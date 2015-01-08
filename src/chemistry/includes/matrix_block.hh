@@ -5,12 +5,12 @@
 
 // Boost may provide us with a more optimal matrix implementation - Glenn
 
-#include "chemistry_output.hh"
+#include "VerboseObject.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
-extern ChemistryOutput* chem_out;
+extern VerboseObject* chem_out;
 
 class MatrixBlock {
  public:

@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  This is the operators component of the Amanzi code. 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -31,7 +31,7 @@ namespace Operators {
 /* ******************************************************************
 * Constructor.                                           
 ****************************************************************** */
-void OperatorDiffusionTPFA::InitOperator(
+void OperatorDiffusionTPFA::Setup(
     std::vector<WhetStone::Tensor>& K,
     Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
     double rho, double mu)
@@ -59,23 +59,15 @@ void OperatorDiffusionTPFA::InitOperator(
 void OperatorDiffusionTPFA::UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, 
                                            Teuchos::RCP<const CompositeVector> p)
 {
-  const std::vector<int>& bc_model = bc_->bc_model();
+  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
 
   // find location of matrix blocks
   int schema_my = OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL;
-  int m(0), nblocks = blocks_.size();
-  bool flag(false);
-
-  for (int n = 0; n < nblocks; n++) {
-    if (blocks_schema_[n] == schema_my) {
-      m = n;
-      flag = true;
-      break;
-    }
-  }
+  int m = FindMatrixBlock(schema_my, OPERATOR_SCHEMA_RULE_EXACT, false);
+  bool flag = (m >= 0);
 
   if (flag == false) { 
-    m = nblocks++;
+    m = blocks_.size();
     blocks_schema_.push_back(OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL);
     blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
     blocks_shadow_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
@@ -98,7 +90,7 @@ void OperatorDiffusionTPFA::UpdateMatrices(Teuchos::RCP<const CompositeVector> f
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface = 0.;
 
-    if (bc_model[f] != OPERATOR_BC_FACE_NEUMANN){
+    if (bc_model[f] != OPERATOR_BC_NEUMANN){
       double tij = (*transmissibility_)[f] * k_face[0][f];
       for (int i = 0; i < ncells; i++) {
 	Aface(i, i) = tij;
@@ -127,7 +119,7 @@ void OperatorDiffusionTPFA::UpdateMatrices(Teuchos::RCP<const CompositeVector> f
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN) continue;
+      if (bc_model[f] == OPERATOR_BC_NEUMANN) continue;
       rhs_cell[0][c] -= dirs[n] * (*gravity_term_)[f] * k_face[0][f];  
     }
   }
@@ -142,8 +134,8 @@ void OperatorDiffusionTPFA::UpdateMatrices(Teuchos::RCP<const CompositeVector> f
 ****************************************************************** */
 void OperatorDiffusionTPFA::ApplyBCs()
 {
-  const std::vector<int>& bc_model = bc_->bc_model();
-  const std::vector<double>& bc_value = bc_->bc_value();
+  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
+  const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
 
   const Epetra_MultiVector& k_face = *k_->ViewComponent("face", true);
   Epetra_MultiVector& rhs_cell = *rhs_->ViewComponent("cell");
@@ -155,9 +147,9 @@ void OperatorDiffusionTPFA::ApplyBCs()
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       int c = cells[0];
 
-      if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET) {
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         rhs_cell[0][c] += bc_value[f] * (*transmissibility_)[f] * k_face[0][f];
-      } else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN) {
+      } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         rhs_cell[0][c] -= bc_value[f] * mesh_->face_area(f);
         //(*transmissibility_)[f] = 0.0;
         (*gravity_term_)[f] = 0.0;
@@ -225,33 +217,24 @@ void OperatorDiffusionTPFA::ComputeNegativeResidual(const CompositeVector& u, Co
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
   Epetra_MultiVector& rc = *r.ViewComponent("cell");
 
-
   // find location of matrix blocks
   int schema_my = OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL;
-  int m(0), nblocks = blocks_.size();
-  bool flag(false);
-
-  for (int n = 0; n < nblocks; n++) {
-    if (blocks_schema_[n] == schema_my) {
-      m = n;
-      flag = true;
-      break;
-    }
-  }
+  int m = FindMatrixBlock(schema_my, OPERATOR_SCHEMA_RULE_EXACT, false);
+  bool flag = (m >= 0);
 
   if (flag == false) { 
-    m = nblocks++;
+    m = blocks_.size();
     blocks_schema_.push_back(OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL);
     blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
     blocks_shadow_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
   }
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
-  const std::vector<int>& bc_model = bc_->bc_model();
-  const std::vector<double>& bc_value = bc_->bc_value();
+
+  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
+  const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
 
   AmanziMesh::Entity_ID_List cells;
-
 
   // matvec product A*u
   u.ScatterMasterToGhosted("cell");
@@ -274,7 +257,7 @@ void OperatorDiffusionTPFA::ComputeNegativeResidual(const CompositeVector& u, Co
       int c = cells[0];
       double tmp = 0;
 
-      if (bc_model[f] != Operators::OPERATOR_BC_FACE_NEUMANN){
+      if (bc_model[f] != Operators::OPERATOR_BC_NEUMANN) {
 	tmp = k_face[0][f] * (*transmissibility_)[f] * uc[0][c];    
       }
       //double tmp = matrix[f](0,0) * uc[0][c];
@@ -299,8 +282,8 @@ void OperatorDiffusionTPFA::ComputeNegativeResidual(const CompositeVector& u, Co
 void OperatorDiffusionTPFA::UpdateFlux(
     const CompositeVector& solution, CompositeVector& darcy_mass_flux)
 {
-  const std::vector<int>& bc_model = bc_->bc_model();
-  const std::vector<double>& bc_value = bc_->bc_value();
+  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
+  const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
 
   solution.ScatterMasterToGhosted("cell");
 
@@ -320,12 +303,12 @@ void OperatorDiffusionTPFA::UpdateFlux(
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
 
-      if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET) {
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
 	double value = bc_value[f];
 	flux[0][f] = dirs[n] * (*transmissibility_)[f] * (p[0][c] - value) + (*gravity_term_)[f];
 	flux[0][f] *= Krel_face[0][f];
 
-      } else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN) {
+      } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
 	double value = bc_value[f];
 	double area = mesh_->face_area(f);
 	flux[0][f] = value*area;
@@ -353,112 +336,6 @@ void OperatorDiffusionTPFA::UpdateFlux(
 }
 
 
-/* ******************************************************************
-* TBW.
-****************************************************************** */
-double OperatorDiffusionTPFA::DeriveBoundaryFaceValue(
-    int f, const CompositeVector& u, Teuchos::RCP<Flow::WaterRetentionModel> wrm)
-{
-  if (u.HasComponent("face")) {
-    const Epetra_MultiVector& u_face = *u.ViewComponent("face");
-    return u_face[f][0];
-  } else {
-    const std::vector<int>& bc_model = bc_->bc_model();
-    const std::vector<double>& bc_value = bc_->bc_value();
-    if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET){
-      return bc_value[f];
-    } else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN){
-      AmanziMesh::Entity_ID_List cells, faces;
-      std::vector<int> dirs;
-      const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");      
-      const Epetra_MultiVector& Krel_face = *k_->ViewComponent("face");
-
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      int c = cells[0];
-      
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-      for (int i=0; i<faces.size(); i++) {
-      	if (faces[i] == f) {
-      	  double a = dirs[i] * (*transmissibility_)[f];
-      	  double b = bc_value[f]* mesh_->face_area(f);	  
-      	  double face_val = u_cell[0][c] + (*gravity_term_)[f]/a - b/(a*Krel_face[0][f]);
-	  double trans = (*transmissibility_)[f];
-	  double gflux = (*gravity_term_)[f];
-	  double bc_flux = bc_value[f]* mesh_->face_area(f);
-	  double atm_pressure_ = 101325;
-
-	  Teuchos::RCP<FlowFluxTPFA_BCFunc> func = 
-	     Teuchos::rcp(new FlowFluxTPFA_BCFunc(trans, face_val, i, u_cell[0][c],
-						  bc_flux, gflux, dirs[i], atm_pressure_, wrm ));
-  // -- convergence criteria
-	  double eps = std::max(1.e-4 * std::abs(bc_flux), 1.e-8);
-	  Tol_ tol(eps);
-	  boost::uintmax_t max_it = 100;
-	  boost::uintmax_t actual_it(max_it);
-	  
-	  double res = (*func)(face_val);
-	  double left = 0.;
-	  double right = 0.;
-	  double lres = 0.;
-	  double rres = 0.;
-
-	  if (res > 0.) {
-	    left = face_val;
-	    lres = res;
-	    right = std::max(face_val, atm_pressure_);
-	    rres = (*func)(right);
-	    while (rres > 0.) {
-	      right += atm_pressure_;
-	      rres = (*func)(right);
-	    }
-	  } else {
-	    right = face_val;
-	    rres = res;
-#if DEBUG_FLAG
-	    std::cout << "RIGHT = " << right << ", " << rres << std::endl;
-#endif
-	    left = std::min(101325., face_val);
-	    lres = (*func)(left);
-	    while (lres < 0.) {
-#if DEBUG_FLAG
-	      std::cout << "LEFT = " << left << ", " << lres << std::endl;
-#endif
-	      left -= 101325.;
-	      lres = (*func)(left);
-	    }
-	  }
-#if DEBUG_FLAG
-  std::cout << "   bracket (res): " << left << " (" << lres << "), "
-            << right << " (" << rres << ")" << std::endl;
-#endif
-
-          std::pair<double,double> result =
-	    boost::math::tools::toms748_solve(*func, left, right, lres, rres, tol, actual_it);
-	  if (actual_it >= max_it) {
-	    std::cout << " Failed to converged in " << actual_it << " steps." << std::endl;
-	    return 3;
-	  }
-	  
-	  face_val = (result.first + result.second) / 2.;
-
-#if DEBUG_FLAG
-	  std::cout << "face_val = "<<face_val<<"\n";
-#endif
-	  //exit(0);
-	  return face_val;
-      	}
-      }
-
-    } else {
-      const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
-      AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      int c = cells[0];
-      return u_cell[0][c];
-    }
-  }
-}
-
 
 /* ******************************************************************
 * Computation the part of the Jacobian which depends on derivatives 
@@ -467,19 +344,12 @@ double OperatorDiffusionTPFA::DeriveBoundaryFaceValue(
 ****************************************************************** */
 void OperatorDiffusionTPFA::AnalyticJacobian_(const CompositeVector& u)
 {
-  const std::vector<int>& bc_model = bc_->bc_model();
-  const std::vector<double>& bc_value = bc_->bc_value();
+  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
+  const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
 
   // find location of matrix blocks
   int schema_my = OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL;
-  int m(0), nblocks = blocks_.size();
-
-  for (int n = 0; n < nblocks; n++) {
-    if (blocks_schema_[n] == schema_my) {
-      m = n;
-      break;
-    }
-  }
+  int m = FindMatrixBlock(schema_my, OPERATOR_SCHEMA_RULE_EXACT, true);
 
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
@@ -527,10 +397,9 @@ void OperatorDiffusionTPFA::AnalyticJacobian_(const CompositeVector& u)
 
 	if (mcells == 1) {
 	  dkdp[0] = dKdP_face[0][f];
-	  //std::cout<<"cell "<<c<<" face "<<f<<" "<<dKdP_face[0][f]<<"\n";
 	}
 
-	const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0]);
+	// const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0], &dir);
 	ComputeJacobianLocal_(mcells, f, face_dir, upwind_, bc_model[f], bc_value[f], pres, dkdp, Aface);
 
         matrix[f] += Aface;
@@ -556,7 +425,7 @@ void OperatorDiffusionTPFA::ComputeJacobianLocal_(
   double dpres;
   if (mcells == 2) {
     dpres = pres[0] - pres[1];  // + grn;
-    if (Krel_method == OPERATOR_UPWIND_WITH_CONSTANT_VECTOR) {  // Define K 
+    if (Krel_method == OPERATOR_UPWIND_CONSTANT_VECTOR) {  // Define K 
       double cos_angle = face_dir * (*gravity_term_)[f] / (rho_ * mesh_->face_area(f));
       if (cos_angle > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
         dKrel_dp[0] = dkdp_cell[0];
@@ -568,20 +437,20 @@ void OperatorDiffusionTPFA::ComputeJacobianLocal_(
         dKrel_dp[0] = 0.5 * dkdp_cell[0];
         dKrel_dp[1] = 0.5 * dkdp_cell[1];
       }
-    } else if (Krel_method == OPERATOR_UPWIND_WITH_FLUX) {
+    } else if (Krel_method == OPERATOR_UPWIND_FLUX) {
       double flux0to1;
       flux0to1 = (*transmissibility_)[f] * dpres + face_dir * (*gravity_term_)[f];
       if (flux0to1  > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
         dKrel_dp[0] = dkdp_cell[0];
         dKrel_dp[1] = 0.0;
-      } else if ( flux0to1 < -OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
+      } else if (flux0to1 < -OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
         dKrel_dp[0] = 0.0;
         dKrel_dp[1] = dkdp_cell[1];
       } else if (fabs(flux0to1) < OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
         dKrel_dp[0] = 0.5 * dkdp_cell[0];
         dKrel_dp[1] = 0.5 * dkdp_cell[1];
       }
-    } else if (Krel_method == OPERATOR_ARITHMETIC_MEAN) {
+    } else if (Krel_method == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
       dKrel_dp[0] = 0.5 * dkdp_cell[0];
       dKrel_dp[1] = 0.5 * dkdp_cell[1];
     }
@@ -592,7 +461,7 @@ void OperatorDiffusionTPFA::ComputeJacobianLocal_(
     Jpp(1, 1) = -Jpp(0, 1);
 
   } else if (mcells == 1) {
-    if (bc_model_f == OPERATOR_BC_FACE_DIRICHLET) {                   
+    if (bc_model_f == OPERATOR_BC_DIRICHLET) {                   
       pres[1] = bc_value_f;
       dpres = pres[0] - pres[1];  // + grn;
       Jpp(0, 0) = ((*transmissibility_)[f] * dpres + face_dir * (*gravity_term_)[f]) * dkdp_cell[0];
@@ -622,7 +491,7 @@ void OperatorDiffusionTPFA::ComputeTransmissibilities_()
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
 
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false);
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     double area = mesh_->face_area(f);
 
@@ -645,8 +514,8 @@ void OperatorDiffusionTPFA::ComputeTransmissibilities_()
       beta[i] = fabs(perm[i] / dxn);
     }
 
-    // double grav = (gravity * normal) / area;
-    double grav = gravity * a_dist;
+    double grav = (gravity * normal) / area;
+    //double grav = gravity * a_dist;
     trans_f = 0.0;
 
     if (ncells == 2) {

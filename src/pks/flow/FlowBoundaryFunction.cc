@@ -13,13 +13,13 @@
 #include "FlowBoundaryFunction.hh"
 
 namespace Amanzi {
-namespace Functions {
+namespace Flow {
 
 /* ******************************************************************
 * TBW.
 ****************************************************************** */
-void FlowBoundaryFunction::Define(const std::vector<std::string> &regions,
-                                  const Teuchos::RCP<const MultiFunction> &f, 
+void FlowBoundaryFunction::Define(const std::vector<std::string>& regions,
+                                  const Teuchos::RCP<const MultiFunction>& f, 
                                   int method) 
 {
   // Create the domain
@@ -29,8 +29,8 @@ void FlowBoundaryFunction::Define(const std::vector<std::string> &regions,
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
 
   for (std::vector<std::string>::const_iterator r = regions.begin(); r != regions.end(); ++r) {
-    if (method != BOUNDARY_FUNCTION_ACTION_NONE) {
-      Action action(*r, method);
+    if (method != CommonDefs::BOUNDARY_FUNCTION_ACTION_NONE) {
+      CommonDefs::Action action(*r, method);
       actions_.push_back(action); 
     }
   }
@@ -40,16 +40,16 @@ void FlowBoundaryFunction::Define(const std::vector<std::string> &regions,
 /* ******************************************************************
 * TBW.
 ****************************************************************** */
-void FlowBoundaryFunction::Define(std::string region,
-                                  const Teuchos::RCP<const MultiFunction> &f,
+void FlowBoundaryFunction::Define(std::string& region,
+                                  const Teuchos::RCP<const MultiFunction>& f,
                                   int method) 
 {
   RegionList regions(1,region);
   Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, AmanziMesh::FACE));
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
 
-  if (method != BOUNDARY_FUNCTION_ACTION_NONE) {
-    Action action(region, method);
+  if (method != CommonDefs::BOUNDARY_FUNCTION_ACTION_NONE) {
+    CommonDefs::Action action(region, method);
     actions_.push_back(action);   
   }
 }
@@ -83,7 +83,7 @@ void FlowBoundaryFunction::Compute(double time) {
     // the most general case.
     Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
     for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
-      AmanziGeometry::Point xc = mesh_->face_centroid(*id);
+      const AmanziGeometry::Point& xc = mesh_->face_centroid(*id);
       for (int i=0; i!=dim; ++i) args[i+1] = xc[i];
       // Careful tracing of the typedefs is required here: spec_and_ids->first
       // is a RCP<Spec>, and the Spec's second is an RCP to the function.
@@ -123,7 +123,7 @@ void FlowBoundaryFunction::ComputeShift(double time, double* shift)
     // the most general case.
     Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
     for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
-      AmanziGeometry::Point xc = mesh_->face_centroid(*id);
+      const AmanziGeometry::Point& xc = mesh_->face_centroid(*id);
       for (int i = 0; i != dim; ++i) args[i+1] = xc[i];
       // Careful tracing of the typedefs is required here: spec_and_ids->first
       //  is a RCP<Spec>, and the Spec's second is an RCP to the function.
@@ -134,7 +134,7 @@ void FlowBoundaryFunction::ComputeShift(double time, double* shift)
 
 
 /* ****************************************************************
-* 
+* Allocates data for mesh function by touching them.
 **************************************************************** */
 void FlowBoundaryFunction::Finalize() {
   finalized_ = true;
@@ -151,8 +151,11 @@ void FlowBoundaryFunction::Finalize() {
     };
   }
 
+  int my_size = size();
+  mesh_->get_comm()->SumAll(&my_size, &global_size_, 1);
+
   //TODO: Verify that the faces in this_domain are all boundary faces.
 }
 
-} // namespace
-} // namespace
+}  // namespace Flow
+}  // namespace Amanzi

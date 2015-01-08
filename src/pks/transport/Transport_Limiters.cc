@@ -50,8 +50,8 @@ void Transport_PK::LimiterTensorial(const int component,
         int c2 = (*downwind_cell_)[f];
 
         if (c1 >= 0 && c2 >= 0) {
-          u1 = (*scalar_field)[c1];
-          u2 = (*scalar_field)[c2];
+          u1 = (*scalar_field)[c];
+          u2 = (*scalar_field)[c1 + c2 - c];
         } else if (c1 == c) {
           u1 = u2 = (*scalar_field)[c1];
         } else {
@@ -61,7 +61,7 @@ void Transport_PK::LimiterTensorial(const int component,
         umax = std::max(u1, u2);
 
         const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
-        u1f = lifting.getValue(gradient_c1, c, xcf);
+        u1f = lifting_->getValue(gradient_c1, c, xcf);
 
         // check if umin <= u1f <= umax
         if (u1f < umin) {
@@ -129,7 +129,7 @@ void Transport_PK::LimiterTensorial(const int component,
 
             const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
             const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
-            u2f = lifting.getValue(c2, xcf);
+            u2f = lifting_->getValue(c2, xcf);
             for (int k = 0; k < dim; k++) gradient_c2[k] = grad[k][c2];
             direction = xcf - xc2;
 
@@ -162,7 +162,7 @@ void Transport_PK::LimiterTensorial(const int component,
 
       if (c == c1) {
         const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
-        u1f = lifting.getValue(c, xcf);
+        u1f = lifting_->getValue(c, xcf);
         u1 = (*scalar_field)[c];
 
         a = u1f - u1;
@@ -427,16 +427,15 @@ void Transport_PK::LimiterKuzmin(const int component,
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     for (int i = 0; i < dim; i++) gradient_c[i] = (*grad)[i][c];
 
-    double umin = component_node_min[c];
-    double umax = component_node_max[c];
-
     normals.clear();  // normals to planes the define the feasiable set
     for (int loop = 0; loop < 2; loop++) {
       for (int i = 0; i < nnodes; i++) {
         int v = nodes[i];
+        double umin = component_node_min[v];
+        double umax = component_node_max[v];
 
         mesh_->node_get_coordinates(v, &xp);
-        up = lifting.getValue(gradient_c, c, xp);
+        up = lifting_->getValue(gradient_c, c, xp);
 
         // check if umin <= up <= umax
         if (up < umin) {
@@ -496,7 +495,7 @@ void Transport_PK::LimiterKuzmin(const int component,
         for (int j = 0; j < nodes.size(); j++) {
           int v = nodes[j];
           mesh_->node_get_coordinates(v, &xp);
-          up = lifting.getValue(c, xp);
+          up = lifting_->getValue(c, xp);
           u1 = (*scalar_field)[c];
 
           a = up - u1;

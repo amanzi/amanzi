@@ -29,16 +29,29 @@ set(CXX_header_files ParmParseHelpers.H
                      TabularFunction.H
                      EventCoord.H
                      WritePlotfile.H
-                     MonotCubicInterpolator.H)
+                     MonotCubicInterpolator.H
+                     MFTower_F.H
+                     MFTower.H
+                     Layout.H)
+
 set(CXX_source_files ParmParseHelpers.cpp
                      InputParser_Structured.cpp
                      TabularFunction.cpp
                      EventCoord.cpp
                      WritePlotfile.cpp
-                     MonotCubicInterpolator.cpp)
+                     MonotCubicInterpolator.cpp
+                     MFTower.cpp
+                     Layout.cpp)
 
-add_library(sutils OBJECT ${CXX_source_files}
-                          ${CXX_headers_files})
+set(FPP_source_files MFTower_${AMANZI_SPACEDIM}D.F)
+
+preprocess_boxlib_fortran(FPP_out_files ${FPP_source_files})
+
+add_library(sutils OBJECT ${FPP_out_files}
+                        ${CXX_source_files}
+                        ${F90_source_files}
+                        ${F77_source_files}
+                        ${CXX_header_files})
 
 # This library depends on samr.
 add_dependencies(sutils samr)

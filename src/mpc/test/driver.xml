@@ -417,15 +417,15 @@
         
 
   <ParameterList name="Flow">
-    <ParameterList name="Darcy Problem">
-      <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
+    <ParameterList name="Darcy problem">
+      <Parameter name="relative permeability" type="string" value="upwind: gravity"/>
       <Parameter name="atmospheric pressure" type="double" value="0.0"/>
       
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
           <ParameterList name="matrix">
-            <Parameter name="discretization primary" type="string" value="optimized mfd scaled"/>
-            <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
             <Parameter name="gravity" type="bool" value="true"/>
@@ -507,10 +507,10 @@
 
 
   <ParameterList name="Transport">
-    <Parameter name="CFL" type="double" value="0.5"/>   
+    <Parameter name="cfl" type="double" value="0.5"/>   
     <Parameter name="spatial discretization order" type="int" value="2"/>   
     <Parameter name="temporal discretization order" type="int" value="2"/>   
-    <Parameter name="advection limiter" type="string" value="Tensorial"/>
+    <Parameter name="advection limiter" type="string" value="tensorial"/>
     <!-- developers parameters --> 
     <Parameter name="enable internal tests" type="string" value="yes"/>   
     <Parameter name="internal tests tolerance" type="double" value="1e-5"/> 

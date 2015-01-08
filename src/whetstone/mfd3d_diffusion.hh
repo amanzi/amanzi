@@ -42,67 +42,53 @@ class MFD3D_Diffusion : public MFD3D {
   explicit MFD3D_Diffusion(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : MFD3D(mesh) {};
   ~MFD3D_Diffusion() {};
 
-  int L2consistency(int cell, const Tensor& T,
-                    DenseMatrix& N, DenseMatrix& Mc);
+  // basic mimetic discretization methods use permeability tensor K
+  int L2consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc);
+  int L2consistencyInverse(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc);
 
-  int L2consistencyInverse(int cell, const Tensor& T,
-                           DenseMatrix& R, DenseMatrix& Wc);
+  int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc);
 
-  int H1consistency(int cell, const Tensor& T, 
-                    DenseMatrix& N, DenseMatrix& Mc);
+  int MassMatrix(int c, const Tensor& K, DenseMatrix& M);
+  int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W);
+  int MassMatrixInverseOptimized(int c, const Tensor& K, DenseMatrix& W);
+  int MassMatrixInverseMMatrixHex(int c, const Tensor& K, DenseMatrix& W);
+  int MassMatrixInverseMMatrix(int c, const Tensor& K, DenseMatrix& W);
 
-  int MassMatrix(int cell, const Tensor& permeability, DenseMatrix& M);
+  int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A);
+  int StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix& A);
 
-  int MassMatrixInverse(int cell, const Tensor& permeability, DenseMatrix& W);
-  int MassMatrixInverseMMatrixHex(int cell, const Tensor& permeability, DenseMatrix& W);
+  // natural scaling of fluxes which was found to be the right way.
+  int L2consistencyInverseScaled(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc);
+  int MassMatrixInverseScaled(int c, const Tensor& K, DenseMatrix& W); 
+  int MassMatrixInverseOptimizedScaled(int c, const Tensor& K, DenseMatrix& W);
 
-  int StiffnessMatrix(int cell, const Tensor& permeability, DenseMatrix& A);
-
-  int StiffnessMatrixMMatrix(int cell, const Tensor& permeability, DenseMatrix& A);
-
-  // different scaling of fluxes
-  int L2consistencyInverseScaled(int cell, const Tensor& T,
-                                 DenseMatrix& R, DenseMatrix& Wc);
-
-  int MassMatrixInverseScaled(int cell, const Tensor& permeability,
-                              DenseMatrix& W);
-
-  // experimental methods
-  int MassMatrixInverseOptimized(int cell, const Tensor& permeability,
-                                 DenseMatrix& W);
-
-  int MassMatrixInverseOptimizedScaled(int cell, const Tensor& permeability,
-                                       DenseMatrix& W);
-
-  int MassMatrixInverseMMatrix(int cell, const Tensor& permeability, DenseMatrix& W);
+  // experimental methods (tensor is product k K)
+  int L2consistencyInverseDivKScaled(int c, const Tensor& K,
+                                     double kmean, const AmanziGeometry::Point& kgrad,
+                                     DenseMatrix& R, DenseMatrix& Wc);
+  int MassMatrixInverseDivKScaled(int c, const Tensor& K,
+                                  double kmean, const AmanziGeometry::Point& kgrad, DenseMatrix& W);
 
   // surface methods
-  int L2consistencyInverseSurface(
-      int cell, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc);
-  int MassMatrixInverseSurface(
-      int cell, const Tensor& permeability, DenseMatrix& W);
+  int L2consistencyInverseSurface(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc);
+  int MassMatrixInverseSurface(int c, const Tensor& K, DenseMatrix& W);
 
   // primary related discetization methods
-  int MassMatrixInverseSO(int cell, const Tensor& permeability, DenseMatrix& W);
-
-  int MassMatrixInverseTPFA(int cell, const Tensor& permeability, DenseMatrix& W);
-
-  int MassMatrixInverseDiagonal(int cell, const Tensor& permeability, DenseMatrix& W);
+  int MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W);
+  int MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& W);
+  int MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatrix& W);
 
   // a posteriori error estimate
-  int RecoverGradient_MassMatrix(int cell,
-                                 const std::vector<double>& solution, 
+  int RecoverGradient_MassMatrix(int c, const std::vector<double>& solution, 
                                  AmanziGeometry::Point& gradient);
 
-  int RecoverGradient_StiffnessMatrix(int cell,
-                                      const std::vector<double>& solution, 
+  int RecoverGradient_StiffnessMatrix(int c, const std::vector<double>& solution, 
                                       AmanziGeometry::Point& gradient);
 
  private:  
   // stability methods (add matrix Ms in M = Mc + Ms)
-  int StabilityMMatrixHex_(int cell, const Tensor& T, DenseMatrix& Mc, DenseMatrix& M);
-
-  void RescaleMassMatrixInverse_(int cell, DenseMatrix& W);
+  int StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& Mc, DenseMatrix& M);
+  void RescaleMassMatrixInverse_(int c, DenseMatrix& W);
 };
 
 }  // namespace WhetStone

@@ -52,9 +52,11 @@ void SorptionIsothermRxn::AddContributionToDTotal(
 }  // end AddContributionToDTotal()
 
 void SorptionIsothermRxn::Display(void) const {
-  std::cout << std::setw(12) << species_name_
-            << std::setw(15) << isotherm_->name()
-            << std::setw(15);
+  std::stringstream message;
+  message << std::setw(12) << species_name_
+          << std::setw(15) << isotherm_->name()
+          << std::setw(15);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
   isotherm_->Display();
 }  // end Display()
 

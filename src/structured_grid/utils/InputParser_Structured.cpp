@@ -1,6 +1,5 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
-#include "Teuchos_MPISession.hpp"
 #include "Teuchos_StrUtils.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
@@ -9,6 +8,8 @@
 #include <PMAMR_Labels.H>
 
 #include <BoxLib.H>
+
+#include <algorithm>
 
 using Teuchos::Array;
 using Teuchos::ParameterList;
@@ -25,14 +26,21 @@ namespace Amanzi {
     static int require_static_velocity = -1; // <0 means it has not yet been set
 
     void MyAbort(const std::string& m) {
-      if (Teuchos::MPISession::getRank() == 0) {
+      if (Teuchos::GlobalMPISession::getRank() == 0) {
         std::cerr << m << std::endl;
         throw std::exception();
       }
     }
 
+    void MyWarning(const std::string& m) {
+
+      if (Teuchos::GlobalMPISession::getRank() == 0) {
+        std::cerr << "WARNING::" << m << "!!!" << std::endl;
+      }
+    }
+
     void MyAbort(const Array<std::string>& m) {
-      if (Teuchos::MPISession::getRank() == 0) {
+      if (Teuchos::GlobalMPISession::getRank() == 0) {
         for (int i=0; i<m.size(); ++i) {
           std::cerr << m[i] << " ";
         }
@@ -61,6 +69,20 @@ namespace Amanzi {
         AMR_to_Amanzi_label_map[ss[i]] = instrings[i];
       }
       return ss;
+    }
+
+    std::string lc(const std::string& in)
+    {
+      std::string out;
+      std::transform(in.begin(), in.end(), std::back_inserter(out), ::tolower);
+      return out;
+    }
+
+    std::string uc(const std::string& in)
+    {
+      std::string out;
+      std::transform(in.begin(), in.end(), std::back_inserter(out), ::toupper);
+      return out;
     }
 
     //
@@ -189,7 +211,11 @@ namespace Amanzi {
       std::string ec_str = "Execution Control";
       std::string tpc_str = "Time Period Control";
       std::string amr_str = "Adaptive Mesh Refinement Control";
-      std::string prob_str = "Basic Algorithm Control";
+      //EIB: this is the actual name of the list, is there a reason for a difference????
+      //std::string amr_str = "Adaptive Mesh Refinement";
+      //EIB: change due to 1.2.2 update
+      //std::string prob_str = "Basic Algorithm Control";
+      std::string prob_str = "Structured Algorithm";
       std::string io_str = "IO Control";
       std::string it_str = "Iterative Linear Solver Control";
       std::string cg_str = "Conjugate Gradient Algorithm";
@@ -299,8 +325,8 @@ namespace Amanzi {
         if (thermoDB_reqd) {
           reqL.push_back(ThermoDB_str);
         }
-        reqP.push_back(Chemistry_Engine_str);
         if (chem_mode == "Alquimia") {
+          reqP.push_back(Chemistry_Engine_str);
           reqP.push_back(Chemistry_Engine_Input_str);
         }
         reqP.push_back(Chemistry_Tol_str);
@@ -320,8 +346,8 @@ namespace Amanzi {
           chem_out_list.set<std::string>(underscore(ThermoDB_str)+"_"+underscore(ThermoDB_File_str), thermoPL.get<std::string>(ThermoDB_File_str));
         }
 
-        chem_out_list.set<std::string>(underscore(Chemistry_Engine_str), underscore(chem_list.get<std::string>(Chemistry_Engine_str)));
         if (chem_mode=="Alquimia") {
+          chem_out_list.set<std::string>(underscore(Chemistry_Engine_str), underscore(chem_list.get<std::string>(Chemistry_Engine_str)));
           chem_out_list.set<std::string>(underscore(Chemistry_Engine_Input_str), underscore(chem_list.get<std::string>(Chemistry_Engine_Input_str)));
         }
         for (int i=0; i<CHoptP.size(); ++i) {
@@ -608,6 +634,13 @@ namespace Amanzi {
       // NOTE: Can now set this AFTER discovering time integration mode
       prob_out_list.set("model_name",model_name);
 
+      // Generate a useful warning
+      
+      double start_time = struc_out_list.get<double>("strt_time");
+      double stop_time = struc_out_list.get<double>("stop_time");
+      if (stop_time <= start_time) {
+        MyWarning("End <= Start, code will halt immediately after initializing data");
+      }
 
       // Deal with optional settings
       const Array<std::string> optL = ECopt.OptLists();
@@ -659,22 +692,21 @@ namespace Amanzi {
       //
       // Verbosity implementation
       //
-      if (v_val == "None") {
+      if (lc(v_val) == "none") {
         prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; diffuse_v = 0; io_v = 0; fab_v = 0;
       }
-      else if (v_val == "Low") {
+      else if (lc(v_val) == "low") {
         prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1;  diffuse_v = 0; io_v = 0; fab_v = 0;
       }
-      else if (v_val == "Medium") {
+      else if (lc(v_val) == "medium") {
         prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2;  diffuse_v = 0; io_v = 0; fab_v = 0;
       }
-      else if (v_val == "High") {
+      else if (lc(v_val) == "high") {
         prob_v = 2; mg_v = 1; cg_v = 1; amr_v = 3;  diffuse_v = 0; io_v = 0; fab_v = 0;
       }
-      else if (v_val == "Extreme") {
+      else if (lc(v_val) == "extreme") {
         prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3;  diffuse_v = 1; io_v = 1; fab_v = 1;
       }
-
       // 
       // Optional lists
       //
@@ -1420,7 +1452,7 @@ namespace Amanzi {
         const ParameterEntry& entry = rlist.getEntry(label);
         
         if ( !entry.isList() ) {
-          if (Teuchos::MPISession::getRank() == 0) {
+          if (Teuchos::GlobalMPISession::getRank() == 0) {
             std::cerr << "Region section must define only regions. \"" 
                       << label << "\" is not a valid region definition." << std::endl;
           }
@@ -1679,25 +1711,6 @@ namespace Amanzi {
       }
     }
 
-    bool convert_MolecularDiffusionUniform(const ParameterList& fPLin,
-                                           ParameterList&       fPLout)
-    {
-      Array<std::string> nullList, reqP;
-      if (fPLin.isParameter("Value")) {
-        const std::string val_name="Value"; reqP.push_back(val_name);
-        PLoptions opt(fPLin,nullList,reqP,true,true);
-        double val = fPLin.get<double>(val_name);
-        if (val == 0) return false;
-        fPLout.set<double>("val",val);
-      }
-      else {
-        std::string str = "Unrecognized molecular diffusion parameters";
-        std::cerr << fPLin << std::endl;
-        BoxLib::Abort(str.c_str());
-      }
-      return true;
-    }
-
     void convert_TortuosityUniform(const ParameterList& fPLin,
                                    ParameterList&       fPLout)
     {
@@ -1791,8 +1804,10 @@ namespace Amanzi {
         const ParameterList& ec_list = parameter_list.sublist("Execution Control");
         if (ec_list.isSublist("Numerical Control Parameters")) {
           const ParameterList& ncp_list = ec_list.sublist("Numerical Control Parameters");
-          if (ncp_list.isSublist("Basic Algorithm Control")) {
-            const ParameterList& bac_list = ncp_list.sublist("Basic Algorithm Control");
+          //if (ncp_list.isSublist("Basic Algorithm Control")) {
+            //const ParameterList& bac_list = ncp_list.sublist("Basic Algorithm Control");
+          if (ncp_list.isSublist("Structured Algorithm")) {
+            const ParameterList& bac_list = ncp_list.sublist("Structured Algorithm");
             if (bac_list.isSublist("Expert Settings")) {
               const ParameterList& es_list = bac_list.sublist("Expert Settings");
               if (es_list.isParameter("gravity")) {
@@ -1844,7 +1859,6 @@ namespace Amanzi {
       const std::string perm_file_str = "Intrinsic Permeability: Input File";
       const std::string perm_uniform_str = "Intrinsic Permeability: Uniform";
       const std::string perm_anisotropic_uniform_str = "Intrinsic Permeability: Anisotropic Uniform";
-      const std::string molec_diff_uniform_str = "Molecular Diffusion: Uniform";
       const std::string tortuosity_str = "Tortuosity: Uniform";
       const std::string dispersivity_str = "Dispersion Tensor: Uniform Isotropic";
       const std::string specific_storage_uniform_str = "Specific Storage: Uniform";
@@ -1957,14 +1971,6 @@ namespace Amanzi {
                 rsublist.set("permeability",psublist);
                 rsublist.set("permeability_dist","uniform");
                 mtest["Intrinsic_Permeability"] = true;
-              }
-              else if (rlabel==molec_diff_uniform_str) {
-                ParameterList dsublist;
-                bool is_nonzero = convert_MolecularDiffusionUniform(rsslist,dsublist);
-                if (is_nonzero) {
-                  rsublist.set("molecular_diffusion",dsublist);
-                  do_tracer_diffusion = do_tracer_advection; 
-                }
               }
               else if (rlabel==tortuosity_str) {
                 ParameterList dsublist;
@@ -2699,12 +2705,12 @@ namespace Amanzi {
                                   ParameterList&       fPLout)
     {
       Array<std::string> nullList, reqP;
-      const std::string phase_name="Phase";reqP.push_back(phase_name);
+      //const std::string phase_name="Phase";reqP.push_back(phase_name);
       const std::string val_name="Value";reqP.push_back(val_name);
       PLoptions opt(fPLin,nullList,reqP,true,true);      
       fPLout.set<std::string>("type","pressure");
       fPLout.set<double>("val",fPLin.get<double>(val_name));
-      fPLout.set<std::string>("phase",fPLin.get<std::string>(phase_name));
+      //fPLout.set<std::string>("phase",fPLin.get<std::string>(phase_name));
     }
 
     void convert_IC_LinPressure(const ParameterList& fPLin,
@@ -2712,7 +2718,7 @@ namespace Amanzi {
                                 ParameterList&       fPLout)
     {
       Array<std::string> reqP, nullList;
-      const std::string phase_name="Phase";reqP.push_back(phase_name);
+      //const std::string phase_name="Phase";reqP.push_back(phase_name);
       const std::string rval_name="Reference Value";reqP.push_back(rval_name);
       const std::string grad_name="Gradient Value";reqP.push_back(grad_name);
       const std::string ref_name="Reference Point";reqP.push_back(ref_name);
@@ -2728,7 +2734,7 @@ namespace Amanzi {
                         const std::string&   Amanzi_type,
                         ParameterList&       fPLout)
     {
-      const std::string phase_name="Phase";
+      //const std::string phase_name="Phase";
       const std::string val_name="Reference Value";
       const std::string grad_name="Gradient Value";
       const std::string ref_name="Reference Point";
@@ -2737,7 +2743,7 @@ namespace Amanzi {
       Array<std::string> reqP, nullList;
       reqP.push_back(val_name);
       if (Amanzi_type == "IC: Flow") {
-        reqP.push_back(phase_name);
+        //reqP.push_back(phase_name);
         reqP.push_back(grad_name);
         reqP.push_back(ref_name);
         reqP.push_back(vel_name);
@@ -2974,11 +2980,11 @@ namespace Amanzi {
         fPLout.set<Array<double> >("loc",fPLin.get<Array<double> >(ref_name));
         fPLout.set<std::string>("type","linear_pressure");
       }
-      else if ((Amanzi_type == "BC: Uniform Pressure Head")
+      else if ((Amanzi_type == "BC: Uniform Hydraulic Head")
                || (Amanzi_type == "BC: Hydrostatic"))
       {
         const std::string val_name
-          = (Amanzi_type == "BC: Uniform Pressure Head" ?  "Values" : "Water Table Height");
+          = (Amanzi_type == "BC: Uniform Hydraulic Head" ?  "Values" : "Water Table Height");
         reqP.push_back(val_name);
         const std::string time_name="Times"; reqP.push_back(time_name);
         const std::string form_name="Time Functions"; reqP.push_back(form_name);
@@ -3010,7 +3016,7 @@ namespace Amanzi {
           fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(time_name));
           fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
         }
-        fPLout.set<std::string>("type","pressure_head");
+        fPLout.set<std::string>("type","hydraulic_head");
         fPLout.set<std::string>("normalization",absolute_or_relative);
       }
       else if (Amanzi_type == "BC: Uniform Pressure")
@@ -3118,13 +3124,21 @@ namespace Amanzi {
       const std::string& solute_bc_label = solute_bc.Label();
 
       const std::string geo_name="Geochemical Condition";
+      const std::string geos_name="Geochemical Conditions";
       const std::string val_name="Value";
       const std::string vals_name="Values";
       const std::string time_name="Times";
       const std::string form_name="Time Functions";
 
       if (fPLin.isParameter(geo_name)) {
-        fPLout.set<std::string>("geochemical_condition",fPLin.get<std::string>(geo_name));
+        fPLout.set<std::string>("geochemical_conditions",fPLin.get<std::string>(geo_name));
+      } else if (fPLin.isParameter(geos_name)) {
+        const Array<std::string>& geo_names = fPLin.get<Array<std::string> >(geos_name);
+        if (geo_names.size() > 1) {
+          fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(time_name));
+          fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
+        }
+        fPLout.set<Array<std::string> >("geochemical_conditions",geo_names);
       } else if (fPLin.isParameter(val_name)) {
         fPLout.set<double>("vals",fPLin.get<double>(val_name));
       } else if (fPLin.isParameter(vals_name)) {
@@ -3135,7 +3149,8 @@ namespace Amanzi {
           fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
         }
       } else {
-        const std::string str = "Solute Concentration for BC \""+solute_bc_label+"\" must be specified using \""+geo_name+"\", \""+val_name+"\" or \""+vals_name;
+        const std::string str = "Solute Concentration for BC \""+solute_bc_label
+          +"\" must be specified using \""+geo_name+"\", \""+val_name+"\" or \""+vals_name;
         MyAbort(str);
       }
 
@@ -3198,7 +3213,7 @@ namespace Amanzi {
           convert_BCSaturation(fPLin,Amanzi_type,fPLout);
         }
         else if ( (Amanzi_type == "BC: Uniform Pressure")
-                  || (Amanzi_type == "BC: Uniform Pressure Head")
+                  || (Amanzi_type == "BC: Uniform Hydraulic Head")
                   || (Amanzi_type == "BC: Hydrostatic")
                   || (Amanzi_type == "BC: Linear Pressure") )
         {
@@ -3279,7 +3294,7 @@ namespace Amanzi {
               }
             }
             if (orient_type == "pressure"
-                     || orient_type == "pressure_head"
+                     || orient_type == "hydraulic_head"
                      || orient_type == "linear_pressure"
                      || orient_type == "hydrostatic") {
               // Must set components by name, and phase press set by press_XX(scalar) or hydro 
@@ -3568,15 +3583,6 @@ namespace Amanzi {
                                 bool&                do_tracer_diffusion,
                                 bool&                do_chem)
     {
-      // FIXME: Molecular diffusivities should be specified as a property of
-      //        solutes (and tortuosity as a property of the materials)
-      //        The arguments to this function are to suggest that if Dmolec
-      //        is specified for any solute, diffusion should be turned on
-      //        (if transport is on....checked here by looking at do_tracer_advection)
-      //
-      // However, this is not implemented yet in the Amanzi input spec (v1.2.1 so far)
-      // Rather, tau.D is specified for all solutes as a material property
-      //
       ParameterList& phase_list  = struc_list.sublist("phase");
       ParameterList& comp_list   = struc_list.sublist("comp"); 
       ParameterList& solute_list = struc_list.sublist("tracer"); 
@@ -3599,9 +3605,9 @@ namespace Amanzi {
       }
     
       StateDef::Phases& phases = stateDef.getPhases();
-      for (StateDef::Phases::const_iterator pit = phases.begin(); pit!=phases.end(); ++pit) 
+      for (StateDef::Phases::const_iterator pit = phases.begin(); pit!=phases.end(); ++pit)
       {
-        const std::string& phaseLabel = pit->first;                
+        const std::string& phaseLabel = pit->first;
         std::string _phaseLabel = underscore(phaseLabel);
         PHASE& phase = stateDef.getPhases()[phaseLabel];
 
@@ -3612,7 +3618,7 @@ namespace Amanzi {
         
         Array<std::string> arraycomp;  
         const CompMap comp_map = stateDef[phaseLabel];
-        for (CompMap::const_iterator cit = comp_map.begin(); cit!=comp_map.end(); ++cit) 
+        for (CompMap::const_iterator cit = comp_map.begin(); cit!=comp_map.end(); ++cit)
         {
           const std::string& compLabel = cit->first;
           std::string _compLabel = underscore(compLabel);
@@ -3664,6 +3670,38 @@ namespace Amanzi {
         Array<std::string> regions;
         solutePLs[soluteName].set<Array<std::string> >("regions",regions);
         solutePLs[soluteName].set<Array<std::string> >("tinits",icLabels);
+
+        // Find solute in phase defs in order to extract solute-specific properties
+        bool found_solute = false;
+        for (StateDef::Phases::const_iterator pit = phases.begin(); pit!=phases.end() && !found_solute; ++pit) 
+        {
+          const std::string& phaseLabel = pit->first;                
+          PHASE& phase = stateDef.getPhases()[phaseLabel];
+          const CompMap comp_map = stateDef[phaseLabel];
+          for (CompMap::const_iterator cit = comp_map.begin(); cit!=comp_map.end() && !found_solute; ++cit) 
+          {
+            const std::string& compLabel = cit->first;
+            const Array<TRACER>& solutes = cit->second.getTracerArray();
+            for (int i=0; i<solutes.size(); ++i)
+            {
+              std::string _soluteLabel = underscore(solutes[i].name);
+              if (_soluteLabel == soluteName) {
+                found_solute = true;
+
+                double D = solutes[i].molecularDiffusivity;
+                if (D != 0) {
+                  solutePLs[soluteName].set<double>("molecularDiffusivity",D);
+                  do_tracer_diffusion = do_tracer_advection;
+                }
+
+                double lambda = solutes[i].firstOrderDecayConstant;
+                if (lambda != 0) {
+                  solutePLs[soluteName].set<double>("firstOrderDecayConstant",lambda);
+                }
+              }
+            }
+          }
+        }
       }
 
       // Only do solute BCs if do_tracer_transport
@@ -3872,20 +3910,12 @@ namespace Amanzi {
       user_derive_list.push_back(underscore("Aqueous Volumetric Flux Z"));
 #endif
 
-      user_derive_list.push_back(underscore("Molecular Diffusion Coefficient X"));
-      user_derive_list.push_back(underscore("Molecular Diffusion Coefficient Y"));
-#if BL_SPACEDIM==3
-      user_derive_list.push_back(underscore("Molecular Diffusion Coefficient Z"));
-#endif
-
       user_derive_list.push_back(underscore("Tortuosity X"));
       user_derive_list.push_back(underscore("Tortuosity Y"));
 #if BL_SPACEDIM==3
       user_derive_list.push_back(underscore("Tortuosity Z"));
 #endif
 
-      user_derive_list.push_back(underscore("Dispersivity L"));
-      user_derive_list.push_back(underscore("Dispersivity T"));
       user_derive_list.push_back(underscore("Specific Storage"));
       user_derive_list.push_back(underscore("Specific Yield"));
       user_derive_list.push_back(underscore("Particle Density"));
@@ -4147,7 +4177,7 @@ namespace Amanzi {
                 vis_cMacroNames.push_back(label);
               }
               else {
-                if (Teuchos::MPISession::getRank() == 0) {
+                if (Teuchos::GlobalMPISession::getRank() == 0) {
                   std::cerr << "Unrecognized cycle macro in \""+vis_data_str+"\": \""
                             << vcMacros[i] << "\"" << std::endl;
                                     
@@ -4180,7 +4210,7 @@ namespace Amanzi {
                 vis_tMacroNames.push_back(label);
               }
               else {
-                if (Teuchos::MPISession::getRank() == 0) {
+                if (Teuchos::GlobalMPISession::getRank() == 0) {
                   std::cerr << "Unrecognized time macro in \""+vis_data_str+"\": \""
                             << vtMacros[i] << "\"" << std::endl;
                                     
@@ -4260,7 +4290,7 @@ namespace Amanzi {
                 chk_cMacroNames.push_back(label);
               }
               else {
-                if (Teuchos::MPISession::getRank() == 0) {
+                if (Teuchos::GlobalMPISession::getRank() == 0) {
                   std::cerr << "Unrecognized cycle macro in \""+chk_data_str+"\": \""
                             << ccMacros[i] << "\"" << std::endl;
                                     

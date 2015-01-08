@@ -34,7 +34,7 @@ void Flow_PK::ProcessShiftWaterTableList(const Teuchos::ParameterList& list)
     Exceptions::amanzi_throw(msg);
   }
 
-  const std::vector<Amanzi::Functions::Action>& actions = bc_head->actions();
+  const std::vector<CommonDefs::Action>& actions = bc_head->actions();
   int nactions = actions.size();
   if (nactions > 0) { 
     const Epetra_BlockMap& fmap = mesh_->face_map(true);
@@ -44,7 +44,7 @@ void Flow_PK::ProcessShiftWaterTableList(const Teuchos::ParameterList& list)
   for (int i = 0; i < nactions; i++) {
     int method = actions[i].second;
 
-    if (method == Functions::BOUNDARY_FUNCTION_ACTION_HEAD_RELATIVE) {
+    if (method == CommonDefs::BOUNDARY_FUNCTION_ACTION_HEAD_RELATIVE) {
       CalculateShiftWaterTable(actions[i].first);
     }
   }

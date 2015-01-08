@@ -104,7 +104,6 @@ ENABLE_Config_Report:
         :Description: Print out configuration report to the terminal.
         :Dependencies:
 
-
 ENABLE_STK_Mesh:
 
         :Default: OFF
@@ -126,6 +125,11 @@ ENABLE_MOAB_Mesh:
         :Dependencies: MOAB, requires a specific version. See
                        Software Requires for more information.
 
+ENABLE_CCSE_TOOLS:
+
+        :Default: OFF
+        :Description: Build structured AMR post processing tools 
+        :Dependencies: python, f2py, gfortran compatible with mpif90
 
 ENABLE_UnitTest:
 

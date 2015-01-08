@@ -29,22 +29,25 @@ class Tensor {
   Tensor(const Tensor& T);
   Tensor(int d, int rank) {
     data_ = NULL;
-    init(d, rank);
+    Init(d, rank);
   }
   Tensor(int d, int rank, const double* data);
   ~Tensor() { if (data_) delete[] data_; }
 
   // primary members
-  int init(int d, int rank);
+  int Init(int d, int rank);
   void PutScalar(double val);
   double Trace() const;
   double Det();
   void Inverse();
+  void PseudoInverse();
   void Transpose();
+  bool isZero();
   void SpectralBounds(double* lower, double* upper) const;
 
   // elementary operators
   Tensor& operator*=(double c);
+  Tensor& operator+=(double c);
   Tensor& operator=(const Tensor& T);
   friend AmanziGeometry::Point operator*(const Tensor& T, const AmanziGeometry::Point& p);
   friend Tensor operator*(const Tensor& T1, const Tensor& T2);
@@ -52,8 +55,8 @@ class Tensor {
   // access members
   double& operator()(int i, int j) { return data_[i * size_ + j]; }
   double& operator()(int i, int j) const { return data_[i * size_ + j]; }
-  int AddColumn(const int column, const AmanziGeometry::Point& p); 
-  int AddRow(const int row, const AmanziGeometry::Point& p); 
+  int SetColumn(int column, const AmanziGeometry::Point& p); 
+  int SetRow(int row, const AmanziGeometry::Point& p); 
 
   int dimension() const { return d_; }
   int rank() const { return rank_; }

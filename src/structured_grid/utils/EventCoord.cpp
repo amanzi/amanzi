@@ -266,6 +266,7 @@ EventCoord::TimeEvent::ThisEventDue(Real t, Real dt, Real& dt_red) const
         }
     }
     else {
+
         for (int i=0; i<times.size(); ++i) {
             Real teps;
             if (times.size()==1) {
@@ -283,13 +284,33 @@ EventCoord::TimeEvent::ThisEventDue(Real t, Real dt, Real& dt_red) const
                 dt_red = std::min(dt, times[i]-t);
                 return true;
             }
+
             if (std::abs(times[i] - t) < teps) {
+
+              // In the case where the time is identically on a node, we would
+              // double-count, because it would be at the end of one interval
+              // and the start of another.  Avoid this by picking the one
+              // at the high end.
+              //
+              // There is a special case though.  If t is at a node, and t+dt is
+              // at the next node, then the one at the low side would never be
+              // triggered.  I cant think of a way around this, but to check for it
+              // explicitly.
+              //
+              for (int j=0; j<times.size(); ++j) {
+                if (i!=j  && std::abs(t + dt - times[j]) < teps) {
+                  dt_red = dt;
+                  return true;
+                }
+              }
+
                 Real max_dt = 0;
                 for (int j=0; j<times.size(); ++j) {
                     if (t < times[j]) {
                         max_dt = std::max(max_dt,times[j]-t);
                     }
                 }
+
                 if (max_dt == 0) {
                     return false;
                 }
@@ -331,7 +352,6 @@ EventCoord::NextEvent(Real t, Real dt, int cycle, int dcycle) const
         const TimeEvent* event = dynamic_cast<const TimeEvent*>(it->second);
         TimeEvent::TType type = event->Type();
         Real dt_red;
-
         if (event->ThisEventDue(t,dt,dt_red)) {
             events.push_back(name);
             delta_t = (delta_t < 0  ?  dt_red  :  std::min(delta_t, dt_red));

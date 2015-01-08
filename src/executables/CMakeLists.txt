@@ -23,6 +23,7 @@ project(EXEC)
 
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
+include_directories(${DBG_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})

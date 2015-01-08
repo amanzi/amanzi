@@ -5,7 +5,6 @@
 
 #include <GSLibInt.H>
 #include <GSLibInt_F.H>
-#include <RockUtil_F.H>
 #include <VisMF.H>
 #include <Utility.H>
 

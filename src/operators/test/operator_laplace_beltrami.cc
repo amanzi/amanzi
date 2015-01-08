@@ -83,19 +83,20 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   }
   double rho(1.0), mu(1.0);
 
-  // create boundary data
+  // create boundary data (no mixed bc)
   std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
   std::vector<double> bc_value(nfaces_wghost);
+  std::vector<double> bc_mixed;
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = surfmesh->face_centroid(f);
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
-      bc_model[f] = OPERATOR_BC_FACE_DIRICHLET;
+      bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = xf[1] * xf[1];
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(bc_model, bc_value));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -117,7 +118,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
 
   Teuchos::RCP<OperatorDiffusionSurface> op = Teuchos::rcp(new OperatorDiffusionSurface(cvs, olist, bc));
   op->Init();
-  op->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
   op->ApplyBCs();
   op->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
@@ -245,19 +246,20 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   }
   double rho(1.0), mu(1.0);
 
-  // create boundary data
+  // create boundary data (no mixed bc)
   std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
   std::vector<double> bc_value(nfaces_wghost);
+  std::vector<double> bc_mixed;
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = surfmesh->face_centroid(f);
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
-      bc_model[f] = OPERATOR_BC_FACE_DIRICHLET;
+      bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = xf[1] * xf[1];
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(bc_model, bc_value));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -279,7 +281,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
 
   Teuchos::RCP<OperatorDiffusionSurface> op = Teuchos::rcp(new OperatorDiffusionSurface(cvs, olist, bc));
   op->Init();
-  op->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
   op->ApplyBCs();
   int nonstandard = 1;
@@ -407,19 +409,20 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   }
   double rho(1.0), mu(1.0);
 
-  // create boundary data
+  // create boundary data (no mixed bc)
   std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
   std::vector<double> bc_value(nfaces_wghost);
+  std::vector<double> bc_mixed;
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = surfmesh->face_centroid(f);
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
-      bc_model[f] = OPERATOR_BC_FACE_DIRICHLET;
+      bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = xf[1] * xf[1];
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(bc_model, bc_value));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -441,7 +444,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
 
   Teuchos::RCP<OperatorDiffusionSurface> op = Teuchos::rcp(new OperatorDiffusionSurface(cvs, olist, bc));
   op->Init();
-  op->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
   op->ApplyBCs();
   op->SymbolicAssembleMatrix(schema_prec_dofs);

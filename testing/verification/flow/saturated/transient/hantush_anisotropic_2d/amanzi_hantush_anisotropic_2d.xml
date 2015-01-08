@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
 
   <!--
     Transient, Two-Dimensional Flow to a Well in an Anisotropic Confined Aquifer (Hantush and Thomas, 1966)

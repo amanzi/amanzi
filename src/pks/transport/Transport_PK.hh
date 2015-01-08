@@ -21,21 +21,19 @@
 #include "Epetra_Import.h"
 #include "Teuchos_RCP.hpp"
 
-#include "VerboseObject.hh"
-
 #include "CompositeVector.hh"
+#include "DiffusionPhase.hh"
 #include "Explicit_TI_FnBase.hh"
+#include "MaterialProperties.hh"
+#include "PK.hh"
+#include "ReconstructionCell.hh"
+#include "State.hh"
 #include "tensor.hh"
 #include "TransportBoundaryFunction.hh"
 #include "TransportDomainFunction.hh"
-
-#include "PK.hh"
-#include "Reconstruction.hh"
-#include "State.hh"
-
 #include "TransportDefs.hh"
 #include "TransportSourceFactory.hh"
-#include "DispersionModel.hh"
+#include "VerboseObject.hh"
 
 #ifdef ALQUIMIA_ENABLED
 #include "Chemistry_State.hh"
@@ -72,13 +70,13 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   ~Transport_PK();
 
   // main PK members
-  void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
-
   void Initialize(const Teuchos::Ptr<State>& S);
-  double get_dt();
   int Advance(double dT, double &dT_actual); 
   void CommitState(double dummy_dT, const Teuchos::Ptr<State>& S);
-  std::string name() { return name_; }
+
+  void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
+  double get_dt();
+  std::string name() { return passwd_; }
 
   // main transport members
   void InitializeFields();
@@ -93,24 +91,27 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   inline double cfl() { return cfl_; }
 
   // control members
+  void CreateDefaultState(Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int ncomponents);
   void Policy(Teuchos::Ptr<State> S);
   void PrintStatistics() const;
   void WriteGMVfile(Teuchos::RCP<State> S) const;
 
-  void CheckDivergenceProperty();
-  void CheckGEDproperty(Epetra_MultiVector& tracer) const; 
-  void CheckTracerBounds(Epetra_MultiVector& tracer, int component,
-                         double lower_bound, double upper_bound, double tol = 0.0) const;
-  void CheckInfluxBC() const;
-
-  void CreateDefaultState(Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int ncomponents);
+  void VV_CheckGEDproperty(Epetra_MultiVector& tracer) const; 
+  void VV_CheckTracerBounds(Epetra_MultiVector& tracer, int component,
+                            double lower_bound, double upper_bound, double tol = 0.0) const;
+  void VV_CheckInfluxBC() const;
+  void VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, double dT_MPC);
+  double VV_TracerVolumeChangePerSecond(int idx_tracer);
 
   void CalculateLpErrors(AnalyticFunction f, double t, Epetra_Vector* sol, double* L1, double* L2);
 
-  // sources and sinks
+  // sources and sinks for components from n0 to n1 including
   void ComputeAddSourceTerms(double Tp, double dTp, 
-                             TransportDomainFunction* src_sink, 
-                             Epetra_MultiVector& tcc);
+                             std::vector<TransportDomainFunction*>& src_sink, 
+                             Epetra_MultiVector& tcc, int n0, int n1);
+
+  bool PopulateBoundaryData(std::vector<int>& bc_model,
+                            std::vector<double>& bc_value, int component);
 
   // limiters 
   void LimiterBarthJespersen(const int component,
@@ -161,20 +162,26 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   const Teuchos::RCP<Epetra_IntVector>& upwind_cell() { return upwind_cell_; }
   const Teuchos::RCP<Epetra_IntVector>& downwind_cell() { return downwind_cell_; }  
 
-  // dispersion
+  // dispersion and diffusion
   void CalculateDispersionTensor_(
       const Epetra_MultiVector& darcy_flux, 
       const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
 
+  void CalculateDiffusionTensor_(
+      double md, int phase,
+      const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
+
+  int FindDiffusionValue(const std::string& tcc_name, double* md, int* phase);
+
+  void CalculateAxiSymmetryDirection();
+
   // I/O methods
   void ProcessParameterList();
   void ProcessStringDispersionModel(const std::string name, int* model);
-  void ProcessStringDispersionMethod(const std::string name, int* method);
   void ProcessStringAdvectionLimiter(const std::string name, int* method);
 
   // miscaleneous methods
   int FindComponentNumber(const std::string component_name);
-  double TracerVolumeChangePerSecond(int idx_tracer);
 
  public:
   Teuchos::ParameterList parameter_list;
@@ -197,7 +204,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   int dim;
 
   Teuchos::RCP<State> S_;  // state info
-  std::string name_;
+  std::string passwd_;
 
   Teuchos::RCP<CompositeVector> tcc_tmp;  // next tcc
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 
@@ -217,36 +224,40 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
 
   int advection_limiter;  // data for limiters
   int current_component_;
-  Teuchos::RCP<Epetra_Vector> limiter_;
-  Reconstruction lifting;
+  // Teuchos::RCP<Epetra_Vector> limiter_;
+  Teuchos::RCP<Operators::ReconstructionCell> lifting_;
   std::vector<double> component_local_min_;
   std::vector<double> component_local_max_;
 
-  TransportDomainFunction* src_sink;  // Source and sink terms
-  int src_sink_distribution; 
+  std::vector<TransportDomainFunction*> srcs;  // Source or sink for components
+  std::vector<TransportBoundaryFunction*> bcs;  // influx BC for components
+  double bc_scaling;
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
 
-  std::vector<Teuchos::RCP<DispersionModel> > dispersion_models_;  // data for dispersion
+  std::vector<Teuchos::RCP<MaterialProperties> > mat_properties_;  // vector of materials
+  std::vector<Teuchos::RCP<DiffusionPhase> >  diffusion_phase_;   // vector of phases
+
   std::vector<WhetStone::Tensor> D;
-  int dispersion_method;
+  int dispersion_models_;
+  std::vector<int> axi_symmetry_;  // axi symmetry direction of permeability tensor
   std::string dispersion_preconditioner;
   std::string dispersion_solver;
 
   double cfl_, dT, dT_debug, T_physics;  
 
-  std::vector<TransportBoundaryFunction*> bcs;  // influx BCs for each components
-  double bc_scaling;
-
-  double mass_tracer_exact, mass_tracer_source;  // statistics for tracer
+  double mass_tracer_exact, mass_tracer_source;  // statistics for tracers or solutes
+  std::vector<std::string> runtime_solutes_;
+  std::vector<std::string> runtime_regions_;
 
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
   int nnodes_wghost;
  
-  std::vector<std::string> component_names_;
+  std::vector<std::string> component_names_;  // details of components
+  int num_aqueous, num_gaseous;
 
   // Forbidden.
   Transport_PK(const Transport_PK&);

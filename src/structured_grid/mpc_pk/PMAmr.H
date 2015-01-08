@@ -72,7 +72,14 @@ public:
 
     static std::pair<Real,std::string> convert_time_units(Real t, const std::string& units);
 
+    void FlushObservations();
+    void FlushObservations(std::ostream& out);
+
+    static void Initialize ();
+    static void Finalize ();
+
 protected:
+    void restart (const std::string& filename); // Note: this should be a virtual, but it is not
     void InitializeControlEvents();
 
     Layout layout;
@@ -92,9 +99,8 @@ protected:
     Array<Real> tpc_initial_time_step_multipliers;
     Array<Real> tpc_maximum_time_steps;
 
-    static void CleanupStatics ();
-    int plot_file_digits;
-    int chk_file_digits;
+    static int plot_file_digits;
+    static int chk_file_digits;
     int  max_step;
     Real stop_time;
 

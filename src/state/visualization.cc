@@ -55,9 +55,9 @@ void Visualization::ReadParameters_() {
   filebasename_ = plist_.get<std::string>("file name base","amanzi_vis");
   dynamic_mesh_ = plist_.get<bool>("dynamic mesh",false);
 
-  Teuchos::Array<std::string>  default_no_regions(0);
+  Teuchos::Array<std::string> default_no_regions(0);
   regions_ = plist_.get<Teuchos::Array<std::string> >("Write Regions", default_no_regions);
-  write_partition_ = plist_.get<bool>("Write Partitions",false);
+  write_partition_ = plist_.get<bool>("Write Partitions", false);
 }
 
 
@@ -115,7 +115,7 @@ void Visualization::WriteRegions() {
     }
     std::vector<std::string> name; 
     name.push_back("regions");
-    WriteVector(reg,name);
+    WriteVector(reg, name);
   }
 }
 

@@ -7,7 +7,7 @@ import sys
 import h5py
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
 
@@ -134,6 +134,17 @@ if __name__ == "__main__":
     CWD = os.getcwd()
     local_path = ""
 
+    # amanziS data
+    try:
+        path_to_amanziS = "run_data"
+        root_amanziS = "plt00102"
+        root_amanziS = "plt00901"
+        compS = "Tritium_Aqueous_Concentration"
+        x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        struct = len(x_amanziS)
+    except:
+        struct = 0
+        
     # subplots
     fig, ax = plt.subplots() 
         
@@ -143,8 +154,8 @@ if __name__ == "__main__":
         comp = 'total_component_concentration.cell.Tritium conc'
 
         # Amanzi native chemistry
-        input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
-        path_to_amanzi = "amanzi-native-output"
+        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-FO.xml")
+        path_to_amanzi = "amanzi-alquimia-FO-output"
         run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=[root+".bgd"])
         x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
      
@@ -202,17 +213,22 @@ if __name__ == "__main__":
 
 
 
-    # lines on axes
+    # Do plot
     if alquim:
         alq = ax.plot(x_amanzi_alquimia, c_amanzi_alquimia,'rx',label='Amanzi+Alquimia(PFloTran)',linewidth=2)
     if alquim_crunch:
         alq = ax.plot(x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch,'r|',label='Amanzi+Alquimia(CrunchFlow)',linewidth=2)
     if (struct>0):
+        alq = ax.plot(x_amanzi_alquimia, c_amanzi_alquimia,'m-',label='AmanziU+Alquimia(PFloTran) - 2nd Order',linewidth=2)
+#    ama = ax.plot(x_amanzi_native, c_amanzi_native,'ro',label='AmanziU+Alquimia(PFloTran) - 1st Order')
+    if (struct>0):
+        sam = ax.plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alquimia(PFloTran)',linewidth=2) 
         sam = ax.plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alquimia(PFloTran)',linewidth=2) 
         sam_crunch = ax.plot(x_amanziS, c_amanziS_crunch,'g*',label='AmanziS+Alquimia(CrunchFlow)',linewidth=2) 
 ##    ama = ax.plot(x_amanzi_native, c_amanzi_native,'r_',label='Amanzi Native Chemistry')
     pfl = ax.plot(x_pflotran, c_pflotran,'b--',label='PFloTran',linewidth=2)
     crunch = ax.plot(x_crunchflow, c_crunchflow,'b.',label='CrunchFlow',linewidth=2)
+
 
     # axes
     ax.set_xlabel("Distance (m)",fontsize=20)
@@ -228,8 +244,20 @@ if __name__ == "__main__":
     plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
     plt.tick_params(axis='both', which='major', labelsize=20)
 
-    #pyplot.show()
-    plt.savefig(root+"_1d.png",format="png")
+    # Do subplot to zoom in on interface
+    a = plt.axes([.65, .25, .3, .35])
+    a.set_xlim(43,57)
+    a.set_ylim(0,.0001)
+    if alquim:
+        alqs = a.plot(x_amanzi_alquimia, c_amanzi_alquimia,'m-',label='Amanzi+Alquimia(PFloTran) - 2nd Order',linewidth=2)
+#    amas = a.plot(x_amanzi_native, c_amanzi_native,'ro',label='AmanziU+Alquimia(PFloTran) - 1st-Order')
+    if (struct>0):
+        sams = a.plot(x_amanziS, c_amanziS,'g-',label='AmanziS',linewidth=2) 
+    pfls = a.plot(x_pflotran, c_pflotran,'b-',label='PFloTran',linewidth=2)
+    plt.title('Zoom near interface')
+    
+    plt.show()
+    #plt.savefig(root+"_1d.png",format="png")
     #plt.close()
 
     # finally:

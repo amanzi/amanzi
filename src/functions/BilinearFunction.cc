@@ -11,6 +11,7 @@ BilinearFunction::BilinearFunction(const std::vector<double> &x, const std::vect
   check_args(x, y, v);
 }
 
+
 void BilinearFunction::check_args(const std::vector<double> &x, const std::vector<double> &y,
 		const Epetra_SerialDenseMatrix &v) const
 {
@@ -89,24 +90,24 @@ double BilinearFunction::operator()(const std::vector<double>& x) const
         k2 = k;
       }
     }
-	// if only xv is out of bounds, linear interpolation 
-	if (xv <= x_[0] && yv > y_[0] && yv < y_[ny-1]) {
+    // if only xv is out of bounds, linear interpolation 
+    if (xv <= x_[0] && yv > y_[0] && yv < y_[ny-1]) {
       v = v_[0][k1] + ((v_[0][k2]-v_[0][k1])/(y_[k2]-y_[k1])) * (yv - y_[k1]);
-	} else if (xv > x_[nx-1] && yv > y_[0] && yv < y_[ny-1]) {
+    } else if (xv > x_[nx-1] && yv > y_[0] && yv < y_[ny-1]) {
       v = v_[nx-1][k1] + ((v_[nx-1][k2]-v_[nx-1][k1])/(y_[k2]-y_[k1])) * (yv - y_[k1]);
-	// if only yv is out of bounds, linear interpolation
-	} else if (yv <= y_[0] && xv > x_[0] && xv < x_[nx-1]) {
+    // if only yv is out of bounds, linear interpolation
+    } else if (yv <= y_[0] && xv > x_[0] && xv < x_[nx-1]) {
       v = v_[j1][0] + ((v_[j2][0]-v_[j1][0])/(x_[j2]-x_[j1])) * (xv - x_[j1]);
-	} else if (yv > y_[ny-1] && xv > x_[0] && xv < x_[nx-1]) {
+    } else if (yv > y_[ny-1] && xv > x_[0] && xv < x_[nx-1]) {
       v = v_[j1][ny-1] + ((v_[j2][ny-1]-v_[j1][ny-1])/(x_[j2]-x_[j1])) * (xv - x_[j1]);
-	} else {
-		// bilinear interpoloation
-		v = v_[j1][k1]*(x_[j2]-xv)*(y_[k2]-yv) +
-			v_[j2][k1]*(xv-x_[j1])*(y_[k2]-yv) +
-			v_[j1][k2]*(x_[j2]-xv)*(yv-y_[k1]) +
-			v_[j2][k2]*(xv-x_[j1])*(yv-y_[k1]);
-		v = v / ( (x_[j2]-x_[j1])*(y_[k2]-y_[k1]) );
-	}
+    } else {
+    // bilinear interpolation
+      v = v_[j1][k1] * (x_[j2]-xv) * (y_[k2]-yv) +
+          v_[j2][k1] * (xv-x_[j1]) * (y_[k2]-yv) +
+          v_[j1][k2] * (x_[j2]-xv) * (yv-y_[k1]) +
+          v_[j2][k2] * (xv-x_[j1]) * (yv-y_[k1]);
+      v = v / ((x_[j2]-x_[j1]) * (y_[k2]-y_[k1]));
+    }
   }
   return v;
 }

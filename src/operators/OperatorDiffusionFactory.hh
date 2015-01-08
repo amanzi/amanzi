@@ -28,7 +28,8 @@ class OperatorDiffusionFactory {
   Teuchos::RCP<OperatorDiffusion> Create(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                                          Teuchos::RCP<BCs> bc,
                                          Teuchos::ParameterList& oplist,
-                                         const AmanziGeometry::Point& g);
+                                         const AmanziGeometry::Point& g,
+                                         int upwind_method);
 
   Teuchos::RCP<OperatorDiffusion> Create(Teuchos::RCP<Operator> op,
                                          Teuchos::RCP<BCs> bc,

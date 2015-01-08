@@ -1,10 +1,12 @@
 /*
   This is the Operator component of the Amanzi code.
 
-  License: BSD
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-  Discrete diffusion operator.
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #ifndef AMANZI_OPERATOR_DIFFUSION_HH_
@@ -20,7 +22,7 @@
 
 #include "Operator.hh"
 #include "OperatorTypeDefs.hh"
-#include "../pks/flow/WaterRetentionModel.hh"
+#include "OperatorDefs.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -36,18 +38,20 @@ class OperatorDiffusion : public Operator {
   ~OperatorDiffusion() {};
 
   // main members
-  virtual void InitOperator(std::vector<WhetStone::Tensor>& K,
-                            Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
-                            double rho, double mu);
-  virtual void InitOperator(std::vector<WhetStone::Tensor>& K,
-                            Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
-                            Teuchos::RCP<const CompositeVector> rho, Teuchos::RCP<const CompositeVector> mu);
+  virtual void Setup(std::vector<WhetStone::Tensor>& K,
+                     Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
+                     double rho, double mu);
+  virtual void Setup(std::vector<WhetStone::Tensor>& K,
+                     Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
+                     Teuchos::RCP<const CompositeVector> rho, Teuchos::RCP<const CompositeVector> mu);
 
   virtual void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u);
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
-  virtual double DeriveBoundaryFaceValue(int f, const CompositeVector& u, Teuchos::RCP<Flow::WaterRetentionModel>);
 
-  // re-implementation of basic operator virtual members
+  template <class Model> 
+  double DeriveBoundaryFaceValue(int f, const CompositeVector& u, const Model& model);
+
+  // re-implementation of virtual members of base class
   void AssembleMatrix(int schema);
   int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
@@ -60,6 +64,7 @@ class OperatorDiffusion : public Operator {
 
   // special members
   void ModifyMatrices(const CompositeVector& u);
+  void AddNewtonCorrection(Teuchos::RCP<const CompositeVector> flux);
 
   // access
   int nfailed_primary() { return nfailed_primary_; }
@@ -71,6 +76,7 @@ class OperatorDiffusion : public Operator {
   void UpdateMatricesNodal_();
   void UpdateMatricesTPFA_();
   void UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector> flux);
+  void UpdateMatricesMixedWithGrad_(Teuchos::RCP<const CompositeVector> flux);
   int ApplyInverseSpecialSff_(const CompositeVector& X, CompositeVector& Y) const;
   int ApplyInverseSpecialScc_(const CompositeVector& X, CompositeVector& Y) const;
   void InitPreconditionerSpecialSff_(const std::string& prec_name, const Teuchos::ParameterList& plist);
@@ -95,6 +101,33 @@ class OperatorDiffusion : public Operator {
   int nfailed_primary_;
   bool scalar_rho_mu_;
 };
+
+
+/* ******************************************************************
+* Calculates solution value on the boundary.
+****************************************************************** */
+template <class Model> 
+double OperatorDiffusion::DeriveBoundaryFaceValue(
+    int f, const CompositeVector& u, const Model& model) 
+{
+  if (u.HasComponent("face")) {
+    const Epetra_MultiVector& u_face = *u.ViewComponent("face");
+    return u_face[f][0];
+  } else {
+    const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
+    const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
+
+    if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+      return bc_value[f];
+    } else {
+      const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
+      AmanziMesh::Entity_ID_List cells;
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int c = cells[0];
+      return u_cell[0][c];
+    }
+  }
+}
 
 }  // namespace Operators
 }  // namespace Amanzi

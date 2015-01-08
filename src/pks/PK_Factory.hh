@@ -30,7 +30,6 @@
   #include "pk_implementation.hh"
   template<>
   Amanzi::RegisteredPKFactory<DerivedPK> DerivedPK::factory_("pk unique id");
-  
 */
 
 

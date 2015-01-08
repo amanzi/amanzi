@@ -10,3 +10,4 @@ bool Amanzi::VerboseObject::hide_line_prefix = false;
 
 // Size of the left column of names.
 unsigned int Amanzi::VerboseObject::line_prefix_size = 16;
+

@@ -2,7 +2,7 @@
     <!-- 1USUnsFlow1a: Transient infiltration into dry SAND -->
     <!-- Vanderborght et al. 2005, A set of analytical benchmarks to test numerical -->
     <!-- models of flow and transport in soils, Vadose Zone Journal 4:206.221 -->
-    <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
+    <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
     <ParameterList name="General Description">
       <Parameter name="Model ID" type="string" value="TBD"/>
       <Parameter name="Author" type="string" value="Yabusaki"/>
@@ -38,7 +38,7 @@
             <Parameter name="transient limit iterations" type="int" value="20"/>
             <Parameter name="transient nonlinear tolerance" type="double" value="1e-6"/>
             <Parameter name="transient max time step" type="double" value="8.64E3"  units="s"/>
-            <Parameter name="transient max preconditioner lag iterations" type="int" value="1"/>
+            <Parameter name="transient max preconditioner lag iterations" type="int" value="0"/>
             <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
             <Parameter name="transient time step increase factor" type="double" value="1.25"/>
           </ParameterList>

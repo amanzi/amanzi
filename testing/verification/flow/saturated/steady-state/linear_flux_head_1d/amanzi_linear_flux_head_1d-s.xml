@@ -1,6 +1,6 @@
 <ParameterList name="Main">
 
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
 
   <!--
      Getting started on a simple 2D steady-state saturated test
@@ -21,7 +21,7 @@
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Steady">
         <Parameter name="Start" type="double" value="0.0"/>
-        <Parameter name="End" type="double" value="0.0"/>
+        <Parameter name="End" type="double" value="1.e3"/>
         <Parameter name="Initial Time Step" type="double" value="1000"/>
       </ParameterList>
     </ParameterList>
@@ -29,7 +29,7 @@
     <Parameter name="Verbosity" type="string" value="High"/>
 
     <ParameterList name="Numerical Control Parameters">
-      <ParameterList name="Basic Algorithm Control">
+      <ParameterList name="Structured Algorithm">
         <ParameterList name="Expert Settings">
           <Parameter name="do_richard_init_to_steady" type="int" value="1"/> 
         </ParameterList>

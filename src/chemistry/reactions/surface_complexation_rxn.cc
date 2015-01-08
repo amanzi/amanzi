@@ -2,21 +2,20 @@
 #include "surface_complexation_rxn.hh"
 
 #include <cmath>
-
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 
 #include "matrix_block.hh"
-#include "chemistry_output.hh"
 #include "chemistry_exception.hh"
 
+#include "VerboseObject.hh"
 #include "exceptions.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
-extern ChemistryOutput* chem_out;
+extern VerboseObject* chem_out;
 
 SurfaceComplexationRxn::SurfaceComplexationRxn()
     : use_newton_solve_(false) {
@@ -229,7 +228,7 @@ void SurfaceComplexationRxn::DisplayResultsHeader(void) const {
   std::stringstream message;
   message << std::setw(7) << "---"
             << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end DisplayResultsHeader()
 
 void SurfaceComplexationRxn::DisplayResults(void) const {
@@ -239,7 +238,7 @@ void SurfaceComplexationRxn::DisplayResults(void) const {
        site != surface_site_.end(); site++) {
     site->DisplayResults();
   }
-  chem_out->Write(kVerbose, "\n");
+  chem_out->Write(Teuchos::VERB_HIGH, "\n");
   surface_complexes_[0].DisplayResultsHeader();
   std::vector<SurfaceComplex>::const_iterator complex;
   for (complex = surface_complexes_.begin();

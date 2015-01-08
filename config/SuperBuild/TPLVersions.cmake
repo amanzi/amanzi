@@ -49,7 +49,11 @@
 #   0.92.5       - Patched Alquimia to build properly with GFortran 4.9.x
 #   0.92.6       - update Boost to version 1.56.0 
 #   0.92.7       - update CCSE to version 1.2.8 
-#
+#   0.92.8       - update ExodussII 5.22 -> 6.06
+#   0.92.9       - update MSTK to v 2.21 (incompatible -DWITH_MSTK_2_21rc1_OR_NEWER=TRUE)
+#   0.92.10      - update MSTK to v 2.22rc1
+#   0.92.11      - update MSTK to v 2.22rc3 (fixed parallel mesh partitioning bug)
+#   0.92.12      - update PETSc to 3.5.2, Alquimia to 0.2, and PFlotran to commit 611092f80ddb.
 
 include(CMakeParseArguments)
 
@@ -99,7 +103,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 92)
-set (AMANZI_TPLS_VERSION_PATCH 7)
+set (AMANZI_TPLS_VERSION_PATCH 12)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -248,30 +252,23 @@ set(ASCEMIO_MD5_SUM       869820bacd4c289c8f320be58c1449a7)
 #
 # TPL: ExodusII
 #
-option(ENABLE_EXODUS498 "Use the 4.98 version of ExodusII" OFF)
-if ( ENABLE_EXODUS498 )
-  set(ExodusII_VERSION_MAJOR 4)
-  set(ExodusII_VERSION_MINOR 98)
-  set(ExodusII_MD5_SUM        4480e641d6ada58f5d8ecb7172e76791) 
-else()
-  set(ExodusII_VERSION_MAJOR 5)
-  set(ExodusII_VERSION_MINOR 22)
-  set(ExodusII_MD5_SUM        b5f537d7028f2c8cf6b4ba3e8a469dbe) 
-endif()
+set(ExodusII_VERSION_MAJOR 6)
+set(ExodusII_VERSION_MINOR 06)
 set(ExodusII_VERSION ${ExodusII_VERSION_MAJOR}.${ExodusII_VERSION_MINOR})
-set(ExodusII_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar.gz)
+set(ExodusII_URL_STRING    "http://software.lanl.gov/ascem/tpls")
+set(ExodusII_ARCHIVE_FILE  exodus-${ExodusII_VERSION}.tar.gz)
+set(ExodusII_MD5_SUM       cfd240dbc1251b08fb1d0ee2de40a44c)
 
 #
 # TPL: MSTK
 #
 set(MSTK_VERSION_MAJOR 2)
-set(MSTK_VERSION_MINOR 12)
-set(MSTK_VERSION_PATCH )
+set(MSTK_VERSION_MINOR 22)
+set(MSTK_VERSION_PATCH rc3)
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tgz)
-set(MSTK_MD5_SUM        f71bc56ae42a022f4d5ef75081cc5477)
+set(MSTK_MD5_SUM        c1ad7cd1b5ca5e068ce4708e39a58ae5)
 
 #
 # TPL: MOAB
@@ -329,13 +326,13 @@ set(SuperLUDist_MD5_SUM        b72c6309f25e9660133007b82621ba7c)
 # TPL: PETSc
 #
 set(PETSc_VERSION_MAJOR  3)
-set(PETSc_VERSION_MINOR  4)
-set(PETSc_VERSION_PATCH  3)
+set(PETSc_VERSION_MINOR  5)
+set(PETSc_VERSION_PATCH  2)
 set(PETSc_VERSION  ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_ARCHIVE_VERSION ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(PETSc_ARCHIVE_FILE   petsc-${PETSc_ARCHIVE_VERSION}.tar.gz)
-set(PETSc_MD5_SUM        db40d8f811f5445ac510dc85ae738573)
+set(PETSc_MD5_SUM        ad170802b3b058b5deb9cd1f968e7e13)
 
 #
 # TPL: Trilinos
@@ -364,18 +361,20 @@ set(SEACAS_MD5_SUM        b97d882535fd1856599b1c7338f5b45a)
 #
 set(PFLOTRAN_VERSION_MAJOR 0)
 set(PFLOTRAN_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(PFLOTRAN_ARCHIVE_FILE   pflotran-dev-1afe88d.tar.gz)
-set(PFLOTRAN_MD5_SUM        92a157f947f6508ac701358d77cd0412)
+set(PFLOTRAN_ARCHIVE_FILE   pflotran-dev-611092f80ddb.tar.gz)
+set(PFLOTRAN_MD5_SUM        e18997dd7de5523c9bef8489a0a2dd24)
 
 #
 # TPL: Alquimia
 #
 set(ALQUIMIA_VERSION_MAJOR 0)
-set(ALQUIMIA_VERSION_MINOR 1)
-set(ALQUIMIA_VERSION_PATCH 1)
+set(ALQUIMIA_VERSION_MINOR 2)
+set(ALQUIMIA_VERSION_PATCH 0)
 set(ALQUIMIA_URL_STRING     "file:///home/scratch/smolins/amanzi-new/ctpl")
 set(ALQUIMIA_ARCHIVE_FILE   alquimia-new.tar.gz)
 set(ALQUIMIA_MD5_SUM        a627bb88dd5c9c19ec7f0063915a89be)
+set(ALQUIMIA_ARCHIVE_FILE   alquimia-0.2.tar.gz)
+set(ALQUIMIA_MD5_SUM        ee7dee337eb0c856723bd57bd0f4edc7)
 #set(ALQUIMIA_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 #set(ALQUIMIA_ARCHIVE_FILE   alquimia-0.1.1a.tar.gz)
 #set(ALQUIMIA_MD5_SUM        0e0bb9fea4ba96e42b9f4cdcd530e6fc)

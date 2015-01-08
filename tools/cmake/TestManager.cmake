@@ -150,7 +150,8 @@ function(ADD_AMANZI_TEST test_name)
 
     get_target_property(base amanzi OUTPUT_NAME)
     get_target_property(dir  amanzi OUTPUT_DIRECTORY)
-    set(test_exec "${dir}/${base}")
+    #set(test_exec "${dir}/${base}")
+    set(test_exec "${SSC_BINARY_DIR}/${base}")
    
   else() 
    
@@ -189,7 +190,7 @@ function(ADD_AMANZI_TEST test_name)
       message(FATAL_ERROR "Amanzi tests require an Amanzi input file")
     endif()
 
-    set(test_args "--xml_file;${AMANZI_TEST_AMANZI_INPUT};${test_args}")
+    set(test_args "--xml_file=${AMANZI_TEST_AMANZI_INPUT};${test_args}")
 
   endif()  
 

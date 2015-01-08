@@ -16,12 +16,9 @@
 namespace Amanzi {
 namespace Transport {
 
-const int TRANSPORT_NULL = 0;
-const int TRANSPORT_FLOW_AVAILABLE = 1;
-const int TRANSPORT_STATE_BEGIN = 2;
-const int TRANSPORT_STATE_COMPLETE = 3;
-
-const int TRANSPORT_INTERNAL_ERROR = 911;  // contact (lipnikov@lanl.gov)
+const int TRANSPORT_PHASE_LIQUID = 0;  // phases from 0 to 1
+const int TRANSPORT_PHASE_GAS = 1;
+const int TRANSPORT_NUMBER_PHASES = 2;
 
 const double TRANSPORT_LARGE_TIME_STEP = 1e+99;
 const double TRANSPORT_SMALL_TIME_STEP = 1e-12;
@@ -48,10 +45,11 @@ const int TRANSPORT_MAX_FACES = 14;  // Kelvin's tetrakaidecahedron
 const int TRANSPORT_MAX_NODES = 47;  // These polyhedron parameters must
 const int TRANSPORT_MAX_EDGES = 60;  // be calculated in Init().
 
-const int TRANSPORT_DISPERSIVITY_MODEL_NULL = 1;
-const int TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC = 2;
-const int TRANSPORT_DISPERSIVITY_MODEL_BEAR = 3;
-const int TRANSPORT_DISPERSIVITY_MODEL_LICHTNER = 4;
+const int TRANSPORT_DISPERSIVITY_MODEL_NULL = 0;
+const int TRANSPORT_DISPERSIVITY_MODEL_SCALAR = 1;
+const int TRANSPORT_DISPERSIVITY_MODEL_BEAR = 2;
+const int TRANSPORT_DISPERSIVITY_MODEL_BURNETT_FRIND = 3;
+const int TRANSPORT_DISPERSIVITY_MODEL_LICHTNER_KELKAR_ROBINSON = 4;
 
 const int TRANSPORT_DISPERSION_METHOD_TPFA = 1;
 const int TRANSPORT_DISPERSION_METHOD_NLFV = 2;
@@ -61,7 +59,7 @@ const int TRANSPORT_LIMITER_TENSORIAL = 2;
 const int TRANSPORT_LIMITER_KUZMIN = 3;
 const double TRANSPORT_LIMITER_TOLERANCE = 1e-14;
 
-const int TRANSPORT_AMANZI_VERSION = 3;  
+const int TRANSPORT_INTERNAL_ERROR = 911;  // contact (lipnikov@lanl.gov)
 
 }  // namespace Transport
 }  // namespace Amanzi

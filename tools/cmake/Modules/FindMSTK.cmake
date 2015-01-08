@@ -20,7 +20,11 @@
 # #############################################################################
 
 # Standard CMake modules see CMAKE_ROOT/Modules
-include(FindPackageHandleStandardArgs)
+#include(FindPackageHandleStandardArgs)
+
+message (STATUS "JDM>> MSTK: Entering FindMSTK.cmake.")
+message (STATUS "JDM>> MSTK: MSTK_LIBRARY_DIR=${MSTK_LIBRARY_DIR} ")
+message (STATUS "JDM>> MSTK: MSTK_INCLUDE_DIR=${MSTK_INCLUDE_DIR} ")
 
 # Amanzi CMake functions see <root>/tools/cmake for source
 include(PrintVariable)
@@ -45,7 +49,6 @@ else(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS)
         set(MSTK_LIBRARY_DIR "${MSTK_LIBRARY_DIR}" CACHE PATH "Path to search for MSTK library files")
     endif()
 
-    
     # Search for include files
     # Search order preference:
     #  (1) MSTK_INCLUDE_DIR - check existence of path AND if the include files exist
@@ -163,7 +166,7 @@ else(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS)
         message(SEND_ERROR "Can not locate MSTK library")
     endif()    
 
-   
+
     # Update the INCLUDE_DIRS and LIBRARIES variables
     set(MSTK_INCLUDE_DIRS ${MSTK_INCLUDE_DIR})
     set(MSTK_LIBRARIES    ${MSTK_LIBRARY})
@@ -190,20 +193,19 @@ else(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS)
       list(APPEND _MSTK_DEP_LIBS ${Zoltan_LIBRARIES})
 #    endif()
 
-
     set_target_properties(${MSTK_LIBRARY} PROPERTIES
                           IMPORTED_LINK_INTERFACE_LIBRARIES "${_MSTK_DEP_LIBS}")
 
 
     # MSTK requires METIS - http://glaros.dtc.umn.edu/gkhome/metis/metis/download
     #add_package_dependency(MSTK DEPENDS_ON METIS)
-    
+
     # MSTK depends on ExodusII
     #add_package_dependency(MSTK DEPENDS_ON ExodusII)
 
     # MSTK depends on NetCDF
     #add_package_dependency(MSTK DEPENDS_ON NetCDF)
-   
+
 endif(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS )    
 
 # Send useful message if everything is found
@@ -217,6 +219,21 @@ if ( MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS)
 else()
     set(MSTK_FOUND FALSE)
 endif()
+
+
+if ( MSTK_VERSION_MINOR )
+   MESSAGE(STATUS "JDM>> MSTK: MSTK_VERSION = ${MSTK_VERSION}")
+   MESSAGE(STATUS "JDM>> MSTK: MSTK_VERSION_MINOR = ${MSTK_VERSION_MINOR}")
+   if ( MSTK_VERSION_MINOR LESS 21 )
+       set ( WITH_MSTK_2_21rc1_OR_NEWER FALSE )
+   else() 
+      set ( WITH_MSTK_2_21rc1_OR_NEWER TRUE )
+   endif()
+else()
+   MESSAGE(STATUS "JDM>> MSTK: MSTK_VERSION unknown, assuming older than 2.21rc1.")
+   set ( WITH_MSTK_2_21rc1_OR_NEWER FALSE )
+endif()
+MESSAGE(STATUS "JDM>> MSTK: WITH_MSTK_2_21rc1_OR_NEWER = ${WITH_MSTK_2_21rc1_OR_NEWER}")
 
 # Define the version
 

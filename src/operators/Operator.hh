@@ -1,12 +1,12 @@
 /*
   This is the Operator component of the Amanzi code.
 
-  License: BSD
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-  The operators can be initialized from other operators.
-  Since data are never copied by default, we have to track 
-  down the ownership of data.
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #ifndef AMANZI_OPERATOR_HH_
@@ -39,7 +39,7 @@ this class.
 
 2. Operator is an un-ordered additive collection of lower-rank (or 
 equal) simple operators. During its construction, an operator can 
-only grow by assimulating more operators. 
+only grow by assimilating more operators. 
 
 At the moment, an operator cannot be split into two operators, but
 there are no desing restriction for doing it in the future.
@@ -53,12 +53,13 @@ representing interation between face-based unknowns.
 a preconditioner. This operation cannot be applied to a subset of
 defining operators. 
  
+Note. The operators can be initialized from other operators.
+    Since data are never copied by default, we have to track 
+    down the ownership of data.
 ****************************************************************** */ 
 
 namespace Amanzi {
 namespace Operators {
-
-// This is the old way to assemble matrices. (lipnikov@lanl.gov)
 
 class Operator {
  public:
@@ -70,7 +71,8 @@ class Operator {
   // main members
   void Init();
   void Clone(const Operator& op);
-
+  void AddBCs(Teuchos::RCP<BCs> bc);
+  
   virtual int Apply(const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
@@ -87,15 +89,28 @@ class Operator {
   void CreateCheckPoint();
   void RestoreCheckPoint();
 
-  void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& ss, double dT);
-  void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& ss);
+  void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& s0, 
+                           const CompositeVector& ss, double dT, const std::string& name);
+  void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& ss, 
+                           double dT, const std::string& name);
+  void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& ss,
+                           const std::string& name);
 
   // preconditioners
   virtual void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
 
+  // supporting members
+  int FindMatrixBlock(int schema_dofs, int matching_rule, bool action) const;
+
   // access
   Teuchos::RCP<CompositeVector>& rhs() { return rhs_; }
+  const Teuchos::RCP<BCs> GetBCofType(int type) const;
   bool data_validity() { return data_validity_; }
+
+ protected:
+  bool ApplyBC_Cell_Mixed_(int nb);
+  bool ApplyBC_Cell_Nodal_(int nb);
+  bool ApplyBC_Face_(int nb);
 
  public:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -108,7 +123,7 @@ class Operator {
   Teuchos::RCP<CompositeVector> diagonal_, diagonal_checkpoint_;
   Teuchos::RCP<CompositeVector> rhs_, rhs_checkpoint_;
 
-  Teuchos::RCP<BCs> bc_;
+  std::vector<Teuchos::RCP<BCs> > bc_;
 
  public:
   int ncells_owned, nfaces_owned, nnodes_owned;

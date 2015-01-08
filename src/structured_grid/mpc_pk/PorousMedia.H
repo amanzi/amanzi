@@ -13,9 +13,6 @@
 #include <FluxRegister.H>
 #include <ViscBndry.H>
 #include <TensorDiffusionBndry.H>
-#include <Godunov.H>
-#include <Diffusion.H>
-#include <MacProj.H> 
 #include <AuxBoundaryData.H>
 #include <ParmParse.H>
 #include <Region.H>
@@ -28,6 +25,7 @@
 #include <PMAmr.H>
 #include <RichardSolver.H>
 #include <RockManager.H>
+#include <IdxRegionData.H>
 
 #ifdef ALQUIMIA_ENABLED
 #include <ChemistryEngine.hh>
@@ -124,9 +122,8 @@ class PorousMedia
   public AmrLevel 
 {
 public:
-  friend class MacProj;
-  friend class Diffusion;
   friend class Observation;
+  friend class PMFillPatchIterator;
 
   enum ExecutionMode {INIT_TO_STEADY, STEADY, TRANSIENT, INVALID};
 
@@ -149,10 +146,6 @@ public:
 
   static void CleanupStatics ();
   void RegisterPhysicsBasedEvents();
-  //
-  // Read problem input file. 
-  //
-  void probDefine(char * filename);
   //
   // Define data descriptors.
   //
@@ -190,7 +183,7 @@ public:
 
   virtual void allocOldData ();
 
-  virtual void removeOldData ();
+  virtual void removeOldData () {}
   //
   // Error estimation for regridding.
   //
@@ -287,24 +280,13 @@ public:
   virtual Real advance (Real time,
 			Real dt,
 			int  iteration,
-			int  ncycle);
+			int  ncycle) {}
 
   bool multilevel_advance (Real  time,
 			   Real  dt,
 			   int   iteration,
 			   int   ncycle,
                            Real& dt_new);
-
-  void advance_incompressible  (Real time,
-				Real dt);
-
-  void advance_simple  (Real time,
-			Real dt);
-
-#ifdef MG_USE_FBOXLIB
-  void advance_richard  (Real time,
-			 Real dt); 
-#endif
 
   bool advance_multilevel_richards_flow (Real  time,
                                          Real  dt,
@@ -335,15 +317,8 @@ public:
 
   void set_saturated_velocity();
 
-  void advance_tracer  (Real time,
-			Real dt);
-
   MultiFab* AllocateUMacG() const;
 
-  //
-  // Public so MacProj can access it.
-  //
-  virtual void SetGodunov ();
   //
   // Returns the value of "gravity" for use in the projection outflow bcs.
   //
@@ -381,8 +356,9 @@ public:
 
   static const Array<std::string>& UserDerives() {return user_derive_list;}
 
-  static const Array<Real>& Density() {return density;}
-  static const Array<Real>& Viscosity() {return muval;}
+  static Real& Temperature() {return temperature;}
+  static Array<Real>& Density() {return density;}
+  static Array<Real>& Viscosity() {return muval;}
   static int numComponents() {return ncomps;}
   static const Array<std::string>& componentNames() {return cNames;}
   static const Array<std::string>& phaseNames() {return pNames;}
@@ -390,7 +366,7 @@ public:
   static bool DoSoluteChemistry() {return do_tracer_chemistry;}
 
   static PArray<RegionData>& BCs() {return bc_array;}
-  static PArray<RegionData>& TBCs(int iTrac) {return tbc_array[iTrac];}
+  static PArray<IdxRegionData>& TBCs(int iTrac) {return tbc_array[iTrac];}
 
   static int echo_inputs;
 
@@ -419,49 +395,7 @@ public:
   virtual void advance_setup (Real time,
 			      Real dt,
 			      int  iteration,
-			      int  ncycle);
-
-  void advance_cleanup (Real dt,
-			int  iteration,
-			int  ncycle,
-                        bool do_revert = false);
-  //
-  // Compute divergent mac velocities, estimate best timestep
-  // from t^n data, and compile cfl number.
-  //
-  Real predict_velocity (Real  dt,
-			 Real& comp_cfl);
-
-  //
-  // Create the coefficient for the MAC projection.
-  //
-  void create_lambda (Real time);
-
-  //
-  // Create the coefficient for the MAC projection.
-  //
-  void initialize_umac (MultiFab* u_mac, 
-			MultiFab& RhoG, 
-			MultiFab* RhoD, 
-			Real      time);
-
-  void compute_vel_phase(MultiFab* u_phase,
-			 MultiFab* u_mac,
-			 Real      time) ;
-
-  void compute_vel_phase(MultiFab* u_phase,
-                         int       nc,
-                         Real      time) ;  
-  //
-  // Impose divergence constraint on MAC velocities.
-  //
-  void mac_project (MultiFab* u_mac, MultiFab* RhoD, Real time);
-
-
-  //
-  // Do an initial mac projection to get a good first dt.
-  //
-  void initial_mac_project (MultiFab* u_mac, MultiFab* RhoD, Real time);
+			      int  ncycle) {}
   //
   // Grow by 1 and fillpatch the MAC-projected velocities: AT LEVEL 0.
   //
@@ -480,16 +414,6 @@ public:
   void GetCrsePressure(MultiFab& phi_crse,
 		       Real      time      ) const;
 
-  //
-  // Advect scalars.
-  //
-  void scalar_advection (MultiFab* u_mac,
-			 Real dt,
-			 int  first_scalar,
-			 int  last_scalar,
-			 bool reflux_on_this_call);
-
-
   void tracer_advection (MultiFab* u_mac,
 			 bool reflux_on_this_call,
                          bool use_cached_sat,
@@ -503,80 +427,8 @@ public:
   void reinstate_component_saturations();
   void get_fillpatched_rhosat(Real t_eval, MultiFab& RhoSat, int nGrow);
 
-  // Update scalars, (viscous solve in scalar_update).
-  //
-  void scalar_update (Real dt,
-		      int  first_scalar,
-		      int  last_scalar,
-		      int corrector,
-		      MultiFab* u_mac = 0);
-
-  void scalar_advection_update (Real dt,
-				int  first_scalar,
-				int  last_scalar,
-				int  corrector);
-
-  void scalar_diffusion_update (Real dt,
-				int  first_scalar,
-				int  last_scalar,
-				int  corrector);
-
-  void scalar_capillary_update (Real dt,
-				int  corrector,
-				MultiFab* u_mac = 0);
-
-  void diff_capillary_update   (Real dt,
-				int  corrector,
-				MultiFab* u_mac = 0);
-
-  void SetTracerDiffusionBndryData(ViscBndry& bndry,
-				   Real       time);
-
-  void SetTracerDiffusionBndryData(TensorDiffusionBndry& bndry,
-				   Real                  time);
-
-  void getTracerViscTerms(MultiFab&  D,
-			  Real       time,
-			  int        nGrow,
-			  PArray<MultiFab>& Dflux);
-
   void richard_init_to_steady();
 
-#ifdef MG_USE_FBOXLIB
-  void richard_eqb_update (MultiFab* u_mac = 0);
-
-  NLSstatus richard_scalar_update (Real      dt,
-				   int&      total_nwt_iter,
-				   MultiFab* u_mac = 0);
-
-  NLSstatus richard_composite_update (Real        dt,
-				      NLScontrol& nlsc);
-#endif
-
-  void scalar_adjust_constraint (int  first_scalar,
-				 int  last_scalar);
-
-  void diffuse_adjust_dominant(MultiFab&              Phi_new,
-			       int                    sigma,
-			       Real                   dt,	
-			       MultiFab**             fluxn,
-			       MultiFab**             fluxnp1=0);
-
-
-  // Reaction-related functions
-  void set_preferred_boundary_values (MultiFab& S,
-				      int       state_index,
-				      int       src_comp,
-				      int       dst_comp,
-				      int       num_comp,
-				      Real      time) const;
-  void set_overdetermined_boundary_cells (Real time);
-
-  //
-  // ngrow == 0 -> we're working on the valid region of state.
-  //
-  // ngrow > 0  -> we're working on aux_boundary_data_old with that many grow cells.
-  //
   bool advance_chemistry (Real time,
 			  Real dt,
 			  int  ngrow=0);
@@ -609,35 +461,6 @@ public:
 		   int**          bc_orig_qty,
 		   SyncInterpType which_interp = CellCons_T,
 		   int            state_comp   = -1);
-  //
-  // Bilinear interpolate nodal pressures from coarse to fine.
-  //
-  void SyncProjInterp (MultiFab& phi,
-		       int       c_lev,
-		       MultiFab& P_new,
-		       MultiFab& P_old,
-		       int       f_lev,
-		       IntVect&  ratio,
-		       bool      first_crse_step_after_initial_iters,
-		       Real      cur_crse_pres_time,
-		       Real      prev_crse_pres_time);
-
-  //
-  // Average edge from fine to coarse
-  //
-  void SyncEAvgDown (PArray<MultiFab> u_mac_crse,
-		     PArray<MultiFab> u_mac_fine, 
-		     int c_lev); 
-
-  void SyncEAvgDown (MultiFab* u_mac,
-		     int f_lev,
-		     MultiFab* u_mac_crse, 
-		     int c_lev); 
-
-  void SyncEAvgDown (MultiFab* u_mac[],
-		     int f_lev,
-		     MultiFab* u_mac_crse[], 
-		     int c_lev); 
   //
   // Average a fine multifab down onto a coarse one.
   //
@@ -687,9 +510,6 @@ public:
   // Compute the mac sync correction.
   //
   virtual void mac_sync ();
-#ifdef MG_USE_FBOXLIB
-  virtual void richard_sync ();
-#endif
 
   //
   // Reflux function.
@@ -718,7 +538,7 @@ public:
   virtual void getViscTerms (MultiFab& visc_terms,
 			     int       src_comp, 
 			     int       num_comp,
-			     Real      time);
+			     Real      time) {}
   //
   // Get the forcing term.
   //
@@ -743,43 +563,6 @@ public:
 			const int  num_comp = 1,
                         MultiFab*  saturation = 0);
   //
-  // Calculate diffusive term due to capillary pressure
-  //
-  void calcDiffusivity_CPL (MultiFab*  diffusivity[BL_SPACEDIM],
-			    const Real time);
-  void calcDiffusivity_CPL (MultiFab*  diffusivity[BL_SPACEDIM],
-			    const MultiFab* lbd);
-  //
-  // Calculate diffusive term due to capillary pressure in jacobian
-  //
-  void calcDiffusivity_CPL_dp (MultiFab*  diffusivity[BL_SPACEDIM],
-			       const MultiFab* lbd,
-			       const Real time,
-			       const int  num_comp = 1);
-#ifdef MG_USE_FBOXLIB
-  //
-  // Caclulate diffusive term in the richard's equation
-  //
-  void calc_richard_coef (MultiFab*  diffusivity[BL_SPACEDIM],
-			  const MultiFab* lbd,
-			  const MultiFab* u_mac,
-			  const int  nc = 0,
-			  const int do_upwind = 0,
-			  double time = 0.);
-  //
-  // Calculate the diffusive term in the jacobian of richard's equation
-  //
-  void calc_richard_jac (MultiFab*  diffusivity[BL_SPACEDIM],
-                         MultiFab*  dalpha,
-			 const MultiFab* lbd,
-			 const MultiFab* umac,
-			 Real time,
-                         Real dt,
-			 int  nc,
-			 int do_upwind,
-			 bool do_n);
-
-  //
   // Calculate the dt term in the jacobian for p-formulation
   //  (alpha = dN /dPc)
   //
@@ -795,23 +578,18 @@ public:
   void calc_richard_velbc(MultiFab& res,
 			  MultiFab* uphase,
 			  const Real dt = 1.0);
-#endif
-
   //
   // Calculate capillary pressure
   //
-  void calcCapillary (Real time);
   void calcCapillary (MultiFab&       pc,
                       const MultiFab& N,
                       Real            time,
                       int             sComp,
                       int             dComp,
                       int             nGrow) const;
-  void smooth_pc (MultiFab* pc);
   //
   // Calculate inverse capillary pressure
   //
-  void calcInvCapillary (Real time);
   void calcInvCapillary (MultiFab&       N,
                          const MultiFab& pc,
                          Real            time,
@@ -875,19 +653,21 @@ public:
                               int        dest_comp,
                               int        src_comp,
                               int        num_comp);
-  void dirichletStateBC (FArrayBox& fab, Real time, int sComp, int dComp, int nComp);
-  void dirichletTracerBC(FArrayBox& fab, Real time, int sComp, int dComp, int nComp);
-  void dirichletPressBC (FArrayBox& fab, Real time);
-  void dirichletDefaultBC (FArrayBox& fab, Real time);
+  void PMsetPhysBoundaryValues (FArrayBox&       dest,
+                                const IArrayBox& matID,
+                                int              state_indx,
+                                Real             time,
+                                int              dest_comp,
+                                int              src_comp,
+                                int              num_comp);
+  void dirichletStateBC (FArrayBox& fab, const IArrayBox& matID, Real time, int sComp, int dComp, int nComp);
+  void dirichletTracerBC(FArrayBox& fab, const IArrayBox& matID, Real time, int sComp, int dComp, int nComp);
+  void dirichletPressBC (FArrayBox& fab, const IArrayBox& matID, Real time);
+  void dirichletDefaultBC (FArrayBox& fab, const IArrayBox& matID, Real time);
   bool get_inflow_velocity(const Orientation& face,
                            FArrayBox&         ccBndFab,
                            FArrayBox&         mask,
                            Real               t);
-  void get_inflow_density(const Orientation& face,
-                          const RegionData&  face_bc,
-                          FArrayBox&         fab,
-                          const Box&         ccBndBox,
-                          Real               t);
 
   Real AdjustBCevalTime(int  state_idx,
                         Real time,
@@ -902,12 +682,6 @@ public:
   PorousMedia& getLevel (int lev)
   {
     return *(PorousMedia*) &parent->getLevel(lev);
-  }
-
-  Diffusion& getDiffusion ()
-  {
-    BL_ASSERT(diffusion);
-    return *diffusion;
   }
 
   FluxRegister& getAdvFluxReg ()
@@ -951,7 +725,6 @@ public:
   void check_sum();
   void check_minmax();
   void check_minmax(int fscalar, int lscalar);
-  void compute_divu (MultiFab& soln, MultiFab* umac);
 
   // list
   static std::map<std::string, int> phase_list;
@@ -1060,11 +833,6 @@ public:
                                      int       dcomp,
                                      int       dir);
 
-  void derive_Molecular_Diffusion_Coefficient(Real      time,
-                                              MultiFab& mf,
-                                              int       dcomp,
-                                              int       dir);
-
   void derive_Tortuosity(Real      time,
                          MultiFab& mf,
                          int       dcomp,
@@ -1095,6 +863,8 @@ public:
   void BuildNLScontrol(NLScontrol&        nlsc,
 		       const std::string& IDstring);
 
+  const iMultiFab& MaterialID() const {return *materialID;}
+
 protected:
 
   static void InitializeStaticVariables();
@@ -1105,25 +875,16 @@ protected:
   static NLScontrol* richard_solver_control;
   static RSdata* richard_solver_data;
 
-  // Deals with the ghost cells 
-  AuxBoundaryData aux_boundary_data_old;
-  bool            FillPatchedOldState_ok;
-
   static Real geometry_eps;
   static std::string surf_file;
 
   // Rock
   static std::map<std::string, int> rock_to_int; // hack to support user output
-  static MultiFab*   kappadata;
-  static MultiFab*   phidata;
-  static Real        saturation_threshold_for_vg_Kr;
-  static int         use_shifted_Kr_eval;
 
   // Phases and components
   static int nphases;
   static int ncomps; 
   static int ndiff;
-  static int idx_dominant;
   static Array<int> pType;
   static Array<std::string> pNames;
   static Array<std::string> cNames;
@@ -1140,8 +901,8 @@ protected:
   static int  ntracers; 
   static Array<int> tType; 
   static Array<Real> tDen;
-  static Array<PArray<RegionData> > tic_array;
-  static Array<PArray<RegionData> > tbc_array;
+  static Array<PArray<IdxRegionData> > tic_array;
+  static Array<PArray<IdxRegionData> > tbc_array;
   static Array<PArray<RegionData> > tsource_array;
   static std::map<std::string,Array<int> > group_map;
 
@@ -1169,9 +930,6 @@ protected:
   static Array<int>  inflow_bc_hi;
 
   // Richard boundary conditions		
-#ifdef MG_USE_FBOXLIB
-  static int richard_iter;
-#endif
   static Array<int>  rinflow_bc_lo;
   static Array<int>  rinflow_bc_hi;
 
@@ -1239,15 +997,9 @@ protected:
   //
   MultiFab* source;
   //
-  // RHS for the MAC projection.
-  //
-  MultiFab* rhs_RhoD;
-  //
   //Diffusion and capillary pressure
   //
-  Diffusion* diffusion;
   MultiFab *diffn_cc, *diffnp1_cc;
-  MultiFab *pcn_cc,   *pcnp1_cc;
   //
   // Volume and area fractions.
   //
@@ -1275,11 +1027,9 @@ protected:
   //
   // Static objects.
   //
-  static Godunov*    godunov;
   static ErrorList   err_list;
   static BCRec       phys_bc;
   static BCRec       pres_bc;
-  static MacProj*    mac_projector;
   static RegionManager* region_manager;
   static RockManager* rock_manager;
   //
@@ -1296,43 +1046,34 @@ protected:
   static int  initial_step;  // flag for initial iterations
   static Real dt_cutoff;     // minimum dt allowed
   static int  sum_interval;  // number of timesteps for conservation stats
-  static int  full_cycle;
   static Real dt_init; // if >0, initial time step size
   static int max_n_subcycle_transport; // maximum number of subcycled transport steps
   static int max_dt_iters_flow; // maximum number of tries to reduce dt and retry to solve Richards flow
   static bool abort_on_chem_fail; // do not recover from chemistry failure
-  static int verbose_chemistry; // dump detailed chemistry output 
-  static int show_selected_runtimes; // dump wall-clock times for selected sections
-  static Real max_chemistry_time_step;
+  static bool show_selected_runtimes; // dump wall-clock times for selected sections
+  static Real max_chemistry_time_step; // Largest dt for chem, triggers subcycling otherwise (-1 means not active)
   //
   // Internal parameters for options.
   //
-  static int        verbose;
-  static Real       gravity;
-  static int        gravity_dir;
-  static int        NUM_SCALARS;      // number of non-velocity components
-  static int        NUM_STATE;        // total number of state variables
-  //
-  // Controls over how the convective and diffusive terms are calculated
-  // for each state variable.
-  //
-  static Array<AdvectionForm> advectionType;
-  static Array<DiffusionForm> diffusionType;
+  static int  verbose;
+  static Real gravity;
+  static int  gravity_dir;
+  static int  NUM_SCALARS;      // number of non-velocity components
+  static int  NUM_STATE;        // total number of state variables
   //
   // Viscosity parameters.
   //
   static Array<int>  is_diffusive;    // does variable diffuse?
   static Array<Real> visc_coef;       // const coef viscosity terms
-  static Array<Real> diff_coef;       // const coef molecular diffusion coefficients (for tracers)
+  static Array<Real> molecular_diffusivity; // for tracers
   static Real        visc_tol;
   static Real        visc_abs_tol;
   static Real        be_cn_theta;
-  static int         variable_scal_diff;
-  static int         have_capillary;
+  static bool        variable_scal_diff;
   static Real        atmospheric_pressure_atm;
   static std::map<std::string,bool> use_gauge_pressure; // On bc_tag string
   static Real        z_location;
-  //  
+  //
   // Chemistry/solute/tracer parameters 
   //
   static bool do_tracer_chemistry; // Does the user want to react tracers
@@ -1343,27 +1084,16 @@ protected:
   static bool react_tracers; // Should the tracers be reacted now
   static bool diffuse_tracers; // Should the tracers be diffused now
   static bool tensor_tracer_diffusion; // Use tensor operator (includes dispersion) rather than diffusion-only ABec
-  static int  do_full_strang;
-  static int  n_chem_interval;
+  static bool do_full_strang;
+  static int  n_chem_interval; // Number of transport steps taken per chemistry solve.  Unused if <= 0
   static int  it_chem;
   static Real dt_chem;
   static Real be_cn_theta_trac;
+  static Array<Real> first_order_decay_constant;
   //
   // Internal switches.
   //
-  static int  do_simple;
-  static int  do_sync_proj;
-  static int  do_multilevel_full;
-  static bool use_PETSc_snes_for_evolution;
-  static int  do_reflux;
-  static int  do_correct;
-  static int  no_corrector;
-  static int  do_kappa_refine;
-  static int  n_pressure_interval;
-  static int  it_pressure;
-  static bool do_any_diffuse;
-  static int  do_cpl_advect;
-  static bool do_richard_sat_solve;
+  static bool do_reflux;
   static ExecutionMode execution_mode;
   static Real switch_time;
   static Real ic_chem_relax_dt;
@@ -1404,7 +1134,6 @@ protected:
   static int  steady_max_num_consecutive_increases;
   static Real steady_consecutive_increase_reduction_factor;
   static Real steady_max_psuedo_time;
-  static bool flow_use_PETSc;
   static bool steady_abort_on_psuedo_timestep_failure;
   static int  steady_limit_function_evals;
   static Real steady_abs_tolerance;
@@ -1459,6 +1188,154 @@ protected:
   Real t_sat_old_cached, t_sat_new_cached;
 
   static Teuchos::ParameterList input_parameter_list;
+};
+
+/*
+class PMFillPatchIterator
+  :
+  public MFIter
+{
+public:
+
+  friend class PorousMedia;
+
+  PMFillPatchIterator (AmrLevel& amrlevel,
+                       MultiFab& leveldata);
+
+  PMFillPatchIterator (AmrLevel&  amrlevel,
+                       MultiFab&  leveldata,
+                       int        boxGrow,
+                       Real       time,
+                       int        state_indx,
+                       int        scomp,
+                       int        ncomp);
+
+  void Initialize (int             boxGrow,
+                   const BoxArray& grids,
+                   AmrLevel&       amrlevel);
+  
+  ~PMFillPatchIterator ();
+
+  FArrayBox& operator() ();
+  const IArrayBox& MatID() const { return m_matID[m_fpi.index()]; }
+
+  const Box& UngrownBox () const { return MFIter::validbox(); }
+
+  // From MFIter
+  //
+  // Returns the valid Box that current tile resides.
+  //
+  const Box& validbox () const { return m_fpi.validbox(); }
+  //
+  // Returns the Box of the FAB at which we currently point.
+  //
+  const Box fabbox () const { return m_fpi.fabbox(); }
+  //
+  // Increments iterator to the next tile we own.
+  //
+  void operator++ () { ++m_fpi;}
+  //
+  // Is the iterator valid i.e. is it associated with a FAB?
+  //
+  //bool isValid () { return m_fpi.isValid(); }
+  bool isValid ();
+  //
+  // The index into the underlying BoxArray of the current FAB.
+  //
+  int index () const { return m_fpi.index(); }
+
+private:
+  //
+  // Disallowed.
+  //
+  PMFillPatchIterator ();
+  PMFillPatchIterator (const PMFillPatchIterator& rhs);
+  PMFillPatchIterator& operator= (const PMFillPatchIterator& rhs);
+  //
+  // The data.
+  //
+  FillPatchIterator m_fpi;
+  PorousMedia& m_pmlevel;
+  iMultiFab m_matID;
+
+  Real m_time;
+  int m_stateIndex,m_scomp,m_ncomp;
+};
+
+*/
+
+class PMFillPatchIterator
+  :
+  public FillPatchIterator
+{
+public:
+
+  friend class PorousMedia;
+
+  PMFillPatchIterator (AmrLevel& amrlevel,
+                       MultiFab& leveldata);
+
+  PMFillPatchIterator (AmrLevel&  amrlevel,
+                       MultiFab&  leveldata,
+                       int        boxGrow,
+                       Real       time,
+                       int        state_indx,
+                       int        scomp,
+                       int        ncomp);
+
+  ~PMFillPatchIterator ();
+
+  const IArrayBox& MatID() const { return m_matID[FillPatchIterator::index()]; }
+
+  void Initialize (int             boxGrow,
+                   const BoxArray& grids,
+                   AmrLevel&       amrlevel);
+
+  FArrayBox& operator() ();
+#if 0
+  
+  const Box& UngrownBox () const { return MFIter::validbox(); }
+
+  // From MFIter
+  //
+  // Returns the valid Box that current tile resides.
+  //
+  const Box& validbox () const { return m_fpi.validbox(); }
+  //
+  // Returns the Box of the FAB at which we currently point.
+  //
+  const Box fabbox () const { return m_fpi.fabbox(); }
+  //
+  // Increments iterator to the next tile we own.
+  //
+  void operator++ () { ++m_fpi;}
+  //
+  // Is the iterator valid i.e. is it associated with a FAB?
+  //
+  //bool isValid () { return m_fpi.isValid(); }
+  bool isValid ();
+  //
+  // The index into the underlying BoxArray of the current FAB.
+  //
+  int index () const { return m_fpi.index(); }
+#endif
+
+private:
+  //
+  // Disallowed.
+  //
+  PMFillPatchIterator ();
+  PMFillPatchIterator (const PMFillPatchIterator& rhs);
+  PMFillPatchIterator& operator= (const PMFillPatchIterator& rhs);
+  //
+  // The data.
+  //
+  //FillPatchIterator m_fpi;
+  PorousMedia& m_pmlevel;
+  iMultiFab m_matID;
+
+  Real m_time;
+  int m_stateIndex,m_scomp,m_ncomp;
 };
 
 #endif /*_PorousMedia_H_*/

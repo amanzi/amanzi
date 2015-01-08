@@ -18,11 +18,11 @@ def run_amanzi(input_file, directory=None):
         path = os.path.join(os.environ['AMANZI_INSTALL_DIR'],'bin')
         xmlschema_path = os.environ['AMANZI_XSD']
     except KeyError:
-        raise RunTimeError("Missing Amanzi installation, please set the AMANZI_INSTALL_DIR environmental variable.")
+        raise RuntimeError("Missing Amanzi installation, please set the AMANZI_INSTALL_DIR environmental variable.")
     executable = os.path.join(path, "amanzi")
 
     if not os.path.isfile(executable):
-        raise RunTimeError("Missing Amanzi installation, please build and install Amanzi.")
+        raise RuntimeError("Missing Amanzi installation, please build and install Amanzi.")
 
     try:
         stdout_file = open("stdout.out", "w")

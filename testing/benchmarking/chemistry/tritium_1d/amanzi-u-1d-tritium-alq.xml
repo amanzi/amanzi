@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="1D Flow and Transport with tritium decay"/>
   </ParameterList>
@@ -57,7 +57,7 @@
       </ParameterList>
       <ParameterList name="Generate Mesh">
         <ParameterList name="Uniform Structured">
-          <Parameter name="Number of Cells" type="Array(int)" value="{100, 1, 1}"/>
+          <Parameter name="Number of Cells" type="Array(int)" value="{3200, 1, 1}"/>
           <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.0, 0.0,  0.0}" />
           <Parameter name="Domain High Coordinate" type="Array(double)" value="{100.0, 1.0, 1.0}" />
         </ParameterList>
@@ -147,7 +147,9 @@
           <ParameterList name="Water">
             <ParameterList name="Tritium">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Geochemical Condition" type="string" value="west"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 7.889e8, 1.5778463e9}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
+                <Parameter name="Geochemical Conditions" type="Array(string)" value="{west, westhi, westhi}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
@@ -166,10 +168,11 @@
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="Tritium">
-              <ParameterList name="BC: Zero Gradient">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
-                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.e-20, 1.e-20}"/>
+              <ParameterList name="BC: Uniform Concentration">
+                <Parameter name="Times" type="Array(double)" value="{0.0, 7.889e8, 1.5778463e9}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
+            <!--    <Parameter name="Values" type="Array(double)" value="{1.e-20, 1.e-20}"/> -->
+                <Parameter name="Geochemical Conditions" type="Array(string)" value="{east, east, east}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>

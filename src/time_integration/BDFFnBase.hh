@@ -46,6 +46,9 @@ class BDFFnBase {
       ModifyCorrection(double h, Teuchos::RCP<const Vector> res,
                        Teuchos::RCP<const Vector> u, Teuchos::RCP<Vector> du) = 0;
 
+  // update the continuation parameter
+  virtual void UpdateContinuationParameter(double lambda) {}
+
   // experimental approach -- calling this indicates that the time
   // integration scheme is changing the value of the solution in
   // state.

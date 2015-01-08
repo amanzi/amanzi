@@ -111,7 +111,7 @@ void Flow_PK::VV_ValidateBCs() const
 {
   // Create sets of the face indices belonging to each BC type.
   std::set<int> pressure_faces, head_faces, flux_faces;
-  Amanzi::Functions::FlowBoundaryFunction::Iterator bc;
+  FlowBoundaryFunction::Iterator bc;
   for (bc = bc_pressure->begin(); bc != bc_pressure->end(); ++bc) pressure_faces.insert(bc->first);
   for (bc = bc_head->begin(); bc != bc_head->end(); ++bc) head_faces.insert(bc->first);
   for (bc = bc_flux->begin(); bc != bc_flux->end(); ++bc) flux_faces.insert(bc->first);
@@ -173,6 +173,69 @@ void Flow_PK::VV_ValidateBCs() const
 
 
 /* *******************************************************************
+* Reports water balance.
+******************************************************************* */
+void Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
+{
+  const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell", false);
+  const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
+  const Epetra_MultiVector& ws = *S->GetFieldData("water_saturation")->ViewComponent("cell", false);
+
+  double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flux) * rho_ * dT;
+
+  double mass_amanzi = 0.0;
+  for (int c = 0; c < ncells_owned; c++) {
+    mass_amanzi += ws[0][c] * rho_ * phi[0][c] * mesh_->cell_volume(c);
+  }
+
+  double mass_amanzi_tmp = mass_amanzi, mass_bc_tmp = mass_bc_dT;
+  mesh_->get_comm()->SumAll(&mass_amanzi_tmp, &mass_amanzi, 1);
+  mesh_->get_comm()->SumAll(&mass_bc_tmp, &mass_bc_dT, 1);
+
+  mass_bc += mass_bc_dT;
+
+  Teuchos::OSTab tab = vo_->getOSTab();
+  *vo_->os() << "reservoir water mass=" << mass_amanzi 
+             << " [kg], total influx=" << mass_bc << " [kg]" << std::endl;
+}
+
+ 
+/* *******************************************************************
+* Calculate flow out of the current seepage face.
+******************************************************************* */
+void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
+{
+  const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face");
+
+  int dir, f, c;
+  double tmp, outflow(0.0);
+  FlowBoundaryFunction::Iterator bc;
+
+  for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
+    f = bc->first;
+    if (f < nfaces_owned) {
+      c = BoundaryFaceGetCell(f);
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+      tmp = flux[0][f] * dir;
+      if (tmp > 0.0) outflow += tmp;
+    }
+  }
+
+  tmp = outflow;
+  mesh_->get_comm()->SumAll(&tmp, &outflow, 1);
+
+  outflow *= rho_;
+  seepage_mass_ += outflow * dT;
+
+  if (MyPID == 0 && bc_seepage->global_size() > 0) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "seepage face: flow=" << outflow << " [kg/s]," 
+               << " total=" << seepage_mass_ << " [kg]" << std::endl;
+  }
+}
+
+
+/* *******************************************************************
 * Calculates best least square fit for data (h[i], error[i]).                       
 ******************************************************************* */
 void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
@@ -180,7 +243,7 @@ void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
   double hmin(1.4e+9), hmax(-1.4e+9);  // diameter of the Sun
   double rho_g = rho_ * fabs(gravity_[dim - 1]);
   for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_model[f] == Operators::OPERATOR_BC_FACE_DIRICHLET) {
+    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
       double z = mesh_->face_centroid(f)[dim - 1]; 
       double h = z + (bc_value[f] - atm_pressure_) / rho_g;
       hmax = std::max(hmax, h);

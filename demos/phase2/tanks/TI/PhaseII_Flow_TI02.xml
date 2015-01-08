@@ -1,7 +1,7 @@
 <ParameterList name="Main">
   <!--Phase II demo, Flow simulation, Flow period 02-->
 
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.0.0"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
   <Parameter name="Dump ParmParse Table" type="string" value="flow02/ppfile"/>
   <Parameter name="Petsc Options File" type="string" value="DOTpetsc"/>
   <!-- <Parameter name="Pause For Debug" type="bool" value="true"/> -->
@@ -55,11 +55,10 @@
     <Parameter name="Verbosity" type="string" value="Medium"/>
 
     <ParameterList name="Numerical Control Parameters">
-      <ParameterList name="Basic Algorithm Control">
+      <ParameterList name="Structured Algorithm">
         <ParameterList name="Expert Settings">
           <Parameter name="do_multilevel_full" type="int" value="1"/>
           <Parameter name="do_richard_init_to_steady" type="int" value="1"/>
-          <Parameter name="do_richard_sat_solve" type="int" value="0"/>
           <Parameter name="richard_init_to_steady_verbose" type="int" value="2"/>
           <Parameter name="steady_limit_iterations" type="int" value="20"/>
           <Parameter name="steady_max_iterations" type="int" value="10"/>

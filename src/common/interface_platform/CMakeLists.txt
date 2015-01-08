@@ -20,6 +20,7 @@ project(PLATFORM_INTERFACE)
 
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
+include_directories(${ATK_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 
 # External (TPL) include directories
@@ -37,8 +38,10 @@ file(GLOB _hh_inc_files "*.hh")
 set(interface_inc_files  ${_hh_inc_files} )
 add_amanzi_library(interface
                       SOURCE 
-                           InputParserIS.hh InputParserIS.cc
-			   InputTranslator.hh InputTranslator.cc
-                           ObservationData.hh Simulator.hh
+                           InputParserIS.cc
+                           InputParserIS_State.cc InputParserIS_MPC.cc
+                           InputParserIS_Flow.cc InputParserIS_Transport.cc InputParserIS_Chemistry.cc
+                           InputParserIS_Solvers.cc InputParserIS_Mesh.cc InputParserIS_Output.cc
+			   InputTranslator.cc
                       HEADERS ${interface_inc_files}
                       LINK_LIBS error_handling geometry ${Teuchos_LIBRARIES})

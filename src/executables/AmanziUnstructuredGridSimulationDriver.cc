@@ -23,6 +23,7 @@
 #include "exceptions.hh"
 
 #include "InputParserIS.hh"
+#include "InputAnalysis.hh"
 
 #include "TimerManager.hh"
 
@@ -57,9 +58,10 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   Teuchos::ParameterList sub_list;
   
   if (! native) {
-    new_list = Amanzi::AmanziInput::Translate(&input_parameter_list, comm->NumProc());
+    Amanzi::AmanziInput::InputParserIS parser;
+    new_list = parser.Translate(&input_parameter_list, comm->NumProc());
 
-    std::string verbosity = input_parameter_list.sublist("Execution Control").get<std::string>("Verbosity","Low");
+    std::string verbosity = input_parameter_list.sublist("Execution Control").get<std::string>("Verbosity", "Low");
     
     if (verbosity == "None") {
       verbLevel = Teuchos::VERB_NONE;
@@ -78,25 +80,25 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     new_list = input_parameter_list;
   }
   
-  if ((comm->MyPID() == 0) && (includesVerbLevel(verbLevel,Teuchos::VERB_EXTREME,true)))
-       Amanzi::AmanziInput::output_boundary_conditions(&new_list);
-  
-  if (! native && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) { 
+  // A hack: print floating-point numbers with a given precision.
+  int precision = input_parameter_list.get<int>("output precision", 0);
+
+  if (!native && includesVerbLevel(verbLevel, Teuchos::VERB_LOW, true)) { 
     std::string xmlFileName = new_list.get<std::string>("input file name");
-    std::string new_extension("_native_v4.xml");
+    std::string new_extension("_native_v5.xml");
     size_t pos = xmlFileName.find(".xml");
     xmlFileName.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)14);
     if (comm->MyPID() == 0) {
       printf("Amanzi: writing the translated parameter list to file %s...\n", xmlFileName.c_str());
 
       Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
+      if (precision > 0) XMLWriter.set_precision(precision);
       Teuchos::XMLObject XMLobj = XMLWriter.toXML(new_list);
 
       std::ofstream xmlfile;
       xmlfile.open(xmlFileName.c_str());
       xmlfile << XMLobj;
     }
-    // Teuchos::writeParameterListToXmlFile(new_list, xmlFileName);
   }
 
 
@@ -343,7 +345,13 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     }  // if verify_mesh_param
   }  // If expert_params_specified
 
-  // -------------- MULTI-PROCESS COORDINATOR------- --------------------
+  // -------------- ANALYSIS --------------------------------------------
+  Amanzi::InputAnalysis analysis(mesh);
+  analysis.Init(new_list);
+  analysis.RegionAnalysis();
+  analysis.OutputBCs();
+  
+  // -------------- MULTI-PROCESS COORDINATOR----------------------------
 
   Amanzi::MPC mpc(new_list, mesh, comm, output_observations);
 
@@ -351,7 +359,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
   mpc.cycle_driver();
 
-  //-----------------------------------------------------
+  //---------------------------------------------------------------------
   
 
   // Clean up

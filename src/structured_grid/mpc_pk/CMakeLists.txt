@@ -14,6 +14,7 @@ project(SAMR)
 
 include_directories(${CHEM_SOURCE_DIR}/includes)
 include_directories(${DBC_SOURCE_DIR})
+include_directories(${ATK_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CCSE_INCLUDE_DIRS})
 include_directories(${PMAMR_INCLUDE_DIRS})
@@ -27,59 +28,29 @@ include_directories(${GEOCHEM_SOURCE_DIR})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 
-set(CXX_source_files Diffusion.cpp
-                     Godunov.cpp
-                     MacOperator.cpp
-                     MacProj.cpp
-                     Observation.cpp
+set(CXX_source_files Observation.cpp
                      PMBld.cpp
                      PM_setup.cpp
                      PorousMedia.cpp
                      Source.cpp
                      ViscBndry.cpp
-                     PressBndry.cpp
-                     PMAmr.cpp
-                     Layout.cpp
-                     MFTower.cpp)
+                     PMAmr.cpp)
 
 set(CXX_header_files BC_TYPES_PM.H
-                     DIFFUSION_F.H
-                     Diffusion.H
-                     GODCOMM_F.H
-                     GODUNOV_F.H
-                     Godunov.H
-                     Layout.H
-                     MACOPERATOR_F.H
-                     MacOperator.H
-                     MacOpMacDrivers.H
-                     MACOUTFLOWBC_F.H
-                     MACPROJ_F.H
-                     MacProj.H
-                     MFTOWER_F.H
-                     MFTower.H
                      Observation.H
                      PMAmr.H
                      PMAMR_Labels.H
-                     POROUSMEDIA_F.H
+                     PorousMedia_F.H
                      PorousMedia.H
-                     PressBndry.H
                      RegType.H
                      Source.H
                      ViscBndry.H
-                     probdata.H
-                     VISCOPERATOR_F.H)
+                     probdata.H)
 
 set(F90_source_files )
 set(F77_source_files )
-set(FPP_source_files  EOS_F.F
-                      GODUNOV_F.F
-                      DIFFUSION_${AMANZI_SPACEDIM}D.F
-                      GODUNOV_${AMANZI_SPACEDIM}D.F
-                      MACOPERATOR_${AMANZI_SPACEDIM}D.F
-                      MACPROJ_${AMANZI_SPACEDIM}D.F
-                      POROUSMEDIA_${AMANZI_SPACEDIM}D.F
-                      VISCOPERATOR_${AMANZI_SPACEDIM}D.F
-                      MFTOWER_${AMANZI_SPACEDIM}D.F)
+set(FPP_source_files  PorousMedia_${AMANZI_SPACEDIM}D.F
+                      Eos_F.F)
 
 preprocess_boxlib_fortran(FPP_out_files ${FPP_source_files})
 

@@ -7,8 +7,6 @@
 #include <sstream>
 #include <iomanip>
 
-#include "chemistry_output.hh"
-
 namespace Amanzi {
 namespace AmanziChemistry {
 
@@ -223,7 +221,7 @@ void MatrixBlock::Print(const std::string& name) const {
       }
     }
   }
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }
 
 void MatrixBlock::Print_ij() const {
@@ -236,7 +234,7 @@ void MatrixBlock::Print_ij() const {
       }
     }
   }
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }
 
 }  // namespace AmanziChemistry

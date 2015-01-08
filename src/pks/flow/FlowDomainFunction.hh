@@ -17,17 +17,14 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "CommonDefs.hh"
 #include "Mesh.hh"
 #include "unique_mesh_function.hh"
 
 namespace Amanzi {
-namespace Functions {
+namespace Flow {
 
-const int DOMAIN_FUNCTION_ACTION_NONE = 0;
-const int DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME = 1;
-const int DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY = 2;
-
-class FlowDomainFunction : public UniqueMeshFunction {
+class FlowDomainFunction : public Functions::UniqueMeshFunction {
  public:
   explicit FlowDomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : 
       UniqueMeshFunction(mesh),
@@ -35,15 +32,16 @@ class FlowDomainFunction : public UniqueMeshFunction {
 
   void Define(const std::vector<std::string>& regions,
               const Teuchos::RCP<const MultiFunction>& f,
-	      int action);
+              int action, int submodel);
 
-  void Define(std::string region,
-              const Teuchos::RCP<const MultiFunction> &f,
-	      int action);
+  void Define(std::string& region,
+              const Teuchos::RCP<const MultiFunction>& f,
+              int action, int submodel);
 
-  void Compute(double time);
-  void ComputeDistribute(double T);
-  void ComputeDistribute(double T, double* weight);
+  // source term on time interval (t0, t1]
+  void Compute(double t0, double t1);
+  void ComputeDistribute(double t0, double t1);
+  void ComputeDistribute(double t0, double t1, double* weight);
   
   void Finalize() {};
  
@@ -59,13 +57,14 @@ class FlowDomainFunction : public UniqueMeshFunction {
 
  private:
   std::vector<int> actions_;
+  std::vector<int> submodel_;
 
  protected:
   std::map<int,double> value_;
   bool finalized_;
 };
 
-}  // namespace Functions
+}  // namespace Flow
 }  // namespace Amanzi
 
 #endif

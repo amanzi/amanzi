@@ -1,16 +1,18 @@
 /*
-This is the transport component of the Amanzi code. 
+  This is the transport component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <algorithm>
 
+#include "ReconstructionCell.hh"
+#include "OperatorDefs.hh"
 #include "Transport_PK.hh"
 
 namespace Amanzi {
@@ -25,18 +27,48 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
   // transport routines need an RCP pointer
   Teuchos::RCP<const Epetra_Vector> component_rcp(&component, false);
 
-  lifting.ResetField(mesh_, component_rcp);
-  lifting.CalculateCellGradient();
-  Teuchos::RCP<CompositeVector> gradient = lifting.gradient();
+  Teuchos::ParameterList plist;
+  plist.set<std::string>("limiter", parameter_list.get<std::string>("advection limiter"));
+  lifting_->Init(component_rcp, plist);
+  lifting_->Compute();
+  Teuchos::RCP<CompositeVector> gradient = lifting_->gradient();
 
+  // extract boundary conditions for the current component
+  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
+  std::vector<double> bc_value(nfaces_wghost);
+
+  for (int m = 0; m < bcs.size(); m++) {
+    std::vector<int>& tcc_index = bcs[m]->tcc_index();
+    int ncomp = tcc_index.size();
+
+    for (int i = 0; i < ncomp; i++) {
+      if (current_component_ == tcc_index[i]) {
+        std::vector<int>& faces = bcs[m]->faces();
+        std::vector<std::vector<double> >& values = bcs[m]->values();
+        int nbfaces = faces.size();
+
+        for (int n = 0; n < nbfaces; ++n) {
+          int f = faces[n];
+          bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+          bc_value[f] = values[n][i];
+        }
+      }
+    }
+  }
+
+  lifting_->InitLimiter(darcy_flux);
+  lifting_->ApplyLimiter(bc_model, bc_value);
+
+  /*
   if (advection_limiter == TRANSPORT_LIMITER_BARTH_JESPERSEN) {
     LimiterBarthJespersen(current_component_, component_rcp, gradient, limiter_);
-    lifting.ApplyLimiter(limiter_);
+    lifting_->ApplyLimiter(limiter_);
   } else if (advection_limiter == TRANSPORT_LIMITER_TENSORIAL) {
     LimiterTensorial(current_component_, component_rcp, gradient);
   } else if (advection_limiter == TRANSPORT_LIMITER_KUZMIN) {
     LimiterKuzmin(current_component_, component_rcp, gradient);
   }
+  */
 
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors.
@@ -64,7 +96,7 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
     if (c1 >= 0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
-      upwind_tcc = lifting.getValue(c1, xf);
+      upwind_tcc = lifting_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 
@@ -72,14 +104,14 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
       f_component[c1] -= tcc_flux;
       f_component[c2] += tcc_flux;
     } else if (c1 >= 0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
-      upwind_tcc = lifting.getValue(c1, xf);
+      upwind_tcc = lifting_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 
       tcc_flux = u * upwind_tcc;
       f_component[c1] -= tcc_flux;
     } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
-      upwind_tcc = lifting.getValue(c1, xf);
+      upwind_tcc = lifting_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 
@@ -89,8 +121,8 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
   }
 
   // process external sources
-  if (src_sink != NULL) {
-    ComputeAddSourceTerms(t, 1.0, src_sink, f_component);
+  if (srcs.size() != 0) {
+    ComputeAddSourceTerms(t, 1.0, srcs, f_component, current_component_, current_component_);
   }
 
   for (int c = 0; c < ncells_owned; c++) {  // calculate conservative quantatity

@@ -1761,8 +1761,14 @@ Internal parameters for Boomer AMG include
   and approximate the inverse matrix with the prescribed tolerance (in
   the energy norm ???).
 
-* `"relaxation type`" [int] defines the smoother to be used. Default is 6 
-  which specifies a symmetric hybrid Gauss-Seidel / Jacobi hybrid method.
+* `"relaxation type`" [int] defines the smoother to be used. Default is 3
+  which specifies a hybrid Gauss-Seidel forward solve method.
+
+* `"relaxation type down`" [int] defines the smoother to be used on down cycle.
+  The recommended value is 3. If missing, parameter `relaxation type` will be used instead.
+
+* `"relaxation type up`" [int] defines the smoother to be used on up cycle.
+  The recommended value is 4. If missing, parameter `relaxation type` will be used instead.
 
 * `"smoother sweeps`" [int] defines the number of smoothing loops. Default is 3.
 

@@ -2,6 +2,8 @@
 
 #include <ParmParse.H>
 
+static Real GEOMETRY_EPS_DEF = 1.e-10;
+
 RegionManager::RegionManager()
 {
   ParmParse pp("geometry");
@@ -9,10 +11,26 @@ RegionManager::RegionManager()
   Array<Real> problo, probhi;
   pp.getarr("prob_lo",problo,0,BL_SPACEDIM);
   pp.getarr("prob_hi",probhi,0,BL_SPACEDIM);
-  Region::domlo = problo;
-  Region::domhi = probhi;
+
+  Init(problo,probhi);
+}
+
+RegionManager::RegionManager(const Array<Real>& plo,
+                             const Array<Real>& phi)
+{
+  Init(plo,phi);
+}
+
+void
+RegionManager::Init(const Array<Real>& plo,
+                    const Array<Real>& phi)
+{
+  Region::domlo = plo;
+  Region::domhi = phi;
   
-  Real geometry_eps = -1; pp.get("geometry_eps",geometry_eps);
+  ParmParse pp("geometry");
+
+  Real geometry_eps = GEOMETRY_EPS_DEF; pp.query("geometry_eps",geometry_eps);
   Region::geometry_eps = geometry_eps;
 
   // set up  1+2*BL_SPACEDIM default regions

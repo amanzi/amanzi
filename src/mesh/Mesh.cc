@@ -576,9 +576,13 @@ AmanziGeometry::Point Mesh::face_centroid (const Entity_ID faceid, const bool re
 // the cell on one side of the face is just the negative of the normal
 // with respect to the cell on the other side. In general surfaces meshes,
 // this will not be true at C1 discontinuities
+//
+// if cellid is specified, then orientation returns the direction of
+// the natural normal of the face with respect to the cell (1 is
+// pointing out of the cell and -1 pointing in)
 
 
-AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid, const bool recompute, const Entity_ID cellid) const {
+AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid, const bool recompute, const Entity_ID cellid, int *orientation) const {
 
   AmanziGeometry::Point normal0(spacedim);
   AmanziGeometry::Point normal1(spacedim);
@@ -608,6 +612,9 @@ AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid, const bool reco
     // to their respective cells, we can return normal0 as is but have
     // to negate normal1.
 
+    if (orientation)
+      *orientation = 1;
+ 
     if (L22(normal0) != 0.0)
       return normal0;
     else {
@@ -633,6 +640,7 @@ AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid, const bool reco
 
     ASSERT(found);
 
+    if (orientation) *orientation = dir;
     if (dir == 1) {
       ASSERT(L22(normal0) != 0.0);
       return normal0;              // Copy to output
@@ -1218,8 +1226,43 @@ int Mesh::build_columns() const {
 
   }
 
+  // now build the columns
+  for (int i = 0; i < nc; i++) {
+    if (cell_cellabove[i] == -1) {
+      // calculate the size
+      Entity_ID_List& col = columns[i];
+      int ncells_in_col = 1;
+      int j = cell_cellbelow[i];
+      while (j >= 0) {
+        ncells_in_col++;
+        j = cell_cellbelow[j];
+      }
+
+      col.resize(ncells_in_col);
+      int index = 0;
+      col[index] = i;
+      j = cell_cellbelow[i];
+      while (j >= 0) {
+        index++;
+        col[index] = j;
+        j = cell_cellbelow[j];
+      }
+    }
+  }
+  
   columns_built = true;
   return status;
+}
+
+
+const Entity_ID_List&
+Mesh::cell_column(Entity_ID cellid) const {
+  return columns[cellid];
+}
+
+const Entity_ID_List&
+Mesh::cell_column_indices() const {
+  return column_indices;
 }
 
 

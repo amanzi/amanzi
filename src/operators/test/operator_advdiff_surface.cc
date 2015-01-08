@@ -89,16 +89,17 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   // create boundary data
   std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
   std::vector<double> bc_value(nfaces_wghost);
+  std::vector<double> bc_mixed;
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = surfmesh->face_centroid(f);
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
-      bc_model[f] = OPERATOR_BC_FACE_DIRICHLET;
+      bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = xf[1] * xf[1];
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(bc_model, bc_value));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create operator map 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -120,7 +121,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
     uf[0][f] = vel * surfmesh->face_normal(f);
   }
 
-  op1->InitOperator(u);
+  op1->Setup(u);
   op1->UpdateMatrices(u);
 
   // add accumulation terms
@@ -131,7 +132,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   phi.PutScalar(0.2);
 
   double dT = 0.02;
-  op1->AddAccumulationTerm(solution, phi, dT);
+  op1->AddAccumulationTerm(solution, phi, dT, "cell");
 
   // initialize velocity
   // add the diffusion operator. It is the last due to BCs.
@@ -142,7 +143,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
                                       .get<Teuchos::ParameterList>("diffusion operator");
 
   Teuchos::RCP<OperatorDiffusionSurface> op2 = Teuchos::rcp(new OperatorDiffusionSurface(*op1, olist, bc));
-  op2->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
+  op2->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op2->UpdateMatrices(Teuchos::null, Teuchos::null);
   op2->ApplyBCs();
 

@@ -45,6 +45,8 @@ class RelativePermeability {
   void DerivedKdP(const Epetra_MultiVector& p, Epetra_MultiVector& dk);
 
   double Value(int c, double pc) const { return WRM_[(*map_c2mb_)[c]]->k_relative(atm_pressure - pc); } 
+  double Derivative(int c, double pc) const { return WRM_[(*map_c2mb_)[c]]->dKdPc(atm_pressure - pc); } 
+
   double Value(int c, double pc, const std::string name) const { 
     if (name == "k_relative"){
       return WRM_[(*map_c2mb_)[c]]->k_relative(atm_pressure - pc); 
@@ -60,7 +62,7 @@ class RelativePermeability {
   void VerifyWRMparameters(double m, double alpha, double sr, double pc0);
   void VerifyStringMualemBurdine(const std::string name);
   void ProcessStringRelativePermeability(const std::string name);
-  void PlotWRMcurves();
+  void PlotWRMcurves(Teuchos::ParameterList& plist);
 
   // access methods
   std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM() { return WRM_; }
@@ -91,6 +93,8 @@ class RelativePermeability {
  protected:
   VerboseObject* vo_;
 };
+
+typedef double(RelativePermeability::*RelativePermeabilityUpwindFn)(int c, double pc) const; 
 
 }  // namespace Flow
 }  // namespace Amanzi

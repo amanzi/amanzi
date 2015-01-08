@@ -40,8 +40,6 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-extern ChemistryOutput* chem_out;
-
 // solver defaults
 const double Beaker::tolerance_default_ = 1.0e-12;
 const unsigned int Beaker::max_iterations_default_ = 250;
@@ -248,7 +246,7 @@ int Beaker::Speciate(Beaker::BeakerComponents* components,
       // geh
       message.str("");
       message << "\n- Iteration " << num_iterations << " --------\n";
-      chem_out->Write(kDebugBeaker, message);
+      chem_out->Write(Teuchos::VERB_EXTREME, message);
       //DisplayResults();
     }
 
@@ -290,7 +288,7 @@ int Beaker::Speciate(Beaker::BeakerComponents* components,
         message << primary_species().at(i).name() << " "
                 << primary_species().at(i).molality() << " " << total_.at(i) << "\n";
       }
-      chem_out->Write(kDebugBeaker, message);
+      chem_out->Write(Teuchos::VERB_EXTREME, message);
     }
 
     num_iterations++;
@@ -330,7 +328,7 @@ int Beaker::Speciate(Beaker::BeakerComponents* components,
     message << "Beaker::speciate: status.num_jacobian_evaluations: " << status_.num_jacobian_evaluations << std::endl;
     message << "Beaker::speciate: status.num_newton_iterations: " << status_.num_newton_iterations << std::endl;
     message << "Beaker::speciate: status.converged: " << status_.converged << std::endl;
-    chem_out->Write(kVerbose, message);
+    chem_out->Write(Teuchos::VERB_HIGH, message);
   }
   return num_iterations;
 }  // end Speciate()
@@ -439,7 +437,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
         }
         message << "\n";
       }
-      chem_out->Write(kVerbose, message);
+      chem_out->Write(Teuchos::VERB_HIGH, message);
     }
 
     num_iterations++;
@@ -657,7 +655,7 @@ int Beaker::GetPrimaryIndex(const std::string& name) const {
 //
 
 void Beaker::Display(void) const {
-  chem_out->Write(kVerbose, "-- Beaker description ------------------------------------------------\n");
+  chem_out->Write(Teuchos::VERB_HIGH, "-- Beaker description ------------------------------------------------\n");
   DisplayParameters();
 
   DisplayPrimary();
@@ -682,7 +680,7 @@ void Beaker::Display(void) const {
 
   DisplaySorptionIsotherms();
 
-  chem_out->Write(kVerbose, "------------------------------------------------ Beaker description --\n");
+  chem_out->Write(Teuchos::VERB_HIGH, "------------------------------------------------ Beaker description --\n");
 }  // end Display()
 
 void Beaker::DisplayComponents(const Beaker::BeakerComponents& components) const {
@@ -728,7 +726,7 @@ void Beaker::DisplayComponents(const Beaker::BeakerComponents& components) const
   }
   message << "------------------------------------------------- Input Components ---"
           << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end DisplayComponents
 
 void Beaker::DisplayResults(void) const {
@@ -761,7 +759,7 @@ void Beaker::DisplayResults(void) const {
           << std::endl;
 
   message << "---- Species " << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 
   primary_species().at(0).DisplayResultsHeader();
   for (int i = 0; i < ncomp(); i++) {
@@ -774,7 +772,7 @@ void Beaker::DisplayResults(void) const {
   }
 
   if (minerals_.size() > 0) {
-    chem_out->Write(kVerbose, "---- Minerals\n");
+    chem_out->Write(Teuchos::VERB_HIGH, "---- Minerals\n");
     minerals_[0].DisplayResultsHeader();
     for (unsigned int i = 0; i < minerals_.size(); i++) {
       minerals_.at(i).DisplayResults();
@@ -782,7 +780,7 @@ void Beaker::DisplayResults(void) const {
   }
 
   if (ion_exchange_rxns_.size() > 0) {
-    chem_out->Write(kVerbose, "---- Ion Exchange Sites\n");
+    chem_out->Write(Teuchos::VERB_HIGH, "---- Ion Exchange Sites\n");
     ion_exchange_rxns_.at(0).site().DisplayResultsHeader();
     for (unsigned int i = 0; i < ion_exchange_rxns_.size(); i++) {
       ion_exchange_rxns_.at(i).site().DisplayResults();
@@ -790,7 +788,7 @@ void Beaker::DisplayResults(void) const {
   }
 
   if (ion_exchange_rxns_.size() > 0) {
-    chem_out->Write(kVerbose, "---- Ion Exchange Complexes\n");
+    chem_out->Write(Teuchos::VERB_HIGH, "---- Ion Exchange Complexes\n");
     ion_exchange_rxns_.at(0).ionx_complexes().at(0).DisplayResultsHeader();
     for (unsigned int i = 0; i < ion_exchange_rxns_.size(); i++) {
       for (unsigned int j = 0; j < ion_exchange_rxns_.at(i).ionx_complexes().size(); j++) {
@@ -800,14 +798,14 @@ void Beaker::DisplayResults(void) const {
   }
 
   if (surfaceComplexationRxns_.size() > 0) {
-    chem_out->Write(kVerbose, "---- Surface Complexation Reactions\n");
+    chem_out->Write(Teuchos::VERB_HIGH, "---- Surface Complexation Reactions\n");
     for (unsigned int i = 0; i < surfaceComplexationRxns_.size(); i++) {
       surfaceComplexationRxns_.at(i).DisplayResultsHeader();
       surfaceComplexationRxns_.at(i).DisplayResults();
     }
   }
 
-  chem_out->Write(kVerbose, "---------------------------------------------------------- Solution --\n\n");
+  chem_out->Write(Teuchos::VERB_HIGH, "---------------------------------------------------------- Solution --\n\n");
 }  // end DisplayResults()
 
 void Beaker::DisplayTotalColumnHeaders(const bool display_free) const {
@@ -835,7 +833,7 @@ void Beaker::DisplayTotalColumnHeaders(const bool display_free) const {
     }
   }
   message << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end DisplayTotalColumnHeaders()
 
 void Beaker::DisplayTotalColumns(const double time,
@@ -863,7 +861,7 @@ void Beaker::DisplayTotalColumns(const double time,
     }
   }
   message << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end DisplayTotalColumns()
 
 
@@ -1625,7 +1623,7 @@ void Beaker::CheckChargeBalance(const std::vector<double>& aqueous_totals) const
     message << "WARNING: Beaker::CheckChargeBalance() : "
             << "         charge balance = " << std::scientific
             << charge_balance << std::fixed << std::endl;
-    chem_out->Write(kWarning, message);
+    chem_out->WriteWarning(Teuchos::VERB_LOW, message);
   }
 }  // end CheckChargeBalance()
 
@@ -1661,19 +1659,19 @@ void Beaker::ValidateSolution() {
  **
  *******************************************************************************/
 void Beaker::display(void) const {
-  chem_out->Write(kVerbose, "----- Beaker description ------\n");
-  chem_out->Write(kVerbose, "Primary Species:");
+  chem_out->Write(Teuchos::VERB_HIGH, "----- Beaker description ------\n");
+  chem_out->Write(Teuchos::VERB_HIGH, "Primary Species:");
   for (std::vector<Species>::const_iterator primary = primary_species().begin();
        primary != primary_species().end(); primary++) {
     primary->display();
   }
-  chem_out->Write(kVerbose, "\n");
-  chem_out->Write(kVerbose, "Aqueous Equilibrium Complexes:\n");
+  chem_out->Write(Teuchos::VERB_HIGH, "\n");
+  chem_out->Write(Teuchos::VERB_HIGH, "Aqueous Equilibrium Complexes:\n");
   for (std::vector<AqueousEquilibriumComplex>::const_iterator aec = aqComplexRxns_.begin();
        aec != aqComplexRxns_.end(); aec++) {
     aec->display();
   }
-  chem_out->Write(kVerbose, "-------------------------------------");
+  chem_out->Write(Teuchos::VERB_HIGH, "-------------------------------------");
 }  // end display()
 
 void Beaker::DisplayParameters(void) const {
@@ -1691,7 +1689,7 @@ void Beaker::DisplayParameters(void) const {
   message << "    water density: " << water_density_kg_m3() << " [kg m^-3]" << std::endl;
   message << "    volume: " << volume() << " [m^3]" << std::endl;
   message << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end DisplayParameters()
 
 void Beaker::DisplayPrimary(void) const {
@@ -1702,12 +1700,12 @@ void Beaker::DisplayPrimary(void) const {
           << std::setw(10) << "GMW"
           << std::setw(10) << "D-H a0"
           << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
   for (std::vector<Species>::const_iterator primary = primary_species().begin();
        primary != primary_species().end(); primary++) {
     primary->Display();
   }
-  chem_out->Write(kVerbose, "\n");
+  chem_out->Write(Teuchos::VERB_HIGH, "\n");
 }  // end DisplayPrimary()
 
 void Beaker::DisplayAqueousEquilibriumComplexes(void) const {
@@ -1719,12 +1717,12 @@ void Beaker::DisplayAqueousEquilibriumComplexes(void) const {
           << std::setw(10) << "GMW"
           << std::setw(8) << "D-H a0"
           << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
   for (std::vector<AqueousEquilibriumComplex>::const_iterator aec = aqComplexRxns_.begin();
        aec != aqComplexRxns_.end(); aec++) {
     aec->Display();
   }
-  chem_out->Write(kVerbose, "\n");
+  chem_out->Write(Teuchos::VERB_HIGH, "\n");
 }  // end DisplayAqueousEquilibriumComplexes()
 
 void Beaker::DisplayGeneralKinetics(void) const {
@@ -1732,12 +1730,12 @@ void Beaker::DisplayGeneralKinetics(void) const {
     std::stringstream message;
     message << "---- General Kinetics" << std::endl;
     message << std::setw(12) << "Reaction" << std::endl;
-    chem_out->Write(kVerbose, message);
+    chem_out->Write(Teuchos::VERB_HIGH, message);
     for (std::vector<GeneralRxn>::const_iterator rxn = generalKineticRxns_.begin();
          rxn != generalKineticRxns_.end(); rxn++) {
       rxn->Display();
     }
-    chem_out->Write(kVerbose, "\n");
+    chem_out->Write(Teuchos::VERB_HIGH, "\n");
   }
 }  // end DisplayGeneralKinetics()
 
@@ -1746,13 +1744,13 @@ void Beaker::DisplayRadioactiveDecayRxns(void) const {
     std::stringstream message;
     message << "---- Radioactive Decay" << std::endl;
     message << std::setw(12) << "Reaction" << std::endl;
-    chem_out->Write(kVerbose, message);
+    chem_out->Write(Teuchos::VERB_HIGH, message);
     std::vector<RadioactiveDecay>::const_iterator rxn;
     for (rxn = radioactive_decay_rxns_.begin();
          rxn != radioactive_decay_rxns_.end(); ++rxn) {
       rxn->Display();
     }
-    chem_out->Write(kVerbose, "\n");
+    chem_out->Write(Teuchos::VERB_HIGH, "\n");
   }
 }  // end DisplayRadioactiveDecayRxns()
 
@@ -1774,24 +1772,24 @@ void Beaker::DisplayMinerals(void) const {
             << std::setw(13) << "[m^2/m^3 blk]"
             << std::setw(13) << "[-]"
             << std::endl;
-    chem_out->Write(kVerbose, message);
+    chem_out->Write(Teuchos::VERB_HIGH, message);
     for (std::vector<Mineral>::const_iterator m = minerals_.begin();
          m != minerals_.end(); m++) {
       m->Display();
     }
-    chem_out->Write(kVerbose, "\n");
+    chem_out->Write(Teuchos::VERB_HIGH, "\n");
   }
 }  // end DisplayMinerals()
 
 void Beaker::DisplayMineralKinetics(void) const {
   if (mineral_rates_.size() > 0) {
     std::stringstream message;
-    chem_out->Write(kVerbose, "---- Mineral Kinetics\n");
+    chem_out->Write(Teuchos::VERB_HIGH, "---- Mineral Kinetics\n");
     for (std::vector<KineticRate*>::const_iterator m = mineral_rates_.begin();
          m != mineral_rates_.end(); m++) {
       (*m)->Display();
     }
-    chem_out->Write(kVerbose, "\n");
+    chem_out->Write(Teuchos::VERB_HIGH, "\n");
   }
 }  // end DisplayMineralKinetics()
 
@@ -1804,13 +1802,13 @@ void Beaker::DisplayIonExchangeSites(void) const {
             << std::setw(10) << "Charge"
             << std::setw(10) << "CEC"
             << std::endl;
-    chem_out->Write(kVerbose, message);
+    chem_out->Write(Teuchos::VERB_HIGH, message);
     std::vector<IonExchangeRxn>::const_iterator rxn;
     for (rxn = ion_exchange_rxns_.begin();
          rxn != ion_exchange_rxns_.end(); rxn++) {
       rxn->site().Display();
     }
-    chem_out->Write(kVerbose, "\n");
+    chem_out->Write(Teuchos::VERB_HIGH, "\n");
   }
 }  // end DisplayIonExchangeSites()
 
@@ -1821,13 +1819,13 @@ void Beaker::DisplayIonExchangeComplexes(void) const {
     message << std::setw(12) << "Reaction"
             << std::setw(38) << "K"
             << std::endl;
-    chem_out->Write(kVerbose, message);
+    chem_out->Write(Teuchos::VERB_HIGH, message);
     std::vector<IonExchangeRxn>::const_iterator ier;
     for (ier = ion_exchange_rxns_.begin();
          ier != ion_exchange_rxns_.end(); ier++) {
       ier->Display();
     }
-    chem_out->Write(kVerbose, "\n");
+    chem_out->Write(Teuchos::VERB_HIGH, "\n");
   }
 }  // end DisplayIonExchangeComplexes()
 
@@ -1841,13 +1839,13 @@ void Beaker::DisplaySurfaceSites(void) const {
     message << std::setw(15) << " "
             << std::setw(15) << "[mol/m^3]"
             << std::endl;
-    chem_out->Write(kVerbose, message);
+    chem_out->Write(Teuchos::VERB_HIGH, message);
     std::vector<SurfaceComplexationRxn>::const_iterator s;
     for (s = surfaceComplexationRxns_.begin();
          s != surfaceComplexationRxns_.end(); s++) {
       s->DisplaySite();
     }
-    chem_out->Write(kVerbose, "\n");
+    chem_out->Write(Teuchos::VERB_HIGH, "\n");
   }
 }  // end DisplaySurfaceSites()
 
@@ -1859,13 +1857,13 @@ void Beaker::DisplaySurfaceComplexes(void) const {
             << std::setw(38) << "log Keq"
             << std::setw(10) << "charge"
             << std::endl;
-    chem_out->Write(kVerbose, message);
+    chem_out->Write(Teuchos::VERB_HIGH, message);
     std::vector<SurfaceComplexationRxn>::const_iterator s;
     for (s = surfaceComplexationRxns_.begin();
          s != surfaceComplexationRxns_.end(); s++) {
       s->DisplayComplexes();
     }
-    chem_out->Write(kVerbose, "\n");
+    chem_out->Write(Teuchos::VERB_HIGH, "\n");
   }
 }  // end DisplaySurfaceComplexes()
 
@@ -1877,13 +1875,13 @@ void Beaker::DisplaySorptionIsotherms(void) const {
             << std::setw(15) << "isotherm"
             << std::setw(15) << "parameters"
             << std::endl;
-    chem_out->Write(kVerbose, message);
+    chem_out->Write(Teuchos::VERB_HIGH, message);
     std::vector<SorptionIsothermRxn>::const_iterator s;
     for (s = sorption_isotherm_rxns_.begin();
          s != sorption_isotherm_rxns_.end(); s++) {
       s->Display();
     }
-    chem_out->Write(kVerbose, "\n");
+    chem_out->Write(Teuchos::VERB_HIGH, "\n");
   }
 }  // end DisplaySurfaceComplexes()
 
@@ -1940,7 +1938,7 @@ void Beaker::print_linear_system(const std::string& s,
   for (unsigned int i = 0; i < vector.size(); i++) {
     message << "RHS: " << primary_species().at(i).name() << " " << vector.at(i) << std::endl;
   }
-  chem_out->Write(kVerbose,message);
+  chem_out->Write(Teuchos::VERB_HIGH,message);
   A.Print_ij();
 }  // end print_linear_system()
 
@@ -1951,7 +1949,7 @@ void Beaker::print_linear_system(const std::string& s,
   for (unsigned int i = 0; i < vector.size(); i++) {
     message << "RHS: " << primary_species().at(i).name() << " " << vector.at(i) << std::endl;
   }
-  chem_out->Write(kVerbose,message);
+  chem_out->Write(Teuchos::VERB_HIGH,message);
 }  // end print_linear_system()
 
 }  // namespace AmanziChemistry

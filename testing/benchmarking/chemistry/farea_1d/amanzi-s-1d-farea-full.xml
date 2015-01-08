@@ -1,6 +1,6 @@
 
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
   <Parameter name="Petsc Options File" type="string" value=".petsc"/>
   <Parameter name="Dump ParmParse Table" type="string" value="run_data/ppfile"/>
 
@@ -24,7 +24,7 @@
     </ParameterList>
     <Parameter name="Verbosity" type="string" value="High"/>
     <ParameterList name="Numerical Control Parameters">
-      <ParameterList name="Basic Algorithm Control">
+      <ParameterList name="Structured Algorithm">
         <ParameterList name="Expert Settings">
           <Parameter name="do_richard_init_to_steady" type="int" value="1"/>
           <Parameter name="steady_max_psuedo_time" type="double" value="1.e30"/>

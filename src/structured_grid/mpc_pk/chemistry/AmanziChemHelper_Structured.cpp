@@ -1,6 +1,10 @@
 
 #include <AmanziChemHelper_Structured.H>
 
+#ifdef _OPENMP
+#include "omp.h"
+#endif
+
 #include <cmath>
 #include <Utility.H>
 #include <ParallelDescriptor.H>
@@ -8,6 +12,8 @@
 #include <chemistry_exception.hh>
 
 static bool abort_on_chem_fail = true;
+//#define DEBUG_NO_CHEM 
+#undef DEBUG_NO_CHEM 
 
 AmanziChemHelper_Structured::AmanziChemHelper_Structured(const std::vector<std::string>& _primarySpeciesNames,
                                                          const std::vector<std::string>& _sorbedPrimarySpeciesNames,
@@ -168,7 +174,8 @@ AmanziChemHelper_Structured::~AmanziChemHelper_Structured()
 
 void
 AmanziChemHelper_Structured::EnforceCondition(FArrayBox& primary_species_mobile,   int sPrimMob,
-                                              FArrayBox& aux_data, const Box& box, const std::string& condition_name, Real time)
+                                              FArrayBox& auxiliary_data, Real water_density, Real temperature,
+                                              const Box& box, const std::string& condition_name, Real time)
 {
   BoxLib::Abort("Geochemical conditions/constraints not currently support in Amanzi native chemistry engine");
 }
@@ -269,7 +276,8 @@ AmanziChemHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       
       if (NfreeIonSpecies > 0) {
         for (int i=0; i<primarySpeciesNames.size(); ++i) {
           const std::string label=primarySpeciesNames[i] + "_Free_Ion_Guess"; 
-          TheComponent.free_ion[i] = aux_data(iv,aux_chem_variables[label]);
+          //TheComponent.free_ion[i] = aux_data(iv,aux_chem_variables[label]);
+          TheComponent.free_ion[i] = 1.e-20;
         }
       }
       
@@ -292,9 +300,10 @@ AmanziChemHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       
 
       Amanzi::AmanziChemistry::Beaker::SolverStatus stat;
       try
-      {  
+      { 
+#ifndef DEBUG_NO_CHEM 
         TheChemSolve.ReactionStep(&TheComponent,TheParameter,dt);
-
+#endif
         stat = TheChemSolve.status();
         fcnCnt(iv,sFunc) = stat.num_rhs_evaluations;        
       }
@@ -440,7 +449,8 @@ AmanziChemHelper_Structured::Initialize(const FArrayBox& aqueous_saturation,    
       if (NfreeIonSpecies > 0) {
         for (int i=0; i<primarySpeciesNames.size(); ++i) {
           const std::string label=primarySpeciesNames[i] + "_Free_Ion_Guess"; 
-          TheComponent.free_ion[i] = aux_data(iv,aux_chem_variables[label]);
+          //TheComponent.free_ion[i] = aux_data(iv,aux_chem_variables[label]);
+          TheComponent.free_ion[i] = 1.e-20;
         }
       }
       
@@ -507,14 +517,14 @@ AmanziChemHelper_Structured::Initialize(const FArrayBox& aqueous_saturation,    
       Amanzi::AmanziChemistry::Beaker::SolverStatus stat;
       try
       {  
+#ifndef DEBUG_NO_CHEM 
         TheChemSolve.Speciate(&TheComponent,TheParameter);
-
+#endif
         stat = TheChemSolve.status();
         fcnCnt(iv,sFunc) = stat.num_rhs_evaluations;        
       }
       catch (const Amanzi::AmanziChemistry::ChemistryException& geochem_error)
       {
-        std::cout << "Hello" << iv << std::endl;;
         if (verbose>-1) {
           std::cout << "CHEMISTRY SPECIATION FAILED on level at " << iv << " : ";
           TheComponent.Display("components: ");

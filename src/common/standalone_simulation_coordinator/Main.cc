@@ -88,8 +88,8 @@ int main(int argc, char *argv[]) {
     std::string xmlInFileName = "";
     CLP.setOption("xml_file", &xmlInFileName, "XML options file");
 
-    std::string xmlSchema = "";
-    CLP.setOption("xml_schema", &xmlSchema, "XML Schema File");
+    std::string xmlSchema = ""; 
+    CLP.setOption("xml_schema", &xmlSchema, "XML Schema File"); 
 
     bool print_version(false);
     CLP.setOption("print_version", "no_print_version", &print_version, "Print version number and exit.");
@@ -220,7 +220,6 @@ int main(int argc, char *argv[]) {
     if (print_paths) {
       if (rank == 0) {
 	std::cout << "xml input file:  " << xmlInFileName << std::endl;
-	std::cout << "xml schema file: " << xmlSchema << std::endl;
       }
     }
 
@@ -263,22 +262,9 @@ int main(int argc, char *argv[]) {
       //DOMImplementation* impl =  DOMImplementationRegistry::getDOMImplementation(X("Core"));
 
       if (strcmp(temp2, "amanzi_input") == 0) {
-	if (xmlSchema.size() == 0) {
-	  if (rank == 0) {
-	    std::cout << "ERROR: No xml schema file was specified. Use the command line option --xml_schema to specify one." << std::endl;
-	  }      
-	  throw std::string("amanzi not run");      
-	}
-
-	if (!exists(xmlSchema)) {
-	  if (rank == 0) {
-	    std::cout << "Error: The xml schema file " << xmlSchema << " that was specified using the command line option --xml_schema does not exist." << std::endl;
-	  }
-	  throw std::string("amanzi not run");
-	}
 	
 	//amanzi_throw(Errors::Message("Translation for new input spec is not yet complete, please use old input spec"));
-	driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName, xmlSchema);
+	driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName);
 	
 	//driver_parameter_list.print(std::cout,true,false);
 	std::string new_filename(xmlInFileName);

@@ -1,0 +1,125 @@
+<ParameterList name="Main">
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+  <Parameter name="grid_option" type="string" value="Unstructured"/>
+
+  <ParameterList name="Mesh">
+    <Parameter name="Framework" type="string" value="mesh::simple"/>
+  </ParameterList>    
+   
+  <ParameterList name="Regions">
+    <ParameterList name="Computational domain">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Left side">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{0.0,0.5}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+ 
+  <!-- SOLVERS -->
+  <ParameterList name="Solvers">
+    <ParameterList name="Dispersion Solver">
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      <Parameter name="iterative method" type="string" value="pcg"/>
+      <ParameterList name="pcg parameters">
+        <Parameter name="maximum number of iterations" type="int" value="400"/>
+        <Parameter name="error tolerance" type="double" value="1e-20"/>
+        <Parameter name="convergence criteria" type="Array(string)" value="{relative rhs, make one iteration}"/>
+        <Parameter name="size of Krylov space" type="int" value="5"/>
+
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Transport">
+    <Parameter name="cfl" type="double" value="0.5"/>   
+    <Parameter name="spatial discretization order" type="int" value="2"/>   
+    <Parameter name="temporal discretization order" type="int" value="1"/>   
+    <Parameter name="solver" type="string" value="Dispersion Solver"/>
+
+    <ParameterList name="material properties">
+      <ParameterList name="Brown soil">
+        <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+        <Parameter name="aqueous tortuosity" type="double" value="0.5"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="molecular diffusion">
+      <Parameter name="aqueous names" type="Array(string)" value="{Component 0}"/>
+      <Parameter name="aqueous values" type="Array(double)" value="{1e-3}"/>
+    </ParameterList>
+
+    <Parameter name="advection limiter" type="string" value="tensorial"/>
+    <!-- developers parameters --> 
+    <Parameter name="enable internal tests" type="string" value="yes"/>   
+    <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
+    <!-- end of developers parameters -->
+
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="high"/>
+    </ParameterList>
+
+    <ParameterList name="boundary conditions">
+      <ParameterList name="concentration">
+        <ParameterList name="Component 0">
+          <ParameterList name="BC for left side">
+            <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+            <ParameterList name="boundary concentration">
+              <ParameterList name="function-tabular">
+                <Parameter name="forms" type="Array(string)" value="{constant}"/>
+                <Parameter name="x values" type="Array(double)" value="{0.0, 0.1}"/>
+                <Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>	
+  </ParameterList>
+
+  <!-- PRECONDITIONERS -->
+  <ParameterList name="Preconditioners">
+    <ParameterList name="Hypre AMG">
+      <Parameter name="discretization method" type="string" value="optimized mfd"/>
+      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <ParameterList name="boomer amg parameters">
+        <Parameter name="tolerance" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="smoother sweeps" type="int" value="3"/>
+        <Parameter name="cycle applications" type="int" value="5"/>
+        <Parameter name="strong threshold" type="double" value="5.00000000000000000e-01"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Trilinos ML">
+      <ParameterList name="ML Parameters">
+        <Parameter name="ML output" type="int" value="0"/>
+        <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
+        <Parameter name="aggregation: nodes per aggregate" type="int" value="3"/>
+        <Parameter name="aggregation: threshold" type="double" value="0.0"/>
+        <Parameter name="aggregation: type" type="string" value="Uncoupled"/>
+        <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
+        <Parameter name="coarse: max size" type="int" value="128"/>
+        <Parameter name="coarse: damping factor" type="double" value="1.0"/>
+        <Parameter name="cycle applications" type="int" value="2"/>
+        <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
+        <Parameter name="eigen-analysis: type" type="string" value="cg"/>
+        <Parameter name="max levels" type="int" value="40"/>
+        <Parameter name="prec type" type="string" value="MGW"/>
+        <Parameter name="smoother: damping factor" type="double" value="1.0"/>
+        <Parameter name="smoother: pre or post" type="string" value="both"/>
+        <Parameter name="smoother: sweeps" type="int" value="2"/>
+        <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+</ParameterList>
+

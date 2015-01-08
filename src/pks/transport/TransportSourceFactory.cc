@@ -22,10 +22,9 @@ namespace Transport {
 /* ******************************************************************
 * Process source, step 1.
 ****************************************************************** */
-TransportDomainFunction* TransportSourceFactory::CreateSource() 
+void TransportSourceFactory::CreateSource(std::vector<TransportDomainFunction*>& srcs) 
 {
   Errors::Message msg;
-  TransportDomainFunction* src = new TransportDomainFunction(mesh_);
 
   if (plist_->isSublist("concentration")) {
     Teuchos::ParameterList& clist = plist_->get<Teuchos::ParameterList>("concentration");
@@ -42,7 +41,9 @@ TransportDomainFunction* TransportSourceFactory::CreateSource()
 	  if (srclist.isSublist(specname)) {
 	    Teuchos::ParameterList& spec = srclist.sublist(specname);
             try {
+              TransportDomainFunction* src = new TransportDomainFunction(mesh_);
               ProcessSourceSpec(spec, name, src);
+              srcs.push_back(src);
             } catch (Errors::Message& m) {
               msg << "in sublist \"" << specname.c_str() << "\": " << m.what();
               Exceptions::amanzi_throw(msg);
@@ -61,8 +62,6 @@ TransportDomainFunction* TransportSourceFactory::CreateSource()
     msg << "Transport PK: \"source terms\" has no sublist \"concentration\".\n";
     Exceptions::amanzi_throw(msg);  
   }
-
-  return src;
 }
 
 
@@ -109,7 +108,11 @@ void TransportSourceFactory::ProcessSourceSpec(
   std::string action_name = list.get<std::string>("spatial distribution method", "none");
   ProcessStringActions(action_name, &method);
 
-  src->Define(regions, f, method, name);
+  std::string submodel_name = list.get<std::string>("submodel", "rate");
+  int submodel(CommonDefs::DOMAIN_FUNCTION_SUBMODEL_RATE);
+  if (submodel_name == "integrand") submodel = CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND;
+
+  src->Define(regions, f, method, submodel, name);
 }
 
 
@@ -120,11 +123,11 @@ void TransportSourceFactory::ProcessStringActions(const std::string& name, int* 
 {
   Errors::Message msg;
   if (name == "none") {
-    *method = TransportActions::DOMAIN_FUNCTION_ACTION_NONE;
+    *method = CommonDefs::DOMAIN_FUNCTION_ACTION_NONE;
   } else if (name == "volume") {
-    *method = TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME;
+    *method = CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME;
   } else if (name == "permeability") {
-    *method = TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY;
+    *method = CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY;
   } else {
     msg << "Transport PK: unknown source distribution method has been specified.";
     Exceptions::amanzi_throw(msg);

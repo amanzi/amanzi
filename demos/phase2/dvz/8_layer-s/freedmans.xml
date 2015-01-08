@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-    <Parameter name="Amanzi Input format version" type="string" value="1.0.0"/>
+    <Parameter name="Amanzi Input format version" type="string" value="1.2.2"/>
     <ParameterList name="General Description">
       <Parameter name="Model ID" type="string" value="TBD"/>
       <Parameter name="Author" type="string" value="Chandrika"/>
@@ -23,7 +23,7 @@
 	<ParameterList name="Adaptive Mesh Refinement Control">
 	  <Parameter name="max_level" type="int" value="0"/>
 	</ParameterList>
-	<ParameterList name="Basic Algorithm Control">
+	<ParameterList name="Structured Algorithm">
 	  <Parameter name="Maximum Time Step Size" type="double" value="1.e6"/>
 	  <Parameter name="Maximum Time Step Change" type="double" value="1.e8"/>
 	  <Parameter name="Maximum Cycle Number" type="int" value="400000"/>

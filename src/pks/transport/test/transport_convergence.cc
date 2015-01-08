@@ -355,7 +355,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
       TPK.CommitState(dT, S.ptr());
       T += dT;
       if (TPK.internal_tests) {
-        TPK.CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
+        TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
       }
       iter++;
     }
@@ -374,7 +374,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
   double L2rate = Amanzi::Transport::bestLSfit(h, L2error);
   printf("convergence rates: %8.2f %20.2f\n", L1rate, L2rate);
 
-  CHECK_CLOSE(2.0, L1rate, 0.3);
+  CHECK_CLOSE(2.0, L1rate, 0.4);
   CHECK_CLOSE(2.0, L2rate, 0.5);
 
   delete gm;
@@ -615,7 +615,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
   double L2rate = Amanzi::Transport::bestLSfit(h, L2error);
   printf("convergence rates: %5.2f %17.2f\n", L1rate, L2rate);
 
-  CHECK_CLOSE(2.0, L1rate, 0.3);
+  CHECK_CLOSE(2.0, L1rate, 0.4);
   CHECK_CLOSE(2.0, L2rate, 0.5);
 
   delete comm;

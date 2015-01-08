@@ -470,3 +470,48 @@ c ::: -------------------------------------------------
       end do
 
       end
+
+c ::: --------------------------------------------------------------------------
+c ::: This routine create random permeability according to some layer structures
+c ::: --------------------------------------------------------------------------
+      subroutine FORT_PHIRAND(kappa,DIMS(kappa),kpval,nkpval,dkp,
+     &     domlo,domhi,iuc)
+
+      integer DIMDEC(kappa)
+      integer nkpval,iuc
+      integer domlo(SDIM),domhi(SDIM)
+      REAL_T  dkp
+      REAL_T  kappa(DIMV(kappa))
+      REAL_T  kpval(nkpval)
+
+      integer i,j,n
+      REAL_T  phirnd
+      REAL_T  y,ydiv(nkpval+1)
+
+      call blutilinitrand(iuc)
+
+      ydiv(nkpval+1) = dble(domhi(2))
+      do n = 1,nkpval
+         ydiv(n) = dble(domlo(2)) + 
+     &        dble(domhi(2)-domlo(2))*dble(n-1)/dble(nkpval)
+      end do 
+      
+      do i=ARG_L1(kappa),ARG_H1(kappa)
+         do j=ARG_L2(kappa),ARG_H2(kappa)
+            y = dble(j) + half
+            call blutilrand(phirnd)
+            do n = 1,nkpval
+               if (y .ge. ydiv(n) .and. y .lt. ydiv(n+1)) then
+                  kappa(i,j) = kpval(n)*(1+2*dkp*(0.5-phirnd))
+               end if
+            end do
+
+            if (y .lt. ydiv(1)) then
+               kappa(i,j) = kpval(1)*(1+2*dkp*(0.5-phirnd))
+            else if (y .ge. ydiv(nkpval+1)) then
+               kappa(i,j) = kpval(nkpval)*(1+2*dkp*(0.5-phirnd))
+            end if
+         end do
+      end do
+
+      end

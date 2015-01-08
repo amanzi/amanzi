@@ -8,6 +8,11 @@
 
 static std::map<std::string,std::string>& AMR_to_Amanzi_label_map = Amanzi::AmanziInput::AMRToAmanziLabelMap();
 
+// Minimum allowable input file version
+static int amanzi_min_major_version = 1;
+static int amanzi_min_minor_version = 2;
+static int amanzi_min_patch_version = 2;
+
 static
 void
 EnsureFolderExists(const std::string& full_path)
@@ -50,6 +55,44 @@ Structured_observations(const PArray<Observation>& observation_array,
     }	
 }  
 
+std::pair<bool,std::string>
+InputVersionOK(const std::string& version)
+{
+  bool returnVal = true;
+  std::string returnStr;
+
+  std::vector<std::string> version_tokens = BoxLib::Tokenize(version,".");
+
+  if ( version_tokens.size() != 3 ) {
+    returnVal = false;
+    returnStr = "Input file version must be of the form X.X.X";
+  }
+  else {
+    if (atoi(version_tokens[0].c_str()) < amanzi_min_major_version ) {
+      returnVal = false;
+      std::stringstream str;
+      str << "Input file format must have major version >= ";
+      str << amanzi_min_major_version;
+      returnStr = str.str();
+    }
+    else if (atoi(version_tokens[1].c_str()) < amanzi_min_minor_version ) {
+      returnVal = false;
+      std::stringstream str;
+      str << "Input file format must have minor version >= ";
+      str << amanzi_min_minor_version;
+      returnStr = str.str();
+    }
+    else if (atoi(version_tokens[2].c_str()) < amanzi_min_patch_version ) {
+      returnVal = false;
+      std::stringstream str;
+      str << "Input file format must have patch version >= ";
+      str << amanzi_min_patch_version;
+      returnStr = str.str();
+    }
+  }
+  return std::pair<bool,std::string>(returnVal,returnStr);
+}
+
 Amanzi::Simulator::ReturnType
 AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_comm,
                                            Teuchos::ParameterList&       input_parameter_list,
@@ -57,6 +100,9 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
 {
     int argc=0;
     char** argv;
+
+    // NOTE: Delay checking input version until we have started parallel so that we can guarantee
+    //       a single error message
 
 #ifdef BL_USE_PETSC
     std::string petsc_help = "Amanzi-S passthrough access to PETSc help option\n";
@@ -70,6 +116,27 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
 #endif
 
     BoxLib::Initialize(argc,argv,false,mpi_comm);
+
+    BL_PROFILE_VAR("main()", pmain);
+
+    // Check version number
+    std::string amanzi_version_str = "Amanzi Input Format Version";
+    if (!input_parameter_list.isParameter(amanzi_version_str))
+    {
+      std::string str = "Must specify a value for the top-level parameter: \"" 
+        + amanzi_version_str + "\"";
+      BoxLib::Abort(str.c_str());
+    }
+
+    std::string version = Teuchos::getParameter<std::string>(input_parameter_list, amanzi_version_str);
+    std::pair<bool,std::string> status = InputVersionOK(version);
+    if (!status.first) {
+      if (ParallelDescriptor::IOProcessor()) {
+        std::cout << status.second << std::endl;
+      }
+      ParallelDescriptor::Barrier();
+      BoxLib::Abort();
+    }
 
     bool pause_for_debug = false;
     if (input_parameter_list.isParameter("Pause For Debug"))
@@ -199,6 +266,8 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
         std::cout << "Run time = " << run_stop << std::endl;
 	std::cout << "SCOMPLETED\n";
       }
+
+    BL_PROFILE_VAR_STOP(pmain);
 
     BoxLib::Finalize(false); // Calling routine responsible for MPI_Finalize call
 #ifdef BL_USE_PETSC

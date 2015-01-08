@@ -59,7 +59,8 @@ generate_evaluators_registration_header(
 # Library: flow
 #
 set(flow_src_files Flow_PK.cc Flow_IO.cc
-                   Flow_BC_Factory.cc Flow_BC_Actions.cc Flow_SourceFactory.cc Flow_VandV.cc 
+                   Flow_BC_Factory.cc Flow_BC_Actions.cc Flow_SeepageFace.cc
+                   Flow_SourceFactory.cc Flow_VandV.cc 
                    Flow_Utilities.cc Flow_AuxData.cc
                    FlowDomainFunction.cc FlowBoundaryFunction.cc
                    Darcy_PK.cc Darcy_TI.cc Darcy_LinearOperator.cc
@@ -120,7 +121,7 @@ if (BUILD_TESTS)
     # Add the flow directory to the include paths
     include_directories(${FLOW_SOURCE_DIR})
 
-    set(amanzi_libs geometry mesh mesh_audit mesh_factory state flow operators whetstone data_structures)
+    set(amanzi_libs geometry mesh mesh_factory state flow operators whetstone data_structures)
 
     # Test: transient Darcy flow 
     add_amanzi_test(flow_darcy_transient flow_darcy_transient
@@ -177,9 +178,9 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: Newton
-    add_amanzi_test(flow_richards_newton_TPFA flow_richards_newton_TPFA
+    add_amanzi_test(flow_richards_newton_tpfa flow_richards_newton_tpfa
                     KIND unit
-                    SOURCE test/Main.cc test/flow_richards_newton_TPFA.cc
+                    SOURCE test/Main.cc test/flow_richards_newton_tpfa.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
     # Test: miscaleneous Darcy flow routines

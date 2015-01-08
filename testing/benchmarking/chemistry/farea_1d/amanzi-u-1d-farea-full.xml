@@ -1,6 +1,6 @@
 
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="1-D advection with ASCEM 2012 F-Area full chemistry"/>
   </ParameterList>

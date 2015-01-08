@@ -25,21 +25,25 @@ namespace Flow {
 /* ******************************************************************
 * Calculate f(u, du/dt) = a d(s(u))/dt + A*u - rhs.
 ****************************************************************** */
-void Richards_PK::Functional(double Told, double Tnew, 
+void Richards_PK::Functional(double T0, double T1, 
                              Teuchos::RCP<CompositeVector> u_old, Teuchos::RCP<CompositeVector> u_new, 
                              Teuchos::RCP<CompositeVector> f)
 { 
-  double Tp(Tnew), dTp(Tnew - Told);
+  double dTp(T1 - T0);
 
   const Epetra_MultiVector& uold_cell = *u_old->ViewComponent("cell");
   const Epetra_MultiVector& unew_cell = *u_new->ViewComponent("cell");
 
   // update coefficients
   darcy_flux_copy->ScatterMasterToGhosted("face");
-  rel_perm_->Compute(*u_new);
-  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(), "k_relative");
-  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), "dkdpc");
-  UpdateSourceBoundaryData(Tp, *u_new);
+  rel_perm_->Compute(*u_new); 
+
+  RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
+  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
+
+  RelativePermeabilityUpwindFn func2 = &RelativePermeability::Derivative;
+  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
+  UpdateSourceBoundaryData(T0, T1, *u_new);
   
   // assemble residual for diffusion operator
   op_matrix_->Init();
@@ -102,26 +106,14 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
   darcy_flux_copy->ScatterMasterToGhosted("face");
   rel_perm_->Compute(*u);
 
-  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(),"k_relative");
-  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), "dkdpc");
+  RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
+  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
 
-  // Epetra_MultiVector& dk_face = *rel_perm_->dKdP()->ViewComponent("face");
-  // std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm_->WRM();
-  // const Epetra_IntVector& map_c2mb = rel_perm_->map_c2mb();
-  // for (int f = 0; f < nfaces_wghost; f++) {
-  //   if (bc_model[f] == Operators::OPERATOR_BC_FACE_NEUMANN && bc_value[f] < 0.0) {
-  //     int c = BoundaryFaceGetCell(f);
-  //     double face_val = op_matrix_ -> DeriveBoundaryFaceValue(f, *solution, WRM[map_c2mb[c]]);
-  //     dk_face[0][f] = -WRM[map_c2mb[c]]->dKdPc (atm_pressure_ - face_val);
-  //   }
-  //   else if (bc_model[f] == Operators::OPERATOR_BC_FACE_DIRICHLET){
-  //     int c = BoundaryFaceGetCell(f);
-  //     dk_face[0][f] = -WRM[map_c2mb[c]]->dKdPc (atm_pressure_ - bc_value[f]);
-  //   }
-  // }
+  RelativePermeabilityUpwindFn func2 = &RelativePermeability::Derivative;
+  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
 
-  UpdateSourceBoundaryData(Tp, *u);
-
+  double T0 = Tp - dTp;
+  UpdateSourceBoundaryData(T0, Tp, *u);
 
   // create diffusion operators
   op_preconditioner_->Init();
@@ -141,7 +133,7 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
   dSdP.Multiply(rho_, phi, dSdP, 0.0);
 
   if (dTp > 0.0) {
-    op_preconditioner_->AddAccumulationTerm(*u, dSdP, dTp);
+    op_preconditioner_->AddAccumulationTerm(*u, dSdP, dTp, "cell");
   }
 
   // finalize preconditioner
@@ -157,16 +149,14 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
 bool Richards_PK::ModifyPredictor(double dT, Teuchos::RCP<const CompositeVector> u0,
                                   Teuchos::RCP<CompositeVector> u)
 {
- /*
- Teuchos::RCP<CompositeVector> du = Teuchos::rcp(new CompositeVector(*u));
- du->Update(-1.0, *u0, 1.0);
+  Teuchos::RCP<CompositeVector> du = Teuchos::rcp(new CompositeVector(*u));
+  du->Update(-1.0, *u0, 1.0);
  
- ModifyCorrection(dT, Teuchos::null, u0, du);
+  ModifyCorrection(dT, Teuchos::null, u0, du);
 
- *u = *u0;
- u->Update(1.0, *du, 1.0);
- */
- return false;
+  *u = *u0;
+  u->Update(1.0, *du, 1.0);
+  return true;
 }
 
 
@@ -267,11 +257,10 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
   double damping_factor = 0.5;
   double reference_pressure = 101325.0;
   
-
   if (rp_list_.isSublist("clipping parameters")){
-    Teuchos::ParameterList clip_list = rp_list_.sublist("clipping parameters");
-    max_sat_pert = clip_list.get<double>("max sat change", 0.25);
-    damping_factor = clip_list.get<double>("damping factor", 0.5);
+    Teuchos::ParameterList& clip_list = rp_list_.sublist("clipping parameters");
+    max_sat_pert = clip_list.get<double>("maximum saturation change", 0.25);
+    damping_factor = clip_list.get<double>("pressure damping factor", 0.5);
   }
 
   int nsat_clipped(0), npre_clipped(0);
@@ -289,7 +278,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
     
     double press_pert = atm_pressure_ - WRM[mb]->capillaryPressure(sat_pert);
     double du_pert_max = fabs(uc[0][c] - press_pert); 
-    double tmp =  duc[0][c];
+    double tmp = duc[0][c];
 
     if ((fabs(duc[0][c]) > du_pert_max) && (1 - sat > 1e-5)) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
@@ -327,7 +316,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 
     if (nsat_clipped > 0 || npre_clipped > 0) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << vo_->color("red") << "saturation/pressure clipped in " 
+      *vo_->os() << vo_->color("green") << "saturation/pressure clipped in " 
                  << nsat_clipped << "/" << npre_clipped << " cells" << vo_->reset() << std::endl;
     }
   }

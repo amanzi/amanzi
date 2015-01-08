@@ -123,10 +123,10 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
 
   // update steady state source conditons
   if (src_sink != NULL) {
-    if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      src_sink->ComputeDistribute(time, Kxy->Values()); 
+    if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+      src_sink->ComputeDistribute(time, time, Kxy->Values()); 
     } else {
-      src_sink->ComputeDistribute(time, NULL);
+      src_sink->ComputeDistribute(time, time, NULL);
     }
   }
 
@@ -144,8 +144,12 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     // update permeabilities
     darcy_flux_copy->ScatterMasterToGhosted("face");
     rel_perm_->Compute(*solution);
-    upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(),"k_relative");
-    upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(),"dkdpc");
+
+    RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
+    upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
+
+    RelativePermeabilityUpwindFn func2 = &RelativePermeability::Derivative;
+    upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
 
     // create algebraic problem (matrix = preconditioner)
     op_preconditioner_->Init();

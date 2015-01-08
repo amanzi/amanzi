@@ -88,6 +88,7 @@ SUITE(SOLVERS) {
     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
     AmanziSolvers::LinearOperatorGMRES<Matrix, Epetra_Vector, Epetra_Map> gmres(m, m);
     gmres.Init();
+    gmres.set_krylov_dim(5);
 
     // initial guess
     Epetra_Vector u(*map);
@@ -180,6 +181,7 @@ SUITE(SOLVERS) {
     Teuchos::ParameterList plist;
     Teuchos::ParameterList& slist = plist.sublist("gmres");
     slist.set<std::string>("iterative method", "gmres");
+    slist.sublist("gmres parameters").set("size of Krylov space", 5);
     Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");
     vlist.set("Verbosity Level", "extreme");
 

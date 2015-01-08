@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
   <ParameterList name="Execution Control">
     <Parameter name="Flow Model" type="string" value="Single Phase"/>
     <Parameter name="Transport Model" type="string" value="On"/>
@@ -204,7 +204,7 @@
                 <Parameter name="Times" type="Array(double)" value="{0.0, 9.4672798E10}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
             <!--    <Parameter name="Values" type="Array(double)" value="{1e-10, 1e-10}"/> -->
-                <Parameter name="Geochemical Condition" type="string" value="top"/>
+                <Parameter name="Geochemical Conditions" type="Array(string)" value="{top, top}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
@@ -214,7 +214,7 @@
                 <Parameter name="Times" type="Array(double)" value="{0.0, 9.4672798E10}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
             <!--<Parameter name="Values" type="Array(double)" value="{5e-2, 5e-2}"/> -->
-                <Parameter name="Geochemical Condition" type="string" value="top"/>
+                <Parameter name="Geochemical Conditions" type="Array(string)" value="{top, top}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
@@ -242,7 +242,7 @@
                 <Parameter name="Times" type="Array(double)" value="{0.0, 1e10}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
            <!--     <Parameter name="Values" type="Array(double)" value="{5e-2, 5e-2}"/> -->
-                <Parameter name="Geochemical Condition" type="string" value="bottom"/>
+                <Parameter name="Geochemical Conditions" type="Array(string)" value="{bottom, bottom}"/>
               </ParameterList>              
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
@@ -252,7 +252,7 @@
                 <Parameter name="Times" type="Array(double)" value="{0.0, 1e10}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
             <!--    <Parameter name="Values" type="Array(double)" value="{1e-10, 1e-10}"/> -->
-                <Parameter name="Geochemical Condition" type="string" value="bottom"/>
+                <Parameter name="Geochemical Conditions" type="Array(string)" value="{bottom, bottom}"/>
               </ParameterList>              
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>

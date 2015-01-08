@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-    <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
+    <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
     <Parameter name="Petsc Options File" type="string" value=".petsc"/>
     <ParameterList name="General Description">
       <Parameter name="Model ID" type="string" value="TBD"/>
@@ -14,7 +14,7 @@
           <Parameter name="Start" type="double" value="0.0"/>
           <Parameter name="End" type="double" value="3.16E11"/>
 	  <!-- want steady state so run to 10,000 years = 3.16E11 seconds -->
-          <Parameter name="Initial Time Step" type="double" value="2.0"/>
+          <Parameter name="Initial Time Step" type="double" value="1.e6"/>
         </ParameterList>
       </ParameterList>
       <Parameter name="Verbosity" type="string" value="High"/>
@@ -34,34 +34,34 @@
     <ParameterList name="Regions">
       <ParameterList name="Top Surface">
         <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,2.0}"  units="m"/>
-          <Parameter name="High Coordinate" type="Array(double)" value="{1.0,2.0}"  units="m"/>
+          <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,2.0}"/>
+          <Parameter name="High Coordinate" type="Array(double)" value="{1.0,2.0}"/>
 			<!-- 2 meter column represented by 200 1x0.01 meter grid cells -->
         </ParameterList>
       </ParameterList>
       <ParameterList name="Bottom Surface">
         <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0}"  units="m"/>
-          <Parameter name="High Coordinate" type="Array(double)" value="{1.0,0.0}"  units="m"/>
+          <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0}"/>
+          <Parameter name="High Coordinate" type="Array(double)" value="{1.0,0.0}"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Region between Plane Surface 0 and Plane Surface 1">
         <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0}"  units="m"/>
-          <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.5}"  units="m"/>
+          <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0}"/>
+          <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.5}"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Region between Plane Surface 1 and Plane Surface 2">
         <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,1.5}"  units="m"/>
-          <Parameter name="High Coordinate" type="Array(double)" value="{1.0,2.}"  units="m"/>
+          <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,1.5}"/>
+          <Parameter name="High Coordinate" type="Array(double)" value="{1.0,2.}"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Material Properties">
       <ParameterList name="loam">
         <ParameterList name="Porosity: Uniform">
-          <Parameter name="Value" type="double" value="0.43"  units="fraction"/>
+          <Parameter name="Value" type="double" value="0.43"/>
         </ParameterList>
         <ParameterList name="Intrinsic Permeability: Uniform">
           <Parameter name="Value" type="double" value="5.92360e-13"/>
@@ -114,7 +114,7 @@
         <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
         <ParameterList name="IC: Uniform Pressure">
          <Parameter name="Phase" type="string" value="Aqueous"/>
-         <Parameter name="Value" type="double" value="81747."  units="Pa"/>
+         <Parameter name="Value" type="double" value="81747."/>
 			<!-- -2 m water initial condition based on 9.80665 m/s^2 gravity -->
         </ParameterList>
         <ParameterList name="Solute IC">
@@ -149,7 +149,7 @@
     <ParameterList name="Output">
       <ParameterList name="Time Macros"/>
       <ParameterList name="Cycle Macros">
-        <ParameterList name="Every_1.0_1000.0_-1">
+        <ParameterList name="Every 100">
           <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,100,-1}"/>
         </ParameterList>
       </ParameterList>
@@ -158,12 +158,12 @@
       <ParameterList name="Visualization Data">
         <Parameter name="File Name Base" type="string" value="case_2b_plot"/>
         <Parameter name="File Name Digits" type="int" value="5"/>
-        <Parameter name="Cycle Macros" type="Array(string)" value="Every_1.0_1000.0_-1"/>
+        <Parameter name="Cycle Macros" type="Array(string)" value="{Every 100}"/>
       </ParameterList>
       <ParameterList name="Checkpoint Data">
         <Parameter name="File Name Base" type="string" value="case_2b_checkpoint"/>
         <Parameter name="File Name Digits" type="int" value="5"/>
-        <Parameter name="Cycle Macro" type="string" value="Every_1.0_1000.0_-1"/>
+        <Parameter name="Cycle Macro" type="string" value="Every 100"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

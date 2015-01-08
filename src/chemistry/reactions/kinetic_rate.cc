@@ -8,13 +8,10 @@
 #include <iomanip>
 
 #include "string_tokenizer.hh"
-#include "chemistry_output.hh"
 #include "chemistry_verbosity.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
-
-extern ChemistryOutput* chem_out;
 
 KineticRate::KineticRate(void)
     : debug_(false),
@@ -92,7 +89,7 @@ void KineticRate::DisplayReaction(void) const {
     }
   }
   message << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end DisplayReaction
 
 }  // namespace AmanziChemistry

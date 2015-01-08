@@ -7,13 +7,10 @@
 
 #include "secondary_species.hh"
 #include "matrix_block.hh"
-#include "chemistry_output.hh"
 #include "chemistry_verbosity.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
-
-extern ChemistryOutput* chem_out;
 
 Mineral::Mineral()
     : SecondarySpecies(),
@@ -73,7 +70,7 @@ void Mineral::UpdateVolumeFraction(const double rate,
             << "rate : " << rate << "\n"
             << "dt : " << delta_time << "\n"
             << "delta_vf : " << molar_volume() * rate * delta_time << std::endl;
-    chem_out->Write(kVerbose, message);
+    chem_out->Write(Teuchos::VERB_HIGH, message);
   }
 }  // end UpdateVolumeFraction()
 
@@ -124,7 +121,7 @@ void Mineral::Display(void) const {
           << std::setw(13) << specific_surface_area()
           << std::setw(13) << std::fixed << volume_fraction()
           << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end Display()
 
 void Mineral::DisplayResultsHeader(void) const {
@@ -133,7 +130,7 @@ void Mineral::DisplayResultsHeader(void) const {
           << std::setw(15) << "Q/K"
           << std::setw(15) << "SI"
           << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end DisplayResultsHeader()
 
 void Mineral::DisplayResults(void) const {
@@ -144,7 +141,7 @@ void Mineral::DisplayResults(void) const {
           << std::fixed << std::setprecision(3)
           << std::setw(15) << saturation_index()
           << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end DisplayResults()
 
 }  // namespace AmanziChemistry

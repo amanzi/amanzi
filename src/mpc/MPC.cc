@@ -247,7 +247,7 @@ void MPC::mpc_init() {
       CPK->InitializeChemistry();
     } catch (const Errors::Message& chem_error) {
       std::ostringstream error_message;
-      error_message << "MPC:mpc_init(): error... Chemistry_PK.InitializeChemistry returned an error status: ";
+      error_message << "mpc_init(): Chemistry_PK.InitializeChemistry returned an error status:\n";
       error_message << chem_error.what();
 
       Errors::Message message(error_message.str());
@@ -831,10 +831,6 @@ void MPC::cycle_driver() {
             // Second, we do a chemistry step. If chemistry is off, we simply update
             // total_component_concentration in state
             if (chemistry_enabled) {
-              if (vo_->os_OK(Teuchos::VERB_LOW)) {
-                *vo_->os() << "Chemistry PK: advancing, time step [sec] = " << tc_dT << std::endl;
-              }
-
               Amanzi::timer_manager.start("Chemistry PK");
               CPK->Advance(tc_dT, total_component_concentration_star);
               Amanzi::timer_manager.stop("Chemistry PK");

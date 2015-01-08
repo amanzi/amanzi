@@ -55,13 +55,13 @@ void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
 
       std::set<AmanziMesh::Entity_ID> overlap;
       std::set<AmanziMesh::Entity_ID>::iterator overlap_end;
-      const std::set<AmanziMesh::Entity_ID> &prev_spec_ids = *(*spec_and_ids)->second;
+      const std::set<AmanziMesh::Entity_ID>& prev_spec_ids = *(*spec_and_ids)->second;
       std::set_intersection(prev_spec_ids.begin(), prev_spec_ids.end(),
                             this_spec_ids->begin(), this_spec_ids->end(),
                             std::inserter(overlap, overlap.end()));
       if (overlap.size() != 0) {
         Errors::Message m;
-        m << "conflicting definition";
+        m << "Conflicting definitions (overlapping) of id sets.";
         Exceptions::amanzi_throw(m);
       }
     }
@@ -72,6 +72,6 @@ void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
 };
 
 
-} //namespace
-} //namespace
+} // namespace Functions
+} // namespace Amanzi
 

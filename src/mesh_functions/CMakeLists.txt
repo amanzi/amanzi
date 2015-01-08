@@ -39,7 +39,6 @@ file(GLOB inc_files "*.hh")
 add_amanzi_library(mesh_functions
                    SOURCE composite_vector_function.cc
 				          composite_vector_function_factory.cc
-                          domain-function.cc
                           unique_mesh_function.cc
                           boundary_function.cc
                           MeshPartition.cc

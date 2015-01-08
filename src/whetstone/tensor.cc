@@ -35,7 +35,7 @@ Tensor::Tensor(const Tensor& T)
 
   if (d && rank) {
     data_ = NULL;
-    int mem = init(d, rank);
+    int mem = Init(d, rank);
     for (int i = 0; i < mem; i++) data_[i] = data[i];
   } else {
     d_ = rank_ = size_ = 0;
@@ -64,7 +64,7 @@ Tensor::Tensor(int d, int rank, const double* data)
 /* ******************************************************************
 * Initialization of a tensor of rank 1, 2 or 4. 
 ****************************************************************** */
-int Tensor::init(int d, int rank)
+int Tensor::Init(int d, int rank)
 {
   size_ = WHETSTONE_TENSOR_SIZE[d - 1][rank - 1];
   int mem = size_ * size_;
@@ -134,6 +134,55 @@ void Tensor::Inverse()
 
 
 /* ******************************************************************
+* Pseudo-inverse operation with tensors of rank 1 and 2
+* The algorithm is based on eigenvector decomposition. All eigenvalues
+* below the tolerance times the largest eigenvale value are neglected.
+****************************************************************** */
+void Tensor::PseudoInverse()
+{
+  if (size_ == 1) {
+    if (data_[0] != 0.0) data_[0] = 1.0 / data_[0];
+
+  } else {
+    int n = size_; 
+    int ipiv[n], lwork(3 * n), info;
+    double S[n], work[lwork];
+
+    Tensor T(*this);
+    DSYEV_F77("V", "U", &n, T.data(), &n, S, work, &lwork, &info);
+
+    // pseudo-invert diagonal matrix S
+    double norm_inf(fabs(S[0]));
+    for (int i = 1; i < n; i++) {
+      norm_inf = std::max(norm_inf, fabs(S[i]));
+    } 
+
+    double eps = norm_inf * 1e-15;
+    for (int i = 0; i < n; i++) {
+      double tmp(fabs(S[i]));
+      if (tmp > eps) { 
+        S[i] = 1.0 / S[i];
+      } else {
+        S[i] = 0.0;
+      }
+    }
+
+    // calculate pseudo inverse pinv(A) = V * pinv(S) * V^t
+    for (int i = 0; i < n; i++) {
+      for (int j = i; j < n; j++) {
+        double tmp(0.0);
+        for (int k = 0; k < n; k++) {
+          tmp += T(i, k) * S[k] * T(j, k);
+        }
+        (*this)(i, j) = tmp;
+        (*this)(j, i) = tmp;
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Transpose operator for non-symmetric tensors.
 ****************************************************************** */
 void Tensor::Transpose()
@@ -179,6 +228,18 @@ double Tensor::Det()
 
 
 /* ******************************************************************
+* Check that matrix is zero.
+****************************************************************** */
+bool Tensor::isZero()
+{
+  for (int i = 0; i < size_ * size_; i++) {
+    if (data_[i] != 0.0) return false;
+  }
+  return true;
+}
+
+
+/* ******************************************************************
 * Spectral bounds of symmetric tensors of rank 1 and 2
 ****************************************************************** */
 void Tensor::SpectralBounds(double* lower, double* upper) const
@@ -209,11 +270,19 @@ void Tensor::SpectralBounds(double* lower, double* upper) const
 
 
 /* ******************************************************************
-* Multiplication by a constant.
+* Elementary operations with a constant. Since we use Voigt notation, 
+* the identity tensor equals the identity matrix.
 ****************************************************************** */
 Tensor& Tensor::operator*=(double c)
 {
   for (int i = 0; i < size_*size_; i++) data_[i] *= c;
+  return *this;
+}
+
+
+Tensor& Tensor::operator+=(double c)
+{
+  for (int i = 0; i < size_*size_; i += size_ + 1) data_[i] += c;
   return *this;
 }
 
@@ -227,7 +296,7 @@ Tensor& Tensor::operator=(const Tensor& T)
   int rank = T.rank();
   double* data = T.data();
 
-  int mem = init(d, rank);
+  int mem = Init(d, rank);
   for (int i = 0; i < mem; i++) data_[i] = data[i];
   return *this;
 }
@@ -281,23 +350,23 @@ Tensor operator*(const Tensor& T1, const Tensor& T2)
     b0 = T2(1, 1);
     c0 = T2(0, 1);
 
-    T3.init(d, rank2);
+    T3.Init(d, rank2);
     T3(0, 0) = T1(0, 0) * a0 + T1(0, 1) * b0 + T1(0, 2) * c0;
     T3(1, 1) = T1(1, 0) * a0 + T1(1, 1) * b0 + T1(1, 2) * c0;
     T3(1, 0) = T3(0, 1) = T1(2, 0) * a0 + T1(2, 1) * b0 + T1(2, 2) * c0;
 
   } else if (rank1 == 1) {
-    int mem = T3.init(d, rank2);
+    int mem = T3.Init(d, rank2);
     double *data3 = T3.data();
     for (int i = 0; i < mem; i++) data3[i] = data2[i] * data1[0];
 
   } else if (rank2 == 1) {
-    int mem = T3.init(d, rank1);
+    int mem = T3.Init(d, rank1);
     double *data3 = T3.data();
     for (int i = 0; i < mem; i++) data3[i] = data1[i] * data2[0];
 
   } else if (rank2 == 2) {
-    T3.init(d, 2);
+    T3.Init(d, 2);
     for (int i = 0; i < d; i++) {
       for (int j = 0; j < d; j++) {
         double& entry = T3(i, j);
@@ -313,7 +382,7 @@ Tensor operator*(const Tensor& T1, const Tensor& T2)
 /* ******************************************************************
 * Miscaleneous routines: populate tensors of rank 2
 ****************************************************************** */
-int Tensor::AddColumn(const int column, const AmanziGeometry::Point& p)
+int Tensor::SetColumn(int column, const AmanziGeometry::Point& p)
 {
   if (rank_ == 2) {
     for (int i = 0; i < d_; i++) (*this)(i, column) = p[i];
@@ -323,7 +392,7 @@ int Tensor::AddColumn(const int column, const AmanziGeometry::Point& p)
 }
 
 
-int Tensor::AddRow(const int row, const AmanziGeometry::Point& p)
+int Tensor::SetRow(int row, const AmanziGeometry::Point& p)
 {
   if (rank_ == 2) {
     for (int i = 0; i < d_; i++) (*this)(row, i) = p[i];

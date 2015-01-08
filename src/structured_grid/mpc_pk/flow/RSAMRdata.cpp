@@ -1,5 +1,5 @@
 #include <RSAMRdata.H>
-#include <POROUSMEDIA_F.H> // For FORT_RICHARD_ALPHA
+#include <PorousMedia_F.H> // For FORT_RICHARD_ALPHA
 
 RSAMRdata::RSAMRdata(int slev, int nlevs, Layout& _layout, PMAmr* amrp, NLScontrol& nlsc, const RockManager* rm)
 : RSdata(slev,nlevs,_layout,nlsc,rm), pm_amr(amrp), eval_time_for_source(-1)
@@ -7,7 +7,12 @@ RSAMRdata::RSAMRdata(int slev, int nlevs, Layout& _layout, PMAmr* amrp, NLScontr
   nLevs = layout.NumLevels();
   pm.resize(pm_amr->finestLevel()+1,PArrayNoManage);
   for (int lev = 0; lev < pm.size(); lev++)  {
-    pm.set(lev,dynamic_cast<PorousMedia*>(&pm_amr->getLevel(lev)));
+    PorousMedia* porous_media = dynamic_cast<PorousMedia*>(&pm_amr->getLevel(lev));
+    if (porous_media == 0) {
+      BoxLib::Abort("AmrLevel structure hosed");
+    }
+    pm.clear(lev);
+    pm.set(lev,porous_media);
   }
 
   // Get boundary conditions for pressure
@@ -292,7 +297,7 @@ RSAMRdata::FillStateBndry (MFTower& press,
   for (int lev=0; lev<nLevs; ++lev) {
     MultiFab& mf(press[lev]);
     const BoxArray& grids = mf.boxArray();
-    for (FillPatchIterator fpi(pm[lev],mf,mf.nGrow(),time,state_indx,src_comp,num_comp);
+    for (PMFillPatchIterator fpi(pm[lev],mf,mf.nGrow(),time,state_indx,src_comp,num_comp);
        fpi.isValid();
        ++fpi) {
       BoxList boxes = BoxLib::boxDiff(fpi().box(),grids[fpi.index()]);

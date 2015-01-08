@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input format version" type="string" value="1.0.0"/>
+  <Parameter name="Amanzi Input format version" type="string" value="1.2.2"/>
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="1D chemistry benchmarking problem for 2012 waste tank demo."/>
     <Parameter name="Author" type="string" value="Ben Andre"/>
@@ -40,12 +40,11 @@
 
       </ParameterList>
 
-      <ParameterList name="Basic Algorithm Control">
+      <ParameterList name="Structured Algorithm">
         <ParameterList name="Expert Settings">
 
           <Parameter name="do_multilevel_full" type="int" value="1"/>
           <Parameter name="do_richard_init_to_steady" type="int" value="1"/>
-          <Parameter name="do_richard_sat_solve" type="int" value="0"/>
           <Parameter name="ic_chem_relax_dt" type="double" value="1.e3"/>
 
           <Parameter name="richard_init_to_steady_verbose" type="int" value="3"/>

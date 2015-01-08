@@ -31,7 +31,7 @@ void RelativePermeability::ProcessParameterList_(Teuchos::ParameterList& plist)
 
   // create verbosity object
   Teuchos::ParameterList vlist;
-  vo_ = new VerboseObject("Flow::RelativePerm", vlist); 
+  vo_ = new VerboseObject("FlowPK::RelPerm", vlist); 
 
   int nblocks = 0;  // Find out how many WRM entries there are.
   for (Teuchos::ParameterList::ConstIterator i = plist.begin(); i != plist.end(); i++) {
@@ -91,7 +91,7 @@ void RelativePermeability::ProcessParameterList_(Teuchos::ParameterList& plist)
   }
 
   // optional debug output
-  PlotWRMcurves();
+  PlotWRMcurves(plist);
 }
 
 
@@ -131,16 +131,18 @@ void RelativePermeability::VerifyStringMualemBurdine(const std::string name)
 void RelativePermeability::ProcessStringRelativePermeability(const std::string name)
 {
   Errors::Message msg;
-  if (name == "upwind with gravity") {
+  if (name == "upwind: gravity") {
     method_ = Flow::FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
-  } else if (name == "cell centered") {
-    method_ = Flow::FLOW_RELATIVE_PERM_CENTERED;
-  } else if (name == "upwind with Darcy flux") {
+  } else if (name == "upwind: darcy velocity") {
     method_ = Flow::FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
-  } else if (name == "arithmetic mean") {
-    method_ = Flow::FLOW_RELATIVE_PERM_ARITHMETIC_MEAN;
-  } else if (name == "upwind amanzi") {
-    method_ = Flow::FLOW_RELATIVE_PERM_AMANZI;
+  } else if (name == "upwind: artificial diffusion") {
+    method_ = Flow::FLOW_RELATIVE_PERM_AMANZI_ARTIFICIAL_DIFFUSION;
+  } else if (name == "upwind: amanzi") {
+    method_ = Flow::FLOW_RELATIVE_PERM_AMANZI_MFD;
+  } else if (name == "other: arithmetic average") {
+    method_ = Flow::FLOW_RELATIVE_PERM_ARITHMETIC_AVERAGE;
+  } else if (name == "other: harmonic average") {
+    method_ = Flow::FLOW_RELATIVE_PERM_HARMONIC_AVERAGE;
   } else {
     msg << "Flow PK: unknown relative permeability method has been specified.";
     Exceptions::amanzi_throw(msg);
@@ -151,10 +153,8 @@ void RelativePermeability::ProcessStringRelativePermeability(const std::string n
 /* ****************************************************************
 * Plot water retention curves.
 **************************************************************** */
-void RelativePermeability::PlotWRMcurves()
+void RelativePermeability::PlotWRMcurves(Teuchos::ParameterList& plist)
 {
-  Teuchos::ParameterList plist;
-
   int MyPID = mesh_->cell_map(false).Comm().MyPID();
   if (MyPID == 0) {
     int mb(0); 
@@ -162,8 +162,8 @@ void RelativePermeability::PlotWRMcurves()
       if (plist.isSublist(plist.name(i))) {
         Teuchos::ParameterList& wrm_list = plist.sublist(plist.name(i));
 
-        if (wrm_list.isSublist("Output")) {
-          Teuchos::ParameterList& out_list = wrm_list.sublist("Output");
+        if (wrm_list.isSublist("output")) {
+          Teuchos::ParameterList& out_list = wrm_list.sublist("output");
 
           std::string fname = out_list.get<std::string>("file");
           Teuchos::OSTab tab = vo_->getOSTab();

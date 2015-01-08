@@ -1,305 +1,555 @@
-<amanzi_input version="2.0.0" type="unstructured">
-
-	<model_description name="unconfined_head_head_no_recharge_2d">
-		<comments>Steady-State Richards: no_recharge_2d</comments>
-		<model_id>??</model_id>
-		<author>Markus Berndt</author>
-		<units>
-			<length_unit>m</length_unit>
-			<time_unit>s</time_unit>
-			<mass_unit>kg</mass_unit>
-			<conc_unit>molar</conc_unit>
-		</units>
-	</model_description>
-
-	<definitions>
-		<macros>
-			<time_macro name="Steady State">
-				<time>3.0e+10</time>
-			</time_macro>
-
-			<cycle_macro name = "Every_20">
-      				<start>0</start>
-      				<timestep_interval>20</timestep_interval>
-      				<stop>-1 </stop>
-    			</cycle_macro>
-		</macros>	
-	</definitions>
-
-	<process_kernels>
-		<comments>Variably saturated flow</comments>
-      		<flow state = "on" model = "richards"/>
-      		<transport state = "off" algorithm="none"/>
-      		<chemistry state = "off" process_model="none" engine="none"/>
-	</process_kernels>
-
-	<phases>
-		<liquid_phase name="water">
-			<eos>false</eos>
-			<viscosity>1.002E-03</viscosity>
-			<density>998.2</density>
-		</liquid_phase>
-	</phases>
-
-	<execution_controls>
-		<verbosity level="medium"/>
-		<execution_control_defaults mode="steady" method="bdf1" />
-		<execution_control  start="0.0" end="3.0e+10" init_dt="0.01" reduction_factor="0.5" mode = "steady" method="bdf1" />
-	</execution_controls>
-
-	<numerical_controls>
-	        <linear_solver>
-			<max_iterations>100</max_iterations>
-			<tolerance>1.0e-17</tolerance>
-
-			<method>gmres</method>
-			<cfl>1</cfl>
-			<preconditioner name="hypre_amg">
-				<hypre_cycle_applications>5</hypre_cycle_applications>
-				<hypre_smoother_sweeps>3</hypre_smoother_sweeps>
-				<hypre_tolerance>0.0</hypre_tolerance>
-				<hypre_strong_threshold>0.5</hypre_strong_threshold>
-			</preconditioner>
-		</linear_solver>
-		<steady-state_controls>
-		        <initialize_with_darcy>true</initialize_with_darcy>
-		        <restart_tolerance_factor>1000.0</restart_tolerance_factor>
-			<restart_tolerance_relaxation_factor>0.95</restart_tolerance_relaxation_factor>
-                        <min_iterations>10</min_iterations>
-	                <max_iterations>15</max_iterations>
-			<max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
-			<nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
-			<limit_iterations>20</limit_iterations>
-			<nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
-			<nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
-			<max_divergent_iterations>3</max_divergent_iterations>
-			<pseudo_time_integrator>
-				<initialize_with_darcy>true</initialize_with_darcy>
-				<clipping_saturation>0.9</clipping_saturation>
-				<method>picard</method>
-				<preconditioner>hypre_amg</preconditioner>
-				<linear_solver>aztec00</linear_solver>
-				<control_options>pressure</control_options>
-				<convergence_tolerance>1.0e-8</convergence_tolerance>
-				<max_iterations>100</max_iterations>
-			</pseudo_time_integrator>
-
-		</steady-state_controls>
-	</numerical_controls>
-
-        <mesh framework="mstk">
-		<comments>Two-dimensional box 499.872m x 73.152m</comments>
-		<dimension>2</dimension>
-		<generate>
-			<number_of_cells nx = "164" ny = "120"/>
-			<box low_coordinates = "0.0, 0.0" high_coordinates = "499.872, 73.152"/>
-		</generate>
-	</mesh>
-
-	<regions>
-  		<comments></comments>
-		<region name ="Aquifer">
-			<comments>One region comprising the entire domain</comments>
-			<box low_coordinates= "0.0, 0.0"   high_coordinates="499.872, 73.152"/>
-		</region>
-		<region name ="Left">
-                        <!--box high_coordinates="(0.0, 73.152)" low_coordinates="(0.0, 0.0)" name="-X_Boundary"/-->
-                        <box high_coordinates="(0.0, 49.9872)" low_coordinates="(0.0, 0.0)" name="-X_Boundary"/>
-			<comments>Left boundary</comments>
-			<!--plane location= "0.0, 0.0"   normal="-1.0, 0.0"/-->
-		</region>
-		<region name ="Right">
-                        <box high_coordinates="(499.872, 73.152)" low_coordinates="(499.872, 0.0)" name="+X_Boundary"/>
-			<comments>Right boundary</comments>
-			<!--plane location= "499.872, 0.0" normal="1.0, 0.0"/-->
-		</region>
-		<region name ="Top">
-                        <box high_coordinates="(499.872, 73.152)" low_coordinates="(0.0, 73.152)" name="+Y_Boundary"/>
-			<comments>Top boundary</comments>
-			<!--plane location= "0.0, 73.152" normal="0.0, 1.0"/-->
-		</region>
-		
-
-
-		<point name="Point5ft"   coordinate="1.5240, 0.3048"/>
-		<point name="Point105ft"   coordinate="32.0040, 0.3048"/>
-		<point name="Point205ft"   coordinate="62.4840, 0.3048"/>
-		<point name="Point305ft"   coordinate="92.9640, 0.3048"/>
-		<point name="Point405ft"   coordinate="123.4440, 0.3048"/>
-		<point name="Point505ft"   coordinate="153.9240, 0.3048"/>
-		<point name="Point605ft"   coordinate="184.4040, 0.3048"/>
-		<point name="Point705ft"   coordinate="214.8840, 0.3048"/>
-		<point name="Point805ft"   coordinate="245.3640, 0.3048"/>
-		<point name="Point905ft"   coordinate="275.8440, 0.3048"/>
-		<point name="Point1005ft"   coordinate="303.2760, 0.3048"/>
-		<point name="Point1105ft"   coordinate="336.8040, 0.3048"/>
-		<point name="Point1205ft"   coordinate="367.2840, 0.3048"/>
-		<point name="Point1305ft"   coordinate="397.7640, 0.3048"/>
-		<point name="Point1405ft"   coordinate="428.2440, 0.3048"/>
-		<point name="Point1505ft"   coordinate="458.7240, 0.3048"/>
-		<point name="Point1605ft"   coordinate="489.2040, 0.3048"/>
-		<point name="Point1635ft"   coordinate="498.3480, 0.3048"/>
-	</regions>
-	
-	<materials>
-		<material name="Aquifer">
-		       	<comments>Aquifer</comments>
-               		<mechanical_properties>
-                         	<porosity value="0.43"/>
- 	 	      	</mechanical_properties>
- 	 	        <permeability x="1.1844e-12" y="1.1844e-12"/>
-			<cap_pressure model="van_genuchten">
-				<parameters alpha="1.46e-3" sr="0.052" m="0.314" optional_krel_smoothing_interval="100.0"/>
-			</cap_pressure>
-			<rel_perm model="mualem">
+  <amanzi_input type="unstructured" version="2.1.0">
+    <model_description name="unconfined_head_head_no_recharge_2d">
+      <comments>Steady-State Richards: no_recharge_2d</comments>
+      <model_id>??</model_id>
+      <author>Markus Berndt</author>
+      <units>
+        
+			
+        <length_unit>m</length_unit>
+        <time_unit>s</time_unit>
+        <mass_unit>kg</mass_unit>
+        <conc_unit>molar</conc_unit>
+      </units>
+    </model_description>
+    <definitions>
+      <macros>
+        
+			
+        <time_macro name="Steady State">
+          
+				
+          <time>3.0e+10</time>
+          
+			
+        </time_macro>
+        <cycle_macro name="Every_20">
+          
+      				
+          <start>0</start>
+          
+      				
+          <timestep_interval>20</timestep_interval>
+          
+      				
+          <stop>-1 </stop>
+          
+    			
+        </cycle_macro>
+      </macros>
+    </definitions>
+    <process_kernels>
+      <comments>Variably saturated flow</comments>
+      <flow model="richards" state="on"/>
+      <transport algorithm="none" state="off"/>
+      <chemistry engine="none" process_model="none" state="off"/>
+    </process_kernels>
+    <phases>
+      <liquid_phase name="water">
+        
+			
+        <eos>false</eos>
+        <viscosity>1.002E-03</viscosity>
+        <density>998.2</density>
+      </liquid_phase>
+    </phases>
+    <execution_controls>
+      <verbosity level="medium"/>
+      <execution_control_defaults method="bdf1" mode="steady"/>
+      <execution_control end="3.0e+10" init_dt="0.01" method="bdf1" mode="steady" reduction_factor="0.5" start="0.0"/>
+    </execution_controls>
+    <numerical_controls>
+      <unstructured_controls>
+        <unstr_linear_solver>
+          <max_iterations>100</max_iterations>
+          <tolerance>1.0e-17</tolerance>
+          <method>gmres</method>
+          <cfl>1</cfl>
+          <preconditioner name="hypre_amg">
+            
+				
+            <hypre_cycle_applications>5</hypre_cycle_applications>
+            
+				
+            <hypre_smoother_sweeps>3</hypre_smoother_sweeps>
+            
+				
+            <hypre_tolerance>0.0</hypre_tolerance>
+            
+				
+            <hypre_strong_threshold>0.5</hypre_strong_threshold>
+            
+			
+          </preconditioner>
+        </unstr_linear_solver>
+        <unstr_steady-state_controls>
+          <initialize_with_darcy>true</initialize_with_darcy>
+          <restart_tolerance_factor>1000.0</restart_tolerance_factor>
+          <restart_tolerance_relaxation_factor>0.95</restart_tolerance_relaxation_factor>
+          <min_iterations>10</min_iterations>
+          <max_iterations>15</max_iterations>
+          <max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
+          <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
+          <limit_iterations>20</limit_iterations>
+          <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
+          <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
+          <max_divergent_iterations>3</max_divergent_iterations>
+          <unstr_pseudo_time_integrator>
+              <initialize_with_darcy>true</initialize_with_darcy>
+              
+				
+              <clipping_saturation>0.9</clipping_saturation>
+              
+				
+              <method>picard</method>
+              
+				
+              <preconditioner>hypre_amg</preconditioner>
+              
+				
+              <linear_solver>aztec00</linear_solver>
+              
+				
+              <control_options>pressure</control_options>
+              
+				
+              <convergence_tolerance>1.0e-8</convergence_tolerance>
+              
+				
+              <max_iterations>100</max_iterations>
+          </unstr_pseudo_time_integrator>
+        </unstr_steady-state_controls>
+      </unstructured_controls>
+    </numerical_controls>
+    <mesh framework="mstk">
+      <comments>Two-dimensional box 499.872m x 73.152m</comments>
+      <dimension>2</dimension>
+      <generate>
+        
+			
+        <number_of_cells nx="164" ny="120"/>
+        <box high_coordinates="499.872, 73.152" low_coordinates="0.0, 0.0"/>
+      </generate>
+    </mesh>
+    <regions>
+      <comments/>
+      <region name="Aquifer">
+        
+			
+        <comments>One region comprising the entire domain</comments>
+        <box high_coordinates="499.872, 73.152" low_coordinates="0.0, 0.0"/>
+      </region>
+      <region name="Left">
+        
+                        
+        <box high_coordinates="(0.0, 49.9872)" low_coordinates="(0.0, 0.0)" name="-X_Boundary"/>
+        <comments>Left boundary</comments>
+      </region>
+      <region name="Right">
+        
+                        
+        <box high_coordinates="(499.872, 73.152)" low_coordinates="(499.872, 0.0)" name="+X_Boundary"/>
+        <comments>Right boundary</comments>
+      </region>
+      <region name="Top">
+        
+                        
+        <box high_coordinates="(499.872, 73.152)" low_coordinates="(0.0, 73.152)" name="+Y_Boundary"/>
+        <comments>Top boundary</comments>
+      </region>
+      <point coordinate="1.5240, 0.3048" name="Point5ft"/>
+      <point coordinate="32.0040, 0.3048" name="Point105ft"/>
+      <point coordinate="62.4840, 0.3048" name="Point205ft"/>
+      <point coordinate="92.9640, 0.3048" name="Point305ft"/>
+      <point coordinate="123.4440, 0.3048" name="Point405ft"/>
+      <point coordinate="153.9240, 0.3048" name="Point505ft"/>
+      <point coordinate="184.4040, 0.3048" name="Point605ft"/>
+      <point coordinate="214.8840, 0.3048" name="Point705ft"/>
+      <point coordinate="245.3640, 0.3048" name="Point805ft"/>
+      <point coordinate="275.8440, 0.3048" name="Point905ft"/>
+      <point coordinate="303.2760, 0.3048" name="Point1005ft"/>
+      <point coordinate="336.8040, 0.3048" name="Point1105ft"/>
+      <point coordinate="367.2840, 0.3048" name="Point1205ft"/>
+      <point coordinate="397.7640, 0.3048" name="Point1305ft"/>
+      <point coordinate="428.2440, 0.3048" name="Point1405ft"/>
+      <point coordinate="458.7240, 0.3048" name="Point1505ft"/>
+      <point coordinate="489.2040, 0.3048" name="Point1605ft"/>
+      <point coordinate="498.3480, 0.3048" name="Point1635ft"/>
+    </regions>
+    <materials>
+      <material name="Aquifer">
+        
+		       	
+        <comments>Aquifer</comments>
+        <mechanical_properties>
+          
+                         	
+          <porosity value="0.43"/>
+          
+ 	 	      	
+        </mechanical_properties>
+        <permeability x="1.1844e-12" y="1.1844e-12"/>
+        <cap_pressure model="van_genuchten">
+          
+				
+          <parameters alpha="1.46e-3" m="0.314" optional_krel_smoothing_interval="100.0" sr="0.052"/>
+          
+			
+        </cap_pressure>
+        <rel_perm model="mualem">
 			</rel_perm>
- 	 	      	<assigned_regions>Aquifer</assigned_regions>
- 	   	</material>
-	</materials>
+        <assigned_regions>Aquifer</assigned_regions>
+      </material>
+    </materials>
+    <initial_conditions>
+      <initial_condition name="Initial Condition">
+        
+			
+        <comments>Aquifer</comments>
+        <assigned_regions>Aquifer</assigned_regions>
+        <liquid_phase name="water">
+          
+				
+          <liquid_component name="water">
+            
+					
+            <uniform_pressure function="uniform" value="101325.0"/>
+            
+				
+          </liquid_component>
+          
+			
+        </liquid_phase>
+      </initial_condition>
+    </initial_conditions>
+    <boundary_conditions>
+      <comments/>
+      <boundary_condition name="LeftBC">
+        
+			
+        <comments>Boundary condition at x=0</comments>
+        <assigned_regions>Left</assigned_regions>
+        <liquid_phase name="water">
+          
+				
+          <liquid_component name="water">
+            
+					
+            <hydrostatic function="constant" start="0.0" value="49.9872"/>
+            
+				
+          </liquid_component>
+          
+			
+        </liquid_phase>
+      </boundary_condition>
+      <boundary_condition name="TopBC">
+        
+			
+        <comments>Boundary condition at y=73.152</comments>
+        <assigned_regions>Top</assigned_regions>
+        <liquid_phase name="water">
+          
+				
+          <liquid_component name="water">
+            
+					
+            <inward_mass_flux function="constant" start="0.0" value="1.1550e-4"/>
+            
+				
+          </liquid_component>
+          
+			
+        </liquid_phase>
+      </boundary_condition>
+    </boundary_conditions>
+    <output>
+      <observations>
+        
+		        
+        <filename>observation.out</filename>
+        <liquid_phase name="water">
+          
 
-	<initial_conditions>
-		<initial_condition name="Initial Condition">
-			<comments>Aquifer</comments>
-			<assigned_regions>Aquifer</assigned_regions>
-			<liquid_phase name = "water">
-				<liquid_component name = "water">
-					<uniform_pressure value = "101325.0" function="uniform"/>
-				</liquid_component>
-			</liquid_phase>
-         	</initial_condition>
-	</initial_conditions>
-
-	<boundary_conditions>
-		<comments></comments>
-		<boundary_condition name = "LeftBC">
-			<comments>Boundary condition at x=0</comments>
-			<assigned_regions>Left</assigned_regions>
-			<liquid_phase name = "water">
-				<liquid_component name = "water">
-					<hydrostatic start="0.0" function= "constant" value="49.9872"/>
-				</liquid_component>
-			</liquid_phase>
-		</boundary_condition>
-
-		<boundary_condition name = "TopBC">
-			<comments>Boundary condition at y=73.152</comments>
-			<assigned_regions>Top</assigned_regions>
-			<liquid_phase name = "water">
-				<liquid_component name = "water">
-					<inward_mass_flux start="0.0" function= "constant" value="1.1550e-4"/>
-				</liquid_component>
-			</liquid_phase>
-		</boundary_condition>
-	</boundary_conditions>
-
-	<output>
-
-	  
-	        <observations>
-		        <filename>observation.out</filename>
-			<liquid_phase name="water">
-
-			        <aqueous_pressure>
-				        <assigned_regions>Point5ft</assigned_regions>
-				        <functional>point</functional>
-				        <time_macro>Steady State</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
-				        <assigned_regions>Point105ft</assigned_regions>
-				        <functional>point</functional>
-				        <time_macro>Steady State</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
-				        <assigned_regions>Point205ft</assigned_regions>
-				        <functional>point</functional>
-				        <time_macro>Steady State</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
-				        <assigned_regions>Point305ft</assigned_regions>
-				        <functional>point</functional>
-				        <time_macro>Steady State</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
-				        <assigned_regions>Point405ft</assigned_regions>
-				        <functional>point</functional>
-				        <time_macro>Steady State</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
-				        <assigned_regions>Point505ft</assigned_regions>
-				        <functional>point</functional>
-				        <time_macro>Steady State</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
-				        <assigned_regions>Point605ft</assigned_regions>
-				        <functional>point</functional>
-				        <time_macro>Steady State</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
-				        <assigned_regions>Point705ft</assigned_regions>
-				        <functional>point</functional>
-				        <time_macro>Steady State</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
-				        <assigned_regions>Point805ft</assigned_regions>
-				        <functional>point</functional>
-				        <time_macro>Steady State</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
-				        <assigned_regions>Point905ft</assigned_regions>
-				        <functional>point</functional>
-				        <time_macro>Steady State</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
-				        <assigned_regions>Point1005ft</assigned_regions>
-				        <functional>point</functional>
-				        <time_macro>Steady State</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
-				        <assigned_regions>Point1105ft</assigned_regions>
-				        <functional>point</functional>
-				        <time_macro>Steady State</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
-				        <assigned_regions>Point1205ft</assigned_regions>
-				        <functional>point</functional>
-				        <time_macro>Steady State</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
-				        <assigned_regions>Point1305ft</assigned_regions>
-				        <functional>point</functional>
-				        <time_macro>Steady State</time_macro>
-				</aqueous_pressure>			
-			        <aqueous_pressure>
-				        <assigned_regions>Point1405ft</assigned_regions>
-				        <functional>point</functional>
-				        <time_macro>Steady State</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
-				        <assigned_regions>Point1505ft</assigned_regions>
-				        <functional>point</functional>
-				        <time_macro>Steady State</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
-				        <assigned_regions>Point1605ft</assigned_regions>
-				        <functional>point</functional>
-				        <time_macro>Steady State</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
-				        <assigned_regions>Point1635ft</assigned_regions>
-				        <functional>point</functional>
-				        <time_macro>Steady State</time_macro>
-				</aqueous_pressure>
-			</liquid_phase>
-	        </observations>
-
-
-
-		<vis>
-			<base_filename>steady-flow</base_filename>
-		  	<num_digits>5</num_digits>
-		  	<time_macros>Steady State</time_macros>
-		</vis>
-	</output>
-
-</amanzi_input>
-
+			        
+          <aqueous_pressure>
+            
+				        
+            <assigned_regions>Point5ft</assigned_regions>
+            
+				        
+            <functional>point</functional>
+            
+				        
+            <time_macro>Steady State</time_macro>
+            
+				
+          </aqueous_pressure>
+          
+			        
+          <aqueous_pressure>
+            
+				        
+            <assigned_regions>Point105ft</assigned_regions>
+            
+				        
+            <functional>point</functional>
+            
+				        
+            <time_macro>Steady State</time_macro>
+            
+				
+          </aqueous_pressure>
+          
+			        
+          <aqueous_pressure>
+            
+				        
+            <assigned_regions>Point205ft</assigned_regions>
+            
+				        
+            <functional>point</functional>
+            
+				        
+            <time_macro>Steady State</time_macro>
+            
+				
+          </aqueous_pressure>
+          
+			        
+          <aqueous_pressure>
+            
+				        
+            <assigned_regions>Point305ft</assigned_regions>
+            
+				        
+            <functional>point</functional>
+            
+				        
+            <time_macro>Steady State</time_macro>
+            
+				
+          </aqueous_pressure>
+          
+			        
+          <aqueous_pressure>
+            
+				        
+            <assigned_regions>Point405ft</assigned_regions>
+            
+				        
+            <functional>point</functional>
+            
+				        
+            <time_macro>Steady State</time_macro>
+            
+				
+          </aqueous_pressure>
+          
+			        
+          <aqueous_pressure>
+            
+				        
+            <assigned_regions>Point505ft</assigned_regions>
+            
+				        
+            <functional>point</functional>
+            
+				        
+            <time_macro>Steady State</time_macro>
+            
+				
+          </aqueous_pressure>
+          
+			        
+          <aqueous_pressure>
+            
+				        
+            <assigned_regions>Point605ft</assigned_regions>
+            
+				        
+            <functional>point</functional>
+            
+				        
+            <time_macro>Steady State</time_macro>
+            
+				
+          </aqueous_pressure>
+          
+			        
+          <aqueous_pressure>
+            
+				        
+            <assigned_regions>Point705ft</assigned_regions>
+            
+				        
+            <functional>point</functional>
+            
+				        
+            <time_macro>Steady State</time_macro>
+            
+				
+          </aqueous_pressure>
+          
+			        
+          <aqueous_pressure>
+            
+				        
+            <assigned_regions>Point805ft</assigned_regions>
+            
+				        
+            <functional>point</functional>
+            
+				        
+            <time_macro>Steady State</time_macro>
+            
+				
+          </aqueous_pressure>
+          
+			        
+          <aqueous_pressure>
+            
+				        
+            <assigned_regions>Point905ft</assigned_regions>
+            
+				        
+            <functional>point</functional>
+            
+				        
+            <time_macro>Steady State</time_macro>
+            
+				
+          </aqueous_pressure>
+          
+			        
+          <aqueous_pressure>
+            
+				        
+            <assigned_regions>Point1005ft</assigned_regions>
+            
+				        
+            <functional>point</functional>
+            
+				        
+            <time_macro>Steady State</time_macro>
+            
+				
+          </aqueous_pressure>
+          
+			        
+          <aqueous_pressure>
+            
+				        
+            <assigned_regions>Point1105ft</assigned_regions>
+            
+				        
+            <functional>point</functional>
+            
+				        
+            <time_macro>Steady State</time_macro>
+            
+				
+          </aqueous_pressure>
+          
+			        
+          <aqueous_pressure>
+            
+				        
+            <assigned_regions>Point1205ft</assigned_regions>
+            
+				        
+            <functional>point</functional>
+            
+				        
+            <time_macro>Steady State</time_macro>
+            
+				
+          </aqueous_pressure>
+          
+			        
+          <aqueous_pressure>
+            
+				        
+            <assigned_regions>Point1305ft</assigned_regions>
+            
+				        
+            <functional>point</functional>
+            
+				        
+            <time_macro>Steady State</time_macro>
+            
+				
+          </aqueous_pressure>
+          			
+			        
+          <aqueous_pressure>
+            
+				        
+            <assigned_regions>Point1405ft</assigned_regions>
+            
+				        
+            <functional>point</functional>
+            
+				        
+            <time_macro>Steady State</time_macro>
+            
+				
+          </aqueous_pressure>
+          
+			        
+          <aqueous_pressure>
+            
+				        
+            <assigned_regions>Point1505ft</assigned_regions>
+            
+				        
+            <functional>point</functional>
+            
+				        
+            <time_macro>Steady State</time_macro>
+            
+				
+          </aqueous_pressure>
+          
+			        
+          <aqueous_pressure>
+            
+				        
+            <assigned_regions>Point1605ft</assigned_regions>
+            
+				        
+            <functional>point</functional>
+            
+				        
+            <time_macro>Steady State</time_macro>
+            
+				
+          </aqueous_pressure>
+          
+			        
+          <aqueous_pressure>
+            
+				        
+            <assigned_regions>Point1635ft</assigned_regions>
+            
+				        
+            <functional>point</functional>
+            
+				        
+            <time_macro>Steady State</time_macro>
+            
+				
+          </aqueous_pressure>
+          
+			
+        </liquid_phase>
+      </observations>
+      <vis>
+        
+			
+        <base_filename>steady-flow</base_filename>
+        <num_digits>5</num_digits>
+        <time_macros>Steady State</time_macros>
+      </vis>
+    </output>
+  </amanzi_input>

@@ -50,10 +50,10 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S) : Flow_
     Exceptions::amanzi_throw(msg);
   }
 
-  if (flow_list.isSublist("Darcy Problem")) {
-    dp_list_ = flow_list.sublist("Darcy Problem");
+  if (flow_list.isSublist("Darcy problem")) {
+    dp_list_ = flow_list.sublist("Darcy problem");
   } else {
-    Errors::Message msg("Flow PK: input parameter list does not have <Darcy Problem> sublist.");
+    Errors::Message msg("Flow PK: input parameter list does not have \"Darcy problem\" sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -173,7 +173,7 @@ Darcy_PK::~Darcy_PK()
 
 
 /* ******************************************************************
-* Extract information from Diffusion Problem parameter list.
+* Extract information from Diffusion problem parameter list.
 ****************************************************************** */
 void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
@@ -199,8 +199,8 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   bc_model.resize(nfaces_wghost, 0);
   bc_submodel.resize(nfaces_wghost, 0);
   bc_value.resize(nfaces_wghost, 0.0);
-  bc_coef.resize(nfaces_wghost, 0.0);
-  op_bc_ = Teuchos::rcp(new Operators::BCs(bc_model, bc_value));
+  bc_mixed.resize(nfaces_wghost, 0.0);
+  op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   rainfall_factor.resize(nfaces_wghost, 1.0);
 
@@ -241,7 +241,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Allocate memory for other fundamental structures
   K.resize(ncells_owned);
 
-  if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+  if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   }
 }
@@ -358,25 +358,22 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 
   Teuchos::ParameterList& oplist = dp_list_.sublist("operators").sublist("diffusion operator").sublist("matrix");
   Operators::OperatorDiffusionFactory opfactory;
-  op_ = opfactory.Create(mesh_, op_bc_, oplist, gravity_);
-  op_->InitOperator(K, Teuchos::null, Teuchos::null, rho_, mu_);
+  op_ = opfactory.Create(mesh_, op_bc_, oplist, gravity_, 0);  // The last 0 means no upwind
+  op_->Setup(K, Teuchos::null, Teuchos::null, rho_, mu_);
   op_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   int schema_prec_dofs = op_->schema_prec_dofs();
   op_->SymbolicAssembleMatrix(schema_prec_dofs);
   op_->CreateCheckPoint();
 
-  // Well modeling (one-time call)
-  if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    CalculatePermeabilityFactorInWell();
-  }
-
-  // Initialize source
+  // Well modeling: initialization
   if (src_sink != NULL) {
-    if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      src_sink->ComputeDistribute(T0, Kxy->Values()); 
+    double T1 = T0 + dT0;
+    if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+      CalculatePermeabilityFactorInWell();
+      src_sink->ComputeDistribute(T0, T1, Kxy->Values()); 
     } else {
-      src_sink->ComputeDistribute(T0, NULL);
+      src_sink->ComputeDistribute(T0, T1, NULL);
     }
   }
   
@@ -416,24 +413,25 @@ int Darcy_PK::AdvanceToSteadyState(double T0, double dT0)
 int Darcy_PK::Advance(double dT_MPC, double& dT_actual) 
 {
   dT = dT_MPC;
-  double time = S_->time();
-  if (time >= 0.0) T_physics = time;
+  double T1 = S_->time();
+  if (T1 >= 0.0) T_physics = T1;
 
   // update boundary conditions and source terms
-  time = T_physics;
-  bc_pressure->Compute(time);
-  bc_flux->Compute(time);
-  bc_seepage->Compute(time);
+  T1 = T_physics;
+  bc_pressure->Compute(T1);
+  bc_flux->Compute(T1);
+  bc_seepage->Compute(T1);
   if (shift_water_table_.getRawPtr() == NULL)
-    bc_head->Compute(time);
+    bc_head->Compute(T1);
   else
-    bc_head->ComputeShift(time, shift_water_table_->Values());
+    bc_head->ComputeShift(T1, shift_water_table_->Values());
 
   if (src_sink != NULL) {
-    if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      src_sink->ComputeDistribute(time, Kxy->Values()); 
+    double T0 = T1 - dT_MPC; 
+    if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+      src_sink->ComputeDistribute(T0, T1, Kxy->Values()); 
     } else {
-      src_sink->ComputeDistribute(time, NULL);
+      src_sink->ComputeDistribute(T0, T1, NULL);
     }
   }
 
@@ -450,8 +448,8 @@ int Darcy_PK::Advance(double dT_MPC, double& dT_actual)
   sy_g.Scale(factor);
 
   op_->RestoreCheckPoint();
-  op_->AddAccumulationTerm(*solution, ss_g, dT);
-  op_->AddAccumulationTerm(*solution, sy_g);
+  op_->AddAccumulationTerm(*solution, ss_g, dT, "cell");
+  op_->AddAccumulationTerm(*solution, sy_g, "cell");
   op_->ApplyBCs();
 
   int schema_prec_dofs = op_->schema_prec_dofs();
@@ -505,7 +503,7 @@ int Darcy_PK::Advance(double dT_MPC, double& dT_actual)
   // Darcy_PK always takes suggested time step
   dT_actual = dT_MPC;
 
-  dt_tuple times(time, dT_MPC);
+  dt_tuple times(T1, dT_MPC);
   ti_specs->dT_history.push_back(times);
 
   return 0;

@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code.  
+  This is the opeartors component of the Amanzi code.  
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -23,7 +23,7 @@
 #include "DenseMatrix.hh"
 #include "Preconditioner.hh"
 #include "OperatorDiffusion.hh"
-#include "../pks/flow/WaterRetentionModel.hh"
+
 
 namespace Amanzi {
 namespace Operators {
@@ -41,9 +41,9 @@ class OperatorDiffusionTPFA : public OperatorDiffusion {
   ~OperatorDiffusionTPFA() {};
 
   // re-implementation of basic operator virtual members
-  void InitOperator(std::vector<WhetStone::Tensor>& K,
-                    Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
-                    double rho, double mu);
+  void Setup(std::vector<WhetStone::Tensor>& K,
+             Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
+             double rho, double mu);
 
   void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u);
   void ApplyBCs(); 
@@ -54,13 +54,14 @@ class OperatorDiffusionTPFA : public OperatorDiffusion {
   void ComputeNegativeResidual(const CompositeVector& v, CompositeVector& r);
 
   void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
+  void SetUpwind(int upwind_method) { upwind_ = upwind_method; }
 
-  virtual double DeriveBoundaryFaceValue(int f, const CompositeVector& u, Teuchos::RCP<Flow::WaterRetentionModel>);
+  template <class Model> 
+  double DeriveBoundaryFaceValue(int f, const CompositeVector& u, const Model& model);
 
   //access function
-  const Epetra_Vector transmissibilities() { return *transmissibility_;}
-  const Epetra_Vector gravity_terms() { return *gravity_term_;}
-
+  const Epetra_Vector transmissibilities() { return *transmissibility_; }
+  const Epetra_Vector gravity_terms() { return *gravity_term_; }
 
  private:
   void ComputeTransmissibilities_();
@@ -81,5 +82,8 @@ class OperatorDiffusionTPFA : public OperatorDiffusion {
 
 }  // namespace Operators
 }  // namespace Amanzi
+
+// Description of templated function DeriveBoundaryFaceValue(f, u, model)
+#include "FluxTPFABCfunc.hh"
 
 #endif

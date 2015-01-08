@@ -16,8 +16,8 @@
 
   <!--  FLOW:  -->
   <ParameterList name="Flow">
-    <ParameterList name="Richards Problem">
-      <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
+    <ParameterList name="Richards problem">
+      <Parameter name="relative permeability" type="string" value="upwind: gravity"/>
       <Parameter name="atmospheric pressure" type="double" value="101325"/>
       <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 
@@ -28,25 +28,32 @@
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
           <ParameterList name="matrix">
-            <Parameter name="discretization primary" type="string" value="optimized mfd scaled"/>
-            <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
             <Parameter name="gravity" type="bool" value="true"/>
           </ParameterList>
           <ParameterList name="preconditioner">
-            <Parameter name="discretization primary" type="string" value="optimized mfd scaled"/>
-            <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
             <Parameter name="gravity" type="bool" value="true"/>
+          </ParameterList>
+
+          <ParameterList name="upwind">
+            <Parameter name="upwind method" type="string" value="standard"/>
+            <ParameterList name="upwind standard parameters">
+              <Parameter name="tolerance" type="double" value="1e-12"/>
+            </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
 
       <ParameterList name="steady state time integrator">
         <Parameter name="linear solver" type="string" value="AztecOO"/>
-        <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
         <ParameterList name="initialization">
           <Parameter name="method" type="string" value="saturated solver"/>
@@ -65,7 +72,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="Water retention models">
+      <ParameterList name="water retention models">
         <ParameterList name="WRM for Bfr">
           <Parameter name="region" type="string" value="Bfr"/>
           <Parameter name="water retention model" type="string" value="van Genuchten"/>
@@ -290,7 +297,7 @@
     </ParameterList>
 
     <ParameterList name="AztecOO">
-      <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+      <!--Parameter name="preconditioner" type="string" value="Hypre AMG"/-->
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
         <Parameter name="maximum number of iterations" type="int" value="400"/>
@@ -304,28 +311,17 @@
 
   <!-- PRECONDITIONERS -->
   <ParameterList name="Preconditioners">
-    <ParameterList name="Trilinos ML">
-      <Parameter name="preconditioner type" type="string" value="ml"/>
-
-      <ParameterList name="ml parameters">
-        <Parameter name="ML output" type="int" value="0"/>
-        <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
-        <Parameter name="aggregation: nodes per aggregate" type="int" value="3"/>
-        <Parameter name="aggregation: threshold" type="double" value="0.001"/>
-        <Parameter name="aggregation: type" type="string" value="Uncoupled"/>
-        <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
-        <Parameter name="coarse: max size" type="int" value="5"/>
-        <Parameter name="coarse: sweeps" type="int" value="5"/>
-        <Parameter name="coarse: damping factor" type="double" value="1.0"/>
-        <Parameter name="cycle applications" type="int" value="2"/>
-        <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
-        <Parameter name="eigen-analysis: type" type="string" value="cg"/>
-        <Parameter name="max levels" type="int" value="40"/>
-        <Parameter name="prec type" type="string" value="MGW"/>
-        <Parameter name="smoother: damping factor" type="double" value="1.0"/>
-        <Parameter name="smoother: pre or post" type="string" value="both"/>
-        <Parameter name="smoother: sweeps" type="int" value="2"/>
-        <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
+    <ParameterList name="Hypre AMG">
+      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <ParameterList name="boomer amg parameters">
+        <Parameter name="tolerance" type="double" value="0.0"/>
+        <Parameter name="smoother sweeps" type="int" value="2"/>
+        <Parameter name="cycle applications" type="int" value="5"/>
+        <Parameter name="strong threshold" type="double" value="0.25"/>
+        <Parameter name="cycle type" type="int" value="1"/>
+        <Parameter name="coarsen type" type="int" value="0"/>
+        <Parameter name="verbosity" type="int" value="0"/>
+        <Parameter name="relaxation type" type="int" value="3"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -714,13 +710,13 @@
 
   <!--  TRANSPORT:  -->
   <ParameterList name="Transport">
-    <Parameter name="CFL" type="double" value="1"/>
+    <Parameter name="cfl" type="double" value="1.0"/>
     <ParameterList name="Transport BCs">
       <ParameterList name="BC 0">
-        <Parameter name="Component 0" type="Array(double)" value="{0, 0}"/>
+        <Parameter name="Component 0" type="Array(double)" value="{0.0, 0.0}"/>
         <Parameter name="Regions" type="Array(string)" value="{Top Surface Region}"/>
         <Parameter name="Time functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Times" type="Array(double)" value="{0, 1}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 1.0}"/>
       </ParameterList>
       <Parameter name="number of BCs" type="int" value="1"/>
     </ParameterList>

@@ -55,7 +55,7 @@ void VerboseObject::set_name(std::string name)
   setLinePrefix(header);
 }
 
-std::string VerboseObject::color(std::string name) 
+std::string VerboseObject::color(std::string name) const
 { 
   std::string output("");
 #ifdef __linux
@@ -130,7 +130,7 @@ VerboseObject::VerboseObject(const Epetra_MpiComm* const comm, std::string name,
   }
 }
 
-std::string VerboseObject::reset() 
+std::string VerboseObject::reset() const
 { 
   std::string output("");
 #ifdef __linux
