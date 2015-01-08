@@ -72,7 +72,7 @@ set(operators_inc_files
     UpwindSecondOrder.hh)
 
 add_amanzi_library(operators
-                   SOURCE GraphFE.cc MatrixFE.cc Operator.cc 
+                   SOURCE GraphFE.cc MatrixFE.cc SuperMap.cc Operator.cc 
                    OperatorDiffusion.cc OperatorDiffusionSurface.cc 
                    OperatorDiffusionWithGravity.cc OperatorDiffusionFactory.cc
                    OperatorDiffusionTPFA.cc OperatorSource.cc 
@@ -95,15 +95,31 @@ if ( BUILD_TESTS )
 
     set(amanzi_libs geometry atk mesh mesh_factory data_structures operators whetstone output)
 
+    # Test: tests for FE graph and matrices
     add_amanzi_test(graph_fe_test graph_fe_test
                     KIND unit
 		    SOURCE test/Main.cc test/graph_fe_test.cc
-		    LINK_LIBS ${amani_libs} ${UnitTest_LIBRARIES})
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(matrix_fe_test matrix_fe_test
                     KIND unit
 		    SOURCE test/Main.cc test/matrix_fe_test.cc
-		    LINK_LIBS ${amani_libs} ${UnitTest_LIBRARIES})
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(matrix_fe_test_np2 matrix_fe_test NPROCS 2 KIND unit)
+    add_amanzi_test(matrix_fe_test_np4 matrix_fe_test NPROCS 4 KIND unit)
+
+    add_amanzi_test(supermap_test supermap_test
+                    KIND unit
+		    SOURCE test/Main.cc test/supermap_test.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(supermap_test_np3 supermap_test NPROCS 3 KIND unit)
+    add_amanzi_test(supermap_test_np5 supermap_test NPROCS 5 KIND unit)
+
+    add_amanzi_test(matrix_fe_test_speed matrix_fe_test_speed
+                    KIND unit
+		    SOURCE test/Main.cc test/matrix_fe_test_speed.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: matrices for diffusion
     if ( ENABLE_INDIVIDUAL_TESTS_OPERATORS OR ENABLE_INDIVIDUAL_TESTS )
@@ -162,6 +178,8 @@ if ( BUILD_TESTS )
                     KIND unit
                     SOURCE test/Main.cc test/operator_reconstruction.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+
 endif()
 
 

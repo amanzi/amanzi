@@ -24,6 +24,13 @@
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
 
+#include "Teuchos_TimeMonitor.hpp"
+#include "Epetra_IntSerialDenseVector.h"
+#include "Epetra_SerialDenseVector.h"
+#include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_FECrsGraph.h"
+#include "Epetra_FECrsMatrix.h"
 #include "GraphFE.hh"
 #include "MatrixFE.hh"
 
@@ -39,7 +46,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "Test: 2D steady-state elliptic solver, mixed discretization" << std::endl;
+  if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_convergence.xml";
@@ -78,11 +85,11 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA) {
     neighbor_cells.resize(0);
     neighbor_cells.push_back(c);
     
-    mesh->cell_get_faces(c, AmanziMesh::USED, &faces);
-    for (int f=0; f!=faces.size(); ++f) {
-      mesh->face_get_cells(f, AmanziMesh::USED, &face_cells);
+    mesh->cell_get_faces(c, &faces);
+    for (int n=0; n!=faces.size(); ++n) {
+      mesh->face_get_cells(faces[n], AmanziMesh::USED, &face_cells);
       if (face_cells.size() > 1) {
-	neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
+        neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
       }	
     }
 
@@ -90,40 +97,77 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA) {
     CHECK(!ierr);
   }
 
-  ierr |= graph->FillCompete(cell_map, cell_map);
+  ierr |= graph->FillComplete(cell_map, cell_map);
   CHECK(!ierr);
 
-  // create the matrix
+  // create the test matrix
   MatrixFE matrix(graph);
 
-  std::vector<double> vals;
+  // and the control matrix
+  Epetra_FECrsMatrix control(Copy, graph->Graph());
+
   for (int c=0; c!=ncells; ++c) {
     neighbor_cells.resize(0);
     neighbor_cells.push_back(c);
-    vals.resize(0);
-    vals.push_back(0.);
     
-    mesh->cell_get_faces(c, AmanziMesh::USED, &faces);
-    for (int f=0; f!=faces.size(); ++f) {
-      mesh->face_get_cells(f, AmanziMesh::USED, &face_cells);
+    mesh->cell_get_faces(c, &faces);
+    for (int n=0; n!=faces.size(); ++n) {
+      mesh->face_get_cells(faces[n], AmanziMesh::USED, &face_cells);
       if (face_cells.size() > 1) {
-	neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
-	vals[0] += 1.;
-	vals.push_back(-1.);
-      }	
+        neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
+      }
     }
 
-    ierr |= matrix->SumIntoMyIndices(c, neighbor_cells.size(), &vals[0], &neighbor_cells[0]);
+    Epetra_SerialDenseVector vals(neighbor_cells.size());
+    vals.Random();
+    
+    ierr |= matrix.SumIntoMyValues(c, neighbor_cells.size(), &vals[0], &neighbor_cells[0]);
+    ASSERT(!ierr);
+    CHECK(!ierr);
+
+    std::vector<int> neighbor_cell_gids(neighbor_cells.size());
+    for (int n=0; n!=neighbor_cells.size(); ++n) {
+      neighbor_cell_gids[n] = cell_map_ghosted->GID(neighbor_cells[n]);
+      ASSERT(neighbor_cell_gids[n] >= 0);
+    }
+    ASSERT(cell_map_ghosted->GID(c) >= 0);
+    ierr |= control.SumIntoGlobalValues(cell_map_ghosted->GID(c), neighbor_cells.size(), &vals[0], &neighbor_cell_gids[0]);
+    ASSERT(!ierr);
     CHECK(!ierr);
   }
 
-  ierr |= matrix->FillCompete();
+  ierr |= matrix.FillComplete();
   CHECK(!ierr);
+
+  ierr |= control.GlobalAssemble();
+  CHECK(!ierr);
+
+  // check matrix equality
+  for (int c=0; c!=ncells; ++c) {
+    int nentries(0);
+    std::vector<double> mat_vals(5);
+    std::vector<double> ctrl_vals(5);
+    std::vector<int> mat_inds(5);
+    std::vector<int> ctrl_inds(5);
+
+    ierr |= matrix.Matrix().ExtractMyRowCopy(c, 5, nentries, &mat_vals[0], &mat_inds[0]);
+    CHECK(!ierr);
+    mat_vals.resize(nentries);
+    mat_inds.resize(nentries);
+
+    ierr |= control.ExtractMyRowCopy(c, 5, nentries, &ctrl_vals[0], &ctrl_inds[0]);
+    CHECK(!ierr);
+    ctrl_vals.resize(nentries);
+    ctrl_inds.resize(nentries);
+    
+    CHECK(mat_vals == ctrl_vals);
+    CHECK(mat_inds == ctrl_inds);
+  }
 }
 
 
 /* *****************************************************************
- * this test is a null test -- all entries are local
+ * this test is a real test with FE-like assembly of face-face system
 * **************************************************************** */
 TEST(FE_MATRIX_FACE_FACE) {
   using namespace Amanzi;
@@ -134,7 +178,7 @@ TEST(FE_MATRIX_FACE_FACE) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "Test: 2D steady-state elliptic solver, mixed discretization" << std::endl;
+  if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_convergence.xml";
@@ -163,37 +207,86 @@ TEST(FE_MATRIX_FACE_FACE) {
 
   // create the graph
   int ierr(0);
-  GraphFE graph(face_map, face_map_ghosted, face_map_ghosted, 5);
+  Teuchos::RCP<GraphFE> graph =
+      Teuchos::rcp(new GraphFE(face_map, face_map_ghosted, face_map_ghosted, 5));
   
   Entity_ID_List faces;
   Entity_ID_List face_cells;
   for (int c=0; c!=ncells; ++c) {
-    mesh->cell_get_faces(c, AmanziMesh::USED, &faces);
+    mesh->cell_get_faces(c, &faces);
 
     for (int n=0; n!=faces.size(); ++n) {
-      ierr |= graph.InsertMyIndices(faces[n], faces.size(), &faces[0]);
+      ierr |= graph->InsertMyIndices(faces[n], faces.size(), &faces[0]);
       CHECK(!ierr);
     }
   }
 
-  ierr |= graph.FillCompete(face_map, face_map);
+  ierr |= graph->FillComplete(face_map, face_map);
   CHECK(!ierr);
 
-  // create the matrix
+  // create the test matrix
   MatrixFE matrix(graph);
 
+  // and the control matrix
+  Epetra_FECrsMatrix control(Copy, graph->Graph());
+
   for (int c=0; c!=ncells; ++c) {
-    mesh->cell_get_faces(c, AmanziMesh::USED, &faces);
+    mesh->cell_get_faces(c, &faces);
 
+    Epetra_IntSerialDenseVector face_gids(faces.size());
     for (int n=0; n!=faces.size(); ++n) {
-      std::vector<double> vals(faces.size(), -1.);
-      vals[n] = 1.;
+      face_gids[n] = face_map_ghosted->GID(faces[n]);
+      ASSERT(face_gids[n] > -1);
+    }
 
-      ierr |= matrix->SumIntoMyIndices(c, neighbor_cells.size(), &vals[0], &faces[0]);
-      CHECK(!ierr);
+    Epetra_SerialDenseMatrix vals(faces.size(), faces.size());
+    vals.Random();
+
+    ierr |= matrix.SumIntoMyValues(&faces[0], vals);
+    CHECK(!ierr);
+
+    ierr |= control.SumIntoGlobalValues(face_gids, vals);
+    CHECK(!ierr);
+  }
+
+  ierr |= matrix.FillComplete();
+  CHECK(!ierr);
+
+  ierr |= control.GlobalAssemble();
+  CHECK(!ierr);
+
+  // check matrix equality
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  for (int f=0; f!=nfaces; ++f) {
+    int nentries(0);
+    std::vector<double> mat_vals(7);
+    std::vector<double> ctrl_vals(7);
+    std::vector<int> mat_inds(7);
+    std::vector<int> ctrl_inds(7);
+
+    ierr |= matrix.Matrix().ExtractMyRowCopy(f, 7, nentries, &mat_vals[0], &mat_inds[0]);
+    CHECK(!ierr);
+    mat_vals.resize(nentries);
+    mat_inds.resize(nentries);
+
+    ierr |= control.ExtractMyRowCopy(f, 7, nentries, &ctrl_vals[0], &ctrl_inds[0]);
+    CHECK(!ierr);
+    ctrl_vals.resize(nentries);
+    ctrl_inds.resize(nentries);
+    
+    CHECK(mat_inds == ctrl_inds);
+    CHECK(mat_vals == ctrl_vals);
+    if (!(mat_vals == ctrl_vals)) {
+      std::cout << "Bad mat: ";
+      for (std::vector<double>::const_iterator it=mat_vals.begin();
+           it !=mat_vals.end(); ++it) std::cout << " " << *it;
+      std::cout << std::endl << "   ctrl: ";
+      for (std::vector<double>::const_iterator it=ctrl_vals.begin();
+           it !=ctrl_vals.end(); ++it) std::cout << " " << *it;
+      std::cout << std::endl;
     }
   }
 
-  ierr |= matrix->FillCompete();
-  CHECK(!ierr);
 }
+
+

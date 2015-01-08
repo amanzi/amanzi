@@ -17,6 +17,7 @@ map, not the true row map.
 #include "Teuchos_RCP.hpp"
 
 class Epetra_CrsMatrix;
+class Epetra_SerialDenseMatrix;
 
 #include "GraphFE.hh"
 
@@ -59,13 +60,15 @@ class MatrixFE {
 
   // fill graph
   int SumIntoMyValues(int row, int count, double *values, int *indices);
+  int SumIntoMyValues(int *indices, Epetra_SerialDenseMatrix& vals);
+  int SumIntoMyValues_Transposed(int *indices, Epetra_SerialDenseMatrix& vals);
 
   // finish fill
   int FillComplete();
 
  protected:
 
-  Teuchos::RCP<GraphFE> graph_;
+  Teuchos::RCP<const GraphFE> graph_;
   Teuchos::RCP<Epetra_CrsMatrix> matrix_;
   Teuchos::RCP<Epetra_CrsMatrix> offproc_matrix_;  
 
