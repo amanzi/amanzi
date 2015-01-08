@@ -76,6 +76,9 @@ public:
   AmanziMesh::Entity_kind Location(std::string name) const {
     return locations_[Index_(name)]; }
 
+  int NumMyElements(std::string name) const;
+  int NumMyGhostedElements(std::string name) const;
+  
   // Update all specs from another space's specs.
   // Useful for PKs to maintain default factories that apply to multiple CVs.
   CompositeVectorSpace* Update(const CompositeVectorSpace& other);
