@@ -23,9 +23,9 @@ namespace Flow {
 /* ******************************************************************
 * Process source, step 1.
 ****************************************************************** */
-Functions::FlowDomainFunction* FlowSourceFactory::createSource() const
+FlowDomainFunction* FlowSourceFactory::createSource() const
 {
-  Functions::FlowDomainFunction* src = new Functions::FlowDomainFunction(mesh_);
+  FlowDomainFunction* src = new FlowDomainFunction(mesh_);
 
   // Iterate through the source specification sublists in the params_.
   // All are expected to be sublists of identical structure.
@@ -53,7 +53,7 @@ Functions::FlowDomainFunction* FlowSourceFactory::createSource() const
 /* ******************************************************************
 * Process source, step 2.
 ****************************************************************** */
-void FlowSourceFactory::ProcessSourceSpec(Teuchos::ParameterList& list, Functions::FlowDomainFunction* src) const
+void FlowSourceFactory::ProcessSourceSpec(Teuchos::ParameterList& list, FlowDomainFunction* src) const
 {
   Errors::Message m;
   std::vector<std::string> regions;
@@ -92,9 +92,9 @@ void FlowSourceFactory::ProcessSourceSpec(Teuchos::ParameterList& list, Function
   std::string action_name = list.get<std::string>("spatial distribution method", "none");
   ProcessStringActions(action_name, &method);
 
-  int submodel(Functions::DOMAIN_FUNCTION_SUBMODEL_RATE);
+  int submodel(CommonDefs::DOMAIN_FUNCTION_SUBMODEL_RATE);
   std::string submodel_name = list.get<std::string>("submodel", "rate");
-  if (submodel_name == "integrad") submodel = Functions::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND;
+  if (submodel_name == "integrad") submodel = CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND;
 
   src->Define(regions, f, method, submodel);
 }
@@ -107,11 +107,11 @@ void FlowSourceFactory::ProcessStringActions(const std::string& name, int* metho
 {
   Errors::Message msg;
   if (name == "none") {
-    *method = Amanzi::Functions::DOMAIN_FUNCTION_ACTION_NONE;
+    *method = CommonDefs::DOMAIN_FUNCTION_ACTION_NONE;
   } else if (name == "volume") {
-    *method = Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME;
+    *method = CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME;
   } else if (name == "permeability") {
-    *method = Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY;
+    *method = CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY;
   } else {
     msg << "Flow PK: unknown source distribution method has been specified.";
     Exceptions::amanzi_throw(msg);

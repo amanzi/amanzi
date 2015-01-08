@@ -60,6 +60,7 @@ Operator::Operator(const Operator& op)
       blocks_shadow_(op.blocks_shadow_), 
       diagonal_(op.diagonal_),
       rhs_(op.rhs_),
+      bc_(op.bc_),
       A_(op.A_),
       preconditioner_(op.preconditioner_)
 {

@@ -122,7 +122,8 @@ void PrimaryVariableFieldEvaluator::SetFieldAsChanged(const Teuchos::Ptr<State>&
   deriv_requests_.clear();
 
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-    *vo_->os() << "PRIMARY Variable marked as changed." << std::endl;
+    *vo_->os() << "Primary field \"" << vo_->color("gree") << my_key_ 
+               << vo_->reset() << "\" marked as changed." << std::endl;
   }
 }
 

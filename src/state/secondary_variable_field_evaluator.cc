@@ -71,8 +71,8 @@ bool SecondaryVariableFieldEvaluator::HasFieldChanged(const Teuchos::Ptr<State>&
   Teuchos::OSTab tab = vo_->getOSTab();
 
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-    *vo_->os() << "Secondary Variable " << my_key_ << " requested by "
-          << request << std::endl;
+    *vo_->os() << "Secondary field \"" << my_key_ << "\" requested by "
+               << request << std::endl;
   }
 
 
@@ -85,7 +85,8 @@ bool SecondaryVariableFieldEvaluator::HasFieldChanged(const Teuchos::Ptr<State>&
 
   if (update) {
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_->os() << "Updating " << my_key_ << " value... " << std::endl;
+      *vo_->os() << "Updating \"" << vo_->color("green") << my_key_ 
+                 << vo_->reset() << "\" value... " << std::endl;
     }
 
     // If so, update ourselves, empty our list of filled requests, and return.
@@ -98,12 +99,12 @@ bool SecondaryVariableFieldEvaluator::HasFieldChanged(const Teuchos::Ptr<State>&
     if (requests_.find(request) == requests_.end()) {
       requests_.insert(request);
       if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-        *vo_->os() << my_key_  << " has changed, but no need to update... " << std::endl;
+        *vo_->os() << "\"" << my_key_ << "\" has changed, but no need to update... " << std::endl;
       }
       return true;
     } else {
       if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-        *vo_->os() << my_key_ << " has not changed... " << std::endl;
+        *vo_->os() << "\"" << my_key_ << "\" has not changed... " << std::endl;
       }
       return false;
     }

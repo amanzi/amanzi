@@ -31,7 +31,7 @@ namespace Operators {
 /* ******************************************************************
 * Constructor.                                           
 ****************************************************************** */
-void OperatorDiffusionTPFA::InitOperator(
+void OperatorDiffusionTPFA::Setup(
     std::vector<WhetStone::Tensor>& K,
     Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
     double rho, double mu)

@@ -4,45 +4,33 @@
 
   <!--  REGIONS  -->
   <ParameterList name="Regions">
-    <ParameterList name="Material 1">
+    <ParameterList name="Computational domain">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,-2.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,-1.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Material 2">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,-1.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,0.0}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{0.0,-1.0}"/>
+        <Parameter name="Location" type="Array(double)" value="{0.0,0.0}"/>
         <Parameter name="Direction" type="Array(double)" value="{-1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Right side Bottom">
+    <ParameterList name="Right side">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{1.0,-2.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,-1.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Right side Top">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{1.0,-1.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,0.0}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{1.0,0.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{0.5,-2.0}"/>
+        <Parameter name="Location" type="Array(double)" value="{0.0,0.0}"/>
         <Parameter name="Direction" type="Array(double)" value="{0.0,-1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{0.5,0.0}"/>
+        <Parameter name="Location" type="Array(double)" value="{1.0,1.0}"/>
         <Parameter name="Direction" type="Array(double)" value="{0.0,1.0}"/>
       </ParameterList>
     </ParameterList>
@@ -50,6 +38,34 @@
 
   <!-- ENERGY -->
   <ParameterList name="Energy">
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="high"/>
+    </ParameterList>
+
+    <ParameterList name="energy evaluator">
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="extreme"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="enthalpy evaluator">
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="extreme"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="thermal conductivity evaluator">
+      <ParameterList name="thermal conductivity parameters">
+        <Parameter name="thermal conductivity type" type="string" value="two-phase Peters-Lidard"/>
+        <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
+        <Parameter name="thermal conductivity of liquid" type="double" value="0.1"/>
+        <Parameter name="thermal conductivity of gas" type="double" value="0.02"/>
+
+        <Parameter name="unsaturated alpha" type="double" value="1.0"/>
+        <Parameter name="epsilon" type="double" value="1.e-10"/>
+      </ParameterList>
+    </ParameterList>
+
     <ParameterList name="operators">
       <ParameterList name="diffusion operator">
         <ParameterList name="matrix">
@@ -63,7 +79,7 @@
           <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
           <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-          <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+          <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="gravity" type="bool" value="true"/>
         </ParameterList>
       </ParameterList>
@@ -101,6 +117,185 @@
     </ParameterList>
   </ParameterList>
 
+  <!-- STATE -->
+  <ParameterList name="State">
+    <ParameterList name="field evaluators">
+      <ParameterList name="saturation_liquid">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.8"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="porosity">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.2"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="pressure">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="8000.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="density_rock">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant"> <!-- time component -->
+                <Parameter name="value" type="double" value="2500."/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="internal_energy_liquid">
+        <Parameter name="field evaluator type" type="string" value="iem"/>
+        <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
+        <ParameterList name="IEM parameters">
+          <Parameter name="IEM type" type="string" value="linear"/>
+          <Parameter name="heat capacity [J/mol-K]" type="double" value="76.0"/>
+        </ParameterList>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="internal_energy_rock">
+        <Parameter name="field evaluator type" type="string" value="iem"/>
+        <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
+        <ParameterList name="IEM parameters">
+          <Parameter name="IEM type" type="string" value="linear"/>
+          <Parameter name="heat capacity [J/kg-K]" type="double" value="620.0"/>
+        </ParameterList>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="internal_energy_gas">
+        <Parameter name="field evaluator type" type="string" value="iem water vapor"/>
+        <Parameter name="internal energy key" type="string" value="internal_energy_gas"/>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="molar_density_liquid">
+        <Parameter name="field evaluator type" type="string" value="eos"/>
+        <Parameter name="EOS basis" type="string" value="both"/>
+        <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
+        <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="EOS type" type="string" value="liquid water"/>
+        </ParameterList>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="molar_density_gas">
+        <Parameter name="field evaluator type" type="string" value="eos"/>
+        <Parameter name="EOS basis" type="string" value="molar"/>
+        <Parameter name="molar density key" type="string" value="molar_density_gas"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="EOS type" type="string" value="vapor in gas"/>
+          <ParameterList name="gas EOS parameters">
+            <Parameter name="EOS type" type="string" value="ideal gas"/>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="mol_frac_gas">
+        <Parameter name="field evaluator type" type="string" value="molar fraction gas"/>
+        <Parameter name="molar fraction key" type="string" value="mol_frac_gas"/>
+        <ParameterList name="vapor pressure model parameters">
+          <Parameter name="vapor pressure model type" type="string" value="water vapor over water/ice"/>
+        </ParameterList>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="effective_pressure">
+        <Parameter name="field evaluator type" type="string" value="effective_pressure"/>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="initial conditions">
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="101325.0"/>
+      </ParameterList>
+
+      <ParameterList name="mass_density_liquid">
+        <ParameterList name="function">
+          <ParameterList name="Aquifer">
+            <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1000.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="gravity">
+        <Parameter name="value" type="Array(double)" value="{0.0, -9.80665}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
   <!-- SOLVERS -->
   <ParameterList name="Solvers">
     <ParameterList name="PCG with Hypre AMG">
@@ -131,25 +326,15 @@
 
   <!-- PRECONDITIONERS -->
   <ParameterList name="Preconditioners">
-    <ParameterList name="Trilinos ML">
-      <Parameter name="preconditioner type" type="string" value="ml"/>
-      <ParameterList name="ml parameters">
-        <Parameter name="ML output" type="int" value="0"/>
-        <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
-        <Parameter name="aggregation: nodes per aggregate" type="int" value="3"/>
-        <Parameter name="aggregation: threshold" type="double" value="0"/>
-        <Parameter name="aggregation: type" type="string" value="Uncoupled"/>
-        <Parameter name="coarse: max size" type="int" value="128"/>
-        <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
-        <Parameter name="cycle applications" type="int" value="2"/>
-        <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
-        <Parameter name="eigen-analysis: type" type="string" value="cg"/>
-        <Parameter name="max levels" type="int" value="40"/>
-        <Parameter name="prec type" type="string" value="MGW"/>
-        <Parameter name="smoother: damping factor" type="double" value="1"/>
-        <Parameter name="smoother: pre or post" type="string" value="both"/>
-        <Parameter name="smoother: sweeps" type="int" value="2"/>
-        <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
+   <ParameterList name="Hypre AMG">
+      <Parameter name="discretization method" type="string" value="optimized mfd"/>
+      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <ParameterList name="boomer amg parameters">
+        <Parameter name="tolerance" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="smoother sweeps" type="int" value="3"/>
+        <Parameter name="cycle applications" type="int" value="5"/>
+        <Parameter name="strong threshold" type="double" value="5.00000000000000000e-01"/>
+        <Parameter name="verbosity" type="int" value="3"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

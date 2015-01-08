@@ -4,6 +4,9 @@
 
 #include "VerboseObject_objs.hh"
 #include "state_evaluators_registration.hh"
+#include "energy_thermal_conductivity_registration.hh"
+#include "energy_internal_energy_registration.hh"
+#include "eos_registration.hh"
 
 int main(int argc, char *argv[])
 {

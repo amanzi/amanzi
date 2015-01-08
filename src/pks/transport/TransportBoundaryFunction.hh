@@ -19,13 +19,12 @@ application per entity.
 
 #include "Teuchos_RCP.hpp"
 
+#include "CommonDefs.hh"
 #include "Mesh.hh"
 #include "unique_mesh_function.hh"
 
 namespace Amanzi {
 namespace Transport {
-
-typedef std::pair<std::string, int> Action;
 
 class TransportBoundaryFunction : public Functions::UniqueMeshFunction {
  public:

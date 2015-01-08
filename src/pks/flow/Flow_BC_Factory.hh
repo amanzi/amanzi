@@ -112,35 +112,35 @@ class FlowBCFactory {
                 const Teuchos::RCP<Teuchos::ParameterList>& plist);
   ~FlowBCFactory() { delete vo_; }
   
-  Functions::FlowBoundaryFunction* CreatePressure(std::vector<int>& submodel) const;
-  Functions::FlowBoundaryFunction* CreateMassFlux(std::vector<int>& submodel) const;
-  Functions::FlowBoundaryFunction* CreateStaticHead(
+  FlowBoundaryFunction* CreatePressure(std::vector<int>& submodel) const;
+  FlowBoundaryFunction* CreateMassFlux(std::vector<int>& submodel) const;
+  FlowBoundaryFunction* CreateStaticHead(
       double p0, double rho, const AmanziGeometry::Point& gravity, std::vector<int>& submodel) const;
-  Functions::FlowBoundaryFunction* CreateSeepageFace(
+  FlowBoundaryFunction* CreateSeepageFace(
       double p0, std::vector<int>& submodel) const;
 
  private:
   void ProcessPressureList(
-      Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::FlowBoundaryFunction* bc) const;
+      Teuchos::ParameterList& list, std::vector<int>& submodel, FlowBoundaryFunction* bc) const;
   void ProcessPressureSpec(
-      Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::FlowBoundaryFunction* bc) const;
+      Teuchos::ParameterList& list, std::vector<int>& submodel, FlowBoundaryFunction* bc) const;
 
   void ProcessMassFluxList(
-      Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::FlowBoundaryFunction* bc) const;
+      Teuchos::ParameterList& list, std::vector<int>& submodel, FlowBoundaryFunction* bc) const;
   void ProcessMassFluxSpec(
-      Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::FlowBoundaryFunction* bc) const;
+      Teuchos::ParameterList& list, std::vector<int>& submodel, FlowBoundaryFunction* bc) const;
 
   void ProcessSeepageFaceList(
-      Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::FlowBoundaryFunction* bc) const;
+      Teuchos::ParameterList& list, std::vector<int>& submodel, FlowBoundaryFunction* bc) const;
   void ProcessSeepageFaceSpec(
-      Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::FlowBoundaryFunction* bc) const;
+      Teuchos::ParameterList& list, std::vector<int>& submodel, FlowBoundaryFunction* bc) const;
 
   void ProcessStaticHeadList(
       double p0, double rho, const AmanziGeometry::Point& gravity, 
-      Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::FlowBoundaryFunction* bc) const;
+      Teuchos::ParameterList& list, std::vector<int>& submodel, FlowBoundaryFunction* bc) const;
   void ProcessStaticHeadSpec(
       double p0, double rho, const AmanziGeometry::Point& gravity,
-      Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::FlowBoundaryFunction* bc) const;
+      Teuchos::ParameterList& list, std::vector<int>& submodel, FlowBoundaryFunction* bc) const;
      
   void PopulateSubmodelFlag(
       const std::vector<std::string>& regions, int flag, std::vector<int>& submodel) const;

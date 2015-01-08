@@ -41,9 +41,9 @@ class OperatorDiffusionTPFA : public OperatorDiffusion {
   ~OperatorDiffusionTPFA() {};
 
   // re-implementation of basic operator virtual members
-  void InitOperator(std::vector<WhetStone::Tensor>& K,
-                    Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
-                    double rho, double mu);
+  void Setup(std::vector<WhetStone::Tensor>& K,
+             Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
+             double rho, double mu);
 
   void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u);
   void ApplyBCs(); 

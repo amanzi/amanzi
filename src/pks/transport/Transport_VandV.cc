@@ -299,7 +299,7 @@ void Transport_PK::VV_CheckTracerBounds(Epetra_MultiVector& tracer,
       std::cout << "    simulation time = " << T_physics << std::endl;
       std::cout << "      cell = " << c << std::endl;
       std::cout << "      center = " << mesh_->cell_centroid(c) << std::endl;
-      std::cout << "      limiter = " << (*limiter_)[c] << std::endl;
+      // std::cout << "      limiter = " << (*limiter_)[c] << std::endl;
       std::cout << "      value (old) = " << tcc_prev[component][c] << std::endl;
       std::cout << "      value (new) = " << value << std::endl;
 

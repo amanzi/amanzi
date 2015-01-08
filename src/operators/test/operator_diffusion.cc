@@ -216,7 +216,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   
   // populate the diffusion operator
   int schema = Operators::OPERATOR_SCHEMA_DOFS_NODE;
-  op->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
   op->ApplyBCs();
   op->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_NODE);
@@ -393,7 +393,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_2D) {
 
   // populate the diffusion operator
   int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE;
-  op->InitOperator(K, knc->values(), knc->derivatives(), rho, mu);
+  op->Setup(K, knc->values(), knc->derivatives(), rho, mu);
   op->UpdateMatrices(flux, Teuchos::null);
   op->ApplyBCs();
   op->SymbolicAssembleMatrix(schema);
@@ -546,7 +546,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
 
   // populate the diffusion operator
   int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE;
-  op->InitOperator(K, knc->values(), knc->derivatives(), rho, mu);
+  op->Setup(K, knc->values(), knc->derivatives(), rho, mu);
   op->UpdateMatrices(flux, Teuchos::null);
   op->ApplyBCs();
   op->SymbolicAssembleMatrix(schema);
@@ -706,7 +706,7 @@ TEST(OPERATOR_DIFFUSION_SECOND_ORDER) {
 
   // populate the diffusion operator
   int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE;
-  op->InitOperator(K, knc->values(), knc->derivatives(), rho, mu);
+  op->Setup(K, knc->values(), knc->derivatives(), rho, mu);
   op->UpdateMatrices(flux, Teuchos::null);
   op->ApplyBCs();
   op->SymbolicAssembleMatrix(schema);
@@ -854,7 +854,7 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   
   // populate the diffusion operator
   int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE;
-  op->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
   op->ApplyBCs();
   op->SymbolicAssembleMatrix(schema);
@@ -1022,7 +1022,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   
   // populate the diffusion operator
   int schema = Operators::OPERATOR_SCHEMA_DOFS_NODE;
-  op->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
   op->ApplyBCs();
   op->SymbolicAssembleMatrix(schema);
@@ -1154,7 +1154,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   
   // populate the diffusion operator
   int schema = Operators::OPERATOR_SCHEMA_DOFS_CELL;
-  op->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
   op->ApplyBCs();
   op->SymbolicAssembleMatrix(schema);

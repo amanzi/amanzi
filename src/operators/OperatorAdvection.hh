@@ -26,7 +26,7 @@ class OperatorAdvection : public Operator {
   ~OperatorAdvection() {};
 
   // main members
-  void InitOperator(const CompositeVector& u);
+  void Setup(const CompositeVector& u);
   void UpdateMatrices(const CompositeVector& u);
 
  private:
