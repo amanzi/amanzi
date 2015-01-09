@@ -26,13 +26,15 @@ set(CXX_source_files Region.cpp
                      RegionManager.cpp 
                      RegionData.cpp
                      IdxRegionData.cpp
-                     ChemConstraintEval.cpp) 
+                     ChemConstraintEval.cpp
+                     DiffDomRelSrc.cpp)
 
 set(CXX_header_files Region.H 
                      RegionManager.H
                      RegionData.H
                      IdxRegionData.H
-                     ChemConstraintEval.H) 
+                     ChemConstraintEval.H
+                     DiffDomRelSrc.cpp)
 
 set(F90_source_files )
 set(F77_source_files )
@@ -64,6 +66,8 @@ if (BUILD_TESTS)
     if(${AMANZI_SPACEDIM} EQUAL 2)
       execute_process(COMMAND ${CMAKE_COMMAND} -E
         copy ${SREGION_SOURCE_DIR}/test/tR.in ${SREGION_BINARY_DIR})
+      execute_process(COMMAND ${CMAKE_COMMAND} -E
+        copy ${SREGION_SOURCE_DIR}/test/tDDRS.in ${SREGION_BINARY_DIR})
     else()
       execute_process(COMMAND ${CMAKE_COMMAND} -E
         copy ${SREGION_SOURCE_DIR}/test/tR_3D.in ${SREGION_BINARY_DIR})
@@ -79,6 +83,11 @@ if (BUILD_TESTS)
   add_amanzi_test(IndexedRegionData tIdxRegionData "tR.in"
                   KIND unit
                   SOURCE test/tIdxRegionData.cpp
+                  LINK_LIBS ${structured_grid_libs} ${common_libs} ${tpl_libs})
+
+  add_amanzi_test(DiffDomRelSrc tDiffDomRelSrc "tDDRS.in"
+                  KIND unit
+                  SOURCE test/tDiffDomRelSrc.cpp
                   LINK_LIBS ${structured_grid_libs} ${common_libs} ${tpl_libs})
 
   if(${AMANZI_SPACEDIM} EQUAL 2)

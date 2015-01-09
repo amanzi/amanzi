@@ -20,6 +20,7 @@ static std::map<std::string,std::string>& AMR_to_Amanzi_label_map = Amanzi::Aman
 #include <Advection.H>
 #include <AmanziChemHelper_Structured.H>
 #include <ChemConstraintEval.H>
+#include <DiffDomRelSrc.H>
 
 #ifdef _OPENMP
 #include "omp.h"
@@ -2028,7 +2029,7 @@ PorousMedia::multilevel_advance (Real  time,
 
   if (dt_suggest_tc>0) {
     if (ParallelDescriptor::IOProcessor()) {
-      std::cout << "  TRANSPORT suggests next dt = " << dt_suggest_tc
+      std::cout << "  TRAN suggests next dt = " << dt_suggest_tc
                 << " (=" << dt_suggest_tc/(365.25*3600*24) << " y)" << std::endl;
     }
     dt_suggest = (dt_suggest > 0 ? std::min(dt_suggest,dt_suggest_tc) : dt_suggest_tc);
@@ -2386,7 +2387,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
                         "TRAN",tmax_subtr,t_eps); 
       }
       n_subtr++;
-      if (n_subtr > max_n_subcycle_transport) {
+      if (n_subtr > max_n_subcycle_transport + std::max(2.,.15*max_n_subcycle_transport)) {
 	if (ParallelDescriptor::IOProcessor()) {
 	  std::cout << "TRAN: Level: "
 		    << level
@@ -2416,7 +2417,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
       int nGrowF = 1;
       MultiFab Fext(grids,ncomps+ntracers,nGrowF);
       bool do_rho_scale = 0;
-      getForce(Fext,nGrowF,0,ncomps+ntracers,t_subtr,do_rho_scale);
+      getForce(Fext,nGrowF,0,ncomps+ntracers,t_subtr,dt_subtr,do_rho_scale);
 
       if (diffuse_tracers) {
         // FIXME: getTracerViscTerms should add to Fext here, but need to get handle cached saturations on coarser levels
@@ -4476,7 +4477,7 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
   ParallelDescriptor::ReduceRealMin(dt_eig);
 
   if (ParallelDescriptor::IOProcessor() && verbose>0) {
-    std::cout << "  TRANSPORT: Level: " << level << " CFL dt limit = " << dt_eig << '\n';
+    std::cout << "  TRAN: Level: " << level << " CFL dt limit = " << dt_eig << '\n';
   }
 
   if (verbose > 3) {
@@ -6019,6 +6020,7 @@ PorousMedia::getForce (MultiFab& force,
 		       int       strt_comp,
 		       int       num_comp,
 		       Real      time,
+		       Real      dt,
 		       bool      do_rho_scale)
 {
   BL_PROFILE("PorousMedia::getForce()");
@@ -6064,7 +6066,7 @@ PorousMedia::getForce (MultiFab& force,
       // Scale all values set by this source function so they sum to 
       // user specified value
       if (stype == "volume_weighted" || stype == "point") {
-        mask.mult(1/total_volume_this_level,0,1,0);
+        mask.mult(cellVol/total_volume_this_level,0,1,0);
       }
       else {
 	if (stype != "uniform") {
@@ -6081,6 +6083,18 @@ PorousMedia::getForce (MultiFab& force,
 	  if (tsource.Type()=="uniform" || tsource.Type()=="point") {
 	    for (MFIter mfi(force); mfi.isValid(); ++mfi) {
 	      tsource.apply(tmp[mfi],dx,it+snum_comp,1,time);
+	    }
+	  }
+	  else if (tsource.Type()=="diffusion_dominated_release_model") {
+
+            const DiffDomRelSrc* tp = dynamic_cast<const DiffDomRelSrc*>(&tsource);
+            if (tp == 0) {
+              BoxLib::Abort("Error in set up of diffusion dominated release model");
+            }
+            else {
+              for (MFIter mfi(force); mfi.isValid(); ++mfi) {
+                tp->apply(tmp[mfi],dx,it+snum_comp,1,time,time+dt);
+              }
 	    }
 	  }
 	  else {
