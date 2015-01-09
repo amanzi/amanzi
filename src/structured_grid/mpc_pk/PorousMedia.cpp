@@ -5009,6 +5009,7 @@ PorousMedia::post_regrid (int lbase,
                           int new_finest)
 {
   BL_PROFILE("PorousMedia::post_regrid()");
+  init_rock_properties();
 
   if (level == lbase) {
 

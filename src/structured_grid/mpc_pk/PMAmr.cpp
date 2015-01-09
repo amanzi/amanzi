@@ -46,7 +46,7 @@ PMAmr::Initialize ()
   regrid_on_restart        = 0;
   use_efficient_regrid     = 0;
   plotfile_on_restart      = 0;
-  compute_new_dt_on_regrid = 1;
+  compute_new_dt_on_regrid = 0; // FIXME: Avoid cfl calc before velocity field computed on new level, need to revisit
   plot_file_digits         = 5;
   chk_file_digits          = 5;
   do_output_time_in_years  = true;
