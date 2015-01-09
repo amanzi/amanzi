@@ -8,15 +8,15 @@
 class RegionData
 {
 public:
-    RegionData(const std::string&    label,
+    RegionData(const std::string&          label,
                const Array<const Region*>& regions,
-               const std::string&    typeStr,
-               const Array<Real>&    vals);
+               const std::string&          typeStr,
+               const Array<Real>&          vals);
 
-    RegionData(const std::string&    label,
+    RegionData(const std::string&          label,
                const Array<const Region*>& regions,
-               const std::string&    typeStr,
-               Real                  val);
+               const std::string&          typeStr,
+               Real                        val);
     virtual ~RegionData() {}
 
     const Array<const Region*>& Regions() const {return regions;}
@@ -49,16 +49,16 @@ public:
                     const Array<Array<Real> >&        x,
                     const Array<Array<Real> >&        y,
                     const Array<Array<std::string> >& form,
-                    const Array<const Region*>&             regions,
+                    const Array<const Region*>&       regions,
                     const std::string&                typeStr);
 
-    ArrayRegionData(const std::string&       label,
-                    const Array<Real>&       x,
-                    const Array<Real>&       y,
-                    const Array<std::string> form,
-                    const Array<const Region*>&    regions,
-                    const std::string&       typeStr,
-                    int                      nComp);
+    ArrayRegionData(const std::string&          label,
+                    const Array<Real>&          x,
+                    const Array<Real>&          y,
+                    const Array<std::string>    form,
+                    const Array<const Region*>& regions,
+                    const std::string&          typeStr,
+                    int                         nComp);
     virtual ~ArrayRegionData() {}
     
     virtual Array<Real> time() const;
@@ -80,14 +80,14 @@ class Transform_S_AR_For_BC
     : public RegionData
 {
 public:
-    Transform_S_AR_For_BC(const std::string&        label,
-                          const Array<Real>&        x,
-                          const Array<Real>&        y,
-                          const Array<std::string>& form,
-                          const Array<const Region*>&     regions,
-                          const std::string&        typeStr,
-                          int                       nComp,
-                          ArrayTransform&           tfunc)
+    Transform_S_AR_For_BC(const std::string&          label,
+                          const Array<Real>&          x,
+                          const Array<Real>&          y,
+                          const Array<std::string>&   form,
+                          const Array<const Region*>& regions,
+                          const std::string&          typeStr,
+                          int                         nComp,
+                          ArrayTransform&             tfunc)
         : RegionData(label,regions,typeStr,Array<Real>(nComp)), func(x,y,form), tfunc(tfunc.clone()) {}
 
     ~Transform_S_AR_For_BC() {delete tfunc;}
