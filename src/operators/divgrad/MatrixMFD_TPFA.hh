@@ -95,8 +95,6 @@ class MatrixMFD_TPFA : virtual public MatrixMFD {
   MatrixMFD_TPFA(const MatrixMFD& other);
   void operator=(const MatrixMFD_TPFA& matrix);
 
-  friend class MatrixMFD_Surf;
-
 };
 
 }  // namespace Operators
