@@ -15,6 +15,7 @@ map, not the true row map.
 #define AMANZI_MATRIX_FE_HH_
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 class Epetra_CrsMatrix;
 class Epetra_SerialDenseMatrix;
@@ -52,17 +53,28 @@ class MatrixFE {
     return *graph_; }
 
   // accessor to matrices
-  const Epetra_CrsMatrix& Matrix() const {
-    return *matrix_; }
+  Teuchos::RCP<const Epetra_CrsMatrix> Matrix() const {
+    return matrix_; }
+  Teuchos::RCP<Epetra_CrsMatrix> Matrix() {
+    return matrix_; }
 
-  const Epetra_CrsMatrix& OffProcMatrix() const {
-    return *offproc_matrix_; }
+  Teuchos::RCP<const Epetra_CrsMatrix> OffProcMatrix() const {
+    return offproc_matrix_; }
+  Teuchos::RCP<Epetra_CrsMatrix> OffProcMatrix() {
+    return offproc_matrix_; }
+
+  // zero to allow mation
+  int Zero();
 
   // fill graph
-  int SumIntoMyValues(int row, int count, double *values, int *indices);
-  int SumIntoMyValues(int *indices, Epetra_SerialDenseMatrix& vals);
-  int SumIntoMyValues_Transposed(int *indices, Epetra_SerialDenseMatrix& vals);
+  int SumIntoMyValues(int row, int count, const double *values, const int *indices);
 
+  int SumIntoMyValues(const int *indices, const Epetra_SerialDenseMatrix& vals);
+  int SumIntoMyValues_Transposed(const int *indices, const Epetra_SerialDenseMatrix& vals);
+
+  int SumIntoMyValues(const int *indices, const Teuchos::SerialDenseMatrix<int,double>& vals);
+  int SumIntoMyValues_Transposed(const int *indices, const Teuchos::SerialDenseMatrix<int,double>& vals);
+  
   // finish fill
   int FillComplete();
 
@@ -76,7 +88,6 @@ class MatrixFE {
   int n_used_;
   
 };
-
 
 }  // namespace Operators
 }  // namespace Amanzi

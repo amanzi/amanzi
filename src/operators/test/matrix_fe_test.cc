@@ -150,7 +150,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA) {
     std::vector<int> mat_inds(5);
     std::vector<int> ctrl_inds(5);
 
-    ierr |= matrix.Matrix().ExtractMyRowCopy(c, 5, nentries, &mat_vals[0], &mat_inds[0]);
+    ierr |= matrix.Matrix()->ExtractMyRowCopy(c, 5, nentries, &mat_vals[0], &mat_inds[0]);
     CHECK(!ierr);
     mat_vals.resize(nentries);
     mat_inds.resize(nentries);
@@ -264,7 +264,7 @@ TEST(FE_MATRIX_FACE_FACE) {
     std::vector<int> mat_inds(7);
     std::vector<int> ctrl_inds(7);
 
-    ierr |= matrix.Matrix().ExtractMyRowCopy(f, 7, nentries, &mat_vals[0], &mat_inds[0]);
+    ierr |= matrix.Matrix()->ExtractMyRowCopy(f, 7, nentries, &mat_vals[0], &mat_inds[0]);
     CHECK(!ierr);
     mat_vals.resize(nentries);
     mat_inds.resize(nentries);
