@@ -3,8 +3,6 @@
 #include <mpi.h>
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "test_mfd_surf.hh"
-
 #include "VerboseObject_objs.hh"
 
 int main(int argc, char *argv[])
