@@ -145,14 +145,14 @@ struct mfd {
     if (x->HasComponent("cell")) {
       Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
       for (int c=0; c!=x_c.MyLength(); ++c) {
-	x_c[0][c] = value(mesh->cell_centroid(c));
+        x_c[0][c] = value(mesh->cell_centroid(c));
       }
     }
 
     if (x->HasComponent("face")) {
       Epetra_MultiVector& x_f = *x->ViewComponent("face",false);
       for (int f=0; f!=x_f.MyLength(); ++f) {
-	x_f[0][f] = value(mesh->face_centroid(f));
+        x_f[0][f] = value(mesh->face_centroid(f));
       }
     }
   }
@@ -161,7 +161,7 @@ struct mfd {
     if (x->HasComponent("cell")) {
       Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
       for (int c=0; c!=x_c.MyLength(); ++c) {
-	x_c[0][c] = value(surf_mesh->cell_centroid(c));
+        x_c[0][c] = value(surf_mesh->cell_centroid(c));
       }
     }
 

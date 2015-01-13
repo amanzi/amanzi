@@ -100,7 +100,6 @@ class Matrix_TPFA :  public MatrixMFD {
  protected:
   mutable Teuchos::RCP<CompositeVector> Dff_;
   mutable Teuchos::RCP<Epetra_FECrsMatrix> Spp_;  // Explicit Schur complement
-  mutable Teuchos::RCP<Epetra_FECrsMatrix> Att_;  
   mutable Teuchos::RCP<Epetra_CrsMatrix> Afc_;
   mutable Teuchos::RCP<Epetra_CrsMatrix> Acf_;
   //mutable Teuchos::RCP<AmanziPreconditioners::Preconditioner> Aff_pc_;
@@ -114,8 +113,6 @@ class Matrix_TPFA :  public MatrixMFD {
  private:
   Matrix_TPFA(const MatrixMFD& other);
   void operator=(const Matrix_TPFA& matrix);
-
-  friend class MatrixMFD_Surf;
 
 };
 
