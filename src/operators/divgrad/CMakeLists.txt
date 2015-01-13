@@ -13,10 +13,10 @@ add_library(divgrad MatrixMFD.cc
                     MatrixMFD_TPFA.cc
                     MatrixMFD_TPFA_ScaledConstraint.cc
                     MatrixMFD_Surf.cc
+                    MatrixMFD_Surf_ScaledConstraint.cc
 #                     Matrix_TPFA.cc
 #                     Matrix_TPFA_Surf.cc
 
-#                     MatrixMFD_Surf_ScaledConstraint.cc
 #                     MatrixMFD_Coupled.cc
 #                     MatrixMFD_Coupled_TPFA.cc
 #                     MatrixMFD_Coupled_Surf.cc
@@ -87,6 +87,15 @@ if (BUILD_TESTS)
       ${Amanzi_TPL_UnitTest_LIBRARIES}
       ${Amanzi_TPL_Trilinos_LIBRARIES})
 
+    add_executable(test_matrix_mfd_surf_sc
+      test/Main.cc test/test_matrix_mfd_surf_sc.cc)
+    target_link_libraries(test_matrix_mfd_surf_sc
+      divgrad amanzi_atk amanzi_whetstone amanzi_geometry
+      amanzi_mesh_factory amanzi_mstk_mesh
+      amanzi_data_structures amanzi_solvers
+      ${Amanzi_TPL_UnitTest_LIBRARIES}
+      ${Amanzi_TPL_Trilinos_LIBRARIES})
+
     # add_executable(test_matrix_tpfa
     #   test/Main.cc test/test_matrix_tpfa.cc)
     # target_link_libraries(test_matrix_tpfa
@@ -105,14 +114,6 @@ if (BUILD_TESTS)
     #   ${Amanzi_TPL_UnitTest_LIBRARIES}
     #   ${Amanzi_TPL_Trilinos_LIBRARIES})
 
-    # add_executable(test_matrix_mfd_surf_sc
-    #   test/Main.cc test/test_matrix_mfd_surf_sc.cc)
-    # target_link_libraries(test_matrix_mfd_surf_sc
-    #   divgrad amanzi_atk amanzi_whetstone amanzi_geometry
-    #   amanzi_mesh_factory amanzi_mstk_mesh
-    #   amanzi_data_structures amanzi_solvers
-    #   ${Amanzi_TPL_UnitTest_LIBRARIES}
-    #   ${Amanzi_TPL_Trilinos_LIBRARIES})
 
     # add_executable(test_matrix_mfd_coupled
     #   test/Main.cc test/test_matrix_mfd_coupled.cc)
