@@ -145,7 +145,7 @@ int MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
   double val = 0.;
 
   // Forward Eliminate
-  // Wc <-- A2c2c_Inv * (x_Ac, x_Bc)^T
+  // 1. Wc <-- A2c2c_Inv * (x_Ac, x_Bc)^T
   {
     Epetra_MultiVector& Ac = *A->ViewComponent("cell",false);
     Epetra_MultiVector& Bc = *B->ViewComponent("cell",false);
@@ -157,12 +157,12 @@ int MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
     }
   }
 
-  // Wf <-- Afc * Wc
+  // 2. Wf <-- Afc * Wc
   ierr |= blockA_->ApplyAfc(*A,*A,0.);
   ierr |= blockB_->ApplyAfc(*B,*B,0.);
   ASSERT(!ierr);
 
-  // Xf <-- (x_Af, x_Ac)^T - Afc * A2c2c_Inv * (x_Ac, x_Bc)^T, the rhs.
+  // 3. Xf <-- (x_Af, x_Ac)^T - Afc * A2c2c_Inv * (x_Ac, x_Bc)^T, the rhs.
   {
     const Epetra_MultiVector& Af = *A_const->ViewComponent("face",false);
     const Epetra_MultiVector& Bf = *B_const->ViewComponent("face",false);
@@ -173,11 +173,13 @@ int MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
     }
   }
 
-  // Apply Schur Inverse,  Yf = Schur^-1 * Xf
+
+  // Apply Schur Inverse
+  // 1. Yf = Schur^-1 * Xf
   ierr = S_pc_->ApplyInverse(Xf, Yf);
   ASSERT(!ierr);
 
-  // copy back into subblock
+  // 2. split back into the subblock data layout
   Teuchos::RCP<CompositeVector> YA = Y.SubVector(0)->Data();
   Teuchos::RCP<CompositeVector> YB = Y.SubVector(1)->Data();
   {
@@ -190,15 +192,16 @@ int MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
     }
   }
 
-  // Backward Substitution, Yc = inv( A2c2c) [  (x_Ac,x_Bc)^T - A2c2f * Yf ]
-  // Yc <-- A2c2f * Yf
+  // Backward Substitution, Yc = inv( A2c2c ) [  (x_Ac,x_Bc)^T - A2c2f * Yf ]
+  // 1. Yc <-- A2c2f * Yf
   ierr |= blockA_->ApplyAcf(*YA,*YA,0.);
-  ierr |= adv_block_->ApplyAcf(*YA,*YB,0.);
-  ierr |= blockB_->ApplyAcf(*YB,*YB,1.);
-  //  ierr |= blockB_->ApplyAcf(*YB,*YB,0.);
+  ierr |= blockB_->ApplyAcf(*YB,*YB,0.);
+  if (adv_block_ != Teuchos::null) {
+    ierr |= adv_block_->ApplyAcf(*YA,*YB,1.);
+  }
   ASSERT(!ierr);
 
-  // Yc -= (x_Ac,x_Bc)^T
+  // 2. Yc = inv(A2c2c) [(x_Ac,x_Bc)^T - Yc]
   {
     Epetra_MultiVector& YA_c = *YA->ViewComponent("cell", false);
     Epetra_MultiVector& YB_c = *YB->ViewComponent("cell", false);
@@ -220,7 +223,10 @@ int MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
  ****************************************************************** */
 int MatrixMFD_Coupled::Apply(const TreeVector& X,
         TreeVector& Y) const {
-  ASSERT(0); // this is currently screwed up with the inclusion of advective terms
+  if (adv_block_ != Teuchos::null) {
+    ASSERT(0); // this is currently screwed up with the inclusion of advective terms
+    return -1;
+  }
 
   Teuchos::RCP<const CompositeVector> XA = X.SubVector(0)->Data();
   Teuchos::RCP<const CompositeVector> XB = X.SubVector(1)->Data();
@@ -339,9 +345,6 @@ void MatrixMFD_Coupled::AssembleSchur_() const {
   std::vector<Epetra_SerialDenseVector>& Bfc = blockB_->Afc_cells();
   std::vector<Epetra_SerialDenseVector>& Bcf = blockB_->Acf_cells();
 
-  std::vector<double>& Gcc = adv_block_->Acc_cells();
-  std::vector<Epetra_SerialDenseVector>& Gcf = adv_block_->Acf_cells();
-  
   // workspace
   Teuchos::SerialDenseMatrix<int, double> cell_inv(2, 2);
   Epetra_SerialDenseMatrix values(2, 2);
@@ -374,7 +377,14 @@ void MatrixMFD_Coupled::AssembleSchur_() const {
     }
 
     // Invert the cell block
-    double Dcc = (*Dcc_)[0][c]*scaling_ + Gcc[c];
+    double Gcc = 0.;
+    Epetra_SerialDenseVector Gcf(nfaces);
+    if (adv_block_ != Teuchos::null) {
+      Gcc = adv_block_->Acc_cells()[c];
+      Gcf = adv_block_->Acf_cells()[c];
+    }      
+
+    double Dcc = (*Dcc_)[0][c]*scaling_ + Gcc;
     double Ccc = (*Ccc_)[0][c]*scaling_;
     double det_cell = Acc[c] * Bcc[c] - Ccc * Dcc;
     if (std::abs(det_cell) > 1.e-30) {
@@ -395,9 +405,9 @@ void MatrixMFD_Coupled::AssembleSchur_() const {
       ASSERT(!ierr);
 
       for (int j=0; j!=nfaces; ++j){
-        values(0,0) = Aff[c](i, j) - Afc[c](i) * (cell_inv(0,0)*Acf[c](j) + cell_inv(0,1)*Gcf[c](j));
+        values(0,0) = Aff[c](i, j) - Afc[c](i) * (cell_inv(0,0)*Acf[c](j) + cell_inv(0,1)*Gcf(j));
         values(0,1) = - Afc[c](i)*cell_inv(0,1)*Bcf[c](j);
-        values(1,0) = - Bfc[c](i) * (cell_inv(1,0)*Acf[c](j) + cell_inv(1,1)*Gcf[c](j));
+        values(1,0) = - Bfc[c](i) * (cell_inv(1,0)*Acf[c](j) + cell_inv(1,1)*Gcf(j));
         values(1,1) = Bff[c](i, j) - Bfc[c](i)*cell_inv(1,1)*Bcf[c](j);
         ierr = P2f2f_->SubmitBlockEntry(values.A(), values.LDA(),
                 values.M(), values.N());
@@ -416,11 +426,11 @@ void MatrixMFD_Coupled::AssembleSchur_() const {
   is_schur_created_ = true;
 
   // DEBUG dump
-  if (dump_schur_) {
-    std::stringstream filename_s;
-    filename_s << "schur_MatrixMFD_Coupled_" << 0 << ".txt";
-    EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *P2f2f_);
-  }
+  // if (dump_schur_) {
+  //   std::stringstream filename_s;
+  //   filename_s << "schur_MatrixMFD_Coupled_" << 0 << ".txt";
+  //   EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *P2f2f_);
+  // }
 
 }
 

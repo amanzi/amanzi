@@ -87,6 +87,9 @@ class MatrixMFD_Coupled : public TreeMatrix {
   Teuchos::RCP<const Epetra_FEVbrMatrix> Schur() {
     return P2f2f_;
   }
+  Teuchos::RCP<const Epetra_FEVbrMatrix> Aff() {
+    return A2f2f_;
+  }
 
   // TreeMatrix stuff FIX ME!
   virtual const TreeVectorSpace& DomainMap() const {
