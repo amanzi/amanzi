@@ -30,9 +30,9 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
   // required methods from the base class
   // sats[0] = sg, sats[1] = sl, sats[2] = si
   virtual bool freezing(double T, double pc_liq, double pc_ice) { return T < 273.15; }
-  virtual void saturations(double pc_liq, double pc_ice, double (&sats)[3]);
-  virtual void dsaturations_dpc_liq(double pc_liq, double pc_ice, double (&dsats)[3]);
-  virtual void dsaturations_dpc_ice(double pc_liq, double pc_ice, double (&dsats)[3]);
+  virtual void saturations(double pc_liq, double pc_ice, double T, double (&sats)[3]);
+  virtual void dsaturations_dpc_liq(double pc_liq, double pc_ice, double T, double (&dsats)[3]);
+  virtual void dsaturations_dpc_ice(double pc_liq, double pc_ice, double T, double (&dsats)[3]);
 
  protected:
   // calculation if unfrozen
