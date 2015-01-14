@@ -1005,10 +1005,10 @@ namespace Amanzi {
       }
                     
       Array<int> n_cell = amr_out_list.get<Array<int> >("n_cell");
-      for (int i=0;i<blocking_factor.size();i++) {
-                
+
+      if (blocking_factor.size() > 0) {
         for (int n=0;n<ndim;n++) {
-          if (n_cell[n]%blocking_factor[i] > 0) {
+          if (n_cell[n]%blocking_factor[0] > 0) {
             std::stringstream buf;
             for (int j=0;j<blocking_factor.size();j++) {
               buf << blocking_factor[j] << " ";

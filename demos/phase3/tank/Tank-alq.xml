@@ -77,10 +77,10 @@
         <Parameter name="Number Of AMR Levels" type="int" value="5"/>
         <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4, 4, 2, 2}"/>
         <Parameter name="Regrid Interval" type="Array(int)" value="{2}"/>
-        <Parameter name="Blocking Factor" type="Array(int)" value="{2, 2, 2, 2, 2, 2}"/>
+        <Parameter name="Blocking Factor" type="Array(int)" value="{2, 16, 16, 16, 16, 16}"/>
         <Parameter name="Maximum Grid Size" type="Array(int)" value="{32, 32, 32, 32, 32, 32}"/>
         <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{1, 1, 1, 1, 1, 1}"/>
-	<Parameter name="Refinement Indicators" type="Array(string)" value="{Tank ref, Wall ref, FF ref, Liners ref, InletOutlet ref, Sorbed ref}"/>
+	<Parameter name="Refinement Indicators" type="Array(string)" value="{Tank ref, Wall ref, FF ref, Liners ref, InletOutlet ref, Sorbed ref, Tracer ref}"/>
 
         <ParameterList name="Tank ref">
           <Parameter name="Regions" type="Array(string)" value="{Tank}"/>
@@ -117,6 +117,13 @@
           <Parameter name="Maximum Refinement Level" type="int" value="4"/>
           <Parameter name="Field Name" type="string" value="Cs137 Sorbed Concentration"/>
           <Parameter name="Value Greater" type="double" value="1.e4"/>
+        </ParameterList>
+
+        <ParameterList name="Tracer ref">
+          <Parameter name="Regions" type="Array(string)" value="{All}"/>
+          <Parameter name="Maximum Refinement Level" type="int" value="4"/>
+          <Parameter name="Field Name" type="string" value="Tracer Aqueous Concentration"/>
+          <Parameter name="Value Greater" type="double" value="0.1"/>
         </ParameterList>
 
         <ParameterList name="Expert Settings">
