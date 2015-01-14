@@ -3857,13 +3857,26 @@ PorousMedia::errorEst (TagBoxArray& tags,
               for (MFIter mfi(tags); mfi.isValid(); ++mfi)
               {
                   TagBox& tagbox = tags[mfi];
-                  const Box fine_box = Box(tagbox.box()).refine(cumRatio);
-                  
-                  mask.resize(fine_box,1); mask.setVal(0);                  
-                  for (int j=0; j<my_regions.size(); ++j) {
+
+                  if (pmfunc->regionOnly()) {
+                    // Catch cells in the region at the (new) fine level that
+                    // may not be in the coarse level
+                    const Box fine_box =  Box(tagbox.box()).refine(cumRatio);
+                    mask.resize(fine_box,1); mask.setVal(0);
+                    for (int j=0; j<my_regions.size(); ++j) {
                       my_regions[j]->setVal(mask,1,0,dx_fine,0);
-                  }                  
-                  coarsenMask(cmask,mask,cumRatio);
+                    }
+                    coarsenMask(cmask,mask,cumRatio);
+                  }
+                  else {
+                    // Otherwise, "in" region only if we can represent the
+                    // derive field at that resolution
+                    cmask.resize( (*mf)[mfi].box(), 1); cmask.setVal(0);
+                    const Real* dx_crse = geom.CellSize();
+                    for (int j=0; j<my_regions.size(); ++j) {
+                      my_regions[j]->setVal(cmask,1,0,dx_crse,0);
+                    }
+                  }
 
                   if (cmask.max()>0)
                   {
