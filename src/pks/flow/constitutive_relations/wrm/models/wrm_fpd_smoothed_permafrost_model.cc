@@ -8,7 +8,7 @@ Painter's permafrost model with freezing point depression.
 #include "dbc.hh"
 
 #include "wrm.hh"
-#include "wrm_fpd_permafrost_model.hh"
+#include "wrm_fpd_smoothed_permafrost_model.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -17,7 +17,7 @@ namespace FlowRelations {
 // required methods from the base class
 // sats[0] = sg, sats[1] = sl, sats[2] = si
 void
-WRMFPDPermafrostModel::saturations(double pc_liq, double pc_ice,
+WRMFPDSmoothedPermafrostModel::saturations(double pc_liq, double pc_ice,
         double T, double (&sats)[3]) {
   if (pc_liq <= 0.) { // saturated
     sats[0] = 0.; // gas
@@ -39,7 +39,7 @@ WRMFPDPermafrostModel::saturations(double pc_liq, double pc_ice,
 }
 
 void
-WRMFPDPermafrostModel::dsaturations_dpc_liq(double pc_liq, double pc_ice,
+WRMFPDSmoothedPermafrostModel::dsaturations_dpc_liq(double pc_liq, double pc_ice,
         double T, double (&dsats)[3]) {
   if (pc_liq <= 0.) { // saturated
     dsats[0] = 0.; // gas
@@ -59,7 +59,7 @@ WRMFPDPermafrostModel::dsaturations_dpc_liq(double pc_liq, double pc_ice,
 
 
 void
-WRMFPDPermafrostModel::dsaturations_dpc_ice(double pc_liq, double pc_ice,
+WRMFPDSmoothedPermafrostModel::dsaturations_dpc_ice(double pc_liq, double pc_ice,
         double T, double (&dsats)[3]) {
   if (pc_liq <= 0.) { // saturated
     dsats[0] = 0.; // gas
@@ -75,6 +75,14 @@ WRMFPDPermafrostModel::dsaturations_dpc_ice(double pc_liq, double pc_ice,
     dsats[0] = - dsats[1] - dsats[2];
   }
 
+}
+
+void
+WRMFPDSmoothedPermafrostModel::dsaturations_dtemperature(double pc_liq, double pc_ice,
+        double T, double (&dsats)[3]) {
+  dsats[0] = 0.;
+  dsats[1] = 0.;
+  dsats[2] = 0.;
 }
 
 

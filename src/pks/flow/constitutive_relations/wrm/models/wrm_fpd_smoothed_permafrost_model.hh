@@ -1,12 +1,12 @@
 /*
 Author: Ethan Coon
 
-Painter's permafrost model with freezing point depression.
+Painter's permafrost model with freezing point depression, smoothed to make life easier
 
  */
 
-#ifndef AMANZI_FLOWRELATIONS_WRM_FPD_PERMAFROST_MODEL_
-#define AMANZI_FLOWRELATIONS_WRM_FPD_PERMAFROST_MODEL_
+#ifndef AMANZI_FLOWRELATIONS_WRM_FPD_SMOOTHED_PERMAFROST_MODEL_
+#define AMANZI_FLOWRELATIONS_WRM_FPD_SMOOTHED_PERMAFROST_MODEL_
 
 #include "wrm_permafrost_model.hh"
 #include "wrm_permafrost_factory.hh"
@@ -17,11 +17,11 @@ namespace FlowRelations {
 
 class WRM;
 
-class WRMFPDPermafrostModel : public WRMPermafrostModel {
+class WRMFPDSmoothedPermafrostModel : public WRMPermafrostModel {
 
  public:
   explicit
-  WRMFPDPermafrostModel(Teuchos::ParameterList& plist) :
+  WRMFPDSmoothedPermafrostModel(Teuchos::ParameterList& plist) :
       WRMPermafrostModel(plist) {}
 
   // required methods from the base class
@@ -33,13 +33,14 @@ class WRMFPDPermafrostModel : public WRMPermafrostModel {
   virtual void saturations(double pc_liq, double pc_ice, double T, double (&sats)[3]);
   virtual void dsaturations_dpc_liq(double pc_liq, double pc_ice, double T, double (&dsats)[3]);
   virtual void dsaturations_dpc_ice(double pc_liq, double pc_ice, double T, double (&dsats)[3]);
+  virtual void dsaturations_dtemperature(double pc_liq, double pc_ice, double T, double (&dsats)[3]);
 
  protected:
   double deriv_regularization_;
 
  private:
   // factory registration
-  static Utils::RegisteredFactory<WRMPermafrostModel,WRMFPDPermafrostModel> factory_;
+  static Utils::RegisteredFactory<WRMPermafrostModel,WRMFPDSmoothedPermafrostModel> factory_;
 
 };
 
