@@ -201,18 +201,52 @@ c ::: -----------------------------------------------------------
       REAL_T    adv(DIMV(adv),1)
       REAL_T    mask(DIMV(mask))
       REAL_T    value
-      REAL_T    ax, ay, aerr
+      REAL_T    axp, axm, ayp, aym, aerr
 
       integer   i, j
 
+
+      if (ARG_L1(mask).gt.lo(1)-1
+     &     .or. ARG_H1(mask).lt.hi(1)+1
+     &     .or. ARG_L2(mask).gt.lo(2)-1
+     &     .or. ARG_H2(mask).lt.hi(2)+1 ) then
+         print *,'bad mask bounds',lo,hi,DIMS(mask)
+         print *,DIMS(mask)
+         print *,DIMS(adv)
+         call abort()
+      endif
+
       do i = lo(1), hi(1)
          do j = lo(2), hi(2)
-            ax = ABS(adv(i+1,j,1) - adv(i,j,1))
-            ay = ABS(adv(i,j+1,1) - adv(i,j,1))
-            ax = MAX(ax,ABS(adv(i,j,1) - adv(i-1,j,1)))
-            ay = MAX(ay,ABS(adv(i,j,1) - adv(i,j-1,1)))
-            aerr = MAX(ax,ay)
-            tag(i,j) = merge(set,tag(i,j), mask(i,j).eq.1 .and. aerr.gt.value)
+            if (mask(i,j).eq.1) then
+
+               if (mask(i+1,j).eq.1) then
+                  axp = ABS(adv(i+1,j,1) - adv(i,j,1))
+               else
+                  axp = 0.d0
+               endif
+               if (mask(i-1,j).eq.1) then
+                  axm = ABS(adv(i-1,j,1) - adv(i,j,1))
+               else
+                  axm = 0.d0
+               endif
+               if (mask(i,j+1).eq.1) then
+                  ayp = ABS(adv(i,j+1,1) - adv(i,j,1))
+               else
+                  ayp = 0.d0
+               endif
+               if (mask(i,j-1).eq.1) then
+                  aym = ABS(adv(i,j-1,1) - adv(i,j,1))
+               else
+                  aym = 0.d0
+               endif
+
+               aerr = MAX(axp,MAX(axm,MAX(ayp,aym)))
+
+               if (aerr.gt.value) then
+                  tag(i,j) = set
+               endif
+            endif
          end do
       end do
       

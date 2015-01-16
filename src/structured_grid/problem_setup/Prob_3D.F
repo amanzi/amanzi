@@ -207,20 +207,64 @@ c ::: -----------------------------------------------------------
       REAL_T    mask(DIMV(mask))
       REAL_T    value
       REAL_T    ax, ay, az, aerr
+      REAL_T    axp, axm, ayp, aym, azp, azm, aerr
 
       integer   i, j, k
+
+      if (ARG_L1(mask).gt.lo(1)-1
+     &     .or.  ARG_H1(mask).lt.hi(1)+1
+     &     .or.  ARG_L2(mask).gt.lo(2)-1
+     &     .or.  ARG_H2(mask).lt.hi(2)+1
+     &     .or.  ARG_L3(mask).gt.lo(3)-1
+     &     .or.  ARG_H3(mask).lt.hi(3)+1 ) then
+         print *,'bad mask bounds',lo,hi,DIMS(mask)
+         print *,DIMS(mask)
+         print *,DIMS(adv)
+         call abort()
+      endif
 
       do i = lo(1), hi(1)
          do j = lo(2), hi(2)
             do k = lo(3), hi(3)
-               ax = ABS(adv(i+1,j,k,1) - adv(i,j,k,1))
-               ay = ABS(adv(i,j+1,k,1) - adv(i,j,k,1))
-               az = ABS(adv(i,j,k+1,1) - adv(i,j,k,1))
-               ax = MAX(ax,ABS(adv(i,j,k,1) - adv(i-1,j,k,1)))
-               ay = MAX(ay,ABS(adv(i,j,k,1) - adv(i,j-1,k,1)))
-               az = MAX(az,ABS(adv(i,j,k,1) - adv(i,j,k-1,1)))
-               aerr = MAX(ax,ay,az)
-               tag(i,j,k) = merge(set,tag(i,j,k), mask(i,j,k).eq.1 .and. aerr.gt.value)
+               if (mask(i,j,k).eq.1) then
+
+                  if (mask(i+1,j,k).eq.1) then
+                     axp = ABS(adv(i+1,j,k,1) - adv(i,j,k,1))
+                  else
+                     axp = 0.d0
+                  endif
+                  if (mask(i-1,j,k).eq.1) then
+                     axm = ABS(adv(i-1,j,k,1) - adv(i,j,k,1))
+                  else
+                     axm = 0.d0
+                  endif
+                  if (mask(i,j+1,k).eq.1) then
+                     ayp = ABS(adv(i,j+1,k,1) - adv(i,j,k,1))
+                  else
+                     ayp = 0.d0
+                  endif
+                  if (mask(i,j-1,k).eq.1) then
+                     aym = ABS(adv(i,j-1,k,1) - adv(i,j,k,1))
+                  else
+                     aym = 0.d0
+                  endif
+                  if (mask(i,j,k+1).eq.1) then
+                     azp = ABS(adv(i,j,k+1,1) - adv(i,j,k,1))
+                  else
+                     azp = 0.d0
+                  endif
+                  if (mask(i,j,k-1).eq.1) then
+                     azm = ABS(adv(i,j,k-1,1) - adv(i,j,k,1))
+                  else
+                     azm = 0.d0
+                  endif
+
+                  aerr = MAX(axp,MAX(axm,MAX(ayp,MAX(aym,MAX(azp,azm)))))
+
+                  if (aerr.gt.value) then
+                     tag(i,j,k) = set
+                  endif
+               endif
             end do
          end do
       end do

@@ -547,6 +547,7 @@ public:
 		 int       strt_comp,
 		 int       num_comp,
 		 Real      time,
+		 Real      dt,
 		 bool      do_rho_scale = false);
   //
   // Fill ghost cells of state.
