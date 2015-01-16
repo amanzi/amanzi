@@ -168,7 +168,7 @@ void CompositeVector::InitMap_(const CompositeVectorSpace& space) {
     } else if (space.Location(*name) == AmanziMesh::BOUNDARY_FACE) {
       mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->exterior_face_map()));
     }
-   }
+  }
 
   // create the master BlockVector
   mastervec_ = Teuchos::rcp(new BlockVector(Comm(), names_,

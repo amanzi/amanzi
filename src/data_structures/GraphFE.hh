@@ -20,6 +20,7 @@ map, not the true row map.
 // forward declarations
 class Epetra_Map;
 class Epetra_CrsGraph;
+class Epetra_Export;
 
 namespace Amanzi {
 namespace Operators {
@@ -31,13 +32,13 @@ class GraphFE {
   // Constructor
   GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
 	  const Teuchos::RCP<const Epetra_Map>& ghosted_row_map,
-	  const Teuchos::RCP<const Epetra_Map>& col_map=Teuchos::null,
+	  const Teuchos::RCP<const Epetra_Map>& col_map,
 	  int max_nnz_per_row);
 
   // Constructor with nnz -- note this should include ghosted rows.
   GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
 	  const Teuchos::RCP<const Epetra_Map>& ghosted_row_map,
-	  const Teuchos::RCP<const Epetra_Map>& col_map=Teuchos::null,
+	  const Teuchos::RCP<const Epetra_Map>& col_map,
 	  const int* max_nnz_per_row);
 
   // accessors to maps
@@ -57,8 +58,8 @@ class GraphFE {
     return *col_map_; }
 
   // accessor to the importer
-  const Epetra_Import& Importer() const {
-    return *importer_;
+  const Epetra_Export& Exporter() const {
+    return *exporter_;
   }
 
   // accessor to graphs
@@ -70,10 +71,14 @@ class GraphFE {
 
   // fill graph
   int InsertMyIndices(int row, int count, int *indices);
+  int InsertGlobalIndices(int row, int count, int *indices);
+  int InsertMyIndices(int row_count, int *row_indices, int col_count, int *col_indices);
+  int InsertGlobalIndices(int row_count, int *row_indices, int col_count, int *col_indices);
 
   // finish fill
-  int FillComplete(const Epetra_Map& domain_map,
-		   const Epetra_Map& range_map);
+  int FillComplete(const Teuchos::RCP<const Epetra_Map>& domain_map,
+                   const Teuchos::RCP<const Epetra_Map>& range_map);
+
 
  protected:
 
@@ -87,7 +92,7 @@ class GraphFE {
   Teuchos::RCP<Epetra_CrsGraph> graph_;
   Teuchos::RCP<Epetra_CrsGraph> offproc_graph_;  
 
-  Teuchos::RCP<Epetra_Import> importer_;
+  Teuchos::RCP<Epetra_Export> exporter_;
 
   int n_owned_;
   int n_used_;

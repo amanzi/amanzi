@@ -51,8 +51,6 @@ add_amanzi_library(operator_audit SOURCE OperatorAudit.cc LINK_LIBS ${flow_tpl_l
 # Library: operators
 #
 set(operators_inc_files 
-    GraphFE.hh
-    MatrixFE.hh
     Operator.hh
     OperatorDefs.hh
     OperatorTypeDefs.hh
@@ -72,7 +70,7 @@ set(operators_inc_files
     UpwindSecondOrder.hh)
 
 add_amanzi_library(operators
-                   SOURCE GraphFE.cc MatrixFE.cc Operator.cc 
+                   SOURCE Operator.cc 
                    OperatorDiffusion.cc OperatorDiffusionSurface.cc 
                    OperatorDiffusionWithGravity.cc OperatorDiffusionFactory.cc
                    OperatorDiffusionTPFA.cc OperatorSource.cc 
@@ -94,16 +92,6 @@ if ( BUILD_TESTS )
     endif()
 
     set(amanzi_libs geometry atk mesh mesh_factory data_structures operators whetstone output)
-
-    add_amanzi_test(graph_fe_test graph_fe_test
-                    KIND unit
-		    SOURCE test/Main.cc test/graph_fe_test.cc
-		    LINK_LIBS ${amani_libs} ${UnitTest_LIBRARIES})
-
-    add_amanzi_test(matrix_fe_test matrix_fe_test
-                    KIND unit
-		    SOURCE test/Main.cc test/matrix_fe_test.cc
-		    LINK_LIBS ${amani_libs} ${UnitTest_LIBRARIES})
 
     # Test: matrices for diffusion
     if ( ENABLE_INDIVIDUAL_TESTS_OPERATORS OR ENABLE_INDIVIDUAL_TESTS )
@@ -162,6 +150,8 @@ if ( BUILD_TESTS )
                     KIND unit
                     SOURCE test/Main.cc test/operator_reconstruction.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+
 endif()
 
 

@@ -22,7 +22,6 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "MeshFactory.hh"
-#include "GMVMesh.hh"
 
 #include "GraphFE.hh"
 
@@ -38,7 +37,7 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "Test: 2D steady-state elliptic solver, mixed discretization" << std::endl;
+  if (MyPID == 0) std::cout << "Test: FD like graph, null off-proc assembly" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_convergence.xml";
@@ -65,9 +64,10 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA) {
   Teuchos::RCP<Epetra_Map> cell_map = Teuchos::rcp(new Epetra_Map(mesh->cell_map(false)));
   Teuchos::RCP<Epetra_Map> cell_map_ghosted = Teuchos::rcp(new Epetra_Map(mesh->cell_map(true)));
 
-  // create the graph
+  // create the graphs, one to test local, the other to test global insertion
   int ierr(0);
-  GraphFE graph(cell_map, cell_map_ghosted, cell_map_ghosted, 5);
+  GraphFE graph_local(cell_map, cell_map_ghosted, cell_map_ghosted, 5);
+  GraphFE graph_global(cell_map, cell_map_ghosted, cell_map_ghosted, 5);
   
   Entity_ID_List faces;
   Entity_ID_List face_cells;
@@ -76,19 +76,27 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA) {
     neighbor_cells.resize(0);
     neighbor_cells.push_back(c);
     
-    mesh->cell_get_faces(c, AmanziMesh::USED, &faces);
-    for (int f=0; f!=faces.size(); ++f) {
-      mesh->face_get_cells(f, AmanziMesh::USED, &face_cells);
+    mesh->cell_get_faces(c, &faces);
+    for (int n=0; n!=faces.size(); ++n) {
+      mesh->face_get_cells(faces[n], AmanziMesh::USED, &face_cells);
       if (face_cells.size() > 1) {
-	neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
+        neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
       }	
     }
 
-    ierr |= graph.InsertMyIndices(c, neighbor_cells.size(), &neighbor_cells[0]);
+    int global_c = cell_map->GID(c);
+    std::vector<int> global_neighbors(neighbor_cells.size());
+    for (int n=0; n!=neighbor_cells.size(); ++n) global_neighbors[n] = cell_map_ghosted->GID(neighbor_cells[n]);
+
+    ierr |= graph_local.InsertMyIndices(c, neighbor_cells.size(), &neighbor_cells[0]);
+    CHECK(!ierr);
+    ierr |= graph_global.InsertGlobalIndices(global_c, neighbor_cells.size(), &global_neighbors[0]);
     CHECK(!ierr);
   }
 
-  ierr |= graph.FillCompete(cell_map, cell_map);
+  ierr |= graph_local.FillComplete(cell_map, cell_map);
+  CHECK(!ierr);
+  ierr |= graph_global.FillComplete(cell_map, cell_map);
   CHECK(!ierr);
 }
 
@@ -105,7 +113,7 @@ TEST(FE_GRAPH_FACE_FACE) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "Test: 2D steady-state elliptic solver, mixed discretization" << std::endl;
+  if (MyPID == 0) std::cout << "Test: FE like graph, off-proc assembly" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_convergence.xml";
@@ -134,20 +142,29 @@ TEST(FE_GRAPH_FACE_FACE) {
 
   // create the graph
   int ierr(0);
-  GraphFE graph(face_map, face_map_ghosted, face_map_ghosted, 5);
+  GraphFE graph_local(face_map, face_map_ghosted, face_map_ghosted, 5);
+  GraphFE graph_global(face_map, face_map_ghosted, face_map_ghosted, 5);
   
   Entity_ID_List faces;
   Entity_ID_List face_cells;
   for (int c=0; c!=ncells; ++c) {
-    mesh->cell_get_faces(c, AmanziMesh::USED, &faces);
+    mesh->cell_get_faces(c, &faces);
 
+    std::vector<int> global_faces(faces.size());
+    for (int n=0; n!=faces.size(); ++n) global_faces[n] = face_map_ghosted->GID(faces[n]);
+    
     for (int n=0; n!=faces.size(); ++n) {
-      ierr |= graph.InsertMyIndices(faces[n], faces.size(), &faces[0]);
+      ierr |= graph_local.InsertMyIndices(faces[n], faces.size(), &faces[0]);
+      CHECK(!ierr);
+      ASSERT(global_faces[n] >= 0);
+      ierr |= graph_global.InsertGlobalIndices(global_faces[n], global_faces.size(), &global_faces[0]);
       CHECK(!ierr);
     }
   }
 
-  ierr |= graph.FillCompete(face_map, face_map);
+  ierr |= graph_local.FillComplete(face_map, face_map);
+  CHECK(!ierr);
+  ierr |= graph_global.FillComplete(face_map, face_map);
   CHECK(!ierr);
 
 }
