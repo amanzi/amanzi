@@ -74,6 +74,16 @@ class MatrixFE {
 
   int SumIntoMyValues(const int *indices, const Teuchos::SerialDenseMatrix<int,double>& vals);
   int SumIntoMyValues_Transposed(const int *indices, const Teuchos::SerialDenseMatrix<int,double>& vals);
+
+  // Passthroughs.
+  // --
+  // NOTE that currently many of these cannot work on an offproc -- the Export is
+  // done with Sum, not Insert. Some could be changed by adding a sum/insert
+  // flag, and only having issues when you try to both Sum and Insert without
+  // FillComplete called between, but I don't see a need for this
+  // functionality.  If you do, ask. --etc
+  int InsertMyValues(int row, int count, const double *values, const int *indices);
+  int ExtractMyRowCopy(int row, int size, int& count, double *values, int *indices) const;
   
   // finish fill
   int FillComplete();

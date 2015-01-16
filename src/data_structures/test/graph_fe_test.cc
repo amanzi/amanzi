@@ -22,7 +22,6 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "MeshFactory.hh"
-#include "GMVMesh.hh"
 
 #include "GraphFE.hh"
 

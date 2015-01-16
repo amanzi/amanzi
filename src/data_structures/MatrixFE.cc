@@ -18,6 +18,7 @@ map, not the true row map.
 #include "Teuchos_SerialDenseMatrix.hpp"
 
 #include "dbc.hh"
+#include "errors.hh"
 #include "MatrixFE.hh"
 
 namespace Amanzi {
@@ -102,6 +103,37 @@ MatrixFE::SumIntoMyValues(const int *indices, const Teuchos::SerialDenseMatrix<i
 }
 
 
+// Passthroughs
+int
+MatrixFE::InsertMyValues(int row, int count, const double *values, const int *indices) {
+  int ierr(0);
+
+  if (row < n_owned_) {
+    ierr = matrix_->InsertMyValues(row, count, values, indices);
+  } else {
+    ierr = -1;
+    Errors::Message message("MatrixFE does not support offproc Insert semantics.");
+    Exceptions::amanzi_throw(message);
+  }
+  return ierr;
+}
+
+
+int
+MatrixFE::ExtractMyRowCopy(int row, int size, int& count,
+                           double *values, int *indices) const {
+  int ierr(0);
+  if (row < n_owned_) {
+    ierr = matrix_->ExtractMyRowCopy(row, size, count, values, indices);
+  } else {
+    ierr = -1;
+    Errors::Message message("MatrixFE does not support offproc Extract semantics.");
+    Exceptions::amanzi_throw(message);
+  }
+  return ierr;
+}
+
+
 // finish fill
 int
 MatrixFE::FillComplete() {
@@ -111,6 +143,10 @@ MatrixFE::FillComplete() {
 
   // scatter offproc into onproc
   ierr |= matrix_->Export(*offproc_matrix_, graph_->Exporter(), Add);
+  ASSERT(!ierr);
+
+  // zero the offproc in case of multiple stage assembly and multiple calls to FillComplete()
+  ierr |= offproc_matrix_->PutScalar(0.);
   ASSERT(!ierr);
 
   // fillcomplete the final graph
