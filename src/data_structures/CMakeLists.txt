@@ -118,10 +118,10 @@ if (BUILD_TESTS)
     add_amanzi_test(supermap_test_np3 supermap_test NPROCS 3 KIND unit)
     add_amanzi_test(supermap_test_np5 supermap_test NPROCS 5 KIND unit)
 
-    add_amanzi_test(matrix_fe_test_speed matrix_fe_test_speed
-                    KIND unit
-		            SOURCE test/Main.cc test/matrix_fe_test_speed.cc
-		            LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    # add_amanzi_test(matrix_fe_test_speed matrix_fe_test_speed
+    #                 KIND unit
+	# 	            SOURCE test/Main.cc test/matrix_fe_test_speed.cc
+	# 	            LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
 #    add_amanzi_test(test_access test_access_times
 #                    KIND int

@@ -38,9 +38,9 @@ class TreeVectorSpace {
     data_ = data; }
 
   // Iterators over SubVectors
-  std::vector< Teuchos::RCP<const TreeVectorSpace> > SubVectors() {
+  std::vector< Teuchos::RCP<const TreeVectorSpace> >& SubVectors() {
     return subvecs_; }
-  const std::vector< Teuchos::RCP<const TreeVectorSpace> > SubVectors() const {
+  const std::vector< Teuchos::RCP<const TreeVectorSpace> >& SubVectors() const {
     return subvecs_; }
 
   // Get a pointer to the sub-vector by index

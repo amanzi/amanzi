@@ -64,10 +64,10 @@ class TreeVector {
   const TreeVectorSpace& Map() const { return *map_; }
 
   // Access to SubVectors
-  std::vector< Teuchos::RCP<TreeVector> > SubVectors() { return subvecs_; }
+  std::vector< Teuchos::RCP<TreeVector> >& SubVectors() { return subvecs_; }
 
   // Const access to SubVectors.
-  const std::vector< Teuchos::RCP<TreeVector> > SubVectors() const {
+  const std::vector< Teuchos::RCP<TreeVector> >& SubVectors() const {
     return subvecs_; }
 
   // Access to the sub-vector by index

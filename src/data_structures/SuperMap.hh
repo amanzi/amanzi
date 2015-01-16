@@ -54,9 +54,9 @@ class SuperMap {
     int ndofs = NumDofs(compname);
     int nelements = NumOwnedElements(compname);
     indices->resize(ndofs);
-    int start = element_id < nelements ? Offset(compname) + element_lid*ndofs :
+    int start = element_lid < nelements ? Offset(compname) + element_lid*ndofs :
         GhostedOffset(compname) + (element_lid - nelements)*ndofs;
-    for (int i=0; i!=ndofs; ++i) indices[i] = start+i;
+    for (int i=0; i!=ndofs; ++i) (*indices)[i] = start+i;
     return;
   }
 
@@ -67,7 +67,7 @@ class SuperMap {
     nindices = ndofs;
     int nelements = NumOwnedElements(compname);
 
-    int start = element_id < nelements ? Offset(compname) + element_lid*ndofs :
+    int start = element_lid < nelements ? Offset(compname) + element_lid*ndofs :
         GhostedOffset(compname) + (element_lid - nelements)*ndofs;
     for (int i=0; i!=ndofs; ++i) indices[i] = start+i;
     return;

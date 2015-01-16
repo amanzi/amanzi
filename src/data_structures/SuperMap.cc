@@ -78,7 +78,7 @@ SuperMap::SuperMap(const Epetra_MpiComm& comm,
 
 
 const std::vector<int>
-SuperMap::Indices(std::string compname, int dofnum) const {
+SuperMap::Indices(const std::string& compname, int dofnum) const {
   if (indices_.count(compname)) {
     if (indices_[compname].count(dofnum)) {
       return indices_[compname][dofnum];
@@ -88,7 +88,7 @@ SuperMap::Indices(std::string compname, int dofnum) const {
 }
 
 const std::vector<int>
-SuperMap::GhostIndices(std::string compname, int dofnum) const {
+SuperMap::GhostIndices(const std::string& compname, int dofnum) const {
   if (ghosted_indices_.count(compname)) {
     if (ghosted_indices_[compname].count(dofnum)) {
       return ghosted_indices_[compname][dofnum];
@@ -99,7 +99,7 @@ SuperMap::GhostIndices(std::string compname, int dofnum) const {
 
 
 const std::vector<int>
-SuperMap::CreateIndices_(std::string compname, int dofnum, bool ghosted) const {
+SuperMap::CreateIndices_(const std::string& compname, int dofnum, bool ghosted) const {
   if (ghosted) {
     if (ghosted_indices_.count(compname) == 0) {
       ghosted_indices_[compname];
