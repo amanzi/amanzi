@@ -67,10 +67,10 @@ class Operator {
   Operator(Teuchos::RCP<const CompositeVectorSpace> cvs, int dummy);
   Operator(const Operator& op);
   ~Operator() {};
+  Operator& operator=(const Operator& op);
 
   // main members
   void Init();
-  void Clone(const Operator& op);
   void AddBCs(Teuchos::RCP<BCs> bc);
   
   virtual int Apply(const CompositeVector& X, CompositeVector& Y) const;
@@ -103,7 +103,10 @@ class Operator {
   int FindMatrixBlock(int schema_dofs, int matching_rule, bool action) const;
 
   // access
-  Teuchos::RCP<CompositeVector>& rhs() { return rhs_; }
+  Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; } 
+  Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; } 
+  Teuchos::RCP<CompositeVector> rhs() { return rhs_; }
+  Teuchos::RCP<const CompositeVector> rhs() const { return rhs_; }
   const Teuchos::RCP<BCs> GetBCofType(int type) const;
   bool data_validity() { return data_validity_; }
 
@@ -112,7 +115,7 @@ class Operator {
   bool ApplyBC_Cell_Nodal_(int nb);
   bool ApplyBC_Face_(int nb);
 
- public:
+ protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<const CompositeVectorSpace> cvs_;
   mutable bool data_validity_;
@@ -125,7 +128,6 @@ class Operator {
 
   std::vector<Teuchos::RCP<BCs> > bc_;
 
- public:
   int ncells_owned, nfaces_owned, nnodes_owned;
   int ncells_wghost, nfaces_wghost, nnodes_wghost;
  
@@ -137,7 +139,6 @@ class Operator {
 
   Teuchos::RCP<VerboseObject> vo_;
 
- protected:
   int nonstandard_symbolic_;
 };
 

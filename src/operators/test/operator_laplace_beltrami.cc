@@ -162,7 +162,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   b.Dot(hb, &bhb);
 
   if (MyPID == 0) {
-    std::cout << "Preconditioner: size=" << op->A_->NumGlobalRows() << "\n" 
+    std::cout << "Preconditioner: size=" << op->A()->NumGlobalRows() << "\n" 
               << "  Symmetry test: " << ahb << " = " << bha << std::endl;
     std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
   } 
@@ -326,7 +326,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   b.Dot(hb, &bhb);
 
   if (MyPID == 0) {
-    std::cout << "Preconditioner: size=" << op->A_->NumGlobalRows() << "\n" 
+    std::cout << "Preconditioner: size=" << op->A()->NumGlobalRows() << "\n" 
               << "  Symmetry test: " << ahb << " = " << bha << std::endl;
     std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
   } 
@@ -468,7 +468,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   b.Dot(hb, &bhb);
 
   if (MyPID == 0) {
-    std::cout << "Preconditioner: size=" << op->A_->NumGlobalRows() << "\n" 
+    std::cout << "Preconditioner: size=" << op->A()->NumGlobalRows() << "\n" 
               << "  Symmetry test: " << ahb << " = " << bha << std::endl;
     std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
   } 

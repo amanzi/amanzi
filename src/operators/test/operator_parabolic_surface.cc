@@ -158,7 +158,7 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   }
 
   // repeat the above without destroying the operators.
-  op1->Clone(*op2);
+  *op1 = *op2;
   op1->Init();
   op1->UpdateMatrices(source);
 

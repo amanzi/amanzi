@@ -88,34 +88,38 @@ Operator::Operator(const Operator& op)
 /* ******************************************************************
 * Copy data structures from another operator.
 ****************************************************************** */
-void Operator::Clone(const Operator& op) 
+Operator&
+Operator::operator=(const Operator& op)
 {
-  data_validity_ = true; 
-  op.data_validity_ = false;
-  mesh_ = op.mesh_;
-  cvs_ = op.cvs_; 
-  blocks_ = op.blocks_;
-  blocks_schema_ = op.blocks_schema_;
-  blocks_shadow_ = op.blocks_shadow_; 
-  diagonal_ = op.diagonal_;
-  rhs_ = op.rhs_;
-  A_ = op.A_;
-  preconditioner_ = op.preconditioner_;
+  if (this != &op) {
+    data_validity_ = true; 
+    op.data_validity_ = false;
+    mesh_ = op.mesh_;
+    cvs_ = op.cvs_; 
+    blocks_ = op.blocks_;
+    blocks_schema_ = op.blocks_schema_;
+    blocks_shadow_ = op.blocks_shadow_; 
+    diagonal_ = op.diagonal_;
+    rhs_ = op.rhs_;
+    A_ = op.A_;
+    preconditioner_ = op.preconditioner_;
 
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+    ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+    nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
 
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+    ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+    nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
-  for (int i = 0; i < 3; i++) { 
-    offset_global_[i] = op.offset_global_[i];
-    offset_my_[i] = op.offset_my_[i];
+    for (int i = 0; i < 3; i++) { 
+      offset_global_[i] = op.offset_global_[i];
+      offset_my_[i] = op.offset_my_[i];
+    }
+
+    nonstandard_symbolic_ = op.nonstandard_symbolic_;
   }
-
-  nonstandard_symbolic_ = op.nonstandard_symbolic_;
+  return *this;
 }
 
 
