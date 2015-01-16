@@ -28,7 +28,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialization of the operator.                                           
 ****************************************************************** */
-void OperatorDiffusion::InitOperator(
+void OperatorDiffusion::Setup(
     std::vector<WhetStone::Tensor>& K, 
     Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
     double rho, double mu)
@@ -62,7 +62,7 @@ void OperatorDiffusion::InitOperator(
 /* ******************************************************************
 * Initialization of the operator.                                           
 ****************************************************************** */
-void OperatorDiffusion::InitOperator(
+void OperatorDiffusion::Setup(
     std::vector<WhetStone::Tensor>& K,
     Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
     Teuchos::RCP<const CompositeVector> rho, Teuchos::RCP<const CompositeVector> mu)

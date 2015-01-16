@@ -121,7 +121,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
     uf[0][f] = vel * surfmesh->face_normal(f);
   }
 
-  op1->InitOperator(u);
+  op1->Setup(u);
   op1->UpdateMatrices(u);
 
   // add accumulation terms
@@ -143,7 +143,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
                                       .get<Teuchos::ParameterList>("diffusion operator");
 
   Teuchos::RCP<OperatorDiffusionSurface> op2 = Teuchos::rcp(new OperatorDiffusionSurface(*op1, olist, bc));
-  op2->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
+  op2->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op2->UpdateMatrices(Teuchos::null, Teuchos::null);
   op2->ApplyBCs();
 

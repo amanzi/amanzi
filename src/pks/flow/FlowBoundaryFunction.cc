@@ -13,7 +13,7 @@
 #include "FlowBoundaryFunction.hh"
 
 namespace Amanzi {
-namespace Functions {
+namespace Flow {
 
 /* ******************************************************************
 * TBW.
@@ -29,8 +29,8 @@ void FlowBoundaryFunction::Define(const std::vector<std::string>& regions,
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
 
   for (std::vector<std::string>::const_iterator r = regions.begin(); r != regions.end(); ++r) {
-    if (method != BOUNDARY_FUNCTION_ACTION_NONE) {
-      Action action(*r, method);
+    if (method != CommonDefs::BOUNDARY_FUNCTION_ACTION_NONE) {
+      CommonDefs::Action action(*r, method);
       actions_.push_back(action); 
     }
   }
@@ -48,8 +48,8 @@ void FlowBoundaryFunction::Define(std::string& region,
   Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, AmanziMesh::FACE));
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
 
-  if (method != BOUNDARY_FUNCTION_ACTION_NONE) {
-    Action action(region, method);
+  if (method != CommonDefs::BOUNDARY_FUNCTION_ACTION_NONE) {
+    CommonDefs::Action action(region, method);
     actions_.push_back(action);   
   }
 }
@@ -157,5 +157,5 @@ void FlowBoundaryFunction::Finalize() {
   //TODO: Verify that the faces in this_domain are all boundary faces.
 }
 
-} // namespace
-} // namespace
+}  // namespace Flow
+}  // namespace Amanzi

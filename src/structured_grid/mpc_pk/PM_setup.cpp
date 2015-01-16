@@ -17,6 +17,7 @@
 #include <PMAMR_Labels.H>
 #include <PMAmr.H>
 #include <ChemConstraintEval.H>
+#include <DiffDomRelSrc.H>
 
 #ifdef _OPENMP
 #include "omp.h"
@@ -2159,9 +2160,18 @@ void  PorousMedia::read_source()
 		      Array<Real> tvals; pps_c_t.getarr("vals",tvals,0,ntvars);
 		      tsource_array[i].set(t_pos, new RegionData(source_name,source_regions,tsource_type,tvals));
 		    }
+                  else if (tsource_type == "diffusion_dominated_release_model") {
+                    Real total_inventory; pps_c_t.get("total_inventory",total_inventory);
+                    Real mixing_length; pps_c_t.get("mixing_length",mixing_length);
+                    Real D_eff; pps_c_t.get("effective_diffusion_coef",D_eff);
+                    Real start_time; pps_c_t.get("start_time",start_time);
+                    Real end_time; pps_c_t.get("end_time",end_time);
+                    Real time_scale; pps_c_t.get("time_scale",time_scale);
+                    tsource_array[i].set(t_pos, new DiffDomRelSrc(source_name,source_regions,tsource_type,mixing_length,D_eff,total_inventory,start_time,end_time,time_scale));
+                  }
 		  else {
 		    BoxLib::Abort(std::string("Source: \"" + source_names[i] + 
-					      " \"" + cName + "\" Solute SOURCE: \"" + tName
+					      "\", Comp: \"" + cName + "\", Solute SOURCE: \"" + tName
 					      + "\": Unsupported source type: \"" + tsource_type + "\"").c_str());
 		  }
 		} else {

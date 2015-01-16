@@ -209,7 +209,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // reconstruction initialization
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-  limiter_ = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
+  // limiter_ = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
   lifting_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
 
   // boundary conditions initialization
@@ -223,7 +223,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   // source term initialization
   for (int i =0; i < srcs.size(); i++) {
     int distribution = srcs[i]->CollectActionsList();
-    if (distribution & TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+    if (distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
       Errors::Message msg;
       msg << "Transport PK: missing capability: permeability-based source distribution.\n";
@@ -493,7 +493,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
 
       if (flag_op1) {
         op1->Init();
-        op1->InitOperator(D, Teuchos::null, Teuchos::null, 1.0, 1.0);
+        op1->Setup(D, Teuchos::null, Teuchos::null, 1.0, 1.0);
         op1->UpdateMatrices(Teuchos::null, Teuchos::null);
         op1->ApplyBCs();
 
@@ -557,7 +557,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
       }
 
       op1->Init();
-      op1->InitOperator(D, Teuchos::null, Teuchos::null, 1.0, 1.0);
+      op1->Setup(D, Teuchos::null, Teuchos::null, 1.0, 1.0);
       op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
       // add boundary conditions and sources for gaseous components
@@ -906,7 +906,7 @@ void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp,
 
     double T0 = Tp - dTp;
     int distribution = srcs[m]->CollectActionsList();
-    if (distribution & TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+    if (distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       srcs[m]->ComputeDistributeMultiValue(T0, Tp, Kxy->Values()); 
     } else {
       srcs[m]->ComputeDistributeMultiValue(T0, Tp, NULL);

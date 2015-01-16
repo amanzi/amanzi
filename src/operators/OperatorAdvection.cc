@@ -20,7 +20,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialization
 ****************************************************************** */
-void OperatorAdvection::InitOperator(const CompositeVector& u)
+void OperatorAdvection::Setup(const CompositeVector& u)
 {
   u.ScatterMasterToGhosted("face");
   IdentifyUpwindCells_(u);

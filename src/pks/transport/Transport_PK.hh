@@ -224,7 +224,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
 
   int advection_limiter;  // data for limiters
   int current_component_;
-  Teuchos::RCP<Epetra_Vector> limiter_;
+  // Teuchos::RCP<Epetra_Vector> limiter_;
   Teuchos::RCP<Operators::ReconstructionCell> lifting_;
   std::vector<double> component_local_min_;
   std::vector<double> component_local_max_;

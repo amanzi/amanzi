@@ -43,6 +43,7 @@ add_amanzi_library(pks
 # Install Targets
 #
 set(pks_inc_files 
+  CommonDefs.hh
   PK.hh
   PK_Factory.hh)  
 
@@ -51,9 +52,12 @@ add_install_include_file(${pks_inc_files})
 if (BUILD_TESTS) 
 endif()
 
+add_subdirectory(eos)
+
 add_subdirectory(flow)
 add_subdirectory(transport)
 add_subdirectory(energy)
+
 add_subdirectory(mpc)
 
 

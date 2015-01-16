@@ -111,7 +111,7 @@ void Flow_PK::VV_ValidateBCs() const
 {
   // Create sets of the face indices belonging to each BC type.
   std::set<int> pressure_faces, head_faces, flux_faces;
-  Amanzi::Functions::FlowBoundaryFunction::Iterator bc;
+  FlowBoundaryFunction::Iterator bc;
   for (bc = bc_pressure->begin(); bc != bc_pressure->end(); ++bc) pressure_faces.insert(bc->first);
   for (bc = bc_head->begin(); bc != bc_head->end(); ++bc) head_faces.insert(bc->first);
   for (bc = bc_flux->begin(); bc != bc_flux->end(); ++bc) flux_faces.insert(bc->first);
@@ -209,7 +209,7 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
 
   int dir, f, c;
   double tmp, outflow(0.0);
-  Functions::FlowBoundaryFunction::Iterator bc;
+  FlowBoundaryFunction::Iterator bc;
 
   for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
     f = bc->first;

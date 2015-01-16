@@ -118,7 +118,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
 
   Teuchos::RCP<OperatorDiffusionSurface> op = Teuchos::rcp(new OperatorDiffusionSurface(cvs, olist, bc));
   op->Init();
-  op->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
   op->ApplyBCs();
   op->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
@@ -281,7 +281,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
 
   Teuchos::RCP<OperatorDiffusionSurface> op = Teuchos::rcp(new OperatorDiffusionSurface(cvs, olist, bc));
   op->Init();
-  op->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
   op->ApplyBCs();
   int nonstandard = 1;
@@ -444,7 +444,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
 
   Teuchos::RCP<OperatorDiffusionSurface> op = Teuchos::rcp(new OperatorDiffusionSurface(cvs, olist, bc));
   op->Init();
-  op->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
   op->ApplyBCs();
   op->SymbolicAssembleMatrix(schema_prec_dofs);

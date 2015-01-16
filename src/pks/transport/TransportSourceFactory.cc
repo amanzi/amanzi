@@ -109,8 +109,8 @@ void TransportSourceFactory::ProcessSourceSpec(
   ProcessStringActions(action_name, &method);
 
   std::string submodel_name = list.get<std::string>("submodel", "rate");
-  int submodel(TransportActions::DOMAIN_FUNCTION_SUBMODEL_RATE);
-  if (submodel_name == "integrand") submodel = TransportActions::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND;
+  int submodel(CommonDefs::DOMAIN_FUNCTION_SUBMODEL_RATE);
+  if (submodel_name == "integrand") submodel = CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND;
 
   src->Define(regions, f, method, submodel, name);
 }
@@ -123,11 +123,11 @@ void TransportSourceFactory::ProcessStringActions(const std::string& name, int* 
 {
   Errors::Message msg;
   if (name == "none") {
-    *method = TransportActions::DOMAIN_FUNCTION_ACTION_NONE;
+    *method = CommonDefs::DOMAIN_FUNCTION_ACTION_NONE;
   } else if (name == "volume") {
-    *method = TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME;
+    *method = CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME;
   } else if (name == "permeability") {
-    *method = TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY;
+    *method = CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY;
   } else {
     msg << "Transport PK: unknown source distribution method has been specified.";
     Exceptions::amanzi_throw(msg);

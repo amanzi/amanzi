@@ -12,6 +12,7 @@
 #include <algorithm>
 
 #include "ReconstructionCell.hh"
+#include "OperatorDefs.hh"
 #include "Transport_PK.hh"
 
 namespace Amanzi {
@@ -27,10 +28,38 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
   Teuchos::RCP<const Epetra_Vector> component_rcp(&component, false);
 
   Teuchos::ParameterList plist;
+  plist.set<std::string>("limiter", parameter_list.get<std::string>("advection limiter"));
   lifting_->Init(component_rcp, plist);
   lifting_->Compute();
   Teuchos::RCP<CompositeVector> gradient = lifting_->gradient();
 
+  // extract boundary conditions for the current component
+  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
+  std::vector<double> bc_value(nfaces_wghost);
+
+  for (int m = 0; m < bcs.size(); m++) {
+    std::vector<int>& tcc_index = bcs[m]->tcc_index();
+    int ncomp = tcc_index.size();
+
+    for (int i = 0; i < ncomp; i++) {
+      if (current_component_ == tcc_index[i]) {
+        std::vector<int>& faces = bcs[m]->faces();
+        std::vector<std::vector<double> >& values = bcs[m]->values();
+        int nbfaces = faces.size();
+
+        for (int n = 0; n < nbfaces; ++n) {
+          int f = faces[n];
+          bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+          bc_value[f] = values[n][i];
+        }
+      }
+    }
+  }
+
+  lifting_->InitLimiter(darcy_flux);
+  lifting_->ApplyLimiter(bc_model, bc_value);
+
+  /*
   if (advection_limiter == TRANSPORT_LIMITER_BARTH_JESPERSEN) {
     LimiterBarthJespersen(current_component_, component_rcp, gradient, limiter_);
     lifting_->ApplyLimiter(limiter_);
@@ -39,6 +68,7 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
   } else if (advection_limiter == TRANSPORT_LIMITER_KUZMIN) {
     LimiterKuzmin(current_component_, component_rcp, gradient);
   }
+  */
 
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors.

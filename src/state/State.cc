@@ -559,9 +559,9 @@ Teuchos::RCP<Field> State::GetField(Key fieldname, Key pk_name) {
     Exceptions::amanzi_throw(message);
   } else if (record->owner() != pk_name) {
     std::stringstream messagestream;
-    messagestream << "PK " << pk_name
-                  << " is attempting write access to field " << fieldname
-                  << " which is owned by " << GetField_(fieldname)->owner();
+    messagestream << "PK \"" << pk_name
+                  << "\" is attempting write access to field \"" << fieldname
+                  << "\" which is owned by \"" << GetField_(fieldname)->owner() <<"\"";
     Errors::Message message(messagestream.str());
     Exceptions::amanzi_throw(message);
   }

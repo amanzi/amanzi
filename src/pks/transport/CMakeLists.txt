@@ -74,7 +74,7 @@ set(transport_inc_files
   TransportSourceFactory.hh)
 
 set(transport_src_files Transport_PK.cc Transport_TI.cc 
-                        Transport_Limiters.cc Transport_VandV.cc Transport_IO.cc 
+                        Transport_VandV.cc Transport_IO.cc 
                         Transport_Dispersion.cc 
                         Transport_PK_Wrapper.cc
                         TransportBCFactory.cc TransportSourceFactory.cc
@@ -115,10 +115,10 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/transport_advance.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    add_amanzi_test(transport_limiters transport_limiters
-                    KIND unit
-                    SOURCE test/Main.cc test/transport_limiters.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    #add_amanzi_test(transport_limiters transport_limiters
+    #                KIND unit
+    #                SOURCE test/Main.cc test/transport_limiters.cc
+    #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(transport_convergence transport_convergence
                     KIND unit

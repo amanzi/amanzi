@@ -241,7 +241,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Allocate memory for other fundamental structures
   K.resize(ncells_owned);
 
-  if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+  if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   }
 }
@@ -359,7 +359,7 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   Teuchos::ParameterList& oplist = dp_list_.sublist("operators").sublist("diffusion operator").sublist("matrix");
   Operators::OperatorDiffusionFactory opfactory;
   op_ = opfactory.Create(mesh_, op_bc_, oplist, gravity_, 0);  // The last 0 means no upwind
-  op_->InitOperator(K, Teuchos::null, Teuchos::null, rho_, mu_);
+  op_->Setup(K, Teuchos::null, Teuchos::null, rho_, mu_);
   op_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   int schema_prec_dofs = op_->schema_prec_dofs();
@@ -369,7 +369,7 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   // Well modeling: initialization
   if (src_sink != NULL) {
     double T1 = T0 + dT0;
-    if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+    if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       CalculatePermeabilityFactorInWell();
       src_sink->ComputeDistribute(T0, T1, Kxy->Values()); 
     } else {
@@ -428,7 +428,7 @@ int Darcy_PK::Advance(double dT_MPC, double& dT_actual)
 
   if (src_sink != NULL) {
     double T0 = T1 - dT_MPC; 
-    if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+    if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       src_sink->ComputeDistribute(T0, T1, Kxy->Values()); 
     } else {
       src_sink->ComputeDistribute(T0, T1, NULL);

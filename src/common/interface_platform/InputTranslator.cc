@@ -800,6 +800,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
   char* textContent;
   char* elemContent;
   std::string meshbase;
+  std::string value;
   Errors::Message msg;
 
   // This actually includes: process kernels, execution controls, and numerical controls
@@ -834,19 +835,23 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
         DOMElement* flowElement = static_cast<DOMElement*>(tmpList->item(0));
         if (flowElement->hasAttribute((XMLString::transcode("state")))) {
 	  textContent = XMLString::transcode(flowElement->getAttribute(XMLString::transcode("state")));
-          if (strcmp(textContent,"off")==0){
+	  value = trim_string(textContent);
+	  value[0] = std::tolower(value[0]);
+          if (value == "off"){
             list.set<std::string>("Flow Model","Off");
           }
-          else if (strcmp(textContent,"on")==0) {
+	  else if (value == "on"){
             flowON = true;
             char* textContent2 = XMLString::transcode(flowElement->getAttribute(XMLString::transcode("model")));
-            if (strcmp(textContent2,"saturated")==0) {
+	    std::string value2 = trim_string(textContent2);
+	    value2[0] = std::tolower(value2[0]);
+            if (value2 == "saturated") {
               list.set<std::string>("Flow Model","Single Phase");
             }
-            else if (strcmp(textContent2,"richards")==0) {
+            else if (value2 =="richards") {
               list.set<std::string>("Flow Model","Richards");
             }
-            else if (strcmp(textContent2,"constant")==0) {
+            else if (value2 == "constant") {
               // EIB - also need to set integration mode = transient with static flow
               list.set<std::string>("Flow Model","Single Phase");
               staticflowON = true;
@@ -936,7 +941,9 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
       DOMElement* transElement = static_cast<DOMElement*>(tmpList->item(0));
       if (transElement->hasAttribute((XMLString::transcode("state")))) {
         textContent = XMLString::transcode(transElement->getAttribute(XMLString::transcode("state")));
-        if (strcmp(textContent,"off")==0) {
+	value = trim_string(textContent);
+	value[0] = std::tolower(value[0]);
+        if (value == "off"){
           list.set<std::string>("Transport Model","Off");
         }
         else {
@@ -986,7 +993,9 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
       else {
         throw_error_missattr("process_kernels", "attribute", "state", "chemistry");
       }
-      if (strcmp(attrName,"off")==0) {
+      value = trim_string(attrName);
+      value[0] = std::tolower(value[0]);
+      if (value == "off"){
         list.set<std::string>("Chemistry Model","Off");
       }
       else {
@@ -3809,6 +3818,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
       if (nodeAttr) {
         textContent = XMLString::transcode(nodeAttr->getNodeValue());
         matName = std::string(textContent);
+        XMLString::release(&textContent);
       }
       else {
         throw_error_missattr("materials", "attribute", "name", "material");
@@ -4384,15 +4394,13 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
       }
       if(cappressON) matlist.sublist(capname) = caplist;
       list.sublist(matName) = matlist;
+      if (!hasPerm and !hasHC){
+        Teuchos::ParameterList perm;
+        perm.set<double>("Value",0.0);
+        list.sublist(matName).sublist("Intrinsic Permeability: Uniform") = perm;
+      }
     }
-
   }
-  if (!hasPerm and !hasHC){
-    Teuchos::ParameterList perm;
-    perm.set<double>("Value",0.0);
-    list.sublist(matName).sublist("Intrinsic Permeability: Uniform") = perm;
-  }
-  XMLString::release(&textContent);
 
   return list;
   
