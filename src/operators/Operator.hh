@@ -132,8 +132,10 @@ class Operator {
   int ncells_wghost, nfaces_wghost, nnodes_wghost;
  
   Teuchos::RCP<Epetra_CrsMatrix> A_;
-  Teuchos::RCP<Epetra_CrsMatrix> A_off_;
-  Teuchos::RCP<Epetra_Export> exporter_;
+  Teuchos::RCP<MatrixFE> Amat_;
+  Teuchos::RCP<SuperMap> smap_;
+  int my_dof_index_;
+
   Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
   int offset_global_[3], offset_my_[3];
 

@@ -46,8 +46,8 @@ class SuperMap {
   Teuchos::RCP<const Epetra_Map> GhostedMap() const { return ghosted_map_; }
 
   // index accessors
-  const std::vector<int> Indices(const std::string& compname, int dofnum) const;
-  const std::vector<int> GhostIndices(const std::string& compname, int dofnum) const;
+  const std::vector<int>& Indices(const std::string& compname, int dofnum) const;
+  const std::vector<int>& GhostIndices(const std::string& compname, int dofnum) const;
 
   // block accessors
   void BlockIndices(const std::string& compname, int element_lid, std::vector<int>* indices) const {
@@ -74,7 +74,7 @@ class SuperMap {
   }
   
  protected:
-    const std::vector<int> CreateIndices_(const std::string& compname, int dofnum, bool ghosted) const;
+    const std::vector<int>& CreateIndices_(const std::string& compname, int dofnum, bool ghosted) const;
 
  protected:
   std::map<std::string,int> offsets_;
