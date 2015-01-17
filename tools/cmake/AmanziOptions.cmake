@@ -49,9 +49,9 @@ if ( ENABLE_DBC )
 endif()    
 
 # Trilinos error checking is defined in macros
-if ( ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
-    add_definitions("-DHAVE_FATAL_MESSAGES:BOOL=TRUE")
-endif()
+# if ( ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
+#     add_definitions("-DHAVE_FATAL_MESSAGES:BOOL=TRUE")
+# endif()
 
 # Testing
 # We do not have a consistent way to activate the unit and other tests
