@@ -1060,7 +1060,7 @@ The following models can be specified for the intrinsic permeability of the mate
  
  * [U] `"File`" [string] provides the name of the file containing the permeability field
 
- * [U] `"Format`" [string] specifies the format of the file (`"exodus`" is the only supported format at this time)
+ * [U] `"Format`" [string] specifies the format of the file (`"Exodus II`" is the only supported format at this time)
 
  * [U] `"Attribute`" [string] to specify the attribute name used to identify the permeability values
 
