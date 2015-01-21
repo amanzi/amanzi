@@ -3855,54 +3855,94 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
               if (DOMNode::ELEMENT_NODE == curkiddy->getNodeType()) {
                 propName  = XMLString::transcode(curkiddy->getNodeName());
                 if  (strcmp("porosity",propName)==0){
-                  // TODO: EIB - assuming value, implement file later
-                  attrMap = curkiddy->getAttributes();
-                  nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
-                  if (nodeAttr) {
-                    textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-                  } else {
-                    throw_error_missattr("material", "attribute", "value", "porosity");
+                  DOMElement* propElem = static_cast<DOMElement*>(curkiddy);
+                  Teuchos::ParameterList propertyPL;
+                  
+                  if (propElem->hasAttribute(XMLString::transcode("type"))) {
+                    propertyPL = get_file_info(propertyPL, propElem, "porosity", "mechanical_properties");
+                    
+                    matlist.sublist("Porosity: Uniform") = propertyPL;
+                    std::cout << "Amanzi::InputTranslator: Warning - " << std::endl;
+                    std::cout << "    Please note - the XML Schema allows for specifing Porosity with a file read." << std::endl;
+                    std::cout << "    However, file read for this property has not been propagated through the input process."  << std::endl;
+                    std::cout << "    Please specify a value."  << std::endl;
                   }
-
-                  matlist.sublist("Porosity: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
-                  XMLString::release(&textContent2);
+                  else {
+                    if (propElem->hasAttribute(XMLString::transcode("value"))) {
+                      textContent2 = XMLString::transcode(propElem->getAttribute(XMLString::transcode("value")));
+                      matlist.sublist("Porosity: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
+                      XMLString::release(&textContent2);
+                    }else {
+                      throw_error_missattr("material", "attribute", "value", "porosity");
+                    }
+                  }
                 }
                 else if  (strcmp("particle_density",propName)==0){
-                  // TODO: EIB - assuming value, implement file later
                   // TODO: EIB - should be check value >= 0.
-                  attrMap = curkiddy->getAttributes();
-                  nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
-                  if (nodeAttr) {
-                    textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-                  } else {
-                    throw_error_missattr("material", "attribute", "value", "particle_density");
+                  DOMElement* propElem = static_cast<DOMElement*>(curkiddy);
+                  Teuchos::ParameterList propertyPL;
+                  if (propElem->hasAttribute(XMLString::transcode("type"))) {
+                    propertyPL = get_file_info(propertyPL, propElem, "particle_density", "mechanical_properties");
+                    
+                    matlist.sublist("Particle Density: Uniform") = propertyPL;
+                    std::cout << "Amanzi::InputTranslator: Warning - " << std::endl;
+                    std::cout << "    Please note - the XML Schema allows for specifing Particle Density with a file read." << std::endl;
+                    std::cout << "    However, file read for this property has not been propagated through the input process."  << std::endl;
+                    std::cout << "    Please specify a value."  << std::endl;
                   }
-                  matlist.sublist("Particle Density: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
-                  XMLString::release(&textContent2);
+                  else {
+                    if (propElem->hasAttribute(XMLString::transcode("value"))) {
+                      textContent2 = XMLString::transcode(propElem->getAttribute(XMLString::transcode("value")));
+                      matlist.sublist("Particle Density: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
+                      XMLString::release(&textContent2);
+                    }else {
+                      throw_error_missattr("material", "attribute", "value", "particle_density");
+                    }
+                  }
                 }
                 else if  (strcmp("specific_storage",propName)==0){
-                  // TODO: EIB - not handling file case
-                  attrMap = curkiddy->getAttributes();
-                  nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
-                  if (nodeAttr) {
-                    textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-                  } else {
-                    throw_error_missattr("material", "attribute", "value", "specific_storage");
+                  DOMElement* propElem = static_cast<DOMElement*>(curkiddy);
+                  Teuchos::ParameterList propertyPL;
+                  if (propElem->hasAttribute(XMLString::transcode("type"))) {
+                    propertyPL = get_file_info(propertyPL, propElem, "specific_storage", "mechanical_properties");
+                    
+                    matlist.sublist("Specific Storage: Uniform") = propertyPL;
+                    std::cout << "Amanzi::InputTranslator: Warning - " << std::endl;
+                    std::cout << "    Please note - the XML Schema allows for specifing Specific Storage with a file read." << std::endl;
+                    std::cout << "    However, file read for this property has not been propagated through the input process."  << std::endl;
+                    std::cout << "    Please specify a value."  << std::endl;
                   }
-                  matlist.sublist("Specific Storage: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
-                  XMLString::release(&textContent2);
+                  else {
+                    if (propElem->hasAttribute(XMLString::transcode("value"))) {
+                      textContent2 = XMLString::transcode(propElem->getAttribute(XMLString::transcode("value")));
+                      matlist.sublist("Specific Storage: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
+                      XMLString::release(&textContent2);
+                    }else {
+                      throw_error_missattr("material", "attribute", "value", "specific_storage");
+                    }
+                  }
                 }
                 else if  (strcmp("specific_yield",propName)==0){
-                  // TODO: EIB - not handling file case
-                  attrMap = curkiddy->getAttributes();
-                  nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
-                  if (nodeAttr) {
-                    textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-                  } else {
-                    throw_error_missattr("material", "attribute", "value", "specific_yield");
+                  DOMElement* propElem = static_cast<DOMElement*>(curkiddy);
+                  Teuchos::ParameterList propertyPL;
+                  if (propElem->hasAttribute(XMLString::transcode("type"))) {
+                    propertyPL = get_file_info(propertyPL, propElem, "specific_yield", "mechanical_properties");
+                    matlist.sublist("Specific Yield: Uniform") = propertyPL;
+                    std::cout << "Amanzi::InputTranslator: Warning - " << std::endl;
+                    std::cout << "    Please note - the XML Schema allows for specifing Specific Yield with a file read." << std::endl;
+                    std::cout << "    However, file read for this property has not been propagated through the input process."  << std::endl;
+                    std::cout << "    Please specify a value."  << std::endl;
                   }
-                  matlist.sublist("Specific Yield: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
-                  XMLString::release(&textContent2);
+                  else {
+                    if (propElem->hasAttribute(XMLString::transcode("value"))) {
+                      textContent2 = XMLString::transcode(propElem->getAttribute(XMLString::transcode("value")));
+                      matlist.sublist("Specific Yield: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
+                      XMLString::release(&textContent2);
+                    }else {
+                      throw_error_missattr("material", "attribute", "value", "specific_yield");
+                    }
+                  }
+
                 }
                 else if  (strcmp("dispersion_tensor",propName)==0){
                   // TODO: EIB - not handling file case
@@ -4013,17 +4053,25 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
                   }
                 }
                 else if  (strcmp("tortuosity",propName)==0){
-                  // TODO: EIB - not handling file case
-                  tortuosityON = true;
-                  attrMap = curkiddy->getAttributes();
-                  nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
-                  if (nodeAttr) {
-                    textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-                  } else {
-                    throw_error_missattr("material", "attribute", "value", "tortuosity");
+                  DOMElement* propElem = static_cast<DOMElement*>(curkiddy);
+                  Teuchos::ParameterList propertyPL;
+                  if (propElem->hasAttribute(XMLString::transcode("type"))) {
+                    propertyPL = get_file_info(propertyPL, propElem, "tortuosity", "mechanical_properties");
+                    matlist.sublist("Tortuosity Aqueous: Uniform") = propertyPL;
+                    std::cout << "Amanzi::InputTranslator: Warning - " << std::endl;
+                    std::cout << "    Please note - the XML Schema allows for specifing Tortuosity with a file read." << std::endl;
+                    std::cout << "    However, file read for this property has not been propagated through the input process."  << std::endl;
+                    std::cout << "    Please specify a value."  << std::endl;
                   }
-                  matlist.sublist("Tortuosity Aqueous: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
-                  XMLString::release(&textContent2);
+                  else {
+                    if (propElem->hasAttribute(XMLString::transcode("value"))) {
+                      textContent2 = XMLString::transcode(propElem->getAttribute(XMLString::transcode("value")));
+                      matlist.sublist("Tortuosity Aqueous: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
+                      XMLString::release(&textContent2);
+                    }else {
+                      throw_error_missattr("material", "attribute", "value", "tortuosity");
+                    }
+                  }
                 }
               }
             }
@@ -4041,26 +4089,9 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
               Exceptions::amanzi_throw(msg);
             }
             hasPerm = true;
-            if (permElem->hasAttribute(XMLString::transcode("filename"))) {
-              textContent2 = XMLString::transcode(permElem->getAttribute(XMLString::transcode("filename")));
-              perm.set<std::string>("File",trim_string(textContent2));
-              XMLString::release(&textContent2);
-              if (permElem->hasAttribute(XMLString::transcode("type"))) {
-                textContent2 = XMLString::transcode(permElem->getAttribute(XMLString::transcode("type")));
-                perm.set<std::string>("Format","Exodus II");
-                XMLString::release(&textContent2);
-              }
-              else {
-                throw_error_missattr("materials", "attribute", "type", "permeability");
-              }
-              if (permElem->hasAttribute(XMLString::transcode("attribute"))) {
-                textContent2 = XMLString::transcode(permElem->getAttribute(XMLString::transcode("attribute")));
-                perm.set<std::string>("Attribute",trim_string(textContent2));
-                XMLString::release(&textContent2);
-              }
-              else {
-                throw_error_missattr("materials", "attribute", "attribute", "permeability");
-              }
+            if (permElem->hasAttribute(XMLString::transcode("type"))) {
+              perm = get_file_info(perm, permElem, "permeability", "materials");
+              permName = "Intrinsic Permeability: Anisotropic";
             }
             else {
               // loop over attributes to get x,y,z
@@ -4177,6 +4208,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
             }
 
             if  (strcmp("van_genuchten",textContent2)==0){
+              // TODO: EIB - not handling file case
               cappressON = true;
               DOMNodeList* paramList= curkid->getChildNodes();
               for (int k=0; k<paramList->getLength(); k++) {
@@ -4202,11 +4234,23 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
                       XMLString::release(&attrValue);
                     }
                   }
+                  else if (strcmp("read",propName)==0) {
+                    // TODO: EIB - implement read, how to seperate parameters?
+                    std::cout << "Amanzi::InputTranslator: Warning - " << std::endl;
+                    std::cout << "    Please note - the XML Schema allows for specifing cap_pressure:van_genuchten with a file read." << std::endl;
+                    std::cout << "    However, file read for this property has not been propagated through the input process."  << std::endl;
+                    std::cout << "    Please specify parameters."  << std::endl;
+                  }
+                  else {
+                    // ill-formed error
+                    throw_error_illformed("material","element","van_genuchten","parameters or read");
+                  }
                 }
               }
               capname = "Capillary Pressure: van Genuchten";
             }
             else if (strcmp("brooks_corey",textContent2)==0){
+              // TODO: EIB - not handling file case
               cappressON = true;
               DOMNodeList* paramList= curkid->getChildNodes();
               for (int k=0; k<paramList->getLength(); k++) {
@@ -5544,6 +5588,8 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
 	        Teuchos::Array<std::string> funcs;
 	        std::string scname;
 	        std::string soluteName;
+                bool isReleaseModel = false;
+                Teuchos::ParameterList newsclist;
                 DOMNodeList* scChildList = compNode->getChildNodes();
                 for (int l=0; l<scChildList->getLength(); l++) {
                   DOMNode* scChildNode = scChildList->item(l) ;
@@ -5554,7 +5600,11 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
 		    }
                     else if (strcmp(scChildName,"uniform_conc")==0){
 		     scname = "Source: Uniform Concentration";
-		    }
+                    }
+                    else if (strcmp(scChildName,"diffusion_dominated_release")==0){
+                      scname = "Source: Diffusion Dominated Release Model";
+                      isReleaseModel = true;
+                    }
 		    // loop over any attributes that may exist
                     DOMNamedNodeMap* attrMap2 = scChildNode->getAttributes();
                     for (int l=0; l<attrMap2->getLength(); l++) {
@@ -5582,6 +5632,15 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
                         else if (strcmp(attrName,"name")==0) {
 		          soluteName = attrValue;
 			}
+                        else if (strcmp(attrName,"total_inventory")==0) {
+                          newsclist.set<double>("Total Inventory",atof(attrValue));
+                        }
+                        else if (strcmp(attrName,"mixing_length")==0) {
+                          newsclist.set<double>("Mixing Length",atof(attrValue));
+                        }
+                        else if (strcmp(attrName,"effective_diffusion_coefficient")==0) {
+                          newsclist.set<double>("Effective Diffusion Coefficient",atof(attrValue));
+                        }
                         XMLString::release(&attrName);
                         XMLString::release(&attrValue);
 		      }
@@ -5598,12 +5657,14 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
 		  vals.append(vals[0]);
 	        }
 	        //EIB - this is iffy!!! Talked with Ellen, this is consistent with her assumptions in Akuna, for now
-	        if (times.length()==funcs.length() && funcs.length()>0) funcs.remove(funcs.length()-1); 
-	        Teuchos::ParameterList newsclist;
-	          newsclist.set<Teuchos::Array<double> >("Times",times);
-	          newsclist.set<Teuchos::Array<std::string> >("Time Functions",funcs);
-	          newsclist.set<Teuchos::Array<double> >("Values",vals);
-	        //sclist.sublist(scname) = newsclist;
+	        if (times.length()==funcs.length() && funcs.length()>0) funcs.remove(funcs.length()-1);
+                newsclist.set<Teuchos::Array<double> >("Times",times);
+                if (!isReleaseModel) {
+                  newsclist.set<Teuchos::Array<std::string> >("Time Functions",funcs);
+                  newsclist.set<Teuchos::Array<double> >("Values",vals);
+
+                }
+                //sclist.sublist(scname) = newsclist;
 	        sclist.sublist("Solute SOURCE").sublist(phase).sublist(component).sublist(soluteName).sublist(scname) = newsclist;
 	      }
 	    }
@@ -6106,6 +6167,60 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
   return list;
   
 }
+
+/*
+ ******************************************************************
+ * Empty
+ ******************************************************************
+ */
+  
+  //TODO: EIB - get file information.
+  
+  Teuchos::ParameterList get_file_info(Teuchos::ParameterList propertyList, DOMElement* propElement, std::string propName, std::string sectionName)
+  {
+    char* textContent;
+    std::string text;
+    bool isExodus = false;
+    
+    if (propElement->hasAttribute(XMLString::transcode("type"))) {
+      text = std::string(XMLString::transcode(propElement->getAttribute(XMLString::transcode("type"))));
+      // TODO: move all to lower case
+      if (text == "exodus ii") {
+        propertyList.set<std::string>("Format","Exodus II");
+      }
+      else if (text == "color") {
+        propertyList.set<std::string>("Format","Color Function");
+      }
+      else {
+        throw_error_illformed(sectionName, "attribute", "type", "exodus ii or color");
+      }
+    }
+    else {
+      throw_error_missattr(sectionName, "attribute", "type", propName);
+    }
+    
+    if (propElement->hasAttribute(XMLString::transcode("filename"))) {
+      textContent = XMLString::transcode(propElement->getAttribute(XMLString::transcode("filename")));
+      propertyList.set<std::string>("File",trim_string(textContent));
+      XMLString::release(&textContent);
+    }
+    else {
+      throw_error_missattr(sectionName, "attribute", "filename", propName);
+    }
+    
+    if (isExodus) {
+      if (propElement->hasAttribute(XMLString::transcode("attribute"))) {
+        textContent = XMLString::transcode(propElement->getAttribute(XMLString::transcode("attribute")));
+        propertyList.set<std::string>("Attribute",trim_string(textContent));
+        XMLString::release(&textContent);
+      }
+      else {
+        throw_error_missattr(sectionName, "attribute", "attribute", propName);
+      }
+    }
+    
+    return propertyList;
+  }
 
 /* 
  ******************************************************************

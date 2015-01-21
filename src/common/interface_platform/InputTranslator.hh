@@ -34,6 +34,8 @@ Teuchos::ParameterList get_boundary_conditions(xercesc::DOMDocument* xmlDoc, Teu
 Teuchos::ParameterList get_sources(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);
 Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);
 
+Teuchos::ParameterList get_file_info(Teuchos::ParameterList propertyList, xercesc::DOMElement* propElement, std::string propName, std::string sectionName);
+  
 double get_time_value(std::string time_value, Teuchos::ParameterList def_list);
 double convert_time_value(char* time_value);
 double get_double_constant(std::string pos_name, Teuchos::ParameterList def_list);
