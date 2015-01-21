@@ -173,24 +173,22 @@ void Transport_PK::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, dou
 
     *vo_->os() << runtime_solutes_[n] << ": min/max=" << tccmin << " " << tccmax;
     if (flag) *vo_->os() << ", flux=" << solute_flux << " [m^3/s]";
-    *vo_->os() << std::endl;
+
+    // old capability
+    mass_solutes_exact_[i] += VV_SoluteVolumeChangePerSecond(i) * dT_MPC;
+    double mass_solute(0.0);
+    for (int c = 0; c < ncells_owned; c++) {
+      double vol = mesh_->cell_volume(c);
+      mass_solute += (*ws)[0][c] * (*phi)[0][c] * tcc_next[i][c] * vol;
+    }
+
+    double tmp1 = mass_solute, tmp2 = mass_solutes_exact_[i], mass_exact;
+    mesh_->get_comm()->SumAll(&tmp1, &mass_solute, 1);
+    mesh_->get_comm()->SumAll(&tmp2, &mass_exact, 1);
+
+    double mass_loss = mass_exact - mass_solute;
+    *vo_->os() << ", mass: kept/left=" << mass_solute << " " << mass_loss << " [kg]" << std::endl;
   }
-
-  // old capability
-  mass_tracer_exact += VV_TracerVolumeChangePerSecond(0) * dT_MPC;
-  double mass_tracer = 0.0;
-  for (int c = 0; c < ncells_owned; c++) {
-    double vol = mesh_->cell_volume(c);
-    mass_tracer += (*ws)[0][c] * (*phi)[0][c] * tcc_next[0][c] * vol;
-  }
-
-  double mass_tracer_tmp = mass_tracer, mass_exact_tmp = mass_tracer_exact, mass_exact;
-  mesh_->get_comm()->SumAll(&mass_tracer_tmp, &mass_tracer, 1);
-  mesh_->get_comm()->SumAll(&mass_exact_tmp, &mass_exact, 1);
-
-  double mass_loss = mass_exact - mass_tracer;
-  *vo_->os() << "(obsolete) solute #0: reservoir mass=" << mass_tracer 
-             << " [kg], mass left=" << mass_loss << " [kg]" << std::endl;
 }
 
 
@@ -314,7 +312,7 @@ void Transport_PK::VV_CheckTracerBounds(Epetra_MultiVector& tracer,
 * Calculate change of tracer volume per second due to boundary flux.
 * This is the simplified version (lipnikov@lanl.gov).
 ****************************************************************** */
-double Transport_PK::VV_TracerVolumeChangePerSecond(int idx_tracer)
+double Transport_PK::VV_SoluteVolumeChangePerSecond(int idx_tracer)
 {
   double volume = 0.0;
 

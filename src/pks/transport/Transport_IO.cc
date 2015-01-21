@@ -161,12 +161,15 @@ void Transport_PK::ProcessParameterList()
     }
   }
 
-  // control parameter
+  // statistics of solutes
   if (transport_list.isParameter("runtime diagnostics: solute names")) {
     runtime_solutes_ = transport_list.get<Teuchos::Array<std::string> >("runtime diagnostics: solute names").toVector();
   } else {
     runtime_solutes_.push_back(component_names_[0]);
   }
+  mass_solutes_exact_.assign(num_aqueous + num_gaseous, 0.0);
+  mass_solutes_source_.assign(num_aqueous + num_gaseous, 0.0);
+
   if (transport_list.isParameter("runtime diagnostics: regions")) {
     runtime_regions_ = transport_list.get<Teuchos::Array<std::string> >("runtime diagnostics: regions").toVector();
   }

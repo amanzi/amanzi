@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "Epetra_Vector.h"
-#include "Epetra_FECrsGraph.h"
+// #include "Epetra_FECrsGraph.h"
 
 #include "errors.hh"
 #include "WhetStoneDefs.hh"

@@ -101,7 +101,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
                             double lower_bound, double upper_bound, double tol = 0.0) const;
   void VV_CheckInfluxBC() const;
   void VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, double dT_MPC);
-  double VV_TracerVolumeChangePerSecond(int idx_tracer);
+  double VV_SoluteVolumeChangePerSecond(int idx_solute);
 
   void CalculateLpErrors(AnalyticFunction f, double t, Epetra_Vector* sol, double* L1, double* L2);
 
@@ -224,8 +224,8 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
 
   double cfl_, dT, dT_debug, T_physics;  
 
-  double mass_tracer_exact, mass_tracer_source;  // statistics for tracers or solutes
-  std::vector<std::string> runtime_solutes_;
+  std::vector<double> mass_solutes_exact_, mass_solutes_source_;  // mass for all solutes
+  std::vector<std::string> runtime_solutes_;  // names of trached solutes
   std::vector<std::string> runtime_regions_;
 
   int ncells_owned, ncells_wghost;
