@@ -123,6 +123,7 @@ if __name__ == "__main__":
         input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "amanzi-output"
         run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi)
+
         x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
 
         # Amanzi-Alquimia
@@ -151,8 +152,8 @@ if __name__ == "__main__":
         plt.tick_params(axis='both', which='major', labelsize=20)
 
         #pyplot.show()
-        # plt.savefig(root+"_1d.png",format="png")
-        #plt.close()
+        plt.savefig(root+"_1d.png",format="png")
+        plt.close()
 
     finally:
         pass 

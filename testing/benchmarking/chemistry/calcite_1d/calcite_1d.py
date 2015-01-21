@@ -115,7 +115,8 @@ if __name__ == "__main__":
     # path_to_pflotran = "/home/scratch/smolins/amanzi/examples/phase2/chemistry/1d-calcite/pflotran-run/"
 
      # hardwired for 1d-calcite: time and comp
-    times = ['Time:  1.00000E+01 y','Time:  2.00000E+01 y','Time:  3.00000E+01 y','Time:  4.00000E+01 y','Time:  5.00000E+01 y']
+    # times = ['Time:  1.00000E+01 y','Time:  2.00000E+01 y','Time:  3.00000E+01 y','Time:  4.00000E+01 y','Time:  5.00000E+01 y']
+    times = ['Time:  5.00000E+01 y']
 
     comp = 'Total_Ca++ [M]'
     Ca_pflotran = []
@@ -140,6 +141,7 @@ if __name__ == "__main__":
 
      # hardwired for 1d-calcite: time and comp
     times = ['Time:  1.00000E+01 y','Time:  2.00000E+01 y','Time:  3.00000E+01 y','Time:  4.00000E+01 y','Time:  5.00000E+01 y']
+    times = ['Time:  5.00000E+01 y']
 
     comp = 'Total_Ca++ [M]'
     Ca_pflotran_OS = []
@@ -163,7 +165,8 @@ if __name__ == "__main__":
     path_to_crunchflow = "crunchflow/gimrt"
 
      # hardwired for calcite_1d_CF.in: time and comp
-    times_CF = ['totcon1.out','totcon2.out','totcon3.out','totcon4.out','totcon5.out']
+#    times_CF = ['totcon1.out','totcon2.out','totcon3.out','totcon4.out','totcon5.out']
+    times_CF = ['totcon5.out']
     comp = 2
     Ca_crunchflow = []
     ignore = 4
@@ -171,7 +174,8 @@ if __name__ == "__main__":
        x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
        Ca_crunchflow = Ca_crunchflow + [c_crunchflow]
 
-    times_CF = ['pH1.out','pH2.out','pH3.out','pH4.out','pH5.out']
+#    times_CF = ['pH1.out','pH2.out','pH3.out','pH4.out','pH5.out']
+    times_CF = ['pH5.out']
     comp = 0
     pH_crunchflow = []
     ignore = 3
@@ -179,7 +183,8 @@ if __name__ == "__main__":
        x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
        pH_crunchflow = pH_crunchflow + [c_crunchflow]
 
-    times_CF = ['volume1.out','volume2.out','volume3.out','volume4.out','volume5.out']
+#    times_CF = ['volume1.out','volume2.out','volume3.out','volume4.out','volume5.out']
+    times_CF = ['volume5.out']
     comp = 0
     VF_crunchflow = []
     ignore = 4
@@ -191,7 +196,8 @@ if __name__ == "__main__":
     path_to_crunchflow = "crunchflow/os3d"
 
      # hardwired for calcite_1d_CF.in: time and comp
-    times_CF = ['totcon1.out','totcon2.out','totcon3.out','totcon4.out','totcon5.out']
+#    times_CF = ['totcon1.out','totcon2.out','totcon3.out','totcon4.out','totcon5.out']
+    times_CF = ['totcon5.out']
     comp = 2
     Ca_crunchOS3D = []
     ignore = 4
@@ -199,7 +205,8 @@ if __name__ == "__main__":
        x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
        Ca_crunchOS3D = Ca_crunchOS3D + [c_crunchflow]
 
-    times_CF = ['pH1.out','pH2.out','pH3.out','pH4.out','pH5.out']
+#    times_CF = ['pH1.out','pH2.out','pH3.out','pH4.out','pH5.out']
+    times_CF = ['pH5.out']
     comp = 0
     pH_crunchOS3D = []
     ignore = 3
@@ -207,7 +214,8 @@ if __name__ == "__main__":
        x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
        pH_crunchOS3D = pH_crunchOS3D + [c_crunchflow]
 
-    times_CF = ['volume1.out','volume2.out','volume3.out','volume4.out','volume5.out']
+#    times_CF = ['volume1.out','volume2.out','volume3.out','volume4.out','volume5.out']
+    times_CF = ['volume5.out']
     comp = 0
     VF_crunchOS3D = []
     ignore = 4
@@ -226,7 +234,8 @@ if __name__ == "__main__":
     
     try:
         # hardwired for 1d-calcite: Ca = component 2, last time = '71'
-        times = ['31','41','51','61','71']
+#        times = ['31','41','51','61','71']
+        times = ['71']
 
         # Amanzi native chemistry
         input_filename = os.path.join("amanzi-u-1d-calcite.xml")
@@ -288,7 +297,7 @@ if __name__ == "__main__":
         # Amanzi-Alquimia-Crunch
         input_filename = os.path.join("amanzi-u-1d-calcite-alq-crunch.xml")
         path_to_amanzi = "amanzi-alquimia-crunch-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["calcite_1d_CF.in","calcite_1d_CF.dbs"])
+        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-calcite-crunch.in","calcite.dbs"])
 
         comp = 'total_component_concentration.cell.Ca++ conc'
         Ca_amanzi_alquimia_crunch = []
@@ -317,10 +326,11 @@ if __name__ == "__main__":
     # amanziS data
     try:
         path_to_amanziS = "run_data"
-        root_amanziS = "plt00053"
+        root_amanziS = "plt00501"
         compS = "Ca++_Aqueous_Concentration"
         x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
         struct = len(x_amanziS)
+        #import pdb; pdb.set_trace()
     except:
         struct = 0
 
@@ -334,32 +344,39 @@ if __name__ == "__main__":
                  ax[0].plot(x_amanzi_alquimia, Ca_amanzi_alquimia[i],'r-',linewidth=2)
           if alq_crunch:
                  ax[0].plot(x_amanzi_alquimia_crunch, Ca_amanzi_alquimia_crunch[i],'r*',linewidth=2)
-          ax[0].plot(x_amanzi_native, Ca_amanzi_native[i],'r--')
+          ax[0].plot(x_amanzi_native, Ca_amanzi_native[i],'rx')
           ax[0].plot(x_pflotran, Ca_pflotran[i],'bx',linewidth=2)
           ax[0].plot(x_pflotran_OS, Ca_pflotran_OS[i],'b*',linewidth=2)
-          if i>1:
-                  ax[0].plot(x_crunchflow, Ca_crunchflow[i-1],'y.')
-                  ax[0].plot(x_crunchflow, Ca_crunchOS3D[i-1],'g.')
+#          if i>1:
+#                  ax[0].plot(x_crunchflow, Ca_crunchflow[i-1],'y.')
+#                  ax[0].plot(x_crunchflow, Ca_crunchOS3D[i-1],'g.')
+          ax[0].plot(x_crunchflow, Ca_crunchflow[i],'y.')
+          ax[0].plot(x_crunchflow, Ca_crunchOS3D[i],'g.')
+
 
           if alq:
                  ax[1].plot(x_amanzi_alquimia, pH_amanzi_alquimia[i],'r-',linewidth=2)
           if alq_crunch:
                  ax[1].plot(x_amanzi_alquimia_crunch, pH_amanzi_alquimia_crunch[i],'r*',linewidth=2)
-          ax[1].plot(x_amanzi_native, pH_amanzi_native[i],'r--')
+          ax[1].plot(x_amanzi_native, pH_amanzi_native[i],'rx')
           ax[1].plot(x_pflotran, pH_pflotran[i],'bx',linewidth=2)
           ax[1].plot(x_pflotran_OS, pH_pflotran_OS[i],'b*',linewidth=2)
-          if i>0:
-                  ax[1].plot(x_crunchflow, pH_crunchflow[i-1],'y.')
-                  ax[1].plot(x_crunchflow, pH_crunchOS3D[i-1],'g.')
+#          if i>0:
+#                  ax[1].plot(x_crunchflow, pH_crunchflow[i-1],'y.')
+#                  ax[1].plot(x_crunchflow, pH_crunchOS3D[i-1],'g.')
+          ax[1].plot(x_crunchflow, pH_crunchflow[i],'y.')
+          ax[1].plot(x_crunchflow, pH_crunchOS3D[i],'g.')
 
           if i==0:
             if alq:
                    ax[2].plot(x_amanzi_alquimia, VF_amanzi_alquimia[i],'r-',label='Amanzi+Alquimia(PFloTran)',linewidth=2)
             if alq_crunch:
                    ax[2].plot(x_amanzi_alquimia_crunch, VF_amanzi_alquimia_crunch[i],'r*',label='Amanzi+Alquimia(Crunch)',linewidth=2)
-            ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'r--',label='Amanzi Native Chemistry')
+            ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'rx',label='Amanzi Native Chemistry')
             ax[2].plot(x_pflotran, VF_pflotran[i],'bx',label='PFloTran',linewidth=2)
             ax[2].plot(x_pflotran_OS, VF_pflotran_OS[i],'b*',label='PFloTran OS',linewidth=2)
+            ax[2].plot(x_crunchflow, VF_crunchflow[i],'y.',label='CrunchFlow GIMRT')
+            ax[2].plot(x_crunchflow, VF_crunchOS3D[i],'g.',label='CrunchFlow OS3D')
           else:
             if alq:
                    ax[2].plot(x_amanzi_alquimia, VF_amanzi_alquimia[i],'r-',linewidth=2)
@@ -368,12 +385,12 @@ if __name__ == "__main__":
             ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'r--')
             ax[2].plot(x_pflotran, VF_pflotran[i],'bx',linewidth=2)
             ax[2].plot(x_pflotran_OS, VF_pflotran_OS[i],'b*',linewidth=2)
-            if i==1:
-                  ax[2].plot(x_crunchflow, VF_crunchflow[i-1],'y.',label='CrunchFlow GIMRT')
-                  ax[2].plot(x_crunchflow, VF_crunchOS3D[i-1],'g.',label='CrunchFlow OS3D')
-            else: 
-                  ax[2].plot(x_crunchflow, VF_crunchflow[i-1],'y.')
-                  ax[2].plot(x_crunchflow, VF_crunchOS3D[i-1],'g.')
+#            if i==1:
+#                  ax[2].plot(x_crunchflow, VF_crunchflow[i-1],'y.',label='CrunchFlow GIMRT')
+#                  ax[2].plot(x_crunchflow, VF_crunchOS3D[i-1],'g.',label='CrunchFlow OS3D')
+#            else: 
+#                  ax[2].plot(x_crunchflow, VF_crunchflow[i-1],'y.')
+#                  ax[2].plot(x_crunchflow, VF_crunchOS3D[i-1],'g.')
 
     if (struct>0):
         sam = ax[0].plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alquimia(PFloTran)',linewidth=2)     
@@ -386,7 +403,9 @@ if __name__ == "__main__":
 
     # plot adjustments
     plt.subplots_adjust(left=0.15,bottom=0.15,right=0.99,top=0.90)
-    ax[0].legend(loc='lower right',fontsize=13)
+    #import pdb; pdb.set_trace()
+    if (struct>0):
+        ax[0].legend(loc='lower right',fontsize=13)
     ax[2].legend(loc='lower right',fontsize=13)
     plt.suptitle("Amanzi 1D Calcite Benchmark",x=0.57,fontsize=20)
     plt.tick_params(axis='x', which='major', labelsize=20)

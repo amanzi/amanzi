@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="1D Flow and Transport with tritium decay"/>
   </ParameterList>
@@ -20,7 +20,7 @@
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
         <ParameterList name="Transport Process Kernel">
-          <Parameter name="Transport Integration Algorithm" type="string" value="Explicit First-Order"/>
+          <Parameter name="Transport Integration Algorithm" type="string" value="Explicit Second-Order"/>
         </ParameterList>
         <ParameterList name="Steady-State Implicit Time Integration">
           <Parameter name="steady max iterations" type="int" value="15"/>
@@ -147,7 +147,9 @@
           <ParameterList name="Water">
             <ParameterList name="Tritium">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Geochemical Condition" type="string" value="west"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+                <Parameter name="Geochemical Conditions" type="Array(string)" value="{west,west}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
@@ -169,7 +171,7 @@
               <ParameterList name="BC: Zero Gradient">
                 <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.e-20, 1.e-20}"/>
+                <Parameter name="Geochemical Conditions" type="Array(string)" value="{west,west}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
