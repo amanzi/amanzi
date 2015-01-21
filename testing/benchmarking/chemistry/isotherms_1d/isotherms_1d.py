@@ -64,6 +64,7 @@ if __name__ == "__main__":
     # root name for problem
     root = "isotherms"
     components = ['A','B','C']
+    compcrunch = ['A']
 
     # times
     timespfl = ['Time:  0.00000E+00 y', 'Time:  5.00000E+01 y',]
@@ -80,9 +81,11 @@ if __name__ == "__main__":
     # amanzi output
     amanzi_totc_templ = "total_component_concentration.cell.{} conc" #Component {0} conc"
     amanzi_totc = [amanzi_totc_templ.format(x) for x in components] #range(len(components))]
+    amanzi_totc_crunch = [amanzi_totc_templ.format(x) for x in compcrunch] #range(len(components))]
 
     amanzi_sorb_templ = "total_sorbed.cell.{0}"
     amanzi_sorb = [amanzi_sorb_templ.format(x) for x in range(len(components))]
+    amanzi_sorb_crunch = [amanzi_sorb_templ.format(x) for x in range(len(compcrunch))]
 
     # pflotran data
     path_to_pflotran = "pflotran"
@@ -176,6 +179,31 @@ if __name__ == "__main__":
 
         isv2 = False
 
+    try:  
+        # Amanzi-Alquimia-Crunch
+        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
+        path_to_amanzi = "amanzi-alquimia-crunch-output"
+        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+"-crunch.in",root+".dbs"])
+
+        u_amanzi_alquimia_crunch = [[[] for x in range(len(amanzi_totc_crunch))] for x in range(len(timesama))]
+        for i, time in enumerate(timesama):
+           for j, comp in enumerate(amanzi_totc_crunch):
+              x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+              u_amanzi_alquimia_crunch[i][j] = c_amanzi_alquimia_crunch
+              
+        v_amanzi_alquimia_crunch = [[[] for x in range(len(amanzi_sorb_crunch))] for x in range(len(timesama))]
+        for i, time in enumerate(timesama):
+           for j, comp in enumerate(amanzi_sorb_crunch):
+              x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+              v_amanzi_alquimia_crunch[i][j] = c_amanzi_alquimia_crunch
+
+        alqc = True
+
+    except:
+
+        alqc = False
+
+
 
     colors= ['r','b','m','g'] # components
     styles = ['-','v','o','x'] # codes
@@ -195,6 +223,10 @@ if __name__ == "__main__":
             ax[0].plot(x_amanzi_native, u_amanzi_native[i][j],markeredgecolor=colors[j],marker=styles[2],linewidth=2,label=comp,mfc='None',markeredgewidth=2,linestyle='None')
             ax[0].plot(x_pflotran, u_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[3],linewidth=2)
 
+    if alqc:
+            comp=='A'
+            ax[0].plot(x_amanzi_alquimia_crunch, u_amanzi_alquimia_crunch[i][0],color=colors[0],linestyle='None',marker='*',linewidth=2)
+
     # for i, time in enumerate(times):
     for j, comp in enumerate(components):
             if alq:
@@ -203,6 +235,10 @@ if __name__ == "__main__":
                    ax[1].plot(x_amanzi_native_isv2, v_amanzi_native_isv2[i][j],color=colors[j],linestyle='None',marker=styles[1],markeredgecolor=colors[j],label=codes[j*len(styles)+1])
             ax[1].plot(x_amanzi_native, v_amanzi_native[i][j],markeredgecolor=colors[j],marker=styles[2],linewidth=2,label=codes[j*len(styles)+2],mfc='None',markeredgewidth=2,linestyle='None')
             ax[1].plot(x_pflotran, v_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[3],linewidth=2,label=codes[j*len(styles)+3])
+
+    if alqc:
+            comp=='A'
+            ax[1].plot(x_amanzi_alquimia_crunch, v_amanzi_alquimia_crunch[i][0],color=colors[0],linestyle='None',marker='*',linewidth=2,label='Amanzi+Alquimia(CrunchFlow)')
 
     # axes
     ax[1].set_xlabel("Distance (m)",fontsize=15)

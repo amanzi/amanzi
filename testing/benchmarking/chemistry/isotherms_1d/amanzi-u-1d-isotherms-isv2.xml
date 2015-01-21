@@ -44,9 +44,9 @@
       <density>998.2</density>
       <dissolved_components>
         <solutes>
-          <solute coefficient_of_diffusion="1.0e-9">A</solute>
-          <solute coefficient_of_diffusion="1.0e-9">B</solute>
-          <solute coefficient_of_diffusion="1.0e-9">C</solute>
+          <solute coefficient_of_diffusion="1.0e-29">A</solute>
+          <solute coefficient_of_diffusion="1.0e-29">B</solute>
+          <solute coefficient_of_diffusion="1.0e-29">C</solute>
         </solutes>
       </dissolved_components>
     </liquid_phase>
