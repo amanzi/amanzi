@@ -134,25 +134,6 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   // time integration members
   void Functional(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
 
-  // limiters 
-  void LimiterTensorial(const int component,
-                        Teuchos::RCP<const Epetra_Vector> scalar_field, 
-                        Teuchos::RCP<CompositeVector>& gradient);
-
-  void LimiterKuzmin(const int component,
-                     Teuchos::RCP<const Epetra_Vector>& scalar_field, 
-                     Teuchos::RCP<CompositeVector>& gradient);
-
-  void CalculateDescentDirection(std::vector<AmanziGeometry::Point>& normals,
-                                 AmanziGeometry::Point& normal_new,
-                                 double& L22normal_new, 
-                                 AmanziGeometry::Point& direction);
-
-  void ApplyDirectionalLimiter(AmanziGeometry::Point& normal, 
-                               AmanziGeometry::Point& p,
-                               AmanziGeometry::Point& direction, 
-                               AmanziGeometry::Point& gradient);
-
   void IdentifyUpwindCells();
 
   void InterpolateCellVector(
@@ -178,7 +159,6 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   // I/O methods
   void ProcessParameterList();
   void ProcessStringDispersionModel(const std::string name, int* model);
-  void ProcessStringAdvectionLimiter(const std::string name, int* method);
 
   // miscaleneous methods
   int FindComponentNumber(const std::string component_name);
@@ -222,12 +202,8 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   Teuchos::RCP<const Epetra_MultiVector> ws_start, ws_end;  // data for subcycling 
   Teuchos::RCP<Epetra_MultiVector> ws_subcycle_start, ws_subcycle_end;
 
-  int advection_limiter;  // data for limiters
-  int current_component_;
-  // Teuchos::RCP<Epetra_Vector> limiter_;
+  int current_component_;  // data for lifting
   Teuchos::RCP<Operators::ReconstructionCell> lifting_;
-  std::vector<double> component_local_min_;
-  std::vector<double> component_local_max_;
 
   std::vector<TransportDomainFunction*> srcs;  // Source or sink for components
   std::vector<TransportBoundaryFunction*> bcs;  // influx BC for components
@@ -238,7 +214,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   Teuchos::RCP<Epetra_Import> face_importer;
 
   std::vector<Teuchos::RCP<MaterialProperties> > mat_properties_;  // vector of materials
-  std::vector<Teuchos::RCP<DiffusionPhase> >  diffusion_phase_;   // vector of phases
+  std::vector<Teuchos::RCP<DiffusionPhase> > diffusion_phase_;   // vector of phases
 
   std::vector<WhetStone::Tensor> D;
   int dispersion_models_;

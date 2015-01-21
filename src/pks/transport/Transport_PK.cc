@@ -200,8 +200,6 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // advection block initialization
   current_component_ = -1;
-  component_local_min_.resize(ncells_owned);
-  component_local_max_.resize(ncells_owned);
 
   const Epetra_Map& cmap_owned = mesh_->cell_map(false);
   ws_subcycle_start = Teuchos::rcp(new Epetra_Vector(cmap_owned));
@@ -209,7 +207,6 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // reconstruction initialization
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-  // limiter_ = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
   lifting_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
 
   // boundary conditions initialization

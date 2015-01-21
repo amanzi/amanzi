@@ -46,9 +46,6 @@ void Transport_PK::ProcessParameterList()
   temporal_disc_order = transport_list.get<int>("temporal discretization order", 1);
   if (temporal_disc_order < 1 || temporal_disc_order > 2) temporal_disc_order = 1;
 
-  std::string advection_limiter_name = transport_list.get<std::string>("advection limiter");
-  ProcessStringAdvectionLimiter(advection_limiter_name, &advection_limiter);
-
   num_aqueous = transport_list.get<int>("number of aqueous components", component_names_.size());
   num_gaseous = transport_list.get<int>("number of gaseous components", 0);
 
@@ -260,25 +257,6 @@ void Transport_PK::ProcessStringDispersionModel(const std::string name, int* mod
 }
 
 
-/* ****************************************************************
-* Process time integration sublist.
-**************************************************************** */
-void Transport_PK::ProcessStringAdvectionLimiter(const std::string name, int* method)
-{
-  Errors::Message msg;
-  if (name == "Barth-Jespersen") {
-    advection_limiter = TRANSPORT_LIMITER_BARTH_JESPERSEN;
-  } else if (name == "tensorial") {
-    advection_limiter = TRANSPORT_LIMITER_TENSORIAL;
-  } else if (name == "Kuzmin") {
-    advection_limiter = TRANSPORT_LIMITER_KUZMIN;
-  } else {
-    msg << "Transport PK: unknown advection limiter (Barth-Jespersen, tensorial, Kuzmin).\n";
-    Exceptions::amanzi_throw(msg);
-  }
-}
-
-
 /* ************************************************************* */
 /* Printing information about Transport status                   */
 /* ************************************************************* */
@@ -293,7 +271,6 @@ void Transport_PK::PrintStatistics() const
     std::cout << "    Spatial/temporal discretication orders = " << spatial_disc_order
          << " " << temporal_disc_order << std::endl;
     std::cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << std::endl;
-    std::cout << "    Advection limiter = " << (advection_limiter == TRANSPORT_LIMITER_TENSORIAL ? "Tensorial" : "BarthJespersen or Kuzmin(experimental)") << std::endl;
   }
 }
 
