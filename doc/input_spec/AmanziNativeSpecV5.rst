@@ -2666,9 +2666,11 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * Aqueous pressure [Pa]
       * Hydraulic Head [m] 
       * Drawdown [m] 
-      * XXX Aqueous concentration [moles of solute XXX / volume water in MKS] (name formed by string concatenation, given the definitions in `"Phase Definition`" section)
+      * SOLUTE Aqueous concentration [mol/m^3] (name SOLUTE formed by string concatenation, given the definitions in `"Phase Definition`" section)
       * X-, Y-, Z- Aqueous volumetric flux [m/s]
       * MaterialID
+      * Aqueous mass flow rate [kg/s] (must use integral functional in the observation)
+      * Aqueous volumetric flow rate [m^3/s] (must use integral functional in the observation)
 
     Observation "Drawdown" is calculated with respect to the value registered at the first time
     it was requested.
