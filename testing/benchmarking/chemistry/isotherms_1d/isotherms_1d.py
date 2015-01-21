@@ -55,6 +55,31 @@ def GetXY_PFloTran(path,root,time,comp):
 
     return (x_pflotran, c_pflotran)
 
+# ------------- CRUNCHFLOW ------------------------------------------------------------------
+def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
+
+    # read CrunchFlow data
+    filename = os.path.join(path,cf_file)
+    f = open(filename,'r')
+    lines = f.readlines()
+    f.close()
+
+    # ignore couple of lines
+    for i in range(ignore):
+      lines.pop(0)
+
+    # extract data x0, x1, ..., xN-1 per line, keep only two columns
+    xv=[]
+    yv=[] 
+    for line in lines:
+      xv = xv + [float(line.split()[0])]
+      yv = yv + [float(line.split()[comp+1])]
+    
+    xv = np.array(xv)
+    yv = np.array(yv)
+
+    return (xv, yv)
+
 if __name__ == "__main__":
 
     import os
@@ -63,7 +88,7 @@ if __name__ == "__main__":
 
     # root name for problem
     root = "isotherms"
-    components = ['A','B','C']
+    components = ['A']#,'B','C']
     compcrunch = ['A']
 
     # times
@@ -104,6 +129,20 @@ if __name__ == "__main__":
 
     CWD = os.getcwd()
     local_path = "" 
+
+    path_to_crunchflow = "crunchflow"
+
+     # hardwired for 1d-isotherms-crunch.in: time and comp
+    times_CF = ['totcon5.out']
+    comp = 0
+    u_crunchflow = []
+    ignore = 4
+    for i, time in enumerate(times_CF):
+       x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
+       u_crunchflow = u_crunchflow + [c_crunchflow]
+    crunch = True
+
+#   crunchflow does not explicitly calculate sorbed concs in Kd approach   
 
     # subplots
     fig, ax = plt.subplots(2,sharex=True,figsize=(8,8))
@@ -205,9 +244,9 @@ if __name__ == "__main__":
 
 
 
-    colors= ['r','b','m','g'] # components
+    colors= ['r'] #,'b','m','g'] # components
     styles = ['-','v','o','x'] # codes
-    codes = ['Amanzi+Alquimia(PFloTran)','Amanzi Native Chemistry (v2)','Amanzi Native Chemistry (v1.2)','PFloTran'] + [None,]*9
+    codes = ['AmanziU (2nd-Ord.)+Alq(PFT)','AmanziU (2nd-Ord.) Native(v2)','Amanzi (2nd-Ord.) Native(v1.2)','PFloTran'] + [None,]*9
 
     # lines on axes
     # ax[0] ---> Aqueous concentrations
@@ -222,6 +261,10 @@ if __name__ == "__main__":
                    ax[0].plot(x_amanzi_native_isv2, u_amanzi_native_isv2[i][j],color=colors[j],marker=styles[1],markeredgecolor=colors[j],linestyle='None')
             ax[0].plot(x_amanzi_native, u_amanzi_native[i][j],markeredgecolor=colors[j],marker=styles[2],linewidth=2,label=comp,mfc='None',markeredgewidth=2,linestyle='None')
             ax[0].plot(x_pflotran, u_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[3],linewidth=2)
+
+    #import pdb; pdb.set_trace()
+    if crunch:
+             ax[0].plot(x_crunchflow, u_crunchflow[0],color=colors[0],linestyle='--',marker='|',linewidth=5, label='CrunchFlow')
 
     if alqc:
             comp=='A'
@@ -238,7 +281,7 @@ if __name__ == "__main__":
 
     if alqc:
             comp=='A'
-            ax[1].plot(x_amanzi_alquimia_crunch, v_amanzi_alquimia_crunch[i][0],color=colors[0],linestyle='None',marker='*',linewidth=2,label='Amanzi+Alquimia(CrunchFlow)')
+            ax[1].plot(x_amanzi_alquimia_crunch, v_amanzi_alquimia_crunch[i][0],color=colors[0],linestyle='None',marker='*',linewidth=2,label='AmanziU (2nd-Ord.)+Alq(CF)')
 
     # axes
     ax[1].set_xlabel("Distance (m)",fontsize=15)

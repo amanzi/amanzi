@@ -33,7 +33,7 @@
 
   <process_kernels>
     <flow state="on" model="saturated"/>
-    <transport state="on" algorithm="explicit first-order" sub_cycling = "on"/>
+    <transport state="on" algorithm="explicit second-order" sub_cycling = "on"/>
     <chemistry state="on" engine="amanzi" process_model="implicit operator split"/>
   </process_kernels>
 

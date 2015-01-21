@@ -265,7 +265,7 @@ if __name__ == "__main__":
     colors= ['r','b','m','g'] # components
     styles = ['-','*','+','x'] # codes
 #    codes = ['Amanzi+Alquimia(PFloTran)','Amanzi+Alquimia(CrunchFlow)','Amanzi Native Chemistry','PFloTran'] + [None,]*12
-    codes = ['Amanzi+Alquimia(PFloTran)','Amanzi+Alquimia(CrunchFlow)','CrunchFlow','PFloTran'] + [None,]*12
+    codes = ['Amanzi(2nd-Ord)+Alquimia(PFloTran)','Amanzi(2nd-Ord)+Alquimia(CrunchFlow)','CrunchFlow(OS3D)','PFloTran'] + [None,]*12
 
     # lines on axes
     # for i, time in enumerate(times):
