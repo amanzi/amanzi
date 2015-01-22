@@ -257,7 +257,9 @@ if __name__ == "__main__":
         # subplots
         #fig, ax = plt.subplots(2,sharex=True,figsize=(15,8))
 
-     # amanziS data
+    # amanziS data
+    
+    # +pflotran
     try:
         input_filename = os.path.join("amanzi-s-1d-ion-exchange-alq.xml")
         path_to_amanziS = "struct_amanzi-output-pflo"
@@ -283,6 +285,34 @@ if __name__ == "__main__":
         struct = len(x_amanziS)
     except:
         struct = 0
+
+    # +crunch
+    try:
+        input_filename = os.path.join("amanzi-s-1d-ion-exchange-alq-crunch.xml")
+        path_to_amanziS = "struct_amanzi-output-crunch"
+        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
+        root_amanziS = "plt00051"
+        #compS = "Na+_Aqueous_Concentration"
+        #x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+
+        #import pdb; pdb.set_trace()
+        u_amanziS_c = [[] for x in range(len(amanzi_compS))]
+        for j, compS in enumerate(amanzi_compS):
+           x_amanziS_c, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+           u_amanziS_c[j] = c_amanziS
+
+        #compS = "Na+_Sorbed_Concentration"
+        #x_amanziS, v_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+
+        v_amanziS_c = [[] for x in range(len(amanzi_sorbS))]
+        for j, compS in enumerate(amanzi_sorbS):
+           x_amanziS_c, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+           v_amanziS_c[j] = c_amanziS
+
+        struct_c = len(x_amanziS_c)
+    except:
+        struct_c = 0
+
 
     components = ['Na+','Ca++','Mg++','Cl-']
     colors= ['r','b','m','g'] # components
@@ -323,6 +353,16 @@ if __name__ == "__main__":
             ax[1].plot(x_amanziS, v_amanziS[j],color=colors[j],linestyle='--',linewidth=2) 
 
         ax[1].plot(x_amanziS, v_amanziS[len(amanzi_sorbS)-1],color=colors[len(amanzi_sorbS)-1],linestyle='--',label='AmanziS+Alquimia(PFloTran)',linewidth=2)
+
+    if (struct_c > 0):
+        
+        for j in range(len(amanzi_compS)):
+            ax[0].plot(x_amanziS_c, u_amanziS_c[j],color=colors[j],linestyle='--',linewidth=2)      
+        
+        for j in range(len(amanzi_sorbS)-1):
+            ax[1].plot(x_amanziS_c, v_amanziS_c[j],color=colors[j],linestyle='--',linewidth=2) 
+
+        ax[1].plot(x_amanziS_c, v_amanziS_c[len(amanzi_sorbS)-1],color=colors[len(amanzi_sorbS)-1],linestyle='--',label='AmanziS+Alquimia(Crunch)',linewidth=2)
 
     # axes
     ax[1].set_xlabel("Distance (m)",fontsize=15)

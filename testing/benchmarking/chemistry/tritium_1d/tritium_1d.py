@@ -230,11 +230,15 @@ if __name__ == "__main__":
 #        alq = ax.plot(x_amanzi_alquimia, c_amanzi_alquimia,'m-',label='AmanziU+Alquimia(PFloTran) - 2nd Order',linewidth=2)
 #    ama = ax.plot(x_amanzi_native, c_amanzi_native,'ro',label='AmanziU+Alquimia(PFloTran) - 1st Order')
     #import pdb; pdb.set_trace()
-    if (struct>0):
+    if (struct > 0):
         sam = ax.plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alquimia(PFloTran)',linewidth=2) 
         #sam = ax.plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alquimia(PFloTran)',linewidth=2) 
         #sam_crunch = ax.plot(x_amanziS, c_amanziS,'g*',label='AmanziS+Alquimia(CrunchFlow)',linewidth=2) 
 ##    ama = ax.plot(x_amanzi_native, c_amanzi_native,'r_',label='Amanzi Native Chemistry')
+
+    if (struct_c > 0):
+        samc = ax.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alquimia(Crunch)',linewidth=2) 
+
     pfl = ax.plot(x_pflotran, c_pflotran,'b--',label='PFloTran',linewidth=2)
     crunch = ax.plot(x_crunchflow, c_crunchflow,'b.',label='CrunchFlow(OS3D)',linewidth=2)
 
@@ -249,7 +253,7 @@ if __name__ == "__main__":
 
     # plot adjustments
     plt.subplots_adjust(left=0.20,bottom=0.15,right=0.99,top=0.90)
-    plt.legend(loc='upper right',fontsize=13)
+    plt.legend(loc='upper right',fontsize=10)
     plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
     plt.tick_params(axis='both', which='major', labelsize=20)
 
@@ -264,6 +268,10 @@ if __name__ == "__main__":
         alqcs = a.plot(x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch,'r|',label='Amanzi+Alquimia(CrunchFlow)',linewidth=2)
     if (struct>0):
         sams = a.plot(x_amanziS, c_amanziS,'g-',label='AmanziS',linewidth=2) 
+
+    if (struct_c > 0):
+        samsc = a.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',linewidth=2) 
+
     pfls = a.plot(x_pflotran, c_pflotran,'b--',label='PFloTran',linewidth=2)
     cfs = a.plot(x_crunchflow, c_crunchflow,'b.',label='CrunchFlow',linewidth=2)
     plt.title('Zoom near interface')

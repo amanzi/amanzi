@@ -36,6 +36,29 @@ def GetXY_Amanzi(path,root,time,comp):
 
     return (x_amanzi_alquimia, c_amanzi_alquimia)
 
+#Amanzi Struct
+
+def GetXY_AmanziS(path,root,time,comp):
+    try:
+        import fsnapshot
+        fsnok = True
+    except:
+        fsnok = False
+
+    #import pdb; pdb.set_trace()
+
+    plotfile = os.path.join(path,root)
+    if os.path.isdir(plotfile) & fsnok:
+        (nx, ny, nz) = fsnapshot.fplotfile_get_size(plotfile)
+        x = np.zeros( (nx), dtype=np.float64)
+        y = np.zeros( (nx), dtype=np.float64)
+        (y, x, npts, err) = fsnapshot.fplotfile_get_data_1d(plotfile, comp, y, x)
+    else:
+        x = np.zeros( (0), dtype=np.float64)
+        y = np.zeros( (0), dtype=np.float64)
+    
+    return (x, y)
+
 # ----------- PFLOTRAN STANDALONE ------------------------------------------------------------
 
 def GetXY_PFloTran(path,root,time,comp):
@@ -242,7 +265,31 @@ if __name__ == "__main__":
 
         alqc = False
 
+    # +pflotran
+    try:
+        # import pdb; pdb.set_trace()
+        input_filename = os.path.join("amanzi-s-1d-isotherms-alq-pflo.xml")
+        path_to_amanziS = "struct_amanzi-output-pflo"
+        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
+        root_amanziS = "plt00051"
+        compS = "A_Aqueous_Concentration"
+        x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        struct = len(x_amanziS)
+    except:
+        struct = 0
 
+    # +crunchflow
+    try:
+        # import pdb; pdb.set_trace()
+        input_filename = os.path.join("amanzi-s-1d-isotherms-alq-crunch.xml")
+        path_to_amanziS = "struct_amanzi-output-crunch"
+        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
+        root_amanziS = "plt00051"
+        compS = "A_Aqueous_Concentration"
+        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        struct_c = len(x_amanziS_crunch)
+    except:
+        struct_c = 0
 
     colors= ['r'] #,'b','m','g'] # components
     styles = ['-','v','o','x'] # codes
@@ -283,6 +330,13 @@ if __name__ == "__main__":
             comp=='A'
             ax[1].plot(x_amanzi_alquimia_crunch, v_amanzi_alquimia_crunch[i][0],color=colors[0],linestyle='None',marker='*',linewidth=2,label='AmanziU (2nd-Ord.)+Alq(CF)')
 
+    #import pdb; pdb.set_trace()
+    if (struct>0):
+        sam = ax[0].plot(x_amanziS, c_amanziS,'g--',label='AmanziS+Alq(PFT)',linewidth=2)     
+
+    if (struct_c>0):
+        samc = ax[0].plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alq(CF)',linewidth=2) 
+
     # axes
     ax[1].set_xlabel("Distance (m)",fontsize=15)
     ax[0].set_ylabel("Total Concentration [mol/L]",fontsize=15)
@@ -290,7 +344,7 @@ if __name__ == "__main__":
 
     # plot adjustments
     plt.subplots_adjust(left=0.15,bottom=0.15,right=0.90,top=0.90)
-    ax[0].legend(loc='center right',fontsize=15)
+    ax[0].legend(loc='upper right',fontsize=10)
     ax[1].legend(loc='upper right',fontsize=10)
     ax[0].set_xlim(left=30,right=70)
     ax[1].set_xlim(left=30,right=70)

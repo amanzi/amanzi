@@ -324,6 +324,8 @@ if __name__ == "__main__":
         alq_crunch = False
 
     # amanziS data
+    
+    # +pflotran
     try:
         # import pdb; pdb.set_trace()
         input_filename = os.path.join("amanzi-s-1d-calcite-alq.xml")
@@ -335,6 +337,19 @@ if __name__ == "__main__":
         struct = len(x_amanziS)
     except:
         struct = 0
+
+    # +crunchflow
+    try:
+        # import pdb; pdb.set_trace()
+        input_filename = os.path.join("amanzi-s-1d-calcite-alq-crunch.xml")
+        path_to_amanziS = "struct_amanzi-output-crunch"
+        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
+        root_amanziS = "plt00501"
+        compS = "Ca++_Aqueous_Concentration"
+        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        struct_c = len(x_amanziS_crunch)
+    except:
+        struct_c = 0
 
         # subplots
        # fig, ax = plt.subplots(3,sharex=True,figsize=(8,10))
@@ -397,6 +412,10 @@ if __name__ == "__main__":
     #import pdb; pdb.set_trace()
     if (struct>0):
         sam = ax[0].plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alq(PFT)',linewidth=2)     
+
+    if (struct_c>0):
+        samc = ax[0].plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alq(CF)',linewidth=2)     
+
   
     # axes
     ax[2].set_xlabel("Distance (m)",fontsize=20)

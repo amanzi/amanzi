@@ -8,7 +8,7 @@
   <ParameterList name="Execution Control">
     <Parameter name="Flow Model" type="string" value="Single Phase"/>
     <Parameter name="Transport Model" type="string" value="On"/>
-    <Parameter name="Chemistry Model" type="string" value="Amanzi"/>
+    <Parameter name="Chemistry Model" type="string" value="Alquimia"/>
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Transient">
         <Parameter name="Start" type="double" value="0.0"/>
@@ -95,20 +95,17 @@
           <ParameterList name="Water">
             <ParameterList name="A">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1.e-20"/>
-                <Parameter name="Free Ion Guess" type="double" value="1.e-9"/>
+                <Parameter name="Geochemical Condition" type="string" value="initial"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="B">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1.e-20"/>
-                <Parameter name="Free Ion Guess" type="double" value="1.e-9"/>
+                <Parameter name="Geochemical Condition" type="string" value="initial"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="C">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1.e-20"/>
-                <Parameter name="Free Ion Guess" type="double" value="1.e-9"/>
+                <Parameter name="Geochemical Condition" type="string" value="initial"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -127,17 +124,17 @@
           <ParameterList name="Water">
             <ParameterList name="A">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Values" type="Array(double)" value="{1.e-3}"/>
+                <Parameter name="Geochemical Condition" type="string" value="west"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="B">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Values" type="Array(double)" value="{1.e-3}"/>
+                <Parameter name="Geochemical Condition" type="string" value="west"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="C">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Values" type="Array(double)" value="{1.e-3}"/>
+                <Parameter name="Geochemical Condition" type="string" value="west"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -188,24 +185,22 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Visualization Data">
-      <Parameter name="File Name Base" type="string" value="run_data/plt"/>
+      <Parameter name="File Name Base" type="string" value="struct_amanzi-output-pflo/plt"/>
       <Parameter name="Cycle Macros" type="Array(string)" value="{Every_100_steps}"/>
     </ParameterList>
     <ParameterList name="Checkpoint Data">
-      <Parameter name="File Name Base" type="string" value="run_data/chk"/>
+      <Parameter name="File Name Base" type="string" value="struct_amanzi-output-pflo/chk"/>
       <Parameter name="Cycle Macros" type="Array(string)" value="{Every_100_steps}"/>
     </ParameterList>
   </ParameterList>
 
   <ParameterList name="Chemistry">
-    <ParameterList name="Thermodynamic Database">
-      <Parameter name="Format" type="string" value="simple" />
-      <Parameter name="File" type="string" value="isotherms.bgd" />
-    </ParameterList>
+    <Parameter name="Engine" type="string" value="PFloTran"/>
+    <Parameter name="Engine Input File" type="string" value="1d-isotherms-trim.in"/>
     <Parameter name="Verbosity" type="string" value="verbose" />
-    <Parameter name="Activity Model" type="string" value="unit" />
-    <Parameter name="Tolerance" type="double" value="1.0e-12"/>
-    <Parameter name="Maximum Newton Iterations" type="int" value="250"/>
+    <Parameter name="Activity Model" type="string" value="debye-huckel" />
+    <Parameter name="Tolerance" type="double" value="1.5e-12"/>
+    <Parameter name="Maximum Newton Iterations" type="int" value="150"/>
     <Parameter name="Max Time Step (s)" type="double" value="15778463.0"/>
   </ParameterList> <!-- Chemistry -->
 </ParameterList>
