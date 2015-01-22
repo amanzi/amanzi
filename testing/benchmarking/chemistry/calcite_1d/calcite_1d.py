@@ -325,12 +325,14 @@ if __name__ == "__main__":
 
     # amanziS data
     try:
-        path_to_amanziS = "run_data_pflo"
+        # import pdb; pdb.set_trace()
+        input_filename = os.path.join("amanzi-s-1d-calcite-alq.xml")
+        path_to_amanziS = "struct_amanzi-output-pflo"
+        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
         root_amanziS = "plt00501"
         compS = "Ca++_Aqueous_Concentration"
         x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
         struct = len(x_amanziS)
-        #import pdb; pdb.set_trace()
     except:
         struct = 0
 
@@ -392,7 +394,7 @@ if __name__ == "__main__":
 #                  ax[2].plot(x_crunchflow, VF_crunchflow[i-1],'y.')
 #                  ax[2].plot(x_crunchflow, VF_crunchOS3D[i-1],'g.')
 
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     if (struct>0):
         sam = ax[0].plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alq(PFT)',linewidth=2)     
   

@@ -195,7 +195,10 @@ if __name__ == "__main__":
 
     # amanziS data
     try:
-        path_to_amanziS = "run_data_pflo"
+        # import pdb; pdb.set_trace()
+        input_filename = os.path.join("amanzi-s-1d-tritium-alq.xml")
+        path_to_amanziS = "struct_amanzi-output-pflo"
+        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
         root_amanziS = "plt00100"
         compS = "Tritium_Aqueous_Concentration"
         x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
@@ -205,11 +208,14 @@ if __name__ == "__main__":
         struct = 0
 
     try:
-        path_to_amanziS = "run_data_crunch"
+        # import pdb; pdb.set_trace()
+        input_filename = os.path.join("amanzi-s-1d-tritium-alq-crunch.xml")
+        path_to_amanziS = "struct_amanzi-output-crunch"
+        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
         root_amanziS = "plt00100"
         compS = "Tritium_Aqueous_Concentration"
         x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
-        struct_c = len(x_amanziS)
+        struct_c = len(x_amanziS_crunch)
     except:
         struct_c = 0
 

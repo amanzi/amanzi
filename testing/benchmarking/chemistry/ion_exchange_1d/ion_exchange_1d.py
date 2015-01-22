@@ -172,6 +172,16 @@ if __name__ == "__main__":
                          'total_sorbed.cell.1', \
                          'total_sorbed.cell.2', \
                          'total_sorbed.cell.3']
+
+    amanzi_compS      = ['Na+_Aqueous_Concentration', \
+                         'Ca++_Aqueous_Concentration', \
+                         'Mg++_Aqueous_Concentration', \
+                         'Cl-_Aqueous_Concentration']
+    amanzi_sorbS      = ['Na+_Sorbed_Concentration', \
+                         'Ca++_Sorbed_Concentration', \
+                         'Mg++_Sorbed_Concentration', \
+                         'Cl-_Sorbed_Concentration']
+
     try:   
         # Amanzi native chemistry
         input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
@@ -249,13 +259,26 @@ if __name__ == "__main__":
 
      # amanziS data
     try:
-        path_to_amanziS = "run_data"
-        root_amanziS = "plt00053"
-        compS = "Na+_Aqueous_Concentration"
-        x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        input_filename = os.path.join("amanzi-s-1d-ion-exchange-alq.xml")
+        path_to_amanziS = "struct_amanzi-output-pflo"
+        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
+        root_amanziS = "plt00051"
+        #compS = "Na+_Aqueous_Concentration"
+        #x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
 
-        compS = "Na+_Sorbed_Concentration"
-        x_amanziS, v_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        #import pdb; pdb.set_trace()
+        u_amanziS = [[] for x in range(len(amanzi_compS))]
+        for j, compS in enumerate(amanzi_compS):
+           x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+           u_amanziS[j] = c_amanziS
+
+        #compS = "Na+_Sorbed_Concentration"
+        #x_amanziS, v_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+
+        v_amanziS = [[] for x in range(len(amanzi_sorbS))]
+        for j, compS in enumerate(amanzi_sorbS):
+           x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+           v_amanziS[j] = c_amanziS
 
         struct = len(x_amanziS)
     except:
@@ -292,8 +315,14 @@ if __name__ == "__main__":
         ax[1].plot(x_pflotran, v_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[3],linewidth=2,label=codes[j*len(styles)+3])
 
     if (struct>0):
-        sam = ax[0].plot(x_amanziS, c_amanziS,'r--',linewidth=2)      
-        samv = ax[1].plot(x_amanziS, v_amanziS,'r--',label='AmanziS+Alquimia(PFloTran)',linewidth=2) 
+        
+        for j in range(len(amanzi_compS)):
+            ax[0].plot(x_amanziS, u_amanziS[j],color=colors[j],linestyle='--',linewidth=2)      
+        
+        for j in range(len(amanzi_sorbS)-1):
+            ax[1].plot(x_amanziS, v_amanziS[j],color=colors[j],linestyle='--',linewidth=2) 
+
+        ax[1].plot(x_amanziS, v_amanziS[len(amanzi_sorbS)-1],color=colors[len(amanzi_sorbS)-1],linestyle='--',label='AmanziS+Alquimia(PFloTran)',linewidth=2)
 
     # axes
     ax[1].set_xlabel("Distance (m)",fontsize=15)
