@@ -93,8 +93,6 @@ void Transport_PK::Construct_(Teuchos::ParameterList& glist,
 
   dT = 0.0;
   bc_scaling = 0.0;
-  mass_tracer_exact = 0.0;  // Tracer is defined as species #0.
-
   passwd_ = "state";  //  state password
 
   // require state variables when Flow is off
@@ -200,8 +198,6 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // advection block initialization
   current_component_ = -1;
-  component_local_min_.resize(ncells_owned);
-  component_local_max_.resize(ncells_owned);
 
   const Epetra_Map& cmap_owned = mesh_->cell_map(false);
   ws_subcycle_start = Teuchos::rcp(new Epetra_Vector(cmap_owned));
@@ -209,7 +205,6 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // reconstruction initialization
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-  // limiter_ = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
   lifting_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
 
   // boundary conditions initialization
@@ -640,7 +635,7 @@ void Transport_PK::CommitState(double dummy_dT, const Teuchos::Ptr<State>& S)
 void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
 {
   dT = dT_cycle;  // overwrite the maximum stable transport step
-  mass_tracer_source = 0.0;
+  mass_solutes_source_.assign(num_aqueous + num_gaseous, 0.0);
 
   // populating next state of concentrations
   tcc->ScatterMasterToGhosted("cell");
@@ -726,7 +721,9 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
   }
 
   // update mass balance
-  mass_tracer_exact += mass_tracer_source * dT;
+  for (int i = 0; i < mass_solutes_exact_.size(); i++) {
+    mass_solutes_exact_[i] += mass_solutes_source_[i] * dT;
+  }
 
   if (internal_tests) {
     VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
@@ -743,7 +740,7 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
 void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
 {
   dT = dT_cycle;  // overwrite the maximum stable transport step
-  mass_tracer_source = 0.0;
+  mass_solutes_source_.assign(num_aqueous + num_gaseous, 0.0);
 
   // work memory
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
@@ -772,7 +769,9 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
   }
 
   // update mass balance
-  mass_tracer_exact += mass_tracer_source * dT;
+  for (int i = 0; i < num_aqueous + num_gaseous; i++) {
+    mass_solutes_exact_[i] += mass_solutes_source_[i] * dT;
+  }
 
   if (internal_tests) {
     VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
@@ -788,7 +787,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
 void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
 {
   dT = dT_cycle;  // overwrite the maximum stable transport step
-  mass_tracer_source = 0.0;
+  mass_solutes_source_.assign(num_aqueous + num_gaseous, 0.0);
 
   // work memory
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
@@ -835,7 +834,9 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
   }
 
   // update mass balance
-  mass_tracer_exact += mass_tracer_source * dT / 2;
+  for (int i = 0; i < num_aqueous + num_gaseous; i++) {
+    mass_solutes_exact_[i] += mass_solutes_source_[i] * dT / 2;
+  }
 
   if (internal_tests) {
     VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
@@ -888,7 +889,7 @@ void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dT_cycle)
 /* ******************************************************************
 * Computes source and sink terms and adds them to vector tcc.
 * Return mass rate for the tracer.
-* The routine separate two cases of tcc with one and all components.
+* The routine treats two cases of tcc with one and all components.
 ****************************************************************** */
 void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp, 
                                          std::vector<TransportDomainFunction*>& srcs, 
@@ -919,7 +920,7 @@ void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp,
       double value = mesh_->cell_volume(c) * it->second;
 
       tcc[imap][c] += dTp * value;
-      if (i == 0) mass_tracer_source += value;
+      mass_solutes_source_[i] += value;
     }
   }
 }

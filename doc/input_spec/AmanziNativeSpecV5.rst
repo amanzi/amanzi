@@ -328,18 +328,33 @@ An independent field evaluator has no dependencies and is specified by a functio
 It has the following fields.
 
 * `"field evaluator type`" [string] The value of this parameter is used by the factory
-  of evaluators. The available options `"independent variable`" ...
+  of evaluators. The available option are `"independent variable`", `"primary variable`",
+  `"secondary variable`", `"CUSTOM_EVALUATOR`".
 
-* `"function`" [sublist]
+* `"function`" [sublist] defines a piecewise function for calculating the independent variable.
+  In may contain multiple sublists *DOMAIN* with identical structure.
+  
+  * `"DOMAIN`" [sublist] defines region and function for calculating the independent variable.
 
-* `"VerboseObject`" [sublist]
+    * `"region`" [string] specifies domain on the function, a single region.
+
+    * `"regions`" [Array(string)] alternative to option *region*, domain on the function consists
+      of many regions.
+
+    * `"component`" [string] speficies geometric object associated with the mesh function.
+      Available options are `"cell`", `"face`", and `"node`".
+
+    * `"function`" [sublist] defines an analytic function for calculation. Its structure
+      is described in the separate section below.
+
+* `"VerboseObject`" [sublist] a standard vebosity object.
 
 .. code-block:: xml
 
-    <ParameterList name="saturation_liquid">
+    <ParameterList name="SATURATION">
       <Parameter name="field evaluator type" type="string" value="independent variable"/>
       <ParameterList name="function">
-        <ParameterList name="domain">
+        <ParameterList name="DOMAIN">
           <Parameter name="region" type="string" value="Computational domain"/>
           <Parameter name="component" type="string" value="cell"/>
           <ParameterList name="function">
@@ -353,6 +368,21 @@ It has the following fields.
         <Parameter name="Verbosity Level" type="string" value="extreme"/>
       </ParameterList>
     </ParameterList>
+
+The indpendet variable *SATURATION* is defined as a cell-based variable with
+constant value 0.8.
+
+
+Primary field evaluator
+.......................
+
+
+Secondary field evaluator
+.........................
+
+
+Custom field evaluator
+......................
 
 
 Initial conditions
@@ -589,14 +619,17 @@ The complete example of a state initialization is below. Note that
   </ParameterList>
 
 
+PKs
+===
+
 Flow
-====
+----
 
 Flow sublist includes exactly one sublist, either `"Darcy problem`" or `"Richards problem`".
 Structure of both sublists is quite similar. We make necessary comments on their differences.
 
 Water retention models
------------------------
+......................
 
 User defines water retention models in sublist `"water retention models`". 
 It contains as many sublists, 
@@ -654,7 +687,7 @@ In this example, we define two different water retention models in two soils.
 
 
 Diffusion operators
--------------------
+...................
 
 Operators sublist describes the PDE structure of the flow, specifies a discretization
 scheme, and selects assembling schemas for matrices and preconditioners.
@@ -727,7 +760,7 @@ Schur complement.
 
 
 Boundary conditions
--------------------
+...................
 
 Boundary conditions are defined in sublist `"boundary conditions`". Four types of boundary 
 conditions are supported.
@@ -827,9 +860,9 @@ is split into six pieces. Constant function is used for simplicity and can be re
 of the other available functions.
 
 
-
 Sources and sinks
------------------
+.................
+
 The external sources and sinks are typically pumping wells. The structure
 of sublist `"source terms`" mimics that of boundary conditions. 
 Again, constant functions can be replaced by any of the available time-functions.
@@ -874,7 +907,7 @@ Again, constant functions can be replaced by any of the available time-functions
 
 
 Initial guess pseudo time integrator (obsolete)
------------------------------------------------
+...............................................
 
 The sublist `"initial guess pseudo time integrator`" defines parameters controlling linear and 
 nonlinear solvers during calculation of an initial guess.
@@ -910,7 +943,8 @@ Detailed description of parameters is in the next two subsections.
 
 
 Steady state time integrator
-----------------------------
+............................
+
 The sublist `"steady state time integrator`" defines parameters controlling linear and 
 nonlinear solvers during steady state time integration. 
 We break this long sublist into smaller parts. 
@@ -1107,7 +1141,7 @@ those needed for unit tests, and future code development.
 
 
 Transient time integrator
--------------------------
+.........................
 
 The sublist `"transient time integrator`" defines parameters controlling linear and 
 nonlinear solvers during transient time integration. Its parameters are similar to 
@@ -1137,9 +1171,8 @@ If a non-empty `"initialization`" list is specified, it will be executed only on
    </ParameterList>
 
 
-
 Other parameters
-----------------
+................
 
 The remaining `"Flow`" parameters are
 
@@ -1194,7 +1227,7 @@ The remaining `"Flow`" parameters are
 
 
 Transport
-=========
+---------
 
 The transport component of Amanzi performs advection of aqueous and gaseous
 components and their dispersion and diffusion. 
@@ -1237,7 +1270,8 @@ and temporal accuracy, and verbosity:
 
 
 Material properties
--------------------
+...................
+
 The material properties include dispersivity model and diffusion parameters 
 for aqueous and gaseous phases.
 The dispersivity is defined as a soil property. 
@@ -1324,8 +1358,8 @@ Three examples are below:
    </ParameterList>  
 
 
-Boundary Conditions
--------------------
+Boundary conditions
+...................
 
 For the advective transport, the boundary conditions must be specified on inflow parts of the
 boundary. If no value is prescribed through the XML input, the zero influx boundary condition
@@ -1389,7 +1423,7 @@ but require special treatment.
 
 
 Sources and sinks
------------------
+.................
 
 The external sources are typically located at pumping wells. The structure
 of list `"source terms`" includes only sublists named after components. 
@@ -1457,9 +1491,8 @@ This example defines one well and one sink.
      </ParameterList>
     
 
-
 Developer parameters
---------------------
+....................
 
 The remaining parameters that can be used by a developes include
 
@@ -1478,10 +1511,10 @@ The remaining parameters that can be used by a developes include
 
 
 Chemistry
-=========
+---------
 
 Geochemical engines
--------------------
+...................
 
 This chemistry list specifies the default and the third-party geochemical engines. 
 In the case of the third-party engine most details are provided in the trimmed 
@@ -1510,7 +1543,7 @@ The rest are only used by the native chemistry kernel.
 
 
 Format of chemistry database (.bgd) file
-........................................
+````````````````````````````````````````
 
 A section header starts with token `"<`". 
 A comment line starts with token `"#`". 
@@ -1613,7 +1646,7 @@ The simplest example is below.
 
 
 Initial conditions
-------------------
+..................
 
 This sublist completes initialization of state variable, see list `"State`" for 
 more detail. This section is only required for the native chemistry kernel, the
@@ -1643,13 +1676,13 @@ Alquimia chemistry kernel reads initial conditions from the `"State`" list.
 
 
 Energy
-======
+------
 
 Diffusion operator
-------------------
+..................
 
 Advection operator
-------------------
+..................
 
 
 Operators
@@ -2666,9 +2699,11 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * Aqueous pressure [Pa]
       * Hydraulic Head [m] 
       * Drawdown [m] 
-      * XXX Aqueous concentration [moles of solute XXX / volume water in MKS] (name formed by string concatenation, given the definitions in `"Phase Definition`" section)
+      * SOLUTE Aqueous concentration [mol/m^3] (name SOLUTE formed by string concatenation, given the definitions in `"Phase Definition`" section)
       * X-, Y-, Z- Aqueous volumetric flux [m/s]
       * MaterialID
+      * Aqueous mass flow rate [kg/s] (must use integral functional in the observation)
+      * Aqueous volumetric flow rate [m^3/s] (must use integral functional in the observation)
 
     Observation "Drawdown" is calculated with respect to the value registered at the first time
     it was requested.

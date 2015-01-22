@@ -178,7 +178,7 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
 
     Teuchos::ParameterList &permeability_ic = stt_ic.sublist("permeability");
     if (perm_init_from_file) {
-      if (perm_format == std::string("exodus")) {
+      if (perm_format == std::string("Exodus II")) {
         // first make sure the file actually exists
 
         boost::filesystem::path p;

@@ -59,17 +59,6 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
   lifting_->InitLimiter(darcy_flux);
   lifting_->ApplyLimiter(bc_model, bc_value);
 
-  /*
-  if (advection_limiter == TRANSPORT_LIMITER_BARTH_JESPERSEN) {
-    LimiterBarthJespersen(current_component_, component_rcp, gradient, limiter_);
-    lifting_->ApplyLimiter(limiter_);
-  } else if (advection_limiter == TRANSPORT_LIMITER_TENSORIAL) {
-    LimiterTensorial(current_component_, component_rcp, gradient);
-  } else if (advection_limiter == TRANSPORT_LIMITER_KUZMIN) {
-    LimiterKuzmin(current_component_, component_rcp, gradient);
-  }
-  */
-
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors.
   // Min-max condition will enforce robustness w.r.t. these errors.
