@@ -336,7 +336,7 @@ void Unstructured_observations::MakeObservations(State& state)
             Amanzi::AmanziMesh::Entity_ID_List cells;
             state.GetMesh()->face_get_cells(f, Amanzi::AmanziMesh::USED, &cells);
             if (cells.size() == 2) {
-              success == false;
+              success = false;
               break;
             }
 
