@@ -92,6 +92,7 @@ class DenseMatrix {
   double* Values() { return data_; }
   double* Value(int i, int j)  { return data_ + j * m_ + i; } 
   const double* Values() const { return data_; }
+  const double* Value(int i, int j) const { return data_ + j * m_ + i; } 
 
   // output 
   friend std::ostream& operator << (std::ostream& os, DenseMatrix& A) {

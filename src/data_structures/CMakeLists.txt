@@ -26,7 +26,6 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MSTK_SOURCE_DIR})
 include_directories(${MESH_SIMPLE_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 

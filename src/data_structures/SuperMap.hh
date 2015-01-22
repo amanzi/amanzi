@@ -15,6 +15,11 @@ surface + subsurface, both with "cell" components, would break miserably.
 #define AMANZI_OPERATORS_SUPER_MAP_HH_
 
 #include "Teuchos_RCP.hpp"
+#include "Epetra_MpiComm.h"
+
+#include "dbc.hh"
+#include "Mesh.hh"
+
 
 namespace Amanzi {
 
@@ -72,7 +77,7 @@ class SuperMap {
     for (int i=0; i!=ndofs; ++i) indices[i] = start+i;
     return;
   }
-  
+
  protected:
     const std::vector<int>& CreateIndices_(const std::string& compname, int dofnum, bool ghosted) const;
 
@@ -93,7 +98,7 @@ class SuperMap {
 
 // Nonmember helper function
 std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
-getMaps_(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location);
+getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location);
 
 // Nonmember contructors/factories
 Teuchos::RCP<SuperMap>
@@ -101,7 +106,6 @@ createSuperMap(const CompositeVectorSpace& cv);
 
 Teuchos::RCP<SuperMap>
 createSuperMap(const TreeVectorSpace& cv);
-
 
 
 } // namespace Operators

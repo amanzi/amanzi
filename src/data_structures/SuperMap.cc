@@ -147,8 +147,9 @@ SuperMap::CreateIndices_(const std::string& compname, int dofnum, bool ghosted) 
   }
 }
 
+
 std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
-getMaps_(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
+getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
   switch(location) {
     case AmanziMesh::CELL:
       return std::make_pair(Teuchos::rcpFromRef(mesh.cell_map(false)),
@@ -186,7 +187,7 @@ createSuperMap(const CompositeVectorSpace& cv) {
     dofnums.push_back(cv.NumVectors(*it));
 
     std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
-        getMaps_(*cv.Mesh(), cv.Location(*it));
+        getMaps(*cv.Mesh(), cv.Location(*it));
     maps.push_back(meshmaps.first);
     ghost_maps.push_back(meshmaps.second);
   }
@@ -221,7 +222,7 @@ createSuperMap(const TreeVectorSpace& tv) {
           dofnums.push_back(1);
 
           std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
-              getMaps_(*(*it)->Data()->Mesh(), (*it)->Data()->Location(*compname));
+              getMaps(*(*it)->Data()->Mesh(), (*it)->Data()->Location(*compname));
           maps.push_back(meshmaps.first);
           ghost_maps.push_back(meshmaps.second);
         } else {

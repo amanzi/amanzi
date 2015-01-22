@@ -315,6 +315,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     CompositeVector& rhs = *op2->rhs();
     solution.PutScalar(0.0);
     int ierr = solver->ApplyInverse(rhs, solution);
+    CHECK(!ierr);
 
     // calculate errors
 #ifdef HAVE_MPI

@@ -51,8 +51,9 @@ add_amanzi_library(operator_audit SOURCE OperatorAudit.cc LINK_LIBS ${flow_tpl_l
 # Library: operators
 #
 set(operators_inc_files 
-    Operator.hh
     OperatorDefs.hh
+    OperatorUtils.hh
+    Operator.hh
     OperatorTypeDefs.hh
     OperatorAdvection.hh
     OperatorDiffusionFactory.hh
@@ -70,10 +71,14 @@ set(operators_inc_files
     UpwindSecondOrder.hh)
 
 add_amanzi_library(operators
-                   SOURCE Operator.cc 
-                   OperatorDiffusion.cc OperatorDiffusionSurface.cc 
-                   OperatorDiffusionWithGravity.cc OperatorDiffusionFactory.cc
-                   OperatorDiffusionTPFA.cc OperatorSource.cc 
+                   SOURCE OperatorUtils.cc
+                   Operator.cc
+                   OperatorSource.cc
+                   OperatorDiffusion.cc
+                   OperatorDiffusionSurface.cc 
+                   OperatorDiffusionWithGravity.cc
+                   OperatorDiffusionTPFA.cc
+                   OperatorDiffusionFactory.cc                   
                    OperatorAdvection.cc 
                    ReconstructionCell.cc ReconstructionCell_Limiters.cc
                    HEADERS ${operators_inc_files}
@@ -124,6 +129,7 @@ if ( BUILD_TESTS )
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
 
     # Test: matrices for surface
     add_amanzi_test(operators_advdiff_surface operators_advdiff_surface

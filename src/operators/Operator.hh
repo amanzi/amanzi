@@ -61,6 +61,9 @@ Note. The operators can be initialized from other operators.
 namespace Amanzi {
 namespace Operators {
 
+class SuperMap;
+class MatrixFE;
+
 class Operator {
  public:
   Operator() {};
@@ -137,7 +140,6 @@ class Operator {
   int my_dof_index_;
 
   Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
-  int offset_global_[3], offset_my_[3];
 
   Teuchos::RCP<VerboseObject> vo_;
 

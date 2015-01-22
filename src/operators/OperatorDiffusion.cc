@@ -12,13 +12,14 @@
 #include <vector>
 
 #include "Epetra_Vector.h"
-#include "Epetra_FECrsGraph.h"
 
 #include "errors.hh"
 #include "WhetStoneDefs.hh"
 #include "mfd3d_diffusion.hh"
 
 #include "PreconditionerFactory.hh"
+#include "MatrixFE.hh"
+#include "SuperMap.hh"
 #include "OperatorDefs.hh"
 #include "OperatorDiffusion.hh"
 
@@ -744,23 +745,28 @@ void OperatorDiffusion::InitPreconditionerSpecialSff_(
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
 
   // create a face-based stiffness matrix from A.
-  A_->PutScalar(0.0);
-  A_off_->PutScalar(0.0);
+  Amat_->Zero();
   int ndof = A_->NumMyRows();
 
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
   AmanziMesh::Entity_ID_List faces;
 
   int lid[OPERATOR_MAX_FACES];
-  int gid[OPERATOR_MAX_FACES];
   double values[OPERATOR_MAX_FACES];
 
   Epetra_MultiVector& diag = *diagonal_->ViewComponent("cell");
 
-  for (int c = 0; c < ncells_owned; c++) {
+  // ELEMENT: cell, DOFS: face and cell
+  const std::vector<int>& face_inds = smap_->GhostIndices("face", my_dof_index_);
+        
+  for (int c=0; c!=ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
+    for (int n=0; n!=nfaces; ++n) {
+      lid[n] = face_inds[faces[n]];
+    }
+    
     WhetStone::DenseMatrix Scell(nfaces, nfaces);
     WhetStone::DenseMatrix& Acell = matrix[c];
 
@@ -781,25 +787,10 @@ void OperatorDiffusion::InitPreconditionerSpecialSff_(
       }
     }
 
-    for (int n = 0; n < nfaces; n++) {
-      lid[n] = faces[n];
-      gid[n] = fmap_wghost.GID(faces[n]);
-    }
-    for (int n = 0; n < nfaces; n++) {
-      for (int m = 0; m < nfaces; m++) values[m] = Scell(n, m);
-      if (lid[n] < ndof) {
-        A_->SumIntoMyValues(lid[n], nfaces, values, lid);
-      } else {
-        A_off_->SumIntoMyValues(lid[n] - ndof, nfaces, values, lid);
-      }
-    }
+    Amat_->SumIntoMyValues(lid, Scell);
   }
 
-  // Scatter off proc to their locations
-  A_->Export(*A_off_, *exporter_, Add);
-      
-  const Epetra_Map& map = A_->RowMap();
-  A_->FillComplete(map, map);
+  Amat_->FillComplete();
 
   // redefine (if necessary) preconditioner since only 
   // one preconditioner is allowed.
@@ -825,13 +816,12 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
 
   // create a cell-based stiffness matrix from A.
-  A_->PutScalar(0.0);
-  A_off_->PutScalar(0.0);
+  Amat_->Zero();
   int ndof = A_->NumMyRows();
 
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
 
-  // populate ecofficients that form transmissibility
+  // populate coefficients that form transmissibility
   CompositeVectorSpace cv_space;
   cv_space.SetMesh(mesh_);
   cv_space.SetGhosted(true);
@@ -867,15 +857,16 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
   T->GatherGhostedToMaster();
  
   // populate the global matrix
-  int lid[2], gid[2];
+  int lid[2],gid[2];
   double a1, a2, values[2];
 
+  const std::vector<int>& cell_inds = smap_->GhostIndices("cell", my_dof_index_);
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
 
-    for (int n = 0; n < ncells; n++) {
-      lid[n] = cells[n];
+    for (int n=0; n!=ncells; ++n) {
+      lid[n] = cell_inds[cells[n]];
       gid[n] = cmap_wghost.GID(cells[n]);
     }
 
@@ -889,7 +880,7 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
     double coef = fabs(a1 + a2) + diag_face[0][f];
     if (coef == 0.0) continue;
 
-    for (int n = 0; n < ncells; n++) {
+    for (int n=0; n!=ncells; ++n) {
       if (n == 0) {
         values[0] = -a1 * a1 / coef;
         values[1] = -a1 * a2 / coef;
@@ -898,19 +889,11 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
         values[1] = -a2 * a2 / coef;
       }
 
-      if (lid[n] < ndof) {
-        A_->SumIntoMyValues(lid[n], ncells, values, lid);
-      } else {
-        A_off_->SumIntoMyValues(lid[n] - ndof, ncells, values, lid);
-      }
+      Amat_->SumIntoMyValues(lid[n], ncells, values, lid);
     }
   }
 
-  // Scatter off proc to their locations
-  A_->Export(*A_off_, *exporter_, Add);
-      
-  const Epetra_Map& map = A_->RowMap();
-  A_->FillComplete(map, map);
+  Amat_->FillComplete();
 
   // Add diagonal (a hack)
   Epetra_Vector tmp(A_->RowMap());
@@ -918,7 +901,7 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
 
   if (diagonal_->HasComponent("cell")) {
     Epetra_MultiVector& diag_cell = *diagonal_->ViewComponent("cell");
-    for (int c = 0; c < ncells_owned; c++) {
+    for (int c = 0; c!=ncells_owned; ++c) {
       WhetStone::DenseMatrix& Acell = matrix[c];
       int n = Acell.NumRows() - 1;
       tmp[c] += Acell(n, n) + diag_cell[0][c];

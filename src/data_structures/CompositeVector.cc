@@ -493,6 +493,7 @@ int CompositeVector::Dot(const CompositeVector& other, double* result) const {
   *result = 0.0;
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
     double intermediate_result[NumVectors(*lcv)];
+    for (int n=0; n!=NumVectors(*lcv); ++n) intermediate_result[n] = 0.0;
     int ierr = ViewComponent(*lcv, false)->Dot(*other.ViewComponent(*lcv,false),
             intermediate_result);
     if (ierr) return ierr;

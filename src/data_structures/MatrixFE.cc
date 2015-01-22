@@ -19,6 +19,7 @@ map, not the true row map.
 
 #include "dbc.hh"
 #include "errors.hh"
+#include "DenseMatrix.hh"
 #include "MatrixFE.hh"
 
 namespace Amanzi {
@@ -98,6 +99,27 @@ MatrixFE::SumIntoMyValues(const int *indices, const Teuchos::SerialDenseMatrix<i
   for (int i=0; i!=vals.numRows(); ++i) {
     for (int j=0; j!=vals.numCols(); ++j) row_vals[j] = vals(i,j);
     ierr |= SumIntoMyValues(indices[i], vals.numCols(), &row_vals[0], indices);
+  }
+  return ierr;
+}
+
+// WhetStone::DenseMatrices are column-major.
+int
+MatrixFE::SumIntoMyValues_Transposed(const int *indices, const WhetStone::DenseMatrix& vals) {
+  int ierr(0);
+  for (int i=0; i!=vals.NumCols(); ++i)
+    ierr |= SumIntoMyValues(indices[i], vals.NumRows(), vals.Value(0,i), indices);
+  return ierr;
+}
+
+// WhetStone::DenseMatrix are column-major.
+int
+MatrixFE::SumIntoMyValues(const int *indices, const WhetStone::DenseMatrix& vals) {
+  int ierr(0);
+  std::vector<double> row_vals(vals.NumCols());
+  for (int i=0; i!=vals.NumRows(); ++i) {
+    for (int j=0; j!=vals.NumCols(); ++j) row_vals[j] = vals(i,j);
+    ierr |= SumIntoMyValues(indices[i], vals.NumCols(), &row_vals[0], indices);
   }
   return ierr;
 }

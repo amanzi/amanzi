@@ -31,14 +31,14 @@ if (ENABLE_Unstructured)
   # Debug helpers
   add_subdirectory(debug)
 
+  # Discretization
+  add_subdirectory(whetstone)
+
   # Data structures
   add_subdirectory(data_structures)
 
   # Mesh functions
   add_subdirectory(mesh_functions)
-
-  # Discretization
-  add_subdirectory(whetstone)
 
   # Output
   add_subdirectory(output)

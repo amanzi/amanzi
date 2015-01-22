@@ -23,6 +23,9 @@ class Epetra_SerialDenseMatrix;
 #include "GraphFE.hh"
 
 namespace Amanzi {
+
+namespace WhetStone { class DenseMatrix; }
+
 namespace Operators {
 
 class MatrixFE {
@@ -75,6 +78,9 @@ class MatrixFE {
   int SumIntoMyValues(const int *indices, const Teuchos::SerialDenseMatrix<int,double>& vals);
   int SumIntoMyValues_Transposed(const int *indices, const Teuchos::SerialDenseMatrix<int,double>& vals);
 
+  int SumIntoMyValues(const int *indices, const WhetStone::DenseMatrix& vals);
+  int SumIntoMyValues_Transposed(const int *indices, const WhetStone::DenseMatrix& vals);
+  
   // Passthroughs.
   // --
   // NOTE that currently many of these cannot work on an offproc -- the Export is
