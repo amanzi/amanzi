@@ -6111,6 +6111,28 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
                         //TODO: EIB - don't think this is in structured
                       }
 	            }
+                    else if (strcmp(obsType,"solute_volumetric_flow_rate")==0) {
+                      // get solute name
+                      DOMNamedNodeMap* attrMap = curObs->getAttributes();
+                      DOMNode* nodeAttr = attrMap->getNamedItem(XMLString::transcode("solute"));
+                      char* soluteName ;
+                      if (nodeAttr) {
+                        soluteName = XMLString::transcode(nodeAttr->getNodeValue());
+                      }
+                      else {
+                        throw_error_missattr("observations", "attribute", "solute", "solute_volumetric_flow_rate");
+                      }
+                      
+                      std::stringstream name;
+                      if (isUnstr_) {
+                        name<< soluteName << " volumetric flow rate";
+                      }
+                      else {
+                        // TODO: EIB not sure this is in structured yet
+                        name<< soluteName << "_volumetric_flow_rate";
+                      }
+                      obPL.set<std::string>("Variable",name.str());
+                    }
 	            DOMNodeList* kidList = curObs->getChildNodes();
                     for (int k=0; k<kidList->getLength(); k++) {
                       DOMNode* curElem = kidList->item(k) ;
