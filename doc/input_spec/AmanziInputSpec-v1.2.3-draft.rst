@@ -1648,14 +1648,15 @@ The user must specify when the various types of output are desired.  For Observa
  * Volumetric water content [volume water / bulk volume]
  * Aqueous saturation [volume water / volume pore space]
  * Aqueous pressure [Pa]
- * XXX Aqueous concentration [moles of solute XXX / volume water in MKS] (name formed by string concatenation, given the definitions in `"Phase Definition`" section)
+ * SOLUTE Aqueous concentration [mol/m^3] (name SOLUTE is given in `"Phase Definition`" section)
  * X-, Y-, Z- Aqueous volumetric flux [m/s]
  * MaterialID
  * Gravimetric water content [volumetric water content * water density / bulk density, in kg/m^3]
  * Hydraulic Head [ (aqueous pressure - atmospheric pressure)/(rho * gravity) + z ]
  * Drawdown [m] (difference of hydraulic heads at different time moments) 
- * Aqueous mass flow rate [ kg/s ] (must use integral functional in the observation)
- * Aqueous volumetric flow rate [ m^3/s ] (must use integral functional in the observation)
+ * Aqueous mass flow rate [kg/s] (must use integral functional in the observation)
+ * Aqueous volumetric flow rate [m^3/s] (must use integral functional in the observation)
+ * SOLUTE volumetric flow rate [mol/s] (name SOLUTE is given in `"Phase Definition`" section, must use integral functional in the observation)
 
 Note that MaterialID will be treated as a double that is unique to each defined material.  Its value will be generated internal to Amanzi.  The log file will be appended with the (material name)->(integer) mapping used.  Also note that this list tacitly assumes the presence of Aqueous Water as one of the transported components.  Presently, it is an error if the `"Phase Definition`" above does not sufficiently define this component.
 
