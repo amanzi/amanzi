@@ -4091,7 +4091,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
             hasPerm = true;
             if (permElem->hasAttribute(XMLString::transcode("type"))) {
               perm = get_file_info(perm, permElem, "permeability", "materials");
-              permName = "Intrinsic Permeability: Anisotropic";
+              permName = "Intrinsic Permeability: Uniform";
             }
             else {
               // loop over attributes to get x,y,z
