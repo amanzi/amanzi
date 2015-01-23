@@ -4091,7 +4091,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
             hasPerm = true;
             if (permElem->hasAttribute(XMLString::transcode("type"))) {
               perm = get_file_info(perm, permElem, "permeability", "materials");
-              permName = "Intrinsic Permeability: Uniform";
+              permName = "Intrinsic Permeability: File";
             }
             else {
               // loop over attributes to get x,y,z
@@ -6209,6 +6209,7 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
       // TODO: move all to lower case
       if (text == "exodus ii") {
         propertyList.set<std::string>("Format","Exodus II");
+        isExodus = true;
       }
       else if (text == "color") {
         propertyList.set<std::string>("Format","Color Function");
