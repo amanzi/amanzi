@@ -376,6 +376,17 @@ constant value 0.8.
 Primary field evaluator
 .......................
 
+The primary field evaluator has no dependencies solved for by a PK.
+
+.. code-block:: xml
+
+    <ParameterList name="PRESSURE">
+      <Parameter name="field evaluator type" type="string" value="primary variable"/>
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="extreme"/>
+      </ParameterList>
+    </ParameterList>
+
 
 Secondary field evaluator
 .........................

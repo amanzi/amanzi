@@ -112,6 +112,7 @@ class AnalyticBase {
         mesh_->node_get_coordinates(v, &xv);
         double tmp = pressure_exact(xv, t);
 
+        // std::cout << v << " " << tmp << " " << p[0][v] << std::endl;
         l2_err += std::pow(tmp - p[0][v], 2.0) * volume / nnodes;
         inf_err = std::max(inf_err, tmp - p[0][v]);
         pnorm += std::pow(tmp, 2.0) * volume / nnodes;

@@ -54,16 +54,19 @@ TEST(RECONSTRUCTION_LINEAR) {
   Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 7, 7);
 
   // create and initialize cell-based field 
-  const Epetra_Map& cmap = mesh->cell_map(false);
-  Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(cmap, 1));
-  Epetra_MultiVector grad_exact(cmap, 2);
+  Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
+  Epetra_MultiVector grad_exact(mesh->cell_map(false), 2);
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c = 0; c < ncells_owned; c++) {
+  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+
+  for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     (*field)[0][c] = xc[0] + 2 * xc[1];
-    grad_exact[0][c] = 1.0;
-    grad_exact[1][c] = 2.0;
+    if (c < ncells_owned) {
+      grad_exact[0][c] = 1.0;
+      grad_exact[1][c] = 2.0;
+    }
   }
 
   // Compute reconstruction
@@ -75,13 +78,14 @@ TEST(RECONSTRUCTION_LINEAR) {
   // calculate gradient error
   const Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
   int ierr = grad_exact.Update(-1.0, grad_computed, 1.0);
+  CHECK(!ierr);
 
   double error[2];
   grad_exact.Norm2(error);
   CHECK_CLOSE(0.0, error[0], 1.0e-12);
   CHECK_CLOSE(0.0, error[1], 1.0e-12);
   
-  printf("errors: %8.4f %8.4f\n", error[0], error[1]);
+  if (MyPID == 0) printf("errors: %8.4f %8.4f\n", error[0], error[1]);
 }
 
 
@@ -107,16 +111,19 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER) {
   Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 7, 7);
 
   // create and initialize cell-based field 
-  const Epetra_Map& cmap = mesh->cell_map(false);
-  Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(cmap, 1));
-  Epetra_MultiVector grad_exact(cmap, 2);
+  Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
+  Epetra_MultiVector grad_exact(mesh->cell_map(false), 2);
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c = 0; c < ncells_owned; c++) {
+  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+
+  for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     (*field)[0][c] = xc[0] + 2 * xc[1];
-    grad_exact[0][c] = 1.0;
-    grad_exact[1][c] = 2.0;
+    if (c < ncells_owned) {
+      grad_exact[0][c] = 1.0;
+      grad_exact[1][c] = 2.0;
+    }
   }
 
   // create and initialize flux
@@ -189,7 +196,6 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER) {
 
     // calculate gradient error
     Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
-    // std::cout << grad_computed << std::endl;
     int ierr = grad_computed.Update(-1.0, grad_exact, 1.0);
 
     double error[2];
@@ -197,7 +203,8 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER) {
     CHECK_CLOSE(0.0, error[0], 1.0e-12);
     CHECK_CLOSE(0.0, error[1], 1.0e-12);
   
-    printf("%9s: errors: %8.4f %8.4f\n", LIMITERS[i].c_str(), error[0], error[1]);
+    if (MyPID == 0)
+        printf("%9s: errors: %8.4f %8.4f\n", LIMITERS[i].c_str(), error[0], error[1]);
   }
 }
 
@@ -225,17 +232,20 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD) {
     Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, n, n);
 
     // create and initialize cell-based field ussing f(x,y) = x^2 y + 2 x y^3
-    const Epetra_Map& cmap = mesh->cell_map(false);
-    Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(cmap, 1));
-    Epetra_MultiVector grad_exact(cmap, 2);
+    Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
+    Epetra_MultiVector grad_exact(mesh->cell_map(false), 2);
 
     int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    for (int c = 0; c < ncells_owned; c++) {
+    int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+
+    for (int c = 0; c < ncells_wghost; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       double x = xc[0], y = xc[1];
       (*field)[0][c] = x*x*y + 2*x*y*y*y;
-      grad_exact[0][c] = 2*x*y + 2*y*y*y;
-      grad_exact[1][c] = x*x + 6*x*y*y;
+      if (c < ncells_owned) {
+        grad_exact[0][c] = 2*x*y + 2*y*y*y;
+        grad_exact[1][c] = x*x + 6*x*y*y;
+      }
     }
 
     // create and initialize flux
@@ -310,8 +320,8 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD) {
 
       // calculate gradient error
       Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
-      // std::cout << grad_computed << std::endl;
       int ierr = grad_computed.Update(-1.0, grad_exact, 1.0);
+      CHECK(!ierr);
 
       double error[2], norms[2];
       grad_computed.Norm2(error);
@@ -322,7 +332,8 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD) {
       CHECK(error[0] < 1.0 / n);
       CHECK(error[1] < 1.0 / n);
   
-      printf("%9s: rel errors: %10.6f %10.6f\n", LIMITERS[i].c_str(), error[0], error[1]);
+      if (MyPID == 0)
+          printf("%9s: rel errors: %10.6f %10.6f\n", LIMITERS[i].c_str(), error[0], error[1]);
     }
   }
 }

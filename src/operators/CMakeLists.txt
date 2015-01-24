@@ -130,6 +130,7 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/operator_diffusion.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+    add_amanzi_test(operators_diffusion_3pe operators_diffusion NPROCS 3 KIND unit)
 
     # Test: matrices for surface
     add_amanzi_test(operators_advdiff_surface operators_advdiff_surface
@@ -142,6 +143,8 @@ if ( BUILD_TESTS )
                     KIND unit
                     SOURCE test/Main.cc test/operator_upwind.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(operators_upwind_2pe operators_upwind NPROCS 2 KIND unit)
 
     # convergence analysis
     add_amanzi_test(operators_convergence operators_convergence
@@ -157,6 +160,7 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/operator_reconstruction.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+    add_amanzi_test(operators_reconstruction_2pe operators_reconstruction NPROCS 2 KIND unit)
 
 endif()
 

@@ -369,7 +369,7 @@ void ReconstructionCell::LimiterKuzmin_(
   field_node_min.assign(nnodes_wghost,  OPERATOR_LIMITER_INFINITY);
   field_node_max.assign(nnodes_wghost, -OPERATOR_LIMITER_INFINITY);
 
-  for (int c = 0; c < ncells_owned; c++) {
+  for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_nodes(c, &nodes);
 
     double value = (*field_)[0][c];

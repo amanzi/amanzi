@@ -966,13 +966,13 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
 
   /* modify diffusion coefficient */
   std::vector<WhetStone::Tensor> K;
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
   Analytic02 ana(mesh);
 
-  for (int c = 0; c < ncells; c++) {
+  for (int c = 0; c < ncells_wghost; c++) {
     const Point& xc = mesh->cell_centroid(c);
     const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
     K.push_back(Kc);
@@ -1051,6 +1051,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   }
 
   // compute pressure error
+  solution.ScatterMasterToGhosted();
   Epetra_MultiVector& p = *solution.ViewComponent("node", false);
 
   double pnorm, pl2_err, pinf_err, hnorm, ph1_err;

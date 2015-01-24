@@ -169,10 +169,19 @@ TEST(UPWIND) {
       CHECK(upw1[0][f] >= 0.0);
       CHECK(upw2[0][f] >= 0.0);
     }
+#ifdef HAVE_MPI
+    double tmp = error1;
+    mesh->get_comm()->SumAll(&tmp, &error1, 1);
+    tmp = error2;
+    mesh->get_comm()->SumAll(&tmp, &error2, 1);
+    int itmp = nfaces_owned;
+    mesh->get_comm()->SumAll(&itmp, &nfaces_owned, 1);
+#endif
     error1 = sqrt(error1 / nfaces_owned);
     error2 = sqrt(error2 / nfaces_owned);
   
-    printf("errors: standard=%8.4f  mfd=%8.4f\n", error1, error2);
+    if (comm.MyPID() == 0)
+        printf("errors: standard=%8.4f  mfd=%8.4f\n", error1, error2);
   }
 }
 
