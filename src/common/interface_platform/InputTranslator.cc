@@ -5882,6 +5882,22 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
               //visPL.set<std::string>("Cycle Macros",textContent2);
               XMLString::release(&textContent2);
 	    }
+            else if (strcmp(textContent,"write_regions")==0) {
+              textContent2 = XMLString::transcode(curKid->getTextContent());
+              Teuchos::Array<std::string> regs = make_regions_list(textContent2);
+              visPL.set<Teuchos::Array<std::string> >("Write Regions",regs);
+              XMLString::release(&textContent2);
+              if (!compare_region_names(regs, def_list)) {
+                Errors::Message msg;
+                msg << "Amanzi::InputTranslator: ERROR - invalid region in Vis Section - " ;
+                msg << "valid regions are: \n" ;
+                for (int r=0; r<regionNames_string_.size(); r++) {
+                  msg << "    " << regionNames_string_[r] << "\n";
+                }
+                msg << "  Please correct and try again \n" ;
+                Exceptions::amanzi_throw(msg);
+              }
+            }
             XMLString::release(&textContent);
           }
           list.sublist("Visualization Data") = visPL;
