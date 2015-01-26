@@ -83,13 +83,15 @@ void ReconstructionCell::LimiterTensorial_(
           normal_new = xcf - xc;
           CalculateDescentDirection_(normals, normal_new, L22normal_new, direction);
 
-          p = ((umin - u1) / sqrt(L22normal_new)) * direction;
+          // p = ((umin - u1) / sqrt(L22normal_new)) * direction;
+          p = ((umin - u1) / sqrt(L22normal_new)) * normal_new;
           ApplyDirectionalLimiter_(normal_new, p, direction, gradient_c1);
         } else if (u1f > umax) {
           normal_new = xcf - xc;
           CalculateDescentDirection_(normals, normal_new, L22normal_new, direction);
 
-          p = ((umax - u1) / sqrt(L22normal_new)) * direction;
+          // p = ((umax - u1) / sqrt(L22normal_new)) * direction;
+          p = ((umax - u1) / sqrt(L22normal_new)) * normal_new;
           ApplyDirectionalLimiter_(normal_new, p, direction, gradient_c1);
         }
       }
@@ -433,13 +435,15 @@ void ReconstructionCell::LimiterKuzmin_(
           normal_new = xp - xc;
           CalculateDescentDirection_(normals, normal_new, L22normal_new, direction);
 
-          p = ((umin - u1) / sqrt(L22normal_new)) * direction;
+          // p = ((umin - u1) / sqrt(L22normal_new)) * direction;
+          p = ((umin - u1) / sqrt(L22normal_new)) * normal_new;
           ApplyDirectionalLimiter_(normal_new, p, direction, gradient_c);
         } else if (up > umax) {
           normal_new = xp - xc;
           CalculateDescentDirection_(normals, normal_new, L22normal_new, direction);
 
-          p = ((umax - u1) / sqrt(L22normal_new)) * direction;
+          // p = ((umax - u1) / sqrt(L22normal_new)) * direction;
+          p = ((umax - u1) / sqrt(L22normal_new)) * normal_new;
           ApplyDirectionalLimiter_(normal_new, p, direction, gradient_c);
         }
       }
