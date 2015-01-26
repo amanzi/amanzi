@@ -2971,7 +2971,7 @@ Teuchos::ParameterList get_phases(DOMDocument* xmlDoc, Teuchos::ParameterList de
     if (nodeAttr) {
       textContent = XMLString::transcode(nodeAttr->getNodeValue());
       phaseName = std::string(textContent);
-      if (!isUnstr_ && phaseName=="water") {
+      if (phaseName=="water") {
 	phaseName="Water";
       }
       XMLString::release(&textContent);
@@ -4526,7 +4526,7 @@ Teuchos::ParameterList get_initial_conditions(DOMDocument* xmlDoc, Teuchos::Para
 	  if (nodeAttr) {
             textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
             phaseName = std::string(textContent2);
-            if (!isUnstr_ && phaseName=="water") {
+            if (phaseName=="water") {
               phaseName="Water";
             }
             XMLString::release(&textContent2);
@@ -4722,7 +4722,7 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
   DOMNamedNodeMap* attrMap;
   char* tagName;
   char* propName;
-  std::string phaseName;
+  std::string phaseName("Water");
   char* textContent;
   char* textContent2;
   char* char_array;
@@ -4787,7 +4787,7 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 	    if (nodeAttr) {
               textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
               phaseName = std::string(textContent2);
-              if (!isUnstr_ && phaseName=="water") {
+              if (phaseName=="water") {
                 phaseName="Water";
               }
               XMLString::release(&textContent2);
@@ -5402,8 +5402,7 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 	          sclist.sublist("BC: Uniform Concentration").set<Teuchos::Array<double> >("Times",curComp_list.get<Teuchos::Array<double> >("sorted_times"));
 	          sclist.sublist("BC: Uniform Concentration").set<Teuchos::Array<std::string> >("Time Functions",curComp_list.get<Teuchos::Array<std::string> >("sorted_functions"));
 	          sclist.sublist("BC: Uniform Concentration").set<Teuchos::Array<double> >("Values",curComp_list.get<Teuchos::Array<double> >("sort_values"));
-	          //bclist.sublist("Solute BC").sublist("Aqueous").sublist(phaseName).sublist(sc_tmplist.name(i)) = sclist;
-	          bclist.sublist("Solute BC").sublist("Aqueous").sublist(sc_tmplist.name(i)) = sclist;
+	          bclist.sublist("Solute BC").sublist("Aqueous").sublist(phaseName).sublist(sc_tmplist.name(i)) = sclist;
                 }
 	        XMLString::release(&solName);
 	      }
@@ -5492,7 +5491,7 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
 	    if (nodeAttr) {
               char* textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
               phaseName = std::string(textContent2);
-              if (!isUnstr_ && phaseName=="water") {
+              if (phaseName=="water") {
                 phaseName="Water";
               }
               XMLString::release(&textContent2);
@@ -5517,7 +5516,9 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
                 char* compName2 ;
 		if (nodeAttr) {
                   compName2 = XMLString::transcode(nodeAttr->getNodeValue());
-		  component = std::string(compName2);
+                  //if (std::string(compName2) != "Water" || std::string(compName2) != "water") {
+		  //  component = std::string(compName2);
+                  //}
                 }
                 else {
                   throw_error_missattr("sources", "attribute", "name", "liquid_component");
@@ -5667,7 +5668,7 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
                 }
                 //sclist.sublist(scname) = newsclist;
 	        //sclist.sublist("Solute SOURCE").sublist(phase).sublist(component).sublist(soluteName).sublist(scname) = newsclist;
-	        sclist.sublist("Solute SOURCE").sublist(phase).sublist(soluteName).sublist(scname) = newsclist;
+                sclist.sublist("Solute SOURCE").sublist(phase).sublist(soluteName).sublist(scname) = newsclist;
 	      }
 	    }
 	  }
@@ -5989,7 +5990,7 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
 		if (nodeAttr) {
                   textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
                   phaseName = std::string(textContent2);
-                  if (!isUnstr_ && phaseName=="water") {
+                  if (phaseName=="water") {
                     phaseName="Water";
                   }
                   XMLString::release(&textContent2);
