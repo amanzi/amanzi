@@ -83,8 +83,8 @@ class Operator {
   virtual void AssembleMatrix(int schema);
 
   virtual void ApplyBCs(); 
-  virtual void ComputeResidual(const CompositeVector& u, CompositeVector& r);
-  virtual void ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r);
+  virtual int ComputeResidual(const CompositeVector& u, CompositeVector& r);
+  virtual int ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r);
 
   const CompositeVectorSpace& DomainMap() const { return *cvs_; }
   const CompositeVectorSpace& RangeMap() const { return *cvs_; }
@@ -123,9 +123,9 @@ class Operator {
   Teuchos::RCP<const CompositeVectorSpace> cvs_;
   mutable bool data_validity_;
 
-  std::vector<Teuchos::RCP<std::vector<WhetStone::DenseMatrix> > > blocks_;
-  std::vector<Teuchos::RCP<std::vector<WhetStone::DenseMatrix> > > blocks_shadow_;
-  std::vector<int> blocks_schema_;
+  mutable std::vector<Teuchos::RCP<std::vector<WhetStone::DenseMatrix> > > blocks_;
+  mutable std::vector<Teuchos::RCP<std::vector<WhetStone::DenseMatrix> > > blocks_shadow_;
+  mutable std::vector<int> blocks_schema_;
   Teuchos::RCP<CompositeVector> diagonal_, diagonal_checkpoint_;
   Teuchos::RCP<CompositeVector> rhs_, rhs_checkpoint_;
 

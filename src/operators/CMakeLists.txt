@@ -131,6 +131,12 @@ if ( BUILD_TESTS )
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
 
+    # Test: tpfa
+    # add_amanzi_test(operators_diffusion_tpfa operators_diffusion_tpfa
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_diffusion_tpfa.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
     # Test: matrices for surface
     add_amanzi_test(operators_advdiff_surface operators_advdiff_surface
                     KIND unit

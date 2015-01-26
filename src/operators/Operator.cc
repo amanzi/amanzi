@@ -824,20 +824,22 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y) const
 /* ******************************************************************
 * Linear algebra operations with matrices: r = f - A * u
 ****************************************************************** */
-void Operator::ComputeResidual(const CompositeVector& u, CompositeVector& r)
+int Operator::ComputeResidual(const CompositeVector& u, CompositeVector& r)
 {
-  Apply(u, r);
+  int ierr = Apply(u, r);
   r.Update(1.0, *rhs_, -1.0);
+  return ierr;
 }
 
 
 /* ******************************************************************
 * Linear algebra operations with matrices: r = A * u - f                                                 
 ****************************************************************** */
-void Operator::ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r)
+int Operator::ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r)
 {
-  Apply(u, r);
+  int ierr = Apply(u, r);
   r.Update(-1.0, *rhs_, 1.0);
+  return ierr;
 }
 
 
