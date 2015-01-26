@@ -1840,6 +1840,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="num_digits" type="xs:integer" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="time_macros" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="cycle_macros" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+		<xs:element name="write_regions" type="typedef_assigned_regions" minOccurs="0" maxOccurs="1"/>
 	</xs:all>
 </xs:complexType>
 
