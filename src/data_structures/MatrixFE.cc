@@ -63,63 +63,70 @@ MatrixFE::SumIntoMyValues(int row, int count, const double *values, const int *i
 
 // Epetra_SerialDenseMatrices are column-major.
 int
-MatrixFE::SumIntoMyValues_Transposed(const int *indices, const Epetra_SerialDenseMatrix& vals) {
+MatrixFE::SumIntoMyValues_Transposed(const int *row_indices, const int *col_indices,
+        const Epetra_SerialDenseMatrix& vals) {
   int ierr(0);
   for (int i=0; i!=vals.N(); ++i)
-    ierr |= SumIntoMyValues(indices[i], vals.M(), vals[i], indices);
+    ierr |= SumIntoMyValues(row_indices[i], vals.M(), vals[i], col_indices);
   return ierr;
 }
 
 // Epetra_SerialDenseMatrices are column-major.
 int
-MatrixFE::SumIntoMyValues(const int *indices, const Epetra_SerialDenseMatrix& vals) {
+MatrixFE::SumIntoMyValues(const int *row_indices, const int *col_indices,
+                          const Epetra_SerialDenseMatrix& vals) {
   int ierr(0);
   std::vector<double> row_vals(vals.N());
   for (int i=0; i!=vals.M(); ++i) {
     for (int j=0; j!=vals.N(); ++j) row_vals[j] = vals(i,j);
-    ierr |= SumIntoMyValues(indices[i], vals.N(), &row_vals[0], indices);
+    ierr |= SumIntoMyValues(row_indices[i], vals.N(), &row_vals[0], col_indices);
   }
   return ierr;
 }
 
 // Teuchos::SerialDenseMatrices are column-major.
 int
-MatrixFE::SumIntoMyValues_Transposed(const int *indices, const Teuchos::SerialDenseMatrix<int,double>& vals) {
+MatrixFE::SumIntoMyValues_Transposed(const int *row_indices, const int *col_indices,
+        const Teuchos::SerialDenseMatrix<int,double>& vals) {
   int ierr(0);
   for (int i=0; i!=vals.numCols(); ++i)
-    ierr |= SumIntoMyValues(indices[i], vals.numRows(), vals[i], indices);
+    ierr |= SumIntoMyValues(row_indices[i], vals.numRows(), vals[i], col_indices);
   return ierr;
 }
 
-// Teuchos::SerialDenseMatrices are column-major.
+// Teuchhos::SerialDenseMatrices are column-major.
 int
-MatrixFE::SumIntoMyValues(const int *indices, const Teuchos::SerialDenseMatrix<int,double>& vals) {
+MatrixFE::SumIntoMyValues(const int *row_indices, const int *col_indices,
+                          const Teuchos::SerialDenseMatrix<int,double>& vals) {
   int ierr(0);
   std::vector<double> row_vals(vals.numCols());
   for (int i=0; i!=vals.numRows(); ++i) {
     for (int j=0; j!=vals.numCols(); ++j) row_vals[j] = vals(i,j);
-    ierr |= SumIntoMyValues(indices[i], vals.numCols(), &row_vals[0], indices);
+    ierr |= SumIntoMyValues(row_indices[i], vals.numRows(), &row_vals[0], col_indices);
   }
   return ierr;
 }
 
+
 // WhetStone::DenseMatrices are column-major.
 int
-MatrixFE::SumIntoMyValues_Transposed(const int *indices, const WhetStone::DenseMatrix& vals) {
+MatrixFE::SumIntoMyValues_Transposed(const int *row_indices, const int *col_indices,
+        const WhetStone::DenseMatrix& vals) {
   int ierr(0);
   for (int i=0; i!=vals.NumCols(); ++i)
-    ierr |= SumIntoMyValues(indices[i], vals.NumRows(), vals.Value(0,i), indices);
+    ierr |= SumIntoMyValues(row_indices[i], vals.NumRows(), vals.Value(0,i), col_indices);
   return ierr;
 }
 
 // WhetStone::DenseMatrix are column-major.
 int
-MatrixFE::SumIntoMyValues(const int *indices, const WhetStone::DenseMatrix& vals) {
+MatrixFE::SumIntoMyValues(const int *row_indices, const int *col_indices,
+                          const WhetStone::DenseMatrix& vals) {
   int ierr(0);
   std::vector<double> row_vals(vals.NumCols());
   for (int i=0; i!=vals.NumRows(); ++i) {
     for (int j=0; j!=vals.NumCols(); ++j) row_vals[j] = vals(i,j);
-    ierr |= SumIntoMyValues(indices[i], vals.NumCols(), &row_vals[0], indices);
+    ierr |= SumIntoMyValues(row_indices[i], vals.NumCols(), &row_vals[0], col_indices);
   }
   return ierr;
 }

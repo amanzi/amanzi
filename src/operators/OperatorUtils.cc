@@ -12,7 +12,9 @@
 #include "Epetra_Vector.h"
 
 #include "CompositeVector.hh"
+#include "TreeVector.hh"
 #include "SuperMap.hh"
+#include "OperatorDefs.hh"
 #include "OperatorUtils.hh"
 
 namespace Amanzi {
@@ -41,15 +43,6 @@ CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector& cv
 }
 
 int
-CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector& cv,
-        Teuchos::RCP<Epetra_Vector>& sv, int dofnum) {
-  if (sv == Teuchos::null) {
-    sv = Teuchos::rcp(new Epetra_Vector(*smap.Map()));
-  }
-  return CopyCompositeVectorToSuperVector(smap, cv, *sv, dofnum);
-}
-
-int
 CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& sv,
         CompositeVector& cv, int dofnum) {
 
@@ -70,6 +63,112 @@ CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& sv,
   } 
   return 0;
 }
+
+
+// Nonmember TreeVector to/from Super-vector
+int
+CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& tv,
+                            Epetra_Vector& sv) {
+  ASSERT(tv.Data() == Teuchos::null);
+  int ierr(0);
+  int my_dof = 0;
+  for (std::vector<Teuchos::RCP<TreeVector> >::const_iterator
+           it = tv.SubVectors().begin();
+       it != tv.SubVectors().end(); ++it) {
+    ASSERT((*it)->Data() != Teuchos::null);
+    ierr |= CopyCompositeVectorToSuperVector(map, *(*it)->Data(), sv, my_dof);
+    my_dof++;            
+  }
+  ASSERT(!ierr);
+  return ierr;
+}
+
+int
+CopySuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
+                            TreeVector& tv) {
+  ASSERT(tv.Data() == Teuchos::null);
+  int ierr(0);
+  int my_dof = 0;
+  for (std::vector<Teuchos::RCP<TreeVector> >::iterator
+           it = tv.SubVectors().begin();
+       it != tv.SubVectors().end(); ++it) {
+    ASSERT((*it)->Data() != Teuchos::null);
+    ierr |= CopySuperVectorToCompositeVector(map, sv, *(*it)->Data(), my_dof);
+    my_dof++;            
+  }
+  ASSERT(!ierr);
+  return ierr;
+}
+
+
+
+Teuchos::RCP<SuperMap>
+createSuperMap(const CompositeVectorSpace& cvs, int schema, int n_dofs) {
+  // build the supermap
+  std::vector<std::string> compnames;
+  std::vector<int> dofnums;
+  std::vector<Teuchos::RCP<const Epetra_Map> > maps;
+  std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
+  if (schema & OPERATOR_SCHEMA_DOFS_FACE) {
+    ASSERT(cvs.HasComponent("face"));
+    compnames.push_back("face");
+    dofnums.push_back(n_dofs);
+    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
+        getMaps(*cvs.Mesh(), AmanziMesh::FACE);
+    maps.push_back(meshmaps.first);
+    ghost_maps.push_back(meshmaps.second);
+  }
+
+  if (schema & OPERATOR_SCHEMA_DOFS_CELL) {
+    ASSERT(cvs.HasComponent("cell"));
+    compnames.push_back("cell");
+    dofnums.push_back(n_dofs);
+    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
+        getMaps(*cvs.Mesh(), AmanziMesh::CELL);
+    maps.push_back(meshmaps.first);
+    ghost_maps.push_back(meshmaps.second);
+  }
+  if (schema & OPERATOR_SCHEMA_DOFS_NODE) {
+    ASSERT(cvs.HasComponent("node"));
+    compnames.push_back("node");
+    dofnums.push_back(n_dofs);
+    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
+        getMaps(*cvs.Mesh(), AmanziMesh::NODE);
+    maps.push_back(meshmaps.first);
+    ghost_maps.push_back(meshmaps.second);
+  }
+
+  return Teuchos::rcp(new SuperMap(cvs.Comm(),
+          compnames, dofnums, maps, ghost_maps));
+
+}
+
+
+unsigned int
+MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n_dofs) {
+    // estimate size of the matrix graph
+  unsigned int row_size(0);
+  int dim = mesh.space_dimension();
+  if (schema & OPERATOR_SCHEMA_DOFS_FACE) {
+    unsigned int i = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
+
+    for (int c = 0; c < mesh.num_entities(AmanziMesh::CELL, AmanziMesh::OWNED); ++c) {
+      i = std::max(i, mesh.cell_get_num_faces(c));
+    }
+    row_size += 2 * i;
+  }
+  if (schema & OPERATOR_SCHEMA_DOFS_CELL) {
+    unsigned int i = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
+    row_size += i + 1;
+  }
+  if (schema & OPERATOR_SCHEMA_DOFS_NODE) {
+    unsigned int i = (dim == 2) ? OPERATOR_QUAD_NODES : OPERATOR_HEX_NODES;
+    row_size += 8 * i;
+  }
+
+  return row_size * n_dofs;
+}    
+
 
 
 } // namespace Operators

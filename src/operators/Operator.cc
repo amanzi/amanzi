@@ -31,7 +31,7 @@ namespace Operators {
 * Default constructor.
 ****************************************************************** */
 Operator::Operator(Teuchos::RCP<const CompositeVectorSpace> cvs, int dummy) 
-    : cvs_(cvs), data_validity_(true), my_dof_index_(0)
+    : cvs_(cvs), data_validity_(true)
 {
   mesh_ = cvs_->Mesh();
   rhs_ = Teuchos::rcp(new CompositeVector(*cvs_, true));
@@ -68,7 +68,6 @@ Operator::Operator(const Operator& op)
       A_(op.A_),
       Amat_(op.Amat_),
       smap_(op.smap_),
-      my_dof_index_(op.my_dof_index_),
       preconditioner_(op.preconditioner_)
 {
   op.data_validity_ = false;
@@ -107,7 +106,7 @@ Operator::operator=(const Operator& op)
     A_ = op.A_;
     Amat_ = op.Amat_;
     smap_ = op.smap_;
-    my_dof_index_ = op.my_dof_index_;
+        
     preconditioner_ = op.preconditioner_;
 
     ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -154,69 +153,39 @@ void Operator::Init()
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrix(int schema, int nonstandard)
 {
-  std::vector<std::string> compnames;
-  std::vector<int> dofnums;
-  std::vector<Teuchos::RCP<const Epetra_Map> > maps;
-  std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
-  if (schema & OPERATOR_SCHEMA_DOFS_FACE) {
-    ASSERT(cvs_->HasComponent("face"));
-    compnames.push_back("face");
-    dofnums.push_back(1);
-    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
-        getMaps(*cvs_->Mesh(), AmanziMesh::FACE);
-    maps.push_back(meshmaps.first);
-    ghost_maps.push_back(meshmaps.second);
-  }
+  // Create the supermap given a space (set of possible schemas) and a
+  // specific schema (assumed/checked to be consistent with the sapce).
+  smap_ = createSuperMap(*cvs_, schema, 1);
 
-  if (schema & OPERATOR_SCHEMA_DOFS_CELL) {
-    ASSERT(cvs_->HasComponent("cell"));
-    compnames.push_back("cell");
-    dofnums.push_back(1);
-    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
-        getMaps(*cvs_->Mesh(), AmanziMesh::CELL);
-    maps.push_back(meshmaps.first);
-    ghost_maps.push_back(meshmaps.second);
-  }
-  if (schema & OPERATOR_SCHEMA_DOFS_NODE) {
-    ASSERT(cvs_->HasComponent("node"));
-    compnames.push_back("node");
-    dofnums.push_back(1);
-    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
-        getMaps(*cvs_->Mesh(), AmanziMesh::NODE);
-    maps.push_back(meshmaps.first);
-    ghost_maps.push_back(meshmaps.second);
-  }
-
-  smap_ = Teuchos::rcp(new SuperMap(cvs_->Comm(),
-          compnames, dofnums, maps, ghost_maps));
-
-  // estimate size of the matrix graph
-  int row_size(0), dim = mesh_->space_dimension();
-  if (schema & OPERATOR_SCHEMA_DOFS_FACE) {
-    int i = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
-
-    for (int c = 0; c < ncells_owned; c++) {
-      int nfaces = mesh_->cell_get_num_faces(c);
-      i = std::max(i, nfaces);
-    }
-    row_size += 2 * i;
-  }
-  if (schema & OPERATOR_SCHEMA_DOFS_CELL) {
-    int i = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
-    row_size += i + 1;
-  }
-  if (schema & OPERATOR_SCHEMA_DOFS_NODE) {
-    int i = (dim == 2) ? OPERATOR_QUAD_NODES : OPERATOR_HEX_NODES;
-    row_size += 8 * i;
-  }
-    
   // create the graph
+  int row_size = MaxRowSize(*mesh_, schema, 1);
   Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
           smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 
+  // fill the graph
+  SymbolicAssembleMatrix(schema, nonstandard, *smap_, *graph, 0, 0);
+  
+  // Completing and optimizing the graphs
+  int ierr = graph->FillComplete(smap_->Map(), smap_->Map());
+  ASSERT(!ierr);
+
+  // create global matrix
+  Amat_ = Teuchos::rcp(new MatrixFE(graph));
+  A_ = Amat_->Matrix();
+}
+
+
+/* ******************************************************************
+* Populate the sparsity structure of a global matrix
+****************************************************************** */
+void Operator::SymbolicAssembleMatrix(int schema, int nonstandard,
+        const SuperMap& map, GraphFE& graph,
+        int my_block_row, int my_block_col) const
+{
   // populate matrix graph using blocks that fit the schema
   AmanziMesh::Entity_ID_List cells, faces, nodes;
-  int lid[OPERATOR_MAX_NODES];
+  int lid_r[OPERATOR_MAX_NODES];
+  int lid_c[OPERATOR_MAX_NODES];
 
   int nblocks = blocks_.size();
   for (int nb=0; nb!=nblocks; ++nb) {
@@ -228,66 +197,84 @@ void Operator::SymbolicAssembleMatrix(int schema, int nonstandard)
         subschema == OPERATOR_SCHEMA_DOFS_CELL) {
 
       // ELEMENT: face, DOF: cell
-      const std::vector<int>& cell_inds = smap_->GhostIndices("cell", my_dof_index_);
+      const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
+      const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
 
+      int ierr(0);
       for (int f=0; f!=nfaces_owned; ++f) {
         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
 
         int ncells = cells.size();
         for (int n=0; n!=ncells; ++n) {
-          lid[n] = cell_inds[cells[n]];
+          lid_r[n] = cell_row_inds[cells[n]];
+          lid_c[n] = cell_col_inds[cells[n]];
         }
 
-        graph->InsertMyIndices(ncells, lid, ncells, lid);
+        ierr |= graph.InsertMyIndices(ncells, lid_r, ncells, lid_c);
       }
+      ASSERT(!ierr);
+      
 
     // Typical representatives of cell-based methods are MFD and FEM.
     } else if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_CELL) {
 
       if (subschema == OPERATOR_SCHEMA_DOFS_FACE) {
         // ELEMENT: cell, DOF: face
-        const std::vector<int>& face_inds = smap_->GhostIndices("face", my_dof_index_);
-        
+        const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
+        const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
+
+        int ierr(0);
         for (int c=0; c!=ncells_owned; ++c) {
           mesh_->cell_get_faces(c, &faces);
           int nfaces = faces.size();
 
           for (int n=0; n!=nfaces; ++n) {
-            lid[n] = face_inds[faces[n]];
+            lid_r[n] = face_row_inds[faces[n]];
+            lid_c[n] = face_col_inds[faces[n]];
           }
-          graph->InsertMyIndices(nfaces, lid, nfaces, lid);
+          ierr |= graph.InsertMyIndices(nfaces, lid_r, nfaces, lid_c);
         }
+        ASSERT(!ierr);
 
       } else if (subschema == OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
         // ELEMENT: cell, DOFS: cell and face
-        const std::vector<int>& face_inds = smap_->GhostIndices("face", my_dof_index_);
-        const std::vector<int>& cell_inds = smap_->GhostIndices("cell", my_dof_index_);
+        const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
+        const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
+        const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
+        const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
 
+        int ierr(0);
         for (int c=0; c!=ncells_owned; ++c) {
           mesh_->cell_get_faces(c, &faces);
           int nfaces = faces.size();
 
           for (int n=0; n!=nfaces; ++n) {
-            lid[n] = face_inds[faces[n]];
+            lid_r[n] = face_row_inds[faces[n]];
+            lid_c[n] = face_col_inds[faces[n]];
           }
-          lid[nfaces] = cell_inds[c];
-          graph->InsertMyIndices(nfaces+1, lid, nfaces+1, lid);
+          lid_r[nfaces] = cell_row_inds[c];
+          lid_c[nfaces] = cell_col_inds[c];
+          ierr |= graph.InsertMyIndices(nfaces+1, lid_r, nfaces+1, lid_c);
         }
+        ASSERT(!ierr);
 
       } else if (subschema == OPERATOR_SCHEMA_DOFS_NODE) {
         // ELEMENT: cell, DOFS: node
-        const std::vector<int>& node_inds = smap_->GhostIndices("node", my_dof_index_);
+        const std::vector<int>& node_row_inds = map.GhostIndices("node", my_block_row);
+        const std::vector<int>& node_col_inds = map.GhostIndices("node", my_block_col);
 
+        int ierr(0);
         for (int c=0; c!=ncells_owned; ++c) {
           mesh_->cell_get_nodes(c, &nodes);
           int nnodes = nodes.size();
 
           for (int n=0; n!=nnodes; ++n) {
-            lid[n] = node_inds[nodes[n]];
+            lid_r[n] = node_row_inds[nodes[n]];
+            lid_c[n] = node_col_inds[nodes[n]];
           }
-          int ierr = graph->InsertMyIndices(nnodes, lid, nnodes, lid);
-          ASSERT(!ierr);          
+          ierr |= graph.InsertMyIndices(nnodes, lid_r, nnodes, lid_c);
         }
+        ASSERT(!ierr);          
 
       } else {
         ASSERT(false);
@@ -297,18 +284,23 @@ void Operator::SymbolicAssembleMatrix(int schema, int nonstandard)
     } else if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_FACE) {
 
       // ELEMENT: face, DOF: cell
-      const std::vector<int>& cell_inds = smap_->GhostIndices("cell", my_dof_index_);
+      const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
+      const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
 
+      int ierr(0);
       for (int f=0; f!=nfaces_owned; ++f) {
         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
 
         int ncells = cells.size();
         for (int n=0; n!=ncells; ++n) {
-          lid[n] = cell_inds[cells[n]];
+          lid_r[n] = cell_row_inds[cells[n]];
+          lid_c[n] = cell_col_inds[cells[n]];
         }
 
-        graph->InsertMyIndices(ncells, lid, ncells, lid);
+        ierr |= graph.InsertMyIndices(ncells, lid_r, ncells, lid_c);
       }
+      ASSERT(!ierr);          
+      
 
     // Typical representative of node-based methods is MPFA.
     } else if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_NODE) {
@@ -316,13 +308,6 @@ void Operator::SymbolicAssembleMatrix(int schema, int nonstandard)
       ASSERT(false);
     }
   }
-
-  // Completing and optimizing the graphs
-  graph->FillComplete(smap_->Map(), smap_->Map());
-
-  // create global matrix
-  Amat_ = Teuchos::rcp(new MatrixFE(graph));
-  A_ = Amat_->Matrix();
 }
 
 
@@ -331,11 +316,22 @@ void Operator::SymbolicAssembleMatrix(int schema, int nonstandard)
 ****************************************************************** */
 void Operator::AssembleMatrix(int schema)
 {
-  // populate matrix
   Amat_->Zero();
+  AssembleMatrix(schema, *smap_, *Amat_, 0, 0);
+  Amat_->FillComplete();
+}
 
+  
+
+/* ******************************************************************
+* Assemble elemental face-based matrices into four global matrices. 
+****************************************************************** */
+void Operator::AssembleMatrix(int schema, const SuperMap& map,
+        MatrixFE& mat, int my_block_row, int my_block_col) const
+{
   AmanziMesh::Entity_ID_List cells, faces, nodes;
-  int lid[OPERATOR_MAX_NODES + 1];
+  int lid_r[OPERATOR_MAX_NODES + 1];
+  int lid_c[OPERATOR_MAX_NODES + 1];
   double values[OPERATOR_MAX_NODES + 1];
 
   int nblocks = blocks_.size();
@@ -349,52 +345,65 @@ void Operator::AssembleMatrix(int schema)
       if (subschema == OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
 
         // ELEMENT: cell, DOFS: face and cell
-        const std::vector<int>& face_inds = smap_->GhostIndices("face", my_dof_index_);
-        const std::vector<int>& cell_inds = smap_->GhostIndices("cell", my_dof_index_);
-        
+        const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
+        const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
+        const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
+        const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);        
+
+        int ierr(0);
         for (int c=0; c!=ncells_owned; ++c) {
           mesh_->cell_get_faces(c, &faces);
 
           int nfaces = faces.size();
           for (int n=0; n!=nfaces; ++n) {
-            lid[n] = face_inds[faces[n]];
+            lid_r[n] = face_row_inds[faces[n]];
+            lid_c[n] = face_col_inds[faces[n]];
           }
-          lid[nfaces] = cell_inds[c];
+          lid_r[nfaces] = cell_row_inds[c];
+          lid_c[nfaces] = cell_col_inds[c];
 
-          Amat_->SumIntoMyValues(lid, matrix[c]);
+          ierr |= mat.SumIntoMyValues(lid_r, lid_c, matrix[c]);
         }
+        ASSERT(!ierr);
         
       } else if (subschema == OPERATOR_SCHEMA_DOFS_FACE) {
         // ELEMENT: cell, DOFS: face
-        const std::vector<int>& face_inds = smap_->GhostIndices("face", my_dof_index_);
+        const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
+        const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
 
+        int ierr(0);
         for (int c=0; c!=ncells_owned; ++c) {
           mesh_->cell_get_faces(c, &faces);
 
           int nfaces = faces.size();
           for (int n=0; n!=nfaces; ++n) {
-            lid[n] = face_inds[faces[n]];
+            lid_r[n] = face_row_inds[faces[n]];
+            lid_c[n] = face_col_inds[faces[n]];
           }
 
-          Amat_->SumIntoMyValues(lid, matrix[c]);
+          ierr |= mat.SumIntoMyValues(lid_r, lid_c, matrix[c]);
         }
+        ASSERT(!ierr);
+
         
       } else if (subschema == OPERATOR_SCHEMA_DOFS_NODE) {
         // ELEMENT: cell, DOFS: node
-        const std::vector<int>& node_inds = smap_->GhostIndices("node", my_dof_index_);
+        const std::vector<int>& node_row_inds = map.GhostIndices("node", my_block_row);
+        const std::vector<int>& node_col_inds = map.GhostIndices("node", my_block_col);
 
+        int ierr(0);
         for (int c=0; c!=ncells_owned; ++c) {
           mesh_->cell_get_nodes(c, &nodes);
 
           int nnodes = nodes.size();
           for (int n=0; n!=nnodes; ++n) {
-            lid[n] = node_inds[nodes[n]];
+            lid_r[n] = node_row_inds[nodes[n]];
+            lid_c[n] = node_col_inds[nodes[n]];
           }
 
-
-          int ierr = Amat_->SumIntoMyValues(lid, matrix[c]);
-          ASSERT(!ierr);
+          ierr |= mat.SumIntoMyValues(lid_r, lid_c, matrix[c]);
         }
+        ASSERT(!ierr);
       }
 
     } else if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_FACE) {
@@ -402,47 +411,57 @@ void Operator::AssembleMatrix(int schema)
 
       if (subschema == OPERATOR_SCHEMA_DOFS_CELL) {
         // ELEMENT: face, DOF: cell
-        const std::vector<int>& cell_inds = smap_->GhostIndices("cell", my_dof_index_);
+        const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
+        const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
 
+        int ierr(0);
         for (int f=0; f!=nfaces_owned; ++f) {
           mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
 
           int ncells = cells.size();
           for (int n=0; n!=ncells; ++n) {
-            lid[n] = cell_inds[cells[n]];
+            lid_r[n] = cell_row_inds[cells[n]];
+            lid_c[n] = cell_col_inds[cells[n]];
           }
 
-          Amat_->SumIntoMyValues(lid, matrix[f]);
+          ierr |= mat.SumIntoMyValues(lid_r, lid_c, matrix[f]);
         }
+        ASSERT(!ierr);
       }
     }
   }
 
-  Amat_->FillComplete();
-
-  // Add diagonal (a hack)
-  Epetra_Vector tmp(A_->RowMap());
-  A_->ExtractDiagonalCopy(tmp);
-
+  // Add diagonal
   if (diagonal_->HasComponent("face")) {
-    const std::vector<int>& face_inds = smap_->Indices("face", my_dof_index_);
+    const std::vector<int>& face_row_inds = map.Indices("face", my_block_row);
+    const std::vector<int>& face_col_inds = map.Indices("face", my_block_col);
     Epetra_MultiVector& diag = *diagonal_->ViewComponent("face");
-    for (int f=0; f!=nfaces_owned; ++f) tmp[face_inds[f]] += diag[0][f];
+    int ierr(0);
+    for (int f=0; f!=nfaces_owned; ++f)
+      ierr |= mat.SumIntoMyValues(face_row_inds[f], 1, &diag[0][f], &face_col_inds[f]);
+    ASSERT(!ierr);
   }
 
   if (diagonal_->HasComponent("cell")) {
-    const std::vector<int>& cell_inds = smap_->Indices("cell", my_dof_index_);
+    const std::vector<int>& cell_row_inds = map.Indices("cell", my_block_row);
+    const std::vector<int>& cell_col_inds = map.Indices("cell", my_block_col);
     Epetra_MultiVector& diag = *diagonal_->ViewComponent("cell");
-    for (int c=0; c!=ncells_owned; ++c) tmp[cell_inds[c]] += diag[0][c];
+    int ierr(0);
+    for (int c=0; c!=ncells_owned; ++c)
+      ierr |= mat.SumIntoMyValues(cell_row_inds[c], 1, &diag[0][c], &cell_col_inds[c]);
+    ASSERT(!ierr);
   }
 
   if (diagonal_->HasComponent("node")) {
-    const std::vector<int>& node_inds = smap_->Indices("node", my_dof_index_);
+    const std::vector<int>& node_row_inds = map.Indices("node", my_block_row);
+    const std::vector<int>& node_col_inds = map.Indices("node", my_block_col);
     Epetra_MultiVector& diag = *diagonal_->ViewComponent("node");
-    for (int v=0; v!=nnodes_owned; ++v) tmp[node_inds[v]] += diag[0][v];
+    int ierr(0);
+    for (int v=0; v!=nnodes_owned; ++v) 
+      ierr |= mat.SumIntoMyValues(node_row_inds[v], 1, &diag[0][v], &node_col_inds[v]);
+    ASSERT(!ierr);
   }
 
-  A_->ReplaceDiagonalValues(tmp);
 }
 
 
@@ -726,11 +745,20 @@ bool Operator::ApplyBC_Face_(int nb)
 /* ******************************************************************
 * Parallel matvec product A * X.                                              
 ******************************************************************* */
-int Operator::Apply(const CompositeVector& X, CompositeVector& Y) const
+int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const
 {
-  // initialize ghost elements 
   X.ScatterMasterToGhosted();
-  Y.PutScalarMasterAndGhosted(0.0);
+
+  // initialize ghost elements 
+  if (scalar == 0.0) {
+    Y.PutScalarMasterAndGhosted(0.0);
+  } else if (scalar == 1.0) {
+    Y.PutScalarGhosted(0.0);
+  } else {
+    Y.Scale(scalar);
+    Y.PutScalarGhosted(0.0);
+  }    
+    
 
   // Multiply by the diagonal block.
   Y.Multiply(1.0, *diagonal_, X, 0.0);
@@ -852,9 +880,9 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
   // return 0;
   Epetra_Vector Xcopy(A_->RowMap());
   Epetra_Vector Ycopy(A_->RowMap());
-  int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, my_dof_index_);
+  int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, 0);
   ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
-  ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, my_dof_index_);
+  ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, 0);
   ASSERT(!ierr);
   return ierr;
 }

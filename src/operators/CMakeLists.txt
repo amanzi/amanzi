@@ -62,6 +62,7 @@ set(operators_inc_files
     OperatorDiffusionWithGravity.hh
     OperatorDiffusionTPFA.hh
     OperatorSource.hh
+    TreeOperator.hh
     Reconstruction.hh
     ReconstructionCell.hh
     Upwind.hh
@@ -71,7 +72,8 @@ set(operators_inc_files
     UpwindSecondOrder.hh)
 
 add_amanzi_library(operators
-                   SOURCE OperatorUtils.cc
+
+SOURCE OperatorUtils.cc
                    Operator.cc
                    OperatorSource.cc
                    OperatorDiffusion.cc
@@ -79,7 +81,8 @@ add_amanzi_library(operators
                    OperatorDiffusionWithGravity.cc
                    OperatorDiffusionTPFA.cc
                    OperatorDiffusionFactory.cc                   
-                   OperatorAdvection.cc 
+                   OperatorAdvection.cc
+                   TreeOperator.cc
                    ReconstructionCell.cc ReconstructionCell_Limiters.cc
                    HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})
@@ -136,7 +139,7 @@ if ( BUILD_TESTS )
     #                 KIND unit
     #                 SOURCE test/Main.cc test/operator_diffusion_tpfa.cc
     #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
+    
     # Test: matrices for surface
     add_amanzi_test(operators_advdiff_surface operators_advdiff_surface
                     KIND unit
@@ -156,6 +159,14 @@ if ( BUILD_TESTS )
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_convergence_2pe operators_convergence NPROCS 2 KIND unit)
+
+    # correctness of tree operator
+    add_amanzi_test(operators_tree operators_tree
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_tree.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(operators_tree_2pe operators_tree NPROCS 2 KIND unit)
 
     # reconstruction tests
     add_amanzi_test(operators_reconstruction operators_reconstruction

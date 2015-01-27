@@ -72,14 +72,38 @@ class MatrixFE {
   // fill graph
   int SumIntoMyValues(int row, int count, const double *values, const int *indices);
 
-  int SumIntoMyValues(const int *indices, const Epetra_SerialDenseMatrix& vals);
-  int SumIntoMyValues_Transposed(const int *indices, const Epetra_SerialDenseMatrix& vals);
+  int SumIntoMyValues(const int *indices, const Epetra_SerialDenseMatrix& vals) {
+    return SumIntoMyValues(indices,indices,vals);
+  }
+  int SumIntoMyValues(const int *row_indices, const int *col_indices,
+                      const Epetra_SerialDenseMatrix& vals);
+  int SumIntoMyValues_Transposed(const int *indices, const Epetra_SerialDenseMatrix& vals) {
+    return SumIntoMyValues_Transposed(indices,indices,vals);
+  }
+  int SumIntoMyValues_Transposed(const int *row_indices, const int *col_indices,
+          const Epetra_SerialDenseMatrix& vals);
 
-  int SumIntoMyValues(const int *indices, const Teuchos::SerialDenseMatrix<int,double>& vals);
-  int SumIntoMyValues_Transposed(const int *indices, const Teuchos::SerialDenseMatrix<int,double>& vals);
+  int SumIntoMyValues(const int *indices, const Teuchos::SerialDenseMatrix<int,double>& vals) {
+    return SumIntoMyValues(indices, indices, vals);
+  }
+  int SumIntoMyValues(const int *row_inds, const int *col_inds,
+                      const Teuchos::SerialDenseMatrix<int,double>& vals);
+  int SumIntoMyValues_Transposed(const int *indices, const Teuchos::SerialDenseMatrix<int,double>& vals) {
+    return SumIntoMyValues_Transposed(indices, indices, vals);
+  }
+  int SumIntoMyValues_Transposed(const int *row_inds, const int *col_inds,
+          const Teuchos::SerialDenseMatrix<int,double>& vals);
 
-  int SumIntoMyValues(const int *indices, const WhetStone::DenseMatrix& vals);
-  int SumIntoMyValues_Transposed(const int *indices, const WhetStone::DenseMatrix& vals);
+  int SumIntoMyValues(const int *indices, const WhetStone::DenseMatrix& vals) {
+    return SumIntoMyValues(indices, indices, vals);
+  }
+  int SumIntoMyValues(const int *row_inds, const int *col_inds,
+                      const WhetStone::DenseMatrix& vals);
+  int SumIntoMyValues_Transposed(const int *indices, const WhetStone::DenseMatrix& vals) {
+    return SumIntoMyValues_Transposed(indices, indices, vals);
+  }
+  int SumIntoMyValues_Transposed(const int *row_inds, const int *col_inds,
+          const WhetStone::DenseMatrix& vals);
   
   // Passthroughs.
   // --

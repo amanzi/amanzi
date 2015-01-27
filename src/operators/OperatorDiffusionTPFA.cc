@@ -211,7 +211,7 @@ int OperatorDiffusionTPFA::ApplyInverse(const CompositeVector& X, CompositeVecto
 /* ******************************************************************
 * Linear algebra operations with matrices: r = A * u - f                                                 
 ****************************************************************** */
-void OperatorDiffusionTPFA::ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r)
+int OperatorDiffusionTPFA::ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r)
 {
   const Epetra_MultiVector& k_face = *k_->ViewComponent("face", true);
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
@@ -273,6 +273,7 @@ void OperatorDiffusionTPFA::ComputeNegativeResidual(const CompositeVector& u, Co
     rc[0][c] -= rhs_cell[0][c];   
   }
 
+  return 0;
 }
 
 

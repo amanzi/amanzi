@@ -16,7 +16,6 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_FECrsMatrix.h"
 #include "Epetra_CrsMatrix.h"
 
 #include "DenseMatrix.hh"
@@ -25,6 +24,7 @@
 #include "Mesh.hh"
 #include "Preconditioner.hh"
 #include "VerboseObject.hh"
+#include "GraphFE.hh"
 
 #include "BCs.hh"
 #include "OperatorTypeDefs.hh"
@@ -76,11 +76,17 @@ class Operator {
   void Init();
   void AddBCs(Teuchos::RCP<BCs> bc);
   
-  virtual int Apply(const CompositeVector& X, CompositeVector& Y) const;
+  virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar=0.) const;
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
   virtual void SymbolicAssembleMatrix(int schema, int nonstandard = 0);
+  virtual void SymbolicAssembleMatrix(int schema, int nonstandard,
+          const SuperMap& map, GraphFE& graph,
+          int my_block_row, int my_block_col) const;
   virtual void AssembleMatrix(int schema);
+  virtual void AssembleMatrix(int schema,
+          const SuperMap& map, MatrixFE& matrix,
+          int my_block_row, int my_block_col) const;
 
   virtual void ApplyBCs(); 
   virtual int ComputeResidual(const CompositeVector& u, CompositeVector& r);
@@ -137,7 +143,6 @@ class Operator {
   Teuchos::RCP<Epetra_CrsMatrix> A_;
   Teuchos::RCP<MatrixFE> Amat_;
   Teuchos::RCP<SuperMap> smap_;
-  int my_dof_index_;
 
   Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
 

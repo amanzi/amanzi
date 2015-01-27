@@ -80,7 +80,9 @@ class OperatorDiffusion : public Operator {
   int ApplyInverseSpecialSff_(const CompositeVector& X, CompositeVector& Y) const;
   int ApplyInverseSpecialScc_(const CompositeVector& X, CompositeVector& Y) const;
   void InitPreconditionerSpecialSff_(const std::string& prec_name, const Teuchos::ParameterList& plist);
+  void AssemblePreconditionerSpecialSff_(const SuperMap& map, MatrixFE& mat, int my_block_row, int my_block_col);
   void InitPreconditionerSpecialScc_(const std::string& prec_name, const Teuchos::ParameterList& plist);
+  void AssemblePreconditionerSpecialScc_(const SuperMap& map, MatrixFE& mat, int my_block_row, int my_block_col);
 
  public:
   std::vector<WhetStone::DenseMatrix> Wff_cells_;

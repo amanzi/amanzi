@@ -51,7 +51,7 @@ class OperatorDiffusionTPFA : public OperatorDiffusion {
 
   int Apply(const CompositeVector& X, CompositeVector& Y) const;
   int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
-  void ComputeNegativeResidual(const CompositeVector& v, CompositeVector& r);
+  int ComputeNegativeResidual(const CompositeVector& v, CompositeVector& r);
 
   void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
   void SetUpwind(int upwind_method) { upwind_ = upwind_method; }

@@ -735,36 +735,49 @@ void OperatorDiffusion::InitPreconditioner(
 void OperatorDiffusion::InitPreconditionerSpecialSff_(
     const std::string& prec_name, const Teuchos::ParameterList& plist)
 {
+  // create a face-based stiffness matrix from A.
+  Amat_->Zero();
+  AssemblePreconditionerSpecialSff_(*smap_, *Amat_, 0, 0);
+  Amat_->FillComplete();
+
+  // redefine (if necessary) preconditioner since only 
+  // one preconditioner is allowed.
+  AmanziPreconditioners::PreconditionerFactory factory;
+  preconditioner_ = factory.Create(prec_name, plist);
+  preconditioner_->Update(A_);
+}
+
+void OperatorDiffusion::AssemblePreconditionerSpecialSff_(const SuperMap& map,
+        MatrixFE& mat, int my_block_row, int my_block_col)
+{
   const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
   const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
 
   // find the block of matrices
   int schema_dofs = OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL;
   int m = FindMatrixBlock(schema_dofs, OPERATOR_SCHEMA_RULE_SUBSET, true);
-
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
-
-  // create a face-based stiffness matrix from A.
-  Amat_->Zero();
-  int ndof = A_->NumMyRows();
 
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
   AmanziMesh::Entity_ID_List faces;
 
-  int lid[OPERATOR_MAX_FACES];
-  double values[OPERATOR_MAX_FACES];
+  int lid_r[OPERATOR_MAX_FACES];
+  int lid_c[OPERATOR_MAX_FACES];
 
   Epetra_MultiVector& diag = *diagonal_->ViewComponent("cell");
 
   // ELEMENT: cell, DOFS: face and cell
-  const std::vector<int>& face_inds = smap_->GhostIndices("face", my_dof_index_);
-        
+  const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
+  const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
+
+  int ierr(0);
   for (int c=0; c!=ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     for (int n=0; n!=nfaces; ++n) {
-      lid[n] = face_inds[faces[n]];
+      lid_r[n] = face_row_inds[faces[n]];
+      lid_c[n] = face_col_inds[faces[n]];
     }
     
     WhetStone::DenseMatrix Scell(nfaces, nfaces);
@@ -787,9 +800,21 @@ void OperatorDiffusion::InitPreconditionerSpecialSff_(
       }
     }
 
-    Amat_->SumIntoMyValues(lid, Scell);
+    ierr |= mat.SumIntoMyValues(lid_r, lid_c, Scell);
   }
+  ASSERT(!ierr);
+}
 
+/* ******************************************************************
+* Routine assembles the Schur complement for face-based degrees 
+* of freedom, Scc = Acc - Acf Aff^{-1} Afc. 
+****************************************************************** */
+void OperatorDiffusion::InitPreconditionerSpecialScc_(
+    const std::string& prec_name, const Teuchos::ParameterList& plist)
+{
+  // create a cell-based stiffness matrix from A.
+  Amat_->Zero();
+  AssemblePreconditionerSpecialScc_(*smap_, *Amat_, 0, 0);
   Amat_->FillComplete();
 
   // redefine (if necessary) preconditioner since only 
@@ -800,12 +825,8 @@ void OperatorDiffusion::InitPreconditionerSpecialSff_(
 }
 
 
-/* ******************************************************************
-* Routine assembles the Schur complement for face-based degrees 
-* of freedom, Scc = Acc - Acf Aff^{-1} Afc. 
-****************************************************************** */
-void OperatorDiffusion::InitPreconditionerSpecialScc_(
-    const std::string& prec_name, const Teuchos::ParameterList& plist)
+void OperatorDiffusion::AssemblePreconditionerSpecialScc_(
+    const SuperMap& map, MatrixFE& mat, int my_block_row, int my_block_col)
 {
   const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
 
@@ -814,10 +835,6 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
   int m = FindMatrixBlock(schema_dofs, OPERATOR_SCHEMA_RULE_SUBSET, true);
 
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
-
-  // create a cell-based stiffness matrix from A.
-  Amat_->Zero();
-  int ndof = A_->NumMyRows();
 
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
 
@@ -857,16 +874,19 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
   T->GatherGhostedToMaster();
  
   // populate the global matrix
-  int lid[2],gid[2];
+  int lid_r[2],lid_c[2],gid[2];
   double a1, a2, values[2];
-
-  const std::vector<int>& cell_inds = smap_->GhostIndices("cell", my_dof_index_);
+  int ierr(0);
+  
+  const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
+  const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
 
     for (int n=0; n!=ncells; ++n) {
-      lid[n] = cell_inds[cells[n]];
+      lid_r[n] = cell_row_inds[cells[n]];
+      lid_c[n] = cell_col_inds[cells[n]];
       gid[n] = cmap_wghost.GID(cells[n]);
     }
 
@@ -889,33 +909,22 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
         values[1] = -a2 * a2 / coef;
       }
 
-      Amat_->SumIntoMyValues(lid[n], ncells, values, lid);
+      ierr |= mat.SumIntoMyValues(lid_r[n], ncells, values, lid_c);
     }
   }
-
-  Amat_->FillComplete();
-
-  // Add diagonal (a hack)
-  Epetra_Vector tmp(A_->RowMap());
-  A_->ExtractDiagonalCopy(tmp);
 
   if (diagonal_->HasComponent("cell")) {
     Epetra_MultiVector& diag_cell = *diagonal_->ViewComponent("cell");
     for (int c = 0; c!=ncells_owned; ++c) {
       WhetStone::DenseMatrix& Acell = matrix[c];
       int n = Acell.NumRows() - 1;
-      tmp[c] += Acell(n, n) + diag_cell[0][c];
+      double diag_val = Acell(n, n) + diag_cell[0][c];
+      lid_r[0] = cell_row_inds[c];
+      lid_c[0] = cell_col_inds[c];
+      ierr |= mat.SumIntoMyValues(lid_r[0], 1, &diag_val, lid_c);
     }
   }
-
-  A_->ReplaceDiagonalValues(tmp);
-  // std::cout << *A_ << std::endl;
-
-  // redefine (if necessary) preconditioner since only 
-  // one preconditioner is allowed.
-  AmanziPreconditioners::PreconditionerFactory factory;
-  preconditioner_ = factory.Create(prec_name, plist);
-  preconditioner_->Update(A_);
+  ASSERT(!ierr);
 }
 
 

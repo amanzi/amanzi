@@ -1,3 +1,4 @@
+
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 
@@ -312,6 +313,10 @@ public:
   // Different name is given so it cannot be used in a templated code.   
   int PutScalarMasterAndGhosted(double scalar);
 
+  // Sets ghost elements to value.
+  // Different name is given so it cannot be used in a templated code.   
+  int PutScalarGhosted(double scalar);
+
   // v(name,:,:) = scalar
   int PutScalar(std::string name, double scalar);
 
@@ -423,6 +428,23 @@ inline int
 CompositeVector::PutScalarMasterAndGhosted(double scalar) {
   ChangedValue();
   return ghostvec_->PutScalar(scalar);
+}
+
+inline int
+CompositeVector::PutScalarGhosted(double scalar) {
+  ChangedValue();
+  for (int lcv_comp = 0; lcv_comp != NumComponents(); ++lcv_comp) {
+    int size_owned = mastervec_->size(names_[lcv_comp]);
+    int size_ghosted = ghostvec_->size(names_[lcv_comp]);
+
+    Epetra_MultiVector& vec = *ghostvec_->ViewComponent(names_[lcv_comp]);
+    for (int j = 0; j != vec.NumVectors(); ++j) {
+      for (int i = size_owned; i != size_ghosted; ++i) {
+        vec[j][i] = scalar;
+      }
+    }
+  }
+  return 0;
 }
 
 inline int
