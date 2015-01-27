@@ -189,6 +189,8 @@ void Unstructured_observations::MakeObservations(State& state)
           }
         }
       } else { // all others need cells
+std::cout << var << std::endl;
+std::cout << (i->second).region << std::endl;
         mesh_block_size = state.GetMesh()->get_set_size((i->second).region,
                                                         Amanzi::AmanziMesh::CELL,
                                                         Amanzi::AmanziMesh::OWNED);    
@@ -205,8 +207,8 @@ void Unstructured_observations::MakeObservations(State& state)
       
       if (global_mesh_block_size == 0) {  // bail if this region is empty
         Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "Cannot make an observation on an empty region: " 
-                   << (i->second).region << ", skipping" << std::endl;
+        *vo_->os() << "Cannot make observation on region \"" << (i->second).region 
+                   << "\", that is empty or has incorrect face/cell type, skipping it." << std::endl;
         continue;
       }
 
