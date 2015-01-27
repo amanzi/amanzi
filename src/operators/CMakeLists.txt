@@ -96,7 +96,7 @@ if ( BUILD_TESTS )
           copy_directory ${OPERATORS_SOURCE_DIR}/test ${OPERATORS_BINARY_DIR}/test) 
     endif()
 
-    set(amanzi_libs geometry atk mesh mesh_factory data_structures operators whetstone output)
+    set(amanzi_libs geometry atk mesh mesh_factory data_structures operators whetstone output atk)
 
     # Test: matrices for diffusion
     if ( ENABLE_INDIVIDUAL_TESTS_OPERATORS OR ENABLE_INDIVIDUAL_TESTS )
@@ -131,6 +131,11 @@ if ( BUILD_TESTS )
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_diffusion_3pe operators_diffusion NPROCS 3 KIND unit)
+
+    add_amanzi_test(operators_commute operators_commute
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_commute.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: matrices for surface
     add_amanzi_test(operators_advdiff_surface operators_advdiff_surface
