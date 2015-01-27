@@ -692,7 +692,7 @@ bool Operator::ApplyBC_Face_(int nb)
     applied_bc = true;
     Epetra_MultiVector& rhs_cell = *rhs_->ViewComponent("cell");
 
-    for (int f=0; f!=nfaces_owned; ++f) {
+    for (int f = 0; f != nfaces_owned; ++f) {
       WhetStone::DenseMatrix& Aface = matrix[f];
 
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
