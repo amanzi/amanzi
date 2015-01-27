@@ -99,7 +99,7 @@ if ( BUILD_TESTS )
           copy_directory ${OPERATORS_SOURCE_DIR}/test ${OPERATORS_BINARY_DIR}/test) 
     endif()
 
-    set(amanzi_libs geometry atk mesh mesh_factory data_structures operators whetstone output)
+    set(amanzi_libs geometry atk mesh mesh_factory data_structures operators whetstone output atk)
 
     # Test: matrices for diffusion
     if ( ENABLE_INDIVIDUAL_TESTS_OPERATORS OR ENABLE_INDIVIDUAL_TESTS )
@@ -133,6 +133,12 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/operator_diffusion.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+    add_amanzi_test(operators_diffusion_3pe operators_diffusion NPROCS 3 KIND unit)
+
+    add_amanzi_test(operators_commute operators_commute
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_commute.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: tpfa
     # add_amanzi_test(operators_diffusion_tpfa operators_diffusion_tpfa
@@ -151,6 +157,8 @@ if ( BUILD_TESTS )
                     KIND unit
                     SOURCE test/Main.cc test/operator_upwind.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(operators_upwind_2pe operators_upwind NPROCS 2 KIND unit)
 
     # convergence analysis
     add_amanzi_test(operators_convergence operators_convergence
@@ -174,6 +182,7 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/operator_reconstruction.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+    add_amanzi_test(operators_reconstruction_2pe operators_reconstruction NPROCS 2 KIND unit)
 
 endif()
 

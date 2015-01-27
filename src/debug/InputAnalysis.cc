@@ -108,16 +108,19 @@ void InputAnalysis::RegionAnalysis()
     for (int i = 0; i < regions.size(); i++) {
       double volume(0.0);
       AmanziMesh::Entity_ID_List block;
+      std::string type;
 
       if (mesh_->valid_set_name(regions[i], AmanziMesh::FACE)) {
         mesh_->get_set_entities(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED, &block);
         nblock = block.size();
+        type = "faces";
         for (int n = 0; n < nblock; n++) 
             volume += mesh_->face_area(block[n]);
       } 
       else if (mesh_->valid_set_name(regions[i], AmanziMesh::CELL)) {
         mesh_->get_set_entities(regions[i], AmanziMesh::CELL, AmanziMesh::OWNED, &block);
         nblock = block.size();
+        type = "cells";
         for (int n = 0; n < nblock; n++) 
             volume += mesh_->cell_volume(block[n]);
       } 
@@ -138,8 +141,8 @@ void InputAnalysis::RegionAnalysis()
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
         std::string name(regions[i]);
         name.resize(std::min(40, (int)name.size()));
-        *vo_->os() << "obs region: \"" << name << "\" with " << nblock << " cells," 
-                   << " size: " << volume << " [m^3]" << std::endl;
+        *vo_->os() << "obs region: \"" << name << "\" with " << nblock << " " << type 
+                   << " size: " << volume << std::endl;
       }
 
       if (nblock == 0) {

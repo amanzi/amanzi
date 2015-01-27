@@ -447,6 +447,10 @@ void OperatorDiffusion::UpdateMatricesTPFA_()
 
     if (Ttmp[0][f] == 0.0) {
       Aface = 0.0;
+      if (!flag) {
+        matrix.push_back(Aface);
+        matrix_shadow.push_back(null_matrix);
+      }
       continue;  // We skip zero transmissibilities
     }
 

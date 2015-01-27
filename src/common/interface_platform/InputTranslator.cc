@@ -2971,7 +2971,7 @@ Teuchos::ParameterList get_phases(DOMDocument* xmlDoc, Teuchos::ParameterList de
     if (nodeAttr) {
       textContent = XMLString::transcode(nodeAttr->getNodeValue());
       phaseName = std::string(textContent);
-      if (!isUnstr_ && phaseName=="water") {
+      if (phaseName=="water") {
 	phaseName="Water";
       }
       XMLString::release(&textContent);
@@ -4091,7 +4091,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
             hasPerm = true;
             if (permElem->hasAttribute(XMLString::transcode("type"))) {
               perm = get_file_info(perm, permElem, "permeability", "materials");
-              permName = "Intrinsic Permeability: Anisotropic";
+              permName = "Intrinsic Permeability: File";
             }
             else {
               // loop over attributes to get x,y,z
@@ -4526,7 +4526,7 @@ Teuchos::ParameterList get_initial_conditions(DOMDocument* xmlDoc, Teuchos::Para
 	  if (nodeAttr) {
             textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
             phaseName = std::string(textContent2);
-            if (!isUnstr_ && phaseName=="water") {
+            if (phaseName=="water") {
               phaseName="Water";
             }
             XMLString::release(&textContent2);
@@ -4722,7 +4722,7 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
   DOMNamedNodeMap* attrMap;
   char* tagName;
   char* propName;
-  std::string phaseName;
+  std::string phaseName("Water");
   char* textContent;
   char* textContent2;
   char* char_array;
@@ -4787,7 +4787,7 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 	    if (nodeAttr) {
               textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
               phaseName = std::string(textContent2);
-              if (!isUnstr_ && phaseName=="water") {
+              if (phaseName=="water") {
                 phaseName="Water";
               }
               XMLString::release(&textContent2);
@@ -5491,7 +5491,7 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
 	    if (nodeAttr) {
               char* textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
               phaseName = std::string(textContent2);
-              if (!isUnstr_ && phaseName=="water") {
+              if (phaseName=="water") {
                 phaseName="Water";
               }
               XMLString::release(&textContent2);
@@ -5516,7 +5516,9 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
                 char* compName2 ;
 		if (nodeAttr) {
                   compName2 = XMLString::transcode(nodeAttr->getNodeValue());
-		  component = std::string(compName2);
+                  //if (std::string(compName2) != "Water" || std::string(compName2) != "water") {
+		  //  component = std::string(compName2);
+                  //}
                 }
                 else {
                   throw_error_missattr("sources", "attribute", "name", "liquid_component");
@@ -5665,7 +5667,8 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
 
                 }
                 //sclist.sublist(scname) = newsclist;
-	        sclist.sublist("Solute SOURCE").sublist(phase).sublist(component).sublist(soluteName).sublist(scname) = newsclist;
+	        //sclist.sublist("Solute SOURCE").sublist(phase).sublist(component).sublist(soluteName).sublist(scname) = newsclist;
+                sclist.sublist("Solute SOURCE").sublist(phase).sublist(soluteName).sublist(scname) = newsclist;
 	      }
 	    }
 	  }
@@ -5880,6 +5883,22 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
               //visPL.set<std::string>("Cycle Macros",textContent2);
               XMLString::release(&textContent2);
 	    }
+            else if (strcmp(textContent,"write_regions")==0) {
+              textContent2 = XMLString::transcode(curKid->getTextContent());
+              Teuchos::Array<std::string> regs = make_regions_list(textContent2);
+              visPL.set<Teuchos::Array<std::string> >("Write Regions",regs);
+              XMLString::release(&textContent2);
+              if (!compare_region_names(regs, def_list)) {
+                Errors::Message msg;
+                msg << "Amanzi::InputTranslator: ERROR - invalid region in Vis Section - " ;
+                msg << "valid regions are: \n" ;
+                for (int r=0; r<regionNames_string_.size(); r++) {
+                  msg << "    " << regionNames_string_[r] << "\n";
+                }
+                msg << "  Please correct and try again \n" ;
+                Exceptions::amanzi_throw(msg);
+              }
+            }
             XMLString::release(&textContent);
           }
           list.sublist("Visualization Data") = visPL;
@@ -5971,7 +5990,7 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
 		if (nodeAttr) {
                   textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
                   phaseName = std::string(textContent2);
-                  if (!isUnstr_ && phaseName=="water") {
+                  if (phaseName=="water") {
                     phaseName="Water";
                   }
                   XMLString::release(&textContent2);
@@ -6111,6 +6130,28 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
                         //TODO: EIB - don't think this is in structured
                       }
 	            }
+                    else if (strcmp(obsType,"solute_volumetric_flow_rate")==0) {
+                      // get solute name
+                      DOMNamedNodeMap* attrMap = curObs->getAttributes();
+                      DOMNode* nodeAttr = attrMap->getNamedItem(XMLString::transcode("solute"));
+                      char* soluteName ;
+                      if (nodeAttr) {
+                        soluteName = XMLString::transcode(nodeAttr->getNodeValue());
+                      }
+                      else {
+                        throw_error_missattr("observations", "attribute", "solute", "solute_volumetric_flow_rate");
+                      }
+                      
+                      std::stringstream name;
+                      if (isUnstr_) {
+                        name<< soluteName << " volumetric flow rate";
+                      }
+                      else {
+                        // TODO: EIB not sure this is in structured yet
+                        name<< soluteName << "_volumetric_flow_rate";
+                      }
+                      obPL.set<std::string>("Variable",name.str());
+                    }
 	            DOMNodeList* kidList = curObs->getChildNodes();
                     for (int k=0; k<kidList->getLength(); k++) {
                       DOMNode* curElem = kidList->item(k) ;
@@ -6187,6 +6228,7 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
       // TODO: move all to lower case
       if (text == "exodus ii") {
         propertyList.set<std::string>("Format","Exodus II");
+        isExodus = true;
       }
       else if (text == "color") {
         propertyList.set<std::string>("Format","Color Function");

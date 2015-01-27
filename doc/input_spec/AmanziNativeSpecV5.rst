@@ -376,6 +376,17 @@ constant value 0.8.
 Primary field evaluator
 .......................
 
+The primary field evaluator has no dependencies solved for by a PK.
+
+.. code-block:: xml
+
+    <ParameterList name="PRESSURE">
+      <Parameter name="field evaluator type" type="string" value="primary variable"/>
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="extreme"/>
+      </ParameterList>
+    </ParameterList>
+
 
 Secondary field evaluator
 .........................
@@ -2704,6 +2715,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * MaterialID
       * Aqueous mass flow rate [kg/s] (must use integral functional in the observation)
       * Aqueous volumetric flow rate [m^3/s] (must use integral functional in the observation)
+      * SOLUTE volumetric flow rate [mol/s] (must use integral functional in the observation)
 
     Observation "Drawdown" is calculated with respect to the value registered at the first time
     it was requested.

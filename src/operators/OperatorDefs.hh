@@ -19,6 +19,7 @@ namespace Operators {
 const int OPERATOR_SCHEMA_DOFS_FACE =  1;
 const int OPERATOR_SCHEMA_DOFS_CELL =  2;
 const int OPERATOR_SCHEMA_DOFS_NODE =  4;
+
 const int OPERATOR_SCHEMA_BASE_FACE =  8;
 const int OPERATOR_SCHEMA_BASE_CELL = 16;
 const int OPERATOR_SCHEMA_BASE_NODE = 32;
