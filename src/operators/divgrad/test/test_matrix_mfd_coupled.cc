@@ -464,7 +464,6 @@ TEST_FIXTURE(mfd, AssembleRandomTwoPointNormed) {
   //   delete Sref;
   //   // delete Atest;
   //   delete Stest;
-  }
-  
 }
+
 
