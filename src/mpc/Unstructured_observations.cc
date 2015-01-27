@@ -189,8 +189,6 @@ void Unstructured_observations::MakeObservations(State& state)
           }
         }
       } else { // all others need cells
-std::cout << var << std::endl;
-std::cout << (i->second).region << std::endl;
         mesh_block_size = state.GetMesh()->get_set_size((i->second).region,
                                                         Amanzi::AmanziMesh::CELL,
                                                         Amanzi::AmanziMesh::OWNED);    
