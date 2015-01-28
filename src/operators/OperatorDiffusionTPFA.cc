@@ -368,7 +368,6 @@ void OperatorDiffusionTPFA::AnalyticJacobian_(const CompositeVector& u)
   const Epetra_MultiVector& dKdP_cell = *dkdp_->ViewComponent("cell");
   const Epetra_MultiVector& dKdP_face = *dkdp_->ViewComponent("face", true);
 
-
   std::vector<int> flag(nfaces_owned, 0);
 
   for (int c = 0; c < ncells_owned; c++) {
