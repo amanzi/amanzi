@@ -81,12 +81,12 @@ class Operator {
 
   virtual void SymbolicAssembleMatrix(int schema, int nonstandard = 0);
   virtual void SymbolicAssembleMatrix(int schema, int nonstandard,
-          const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const;
+                                      const SuperMap& map, GraphFE& graph,
+                                      int my_block_row, int my_block_col) const;
   virtual void AssembleMatrix(int schema);
   virtual void AssembleMatrix(int schema,
-          const SuperMap& map, MatrixFE& matrix,
-          int my_block_row, int my_block_col) const;
+                              const SuperMap& map, MatrixFE& matrix,
+                              int my_block_row, int my_block_col) const;
 
   virtual void ApplyBCs(); 
   virtual int ComputeResidual(const CompositeVector& u, CompositeVector& r);

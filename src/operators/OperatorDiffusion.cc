@@ -751,8 +751,12 @@ void OperatorDiffusion::InitPreconditionerSpecialSff_(
   preconditioner_->Update(A_);
 }
 
-void OperatorDiffusion::AssemblePreconditionerSpecialSff_(const SuperMap& map,
-        MatrixFE& mat, int my_block_row, int my_block_col)
+
+/* ******************************************************************
+* TBW
+****************************************************************** */
+void OperatorDiffusion::AssemblePreconditionerSpecialSff_(
+    const SuperMap& map, MatrixFE& mat, int my_block_row, int my_block_col)
 {
   const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
   const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
@@ -809,6 +813,7 @@ void OperatorDiffusion::AssemblePreconditionerSpecialSff_(const SuperMap& map,
   ASSERT(!ierr);
 }
 
+
 /* ******************************************************************
 * Routine assembles the Schur complement for face-based degrees 
 * of freedom, Scc = Acc - Acf Aff^{-1} Afc. 
@@ -829,6 +834,9 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
 }
 
 
+/* ******************************************************************
+* TBW
+****************************************************************** */
 void OperatorDiffusion::AssemblePreconditionerSpecialScc_(
     const SuperMap& map, MatrixFE& mat, int my_block_row, int my_block_col)
 {

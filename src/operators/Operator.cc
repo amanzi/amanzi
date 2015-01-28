@@ -160,7 +160,7 @@ void Operator::SymbolicAssembleMatrix(int schema, int nonstandard)
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema, 1);
   Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
-          smap_->GhostedMap(), smap_->GhostedMap(), row_size));
+      smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 
   // fill the graph
   SymbolicAssembleMatrix(schema, nonstandard, *smap_, *graph, 0, 0);
@@ -316,6 +316,12 @@ void Operator::SymbolicAssembleMatrix(int schema, int nonstandard,
 ****************************************************************** */
 void Operator::AssembleMatrix(int schema)
 {
+  if (Amat_ == Teuchos::null) {
+    Errors::Message msg;
+    msg << "Symbolic assembling was not performed.";
+    Exceptions::amanzi_throw(msg);
+  }
+
   Amat_->Zero();
   AssembleMatrix(schema, *smap_, *Amat_, 0, 0);
   Amat_->FillComplete();
@@ -326,8 +332,9 @@ void Operator::AssembleMatrix(int schema)
 /* ******************************************************************
 * Assemble elemental face-based matrices into four global matrices. 
 ****************************************************************** */
-void Operator::AssembleMatrix(int schema, const SuperMap& map,
-        MatrixFE& mat, int my_block_row, int my_block_col) const
+void Operator::AssembleMatrix(
+    int schema, const SuperMap& map,
+    MatrixFE& mat, int my_block_row, int my_block_col) const
 {
   AmanziMesh::Entity_ID_List cells, faces, nodes;
   int lid_r[OPERATOR_MAX_NODES + 1];
@@ -335,15 +342,12 @@ void Operator::AssembleMatrix(int schema, const SuperMap& map,
   double values[OPERATOR_MAX_NODES + 1];
 
   int nblocks = blocks_.size();
-  for (int nb=0; nb!=nblocks; ++nb) {
+  for (int nb = 0; nb != nblocks; ++nb) {
     int subschema = blocks_schema_[nb] & schema;
     std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[nb];
 
     if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_CELL) {
-      // Element-based assembly on cells.
-
       if (subschema == OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
-
         // ELEMENT: cell, DOFS: face and cell
         const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
         const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
@@ -385,7 +389,6 @@ void Operator::AssembleMatrix(int schema, const SuperMap& map,
         }
         ASSERT(!ierr);
 
-        
       } else if (subschema == OPERATOR_SCHEMA_DOFS_NODE) {
         // ELEMENT: cell, DOFS: node
         const std::vector<int>& node_row_inds = map.GhostIndices("node", my_block_row);
@@ -407,10 +410,8 @@ void Operator::AssembleMatrix(int schema, const SuperMap& map,
       }
 
     } else if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_FACE) {
-      // element loop over faces
-
+      // ELEMENT: face, DOFS: cell
       if (subschema == OPERATOR_SCHEMA_DOFS_CELL) {
-        // ELEMENT: face, DOF: cell
         const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
         const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
 
@@ -461,7 +462,6 @@ void Operator::AssembleMatrix(int schema, const SuperMap& map,
       ierr |= mat.SumIntoMyValues(node_row_inds[v], 1, &diag[0][v], &node_col_inds[v]);
     ASSERT(!ierr);
   }
-
 }
 
 

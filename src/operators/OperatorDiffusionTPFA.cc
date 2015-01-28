@@ -107,7 +107,6 @@ void OperatorDiffusionTPFA::UpdateMatrices(Teuchos::RCP<const CompositeVector> f
       matrix.push_back(Aface);
       matrix_shadow.push_back(null_matrix);
     }
-    
   }
 
   // populating right-hand side

@@ -32,12 +32,12 @@ class BCs;
 
 class OperatorDiffusionTPFA : public OperatorDiffusion {
  public:
-  OperatorDiffusionTPFA() {};
+  OperatorDiffusionTPFA() { g_.set(mesh_->space_dimension(), 0.0); }
   OperatorDiffusionTPFA(Teuchos::RCP<const CompositeVectorSpace> cvs, 
                         Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc) 
-      : OperatorDiffusion(cvs, plist, bc) {};
+      : OperatorDiffusion(cvs, plist, bc) { g_.set(mesh_->space_dimension(), 0.0); }
   OperatorDiffusionTPFA(const Operator& op, Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc) 
-      : OperatorDiffusion(op, plist, bc) {};
+      : OperatorDiffusion(op, plist, bc) { g_.set(mesh_->space_dimension(), 0.0); }
   ~OperatorDiffusionTPFA() {};
 
   // re-implementation of basic operator virtual members

@@ -60,9 +60,9 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_MFD) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
+  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, gm);
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
   std::vector<WhetStone::Tensor> K;
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -184,7 +184,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
+  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, gm);
 
   /* modify diffusion coefficient */
   std::vector<WhetStone::Tensor> K;
@@ -236,11 +236,11 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
     uf[0][f] = vel * mesh->face_normal(f);
   }
  
-  // temporary arrays 
+  // temporary data for TPFA
   Teuchos::RCP<CompositeVector> k = Teuchos::rcp(new CompositeVector(*cvs_tmp, true));
   Teuchos::RCP<CompositeVector> dkdp = Teuchos::rcp(new CompositeVector(*cvs_tmp, true));
   k->PutScalar(1.0);
-  dkdp->PutScalar(0.0);
+  dkdp->PutScalar(1.0);
 
   Teuchos::RCP<CompositeVector> p = Teuchos::rcp(new CompositeVector(*cvs, true));
   p->PutScalar(0.0);
@@ -258,6 +258,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
                                       .get<Teuchos::ParameterList>("diffusion operator fv");
 
   Teuchos::RCP<OperatorDiffusionTPFA> op2 = Teuchos::rcp(new OperatorDiffusionTPFA(*op1, olist, bc));
+  op2->SetUpwind(OPERATOR_UPWIND_NONE);
   op2->Setup(K, k, dkdp, rho, mu);
   op2->UpdateMatrices(Teuchos::null, p);
   op2->ApplyBCs();
@@ -269,6 +270,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   // make reverse assembling: diffusion + advection
   Teuchos::RCP<OperatorDiffusionTPFA> op3 = Teuchos::rcp(new OperatorDiffusionTPFA(cvs, olist, bc));
   op3->Init();
+  op3->SetUpwind(OPERATOR_UPWIND_NONE);
   op3->Setup(K, k, dkdp, rho, mu);
   op3->UpdateMatrices(Teuchos::null, p);
 
@@ -282,7 +284,6 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   op4->AssembleMatrix(schema_dofs); 
 
   // compare matrices
-  /*
   int n, nrows = op2->A()->NumMyRows();
 
   for (int i = 0; i < nrows; ++i) {
@@ -291,5 +292,4 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
     op4->A()->ExtractMyRowView(i, n, val4); 
     for (int k = 0; k < n; ++k) CHECK_CLOSE(val2[k], val4[k], 1e-10);
   }
-  */
 }
