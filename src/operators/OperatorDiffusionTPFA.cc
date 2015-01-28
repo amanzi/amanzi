@@ -217,18 +217,12 @@ int OperatorDiffusionTPFA::ComputeNegativeResidual(const CompositeVector& u, Com
   Epetra_MultiVector& rc = *r.ViewComponent("cell");
 
   // find location of matrix blocks
+  /*
   int schema_my = OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL;
   int m = FindMatrixBlock(schema_my, OPERATOR_SCHEMA_RULE_EXACT, false);
-  bool flag = (m >= 0);
-
-  if (flag == false) { 
-    m = blocks_.size();
-    blocks_schema_.push_back(OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL);
-    blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
-    blocks_shadow_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
-  }
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
+  */
 
   const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
   const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
