@@ -406,6 +406,8 @@ void OperatorDiffusionTPFA::ComputeJacobianLocal_(
     } else if (Krel_method == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
       dKrel_dp[0] = 0.5 * dkdp_cell[0];
       dKrel_dp[1] = 0.5 * dkdp_cell[1];
+    } else {
+      ASSERT(0);
     }
 
     Jpp(0, 0) = ((*transmissibility_)[f] * dpres + face_dir * (*gravity_term_)[f]) * dKrel_dp[0];

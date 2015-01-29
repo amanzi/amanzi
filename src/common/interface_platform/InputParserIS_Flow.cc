@@ -19,6 +19,7 @@ namespace AmanziInput {
 ****************************************************************** */
 Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* plist)
 {
+  Teuchos::OSTab tab = vo_->getOSTab();
   Teuchos::ParameterList flw_list;
 
   if (plist->isSublist("Execution Control")) {
@@ -67,7 +68,12 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
       // discretization method must be two-point flux approximation for if newton is used
       if (nonlinear_solver == std::string("Newton") || nonlinear_solver == std::string("inexact Newton")) {
         disc_method = std::string("FV: Default");
+        rel_perm = std::string("Upwind: Darcy Velocity");
 	update_upwind = std::string("every nonlinear iteration");	
+        if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+          *vo_->os() << vo_->color("yellow") << "Newton enforces: \"Upwind: Darcy Velocity\" and \"FV: Default\"" 
+                     << vo_->reset() << std::endl;
+        }
       }
 
       if (flow_model == "Single Phase" || flow_model == "Richards") {
