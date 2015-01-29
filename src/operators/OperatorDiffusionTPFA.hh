@@ -33,11 +33,9 @@ class BCs;
 class OperatorDiffusionTPFA : public OperatorDiffusion {
  public:
   OperatorDiffusionTPFA() { g_.set(mesh_->space_dimension(), 0.0); }
-  OperatorDiffusionTPFA(Teuchos::RCP<const CompositeVectorSpace> cvs, 
-                        Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc) 
-      : OperatorDiffusion(cvs, plist, bc) { g_.set(mesh_->space_dimension(), 0.0); }
-  OperatorDiffusionTPFA(const Operator& op, Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc) 
-      : OperatorDiffusion(op, plist, bc) { g_.set(mesh_->space_dimension(), 0.0); }
+  OperatorDiffusionTPFA(Teuchos::RCP<const CompositeVectorSpace> cvs,
+                        Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc);
+  OperatorDiffusionTPFA(const Operator& op, Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc);
   ~OperatorDiffusionTPFA() {};
 
   // re-implementation of basic operator virtual members
@@ -77,6 +75,8 @@ class OperatorDiffusionTPFA : public OperatorDiffusion {
   AmanziGeometry::Point g_;
   Teuchos::RCP<Epetra_Vector> transmissibility_;
   Teuchos::RCP<Epetra_Vector> gravity_term_;
+
+  Teuchos::ParameterList vlist_;
 };
 
 }  // namespace Operators

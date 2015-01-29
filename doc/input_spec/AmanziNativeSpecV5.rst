@@ -1,6 +1,6 @@
-========================================
-Amanzi Native XML Input Specification V5
-========================================
+==========================================
+Amanzi-U Native XML Input Specification V5
+==========================================
 
 .. contents:: **Table of Contents**
 
@@ -28,6 +28,10 @@ Changes V4 -> V5
 * More clear naming of discretization and upwind options.
 
 * Added more details on creating and populating data for Amanzi's chemistry kernel.
+
+* Enriched operators' interface.
+
+* Added description of field evaluators.
 
 
 ParameterList XML

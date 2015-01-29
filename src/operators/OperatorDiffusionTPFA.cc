@@ -29,6 +29,28 @@ namespace Operators {
 #define DEBUG_FLAG 0
 
 /* ******************************************************************
+* Constructors. 
+****************************************************************** */
+OperatorDiffusionTPFA::OperatorDiffusionTPFA(
+    Teuchos::RCP<const CompositeVectorSpace> cvs, 
+    Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc)
+    : OperatorDiffusion(cvs, plist, bc)
+{
+  g_.set(mesh_->space_dimension(), 0.0);
+  vlist_ = plist.sublist("VerboseObject");
+}
+
+
+OperatorDiffusionTPFA::OperatorDiffusionTPFA(
+    const Operator& op, Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc)
+    : OperatorDiffusion(op, plist, bc) 
+{ 
+  g_.set(mesh_->space_dimension(), 0.0); 
+  vlist_ = plist.sublist("VerboseObject");
+}
+
+
+/* ******************************************************************
 * Constructor.                                           
 ****************************************************************** */
 void OperatorDiffusionTPFA::Setup(
@@ -191,8 +213,7 @@ int OperatorDiffusionTPFA::ApplyInverse(const CompositeVector& X, CompositeVecto
   pre_list.set<std::string>("iterative method", "gmres");
   slist.set<double>("error tolerance", 1e-7);
   slist.set<int>("maximum number of iterations", 50);
-  Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");
-  vlist.set("Verbosity Level", "high");
+  slist.sublist("VerboseObject") = vlist_;
 
   // delegating preconditioning to the base operator
   Teuchos::RCP<const OperatorDiffusionTPFA> op_matrix = Teuchos::rcp(this, false);
