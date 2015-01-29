@@ -444,17 +444,14 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D) {
     const Epetra_Map& fmap = mesh->face_map(true);
     Teuchos::RCP<Epetra_MultiVector> flux = Teuchos::rcp(new Epetra_MultiVector(fmap, 1));
 
-    int dir;
     int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
     int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
     AmanziGeometry::Point velocity(1.0, 2.0), center(0.5, 0.5);
-    Amanzi::AmanziMesh::Entity_ID_List cells;
 
     for (int f = 0; f < nfaces_wghost; f++) {
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
       velocity = center - xf;
-      mesh->face_get_cells(f, Amanzi::AmanziMesh::USED, &cells);
-      const AmanziGeometry::Point& normal = mesh->face_normal(f, false, cells[0], &dir);
+      const AmanziGeometry::Point& normal = mesh->face_normal(f);
       (*flux)[0][f] = (velocity * normal) / mesh->face_area(f);
     }
 
@@ -578,17 +575,14 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_3D) {
     const Epetra_Map& fmap = mesh->face_map(true);
     Teuchos::RCP<Epetra_MultiVector> flux = Teuchos::rcp(new Epetra_MultiVector(fmap, 1));
 
-    int dir;
     int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
     int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
     AmanziGeometry::Point velocity(3), center(0.5, 0.5, 0.5);
-    Amanzi::AmanziMesh::Entity_ID_List cells;
 
     for (int f = 0; f < nfaces_wghost; f++) {
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
       velocity = center - xf;
-      mesh->face_get_cells(f, Amanzi::AmanziMesh::USED, &cells);
-      const AmanziGeometry::Point& normal = mesh->face_normal(f, false, cells[0], &dir);
+      const AmanziGeometry::Point& normal = mesh->face_normal(f);
       (*flux)[0][f] = (velocity * normal) / mesh->face_area(f);
     }
 

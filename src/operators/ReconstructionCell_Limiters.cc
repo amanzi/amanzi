@@ -59,7 +59,7 @@ void ReconstructionCell::LimiterTensorial_(
 
     normals.clear();  // normals to planes that define a feasiable set
     for (int loop = 0; loop < 2; loop++) {
-      for (int i = 0; i < nfaces; i++) {
+      for (int i = 0; i < nfaces; ++i) {
         int f = faces[i];
         int c1 = upwind_cell_[f];
         int c2 = downwind_cell_[f];
@@ -68,8 +68,8 @@ void ReconstructionCell::LimiterTensorial_(
           u1 = (*field_)[0][c];
           u2 = (*field_)[0][c1 + c2 - c];
         } else if (c1 == c) {
-          u1 = u2 = (*field_)[0][c1];
-        } else {
+          u1 = u2 = (*field_)[0][c];
+        } else {  // limiting on upwind face is done separately.
           continue;
         }
         umin = std::min(u1, u2);
@@ -86,6 +86,7 @@ void ReconstructionCell::LimiterTensorial_(
           // p = ((umin - u1) / sqrt(L22normal_new)) * direction;
           p = ((umin - u1) / sqrt(L22normal_new)) * normal_new;
           ApplyDirectionalLimiter_(normal_new, p, direction, gradient_c1);
+
         } else if (u1f > umax) {
           normal_new = xcf - xc;
           CalculateDescentDirection_(normals, normal_new, L22normal_new, direction);
