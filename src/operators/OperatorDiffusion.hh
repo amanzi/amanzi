@@ -96,6 +96,7 @@ class OperatorDiffusion : public Operator {
   int schema_base_, schema_dofs_, schema_;
   int schema_prec_dofs_;
   mutable int special_assembling_;
+  int newton_correction_;
 
   double factor_;
 

@@ -1164,6 +1164,15 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
     Exceptions::amanzi_throw(msg);
   }
 
+  // Do we ned to calculate Newton correction terms?
+  newton_correction_ = 0;
+  std::string jacobian = plist.get<std::string>("newton correction", "none");
+  if (jacobian == "true jacobian") {
+    newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
+  } else if (jacobian == "approximate jacobian") {
+    newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
+  }
+
   // Define other parameters.
   schema_ = schema_base_ + schema_dofs_;
   factor_ = 1.0;

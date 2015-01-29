@@ -751,6 +751,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
           <Parameter name="gravity" type="bool" value="true"/>
+          <Parameter name="newton correction" type="string" value="approximate jacobian"/>
           <!--Parameter name="upwind method" type="string" value="standard"/-->  <!--redefined internally-->
         </ParameterList>
 
@@ -1738,6 +1739,10 @@ Diffusion operator
     Available options are `"standard`" (default), `"divk`", `"artificial diffusion`",
     `"second-order`", and `"none`".
 
+  * `"newton correction`" [string] specifies a model for non-physical terms 
+    that must be added to the matrix. These terms represent Jacobian and are needed 
+    for the preconditoner. Available options are `"true jacobian`" and `"approximate jacobian`".
+
 .. code-block:: xml
 
     <ParameterList name="OPERATOR_NAME">
@@ -1747,6 +1752,7 @@ Diffusion operator
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
       <Parameter name="gravity" type="bool" value="true"/>
       <Parameter name="upwind method" type="string" value="standard"/>
+      <Parameter name="newton correction" type="string" value="true jacobian"/>
     </ParameterList>
 
 This example creates a p-lambda system, i.e. the pressure is

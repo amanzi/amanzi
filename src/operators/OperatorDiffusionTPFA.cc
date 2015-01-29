@@ -124,7 +124,9 @@ void OperatorDiffusionTPFA::UpdateMatrices(Teuchos::RCP<const CompositeVector> f
   }
 
   // Add derivatives to the matrix (Jacobian in this case)
-  AnalyticJacobian_(*p);
+  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE) {
+    AnalyticJacobian_(*p);
+  }
 }
 
 
@@ -202,69 +204,6 @@ int OperatorDiffusionTPFA::ApplyInverse(const CompositeVector& X, CompositeVecto
 
   Y.PutScalar(0.0);
   int ierr = solver->ApplyInverse(X, Y);
-
-  return 0;
-}
-
-
-/* ******************************************************************
-* Linear algebra operations with matrices: r = A * u - f                                                 
-****************************************************************** */
-int OperatorDiffusionTPFA::ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r)
-{
-  const Epetra_MultiVector& k_face = *k_->ViewComponent("face", true);
-  const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
-  Epetra_MultiVector& rc = *r.ViewComponent("cell");
-
-  // find location of matrix blocks
-  /*
-  int schema_my = OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL;
-  int m = FindMatrixBlock(schema_my, OPERATOR_SCHEMA_RULE_EXACT, false);
-  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
-  std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
-  */
-
-  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
-  const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
-
-  AmanziMesh::Entity_ID_List cells;
-
-  // matvec product A*u
-  u.ScatterMasterToGhosted("cell");
-
-  r.PutScalar(0.0);
-
-  for (int f = 0; f < nfaces_wghost; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    int ncells = cells.size();
-
-    if (ncells == 2) {
-      int c1 = cells[0];
-      int c2 = cells[1];
-
-      double tmp = k_face[0][f] * (*transmissibility_)[f] * (uc[0][c1] - uc[0][c2]);  
-      if (c1 < ncells_owned) rc[0][c1] += tmp; 
-      if (c2 < ncells_owned) rc[0][c2] -= tmp; 
-    } else {
-
-      int c = cells[0];
-      double tmp = 0;
-
-      if (bc_model[f] != Operators::OPERATOR_BC_NEUMANN) {
-	tmp = k_face[0][f] * (*transmissibility_)[f] * uc[0][c];    
-      }
-      //double tmp = matrix[f](0,0) * uc[0][c];
-
-      if (c < ncells_owned) rc[0][c] += tmp;
-    }							
-  } 
-  
-  // right-hand side
-  Epetra_MultiVector& rhs_cell = *rhs_->ViewComponent("cell");
-
-  for (int c = 0; c < ncells_owned; c++) {    
-    rc[0][c] -= rhs_cell[0][c];   
-  }
 
   return 0;
 }

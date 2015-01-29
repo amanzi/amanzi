@@ -992,7 +992,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(
     tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
     tmp_list.set<bool>("gravity", true);
   }
-  else{
+  else {
     Teuchos::Array<std::string> stensil(1);
     stensil[0] = "cell";
     tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
@@ -1001,8 +1001,12 @@ Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(
     tmp_list.set<bool>("gravity", true);
   }
 
+  // create two operators for matrix and preconditioner
   op_list.sublist("diffusion operator").sublist("matrix") = tmp_list;
   op_list.sublist("diffusion operator").sublist("preconditioner") = tmp_list;
+
+  op_list.sublist("diffusion operator").sublist("preconditioner")
+      .set<std::string>("newton correction", "true jacobian");
 
   Teuchos::ParameterList& upw_list = op_list.sublist("diffusion operator").sublist("upwind");
   if (rel_perm == "Upwind: Amanzi") {
