@@ -21,8 +21,8 @@ class WRMFPDSmoothedPermafrostModel : public WRMPermafrostModel {
 
  public:
   explicit
-  WRMFPDSmoothedPermafrostModel(Teuchos::ParameterList& plist) :
-      WRMPermafrostModel(plist) {}
+  WRMFPDSmoothedPermafrostModel(Teuchos::ParameterList& plist); // :
+  //    WRMPermafrostModel(plist) {}
 
   // required methods from the base class
   // sats[0] = sg, sats[1] = sl, sats[2] = si
@@ -41,6 +41,9 @@ class WRMFPDSmoothedPermafrostModel : public WRMPermafrostModel {
  private:
   // factory registration
   static Utils::RegisteredFactory<WRMPermafrostModel,WRMFPDSmoothedPermafrostModel> factory_;
+  double T0_; 
+  double delT_; 
+  double gamma_; 
 
 };
 
