@@ -44,12 +44,12 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
         trp_list.set<int>("temporal discretization order", 1);
         trp_list.set<double>("cfl", cfl);
         trp_list.set<std::string>("flow mode", "transient");
-        trp_list.set<std::string>("advection limiter", "tensorial");
 
         trp_list.set<std::string>("solver", "PCG with Hypre AMG");
         trp_list.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
         trp_list.set<std::string>("enable internal tests", "no");
 
+        int poly_order(0);
         if (exe_list.isSublist("Numerical Control Parameters")) {
           Teuchos::ParameterList& ncp_list = exe_list.sublist("Numerical Control Parameters");
           if (ncp_list.isSublist("Unstructured Algorithm")) {
@@ -65,11 +65,17 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
                 } else if (tia == "Explicit Second-Order") {
                   trp_list.set<int>("spatial discretization order", 2);
                   trp_list.set<int>("temporal discretization order", 2);
+                  poly_order = 1;
                 }
               }
             }
           }
         }
+
+        Teuchos::ParameterList& trp_lift = trp_list.sublist("reconstruction");
+        trp_lift.set<int>("polynomial order", poly_order);
+        trp_lift.set<std::string>("limiter", "tensorial");
+        trp_lift.set<bool>("limiter extension for transport", true);
 
         // now write the dispersion lists if needed
         if (need_dispersion_) {

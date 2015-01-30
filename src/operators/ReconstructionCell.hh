@@ -86,6 +86,16 @@ class ReconstructionCell : public Reconstruction {
 
   void IdentifyUpwindCells_();
 
+  void LimiterExtensionTransportTensorial_(
+      const std::vector<double>& field_local_min, const std::vector<double>& field_local_max);
+
+  void LimiterExtensionTransportKuzmin_(
+      const std::vector<double>& field_local_min, const std::vector<double>& field_local_max);
+
+  void LimiterExtensionTransportBarthJespersen_(
+      const std::vector<double>& field_local_min, const std::vector<double>& field_local_max,
+      Teuchos::RCP<Epetra_Vector> limiter);
+
  private:
   int dim;
   int ncells_owned, nfaces_owned, nnodes_owned;
@@ -98,7 +108,8 @@ class ReconstructionCell : public Reconstruction {
   std::vector<int> upwind_cell_, downwind_cell_;
 
   double bc_scaling_;
-  int limiter_id_;
+  int limiter_id_, poly_order_;
+  bool limiter_correction_;
 };
 
 }  // namespace Operators

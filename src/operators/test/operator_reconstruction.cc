@@ -28,6 +28,53 @@
 
 const std::string LIMITERS[3] = {"B-J", "Tensorial", "Kuzmin"};
 
+void GradientError(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
+                   Epetra_MultiVector& grad_err, Epetra_MultiVector& grad,
+                   double& err_int, double& err_glb)
+{
+  int dim = mesh->space_dimension();
+  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
+  int nfaces_owned = mesh->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED);
+  std::vector<int> flag(ncells_owned, 0);
+
+  Amanzi::AmanziMesh::Entity_ID_List cells;
+  double norm(0.0), err_bnd(0.0);
+
+  err_bnd = 0.0;
+  for (int f = 0; f < nfaces_owned; ++f) {
+    mesh->face_get_cells(f, Amanzi::AmanziMesh::USED, &cells);
+    int c = cells[0];
+    if (cells.size() == 1 && flag[c] == 0) {
+      for (int i = 0; i < dim; ++i) {
+        err_bnd += pow(grad_err[i][c], 2.0);
+      }
+      flag[c] = 1;
+    }
+  }
+
+  err_glb = 0.0;
+  for (int c = 0; c < ncells_owned; ++c) {
+    for (int i = 0; i < dim; ++i) {
+      err_glb += pow(grad_err[i][c], 2.0);
+      norm += pow(grad[i][c], 2.0);
+    }
+  }
+  err_int = err_glb - err_bnd;
+
+#ifdef HAVE_MPI
+    double tmp = err_int;
+    mesh->get_comm()->SumAll(&tmp, &err_int, 1);
+    tmp = err_glb;
+    mesh->get_comm()->SumAll(&tmp, &err_glb, 1);
+    tmp = norm;
+    mesh->get_comm()->SumAll(&tmp, &norm, 1);
+#endif
+
+  err_int = pow(err_int / norm, 0.5);
+  err_glb = pow(err_glb / norm, 0.5);
+}
+
+
 /* *****************************************************************
 * Exactness on linear functions in two dimensions
 ***************************************************************** */
@@ -71,21 +118,23 @@ TEST(RECONSTRUCTION_LINEAR_2D) {
 
   // Compute reconstruction
   Teuchos::ParameterList plist;
+  plist.set<std::string>("limiter", "tensorial");
+  plist.set<int>("polynomial_order", 1);
+  plist.set<bool>("limiter extension for transport", false);
+
   ReconstructionCell lifting(mesh);
   lifting.Init(field, plist);
   lifting.Compute(); 
 
   // calculate gradient error
-  const Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
-  int ierr = grad_exact.Update(-1.0, grad_computed, 1.0);
-  CHECK(!ierr);
+  Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
+  grad_computed.Update(-1.0, grad_exact, 1.0);
 
-  double error[2];
-  grad_exact.Norm2(error);
-  CHECK_CLOSE(0.0, error[0], 1.0e-12);
-  CHECK_CLOSE(0.0, error[1], 1.0e-12);
-  
-  if (MyPID == 0) printf("errors: %8.4f %8.4f\n", error[0], error[1]);
+  double err_int, err_glb;
+  GradientError(mesh, grad_computed, grad_exact, err_int, err_glb);
+  CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
+
+  if (MyPID == 0) printf("errors (interior & global): %8.4f %8.4f\n", err_int, err_glb);
 }
 
 
@@ -133,22 +182,23 @@ TEST(RECONSTRUCTION_LINEAR_3D) {
 
   // Compute reconstruction
   Teuchos::ParameterList plist;
+  plist.set<std::string>("limiter", "tensorial");
+  plist.set<int>("polynomial_order", 1);
+  plist.set<bool>("limiter extension for transport", false);
+
   ReconstructionCell lifting(mesh);
   lifting.Init(field, plist);
   lifting.Compute(); 
 
   // calculate gradient error
-  const Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
-  int ierr = grad_exact.Update(-1.0, grad_computed, 1.0);
-  CHECK(!ierr);
+  Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
+  grad_computed.Update(-1.0, grad_exact, 1.0);
 
-  double error[3];
-  grad_exact.Norm2(error);
-  CHECK_CLOSE(0.0, error[0], 1.0e-12);
-  CHECK_CLOSE(0.0, error[1], 1.0e-12);
-  CHECK_CLOSE(0.0, error[3], 1.0e-12);
-  
-  if (MyPID == 0) printf("errors: %8.4f %8.4f %8.4f\n", error[0], error[1], error[2]);
+  double err_int, err_glb;
+  GradientError(mesh, grad_computed, grad_exact, err_int, err_glb);
+  CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
+
+  if (MyPID == 0) printf("errors (interior & global): %8.4f %8.4f\n", err_int, err_glb);
 }
 
 
@@ -213,6 +263,9 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_2D) {
     std::vector<int> bc_model;
     std::vector<double> bc_value;
     Teuchos::ParameterList plist;
+    plist.set<int>("polynomial_order", 1);
+    plist.set<bool>("limiter extension for transport", false);
+
     if (i == 0) {
       plist.set<std::string>("limiter", "Barth-Jespersen");
     } else if (i == 1) {
@@ -259,15 +312,14 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_2D) {
 
     // calculate gradient error
     Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
-    int ierr = grad_computed.Update(-1.0, grad_exact, 1.0);
+    grad_computed.Update(-1.0, grad_exact, 1.0);
 
-    double error[2];
-    grad_computed.Norm2(error);
-    CHECK_CLOSE(0.0, error[0], 1.0e-12);
-    CHECK_CLOSE(0.0, error[1], 1.0e-12);
-  
+    double err_int, err_glb;
+    GradientError(mesh, grad_computed, grad_exact, err_int, err_glb);
+    CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
+
     if (MyPID == 0)
-        printf("%9s: errors: %8.4f %8.4f\n", LIMITERS[i].c_str(), error[0], error[1]);
+        printf("%9s: errors: %8.4f %8.4f\n", LIMITERS[i].c_str(), err_int, err_glb);
   }
 }
 
@@ -334,6 +386,9 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_3D) {
     std::vector<int> bc_model;
     std::vector<double> bc_value;
     Teuchos::ParameterList plist;
+    plist.set<int>("polynomial_order", 1);
+    plist.set<bool>("limiter extension for transport", false);
+
     if (i == 0) {
       plist.set<std::string>("limiter", "Barth-Jespersen");
     } else if (i == 1) {
@@ -382,16 +437,14 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_3D) {
 
     // calculate gradient error
     Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
-    int ierr = grad_computed.Update(-1.0, grad_exact, 1.0);
+    grad_computed.Update(-1.0, grad_exact, 1.0);
 
-    double error[3];
-    grad_computed.Norm2(error);
-    CHECK_CLOSE(0.0, error[0], 1.0e-12);
-    CHECK_CLOSE(0.0, error[1], 1.0e-12);
-    CHECK_CLOSE(0.0, error[2], 1.0e-12);
-  
+    double err_int, err_glb;
+    GradientError(mesh, grad_computed, grad_exact, err_int, err_glb);
+    CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
+
     if (MyPID == 0)
-        printf("%9s: errors: %8.4f %8.4f %8.4f\n", LIMITERS[i].c_str(), error[0], error[1], error[2]);
+        printf("%9s: errors: %8.4f %8.4f\n", LIMITERS[i].c_str(), err_int, err_glb);
   }
 }
 
@@ -459,6 +512,9 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D) {
       std::vector<int> bc_model;
       std::vector<double> bc_value;
       Teuchos::ParameterList plist;
+      plist.set<int>("polynomial_order", 1);
+      plist.set<bool>("limiter extension for transport", false);
+
       if (i == 0) {
         plist.set<std::string>("limiter", "Barth-Jespersen");
       } else if (i == 1) {
@@ -507,20 +563,15 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D) {
 
       // calculate gradient error
       Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
-      int ierr = grad_computed.Update(-1.0, grad_exact, 1.0);
-      CHECK(!ierr);
+      grad_computed.Update(-1.0, grad_exact, 1.0);
 
-      double error[2], norms[2];
-      grad_computed.Norm2(error);
-      grad_exact.Norm2(norms);
+      double err_int, err_glb;
+      GradientError(mesh, grad_computed, grad_exact, err_int, err_glb);
 
-      error[0] /= norms[0];
-      error[1] /= norms[1];
-      CHECK(error[0] < 1.0 / n);
-      CHECK(error[1] < 1.0 / n);
-  
       if (MyPID == 0)
-          printf("%9s: rel errors: %10.6f %10.6f\n", LIMITERS[i].c_str(), error[0], error[1]);
+          printf("%9s: rel errors: %9.5f %9.5f\n", LIMITERS[i].c_str(), err_int, err_glb);
+
+      CHECK(err_int + err_glb < 1.0 / n);
     }
   }
 }
@@ -590,6 +641,9 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_3D) {
       std::vector<int> bc_model;
       std::vector<double> bc_value;
       Teuchos::ParameterList plist;
+      plist.set<int>("polynomial_order", 1);
+      plist.set<bool>("limiter extension for transport", false);
+
       if (i == 0) {
         plist.set<std::string>("limiter", "Barth-Jespersen");
       } else if (i == 1) {
@@ -640,23 +694,15 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_3D) {
 
       // calculate gradient error
       Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
-      int ierr = grad_computed.Update(-1.0, grad_exact, 1.0);
-      CHECK(!ierr);
+      grad_computed.Update(-1.0, grad_exact, 1.0);
 
-      double error[3], norms[3];
-      grad_computed.Norm2(error);
-      grad_exact.Norm2(norms);
+      double err_int, err_glb;
+      GradientError(mesh, grad_computed, grad_exact, err_int, err_glb);
 
-      double norm = std::pow(norms[0] * norms[0] + norms[1] * norms[1] + norms[2] * norms[2], 0.5);
-      error[0] /= norm;
-      error[1] /= norm;
-      error[2] /= norm;
-      CHECK(error[0] < 1.0 / n);
-      CHECK(error[1] < 1.0 / n);
-      CHECK(error[2] < 1.0 / n);
-  
       if (MyPID == 0)
-          printf("%9s: rel errors: %10.6f %10.6f %10.6f\n", LIMITERS[i].c_str(), error[0], error[1], error[2]);
+          printf("%9s: rel errors: %9.5f %9.5f\n", LIMITERS[i].c_str(), err_int, err_glb);
+
+      CHECK(err_int + err_glb < 1.0 / n);
     }
   }
 }
@@ -727,6 +773,9 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D_POLYMESH) {
     std::vector<int> bc_model;
     std::vector<double> bc_value;
     Teuchos::ParameterList plist;
+    plist.set<int>("polynomial_order", 1);
+    plist.set<bool>("limiter extension for transport", false);
+
     if (i == 0) {
       plist.set<std::string>("limiter", "Barth-Jespersen");
     } else if (i == 1) {
@@ -777,15 +826,11 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D_POLYMESH) {
     Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
     grad_computed.Update(-1.0, grad_exact, 1.0);
 
-    double error[2], norms[2];
-    grad_computed.Norm2(error);
-    grad_exact.Norm2(norms);
+    double err_int, err_glb;
+    GradientError(mesh, grad_computed, grad_exact, err_int, err_glb);
 
-    error[0] /= norms[0];
-    error[1] /= norms[1];
-  
     if (MyPID == 0)
-        printf("%9s: rel errors: %10.6f %10.6f\n", LIMITERS[i].c_str(), error[0], error[1]);
+        printf("%9s: rel errors: %9.5f %9.5f\n", LIMITERS[i].c_str(), err_int, err_glb);
   }
 }
 

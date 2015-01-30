@@ -158,6 +158,27 @@ void ReconstructionCell::LimiterTensorial_(
   }
 
   // Step 3: enforcing a priori time step estimate (division of dT by 2).
+  if (limiter_correction_) {
+    LimiterExtensionTransportTensorial_(field_local_min, field_local_max);
+  }    
+
+  gradient_->ScatterMasterToGhosted("cell");
+}
+
+
+/* *******************************************************************
+* Extension of the tensorial limiter. Routine changes gradient to 
+* satisfy an a prioty estimate of the stable time step. That estimate
+* assumes that the weigthed flux is smaller that the first-order flux.
+******************************************************************* */
+void ReconstructionCell::LimiterExtensionTransportTensorial_(
+    const std::vector<double>& field_local_min, const std::vector<double>& field_local_max)
+{
+  double u1f, u1;
+  AmanziMesh::Entity_ID_List faces;
+
+  Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
+
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
@@ -195,8 +216,6 @@ void ReconstructionCell::LimiterTensorial_(
       for (int i = 0; i < dim; i++) grad[i][c] *= psi;
     }
   }
-
-  gradient_->ScatterMasterToGhosted("cell");
 }
 
 
@@ -306,7 +325,28 @@ void ReconstructionCell::LimiterBarthJespersen_(
   }
 
   // Step 3: enforcing a priori time step estimate (division of dT by 2).
+  if (limiter_correction_) {
+    LimiterExtensionTransportBarthJespersen_(field_local_min, field_local_max, limiter);
+  }    
+
+  gradient_->ScatterMasterToGhosted("cell");
+}
+
+
+/* *******************************************************************
+* Extension of Barth-JEspersen's limiter. Routine changes gradient to 
+* satisfy an a prioty estimate of the stable time step. That estimate
+* assumes that the weigthed flux is smaller that the first-order flux.
+******************************************************************* */
+void ReconstructionCell::LimiterExtensionTransportBarthJespersen_(
+    const std::vector<double>& field_local_min, const std::vector<double>& field_local_max,
+    Teuchos::RCP<Epetra_Vector> limiter)
+{
+  double u1, u1f;
+  AmanziGeometry::Point gradient_c1(dim);
   AmanziMesh::Entity_ID_List faces;
+
+  Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
 
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -347,8 +387,6 @@ void ReconstructionCell::LimiterBarthJespersen_(
       (*limiter)[c] *= psi;
     }
   }
-
-  gradient_->ScatterMasterToGhosted("cell");
 }
 
 
@@ -475,7 +513,27 @@ void ReconstructionCell::LimiterKuzmin_(
 
   // Step 4: enforcing a priori time step estimate (division of dT by 2).
   // Experimental version is limited to 2D (lipnikov@lanl.gov).
-  AmanziMesh::Entity_ID_List faces;
+  if (limiter_correction_) {
+    LimiterExtensionTransportKuzmin_(field_local_min, field_local_max);
+  }    
+
+  gradient_->ScatterMasterToGhosted("cell");
+}
+
+
+/* *******************************************************************
+* Extension of Kuzmin's limiter. Routine changes gradient to 
+* satisfy an a prioty estimate of the stable time step. That estimate
+* assumes that the weigthed flux is smaller that the first-order flux.
+******************************************************************* */
+void ReconstructionCell::LimiterExtensionTransportKuzmin_(
+    const std::vector<double>& field_local_min, const std::vector<double>& field_local_max)
+{
+  double u1, up;
+  AmanziGeometry::Point xp(dim);
+  AmanziMesh::Entity_ID_List faces, nodes;
+
+  Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
@@ -521,8 +579,6 @@ void ReconstructionCell::LimiterKuzmin_(
       for (int i = 0; i < dim; i++) (*grad)[i][c] *= psi;
     }
   }
-
-  gradient_->ScatterMasterToGhosted("cell");
 }
 
 
