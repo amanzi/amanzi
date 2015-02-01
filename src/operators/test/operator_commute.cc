@@ -69,7 +69,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_MFD) {
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
-    Kc(0, 0) = 1.0;
+    Kc(0, 0) = 0.01;
     K.push_back(Kc);
   }
   double rho(1.0), mu(1.0);
@@ -97,11 +97,16 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_MFD) {
   cvs->SetOwned(false);
   cvs->AddComponent("face", AmanziMesh::FACE, 1);
 
+  Teuchos::RCP<CompositeVector> k = Teuchos::rcp(new CompositeVector(*cvs, true));
+  Teuchos::RCP<CompositeVector> dkdp = Teuchos::rcp(new CompositeVector(*cvs, true));
+  k->PutScalar(1.0);
+  dkdp->PutScalar(1.0);
+
   // create velocity field
-  CompositeVector u(*cvs);
-  Epetra_MultiVector& uf = *u.ViewComponent("face");
+  Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(*cvs));
+  Epetra_MultiVector& uf = *u->ViewComponent("face");
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  Point vel(4.0, 4.0);
+  Point vel(4.0, 0.0);
   for (int f = 0; f < nfaces; f++) {
     uf[0][f] = vel * mesh->face_normal(f);
   }
@@ -109,8 +114,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_MFD) {
   // create advection operator
   Teuchos::RCP<OperatorAdvection> op1 = Teuchos::rcp(new OperatorAdvection(cvs, 0));
   op1->Init();
-  op1->Setup(u);
-  op1->UpdateMatrices(u);
+  op1->Setup(*u);
+  op1->UpdateMatrices(*u);
 
   // add the diffusion operator. It is the last due to BCs.
   int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
@@ -120,8 +125,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_MFD) {
                                       .get<Teuchos::ParameterList>("diffusion operator mfd");
 
   Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusion(*op1, olist, bc));
-  op2->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
-  op2->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op2->Setup(K, k, dkdp, rho, mu);
+  op2->UpdateMatrices(u, Teuchos::null);
   op2->ApplyBCs();
 
   // create a preconditioner 
@@ -131,12 +136,12 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_MFD) {
   // make reverse assembling: diffusion + advection
   Teuchos::RCP<OperatorDiffusion> op3 = Teuchos::rcp(new OperatorDiffusion(cvs, olist, bc));
   op3->Init();
-  op3->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
-  op3->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op3->Setup(K, k, dkdp, rho, mu);
+  op3->UpdateMatrices(u, Teuchos::null);
 
   Teuchos::RCP<OperatorAdvection> op4 = Teuchos::rcp(new OperatorAdvection(*op3));
-  op4->Setup(u);
-  op4->UpdateMatrices(u);
+  op4->Setup(*u);
+  op4->UpdateMatrices(*u);
   op4->ApplyBCs();
 
   // create a preconditioner 

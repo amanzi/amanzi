@@ -57,17 +57,18 @@ class OperatorDiffusion : public Operator {
 
   void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
 
-  // access (for developers only)
+  // access (for developers mainly)
   void set_factor(double factor) { factor_ = factor; }
   int schema_dofs() { return schema_dofs_; }
   int schema_prec_dofs() { return schema_prec_dofs_; }
 
+  int nfailed_primary() { return nfailed_primary_; }
+
   // special members
   void ModifyMatrices(const CompositeVector& u);
-  void AddNewtonCorrection(Teuchos::RCP<const CompositeVector> flux);
 
-  // access
-  int nfailed_primary() { return nfailed_primary_; }
+ private :
+  void AddNewtonCorrection_(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u);
 
  protected:
   void CreateMassMatrices_();

@@ -99,6 +99,11 @@ void OperatorDiffusion::UpdateMatrices(Teuchos::RCP<const CompositeVector> flux,
   } else if (schema_dofs_ == OPERATOR_SCHEMA_DOFS_CELL) {
     UpdateMatricesTPFA_();
   }
+
+  // add Newton-type corrections
+  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
+    AddNewtonCorrection_(flux, u);
+  }
 }
 
 
@@ -463,6 +468,79 @@ void OperatorDiffusion::UpdateMatricesTPFA_()
     } else {
       double coef = 1.0 / Ttmp[0][f];
       Aface(0, 0) = coef;
+    }
+
+    if (flag) {
+      matrix[f] += Aface;
+    } else {
+      matrix.push_back(Aface);
+      matrix_shadow.push_back(null_matrix);
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Modify operator by addition approximation of Newton corection.
+* We ignore the right-hand side for the moment.
+****************************************************************** */
+void OperatorDiffusion::AddNewtonCorrection_(
+    Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u)
+{
+  // hack: ignore correction if no flux provided.
+  if (flux == Teuchos::null) return;
+
+  // Correction is zero for linear problems
+  if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
+
+  const Epetra_MultiVector& kf = *k_->ViewComponent("face");
+  const Epetra_MultiVector& dkdp_f = *dkdp_->ViewComponent("face");
+  const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
+  Epetra_MultiVector& rhs_c = *rhs_->ViewComponent("cell");
+
+  // find location of matrix blocks
+  int schema_dofs = OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL;
+  int m = FindMatrixBlock(schema_dofs, OPERATOR_SCHEMA_RULE_EXACT, false);
+  bool flag = (m >= 0);
+
+  if (flag == false) { 
+    m = blocks_.size();
+    blocks_schema_.push_back(OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL);
+    blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
+    blocks_shadow_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
+  }
+  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
+  std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
+  WhetStone::DenseMatrix null_matrix;
+
+  // populate the global matrix
+  AmanziMesh::Entity_ID_List cells;
+
+  for (int f = 0; f < nfaces_owned; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+    WhetStone::DenseMatrix Aface(ncells, ncells);
+    Aface.PutScalar(0.0);
+
+    double v = flux_f[0][f];
+    double vmod = fabs(v) * dkdp_f[0][f] / kf[0][f];
+
+    // interior face
+    int i, dir, c1, c2;
+    c1 = cells[0];
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
+    i = (v * dir >= 0.0) ? 0 : 1;
+
+    if (ncells == 2) {
+      Aface(i, i) = vmod;
+      Aface(1 - i, i) = -vmod;
+
+      // c1 = cells[i];
+      // c2 = cells[1 - i];
+      // rhs_c[0][c1] += vmod * uc[0][c1];
+      // rhs_c[0][c2] -= vmod * uc[0][c1];
+    } else if (i == 0) {
+      Aface(0, 0) = vmod;
     }
 
     if (flag) {
@@ -991,14 +1069,6 @@ void OperatorDiffusion::UpdateFlux(const CompositeVector& u, CompositeVector& fl
       }
     }
   }
-}
-
-
-/* ******************************************************************
-* Modify operator by addition approximation of NEwton corection.
-****************************************************************** */
-void OperatorDiffusion::AddNewtonCorrection(Teuchos::RCP<const CompositeVector> flux)
-{
 }
 
 

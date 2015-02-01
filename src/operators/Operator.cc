@@ -179,8 +179,8 @@ void Operator::SymbolicAssembleMatrix(int schema, int nonstandard)
 * Populate the sparsity structure of a global matrix
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrix(int schema, int nonstandard,
-        const SuperMap& map, GraphFE& graph,
-        int my_block_row, int my_block_col) const
+                                      const SuperMap& map, GraphFE& graph,
+                                      int my_block_row, int my_block_col) const
 {
   // populate matrix graph using blocks that fit the schema
   AmanziMesh::Entity_ID_List cells, faces, nodes;
@@ -188,7 +188,7 @@ void Operator::SymbolicAssembleMatrix(int schema, int nonstandard,
   int lid_c[OPERATOR_MAX_NODES];
 
   int nblocks = blocks_.size();
-  for (int nb=0; nb!=nblocks; ++nb) {
+  for (int nb = 0; nb != nblocks; ++nb) {
     int subschema = blocks_schema_[nb] & schema;
 
     // Non-standard combinations of schemas 
@@ -213,7 +213,6 @@ void Operator::SymbolicAssembleMatrix(int schema, int nonstandard,
         ierr |= graph.InsertMyIndices(ncells, lid_r, ncells, lid_c);
       }
       ASSERT(!ierr);
-      
 
     // Typical representatives of cell-based methods are MFD and FEM.
     } else if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_CELL) {
@@ -282,7 +281,6 @@ void Operator::SymbolicAssembleMatrix(int schema, int nonstandard,
 
     // Typical representative of face-based methods is FV.
     } else if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_FACE) {
-
       // ELEMENT: face, DOF: cell
       const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
       const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
@@ -416,7 +414,7 @@ void Operator::AssembleMatrix(
         const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
 
         int ierr(0);
-        for (int f=0; f!=nfaces_owned; ++f) {
+        for (int f = 0; f != nfaces_owned; ++f) {
           mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
 
           int ncells = cells.size();
@@ -426,7 +424,7 @@ void Operator::AssembleMatrix(
           }
 
           ierr |= mat.SumIntoMyValues(lid_r, lid_c, matrix[f]);
-        }
+        } 
         ASSERT(!ierr);
       }
     }
@@ -438,7 +436,7 @@ void Operator::AssembleMatrix(
     const std::vector<int>& face_col_inds = map.Indices("face", my_block_col);
     Epetra_MultiVector& diag = *diagonal_->ViewComponent("face");
     int ierr(0);
-    for (int f=0; f!=nfaces_owned; ++f)
+    for (int f = 0; f != nfaces_owned; ++f)
       ierr |= mat.SumIntoMyValues(face_row_inds[f], 1, &diag[0][f], &face_col_inds[f]);
     ASSERT(!ierr);
   }
@@ -448,7 +446,7 @@ void Operator::AssembleMatrix(
     const std::vector<int>& cell_col_inds = map.Indices("cell", my_block_col);
     Epetra_MultiVector& diag = *diagonal_->ViewComponent("cell");
     int ierr(0);
-    for (int c=0; c!=ncells_owned; ++c)
+    for (int c = 0; c != ncells_owned; ++c)
       ierr |= mat.SumIntoMyValues(cell_row_inds[c], 1, &diag[0][c], &cell_col_inds[c]);
     ASSERT(!ierr);
   }
@@ -458,7 +456,7 @@ void Operator::AssembleMatrix(
     const std::vector<int>& node_col_inds = map.Indices("node", my_block_col);
     Epetra_MultiVector& diag = *diagonal_->ViewComponent("node");
     int ierr(0);
-    for (int v=0; v!=nnodes_owned; ++v) 
+    for (int v = 0; v != nnodes_owned; ++v) 
       ierr |= mat.SumIntoMyValues(node_row_inds[v], 1, &diag[0][v], &node_col_inds[v]);
     ASSERT(!ierr);
   }

@@ -33,12 +33,12 @@ void Richards_PK::SolveFullySaturatedProblem(
   rel_perm_->Krel()->PutScalar(1.0);
   rel_perm_->dKdP()->PutScalar(0.0);
 
-  // add diffusion operator
+  // create diffusion operator
   op_matrix_->Init();
   op_matrix_->UpdateMatrices(Teuchos::null, solution);
   op_matrix_->ApplyBCs();
 
-  // create preconditioner
+  // create diffusion preconditioner
   op_preconditioner_->Init();
   op_preconditioner_->UpdateMatrices(Teuchos::null, solution);
   op_preconditioner_->ApplyBCs();
@@ -48,11 +48,11 @@ void Richards_PK::SolveFullySaturatedProblem(
 
   AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> sfactory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
-     solver = sfactory.Create(solver_name, linear_operator_list_, op_preconditioner_, op_preconditioner_);
+     solver = sfactory.Create(solver_name, linear_operator_list_, op_matrix_, op_preconditioner_);
 
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
 
-  CompositeVector& rhs = *op_preconditioner_->rhs();
+  CompositeVector& rhs = *op_matrix_->rhs();
   int ierr = solver->ApplyInverse(rhs, u);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -115,7 +115,13 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
     }
   }
 
-  // calculate preconditioner
+  // calculate diffusion operator
+  op_matrix_->Init();
+  op_matrix_->UpdateMatrices(Teuchos::null, solution);
+  op_matrix_->ApplyBCs();
+  op_matrix_->ModifyMatrices(u);
+
+  // calculate diffusion preconditioner
   op_preconditioner_->Init();
   op_preconditioner_->UpdateMatrices(Teuchos::null, solution);
   op_preconditioner_->ApplyBCs();
@@ -127,7 +133,7 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
   // solve non-symmetric problem
   AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create(ti_specs->solver_name_constraint, linear_operator_list_, op_preconditioner_);
+     solver = factory.Create(ti_specs->solver_name_constraint, linear_operator_list_, op_matrix_, op_preconditioner_);
 
   CompositeVector& rhs = *op_preconditioner_->rhs();
   int ierr = solver->ApplyInverse(rhs, utmp);
@@ -138,10 +144,12 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
     int num_itrs = solver->num_itrs();
     double residual = solver->residual();
     int code = solver->returned_code();
+    double pnorm;
+    u.Norm2(&pnorm);
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "constraints solver (" << solver->name() 
-               << "): ||r||=" << residual << " itr=" << num_itrs
+               << "): ||p,lambda||=" << pnorm << " itr=" << num_itrs 
                << " code=" << code << std::endl;
   }
   if (ierr != 0) {

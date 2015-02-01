@@ -854,6 +854,8 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   
   // populate the diffusion operator
   int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE;
+  CHECK(schema == op->schema_prec_dofs());
+
   op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
   op->ApplyBCs();

@@ -459,7 +459,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 
   op_preconditioner_->Init();
   op_preconditioner_->Setup(K, rel_perm_->Krel(), rel_perm_->dKdP(), rho_, mu_);
-  op_preconditioner_->UpdateMatrices(Teuchos::null, solution);
+  op_preconditioner_->UpdateMatrices(darcy_flux_copy, solution);
   op_preconditioner_->ApplyBCs();
   int schema_prec_dofs = op_preconditioner_->schema_prec_dofs();
   op_preconditioner_->SymbolicAssembleMatrix(schema_prec_dofs);
