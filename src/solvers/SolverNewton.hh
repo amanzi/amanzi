@@ -35,7 +35,7 @@ class SolverNewton : public Solver<Vector,VectorSpace> {
             const Teuchos::RCP<SolverFnBase<Vector> >& fn,
             const VectorSpace& map) :
       plist_(plist) {
-    Init(fn,map);
+    Init(fn, map);
   }
 
   void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
@@ -158,7 +158,7 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
     if (num_itrs_ > max_itrs_) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
         *vo_->os() << "Solve reached maximum of iterations " << num_itrs_ 
-                   << "  error = " << error << std::endl;
+                   << "  error=" << error << std::endl;
       return SOLVER_MAX_ITERATIONS;
     }
 
@@ -178,7 +178,7 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
 
       r->Norm2(&l2_error);
       u->Norm2(&u_norm);
-      *vo_->os() <<"sol "<<u_norm<<" resid "<<l2_error<<" error "<<error<<"\n";
+      *vo_->os() << "||u||=" << u_norm << " ||r||=" << l2_error << " error=" << error << "\n";
 
       // attempt to catch non-convergence early
       if (num_itrs_ == 1) {

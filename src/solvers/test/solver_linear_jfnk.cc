@@ -111,7 +111,7 @@ SUITE(SOLVERS) {
     jfnk_list.sublist("nonlinear solver").sublist("Newton parameters").sublist("VerboseObject")
         .set("Verbosity Level", "extreme");
     jfnk_list.sublist("nonlinear solver").sublist("Newton parameters").set("monitor", "monitor residual");
-    jfnk_list.sublist("JF matrix parameters");
+    jfnk_list.sublist("JF matrix parameters").set("finite difference epsilon", 1e-7);
     jfnk_list.sublist("linear operator").set("iterative method", "pcg");
     jfnk_list.sublist("linear operator").sublist("pcg parameters").sublist("VerboseObject")
         .set("Verbosity Level", "extreme");
