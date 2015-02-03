@@ -524,6 +524,11 @@ void OperatorDiffusion::AddNewtonCorrection_(
 
     double v = flux_f[0][f];
     double vmod = fabs(v) * dkdp_f[0][f] / kf[0][f];
+    if (scalar_rho_mu_) {
+      vmod *= rho_;
+    } else {
+      ASSERT(false);
+    }
 
     // interior face
     int i, dir, c1, c2;

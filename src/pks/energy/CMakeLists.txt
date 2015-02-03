@@ -167,5 +167,11 @@ if (BUILD_TESTS)
                     KIND int
                     SOURCE test/Main.cc test/energy_matrix_2D.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: 2
+    add_amanzi_test(energy_newton_picard energy_newton_picard
+                    KIND int
+                    SOURCE test/Main.cc test/energy_newton_picard.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 
