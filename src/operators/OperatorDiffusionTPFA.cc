@@ -213,6 +213,10 @@ int OperatorDiffusionTPFA::ApplyInverse(const CompositeVector& X, CompositeVecto
   pre_list.set<std::string>("iterative method", "gmres");
   slist.set<double>("error tolerance", 1e-7);
   slist.set<int>("maximum number of iterations", 50);
+  std::vector<std::string> criteria;
+  criteria.push_back("relative rhs");
+  criteria.push_back("relative residual");
+  slist.set<Teuchos::Array<std::string> >("convergence criteria", criteria);
   slist.sublist("VerboseObject") = vlist_;
 
   // delegating preconditioning to the base operator

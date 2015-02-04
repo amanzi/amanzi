@@ -19,6 +19,7 @@ namespace AmanziInput {
 ****************************************************************** */
 Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* plist)
 {
+  Errors::Message msg;
   Teuchos::OSTab tab = vo_->getOSTab();
   Teuchos::ParameterList flw_list;
 
@@ -218,9 +219,8 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 	  Teuchos::ParameterList* sti_bdf1_solver;
 
           // solver type
-	  if (nonlinear_solver == std::string("Newton")){
+	  if (nonlinear_solver == std::string("Newton")) {
 	    sti_bdf1.set<std::string>("solver type", "Newton");
-	    
 	    Teuchos::ParameterList& test = sti_bdf1.sublist("Newton parameters");
 	    sti_bdf1_solver = &test;
 	    sti_bdf1_solver->set<double>("nonlinear tolerance", STEADY_NONLINEAR_TOLERANCE);
@@ -230,7 +230,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 	    sti_bdf1_solver->set<int>("max nka vectors", ST_NKA_NUMVEC);
 	    sti_bdf1_solver->set<int>("limit iterations", ST_LIMIT_ITER);
 	  }
-	  else {
+	  else if (nonlinear_solver == std::string("NKA")) {
 	    sti_bdf1.set<std::string>("solver type", "nka");
 	    Teuchos::ParameterList& test = sti_bdf1.sublist("nka parameters");
 	    sti_bdf1_solver = &test;
@@ -242,6 +242,40 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 	    sti_bdf1_solver->set<int>("limit iterations", ST_LIMIT_ITER);
 	    sti_bdf1_solver->set<bool>("modify correction", modify_correction);
 	  }
+	  else if (nonlinear_solver == std::string("JFNK")) {
+	    sti_bdf1.set<std::string>("solver type", "JFNK");
+	    Teuchos::ParameterList& test = sti_bdf1.sublist("JFNK parameters");
+	    sti_bdf1_solver = &test;
+	    sti_bdf1_solver->set<double>("typical solution value", 1.0);
+
+            Teuchos::ParameterList& tmp = sti_bdf1_solver->sublist("nonlinear solver");     
+	    tmp.set<std::string>("solver type", "Newton");
+            Teuchos::ParameterList& sti_bdf1_newton = tmp.sublist("Newton parameters");     
+	    sti_bdf1_newton.set<double>("diverged tolerance", ST_NKA_DIVGD_TOL);
+	    sti_bdf1_newton.set<double>("max du growth factor", ST_DIVERG_FACT);
+	    sti_bdf1_newton.set<int>("max divergent iterations", ST_MAX_DIVERGENT_ITERATIONS);
+	    sti_bdf1_newton.set<int>("max nka vectors", ST_NKA_NUMVEC);
+	    sti_bdf1_newton.set<int>("limit iterations", ST_LIMIT_ITER);
+
+            Teuchos::ParameterList& sti_bdf1_jfmat = sti_bdf1_solver->sublist("JF matrix parameters");
+            sti_bdf1_jfmat.set<double>("finite difference epsilon", 1.0e-8);
+            sti_bdf1_jfmat.set<std::string>("method for epsilon", "Knoll-Keyes");
+
+            Teuchos::ParameterList& sti_bdf1_linop = sti_bdf1_solver->sublist("linear operator");
+            sti_bdf1_linop.set<std::string>("iterative method", "gmres");
+            Teuchos::ParameterList& sti_bdf1_gmres = sti_bdf1_linop.sublist("gmres parameters");
+            sti_bdf1_gmres.set<double>("error tolerance", 1e-7);
+            sti_bdf1_gmres.set<int>("maximum number of iterations", 100);
+            std::vector<std::string> criteria;
+            criteria.push_back("relative rhs");
+            criteria.push_back("relative residual");
+            sti_bdf1_gmres.set<Teuchos::Array<std::string> >("convergence criteria", criteria);
+          } 
+          else {
+            msg << "In the definition of Nonlinear Solver Type: you must specify either "
+                << "'NKA', 'Newton', or 'JFNK'";
+            Exceptions::amanzi_throw(msg);
+          }
 
           // remaining BDF1 parameters
           sti_bdf1.set<int>("max preconditioner lag iterations", ST_MAX_PREC_LAG);
@@ -303,7 +337,8 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           }
 
           // overwrite parameters for special solvers
-          if (nonlinear_solver == std::string("Newton")) {
+          if (nonlinear_solver == std::string("Newton") || 
+              nonlinear_solver == std::string("JFNK")) {
             sti_bdf1.set<int>("max preconditioner lag iterations", 0);
 	    sti_bdf1.set<bool>("extrapolate initial guess", false);	    
           }

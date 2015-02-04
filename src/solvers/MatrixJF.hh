@@ -137,7 +137,7 @@ double MatrixJF<Vector,VectorSpace>::CalculateEpsilon_(const Vector& u, const Ve
   x.NormInf(&xinf);
 
   double eps = eps_;
-  if (xinf > 0.0)
+  if (xinf > 0.0 && method_name_ == "Knoll-Keyes")
     eps = std::sqrt((1 + uinf) * 1.e-12) / xinf;
   return eps;
 }
