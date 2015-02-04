@@ -426,7 +426,7 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
    * [U] `"Nonlinear Solver`" [list] Parameters for the nonlinear solver used in time-integration.
 
-     * [U] `"Nonlinear Solver Type`" [string] select the nonlinear solver type from `"NKA`", `"Newton`", and `"inexact Newton`".
+     * [U] `"Nonlinear Solver Type`" [string] select the nonlinear solver type from `"NKA`", `"Newton`", `"JFNK`", and `"Newton-Picard`".
 
      * [U] `"modify correction`" [bool] allows a process kernel to modify correction to a solution.(default: `"false`")
 

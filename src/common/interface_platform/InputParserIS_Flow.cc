@@ -104,7 +104,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 
         // insert operator sublist
         Teuchos::ParameterList op_list;
-        op_list = CreateFlowOperatorList_(disc_method, rel_perm);
+        op_list = CreateFlowOperatorList_(disc_method, nonlinear_solver, rel_perm);
         flow_list->sublist("operators") = op_list;
 
         // insert the flow BC sublist
@@ -219,7 +219,8 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 	  Teuchos::ParameterList* sti_bdf1_solver;
 
           // solver type
-	  if (nonlinear_solver == std::string("Newton")) {
+	  if (nonlinear_solver == std::string("Newton") ||
+	      nonlinear_solver == std::string("Newton-Picard")) {
 	    sti_bdf1.set<std::string>("solver type", "Newton");
 	    Teuchos::ParameterList& test = sti_bdf1.sublist("Newton parameters");
 	    sti_bdf1_solver = &test;
@@ -1015,7 +1016,7 @@ Teuchos::ParameterList InputParserIS::CreateWRM_List_(Teuchos::ParameterList* pl
 * Flow operators sublist
 ****************************************************************** */
 Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(
-    const std::string& disc_method, const std::string& rel_perm)
+    const std::string& disc_method, const std::string& nonlinear_solver, const std::string& rel_perm)
 {
   Teuchos::ParameterList op_list;
 
@@ -1029,7 +1030,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(
     stensil[1] = "cell";
     tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
 
-    stensil.remove(1);
+    if (nonlinear_solver != "Newton-Picard") stensil.remove(1);
     tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
     tmp_list.set<bool>("gravity", true);
   }
@@ -1046,8 +1047,13 @@ Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(
   op_list.sublist("diffusion operator").sublist("matrix") = tmp_list;
   op_list.sublist("diffusion operator").sublist("preconditioner") = tmp_list;
 
-  op_list.sublist("diffusion operator").sublist("preconditioner")
-      .set<std::string>("newton correction", "true jacobian");
+  if (nonlinear_solver != "Newton-Picard") {
+    op_list.sublist("diffusion operator").sublist("preconditioner")
+        .set<std::string>("newton correction", "true jacobian");
+  } else {
+    op_list.sublist("diffusion operator").sublist("preconditioner")
+        .set<std::string>("newton correction", "approximate jacobian");
+  }
 
   Teuchos::ParameterList& upw_list = op_list.sublist("diffusion operator").sublist("upwind");
   if (rel_perm == "Upwind: Amanzi") {

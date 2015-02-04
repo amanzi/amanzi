@@ -539,11 +539,6 @@ void OperatorDiffusion::AddNewtonCorrection_(
     if (ncells == 2) {
       Aface(i, i) = vmod;
       Aface(1 - i, i) = -vmod;
-
-      // c1 = cells[i];
-      // c2 = cells[1 - i];
-      // rhs_c[0][c1] += vmod * uc[0][c1];
-      // rhs_c[0][c2] -= vmod * uc[0][c1];
     } else if (i == 0) {
       Aface(0, 0) = vmod;
     }
