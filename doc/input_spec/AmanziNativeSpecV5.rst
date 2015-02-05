@@ -1792,6 +1792,9 @@ Diffusion operator
     that must be added to the matrix. These terms represent Jacobian and are needed 
     for the preconditoner. Available options are `"true jacobian`" and `"approximate jacobian`".
 
+  * `"linear operator`" [sublist] add parameters for a linear solver that defines a preconditioner
+    for the diffusion operator (see section LinearSolvers_).
+
 .. code-block:: xml
 
     <ParameterList name="OPERATOR_NAME">
@@ -1802,6 +1805,9 @@ Diffusion operator
       <Parameter name="gravity" type="bool" value="true"/>
       <Parameter name="upwind method" type="string" value="standard"/>
       <Parameter name="newton correction" type="string" value="true jacobian"/>
+      <ParameterList name="linear solver">
+        ...
+      </ParameterList>
     </ParameterList>
 
 This example creates a p-lambda system, i.e. the pressure is
@@ -2181,7 +2187,8 @@ This section describes generic solvers and preconditioners that can be used
 by various PKs.
 
 
-Linear Solvers
+.. _LinearSolvers:
+Linear solvers
 --------------
 
 This list contains sublists for various linear solvers such as PCG, GMRES, and NKA.

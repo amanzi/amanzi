@@ -37,7 +37,7 @@ OperatorDiffusionTPFA::OperatorDiffusionTPFA(
     : OperatorDiffusion(cvs, plist, bc)
 {
   g_.set(mesh_->space_dimension(), 0.0);
-  vlist_ = plist.sublist("VerboseObject");
+  slist_ = plist.sublist("linear operator");
 }
 
 
@@ -46,7 +46,7 @@ OperatorDiffusionTPFA::OperatorDiffusionTPFA(
     : OperatorDiffusion(op, plist, bc) 
 { 
   g_.set(mesh_->space_dimension(), 0.0); 
-  vlist_ = plist.sublist("VerboseObject");
+  slist_ = plist.sublist("linear operator");
 }
 
 
@@ -206,26 +206,13 @@ int OperatorDiffusionTPFA::Apply(const CompositeVector& X, CompositeVector& Y) c
 ****************************************************************** */
 int OperatorDiffusionTPFA::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
-  Teuchos::ParameterList plist;
-  Teuchos::ParameterList& pre_list = plist.sublist("gmres");
-  Teuchos::ParameterList& slist = pre_list.sublist("gmres parameters");
-
-  pre_list.set<std::string>("iterative method", "gmres");
-  slist.set<double>("error tolerance", 1e-7);
-  slist.set<int>("maximum number of iterations", 50);
-  std::vector<std::string> criteria;
-  criteria.push_back("relative rhs");
-  criteria.push_back("relative residual");
-  slist.set<Teuchos::Array<std::string> >("convergence criteria", criteria);
-  slist.sublist("VerboseObject") = vlist_;
-
   // delegating preconditioning to the base operator
   Teuchos::RCP<const OperatorDiffusionTPFA> op_matrix = Teuchos::rcp(this, false);
   Teuchos::RCP<const Operator> op_preconditioner = Teuchos::rcp(new Operator(*this));
 
   AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> > 
-      solver = factory.Create("gmres", plist, op_matrix, op_preconditioner);
+      solver = factory.Create(slist_, op_matrix, op_preconditioner);
 
   Y.PutScalar(0.0);
   int ierr = solver->ApplyInverse(X, Y);

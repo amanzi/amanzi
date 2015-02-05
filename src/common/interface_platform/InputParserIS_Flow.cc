@@ -1047,9 +1047,21 @@ Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(
   op_list.sublist("diffusion operator").sublist("matrix") = tmp_list;
   op_list.sublist("diffusion operator").sublist("preconditioner") = tmp_list;
 
-  if (nonlinear_solver != "Newton-Picard") {
-    op_list.sublist("diffusion operator").sublist("preconditioner")
-        .set<std::string>("newton correction", "true jacobian");
+  if (nonlinear_solver == "Newton") {
+    Teuchos::ParameterList& prec_list = 
+        op_list.sublist("diffusion operator").sublist("preconditioner");
+    prec_list.set<std::string>("newton correction", "true jacobian");
+
+    Teuchos::ParameterList& slist = prec_list.sublist("linear operator");
+    slist.set<std::string>("iterative method", "gmres");
+    Teuchos::ParameterList& gmres_list = slist.sublist("gmres parameters");
+    gmres_list.set<double>("error tolerance", TRANSIENT_NONLINEAR_TOLERANCE * 1e-2);
+    gmres_list.set<int>("maximum number of iterations", 50);
+    std::vector<std::string> criteria;
+    criteria.push_back("relative rhs");
+    criteria.push_back("relative residual");
+    gmres_list.set<Teuchos::Array<std::string> >("convergence criteria", criteria);
+    gmres_list.sublist("VerboseObject") = CreateVerbosityList_("low");
   } else {
     op_list.sublist("diffusion operator").sublist("preconditioner")
         .set<std::string>("newton correction", "approximate jacobian");

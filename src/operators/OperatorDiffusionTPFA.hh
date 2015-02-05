@@ -76,7 +76,7 @@ class OperatorDiffusionTPFA : public OperatorDiffusion {
   Teuchos::RCP<Epetra_Vector> transmissibility_;
   Teuchos::RCP<Epetra_Vector> gravity_term_;
 
-  Teuchos::ParameterList vlist_;
+  mutable Teuchos::ParameterList slist_;
 };
 
 }  // namespace Operators

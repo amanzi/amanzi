@@ -75,6 +75,17 @@
             <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
             <Parameter name="gravity" type="bool" value="true"/>
             <Parameter name="newton correction" type="string" value="true jacobian"/>
+            <ParameterList name="linear operator">
+              <Parameter name="iterative method" type="string" value="gmres"/>
+              <ParameterList name="gmres parameters">
+                <Parameter name="error tolerance" type="double" value="1e-7"/>
+                <Parameter name="maximum number of iterations" type="int" value="50"/>
+                <Parameter name="convergence criteria" type="Array(string)" value="{relative rhs, relative residual}"/>
+                <ParameterList name="VerboseObject">
+                  <Parameter name="Verbosity Level" type="string" value="high"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
           </ParameterList>
 
           <ParameterList name="upwind">
