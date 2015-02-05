@@ -8,32 +8,35 @@
 
 #include "Energy_PK.hh"
 #include "MeshFactory.hh"
-#include "SolverFnBase01.hh"
 #include "SolverNewton.hh"
+#include "SolverFnBase.hh"
 
 const double TemperatureSource = 100.0; 
 const double TemperatureFloor = 0.02; 
 
-SUITE(SOLVERS) {
-using namespace Amanzi;
 
-class Problem {
+namespace Amanzi {
+
+class Problem : public Amanzi::AmanziSolvers::SolverFnBase<Amanzi::CompositeVector> {
  public:
   Problem() {};
   ~Problem() {};
 
-  void Setup(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::ParameterList& plist) {
+  // Initialization requires global parameter list.
+  void Init(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::ParameterList& plist) {
     mesh_ = mesh;
-    // create vector
-    cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh);
-    cvs->SetGhosted(true);
-    cvs->SetComponent("cell", AmanziMesh::CELL, 1);
-    cvs->SetOwned(false);
-    cvs->AddComponent("face", AmanziMesh::FACE, 1);
+    plist_ = plist;
 
-    solution = Teuchos::rcp(new CompositeVector(*cvs)); 
-    flux = Teuchos::rcp(new CompositeVector(*cvs)); 
+    // create vector
+    cvs_ = Teuchos::rcp(new CompositeVectorSpace());
+    cvs_->SetMesh(mesh);
+    cvs_->SetGhosted(true);
+    cvs_->SetComponent("cell", AmanziMesh::CELL, 1);
+    cvs_->SetOwned(false);
+    cvs_->AddComponent("face", AmanziMesh::FACE, 1);
+
+    solution_ = Teuchos::rcp(new CompositeVector(*cvs_)); 
+    flux_ = Teuchos::rcp(new CompositeVector(*cvs_)); 
 
     // create BCs
     int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -60,11 +63,11 @@ class Problem {
         Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
     // constant accumulation term
-    double dT = 0.02;
-    CompositeVector phi(*solution);
-    phi.PutScalar(0.2);
+    dT = 0.02;
+    phi_ = Teuchos::rcp(new CompositeVector(*cvs_));
+    phi_->PutScalar(0.2);
 
-    // create statis diffusion data
+    // create static diffusion data
     for (int c = 0; c < ncells_owned; c++) {
       WhetStone::Tensor Kc(2, 1);
       Kc(0, 0) = 1.0;
@@ -73,33 +76,31 @@ class Problem {
     double rho(1.0), mu(1.0);
 
     // create temperature-dependent data
-    k = Teuchos::rcp(new CompositeVector(*cvs));
-    dkdT = Teuchos::rcp(new CompositeVector(*cvs));
-    UpdateValues(*solution);
+    k = Teuchos::rcp(new CompositeVector(*cvs_));
+    dkdT = Teuchos::rcp(new CompositeVector(*cvs_));
+    UpdateValues(*solution_);
 
     // create diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("diffusion operator");
-    op = Teuchos::rcp(new Operators::OperatorDiffusion(cvs, olist, bc));
-    op->Init();
+    op_ = Teuchos::rcp(new Operators::OperatorDiffusion(cvs_, olist, bc));
+    op_->Init();
 
-    int schema_dofs = op->schema_dofs();
-    int schema_prec_dofs = op->schema_prec_dofs();
+    int schema_dofs = op_->schema_dofs();
+    int schema_prec_dofs = op_->schema_prec_dofs();
 
-    op->Setup(K, k, dkdT, rho, mu);
-    op->UpdateMatrices(flux, solution);
-    op->AddAccumulationTerm(*solution, phi, dT, "cell");
-    op->ApplyBCs();
-    op->SymbolicAssembleMatrix(schema_prec_dofs);
-    op->AssembleMatrix(schema_prec_dofs);
+    op_->Setup(K, k, dkdT, rho, mu);
+    op_->UpdateMatrices(flux_, solution_);
+    op_->AddAccumulationTerm(*solution_, *phi_, dT, "cell");
+    op_->ApplyBCs();
+    op_->SymbolicAssembleMatrix(schema_prec_dofs);
+    op_->AssembleMatrix(schema_prec_dofs);
 
-    // create preconditoner using the base operator class
-    Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-    op->InitPreconditioner("Hypre AMG", slist);
+    // create preconditoner
+    Teuchos::ParameterList slist = plist.sublist("Preconditioners");
+    op_->InitPreconditioner("Hypre AMG", slist);
   }
 
-  void InitialGuess(Amanzi::CompositeVector& u) {
-    u.PutScalar(1.0);
-  }
+  void InitialGuess() { solution_->PutScalar(1.0); }
 
   void UpdateValues(const CompositeVector& u) { 
     const Epetra_MultiVector& uc = *u.ViewComponent("cell", true); 
@@ -111,31 +112,81 @@ class Problem {
     }
 
     k->PutScalar(1.0);
-    dkdT->PutScalar(1.0);
+    dkdT->PutScalar(0.0);
   }
 
- public:
-  Teuchos::RCP<CompositeVectorSpace> cvs;
-  Teuchos::RCP<Operators::OperatorDiffusion> op;
+  // virtual member functions
+  void Residual(const Teuchos::RCP<Amanzi::CompositeVector>& u,
+                const Teuchos::RCP<Amanzi::CompositeVector>& f) {
+    op_->Init();
+    op_->UpdateMatrices(flux_, u);
+    op_->AddAccumulationTerm(*u, *phi_, dT, "cell");
+    op_->ApplyBCs();
+    op_->ComputeNegativeResidual(*u, *f);
+  }
 
- public:
-  Teuchos::RCP<CompositeVector> solution;
-  Teuchos::RCP<CompositeVector> flux;
+  void ApplyPreconditioner(const Teuchos::RCP<const Amanzi::CompositeVector>& u,
+                           const Teuchos::RCP<Amanzi::CompositeVector>& hu) {
+    op_->ApplyInverse(*u, *hu);
+  }
+
+  double ErrorNorm(const Teuchos::RCP<const Amanzi::CompositeVector>& u,
+                   const Teuchos::RCP<const Amanzi::CompositeVector>& du) {
+    double norm_du, norm_u;
+    du->NormInf(&norm_du);
+    return norm_du;
+  }
+
+  void UpdatePreconditioner(const Teuchos::RCP<const Amanzi::CompositeVector>& up) {
+    op_->UpdateFlux(*up, *flux_);
+
+    // Calculate new matrix.
+    op_->Init();
+    op_->UpdateMatrices(flux_, up);
+    op_->AddAccumulationTerm(*up, *phi_, dT, "cell");
+    op_->ApplyBCs();
+
+    // Assemble matrix and calculate preconditioner.
+    int schema_prec_dofs = op_->schema_prec_dofs();
+    op_->AssembleMatrix(schema_prec_dofs);
+
+    Teuchos::ParameterList prec_list = plist_.sublist("Preconditioners");
+    op_->InitPreconditioner("Hypre AMG", prec_list);
+  }
+
+  void ChangedSolution() {};
+
+  // access
+  CompositeVectorSpace& cvs() { return *cvs_; }
+  Teuchos::RCP<CompositeVector> solution() { return solution_; }
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::ParameterList plist_;
+
+  Teuchos::RCP<CompositeVectorSpace> cvs_;
+  Teuchos::RCP<Operators::OperatorDiffusion> op_;
   std::vector<int> bc_model;
   std::vector<double> bc_value, bc_mixed;
 
   std::vector<WhetStone::Tensor> K;
   Teuchos::RCP<CompositeVector> k, dkdT;
+
+  double dT;
+  Teuchos::RCP<CompositeVector> phi_;
+
+  Teuchos::RCP<CompositeVector> solution_;
+  Teuchos::RCP<CompositeVector> flux_;
 };
+
+}  // namespace Amanzi
 
 
 /* ******************************************************************
 * Test 1.
 ****************************************************************** */
-TEST_FIXTURE(Problem, NEWTON_PICARD) {
+TEST(NEWTON_PICARD) {
+  using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
@@ -164,23 +215,22 @@ TEST_FIXTURE(Problem, NEWTON_PICARD) {
   Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 3.0, 1.0, 30, 10, gm);
 
   // create problem
-  Setup(mesh, plist);
+  Teuchos::RCP<Problem> problem = Teuchos::rcp(new Problem());
+  problem->Init(mesh, plist);
 
   // create the Solver
   Teuchos::ParameterList& prec_list = plist.get<Teuchos::ParameterList>("Preconditioners");
-  Teuchos::RCP<SolverFnBase01> fn = Teuchos::rcp(new SolverFnBase01(op, prec_list));
   Teuchos::ParameterList slist = plist.sublist("Newton parameters");
 
   Teuchos::RCP<AmanziSolvers::SolverNewton<CompositeVector, CompositeVectorSpace> > 
       newton_picard = Teuchos::rcp(new AmanziSolvers::SolverNewton<CompositeVector, CompositeVectorSpace>(slist));
-  newton_picard->Init(fn, *cvs);
+  newton_picard->Init(problem, problem->cvs());
 
   // initial guess
-  InitialGuess(*solution);
+  problem->InitialGuess();
 
   // solve
-  newton_picard->Solve(solution);
+  newton_picard->Solve(problem->solution());
 };
 
-}  // SUITE
 
