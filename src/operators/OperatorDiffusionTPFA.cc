@@ -206,16 +206,20 @@ int OperatorDiffusionTPFA::Apply(const CompositeVector& X, CompositeVector& Y) c
 ****************************************************************** */
 int OperatorDiffusionTPFA::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
-  // delegating preconditioning to the base operator
-  Teuchos::RCP<const OperatorDiffusionTPFA> op_matrix = Teuchos::rcp(this, false);
-  Teuchos::RCP<const Operator> op_preconditioner = Teuchos::rcp(new Operator(*this));
+  if (slist_.numParams() != 0) {
+    // delegating preconditioning to the base operator
+    Teuchos::RCP<const OperatorDiffusionTPFA> op_matrix = Teuchos::rcp(this, false);
+    Teuchos::RCP<const Operator> op_preconditioner = Teuchos::rcp(new Operator(*this));
 
-  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> > 
-      solver = factory.Create(slist_, op_matrix, op_preconditioner);
+    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> > 
+        solver = factory.Create(slist_, op_matrix, op_preconditioner);
 
-  Y.PutScalar(0.0);
-  int ierr = solver->ApplyInverse(X, Y);
+    Y.PutScalar(0.0);
+    solver->ApplyInverse(X, Y);
+  } else {
+    Operator::ApplyInverse(X, Y);
+  }
 
   return 0;
 }

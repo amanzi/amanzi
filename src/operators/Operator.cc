@@ -878,10 +878,12 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
   // return 0;
   Epetra_Vector Xcopy(A_->RowMap());
   Epetra_Vector Ycopy(A_->RowMap());
+
   int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, 0);
   ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
   ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, 0);
   ASSERT(!ierr);
+
   return ierr;
 }
 

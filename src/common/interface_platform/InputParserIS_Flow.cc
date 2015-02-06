@@ -228,8 +228,8 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 	    sti_bdf1_solver->set<double>("diverged tolerance", ST_NKA_DIVGD_TOL);
 	    sti_bdf1_solver->set<double>("max du growth factor", ST_DIVERG_FACT);
 	    sti_bdf1_solver->set<int>("max divergent iterations", ST_MAX_DIVERGENT_ITERATIONS);
-	    sti_bdf1_solver->set<int>("max nka vectors", ST_NKA_NUMVEC);
 	    sti_bdf1_solver->set<int>("limit iterations", ST_LIMIT_ITER);
+	    sti_bdf1_solver->set<bool>("modify correction", true);
 	  }
 	  else if (nonlinear_solver == std::string("NKA")) {
 	    sti_bdf1.set<std::string>("solver type", "nka");
@@ -380,31 +380,31 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           tti_bdf1_std.set<double>("max time step", TR_MAX_TS);
           tti_bdf1_std.set<double>("min time step", TR_MIN_TS);
 
-	  Teuchos::ParameterList* tti_bdf1_nka;
+	  Teuchos::ParameterList* tti_bdf1_solver;
 
           // solver type
 	  if (nonlinear_solver == std::string("Newton")) {
 	    tti_bdf1.set<std::string>("solver type", "Newton");
 	    Teuchos::ParameterList& test = tti_bdf1.sublist("Newton parameters");
-	    tti_bdf1_nka = &test;
-	    tti_bdf1_nka->set<double>("nonlinear tolerance", TRANSIENT_NONLINEAR_TOLERANCE);
-	    tti_bdf1_nka->set<double>("diverged tolerance", TR_NKA_DIVGD_TOL);
-	    tti_bdf1_nka->set<double>("max du growth factor", TR_DIVERG_FACT);
-	    tti_bdf1_nka->set<int>("max divergent iterations", TR_MAX_DIVERGENT_ITERATIONS);
-	    tti_bdf1_nka->set<int>("max nka vectors", TR_NKA_NUMVEC);
-	    tti_bdf1_nka->set<int>("limit iterations", TR_LIMIT_ITER);
+	    tti_bdf1_solver = &test;
+	    tti_bdf1_solver->set<double>("nonlinear tolerance", TRANSIENT_NONLINEAR_TOLERANCE);
+	    tti_bdf1_solver->set<double>("diverged tolerance", TR_NKA_DIVGD_TOL);
+	    tti_bdf1_solver->set<double>("max du growth factor", TR_DIVERG_FACT);
+	    tti_bdf1_solver->set<int>("max divergent iterations", TR_MAX_DIVERGENT_ITERATIONS);
+	    tti_bdf1_solver->set<int>("limit iterations", TR_LIMIT_ITER);
+	    tti_bdf1_solver->set<bool>("modify correction", true);
 	  }
 	  else {
 	    tti_bdf1.set<std::string>("solver type", "nka");
 	    Teuchos::ParameterList& test = tti_bdf1.sublist("nka parameters");
-	    tti_bdf1_nka = &test;
-	    tti_bdf1_nka->set<double>("nonlinear tolerance", TRANSIENT_NONLINEAR_TOLERANCE);
-	    tti_bdf1_nka->set<double>("diverged tolerance", TR_NKA_DIVGD_TOL);
-	    tti_bdf1_nka->set<double>("max du growth factor", TR_DIVERG_FACT);
-	    tti_bdf1_nka->set<int>("max divergent iterations", TR_MAX_DIVERGENT_ITERATIONS);
-	    tti_bdf1_nka->set<int>("max nka vectors", TR_NKA_NUMVEC);
-	    tti_bdf1_nka->set<int>("limit iterations", TR_LIMIT_ITER);
-	    tti_bdf1_nka->set<bool>("modify correction", modify_correction);
+	    tti_bdf1_solver = &test;
+	    tti_bdf1_solver->set<double>("nonlinear tolerance", TRANSIENT_NONLINEAR_TOLERANCE);
+	    tti_bdf1_solver->set<double>("diverged tolerance", TR_NKA_DIVGD_TOL);
+	    tti_bdf1_solver->set<double>("max du growth factor", TR_DIVERG_FACT);
+	    tti_bdf1_solver->set<int>("max divergent iterations", TR_MAX_DIVERGENT_ITERATIONS);
+	    tti_bdf1_solver->set<int>("max nka vectors", TR_NKA_NUMVEC);
+	    tti_bdf1_solver->set<int>("limit iterations", TR_LIMIT_ITER);
+	    tti_bdf1_solver->set<bool>("modify correction", modify_correction);
 	  }
 
           // remaining parameters
@@ -422,9 +422,9 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
                     num_list.get<int>("transient max iterations", TR_MAX_ITER));
                 tti_bdf1_std.set<int>("min iterations",
                     num_list.get<int>("transient min iterations", TR_MIN_ITER));
-                tti_bdf1_nka->set<int>("limit iterations", 
+                tti_bdf1_solver->set<int>("limit iterations", 
                     num_list.get<int>("transient limit iterations", TR_LIMIT_ITER));
-                tti_bdf1_nka->set<double>("nonlinear tolerance",
+                tti_bdf1_solver->set<double>("nonlinear tolerance",
                     num_list.get<double>("transient nonlinear tolerance", TRANSIENT_NONLINEAR_TOLERANCE));
                 tti_bdf1_std.set<double>("time step reduction factor",
                     num_list.get<double>("transient time step reduction factor", TR_TS_RED_FACTOR));
@@ -433,7 +433,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
                 tti_bdf1_std.set<double>("max time step", num_list.get<double>("transient max time step", TR_MAX_TS));
                 tti_bdf1.set<int>("max preconditioner lag iterations",
                     num_list.get<int>("transient max preconditioner lag iterations", TR_MAX_PREC_LAG));
-                tti_bdf1_nka->set<int>("max divergent iterations",
+                tti_bdf1_solver->set<int>("max divergent iterations",
                     num_list.get<int>("transient max divergent iterations", TR_MAX_DIVERGENT_ITERATIONS));
                 tti_bdf1.set<double>("nonlinear iteration damping factor",
                     num_list.get<double>("transient nonlinear iteration damping factor", TR_NONLIN_DAMP));
@@ -445,7 +445,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
                 tti_bdf1.set<double>("restart tolerance relaxation factor damping",
                     num_list.get<double>("transient restart tolerance relaxation factor damping", 
                     TR_NONLIN_INIT_TS_FACTOR_DAMP));
-                tti_bdf1_nka->set<double>("max du growth factor",
+                tti_bdf1_solver->set<double>("max du growth factor",
                     num_list.get<double>("transient nonlinear iteration divergence factor", TR_DIVERG_FACT));
 
                 tti_list.set<Teuchos::Array<std::string> >("error control options",
