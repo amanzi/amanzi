@@ -56,7 +56,8 @@ class InputParserIS {
   Teuchos::ParameterList CreateFlowSrcList_(Teuchos::ParameterList* plist);
   Teuchos::ParameterList CreateSS_FlowBC_List_(Teuchos::ParameterList* plist);
   Teuchos::ParameterList CreateFlowOperatorList_(
-     const std::string& disc_method, const std::string& nonlinear_solver, const std::string& rel_perm);
+     const std::string& disc_method, const std::string& prec_method,
+     const std::string& nonlinear_solver, const std::string& rel_perm);
   Teuchos::ParameterList CreateWRM_List_(Teuchos::ParameterList* plist);
 
   // transport

@@ -33,6 +33,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 
       // get the expert parameters
       std::string disc_method("MFD: Optimized for Sparsity");
+      std::string prec_method("Diffusion Operator");
       std::string rel_perm("Upwind: Amanzi");
       std::string update_upwind("every timestep");
       double atm_pres(ATMOSPHERIC_PRESSURE);
@@ -55,6 +56,9 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
             if (fl_exp_params.isParameter("atmospheric pressure")) {
               atm_pres = fl_exp_params.get<double>("atmospheric pressure");
             }
+            if (fl_exp_params.isParameter("Preconditioning Strategy")) {
+              prec_method = fl_exp_params.get<std::string>("Preconditioning Strategy");
+            }
           }
           if (ua_list.isSublist("Nonlinear Solver")) {
             Teuchos::ParameterList fl_exp_params = ua_list.sublist("Nonlinear Solver");
@@ -66,13 +70,15 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           }
         }
       }
-      // discretization method must be two-point flux approximation for if newton is used
-      if (nonlinear_solver == std::string("Newton") || nonlinear_solver == std::string("inexact Newton")) {
+
+      // Newton method requires to overwrite other parameters.
+      if (nonlinear_solver == std::string("Newton")) {
         disc_method = std::string("FV: Default");
         rel_perm = std::string("Upwind: Darcy Velocity");
 	update_upwind = std::string("every nonlinear iteration");	
         if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
-          *vo_->os() << vo_->color("yellow") << "Newton enforces: \"Upwind: Darcy Velocity\" and \"FV: Default\"" 
+          *vo_->os() << vo_->color("yellow") << "Newton enforces: \"Upwind: Darcy Velocity\" "
+                     << ", \"modify correction\", and \"FV: Default\"." 
                      << vo_->reset() << std::endl;
         }
       }
@@ -104,7 +110,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 
         // insert operator sublist
         Teuchos::ParameterList op_list;
-        op_list = CreateFlowOperatorList_(disc_method, nonlinear_solver, rel_perm);
+        op_list = CreateFlowOperatorList_(disc_method, prec_method, nonlinear_solver, rel_perm);
         flow_list->sublist("operators") = op_list;
 
         // insert the flow BC sublist
@@ -274,7 +280,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           } 
           else {
             msg << "In the definition of Nonlinear Solver Type: you must specify either "
-                << "'NKA', 'Newton', or 'JFNK'";
+                << "'NKA', 'Newton', 'JFNK', or 'Newton-Picard'";
             Exceptions::amanzi_throw(msg);
           }
 
@@ -339,7 +345,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 
           // overwrite parameters for special solvers
           if (nonlinear_solver == std::string("Newton") || 
-              nonlinear_solver == std::string("JFNK")) {
+              nonlinear_solver == std::string("Newton-Picard")) {
             sti_bdf1.set<int>("max preconditioner lag iterations", 0);
 	    sti_bdf1.set<bool>("extrapolate initial guess", false);	    
           }
@@ -383,7 +389,8 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 	  Teuchos::ParameterList* tti_bdf1_solver;
 
           // solver type
-	  if (nonlinear_solver == std::string("Newton")) {
+	  if (nonlinear_solver == std::string("Newton") ||
+	      nonlinear_solver == std::string("Newton-Picard")) {
 	    tti_bdf1.set<std::string>("solver type", "Newton");
 	    Teuchos::ParameterList& test = tti_bdf1.sublist("Newton parameters");
 	    tti_bdf1_solver = &test;
@@ -1016,7 +1023,8 @@ Teuchos::ParameterList InputParserIS::CreateWRM_List_(Teuchos::ParameterList* pl
 * Flow operators sublist
 ****************************************************************** */
 Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(
-    const std::string& disc_method, const std::string& nonlinear_solver, const std::string& rel_perm)
+    const std::string& disc_method, const std::string& prec_method,
+    const std::string& nonlinear_solver, const std::string& rel_perm)
 {
   Teuchos::ParameterList op_list;
 
@@ -1030,7 +1038,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(
     stensil[1] = "cell";
     tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
 
-    if (nonlinear_solver != "Newton-Picard") stensil.remove(1);
+    if (prec_method != "Linearized Operator") stensil.remove(1);
     tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
     tmp_list.set<bool>("gravity", true);
   }
@@ -1062,7 +1070,8 @@ Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(
     criteria.push_back("relative residual");
     gmres_list.set<Teuchos::Array<std::string> >("convergence criteria", criteria);
     gmres_list.sublist("VerboseObject") = CreateVerbosityList_("low");
-  } else {
+  }
+  if (prec_method == "Linearized Operator") {
     op_list.sublist("diffusion operator").sublist("preconditioner")
         .set<std::string>("newton correction", "approximate jacobian");
   }

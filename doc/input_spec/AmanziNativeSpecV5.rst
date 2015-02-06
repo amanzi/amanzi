@@ -2278,6 +2278,7 @@ Internal parameters for PCG include
 * `"overflow tolerance`" [double] defines the maximum allowed jump in residual. The default
   value is 3.0e+50.
 
+/
 .. code-block:: xml
 
     <ParameterList name="pcg parameters">
@@ -2414,14 +2415,51 @@ Newton-Krylov acceleration (NKA)
 Newton
 ......
 
-Newton method works reasonably well for cases where Jacobian is available and
-corerspond to a stable discretization.
+The classical Newton method works well for cases where Jacobian is available and
+corersponds to a stable (e.g. upwind) discretization.
+
+* `"nonlinear tolerance`" [double] defines the required error tolerance. 
+  The error is calculated by a PK. Default is 1e-6. 
+
+* `"monitor`" [string] specifies control of the nonlinear residual. The available 
+  options are `"monitor update`" (default) and `"monitor residual`".
+
+* `"limit iterations`" [int] defines the maximum allowed number of iterations.
+  Default is 50.
+
+* `"diverged tolerance`" [double] defines the error level indicating divergence 
+  of the solver. The error is calculated by a PK. Default is 1e+10.
+
+* `"max du growth factor`" [double] allows the solver to identify divergence 
+  pattern on earlier iterations. If the maximum norm of the solution increment
+  changes drastically on two consecutive iterations, the solver is terminated.
+  Default is 1e+5.
+
+* `"max error growth factor`" [double] defines another way to identify divergence 
+  pattern on earlier iterations. If the PK-specific error changes drastically on 
+  two consecutive iterations, the solver is terminated. Default is 1e+5.
+
+* `"max divergent iterations`" [int] defines another way to identify divergence
+  pattern on earlier iterations. If the maximum norm of the solution increment grows 
+  on too many consequtive iterations, the solver is terminated. Default is 3.
+
+* `"modify correction`" [bool] allows a PK to modify the solution increment.
+  One example is a physics-based clipping of extreme solution values. Default is *true*.
+
+* `"stagnation iteration check`" determines the number of iterations before the
+  stagnation check is turned on. The stangnation happens when the current L2-error
+  exceeds the initial L2-error. Default is 8.
 
 .. code-block:: xml
 
     <Parameter name="solver type" type="string" value="Newton"/>
     <ParameterList name="Newton parameters">
-      ...
+      <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+      <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+      <Parameter name="max divergent iterations" type="int" value="3"/>
+      <Parameter name="limit iterations" type="int" value="20"/>
+      <Parameter name="modify correction" type="bool" value="true"/>
     </ParameterList>
 
 

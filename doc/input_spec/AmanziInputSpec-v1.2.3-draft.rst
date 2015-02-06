@@ -305,7 +305,12 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [U] `"atmospheric pressure`" [double]: Defines the atmospheric pressure, [Pa].   
 
-     * [U] `"Use Picard`" [bool]: Use the Picard solver to find a good initial guess for the steady state solver. (default: `"false`")
+     * [U] `"Preconditining Strategy`" [string]: Defines a method for calculating a preconditioner.
+       The available options are: `"Diffusion Operator`" (with lagging of nonlinear coefficients) 
+       and `"Linearized Operator`". (default: `"Diffusion Operator`").
+
+     * [U] `"Use Picard`" [bool]: Use the Picard solver to find a good initial guess for the steady state solver.
+       This option becomes obsolete. (default: `"false`").
 
    * [U] `"Transport Process Kernel`" [list]: Control parameters for the transport methods
 
