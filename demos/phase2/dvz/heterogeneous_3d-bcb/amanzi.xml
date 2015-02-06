@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-    <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
+    <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
     <ParameterList name="General Description">
       <Parameter name="Model ID" type="string" value="TBD"/>
       <Parameter name="Author" type="string" value="ellen"/>
@@ -91,6 +91,10 @@
             <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
             <Parameter name="transient time step increase factor" type="double" value="1.25"/>
             <Parameter name="transient preconditioner" type="string" value="Hypre AMG"/>
+          </ParameterList>
+          <ParameterList name="Nonlinear Solver">
+            <Parameter name="Nonlinear Solver Type" type="string" value="Newton"/>
+	    <Parameter name="modify correction" type="bool" value="true"/>
           </ParameterList>
           <ParameterList name="Preconditioners">
             <ParameterList name="Trilinos ML">
@@ -337,7 +341,7 @@
 	<ParameterList name="IC: Linear Pressure">
 	  <Parameter name="Phase" type="string" value="Aqueous"/>
 	  <Parameter name="Reference Value" type="double" value="101325 "/>
-	  <Parameter name="Reference Coordinate" type="Array(double)" value="{0.0,0.0,0.5}"/>
+	  <Parameter name="Reference Point" type="Array(double)" value="{0.0,0.0,0.5}"/>
 	  <Parameter name="Gradient Value" type="Array(double)" value="{0.0,0.0,-9793.5192 }"/>
 	</ParameterList>
         <ParameterList name="Solute IC">
