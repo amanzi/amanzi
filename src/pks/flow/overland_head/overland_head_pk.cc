@@ -47,7 +47,7 @@ void OverlandHeadFlow::setup(const Teuchos::Ptr<State>& S) {
   // set up the meshes
   if (!S->HasMesh("surface")) {
     Teuchos::RCP<const AmanziMesh::Mesh> domain = S->GetMesh();
-    ASSERT(domain->space_dimension() == 2);
+    //    ASSERT(domain->space_dimension() == 2);
     standalone_mode_ = true;
     S->AliasMesh("domain", "surface");
   } else {
@@ -711,7 +711,7 @@ void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
         int c = cells[0];
 
-        double p0 = bc->second > p_atm ? p0 : p_atm;
+        double p0 = bc->second > p_atm ? bc->second : p_atm;
         double h0 = (p0 - p_atm) / ((eta[0][c]*rho_l[0][c] + (1.-eta[0][c])*rho_i[0][c]) * gz);
         double dz = elevation_cells[0][c] - elevation[0][f];
 
@@ -732,7 +732,7 @@ void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
         int c = cells[0];
 
-        double p0 = bc->second > p_atm ? p0 : p_atm;
+        double p0 = bc->second > p_atm ? bc->second : p_atm;
         double h0 = (p0 - p_atm) / (rho_l[0][c] * gz);
         double dz = elevation_cells[0][c] - elevation[0][f];
 

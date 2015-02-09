@@ -27,7 +27,7 @@ class Matrix_TPFA_Surf : public Matrix_TPFA {
 
   virtual void AssembleGlobalMatrices(){};
   virtual void ApplyBoundaryConditions(const std::vector<MatrixBC>& subsurface_markers,
-          const std::vector<double>& subsurface_values);
+          const std::vector<double>& subsurface_values, bool ADD_BC_FLUX=true);
   virtual void ComputeSchurComplement(const std::vector<MatrixBC>& bc_markers,
           const std::vector<double>& bc_values);
 

@@ -115,7 +115,7 @@ MPCPermafrost3::setup(const Teuchos::Ptr<State>& S) {
   precon_->InitPreconditioner();
 
   // set up the advective term
-  // -- clone the surface flow operator
+  // -- clone the flow operator
   Teuchos::RCP<CompositeMatrix> pcAdv_mat = sub_pks_[0]->preconditioner()->Clone();
   pcAdv_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(pcAdv_mat);
   ASSERT(pcAdv_ != Teuchos::null);

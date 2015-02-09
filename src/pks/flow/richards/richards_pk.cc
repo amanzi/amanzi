@@ -144,7 +144,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   unsigned int c_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   K_ = Teuchos::rcp(new std::vector<WhetStone::Tensor>(c_owned));
   for (unsigned int c=0; c!=c_owned; ++c) {
-    (*K_)[c].init(mesh_->space_dimension(),1);
+    (*K_)[c].Init(mesh_->space_dimension(),1);
   }
   // scaling for permeability
   perm_scale_ = plist_->get<double>("permeability rescaling", 1.0);
@@ -476,32 +476,32 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
   }
 
   // As a diagnostic, calculate the mass balance error
-#if DEBUG_FLAG
-  if (S_next_ != Teuchos::null) {
-    Teuchos::RCP<const CompositeVector> wc1 = S_next_->GetFieldData("water_content");
-    Teuchos::RCP<const CompositeVector> wc0 = S_->GetFieldData("water_content");
-    Teuchos::RCP<const CompositeVector> darcy_flux = S->GetFieldData("darcy_flux", name_);
-    CompositeVector error(*wc1);
+// #if DEBUG_FLAG
+//   if (S_next_ != Teuchos::null) {
+//     Teuchos::RCP<const CompositeVector> wc1 = S_next_->GetFieldData("water_content");
+//     Teuchos::RCP<const CompositeVector> wc0 = S_->GetFieldData("water_content");
+//     Teuchos::RCP<const CompositeVector> darcy_flux = S->GetFieldData("darcy_flux", name_);
+//     CompositeVector error(*wc1);
 
-    for (unsigned int c=0; c!=error.size("cell"); ++c) {
-      error("cell",c) = (*wc1)("cell",c) - (*wc0)("cell",c);
+//     for (unsigned int c=0; c!=error.size("cell"); ++c) {
+//       error("cell",c) = (*wc1)("cell",c) - (*wc0)("cell",c);
 
-      AmanziMesh::Entity_ID_List faces;
-      std::vector<int> dirs;
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-      for (unsigned int n=0; n!=faces.size(); ++n) {
-        error("cell",c) += (*darcy_flux)("face",faces[n]) * dirs[n] * dt;
-      }
-    }
+//       AmanziMesh::Entity_ID_List faces;
+//       std::vector<int> dirs;
+//       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+//       for (unsigned int n=0; n!=faces.size(); ++n) {
+//         error("cell",c) += (*darcy_flux)("face",faces[n]) * dirs[n] * dt;
+//       }
+//     }
 
-    double einf(0.0);
-    error.NormInf(&einf);
+//     double einf(0.0);
+//     error.NormInf(&einf);
 
-    // VerboseObject stuff.
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Final Mass Balance Error: " << einf << std::endl;
-  }
-#endif
+//     // VerboseObject stuff.
+//     Teuchos::OSTab tab = vo_->getOSTab();
+//     *vo_->os() << "Final Mass Balance Error: " << einf << std::endl;
+//   }
+// #endif
 };
 
 

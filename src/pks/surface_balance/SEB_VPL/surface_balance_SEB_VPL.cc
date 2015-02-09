@@ -460,7 +460,7 @@ bool SurfaceBalanceSEBVPL::advance(double dt) {
       data.st_energy.Trw = data.st_energy.Trw * theta + data_bare.st_energy.Trw * (1.-theta);
 
       // slightly different averaging
-      double avg_dens, avg_age, ht;
+      double avg_dens(0.), avg_age(0.), ht(0.);
       if (data_bare.st_energy.ht_snow > 0) {
         avg_dens += data_bare.st_energy.density_snow * data_bare.st_energy.ht_snow;
         avg_age += data_bare.st_energy.age_snow * data_bare.st_energy.ht_snow;

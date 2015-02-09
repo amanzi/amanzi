@@ -26,9 +26,9 @@ class WRMOldPermafrostModel : public WRMPermafrostModel {
   // required methods from the base class
   // sats[0] = s_g, sats[1] = s_l, sats[2] = s_i
   virtual bool freezing(double T, double pc_liq, double pc_ice) { return T < 273.15; }
-  virtual void saturations(double pc_liq, double pc_ice, double (&sats)[3]);
-  virtual void dsaturations_dpc_liq(double pc_liq, double pc_ice, double (&dsats)[3]);
-  virtual void dsaturations_dpc_ice(double pc_liq, double pc_ice, double (&dsats)[3]);
+  virtual void saturations(double pc_liq, double pc_ice, double T, double (&sats)[3]);
+  virtual void dsaturations_dpc_liq(double pc_liq, double pc_ice, double T, double (&dsats)[3]);
+  virtual void dsaturations_dpc_ice(double pc_liq, double pc_ice, double T, double (&dsats)[3]);
 
  private:
   static Utils::RegisteredFactory<WRMPermafrostModel,WRMOldPermafrostModel> factory_;

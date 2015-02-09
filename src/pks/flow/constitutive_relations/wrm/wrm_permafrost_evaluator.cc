@@ -70,6 +70,7 @@ WRMPermafrostEvaluator::WRMPermafrostEvaluator(const WRMPermafrostEvaluator& oth
     SecondaryVariablesFieldEvaluator(other),
     pc_liq_key_(other.pc_liq_key_),
     pc_ice_key_(other.pc_ice_key_),
+    temp_key_(other.temp_key_),
     s_l_key_(other.s_l_key_),
     permafrost_models_(other.permafrost_models_) {}
 
@@ -102,6 +103,11 @@ void WRMPermafrostEvaluator::InitializeFromPlist_() {
   pc_ice_key_ = plist_.get<std::string>("liquid-ice capillary pressure key",
           "capillary_pressure_liq_ice");
   dependencies_.insert(pc_ice_key_);
+
+  // temperature
+  temp_key_ = plist_.get<std::string>("temperature key",
+          "temperature");
+  dependencies_.insert(temp_key_);
 }
 
 
@@ -123,12 +129,14 @@ void WRMPermafrostEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       ->ViewComponent("cell",false);
   const Epetra_MultiVector& pc_ice_c = *S->GetFieldData(pc_ice_key_)
       ->ViewComponent("cell",false);
+  const Epetra_MultiVector& temp_c = *S->GetFieldData(temp_key_)
+      ->ViewComponent("cell",false);
 
   double sats[3];
   int ncells = satg_c.MyLength();
   for (AmanziMesh::Entity_ID c=0; c!=ncells; ++c) {
     int i = (*permafrost_models_->first)[c];
-    permafrost_models_->second[i]->saturations(pc_liq_c[0][c], pc_ice_c[0][c], sats);
+    permafrost_models_->second[i]->saturations(pc_liq_c[0][c], pc_ice_c[0][c], temp_c[0][c], sats);
     satg_c[0][c] = sats[0];
     satl_c[0][c] = sats[1];
     sati_c[0][c] = sats[2];
@@ -142,6 +150,8 @@ void WRMPermafrostEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     const Epetra_MultiVector& pc_liq_bf = *S->GetFieldData(pc_liq_key_)
         ->ViewComponent("boundary_face",false);
     const Epetra_MultiVector& pc_ice_bf = *S->GetFieldData(pc_ice_key_)
+        ->ViewComponent("boundary_face",false);
+    const Epetra_MultiVector& temp_bf = *S->GetFieldData(temp_key_)
         ->ViewComponent("boundary_face",false);
 
     // Need to get boundary face's inner cell to specify the WRM.
@@ -160,7 +170,7 @@ void WRMPermafrostEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
       int i = (*permafrost_models_->first)[cells[0]];
       permafrost_models_->second[i]
-          ->saturations(pc_liq_bf[0][bf], pc_ice_bf[0][bf], sats);
+          ->saturations(pc_liq_bf[0][bf], pc_ice_bf[0][bf], temp_bf[0][bf], sats);
       satg_bf[0][bf] = sats[0];
       satl_bf[0][bf] = sats[1];
       sati_bf[0][bf] = sats[2];
@@ -187,6 +197,8 @@ WRMPermafrostEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State
       ->ViewComponent("cell",false);
   const Epetra_MultiVector& pc_ice_c = *S->GetFieldData(pc_ice_key_)
       ->ViewComponent("cell",false);
+  const Epetra_MultiVector& temp_c = *S->GetFieldData(temp_key_)
+      ->ViewComponent("cell",false);
 
   double dsats[3];
   if (wrt_key == pc_liq_key_) {
@@ -194,7 +206,7 @@ WRMPermafrostEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State
     for (AmanziMesh::Entity_ID c=0; c!=ncells; ++c) {
       int i = (*permafrost_models_->first)[c];
       permafrost_models_->second[i]->dsaturations_dpc_liq(
-          pc_liq_c[0][c], pc_ice_c[0][c], dsats);
+          pc_liq_c[0][c], pc_ice_c[0][c], temp_c[0][c], dsats);
 
       satg_c[0][c] = dsats[0];
       satl_c[0][c] = dsats[1];
@@ -206,12 +218,25 @@ WRMPermafrostEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State
     for (AmanziMesh::Entity_ID c=0; c!=ncells; ++c) {
       int i = (*permafrost_models_->first)[c];
       permafrost_models_->second[i]->dsaturations_dpc_ice(
-          pc_liq_c[0][c], pc_ice_c[0][c], dsats);
+          pc_liq_c[0][c], pc_ice_c[0][c], temp_c[0][c], dsats);
 
       satg_c[0][c] = dsats[0];
       satl_c[0][c] = dsats[1];
       sati_c[0][c] = dsats[2];
     }
+
+  } else if (wrt_key == temp_key_) {
+    int ncells = satg_c.MyLength();
+    for (AmanziMesh::Entity_ID c=0; c!=ncells; ++c) {
+      int i = (*permafrost_models_->first)[c];
+      permafrost_models_->second[i]->dsaturations_dtemperature(
+          pc_liq_c[0][c], pc_ice_c[0][c], temp_c[0][c], dsats);
+
+      satg_c[0][c] = dsats[0];
+      satl_c[0][c] = dsats[1];
+      sati_c[0][c] = dsats[2];
+    }
+
   } else {
     ASSERT(0);
   }
@@ -224,6 +249,8 @@ WRMPermafrostEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State
     const Epetra_MultiVector& pc_liq_bf = *S->GetFieldData(pc_liq_key_)
         ->ViewComponent("boundary_face",false);
     const Epetra_MultiVector& pc_ice_bf = *S->GetFieldData(pc_ice_key_)
+        ->ViewComponent("boundary_face",false);
+    const Epetra_MultiVector& temp_bf = *S->GetFieldData(temp_key_)
         ->ViewComponent("boundary_face",false);
 
     // Need to get boundary face's inner cell to specify the WRM.
@@ -243,7 +270,7 @@ WRMPermafrostEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State
 
         int i = (*permafrost_models_->first)[cells[0]];
         permafrost_models_->second[i]->dsaturations_dpc_liq(
-            pc_liq_bf[0][bf], pc_ice_bf[0][bf], dsats);
+            pc_liq_bf[0][bf], pc_ice_bf[0][bf], temp_bf[0][bf], dsats);
         satg_bf[0][bf] = dsats[0];
         satl_bf[0][bf] = dsats[1];
         sati_bf[0][bf] = dsats[2];
@@ -260,11 +287,29 @@ WRMPermafrostEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State
 
         int i = (*permafrost_models_->first)[cells[0]];
         permafrost_models_->second[i]->dsaturations_dpc_ice(
-            pc_liq_bf[0][bf], pc_ice_bf[0][bf], dsats);
+            pc_liq_bf[0][bf], pc_ice_bf[0][bf], temp_bf[0][bf], dsats);
         satg_bf[0][bf] = dsats[0];
         satl_bf[0][bf] = dsats[1];
         sati_bf[0][bf] = dsats[2];
       }
+
+    } else if (wrt_key == temp_key_) {
+      // calculate boundary face values
+      int nbfaces = satl_bf.MyLength();
+      for (int bf=0; bf!=nbfaces; ++bf) {
+        // given a boundary face, we need the internal cell to choose the right WRM
+        AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
+        mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+        ASSERT(cells.size() == 1);
+
+        int i = (*permafrost_models_->first)[cells[0]];
+        permafrost_models_->second[i]->dsaturations_dtemperature(
+            pc_liq_bf[0][bf], pc_ice_bf[0][bf], temp_bf[0][bf], dsats);
+        satg_bf[0][bf] = dsats[0];
+        satl_bf[0][bf] = dsats[1];
+        sati_bf[0][bf] = dsats[2];
+      }
+
     } else {
       ASSERT(0);
     }

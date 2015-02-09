@@ -77,7 +77,7 @@ class MatrixMFD_Coupled : public TreeMatrix {
 
   virtual void SetOffDiagonals(const Teuchos::RCP<const Epetra_MultiVector>& Ccc,
                        const Teuchos::RCP<const Epetra_MultiVector>& Dcc,
-                       double scaling=1.) {
+                       double scaling) {
     scaling_ = scaling;
     Ccc_ = Ccc;
     Dcc_ = Dcc;
@@ -86,6 +86,9 @@ class MatrixMFD_Coupled : public TreeMatrix {
 
   Teuchos::RCP<const Epetra_FEVbrMatrix> Schur() {
     return P2f2f_;
+  }
+  Teuchos::RCP<const Epetra_FEVbrMatrix> Aff() {
+    return A2f2f_;
   }
 
   // TreeMatrix stuff FIX ME!
