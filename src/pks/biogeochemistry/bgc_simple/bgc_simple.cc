@@ -291,7 +291,7 @@ bool BGCSimple::advance(double dt) {
     // -- serious cache thrash... --etc
     for (std::size_t i=0; i!=col_iter.size(); ++i) {
       AmanziGeometry::Point centroid = mesh_->cell_centroid(col_iter[i]);
-      std::cout << "Col iter col=" << col << ", index i=" << i << ", cell=" << col_iter[i] << " at " << centroid << std::endl;
+	  //      std::cout << "Col iter col=" << col << ", index i=" << i << ", cell=" << col_iter[i] << " at " << centroid << std::endl;
       for (int p=0; p!=soil_carbon_pools_[col][i]->nPools; ++p) {
         soil_carbon_pools_[col][i]->SOM[p] = sc_pools[p][col_iter[i]];
       }
