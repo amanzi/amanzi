@@ -2278,7 +2278,6 @@ Internal parameters for PCG include
 * `"overflow tolerance`" [double] defines the maximum allowed jump in residual. The default
   value is 3.0e+50.
 
-/
 .. code-block:: xml
 
     <ParameterList name="pcg parameters">

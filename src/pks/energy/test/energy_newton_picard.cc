@@ -7,11 +7,13 @@
 #include "Epetra_MpiComm.h"
 
 #include "Energy_PK.hh"
+#include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "SolverNewton.hh"
 #include "SolverFnBase.hh"
+#include "UpwindStandard.hh"
 
-const double TemperatureSource = 100.0; 
+const double TemperatureSource = 1.0; 
 const double TemperatureFloor = 0.02; 
 
 
@@ -27,7 +29,7 @@ class Problem : public Amanzi::AmanziSolvers::SolverFnBase<Amanzi::CompositeVect
     mesh_ = mesh;
     plist_ = plist;
 
-    // create vector
+    // create generic vector
     cvs_ = Teuchos::rcp(new CompositeVectorSpace());
     cvs_->SetMesh(mesh);
     cvs_->SetGhosted(true);
@@ -36,7 +38,9 @@ class Problem : public Amanzi::AmanziSolvers::SolverFnBase<Amanzi::CompositeVect
     cvs_->AddComponent("face", AmanziMesh::FACE, 1);
 
     solution_ = Teuchos::rcp(new CompositeVector(*cvs_)); 
+    solution0_ = Teuchos::rcp(new CompositeVector(*cvs_)); 
     flux_ = Teuchos::rcp(new CompositeVector(*cvs_)); 
+    InitialGuess();
 
     // create BCs
     int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -63,9 +67,9 @@ class Problem : public Amanzi::AmanziSolvers::SolverFnBase<Amanzi::CompositeVect
         Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
     // constant accumulation term
-    dT = 0.02;
+    dT = 5e-3;
     phi_ = Teuchos::rcp(new CompositeVector(*cvs_));
-    phi_->PutScalar(0.2);
+    phi_->PutScalar(1.0);
 
     // create static diffusion data
     for (int c = 0; c < ncells_owned; c++) {
@@ -78,6 +82,14 @@ class Problem : public Amanzi::AmanziSolvers::SolverFnBase<Amanzi::CompositeVect
     // create temperature-dependent data
     k = Teuchos::rcp(new CompositeVector(*cvs_));
     dkdT = Teuchos::rcp(new CompositeVector(*cvs_));
+
+    // Create upwind model
+    Teuchos::ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
+    Teuchos::RCP<Problem> problem = Teuchos::rcp(new Problem());
+    upwind_ = Teuchos::rcp(new Operators::UpwindStandard<Problem>(mesh_, problem));
+    upwind_->Init(ulist);
+
+    // Update values
     UpdateValues(*solution_);
 
     // create diffusion operator
@@ -90,7 +102,7 @@ class Problem : public Amanzi::AmanziSolvers::SolverFnBase<Amanzi::CompositeVect
 
     op_->Setup(K, k, dkdT, rho, mu);
     op_->UpdateMatrices(flux_, solution_);
-    op_->AddAccumulationTerm(*solution_, *phi_, dT, "cell");
+    op_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
     op_->ApplyBCs();
     op_->SymbolicAssembleMatrix(schema_prec_dofs);
     op_->AssembleMatrix(schema_prec_dofs);
@@ -100,27 +112,61 @@ class Problem : public Amanzi::AmanziSolvers::SolverFnBase<Amanzi::CompositeVect
     op_->InitPreconditioner("Hypre AMG", slist);
   }
 
-  void InitialGuess() { solution_->PutScalar(1.0); }
+  double Conduction(int c, double T) const {
+    ASSERT(T > 0.0);
+    return T * T * T;
+  }
+
+  double ConductionDerivative(int c, double T) const {
+    ASSERT(T > 0.0);
+    return 3 * T * T;
+  }
+
+  void InitialGuess() { 
+    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+    Epetra_MultiVector& sol_c = *solution_->ViewComponent("cell", true);
+  
+    for (int c = 0; c < ncells_wghost; ++c) {
+      const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+      double a = TemperatureSource;
+      sol_c[0][c] = a / 2 - a / M_PI * atan(20 * (xc[0] - 1.0));
+    }
+
+    int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    Epetra_MultiVector& sol_f = *solution_->ViewComponent("face", true);
+  
+    for (int f = 0; f < nfaces_wghost; ++f) {
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+      double a = TemperatureSource;
+      sol_f[0][f] = a / 2 - a / M_PI * atan(100 * (xf[0] - 1.0));
+    }
+
+    *solution0_ = *solution_;
+  }
 
   void UpdateValues(const CompositeVector& u) { 
     const Epetra_MultiVector& uc = *u.ViewComponent("cell", true); 
     const Epetra_MultiVector& kc = *k->ViewComponent("cell", true); 
+    const Epetra_MultiVector& dkdT_c = *dkdT->ViewComponent("cell", true); 
 
-    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-    for (int c = 0; c < ncells; c++) {
-      kc[0][c] = std::pow(uc[0][c], 3.0);
+    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+    for (int c = 0; c < ncells_wghost; c++) {
+      double u = uc[0][c];
+      kc[0][c] = Conduction(c, u);
+      dkdT_c[0][c] = ConductionDerivative(c, u);
     }
 
-    k->PutScalar(1.0);
-    dkdT->PutScalar(0.0);
+    upwind_->Compute(*flux_, bc_model, bc_value, *k, *k, &Problem::Conduction);
+    upwind_->Compute(*flux_, bc_model, bc_value, *dkdT, *dkdT, &Problem::ConductionDerivative);
   }
 
   // virtual member functions
   void Residual(const Teuchos::RCP<Amanzi::CompositeVector>& u,
                 const Teuchos::RCP<Amanzi::CompositeVector>& f) {
     op_->Init();
-    op_->UpdateMatrices(flux_, u);
-    op_->AddAccumulationTerm(*u, *phi_, dT, "cell");
+    UpdateValues(*u);
+    op_->UpdateMatrices(Teuchos::null, u);
+    op_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
     op_->ApplyBCs();
     op_->ComputeNegativeResidual(*u, *f);
   }
@@ -142,8 +188,9 @@ class Problem : public Amanzi::AmanziSolvers::SolverFnBase<Amanzi::CompositeVect
 
     // Calculate new matrix.
     op_->Init();
+    UpdateValues(*up);
     op_->UpdateMatrices(flux_, up);
-    op_->AddAccumulationTerm(*up, *phi_, dT, "cell");
+    op_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
     op_->ApplyBCs();
 
     // Assemble matrix and calculate preconditioner.
@@ -171,13 +218,17 @@ class Problem : public Amanzi::AmanziSolvers::SolverFnBase<Amanzi::CompositeVect
 
   std::vector<WhetStone::Tensor> K;
   Teuchos::RCP<CompositeVector> k, dkdT;
+  Teuchos::RCP<Operators::UpwindStandard<Problem> > upwind_;
 
   double dT;
   Teuchos::RCP<CompositeVector> phi_;
 
   Teuchos::RCP<CompositeVector> solution_;
+  Teuchos::RCP<CompositeVector> solution0_;
   Teuchos::RCP<CompositeVector> flux_;
 };
+
+typedef double(Problem::*ModelUpwindFn)(int c, double T) const; 
 
 }  // namespace Amanzi
 
@@ -212,7 +263,7 @@ TEST(NEWTON_PICARD) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 3.0, 1.0, 30, 10, gm);
+  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 3.0, 1.0, 60, 10, gm);
 
   // create problem
   Teuchos::RCP<Problem> problem = Teuchos::rcp(new Problem());
@@ -228,9 +279,19 @@ TEST(NEWTON_PICARD) {
 
   // initial guess
   problem->InitialGuess();
+  Epetra_MultiVector p0(*problem->solution()->ViewComponent("cell"));
 
   // solve
   newton_picard->Solve(problem->solution());
+  Epetra_MultiVector& p1 = *problem->solution()->ViewComponent("cell");
+
+  if (MyPID == 0) {
+    GMV::open_data_file(*mesh, (std::string)"energy.gmv");
+    GMV::start_data();
+    GMV::write_cell_data(p0, 0, "p0");
+    GMV::write_cell_data(p1, 0, "p1");
+    GMV::close_data_file();
+  }
 };
 
 

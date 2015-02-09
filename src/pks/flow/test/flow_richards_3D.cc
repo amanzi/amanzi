@@ -21,9 +21,9 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
+#include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
-#include "GMVMesh.hh"
 
 #include "State.hh"
 #include "Richards_PK.hh"
