@@ -80,6 +80,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     new_list = input_parameter_list;
   }
   
+#ifdef ENABLE_NATIVE_XML_OUTPUT
   // A hack: print floating-point numbers with a given precision.
   int precision = input_parameter_list.get<int>("output precision", 0);
 
@@ -100,6 +101,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       xmlfile << XMLobj;
     }
   }
+#endif
 
 
   //------------ DOMAIN, GEOMETRIC MODEL, ETC ----------------------------
