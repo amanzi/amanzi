@@ -14,6 +14,7 @@
 #include "Teuchos_Array.hpp"
 
 #include "VerboseObject.hh"
+#include "InputParserIS_Defs.hh"
 
 namespace Amanzi {
 namespace AmanziInput {
@@ -52,7 +53,7 @@ class InputParserIS {
 
  private:
   // flow 
-  Teuchos::ParameterList CreateFlowList_(Teuchos::ParameterList* plist);
+  Teuchos::ParameterList CreateFlowList_(Teuchos::ParameterList* plist, int time_regime = BOTH_REGIMES);
   Teuchos::ParameterList CreateFlowSrcList_(Teuchos::ParameterList* plist);
   Teuchos::ParameterList CreateSS_FlowBC_List_(Teuchos::ParameterList* plist);
   Teuchos::ParameterList CreateFlowOperatorList_(
@@ -92,6 +93,10 @@ class InputParserIS {
   // MPC and state
   Teuchos::ParameterList CreateMPC_List_(Teuchos::ParameterList* plist);
   Teuchos::ParameterList CreateTimePeriodControlList_(Teuchos::ParameterList* plist);
+  Teuchos::ParameterList CreateCycleDriver_List_(Teuchos::ParameterList* plist);
+  void CreatePKslist_(Teuchos::ParameterList& cycle_driver_list, Teuchos::ParameterList& pks_list);
+  void RegisterPKlist_(Teuchos::ParameterList& pk_tree, Teuchos::ParameterList& pks_list);
+  void FillPKslist_(Teuchos::ParameterList* plist, Teuchos::ParameterList& pks_list);
 
   // mesh and geometry
   Teuchos::ParameterList CreateMeshList_(Teuchos::ParameterList* plist);

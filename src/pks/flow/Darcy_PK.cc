@@ -35,7 +35,7 @@ namespace Flow {
 /* ******************************************************************
 * Simplest possible constructor: extracts lists and requires fields.
 ****************************************************************** */
-Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S) : Flow_PK()
+Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, const std::string& pk_list_name, Teuchos::RCP<State> S) : Flow_PK()
 {
   S_ = S;
   mesh_ = S->GetMesh();
@@ -43,17 +43,22 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S) : Flow_
 
   // We need the flow list
   Teuchos::ParameterList flow_list;
-  if (glist.isSublist("Flow")) {
-    flow_list = glist.sublist("Flow");
+  if (!glist.isSublist("PKs")){
+      Errors::Message msg("Flow PK: input parameter list does not have PKs sublist.");
+      Exceptions::amanzi_throw(msg);
+  }
+
+  if (glist.sublist("PKs").isSublist(pk_list_name)) {
+    flow_list = glist.sublist("PKs").sublist(pk_list_name);
   } else {
-    Errors::Message msg("Flow PK: input parameter list does not have <Flow> sublist.");
+    Errors::Message msg("Darcy PK: input parameter list does not have "+pk_list_name+" sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
   if (flow_list.isSublist("Darcy problem")) {
     dp_list_ = flow_list.sublist("Darcy problem");
   } else {
-    Errors::Message msg("Flow PK: input parameter list does not have \"Darcy problem\" sublist.");
+    Errors::Message msg("Darcy PK: input parameter list does not have \"Darcy problem\" sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -71,6 +76,14 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S) : Flow_
     Errors::Message msg("Flow PK: input XML does not have <Solvers> sublist.");
     Exceptions::amanzi_throw(msg);
   }
+
+  if (dp_list_.isSublist("time integrator")){
+    ti_list_ = dp_list_.sublist("time integrator");
+  } 
+  // else {
+  //   Errors::Message msg("Richards PK: input XML does not have <time integrator> sublist.");
+  //   Exceptions::amanzi_throw(msg);
+  // }  
 
   // for creating fields
   std::vector<std::string> names(2);
@@ -286,6 +299,37 @@ void Darcy_PK::InitializeSteadySaturated()
   SolveFullySaturatedProblem(T, *solution);
 }
 
+/* ******************************************************************
+* Specific initialization of a steady state time integration phase.
+* WARNING: now it is equivalent to transient phase.
+****************************************************************** */
+void Darcy_PK::InitTimeInterval()
+{
+  specific_yield_copy_ = Teuchos::null;
+
+  UpdateSpecificYield_();
+
+  ProcessSublistTimeInterval(ti_list_,  ti_specs_generic_);
+ 
+  ti_specs_generic_.T0  = ti_list_.get<double>("start interval time", 0);
+  ti_specs_generic_.dT0 = ti_list_.get<double>("initial time step", 1);
+
+  double T0 = ti_specs_generic_.T0;
+  double dT0 = ti_specs_generic_.dT0;
+
+  dT = dT0;
+  dTnext = dT0;
+
+  if (ti_specs != NULL) OutputTimeHistory(dp_list_, ti_specs->dT_history);
+  ti_specs = &ti_specs_generic_;
+
+  InitNextTI(T0, dT0, ti_specs_generic_);
+
+  error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;  // usually 1e-4;
+}
+
+
+
 
 /* ******************************************************************
 * Specific initialization of a steady state time integration phase.
@@ -331,7 +375,7 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
         << "****************************************" << std::endl
         << vo_->color("green") << "New TI phase: " << ti_specs.ti_method_name.c_str() << vo_->reset() << std::endl
         << "****************************************" << std::endl
-        << "  start T=" << T0 / FLOW_YEAR << " [y], dT=" << dT0 << " [sec]" << std::endl
+      //<< "  start T=" << T0 / FLOW_YEAR << " [y], dT=" << dT0 << " [sec]" << std::endl
         << "  time stepping id=" << ti_specs.dT_method << std::endl
         << "  sources distribution id=" << src_sink_distribution << std::endl
         << "  linear solver name: " << ti_specs.solver_name.c_str() << std::endl
@@ -410,7 +454,7 @@ int Darcy_PK::AdvanceToSteadyState(double T0, double dT0)
 * Performs one time step of size dT. The boundary conditions are 
 * calculated only once, during the initialization step.  
 ******************************************************************* */
-int Darcy_PK::Advance(double dT_MPC, double& dT_actual) 
+bool Darcy_PK::Advance(double dT_MPC, double& dT_actual) 
 {
   dT = dT_MPC;
   double T1 = S_->time();
@@ -467,6 +511,8 @@ int Darcy_PK::Advance(double dT_MPC, double& dT_actual)
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
   solver->ApplyInverse(rhs, *solution);
 
+  bool fail = false;
+
   ti_specs->num_itrs++;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -506,7 +552,7 @@ int Darcy_PK::Advance(double dT_MPC, double& dT_actual)
   dt_tuple times(T1, dT_MPC);
   ti_specs->dT_history.push_back(times);
 
-  return 0;
+  return fail;
 }
 
 
@@ -581,6 +627,10 @@ void Darcy_PK::UpdateSpecificYield_()
     msg << "Flow PK: configuration of the yield region leads to negative yield interfaces.";
     Exceptions::amanzi_throw(msg);
   }
+}
+
+void  Darcy_PK::CalculateDiagnostics(const Teuchos::Ptr<State>& S){
+  UpdateAuxilliaryData();
 }
 
 }  // namespace Flow

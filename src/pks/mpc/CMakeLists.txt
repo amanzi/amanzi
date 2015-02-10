@@ -35,9 +35,21 @@ include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
 #
+# PK registrations
+#
+register_evaluator_with_factory( HEADERFILE FlowReactiveTransport_PK_reg.hh 
+  LISTNAME   PKS_FRT_REGISTRATIONS )
+
+generate_evaluators_registration_header( 
+  HEADERFILE pks_flowreactivetransport_registration.hh 
+  LISTNAME   PKS_FRT_REGISTRATIONS
+  INSTALL    True )
+
+
+#
 # Library: energy
 #
-set(mpc_tree_src_files MPCWeak.cc MPCSubcycled.cc)
+set(mpc_tree_src_files MPCWeak.cc MPCSubcycled.cc FlowReactiveTransport_PK.cc)
 set(mpc_tree_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 add_amanzi_library(mpc_tree SOURCE ${mpc_tree_src_files}
                    LINK_LIBS ${mpc_tree_tpl_libs} time_integration data_structures state)
@@ -45,7 +57,7 @@ add_amanzi_library(mpc_tree SOURCE ${mpc_tree_src_files}
 #
 # Install Targets
 #
-set(mpc_tree_inc_files MPCStrong.hh MPCWeak.hh MPCSubcycled.hh MPC_tmp.hh)
+set(mpc_tree_inc_files MPCStrong.hh MPCWeak.hh MPCSubcycled.hh MPC_tmp.hh FlowReactiveTransport_PK.hh)
 
 add_install_include_file(${mpc_tree_inc_files})
 

@@ -25,6 +25,8 @@ MPCSubcycled::MPCSubcycled(Teuchos::ParameterList& pk_tree,
     MPCTmp<PK>(pk_tree, global_list, S, soln) {
 
   // Master PK is the PK whose time step size sets the size, the slave is subcycled.
+
+
   master_ = my_list_->get<int>("master PK index", 0);
   slave_ = master_ == 1 ? 0 : 1;
 
@@ -45,6 +47,7 @@ MPCSubcycled::MPCSubcycled(Teuchos::ParameterList& pk_tree,
 double MPCSubcycled::get_dt() {
   master_dt_ = sub_pks_[master_]->get_dt();
   slave_dt_ = sub_pks_[slave_]->get_dt();
+  //  std::cout<<"master_dt_ "<<master_dt_<<" slave_dt_ "<<slave_dt_<<"\n";
   if (slave_dt_ > master_dt_) slave_dt_ = master_dt_;
   
   return master_dt_;
@@ -58,8 +61,12 @@ bool MPCSubcycled::AdvanceStep(double t_old, double t_new) {
   bool fail = false;
 
   // advance the master PK using the full step size
+
   fail = sub_pks_[master_]->AdvanceStep(t_old, t_new);
   if (fail) return fail;
+
+  master_dt_ = t_new - t_old;
+  if (slave_dt_ > master_dt_) slave_dt_ = master_dt_;
 
   // --etc: unclear if state should be commited?
   sub_pks_[master_]->CommitStep(t_old, t_new);
@@ -94,7 +101,7 @@ bool MPCSubcycled::AdvanceStep(double t_old, double t_new) {
 
     // check for done condition
     done = (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) || // finished the step
-        (dt_next / (t_new - t_old) < min_dt_); // failed
+        (dt_next  < min_dt_); // failed
   }
 
   if (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) {

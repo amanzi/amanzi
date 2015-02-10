@@ -127,4 +127,8 @@
 #define RESTART_TIME_STEP               1.0
 #define TI_RESCUE_REDUCTION_FACTOR      0.5
 
+#define STEADY_REGIME                   1
+#define TRANSIENT_REGIME                2
+#define BOTH_REGIMES                    3
+
 #endif

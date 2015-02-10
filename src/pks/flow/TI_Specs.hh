@@ -37,6 +37,7 @@ class TI_Specs {
     clip_pressure = -1e+10;
     pressure_lambda_constraints = true;
     inflow_krel_correction = false;
+    ti_list_ptr_ = NULL;
   }
   ~TI_Specs() {};
 
@@ -62,6 +63,7 @@ class TI_Specs {
   std::string preconditioner_name_constraint;
 
   std::vector<std::pair<double, double> > dT_history;  // statistics (relocate to debug?)
+  Teuchos::ParameterList* ti_list_ptr_;
 };
 
 }  // namespace Flow

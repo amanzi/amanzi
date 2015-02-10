@@ -66,7 +66,7 @@ TEST(FLOW_2D_DARCY_WELL) {
   RCP<State> S = rcp(new State());
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Darcy_PK* DPK = new Darcy_PK(plist, S);
+  Darcy_PK* DPK = new Darcy_PK(plist, "Flow", S);
   S->Setup();
   S->InitializeFields();
 

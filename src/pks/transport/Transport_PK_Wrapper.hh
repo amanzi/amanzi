@@ -4,6 +4,7 @@
 
   Temporary wrapper converting the Transport_PK, which inherits from 
   BDFFnBase<CompositeVector>, to use TreeVectors.
+
 */
 
 #ifndef AMANZI_TRANSPORT_PK_WRAPPER_HH_
@@ -19,6 +20,7 @@ namespace Amanzi {
 namespace Transport {
 
 class Transport_PK_Wrapper : public PK {
+
  public:
   Transport_PK_Wrapper(Teuchos::ParameterList& pk_tree,
                        const Teuchos::RCP<Teuchos::ParameterList>& global_list,
@@ -26,7 +28,9 @@ class Transport_PK_Wrapper : public PK {
                        const Teuchos::RCP<TreeVector>& soln);
 
   // Setup
-  virtual void Setup() {};
+  virtual void Setup() {
+    pk_->InitializeFields();
+  }
   
   // Initialize owned (dependent) variables.
   virtual void Initialize() {
@@ -37,6 +41,8 @@ class Transport_PK_Wrapper : public PK {
   virtual double get_dt() {
     return pk_->get_dt();
   }
+
+  virtual void set_dt(double dt){};
 
   // Advance from state S0 to state S1 at time S0.time + dt.
   // Due to Transport PK / MPC conflict (FIXME when MPC will be upgraded)
@@ -55,9 +61,14 @@ class Transport_PK_Wrapper : public PK {
     return pk_->name();
   }
 
+  Teuchos::RCP<CompositeVector> total_component_concentration() {
+    return pk_->total_component_concentration();
+  }
+
  protected:
   std::vector<std::string> comp_names_;
   Teuchos::RCP<Teuchos::ParameterList> glist_;
+  Teuchos::ParameterList ti_list_;
   Teuchos::RCP<Transport_PK> pk_;
   Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<State> S_;
@@ -65,9 +76,10 @@ class Transport_PK_Wrapper : public PK {
  private:
   // factory registration
   static RegisteredPKFactory<Transport_PK_Wrapper> reg_;
+    
 };
 
-}  // namespace Transport
-}  // namespace Amanzi
+} // namespace
+} // namespace
 
 #endif

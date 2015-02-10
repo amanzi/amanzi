@@ -22,6 +22,7 @@ include_directories(${CHEM_INCLUDES_DIR})
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
+include_directories(${PKS_SOURCE_DIR})
 include_directories(${GEOCHEM_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
@@ -33,16 +34,27 @@ include_directories(${STATE_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 
 
+
 # External (TPL) include directories
 # Although it does not call HDF5 directly 
 # it does need HDF5 for the Vis.hpp file 
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
 
+
+register_evaluator_with_factory( HEADERFILE Chemistry_PK_Wrapper_reg.hh
+  LISTNAME   PKS_CHEMISTRY_REGISTRATIONS )
+
+generate_evaluators_registration_header( 
+  HEADERFILE pks_chemistry_registration.hh   
+  LISTNAME   PKS_CHEMISTRY_REGISTRATIONS
+  INSTALL    True )
+
+
 file(GLOB chem_inc_files "*hh")
 set(chem_src_files)
 if (ENABLE_Unstructured)
-  list(APPEND chem_src_files Chemistry_State.cc;chemistry_pk.cc)
+  list(APPEND chem_src_files Chemistry_State.cc;chemistry_pk.cc;Chemistry_PK_Wrapper.cc)
   if (ENABLE_ALQUIMIA)
     list(APPEND chem_src_files alquimia_chemistry_pk.cc)
   endif()

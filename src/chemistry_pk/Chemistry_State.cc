@@ -314,12 +314,19 @@ void Chemistry_State::RequireData_() {
   water_density_initialized_ = false;
 
   // Require data from flow
-  S_->RequireField("porosity", name_)->SetMesh(mesh_)->SetGhosted(false)
+  if (!S_->HasField("porosity")) {
+    S_->RequireField("porosity", name_)->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S_->RequireField("water_saturation", name_)->SetMesh(mesh_)->SetGhosted(false)
+  }
+  if (!S_->HasField("water_saturation")) {
+    S_->RequireField("water_saturation", name_)->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+  
   S_->RequireScalar("fluid_density", name_);
-  S_->RequireFieldEvaluator("cell_volume");
+  if (!S_->HasFieldEvaluator("cell_volume")){
+    S_->RequireFieldEvaluator("cell_volume");
+  }
 
   // Require my data
   if (number_of_aqueous_components_ > 0) {
@@ -501,7 +508,11 @@ void Chemistry_State::InitializeField_(Teuchos::ParameterList& ic_plist,
   // Initialize mineral volume fractions
   // -- first initialize to a default: this should be a valid default if the
   // parameter is optional, and non-valid if it is not.
-  S_->GetFieldData(fieldname, name_)->PutScalar(default_val);
+
+  if (S_->HasField(fieldname)){
+    S_->GetFieldData(fieldname, name_)->PutScalar(default_val);
+    //S_->GetField(fieldname, name_)->set_initialized();
+  }
 
   // -- initialize from the ParameterList
   if (ic_plist.isSublist(fieldname)) {

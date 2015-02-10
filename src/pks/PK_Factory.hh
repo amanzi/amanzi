@@ -30,6 +30,7 @@
   #include "pk_implementation.hh"
   template<>
   Amanzi::RegisteredPKFactory<DerivedPK> DerivedPK::factory_("pk unique id");
+  
 */
 
 
@@ -64,31 +65,31 @@ class PKFactory {
           const Teuchos::RCP<State>& state,
           const Teuchos::RCP<TreeVector>& soln) {
 
+
     if (!global_list->isSublist("PKs")) {
       Errors::Message message("PK_Factory: Missing sublist \"PKs\" in global list.");
       Exceptions::amanzi_throw(message);
     }
-
-    if (!global_list->sublist("PKs").isSublist(pk_tree.name())) {
+   
+   
+    std::string pk_type;
+    if (pk_tree.isParameter("PK type")){
+      pk_type = pk_tree.get<std::string>("PK type");
+	//if (!global_list->sublist("PKs").isSublist(pk_tree.name(pk_ite)) {
+    }
+    else{
       std::stringstream errmsg;
-      errmsg << "PK_Factory: Missing PK list \"" << pk_tree.name() << "\" from global PK list";
+      errmsg << "PK_Factory: Missing PK type item \n";
       Errors::Message message(errmsg.str());
       Exceptions::amanzi_throw(message);
     }
 
-    if (!global_list->sublist("PKs").sublist(pk_tree.name()).isParameter("PK type")) {
-      std::stringstream errmsg;
-      errmsg << "PK_Factory: PK list \"" << pk_tree.name() << "\" is missing the \"PK type\" parameter.";
-      Errors::Message message(errmsg.str());
-      Exceptions::amanzi_throw(message);
-    }
+    //std::string s = global_list->sublist("PKs").sublist(pk_name).get<std::string>("PK type");
 
-    std::string s = global_list->sublist("PKs").sublist(pk_tree.name())
-        .get<std::string>("PK type");
-    map_type::iterator iter = GetMap()->find(s);
+    map_type::iterator iter = GetMap()->find(pk_type);
     if (iter == GetMap()->end()) {
       std::stringstream errmsg;
-      errmsg << "PK Factory: cannot find PK type \"" << s << "\"";
+      errmsg << "PK Factory: cannot find PK type \"" << pk_type << "\"";
       for (map_type::iterator iter=GetMap()->begin();
            iter!=GetMap()->end(); ++iter) {
         errmsg << std::endl << "  option: " << iter->first;
@@ -99,14 +100,16 @@ class PKFactory {
     return Teuchos::rcp(iter->second(pk_tree, global_list, state, soln));
   }
 
+ private:
+  static map_type* map_;
+
  protected:
   static map_type* GetMap() {
     if (!map_) map_ = new map_type;
     return map_;
   }
 
- private:
-  static map_type* map_;
+
 };
 
 

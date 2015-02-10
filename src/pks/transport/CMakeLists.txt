@@ -40,6 +40,7 @@ include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${PKS_SOURCE_DIR})
+include_directories(${MPC_TREE_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Epetra_INCLUDE_DIRS})
@@ -47,7 +48,7 @@ include_directories(${HDF5_INCLUDE_DIRS})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
 #
-# Flow registrations
+# Transport registrations
 #
 register_evaluator_with_factory( HEADERFILE Transport_PK_Wrapper_reg.hh
   LISTNAME   PKS_TRANSPORT_REGISTRATIONS )
@@ -55,6 +56,16 @@ register_evaluator_with_factory( HEADERFILE Transport_PK_Wrapper_reg.hh
 generate_evaluators_registration_header( 
   HEADERFILE pks_transport_registration.hh   
   LISTNAME   PKS_TRANSPORT_REGISTRATIONS
+  INSTALL    True )
+#
+# ReactiveTransport registrations
+#
+register_evaluator_with_factory( HEADERFILE ReactiveTransport_PK_reg.hh
+  LISTNAME   PKS_REACTIVETRANSPORT_REGISTRATIONS )
+
+generate_evaluators_registration_header( 
+  HEADERFILE pks_reactivetransport_registration.hh   
+  LISTNAME   PKS_REACTIVETRANSPORT_REGISTRATIONS
   INSTALL    True )
 
 
@@ -79,7 +90,7 @@ set(transport_src_files Transport_PK.cc Transport_TI.cc
                         Transport_PK_Wrapper.cc
                         TransportBCFactory.cc TransportSourceFactory.cc
                         TransportBoundaryFunction_Tracer.cc TransportBoundaryFunction_Alquimia.cc
-                        TransportDomainFunction.cc)
+                        TransportDomainFunction.cc ReactiveTransport_PK.cc)
 
 if (ENABLE_ALQUIMIA)
   set(geochem_lib geochemistry)
@@ -87,7 +98,7 @@ endif()
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}
                    LINK_LIBS geometry mesh error_handling state data_structures 
-                             ${geochem_lib} chemistry_pk time_integration ${Epetra_LIBRARIES})
+                             ${geochem_lib} chemistry_pk mpc_tree time_integration ${Epetra_LIBRARIES})
 
 if ( BUILD_TESTS )
     # Add UnitTest includes

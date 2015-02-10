@@ -122,7 +122,7 @@ void MPC::mpc_init() {
 
   // chemistry...
   if (chemistry_enabled) {
-    Teuchos::ParameterList chemistry_parameter_list = parameter_list.sublist("Chemistry");
+    Teuchos::ParameterList chemistry_parameter_list = parameter_list.sublist("PKs").sublist("Chemistry");
 
 #ifdef ALQUIMIA_ENABLED
     if (chemistry_model == "Alquimia") {
@@ -166,13 +166,13 @@ void MPC::mpc_init() {
   if (flow_enabled) {
     flow_model = mpc_parameter_list.get<std::string>("Flow model", "Darcy");
     if (flow_model == "Darcy") {
-      FPK = Teuchos::rcp(new Flow::Darcy_PK(parameter_list, S));
+      FPK = Teuchos::rcp(new Flow::Darcy_PK(parameter_list,"Flow", S));
     } else if (flow_model == "Steady State Saturated") {
-      FPK = Teuchos::rcp(new Flow::Darcy_PK(parameter_list, S));
+      FPK = Teuchos::rcp(new Flow::Darcy_PK(parameter_list,"Flow", S));
     } else if (flow_model == "Richards") {
-      FPK = Teuchos::rcp(new Flow::Richards_PK(parameter_list, S));
+      FPK = Teuchos::rcp(new Flow::Richards_PK(parameter_list, "Flow", S));
     } else if (flow_model == "Steady State Richards") {
-      FPK = Teuchos::rcp(new Flow::Richards_PK(parameter_list, S));
+      FPK = Teuchos::rcp(new Flow::Richards_PK(parameter_list, "Flow", S));
     } else {
       std::cout << "MPC: unknown flow model: " << flow_model << std::endl;
       throw std::exception();
@@ -191,11 +191,11 @@ void MPC::mpc_init() {
       // When Alquimia is used, the Transport PK must interact with the 
       // chemistry engine to obtain boundary values for the components.
       // The component names are fetched from the chemistry engine.
-      TPK = Teuchos::rcp(new Transport::Transport_PK(parameter_list, S, CS, chem_engine));
+      TPK = Teuchos::rcp(new Transport::Transport_PK(parameter_list, S, "Transport", CS, chem_engine));
     }
     else {
 #endif
-      TPK = Teuchos::rcp(new Transport::Transport_PK(parameter_list, S, component_names));
+      TPK = Teuchos::rcp(new Transport::Transport_PK(parameter_list, S, "Transport", component_names));
 #ifdef ALQUIMIA_ENABLED
     }
 #endif
@@ -238,7 +238,7 @@ void MPC::mpc_init() {
         throw std::exception();
 #endif
       } else if (chemistry_model == "Amanzi") {
-        Teuchos::ParameterList chemistry_parameter_list = parameter_list.sublist("Chemistry");
+        Teuchos::ParameterList chemistry_parameter_list = parameter_list.sublist("PKs").sublist("Chemistry");
         CPK = Teuchos::rcp(new AmanziChemistry::Chemistry_PK(chemistry_parameter_list, CS));
       } else {
         std::cout << "MPC: unknown chemistry model: " << chemistry_model << std::endl;
@@ -288,6 +288,7 @@ void MPC::mpc_init() {
   } else {
     restart = Teuchos::ptr(new Amanzi::Checkpoint());
   }
+
 
   // are we restarting from a file?
   // first assume we're not
@@ -778,6 +779,9 @@ void MPC::cycle_driver() {
         case (FLOW_LIMITS):
           break;
       }
+
+      //WriteCheckpoint(restart,S.ptr(),dTtransient);
+      //exit(0);
 
       // then advance transport and chemistry
       if ( (ti_mode == TRANSIENT) || 

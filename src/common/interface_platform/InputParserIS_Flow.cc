@@ -17,7 +17,7 @@ namespace AmanziInput {
 * This routine has to be called after routine CreateStateList so that
 * constant density will be properly initialized.
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* plist, int time_regime) 
 {
   Errors::Message msg;
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -82,7 +82,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
                      << vo_->reset() << std::endl;
         }
       }
-
+      
       if (flow_model == "Single Phase" || flow_model == "Richards") {
         if (flow_model == "Single Phase") {
           Teuchos::ParameterList& darcy_problem = flw_list.sublist("Darcy problem");
@@ -117,7 +117,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
         Teuchos::ParameterList flow_bc; // = flow_list->sublist("boundary conditions");
         flow_bc = CreateSS_FlowBC_List_(plist);
         flow_list->sublist("boundary conditions") = flow_bc;
-
+	
         // insert sources, if they exist
         Teuchos::ParameterList flow_src; // = flow_list->sublist("source terms");
         flow_src = CreateFlowSrcList_(plist);
@@ -349,8 +349,13 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
             sti_bdf1.set<int>("max preconditioner lag iterations", 0);
 	    sti_bdf1.set<bool>("extrapolate initial guess", false);	    
           }
-        }
 
+	  if (time_regime == STEADY_REGIME){
+	    flow_list->sublist("time integrator") = sti_list;
+	  }
+	  
+        }
+	
         // only include the transient list if not in steady mode
         if (! ti_mode_list.isSublist("Steady")) {
           // create sublists for the transient state time integrator
@@ -481,13 +486,17 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           }
 
           tti_list.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
-        }
+
+	  if (time_regime == TRANSIENT_REGIME){ 
+	    flow_list->sublist("time integrator") =  tti_list; 
+	  }
+	}
       }
     }
   }
 
   return flw_list;
-}
+ }
 
 
 /* ******************************************************************

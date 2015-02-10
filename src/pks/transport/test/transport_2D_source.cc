@@ -66,7 +66,7 @@ std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
   RCP<State> S = rcp(new State());
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Transport_PK TPK(plist, S, component_names);
+  Transport_PK TPK(plist, S, "Transport", component_names);
   TPK.CreateDefaultState(mesh, 2);
 
   /* modify the default state for the problem at hand */

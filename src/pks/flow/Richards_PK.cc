@@ -42,7 +42,7 @@ namespace Flow {
 /* ******************************************************************
 * Simplest possible constructor: extracts lists and requires fields.
 ****************************************************************** */
-Richards_PK::Richards_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S) :
+  Richards_PK::Richards_PK(Teuchos::ParameterList& glist, const std::string& pk_list_name, Teuchos::RCP<State> S) :
   Flow_PK()
 {
   S_ = S;
@@ -51,19 +51,26 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S) :
 
   // We need the flow list
   Teuchos::ParameterList flow_list;
-  if (glist.isSublist("Flow")) {
-    flow_list = glist.sublist("Flow");
+  if (!glist.isSublist("PKs")){
+      Errors::Message msg("Richards_PK: input parameter list does not have PKs sublist.");
+      Exceptions::amanzi_throw(msg);
+  }
+
+  if (glist.sublist("PKs").isSublist(pk_list_name)) {
+    flow_list = glist.sublist("PKs").sublist(pk_list_name);
   } else {
-    Errors::Message msg("Flow PK: input parameter list does not have <Flow> sublist.");
+    Errors::Message msg("Richards_PK: input parameter list does not have "+pk_list_name+" sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
   if (flow_list.isSublist("Richards problem")) {
     rp_list_ = flow_list.sublist("Richards problem");
   } else {
-    Errors::Message msg("Flow PK: input parameter list does not have \"Richards oroblem\" sublist.");
+    Errors::Message msg("Richards_PK: input parameter list does not have <Richards problem> sublist.");
     Exceptions::amanzi_throw(msg);
   }
+  
+  new_mpc_driver = glist.get<bool>("new mpc driver", false);
 
   // We also need iscaleneous sublists
   if (glist.isSublist("Preconditioners")) {
@@ -79,6 +86,15 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S) :
     Errors::Message msg("Flow PK: input XML does not have <Solvers> sublist.");
     Exceptions::amanzi_throw(msg);
   }
+
+  if (rp_list_.isSublist("time integrator")){
+    ti_list_ = rp_list_.sublist("time integrator");
+  } 
+  // else {
+  //   Errors::Message msg("Richards PK: input XML does not have <time integrator> sublist.");
+  //   Exceptions::amanzi_throw(msg);
+  // }  
+
 
   // for creating fields
   std::vector<std::string> names(2);
@@ -355,6 +371,10 @@ void Richards_PK::InitializeSteadySaturated()
 ****************************************************************** */
 void Richards_PK::InitPicard(double T0)
 {
+
+  ti_igs_list_ = rp_list_.sublist("initial guess pseudo time integrator");
+  ProcessSublistTimeInterval(ti_igs_list_,  ti_specs_igs_);
+
   ti_specs = &ti_specs_igs_;
   if (ti_specs->error_control_options == 0) {
     error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;
@@ -381,6 +401,10 @@ void Richards_PK::InitPicard(double T0)
 ****************************************************************** */
 void Richards_PK::InitSteadyState(double T0, double dT0)
 {
+
+  ti_sss_list_ = rp_list_.sublist("steady state time integrator");
+  ProcessSublistTimeInterval(ti_sss_list_,  ti_specs_sss_);
+
   if (ti_specs != NULL) OutputTimeHistory(rp_list_, ti_specs->dT_history);
   ti_specs = &ti_specs_sss_;
 
@@ -402,6 +426,10 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 ****************************************************************** */
 void Richards_PK::InitTransient(double T0, double dT0)
 {
+
+  ti_trs_list_ = rp_list_.sublist("transient time integrator");
+  ProcessSublistTimeInterval(ti_trs_list_,  ti_specs_trs_);
+
   if (ti_specs != NULL) OutputTimeHistory(rp_list_, ti_specs->dT_history);
   ti_specs = &ti_specs_trs_;
 
@@ -419,6 +447,37 @@ void Richards_PK::InitTransient(double T0, double dT0)
   seepage_mass_ = 0.0;
 }
 
+void Richards_PK::InitTimeInterval(){
+  
+  //std::cout<<ti_list_<<"\n";
+  ProcessSublistTimeInterval(ti_list_,  ti_specs_generic_);
+ 
+  ti_specs_generic_.T0  = ti_list_.get<double>("start interval time", 0);
+  ti_specs_generic_.dT0 = ti_list_.get<double>("initial time step", 1);
+
+  double T0 = ti_specs_generic_.T0;
+  double dT0 = ti_specs_generic_.dT0;
+
+  dT = dT0;
+  dTnext = dT0;
+
+  //  std::cout<<"T0 "<<T0<<" dT0 "<<dT0<<"\n";
+
+  if (ti_specs != NULL) OutputTimeHistory(rp_list_, ti_specs->dT_history);
+  ti_specs = &ti_specs_generic_;
+
+  error_control_ = ti_specs->error_control_options;
+  if (error_control_ == 0) {
+    error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]
+                     FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4;
+    ti_specs->error_control_options = error_control_;
+  }
+
+  InitNextTI(T0, dT0, ti_specs_generic_);
+  
+}
+
+
 
 /* ******************************************************************
 * Generic initialization of a next time integration phase.
@@ -427,13 +486,14 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 {
   ResetPKtimes(T0, dT0);
 
+
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << std::endl 
         << vo_->color("green") << "New TI phase: " << ti_specs.ti_method_name.c_str() 
         << vo_->reset() << std::endl << std::endl;
-    *vo_->os() << "T=" << T0 / FLOW_YEAR << " [y] dT=" << dT0 << " [sec]" << std::endl
-        << "EC:" << error_control_ << " Src:" << src_sink_distribution
+    //*vo_->os() << "T=" << T0 / FLOW_YEAR << " [y] dT=" << dT0 << " [sec]" << std::endl
+    *vo_->os()<< "EC:" << error_control_ << " Src:" << src_sink_distribution
         << " Upwind:" << rel_perm_->method() << op_matrix_->upwind_
         << " PC:\"" << ti_specs.preconditioner_name.c_str() << "\"" << std::endl;
   }
@@ -442,7 +502,9 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   std::string ti_method_name(ti_specs.ti_method_name);
 
   if (ti_specs.ti_method == FLOW_TIME_INTEGRATION_BDF1) {
-    Teuchos::ParameterList bdf1_list = rp_list_.sublist(ti_method_name).sublist("BDF1");
+    //Teuchos::ParameterList bdf1_list = rp_list_.sublist(ti_method_name).sublist("BDF1");
+    Teuchos::ParameterList bdf1_list = ti_specs.ti_list_ptr_->sublist("BDF1");
+    //std::cout<<bdf1_list<<"\n";
     if (! bdf1_list.isSublist("VerboseObject"))
         bdf1_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
 
@@ -515,6 +577,12 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
       Epetra_MultiVector& lambda = *solution->ViewComponent("face", true);
       DeriveFaceValuesFromCellValues(p, lambda);
     }
+
+    Epetra_MultiVector& ws = *S_->GetFieldData("water_saturation", passwd_)->ViewComponent("cell", false);
+    Epetra_MultiVector& ws_prev = *S_->GetFieldData("prev_water_saturation", passwd_)->ViewComponent("cell", false);
+    DeriveSaturationFromPressure(p, ws);
+    ws_prev = ws;
+
   }
 
   // initialize saturation
@@ -594,7 +662,7 @@ double Richards_PK::get_dt()
 *       dT_MPC, otherwise return true (for failed). Steps should not be
 *       taken internally in case coupling fails at a higher level.
 ******************************************************************* */
-int Richards_PK::Advance(double dT_MPC, double& dT_actual)
+bool Richards_PK::Advance(double dT_MPC, double& dT_actual)
 {
   dT = dT_MPC;
   double time = S_->time();
@@ -618,25 +686,73 @@ int Richards_PK::Advance(double dT_MPC, double& dT_actual)
     ti_specs->num_itrs++;
   }
 
-  if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF1) {
-    while (bdf1_dae->TimeStep(dT, dTnext, solution)) {
-      dT = dTnext;
+
+  bool fail = false;
+
+  // Epetra_MultiVector& pr_face = *solution->ViewComponent("face", true);
+  // const Epetra_MultiVector& pr_state_face =*S_->GetFieldData("pressure")->ViewComponent("face");
+  // for (int f = 0; f < 20; f++) std::cout<<"sol "<<pr_face[0][f]<<" sol_state"<<pr_state_face[0][f]<<"\n";
+
+
+  if (!new_mpc_driver){
+    if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF1) {
+      while (bdf1_dae->TimeStep(dT, dTnext, solution)) {
+	dT = dTnext;
+      }
+      // --etc this is a bug in general -- should not commit the solution unless
+      //   the step passes all other PKs
+      bdf1_dae->CommitSolution(dT, solution);
+      T_physics = bdf1_dae->time();
     }
 
-    // --etc this is a bug in general -- should not commit the solution unless
-    //   the step passes all other PKs
-    bdf1_dae->CommitSolution(dT, solution);
-    T_physics = bdf1_dae->time();
+    // Epetra_MultiVector& pr_face = *solution->ViewComponent("face", true);
+    // const Epetra_MultiVector& pr_state_face =*S_->GetFieldData("pressure")->ViewComponent("face");
+    // //for (int f = 0; f < 10; f++) std::cout<<pr_face[0][f]<<" "<<pr_state_face[0][f]<<"\n";
+    // for (int f = 0; f < 20; f++) std::cout<<"sol "<<pr_face[0][f]<<" sol_state "<<pr_state_face[0][f]<<"\n";
+
+    dT_actual = dT;
   }
+  else {
+    if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF1){
+      fail = bdf1_dae->TimeStep(dT, dTnext, solution);
+      if (fail){
+	dT = dTnext;
+	return fail;
+      }
+      bdf1_dae->CommitSolution(dT, solution);
+      T_physics = bdf1_dae->time();
+    }
+
+    // Epetra_MultiVector& pr_face = *solution->ViewComponent("face", true);
+    // const Epetra_MultiVector& pr_state_face =*S_->GetFieldData("pressure")->ViewComponent("face");
+    // //for (int f = 0; f < 10; f++) std::cout<<pr_face[0][f]<<" "<<pr_state_face[0][f]<<"\n";
+    // for (int f = 0; f < 20; f++) std::cout<<"sol "<<pr_face[0][f]<<" sol_state "<<pr_state_face[0][f]<<"\n";
+
+  }
+
+
   // tell the caller what time step we actually took
-  dT_actual = dT;
+  //dT_actual = dT;
   
   dt_tuple times(time, dT);
   ti_specs->dT_history.push_back(times);
 
   ti_specs->num_itrs++;
 
-  return 0;
+
+ if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+   VV_ReportWaterBalance(S_.ptr());
+  }
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    VV_ReportSeepageOutflow(S_.ptr());
+  }
+
+
+  dT = dTnext;
+
+  //exit(0);
+  
+  return fail;
 }
 
 
@@ -648,6 +764,8 @@ int Richards_PK::Advance(double dT_MPC, double& dT_actual)
 ****************************************************************** */
 void Richards_PK::CommitState(double dt, const Teuchos::Ptr<State>& S)
 {
+  //UpdateAuxilliaryData();
+
   // copy solution to State
   CompositeVector& pressure = *S->GetFieldData("pressure", passwd_);
   *pressure.ViewComponent("cell") = *solution->ViewComponent("cell");
@@ -673,19 +791,14 @@ void Richards_PK::CommitState(double dt, const Teuchos::Ptr<State>& S)
   for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
   *darcy_flux_copy->ViewComponent("face", true) = flux;
 
+  
   // update time derivative
   *pdot_cells_prev = *pdot_cells;
 
   // update mass balance
   // ImproveAlgebraicConsistency(ws_prev, ws);
   
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    VV_ReportWaterBalance(S);
-  }
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    VV_ReportSeepageOutflow(S);
-  }
-
+ 
   dT = dTnext;
 }
 
@@ -788,6 +901,10 @@ double Richards_PK::BoundaryFaceValue(int f, const CompositeVector& u)
     // dk_face[0][f] = -WRM[map_c2mb[c]]->dKdPc (atm_pressure_ - face_val);
   }
   return face_value;
+}
+
+void  Richards_PK::CalculateDiagnostics(const Teuchos::Ptr<State>& S){
+  UpdateAuxilliaryData();
 }
 
 }  // namespace Flow

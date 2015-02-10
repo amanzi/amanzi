@@ -37,10 +37,11 @@ namespace Transport {
 * We set up minimum default values and call Construct_() to complete 
 * the initialization process.
 ****************************************************************** */
-Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
+Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S, 
+			   const std::string& pk_list_name,
                            std::vector<std::string>& component_names)
 {
-  Construct_(glist, S, component_names);
+  Construct_(glist, S, pk_list_name, component_names);
 }
 
 
@@ -49,6 +50,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
 ****************************************************************** */
 #ifdef ALQUIMIA_ENABLED
 Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
+			   const std::string& pk_list_name,
                            Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
                            Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
     : chem_state_(chem_state), chem_engine_(chem_engine)
@@ -56,7 +58,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
   // Retrieve the component names from the chemistry engine.
   std::vector<std::string> component_names;
   chem_engine_->GetPrimarySpeciesNames(component_names);
-  Construct_(glist, S, component_names);
+  Construct_(glist, S, pk_list_name, component_names);
 }
 #endif
 
@@ -66,13 +68,14 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
 ****************************************************************** */
 void Transport_PK::Construct_(Teuchos::ParameterList& glist, 
                               Teuchos::RCP<State> S,
+			      const std::string& pk_list_name,
                               std::vector<std::string>& component_names)
 {
   vo_ = NULL;
   S_ = S;
   component_names_ = component_names;
 
-  parameter_list = glist.sublist("Transport");
+  parameter_list = glist.sublist("PKs").sublist(pk_list_name);
   preconditioners_list = glist.sublist("Preconditioners");
   solvers_list = glist.sublist("Solvers");
   nonlin_solvers_list = glist.sublist("Nonlinear solvers");
@@ -167,6 +170,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   // extract control parameters
   ProcessParameterList();
 
+    
   // state pre-prosessing
   Teuchos::RCP<CompositeVector> cv1;
   S->GetFieldData("darcy_flux", passwd_)->ScatterMasterToGhosted("face");
@@ -307,7 +311,8 @@ double Transport_PK::CalculateTransportDt()
 ******************************************************************* */
 double Transport_PK::get_dt()
 {
-  if (dT == 0.0) CalculateTransportDt();
+  //if (dT == 0.0) 
+  CalculateTransportDt();
   return dT;
 }
 
@@ -980,8 +985,8 @@ void Transport_PK::IdentifyUpwindCells()
   for (int f = 0; f < nfaces_wghost; f++) {
     (*upwind_cell_)[f] = -1;  // negative value indicates boundary
     (*downwind_cell_)[f] = -1;
-  }
 
+    }
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 

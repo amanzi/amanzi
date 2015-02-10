@@ -15,6 +15,7 @@
 
 #include "Teuchos_RCP.hpp"
 
+
 namespace Amanzi {
 
 class State;
@@ -38,6 +39,9 @@ class PK {
 
   // Choose a time step compatible with physics.
   virtual double get_dt() = 0;
+
+  // Set a time step for a PK.
+  virtual void set_dt(double dt) = 0;
 
   // Advance PK by step size dt.
   virtual bool AdvanceStep(double t_old, double t_new) = 0;

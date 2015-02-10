@@ -4,6 +4,7 @@
 
   Temporary wrapper converting the Richards_PK, which inherits from
   BDFFnBase<CompositeVector>, to use TreeVectors.
+
 */
 
 #ifndef AMANZI_RICHARDS_PK_WRAPPER_HH_
@@ -23,25 +24,41 @@ class State;
 namespace Flow {
 
 class Richards_PK_Wrapper : public FnTimeIntegratorPK {
+
  public:
   Richards_PK_Wrapper(Teuchos::ParameterList& pk_tree,
                       const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                       const Teuchos::RCP<State>& S,
                       const Teuchos::RCP<TreeVector>& soln);
 
+  ~Richards_PK_Wrapper(){
+  }
+
   // Setup
-  virtual void Setup() {};
+  virtual void Setup() {
+    dt_ = -1;
+    pk_->InitializeFields();
+  }
 
   // Initialize owned (dependent) variables.
   virtual void Initialize() {
     pk_->Initialize(S_.ptr());
-    pk_->InitializeAuxiliaryData();
+    pk_->InitializeAuxiliaryData(); 
+    pk_->InitTimeInterval();
+    pk_->UpdateAuxilliaryData();
   }
 
   // Choose a time step compatible with physics.
-  virtual double get_dt() {
-    return pk_->get_dt();
+  virtual double get_dt() {    
+    return pk_->get_dt();    
   }
+
+  //  Set a time step
+  virtual void set_dt(double dt){
+    dt_ = dt;
+    pk_->set_dt(dt);
+  }
+
 
   // Advance PK by step size dt.
   virtual bool AdvanceStep(double t_old, double t_new);
@@ -122,16 +139,19 @@ class Richards_PK_Wrapper : public FnTimeIntegratorPK {
 
  protected:
   Teuchos::RCP<Teuchos::ParameterList> glist_;
-  Teuchos::RCP<Richards_PK> pk_;
+  Teuchos::ParameterList ti_list_;
+  Teuchos::RCP<Richards_PK> pk_; 
   Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<State> S_;
+  double dt_;
 
  private:
   // factory registration
   static RegisteredPKFactory<Richards_PK_Wrapper> reg_;
+
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace
+} // namespace
 
 #endif

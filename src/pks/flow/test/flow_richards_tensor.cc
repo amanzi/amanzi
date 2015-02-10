@@ -66,7 +66,7 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Richards_PK* RPK = new Richards_PK(plist, S);
+  Richards_PK* RPK = new Richards_PK(plist,  "Flow", S);
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();

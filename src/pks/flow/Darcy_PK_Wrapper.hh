@@ -4,6 +4,7 @@
 
   Temporary wrapper converting the Darcy_PK, which inherits from 
   BDFFnBase<CompositeVector>, to use TreeVectors.
+
 */
 
 #ifndef AMANZI_DARCY_PK_WRAPPER_HH_
@@ -20,24 +21,42 @@ namespace Amanzi {
 namespace Flow {
 
 class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
+
  public:
   Darcy_PK_Wrapper(Teuchos::ParameterList& pk_tree,
                    const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                    const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& soln);
 
+  ~Darcy_PK_Wrapper(){
+  }
+
   // Setup
-  virtual void Setup() {};
+  virtual void Setup() {
+    dt_ = -1;
+    pk_->InitializeFields();
+  }
   
   // Initialize owned (dependent) variables.
   virtual void Initialize() {
     pk_->Initialize(S_.ptr());
+    pk_->InitializeAuxiliaryData(); 
+    pk_->InitTimeInterval();
   }
 
   // Choose a time step compatible with physics.
   virtual double get_dt() {
+
     return pk_->get_dt();
+    
   }
+
+  //  Set a time step 
+  virtual void set_dt(double dt){
+    dt_ = dt;
+    pk_->set_dt(dt);
+  }
+
 
   // Advance from t_old to t_new
   virtual bool AdvanceStep(double t_old, double t_new);
@@ -48,7 +67,9 @@ class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
   }
 
   // Calculate any diagnostics prior to doing vis
-  virtual void CalculateDiagnostics() {}
+  virtual void CalculateDiagnostics() {
+    pk_->CalculateDiagnostics(S_.ptr());
+  }
 
   virtual std::string name() {
     return pk_->name();
@@ -119,13 +140,15 @@ class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
   Teuchos::RCP<Darcy_PK> pk_;
   Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<State> S_;
+  double dt_;
 
  private:
   // factory registration
   static RegisteredPKFactory<Darcy_PK_Wrapper> reg_;
+    
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace
+} // namespace
 
 #endif

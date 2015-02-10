@@ -14,6 +14,9 @@
 #include "MeshFactory.hh"
 #include "State.hh"
 #include "MPC.hh"
+#include "CycleDriver.hh"
+#include "PK_Factory.hh"
+#include "PK.hh"
 #include "Domain.hh"
 #include "GeometricModel.hh"
 #include "MeshAudit.hh"
@@ -28,8 +31,15 @@
 #include "TimerManager.hh"
 
 // includes for PK registration
+//#include "pks_flow_registration.hh"
+//#include "pks_transport_registration.hh"
+// includes for PK registration
 #include "pks_flow_registration.hh"
 #include "pks_transport_registration.hh"
+#include "pks_reactivetransport_registration.hh"
+#include "pks_flowreactivetransport_registration.hh"
+#include "pks_chemistry_registration.hh"
+
 
 Amanzi::Simulator::ReturnType
 AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
@@ -85,7 +95,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
   if (!native && includesVerbLevel(verbLevel, Teuchos::VERB_LOW, true)) { 
     std::string xmlFileName = new_list.get<std::string>("input file name");
-    std::string new_extension("_native_v5.xml");
+    std::string new_extension("_native_v6.xml");
     size_t pos = xmlFileName.find(".xml");
     xmlFileName.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)14);
     if (comm->MyPID() == 0) {
@@ -350,18 +360,37 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   analysis.Init(new_list);
   analysis.RegionAnalysis();
   analysis.OutputBCs();
+
+
+  bool new_mpc_driver = new_list.get<bool>("new mpc driver", false);
+
+  if (new_mpc_driver){
+    if (new_list.isSublist("State")){
+      // Create the state.    
+      Teuchos::ParameterList state_plist = new_list.sublist("State");
+      Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
+      S->RegisterMesh("domain",mesh);      
+
+      // -------------- MULTI-PROCESS COORDINATOR------- --------------------
+      Amanzi::CycleDriver cycle_driver(new_list, S, comm, output_observations);
+      //--------------- DO THE SIMULATION -----------------------------------
+      cycle_driver.go();
+      //-----------------------------------------------------
+    }
+  }
+  else{
+    // -------------- MULTI-PROCESS COORDINATOR----------------------------
+    
+    Amanzi::MPC mpc(new_list, mesh, comm, output_observations);
+
+    //--------------- DO THE SIMULATION -----------------------------------
+
+    mpc.cycle_driver();
+
+    //---------------------------------------------------------------------
   
-  // -------------- MULTI-PROCESS COORDINATOR----------------------------
-
-  Amanzi::MPC mpc(new_list, mesh, comm, output_observations);
-
-  //--------------- DO THE SIMULATION -----------------------------------
-
-  mpc.cycle_driver();
-
-  //---------------------------------------------------------------------
+  }
   
-
   // Clean up
   mesh.reset();
   delete simdomain_ptr;

@@ -28,21 +28,23 @@ namespace Flow {
 
 class Darcy_PK : public Flow_PK {
  public:
-  Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S);
+  Darcy_PK(Teuchos::ParameterList& glist, const std::string& pk_list_name, Teuchos::RCP<State> S);
   ~Darcy_PK();
 
   // main PK methods
   void Initialize(const Teuchos::Ptr<State>& S);
-  int Advance(double dT, double &dT_actual); 
+  bool Advance(double dT, double &dT_actual); 
+  void set_dt(double dt){dT = dt; dT_desirable_ = dT;}
   double get_dt() { return dT_desirable_; }
   void CommitState(double dt, const Teuchos::Ptr<State>& S);
-  void CalculateDiagnostics(const Teuchos::Ptr<State>& S) {}
+  void CalculateDiagnostics(const Teuchos::Ptr<State>& S);
 
   // main flow methods
   void InitSteadyState(double T0, double dT0);
   void InitTransient(double T0, double dT0);
   void InitPicard(double T0) {};  // not used yet.
   void InitNextTI(double T0, double dT0, TI_Specs& ti_specs);
+  void InitTimeInterval();
 
   int AdvanceToSteadyState(double T0, double dT0);
   void InitializeAuxiliaryData();

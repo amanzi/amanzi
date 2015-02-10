@@ -4,10 +4,10 @@
 
   Temporary wrapper converting the Transport_PK, which inherits from 
   BDFFnBase<CompositeVector>, to use TreeVectors.
+
 */
 
 
-#include "Transport_PK.hh"
 #include "Transport_PK.hh"
 #include "Transport_PK_Wrapper.hh"
 
@@ -21,23 +21,31 @@ Transport_PK_Wrapper::Transport_PK_Wrapper(Teuchos::ParameterList& pk_tree,
     S_(S),
     soln_(soln)
 {
-  // Transport expects a single global list with sublist Flow
+  // Transport expects a single global list with sublist Transport
   glist_ = Teuchos::rcp(new Teuchos::ParameterList(*global_list));
-  glist_->set("Transport", global_list->sublist("PKs").sublist(pk_tree.name()));
 
+  //std::cout<<pk_tree;
+
+  std::string pk_name = pk_tree.name();
+  const char* result = pk_name.data();
+  while ((result = std::strstr(result, "->")) != NULL) {
+    result += 2;
+    pk_name = result;   
+  }
+
+  //std::cout<<glist_->sublist("Cycle Driver").sublist("time intervals").sublist("TI 0")<<"\n";
   // grab the component names
-  comp_names_ = glist_->sublist("PKs").sublist(pk_tree.name())
-      .get<Teuchos::Array<std::string> >("component names").toVector();
-  
+  comp_names_ = glist_->sublist("Cycle Driver").get<Teuchos::Array<std::string> >("component names").toVector();
+
+ 
   // construct
-  pk_ = Teuchos::rcp(new Transport_PK(*glist_, S_, comp_names_));
+  pk_ = Teuchos::rcp(new Transport_PK(*glist_, S_, pk_name, comp_names_));
 }
 
 
-/* ******************************************************************
-* Wrapper for new MPC policy.
-****************************************************************** */
-bool Transport_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
+bool
+Transport_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
+
   bool failed = false;
   double dt = t_new - t_old;
   double dt_actual(dt);
@@ -46,8 +54,9 @@ bool Transport_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
     failed = true;
   }
   return failed;
+
 }
 
-}  // namespace Transport
-}  // namespace Amanzi
+} // namespace Transport
+} // namespace Amanzi
 

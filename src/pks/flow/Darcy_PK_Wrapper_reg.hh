@@ -4,7 +4,7 @@
 namespace Amanzi {
 namespace Flow {
 
-RegisteredPKFactory<Darcy_PK_Wrapper> Darcy_PK_Wrapper::reg_("Darcy");
+RegisteredPKFactory<Darcy_PK_Wrapper> Darcy_PK_Wrapper::reg_("darcy");
 
 } // namespace
 } // namespace

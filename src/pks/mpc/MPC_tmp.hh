@@ -43,6 +43,8 @@ public:
          const Teuchos::RCP<State>& S,
          const Teuchos::RCP<TreeVector>& soln);
 
+  ~MPCTmp(){ std::cout<<"Destructor "<<name()<<"\n";}
+
   // PK methods
   // -- sets up sub-PKs
   virtual void Setup();
@@ -92,27 +94,48 @@ MPCTmp<PK_t>::MPCTmp(Teuchos::ParameterList& pk_tree,
     S_(S),
     solution_(soln)
 {
+
   // name the PK
   name_ = pk_tree.name();
+
+  const char* result = name_.data();
+  while ((result = std::strstr(result, "->")) != NULL) {
+    result += 2;
+    name_ = result;   
+  }
+
+  //std::cout<<pk_tree<<"\n";
+  //std::cout<<*global_list<<"\n";
 
   // get my ParameterList
   my_list_ = Teuchos::sublist(Teuchos::sublist(global_list_, "PKs"), name_);
 
-  Teuchos::RCP<Teuchos::ParameterList> plist =
-      Teuchos::sublist(Teuchos::sublist(global_list, "PKs"), name_);
+  Teuchos::RCP<Teuchos::ParameterList> plist;
+  //     Teuchos::sublist(Teuchos::sublist(global_list, "PKs"), name_);
+
+  if (global_list_->isSublist("PKs")){
+    plist =  Teuchos::sublist(global_list, "PKs");
+  }
+
+  std::vector<std::string> pk_name =  my_list_->get<Teuchos::Array<std::string> >("PKs order").toVector();
 
   // loop over sub-PKs in the PK sublist, constructing the hierarchy recursively
   PKFactory pk_factory;
-  for (Teuchos::ParameterList::ConstIterator sub=plist->begin();
-       sub!=plist->end(); ++sub) {
-    const std::string& sub_name = sub->first;
+  // for (Teuchos::ParameterList::ConstIterator sub=plist->begin();
+  //      sub!=plist->end(); ++sub) {
+  for (int i=0; i<pk_name.size(); i++){
+    //const std::string& sub_name = sub->first;
+    const std::string& sub_name = pk_name[i];
+    std::cout<<"sub_name "<<sub_name<<"\n";
     if (!plist->isSublist(sub_name)) {
       Errors::Message message("PK Tree: All entries in the PK tree must be ParameterLists");
       Exceptions::amanzi_throw(message);
     }
+  }
 
+  for (int i=0; i<pk_name.size(); i++){
     // Collect arguments to the constructor
-    Teuchos::ParameterList& pk_sub_tree = pk_tree.sublist(sub_name);
+    Teuchos::ParameterList& pk_sub_tree = pk_tree.sublist(pk_name[i]);
     Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector());
     solution_->PushBack(pk_soln);
 
@@ -122,6 +145,7 @@ MPCTmp<PK_t>::MPCTmp(Teuchos::ParameterList& pk_tree,
     Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
     sub_pks_.push_back(pk);
   }
+
 
 }
 
