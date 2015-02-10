@@ -22,13 +22,31 @@
   <ParameterList name="PK operator">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
-    <ParameterList name="diffusion operator">
+    <ParameterList name="diffusion operator NKA">
+      <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+      <Parameter name="upwind method" type="string" value="standard"/>
+      <Parameter name="newton correction" type="string" value="none"/>
+    </ParameterList>
+
+    <ParameterList name="diffusion operator Newton-Picard">
       <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="upwind method" type="string" value="standard"/>
-      <Parameter name="newton correction" type="string" value="approximate jacobiana"/>
+      <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+    </ParameterList>
+
+    <ParameterList name="diffusion operator JFNK">
+      <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+      <Parameter name="upwind method" type="string" value="standard"/>
+      <Parameter name="newton correction" type="string" value="none"/>
     </ParameterList>
 
     <ParameterList name="upwind">
@@ -39,12 +57,60 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Newton parameters">
-    <Parameter name="nonlinear tolerance" type="double" value="1.0e-6"/>
-    <Parameter name="diverged tolerance" type="double" value="1.00000000000000000e+10"/>
-    <Parameter name="max du growth factor" type="double" value="1.00000000000000000e+03"/>
+  <ParameterList name="Newton-Picard parameters">
+    <Parameter name="nonlinear tolerance" type="double" value="1.0e-8"/>
+    <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+    <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
     <Parameter name="max divergent iterations" type="int" value="3"/>
-    <Parameter name="limit iterations" type="int" value="50"/>
+    <Parameter name="max nka vectors" type="int" value="10"/>
+    <Parameter name="limit iterations" type="int" value="20"/>
+    <Parameter name="modify correction" type="bool" value="true"/>
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="extreme"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="NKA parameters">
+    <Parameter name="nonlinear tolerance" type="double" value="1.0e-8"/>
+    <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+    <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+    <Parameter name="max divergent iterations" type="int" value="3"/>
+    <Parameter name="max nka vectors" type="int" value="10"/>
+    <Parameter name="limit iterations" type="int" value="20"/>
+    <Parameter name="modify correction" type="bool" value="false"/>
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="extreme"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="JFNK parameters">
+    <Parameter name="typical solution value" type="double" value="1.0"/>
+    <ParameterList name="nonlinear solver">
+      <Parameter name="solver type" type="string" value="Newton"/>
+      <ParameterList name="Newton parameters">
+        <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+        <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+        <Parameter name="max divergent iterations" type="int" value="3"/>
+        <Parameter name="max nka vectors" type="int" value="10"/>
+        <Parameter name="limit iterations" type="int" value="20"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="JF matrix parameters">
+      <Parameter name="finite difference epsilon" type="double" value="1.0e-08"/>
+      <Parameter name="method for epsilon" type="string" value="Knoll-Keyes"/>
+    </ParameterList>
+    <ParameterList name="linear operator">
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="error tolerance" type="double" value="1e-7"/>
+        <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <Parameter name="convergence criteria" type="Array(string)" value="{relative rhs, relative residual}"/>
+      </ParameterList>
+    </ParameterList>
+    <Parameter name="limit iterations" type="int" value="20"/>
+    <Parameter name="nonlinear tolerance" type="double" value="1.0e-08"/>
+    <Parameter name="max divergent iterations" type="int" value="3"/>
+    <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
     <ParameterList name="VerboseObject">
       <Parameter name="Verbosity Level" type="string" value="extreme"/>
     </ParameterList>
@@ -88,7 +154,7 @@
         <Parameter name="relaxation type down" type="int" value="3"/>
         <Parameter name="relaxation type up" type="int" value="4"/>
         <Parameter name="coarsen type" type="int" value="0"/>
-        <Parameter name="tolerance" type="double" value="1e-7"/>
+        <Parameter name="tolerance" type="double" value="0.0"/>
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>
