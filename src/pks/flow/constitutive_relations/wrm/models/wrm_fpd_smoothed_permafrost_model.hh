@@ -1,7 +1,7 @@
 /*
 Author: Ethan Coon
 
-Painter's permafrost model with freezing point depression, smoothed to make life easier
+Painter's permafrost model with freezing point depression.
 
  */
 
@@ -21,8 +21,7 @@ class WRMFPDSmoothedPermafrostModel : public WRMPermafrostModel {
 
  public:
   explicit
-  WRMFPDSmoothedPermafrostModel(Teuchos::ParameterList& plist); //   :
-//      WRMPermafrostModel(plist) {}; 
+  WRMFPDSmoothedPermafrostModel(Teuchos::ParameterList& plist);
 
   // required methods from the base class
   // sats[0] = sg, sats[1] = sl, sats[2] = si
@@ -30,21 +29,16 @@ class WRMFPDSmoothedPermafrostModel : public WRMPermafrostModel {
     return pc_liq <= 0. ? T < 273.15 : pc_liq < pc_ice;
   }
 
-  virtual void saturations(double pc_liq, double pc_ice, double T, double (&sats)[3]);
-  virtual void dsaturations_dpc_liq(double pc_liq, double pc_ice, double T, double (&dsats)[3]);
-  virtual void dsaturations_dpc_ice(double pc_liq, double pc_ice, double T, double (&dsats)[3]);
-  virtual void dsaturations_dtemperature(double pc_liq, double pc_ice, double T, double (&dsats)[3]);
+  virtual void saturations(double pc_liq, double pc_ice, double (&sats)[3]);
+  virtual void dsaturations_dpc_liq(double pc_liq, double pc_ice, double (&dsats)[3]);
+  virtual void dsaturations_dpc_ice(double pc_liq, double pc_ice, double (&dsats)[3]);
 
  protected:
-  double deriv_regularization_;
-
+  double dp_;
+  
  private:
   // factory registration
   static Utils::RegisteredFactory<WRMPermafrostModel,WRMFPDSmoothedPermafrostModel> factory_;
-
-  double T0_; 
-  double delT_; 
-  double gamma_; 
 
 };
 

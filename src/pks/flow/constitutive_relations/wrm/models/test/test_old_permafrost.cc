@@ -37,17 +37,17 @@ TEST(permafrost) {
   // -- value
   double pc_ice = pcice.CapillaryPressure(275., rho);
   double pc_liq = p_atm - 100000.;
-  p1.saturations(pc_liq, pc_ice, 275., sats);
+  p1.saturations(pc_liq, pc_ice, sats);
   CHECK_CLOSE(sats[1], wrm->saturation(pc_liq), 1.e-8);
 
   // -- derivatives
   double eps = 1.e-6;
-  p1.saturations(pc_liq+eps, pc_ice, 275., sats2);
-  p1.saturations(pc_liq-eps, pc_ice, 275., sats3);
+  p1.saturations(pc_liq+eps, pc_ice, sats2);
+  p1.saturations(pc_liq-eps, pc_ice, sats3);
   sats2[0] = (sats2[0] - sats3[0])/(2*eps);
   sats2[1] = (sats2[1] - sats3[1])/(2*eps);
   sats2[2] = (sats2[2] - sats3[2])/(2*eps);
-  p1.dsaturations_dpc_liq(pc_liq, pc_ice, 275., sats);
+  p1.dsaturations_dpc_liq(pc_liq, pc_ice, sats);
   CHECK_CLOSE(sats[0], sats2[0], std::abs(sats[0])/1.e3);
   CHECK_CLOSE(sats[1], sats2[1], std::abs(sats[1])/1.e3);
   CHECK_CLOSE(sats[2], sats2[2], std::abs(sats[2])/1.e3);
@@ -56,16 +56,16 @@ TEST(permafrost) {
   // saturated, above freezing
   // -- value
   pc_liq = -1000.;
-  p1.saturations(pc_liq, pc_ice, 275., sats);
+  p1.saturations(pc_liq, pc_ice, sats);
   CHECK_CLOSE(sats[1], wrm->saturation(pc_liq), 1.e-8);
 
   // -- derivatives
-  p1.saturations(pc_liq+eps, pc_ice, 275., sats2);
-  p1.saturations(pc_liq-eps, pc_ice, 275., sats3);
+  p1.saturations(pc_liq+eps, pc_ice, sats2);
+  p1.saturations(pc_liq-eps, pc_ice, sats3);
   sats2[0] = (sats2[0] - sats3[0])/(2*eps);
   sats2[1] = (sats2[1] - sats3[1])/(2*eps);
   sats2[2] = (sats2[2] - sats3[2])/(2*eps);
-  p1.dsaturations_dpc_liq(pc_liq, pc_ice, 275., sats);
+  p1.dsaturations_dpc_liq(pc_liq, pc_ice, sats);
   CHECK_CLOSE(sats[0], sats2[0], std::abs(sats[0])/1.e3);
   CHECK_CLOSE(sats[1], sats2[1], std::abs(sats[1])/1.e3);
   CHECK_CLOSE(sats[2], sats2[2], std::abs(sats[2])/1.e3);
@@ -75,29 +75,29 @@ TEST(permafrost) {
   // -- value
   pc_ice = pcice.CapillaryPressure(273.1, rho);
   pc_liq = p_atm - 100000.;
-  p1.saturations(pc_liq, pc_ice, 273.1, sats);
+  p1.saturations(pc_liq, pc_ice, sats);
   CHECK_CLOSE(sats[0], 1.5071633730387701e-09, 1.e-12);
   CHECK_CLOSE(sats[1], 6.075025773954138e-06, 1.e-12);
   CHECK_CLOSE(sats[2], 0.9999939234670627, 1.e-8);
 
   // -- derivatives
-  p1.saturations(pc_liq+eps, pc_ice, 273.1, sats2);
-  p1.saturations(pc_liq-eps, pc_ice, 273.1, sats3);
+  p1.saturations(pc_liq+eps, pc_ice, sats2);
+  p1.saturations(pc_liq-eps, pc_ice, sats3);
   sats2[0] = (sats2[0] - sats3[0])/(2*eps);
   sats2[1] = (sats2[1] - sats3[1])/(2*eps);
   sats2[2] = (sats2[2] - sats3[2])/(2*eps);
-  p1.dsaturations_dpc_liq(pc_liq, pc_ice, 273.1, sats);
+  p1.dsaturations_dpc_liq(pc_liq, pc_ice, sats);
   CHECK_CLOSE(sats[0], sats2[0], std::abs(sats[0])/1.e3 + 1.e-10);
   CHECK_CLOSE(sats[1], sats2[1], std::abs(sats[1])/1.e3 + 1.e-10);
   CHECK_CLOSE(sats[2], sats2[2], std::abs(sats[2])/1.e3 + 1.e-10);
 
   eps = 1.e-5;
-  p1.saturations(pc_liq, pc_ice+eps, 273.1, sats2);
-  p1.saturations(pc_liq, pc_ice-eps, 273.1, sats3);
+  p1.saturations(pc_liq, pc_ice+eps, sats2);
+  p1.saturations(pc_liq, pc_ice-eps, sats3);
   sats2[0] = (sats2[0] - sats3[0])/(2.*eps);
   sats2[1] = (sats2[1] - sats3[1])/(2.*eps);
   sats2[2] = (sats2[2] - sats3[2])/(2.*eps);
-  p1.dsaturations_dpc_ice(pc_liq, pc_ice, 273.1, sats);
+  p1.dsaturations_dpc_ice(pc_liq, pc_ice, sats);
   CHECK_CLOSE(sats[0], sats2[0], std::abs(sats[0])/1.e3 + 1.e-10);
   CHECK_CLOSE(sats[1], sats2[1], std::abs(sats[1])/1.e3 + 1.e-10);
   CHECK_CLOSE(sats[2], sats2[2], std::abs(sats[2])/1.e3 + 1.e-10);
@@ -106,28 +106,28 @@ TEST(permafrost) {
   // unsaturated, below freezing
   // -- value
   pc_liq = p_atm - (-200000);
-  p1.saturations(pc_liq, pc_ice, 273.1, sats);
+  p1.saturations(pc_liq, pc_ice, sats);
   CHECK_CLOSE(sats[0], 0.962055704092613, 1.e-6);
   CHECK_CLOSE(sats[1], 2.305125759593384e-07, 1.e-12);
   CHECK_CLOSE(sats[2], 0.037944065394811, 1.e-10);
 
   // -- derivatives
-  p1.saturations(pc_liq+eps, pc_ice, 273.1, sats2);
-  p1.saturations(pc_liq-eps, pc_ice, 273.1, sats3);
+  p1.saturations(pc_liq+eps, pc_ice, sats2);
+  p1.saturations(pc_liq-eps, pc_ice, sats3);
   sats2[0] = (sats2[0] - sats3[0])/(2*eps);
   sats2[1] = (sats2[1] - sats3[1])/(2*eps);
   sats2[2] = (sats2[2] - sats3[2])/(2*eps);
-  p1.dsaturations_dpc_liq(pc_liq, pc_ice, 273.1, sats);
+  p1.dsaturations_dpc_liq(pc_liq, pc_ice, sats);
   CHECK_CLOSE(sats[0], sats2[0], std::abs(sats[0])/1.e3);
   CHECK_CLOSE(sats[1], sats2[1], std::abs(sats[1])/1.e3);
   CHECK_CLOSE(sats[2], sats2[2], std::abs(sats[2])/1.e3);
 
-  p1.saturations(pc_liq, pc_ice+eps, 273.1, sats2);
-  p1.saturations(pc_liq, pc_ice-eps, 273.1, sats3);
+  p1.saturations(pc_liq, pc_ice+eps, sats2);
+  p1.saturations(pc_liq, pc_ice-eps, sats3);
   sats2[0] = (sats2[0] - sats3[0])/(2*eps);
   sats2[1] = (sats2[1] - sats3[1])/(2*eps);
   sats2[2] = (sats2[2] - sats3[2])/(2*eps);
-  p1.dsaturations_dpc_ice(pc_liq, pc_ice, 273.1, sats);
+  p1.dsaturations_dpc_ice(pc_liq, pc_ice, sats);
   CHECK_CLOSE(sats[0], sats2[0], std::abs(sats[0])/1.e3);
   CHECK_CLOSE(sats[1], sats2[1], std::abs(sats[1])/1.e3);
   CHECK_CLOSE(sats[2], sats2[2], std::abs(sats[2])/1.e3);

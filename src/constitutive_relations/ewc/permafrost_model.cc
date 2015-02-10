@@ -195,7 +195,7 @@ int PermafrostModel::EvaluateSaturations(double T, double p, double& s_gas, doub
     }
 
     double sats[3];
-    wrm_->saturations(pc_l, pc_i, T, sats);
+    wrm_->saturations(pc_l, pc_i, sats);
     s_gas = sats[0];
     s_liq = sats[1];
     s_ice = sats[2];
@@ -235,7 +235,7 @@ int PermafrostModel::EvaluateEnergyAndWaterContent_(double T, double p, AmanziGe
     double pc_l = pc_l_->CapillaryPressure(p, p_atm_);
 
     double sats[3];
-    wrm_->saturations(pc_l, pc_i, T, sats);
+    wrm_->saturations(pc_l, pc_i, sats);
     double s_g = sats[0];
     double s_l = sats[1];
     double s_i = sats[2];
