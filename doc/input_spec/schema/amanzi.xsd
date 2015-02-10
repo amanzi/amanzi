@@ -1118,7 +1118,8 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="sorption_isotherms" type="typedef_sorption_isotherms" minOccurs="0" maxOccurs="1"/>
 		<!-- We need either permeability or hydraulic conductivity, need to add a check with a choice? -->
                 <xs:element name="permeability" minOccurs="0" maxOccurs="1">
-                  <xs:alternative test="@type='file'" type="typedef_property_file"/>
+		    <!-- EIB: may change value of type, therefore test for existance not value-->
+                  <xs:alternative test="exists(@type)" type="typedef_property_file"/>
                   <xs:alternative type="typedef_permeability"/>
                 </xs:element>
 		<xs:element name="hydraulic_conductivity" type="typedef_hydraulic_conductivity" minOccurs="0" maxOccurs="1"/>
@@ -1143,19 +1144,23 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:complexType name="typedef_mechanical_properties">
 	<xs:all>
 		<xs:element name="porosity" minOccurs="1" maxOccurs="1">			
-			<xs:alternative test="@type='file'" type="typedef_property_file"/>
+		        <!-- EIB: may change value of type, therefore test for existance not value-->
+			<xs:alternative test="exists(@type)" type="typedef_property_file"/>
 			<xs:alternative type="typedef_porosity"/>
 		</xs:element>
 		<xs:element name="particle_density" minOccurs="0" maxOccurs="1">			
-			<xs:alternative test="@type='file'" type="typedef_property_file"/>
+		        <!-- EIB: may change value of type, therefore test for existance not value-->
+			<xs:alternative test="exists(@type)" type="typedef_property_file"/>
 			<xs:alternative type="typedef_particle_density"/>
 		</xs:element>
 		<xs:element name="specific_storage" minOccurs="0" maxOccurs="1">			
-			<xs:alternative test="@type='file'" type="typedef_property_file"/>
+		        <!-- EIB: may change value of type, therefore test for existance not value-->
+			<xs:alternative test="exists(@type)" type="typedef_property_file"/>
 			<xs:alternative type="typedef_specific_storage"/>
 		</xs:element>
 		<xs:element name="specific_yield" minOccurs="0" maxOccurs="1">			
-			<xs:alternative test="@type='file'" type="typedef_property_file"/>
+		        <!-- EIB: may change value of type, therefore test for existance not value-->
+			<xs:alternative test="exists(@type)" type="typedef_property_file"/>
 			<xs:alternative type="typedef_specific_yield"/>
 		</xs:element>
 		<xs:element name="dispersion_tensor" minOccurs="0" maxOccurs="1">			
@@ -1165,7 +1170,8 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
                         <xs:alternative test="@type='lichtner_kelkar_robinson'" type="typedef_dispersion_tensor_lichtner_kelkar_robinson"/>
 		</xs:element>
 		<xs:element name="tortuosity" minOccurs="0" maxOccurs="1">			
-			<xs:alternative test="@type='file'" type="typedef_property_file"/>
+		        <!-- EIB: may change value of type, therefore test for existance not value-->
+			<xs:alternative test="exists(@type)" type="typedef_property_file"/>
 			<xs:alternative type="typedef_tortuosity"/>
 		</xs:element>
 	</xs:all>
@@ -1309,7 +1315,8 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:complexType name="typedef_solute_isotherms">
 	<xs:all>
         	<xs:element name="molecular_diffusion" minOccurs="0" maxOccurs="1">			
-	        	<xs:alternative test="@type='file'" type="typedef_property_file"/>
+		        <!-- EIB: may change value of type, therefore test for existance not value-->
+			<xs:alternative test="exists(@type)" type="typedef_property_file"/>
 		        <xs:alternative type="typedef_molecular_diffusion"/>
 	        </xs:element>
 		<xs:element name="kd_model" type="typedef_kd_model" minOccurs="0" maxOccurs="1"/>
@@ -1386,8 +1393,16 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:complexType name="typedef_liquid_phase">
 	<xs:all>
 		<xs:element name="eos" type="xs:string" minOccurs="0" maxOccurs="1"/>
-		<xs:element name="viscosity" type="typedef_exponential" minOccurs="1" maxOccurs="1"/>
-		<xs:element name="density" type="typedef_exponential" minOccurs="1" maxOccurs="1"/>
+		<xs:element name="viscosity" type="typedef_exponential" minOccurs="1" maxOccurs="1">
+		    <!-- EIB: if attributes exist this is a file read, else get value from element text -->
+		    <xs:alternative test="exists(@type)" type="typedef_property_file"/>
+		    <xs:alternative type="typedef_exponential"/>
+                </xs:element>
+		<xs:element name="density" type="typedef_exponential" minOccurs="1" maxOccurs="1">
+		    <!-- EIB: if attributes exist this is a file read, else get value from element text -->
+		    <xs:alternative test="exists(@type)" type="typedef_property_file"/>
+		    <xs:alternative type="typedef_exponential"/>
+                </xs:element>
 		<xs:element name="dissolved_components" type="typedef_dissolved_components" minOccurs="0" maxOccurs="1"/>
 		<!-- Dissolved components should only be required if transport is on - is there a way to validate this? -->
 	</xs:all>
@@ -1840,7 +1855,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="num_digits" type="xs:integer" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="time_macros" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="cycle_macros" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
-		<xs:element name="write_regions" type="typedef_assigned_regions" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="write_regions" type="typedef_assigned_regions" minOccurs="1" maxOccurs="1"/>
 	</xs:all>
 </xs:complexType>
 
