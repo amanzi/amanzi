@@ -18,7 +18,7 @@ namespace FlowRelations {
 // sats[0] = sg, sats[1] = sl, sats[2] = si
 void
 WRMFPDPermafrostModel::saturations(double pc_liq, double pc_ice,
-        double T, double (&sats)[3]) {
+        double (&sats)[3]) {
   if (pc_liq <= 0.) { // saturated
     sats[0] = 0.; // gas
     sats[1] = wrm_->saturation(pc_ice); // liquid
@@ -40,7 +40,7 @@ WRMFPDPermafrostModel::saturations(double pc_liq, double pc_ice,
 
 void
 WRMFPDPermafrostModel::dsaturations_dpc_liq(double pc_liq, double pc_ice,
-        double T, double (&dsats)[3]) {
+        double (&dsats)[3]) {
   if (pc_liq <= 0.) { // saturated
     dsats[0] = 0.; // gas
     dsats[1] = 0.;
@@ -60,7 +60,7 @@ WRMFPDPermafrostModel::dsaturations_dpc_liq(double pc_liq, double pc_ice,
 
 void
 WRMFPDPermafrostModel::dsaturations_dpc_ice(double pc_liq, double pc_ice,
-        double T, double (&dsats)[3]) {
+        double (&dsats)[3]) {
   if (pc_liq <= 0.) { // saturated
     dsats[0] = 0.; // gas
     dsats[1] = wrm_->d_saturation(pc_ice); // liquid

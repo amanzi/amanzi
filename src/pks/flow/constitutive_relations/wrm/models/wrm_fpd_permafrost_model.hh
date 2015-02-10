@@ -30,9 +30,9 @@ class WRMFPDPermafrostModel : public WRMPermafrostModel {
     return pc_liq <= 0. ? T < 273.15 : pc_liq < pc_ice;
   }
 
-  virtual void saturations(double pc_liq, double pc_ice, double T, double (&sats)[3]);
-  virtual void dsaturations_dpc_liq(double pc_liq, double pc_ice, double T, double (&dsats)[3]);
-  virtual void dsaturations_dpc_ice(double pc_liq, double pc_ice, double T, double (&dsats)[3]);
+  virtual void saturations(double pc_liq, double pc_ice, double (&sats)[3]);
+  virtual void dsaturations_dpc_liq(double pc_liq, double pc_ice, double (&dsats)[3]);
+  virtual void dsaturations_dpc_ice(double pc_liq, double pc_ice, double (&dsats)[3]);
 
  protected:
   double deriv_regularization_;

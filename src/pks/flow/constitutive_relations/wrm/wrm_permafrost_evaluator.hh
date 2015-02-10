@@ -47,7 +47,6 @@ class WRMPermafrostEvaluator : public SecondaryVariablesFieldEvaluator {
  protected:
   Key pc_liq_key_;
   Key pc_ice_key_;
-  Key temp_key_;
   Key s_l_key_;
 
   Teuchos::RCP<WRMPermafrostModelPartition> permafrost_models_;

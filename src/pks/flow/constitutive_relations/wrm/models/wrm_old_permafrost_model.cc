@@ -13,8 +13,7 @@ namespace Flow {
 namespace FlowRelations {
 
 // sats[0] = s_g, sats[1] = s_l, sats[2] = s_i
-void WRMOldPermafrostModel::saturations(double pc_liq, double pc_ice,
-        double T, double (&sats)[3]) {
+void WRMOldPermafrostModel::saturations(double pc_liq, double pc_ice, double (&sats)[3]) {
   if (pc_ice == 0.) {
     sats[2] = 0.;
     sats[1] = wrm_->saturation(pc_liq);
@@ -30,14 +29,13 @@ void WRMOldPermafrostModel::saturations(double pc_liq, double pc_ice,
 }
 
 
-void WRMOldPermafrostModel::dsaturations_dpc_liq(double pc_liq, double pc_ice,
-        double T, double (&dsats)[3]) {
+void WRMOldPermafrostModel::dsaturations_dpc_liq(double pc_liq, double pc_ice, double (&dsats)[3]) {
   if (pc_ice == 0.) {
     dsats[2] = 0.;
     dsats[1] = wrm_->d_saturation(pc_liq);
     dsats[0] = -dsats[1];
   } else {
-    saturations(pc_liq, pc_ice, T, dsats);
+    saturations(pc_liq, pc_ice, dsats);
     double sl = dsats[1];
 
     double B = 1.0 / wrm_->saturation(pc_liq);
@@ -50,14 +48,13 @@ void WRMOldPermafrostModel::dsaturations_dpc_liq(double pc_liq, double pc_ice,
 
 
 
-void WRMOldPermafrostModel::dsaturations_dpc_ice(double pc_liq, double pc_ice,
-        double T, double (&dsats)[3]) {
+void WRMOldPermafrostModel::dsaturations_dpc_ice(double pc_liq, double pc_ice, double (&dsats)[3]) {
   if (pc_ice == 0.) {
     dsats[2] = 0.;
     dsats[1] = 0.;
     dsats[0] = 0.;
   } else {
-    saturations(pc_liq, pc_ice, T, dsats);
+    saturations(pc_liq, pc_ice, dsats);
     double sl = dsats[1];
 
     double B = 1.0 / wrm_->saturation(pc_liq);

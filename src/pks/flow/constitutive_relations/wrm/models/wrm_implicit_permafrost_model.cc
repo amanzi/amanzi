@@ -378,7 +378,7 @@ double WRMImplicitPermafrostModel::dsi_dpc_ice_frozen_unsaturated_nospline_(doub
 // PUBLIC METHODS
 // Calculate the saturation
 void WRMImplicitPermafrostModel::saturations(double pc_liq, double pc_ice,
-        double T, double (&sats)[3]) {
+        double (&sats)[3]) {
   if (sats_unfrozen_(pc_liq, pc_ice, sats)) return;
   if (sats_saturated_(pc_liq, pc_ice, sats)) return;
   sats_frozen_unsaturated_(pc_liq, pc_ice, sats);
@@ -386,14 +386,14 @@ void WRMImplicitPermafrostModel::saturations(double pc_liq, double pc_ice,
 }
 
 void WRMImplicitPermafrostModel::dsaturations_dpc_liq(double pc_liq, double pc_ice,
-        double T, double (&dsats)[3]) {
+        double (&dsats)[3]) {
   if (dsats_dpc_liq_unfrozen_(pc_liq, pc_ice, dsats)) return;
   if (dsats_dpc_liq_saturated_(pc_liq, pc_ice, dsats)) return;
   dsats_dpc_liq_frozen_unsaturated_(pc_liq, pc_ice, dsats);
 };
 
 void WRMImplicitPermafrostModel::dsaturations_dpc_ice(double pc_liq, double pc_ice,
-        double T, double (&dsats)[3]) {
+        double (&dsats)[3]) {
   if (dsats_dpc_ice_unfrozen_(pc_liq, pc_ice, dsats)) return;
   if (dsats_dpc_ice_saturated_(pc_liq, pc_ice, dsats)) return;
   dsats_dpc_ice_frozen_unsaturated_(pc_liq, pc_ice, dsats);
