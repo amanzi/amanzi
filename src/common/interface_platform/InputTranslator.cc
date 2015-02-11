@@ -3900,9 +3900,6 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
   // add array of region names to def_list, use these names to check assigned_regions list against later
   def_list->sublist("regions") = reg_names; 
   
-  
-  }
-  
   return list;
   
 }
