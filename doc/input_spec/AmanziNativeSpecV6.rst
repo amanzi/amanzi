@@ -1,5 +1,5 @@
 ==========================================
-Amanzi-U Native XML Input Specification V5
+Amanzi-U Native XML Input Specification V6
 ==========================================
 
 .. contents:: **Table of Contents**
@@ -304,7 +304,7 @@ additional (but usually small) computational overhead.
 Such a sublist can be added safely to various sublists of an XML file.
 
 Cycle Driver
-====================================
+============
 
 New multiprocessor cycle driver which provides more flexibility
 to handle multiphysics process kernels. Either old MPC list or new
@@ -455,7 +455,7 @@ It has the following fields.
     * `"function`" [sublist] defines an analytic function for calculation. Its structure
       is described in the separate section below.
 
-* `"VerboseObject`" [sublist] a standard vebosity object.
+* `"VerboseObject`" [sublist] defines the standard verbosity object
 
 .. code-block:: xml
 
@@ -1296,8 +1296,10 @@ If a non-empty `"initialization`" list is specified, it will be executed only on
      </ParameterList>
    </ParameterList>
 
+
 Time integrator
-...........................
+...............
+
 The sublist `"time integrator`" defines a generic time integrator used
 by new mpc driver. The new mpc driver assumes that each PK has only
 one time integrator.
@@ -1888,6 +1890,9 @@ Diffusion operator
     that must be added to the matrix. These terms represent Jacobian and are needed 
     for the preconditoner. Available options are `"true jacobian`" and `"approximate jacobian`".
 
+  * `"linear operator`" [sublist] add parameters for a linear solver that defines a preconditioner
+    for the diffusion operator (see section LinearSolvers_).
+
 .. code-block:: xml
 
     <ParameterList name="OPERATOR_NAME">
@@ -1898,6 +1903,9 @@ Diffusion operator
       <Parameter name="gravity" type="bool" value="true"/>
       <Parameter name="upwind method" type="string" value="standard"/>
       <Parameter name="newton correction" type="string" value="true jacobian"/>
+      <ParameterList name="linear solver">
+        ...
+      </ParameterList>
     </ParameterList>
 
 This example creates a p-lambda system, i.e. the pressure is
@@ -2277,7 +2285,9 @@ This section describes generic solvers and preconditioners that can be used
 by various PKs.
 
 
-Linear Solvers
+.. _LinearSolvers:
+
+Linear solvers
 --------------
 
 This list contains sublists for various linear solvers such as PCG, GMRES, and NKA.
@@ -2380,6 +2390,7 @@ Internal parameters for PCG include
       </ParameterList>
     </ParameterList>
 
+
 Newton-Krylov acceleration (NKA)
 ................................
 
@@ -2423,7 +2434,181 @@ This is a variation of the GMRES solver. Internal parameters for NKA include
 Nonlinear solvers
 -----------------
 
-This section has to be written.
+Amanzi supports a few nonlinear solvers. 
+Typically, a process kernel uses a factory to select a nonlinear solver.
+This factory uses parameters `"solver type`" to find parameters for 
+the selected solver.
+
+
+Newton-Krylov acceleration (NKA)
+................................
+
+* `"nonlinear tolerance`" [double] defines the required error tolerance. 
+  The error is calculated by a PK. Default is 1e-6. 
+
+* `"monitor`" [string] specifies control of the nonlinear residual. The available 
+  options are `"monitor update`" (default), `"monitor residual`", and 
+  `"monitor preconditioned residual`".
+
+* `"limit iterations`" [int] defines the maximum allowed number of iterations.
+  Default is 20.
+
+* `"diverged tolerance`" [double] defines the error level indicating divergence 
+  of the solver. The error is calculated by a PK. Default is 1e+10.
+
+* `"diverged l2 tolerance`" [double] defines another way to identify divergence
+  of the solver. If the relative L2 norm of the solution increment is above this
+  value, the solver is terminated. Default is 1e+10.
+
+* `"max du growth factor`" [double] allows the solver to identify divergence 
+  pattern on earlier iterations. If the maximum norm of the solution increment
+  changes drastically on two consecutive iterations, the solver is terminated.
+  Default is 1e+5.
+
+* `"max error growth factor`" [double] defines another way to identify divergence 
+  pattern on earlier iterations. If the PK-specific error changes drastically on 
+  two consecutive iterations, the solver is terminated. Default is 1e+5.
+
+* `"max divergent iterations`" [int] defines another way to identify divergence
+  pattern on earlier iterations. If the maximum norm of the solution increment grows 
+  on too many consequtive iterations, the solver is terminated. Default is 3.
+
+* `"modify correction`" [bool] allows a PK to modify the solution increment.
+  One example is a physics-based clipping of extreme solution values. Default is *false*.
+
+* `"lag iterations`" [int] delays the NKA acceleration, but updates the Krylov space.
+  Default is 0.
+
+* `"max nka vectors`" [int] defines the maximum number of consecutive vectors used for 
+  a local space. Default is 10.
+
+* `"nka vector tolerance`" [int] defines the minimum allowed orthogonality between vectors in 
+  the local space. If a new vector does not satisfy this requirement, the space is modified. 
+  Default is 0.05.
+
+* `"VerboseObject`" [sublist] defines the standard verbosity object.
+
+.. code-block:: xml
+
+    <Parameter name="solver type" type="string" value="nka"/>
+    <ParameterList name="nka parameters">
+      <Parameter name="nonlinear tolerance" type="double" value="1.0e-06"/>
+      <Parameter name="monitor" type="string" value="monitor update"/>
+      <Parameter name="limit iterations" type="int" value="20"/>
+      <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+      <Parameter name="max error growth factor" type="double" value="1.0e+05"/>
+      <Parameter name="max divergent iterations" type="int" value="3"/>
+      <Parameter name="max nka vectors" type="int" value="10"/>
+      <Parameter name="nka vector tolerance" type="double" value="0.05"/>
+      <Parameter name="modify correction" type="bool" value="false"/>
+      <Parameter name="lag iterations" type="int" value="0"/>
+
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="high"/>
+      </ParameterList>
+    </ParameterList>
+
+
+Newton
+......
+
+The classical Newton method works well for cases where Jacobian is available and
+corersponds to a stable (e.g. upwind) discretization.
+
+* `"nonlinear tolerance`" [double] defines the required error tolerance. 
+  The error is calculated by a PK. Default is 1e-6. 
+
+* `"monitor`" [string] specifies control of the nonlinear residual. The available 
+  options are `"monitor update`" (default) and `"monitor residual`".
+
+* `"limit iterations`" [int] defines the maximum allowed number of iterations.
+  Default is 50.
+
+* `"diverged tolerance`" [double] defines the error level indicating divergence 
+  of the solver. The error is calculated by a PK. Default is 1e+10.
+
+* `"max du growth factor`" [double] allows the solver to identify divergence 
+  pattern on earlier iterations. If the maximum norm of the solution increment
+  changes drastically on two consecutive iterations, the solver is terminated.
+  Default is 1e+5.
+
+* `"max error growth factor`" [double] defines another way to identify divergence 
+  pattern on earlier iterations. If the PK-specific error changes drastically on 
+  two consecutive iterations, the solver is terminated. Default is 1e+5.
+
+* `"max divergent iterations`" [int] defines another way to identify divergence
+  pattern on earlier iterations. If the maximum norm of the solution increment grows 
+  on too many consequtive iterations, the solver is terminated. Default is 3.
+
+* `"modify correction`" [bool] allows a PK to modify the solution increment.
+  One example is a physics-based clipping of extreme solution values. Default is *true*.
+
+* `"stagnation iteration check`" determines the number of iterations before the
+  stagnation check is turned on. The stangnation happens when the current L2-error
+  exceeds the initial L2-error. Default is 8.
+
+.. code-block:: xml
+
+    <Parameter name="solver type" type="string" value="Newton"/>
+    <ParameterList name="Newton parameters">
+      <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+      <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+      <Parameter name="max divergent iterations" type="int" value="3"/>
+      <Parameter name="limit iterations" type="int" value="20"/>
+      <Parameter name="modify correction" type="bool" value="true"/>
+    </ParameterList>
+
+
+Jacobian-free Newton-Krylov (JFNK)
+..................................
+
+JFNK is the example of an inexact Newton solver. 
+It requires three sublists for a nonlinear solver (NKA, Newton, etc), 
+a preconditioner, and a linear operator that uses this preconditioner.
+We describe parameters of the second sublist only.
+
+* `"typical solution value`" [double] Default is 1.
+
+* `"nonlinear solver`" [sublist] specifies the base nonlinear solvers.
+
+* `"linear operator`" [sublist] specifies the linear solver for inverting 
+  the approximate Jacobian.
+
+* `"finite difference epsilon`" [double] defines the base finite difference epsilon.
+  Default is 1e-8.
+
+* `"method for epsilon`" [string] defines a method for calculating finite difefrence epsilon.
+  Available option is `"Knoll-Keyes`".
+
+.. code-block:: xml
+
+    <Parameter name="solver type" type="string" value="JFNK"/>
+      <ParameterList name="JFNK parameters">
+        <Parameter name="typical solution value" type="double" value="1.0"/>
+
+        <ParameterList name="JF matrix parameters">
+          <Parameter name="finite difference epsilon" type="double" value="1.0e-8"/>
+          <Parameter name="method for epsilon" type="string" value="Knoll-Keyes"/>
+        </ParameterList>
+
+        <ParameterList name="nonlinear solver">
+          <Parameter name="solver type" type="string" value="Newton"/>
+          <ParameterList name="Newton parameters">
+            ...
+          </ParameterList>
+        </ParameterList>
+
+        <ParameterList name="linear operator">
+          <Parameter name="iterative method" type="string" value="gmres"/>
+          <ParameterList name="gmres parameters">
+            ...
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
 
 
 Preconditioners

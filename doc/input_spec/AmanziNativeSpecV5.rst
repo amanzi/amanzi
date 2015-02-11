@@ -2188,6 +2188,7 @@ by various PKs.
 
 
 .. _LinearSolvers:
+
 Linear solvers
 --------------
 
