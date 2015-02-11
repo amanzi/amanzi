@@ -109,10 +109,118 @@ Additional conventions:
 
 * Sublist with too many parameters will be described using multiple paragraphs and multiple examples.
 
-Multi-process coordinator (MPC)
-===============================
 
-The MPC stands for Multi-Process Coordinators.
+Cycle driver
+============
+
+New multiprocessor cycle driver which provides more flexibility
+to handle multiphysics process kernels. Either old MPC list or new
+Cycly Driver list has to be defined. To work with new Cycle Driver 
+parameter `"new mpc driver`" has to be set to true.
+
+* `"components names`" [Array(string)] list of components involved in simulation.
+
+.. code-block:: xml
+
+  <Parameter name="component names" type="Array(string)" value="{H+, Na+, NO3-, Zn++}"/>
+
+* `"time periods`"  [sublist] defines list of time periods involved in simulation
+
+  * `"TP #`" [sublist]  defines a particular time period. The numbering
+    should be sequential  starting with 0.
+
+    * `"PK tree`" [sublist] describes a structure of process kernels 
+
+      * `"PKNAME`"  [sublist] name of PK which is used in the
+        simulation. Name can be arbitrary but the sublist with the same name
+        should exist in the list of PKs (see below).
+
+      * `"PK type`" [string] specifies the type of pk. At the moment
+        available options are (darcy, richards, transport, reactive
+        transport, flow and reactive transport, chemistry).
+ 
+      * `"start period time`" [double] start time of the time period
+
+      * `"end period time`" [double] end time of the time period
+
+      * `"maximum cycle number`" [int] maximal number of cycles in time
+        period( value -1 mean unlimited number of cycles)
+
+      * `"initial time step`" initial time step for the time period
+
+Example of a sublist for a simulation with one time period:
+
+.. code-block:: xml
+
+  <Parameter name="new mpc driver" type="bool" value="true"/>
+  <ParameterList name="Cycle Driver">
+    <Parameter name="component names" type="Array(string)" value="{H+, Na+, NO3-, Zn++}"/>
+    <ParameterList name="TP 0">
+      <ParameterList name="PK Tree">
+        <ParameterList name="Flow and Reactive Transport">
+          <Parameter name="PK type" type="string" value="flow reactive transport"/>
+          <ParameterList name="Reactive Transport">
+            <Parameter name="PK type" type="string" value="reactive transport"/>
+            <ParameterList name="Transport">
+               <Parameter name="PK type" type="string" value="transport"/>
+            </ParameterList>
+            <ParameterList name="Chemistry">
+               <Parameter name="PK type" type="string" value="chemistry"/>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Flow">
+            <Parameter name="PK type" type="string" value="darcy"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <Parameter name="start period time" type="double" value="0.0"/>
+      <Parameter name="end period time" type="double" value="1.5778463e+09"/>
+      <Parameter name="maximum cycle number" type="int" value="-10"/>
+      <Parameter name="initial time step" type="double" value="1.57680e+05"/>
+    </ParameterList>
+  </ParameterList>
+
+
+Restart from checkpoint data file
+---------------------------------
+
+A user may request a restart from a Checkpoint Data file by including the MPC sublist 
+`"Restart from Checkpoint Data File`". This mode of restarting
+will overwrite all other initialization of data that are called out in the input file.
+The purpose of restarting Amanzi in this fashion is mostly to continue a run that has been 
+terminated because its allocation of time ran out.
+
+* `"Restart from Checkpoint Data File`" [list]
+
+  * `"Checkpoint Data File Name`" [string] provides name of the existing checkpoint data file to restart from.
+
+  * `"initialize from checkpoint data file and do not restart`" [bool] (optional) If this is set to false 
+    (default), then a restart is performed, if it is set to true, then all fields are initialized from 
+    the checkpoint data file.
+
+.. code-block:: xml
+  
+  <ParameterList name="Cycle Driver">
+    ...
+    <ParameterList name="Restart from Checkpoint Data File">
+      <Parameter name="Checkpoint Data File Name" type="string" value="CHECK00123.h5"/>
+    </ParameterList>
+    ...
+  </ParameterList>
+
+
+In this example, Amanzi is restarted with all state data initialized from file
+CHECK00123.h5. All other initialization of field variables that might be called 
+out in the input file is ignored.  Recall that the value for the current time and current cycle
+is read from the checkpoint file.
+
+
+Multi-process coordinator (MPC), obsolete
+=========================================
+
+The MPC stands for Multi-Process Coordinators. 
+This version of management time periods is obsolete in this version of native spec 
+and will phase out in the next version.
 In the MPC sublist the user specifies which process kernels are on or off, which 
 flow model is active, and the time integration mode that the MPC should run in.
 
@@ -302,107 +410,6 @@ In this example, we included `"VerboseObject`" sublist. Its parameter `"Verbosit
 controls the number of output messages. Note that higher verbosity levels come with
 additional (but usually small) computational overhead. 
 Such a sublist can be added safely to various sublists of an XML file.
-
-Cycle Driver
-============
-
-New multiprocessor cycle driver which provides more flexibility
-to handle multiphysics process kernels. Either old MPC list or new
-Cycly Driver list has to be defined. To work with new Cycle Driver 
-parameter `"new mpc driver`" has to be set to true.
-
-* `"components names`" [Array(string)] list of components involved in simulation 
-
-.. code-block:: xml
-
-  <Parameter name="component names" type="Array(string)" value="{H+,
-  Na+, NO3-, Zn++}"/>
-
-* `"time periods`"  [sublist] defines list of time periods involved in
-  simulation
-
-* `"TP #`" [sublist]  defines a particular time period. The numbering
-  should be sequential  starting with 0.
-
-* `"PK tree`" [sublist] describes a structure of process kernels 
-
-* `"PKNAME`"  [sublist] name of PK which is used in the
-  simulation. Name can be arbitrary but the sublist with the same name
-  should exist in the list of PKs (see below).
-
-* `"PK type`" [string] specifies the type of pk. At the moment
-  available options are (darcy, richards, transport, reactive
-  transport, flow and reactive transport, chemistry).
- 
-* `"start period time`" [double] start time of the time period
-
-* `"end period time`" [double] end time of the time period
-
-* `"maximum cycle number`" [int] maximal number of cycles in time
-  period( value -1 mean unlimited number of cycles)
-
-* `"initial time step`" initial time step for the time period
-
-Example of a sublist for a one time period
-
-.. code-block:: xml
-
-  <ParameterList name="TP 1">
-    <ParameterList name="PK Tree">
-      <ParameterList name="Flow and Reactive Transport">
-        <Parameter name="PK type" type="string" value="flow reactive transport"/>
-        <ParameterList name="Reactive Transport">
-          <Parameter name="PK type" type="string" value="reactive transport"/>
-          <ParameterList name="Transport">
-             <Parameter name="PK type" type="string" value="transport"/>
-          </ParameterList>
-          <ParameterList name="Chemistry">
-             <Parameter name="PK type" type="string" value="chemistry"/>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="Flow">
-          <Parameter name="PK type" type="string" value="darcy"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-    <Parameter name="start period time" type="double" value="0.00000000000000000e+00"/>
-    <Parameter name="end period time" type="double" value="1.57784630000000000e+09"/>
-    <Parameter name="maximum cycle number" type="double" value="-1.00000000000000000e+00"/>
-    <Parameter name="initial time step" type="double" value="1.57680000000000000e+05"/>
-  </ParameterList>
-
-Restart from checkpoint data file
----------------------------------
-
-A user may request a restart from a Checkpoint Data file by including the MPC sublist 
-`"Restart from Checkpoint Data File`". This mode of restarting
-will overwrite all other initialization of data that are called out in the input file.
-The purpose of restarting Amanzi in this fashion is mostly to continue a run that has been 
-terminated because its allocation of time ran out.
-
-* `"Restart from Checkpoint Data File`" [list]
-
-  * `"Checkpoint Data File Name`" [string] provides name of the existing checkpoint data file to restart from.
-
-  * `"initialize from checkpoint data file and do not restart`" [bool] (optional) If this is set to false 
-    (default), then a restart is performed, if it is set to true, then all fields are initialized from 
-    the checkpoint data file.
-
-.. code-block:: xml
-  
-  <ParameterList name="MPC">
-    ...
-    <ParameterList name="Restart from Checkpoint Data File">
-      <Parameter name="Checkpoint Data File Name" type="string" value="CHECK00123.h5"/>
-    </ParameterList>
-    ...
-  </ParameterList>
-
-
-In this example, Amanzi is restarted with all state data initialized from file
-CHECK00123.h5. All other initialization of field variables that might be called 
-out in the input file is ignored.  Recall that the value for the current time and current cycle
-is read from the checkpoint file.
 
 
 State
