@@ -3162,7 +3162,6 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
     DOMNode* cur = childern->item(i) ;
     if (DOMNode::ELEMENT_NODE == cur->getNodeType()) {
       tagName  = XMLString::transcode(cur->getNodeName());
-      std::cout << "EIB>> get tagName = " << tagName << std::endl;
       /* NOTE: EIB - geometry doesn't deal with extra comment node
       if (strcmp(tagName,"comments") == 0){
         textContent = XMLString::transcode(cur->getTextContent());
@@ -3177,7 +3176,6 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
 	if (nodeAttr) {
           regName = XMLString::transcode(nodeAttr->getNodeValue());
           haveName = true;
-          std::cout << "  EIB>> get region name = " << regName << std::endl;
 	} else {
           throw_error_missattr("Regions","attribute","name","region");
 	}
@@ -3203,7 +3201,6 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
             //  list.set<std::string>("comments",textContent);
             //  XMLString::release(&textContent);
             //}
-            std::cout << "  EIB>> got nodeName = " << nodeName << std::endl;
             if  (strcmp(nodeName,"box") == 0){
               
               // add region name to array of region names
@@ -3277,7 +3274,6 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
                 regionNames_string_.append(regName);
               }
               
-              std::cout << "    EIB>> getting name = " << std::endl;
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
               if (nodeAttr) {
                 textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
@@ -3287,7 +3283,6 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
 	      rfPL.set<std::string>("File",trim_string(textContent2));
 	      XMLString::release(&textContent2);
               
-              std::cout << "    EIB>> getting type = " << std::endl;
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("type"));
               if (nodeAttr) {
                 textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
@@ -3295,7 +3290,6 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
                 throw_error_missattr("Regions","attribute","type","region_file");
 	      }
               if  (strcmp(textContent2,"color") == 0){
-                std::cout << "    EIB>> getting color:label = " << std::endl;
                 nodeAttr = attrMap->getNamedItem(XMLString::transcode("label"));
                 char* value;
 		if (nodeAttr) {
@@ -3308,7 +3302,6 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
                 list.sublist(regName).sublist("Region: Color Function") = rfPL;
 	      }
               else if  (strcmp(textContent2,"labeled set") == 0){
-                std::cout << "    EIB>> getting labeled set: label = " << std::endl;
                 nodeAttr = attrMap->getNamedItem(XMLString::transcode("label"));
                 char* value ;
 		if (nodeAttr) {
@@ -3319,7 +3312,6 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
 	        rfPL.set<std::string>("Label",trim_string(value));
 	        XMLString::release(&value);
                 
-                std::cout << "    EIB>> getting labeled set: format = " << std::endl;
                 nodeAttr = attrMap->getNamedItem(XMLString::transcode("format"));
 		if (nodeAttr) {
                   value = XMLString::transcode(nodeAttr->getNodeValue());
@@ -3331,7 +3323,6 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
 		}
 	        XMLString::release(&value);
                 
-                std::cout << "    EIB>> getting labeled set: entity = " << std::endl;
                 nodeAttr = attrMap->getNamedItem(XMLString::transcode("entity"));
 		if (nodeAttr) {
                   value = XMLString::transcode(nodeAttr->getNodeValue());
@@ -3431,7 +3422,6 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
               }
             }
             else if  (strcmp(nodeName,"logical") == 0){
-              std::cout << "  EIB>> in logical" << std::endl;
               if (!isUnstr_) {
                 throw_error_str_ustr("Regions", tagName, "Unstructured");
               }
@@ -3444,7 +3434,6 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
                 if (!haveName)
                   throw_error_missattr("Regions","attribute","name","logical");
               }
-              std::cout << "EIB>> about to store logical region name:" << regName << std::endl;
               // add region name to array of region names
               if (reg_names.isParameter(regName)) {
                 // warn, region of this name already exists, overwriting
@@ -3454,16 +3443,13 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
               }
          
               // loop over children to get operation and region list
-              std::cout << "    EIB>> looping over children" << std::endl;
               DOMNodeList* gkids = curKid->getChildNodes();
               for (int j=0; j<gkids->getLength(); j++) {
                 DOMNode* curGKid = gkids->item(j) ;
                 if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
                   nodeName  = XMLString::transcode(curGKid->getNodeName());
-                  std::cout << "      EIB>> nodeName = " << nodeName << std::endl;
                   if  (strcmp(nodeName,"operation") == 0){
                     textContent2 = XMLString::transcode(curGKid->getTextContent());
-                    std::cout << "      EIB>> got operation = " << textContent2 << std::endl;
                     if ( strcmp(textContent2,"union") == 0) {
                       list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Union");
                     }
@@ -3480,7 +3466,6 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
                   }
                   else if (strcmp(nodeName,"region_list") == 0) {
                     textContent2 = XMLString::transcode(curGKid->getTextContent());
-                    std::cout << "      EIB>> got region_list = " << textContent2 << std::endl;
                     Teuchos::Array<std::string> regs = make_regions_list(textContent2);
                     list.sublist(regName).sublist("Region: Logical").set<Teuchos::Array<std::string> >("Regions",regs);
                     XMLString::release(&textContent2);
@@ -3837,7 +3822,6 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
       }
       else if  (strcmp(tagName,"region_file") == 0){
         //TODO: EIB - add file
-        std::cout << "  EIB>> in region_file" << std::endl;
         Teuchos::ParameterList rfPL;
         attrMap = cur->getAttributes();
         
@@ -3916,11 +3900,7 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
   // add array of region names to def_list, use these names to check assigned_regions list against later
   def_list->sublist("regions") = reg_names; 
   
-  std::cout << "  EIB>> regions:" <<std::endl;
-  def_list->sublist("regions").print(std::cout);
-  std::cout << "  EIB>> regionNames_string:" <<std::endl;
-  for (int r=0; r<regionNames_string_.size(); r++) {
-    std::cout << "    " << regionNames_string_[r] << std::endl;
+  
   }
   
   return list;
