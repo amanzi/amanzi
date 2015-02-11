@@ -49,7 +49,6 @@ bool Richards_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
   if (failed){
     Teuchos::OSTab tab = pk_->vo_->getOSTab();
     *(pk_->vo_->os()) << "Step failed " << std::endl;
-    //std::cout<<"Step failed " << std::endl;
   }
 
   return failed;

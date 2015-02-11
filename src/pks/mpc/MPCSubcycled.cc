@@ -47,7 +47,6 @@ MPCSubcycled::MPCSubcycled(Teuchos::ParameterList& pk_tree,
 double MPCSubcycled::get_dt() {
   master_dt_ = sub_pks_[master_]->get_dt();
   slave_dt_ = sub_pks_[slave_]->get_dt();
-  //  std::cout<<"master_dt_ "<<master_dt_<<" slave_dt_ "<<slave_dt_<<"\n";
   if (slave_dt_ > master_dt_) slave_dt_ = master_dt_;
   
   return master_dt_;

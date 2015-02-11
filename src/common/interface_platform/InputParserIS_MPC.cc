@@ -495,7 +495,7 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriver_List_(Teuchos::Parameter
 
     cycle_driver_list.sublist("time periods").sublist(tp_list_name.data()).set<double>("start period time", start_time);
     cycle_driver_list.sublist("time periods").sublist(tp_list_name.data()).set<double>("end period time", switch_time);
-    cycle_driver_list.sublist("time periods").sublist(tp_list_name.data()).set<double>("maximum cycle number", max_cycle_number);
+    cycle_driver_list.sublist("time periods").sublist(tp_list_name.data()).set<int>("maximum cycle number", max_cycle_number);
     cycle_driver_list.sublist("time periods").sublist(tp_list_name.data()).set<double>("initial time step", dt_steady);
     time_pr_id++;
   }

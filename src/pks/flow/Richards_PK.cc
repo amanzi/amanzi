@@ -449,7 +449,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
 
 void Richards_PK::InitTimeInterval(){
   
-  //std::cout<<ti_list_<<"\n";
+
   ProcessSublistTimeInterval(ti_list_,  ti_specs_generic_);
  
   ti_specs_generic_.T0  = ti_list_.get<double>("start interval time", 0);
@@ -461,7 +461,7 @@ void Richards_PK::InitTimeInterval(){
   dT = dT0;
   dTnext = dT0;
 
-  //  std::cout<<"T0 "<<T0<<" dT0 "<<dT0<<"\n";
+
 
   if (ti_specs != NULL) OutputTimeHistory(rp_list_, ti_specs->dT_history);
   ti_specs = &ti_specs_generic_;
@@ -504,7 +504,6 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   if (ti_specs.ti_method == FLOW_TIME_INTEGRATION_BDF1) {
     //Teuchos::ParameterList bdf1_list = rp_list_.sublist(ti_method_name).sublist("BDF1");
     Teuchos::ParameterList bdf1_list = ti_specs.ti_list_ptr_->sublist("BDF1");
-    //std::cout<<bdf1_list<<"\n";
     if (! bdf1_list.isSublist("VerboseObject"))
         bdf1_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
 
@@ -689,11 +688,6 @@ bool Richards_PK::Advance(double dT_MPC, double& dT_actual)
 
   bool fail = false;
 
-  // Epetra_MultiVector& pr_face = *solution->ViewComponent("face", true);
-  // const Epetra_MultiVector& pr_state_face =*S_->GetFieldData("pressure")->ViewComponent("face");
-  // for (int f = 0; f < 20; f++) std::cout<<"sol "<<pr_face[0][f]<<" sol_state"<<pr_state_face[0][f]<<"\n";
-
-
   if (!new_mpc_driver){
     if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF1) {
       while (bdf1_dae->TimeStep(dT, dTnext, solution)) {
@@ -704,11 +698,6 @@ bool Richards_PK::Advance(double dT_MPC, double& dT_actual)
       bdf1_dae->CommitSolution(dT, solution);
       T_physics = bdf1_dae->time();
     }
-
-    // Epetra_MultiVector& pr_face = *solution->ViewComponent("face", true);
-    // const Epetra_MultiVector& pr_state_face =*S_->GetFieldData("pressure")->ViewComponent("face");
-    // //for (int f = 0; f < 10; f++) std::cout<<pr_face[0][f]<<" "<<pr_state_face[0][f]<<"\n";
-    // for (int f = 0; f < 20; f++) std::cout<<"sol "<<pr_face[0][f]<<" sol_state "<<pr_state_face[0][f]<<"\n";
 
     dT_actual = dT;
   }
@@ -722,12 +711,6 @@ bool Richards_PK::Advance(double dT_MPC, double& dT_actual)
       bdf1_dae->CommitSolution(dT, solution);
       T_physics = bdf1_dae->time();
     }
-
-    // Epetra_MultiVector& pr_face = *solution->ViewComponent("face", true);
-    // const Epetra_MultiVector& pr_state_face =*S_->GetFieldData("pressure")->ViewComponent("face");
-    // //for (int f = 0; f < 10; f++) std::cout<<pr_face[0][f]<<" "<<pr_state_face[0][f]<<"\n";
-    // for (int f = 0; f < 20; f++) std::cout<<"sol "<<pr_face[0][f]<<" sol_state "<<pr_state_face[0][f]<<"\n";
-
   }
 
 

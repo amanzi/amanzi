@@ -40,11 +40,6 @@ double FlowReactiveTransport_PK::get_dt() {
 void FlowReactiveTransport_PK::set_dt(double dt){
   master_dt_ = dt;
   sub_pks_[master_]->set_dt(dt);
-
-  //slave_dt_ = sub_pks_[slave_]->get_dt();
-  //  std::cout<<"master_dt_ "<<master_dt_<<" slave_dt_ "<<slave_dt_<<"\n";
-  //if (slave_dt_ > master_dt_) slave_dt_ = master_dt_;
-
 }
 
 void FlowReactiveTransport_PK::CommitStep(double t_old, double t_new){
@@ -55,13 +50,9 @@ void FlowReactiveTransport_PK::CommitStep(double t_old, double t_new){
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
  bool FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new) {
- //   bool fail = Amanzi::MPCSubcycled::AdvanceStep(t_old, t_new);
    bool fail = false;
 
   // advance the master PK using the full step size
-
-   std::cout<<"Advance Flow: "<<t_old<<" "<<t_new<<"\n";
-
   fail = sub_pks_[master_]->AdvanceStep(t_old, t_new);
   if (fail) return fail;
 
