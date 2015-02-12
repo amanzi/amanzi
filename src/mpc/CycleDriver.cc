@@ -407,9 +407,9 @@ void CycleDriver::read_parameter_list_() {
     const std::string & tp_name = time_periods_list.name(item);
     tp_start_[i] = time_periods_list.sublist(tp_name).get<double>("start period time");
     tp_end_[i] = time_periods_list.sublist(tp_name).get<double>("end period time");
+    tp_max_cycle_[i] = time_periods_list.sublist(tp_name).get<int>("maximum cycle number", -1);
     tp_dt_[i] = time_periods_list.sublist(tp_name).get<double>("initial time step", 1);
-    tp_max_cycle_[i] = time_periods_list.sublist(tp_name).get<double>("maximum cycle number", -1);
-   
+      
     std::string t_units = time_periods_list.sublist(tp_name).get<std::string>("start time units", "s");
     if (t_units == "s") {
       // internal units in s

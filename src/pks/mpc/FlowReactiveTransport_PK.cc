@@ -28,7 +28,8 @@ Amanzi::MPCSubcycled(pk_tree, global_list, S, soln) {
 // -----------------------------------------------------------------------------
 double FlowReactiveTransport_PK::get_dt() {
   
-  double dt = Amanzi::MPCSubcycled::get_dt();
+  //double dt = Amanzi::MPCSubcycled::get_dt();
+  double dt = sub_pks_[master_]->get_dt();
   return dt;
 
 };
