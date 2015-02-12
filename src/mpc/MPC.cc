@@ -165,14 +165,15 @@ void MPC::mpc_init() {
   // flow...
   if (flow_enabled) {
     flow_model = mpc_parameter_list.get<std::string>("Flow model", "Darcy");
+    Teuchos::RCP<Teuchos::ParameterList> glist(&parameter_list, Teuchos::RCP_WEAK_NO_DEALLOC);
     if (flow_model == "Darcy") {
-      FPK = Teuchos::rcp(new Flow::Darcy_PK(parameter_list,"Flow", S));
+      FPK = Teuchos::rcp(new Flow::Darcy_PK(parameter_list, "Flow", S));
     } else if (flow_model == "Steady State Saturated") {
       FPK = Teuchos::rcp(new Flow::Darcy_PK(parameter_list,"Flow", S));
     } else if (flow_model == "Richards") {
-      FPK = Teuchos::rcp(new Flow::Richards_PK(parameter_list, "Flow", S));
+      FPK = Teuchos::rcp(new Flow::Richards_PK(glist, "Flow", S));
     } else if (flow_model == "Steady State Richards") {
-      FPK = Teuchos::rcp(new Flow::Richards_PK(parameter_list, "Flow", S));
+      FPK = Teuchos::rcp(new Flow::Richards_PK(glist, "Flow", S));
     } else {
       std::cout << "MPC: unknown flow model: " << flow_model << std::endl;
       throw std::exception();

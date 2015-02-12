@@ -1,10 +1,15 @@
 /*
-  License: see $AMANZI_DIR/COPYRIGHT
+  This is the flow component of the Amanzi code. 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Authors: Ethan Coon
 
   Temporary wrapper converting the Richards_PK, which inherits from
   BDFFnBase<CompositeVector>, to use TreeVectors.
-
 */
 
 #ifndef AMANZI_RICHARDS_PK_WRAPPER_HH_
@@ -24,15 +29,13 @@ class State;
 namespace Flow {
 
 class Richards_PK_Wrapper : public FnTimeIntegratorPK {
-
  public:
   Richards_PK_Wrapper(Teuchos::ParameterList& pk_tree,
                       const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                       const Teuchos::RCP<State>& S,
                       const Teuchos::RCP<TreeVector>& soln);
 
-  ~Richards_PK_Wrapper(){
-  }
+  ~Richards_PK_Wrapper() {};
 
   // Setup
   virtual void Setup() {
@@ -138,7 +141,7 @@ class Richards_PK_Wrapper : public FnTimeIntegratorPK {
   }
 
  protected:
-  Teuchos::RCP<Teuchos::ParameterList> glist_;
+  // Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::ParameterList ti_list_;
   Teuchos::RCP<Richards_PK> pk_; 
   Teuchos::RCP<TreeVector> soln_;
@@ -148,10 +151,9 @@ class Richards_PK_Wrapper : public FnTimeIntegratorPK {
  private:
   // factory registration
   static RegisteredPKFactory<Richards_PK_Wrapper> reg_;
-
 };
 
-} // namespace
-} // namespace
+}  // namespace Flow
+}  // namespace Amanzi
 
 #endif

@@ -367,8 +367,12 @@ Teuchos::ParameterList InputParserIS::CreateMPC_List_(Teuchos::ParameterList* pl
   return mpc_list;
 }
 
-Teuchos::ParameterList InputParserIS::CreateCycleDriver_List_(Teuchos::ParameterList* plist){
 
+/* ******************************************************************
+* Empty
+****************************************************************** */
+Teuchos::ParameterList InputParserIS::CreateCycleDriver_List_(Teuchos::ParameterList* plist)
+{
   Teuchos::ParameterList cycle_driver_list, pk_tree_list, pk_tree_list_pre;
 
   bool transport_on(false), chemistry_on(false), flow_on(false);
@@ -399,9 +403,8 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriver_List_(Teuchos::Parameter
       Exceptions::amanzi_throw(Errors::Message("The parameter Transport Model must be specified."));
     }
 
-
     if (exe_sublist.isParameter("Flow Model")) {
-      if (exe_sublist.get<std::string>("Flow Model") == "Off" || exe_sublist.get<std::string>("Flow Model") == "off"){
+      if (exe_sublist.get<std::string>("Flow Model") == "Off" || exe_sublist.get<std::string>("Flow Model") == "off") {
   	flow_on = false;
       } else if (exe_sublist.get<std::string>("Flow Model") == "Richards") {
   	flow_pk = "richards";
@@ -417,14 +420,13 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriver_List_(Teuchos::Parameter
       Exceptions::amanzi_throw(Errors::Message("The parameter Flow Model must be specified."));
     }
 
-
     if (exe_sublist.isParameter("Chemistry Model")) {
       if (exe_sublist.get<std::string>("Chemistry Model") == "Off") {
   	chemistry_on = false;
-      } else if  (exe_sublist.get<std::string>("Chemistry Model") == "Amanzi"){
+      } else if  (exe_sublist.get<std::string>("Chemistry Model") == "Amanzi") {
   	chemistry_on = true;
   	chemistry_pk = "chemistry";    
-      } else if  (exe_sublist.get<std::string>("Chemistry Model") == "Alquimia"){
+      } else if  (exe_sublist.get<std::string>("Chemistry Model") == "Alquimia") {
   	// chemistry_on = true;
   	// std::string chemistry_pk = "chemistry_pk";
   	Exceptions::amanzi_throw(Errors::Message("New MPC driver doesn't support Alquimia chemistry model."));
@@ -434,8 +436,7 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriver_List_(Teuchos::Parameter
       Exceptions::amanzi_throw(Errors::Message("The parameter \'Chemistry Model\' must be specified."));
     }
 
-    model = chemistry_on  + 2*transport_on + 4*flow_on;
-
+    model = chemistry_on + 2*transport_on + 4*flow_on;
 
     if (exe_sublist.isSublist("Time Integration Mode")) {
       if (exe_sublist.sublist("Time Integration Mode").isSublist("Initialize To Steady")) {
@@ -480,13 +481,12 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriver_List_(Teuchos::Parameter
             max_cycle_number =exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("Maximum Cycle Number");
       }	
     }
-
   }
 
   int time_pr_id = 0;
   std::string tp_list_name;
 
-  if (model_pre > 0){
+  if (model_pre > 0) {
      std::ostringstream ss; ss << time_pr_id;
      tp_list_name = "TP "+ ss.str();
 
@@ -500,9 +500,7 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriver_List_(Teuchos::Parameter
     time_pr_id++;
   }
 
-
-
-  switch (model){
+  switch (model) {
   case 1:
     // Chemistry
     pk_tree_list.sublist("Chemistry").set<std::string>("PK type", chemistry_pk);
@@ -554,7 +552,6 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriver_List_(Teuchos::Parameter
   }
 
   Teuchos::ParameterList  tpc_list = CreateTimePeriodControlList_(plist);
-  //std::cout<<tpc_list<<"\n";
 
   cycle_driver_list.sublist("time periods").sublist(tp_list_name.data()).set<double>("start period time", switch_time);
   cycle_driver_list.sublist("time periods").sublist(tp_list_name.data()).set<double>("end period time", end_time);
@@ -562,72 +559,75 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriver_List_(Teuchos::Parameter
   cycle_driver_list.sublist("time periods").sublist(tp_list_name.data()).set<double>("initial time step", dt_tran);
   cycle_driver_list.sublist("Time Period Control") = tpc_list;
 
-
-  //  std::cout<<cycle_driver_list;
-  //exit(0);
-
   return cycle_driver_list;
-
 }
 
-void InputParserIS::CreatePKslist_(Teuchos::ParameterList& cycle_driver_list, Teuchos::ParameterList& pks_list){
 
+/* ******************************************************************
+* Empty
+****************************************************************** */
+void InputParserIS::CreatePKslist_(
+    Teuchos::ParameterList& cycle_driver_list, Teuchos::ParameterList& pks_list)
+{
   Teuchos::ParameterList tp_list = cycle_driver_list.sublist("time periods");
 
-  for (Teuchos::ParameterList::ConstIterator tp_item = tp_list.begin(); tp_item !=tp_list.end(); ++tp_item){
-    if ((tp_item->second).isList()){
+  for (Teuchos::ParameterList::ConstIterator tp_item = tp_list.begin(); tp_item !=tp_list.end(); ++tp_item) {
+    if ((tp_item->second).isList()) {
       Teuchos::ParameterList& pk_tree = tp_list.sublist(tp_item->first).sublist("PK Tree");
       RegisterPKlist_(pk_tree,  pks_list);
     }
   }
-
 }
 
 
-void InputParserIS::RegisterPKlist_(Teuchos::ParameterList& pk_tree, Teuchos::ParameterList& pks_list){
-
-  int k=0;
-  for (Teuchos::ParameterList::ConstIterator it = pk_tree.begin(); it !=pk_tree.end();++it){
-
-    if ((it->second).isList()){
+/* ******************************************************************
+* Empty
+****************************************************************** */
+void InputParserIS::RegisterPKlist_(Teuchos::ParameterList& pk_tree, Teuchos::ParameterList& pks_list)
+{
+  int k = 0;
+  for (Teuchos::ParameterList::ConstIterator it = pk_tree.begin(); it !=pk_tree.end();++it) {
+    if ((it->second).isList()) {
       pks_list.sublist(it->first);
       RegisterPKlist_(pk_tree.sublist(it->first), pks_list);
     }   
   }
-
 }
 
 
-void InputParserIS::FillPKslist_(Teuchos::ParameterList* plist, Teuchos::ParameterList& pks_list){
-
-  for (Teuchos::ParameterList::ConstIterator it =  pks_list.begin(); it != pks_list.end(); ++it){
-    if ((it->second).isList()){
-      if (it->first == "Flow"){
+/* ******************************************************************
+* Empty
+****************************************************************** */
+void InputParserIS::FillPKslist_(Teuchos::ParameterList* plist, Teuchos::ParameterList& pks_list)
+{
+  for (Teuchos::ParameterList::ConstIterator it =  pks_list.begin(); it != pks_list.end(); ++it) {
+    if ((it->second).isList()) {
+      if (it->first == "Flow") {
 	pks_list.sublist(it->first) = CreateFlowList_(plist, TRANSIENT_REGIME);
       }
-      if (it->first == "Flow Steady"){
+      if (it->first == "Flow Steady") {
 	pks_list.sublist(it->first) = CreateFlowList_(plist, STEADY_REGIME);
       }
-      else if (it->first == "Transport"){
+      else if (it->first == "Transport") {
 	pks_list.sublist(it->first) = CreateTransportList_(plist);
       }
-      else if (it->first == "Chemistry"){
+      else if (it->first == "Chemistry") {
 	pks_list.sublist(it->first) =  CreateChemistryList_(plist);
       }
-      else if (it->first == "Reactive Transport"){
+      else if (it->first == "Reactive Transport") {
 	Teuchos::Array<std::string> pk_names;
 	pk_names.push_back("Chemistry");
 	pk_names.push_back("Transport");
 	pks_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
       }
-      else if (it->first == "Flow and Reactive Transport"){
+      else if (it->first == "Flow and Reactive Transport") {
 	Teuchos::Array<std::string> pk_names;
 	pk_names.push_back("Flow");
 	pk_names.push_back("Reactive Transport");
 	pks_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
 	pks_list.sublist(it->first).set<int>("master PK index", 0);
       }
-      else if (it->first == "Flow and Transport"){
+      else if (it->first == "Flow and Transport") {
 	Teuchos::Array<std::string> pk_names;
 	pk_names.push_back("Flow");
 	pk_names.push_back("Transport");
@@ -636,7 +636,6 @@ void InputParserIS::FillPKslist_(Teuchos::ParameterList* plist, Teuchos::Paramet
       }
     }
   }
-
 }
 
 }  // namespace AmanziInput

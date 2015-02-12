@@ -66,7 +66,8 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Richards_PK* RPK = new Richards_PK(plist,  "Flow", S);
+  Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
+  Richards_PK* RPK = new Richards_PK(global_list, "Flow", S);
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();

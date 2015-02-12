@@ -42,24 +42,25 @@ namespace Flow {
 /* ******************************************************************
 * Simplest possible constructor: extracts lists and requires fields.
 ****************************************************************** */
-  Richards_PK::Richards_PK(Teuchos::ParameterList& glist, const std::string& pk_list_name, Teuchos::RCP<State> S) :
-  Flow_PK()
+Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                         const std::string& pk_list_name, Teuchos::RCP<State> S)
+    : Flow_PK()
 {
   S_ = S;
   mesh_ = S->GetMesh();
   dim = mesh_->space_dimension();
 
   // We need the flow list
-  Teuchos::ParameterList flow_list;
-  if (!glist.isSublist("PKs")){
-      Errors::Message msg("Richards_PK: input parameter list does not have PKs sublist.");
-      Exceptions::amanzi_throw(msg);
+  if (!glist->isSublist("PKs")){
+    Errors::Message msg("Richards_PK: input parameter list does not have PKs sublist.");
+    Exceptions::amanzi_throw(msg);
   }
 
-  if (glist.sublist("PKs").isSublist(pk_list_name)) {
-    flow_list = glist.sublist("PKs").sublist(pk_list_name);
+  Teuchos::ParameterList flow_list;
+  if (glist->sublist("PKs").isSublist(pk_list_name)) {
+    flow_list = glist->sublist("PKs").sublist(pk_list_name);
   } else {
-    Errors::Message msg("Richards_PK: input parameter list does not have "+pk_list_name+" sublist.");
+    Errors::Message msg("Richards_PK: input parameter list does not have " + pk_list_name + " sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -70,18 +71,18 @@ namespace Flow {
     Exceptions::amanzi_throw(msg);
   }
   
-  new_mpc_driver = glist.get<bool>("new mpc driver", false);
+  new_mpc_driver = glist->get<bool>("new mpc driver", false);
 
   // We also need iscaleneous sublists
-  if (glist.isSublist("Preconditioners")) {
-    preconditioner_list_ = glist.sublist("Preconditioners");
+  if (glist->isSublist("Preconditioners")) {
+    preconditioner_list_ = glist->sublist("Preconditioners");
   } else {
     Errors::Message msg("Flow PK: input XML does not have <Preconditioners> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
-  if (glist.isSublist("Solvers")) {
-    linear_operator_list_ = glist.sublist("Solvers");
+  if (glist->isSublist("Solvers")) {
+    linear_operator_list_ = glist->sublist("Solvers");
   } else {
     Errors::Message msg("Flow PK: input XML does not have <Solvers> sublist.");
     Exceptions::amanzi_throw(msg);
@@ -90,11 +91,6 @@ namespace Flow {
   if (rp_list_.isSublist("time integrator")){
     ti_list_ = rp_list_.sublist("time integrator");
   } 
-  // else {
-  //   Errors::Message msg("Richards PK: input XML does not have <time integrator> sublist.");
-  //   Exceptions::amanzi_throw(msg);
-  // }  
-
 
   // for creating fields
   std::vector<std::string> names(2);

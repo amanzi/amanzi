@@ -16,7 +16,7 @@ Parameters labeled by [O] (Obsolete) are old capabilities and will be removed so
 Changes V5 -> V6
 ================
 
-* New MPC driver
+* Added new MPC driver
 
 
 ParameterList XML
@@ -746,12 +746,25 @@ The complete example of a state initialization is below. Note that
 Process kernels (PKs)
 =====================
 
-PKs
------------
-
 Sublist of PKs used in a simulation. Using old mpc driver possible
 entries of this sublist are Flow, Transport, Chemistry. Using new mpc
 driver entries of this sublist must match PKNAMEs in Cycle Driver sublist.
+
+.. code-block:: xml
+
+  <ParameterList name="PKs">
+    <ParameterList name="Flow and Transport">
+      <Parameter name="PK type" type="string" value="flow transport pk"/>      
+      <Parameter name="PKs order" type="Array(string)" value="{Flow, Transport}"/> 
+      <Parameter name="master PK index" type="int" value="0"/>
+    </ParameterList>
+    <ParameterList name="Flow">
+      ...
+    </ParameterList>
+    <ParameterList name="Transport">
+      ...
+    </ParameterList>
+  </ParameterList>
 
 
 Flow PK

@@ -30,7 +30,6 @@
 
 /* **************************************************************** */
 TEST(FLOW_2D_RICHARDS) {
-  using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -43,11 +42,11 @@ TEST(FLOW_2D_RICHARDS) {
 
   /* read parameter list */
   std::string xmlFileName = "test/flow_richards_2D.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
+  Teuchos::ParameterList plist = xmlreader.getParameters();
 
   /* create a mesh framework */
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
   FrameworkPreference pref;
@@ -57,16 +56,17 @@ TEST(FLOW_2D_RICHARDS) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  RCP<const Mesh> mesh = meshfactory(0.0, -2.0, 1.0, 0.0, 18, 18, gm);
+  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, -2.0, 1.0, 0.0, 18, 18, gm);
 
   /* create a simple state and populate it */
   Amanzi::VerboseObject::hide_line_prefix = false;
 
-  ParameterList state_list;
-  RCP<State> S = rcp(new State(state_list));
-  S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+  Teuchos::ParameterList state_list;
+  Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
+  S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
-  Richards_PK* RPK = new Richards_PK(plist,  "Flow", S);
+  Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
+  Richards_PK* RPK = new Richards_PK(global_list, "Flow", S);
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
