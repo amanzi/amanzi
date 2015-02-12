@@ -70,6 +70,8 @@
 
 	  <Parameter name="time integration method" type="string" value="Picard"/>
 	  <ParameterList name="Picard">
+            <Parameter name="convergence tolerance" type="double" value="1e-12"/> 
+            <Parameter name="maximum number of iterations" type="int" value="600"/> 
 	  </ParameterList>
 	</ParameterList>
 

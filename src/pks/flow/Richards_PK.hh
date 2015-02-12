@@ -34,7 +34,8 @@ namespace Flow {
 
 class Richards_PK : public Flow_PK {
  public:
-  Richards_PK(Teuchos::ParameterList& global_list, const std::string& pk_list_name, Teuchos::RCP<State> S);
+  Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+              const std::string& pk_list_name, Teuchos::RCP<State> S);
   ~Richards_PK();
 
   // main PK methods

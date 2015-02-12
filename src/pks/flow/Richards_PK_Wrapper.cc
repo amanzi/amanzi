@@ -1,10 +1,15 @@
 /*
-  License: see $AMANZI_DIR/COPYRIGHT
+  This is the flow component of the Amanzi code. 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Authors: Ethan Coon
 
   Temporary wrapper converting the Richards_PK, which inherits from 
   BDFFnBase<CompositeVector>, to use TreeVectors.
-
 */
 
 
@@ -21,11 +26,6 @@ Richards_PK_Wrapper::Richards_PK_Wrapper(Teuchos::ParameterList& pk_tree,
     S_(S),
     soln_(soln)
 {
-  // Richards expects a single global list with sublist Flow
-  glist_ = Teuchos::rcp(new Teuchos::ParameterList(*global_list));
-  //We need the flow list
-   
-
   std::string pk_name = pk_tree.name();
   const char* result = pk_name.data();
   while ((result = std::strstr(result, "->")) != NULL) {
@@ -33,9 +33,9 @@ Richards_PK_Wrapper::Richards_PK_Wrapper(Teuchos::ParameterList& pk_tree,
     pk_name = result;   
   }
 
-  // construct
-   pk_ = Teuchos::rcp(new Richards_PK(*glist_, pk_name, S_));
+  pk_ = Teuchos::rcp(new Richards_PK(global_list, pk_name, S_));
 }
+
 
 bool Richards_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
   bool failed = false;
@@ -54,5 +54,5 @@ bool Richards_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
   return failed;
 }
 
-}
-}
+}  // namespace Flow
+}  // namespace Amanzi
