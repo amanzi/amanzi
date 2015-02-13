@@ -16,13 +16,12 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "ImplicitFnPK.hh"
 #include "PK_Factory.hh"
 #include "MPCStrong.hh"
 
 namespace Amanzi {
 
-class FlowEnergy_PK : public MPCStrong<ImplicitFnPK> {
+class FlowEnergy_PK : public MPCStrong<> {
  public:
   FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
                 const Teuchos::RCP<Teuchos::ParameterList>& global_list,

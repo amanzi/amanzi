@@ -1,11 +1,14 @@
 /*
-  Amanzi
+  This is the PKs component of the Amanzi code. 
 
-  License: see $AMANZI_DIR/COPYRIGHT
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Author: Ethan Coon
 
   PK factory for self-registering PKs.
-
   See a more thorough factory discussion in src/utils/Factory.hh.
 
   Usage:
@@ -30,9 +33,7 @@
   #include "pk_implementation.hh"
   template<>
   Amanzi::RegisteredPKFactory<DerivedPK> DerivedPK::factory_("pk unique id");
-  
 */
-
 
 #ifndef AMANZI_PK_FACTORY_HH_
 #define AMANZI_PK_FACTORY_HH_
@@ -71,7 +72,6 @@ class PKFactory {
       Exceptions::amanzi_throw(message);
     }
    
-   
     std::string pk_type;
     if (pk_tree.isParameter("PK type")){
       pk_type = pk_tree.get<std::string>("PK type");
@@ -108,8 +108,6 @@ class PKFactory {
     if (!map_) map_ = new map_type;
     return map_;
   }
-
-
 };
 
 
@@ -129,9 +127,9 @@ public:
   // call themselves the same thing) --etc
   RegisteredPKFactory(const std::string& s) {
     GetMap()->insert(std::pair<std::string, PK* (*)(Teuchos::ParameterList&,
-            const Teuchos::RCP<Teuchos::ParameterList>&,
-            const Teuchos::RCP<State>&,
-            const Teuchos::RCP<TreeVector>&)>(s, &CreateT<T>));
+                     const Teuchos::RCP<Teuchos::ParameterList>&,
+                     const Teuchos::RCP<State>&,
+                     const Teuchos::RCP<TreeVector>&)>(s, &CreateT<T>));
   }
 };
 

@@ -39,7 +39,7 @@ class Richards_PK_Wrapper : public FnTimeIntegratorPK {
 
   // Setup
   virtual void Setup() {
-    dt_ = -1;
+    dt_ = -1.0;
     pk_->InitializeFields();
   }
 
@@ -61,7 +61,6 @@ class Richards_PK_Wrapper : public FnTimeIntegratorPK {
     dt_ = dt;
     pk_->set_dt(dt);
   }
-
 
   // Advance PK by step size dt.
   virtual bool AdvanceStep(double t_old, double t_new);

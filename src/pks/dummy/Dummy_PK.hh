@@ -4,7 +4,6 @@
 
   Dummy PK which demonstrates the require interface for PK
   BDFFnBase<CompositeVector>, to use TreeVectors.
-
 */
 
 #ifndef AMANZI_DUMMY_PK_HH_
@@ -19,7 +18,6 @@
 namespace Amanzi {
 
 class Dummy_PK : public FnTimeIntegratorPK {
-
  public:
   Dummy_PK(Teuchos::ParameterList& pk_tree,
                       const Teuchos::RCP<Teuchos::ParameterList>& global_list,
@@ -32,7 +30,6 @@ class Dummy_PK : public FnTimeIntegratorPK {
   // Initialize owned (dependent) variables.
   virtual void Initialize() {}
   
-
   // Choose a time step compatible with physics.
   virtual double get_dt() {
     return dummy_dt;
@@ -49,7 +46,7 @@ class Dummy_PK : public FnTimeIntegratorPK {
   virtual void CommitStep(double t_old, double t_new) {}
 
   // Calculate any diagnostics prior to doing vis
-  virtual void CalculateDiagnostics() {}
+  virtual void CalculateDiagnostics() {};
 
   virtual std::string name() {
     //return pk_->name();
@@ -96,15 +93,15 @@ class Dummy_PK : public FnTimeIntegratorPK {
   // so that the nonlinear iteration can store the modified correction
   // and pass it to NKA so that the NKA space can be updated
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-  ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
-                   Teuchos::RCP<const TreeVector> u,
-                   Teuchos::RCP<TreeVector> du) {
+      ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+                       Teuchos::RCP<const TreeVector> u,
+                       Teuchos::RCP<TreeVector> du) {
   }
 
   // experimental approach -- calling this indicates that the time
   // integration scheme is changing the value of the solution in
   // state.
-  virtual void ChangedSolution() {}
+  virtual void ChangedSolution() {};
 
  protected:
   Teuchos::RCP<Teuchos::ParameterList> glist_;
@@ -117,9 +114,8 @@ class Dummy_PK : public FnTimeIntegratorPK {
  private:
   // factory registration
   static RegisteredPKFactory<Dummy_PK> reg_;
-
 };
 
-} // namespace
+}  // namespace Amanzi
 
 #endif

@@ -96,8 +96,6 @@ set(mpc_tree_inc_files
 add_install_include_file(${mpc_tree_inc_files})
 
 if (BUILD_TESTS) 
-  
-#if (0)
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
 

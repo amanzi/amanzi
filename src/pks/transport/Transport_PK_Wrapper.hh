@@ -40,7 +40,7 @@ class Transport_PK_Wrapper : public PK {
     return pk_->get_dt();
   }
 
-  virtual void set_dt(double dt){};
+  virtual void set_dt(double dt) {};
 
   // Advance from state S0 to state S1 at time S0.time + dt.
   // Due to Transport PK / MPC conflict (FIXME when MPC will be upgraded)
@@ -53,7 +53,7 @@ class Transport_PK_Wrapper : public PK {
   }
 
   // Calculate any diagnostics prior to doing vis
-  virtual void CalculateDiagnostics() {}
+  virtual void CalculateDiagnostics() {};
 
   virtual std::string name() {
     return pk_->name();

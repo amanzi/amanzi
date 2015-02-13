@@ -71,7 +71,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
 
   // main PK members
   void Initialize(const Teuchos::Ptr<State>& S);
-  int Advance(double dT, double &dT_actual); 
+  int Advance(double dT, double& dT_actual); 
   void CommitState(double dummy_dT, const Teuchos::Ptr<State>& S);
 
   void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
