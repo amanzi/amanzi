@@ -548,16 +548,18 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriver_List_(Teuchos::Parameter
 
   cycle_driver_list.sublist("time periods").sublist(tp_list_name.data()).sublist("PK Tree") = pk_tree_list;
   if (transport_on || chemistry_on) {
-      cycle_driver_list.set<Teuchos::Array<std::string> >("component names", comp_names_all_);
+    cycle_driver_list.set<Teuchos::Array<std::string> >("component names", comp_names_all_);
   }
 
-  Teuchos::ParameterList  tpc_list = CreateTimePeriodControlList_(plist);
+  Teuchos::ParameterList tpc_list = CreateTimePeriodControlList_(plist);
 
   cycle_driver_list.sublist("time periods").sublist(tp_list_name.data()).set<double>("start period time", switch_time);
   cycle_driver_list.sublist("time periods").sublist(tp_list_name.data()).set<double>("end period time", end_time);
   cycle_driver_list.sublist("time periods").sublist(tp_list_name.data()).set<int>("maximum cycle number", max_cycle_number);
   cycle_driver_list.sublist("time periods").sublist(tp_list_name.data()).set<double>("initial time step", dt_tran);
   cycle_driver_list.sublist("Time Period Control") = tpc_list;
+
+  cycle_driver_list.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
 
   return cycle_driver_list;
 }

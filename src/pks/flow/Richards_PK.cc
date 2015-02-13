@@ -482,7 +482,6 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 {
   ResetPKtimes(T0, dT0);
 
-
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << std::endl 
@@ -577,7 +576,6 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     Epetra_MultiVector& ws_prev = *S_->GetFieldData("prev_water_saturation", passwd_)->ViewComponent("cell", false);
     DeriveSaturationFromPressure(p, ws);
     ws_prev = ws;
-
   }
 
   // initialize saturation

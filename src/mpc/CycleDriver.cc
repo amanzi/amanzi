@@ -57,7 +57,7 @@ CycleDriver::CycleDriver(Teuchos::ParameterList& parameter_list,
   // create and start the global timer
   coordinator_init_();
 
-  vo_ = Teuchos::rcp(new VerboseObject("CycleDriver", *parameter_list_));
+  vo_ = Teuchos::rcp(new VerboseObject("CycleDriver", parameter_list_->sublist("Cycle Driver")));
 };
 
 
@@ -518,6 +518,7 @@ void CycleDriver::set_dt(double dt) {
 
 // This is used by CLM
 bool CycleDriver::advance(double dt) {
+  Teuchos::OSTab tab = vo_->getOSTab();
   //bool fail = pk_->AdvanceStep(S_->last_time(), S_->time());
   bool fail = pk_->AdvanceStep(S_->time(), S_->time()+dt);
 
@@ -527,7 +528,6 @@ bool CycleDriver::advance(double dt) {
     S_->advance_cycle();
     S_->advance_time(dt);
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "New time(y) = "<< S_->time() / (60*60*24*365.25);
       *vo_->os() << std::endl;
     }
@@ -543,7 +543,7 @@ bool CycleDriver::advance(double dt) {
     }
 
     if (!reset_info_.empty())
-          if (S_->time() == reset_info_.front().first)
+        if (S_->time() == reset_info_.front().first)
             force_check = true;
 
     // make observations, vis, and checkpoints
@@ -605,6 +605,7 @@ void CycleDriver::visualize(bool force) {
        vis!=visualization_.end(); ++vis) {
     if (force || (*vis)->DumpRequested(S_->cycle(), S_->time())) {
       WriteVis((*vis).ptr(), S_.ptr());
+
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "Cycle " << S_->cycle() << ": writing visualization file" << std::endl;
     }
@@ -616,6 +617,8 @@ void CycleDriver::checkpoint(double dt, bool force) {
   if (force || checkpoint_->DumpRequested(S_->cycle(), S_->time())) {
     WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt);
     pk_->CalculateDiagnostics();
+
+    Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Cycle " << S_->cycle() << ": writing checkpoint file" << std::endl;
   }
 }
