@@ -1,11 +1,15 @@
 /*
-  License: see $AMANZI_DIR/COPYRIGHT
+  This is the mpc_pk component of the Amanzi code. 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Authors: Daniil Svyatskiy
 
   PK for coupling of Flow_PK with Transport_PK and Chemestry_PK
-
 */
-
 
 #include "FlowReactiveTransport_PK.hh"
 
@@ -18,8 +22,7 @@ FlowReactiveTransport_PK::FlowReactiveTransport_PK(Teuchos::ParameterList& pk_tr
 					   const Teuchos::RCP<Teuchos::ParameterList>& global_list,
 					   const Teuchos::RCP<State>& S,
 					   const Teuchos::RCP<TreeVector>& soln) :
-Amanzi::MPCSubcycled(pk_tree, global_list, S, soln) { 
-
+    Amanzi::MPCSubcycled(pk_tree, global_list, S, soln) { 
 }
 
 
@@ -27,31 +30,34 @@ Amanzi::MPCSubcycled(pk_tree, global_list, S, soln) {
 // Calculate the min of sub PKs timestep sizes.
 // -----------------------------------------------------------------------------
 double FlowReactiveTransport_PK::get_dt() {
-  
   //double dt = Amanzi::MPCSubcycled::get_dt();
   double dt = sub_pks_[master_]->get_dt();
   return dt;
+}
 
-};
 
 // -----------------------------------------------------------------------------
 // Set master dt
 // -----------------------------------------------------------------------------
-
-void FlowReactiveTransport_PK::set_dt(double dt){
+void FlowReactiveTransport_PK::set_dt(double dt) {
   master_dt_ = dt;
   sub_pks_[master_]->set_dt(dt);
 }
 
-void FlowReactiveTransport_PK::CommitStep(double t_old, double t_new){
+
+// -----------------------------------------------------------------------------
+// Make necessary operatios by the end of the time steps.
+// -----------------------------------------------------------------------------
+void FlowReactiveTransport_PK::CommitStep(double t_old, double t_new) {
   sub_pks_[slave_]->CommitStep(t_old, t_new);
 }
+
 
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
- bool FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new) {
-   bool fail = false;
+bool FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new) {
+  bool fail = false;
 
   // advance the master PK using the full step size
   fail = sub_pks_[master_]->AdvanceStep(t_old, t_new);
@@ -59,7 +65,7 @@ void FlowReactiveTransport_PK::CommitStep(double t_old, double t_new){
 
   master_dt_ = t_new - t_old;
 
- // --etc: unclear if state should be commited?
+  // --etc: unclear if state should be commited?
   sub_pks_[master_]->CommitStep(t_old, t_new);
 
   slave_dt_ = sub_pks_[slave_]->get_dt();
@@ -107,8 +113,7 @@ void FlowReactiveTransport_PK::CommitStep(double t_old, double t_new){
   } else {
     return true;
   }  
+}
 
- };
+}  // namespace Amanzi
 
-
-}//close namespace Amanzi

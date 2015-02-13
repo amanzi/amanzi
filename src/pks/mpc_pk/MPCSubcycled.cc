@@ -1,19 +1,22 @@
-/* -------------------------------------------------------------------------
-Amanzi
+/*
+  This is the mpc_pk component of the Amanzi code. 
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Class for subcycling a slave step within a master step.
-Assumes that intermediate_time() can be used (i.e. this is not nestable?)
+  Author: Ethan Coon
 
-See additional documentation in the base class src/pks/mpc/MPC.hh
-------------------------------------------------------------------------- */
+  Class for subcycling a slave step within a master step.
+  Assumes that intermediate_time() can be used (i.e. this is not nestable?)
+
+  See additional documentation in the base class src/pks/mpc_pk/MPC_PK.hh
+*/
 
 #include "MPCSubcycled.hh"
 
 namespace Amanzi {
-
 
 // -----------------------------------------------------------------------------
 // Constructor
@@ -22,11 +25,9 @@ MPCSubcycled::MPCSubcycled(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& soln) :
-    MPCTmp<PK>(pk_tree, global_list, S, soln) {
+    MPC_PK<PK>(pk_tree, global_list, S, soln) {
 
   // Master PK is the PK whose time step size sets the size, the slave is subcycled.
-
-
   master_ = my_list_->get<int>("master PK index", 0);
   slave_ = master_ == 1 ? 0 : 1;
 
@@ -37,7 +38,6 @@ MPCSubcycled::MPCSubcycled(Teuchos::ParameterList& pk_tree,
 
   // min dt allowed in subcycling
   min_dt_ = my_list_->get<double>("mininum subcycled relative dt", 1.e-5);
-
 }
   
 
@@ -50,7 +50,7 @@ double MPCSubcycled::get_dt() {
   if (slave_dt_ > master_dt_) slave_dt_ = master_dt_;
   
   return master_dt_;
-};
+}
 
 
 // -----------------------------------------------------------------------------
@@ -60,7 +60,6 @@ bool MPCSubcycled::AdvanceStep(double t_old, double t_new) {
   bool fail = false;
 
   // advance the master PK using the full step size
-
   fail = sub_pks_[master_]->AdvanceStep(t_old, t_new);
   if (fail) return fail;
 
@@ -113,5 +112,5 @@ bool MPCSubcycled::AdvanceStep(double t_old, double t_new) {
   }
 }
 
+}  // namespace Amanzi
 
-} // namespace

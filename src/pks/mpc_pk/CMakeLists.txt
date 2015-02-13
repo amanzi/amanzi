@@ -57,7 +57,12 @@ add_amanzi_library(mpc_tree SOURCE ${mpc_tree_src_files}
 #
 # Install Targets
 #
-set(mpc_tree_inc_files MPCStrong.hh MPCWeak.hh MPCSubcycled.hh MPC_tmp.hh FlowReactiveTransport_PK.hh)
+set(mpc_tree_inc_files
+    MPCStrong.hh
+    MPCWeak.hh
+    MPCSubcycled.hh
+    MPC_PK.hh
+    FlowReactiveTransport_PK.hh)
 
 add_install_include_file(${mpc_tree_inc_files})
 

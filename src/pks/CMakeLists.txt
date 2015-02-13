@@ -54,7 +54,7 @@ endif()
 
 add_subdirectory(eos)
 
-add_subdirectory(mpc)
+add_subdirectory(mpc_pk)
 add_subdirectory(flow)
 add_subdirectory(transport)
 add_subdirectory(energy)
