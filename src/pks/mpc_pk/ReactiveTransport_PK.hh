@@ -1,9 +1,14 @@
 /*
-  License: see $AMANZI_DIR/COPYRIGHT
+  This is the mpc_pk component of the Amanzi code. 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Authors: Daniil Svyatskiy
 
-  PK for coupling of Transport_PK and Chemestry_PK
-
+  Process kernel for coupling of Transport_PK and Chemistry_PK.
 */
 
 
@@ -19,11 +24,9 @@
 #include "MPCWeak.hh"
 
 namespace Amanzi {
- namespace Transport {
 
-class ReactiveTransport_PK : public MPCWeak{
-
-public:
+class ReactiveTransport_PK : public MPCWeak {
+ public:
   ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
                const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                const Teuchos::RCP<State>& S,
@@ -41,23 +44,21 @@ public:
 
   std::string name() { return "reactive transport";} 
 
-private:
-
+ private:
   // storage for the component concentration intermediate values
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration_stor;
 
-  Teuchos::RCP<Transport_PK_Wrapper> tranport_pk_;
-  Teuchos::RCP<Amanzi::AmanziChemistry::Chemistry_PK_Wrapper> chemistry_pk_;
+  Teuchos::RCP<Transport::Transport_PK_Wrapper> tranport_pk_;
+  Teuchos::RCP<AmanziChemistry::Chemistry_PK_Wrapper> chemistry_pk_;
   //int  master_, slave_;
 
   bool chem_step_succeeded;
   bool storage_created;
   double dTtran_, dTchem_;
+
   // factory registration
   static RegisteredPKFactory<ReactiveTransport_PK> reg_;
-
-
 };
-} // close namespace Transport
-} // close namespace Amanzi
+
+}  // namespace Amanzi
 #endif

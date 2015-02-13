@@ -40,7 +40,6 @@ include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${PKS_SOURCE_DIR})
-include_directories(${MPC_TREE_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Epetra_INCLUDE_DIRS})
@@ -50,24 +49,16 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 # Transport registrations
 #
-register_evaluator_with_factory( HEADERFILE Transport_PK_Wrapper_reg.hh
-  LISTNAME   PKS_TRANSPORT_REGISTRATIONS )
+register_evaluator_with_factory(
+  HEADERFILE Transport_PK_Wrapper_reg.hh
+  LISTNAME   PKS_TRANSPORT_REGISTRATIONS
+  )
 
 generate_evaluators_registration_header( 
   HEADERFILE pks_transport_registration.hh   
   LISTNAME   PKS_TRANSPORT_REGISTRATIONS
-  INSTALL    True )
-#
-# ReactiveTransport registrations
-#
-register_evaluator_with_factory( HEADERFILE ReactiveTransport_PK_reg.hh
-  LISTNAME   PKS_REACTIVETRANSPORT_REGISTRATIONS )
-
-generate_evaluators_registration_header( 
-  HEADERFILE pks_reactivetransport_registration.hh   
-  LISTNAME   PKS_REACTIVETRANSPORT_REGISTRATIONS
-  INSTALL    True )
-
+  INSTALL    True
+  )
 
 #
 # Library: transport
@@ -90,7 +81,7 @@ set(transport_src_files Transport_PK.cc Transport_TI.cc
                         Transport_PK_Wrapper.cc
                         TransportBCFactory.cc TransportSourceFactory.cc
                         TransportBoundaryFunction_Tracer.cc TransportBoundaryFunction_Alquimia.cc
-                        TransportDomainFunction.cc ReactiveTransport_PK.cc)
+                        TransportDomainFunction.cc)
 
 if (ENABLE_ALQUIMIA)
   set(geochem_lib geochemistry)

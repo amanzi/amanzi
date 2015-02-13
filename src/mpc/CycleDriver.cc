@@ -1,16 +1,15 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-ATS
+/*
+  Amanzi & ATS
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+  License: see $ATS_DIR/COPYRIGHT
+  Author: Ethan Coon
 
-Implementation for the CycleDriver.  CycleDriver is basically just a class to hold
-the cycle driver, which runs the overall, top level timestep loop.  It
-instantiates states, ensures they are initialized, and runs the timestep loop
-including Vis and restart/checkpoint dumps.  It contains one and only one PK
--- most likely this PK is an MPC of some type -- to do the actual work.
-------------------------------------------------------------------------- */
+  Implementation for the CycleDriver.  CycleDriver is basically just a class to hold
+  the cycle driver, which runs the overall, top level timestep loop.  It
+  instantiates states, ensures they are initialized, and runs the timestep loop
+  including Vis and restart/checkpoint dumps.  It contains one and only one PK
+  -- most likely this PK is an MPC of some type -- to do the actual work.
+*/
 
 #include <iostream>
 #include <unistd.h>
@@ -527,6 +526,7 @@ bool CycleDriver::advance(double dt) {
     // advance the iteration count and timestep size
     S_->advance_cycle();
     S_->advance_time(dt);
+
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       *vo_->os() << "New time(y) = "<< S_->time() / (60*60*24*365.25);
       *vo_->os() << std::endl;

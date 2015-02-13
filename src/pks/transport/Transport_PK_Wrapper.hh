@@ -4,7 +4,6 @@
 
   Temporary wrapper converting the Transport_PK, which inherits from 
   BDFFnBase<CompositeVector>, to use TreeVectors.
-
 */
 
 #ifndef AMANZI_TRANSPORT_PK_WRAPPER_HH_
@@ -20,7 +19,6 @@ namespace Amanzi {
 namespace Transport {
 
 class Transport_PK_Wrapper : public PK {
-
  public:
   Transport_PK_Wrapper(Teuchos::ParameterList& pk_tree,
                        const Teuchos::RCP<Teuchos::ParameterList>& global_list,
@@ -79,7 +77,7 @@ class Transport_PK_Wrapper : public PK {
     
 };
 
-} // namespace
-} // namespace
+}  // namespace Transport
+}  // namespace Amanzi
 
 #endif

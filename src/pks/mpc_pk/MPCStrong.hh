@@ -23,15 +23,15 @@
 
 #include <vector>
 
+#include "BDF1_TI.hh"
 #include "FnTimeIntegratorPK.hh"
 #include "MPC_PK.hh"
 #include "PK_Factory.hh"
 
 namespace Amanzi {
 
-template <class PK_Base>
-class MPCStrong : public MPC_PK<PK_Base>,
-                  public FnTimeIntegratorPK {
+template<class PK_Base>
+class MPCStrong : public MPC_PK<PK_Base>, public FnTimeIntegratorPK {
  public:
   MPCStrong(Teuchos::ParameterList& pk_tree,
             const Teuchos::RCP<Teuchos::ParameterList>& global_list,
@@ -45,8 +45,6 @@ class MPCStrong : public MPC_PK<PK_Base>,
   // -- dt is the minimum of the sub pks
   virtual double get_dt();
   virtual void set_dt(double dt);
-
-  
 
   // -- advance each sub pk dt.
   virtual bool AdvanceStep(double t_old, double t_new);
@@ -88,7 +86,14 @@ class MPCStrong : public MPC_PK<PK_Base>,
                        Teuchos::RCP<TreeVector> du);
 
  protected:
-  using MPCTmp<PK_Base>::sub_pks_;
+  using MPC_PK<PK_Base>::sub_pks_;
+  using MPC_PK<PK_Base>::S_;
+
+  using MPC_PK<PK_Base>::global_list_;
+  using MPC_PK<PK_Base>::pk_tree_;
+  using MPC_PK<PK_Base>::my_list_;
+
+  using MPC_PK<PK_Base>::solution_;
 
   // timestep control
   double dt_;
@@ -104,11 +109,11 @@ class MPCStrong : public MPC_PK<PK_Base>,
 // Constructor
 // -----------------------------------------------------------------------------
 template<class PK_Base>
-MPCStrong<PK_Base>::MPCTmp(Teuchos::ParameterList& pk_tree,
-                           const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-                           const Teuchos::RCP<State>& S,
-                           const Teuchos::RCP<TreeVector>& soln) :
-    MPCTmp<PK_Base>(pk_tree, global_list, S, soln) {
+MPCStrong<PK_Base>::MPCStrong(Teuchos::ParameterList& pk_tree,
+                              const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                              const Teuchos::RCP<State>& S,
+                              const Teuchos::RCP<TreeVector>& soln) :
+    MPC_PK<PK_Base>(pk_tree, global_list, S, soln) {
 };
 
 
@@ -119,10 +124,9 @@ template<class PK_Base>
 void MPCStrong<PK_Base>::Setup() {
   // Tweak the sub-PK parameter lists.  This allows the PK to
   // potentially not assemble things.
-  Teuchos::RCP<Teuchos::ParameterList> pks_list =
-      Teuchos::sublist(global_list_, "PKs");
-  for (Teuchos::ParameterList::ConstIterator param=pk_tree_.begin();
-       param!=pk_tree_.end(); ++param) {
+  Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(global_list_, "PKs");
+  for (Teuchos::ParameterList::ConstIterator param = pk_tree_.begin();
+       param != pk_tree_.end(); ++param) {
     std::string pname = param->first;
     if (pks_list->isSublist(pname)) {
       pks_list->sublist(pname).set("strongly coupled PK", true);
@@ -132,7 +136,7 @@ void MPCStrong<PK_Base>::Setup() {
   }
 
   // call each sub-PKs Setup()
-  MPCTmp<PK_Base>::Setup();
+  MPC_PK<PK_Base>::Setup();
 
   // Set the initial timestep as the min of the sub-pk sizes.
   dt_ = get_dt();
@@ -150,13 +154,13 @@ void MPCStrong<PK_Base>::Initialize() {
   // initializing the timestepper.
 
   // Initialize all sub PKs.
-  MPCTmp<PK_Base>::Initialize();
+  MPC_PK<PK_Base>::Initialize();
 
   // set up the timestepping algorithm if this is not strongly coupled
   if (!my_list_->get<bool>("strongly coupled PK", false)) {
     // -- instantiate time stepper
     Teuchos::ParameterList& ts_plist = my_list_->sublist("time integrator");
-    ts_plist.set("initial time", S->time());
+    ts_plist.set("initial time", S_->time());
     time_stepper_ = Teuchos::rcp(new Amanzi::BDF1_TI<TreeVector,
             TreeVectorSpace>(*this, ts_plist, solution_));
 
@@ -165,7 +169,7 @@ void MPCStrong<PK_Base>::Initialize() {
     solution_dot->PutScalar(0.0);
 
     // -- set initial state
-    time_stepper_->SetInitialState(S->time(), solution_, solution_dot);
+    time_stepper_->SetInitialState(S_->time(), solution_, solution_dot);
   }
 }
 
@@ -298,8 +302,8 @@ void MPCStrong<PK_Base>::UpdatePreconditioner(
 template<class PK_Base>
 void MPCStrong<PK_Base>::ChangedSolution() {
   // loop over sub-PKs
-  for (typename MPCTmp<PK_Base>::SubPKList::iterator pk = MPCTmp<PK_Base>::sub_pks_.begin();
-      pk != MPCTmp<PK_Base>::sub_pks_.end(); ++pk) {
+  for (typename MPC_PK<PK_Base>::SubPKList::iterator pk = MPC_PK<PK_Base>::sub_pks_.begin();
+      pk != MPC_PK<PK_Base>::sub_pks_.end(); ++pk) {
     (*pk)->ChangedSolution();
   }
 }

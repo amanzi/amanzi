@@ -5,40 +5,30 @@
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
 
-#include "AmanziUnstructuredGridSimulationDriver.hh"
-
 #include "Teuchos_ParameterList.hpp"
-// #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "XMLParameterListWriter.hh"
 
-#include "MeshFactory.hh"
-#include "State.hh"
-#include "MPC.hh"
+#include "AmanziUnstructuredGridSimulationDriver.hh"
 #include "CycleDriver.hh"
-#include "PK_Factory.hh"
-#include "PK.hh"
 #include "Domain.hh"
 #include "GeometricModel.hh"
+#include "InputParserIS.hh"
+#include "InputAnalysis.hh"
 #include "MeshAudit.hh"
+#include "MeshFactory.hh"
+#include "MPC.hh"
+#include "PK_Factory.hh"
+#include "PK.hh"
+#include "State.hh"
+#include "TimerManager.hh"
 
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
-
-#include "InputParserIS.hh"
-#include "InputAnalysis.hh"
-
-#include "TimerManager.hh"
-
-// includes for PK registration
-//#include "pks_flow_registration.hh"
-//#include "pks_transport_registration.hh"
-// includes for PK registration
+#include "mpc_pks_registration.hh"
+#include "pks_chemistry_registration.hh"
 #include "pks_flow_registration.hh"
 #include "pks_transport_registration.hh"
-#include "pks_reactivetransport_registration.hh"
-#include "pks_flowreactivetransport_registration.hh"
-#include "pks_chemistry_registration.hh"
 
 
 Amanzi::Simulator::ReturnType

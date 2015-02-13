@@ -26,9 +26,7 @@ Teuchos::ParameterList InputParserIS::Translate(Teuchos::ParameterList* plist, i
   // unstructured header
   Teuchos::ParameterList new_list, tmp_list, pks_list, cd_list;
   
-
   bool new_mpc_driver = plist->get<bool>("new mpc driver", false);
-
 
   new_list.set<bool>("Native Unstructured Input", true);
   new_list.set<std::string>("grid_option", "Unstructured");

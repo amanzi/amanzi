@@ -44,15 +44,21 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 # Flow registrations
 #
-register_evaluator_with_factory( HEADERFILE Darcy_PK_Wrapper_reg.hh
-  LISTNAME   PKS_FLOW_REGISTRATIONS )
-register_evaluator_with_factory( HEADERFILE Richards_PK_Wrapper_reg.hh
-  LISTNAME   PKS_FLOW_REGISTRATIONS )
+register_evaluator_with_factory(
+  HEADERFILE Darcy_PK_Wrapper_reg.hh
+  LISTNAME   PKS_FLOW_REGISTRATIONS
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE Richards_PK_Wrapper_reg.hh
+  LISTNAME   PKS_FLOW_REGISTRATIONS
+  )
 
 generate_evaluators_registration_header( 
   HEADERFILE pks_flow_registration.hh   
   LISTNAME   PKS_FLOW_REGISTRATIONS
-  INSTALL    True )
+  INSTALL    True
+  )
 
 
 #
