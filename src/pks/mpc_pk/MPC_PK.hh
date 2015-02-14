@@ -12,7 +12,7 @@
   Interface for the Base MPC class.  A multi process coordinator (MPC)
   is a PK which coordinates other PKs.  Each of these coordinated PKs
   may be MPCs themselves, or physical PKs.  Note this does NOT provide a
-  full implementation of PK -- it does not supply the Advance() method.
+  full implementation of PK -- it does not supply the AdvanceStep() method.
   Therefore this class cannot be instantiated, but must be inherited by
   derived classes which finish supplying the functionality.  Instead,
   this provides the data structures and methods (which may be overridden
@@ -40,7 +40,7 @@
 namespace Amanzi {
 
 template <class PK_Base>
-class MPC_PK : public PK {
+class MPC_PK : virtual public PK {
  public:
   MPC_PK(Teuchos::ParameterList& pk_tree,
          const Teuchos::RCP<Teuchos::ParameterList>& global_list,

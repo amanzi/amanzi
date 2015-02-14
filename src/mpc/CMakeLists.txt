@@ -77,10 +77,7 @@ add_amanzi_library(mpc
                    LINK_LIBS time_integration solvers output state mesh dbg ${mpc_tpl_libs})
 
 if (BUILD_TESTS)
-#if (0)
-
-  include_directories(${MESH_FACTORY_SOURCE_DIR})
-
+    include_directories(${MESH_FACTORY_SOURCE_DIR})
     
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
@@ -106,17 +103,18 @@ if (BUILD_TESTS)
                     KIND      int
                     SOURCE    test/Main.cc test/test_new_driver_flow.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-if(0)
-    # Test: mpc-new driver dummy
-    add_amanzi_test(mpc-new-dummy test_mpc_new_dummy
-                    KIND      int
-                    SOURCE    test/Main.cc test/test_dummy_pk.cc
-		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: mpc-new driver transport
     add_amanzi_test(mpc-new-transport test_mpc_new_transport
                     KIND      int
                     SOURCE    test/Main.cc test/test_new_driver_transport.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+if(0)
+    # Test: mpc-new driver dummy
+    add_amanzi_test(mpc-new-dummy test_mpc_new_dummy
+                    KIND      int
+                    SOURCE    test/Main.cc test/test_dummy_pk.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: mpc-new driver reactive transport

@@ -50,11 +50,11 @@ register_evaluator_with_factory(
   LISTNAME   MPC_PKS_REGISTRATIONS
   )
 
-#register_evaluator_with_factory(
-#  HEADERFILE FlowEnergy_PK_reg.hh 
-#  LISTNAME   MPC_PKS_REGISTRATIONS
-#  INSTALL    True
-#  )
+register_evaluator_with_factory(
+  HEADERFILE FlowEnergy_PK_reg.hh 
+  LISTNAME   MPC_PKS_REGISTRATIONS
+  INSTALL    True
+  )
 
 register_evaluator_with_factory(
   HEADERFILE ReactiveTransport_PK_reg.hh
@@ -75,6 +75,7 @@ set(mpc_tree_src_files
     MPCWeak.cc 
     MPCSubcycled.cc 
     ReactiveTransport_PK.cc
+    FlowEnergy_PK.cc
     FlowReactiveTransport_PK.cc)
 
 set(mpc_tree_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})

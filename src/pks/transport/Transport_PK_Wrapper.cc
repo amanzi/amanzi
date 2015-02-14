@@ -24,8 +24,6 @@ Transport_PK_Wrapper::Transport_PK_Wrapper(Teuchos::ParameterList& pk_tree,
   // Transport expects a single global list with sublist Transport
   glist_ = Teuchos::rcp(new Teuchos::ParameterList(*global_list));
 
-  //std::cout<<pk_tree;
-
   std::string pk_name = pk_tree.name();
   const char* result = pk_name.data();
   while ((result = std::strstr(result, "->")) != NULL) {
@@ -33,10 +31,8 @@ Transport_PK_Wrapper::Transport_PK_Wrapper(Teuchos::ParameterList& pk_tree,
     pk_name = result;   
   }
 
-  //std::cout<<glist_->sublist("Cycle Driver").sublist("time intervals").sublist("TI 0")<<"\n";
   // grab the component names
   comp_names_ = glist_->sublist("Cycle Driver").get<Teuchos::Array<std::string> >("component names").toVector();
-
  
   // construct
   pk_ = Teuchos::rcp(new Transport_PK(*glist_, S_, pk_name, comp_names_));
@@ -54,9 +50,8 @@ Transport_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
     failed = true;
   }
   return failed;
-
 }
 
-} // namespace Transport
-} // namespace Amanzi
+}  // namespace Transport
+}  // namespace Amanzi
 

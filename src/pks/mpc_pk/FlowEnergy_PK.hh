@@ -16,12 +16,13 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "PK_Factory.hh"
+#include "FnTimeIntegratorPK.hh"
 #include "MPCStrong.hh"
+#include "PK_Factory.hh"
 
 namespace Amanzi {
 
-class FlowEnergy_PK : public MPCStrong<> {
+class FlowEnergy_PK : public MPCStrong<FnTimeIntegratorPK> {
  public:
   FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
                 const Teuchos::RCP<Teuchos::ParameterList>& global_list,
@@ -30,7 +31,7 @@ class FlowEnergy_PK : public MPCStrong<> {
 
   // PK methods
   // -- dt is the minimum of the sub pks
-  virtual double get_dt() {};
+  double get_dt() {};
   virtual void set_dt(double dt) {};
 
   // -- advance each sub pk dt.

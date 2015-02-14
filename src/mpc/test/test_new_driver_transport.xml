@@ -2,7 +2,8 @@
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
   <Parameter name="grid_option" type="string" value="Unstructured"/>
   <Parameter isUsed="true" name="input file name" type="string" value="dvz_3layer_2D_short.xml"/>
-  <Parameter name="New multi-process coordinator" type="bool" value="true"/>
+  <Parameter name="new cycle driver" type="bool" value="true"/>
+
   <ParameterList name="Checkpoint Data">
     <Parameter name="file name base" type="string" value="checkpoint"/>
     <Parameter name="file name digits" type="int" value="5"/>
@@ -19,6 +20,12 @@
         <Parameter name="File" type="string" value="rect2D_10x10_ss.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Cell"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="All domain">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array(double)" value="{-1.0, -1.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,  1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
@@ -62,28 +69,27 @@
       <ParameterList name="TP 0">
 	<ParameterList name="PK Tree">
 	  <ParameterList name="Transport">
-	    <Parameter name="PK type" type="string" value="transport pk"/>
+	    <Parameter name="PK type" type="string" value="transport"/>
 	  </ParameterList>
 	</ParameterList>
 	<Parameter name="initial time step" type="double" value="1.00000000000000000e+00"/>
 	<Parameter name="maximal time step" type="double" value="1.00000000000000000e+07"/>
 	<Parameter name="start period time" type="double" value="0.00000000000000000e+00"/>
-	<Parameter name="end period time" type="double" value="1.00000000000000000e+1"/>
+	<Parameter name="end period time" type="double" value="1.00000000000000000e+03"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
-
   <ParameterList name="State">
     <ParameterList name="initial conditions">
       <ParameterList name="gravity">
-        <Parameter name="value" type="Array(double)" value="{0.00000000000000000e+00, -9.80664999999999942e+00}"/>
+        <Parameter name="value" type="Array(double)" value="{0.0, -9.80665}"/>
       </ParameterList>
       <ParameterList name="fluid_viscosity">
-        <Parameter name="value" type="double" value="1.00200000000000007e-03"/>
+        <Parameter name="value" type="double" value="1.002e-03"/>
       </ParameterList>
       <ParameterList name="fluid_density">
-        <Parameter name="value" type="double" value="9.98200000000000045e+02"/>
+        <Parameter name="value" type="double" value="998.2"/>
       </ParameterList>
       <ParameterList name="water_density">
         <ParameterList name="function">
@@ -141,8 +147,8 @@
             <ParameterList name="function">
               <ParameterList name="function-linear">
                 <Parameter name="y0" type="double" value="1.01325000000000000e+05"/>
-                <Parameter name="x0" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00, 0.00000000000000000e+00}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00, -9.79351920000000064e+03}"/>
+                <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, -9.79351920000000064e+03}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -154,11 +160,39 @@
             <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="1"/>
+              <Parameter name="Number of DoFs" type="int" value="2"/>
               <Parameter name="Function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.00000000000000000e+00"/>
+                  <Parameter name="value" type="double" value="0.0"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 2 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.0"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="darcy_flux">
+        <Parameter name="dot with normal" type="bool" value="true"/>
+        <ParameterList name="function">
+          <ParameterList name="All domain">
+            <Parameter name="regions" type="Array(string)" value="{All domain}"/>
+            <Parameter name="component" type="string" value="face"/>
+            <ParameterList name="function">
+              <Parameter name="Number of DoFs" type="int" value="2"/>
+              <Parameter name="Function type" type="string" value="composite function"/>
+              <ParameterList name="DoF 1 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.8634e-04"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 2 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.8634e-04"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -172,24 +206,29 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="PKs">
     <ParameterList name="Transport">
-      <Parameter name="PK type" type="string" value="transport pk"/>
+      <Parameter name="PK type" type="string" value="transport"/>
       <Parameter name="cfl" type="double" value="0.5"/>   
       <Parameter name="spatial discretization order" type="int" value="2"/>   
       <Parameter name="temporal discretization order" type="int" value="2"/>   
-      <Parameter name="advection limiter" type="string" value="Tensorial"/>
       <!-- developers parameters --> 
       <Parameter name="enable internal tests" type="string" value="yes"/>   
       <Parameter name="internal tests tolerance" type="double" value="1e-5"/> 
       <Parameter name="component names" type="Array(string)" value="{Tc-99, Tc-98}"/>
       <!-- end of developers parameters -->
+      <ParameterList name="reconstruction">
+        <Parameter name="polynomial order" type="int" value="1"/>
+        <Parameter name="limiter" type="string" value="tensorial"/>
+        <Parameter name="limiter extension for transport" type="bool" value="true"/>
+      </ParameterList>
       <ParameterList name="VerboseObject">
-	<Parameter name="Verbosity Level" type="string" value="medium"/>
+	<Parameter name="Verbosity Level" type="string" value="high"/>
       </ParameterList>
       <ParameterList name="boundary conditions">
 	<ParameterList name="concentration">
-	  <ParameterList name="Component 0">
+	  <ParameterList name="Tc-99">
 	    <ParameterList name="BC for bottom and left side">
 	      <Parameter name="regions" type="Array(string)" value="{Bottom side, Left side}"/>
 	      <ParameterList name="boundary concentration">
@@ -201,14 +240,14 @@
 	      </ParameterList>
 	    </ParameterList>
 	  </ParameterList>
-	  <ParameterList name="Component 1">
+	  <ParameterList name="Tc-98">
 	    <ParameterList name="BC for bottom">
 	      <Parameter name="regions" type="Array(string)" value="{Left side}"/>
 	      <ParameterList name="boundary concentration">
 		<ParameterList name="function-tabular">
 		  <Parameter name="forms" type="Array(string)" value="{constant}"/>
 		  <Parameter name="x values" type="Array(double)" value="{0.0, 0.1}"/>
-		  <Parameter name="y values" type="Array(double)" value="{1.0, 0.0}"/>
+		  <Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
 		</ParameterList>
 	      </ParameterList>
 	    </ParameterList>
@@ -218,7 +257,7 @@
 		<ParameterList name="function-tabular">
 		  <Parameter name="forms" type="Array(string)" value="{constant}"/>
 		  <Parameter name="x values" type="Array(double)" value="{0.0, 0.1}"/>
-		  <Parameter name="y values" type="Array(double)" value="{0.5, 0.0}"/>
+		  <Parameter name="y values" type="Array(double)" value="{0.5, 1.0}"/>
 		</ParameterList>
 	      </ParameterList>
 	    </ParameterList>
@@ -227,6 +266,7 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="Preconditioners">
     <ParameterList name="Trilinos ML">
       <Parameter name="preconditioner type" type="string" value="ml"/>

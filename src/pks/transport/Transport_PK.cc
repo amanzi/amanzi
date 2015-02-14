@@ -169,8 +169,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // extract control parameters
   ProcessParameterList();
-
-    
+ 
   // state pre-prosessing
   Teuchos::RCP<CompositeVector> cv1;
   S->GetFieldData("darcy_flux", passwd_)->ScatterMasterToGhosted("face");
@@ -191,7 +190,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // memory for new components
   tcc_tmp = Teuchos::rcp(new CompositeVector(*(S->GetFieldData("total_component_concentration"))));
-  tcc_tmp->PutScalar(0.0);
+  *tcc_tmp = *tcc;
 
   // upwind 
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);

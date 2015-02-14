@@ -9,7 +9,7 @@
   Author: Ethan Coon
 
   Virtual interface for Process Kernels.  Note that PKs deriving from this
-  class mustimplement the commented constructor interface as well, and should
+  class must implement the commented constructor interface as well, and should
   add the private static member (following the Usage notes in
   src/pks/PK_Factory.hh) to register the derived PK with the PK factory.
 */

@@ -24,7 +24,7 @@ namespace Amanzi {
 
 class TreeVector;
 
-class FnTimeIntegratorPK : public PK, public Amanzi::BDFFnBase<TreeVector> {};
+class FnTimeIntegratorPK : virtual public PK, public Amanzi::BDFFnBase<TreeVector> {};
 
 }  // namespace Amanzi
 

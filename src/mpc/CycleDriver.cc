@@ -140,9 +140,8 @@ void CycleDriver::initialize() {
   //if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(tsm_);
  
   *S_->GetScalarData("dt", "coordinator") = tp_dt_[0];
-  S_->GetField("dt","coordinator")->set_initialized();
+  S_->GetField("dt", "coordinator")->set_initialized();
 
- 
   // Initialize the state (initializes all dependent variables).
   S_->Initialize();
 
@@ -152,11 +151,11 @@ void CycleDriver::initialize() {
   S_->GetMeshPartition("materials");
 
   // commit the initial conditions.
-  //pk_->CommitStep(t0_-get_dt(), get_dt());
-  if (!restart_requested_){
+  // pk_->CommitStep(t0_-get_dt(), get_dt());
+  if (!restart_requested_) {
     pk_->CommitStep(S_->time(), S_->time());
-    //visualize();
-    //checkpoint(*S_->GetScalarData("dt", "coordinator"));
+    // visualize();
+    // checkpoint(*S_->GetScalarData("dt", "coordinator"));
   }
 
   // // vis for the state

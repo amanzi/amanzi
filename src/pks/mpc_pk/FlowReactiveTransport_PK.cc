@@ -18,10 +18,11 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 // Constructor
 // -----------------------------------------------------------------------------
-FlowReactiveTransport_PK::FlowReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
-					   const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-					   const Teuchos::RCP<State>& S,
-					   const Teuchos::RCP<TreeVector>& soln) :
+FlowReactiveTransport_PK::FlowReactiveTransport_PK(
+    Teuchos::ParameterList& pk_tree,
+    const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+    const Teuchos::RCP<State>& S,
+    const Teuchos::RCP<TreeVector>& soln) :
     Amanzi::MPCSubcycled(pk_tree, global_list, S, soln) { 
 }
 

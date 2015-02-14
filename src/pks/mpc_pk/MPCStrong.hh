@@ -23,6 +23,8 @@
 
 #include <vector>
 
+#include "Teuchos_ParameterList.hpp"
+
 #include "BDF1_TI.hh"
 #include "FnTimeIntegratorPK.hh"
 #include "MPC_PK.hh"
@@ -43,8 +45,8 @@ class MPCStrong : public MPC_PK<PK_Base>, public FnTimeIntegratorPK {
   virtual void Initialize();
 
   // -- dt is the minimum of the sub pks
-  virtual double get_dt();
-  virtual void set_dt(double dt);
+  virtual double get_dt() { return dt_; }
+  virtual void set_dt(double dt) { dt_ = dt; }
 
   // -- advance each sub pk dt.
   virtual bool AdvanceStep(double t_old, double t_new);
@@ -157,7 +159,7 @@ void MPCStrong<PK_Base>::Initialize() {
   MPC_PK<PK_Base>::Initialize();
 
   // set up the timestepping algorithm if this is not strongly coupled
-  if (!my_list_->get<bool>("strongly coupled PK", false)) {
+  if (!my_list_->Teuchos::ParameterList::get<bool>("strongly coupled PK", false)) {
     // -- instantiate time stepper
     Teuchos::ParameterList& ts_plist = my_list_->sublist("time integrator");
     ts_plist.set("initial time", S_->time());
@@ -171,6 +173,42 @@ void MPCStrong<PK_Base>::Initialize() {
     // -- set initial state
     time_stepper_->SetInitialState(S_->time(), solution_, solution_dot);
   }
+}
+
+
+// -----------------------------------------------------------------------------
+// Make one time step 
+// -----------------------------------------------------------------------------
+template<class PK_Base>
+bool MPCStrong<PK_Base>::AdvanceStep(double t_old, double t_new) {
+  // take a bdf timestep
+  double dt_solver;
+  bool fail;
+  if (true) { // this is here simply to create a context for timer,
+              // which stops the clock when it is destroyed at the
+              // closing brace.
+    fail = time_stepper_->TimeStep(dt_, dt_solver, solution_);
+  }
+
+  if (!fail) {
+    // commit the step as successful
+    // time_stepper_->CommitSolution(dt_, solution_);
+    // commit_state(dt_, S_);
+
+    // update the timestep size
+    if (dt_solver < dt_ && dt_solver >= dt_) {
+      // We took a smaller step than we recommended, and it worked fine (not
+      // suprisingly).  Likely this was due to constraints from other PKs or
+      // vis.  Do not reduce our recommendation.
+    } else {
+      dt_ = dt_solver;
+    }
+  } else {
+    // take the decreased timestep size
+    dt_ = dt_solver;
+  }
+
+  return fail;
 }
 
 
