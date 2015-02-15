@@ -90,10 +90,15 @@ TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const {
 
     
 void
-TreeOperator::SymbolicAssembleMatrix(int schema, int nonstandard) {
+TreeOperator::SymbolicAssembleMatrix() {
   int n_blocks = blocks_.size();
 
-  // check that each row has at least one non-null operator block
+  // Currently we assume all diagonal schema are the same and well defined.
+  // May be ways to relax this a bit in the future, but it currently covers
+  // all uses.
+  int schema = 0;
+
+  // Check that each row has at least one non-null operator block
   Teuchos::RCP<const Operator> an_op;
   for (int lcv_row = 0; lcv_row != n_blocks; ++lcv_row) {
     bool is_block(false);
@@ -101,6 +106,15 @@ TreeOperator::SymbolicAssembleMatrix(int schema, int nonstandard) {
       if (blocks_[lcv_row][lcv_col] != Teuchos::null) {
         an_op = blocks_[lcv_row][lcv_col];
         is_block = true;
+      }
+
+      if (lcv_row == lcv_col) {
+        ASSERT(blocks_[lcv_row][lcv_col] != Teuchos::null);
+        if (schema == 0) {
+          schema = blocks_[lcv_row][lcv_col]->schema();
+        } else {
+          ASSERT(schema == blocks_[lcv_row][lcv_col]->schema());
+        }
       }
     }
     ASSERT(is_block);
@@ -117,8 +131,7 @@ TreeOperator::SymbolicAssembleMatrix(int schema, int nonstandard) {
     for (int lcv_col = 0; lcv_col != n_blocks; ++lcv_col) {
       Teuchos::RCP<const Operator> block = blocks_[lcv_row][lcv_col];
       if (block != Teuchos::null) {
-        block->SymbolicAssembleMatrix(schema, nonstandard,
-                *smap_, *graph, lcv_row, lcv_col);
+        block->SymbolicAssembleMatrix(*smap_, *graph, lcv_row, lcv_col);
       }
     }
   }
@@ -134,7 +147,7 @@ TreeOperator::SymbolicAssembleMatrix(int schema, int nonstandard) {
 
 
 void
-TreeOperator::AssembleMatrix(int schema) {
+TreeOperator::AssembleMatrix() {
   int n_blocks = blocks_.size();
   Amat_->Zero();
 
@@ -143,7 +156,7 @@ TreeOperator::AssembleMatrix(int schema) {
     for (int lcv_col = 0; lcv_col != n_blocks; ++lcv_col) {
       Teuchos::RCP<const Operator> block = blocks_[lcv_row][lcv_col];
       if (block != Teuchos::null) {
-        block->AssembleMatrix(schema, *smap_, *Amat_, lcv_row, lcv_col);
+        block->AssembleMatrix(*smap_, *Amat_, lcv_row, lcv_col);
       }
     }
   }

@@ -31,15 +31,15 @@
 #include "LinearOperatorFactory.hh"
 #include "OperatorDefs.hh"
 #include "Operator.hh"
-#include "OperatorDiffusionSurface.hh"
-#include "OperatorSource.hh"
+#include "OperatorDiffusion.hh"
+#include "OperatorAccumulation.hh"
 
 
 /* *****************************************************************
 * This test replaces tensor and boundary conditions by continuous
 * functions. This is a prototype for future solvers.
 * **************************************************************** */
-TEST(LAPLACE_BELTRAMI_CLOSED) {
+void RunTest(std::string op_list_name) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -110,10 +110,6 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
     if (MyPID == 0) src[0][c] = 1.0;
   }
 
-  Teuchos::RCP<OperatorSource> op1 = Teuchos::rcp(new OperatorSource(cvs, 0));
-  op1->Init();
-  op1->UpdateMatrices(source);
-
   // add accumulation terms
   CompositeVector solution(*cvs);
   solution.PutScalar(0.0);  // solution at time T=0
@@ -122,32 +118,38 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   phi.PutScalar(0.2);
 
   double dT = 10.0;
-  op1->AddAccumulationTerm(solution, phi, dT, "cell");
 
   // add the diffusion operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                      .get<Teuchos::ParameterList>("diffusion operator Sff");
-  Teuchos::RCP<OperatorDiffusionSurface> op2 = Teuchos::rcp(new OperatorDiffusionSurface(*op1, olist, bc));
-  int schema_dofs = op2->schema_dofs();
-  int schema_prec_dofs = op2->schema_prec_dofs();
+                                      .get<Teuchos::ParameterList>(op_list_name);
+  OperatorDiffusion op(olist, surfmesh);
+  op.Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+  op.UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  op2->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
-  op2->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op2->ApplyBCs();
-  op2->SymbolicAssembleMatrix(schema_prec_dofs);
-  op2->AssembleMatrix(schema_prec_dofs);
+  // get the global operator
+  Teuchos::RCP<Operator> global_op = op.global_operator();
+
+  // add accumulation terms
+  OperatorAccumulation op_acc(AmanziMesh::CELL, global_op);
+  op_acc.AddAccumulationTerm(solution, phi, dT, "cell");
+
+  // apply BCs and assemble
+  global_op->UpdateRHS(source, false);
+  global_op->ApplyBCs(bc);
+  global_op->SymbolicAssembleMatrix();
+  global_op->AssembleMatrix();
 
   // create preconditoner
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-  op2->InitPreconditioner("Hypre AMG", slist);
+  global_op->InitPreconditioner("Hypre AMG", slist);
 
   // solve the problem
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
-  AmanziSolvers::LinearOperatorFactory<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, op2);
+  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
+      solver = factory.Create("AztecOO CG", lop_list, global_op);
 
-  CompositeVector rhs = *op2->rhs();
+  CompositeVector rhs = *global_op->rhs();
   solution.PutScalar(0.0);
   int ierr = solver->ApplyInverse(rhs, solution);
 
@@ -158,35 +160,41 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   }
 
   // repeat the above without destroying the operators.
-  *op1 = *op2;
-  op1->Init();
-  op1->UpdateMatrices(source);
+  solution.PutScalar(0.0);
+  global_op->rhs()->PutScalar(0.);
 
-  solution.PutScalar(0.0); 
-  op1->AddAccumulationTerm(solution, phi, dT, "cell");
+  op.UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_acc.AddAccumulationTerm(solution, phi, dT, "cell");
 
-  op2->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
-  op2->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op2->ApplyBCs();
-  op2->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
-  op2->AssembleMatrix(schema_prec_dofs);
-  op2->InitPreconditioner("Hypre AMG", slist);
+  global_op->UpdateRHS(source, false);
+  global_op->ApplyBCs(bc);
+  global_op->SymbolicAssembleMatrix();
+  global_op->AssembleMatrix();
+  global_op->InitPreconditioner("Hypre AMG", slist);
 
-  rhs = *op2->rhs();
   ierr = solver->ApplyInverse(rhs, solution);
+
+  // THIS IS NOT A TEST! --etc
 
   if (MyPID == 0) {
     std::cout << "pressure solver (" << solver->name() 
               << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
               << " code=" << solver->returned_code() << std::endl;
 
-    // visualization
-    const Epetra_MultiVector& p = *solution.ViewComponent("cell");
-    GMV::open_data_file(*surfmesh, (std::string)"operators.gmv");
-    GMV::start_data();
-    GMV::write_cell_data(p, 0, "solution");
-    GMV::close_data_file();
+    // // visualization
+    // const Epetra_MultiVector& p = *solution.ViewComponent("cell");
+    // GMV::open_data_file(*surfmesh, (std::string)"operators.gmv");
+    // GMV::start_data();
+    // GMV::write_cell_data(p, 0, "solution");
+    // GMV::close_data_file();
   }
 }
 
 
+TEST(LAPLACE_BELTRAMI_CLOSED) {
+  RunTest("diffusion operator");
+}
+
+TEST(LAPLACE_BELTRAMI_CLOSED_SFF) {
+  RunTest("diffusion operator Sff");
+}

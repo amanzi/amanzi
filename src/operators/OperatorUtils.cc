@@ -65,6 +65,29 @@ CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& sv,
 }
 
 
+int
+AddSuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& sv,
+        CompositeVector& cv, int dofnum) {
+
+  if (cv.HasComponent("face")) {
+    const std::vector<int>& face_inds = smap.Indices("face", dofnum);
+    Epetra_MultiVector& data = *cv.ViewComponent("face");
+    for (int f=0; f!=data.MyLength(); ++f) data[0][f] += sv[face_inds[f]];
+  } 
+  if (cv.HasComponent("cell")) {
+    const std::vector<int>& cell_inds = smap.Indices("cell", dofnum);
+    Epetra_MultiVector& data = *cv.ViewComponent("cell");
+    for (int c=0; c!=data.MyLength(); ++c) data[0][c] += sv[cell_inds[c]];
+  } 
+  if (cv.HasComponent("node")) {
+    const std::vector<int>& node_inds = smap.Indices("node", dofnum);
+    Epetra_MultiVector& data = *cv.ViewComponent("node");
+    for (int v=0; v!=data.MyLength(); ++v) data[0][v] += sv[node_inds[v]];
+  } 
+  return 0;
+}
+
+
 // Nonmember TreeVector to/from Super-vector
 int
 CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& tv,
@@ -94,6 +117,24 @@ CopySuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
        it != tv.SubVectors().end(); ++it) {
     ASSERT((*it)->Data() != Teuchos::null);
     ierr |= CopySuperVectorToCompositeVector(map, sv, *(*it)->Data(), my_dof);
+    my_dof++;            
+  }
+  ASSERT(!ierr);
+  return ierr;
+}
+
+
+int
+AddSuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
+                            TreeVector& tv) {
+  ASSERT(tv.Data() == Teuchos::null);
+  int ierr(0);
+  int my_dof = 0;
+  for (std::vector<Teuchos::RCP<TreeVector> >::iterator
+           it = tv.SubVectors().begin();
+       it != tv.SubVectors().end(); ++it) {
+    ASSERT((*it)->Data() != Teuchos::null);
+    ierr |= AddSuperVectorToCompositeVector(map, sv, *(*it)->Data(), my_dof);
     my_dof++;            
   }
   ASSERT(!ierr);

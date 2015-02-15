@@ -29,7 +29,7 @@
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorAdvection.hh"
-
+#include "Operator_FaceCell.hh"
 
 /* *****************************************************************
 * This test verified that operators can be computed in arbitrary
@@ -91,12 +91,10 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   }
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
-  // create operator map 
+  // create the global operator space
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(mesh);
-  cvs->SetGhosted(true);
-  cvs->SetComponent("cell", AmanziMesh::CELL, 1);
-  cvs->SetOwned(false);
+  cvs->SetMesh(mesh)->SetGhosted(true);
+  cvs->AddComponent("cell", AmanziMesh::CELL, 1);
   cvs->AddComponent("face", AmanziMesh::FACE, 1);
 
   // create velocity field
@@ -108,50 +106,55 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
     uf[0][f] = vel * mesh->face_normal(f);
   }
 
+  // create the global op
+  Teuchos::ParameterList plist1;
+  Teuchos::RCP<Operator> global_op = Teuchos::rcp(new Operator_FaceCell(cvs, plist1));
+  
   // create advection operator
-  Teuchos::RCP<OperatorAdvection> op1 = Teuchos::rcp(new OperatorAdvection(cvs, 0));
-  op1->Init();
+  Teuchos::ParameterList alist;
+  Teuchos::RCP<OperatorAdvection> op1 = Teuchos::rcp(new OperatorAdvection(alist, global_op));
   op1->Setup(u);
   op1->UpdateMatrices(u);
 
-  // add the diffusion operator. It is the last due to BCs.
-  int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
-  int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + 
-                    Operators::OPERATOR_SCHEMA_DOFS_CELL;
+  // add the diffusion operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator");
-
-  Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusion(*op1, olist, bc));
+  Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusion(olist, global_op));
   op2->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op2->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op2->ApplyBCs();
 
-  // create a preconditioner 
-  op2->SymbolicAssembleMatrix(schema_dofs);
-  op2->AssembleMatrix(schema_dofs);
+  // create a preconditioner
+  global_op->ApplyBCs(bc);
+  global_op->SymbolicAssembleMatrix();
+  global_op->AssembleMatrix();
 
   // make reverse assembling: diffusion + advection
-  Teuchos::RCP<OperatorDiffusion> op3 = Teuchos::rcp(new OperatorDiffusion(cvs, olist, bc));
-  op3->Init();
+  Teuchos::ParameterList plist2;
+  Teuchos::RCP<Operator> global_op2 = Teuchos::rcp(new Operator_FaceCell(cvs, plist2));
+  
+  Teuchos::ParameterList olist2 = plist.get<Teuchos::ParameterList>("PK operator")
+                                      .get<Teuchos::ParameterList>("diffusion operator");
+  Teuchos::RCP<OperatorDiffusion> op3 = Teuchos::rcp(new OperatorDiffusion(olist2, global_op2));
   op3->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op3->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  Teuchos::RCP<OperatorAdvection> op4 = Teuchos::rcp(new OperatorAdvection(*op3));
+  Teuchos::ParameterList alist2;
+  Teuchos::RCP<OperatorAdvection> op4 = Teuchos::rcp(new OperatorAdvection(alist2, global_op2));
   op4->Setup(u);
   op4->UpdateMatrices(u);
-  op4->ApplyBCs();
 
-  // create a preconditioner 
-  op4->SymbolicAssembleMatrix(schema_dofs);
-  op4->AssembleMatrix(schema_dofs); 
+  // create a preconditioner
+  global_op2->ApplyBCs(bc);
+  global_op2->SymbolicAssembleMatrix();
+  global_op2->AssembleMatrix();
 
   // compare matrices
-  int n, nrows = op2->A()->NumMyRows();
+  int n, nrows = global_op->A()->NumMyRows();
 
   for (int i = 0; i < nrows; ++i) {
     double *val2, *val4; 
-    op2->A()->ExtractMyRowView(i, n, val2); 
-    op4->A()->ExtractMyRowView(i, n, val4); 
+    global_op->A()->ExtractMyRowView(i, n, val2); 
+    global_op2->A()->ExtractMyRowView(i, n, val4); 
     for (int k = 0; k < n; ++k) CHECK_CLOSE(val2[k], val4[k], 1e-10);
   }
 }

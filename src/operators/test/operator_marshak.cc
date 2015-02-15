@@ -31,7 +31,8 @@
 #include "LinearOperatorFactory.hh"
 #include "OperatorDefs.hh"
 #include "Operator.hh"
-#include "OperatorDiffusionSurface.hh"
+#include "OperatorAccumulation.hh"
+#include "OperatorDiffusion.hh"
 #include "UpwindStandard.hh"
 
 const double TemperatureSource = 100.0; 
@@ -91,11 +92,7 @@ double exact(double t, const Amanzi::AmanziGeometry::Point& p) {
 }
 
 
-/* *****************************************************************
-* This test replaves tensor and boundary conditions by continuous
-* functions. This is a prototype forheat conduction solvers.
-* **************************************************************** */
-TEST(MASHAK_NONLINEAR_WAVE) {
+void RunTest(std::string op_list_name) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -193,6 +190,8 @@ TEST(MASHAK_NONLINEAR_WAVE) {
 
   // MAIN LOOP
   int step(0);
+  double snorm(0.);
+  
   double T(0.0), dT(1e-4);
   while (T < 1.0) {
     solution.ScatterMasterToGhosted();
@@ -209,43 +208,47 @@ TEST(MASHAK_NONLINEAR_WAVE) {
     upwind.Compute(*flux, bc_model, bc_value, *knc->values(), *knc->values(), func);
 
     // add diffusion operator
-    Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("diffusion operator");
-    Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusion(cvs, olist, bc));
-    op->Init();
+    Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
+    OperatorDiffusion op(olist, mesh);
 
-    int schema_dofs = op->schema_dofs();
-    int schema_prec_dofs = op->schema_prec_dofs();
+    int schema_dofs = op.schema_dofs();
+    int schema_prec_dofs = op.schema_prec_dofs();
 
-    op->Setup(K, knc->values(), knc->derivatives(), rho, mu);
-    op->UpdateMatrices(flux, Teuchos::null);
-    op->ApplyBCs();
-    op->SymbolicAssembleMatrix(schema_prec_dofs);
-    op->AssembleMatrix(schema_prec_dofs);
+    op.Setup(K, knc->values(), knc->derivatives(), rho, mu);
+    op.UpdateMatrices(flux, Teuchos::null);
+
+    // get the global operator
+    Teuchos::RCP<Operator> global_op = op.global_operator();
 
     // add accumulation terms
-    op->AddAccumulationTerm(solution, heat_capacity, dT, "cell");
+    OperatorAccumulation op_acc(AmanziMesh::CELL, global_op);
+    op_acc.AddAccumulationTerm(solution, heat_capacity, dT, "cell");
+
+    // apply BCs and assemble
+    global_op->ApplyBCs(bc);
+    global_op->SymbolicAssembleMatrix();
+    global_op->AssembleMatrix();
 
     // create preconditoner
     ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-    op->InitPreconditioner("Hypre AMG", slist);
+    global_op->InitPreconditioner("Hypre AMG", slist);
 
     // solve the problem
     ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
-    AmanziSolvers::LinearOperatorFactory<OperatorDiffusion, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create("Amanzi GMRES", lop_list, op);
+    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
+       solver = factory.Create("Amanzi GMRES", lop_list, global_op);
 
     Epetra_MultiVector& sol_new = *solution.ViewComponent("cell");
     Epetra_MultiVector sol_old(sol_new);
 
-    CompositeVector rhs = *op->rhs();
+    CompositeVector rhs = *global_op->rhs();
     solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
     int ierr = solver->ApplyInverse(rhs, solution);
 
     step++;
     T += dT;
 
-    double snorm;
     solution.ViewComponent("cell")->Norm2(&snorm);
 
     if (MyPID == 0) {
@@ -261,6 +264,9 @@ TEST(MASHAK_NONLINEAR_WAVE) {
     for (int c = 0; c < ncells_owned; c++) {
       ds_rel = std::max(ds_rel, sol_diff[0][c] / (1e-3 + sol_old[0][c] + sol_new[0][c]));
     }
+    double ds_rel_local = ds_rel;
+    sol_diff.Comm().MaxAll(&ds_rel_local, &ds_rel, 1);
+
     if (ds_rel < 0.05) {
       dT *= 1.2;
     } else if (ds_rel > 0.10) {
@@ -268,14 +274,31 @@ TEST(MASHAK_NONLINEAR_WAVE) {
     }
   }
 
-  if (MyPID == 0) {
-    // visualization
-    const Epetra_MultiVector& p = *solution.ViewComponent("cell");
-    GMV::open_data_file(*mesh, (std::string)"operators.gmv");
-    GMV::start_data();
-    GMV::write_cell_data(p, 0, "solution");
-    GMV::close_data_file();
-  }
+  CHECK_EQUAL(208, step);
+  CHECK_CLOSE(1.0034, T, 1.e-4); // overshoots the end time?
+  CHECK_CLOSE(9.94834, snorm, 1.e-4);
+      
+
+  // if (MyPID == 0) {
+  //   // visualization
+  //   const Epetra_MultiVector& p = *solution.ViewComponent("cell");
+  //   GMV::open_data_file(*mesh, (std::string)"operators.gmv");
+  //   GMV::start_data();
+  //   GMV::write_cell_data(p, 0, "solution");
+  //   GMV::close_data_file();
+  // }
 }
 
+
+/* *****************************************************************
+* This test replaves tensor and boundary conditions by continuous
+* functions. This is a prototype forheat conduction solvers.
+* **************************************************************** */
+TEST(MARSHAK_NONLINEAR_WAVE) {
+  RunTest("diffusion operator");
+}
+
+TEST(MARSHAK_NONLINEAR_WAVE_SFF) {
+  RunTest("diffusion operator Sff");
+}
 

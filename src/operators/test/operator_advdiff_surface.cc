@@ -30,8 +30,9 @@
 
 #include "LinearOperatorFactory.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionSurface.hh"
+#include "OperatorDiffusion.hh"
 #include "OperatorAdvection.hh"
+#include "OperatorAccumulation.hh"
 
 
 /* *****************************************************************
@@ -101,19 +102,26 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   }
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
-  // create operator map 
-  Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(surfmesh);
-  cvs->SetGhosted(true);
-  cvs->SetComponent("cell", AmanziMesh::CELL, 1);
-  cvs->SetOwned(false);
-  cvs->AddComponent("face", AmanziMesh::FACE, 1);
+  // create diffusion operator
+  Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
+                                      .get<Teuchos::ParameterList>("diffusion operator");
+  Teuchos::RCP<OperatorDiffusion> op_diff = Teuchos::rcp(new OperatorDiffusion(olist, surfmesh));
+  const CompositeVectorSpace& cvs = op_diff->global_operator()->DomainMap();
 
-  // create advection operator
-  Teuchos::RCP<OperatorAdvection> op1 = Teuchos::rcp(new OperatorAdvection(cvs, 0));
-  op1->Init();
+  // set up the diffusion operator
+  op_diff->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+  op_diff->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  CompositeVector u(*cvs);
+  // get the global operator
+  Teuchos::RCP<Operator> global_op = op_diff->global_operator();
+
+  // create an advection operator  
+  Teuchos::ParameterList alist;
+  Teuchos::RCP<OperatorAdvection> op_adv =
+      Teuchos::rcp(new OperatorAdvection(alist, global_op));
+
+  // get a flux field
+  CompositeVector u(cvs);
   Epetra_MultiVector& uf = *u.ViewComponent("face");
   int nfaces = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   Point vel(4.0, 4.0, 0.0);
@@ -121,48 +129,38 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
     uf[0][f] = vel * surfmesh->face_normal(f);
   }
 
-  op1->Setup(u);
-  op1->UpdateMatrices(u);
+  op_adv->Setup(u);
+  op_adv->UpdateMatrices(u);
+
 
   // add accumulation terms
-  CompositeVector solution(*cvs);
+  CompositeVector solution(cvs);
   solution.PutScalar(0.0);  // solution at time T=0
 
-  CompositeVector phi(*cvs);
+  CompositeVector phi(cvs);
   phi.PutScalar(0.2);
 
   double dT = 0.02;
-  op1->AddAccumulationTerm(solution, phi, dT, "cell");
+  Teuchos::RCP<OperatorAccumulation> op_acc =
+      Teuchos::rcp(new OperatorAccumulation(AmanziMesh::CELL, global_op));
+  op_acc->AddAccumulationTerm(solution, phi, dT, "cell");
 
-  // initialize velocity
-  // add the diffusion operator. It is the last due to BCs.
-  int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
-  int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + 
-                    Operators::OPERATOR_SCHEMA_DOFS_CELL;
-  Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                      .get<Teuchos::ParameterList>("diffusion operator");
+  // BCs and assemble
+  global_op->ApplyBCs(bc);
+  global_op->SymbolicAssembleMatrix();
+  global_op->AssembleMatrix();
 
-  Teuchos::RCP<OperatorDiffusionSurface> op2 = Teuchos::rcp(new OperatorDiffusionSurface(*op1, olist, bc));
-  op2->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
-  op2->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op2->ApplyBCs();
-
-  // change preconditioner to default
-  Teuchos::RCP<Operator> op3 = Teuchos::rcp(new Operator(*op2));
-
-  op3->SymbolicAssembleMatrix(schema_dofs);
-  op3->AssembleMatrix(schema_dofs);
-
+  // PC
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-  op3->InitPreconditioner("Hypre AMG", slist);
+  global_op->InitPreconditioner("Hypre AMG", slist);
 
   // solve the problem
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
   AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, op3);
+     solver = factory.Create("AztecOO CG", lop_list, global_op);
 
-  CompositeVector& rhs = *op3->rhs();
+  CompositeVector& rhs = *global_op->rhs();
   int ierr = solver->ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
@@ -177,4 +175,6 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
     GMV::write_cell_data(p, 0, "solution");
     GMV::close_data_file();
   }
+
+  // THIS IS NOT A TEST!
 }

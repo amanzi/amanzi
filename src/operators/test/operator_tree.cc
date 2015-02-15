@@ -31,7 +31,7 @@
 #include "BCs.hh"
 #include "OperatorDefs.hh"
 #include "OperatorDiffusion.hh"
-#include "OperatorSource.hh"
+
 #include "TreeOperator.hh"
 
 #include "Analytic01.hh"
@@ -123,25 +123,19 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   // MAIN LOOP
   double factor = 1.0;
     
-  // create source operator 
-  Teuchos::RCP<OperatorSource> op1 = Teuchos::rcp(new OperatorSource(cvs, 0));
-  op1->Init();
-  op1->UpdateMatrices(source);
-
   // populate the diffusion operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
       .get<Teuchos::ParameterList>("mixed diffusion");
-  Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusion(*op1, olist, bc));
+  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusion(olist, mesh));
 
-  int schema_dofs = op2->schema_dofs();
-  int schema_prec_dofs = op2->schema_prec_dofs();
-  CHECK(schema_dofs == Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL);
-  // CHECK(schema_prec_dofs == Operators::OPERATOR_SCHEMA_DOFS_FACE);
+  op->set_factor(factor);  // for developers only
+  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  op2->set_factor(factor);  // for developers only
-  op2->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
-  op2->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op2->ApplyBCs();
+  // get and assmeble the global operator
+  Teuchos::RCP<Operator> global_op = op->global_operator();
+  global_op->UpdateRHS(source, false);
+  global_op->ApplyBCs(bc);
 
   // create the TreeOperator, which combines two copies of op1 in a block-diagonal operator.
   Teuchos::RCP<TreeVectorSpace> tvs = Teuchos::rcp(new TreeVectorSpace());
@@ -150,12 +144,12 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   tvs->PushBack(cvs_as_tv);
   Teuchos::RCP<TreeOperator> tree_op = Teuchos::rcp(new TreeOperator(tvs));
 
-  tree_op->SetOperatorBlock(0,0,op2);
-  tree_op->SetOperatorBlock(1,1,op2);
+  tree_op->SetOperatorBlock(0,0,global_op);
+  tree_op->SetOperatorBlock(1,1,global_op);
 
   // assemble the tree operator
-  tree_op->SymbolicAssembleMatrix(schema_dofs);
-  tree_op->AssembleMatrix(schema_dofs);
+  tree_op->SymbolicAssembleMatrix();
+  tree_op->AssembleMatrix();
   
   // create preconditioner
   Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
@@ -168,8 +162,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
       solver = factory.Create("AztecOO CG", lop_list, tree_op);
 
   // create a solution vector, rhs vector
-  Teuchos::RCP<CompositeVector> rhs_comp = Teuchos::rcp(new CompositeVector(*op2->rhs()));
-  *rhs_comp = *op2->rhs();
+  Teuchos::RCP<CompositeVector> rhs_comp = Teuchos::rcp(new CompositeVector(*global_op->rhs()));
   Teuchos::RCP<TreeVector> rhs_comp_tv = Teuchos::rcp(new TreeVector());
   rhs_comp_tv->SetData(rhs_comp);
   TreeVector rhs;
@@ -195,7 +188,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   Epetra_MultiVector& flx = *flux.ViewComponent("face", true);
   double unorm, ul2_err, uinf_err;
 
-  op2->UpdateFlux(*solution.SubVector(0)->Data(), flux);
+  op->UpdateFlux(*solution.SubVector(0)->Data(), flux);
   flux.ScatterMasterToGhosted();
   ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 

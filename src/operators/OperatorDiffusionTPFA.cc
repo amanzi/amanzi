@@ -125,7 +125,7 @@ void OperatorDiffusionTPFA::UpdateMatrices(Teuchos::RCP<const CompositeVector> f
   }
 
   // Add derivatives to the matrix (Jacobian in this case)
-  AnalyticJacobian_(*p);
+  if (p != Teuchos::null) AnalyticJacobian_(*p);
 }
 
 

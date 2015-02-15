@@ -34,6 +34,10 @@ int
 CopySuperVectorToCompositeVector(const SuperMap& map,const Epetra_Vector& sv,
         CompositeVector& cv, int dofnum=0);
 
+int
+AddSuperVectorToCompositeVector(const SuperMap& map,const Epetra_Vector& sv,
+        CompositeVector& cv, int dofnum=0);
+
 // Nonmember TreeVector to/from Super-vector
 int
 CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& cv,
@@ -42,6 +46,10 @@ CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& cv,
 int
 CopySuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
         TreeVector& cv);
+
+int
+AddSuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
+                           TreeVector& cv);
 
 // supermap factory from CV and schema
 Teuchos::RCP<SuperMap>

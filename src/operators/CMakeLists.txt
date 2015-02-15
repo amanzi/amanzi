@@ -45,7 +45,7 @@ add_definitions("-DMSTK_HAVE_MPI")
 #
 # Library: operator audit
 #
-add_amanzi_library(operator_audit SOURCE OperatorAudit.cc LINK_LIBS ${flow_tpl_libs})
+#add_amanzi_library(operator_audit SOURCE OperatorAudit.cc LINK_LIBS ${flow_tpl_libs})
 
 #
 # Library: operators
@@ -53,15 +53,26 @@ add_amanzi_library(operator_audit SOURCE OperatorAudit.cc LINK_LIBS ${flow_tpl_l
 set(operators_inc_files 
     OperatorDefs.hh
     OperatorUtils.hh
+    Op.hh
+    Op_Cell_Cell.hh
+    Op_Cell_Face.hh
+    Op_Cell_FaceCell.hh
+    Op_Cell_Node.hh
+    Op_Face_Cell.hh
+    Op_Node_Node.hh
     Operator.hh
-    OperatorTypeDefs.hh
-    OperatorAdvection.hh
-    OperatorDiffusionFactory.hh
+    Operator_Cell.hh
+    Operator_FaceCell.hh
+    Operator_FaceCellScc.hh
+    Operator_FaceCellSff.hh
+    # OperatorTypeDefs.hh
+    # OperatorDiffusionFactory.hh
     OperatorDiffusion.hh
-    OperatorDiffusionSurface.hh
-    OperatorDiffusionWithGravity.hh
-    OperatorDiffusionTPFA.hh
-    OperatorSource.hh
+    # OperatorDiffusionSurface.hh
+    # OperatorDiffusionWithGravity.hh
+    # OperatorDiffusionTPFA.hh
+    OperatorAccumulation.hh
+    OperatorAdvection.hh
     TreeOperator.hh
     Reconstruction.hh
     ReconstructionCell.hh
@@ -69,19 +80,28 @@ set(operators_inc_files
     UpwindFactory.hh
     UpwindStandard.hh
     UpwindDivK.hh
-    UpwindSecondOrder.hh)
+    UpwindSecondOrder.hh
+)
 
 add_amanzi_library(operators
 
 SOURCE OperatorUtils.cc
+                   Op_Cell_FaceCell.cc
+                   Op_Face_Cell.cc
+                   Op_Cell_Face.cc
+                   Op_Cell_FaceCell.cc
                    Operator.cc
-                   OperatorSource.cc
+                   Operator_Cell.cc
+                   Operator_FaceCell.cc
+                   Operator_FaceCellScc.cc
+                   Operator_FaceCellSff.cc
                    OperatorDiffusion.cc
-                   OperatorDiffusionSurface.cc 
-                   OperatorDiffusionWithGravity.cc
-                   OperatorDiffusionTPFA.cc
-                   OperatorDiffusionFactory.cc                   
-                   OperatorAdvection.cc
+                   # OperatorDiffusionSurface.cc 
+                   # OperatorDiffusionWithGravity.cc
+                   # OperatorDiffusionTPFA.cc
+                   # OperatorDiffusionFactory.cc                   
+                   OperatorAccumulation.cc
+                   OperatorAdvection.cc  
                    TreeOperator.cc
                    ReconstructionCell.cc ReconstructionCell_Limiters.cc
                    HEADERS ${operators_inc_files}
@@ -140,7 +160,7 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/operator_commute.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    # Test: tpfa
+    # # Test: tpfa
     # add_amanzi_test(operators_diffusion_tpfa operators_diffusion_tpfa
     #                 KIND unit
     #                 SOURCE test/Main.cc test/operator_diffusion_tpfa.cc

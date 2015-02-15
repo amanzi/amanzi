@@ -146,7 +146,7 @@ TEST(RECONSTRUCTION_LINEAR_3D) {
   grad_exact.Norm2(error);
   CHECK_CLOSE(0.0, error[0], 1.0e-12);
   CHECK_CLOSE(0.0, error[1], 1.0e-12);
-  CHECK_CLOSE(0.0, error[3], 1.0e-12);
+  CHECK_CLOSE(0.0, error[2], 1.0e-12);
   
   if (MyPID == 0) printf("errors: %8.4f %8.4f %8.4f\n", error[0], error[1], error[2]);
 }

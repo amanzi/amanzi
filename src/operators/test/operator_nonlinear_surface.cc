@@ -31,8 +31,8 @@
 #include "LinearOperatorFactory.hh"
 #include "OperatorDefs.hh"
 #include "Operator.hh"
-#include "OperatorDiffusionSurface.hh"
-#include "OperatorSource.hh"
+#include "OperatorDiffusion.hh"
+#include "OperatorAccumulation.hh"
 
 namespace Amanzi{
 
@@ -87,7 +87,7 @@ class HeatConduction {
 * This test replaves tensor and boundary conditions by continuous
 * functions. This is a prototype forheat conduction solvers.
 * **************************************************************** */
-TEST(NONLINEAR_HEAT_CONDUCTION) {
+void RunTest(std::string op_list_name) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -173,43 +173,41 @@ TEST(NONLINEAR_HEAT_CONDUCTION) {
   // MAIN LOOP
   double dT = 1.0;
   for (int loop = 0; loop < 3; loop++) {
-    Teuchos::RCP<OperatorSource> op1 = Teuchos::rcp(new OperatorSource(cvs, 0));
-    op1->Init();
-    op1->UpdateMatrices(source);
-
-    // add accumulation terms
-    op1->AddAccumulationTerm(solution, phi, dT, "cell");
-
     // add diffusion operator
     solution.ScatterMasterToGhosted();
     knc->UpdateValues(solution);
 
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                        .get<Teuchos::ParameterList>("diffusion operator Sff");
-    Teuchos::RCP<OperatorDiffusionSurface> op2 = Teuchos::rcp(new OperatorDiffusionSurface(*op1, olist, bc));
+                                        .get<Teuchos::ParameterList>(op_list_name);
+    OperatorDiffusion op(olist, surfmesh);
 
-    int schema_dofs = op2->schema_dofs();
-    CHECK(schema_dofs == Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL);
-    int schema_prec_dofs = op2->schema_prec_dofs();
-    CHECK(schema_prec_dofs == Operators::OPERATOR_SCHEMA_DOFS_FACE);
+    op.Setup(K, knc->values(), knc->derivatives(), rho, mu);
+    op.UpdateMatrices(flux, Teuchos::null);
 
-    op2->Setup(K, knc->values(), knc->derivatives(), rho, mu);
-    op2->UpdateMatrices(flux, Teuchos::null);
-    op2->ApplyBCs();
-    op2->SymbolicAssembleMatrix(schema_prec_dofs);
-    op2->AssembleMatrix(schema_prec_dofs);
+    // get the global operator
+    Teuchos::RCP<Operator> global_op = op.global_operator();
 
+    // add accumulation terms
+    OperatorAccumulation op_acc(AmanziMesh::CELL, global_op);
+    op_acc.AddAccumulationTerm(solution, phi, dT, "cell");
+
+    // apply BCs and assemble
+    global_op->UpdateRHS(source, false);
+    global_op->ApplyBCs(bc);
+    global_op->SymbolicAssembleMatrix();
+    global_op->AssembleMatrix();
+    
     // create preconditoner
     ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-    op2->InitPreconditioner("Hypre AMG", slist);
+    global_op->InitPreconditioner("Hypre AMG", slist);
 
     // solve the problem
     ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
-    AmanziSolvers::LinearOperatorFactory<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create("Amanzi GMRES", lop_list, op2);
+    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
+       solver = factory.Create("Amanzi GMRES", lop_list, global_op);
 
-    CompositeVector rhs = *op2->rhs();
+    CompositeVector rhs = *global_op->rhs();
     int ierr = solver->ApplyInverse(rhs, solution);
 
     if (MyPID == 0) {
@@ -219,22 +217,28 @@ TEST(NONLINEAR_HEAT_CONDUCTION) {
     }
 
     // derive diffusion flux.
-    op2->UpdateFlux(solution, *flux);
-    // const Epetra_MultiVector& flux_data = *flux->ViewComponent("face");
-    // std::cout << flux_data << std::endl;
+    op.UpdateFlux(solution, *flux);
 
     // turn off the source
     source.PutScalar(0.0);
   }
 
-  if (MyPID == 0) {
-    // visualization
-    const Epetra_MultiVector& p = *solution.ViewComponent("cell");
-    GMV::open_data_file(*surfmesh, (std::string)"operators.gmv");
-    GMV::start_data();
-    GMV::write_cell_data(p, 0, "solution");
-    GMV::close_data_file();
-  }
+  // THIS TEST IS NOT A TEST!
+  
+  // if (MyPID == 0) {
+  //   // visualization
+  //   const Epetra_MultiVector& p = *solution.ViewComponent("cell");
+  //   GMV::open_data_file(*surfmesh, (std::string)"operators.gmv");
+  //   GMV::start_data();
+  //   GMV::write_cell_data(p, 0, "solution");
+  //   GMV::close_data_file();
+  // }
 }
 
+TEST(NONLINEAR_HEAT_CONDUCTION) {
+  RunTest("diffusion operator");
+}
 
+TEST(NONLINEAR_HEAT_CONDUCTION_SFF) {
+  RunTest("diffusion operator Sff");
+}

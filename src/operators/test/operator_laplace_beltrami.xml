@@ -49,7 +49,7 @@
     <ParameterList name="diffusion operator Scc">
       <Parameter name="discretization primary" type="string" value="mfd: two-point flux approximation"/>
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-      <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
+      <Parameter name="schema" type="Array(string)" value="{cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
       <Parameter name="nonstandard symbolic assembling" type="int" value="1"/>
     </ParameterList>
