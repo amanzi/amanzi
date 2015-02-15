@@ -1,10 +1,15 @@
 /*
-  License: see $AMANZI_DIR/COPYRIGHT
+  This is the flow component of the Amanzi code. 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Authors: Ethan Coon
 
   Temporary wrapper converting the Darcy_PK, which inherits from 
   BDFFnBase<CompositeVector>, to use TreeVectors.
-
 */
 
 
@@ -23,11 +28,6 @@ Darcy_PK_Wrapper::Darcy_PK_Wrapper(Teuchos::ParameterList& pk_tree,
     S_(S),
     soln_(soln)
 {
-  // Darcy expects a single global list with sublist Flow
-  glist_ = Teuchos::rcp(new Teuchos::ParameterList(*global_list));
-  //glist_->set("Flow", global_list->sublist("PKs").sublist(pk_tree.name()));
-
-
   std::string pk_name = pk_tree.name();
   const char* result = pk_name.data();
 
@@ -37,8 +37,8 @@ Darcy_PK_Wrapper::Darcy_PK_Wrapper(Teuchos::ParameterList& pk_tree,
     
   }
   
-    // construct
-  pk_ = Teuchos::rcp(new Darcy_PK(*glist_, pk_name,  S_));
+  // Darcy expects a single global list with sublist Flow
+  pk_ = Teuchos::rcp(new Darcy_PK(global_list, pk_name,  S_));
 }
 
 
@@ -55,6 +55,6 @@ Darcy_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
   return failed;
 }
 
-} // namespace Flow
-} // namespace Amanzi
+}  // namespace Flow
+}  // namespace Amanzi
 

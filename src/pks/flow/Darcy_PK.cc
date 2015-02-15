@@ -35,53 +35,54 @@ namespace Flow {
 /* ******************************************************************
 * Simplest possible constructor: extracts lists and requires fields.
 ****************************************************************** */
-Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, const std::string& pk_list_name, Teuchos::RCP<State> S) : Flow_PK()
+Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                   const std::string& pk_list_name, Teuchos::RCP<State> S)
+    : Flow_PK()
 {
   S_ = S;
   mesh_ = S->GetMesh();
   dim = mesh_->space_dimension();
 
   // We need the flow list
-  Teuchos::ParameterList flow_list;
-  if (!glist.isSublist("PKs")){
-      Errors::Message msg("Flow PK: input parameter list does not have PKs sublist.");
+  if (glist->isSublist("PKs")){
+    if (glist->sublist("PKs").isSublist(pk_list_name)) {
+      if (glist->sublist("PKs").sublist(pk_list_name).isSublist("Darcy problem")) {
+        dp_list_ = Teuchos::rcp(&glist->sublist("PKs")
+                                       .sublist(pk_list_name)
+                                       .sublist("Darcy problem"), false);
+      } else {
+        Errors::Message msg("Flow PK: \"Darcy problem\" sublist is missing.");
+        Exceptions::amanzi_throw(msg);
+      }
+    } else {
+      Errors::Message msg("Flow PK: "+pk_list_name+" sublist is missing.");
       Exceptions::amanzi_throw(msg);
-  }
-
-  if (glist.sublist("PKs").isSublist(pk_list_name)) {
-    flow_list = glist.sublist("PKs").sublist(pk_list_name);
+    }
   } else {
-    Errors::Message msg("Darcy PK: input parameter list does not have "+pk_list_name+" sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  if (flow_list.isSublist("Darcy problem")) {
-    dp_list_ = flow_list.sublist("Darcy problem");
-  } else {
-    Errors::Message msg("Darcy PK: input parameter list does not have \"Darcy problem\" sublist.");
+    Errors::Message msg("Flow PK: input parameter list does not have PKs sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
   // We also need iscaleneous sublists
-  if (glist.isSublist("Preconditioners")) {
-    preconditioner_list_ = glist.sublist("Preconditioners");
+  if (glist->isSublist("Preconditioners")) {
+    preconditioner_list_ = Teuchos::rcp(&glist->sublist("Preconditioners"), false);
   } else {
     Errors::Message msg("Flow PK: input XML does not have <Preconditioners> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
-  if (glist.isSublist("Solvers")) {
-    linear_operator_list_ = glist.sublist("Solvers");
+  if (glist->isSublist("Solvers")) {
+    linear_operator_list_ = Teuchos::rcp(&glist->sublist("Solvers"), false);
   } else {
     Errors::Message msg("Flow PK: input XML does not have <Solvers> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
-  if (dp_list_.isSublist("time integrator")){
-    ti_list_ = dp_list_.sublist("time integrator");
+  if (dp_list_->isSublist("time integrator")) {
+    ti_list_ = dp_list_->sublist("time integrator");
   } 
   // else {
-  //   Errors::Message msg("Richards PK: input XML does not have <time integrator> sublist.");
+  //   Errors::Message msg("Darcy PK: input XML does not have <time integrator> sublist.");
   //   Exceptions::amanzi_throw(msg);
   // }  
 
@@ -177,7 +178,7 @@ Darcy_PK::~Darcy_PK()
   if (bc_seepage != NULL) delete bc_seepage;
 
   if (ti_specs != NULL) {
-    OutputTimeHistory(dp_list_, ti_specs->dT_history);
+    OutputTimeHistory(*dp_list_, ti_specs->dT_history);
   }
 
   if (src_sink != NULL) delete src_sink;
@@ -218,10 +219,12 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   rainfall_factor.resize(nfaces_wghost, 1.0);
 
   // create verbosity object
-  vo_ = new VerboseObject("FlowPK::Darcy", dp_list_); 
+  Teuchos::ParameterList vlist;
+  vlist.sublist("VerboseObject") = dp_list_->sublist("VerboseObject");
+  vo_ = new VerboseObject("FlowPK::Darcy", vlist); 
 
   // Process Native XML.
-  ProcessParameterList(dp_list_);
+  ProcessParameterList(*dp_list_);
 
   // Create solution and auxiliary data for time history.
   solution = Teuchos::rcp(new CompositeVector(*(S->GetFieldData("pressure"))));
@@ -236,7 +239,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (time >= 0.0) T_physics = time;
 
   // Initialize boundary condtions. 
-  ProcessShiftWaterTableList(dp_list_);
+  ProcessShiftWaterTableList(*dp_list_);
 
   time = T_physics;
   bc_pressure->Compute(time);
@@ -320,7 +323,7 @@ void Darcy_PK::InitTimeInterval()
   dT = dT0;
   dTnext = dT0;
 
-  if (ti_specs != NULL) OutputTimeHistory(dp_list_, ti_specs->dT_history);
+  if (ti_specs != NULL) OutputTimeHistory(*dp_list_, ti_specs->dT_history);
   ti_specs = &ti_specs_generic_;
 
   InitNextTI(T0, dT0, ti_specs_generic_);
@@ -339,7 +342,7 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
 {
   specific_yield_copy_ = Teuchos::null;
 
-  if (ti_specs != NULL) OutputTimeHistory(dp_list_, ti_specs->dT_history);
+  if (ti_specs != NULL) OutputTimeHistory(*dp_list_, ti_specs->dT_history);
   ti_specs = &ti_specs_sss_;
 
   InitNextTI(T0, dT0, ti_specs_sss_);
@@ -355,7 +358,7 @@ void Darcy_PK::InitTransient(double T0, double dT0)
 {
   UpdateSpecificYield_();
 
-  if (ti_specs != NULL) OutputTimeHistory(dp_list_, ti_specs->dT_history);
+  if (ti_specs != NULL) OutputTimeHistory(*dp_list_, ti_specs->dT_history);
   ti_specs = &ti_specs_trs_;
 
   InitNextTI(T0, dT0, ti_specs_trs_);
@@ -400,7 +403,9 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   // initialize diffusion operator
   SetAbsolutePermeabilityTensor();
 
-  Teuchos::ParameterList& oplist = dp_list_.sublist("operators").sublist("diffusion operator").sublist("matrix");
+  Teuchos::ParameterList& oplist = dp_list_->sublist("operators")
+                                            .sublist("diffusion operator")
+                                            .sublist("matrix");
   Operators::OperatorDiffusionFactory opfactory;
   op_ = opfactory.Create(mesh_, op_bc_, oplist, gravity_, 0);  // The last 0 means no upwind
   op_->Setup(K, Teuchos::null, Teuchos::null, rho_, mu_);
@@ -498,7 +503,7 @@ bool Darcy_PK::Advance(double dT_MPC, double& dT_actual)
 
   int schema_prec_dofs = op_->schema_prec_dofs();
   op_->AssembleMatrix(schema_prec_dofs);
-  op_->InitPreconditioner(ti_specs->preconditioner_name, preconditioner_list_);
+  op_->InitPreconditioner(ti_specs->preconditioner_name, *preconditioner_list_);
 
   CompositeVector& rhs = *op_->rhs();
   if (src_sink != NULL) AddSourceTerms(rhs);
@@ -506,7 +511,7 @@ bool Darcy_PK::Advance(double dT_MPC, double& dT_actual)
   // create linear solver
   AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create(ti_specs->solver_name, linear_operator_list_, op_);
+     solver = factory.Create(ti_specs->solver_name, *linear_operator_list_, op_);
 
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
   solver->ApplyInverse(rhs, *solution);

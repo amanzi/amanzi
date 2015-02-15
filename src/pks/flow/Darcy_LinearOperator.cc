@@ -34,11 +34,11 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, CompositeVector& u)
   op_->RestoreCheckPoint();
   op_->ApplyBCs();
   op_->AssembleMatrix(schema_prec_dofs);
-  op_->InitPreconditioner(ti_specs->preconditioner_name, preconditioner_list_);
+  op_->InitPreconditioner(ti_specs->preconditioner_name, *preconditioner_list_);
 
   AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> sfactory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
-     solver = sfactory.Create(ti_specs->solver_name, linear_operator_list_, op_);
+     solver = sfactory.Create(ti_specs->solver_name, *linear_operator_list_, op_);
 
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
 

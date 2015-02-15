@@ -140,7 +140,6 @@ class Richards_PK_Wrapper : public FnTimeIntegratorPK {
   }
 
  protected:
-  // Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::ParameterList ti_list_;
   Teuchos::RCP<Richards_PK> pk_; 
   Teuchos::RCP<TreeVector> soln_;

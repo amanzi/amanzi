@@ -272,7 +272,7 @@ std::string Flow_PK::FindStringPreconditioner(const Teuchos::ParameterList& list
     Exceptions::amanzi_throw(msg);
   }
 
-  if (! preconditioner_list_.isSublist(name)) {
+  if (! preconditioner_list_->isSublist(name)) {
     msg << "Flow PK: preconditioner \"" << name.c_str() << "\" does not exist.";
     Exceptions::amanzi_throw(msg);
   }
@@ -295,7 +295,7 @@ std::string Flow_PK::FindStringLinearSolver(const Teuchos::ParameterList& list)
     Exceptions::amanzi_throw(msg);
   }
 
-  if (! linear_operator_list_.isSublist(name)) {
+  if (! linear_operator_list_->isSublist(name)) {
     msg << "Flow PK: linear solver \"" << name.c_str() << "\" does not exist.";
     Exceptions::amanzi_throw(msg);
   }
