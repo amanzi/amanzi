@@ -79,7 +79,7 @@ class DenseMatrix {
   }
 
   int Multiply(const DenseMatrix& A, const DenseMatrix& B, bool transposeA);
-  int Multiply(const DenseVector& A, DenseVector& B, bool transpose);
+  int Multiply(const DenseVector& A, DenseVector& B, bool transpose) const;
 
   void PutScalar(double val) {
     for (int i = 0; i < m_ * n_; i++) data_[i] = val;
@@ -104,7 +104,7 @@ class DenseMatrix {
     }
     return os;
   }
-  void PrintMatrix() {
+  void PrintMatrix() const {
     for (int i = 0; i < m_; i++) {
       for (int j = 0; j < n_; j++) {
         printf("%12.5f", *(data_ + j * m_ + i));
