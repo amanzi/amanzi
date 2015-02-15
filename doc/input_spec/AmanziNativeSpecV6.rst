@@ -3321,11 +3321,33 @@ Input analysis
 
 This list contains data collected by the input parser of a higher-level spec. 
 
+* `"used boundary condition regions`" [Array(string)] provides list of boundary regions 
+  for analysis. The simulator will print number of faces and total area of these regions
+  if verbosity level is equal to or above *high*.
+
+* `"used source and sink regions`" [Array(string)] provides list of source and sink regions
+  for analysis. The simulator will print number of cells and the total volume of these regions
+  if verbosity level is equal to or above *high*.
+
+* `"used observation regions`" [Array(string)] provides list of observation regions
+  for analysis. The simulator will print number of faces(or cells) and the total area 
+  (or volume) of these regions if verbosity level is equal to or above *high*.
+
+* `"print unused parameters`" [bool] prints parameters that were not used by the simulation.
+  Default is *false*.
+
+* `"VerboseObject`" [sublist] is the standard verbosity list.
+
 .. code-block:: xml
 
   <ParameterList name="Analysis">
     <Parameter name="used boundary condition regions" type="Array(string)" value="{region1,region2}"/>
     <Parameter name="used source and sink regions" type="Array(string)" value="{region3,region4}"/>
+    <Parameter name="used observation regions" type="Array(string)" value="{region5}"/>
+    <Parameter name="print unused parameters" type="bool" value="true"/>
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="high"/>
+    </ParameterList>
   </ParameterList>
   
 
