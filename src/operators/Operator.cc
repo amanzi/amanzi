@@ -124,6 +124,11 @@ void
 Operator::AssembleMatrix(const SuperMap& map,
                          MatrixFE& matrix, int my_block_row, int my_block_col) const
 {
+  if (Amat_ == Teuchos::null) {
+    Errors::Message msg("Symbolic assembling was not performed.");
+    Exceptions::amanzi_throw(msg);
+  }
+
   // first of double dispatch via Visitor pattern
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     (*it)->AssembleMatrixOp(this, map, matrix,
