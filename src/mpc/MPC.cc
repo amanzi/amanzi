@@ -54,7 +54,7 @@ double rss_usage() { // return ru_maxrss in MBytes
 
 
 /* *******************************************************************/
-MPC::MPC(Teuchos::ParameterList parameter_list_,
+MPC::MPC(Teuchos::ParameterList& parameter_list_,
          Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_,
          Epetra_MpiComm* comm_,
          Amanzi::ObservationData& output_observations_):

@@ -55,6 +55,7 @@
 #   0.92.11      - update MSTK to v 2.22rc3 (fixed parallel mesh partitioning bug)
 #   0.92.12      - update PETSc to 3.5.2, Alquimia to 0.2, and PFlotran to commit 611092f80ddb.
 #   0.92.13      - update MSTK to v2.22, includes installation of mesh utilities
+#   0.92.14      - update Hypre to v2.10.0b
 
 include(CMakeParseArguments)
 
@@ -104,7 +105,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 92)
-set (AMANZI_TPLS_VERSION_PATCH 13)
+set (AMANZI_TPLS_VERSION_PATCH 14)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -285,12 +286,12 @@ set(MOAB_MD5_SUM        49da04e8905f6d730d92521e7ca7400e)
 # TPL: HYPRE
 #
 set(HYPRE_VERSION_MAJOR  2)
-set(HYPRE_VERSION_MINOR  8)
+set(HYPRE_VERSION_MINOR  10)
 set(HYPRE_VERSION_PATCH  0b)
 set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
 set(HYPRE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(HYPRE_ARCHIVE_FILE   hypre-${HYPRE_VERSION}.tar.gz)
-set(HYPRE_MD5_SUM        6b4db576c68d2072e48efbc00ea58489) 
+set(HYPRE_MD5_SUM        768be38793a35bb5d055905b271f5b8e) 
 
 #
 # TPL: ParMetis

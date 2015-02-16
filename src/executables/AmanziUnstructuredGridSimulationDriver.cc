@@ -379,14 +379,6 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   delete simdomain_ptr;
   delete comm;
       
-#ifdef ENABLE_NATIVE_XML_OUTPUT
-  if (new_list.sublist("Analysis").get<bool>("print unused parameters", false)) {
-    std::cout << "\n***** Unused XML parameters *****" << std::endl;
-    new_list.unused(std::cout);
-    std::cout << std::endl;
-  }
-#endif
-
   return Amanzi::Simulator::SUCCESS;
 }
 

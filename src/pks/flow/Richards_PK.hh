@@ -111,9 +111,10 @@ class Richards_PK : public Flow_PK {
   virtual double BoundaryFaceValue(int f, const CompositeVector& pressure);
   
  private:
+  const Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> rp_list_;
-  Teuchos::RCP<RelativePermeability> rel_perm_;
 
+  Teuchos::RCP<RelativePermeability> rel_perm_;
   Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_, op_preconditioner_;
   Teuchos::RCP<Operators::Upwind<RelativePermeability> > upwind_;
   Teuchos::RCP<Operators::BCs> op_bc_;

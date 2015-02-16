@@ -18,6 +18,13 @@ include(TestManager)
 # through these variables.
 project(FLOW)
 
+# External instruction
+if(ENABLE_NATIVE_XML_OUTPUT)
+  add_definitions("-DENABLE_NATIVE_XML_OUTPUT")
+endif()
+
+# External (TPL) include directories
+include_directories(${ASCEMIO_INCLUDE_DIR})
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
@@ -35,8 +42,6 @@ include_directories(${STATE_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 
-# External (TPL) include directories
-include_directories(${ASCEMIO_INCLUDE_DIR})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_C_INCLUDE_DIR})
 include_directories(${Teuchos_INCLUDE_DIRS})

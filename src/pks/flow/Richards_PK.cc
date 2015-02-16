@@ -30,6 +30,7 @@
 #include "OperatorDiffusionFactory.hh"
 #include "Point.hh"
 #include "UpwindFactory.hh"
+#include "XMLParameterListWriter.hh"
 
 #include "darcy_velocity_evaluator.hh"
 #include "Flow_BC_Factory.hh"
@@ -44,7 +45,7 @@ namespace Flow {
 ****************************************************************** */
 Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
                          const std::string& pk_list_name, Teuchos::RCP<State> S)
-    : Flow_PK()
+    : Flow_PK(), glist_(glist)
 {
   S_ = S;
   mesh_ = S->GetMesh();
@@ -182,6 +183,17 @@ Richards_PK::~Richards_PK()
 
   if (src_sink != NULL) delete src_sink;
   if (vo_ != NULL) delete vo_;
+
+#ifdef ENABLE_NATIVE_XML_OUTPUT
+  /*
+  if (glist_->sublist("Analysis").get<bool>("print unused parameters", false)) {
+    std::cout << "\n***** Unused XML parameters *****" << std::endl;
+    Teuchos::Amanzi_XMLParameterListWriter out; 
+    out.unused(*rp_list_, std::cout);
+    std::cout << std::endl;
+  }
+  */
+#endif
 }
 
 
@@ -489,7 +501,6 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     *vo_->os() << std::endl 
         << vo_->color("green") << "New TI phase: " << ti_specs.ti_method_name.c_str() 
         << vo_->reset() << std::endl << std::endl;
-    //*vo_->os() << "T=" << T0 / FLOW_YEAR << " [y] dT=" << dT0 << " [sec]" << std::endl
     *vo_->os()<< "EC:" << error_control_ << " Src:" << src_sink_distribution
         << " Upwind:" << rel_perm_->method() << op_matrix_->upwind_
         << " PC:\"" << ti_specs.preconditioner_name.c_str() << "\"" << std::endl;
@@ -499,8 +510,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   std::string ti_method_name(ti_specs.ti_method_name);
 
   if (ti_specs.ti_method == FLOW_TIME_INTEGRATION_BDF1) {
-    //Teuchos::ParameterList bdf1_list = rp_list_.sublist(ti_method_name).sublist("BDF1");
-    Teuchos::ParameterList bdf1_list = ti_specs.ti_list_ptr_->sublist("BDF1");
+    Teuchos::ParameterList& bdf1_list = ti_specs.ti_list_ptr_->sublist("BDF1");
     if (! bdf1_list.isSublist("VerboseObject"))
         bdf1_list.sublist("VerboseObject") = rp_list_->sublist("VerboseObject");
 
