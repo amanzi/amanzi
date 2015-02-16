@@ -21,7 +21,7 @@ Transport_PK_Wrapper::Transport_PK_Wrapper(Teuchos::ParameterList& pk_tree,
     S_(S),
     soln_(soln)
 {
-  // Transport expects a single global list with sublist Transport
+  // Transport expects a single global list with sublist PKs->Transport
   glist_ = Teuchos::rcp(new Teuchos::ParameterList(*global_list));
 
   std::string pk_name = pk_tree.name();
@@ -31,8 +31,30 @@ Transport_PK_Wrapper::Transport_PK_Wrapper(Teuchos::ParameterList& pk_tree,
     pk_name = result;   
   }
 
-  // grab the component names
-  comp_names_ = glist_->sublist("Cycle Driver").get<Teuchos::Array<std::string> >("component names").toVector();
+  if (glist_->isSublist("Cycle Driver")){
+    if (glist_->sublist("Cycle Driver").isParameter("component names")){
+      // grab the component names
+      comp_names_ = glist_->sublist("Cycle Driver").get<Teuchos::Array<std::string> >("component names").toVector();
+    }else{
+      Errors::Message msg("Transport PK: parameter component names is missing.");
+      Exceptions::amanzi_throw(msg);
+    }
+  }else{
+    Errors::Message msg("Transport PK: sublist Cycle Driver is missing.");
+      Exceptions::amanzi_throw(msg);
+  }
+
+  if (glist_->isSublist("PKs")){
+    if (glist_->sublist("PKs").isSublist(pk_name)){
+      transport_subsycling = glist_->sublist("PKs").sublist(pk_name).get<bool>("transport subsycling", true);
+    }else{
+      Errors::Message msg("Transport PK: sublist PKs->" + pk_name + " is missing.");
+      Exceptions::amanzi_throw(msg);
+    }   
+  }else{
+    Errors::Message msg("Transport PK: sublist PKs is missing.");
+      Exceptions::amanzi_throw(msg);
+  }
  
   // construct
   pk_ = Teuchos::rcp(new Transport_PK(*glist_, S_, pk_name, comp_names_));

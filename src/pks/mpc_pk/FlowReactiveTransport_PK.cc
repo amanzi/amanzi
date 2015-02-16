@@ -66,7 +66,6 @@ bool FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new) {
 
   master_dt_ = t_new - t_old;
 
-  // --etc: unclear if state should be commited?
   sub_pks_[master_]->CommitStep(t_old, t_new);
 
   slave_dt_ = sub_pks_[slave_]->get_dt();
@@ -85,8 +84,7 @@ bool FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new) {
       dt_next = t_new - t_old - dt_done;
     }
 
-    // set the intermediate time
-    S_->set_intermediate_time(t_old + dt_done + dt_next);
+
 
     // take the step
     fail = sub_pks_[slave_]->AdvanceStep(t_old + dt_done, t_old + dt_done + dt_next);
@@ -97,6 +95,8 @@ bool FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new) {
     } else {
       // if success, commit the state and increment to next intermediate
       // -- etc: unclear if state should be commited or not?
+    // set the intermediate time
+      S_->set_intermediate_time(t_old + dt_done + dt_next);
       sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next);
       dt_done += dt_next;
     }
@@ -108,8 +108,6 @@ bool FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new) {
 
   if (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) {
     // done, success
-    // --etc: unclear if state should be commited or not?
-    //CommitStep(t_old, t_new);
     return false;
   } else {
     return true;

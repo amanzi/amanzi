@@ -239,6 +239,8 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   // Forbidden.
   Transport_PK(const Transport_PK&);
   Transport_PK& operator=(const Transport_PK&);
+
+  friend class Transport_PK_Wrapper;
 };
 
 }  // namespace Transport

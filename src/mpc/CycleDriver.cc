@@ -692,6 +692,8 @@ void CycleDriver::go() {
                      << ", dt(y) = " << dt / (60*60*24*365.25) << std::endl;
         }
         *S_->GetScalarData("dt", "coordinator") = dt;
+	S_->set_initial_time(S_->time());
+	S_->set_final_time(S_->time() + dt);
         fail = advance(dt);
         dt = get_dt();
       }  // while not finished
