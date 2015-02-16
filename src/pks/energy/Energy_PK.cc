@@ -83,7 +83,7 @@ void Energy_PK::Initialize()
 
   // create verbosity object
   Teuchos::ParameterList vlist;
-  vlist.sublist("VerboseObject") = glist_->sublist("Energy").sublist("VerboseObject");
+  vlist.sublist("VerboseObject") = glist_->sublist("PKs").sublist("Energy").sublist("VerboseObject");
   vo_ = new VerboseObject("EnergyPK", vlist);
 
   // ProcessParameterList(plist_);
@@ -94,7 +94,7 @@ void Energy_PK::Initialize()
   }
 
   // Select a proper matrix class. 
-  Teuchos::ParameterList tmp_list = glist_->sublist("Energy")
+  Teuchos::ParameterList tmp_list = glist_->sublist("PKs").sublist("Energy")
                                            .sublist("operators").sublist("diffusion operator");
   Teuchos::ParameterList oplist_matrix = tmp_list.sublist("matrix");
   Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");

@@ -1,18 +1,21 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-Amanzi
+/*
+  This is the mpc_pk component of the Amanzi code. 
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Implementation for the derived MPCWeak class.  Provides only the Advance()
-method missing from MPC.hh.  In weak coupling, we simply loop over the
-sub-PKs, calling their advance() methods and returning failure if any fail.
+  Author: Ethan Coon
 
-Simplest form of sequential coupling.
+  Implementation for the derived MPCWeak class.  Provides only the Advance()
+  method missing from MPC.hh.  In weak coupling, we simply loop over the
+  sub-PKs, calling their advance() methods and returning failure if any fail.
 
-See additional documentation in the base class src/pks/mpc/MPC.hh
-------------------------------------------------------------------------- */
+  Simplest form of sequential coupling.
+
+  See additional documentation in the base class src/pks/mpc_pk/MPC_PK.hh
+*/
 
 #include "MPCWeak.hh"
 
@@ -23,12 +26,12 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 double MPCWeak::get_dt() {
   double dt = 1.0e99;
-  for (MPCTmp<PK>::SubPKList::iterator pk = sub_pks_.begin();
+  for (MPC_PK<PK>::SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
     dt = std::min<double>(dt, (*pk)->get_dt());
   }
   return dt;
-};
+}
 
 
 // -----------------------------------------------------------------------------
@@ -36,7 +39,7 @@ double MPCWeak::get_dt() {
 // -----------------------------------------------------------------------------
 bool MPCWeak::AdvanceStep(double t_old, double t_new) {
   bool fail = false;
-  for (MPCTmp<PK>::SubPKList::iterator pk = sub_pks_.begin();
+  for (MPC_PK<PK>::SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
     fail = (*pk)->AdvanceStep(t_old, t_new);
     if (fail) {
@@ -44,6 +47,6 @@ bool MPCWeak::AdvanceStep(double t_old, double t_new) {
     }
   }
   return fail;
-};
+}
 
-} // namespace
+}  // namespace Amanzi

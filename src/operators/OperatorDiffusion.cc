@@ -113,6 +113,16 @@ void OperatorDiffusion::UpdateMatrices(Teuchos::RCP<const CompositeVector> flux,
   } else if (local_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
     UpdateMatricesTPFA_();
   }
+
+  // add Newton-type corrections
+  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
+    if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
+      AddNewtonCorrectionCell_(flux, u);
+    } else {
+      Errors::Message msg("OperatorDiffusion: Newton Correction may only be applied to schemas that include CELL dofs.");
+      Exceptions::amanzi_throw(msg);
+    }
+  }
 }
 
 
@@ -404,6 +414,63 @@ void OperatorDiffusion::UpdateMatricesTPFA_()
 }
 
 
+/* ******************************************************************
+* Modify operator by addition approximation of Newton corection.
+* We ignore the right-hand side for the moment.
+****************************************************************** */
+void OperatorDiffusion::AddNewtonCorrectionCell_(
+    Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u)
+{
+  // hack: ignore correction if no flux provided.
+  if (flux == Teuchos::null) return;
+
+  // Correction is zero for linear problems
+  if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
+
+  // lazy creation of local op
+  if (jac_op_ == Teuchos::null) {
+    jac_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
+    std::string name("Jacobian FACE_CELL");
+    jac_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+    global_op_->OpPushBack(jac_op_);
+  }
+
+  const Epetra_MultiVector& kf = *k_->ViewComponent("face");
+  const Epetra_MultiVector& dkdp_f = *dkdp_->ViewComponent("face");
+  const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
+
+  // populate the local matrices
+  AmanziMesh::Entity_ID_List cells;
+  for (int f = 0; f < nfaces_owned; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+    WhetStone::DenseMatrix Aface(ncells, ncells);
+    Aface.PutScalar(0.0);
+
+    double v = flux_f[0][f];
+    double vmod = fabs(v) * dkdp_f[0][f] / kf[0][f];
+    if (scalar_rho_mu_) {
+      vmod *= rho_;
+    } else {
+      ASSERT(false);
+    }
+
+    // interior face
+    int i, dir, c1, c2;
+    c1 = cells[0];
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
+    i = (v * dir >= 0.0) ? 0 : 1;
+
+    if (ncells == 2) {
+      Aface(i, i) = vmod;
+      Aface(1 - i, i) = -vmod;
+    } else if (i == 0) {
+      Aface(0, 0) = vmod;
+    }
+
+    jac_op_->matrices[f] = Aface;
+  }
+}
 
 // /* ******************************************************************
 // * Special assemble of elemental face-based matrices. 
@@ -488,14 +555,6 @@ void OperatorDiffusion::UpdateFlux(const CompositeVector& u, CompositeVector& fl
       }
     }
   }
-}
-
-
-/* ******************************************************************
-* Modify operator by addition approximation of NEwton corection.
-****************************************************************** */
-void OperatorDiffusion::AddNewtonCorrection(Teuchos::RCP<const CompositeVector> flux)
-{
 }
 
 
@@ -725,6 +784,15 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::ParameterList& plist)
     upwind_ = OPERATOR_UPWIND_NONE;  // cell-centered scheme.
   } else {
     ASSERT(false);
+  }
+
+  // Do we need to calculate Newton correction terms?
+  newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
+  std::string jacobian = plist.get<std::string>("newton correction", "none");
+  if (jacobian == "true jacobian") {
+    newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
+  } else if (jacobian == "approximate jacobian") {
+    newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
   }
 
   // mesh info

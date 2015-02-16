@@ -19,6 +19,9 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_MpiComm.h"
+#include "TI_Specs.hh"
+#include "ObservationData.hh"
+#include "Unstructured_observations.hh"
 
 #include "VerboseObject.hh"
 
@@ -44,13 +47,17 @@ public:
   // PK methods
   void setup();
   void initialize();
+  void init_pk(int);
+  void reset_pk();
   void finalize();
   void report_memory();
   bool advance(double dt);
   void visualize(bool force=false);
+  void observations(bool force=false);
   void checkpoint(double dt, bool force=false);
   double get_dt();
-
+  void set_dt(double dt);
+  void reset_driver(int time_period_id);
   // one stop shopping
   void go();
 
@@ -62,19 +69,22 @@ private:
   Teuchos::RCP<PK> pk_;
 
   // states
-  Teuchos::RCP<State> S_;
+  Teuchos::RCP<State> S_, S_old_;
   Teuchos::RCP<TreeVector> soln_;
 
   // time step manager
-  Teuchos::RCP<TimeStepManager> tsm_;
+  Teuchos::Ptr<TimeStepManager> tsm_;
 
   // misc setup information
   Teuchos::RCP<Teuchos::ParameterList> parameter_list_;
   Teuchos::RCP<Teuchos::ParameterList> coordinator_list_;
 
   double t0_, t1_;
+  std::vector<double> t_, tp_start_, tp_end_, tp_dt_, tp_max_cycle_;  
   double max_dt_, min_dt_;
   int cycle0_, cycle1_;
+  int num_time_periods_;
+  int time_period_id_;
 
   // Epetra communicator
   Epetra_MpiComm* comm_;
@@ -83,12 +93,25 @@ private:
   Amanzi::ObservationData&  output_observations_;
   Teuchos::RCP<Amanzi::Unstructured_observations> observations_;
 
+  // time interval
+  std::vector<Amanzi::Flow::TI_Specs> ti_specs_;
+
+
   // vis and checkpointing
   std::vector<Teuchos::RCP<Visualization> > visualization_;
   std::vector<Teuchos::RCP<Visualization> > failed_visualization_;
   Teuchos::RCP<Checkpoint> checkpoint_;
-  bool restart_;
+  bool restart_requested_;
   std::string restart_filename_;
+
+  // time period control
+  std::vector<std::pair<double,double> > reset_info_;
+
+  // //  checkpoint/restart 
+  // Teuchos::RCP<Amanzi::Checkpoint> restart_;
+ 
+  // walkabout
+  Teuchos::RCP<Amanzi::Checkpoint> walkabout;  
 
   // fancy OS
   Teuchos::RCP<VerboseObject> vo_;

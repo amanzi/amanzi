@@ -20,39 +20,45 @@ project(FLOW)
 
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
+include_directories(${FUNCS_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
-include_directories(${GEOMETRY_SOURCE_DIR})
-include_directories(${DATA_STRUCTURES_SOURCE_DIR})
-include_directories(${STATE_SOURCE_DIR})
-include_directories(${WHETSTONE_SOURCE_DIR})
-include_directories(${SOLVERS_SOURCE_DIR})
-include_directories(${TIME_INTEGRATION_SOURCE_DIR})
-include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${PKS_SOURCE_DIR})
+include_directories(${SOLVERS_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR})
+include_directories(${TIME_INTEGRATION_SOURCE_DIR})
+include_directories(${WHETSTONE_SOURCE_DIR})
 
 # External (TPL) include directories
-include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${ASCEMIO_INCLUDE_DIR})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_C_INCLUDE_DIR})
-include_directories(${ASCEMIO_INCLUDE_DIR})
+include_directories(${Teuchos_INCLUDE_DIRS})
 
 #
 # Flow registrations
 #
-register_evaluator_with_factory( HEADERFILE Darcy_PK_Wrapper_reg.hh
-  LISTNAME   PKS_FLOW_REGISTRATIONS )
-register_evaluator_with_factory( HEADERFILE Richards_PK_Wrapper_reg.hh
-  LISTNAME   PKS_FLOW_REGISTRATIONS )
+register_evaluator_with_factory(
+  HEADERFILE Darcy_PK_Wrapper_reg.hh
+  LISTNAME   PKS_FLOW_REGISTRATIONS
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE Richards_PK_Wrapper_reg.hh
+  LISTNAME   PKS_FLOW_REGISTRATIONS
+  )
 
 generate_evaluators_registration_header( 
   HEADERFILE pks_flow_registration.hh   
   LISTNAME   PKS_FLOW_REGISTRATIONS
-  INSTALL    True )
+  INSTALL    True
+  )
 
 
 #
@@ -106,8 +112,6 @@ set(flow_inc_files
 add_install_include_file(${flow_inc_files})
 
 if (BUILD_TESTS) 
-  
-#if (0)
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
     include_directories(${MESH_FACTORY_SOURCE_DIR})

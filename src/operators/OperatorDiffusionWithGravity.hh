@@ -14,8 +14,9 @@
 
 #include "tensor.hh"
 #include "WhetStoneDefs.hh"
+#include "DenseMatrix.hh"
 
-#include "Operator.hh"
+#include "OperatorDefs.hh"
 #include "OperatorDiffusion.hh"
 
 
@@ -26,28 +27,39 @@ class BCs;
 
 class OperatorDiffusionWithGravity : public OperatorDiffusion {
  public:
-  OperatorDiffusionWithGravity() { Init(); }
-  OperatorDiffusionWithGravity(Teuchos::RCP<const CompositeVectorSpace> cvs, 
-                               Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc) 
-      : OperatorDiffusion(cvs, plist, bc) { Init(); }
-  OperatorDiffusionWithGravity(const Operator& op, 
-                               Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc) 
-      : OperatorDiffusion(op, plist, bc) { Init(); }
+  OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
+                    Teuchos::RCP<Operator> global_op) :
+      OperatorDiffusion(plist, global_op)
+  {
+    Init_();
+  }
 
-  ~OperatorDiffusionWithGravity() {};
+  OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
+                    Teuchos::RCP<AmanziMesh::Mesh> mesh) :
+      OperatorDiffusion(plist, mesh)
+  {
+    Init_();
+  }
+
+  OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
+                    Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+      OperatorDiffusion(plist, mesh)
+  {
+    Init_();
+  }
 
   // main members
-  void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u);
-  void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
+  virtual void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u);
+  virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
 
-  inline void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
+  void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
   
-  inline void Init() { gravity_special_projection_ = (mfd_primary_ == WhetStone::DIFFUSION_TPFA); }
 
- private:
+ protected:
   inline AmanziGeometry::Point GravitySpecialDirection_(int f) const;
+  void Init_() { gravity_special_projection_ = (mfd_primary_ == WhetStone::DIFFUSION_TPFA); }
 
- private:
+ protected:
   AmanziGeometry::Point g_;
   bool gravity_special_projection_;
 };

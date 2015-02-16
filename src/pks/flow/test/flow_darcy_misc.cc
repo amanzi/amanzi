@@ -91,14 +91,14 @@ class DarcyProblem {
     S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
     S->set_time(0.0);
 
-    DPK = new Darcy_PK(plist, S);
+    DPK = new Darcy_PK(plist, "Flow", S);
     S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
     DPK->InitializeFields();
     S->CheckAllFieldsInitialized();
 
-    Teuchos::ParameterList& flow_list = plist.get<Teuchos::ParameterList>("Flow");
+    Teuchos::ParameterList& flow_list = plist.sublist("PKs").get<Teuchos::ParameterList>("Flow");
     dp_list = flow_list.get<Teuchos::ParameterList>("Darcy problem");
     return 0;
   }

@@ -68,8 +68,7 @@ set(operators_inc_files
     # OperatorTypeDefs.hh
     # OperatorDiffusionFactory.hh
     OperatorDiffusion.hh
-    # OperatorDiffusionSurface.hh
-    # OperatorDiffusionWithGravity.hh
+    OperatorDiffusionWithGravity.hh
     # OperatorDiffusionTPFA.hh
     OperatorAccumulation.hh
     OperatorAdvection.hh
@@ -96,8 +95,7 @@ SOURCE OperatorUtils.cc
                    Operator_FaceCellScc.cc
                    Operator_FaceCellSff.cc
                    OperatorDiffusion.cc
-                   # OperatorDiffusionSurface.cc 
-                   # OperatorDiffusionWithGravity.cc
+                   OperatorDiffusionWithGravity.cc
                    # OperatorDiffusionTPFA.cc
                    # OperatorDiffusionFactory.cc                   
                    OperatorAccumulation.cc

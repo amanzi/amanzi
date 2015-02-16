@@ -81,7 +81,7 @@ TEST(DISPERSION) {
   S->set_initial_time(0.0);
   S->set_final_time(0.0);
 
-  Transport_PK TPK(plist, S, component_names);
+  Transport_PK TPK(plist, S, "Transport", component_names);
   TPK.CreateDefaultState(mesh, 1);
 
   /* modify the default state for the problem at hand */
@@ -182,7 +182,7 @@ TEST(DIFFUSION) {
   S->set_initial_time(0.0);
   S->set_final_time(0.0);
 
-  Transport_PK TPK(plist, S, component_names);
+  Transport_PK TPK(plist, S, "Transport", component_names);
   TPK.CreateDefaultState(mesh, 1);
 
   /* modify the default state for the problem at hand */

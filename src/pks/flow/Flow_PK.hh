@@ -55,13 +55,15 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   virtual void InitPicard(double T0) = 0;
   virtual void InitSteadyState(double T0, double dT0) = 0;
   virtual void InitTransient(double T0, double dT0) = 0;
+  virtual void InitTimeInterval() = 0;
 
   virtual void Initialize(const Teuchos::Ptr<State>& S) = 0;
   virtual void CommitState(double dt, const Teuchos::Ptr<State>& S) = 0;
   virtual double get_dt() = 0;
+  virtual void set_dt(double dt){dT = dt;}
 
   
-  virtual int Advance(double dT, double &dT_actual) = 0;
+  virtual bool Advance(double dT, double &dT_actual) = 0;
   virtual int AdvanceToSteadyState(double T0, double dT0) = 0;
   virtual void InitializeAuxiliaryData() = 0;
   virtual void InitializeSteadySaturated() = 0;
@@ -95,6 +97,8 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   void ProcessStringSourceDistribution(const std::string name, int* method);
   void ProcessStringTimeIntegration(const std::string name, int* method);
   void ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control);
+  void ProcessSublistTimeInterval(Teuchos::ParameterList& ti_list,  TI_Specs& ti_specs);
+
 
   std::string FindStringLinearSolver(const Teuchos::ParameterList& plist);
   std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
@@ -182,11 +186,15 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   int src_sink_distribution; 
   mutable double mass_bc, seepage_mass_;
 
+  Teuchos::ParameterList ti_list_, ti_sss_list_, ti_trs_list_, ti_igs_list_;
   // time integration phases
+  TI_Specs ti_specs_generic_;
   TI_Specs ti_specs_igs_;
   TI_Specs ti_specs_sss_;
   TI_Specs ti_specs_trs_;
   TI_Specs* ti_specs;
+
+  bool  new_mpc_driver;
 
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
   Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval;

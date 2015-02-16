@@ -1,5 +1,11 @@
 /*
-  License: see $AMANZI_DIR/COPYRIGHT
+  This is the flow component of the Amanzi code. 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Authors: Ethan Coon
 
   Temporary wrapper converting the Richards_PK, which inherits from
@@ -29,18 +35,31 @@ class Richards_PK_Wrapper : public FnTimeIntegratorPK {
                       const Teuchos::RCP<State>& S,
                       const Teuchos::RCP<TreeVector>& soln);
 
+  ~Richards_PK_Wrapper() {};
+
   // Setup
-  virtual void Setup() {};
+  virtual void Setup() {
+    dt_ = -1.0;
+    pk_->InitializeFields();
+  }
 
   // Initialize owned (dependent) variables.
   virtual void Initialize() {
     pk_->Initialize(S_.ptr());
-    pk_->InitializeAuxiliaryData();
+    pk_->InitializeAuxiliaryData(); 
+    pk_->InitTimeInterval();
+    pk_->UpdateAuxilliaryData();
   }
 
   // Choose a time step compatible with physics.
-  virtual double get_dt() {
-    return pk_->get_dt();
+  virtual double get_dt() {    
+    return pk_->get_dt();    
+  }
+
+  //  Set a time step
+  virtual void set_dt(double dt){
+    dt_ = dt;
+    pk_->set_dt(dt);
   }
 
   // Advance PK by step size dt.
@@ -121,10 +140,12 @@ class Richards_PK_Wrapper : public FnTimeIntegratorPK {
   }
 
  protected:
-  Teuchos::RCP<Teuchos::ParameterList> glist_;
-  Teuchos::RCP<Richards_PK> pk_;
+  // Teuchos::RCP<Teuchos::ParameterList> glist_;
+  Teuchos::ParameterList ti_list_;
+  Teuchos::RCP<Richards_PK> pk_; 
   Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<State> S_;
+  double dt_;
 
  private:
   // factory registration

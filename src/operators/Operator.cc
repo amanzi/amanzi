@@ -114,6 +114,11 @@ Operator::SymbolicAssembleMatrix(const SuperMap& map, GraphFE& graph,
 void
 Operator::AssembleMatrix()
 {
+  if (Amat_ == Teuchos::null) {
+    Errors::Message msg("Symbolic assembling was not performed.");
+    Exceptions::amanzi_throw(msg);
+  }
+
   Amat_->Zero();
   AssembleMatrix(*smap_, *Amat_, 0, 0);
   Amat_->FillComplete();
@@ -124,11 +129,6 @@ void
 Operator::AssembleMatrix(const SuperMap& map,
                          MatrixFE& matrix, int my_block_row, int my_block_col) const
 {
-  if (Amat_ == Teuchos::null) {
-    Errors::Message msg("Symbolic assembling was not performed.");
-    Exceptions::amanzi_throw(msg);
-  }
-
   // first of double dispatch via Visitor pattern
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     (*it)->AssembleMatrixOp(this, map, matrix,
@@ -264,10 +264,13 @@ Operator::ApplyBCs(const Teuchos::RCP<BCs>& bc) {
     bc_sucessfully_applied |=
         (*it)->ApplyBC(*bc, rhs_.ptr(), bc_sucessfully_applied);
   }
-  if (!bc_sucessfully_applied) {
-    Errors::Message msg("Operators: ApplyBC not sucessful for this bc and operator schema combinations.");
-    Exceptions::amanzi_throw(msg);
-  }    
+  // This check is currently broken by adv + diffusion when diffusion is MFD
+  // -- need to reconsider whether this is useful or can be reformulated to be
+  // useful.  
+  // if (!bc_sucessfully_applied) {
+  //   Errors::Message msg("Operators: ApplyBC not sucessful for this bc and operator schema combinations.");
+  //   Exceptions::amanzi_throw(msg);
+  // }    
 }
 
 

@@ -26,7 +26,6 @@ namespace AmanziSolvers {
 
 template<class Vector, class VectorSpace>
 class SolverJFNK : public Solver<Vector,VectorSpace> {
-
  public:
   SolverJFNK(Teuchos::ParameterList& plist) :
       plist_(plist) {}
@@ -83,9 +82,8 @@ class SolverJFNK : public Solver<Vector,VectorSpace> {
 * Public Init method.
 ****************************************************************** */
 template<class Vector, class VectorSpace>
-void
-SolverJFNK<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-        const VectorSpace& map)
+void SolverJFNK<Vector,VectorSpace>::Init(
+    const Teuchos::RCP<SolverFnBase<Vector> >& fn, const VectorSpace& map)
 {
   // create the nonlinear solver
   Teuchos::ParameterList& slist = plist_.sublist("nonlinear solver");
@@ -127,11 +125,11 @@ SolverJFNK<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector> >& 
       solver_ = Teuchos::rcp(new SolverNKA_BT_ATS<Vector,VectorSpace>(nka_list));
 
     } else {
-      Errors::Message msg("SolverFactory: wrong value of parameter `\"solver type`\"");
+      Errors::Message msg("JFNK solver factory: wrong value of parameter `\"solver type`\"");
       Exceptions::amanzi_throw(msg);
     }
   } else {
-    Errors::Message msg("SolverFactory: parameter `\"solver type`\" is missing");
+    Errors::Message msg("JFNK solver factory: parameter `\"solver type`\" is missing");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -139,7 +137,7 @@ SolverJFNK<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector> >& 
   wrapped_fnbase_ = fn;
 
   // wrap the base fn in a JF fn
-  jf_fnbase_ = Teuchos::rcp(new SolverFnBaseJF<Vector,VectorSpace>(plist_,wrapped_fnbase_, map));
+  jf_fnbase_ = Teuchos::rcp(new SolverFnBaseJF<Vector,VectorSpace>(plist_, wrapped_fnbase_, map));
 
   // Init the nonlinear method with this wrapped SolverFnBase
   solver_->Init(jf_fnbase_, map);

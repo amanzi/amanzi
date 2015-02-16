@@ -1,11 +1,17 @@
 /*
-  License: see $AMANZI_DIR/COPYRIGHT
+  This is the flow component of the Amanzi code. 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Authors: Ethan Coon
 
   Temporary wrapper converting the Richards_PK, which inherits from 
   BDFFnBase<CompositeVector>, to use TreeVectors.
-
 */
+
 
 #include "Richards_PK.hh"
 #include "Richards_PK_Wrapper.hh"
@@ -20,28 +26,33 @@ Richards_PK_Wrapper::Richards_PK_Wrapper(Teuchos::ParameterList& pk_tree,
     S_(S),
     soln_(soln)
 {
-  // Richards expects a single global list with sublist Flow
-  glist_ = Teuchos::rcp(new Teuchos::ParameterList(*global_list));
-  glist_->set("Flow", global_list->sublist("PKs").sublist(pk_tree.name()));
+  std::string pk_name = pk_tree.name();
+  const char* result = pk_name.data();
+  while ((result = std::strstr(result, "->")) != NULL) {
+    result += 2;
+    pk_name = result;   
+  }
 
-  // construct
-  pk_ = Teuchos::rcp(new Richards_PK(*glist_, S_));
+  pk_ = Teuchos::rcp(new Richards_PK(global_list, pk_name, S_));
 }
 
 
-/* ******************************************************************
-* Wrapper for new MPC policy.
-****************************************************************** */
 bool Richards_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
   bool failed = false;
   double dt = t_new - t_old;
   double dt_actual(dt);
-  int ierr = pk_->Advance(dt, dt_actual);
-  if (std::abs(dt - dt_actual) > 1.e-10 || ierr) {
+  int ierr;
+  failed = pk_->Advance(dt, dt_actual);
+  if (std::abs(dt - dt_actual) > 1.e-10) {
     failed = true;
   }
+  if (failed) {
+    Teuchos::OSTab tab = pk_->vo_->getOSTab();
+    *(pk_->vo_->os()) << "Step failed " << std::endl;
+  }
+
   return failed;
 }
 
-}
-}
+}  // namespace Flow
+}  // namespace Amanzi

@@ -67,7 +67,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   S->set_time(0.0);
   S->set_intermediate_time(0.0);
 
-  Transport_PK TPK(plist, S, component_names);
+  Transport_PK TPK(plist, S, "Transport", component_names);
   TPK.CreateDefaultState(mesh, 2);
 
   /* modify the default state for the problem at hand */
@@ -117,6 +117,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
       GMV::close_data_file();
     }
   }
+
 
   /* check that the final state is constant */
   for (int k=0; k<10; k++) {

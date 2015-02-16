@@ -34,22 +34,25 @@ namespace Flow {
 
 class Richards_PK : public Flow_PK {
  public:
-  Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<State> S);
+  Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+              const std::string& pk_list_name, Teuchos::RCP<State> S);
   ~Richards_PK();
 
   // main PK methods
   void Initialize(const Teuchos::Ptr<State>& S);
   void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
-  int Advance(double dT_MPC, double& dT_actual); 
+  bool Advance(double dT_MPC, double& dT_actual); 
   double get_dt();
+  void set_dt(double dt){dT = dt; dT_desirable_ = dT;}
   void CommitState(double dt, const Teuchos::Ptr<State>& S);
-  void CalculateDiagnostics(const Teuchos::Ptr<State>& S) {}
+  void CalculateDiagnostics(const Teuchos::Ptr<State>& S);
 
   // main flow methods
   void InitSteadyState(double T0, double dT0);
   void InitTransient(double T0, double dT0);
   void InitPicard(double T0);
   void InitNextTI(double T0, double dT0, TI_Specs& ti_specs);
+  void InitTimeInterval();
 
   int AdvanceToSteadyState(double T0, double dT0);
   void InitializeAuxiliaryData();
@@ -139,6 +142,8 @@ class Richards_PK : public Flow_PK {
 
  private:
   void operator=(const Richards_PK& RPK);
+
+  friend class Richards_PK_Wrapper;
 };
 
 }  // namespace Flow

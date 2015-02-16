@@ -695,6 +695,56 @@ void State::Initialize() {
   WriteDependencyGraph();
 };
 
+void State::Initialize(Teuchos::RCP<State> S) {
+
+
+
+  for (FieldMap::iterator f_it = fields_.begin();
+       f_it != fields_.end(); ++f_it) {
+    Teuchos::RCP<Field> field = f_it->second;
+    Teuchos::RCP<Field> copy = S->GetField_(field->fieldname());
+    if (copy != Teuchos::null) {
+      if (field->type() != copy->type()){
+        std::stringstream messagestream;
+        messagestream << "States has fields with the same name but different types\n";
+        Errors::Message message(messagestream.str());
+        Exceptions::amanzi_throw(message);
+      }
+      switch (field->type()){
+      case CONSTANT_SCALAR:
+        *field->GetScalarData() = *copy->GetScalarData();
+        break;
+      case CONSTANT_VECTOR:
+        *field->GetConstantVectorData() = *copy->GetConstantVectorData();
+        break;
+      case COMPOSITE_VECTOR_FIELD:
+        *field->GetFieldData() = *copy->GetFieldData();
+        break;
+      default:
+        Errors::Message message("Copy field with unknown type\n");
+        Exceptions::amanzi_throw(message);
+      }
+      field -> set_initialized();      
+    }   
+  }
+
+
+  // Initialize any other fields from state plist.
+  InitializeFields();
+
+  // Ensure that non-evaluator-based fields are initialized.
+  CheckNotEvaluatedFieldsInitialized();
+
+  // Initialize other field evaluators.
+  InitializeEvaluators();
+
+  // Ensure everything is owned and initialized.
+  CheckAllFieldsInitialized();
+
+  // Write dependency graph.
+  WriteDependencyGraph();
+};
+
 void State::InitializeEvaluators() {
   for (evaluator_iterator f_it = field_evaluator_begin();
        f_it != field_evaluator_end(); ++f_it) {
@@ -705,9 +755,10 @@ void State::InitializeEvaluators() {
 
 
 void State::InitializeFields() {
-  for (FieldMap::iterator f_it = fields_.begin();
-       f_it != fields_.end(); ++f_it) {
+  for (FieldMap::iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
+    //std::cout<<f_it->second->fieldname()<<"\n";
     if (!f_it->second->initialized()) {
+      //std::cout<<f_it->second->fieldname()<<" "<<f_it->first<<"\n";
       if (state_plist_.isSublist("initial conditions")) {
         if (state_plist_.sublist("initial conditions").isSublist(f_it->first)) {
           Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(f_it->first);
@@ -753,9 +804,98 @@ bool State::CheckNotEvaluatedFieldsInitialized() {
   return true;
 };
 
+// Make sure all fields that are not evaluated by a FieldEvaluator are
+// initialized.  Such fields may be used by an evaluator field but are not in
+// the dependency tree due to poor design.
+bool State::CheckNotEvaluatedFieldsInitialized(Teuchos::RCP<State> S) {
+  for (FieldMap::iterator f_it = fields_.begin();
+       f_it != fields_.end(); ++f_it) {
+    Teuchos::RCP<Field> field = f_it->second;
+    if (!HasFieldEvaluator(f_it->first)) {
+      // first check and see if there is a FieldEvaluator, but we haven't yet used it.
+      Teuchos::RCP<FieldEvaluator> found_eval;
+      for (evaluator_iterator f_eval_it = field_evaluator_begin();
+         f_eval_it != field_evaluator_end(); ++f_eval_it) {
+        if (f_eval_it->second->ProvidesKey(f_it->first)) {
+          found_eval = f_eval_it->second;
+          break;
+        }
+      }
+
+      if (found_eval != Teuchos::null) {
+        // found an evaluator that provides this key, set it.
+        SetFieldEvaluator(f_it->first, found_eval);
+      } else if (!field->initialized()) {
+        // No evaluator, not intialized... FAIL.
+        std::stringstream messagestream;
+        messagestream << "Field " << field->fieldname() << " was not initialized.";
+        Errors::Message message(messagestream.str());
+        Exceptions::amanzi_throw(message);
+        return false;
+      }
+    }
+  }
+  return true;
+};
+
 
 // Make sure all fields have gotten their IC, either from State or the owning PK.
 bool State::CheckAllFieldsInitialized() {
+  for (FieldMap::iterator f_it = fields_.begin();
+       f_it != fields_.end(); ++f_it) {
+    Teuchos::RCP<Field> field = f_it->second;
+    if (!field->initialized()) {
+      // field was not initialized
+      std::stringstream messagestream;
+      messagestream << "Field " << field->fieldname() << " was not initialized.";
+      Errors::Message message(messagestream.str());
+      Exceptions::amanzi_throw(message);
+      return false;
+    }
+  }
+  return true;
+};
+
+
+
+// Make sure all fields have gotten their IC, either from State or the owning PK.
+// if state S has the same filed the data is copied
+
+bool State::CheckAllFieldsInitialized(Teuchos::RCP<State> S) {
+
+
+  for (FieldMap::iterator f_it = fields_.begin();
+       f_it != fields_.end(); ++f_it) {
+    Teuchos::RCP<Field> field = f_it->second;
+    Teuchos::RCP<Field> copy = S->GetField_(field->fieldname());
+    if (copy != Teuchos::null) {
+      if (field->type() != copy->type()){
+        std::stringstream messagestream;
+        messagestream << "States has fields with the same name but different types\n";
+        Errors::Message message(messagestream.str());
+        Exceptions::amanzi_throw(message);
+        return false;
+      }
+      switch (field->type()){
+      case CONSTANT_SCALAR:
+        *field->GetScalarData() = *copy->GetScalarData();
+        break;
+      case CONSTANT_VECTOR:
+        *field->GetConstantVectorData() = *copy->GetConstantVectorData();
+        break;
+      case COMPOSITE_VECTOR_FIELD:
+        *field->GetFieldData() = *copy->GetFieldData();
+        break;
+      default:
+        Errors::Message message("Copy field with unknown type\n");
+        Exceptions::amanzi_throw(message);
+        return false;
+      }
+      field -> set_initialized();
+    }   
+  }
+
+
   for (FieldMap::iterator f_it = fields_.begin();
        f_it != fields_.end(); ++f_it) {
     Teuchos::RCP<Field> field = f_it->second;

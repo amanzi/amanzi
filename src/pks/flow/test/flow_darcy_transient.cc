@@ -66,7 +66,10 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Darcy_PK* DPK = new Darcy_PK(plist, S);
+  Darcy_PK* DPK = new Darcy_PK(plist, "Flow", S);
+  std::cout << "Owner of " << S->GetField("permeability")->fieldname() 
+            << " is " << S->GetField("permeability")->owner() << "\n";
+
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -76,7 +79,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
-  
+
   AmanziMesh::Entity_ID_List block;
   mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
   for (int i = 0; i != block.size(); ++i) {
@@ -183,7 +186,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Darcy_PK* DPK = new Darcy_PK(plist, S);
+  Darcy_PK* DPK = new Darcy_PK(plist, "Flow", S);
   S->Setup();
   S->InitializeFields();
 

@@ -87,6 +87,11 @@ class State {
   bool CheckNotEvaluatedFieldsInitialized();
   bool CheckAllFieldsInitialized();
 
+  // Using another state for initialization
+  void Initialize(Teuchos::RCP<State> S);
+  bool CheckAllFieldsInitialized(Teuchos::RCP<State> S);
+  bool CheckNotEvaluatedFieldsInitialized(Teuchos::RCP<State> S);
+
   // Used by ATS.
   void Initialize();
 

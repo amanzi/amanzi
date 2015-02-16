@@ -70,28 +70,31 @@ class OperatorDiffusion {
   template <class Model> 
   double DeriveBoundaryFaceValue(int f, const CompositeVector& u, const Model& model);
 
-  // access (for developers only)
+  // access (for developers mainly)
   void set_factor(double factor) { factor_ = factor; }
   int schema_dofs() { return local_op_schema_; }
   int schema_prec_dofs() { return global_op_schema_; }
 
+  int nfailed_primary() { return nfailed_primary_; }
+
   // special members
   void ModifyMatrices(const CompositeVector& u);
-  void AddNewtonCorrection(Teuchos::RCP<const CompositeVector> flux);
 
   // access
-  int nfailed_primary() { return nfailed_primary_; }
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
   Teuchos::RCP<Operator> global_operator() { return global_op_; }
 
  protected:
+  void InitDiffusion_(Teuchos::ParameterList& plist);
   void CreateMassMatrices_();
 
-  void InitDiffusion_(Teuchos::ParameterList& plist);
   void UpdateMatricesNodal_();
   void UpdateMatricesTPFA_();
   void UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector> flux);
   void UpdateMatricesMixedWithGrad_(Teuchos::RCP<const CompositeVector> flux);
+
+  void AddNewtonCorrectionCell_(Teuchos::RCP<const CompositeVector> flux,
+          Teuchos::RCP<const CompositeVector> u);
 
  protected:
   std::vector<WhetStone::DenseMatrix> Wff_cells_;
@@ -101,7 +104,7 @@ class OperatorDiffusion {
 
   Teuchos::RCP<const CompositeVector> k_, dkdp_;
   int upwind_;
-
+  int newton_correction_;
   double factor_;
 
   int mfd_primary_, mfd_secondary_, mfd_pc_primary_, mfd_pc_secondary_;
@@ -111,7 +114,8 @@ class OperatorDiffusion {
   // operator
   Teuchos::RCP<Operator> global_op_;
   Teuchos::RCP<Op> local_op_;
-  int global_op_schema_, local_op_schema_;
+  Teuchos::RCP<Op> jac_op_;
+  int global_op_schema_, local_op_schema_, jac_op_schema_;
 
   // mesh info
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

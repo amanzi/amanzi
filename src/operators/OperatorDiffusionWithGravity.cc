@@ -23,6 +23,8 @@ namespace Operators {
 void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVector> flux,
                                                   Teuchos::RCP<const CompositeVector> u)
 {
+  ASSERT(scalar_rho_mu_);
+
   // add the diffusion matrices
   OperatorDiffusion::UpdateMatrices(flux, u);
 
@@ -30,7 +32,7 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
   AmanziGeometry::Point rho_g(g_);
   rho_g *= rho_ * rho_ / mu_;
 
-  if (rhs_->HasComponent("face")) {
+  if (global_op_->rhs()->HasComponent("face")) {
     int dim = mesh_->space_dimension();
 
     // preparing upwind data
@@ -46,8 +48,8 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
     AmanziMesh::Entity_ID_List faces;
     std::vector<int> dirs;
 
-    Epetra_MultiVector& rhs_cell = *rhs_->ViewComponent("cell");
-    Epetra_MultiVector& rhs_face = *rhs_->ViewComponent("face", true);
+    Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
+    Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
     for (int f = nfaces_owned; f < nfaces_wghost; f++) rhs_face[0][f] = 0.0;
 
     for (int c = 0; c < ncells_owned; c++) {
@@ -123,7 +125,7 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
       }
     }
 
-    rhs_->GatherGhostedToMaster("face", Epetra_CombineMode(Add));
+    global_op_->rhs()->GatherGhostedToMaster("face", Epetra_CombineMode(Add));
   }
 }
 
@@ -135,6 +137,8 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
 void OperatorDiffusionWithGravity::UpdateFlux(
     const CompositeVector& u, CompositeVector& flux)
 {
+  ASSERT(scalar_rho_mu_);
+
   // Calculate diffusive part of the flux.
   OperatorDiffusion::UpdateFlux(u, flux);
 
@@ -245,7 +249,8 @@ void OperatorDiffusionWithGravity::UpdateFlux(
 * Compute non-normalized unsigned direction to the next cell needed
 * to project gravity vector in the MFD-TPFA discretization method.
 * **************************************************************** */
-inline AmanziGeometry::Point OperatorDiffusionWithGravity::GravitySpecialDirection_(int f) const
+AmanziGeometry::Point
+OperatorDiffusionWithGravity::GravitySpecialDirection_(int f) const
 {
   AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);

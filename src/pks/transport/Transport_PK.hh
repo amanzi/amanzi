@@ -61,22 +61,22 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
  public:
   Transport_PK();
 #ifdef ALQUIMIA_ENABLED
-  Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
+  Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S, const std::string& pk_list_name,
                Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state = Teuchos::null,
                Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine = Teuchos::null);
 #endif
-  Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
+  Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S, const std::string& pk_list_name,
                std::vector<std::string>& component_names);
   ~Transport_PK();
 
   // main PK members
   void Initialize(const Teuchos::Ptr<State>& S);
-  int Advance(double dT, double &dT_actual); 
+  int Advance(double dT, double& dT_actual); 
   void CommitState(double dummy_dT, const Teuchos::Ptr<State>& S);
 
   void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
   double get_dt();
-  std::string name() { return passwd_; }
+  std::string name() { return "transport"; }
 
   // main transport members
   void InitializeFields();
@@ -123,6 +123,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   // Helper for constructors.
   void Construct_(Teuchos::ParameterList& glist, 
                   Teuchos::RCP<State> S,
+		  const std::string& pk_list_name,
                   std::vector<std::string>& component_names);
 
   // advection members

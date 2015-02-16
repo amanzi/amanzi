@@ -56,6 +56,19 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
     src_sink = src_factory.createSource();
     src_sink_distribution = src_sink->CollectActionsList();
   }
+  // Time integrator for generic time period used in new MPC driver 
+  if (plist.isSublist("time integrator")){
+    Teuchos::ParameterList& ti_list = plist.sublist("time integrator");
+    std::string ti_method_name = ti_list.get<std::string>("time integration method", "none");
+    ProcessStringTimeIntegration(ti_method_name, &ti_specs_generic_.ti_method);
+    ProcessSublistTimeIntegration(ti_list, ti_method_name, ti_specs_generic_);
+    ti_specs_generic_.ti_method_name = "time integrator";
+    
+    ti_specs_generic_.preconditioner_name = FindStringPreconditioner(ti_list);
+    ti_specs_generic_.solver_name = FindStringLinearSolver(ti_list);
+
+    ProcessStringErrorOptions(ti_list, &ti_specs_generic_.error_control_options);
+  }
 
   // Time integrator for period I, temporary called initial guess initialization
   if (plist.isSublist("initial guess pseudo time integrator")) {
@@ -112,6 +125,39 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
                << vo_->reset() << std::endl;
   }
 }
+
+
+
+/* ******************************************************************
+* Process generic time  interval sublist.
+**************************************************************** */
+void Flow_PK::ProcessSublistTimeInterval(
+	Teuchos::ParameterList& ti_list,  TI_Specs& ti_specs){
+
+ 
+  ti_specs.ti_list_ptr_ = &ti_list;
+  std::string ti_method_name = ti_list.get<std::string>("time integration method", "none");
+
+  ProcessStringTimeIntegration(ti_method_name, &ti_specs.ti_method);
+  ProcessSublistTimeIntegration(ti_list, ti_method_name, ti_specs);
+  
+  //ti_specs.ti_method_name = ti_list.name(ti_list.begin());
+
+  ti_specs.preconditioner_name = FindStringPreconditioner(ti_list);
+  ti_specs.solver_name = FindStringLinearSolver(ti_list);
+
+  ProcessStringErrorOptions(ti_list, &ti_specs.error_control_options);
+
+  //std::cout<<"error_control_options  "<<ti_specs.error_control_options <<"\n";
+  //std::cout<<"ti_method_name  "<<ti_specs.ti_method_name <<"\n";
+  //std::cout<<" inflow_krel_correction  "<<ti_specs. inflow_krel_correction <<"\n";
+  //std::cout<<"preconditioner_name  "<<ti_specs.preconditioner_name <<"\n";
+  //std::cout<<"solver_name  "<<ti_specs.solver_name<<"\n";
+  // std::cout<<"  "<<ti_specs. <<"\n";
+  // std::cout<<"  "<<ti_specs. <<"\n";
+
+}
+
 
 
 /* ******************************************************************

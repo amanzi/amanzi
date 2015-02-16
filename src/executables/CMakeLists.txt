@@ -45,6 +45,7 @@ include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${PKS_SOURCE_DIR})
+include_directories(${MPC_TREE_SOURCE_DIR})
 
 # Chemistry includes directory
 get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
@@ -61,6 +62,11 @@ if(ENABLE_MOAB_Mesh)
 endif()
 if(ENABLE_MSTK_Mesh)
   add_definitions("-DHAVE_MSTK_MESH")
+endif()
+
+# XML ouput
+if(ENABLE_NATIVE_XML_OUTPUT)
+  add_definitions("-DENABLE_NATIVE_XML_OUTPUT")
 endif()
 
 # External (TPL) include directories

@@ -1,14 +1,17 @@
-========================================
-Amanzi Native XML Input Specification V5
-========================================
+==========================================
+Amanzi-U Native XML Input Specification V5
+==========================================
 
 .. contents:: **Table of Contents**
 
 
 Overview
 ========
-This is a continuously evolving specification format used by
-the code developers. It is used for development of new capabilities.
+This is a continuously evolving specification format used by the code developers. 
+It is main purpose is to develop and test new capabilities without disruption of end-users.
+Parameters labeled by [WIP] (Work-In-Progress) are under development.
+Parameters labeled by [O] (Obsolete) are old capabilities and will be removed soon.
+
 
 Changes V4 -> V5
 ================
@@ -29,6 +32,10 @@ Changes V4 -> V5
 
 * Added more details on creating and populating data for Amanzi's chemistry kernel.
 
+* Enriched operators' interface.
+
+* Added description of field evaluators.
+
 
 ParameterList XML
 =================
@@ -39,7 +46,7 @@ at the beginning and end by the following statements:
 .. code-block:: xml
 
   <ParameterList name="Main">
-    ...
+    various sublists
   </ParameterList>
 
 The value in the "name" can be anything ("Main" in this example).  
@@ -63,7 +70,7 @@ the value of 0.9, and a Array(int) parameter named "ratio" such that ratio[0] = 
 ratio[1]=1, and ratio[2]=4.
 
 
-Syntax of the Specification
+Syntax of the specification
 ===========================
 
 Input specification for each ParameterList entry consists of two parts.  
@@ -78,22 +85,24 @@ Where Amanzi supports a number of parameterized models for quantity `"model`", t
 models will be listed by name, and then will be described in the subsequent section.  
 In the manufactured example below, the specification looks as follows:
 
-  * SOIL [list] 
+* SOIL [sublist] accepts parameters that describes properties of this soil.
 
-    * `"region`" [string]
+  * `"region`" [string] defines a subdomain of the computational domain.
 
-    * `"model`" [list] Model for soil, choose exactly one of the following: (1) `"van Genuchten`" or (2) `"Brooks-Corey`" (see below) 
+  * `"model`" [sublist] specifies a model for the soil. Available options are `"van Genuchten`" 
+    and `"Brooks-Corey`".
 
 Here SOIL is defined by a `"region`" and a `"model`".  
-The `"region`" is a string parameter but the `"model`" is given by a model (which will 
-require its own set of parameters).
-The options for `"model`" will then be described:
+The `"region`" is a string parameter but the `"model`" is given by a sublist with its own set of parameters.
+The parameter for `"model`" can be described in the same section or in a separate section
+of this document. For instance, the local description may look like:
 
- * `"van Genuchten`" applies van Genuchten model. Requires `"m`" [double]
+* `"model`" [sublist] specifies a model for the soil. Available options are `"van Genuchten`"
+  and `"Brooks-Corey`".
+  The option `"van Genuchten`" requires `"m`" [double].
+  The option `"Brooks-Corey`" requires `"lambda`" [double] and `"alpha`" [double].
 
- * `"Brooks-Corey`" applies Brooks-Corey model.  Requires `"lambda`" [double] and `"alpha`" [double]
-
-An example of using such a specification:
+Each part of the spec is illustrated by an example followed by optional comments:
 
 .. code-block:: xml
 
@@ -105,54 +114,66 @@ An example of using such a specification:
       </ParameterList>   
     </ParameterList>   
  
-Here, the user defines soil properties in region TOP_DOMAIN usign
+This defines soil properties in region TOP_DOMAIN usign the
 Brocks-Corey model with parameters `"lambda=0.7`" and `"alpha=1e-3`".
 
-Conventions:
+Additional conventions:
 
-* Reserved keywords and labels are `"quoted and italicized`" -- these labels or values of parameters 
-  in user-generated input files must match (using XML matching rules) the specified or allowable values.
+* Reserved keywords and labels are `"quoted and italicized`". These are usually labels or values of parameters 
+  in the input file and must match (using XML matching rules) the specified or allowable values.
 
-* User-defined labels are indicated with ALL_CAPS, and are meant to represent a typical name given by 
-  a user - these can be names or numbers or whatever serves best the organization of the user input data.
+* User-defined labels are indicated with ALL_CAPS.
+  These names are usually defined to serve best the organization of the user input data.
 
+* Sublist with too many parameters will be described using multiple paragraphs and multiple examples.
+ 
 
+Multi-process coordinator (MPC)
+===============================
 
-MultiProcess Coordinator
-========================
-
-The MPC stands for MultiProcess Coordinators.
+The MPC stands for Multi-Process Coordinators.
 In the MPC sublist the user specifies which process kernels are on or off, which 
 flow model is active, and the time integration mode that the MPC should run in.
 
 To turn a particular process kernel on or off use these options:
 
- * `"disable Transport_PK`" [string] Valid options are `"yes`" or `"no`".
+ * `"disable Transport_PK`" [string] accepts either `"yes`" or `"no`".
 
- * `"disable Flow_PK`" [string]  Valid options are `"yes`" or `"no`".
+ * `"disable Flow_PK`" [string] accepts either `"yes`" or `"no`".
 
- * `"Chemistry Model`" [string] Valid options are `"On`", `"Off`", or `"Alquimia`".
+ * `"Chemistry Model`" [string] accepts either `"On`", or `"Off`", or `"Alquimia`".
 
 To select a particular flow model, use this option:
 
- * `"Flow model`" [string] Valid options are `"Darcy`", `"Steady State Saturated`" 
-   (both will cause the instantiation of a Darcy_PK process kernel), `"Richards`", 
+ * `"Flow model`" [string] accepts the following options:`"Darcy`", `"Steady State Saturated`" 
+   (both will cause the instantiation of a Darcy_PK process kernel), `"Richards`", or
    `"Steady State Richards`" (both will cause the instantiation of a Richards_PK 
    process kernel.
 
 The following parameters control MPC options related to particular process kernels:
 
- * `"transport subcycling`" [bool]  Default value is `"false`".
+ * `"transport subcycling`" [bool] allows flow and transport PKs use different time steps.
+   Usually transport will subcycled with respect to flow. Default value is `"false`".
 
- * `"max chemistry to transport time step ratio`" [double]  Default value is 1.0.
+ * `"max chemistry to transport time step ratio`" [double] Default value is 1.
 
- * `"time integration rescue reduction factor`" [double]  Default value is 0.5.
+ * `"time integration rescue reduction factor`" [double] Default value is 0.5.
+
+.. code-block:: xml
+
+  <ParameterList name="MPC">
+    <Parameter name="disable Transport_PK" type="string" value="no"/>
+    <Parameter isUsed="true" name="Chemistry Model" type="string" value="Off"/>
+    <Parameter name="transport subcycling" type="bool" value="false"/>
+    <Parameter name="component names" type="Array(string)" value="{Tc-99}"/>
+    <Parameter name="disable Flow_PK" type="string" value="yes"/>
+  </ParameterList>
 
 
 Time integration mode
 ---------------------
 
-The list `"MPC`" must have a sublist `"Time Integration Mode`" if flow is enabled.
+`"MPC`" requires sublist `"Time Integration Mode`" if flow is enabled.
 This sublist must have exactly one of the following three sublists: `"Steady`",
 `"Initialize To Steady`", `"Transient with Static Flow`", or `"Transient`". 
 The first one is used to find a steady-state solution and terminate the simulation. 
@@ -178,6 +199,7 @@ to a transient phase happens at time `"Switch`".
 .. code-block:: xml
 
   <ParameterList name="MPC">
+    ...
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Initialize To Steady">
         <Parameter name="Start" type="double" value="0.0"/>
@@ -187,6 +209,7 @@ to a transient phase happens at time `"Switch`".
         <Parameter name="Transient Initial Time Step" type="double" value="0.1"/>
       </ParameterList>
     </ParameterList>
+    ...
   </ParameterList>
 
 The third time integration mode is used for a transient simulation only.
@@ -194,6 +217,7 @@ The third time integration mode is used for a transient simulation only.
 .. code-block:: xml
 
   <ParameterList name="MPC">
+    ...
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Transient">
         <Parameter name="Start" type="double" value="0.0"/>
@@ -201,6 +225,7 @@ The third time integration mode is used for a transient simulation only.
         <Parameter name="Initial Time Step" type="double" value="0.1"/>
       </ParameterList>
     </ParameterList>
+    ...
   </ParameterList>
 
 The fourth time integration mode is used for a transient simulation only.
@@ -214,6 +239,7 @@ At present this mode only supports the `"Single Phase`" flow model.
 .. code-block:: xml
 
   <ParameterList name="MPC">
+    ...
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Transient With Static Flow">
         <Parameter name="Start" type="double" value="0.0"/>
@@ -221,6 +247,7 @@ At present this mode only supports the `"Single Phase`" flow model.
         <Parameter name="Initial Time Step" type="double" value="0.1"/>
       </ParameterList>
     </ParameterList>
+    ...
   </ParameterList>
 
 Here, we start simulation at time `"Start=0`" and run it for 100 million seconds.
@@ -236,10 +263,9 @@ will overwrite all other initialization of data that are called out in the input
 The purpose of restarting Amanzi in this fashion is mostly to continue a run that has been 
 terminated because its allocation of time ran out.
 
-
 * `"Restart from Checkpoint Data File`" [list]
 
-  * `"Checkpoint Data File Name`" [string] File name of the specific checkpoint data file to restart from.
+  * `"Checkpoint Data File Name`" [string] provides name of the existing checkpoint data file to restart from.
 
   * `"initialize from checkpoint data file and do not restart`" [bool] (optional) If this is set to false 
     (default), then a restart is performed, if it is set to true, then all fields are initialized from 
@@ -347,7 +373,7 @@ It has the following fields.
     * `"function`" [sublist] defines an analytic function for calculation. Its structure
       is described in the separate section below.
 
-* `"VerboseObject`" [sublist] a standard vebosity object.
+* `"VerboseObject`" [sublist] defined the standard verbosity object.
 
 .. code-block:: xml
 
@@ -458,7 +484,7 @@ and the function itself.
         </ParameterList>
       </ParameterList>
       <ParameterList name="MESH BLOCK 2">
-        ...
+        ... 
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -471,10 +497,8 @@ porosity in other mesh regions.
 A vector or tensor field
 ........................
 
-A variable tensor (or vector) field is defined similarly to 
-a variable scalar field. 
-The difference lies in the definition of the function which
-is now a multi-value function.
+A variable tensor (or vector) field is defined similarly to a variable scalar field. 
+The difference lies in the definition of the function which is now a multi-value function.
 The required parameters are `"Number of DoFs`" and `"Function type`". 
 
 * `"dot with normal`" [bool] triggers special initialization of a
@@ -512,7 +536,7 @@ normal producing one number per mesh face.
 changing value of `"dot with normal`" to false will produce a vector 
 
 
-Mesh Partitioning
+Mesh partitioning
 -----------------
 
 Amanzi's state has a number of tools to verify completeness of initial data.
@@ -630,11 +654,11 @@ The complete example of a state initialization is below. Note that
   </ParameterList>
 
 
-PKs
-===
+Process kernels (PKs)
+=====================
 
-Flow
-----
+Flow PK
+-------
 
 Flow sublist includes exactly one sublist, either `"Darcy problem`" or `"Richards problem`".
 Structure of both sublists is quite similar. We make necessary comments on their differences.
@@ -729,9 +753,9 @@ scheme, and selects assembling schemas for matrices and preconditioners.
         * `"tolerance`" [double] specifies relative tolerance for almost zero local flux. In such
           a case the flow is assumed to be parallel to a mesh face. Default value is 1e-12.
 
-        * `"reconstruction method`" [string] defines a reconstruction method for the second-order upwind.
+        * [WIP] `"reconstruction method`" [string] defines a reconstruction method for the second-order upwind.
 
-        * `"limiting method`" [string] defines limiting method for the second-order upwind.
+        * [WIP] `"limiting method`" [string] defines limiting method for the second-order upwind.
 
 .. code-block:: xml
 
@@ -751,6 +775,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
           <Parameter name="gravity" type="bool" value="true"/>
+          <Parameter name="newton correction" type="string" value="approximate jacobian"/>
           <!--Parameter name="upwind method" type="string" value="standard"/-->  <!--redefined internally-->
         </ParameterList>
 
@@ -1236,9 +1261,8 @@ The remaining `"Flow`" parameters are
   </ParameterList>
 
 
-
-Transport
----------
+Transport PK
+------------
 
 The transport component of Amanzi performs advection of aqueous and gaseous
 components and their dispersion and diffusion. 
@@ -1247,18 +1271,21 @@ and temporal accuracy, and verbosity:
 
 * `"cfl`" [double] Time step limiter, a number less than 1. Default value is 1.
    
-* `"spatial discretization order`" [int] Defines accuracy of spartial dscretization.
+* `"spatial discretization order`" [int] defines accuracy of spartial dscretization.
   It allows values 1 or 2. Default value is 1. 
   
-* `"temporal discretization order`" [int] Defines accuracy of temporal discretization.
+* `"temporal discretization order`" [int] defines accuracy of temporal discretization.
   It allows values 1 or 2. Default value is 1.
+
+* `"reconstruction`" [sublist] collects reconstruction parameters. The available options are
+  describe in the separate section below.
 
 * `"solver`" [string] Specifies the dispersion/diffusion solver.
 
-* `"number of aqueous components`" [int] Define the total number of aqueous components. 
+* `"number of aqueous components`" [int] The total number of aqueous components. 
   Default value is the total number of components.
 
-* `"number of gaseous components`" [int] Define the total number of gaseous components. 
+* [WIP] `"number of gaseous components`" [int] The total number of gaseous components. 
   Default value is 0.
    
 * `"VerboseObject`" [list] Defines verbosity level for the process kernel.
@@ -1270,9 +1297,14 @@ and temporal accuracy, and verbosity:
      <Parameter name="cfl" type="double" value="1.0"/>
      <Parameter name="spatial discretization order" type="int" value="1"/>
      <Parameter name="temporal discretization order" type="int" value="1"/>
-     <Parameter name="advection limiter" type="string" value="tensorial"/>
-
      <Parameter name="solver" type="string" value="PCG_SOLVER"/>
+
+     <ParameterList name="reconstruction">
+       <Parameter name="method" type="string" value="cell-based"/>
+       <Parameter name="polynomial order" type="int" value="1"/>
+       <Parameter name="limiter" type="string" value="tensorial"/>
+       <Parameter name="limiter extension for transport" type="bool" value="true"/>
+     </ParameterList>
 
      <ParameterList name="VerboseObject">
        <Parameter name="Verbosity Level" type="string" value="high"/>
@@ -1521,8 +1553,8 @@ The remaining parameters that can be used by a developes include
   tracking solutes. Default value is a seepage face boundary, see Flow PK.
 
 
-Chemistry
----------
+Chemistry PK
+------------
 
 Geochemical engines
 ...................
@@ -1644,7 +1676,6 @@ Data fields are separated by semicolumns.
    The stoichiometric coefficient of the parent should always be one.
    The units is one of the following: years, days, hours, minutes, or seconds.
 
-
 The simplest example is below.
 
 .. code-block:: text
@@ -1686,26 +1717,45 @@ Alquimia chemistry kernel reads initial conditions from the `"State`" list.
     </ParameterList>
 
 
-Energy
-------
+Energy PK
+---------
+
+This process kernel will appear in Amanzi, version 0.84.
+
 
 Diffusion operator
 ..................
 
+This section to be written.
+
+
 Advection operator
 ..................
 
+This section to be written.
+
+
+Generic capabilities
+====================
+
+Collection of generic tools used by PKs.
+
 
 Operators
-=========
+---------
 
 Operators are discrete forms of linearized PDEs operators.
 They form a layer between physical process kernels and solvers
 and include diffusion, advection, and source operators.
 A PK decides which collection of operators must be used to build a preconditioner.
 
+Operators use a few generic tools that are generic in nature and can be used 
+independently by PKs. 
+The list includes reconstruction and limiting algorithms. 
+
+
 Diffusion operator
-------------------
+..................
 
 * `"OPERATOR_NAME`" [sublist] a PK specific name for the diffusion operator.
 
@@ -1738,6 +1788,13 @@ Diffusion operator
     Available options are `"standard`" (default), `"divk`", `"artificial diffusion`",
     `"second-order`", and `"none`".
 
+  * `"newton correction`" [string] specifies a model for non-physical terms 
+    that must be added to the matrix. These terms represent Jacobian and are needed 
+    for the preconditoner. Available options are `"true jacobian`" and `"approximate jacobian`".
+
+  * `"linear operator`" [sublist] add parameters for a linear solver that defines a preconditioner
+    for the diffusion operator (see section LinearSolvers_).
+
 .. code-block:: xml
 
     <ParameterList name="OPERATOR_NAME">
@@ -1747,6 +1804,10 @@ Diffusion operator
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
       <Parameter name="gravity" type="bool" value="true"/>
       <Parameter name="upwind method" type="string" value="standard"/>
+      <Parameter name="newton correction" type="string" value="true jacobian"/>
+      <ParameterList name="linear solver">
+        ...
+      </ParameterList>
     </ParameterList>
 
 This example creates a p-lambda system, i.e. the pressure is
@@ -1757,13 +1818,15 @@ Schur complement.
 
 
 Advection operator
-------------------
+..................
+
+This section is under construction.
 
 * `"OPERATOR_NAME`" [sublist] a PK specific name for the advection operator.
 
-  * `"discretization primary`" defines a discretization method. The only aiavalble option is `"upwind`".
+  * [WIP] `"discretization primary`" defines a discretization method. The only aiavalble option is `"upwind`".
 
-  * `"reconstruction order`" defines accuracy of this discrete operator.
+  * [WIP] `"reconstruction order`" defines accuracy of this discrete operator.
 
 .. code-block:: xml
 
@@ -1773,9 +1836,40 @@ Advection operator
   </ParameterList>
 
 
+Reconstruction and limiters
+...........................
+
+A reconstruction of discrete fields is used to increase accuracy of discrete models.
+The reconstruction can be either unconstrained or limited. 
+Amanzi supports a variety of state-of-the-art reconstruction and limiting algorithms 
+and their extensions for various PKs.
+
+* `"reconstruction`" [sublist] describes parameters used by reconstruction algorithms.
+
+ * [WIP] `"method`" [string] specifies a reconstruction method. Available option is
+   `"cell-based`" (default).
+
+ * [WIP] `"polynomial order`" [int] defines the polynomial order of a reconstructed function. 
+   Default is 1.
+
+ * `"limiter`" [string] specifies limiting method. Available options are 
+   `"Barth-Jespersen`" (default), `"tensorial`", and `"Kuzmin`". 
+
+ * `"limiter extension for transport`" [bool] adds additional corrections to 
+   limiters required by the transport PK. Default value is *false*.
+
+.. code-block:: xml
+
+  <ParameterList name="reconstruction">
+    <Parameter name="method" type="string" value="cell-based"/>
+    <Parameter name="order" type="int" value="1"/>
+    <Parameter name="limiter" type="string" value="tensorial"/>
+    <Parameter name="limiter extension for transport" type="bool" value="false"/>
+  </ParameterList>
+
 
 Functions
-=========
+---------
 
 To set up non-trivial boundary conditions and/or initial fields, `Amanzi`
 supports a few mathematical functions. 
@@ -1796,7 +1890,8 @@ The function-specification is one of the following parameter lists.
 
 
 Constant function
------------------
+.................
+
 Constant function is defined as `f(x) = a`, for all `x`. 
 The specification of this function needs only one parameter.
 For example, when `a = 1`, we have:
@@ -1809,7 +1904,8 @@ For example, when `a = 1`, we have:
   
 
 Tabular function
-----------------
+................
+
 Given values :math:`x_i, y_i, i=0, ... n-1`, a tabular function :math:`f(x)` is 
 defined piecewise: 
 
@@ -1855,7 +1951,8 @@ x-coordinate `"x`", y-coordinate `"y`", or z-coordinate `"z`".
 
 
 Bilinear function
------------------
+.................
+
 The bilinear function provides an extension of the linear form of the tabular function 
 to a function with 2 variables `f(x,y)`.
 A 2x2 matrix of values for `f(x,y)` and arrays of associated values for `x`
@@ -1884,7 +1981,8 @@ that vary in time and the x dimension.
   
 
 Smooth step function
---------------------
+....................
+
 A smooth :math:`C^2` function `f(x)` on interval :math:`[x_0,\,x_1]` is 
 defined such that `f(x) = y_0` for `x < x0`, `f(x) = y_1` for `x > x_1`, 
 and monotonically increasing for :math:`x \in [x_0, x_1]`.
@@ -1901,7 +1999,8 @@ Here is an example:
 
 
 Polynomial function
--------------------
+...................
+
 A generic polynomial function is given by the following expression:
 
 .. math::
@@ -1921,7 +2020,8 @@ Here i san example of a quartic polynomial:
   
 
 Multi-variable linear function
-------------------------------
+..............................
+
 A multi-variable linear function is formally defined by
  
 .. math::
@@ -1943,7 +2043,8 @@ Here is an example:
   
 
 Separable function
-------------------
+..................
+
 A separable function is defined as the product of other functions such as
 
 .. math::
@@ -1965,7 +2066,8 @@ where :math:`f_1` is defined by the `"function1`" sublist, and
 
 
 Standard math functions
------------------------
+.......................
+
 Amanzi supports a set of standard functions `f(x) = f(x[0])`. 
 In Amanzi, the first index of vector `x` corresponds to time.
 These functions allow to set up non-trivial time-depedent boundary conditions 
@@ -1999,7 +2101,8 @@ This example defines function `1e-7 sqrt(t-0.1)`.
 
 
 Additive function
------------------
+.................
+
 To increase calculus of standard math functions, we support a few basic operations
 with them. The first one is the sum of two functions, `f(t) = f1(t) + f2(t)`.
 This function requires two sublists `"function1`" and `"function2`".
@@ -2024,7 +2127,8 @@ This example defines function `srqt(t) + sin(t)`.
 
 
 Composition function
---------------------
+....................
+
 To increase calculus of standard math functions, we support a few basic operations
 with them. The second one is the composition of two functions, `f(t) = f1(f2(t))`.
 This function requires two sublists `"function1`" and `"function2`".
@@ -2051,7 +2155,8 @@ In three dimension, we have to add one additional argument to the `gradient` and
 
 
 Multiplicative function
------------------------
+.......................
+
 To increase calculus of standard math functions, we support a few basic operations
 with them. The third one is the multiplication of two functions, `f(t) = f1(t) * f2(t)`.
 This function requires two sublists `"function1`" and `"function2`".
@@ -2075,8 +2180,17 @@ This function requires two sublists `"function1`" and `"function2`".
 This example defines function `srqt(t) * sin(t)`.
 
 
-Linear Solvers
-==============
+Solvers
+=======
+
+This section describes generic solvers and preconditioners that can be used
+by various PKs.
+
+
+.. _LinearSolvers:
+
+Linear solvers
+--------------
 
 This list contains sublists for various linear solvers such as PCG, GMRES, and NKA.
 
@@ -2113,9 +2227,10 @@ This list contains sublists for various linear solvers such as PCG, GMRES, and N
 The names `"GMRES with HYPRE AMG`" and similar are chosen by the user.
 
 
-GMRES
------
+Generalized minimal residuals (GMRES)
+.....................................
 
+Not all scientists know that idea of GMRES method was formulated first in 1968.
 Internal parameters for GMRES include
 
 * `"error tolerance`" [double] is used in the convergence test. The default value is 1e-6.
@@ -2147,8 +2262,8 @@ Internal parameters for GMRES include
     </ParameterList>
 
 
-PCG
----
+Preconditioner conjugate gradient (PCG)
+.......................................
 
 Internal parameters for PCG include
 
@@ -2177,9 +2292,8 @@ Internal parameters for PCG include
       </ParameterList>
     </ParameterList>
 
-
-NKA
----
+Newton-Krylov acceleration (NKA)
+................................
 
 This is a variation of the GMRES solver. Internal parameters for NKA include
 
@@ -2218,8 +2332,188 @@ This is a variation of the GMRES solver. Internal parameters for NKA include
     </ParameterList>
 
 
+Nonlinear solvers
+-----------------
+
+Amanzi supports a few nonlinear solvers. 
+Typically, a process kernel uses a factory to select a nonlinear solver.
+This factory uses parameters `"solver type`" to find parameters for 
+the selected solver.
+
+
+Newton-Krylov acceleration (NKA)
+................................
+
+* `"nonlinear tolerance`" [double] defines the required error tolerance. 
+  The error is calculated by a PK. Default is 1e-6. 
+
+* `"monitor`" [string] specifies control of the nonlinear residual. The available 
+  options are `"monitor update`" (default), `"monitor residual`", and 
+  `"monitor preconditioned residual`".
+
+* `"limit iterations`" [int] defines the maximum allowed number of iterations.
+  Default is 20.
+
+* `"diverged tolerance`" [double] defines the error level indicating divergence 
+  of the solver. The error is calculated by a PK. Default is 1e+10.
+
+* `"diverged l2 tolerance`" [double] defines another way to identify divergence
+  of the solver. If the relative L2 norm of the solution increment is above this
+  value, the solver is terminated. Default is 1e+10.
+
+* `"max du growth factor`" [double] allows the solver to identify divergence 
+  pattern on earlier iterations. If the maximum norm of the solution increment
+  changes drastically on two consecutive iterations, the solver is terminated.
+  Default is 1e+5.
+
+* `"max error growth factor`" [double] defines another way to identify divergence 
+  pattern on earlier iterations. If the PK-specific error changes drastically on 
+  two consecutive iterations, the solver is terminated. Default is 1e+5.
+
+* `"max divergent iterations`" [int] defines another way to identify divergence
+  pattern on earlier iterations. If the maximum norm of the solution increment grows 
+  on too many consequtive iterations, the solver is terminated. Default is 3.
+
+* `"modify correction`" [bool] allows a PK to modify the solution increment.
+  One example is a physics-based clipping of extreme solution values. Default is *false*.
+
+* `"lag iterations`" [int] delays the NKA acceleration, but updates the Krylov space.
+  Default is 0.
+
+* `"max nka vectors`" [int] defines the maximum number of consecutive vectors used for 
+  a local space. Default is 10.
+
+* `"nka vector tolerance`" [int] defines the minimum allowed orthogonality between vectors in 
+  the local space. If a new vector does not satisfy this requirement, the space is modified. 
+  Default is 0.05.
+
+* `"VerboseObject`" [sublist] defines the standard verbosity object.
+
+.. code-block:: xml
+
+    <Parameter name="solver type" type="string" value="nka"/>
+    <ParameterList name="nka parameters">
+      <Parameter name="nonlinear tolerance" type="double" value="1.0e-06"/>
+      <Parameter name="monitor" type="string" value="monitor update"/>
+      <Parameter name="limit iterations" type="int" value="20"/>
+      <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+      <Parameter name="max error growth factor" type="double" value="1.0e+05"/>
+      <Parameter name="max divergent iterations" type="int" value="3"/>
+      <Parameter name="max nka vectors" type="int" value="10"/>
+      <Parameter name="nka vector tolerance" type="double" value="0.05"/>
+      <Parameter name="modify correction" type="bool" value="false"/>
+      <Parameter name="lag iterations" type="int" value="0"/>
+
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="high"/>
+      </ParameterList>
+    </ParameterList>
+
+
+Newton
+......
+
+The classical Newton method works well for cases where Jacobian is available and
+corersponds to a stable (e.g. upwind) discretization.
+
+* `"nonlinear tolerance`" [double] defines the required error tolerance. 
+  The error is calculated by a PK. Default is 1e-6. 
+
+* `"monitor`" [string] specifies control of the nonlinear residual. The available 
+  options are `"monitor update`" (default) and `"monitor residual`".
+
+* `"limit iterations`" [int] defines the maximum allowed number of iterations.
+  Default is 50.
+
+* `"diverged tolerance`" [double] defines the error level indicating divergence 
+  of the solver. The error is calculated by a PK. Default is 1e+10.
+
+* `"max du growth factor`" [double] allows the solver to identify divergence 
+  pattern on earlier iterations. If the maximum norm of the solution increment
+  changes drastically on two consecutive iterations, the solver is terminated.
+  Default is 1e+5.
+
+* `"max error growth factor`" [double] defines another way to identify divergence 
+  pattern on earlier iterations. If the PK-specific error changes drastically on 
+  two consecutive iterations, the solver is terminated. Default is 1e+5.
+
+* `"max divergent iterations`" [int] defines another way to identify divergence
+  pattern on earlier iterations. If the maximum norm of the solution increment grows 
+  on too many consequtive iterations, the solver is terminated. Default is 3.
+
+* `"modify correction`" [bool] allows a PK to modify the solution increment.
+  One example is a physics-based clipping of extreme solution values. Default is *true*.
+
+* `"stagnation iteration check`" determines the number of iterations before the
+  stagnation check is turned on. The stangnation happens when the current L2-error
+  exceeds the initial L2-error. Default is 8.
+
+.. code-block:: xml
+
+    <Parameter name="solver type" type="string" value="Newton"/>
+    <ParameterList name="Newton parameters">
+      <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+      <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+      <Parameter name="max divergent iterations" type="int" value="3"/>
+      <Parameter name="limit iterations" type="int" value="20"/>
+      <Parameter name="modify correction" type="bool" value="true"/>
+    </ParameterList>
+
+
+Jacobian-free Newton-Krylov (JFNK)
+..................................
+
+JFNK is the example of an inexact Newton solver. 
+It requires three sublists for a nonlinear solver (NKA, Newton, etc), 
+a preconditioner, and a linear operator that uses this preconditioner.
+We describe parameters of the second sublist only.
+
+* `"typical solution value`" [double] Default is 1.
+
+* `"nonlinear solver`" [sublist] specifies the base nonlinear solvers.
+
+* `"linear operator`" [sublist] specifies the linear solver for inverting 
+  the approximate Jacobian.
+
+* `"finite difference epsilon`" [double] defines the base finite difference epsilon.
+  Default is 1e-8.
+
+* `"method for epsilon`" [string] defines a method for calculating finite difefrence epsilon.
+  Available option is `"Knoll-Keyes`".
+
+.. code-block:: xml
+
+    <Parameter name="solver type" type="string" value="JFNK"/>
+      <ParameterList name="JFNK parameters">
+        <Parameter name="typical solution value" type="double" value="1.0"/>
+
+        <ParameterList name="JF matrix parameters">
+          <Parameter name="finite difference epsilon" type="double" value="1.0e-8"/>
+          <Parameter name="method for epsilon" type="string" value="Knoll-Keyes"/>
+        </ParameterList>
+
+        <ParameterList name="nonlinear solver">
+          <Parameter name="solver type" type="string" value="Newton"/>
+          <ParameterList name="Newton parameters">
+            ...
+          </ParameterList>
+        </ParameterList>
+
+        <ParameterList name="linear operator">
+          <Parameter name="iterative method" type="string" value="gmres"/>
+          <ParameterList name="gmres parameters">
+            ...
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+
 Preconditioners
-===============
+---------------
 
 This sublist contains entries for various
 preconditioners required by a simulation. At the moment, we support Trilinos multilevel
@@ -2259,8 +2553,8 @@ preconditioner, and identity preconditioner.
 Names `"TRILINOS ML`", `"HYPRE AMG`", and `"BLOCK ILU`" are choosen by the user.
 
 
-Hypre AMG
----------
+Hypre's algebraic multigrid (AMG)
+.................................
 
 Internal parameters for Boomer AMG include
 
@@ -2312,7 +2606,7 @@ Internal parameters for Boomer AMG include
 
 
 Euclid ILU
-----------
+..........
 
 The Euclid Parallel ILU algorithm was presented at SC99 and published in expanded 
 form in the SIAM Journal on Scientific Computing. 
@@ -2345,7 +2639,7 @@ Internal parameters for this preconditioner include
 
 
 Trilinos ML
------------
+...........
 
 Internal parameters for Trilinos ML include
 
@@ -2373,7 +2667,7 @@ Internal parameters for Trilinos ML include
 
 
 Block ILU
----------
+.........
 
 The internal parameters for block ILU are as follows:
 
@@ -2390,7 +2684,7 @@ The internal parameters for block ILU are as follows:
 
 
 Indentity
----------
+.........
 
 The identity preconditioner is instantiated if either no preconditioner is
 specified or the specified preconditioner list does not exists.
@@ -2403,60 +2697,46 @@ Amanzi supports both structured and unstructured numerical solution approaches.
 This flexibility has a direct impact on the selection and design of the underlying 
 numerical algorithms, the style of the software implementations, and, ultimately, 
 the complexity of the user-interface.  
-`"Mesh`" is used to select between the following options:
+This specification format uses and describes the unstructured mesh only.
 
-* `"Structured`": This instructs Amanzi to use BoxLib data structures and an associated paradigm to numerically represent the flow equations.  Data containers in the BoxLib software library, developed by CCSE at LBNL, are based on a hierarchical set of uniform Cartesian grid patches.  `"Structured`" requires that the simulation domain be a single coordinate-aligned rectangle, and that the "base mesh" consists of a logically rectangular set of uniform hexahedral cells.  This option supports a block-structured approach to dynamic mesh refinement, wherein successively refined subregions of the solution are constructed dynamically to track "interesting" features of the evolving solution.  The numerical solution approach implemented under the `"Structured`" framework is highly optimized to exploit regular data and access patterns on massively parallel computing architectures.
+* `"Mesh`" [list] accepts `"Unstructured`" to indicate the meshing option that Amanzi will use.
+  This instructs Amanzi to use data structures provided in the Trilinos or MSTK software frameworks.
+  To the extent possible, the discretization algorithms implemented under this option 
+  are largely independent of the shape and connectivity of the underlying cells.
+  As a result, this option supports an arbitrarily complex computational mesh structure
+  that enables users to work with numerical meshes that can be aligned with geometrically
+  complex man-made or geostatigraphical features.
+  Under this option, the user typically provides a mesh file that was generated with 
+  an external software package.
+  The following mesh file formats are currently supported: `"Exodus 2`" (see example),
+  `"MSTK`" (see example), `"MOAB`" (see example).
+  Amanzi also provides a rudimentary capability to generate unstructured meshes automatically.
 
-* `"Unstructured`": This instructs Amanzi to use data structures provided in the Trilinos software framework.  To the extent possible, the discretization algorithms implemented under this option are largely independent of the shape and connectivity of the underlying cells.  As a result, this option supports an arbitrarily complex computational mesh structure that enables users to work with numerical meshes that can be aligned with geometrically complex man-made or geostatigraphical features.  Under this option, the user typically provides a mesh file that was generated with an external software package.  The following mesh file formats are currently supported: `"Exodus 2`" (see example), `"MSTK`" (see example), `"MOAB`" (see example).  Amanzi also provides a rudimentary capability to generate unstructured meshes automatically.
+ * `"Unstructured`" [list] accepts instructions to either (1) read or, (2) generate an unstructured mesh.
 
-Usage:
+  * `"Read Mesh File`" [list] accepts name, format of pre-generated mesh file
 
-* [SU] `"Mesh`" [list] accepts either (1) `"Structured`", or (2) `"Unstructured`" to indicate the meshing option that Amanzi will use
+   * `"File`" [string] name of pre-generated mesh file. Note that in the case of an
+     Exodus II mesh file, the suffix of the serial mesh file must be .exo.
+     When running in serial the code will read this file directly.
+     When running in parallel, the code will instead read the partitioned files,
+     that have been generated with a Nemesis tool.
+     There is no need to change the file name in this case as the code will automatically load the proper files. 
 
- * [S] `"Structured`" [list] accepts coordinates defining the extents of simulation domain, and number of cells in each direction.
+   * `"Format`" [string] format of pre-generated mesh file (`"MSTK`", `"MOAB`", or `"Exodus II`")
 
-  * [S] `"Domain Low Coordinate`" [Array(double)] Location of low corner of domain
+  * `"Generate Mesh`" [list] accepts parameters of generated mesh (currently only `"Uniform`" supported)
 
-  * [S] `"Domain High Coordinate`" [Array(double)] Location of high corner of domain
+   * `"Uniform Structured`" [list] accepts coordinates defining the extents of simulation domain, and number of cells in each direction.
 
-  * [S] `"Number Of Cells`" [Array(int)] the number of uniform cells in each coordinate direction
+    * `"Domain Low Coordinate`" [Array(double)] Location of low corner of domain
+    * `"Domain High Coordinate`" [Array(double)] Location of high corner of domain
+    * `"Number Of Cells`" [Array(int)] the number of uniform cells in each coordinate direction
 
- * [U] `"Unstructured`" [list] accepts instructions to either (1) read or, (2) generate an unstructured mesh.
+   * `"Expert`" [list] accepts parameters that control which particular mesh framework is to be used.
 
-  * [U] `"Read Mesh File`" [list] accepts name, format of pre-generated mesh file
-
-   * [U] `"File`" [string] name of pre-generated mesh file. Note that in the case of an Exodus II mesh file, the suffix of the serial mesh file must be .exo. When running in serial the code will read this file directly. When running in parallel, the code will instead read the partitioned files, that have been generated with a Nemesis tool. There is no need to change the file name in this case as the code will automatically load the proper files. 
-
-   * [U] `"Format`" [string] format of pre-generated mesh file (`"MSTK`", `"MOAB`", or `"Exodus II`")
-
-  * [U] `"Generate Mesh`" [list] accepts parameters of generated mesh (currently only `"Uniform`" supported)
-
-   * [U] `"Uniform Structured`" [list] accepts coordinates defining the extents of simulation domain, and number of cells in each direction.
-
-    * [U] `"Domain Low Coordinate`" [Array(double)] Location of low corner of domain
-
-    * [U] `"Domain High Coordinate`" [Array(double)] Location of high corner of domain
-
-    * [U] `"Number Of Cells`" [Array(int)] the number of uniform cells in each coordinate direction
-
-   * [U] `"Expert`" [list] accepts parameters that control which particular mesh framework is to be used.
-
-    * [U] `"Framework`" [string] one of "stk::mesh", "MSTK",
-      "MOAB" or "Simple". 
-    * [U] `"Verify Mesh`" [bool] true or false. 
-
-
-Example of `"Structured`" mesh:
-
-.. code-block:: xml
-
-   <ParameterList name="Mesh">
-     <ParameterList name="Structured"/>
-       <Parameter name="Number of Cells" type="Array(int)" value="{100, 1, 100}"/>
-       <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0, 0.0}" />
-       <Parameter name="Domain High Corner" type="Array(double)" value="{103.2, 1.0, 103.2}" />
-     </ParameterList>   
-   </ParameterList>
+    * `"Framework`" [string] one of "stk::mesh", "MSTK", "MOAB" or "Simple". 
+    * `"Verify Mesh`" [bool] true or false. 
 
 Example of `"Unstructured`" mesh generated internally:
 
@@ -2654,8 +2934,8 @@ file and "Outflow plane" is a planar region. "Sand" is a volumetric
 region defined by the value 25 in color function file.
 
 
-Output
-======
+Output data
+===========
 
 VerboseObject
 -------------
@@ -2666,10 +2946,9 @@ value is used.
 
 .. code-block:: xml
 
-    <ParameterList name="VerboseObject">
-      <Parameter name="Verbosity Level" type="string" value="high"/>
-    </ParameterList>
-
+   <ParameterList name="VerboseObject">
+     <Parameter name="Verbosity Level" type="string" value="high"/>
+   </ParameterList>
 
 
 Time Functions
@@ -2679,17 +2958,16 @@ Boundary condition functions utilize a parameterized model for time variations t
 
 .. code-block:: xml
 
-      <Parameter name="Times" type="Array(double)" value="{1, 2, 3}"/>
-      <Parameter name="Time Values" type="Array(double)" value="{10, 20, 30}"/>
-      <Parameter name="Time Functions" type="Array(string)" value="{Constant, Linear}"/>    
-
+   <Parameter name="Times" type="Array(double)" value="{1, 2, 3}"/>
+   <Parameter name="Time Values" type="Array(double)" value="{10, 20, 30}"/>
+   <Parameter name="Time Functions" type="Array(string)" value="{Constant, Linear}"/>    
 
 This defines four time intervals: (-inf,1), (1,2), (2,3), (3,+inf).  By assumption the function is constant over the first and last intervals.  The remaining 
 two intervals are specified by the `"Time Functions`" parameter.  Thus, the value here is 10 anytime prior to t=2. The value increases linearly from 10 to 
 20 over the interval t=2 to t=3, and then is constant at 30 for t>3.
 
 
-Observation Data
+Observation file
 ----------------
 
 A user may request any number of specific observations from Amanzi.  Each labeled Observation Data quantity involves a field quantity, a model, a region from which it will extract its source data, and a list of discrete times 
@@ -2765,20 +3043,27 @@ The following Observation Data functionals are currently supported.  All of them
   </ParameterList>
 
 
-Checkpoint Data
+Checkpoint file
 ---------------
 
-A user may request periodic dumps of Amanzi Checkpoint Data.  The user has no explicit control over the content of these files, but has the guarantee that the Amanzi run will be reproducible (with accuracies determined
-by machine round errors and randomness due to execution in a parallel computing environment).  Therefore, output controls for Checkpoint Data are limited to file name generation and writing frequency, by numerical cycle number.
+A user may request periodic dumps of Amanzi Checkpoint Data.  
+The user has no explicit control over the content of these files, but has the guarantee that 
+the Amanzi run will be reproducible (with accuracies determined
+by machine round errors and randomness due to execution in a parallel computing environment).
+Therefore, output controls for Checkpoint Data are limited to file name generation and writing 
+frequency, by numerical cycle number.
 
 * `"Checkpoint Data`" [list] can accept a file name base [string] and cycle data [list] 
   used to generate the file base name or directory base name that is used in writing Checkpoint Data. 
 
   * `"file name base`" [string] ("checkpoint")
   
-  * `"file name digits`" [int] (5)
+  * `"file name digits`" [int] Default value is 5.
 
-  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written at such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
+  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, the second 
+    is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle.
+    A visualization dump shall be written at such cycles that satisfy cycle = start + n*period, 
+    for n=0,1,2,... and cycle < stop if stop != -1.0.
 
   * `"cycles start period stop n`" [Array(int)] if multiple cycles start period stop parameters 
     are needed, then use these parameters with n=0,1,2,..., and not the single `"cycles start period stop`" parameter.
@@ -2814,7 +3099,7 @@ In this example, Checkpoint Data files are written when the cycle number is
 a multiple of 100.
 
 
-Walkabout Data
+Walkabout file
 --------------
 
 A user may request periodic dumps of Walkabout Data. Output controls for Walkabout Data are limited to file name generation and writing frequency, by numerical cycle number or time.
@@ -2858,8 +3143,7 @@ In this example, walkabout data files are written when the cycle number is
 a multiple of 100.
 
 
-
-Visualization Data
+Visualization file
 ------------------
 
 A user may request periodic writes of field data for the purposes of visualization.  The user will specify explicitly what is to be included in the file at each snapshot.  Visualization files can only be written 
@@ -2906,9 +3190,15 @@ at intervals corresponding to the numerical time step values or intervals corres
   </ParameterList>
 
 
+Input data
+==========
 
-Analysis
-========
+This section describes format and purpose of various input files.
+In addition it explain how to verify the input information (e.g. regions) using special sublists.
+
+
+Input analysis
+--------------
 
 This list contains data collected by the input parser of a higher-level spec. 
 
@@ -2920,9 +3210,8 @@ This list contains data collected by the input parser of a higher-level spec.
   </ParameterList>
   
 
-
-Tabulated Function File Format
-==============================
+Tabulated function file format
+------------------------------
 
 The following ASCII input file format supports the definition of a tabulated function defined over a grid.  Several XML input Parameters refer to files in this format.  The file consists of the following records (lines).  Each record is on a single line, except for the DATAVAL record which may be split across multiple lines.
 
@@ -2957,8 +3246,9 @@ For the uniform rectilinear grids, the remaining records are as follows.  Severa
 
 8. **DATAVAL**: The values of the function on the cells/points of the grid.  The values should appear in Fortran array order were the values stored in the Fortran array A(N,NX,NY,NZ) (A(N,0:NX,0:NY,0:NZ) for point-based data).  That is, the column index varies fastest, x grid index next fastest, etc.
     
+
 Example
--------
+.......
 
 As an example, consider the following integer-valued function in 2-D:
 
@@ -2988,4 +3278,4 @@ The corresponding input file would be:
   1
   5 1 2 2 1 1
 
-
+*** THE END ***

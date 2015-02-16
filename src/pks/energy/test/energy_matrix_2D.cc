@@ -112,7 +112,7 @@ std::cout << "Passed S.InitilizeEvaluators()" << std::endl;
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
   
   // create diffusion operator 
-  const Teuchos::ParameterList& elist = plist->sublist("Energy");
+  const Teuchos::ParameterList& elist = plist->sublist("PKs").sublist("Energy");
   Teuchos::ParameterList oplist = elist.sublist("operators")
                                        .sublist("diffusion operator")
                                        .sublist("preconditioner");

@@ -122,7 +122,7 @@ Teuchos::ParameterList InputParserIS::CreateDPC_List_(Teuchos::ParameterList* pl
       if (solver_list.isParameter("Nonlinear Solver Type")) {
 	nonlinear_solver = solver_list.get<std::string>("Nonlinear Solver Type");
       }
-      if (nonlinear_solver == std::string("Newton") || nonlinear_solver == std::string("inexact Newton")) {
+      if (nonlinear_solver == std::string("Newton")) {
 	dpc_list.set<std::string>("discretization method", "fv: default");
       }
       else{
@@ -198,7 +198,7 @@ Teuchos::ParameterList InputParserIS::CreateBILU_List_(Teuchos::ParameterList* p
       if (solver_list.isParameter("Nonlinear Solver Type")) {
 	nonlinear_solver = solver_list.get<std::string>("Nonlinear Solver Type");
       }
-      if (nonlinear_solver == std::string("Newton") || nonlinear_solver == std::string("inexact Newton")) {
+      if (nonlinear_solver == std::string("Newton")) {
 	bilu_list.set<std::string>("discretization method", "fv: default");
       }
       else{
@@ -259,7 +259,7 @@ Teuchos::ParameterList InputParserIS::CreateHypreAMG_List_(Teuchos::ParameterLis
       if (solver_list.isParameter("Nonlinear Solver Type")) {
 	nonlinear_solver = solver_list.get<std::string>("Nonlinear Solver Type");
       }
-      if (nonlinear_solver == std::string("Newton") || nonlinear_solver == std::string("inexact Newton")) {
+      if (nonlinear_solver == std::string("Newton")) {
 	dpc_list.set<std::string>("discretization method", "fv: default");
       }
       else{

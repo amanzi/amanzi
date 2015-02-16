@@ -32,12 +32,10 @@ class BCs;
 
 class OperatorDiffusionTPFA : public OperatorDiffusion {
  public:
-  OperatorDiffusionTPFA() {};
-  OperatorDiffusionTPFA(Teuchos::RCP<const CompositeVectorSpace> cvs, 
-                        Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc) 
-      : OperatorDiffusion(cvs, plist, bc) {};
-  OperatorDiffusionTPFA(const Operator& op, Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc) 
-      : OperatorDiffusion(op, plist, bc) {};
+  OperatorDiffusionTPFA() { g_.set(mesh_->space_dimension(), 0.0); }
+  OperatorDiffusionTPFA(Teuchos::RCP<const CompositeVectorSpace> cvs,
+                        Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc);
+  OperatorDiffusionTPFA(const Operator& op, Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc);
   ~OperatorDiffusionTPFA() {};
 
   // re-implementation of basic operator virtual members
@@ -51,7 +49,6 @@ class OperatorDiffusionTPFA : public OperatorDiffusion {
 
   int Apply(const CompositeVector& X, CompositeVector& Y) const;
   int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
-  int ComputeNegativeResidual(const CompositeVector& v, CompositeVector& r);
 
   void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
   void SetUpwind(int upwind_method) { upwind_ = upwind_method; }
@@ -78,6 +75,8 @@ class OperatorDiffusionTPFA : public OperatorDiffusion {
   AmanziGeometry::Point g_;
   Teuchos::RCP<Epetra_Vector> transmissibility_;
   Teuchos::RCP<Epetra_Vector> gravity_term_;
+
+  mutable Teuchos::ParameterList slist_;
 };
 
 }  // namespace Operators

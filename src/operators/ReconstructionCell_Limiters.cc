@@ -59,7 +59,7 @@ void ReconstructionCell::LimiterTensorial_(
 
     normals.clear();  // normals to planes that define a feasiable set
     for (int loop = 0; loop < 2; loop++) {
-      for (int i = 0; i < nfaces; i++) {
+      for (int i = 0; i < nfaces; ++i) {
         int f = faces[i];
         int c1 = upwind_cell_[f];
         int c2 = downwind_cell_[f];
@@ -68,8 +68,8 @@ void ReconstructionCell::LimiterTensorial_(
           u1 = (*field_)[0][c];
           u2 = (*field_)[0][c1 + c2 - c];
         } else if (c1 == c) {
-          u1 = u2 = (*field_)[0][c1];
-        } else {
+          u1 = u2 = (*field_)[0][c];
+        } else {  // limiting on upwind face is done separately.
           continue;
         }
         umin = std::min(u1, u2);
@@ -86,6 +86,7 @@ void ReconstructionCell::LimiterTensorial_(
           // p = ((umin - u1) / sqrt(L22normal_new)) * direction;
           p = ((umin - u1) / sqrt(L22normal_new)) * normal_new;
           ApplyDirectionalLimiter_(normal_new, p, direction, gradient_c1);
+
         } else if (u1f > umax) {
           normal_new = xcf - xc;
           CalculateDescentDirection_(normals, normal_new, L22normal_new, direction);
@@ -157,6 +158,27 @@ void ReconstructionCell::LimiterTensorial_(
   }
 
   // Step 3: enforcing a priori time step estimate (division of dT by 2).
+  if (limiter_correction_) {
+    LimiterExtensionTransportTensorial_(field_local_min, field_local_max);
+  }    
+
+  gradient_->ScatterMasterToGhosted("cell");
+}
+
+
+/* *******************************************************************
+* Extension of the tensorial limiter. Routine changes gradient to 
+* satisfy an a prioty estimate of the stable time step. That estimate
+* assumes that the weigthed flux is smaller that the first-order flux.
+******************************************************************* */
+void ReconstructionCell::LimiterExtensionTransportTensorial_(
+    const std::vector<double>& field_local_min, const std::vector<double>& field_local_max)
+{
+  double u1f, u1;
+  AmanziMesh::Entity_ID_List faces;
+
+  Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
+
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
@@ -194,8 +216,6 @@ void ReconstructionCell::LimiterTensorial_(
       for (int i = 0; i < dim; i++) grad[i][c] *= psi;
     }
   }
-
-  gradient_->ScatterMasterToGhosted("cell");
 }
 
 
@@ -305,7 +325,28 @@ void ReconstructionCell::LimiterBarthJespersen_(
   }
 
   // Step 3: enforcing a priori time step estimate (division of dT by 2).
+  if (limiter_correction_) {
+    LimiterExtensionTransportBarthJespersen_(field_local_min, field_local_max, limiter);
+  }    
+
+  gradient_->ScatterMasterToGhosted("cell");
+}
+
+
+/* *******************************************************************
+* Extension of Barth-JEspersen's limiter. Routine changes gradient to 
+* satisfy an a prioty estimate of the stable time step. That estimate
+* assumes that the weigthed flux is smaller that the first-order flux.
+******************************************************************* */
+void ReconstructionCell::LimiterExtensionTransportBarthJespersen_(
+    const std::vector<double>& field_local_min, const std::vector<double>& field_local_max,
+    Teuchos::RCP<Epetra_Vector> limiter)
+{
+  double u1, u1f;
+  AmanziGeometry::Point gradient_c1(dim);
   AmanziMesh::Entity_ID_List faces;
+
+  Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
 
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -346,8 +387,6 @@ void ReconstructionCell::LimiterBarthJespersen_(
       (*limiter)[c] *= psi;
     }
   }
-
-  gradient_->ScatterMasterToGhosted("cell");
 }
 
 
@@ -474,7 +513,27 @@ void ReconstructionCell::LimiterKuzmin_(
 
   // Step 4: enforcing a priori time step estimate (division of dT by 2).
   // Experimental version is limited to 2D (lipnikov@lanl.gov).
-  AmanziMesh::Entity_ID_List faces;
+  if (limiter_correction_) {
+    LimiterExtensionTransportKuzmin_(field_local_min, field_local_max);
+  }    
+
+  gradient_->ScatterMasterToGhosted("cell");
+}
+
+
+/* *******************************************************************
+* Extension of Kuzmin's limiter. Routine changes gradient to 
+* satisfy an a prioty estimate of the stable time step. That estimate
+* assumes that the weigthed flux is smaller that the first-order flux.
+******************************************************************* */
+void ReconstructionCell::LimiterExtensionTransportKuzmin_(
+    const std::vector<double>& field_local_min, const std::vector<double>& field_local_max)
+{
+  double u1, up;
+  AmanziGeometry::Point xp(dim);
+  AmanziMesh::Entity_ID_List faces, nodes;
+
+  Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
@@ -520,8 +579,6 @@ void ReconstructionCell::LimiterKuzmin_(
       for (int i = 0; i < dim; i++) (*grad)[i][c] *= psi;
     }
   }
-
-  gradient_->ScatterMasterToGhosted("cell");
 }
 
 

@@ -57,8 +57,9 @@ add_subdirectory(eos)
 add_subdirectory(flow)
 add_subdirectory(transport)
 add_subdirectory(energy)
+add_subdirectory(dummy)
+add_subdirectory(mpc_pk)
 
-add_subdirectory(mpc)
 
 
 

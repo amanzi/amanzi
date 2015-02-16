@@ -45,6 +45,7 @@ class Energy_PK : public PK, public Amanzi::BDFFnBase<TreeVector> {
   void CalculateDiagnostics() {};
 
   double get_dt() { return 0.0; }
+  void set_dt(double dt) {}
   void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
   std::string name() { return "energy"; }
 
