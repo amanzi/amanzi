@@ -66,7 +66,8 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Darcy_PK* DPK = new Darcy_PK(plist, "Flow", S);
+  Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
+  Darcy_PK* DPK = new Darcy_PK(global_list, "Flow", S);
   std::cout << "Owner of " << S->GetField("permeability")->fieldname() 
             << " is " << S->GetField("permeability")->owner() << "\n";
 
@@ -186,7 +187,8 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Darcy_PK* DPK = new Darcy_PK(plist, "Flow", S);
+  Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
+  Darcy_PK* DPK = new Darcy_PK(global_list, "Flow", S);
   S->Setup();
   S->InitializeFields();
 

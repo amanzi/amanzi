@@ -155,10 +155,10 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   // Create a Verbose object to pass to the mesh_factory and mesh
 
   Amanzi::VerboseObject *meshverbobj = 
-    new Amanzi::VerboseObject("Mesh",new_list);
+    new Amanzi::VerboseObject("Mesh", new_list);
 
   // Create a mesh factory for this geometric model
-  Amanzi::AmanziMesh::MeshFactory factory(comm,meshverbobj) ;
+  Amanzi::AmanziMesh::MeshFactory factory(comm, meshverbobj) ;
 
   // Prepare to read/create the mesh specification
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
@@ -356,31 +356,22 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
   bool new_mpc_driver = new_list.get<bool>("new mpc driver", false);
 
-  if (new_mpc_driver){
-    if (new_list.isSublist("State")){
+  if (new_mpc_driver) {
+    if (new_list.isSublist("State")) {
       // Create the state.    
       Teuchos::ParameterList state_plist = new_list.sublist("State");
       Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
       S->RegisterMesh("domain",mesh);      
 
-      // -------------- MULTI-PROCESS COORDINATOR------- --------------------
+      // -------------- OLD MULTI-PROCESS COORDINATOR --------------------------
       Amanzi::CycleDriver cycle_driver(new_list, S, comm, output_observations);
-      //--------------- DO THE SIMULATION -----------------------------------
       cycle_driver.go();
-      //-----------------------------------------------------
     }
   }
-  else{
-    // -------------- MULTI-PROCESS COORDINATOR----------------------------
-    
+  else {
+    // -------------- NEW MULTI-PROCESS COORDINATOR ----------------------------
     Amanzi::MPC mpc(new_list, mesh, comm, output_observations);
-
-    //--------------- DO THE SIMULATION -----------------------------------
-
     mpc.cycle_driver();
-
-    //---------------------------------------------------------------------
-  
   }
   
   // Clean up

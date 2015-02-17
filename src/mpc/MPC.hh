@@ -24,11 +24,11 @@
 
 namespace Amanzi {
 
-  enum time_integration_mode { STEADY, TRANSIENT, INIT_TO_STEADY, TRANSIENT_STATIC_FLOW };
+enum time_integration_mode { STEADY, TRANSIENT, INIT_TO_STEADY, TRANSIENT_STATIC_FLOW };
 
 class MPC {
  public:
-  MPC(Teuchos::ParameterList parameter_list_,
+  MPC(Teuchos::ParameterList& parameter_list_,
       Teuchos::RCP<AmanziMesh::Mesh> mesh_maps_,
       Epetra_MpiComm* comm_,
       Amanzi::ObservationData& output_observations_); 

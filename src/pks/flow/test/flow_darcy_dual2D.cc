@@ -65,7 +65,8 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   RCP<State> S = rcp(new State());
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Darcy_PK* DPK = new Darcy_PK(plist,"Flow", S);
+  Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
+  Darcy_PK* DPK = new Darcy_PK(global_list,"Flow", S);
   S->Setup();
   S->InitializeFields();
 

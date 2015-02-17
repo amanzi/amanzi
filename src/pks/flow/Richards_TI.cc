@@ -138,7 +138,7 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
 
   // finalize preconditioner
   op_preconditioner_->AssembleMatrix();
-  op_preconditioner_->InitPreconditioner(ti_specs->preconditioner_name, preconditioner_list_); 
+  op_preconditioner_->InitPreconditioner(ti_specs->preconditioner_name, *preconditioner_list_); 
 }
 
 
@@ -256,8 +256,8 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
   double damping_factor = 0.5;
   double reference_pressure = 101325.0;
   
-  if (rp_list_.isSublist("clipping parameters")){
-    Teuchos::ParameterList& clip_list = rp_list_.sublist("clipping parameters");
+  if (rp_list_->isSublist("clipping parameters")) {
+    Teuchos::ParameterList& clip_list = rp_list_->sublist("clipping parameters");
     max_sat_pert = clip_list.get<double>("maximum saturation change", 0.25);
     damping_factor = clip_list.get<double>("pressure damping factor", 0.5);
   }

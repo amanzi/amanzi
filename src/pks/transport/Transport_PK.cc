@@ -311,8 +311,7 @@ double Transport_PK::CalculateTransportDt()
 ******************************************************************* */
 double Transport_PK::get_dt()
 {
-  //if (dT == 0.0) 
-  CalculateTransportDt();
+  if (dT == 0.0) CalculateTransportDt();
   return dT;
 }
 

@@ -56,18 +56,18 @@ void ReactiveTransport_PK::Initialize() {
 // Calculate the min of sub PKs timestep sizes.
 // -----------------------------------------------------------------------------
 double ReactiveTransport_PK::get_dt() {
-  dTtran_ = tranport_pk_ -> get_dt();
 
+  dTtran_ = tranport_pk_ -> get_dt();
   dTchem_ = chemistry_pk_ -> get_dt();
 
   if (!chem_step_succeeded && (dTchem_/dTtran_ > 0.99)) {
-     dTtran_ *= 0.5;
+     dTchem_ *= 0.5;
   } 
 
   //std::cout<<"Transport dT="<<dTtran_<<" Chemistry dT="<<dTchem_<<"\n";
-  if (dTchem_ > dTtran_) dTchem_ = dTtran_;
+  if (dTtran_ > dTchem_) dTtran_= dTchem_; 
   
-  return dTtran_;
+  return dTchem_;
 };
 
 
@@ -76,8 +76,12 @@ double ReactiveTransport_PK::get_dt() {
 // -----------------------------------------------------------------------------
 void ReactiveTransport_PK::set_dt(double dt) {
   dTtran_ = dt;
-  dTchem_ = chemistry_pk_ -> get_dt();
-  if (dTchem_ > dTtran_) dTchem_ = dTtran_;
+  dTchem_ = dt;
+  //dTchem_ = chemistry_pk_ -> get_dt();
+  //if (dTchem_ > dTtran_) dTchem_ = dTtran_;
+  //if (dTtran_ > dTchem_) dTtran_= dTchem_; 
+  chemistry_pk_ -> set_dt(dTchem_);
+  tranport_pk_ -> set_dt(dTtran_);
 }
 
 
@@ -88,7 +92,6 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new) {
   bool fail = false;
   chem_step_succeeded = false;
 
-  std::cout<<"Transport::AdvanceStep "<<t_old<<" "<<t_new - t_old<<"\n";
   int ok = tranport_pk_->AdvanceStep(t_old, t_new);
 
   if (ok == 0) {
@@ -99,7 +102,6 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new) {
   }
   chemistry_pk_->set_total_component_concentration(total_component_concentration_stor);
 
-  std::cout<<"Chemistry::AdvanceStep "<<t_old<<" "<<t_new - t_old<<"\n";
   ok = chemistry_pk_->AdvanceStep(t_old, t_new);
   chem_step_succeeded = true;
     

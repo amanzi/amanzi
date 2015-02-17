@@ -103,7 +103,7 @@ int Richards_PK::AdvanceToSteadyState_BDF1(TI_Specs& ti_specs)
 int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
 {
   // create verbosity object
-  VerboseObject* vo = new VerboseObject("Amanzi::Picard", rp_list_); 
+  VerboseObject* vo = new VerboseObject("Amanzi::Picard", *rp_list_); 
 
   CompositeVector  solution_old(*solution);
   CompositeVector& solution_new = *solution;
@@ -161,7 +161,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
 
     // create preconditioner
     op_preconditioner_->AssembleMatrix();
-    op_preconditioner_->InitPreconditioner(ti_specs.preconditioner_name, preconditioner_list_);
+    op_preconditioner_->InitPreconditioner(ti_specs.preconditioner_name, *preconditioner_list_);
 
     // check convergence of non-linear residual
     op_preconditioner_->ComputeResidual(solution_new, residual);
@@ -172,7 +172,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     // solve linear problem
     AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;
     Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create(ti_specs.solver_name, linear_operator_list_, op_preconditioner_);
+       solver = factory.Create(ti_specs.solver_name, *linear_operator_list_, op_preconditioner_);
 
     solver->ApplyInverse(*rhs, *solution);
 

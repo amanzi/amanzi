@@ -30,7 +30,8 @@ namespace Flow {
 
 class Darcy_PK : public Flow_PK {
  public:
-  Darcy_PK(Teuchos::ParameterList& glist, const std::string& pk_list_name, Teuchos::RCP<State> S);
+  Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+           const std::string& pk_list_name, Teuchos::RCP<State> S);
   ~Darcy_PK();
 
   // main PK methods
@@ -79,16 +80,12 @@ class Darcy_PK : public Flow_PK {
   void SolveFullySaturatedProblem(double T, CompositeVector& u);
   int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) { Y = X; return 1; }
 
-  // methods for unit tests
-  void ResetParameterList(const Teuchos::ParameterList& dp_list_new) { dp_list_ = dp_list_new; }
-  Teuchos::RCP<CompositeVector> get_solution() { return solution; }
-
  private:
   void UpdateSpecificYield_();
   double ErrorEstimate_(double* dTfactor);
 
  private:
-  Teuchos::ParameterList dp_list_;
+  Teuchos::RCP<Teuchos::ParameterList> dp_list_;
   Teuchos::RCP<Operators::Operator> op_;
   Teuchos::RCP<Operators::OperatorDiffusion> op_diff_;
   Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;

@@ -30,6 +30,7 @@
 #include "OperatorDiffusionFactory.hh"
 #include "Point.hh"
 #include "UpwindFactory.hh"
+#include "XMLParameterListWriter.hh"
 
 #include "darcy_velocity_evaluator.hh"
 #include "Flow_BC_Factory.hh"
@@ -44,30 +45,29 @@ namespace Flow {
 ****************************************************************** */
 Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
                          const std::string& pk_list_name, Teuchos::RCP<State> S)
-    : Flow_PK()
+    : Flow_PK(), glist_(glist)
 {
   S_ = S;
   mesh_ = S->GetMesh();
   dim = mesh_->space_dimension();
 
   // We need the flow list
-  if (!glist->isSublist("PKs")){
-    Errors::Message msg("Richards_PK: input parameter list does not have PKs sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  Teuchos::ParameterList flow_list;
-  if (glist->sublist("PKs").isSublist(pk_list_name)) {
-    flow_list = glist->sublist("PKs").sublist(pk_list_name);
+  if (glist->isSublist("PKs")) {
+    if (glist->sublist("PKs").isSublist(pk_list_name)) {
+      if (glist->sublist("PKs").sublist(pk_list_name).isSublist("Richards problem")) {
+         rp_list_ = Teuchos::rcp(&glist->sublist("PKs")
+                                        .sublist(pk_list_name)
+                                        .sublist("Richards problem"), false);
+      } else {
+        Errors::Message msg("Flow PK: sublist \"Richards problem\" is missing.");
+        Exceptions::amanzi_throw(msg);
+      }
+    } else {
+      Errors::Message msg("Flow PK: sublist " + pk_list_name + " is missing.");
+      Exceptions::amanzi_throw(msg);
+    }
   } else {
-    Errors::Message msg("Richards_PK: input parameter list does not have " + pk_list_name + " sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  if (flow_list.isSublist("Richards problem")) {
-    rp_list_ = flow_list.sublist("Richards problem");
-  } else {
-    Errors::Message msg("Richards_PK: input parameter list does not have <Richards problem> sublist.");
+    Errors::Message msg("Flow PK: sublist \"PKs\" is missing.");
     Exceptions::amanzi_throw(msg);
   }
   
@@ -75,22 +75,26 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 
   // We also need iscaleneous sublists
   if (glist->isSublist("Preconditioners")) {
-    preconditioner_list_ = glist->sublist("Preconditioners");
+    preconditioner_list_ = Teuchos::rcp(&glist->sublist("Preconditioners"), false);  // no memory destructor
   } else {
     Errors::Message msg("Flow PK: input XML does not have <Preconditioners> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
   if (glist->isSublist("Solvers")) {
-    linear_operator_list_ = glist->sublist("Solvers");
+    linear_operator_list_ = Teuchos::rcp(&glist->sublist("Solvers"), false);
   } else {
     Errors::Message msg("Flow PK: input XML does not have <Solvers> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
-  if (rp_list_.isSublist("time integrator")){
-    ti_list_ = rp_list_.sublist("time integrator");
+  if (rp_list_->isSublist("time integrator")) {
+    ti_list_ = rp_list_->sublist("time integrator");
   } 
+  // else {
+  //   Errors::Message msg("Richards PK: input XML does not have <time integrator> sublist.");
+  //   Exceptions::amanzi_throw(msg);
+  // }  
 
   // for creating fields
   std::vector<std::string> names(2);
@@ -174,11 +178,22 @@ Richards_PK::~Richards_PK()
   if (bc_seepage != NULL) delete bc_seepage;
 
   if (ti_specs != NULL) {
-    OutputTimeHistory(rp_list_, ti_specs->dT_history);
+    OutputTimeHistory(*rp_list_, ti_specs->dT_history);
   }
 
   if (src_sink != NULL) delete src_sink;
   if (vo_ != NULL) delete vo_;
+
+#ifdef ENABLE_NATIVE_XML_OUTPUT
+  /*
+  if (glist_->sublist("Analysis").get<bool>("print unused parameters", false)) {
+    std::cout << "\n***** Unused XML parameters *****" << std::endl;
+    Teuchos::Amanzi_XMLParameterListWriter out; 
+    out.unused(*rp_list_, std::cout);
+    std::cout << std::endl;
+  }
+  */
+#endif
 }
 
 
@@ -212,27 +227,29 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   rainfall_factor.resize(nfaces_wghost, 1.0);
 
   // create verbosity object
-  vo_ = new VerboseObject("FlowPK::Richards", rp_list_); 
+  Teuchos::ParameterList vlist;
+  vlist.sublist("VerboseObject") = rp_list_->sublist("VerboseObject");
+  vo_ = new VerboseObject("FlowPK::Richards", vlist); 
 
   // Process Native XML.
-  ProcessParameterList(rp_list_);
+  ProcessParameterList(*rp_list_);
 
   // Create water retention models.
-  Teuchos::ParameterList& wrm_list = rp_list_.sublist("water retention models");
+  Teuchos::ParameterList& wrm_list = rp_list_->sublist("water retention models");
   rel_perm_ = Teuchos::rcp(new RelativePermeability(mesh_));
   rel_perm_->Init(atm_pressure_, wrm_list);
 
-  std::string krel_method_name = rp_list_.get<std::string>("relative permeability");
+  std::string krel_method_name = rp_list_->get<std::string>("relative permeability");
   rel_perm_->ProcessStringRelativePermeability(krel_method_name);
 
   // parameter which defines when update direction of update
-  Teuchos::ParameterList upw_list = rp_list_.sublist("operators")
-                                            .sublist("diffusion operator")
-                                            .sublist("upwind");
+  Teuchos::ParameterList upw_list = rp_list_->sublist("operators")
+                                             .sublist("diffusion operator")
+                                             .sublist("upwind");
   Operators::UpwindFactory<RelativePermeability> upwind_factory;
   upwind_ = upwind_factory.Create(mesh_, rel_perm_, upw_list);
 
-  std::string upw_upd = rp_list_.get<std::string>("upwind update", "every timestep");
+  std::string upw_upd = rp_list_->get<std::string>("upwind update", "every timestep");
   if (upw_upd == "every nonlinear iteration") update_upwind = FLOW_UPWIND_UPDATE_ITERATION;
   else update_upwind = FLOW_UPWIND_UPDATE_TIMESTEP;  
 
@@ -241,7 +258,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (T1 >= 0.0) T_physics = T1;
 
   // Initialize actions on boundary condtions. 
-  ProcessShiftWaterTableList(rp_list_);
+  ProcessShiftWaterTableList(*rp_list_);
 
   T1 = T_physics;
   bc_pressure->Compute(T1);
@@ -263,11 +280,12 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   // Select a proper matrix class. 
-  Teuchos::ParameterList& tmp_list = rp_list_.sublist("operators").sublist("diffusion operator");
+  const Teuchos::ParameterList& tmp_list = rp_list_->sublist("operators")
+                                                    .sublist("diffusion operator");
   Teuchos::ParameterList oplist_matrix = tmp_list.sublist("matrix");
   Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
 
-  std::string name = rp_list_.get<std::string>("relative permeability");
+  std::string name = rp_list_->get<std::string>("relative permeability");
   int upw_id(Operators::OPERATOR_UPWIND_FLUX);
   std::string upw_method("none");
   if (name == "upwind: darcy velocity") {
@@ -370,8 +388,7 @@ void Richards_PK::InitializeSteadySaturated()
 ****************************************************************** */
 void Richards_PK::InitPicard(double T0)
 {
-
-  ti_igs_list_ = rp_list_.sublist("initial guess pseudo time integrator");
+  ti_igs_list_ = rp_list_->sublist("initial guess pseudo time integrator");
   ProcessSublistTimeInterval(ti_igs_list_,  ti_specs_igs_);
 
   ti_specs = &ti_specs_igs_;
@@ -400,11 +417,10 @@ void Richards_PK::InitPicard(double T0)
 ****************************************************************** */
 void Richards_PK::InitSteadyState(double T0, double dT0)
 {
-
-  ti_sss_list_ = rp_list_.sublist("steady state time integrator");
+  ti_sss_list_ = rp_list_->sublist("steady state time integrator");
   ProcessSublistTimeInterval(ti_sss_list_,  ti_specs_sss_);
 
-  if (ti_specs != NULL) OutputTimeHistory(rp_list_, ti_specs->dT_history);
+  if (ti_specs != NULL) OutputTimeHistory(*rp_list_, ti_specs->dT_history);
   ti_specs = &ti_specs_sss_;
 
   error_control_ = ti_specs->error_control_options;
@@ -425,11 +441,10 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 ****************************************************************** */
 void Richards_PK::InitTransient(double T0, double dT0)
 {
-
-  ti_trs_list_ = rp_list_.sublist("transient time integrator");
+  ti_trs_list_ = rp_list_->sublist("transient time integrator");
   ProcessSublistTimeInterval(ti_trs_list_,  ti_specs_trs_);
 
-  if (ti_specs != NULL) OutputTimeHistory(rp_list_, ti_specs->dT_history);
+  if (ti_specs != NULL) OutputTimeHistory(*rp_list_, ti_specs->dT_history);
   ti_specs = &ti_specs_trs_;
 
   error_control_ = ti_specs->error_control_options;
@@ -446,13 +461,16 @@ void Richards_PK::InitTransient(double T0, double dT0)
   seepage_mass_ = 0.0;
 }
 
-void Richards_PK::InitTimeInterval(){
-  
 
-  ProcessSublistTimeInterval(ti_list_,  ti_specs_generic_);
+/* ******************************************************************
+* TBW
+****************************************************************** */
+void Richards_PK::InitTimeInterval()
+{
+  ProcessSublistTimeInterval(ti_list_, ti_specs_generic_);
  
-  ti_specs_generic_.T0  = ti_list_.get<double>("start interval time", 0);
-  ti_specs_generic_.dT0 = ti_list_.get<double>("initial time step", 1);
+  ti_specs_generic_.T0  = ti_list_.get<double>("start interval time", 0.0);
+  ti_specs_generic_.dT0 = ti_list_.get<double>("initial time step", 1.0);
 
   double T0 = ti_specs_generic_.T0;
   double dT0 = ti_specs_generic_.dT0;
@@ -460,9 +478,7 @@ void Richards_PK::InitTimeInterval(){
   dT = dT0;
   dTnext = dT0;
 
-
-
-  if (ti_specs != NULL) OutputTimeHistory(rp_list_, ti_specs->dT_history);
+  if (ti_specs != NULL) OutputTimeHistory(*rp_list_, ti_specs->dT_history);
   ti_specs = &ti_specs_generic_;
 
   error_control_ = ti_specs->error_control_options;
@@ -473,9 +489,7 @@ void Richards_PK::InitTimeInterval(){
   }
 
   InitNextTI(T0, dT0, ti_specs_generic_);
-  
 }
-
 
 
 /* ******************************************************************
@@ -490,7 +504,6 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     *vo_->os() << std::endl 
         << vo_->color("green") << "New TI phase: " << ti_specs.ti_method_name.c_str() 
         << vo_->reset() << std::endl << std::endl;
-    //*vo_->os() << "T=" << T0 / FLOW_YEAR << " [y] dT=" << dT0 << " [sec]" << std::endl
     *vo_->os()<< "EC:" << error_control_ << " Src:" << src_sink_distribution
               << " Upwind:" << rel_perm_->method() << op_matrix_diff_->upwind()
               << " PC:\"" << ti_specs.preconditioner_name.c_str() << "\"" << std::endl;
@@ -500,10 +513,9 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   std::string ti_method_name(ti_specs.ti_method_name);
 
   if (ti_specs.ti_method == FLOW_TIME_INTEGRATION_BDF1) {
-    //Teuchos::ParameterList bdf1_list = rp_list_.sublist(ti_method_name).sublist("BDF1");
-    Teuchos::ParameterList bdf1_list = ti_specs.ti_list_ptr_->sublist("BDF1");
+    Teuchos::ParameterList& bdf1_list = ti_specs.ti_list_ptr_->sublist("BDF1");
     if (! bdf1_list.isSublist("VerboseObject"))
-        bdf1_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
+        bdf1_list.sublist("VerboseObject") = rp_list_->sublist("VerboseObject");
 
     bdf1_dae = Teuchos::rcp(new BDF1_TI<CompositeVector, CompositeVectorSpace>(*this, bdf1_list, solution));
   }

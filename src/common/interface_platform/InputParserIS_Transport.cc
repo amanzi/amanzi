@@ -48,6 +48,7 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
         trp_list.set<std::string>("solver", "PCG with Hypre AMG");
         trp_list.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
         trp_list.set<std::string>("enable internal tests", "no");
+	trp_list.set<bool>("transport subcycling", TRANSPORT_SUBCYCLING);
 
         int poly_order(0);
         if (exe_list.isSublist("Numerical Control Parameters")) {
@@ -56,7 +57,10 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
             Teuchos::ParameterList& ua_list = ncp_list.sublist("Unstructured Algorithm");
             if (ua_list.isSublist("Transport Process Kernel")) {
               Teuchos::ParameterList& tpk_list = ua_list.sublist("Transport Process Kernel");
-              if (tpk_list.isParameter("Transport Integration Algorithm")) {
+	      if (tpk_list.isParameter("transport subcycling")) {
+		trp_list.set<bool>("transport subcycling",tpk_list.get<bool>("transport subcycling"));
+	      }
+	      if (tpk_list.isParameter("Transport Integration Algorithm")) {
                 std::string tia = tpk_list.get<std::string>("Transport Integration Algorithm");
 
                 if (tia == "Explicit First-Order") {

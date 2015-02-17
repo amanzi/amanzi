@@ -150,8 +150,8 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   int ti_phase_counter;
 
  public:
-  Teuchos::ParameterList linear_operator_list_;
-  Teuchos::ParameterList preconditioner_list_;
+  Teuchos::RCP<const Teuchos::ParameterList> linear_operator_list_;
+  Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -186,15 +186,15 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   int src_sink_distribution; 
   mutable double mass_bc, seepage_mass_;
 
-  Teuchos::ParameterList ti_list_, ti_sss_list_, ti_trs_list_, ti_igs_list_;
   // time integration phases
+  Teuchos::ParameterList ti_list_, ti_sss_list_, ti_trs_list_, ti_igs_list_;
   TI_Specs ti_specs_generic_;
   TI_Specs ti_specs_igs_;
   TI_Specs ti_specs_sss_;
   TI_Specs ti_specs_trs_;
   TI_Specs* ti_specs;
 
-  bool  new_mpc_driver;
+  bool new_mpc_driver;
 
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
   Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval;

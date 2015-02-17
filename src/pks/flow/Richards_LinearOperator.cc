@@ -43,11 +43,11 @@ void Richards_PK::SolveFullySaturatedProblem(
   op_preconditioner_diff_->UpdateMatrices(Teuchos::null, solution);
   op_preconditioner_->ApplyBCs(op_bc_);
   op_preconditioner_->AssembleMatrix();
-  op_preconditioner_->InitPreconditioner(ti_specs->preconditioner_name, preconditioner_list_);
+  op_preconditioner_->InitPreconditioner(ti_specs->preconditioner_name, *preconditioner_list_);
 
   AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
-     solver = sfactory.Create(solver_name, linear_operator_list_, op_matrix_, op_preconditioner_);
+     solver = sfactory.Create(solver_name, *linear_operator_list_, op_matrix_, op_preconditioner_);
 
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
 
@@ -126,12 +126,12 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
   op_preconditioner_->ApplyBCs(op_bc_);
   op_preconditioner_diff_->ModifyMatrices(u);
   op_preconditioner_->AssembleMatrix();
-  op_preconditioner_->InitPreconditioner(ti_specs->preconditioner_name, preconditioner_list_);
+  op_preconditioner_->InitPreconditioner(ti_specs->preconditioner_name, *preconditioner_list_);
 
   // solve non-symmetric problem
   AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create(ti_specs->solver_name_constraint, linear_operator_list_, op_matrix_, op_preconditioner_);
+     solver = factory.Create(ti_specs->solver_name_constraint, *linear_operator_list_, op_matrix_, op_preconditioner_);
 
   CompositeVector& rhs = *op_preconditioner_->rhs();
   int ierr = solver->ApplyInverse(rhs, utmp);

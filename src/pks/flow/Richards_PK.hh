@@ -102,9 +102,6 @@ class Richards_PK : public Flow_PK {
   double CalculateRelaxationFactor(const Epetra_MultiVector& uold,
                                    const Epetra_MultiVector& unew);
 
-  // control method
-  void ResetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list_ = rp_list_new; }
-  
   // access methods
   Teuchos::RCP<Operators::Operator> op_matrix() { return op_matrix_; }
   const Teuchos::RCP<CompositeVector> get_solution() { return solution; }
@@ -117,10 +114,10 @@ class Richards_PK : public Flow_PK {
           const Model& model);
   virtual double BoundaryFaceValue(int f, const CompositeVector& pressure);
   
- public:
-  Teuchos::ParameterList rp_list_;
-
  private:
+  const Teuchos::RCP<Teuchos::ParameterList> glist_;
+  Teuchos::RCP<Teuchos::ParameterList> rp_list_;
+
   Teuchos::RCP<RelativePermeability> rel_perm_;
   Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_;
   Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_diff_, op_preconditioner_diff_;
