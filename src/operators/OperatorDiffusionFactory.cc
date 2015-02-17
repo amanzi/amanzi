@@ -13,8 +13,7 @@
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorDiffusion.hh"
-#include "OperatorDiffusionSurface.hh"
-#include "OperatorDiffusionTPFA.hh"
+//#include "OperatorDiffusionTPFA.hh"
 #include "OperatorDiffusionWithGravity.hh"
 
 namespace Amanzi {
@@ -57,22 +56,17 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
   // Let us try to identify a FV scheme.
   std::string name = oplist.get<std::string>("discretization primary");
   if (name == "fv: default") {
-    Teuchos::RCP<OperatorDiffusionTPFA> op = Teuchos::rcp(new OperatorDiffusionTPFA(cvs, oplist, bc));
-    op->Init();
-    op->SetUpwind(upwind_method);
-    op->SetGravity(g);
-    return op;
+
+    Errors::Message msg("OperatorDiffusionFactory: TPFA not yet implemented");
+    Exceptions::amanzi_throw(msg);
   }
 
   // Let us see if we have gravity.
   bool flag = oplist.get<bool>("gravity", false);
-  if (! flag) {
-    Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusion(cvs, oplist, bc));
-    op->Init();
-    return op;
+  if (!flag) {
+    return Teuchos::rcp(new OperatorDiffusion(oplist, mesh));
   } else {
-    Teuchos::RCP<OperatorDiffusionWithGravity> op = Teuchos::rcp(new OperatorDiffusionWithGravity(cvs, oplist, bc));
-    op->Init();
+    Teuchos::RCP<OperatorDiffusionWithGravity> op = Teuchos::rcp(new OperatorDiffusionWithGravity(oplist, mesh));
     op->SetGravity(g);
     return op;
   }

@@ -24,8 +24,11 @@
 #include "EnergyTwoPhase_PK.hh"
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "OperatorDiffusionFactory.hh"
+#include "Operator.hh"
+#include "OperatorDiffusion.hh"
 #include "OperatorAdvection.hh"
+#include "OperatorAccumulation.hh"
+#include "OperatorDiffusionFactory.hh"
 #include "State.hh"
 
 /* **************************************************************** 
@@ -124,14 +127,17 @@ std::cout << "Passed S.InitilizeEvaluators()" << std::endl;
   double rho(1.0), mu(1.0);
   op1->Setup(EPK->get_K(), Teuchos::null, Teuchos::null, rho, mu);
   op1->UpdateMatrices(Teuchos::null, Teuchos::null);
+  Teuchos::RCP<Operator> op = op1->global_operator();
 
   // add accumulation term
+  Teuchos::RCP<OperatorAccumulation> op2 = Teuchos::rcp(new OperatorAccumulation(AmanziMesh::CELL, op));
   double dT = 1.0;
-  CompositeVector solution(op1->DomainMap());
+  CompositeVector solution(op->DomainMap());
 
   S->GetFieldEvaluator("energy")->HasFieldDerivativeChanged(S.ptr(), passwd, "temperature");
   const CompositeVector& dEdT = *S->GetFieldData("denergy_dtemperature");
-  op1->AddAccumulationTerm(solution, dEdT, dT, "cell");
+
+  op2->AddAccumulationTerm(solution, dEdT, dT, "cell");
 
   // add advection term: u = q_l n_l c_v
   // we do not upwind n_l c_v  in this test.
@@ -140,7 +146,7 @@ std::cout << "Passed S.InitilizeEvaluators()" << std::endl;
       ->ViewComponent("cell", true);
   const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell", true);
 
-  CompositeVector flux(op1->DomainMap());
+  CompositeVector flux(op->DomainMap());
   Epetra_MultiVector& q_l = *flux.ViewComponent("face");
 
   AmanziMesh::Entity_ID_List cells;
@@ -160,20 +166,21 @@ std::cout << "Passed S.InitilizeEvaluators()" << std::endl;
     q_l[0][f] *= tmp / ncells;
   }
 
-  int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE
-                  + Operators::OPERATOR_SCHEMA_DOFS_CELL;
-  Teuchos::RCP<OperatorAdvection> op2 = Teuchos::rcp(new OperatorAdvection(*op1));
-  op2->Setup(flux);
-  op2->UpdateMatrices(flux);
-  op2->ApplyBCs();
-  op2->SymbolicAssembleMatrix(schema_dofs);
-  op2->AssembleMatrix(schema_dofs);
+  Teuchos::ParameterList alist;
+  Teuchos::RCP<OperatorAdvection> op3 = Teuchos::rcp(new OperatorAdvection(alist, op));
+  op3->Setup(flux);
+  op3->UpdateMatrices(flux);
+
+  // build the matrix
+  op->ApplyBCs(bc);
+  op->SymbolicAssembleMatrix();
+  op->AssembleMatrix();
 
   // make preconditioner
   // Teuchos::RCP<Operator> op3 = Teuchos::rcp(new Operator(*op2));
 
   Teuchos::ParameterList slist = plist->sublist("Preconditioners");
-  op2->InitPreconditioner("Hypre AMG", slist);
+  op->InitPreconditioner("Hypre AMG", slist);
 
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"energy.gmv");

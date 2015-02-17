@@ -96,6 +96,8 @@ class Operator {
            Teuchos::ParameterList& plist,
            int schema);
 
+  void Init();
+
   // main members
   // -- virtual methods potentially altered by the schema
   virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar=0.) const;

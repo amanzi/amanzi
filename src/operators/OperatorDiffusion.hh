@@ -20,7 +20,9 @@
 #include "tensor.hh"
 #include "Point.hh"
 #include "CompositeVector.hh"
+#include "DenseMatrix.hh"
 
+#include "BCs.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 
@@ -67,9 +69,6 @@ class OperatorDiffusion {
   virtual void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u);
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
 
-  template <class Model> 
-  double DeriveBoundaryFaceValue(int f, const CompositeVector& u, const Model& model);
-
   // access (for developers mainly)
   void set_factor(double factor) { factor_ = factor; }
   int schema_dofs() { return local_op_schema_; }
@@ -84,6 +83,8 @@ class OperatorDiffusion {
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
   Teuchos::RCP<Operator> global_operator() { return global_op_; }
 
+  int upwind() { return upwind_; }
+  
  protected:
   void InitDiffusion_(Teuchos::ParameterList& plist);
   void CreateMassMatrices_();
@@ -124,7 +125,6 @@ class OperatorDiffusion {
   int nnodes_owned, nnodes_wghost;
 
 };
-
 
 }  // namespace Operators
 }  // namespace Amanzi

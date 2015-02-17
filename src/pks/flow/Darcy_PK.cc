@@ -402,12 +402,15 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 
   Teuchos::ParameterList& oplist = dp_list_.sublist("operators").sublist("diffusion operator").sublist("matrix");
   Operators::OperatorDiffusionFactory opfactory;
-  op_ = opfactory.Create(mesh_, op_bc_, oplist, gravity_, 0);  // The last 0 means no upwind
-  op_->Setup(K, Teuchos::null, Teuchos::null, rho_, mu_);
-  op_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_diff_ = opfactory.Create(mesh_, op_bc_, oplist, gravity_, 0);  // The last 0 means no upwind
+  op_diff_->Setup(K, Teuchos::null, Teuchos::null, rho_, mu_);
+  op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_ = op_diff_->global_operator();
 
-  int schema_prec_dofs = op_->schema_prec_dofs();
-  op_->SymbolicAssembleMatrix(schema_prec_dofs);
+  // initialize accumulation operator
+  op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_));
+
+  op_->SymbolicAssembleMatrix();
   op_->CreateCheckPoint();
 
   // Well modeling: initialization
@@ -492,20 +495,19 @@ bool Darcy_PK::Advance(double dT_MPC, double& dT_actual)
   sy_g.Scale(factor);
 
   op_->RestoreCheckPoint();
-  op_->AddAccumulationTerm(*solution, ss_g, dT, "cell");
-  op_->AddAccumulationTerm(*solution, sy_g, "cell");
-  op_->ApplyBCs();
+  op_acc_->AddAccumulationTerm(*solution, ss_g, dT, "cell");
+  op_acc_->AddAccumulationTerm(*solution, sy_g, "cell");
 
-  int schema_prec_dofs = op_->schema_prec_dofs();
-  op_->AssembleMatrix(schema_prec_dofs);
+  op_->ApplyBCs(op_bc_);
+  op_->AssembleMatrix();
   op_->InitPreconditioner(ti_specs->preconditioner_name, preconditioner_list_);
 
   CompositeVector& rhs = *op_->rhs();
   if (src_sink != NULL) AddSourceTerms(rhs);
 
   // create linear solver
-  AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
+  AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
      solver = factory.Create(ti_specs->solver_name, linear_operator_list_, op_);
 
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
@@ -567,7 +569,7 @@ void Darcy_PK::CommitState(double dt, const Teuchos::Ptr<State>& S)
 
   // calculate darcy mass flux
   CompositeVector& darcy_flux = *S->GetFieldData("darcy_flux", passwd_);
-  op_->UpdateFlux(*solution, darcy_flux);
+  op_diff_->UpdateFlux(*solution, darcy_flux);
 
   Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
   for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;

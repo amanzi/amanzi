@@ -18,7 +18,9 @@
 
 #include "BCs.hh"
 #include "FnBaseDefs.hh"
+#include "Operator.hh"
 #include "OperatorDiffusion.hh"
+#include "OperatorAccumulation.hh"
 
 #include "Flow_PK.hh"
 #include "TI_Specs.hh"
@@ -87,7 +89,9 @@ class Darcy_PK : public Flow_PK {
 
  private:
   Teuchos::ParameterList dp_list_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op_;
+  Teuchos::RCP<Operators::Operator> op_;
+  Teuchos::RCP<Operators::OperatorDiffusion> op_diff_;
+  Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
   Teuchos::RCP<Operators::BCs> op_bc_;
 
   int error_control_;

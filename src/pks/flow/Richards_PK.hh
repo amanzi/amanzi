@@ -23,6 +23,7 @@
 #include "BCs.hh"
 #include "BDF1_TI.hh"
 #include "OperatorDiffusion.hh"
+#include "OperatorAccumulation.hh"
 #include "Upwind.hh"
 
 #include "Flow_PK.hh"
@@ -105,12 +106,15 @@ class Richards_PK : public Flow_PK {
   void ResetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list_ = rp_list_new; }
   
   // access methods
-  Teuchos::RCP<Operators::OperatorDiffusion> op_matrix() { return op_matrix_; }
+  Teuchos::RCP<Operators::Operator> op_matrix() { return op_matrix_; }
   const Teuchos::RCP<CompositeVector> get_solution() { return solution; }
 
   // developement members
   void ImproveAlgebraicConsistency(const Epetra_Vector& ws_prev, Epetra_Vector& ws);
 
+  template <class Model> 
+  double DeriveBoundaryFaceValue(int f, const CompositeVector& u,
+          const Model& model);
   virtual double BoundaryFaceValue(int f, const CompositeVector& pressure);
   
  public:
@@ -118,7 +122,9 @@ class Richards_PK : public Flow_PK {
 
  private:
   Teuchos::RCP<RelativePermeability> rel_perm_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_, op_preconditioner_;
+  Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_;
+  Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_diff_, op_preconditioner_diff_;
+  Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
   Teuchos::RCP<Operators::Upwind<RelativePermeability> > upwind_;
   Teuchos::RCP<Operators::BCs> op_bc_;
 
@@ -145,6 +151,35 @@ class Richards_PK : public Flow_PK {
 
   friend class Richards_PK_Wrapper;
 };
+
+
+/* ******************************************************************
+* Calculates solution value on the boundary.
+****************************************************************** */
+template <class Model> 
+double Richards_PK::DeriveBoundaryFaceValue(
+    int f, const CompositeVector& u, const Model& model) 
+{
+  if (u.HasComponent("face")) {
+    const Epetra_MultiVector& u_face = *u.ViewComponent("face");
+    return u_face[f][0];
+  } else {
+    const std::vector<int>& bc_model = op_bc_->bc_model();
+    const std::vector<double>& bc_value = op_bc_->bc_value();
+
+    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+      return bc_value[f];
+    } else {
+      const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
+      AmanziMesh::Entity_ID_List cells;
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int c = cells[0];
+      return u_cell[0][c];
+    }
+  }
+}
+
+
 
 }  // namespace Flow
 }  // namespace Amanzi

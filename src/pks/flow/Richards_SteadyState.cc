@@ -153,15 +153,14 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
 
     // create algebraic problem (matrix = preconditioner)
     op_preconditioner_->Init();
-    op_preconditioner_->UpdateMatrices(darcy_flux_copy, Teuchos::null);
-    op_preconditioner_->ApplyBCs();
+    op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy, Teuchos::null);
+    op_preconditioner_->ApplyBCs(op_bc_);
 
     Teuchos::RCP<CompositeVector> rhs = op_preconditioner_->rhs();  // export RHS from the matrix class
     if (src_sink != NULL) AddSourceTerms(*rhs);
 
     // create preconditioner
-    int schema_prec_dofs = op_preconditioner_->schema_prec_dofs(); 
-    op_preconditioner_->AssembleMatrix(schema_prec_dofs);
+    op_preconditioner_->AssembleMatrix();
     op_preconditioner_->InitPreconditioner(ti_specs.preconditioner_name, preconditioner_list_);
 
     // check convergence of non-linear residual
@@ -171,8 +170,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     L2error /= L2norm;
 
     // solve linear problem
-    AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
+    AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
        solver = factory.Create(ti_specs.solver_name, linear_operator_list_, op_preconditioner_);
 
     solver->ApplyInverse(*rhs, *solution);

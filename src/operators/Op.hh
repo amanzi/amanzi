@@ -33,6 +33,24 @@ class Op {
       mesh_(mesh)
   {}
 
+  void Init() {
+    if (vals.size() > 0) {
+      for (int i = 0; i != vals.size(); ++i) {
+        vals[i] = 0.;
+        vals_shadow[i] = 0.;
+      }
+    }
+
+    WhetStone::DenseMatrix null_mat;
+    if (matrices.size() > 0) {
+      for (int i = 0; i != matrices.size(); ++i) {
+        matrices[i] = 0.;
+        matrices_shadow[i] = null_mat;
+      }
+    }
+  }
+    
+  
   virtual void RestoreCheckPoint() {
     for (int i = 0; i != matrices.size(); ++i) {
       if (matrices_shadow[i].NumRows() != 0) {

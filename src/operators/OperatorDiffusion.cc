@@ -472,44 +472,43 @@ void OperatorDiffusion::AddNewtonCorrectionCell_(
   }
 }
 
-// /* ******************************************************************
-// * Special assemble of elemental face-based matrices. 
-// ****************************************************************** */
-// void OperatorDiffusion::ModifyMatrices(const CompositeVector& u)
-// {
-//   if (schema_dofs_ != OPERATOR_SCHEMA_DOFS_CELL + OPERATOR_SCHEMA_DOFS_FACE) {
-//     std::cout << "Schema " << schema_dofs_ << " is not supported" << std::endl;
-//     ASSERT(0);
-//   }
+/* ******************************************************************
+* Special assemble of elemental face-based matrices. 
+****************************************************************** */
+void OperatorDiffusion::ModifyMatrices(const CompositeVector& u)
+{
+  if (local_op_schema_ != (OPERATOR_SCHEMA_BASE_CELL |
+                           OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
+    std::cout << "Schema " << global_op_schema_ << " is not supported" << std::endl;
+    ASSERT(0);
+  }
 
-//   // find location of face-based matrices
-//   int m = FindMatrixBlock(schema_, OPERATOR_SCHEMA_RULE_EXACT, true);
-//   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
+  // populate the matrix
+  AmanziMesh::Entity_ID_List faces;
+  const Epetra_MultiVector& u_c = *u.ViewComponent("cell");
 
-//   // populate the matrix
-//   AmanziMesh::Entity_ID_List faces;
-//   const Epetra_MultiVector& u_c = *u.ViewComponent("cell");
-//   Epetra_MultiVector& rhs_f = *rhs_->ViewComponent("face", true);
+  global_op_->rhs()->PutScalarGhosted(0.);
 
-//   for (int f = nfaces_owned; f < nfaces_wghost; f++) rhs_f[0][f] = 0.0;
+  {
+    Epetra_MultiVector& rhs_f = *global_op_->rhs()->ViewComponent("face", true);
+    for (int c = 0; c != ncells_owned; ++c) {
+      mesh_->cell_get_faces(c, &faces);
+      int nfaces = faces.size();
 
-//   for (int c = 0; c < ncells_owned; c++) {
-//     mesh_->cell_get_faces(c, &faces);
-//     int nfaces = faces.size();
+      WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
 
-//     WhetStone::DenseMatrix& Acell = matrix[c];
+      for (int n = 0; n < nfaces; n++) {
+        int f = faces[n];
+        rhs_f[0][f] -= Acell(n, nfaces) * u_c[0][c];
+        Acell(n, nfaces) = 0.0;
+        Acell(nfaces, n) = 0.0;
+      }
+    }
+  }
 
-//     for (int n = 0; n < nfaces; n++) {
-//       int f = faces[n];
-//       rhs_f[0][f] -= Acell(n, nfaces) * u_c[0][c];
-//       Acell(n, nfaces) = 0.0;
-//       Acell(nfaces, n) = 0.0;
-//     }
-//   }
-
-//   // Assemble all right-hand sides
-//   rhs_->GatherGhostedToMaster("face", Add);
-// }
+  // Assemble all right-hand sides
+  global_op_->rhs()->GatherGhostedToMaster("face", Add);
+}
 
 
 /* ******************************************************************

@@ -47,8 +47,8 @@ void Richards_PK::Functional(double T0, double T1,
   
   // assemble residual for diffusion operator
   op_matrix_->Init();
-  op_matrix_->UpdateMatrices(darcy_flux_copy, solution);
-  op_matrix_->ApplyBCs();
+  op_matrix_diff_->UpdateMatrices(darcy_flux_copy, solution);
+  op_matrix_->ApplyBCs(op_bc_);
 
   Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
   if (src_sink != NULL) AddSourceTerms(*rhs);
@@ -117,8 +117,8 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
 
   // create diffusion operators
   op_preconditioner_->Init();
-  op_preconditioner_->UpdateMatrices(darcy_flux_copy, solution);
-  op_preconditioner_->ApplyBCs();
+  op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy, solution);
+  op_preconditioner_->ApplyBCs(op_bc_);
 
   // add time derivative
   CompositeVectorSpace cvs;
@@ -133,12 +133,11 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
   dSdP.Multiply(rho_, phi, dSdP, 0.0);
 
   if (dTp > 0.0) {
-    op_preconditioner_->AddAccumulationTerm(*u, dSdP, dTp, "cell");
+    op_acc_->AddAccumulationTerm(*u, dSdP, dTp, "cell");
   }
 
   // finalize preconditioner
-  int schema_prec_dofs = op_preconditioner_->schema_prec_dofs();
-  op_preconditioner_->AssembleMatrix(schema_prec_dofs);
+  op_preconditioner_->AssembleMatrix();
   op_preconditioner_->InitPreconditioner(ti_specs->preconditioner_name, preconditioner_list_); 
 }
 

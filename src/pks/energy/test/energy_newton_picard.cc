@@ -13,6 +13,12 @@
 #include "SolverFnBase.hh"
 #include "UpwindStandard.hh"
 
+#include "Operator.hh"
+#include "OperatorDiffusion.hh"
+#include "OperatorAdvection.hh"
+#include "OperatorAccumulation.hh"
+#include "OperatorDiffusionFactory.hh"
+
 const double TemperatureSource = 1.0; 
 const double TemperatureFloor = 0.02; 
 const std::string SOLVERS[3] = {"NKA", "Newton-Picard", "JFNK"};
@@ -60,7 +66,11 @@ class HeatConduction : public AmanziSolvers::SolverFnBase<CompositeVector> {
   std::string op_name_;
 
   Teuchos::RCP<CompositeVectorSpace> cvs_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op_;
+  Teuchos::RCP<Operators::Operator> op_;
+  Teuchos::RCP<Operators::OperatorDiffusion> op_diff_;
+  Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
+
+  Teuchos::RCP<Operators::BCs> bc_;  
   std::vector<int> bc_model;
   std::vector<double> bc_value, bc_mixed;
 
@@ -138,8 +148,7 @@ void HeatConduction::Init(
       bc_value[f] = TemperatureFloor;
     }
   }
-  Teuchos::RCP<Operators::BCs> bc =
-      Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
+  bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // constant accumulation term
   dT = 5e-3;
@@ -167,20 +176,22 @@ void HeatConduction::Init(
   // Update conductivity values
   UpdateValues(*solution_);
 
-  // create diffusion operator
+  // create the operators
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_name_);
-  op_ = Teuchos::rcp(new Operators::OperatorDiffusion(cvs_, olist, bc));
+  op_diff_ = Teuchos::rcp(new Operators::OperatorDiffusion(olist, mesh_));
+  op_ = op_diff_->global_operator();
+  op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_));
   op_->Init();
 
-  int schema_dofs = op_->schema_dofs();
-  int schema_prec_dofs = op_->schema_prec_dofs();
+  // set up the local matrices
+  op_diff_->Setup(K, k, dkdT, rho, mu);
+  op_diff_->UpdateMatrices(flux_, solution_);
+  op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
 
-  op_->Setup(K, k, dkdT, rho, mu);
-  op_->UpdateMatrices(flux_, solution_);
-  op_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
-  op_->ApplyBCs();
-  op_->SymbolicAssembleMatrix(schema_prec_dofs);
-  op_->AssembleMatrix(schema_prec_dofs);
+  // form the global matrix
+  op_->ApplyBCs(bc_);
+  op_->SymbolicAssembleMatrix();
+  op_->AssembleMatrix();
 
   // create preconditoner
   Teuchos::ParameterList slist = plist.sublist("Preconditioners");
@@ -223,9 +234,9 @@ void HeatConduction::Residual(const Teuchos::RCP<CompositeVector>& u,
 {
   op_->Init();
   UpdateValues(*u);
-  op_->UpdateMatrices(Teuchos::null, u);
-  op_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
-  op_->ApplyBCs();
+  op_diff_->UpdateMatrices(Teuchos::null, u);
+  op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
+  op_->ApplyBCs(bc_);
   op_->ComputeNegativeResidual(*u, *f);
 }
 
@@ -235,18 +246,17 @@ void HeatConduction::Residual(const Teuchos::RCP<CompositeVector>& u,
 ****************************************************************** */
 void HeatConduction::UpdatePreconditioner(const Teuchos::RCP<const CompositeVector>& up)
 {
-  op_->UpdateFlux(*up, *flux_);
+  op_diff_->UpdateFlux(*up, *flux_);
 
   // Calculate new matrix.
-  op_->Init();
   UpdateValues(*up);
-  op_->UpdateMatrices(flux_, up);
-  op_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
-  op_->ApplyBCs();
+  op_->Init();
+  op_diff_->UpdateMatrices(flux_, up);
+  op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
+  op_->ApplyBCs(bc_);
 
   // Assemble matrix and calculate preconditioner.
-  int schema_prec_dofs = op_->schema_prec_dofs();
-  op_->AssembleMatrix(schema_prec_dofs);
+  op_->AssembleMatrix();
 
   Teuchos::ParameterList prec_list = plist_.sublist("Preconditioners");
   op_->InitPreconditioner("Hypre AMG", prec_list);

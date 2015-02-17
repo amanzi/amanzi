@@ -69,6 +69,19 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
 
 
 /* ******************************************************************
+ * Zeros everything out
+ ****************************************************************** */
+void
+Operator::Init()
+{
+  rhs_->PutScalarMasterAndGhosted(0.);
+  for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
+    (*it)->Init();
+  }
+}
+
+
+/* ******************************************************************
  * Create a global matrix.
  ****************************************************************** */
 void

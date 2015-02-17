@@ -27,6 +27,7 @@
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorDiffusion.hh"
+#include "OperatorAccumulation.hh"
 
 #include "Transport_PK.hh"
 
@@ -449,15 +450,18 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
 
     Operators::OperatorDiffusionFactory opfactory;
     Teuchos::RCP<Operators::OperatorDiffusion> op1 = opfactory.Create(mesh_, bc_dummy, op_list, g, 0);
+    Teuchos::RCP<Operators::Operator> op = op1->global_operator();
+    Teuchos::RCP<Operators::OperatorAccumulation> op2 =
+        Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op));
 
-    const CompositeVectorSpace& cvs = op1->DomainMap();
+    const CompositeVectorSpace& cvs = op1->global_operator()->DomainMap();
     CompositeVector sol(cvs), factor(cvs), factor0(cvs), source(cvs), zero(cvs);
     zero.PutScalar(0.0);
   
     // instantiale solver
-    AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> sfactory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
-       solver = sfactory.Create(dispersion_solver, solvers_list, op1);
+    AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
+        solver = sfactory.Create(dispersion_solver, solvers_list, op);
 
     solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
 
@@ -491,31 +495,29 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
       }
 
       if (flag_op1) {
-        op1->Init();
         op1->Setup(D, Teuchos::null, Teuchos::null, 1.0, 1.0);
         op1->UpdateMatrices(Teuchos::null, Teuchos::null);
-        op1->ApplyBCs();
 
         // add accumulation term
         Epetra_MultiVector& fac = *factor.ViewComponent("cell");
         for (int c = 0; c < ncells_owned; c++) {
           fac[0][c] = (*phi)[0][c] * (*ws)[0][c];
         }
-        op1->AddAccumulationTerm(sol, factor, dT_MPC, "cell");
+        op2->AddAccumulationTerm(sol, factor, dT_MPC, "cell");
  
-        int schema_prec_dofs = op1->schema_prec_dofs();
-        op1->SymbolicAssembleMatrix(schema_prec_dofs);
-        op1->AssembleMatrix(schema_prec_dofs);
-        op1->InitPreconditioner(dispersion_preconditioner, preconditioners_list);
+        op->ApplyBCs(bc_dummy);
+        op->SymbolicAssembleMatrix();
+        op->AssembleMatrix();
+        op->InitPreconditioner(dispersion_preconditioner, preconditioners_list);
       } else {
-        Epetra_MultiVector& rhs_cell = *op1->rhs()->ViewComponent("cell");
+        Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
         for (int c = 0; c < ncells_owned; c++) {
           double tmp = mesh_->cell_volume(c) * (*ws)[0][c] * (*phi)[0][c] / dT_MPC;
           rhs_cell[0][c] = tcc_next[i][c] * tmp;
         }
       }
   
-      CompositeVector& rhs = *op1->rhs();
+      CompositeVector& rhs = *op->rhs();
       int ierr = solver->ApplyInverse(rhs, sol);
 
       if (ierr != 0) {
@@ -555,17 +557,16 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
         sol.ViewComponent("face")->PutScalar(0.0);
       }
 
-      op1->Init();
       op1->Setup(D, Teuchos::null, Teuchos::null, 1.0, 1.0);
       op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
       // add boundary conditions and sources for gaseous components
       PopulateBoundaryData(bc_model, bc_value, i);
 
-      Epetra_MultiVector& rhs_cell = *op1->rhs()->ViewComponent("cell");
+      Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
       double time = T_physics + dT_MPC;
       ComputeAddSourceTerms(time, 1.0, srcs, rhs_cell, i, i);
-      op1->ApplyBCs();
+      op->ApplyBCs(bc_dummy);
 
       // add accumulation term
       Epetra_MultiVector& fac1 = *factor.ViewComponent("cell");
@@ -576,14 +577,13 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
         fac0[0][c] = (*phi)[0][c] * (1.0 - (*ws_prev)[0][c]);
         if ((*ws)[0][c] == 1.0) fac1[0][c] = 1.0;  // hack so far
       }
-      op1->AddAccumulationTerm(sol, factor0, factor, dT_MPC, "cell");
+      op2->AddAccumulationTerm(sol, factor0, factor, dT_MPC, "cell");
  
-      int schema_prec_dofs = op1->schema_prec_dofs();
-      op1->SymbolicAssembleMatrix(schema_prec_dofs);
-      op1->AssembleMatrix(schema_prec_dofs);
-      op1->InitPreconditioner(dispersion_preconditioner, preconditioners_list);
+      op->SymbolicAssembleMatrix();
+      op->AssembleMatrix();
+      op->InitPreconditioner(dispersion_preconditioner, preconditioners_list);
   
-      CompositeVector& rhs = *op1->rhs();
+      CompositeVector& rhs = *op->rhs();
       int ierr = solver->ApplyInverse(rhs, sol);
 
       if (ierr != 0) {

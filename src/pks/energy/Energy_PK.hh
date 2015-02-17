@@ -19,12 +19,15 @@
 
 #include "BDFFnBase.hh"
 #include "CompositeVector.hh"
-#include "OperatorDiffusionFactory.hh"
 #include "PK.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "tensor.hh"
 #include "TreeVector.hh"
 #include "VerboseObject.hh"
+
+#include "Operator.hh"
+#include "OperatorDiffusion.hh"
+#include "OperatorAccumulation.hh"
 
 #include "EnergyBoundaryFunction.hh"
 
@@ -105,7 +108,9 @@ class Energy_PK : public PK, public Amanzi::BDFFnBase<TreeVector> {
   int dirichlet_bc_faces_;
 
   // operators
-  Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_, op_preconditioner_;
+  Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_diff_, op_preconditioner_diff_;
+  Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
+  Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_;
   Teuchos::RCP<Operators::BCs> op_bc_;
 
  protected:

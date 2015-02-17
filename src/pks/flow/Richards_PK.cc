@@ -288,8 +288,11 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   oplist_pc.set<std::string>("upwind method", upw_method);
 
   Operators::OperatorDiffusionFactory opfactory;
-  op_matrix_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, gravity_, upw_id);
-  op_preconditioner_ = opfactory.Create(mesh_, op_bc_, oplist_pc, gravity_, upw_id);
+  op_matrix_diff_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, gravity_, upw_id);
+  op_matrix_ = op_matrix_diff_->global_operator();
+  op_preconditioner_diff_ = opfactory.Create(mesh_, op_bc_, oplist_pc, gravity_, upw_id);
+  op_preconditioner_ = op_preconditioner_diff_->global_operator();
+  op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_preconditioner_));
 
   // Create the solution (pressure) vector and auxiliary vector for time history.
   solution = Teuchos::rcp(new CompositeVector(op_matrix_->DomainMap()));
@@ -489,8 +492,8 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
         << vo_->reset() << std::endl << std::endl;
     //*vo_->os() << "T=" << T0 / FLOW_YEAR << " [y] dT=" << dT0 << " [sec]" << std::endl
     *vo_->os()<< "EC:" << error_control_ << " Src:" << src_sink_distribution
-        << " Upwind:" << rel_perm_->method() << op_matrix_->upwind_
-        << " PC:\"" << ti_specs.preconditioner_name.c_str() << "\"" << std::endl;
+              << " Upwind:" << rel_perm_->method() << op_matrix_diff_->upwind()
+              << " PC:\"" << ti_specs.preconditioner_name.c_str() << "\"" << std::endl;
   }
 
   // set up new time integration or solver
@@ -509,16 +512,15 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   SetAbsolutePermeabilityTensor();
 
   op_matrix_->Init();
-  op_matrix_->Setup(K, rel_perm_->Krel(), rel_perm_->dKdP(), rho_, mu_);
-  op_matrix_->UpdateMatrices(Teuchos::null, solution);
-  op_matrix_->ApplyBCs();
+  op_matrix_diff_->Setup(K, rel_perm_->Krel(), rel_perm_->dKdP(), rho_, mu_);
+  op_matrix_diff_->UpdateMatrices(Teuchos::null, solution);
+  op_matrix_->ApplyBCs(op_bc_);
 
   op_preconditioner_->Init();
-  op_preconditioner_->Setup(K, rel_perm_->Krel(), rel_perm_->dKdP(), rho_, mu_);
-  op_preconditioner_->UpdateMatrices(darcy_flux_copy, solution);
-  op_preconditioner_->ApplyBCs();
-  int schema_prec_dofs = op_preconditioner_->schema_prec_dofs();
-  op_preconditioner_->SymbolicAssembleMatrix(schema_prec_dofs);
+  op_preconditioner_diff_->Setup(K, rel_perm_->Krel(), rel_perm_->dKdP(), rho_, mu_);
+  op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy, solution);
+  op_preconditioner_->ApplyBCs(op_bc_);
+  op_preconditioner_->SymbolicAssembleMatrix();
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     int missed_tmp = missed_bc_faces_;
@@ -583,7 +585,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   DeriveSaturationFromPressure(pstate, ws);
  
   // derive mass flux (state may not have it at time 0)
-  op_matrix_->UpdateFlux(*solution, *darcy_flux_copy);
+  op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
 
   // re-initialize lambda
   double T1 = T0 + dT0;
@@ -591,8 +593,8 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     EnforceConstraints(T1, *solution);
     // update mass flux
     op_matrix_->Init();
-    op_matrix_->UpdateMatrices(Teuchos::null, solution);
-    op_matrix_->UpdateFlux(*solution, *darcy_flux_copy);
+    op_matrix_diff_->UpdateMatrices(Teuchos::null, solution);
+    op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
   } else {
     CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
     UpdateSourceBoundaryData(T0, T1, *solution);
@@ -762,7 +764,7 @@ void Richards_PK::CommitState(double dt, const Teuchos::Ptr<State>& S)
 
   // calculate Darcy flux as diffusive part + advective part.
   CompositeVector& darcy_flux = *S->GetFieldData("darcy_flux", passwd_);
-  op_matrix_->UpdateFlux(*solution, darcy_flux);
+  op_matrix_diff_->UpdateFlux(*solution, darcy_flux);
 
   Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
   for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
@@ -854,6 +856,7 @@ void Richards_PK::ImproveAlgebraicConsistency(const Epetra_Vector& ws_prev, Epet
 }
 
 
+
 /* ******************************************************************
 * 
 ****************************************************************** */
@@ -873,7 +876,7 @@ double Richards_PK::BoundaryFaceValue(int f, const CompositeVector& u)
     const Epetra_IntVector& map_c2mb = rel_perm_->map_c2mb();
 
     int c = BoundaryFaceGetCell(f);
-    face_value = op_matrix_->DeriveBoundaryFaceValue(f, u, WRM[map_c2mb[c]]);
+    face_value = DeriveBoundaryFaceValue(f, u, WRM[map_c2mb[c]]);
     // k_face[0][f] = WRM[map_c2mb[c]]->k_relative (atm_pressure_ - face_val);
     // dk_face[0][f] = -WRM[map_c2mb[c]]->dKdPc (atm_pressure_ - face_val);
   }
