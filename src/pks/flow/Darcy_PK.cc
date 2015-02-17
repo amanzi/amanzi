@@ -505,7 +505,7 @@ bool Darcy_PK::Advance(double dT_MPC, double& dT_actual)
 
   op_->ApplyBCs(op_bc_);
   op_->AssembleMatrix();
-  op_->InitPreconditioner(ti_specs->preconditioner_name, preconditioner_list_);
+  op_->InitPreconditioner(ti_specs->preconditioner_name, *preconditioner_list_);
 
   CompositeVector& rhs = *op_->rhs();
   if (src_sink != NULL) AddSourceTerms(rhs);
