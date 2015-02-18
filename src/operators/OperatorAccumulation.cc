@@ -28,7 +28,7 @@ OperatorAccumulation::AddAccumulationTerm(const Epetra_MultiVector& du)
   std::vector<double>& diag = local_op_->vals;
   ASSERT(diag.size() == du.MyLength());
   for (int i=0; i!=du.MyLength(); ++i) {
-    diag[i] = du[0][i];
+    diag[i] += du[0][i];
   }
 }
 
@@ -80,7 +80,7 @@ OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
   ASSERT(diag.size() == n);
   for (int i = 0; i < n; i++) {
     double factor = volume[0][i] / dT;
-    diag[i] = factor * ssc[0][i];
+    diag[i] += factor * ssc[0][i];
     rhs[0][i] += factor * s0c[0][i] * u0c[0][i];
   }
 }
@@ -131,7 +131,7 @@ OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
   ASSERT(diag.size() == n);
   for (int i = 0; i < n; i++) {
     double factor = volume[0][i] * ssc[0][i] / dT;
-    diag[i] = factor;
+    diag[i] += factor;
     rhs[0][i] += factor * u0c[0][i];
   }
 }
@@ -151,7 +151,7 @@ OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
   int n = u0c.MyLength();
   ASSERT(diag.size() == n);
   for (int i = 0; i < n; i++) {
-    diag[i] = ssc[0][i];
+    diag[i] += ssc[0][i];
     rhs[0][i] += ssc[0][i] * u0c[0][i];
   }
 }
