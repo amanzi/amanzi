@@ -77,6 +77,17 @@ SuperMap::SuperMap(const Epetra_MpiComm& comm,
 }
 
 
+// Copy constructor specifically does not copy indices and ghosted_indices.
+// These will be lazily recreated if needed.
+SuperMap::SuperMap(const SuperMap& other) :
+    offsets_(other.offsets_),
+    num_dofs_(other.num_dofs_),
+    counts_(other.counts_),
+    ghosted_offsets_(other.ghosted_offsets_),
+    ghosted_counts_(other.ghosted_counts_),
+    map_(other.map_),
+    ghosted_map_(other.ghosted_map_) {}
+
 const std::vector<int>&
 SuperMap::Indices(const std::string& compname, int dofnum) const {
   if (indices_.count(compname)) {

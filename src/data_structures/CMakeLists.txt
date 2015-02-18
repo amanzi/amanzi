@@ -52,7 +52,8 @@ set(data_structures_src_files BlockVector.cc
                               ParallelCommunication.cc
                               GraphFE.cc
                               MatrixFE.cc
-                              SuperMap.cc)
+                              SuperMap.cc
+                              SuperMapSurface.cc)
 
 file(GLOB data_structures_inc_files "*.hh")
 

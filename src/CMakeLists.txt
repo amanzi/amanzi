@@ -50,11 +50,7 @@ if (ENABLE_Unstructured)
   add_subdirectory(operators)
 
   # Time integration
-  if (ENABLE_NewTimeIntegrators)
-    add_subdirectory(time_integration_new)
-  else()
-    add_subdirectory(time_integration)
-  endif()
+  add_subdirectory(time_integration)
 
   # Build State
   add_subdirectory(state)
