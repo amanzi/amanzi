@@ -175,6 +175,7 @@ void RunTest(std::string op_list_name) {
   ierr = solver->ApplyInverse(rhs, solution);
 
   // THIS IS NOT A TEST! --etc
+  // NOPE, THIS IS A TEST! --kl
 
   if (MyPID == 0) {
     std::cout << "pressure solver (" << solver->name() 

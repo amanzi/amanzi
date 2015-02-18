@@ -15,24 +15,26 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
 
+// Amanzi
+#include "GMVMesh.hh"
+#include "LinearOperatorFactory.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
-#include "GMVMesh.hh"
-
-#include "tensor.hh"
 #include "mfd3d_diffusion.hh"
+#include "tensor.hh"
 
-#include "LinearOperatorFactory.hh"
-#include "OperatorDefs.hh"
+// Amanzi::Operators
 #include "OperatorDiffusion.hh"
 #include "OperatorAdvection.hh"
 #include "OperatorAccumulation.hh"
+#include "OperatorDefs.hh"
+#include "Verification.hh"
 
 
 /* *****************************************************************
@@ -132,8 +134,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   op_adv->Setup(u);
   op_adv->UpdateMatrices(u);
 
-
-  // add accumulation terms
+  // Add an accumulation term.
   CompositeVector solution(cvs);
   solution.PutScalar(0.0);  // solution at time T=0
 
@@ -150,11 +151,16 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
-  // PC
+  // Create a preconditioner.
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
 
-  // solve the problem
+  // Test SPD properties of the matrix and preconditioner.
+  Verification ver(global_op);
+  ver.CheckMatrixSPD(false, true);
+  ver.CheckPreconditionerSPD(false, true);
+
+  // Solve the problem.
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
   AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
@@ -162,6 +168,9 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
 
   CompositeVector& rhs = *global_op->rhs();
   int ierr = solver->ApplyInverse(rhs, solution);
+
+  int num_itrs = solver->num_itrs();
+  CHECK(num_itrs < 15);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (" << solver->name() 
@@ -175,6 +184,4 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
     GMV::write_cell_data(p, 0, "solution");
     GMV::close_data_file();
   }
-
-  // THIS IS NOT A TEST!
 }

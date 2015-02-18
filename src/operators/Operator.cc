@@ -74,7 +74,7 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
 void
 Operator::Init()
 {
-  rhs_->PutScalarMasterAndGhosted(0.);
+  rhs_->PutScalarMasterAndGhosted(0.0);
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     (*it)->Init();
   }
@@ -248,14 +248,14 @@ void Operator::InitPreconditioner(const std::string& prec_name, const Teuchos::P
 
 
 /* ******************************************************************
- * Update the RHS with this vector.  Note that derived classes may reimplement
- * this with a volume term.
- ****************************************************************** */
+* Update the RHS with this vector.
+* Note that derived classes may reimplement this with a volume term.
+****************************************************************** */
 void Operator::UpdateRHS(const CompositeVector& source, bool volume_included) {
   for (CompositeVector::name_iterator it = rhs_->begin();
        it != rhs_->end(); ++it) {
     if (source.HasComponent(*it)) {
-      rhs_->ViewComponent(*it,false)->Update(1., *source.ViewComponent(*it,false), 1.);
+      rhs_->ViewComponent(*it, false)->Update(1.0, *source.ViewComponent(*it, false), 1.0);
     }
   }
 }

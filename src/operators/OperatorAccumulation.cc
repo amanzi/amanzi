@@ -128,7 +128,7 @@ OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
   Epetra_MultiVector& rhs = *global_operator()->rhs()->ViewComponent(name);
 
   int n = u0c.MyLength();
-  ASSERT(diag.size() == n);
+  ASSERT(diag.size() == n); 
   for (int i = 0; i < n; i++) {
     double factor = volume[0][i] * ssc[0][i] / dT;
     diag[i] += factor;
