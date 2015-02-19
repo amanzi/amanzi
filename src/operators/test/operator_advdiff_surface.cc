@@ -170,7 +170,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   int ierr = solver->ApplyInverse(rhs, solution);
 
   int num_itrs = solver->num_itrs();
-  CHECK(num_itrs < 15);
+  CHECK(num_itrs > 5 && num_itrs < 15);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (" << solver->name() 

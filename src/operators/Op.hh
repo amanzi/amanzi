@@ -50,7 +50,6 @@ class Op {
     }
   }
     
-  
   virtual void RestoreCheckPoint() {
     for (int i = 0; i != matrices.size(); ++i) {
       if (matrices_shadow[i].NumRows() != 0) {

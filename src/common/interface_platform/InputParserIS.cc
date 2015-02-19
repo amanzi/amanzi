@@ -369,12 +369,10 @@ Teuchos::ParameterList InputParserIS::CreateAnalysisList_()
   alist.set<Teuchos::Array<std::string> >("used source regions", vv_src_regions);
   alist.set<Teuchos::Array<std::string> >("used observation regions", vv_obs_regions);
 
-  alist.set<bool>("print unused parameters", false);
   alist.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
 
   return alist;
 }
-
 
 }  // namespace AmanziInput
 }  // namespace Amanzi
