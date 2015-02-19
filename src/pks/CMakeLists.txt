@@ -55,6 +55,7 @@ endif()
 add_subdirectory(eos)
 
 add_subdirectory(flow)
+add_subdirectory(chemistry)
 add_subdirectory(transport)
 add_subdirectory(energy)
 add_subdirectory(dummy)
