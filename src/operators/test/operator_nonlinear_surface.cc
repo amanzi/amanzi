@@ -85,6 +85,8 @@ class HeatConduction {
 }  // namespace Amanzi
 
 
+namespace {
+
 /* *****************************************************************
 * This test replaves tensor and boundary conditions by continuous
 * functions. This is a prototype forheat conduction solvers.
@@ -249,6 +251,8 @@ void RunTest(std::string op_list_name) {
     GMV::close_data_file();
   }
 }
+
+} // end anonymous namespace
 
 
 TEST(NONLINEAR_HEAT_CONDUCTION) {
