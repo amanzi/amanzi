@@ -64,6 +64,14 @@ class Op_Node_Node : public Op {
     return false;
   }
 
+  virtual void Rescale(const CompositeVector& scaling) {
+    if (scaling.HasComponent("node")) {
+      const Epetra_MultiVector& s_c = *scaling.ViewComponent("node",false);
+      for (int i = 0; i != vals.size(); ++i) {
+        vals[i] *= s_c[0][i];
+      }
+    }
+  }
 };
 
 }  // namespace Operators

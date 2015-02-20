@@ -12,6 +12,8 @@
 #ifndef AMANZI_OP_HH_
 #define AMANZI_OP_HH_
 
+#include "Teuchos_RCP.hpp"
+
 #include "DenseMatrix.hh"
 #include "BCs.hh"
 #include "OperatorDefs.hh"
@@ -22,6 +24,9 @@ class CompositeVector;
 
 namespace Operators {
 
+class SuperMap;
+class GraphFE;
+class MatrixFE;
 class Operator;
 
 class Op {
@@ -84,6 +89,8 @@ class Op {
   virtual bool ApplyBC(BCs& bc,
                        const Teuchos::Ptr<CompositeVector>& rhs,                       
                        bool bc_previously_applied) = 0;
+
+  virtual void Rescale(const CompositeVector& scaling) = 0;
   
 
  public:

@@ -494,7 +494,8 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
       }
 
       if (flag_op1) {
-        op1->Setup(D, Teuchos::null, Teuchos::null, 1.0, 1.0);
+        Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D);
+        op1->Setup(Dptr, Teuchos::null, Teuchos::null, 1.0, 1.0);
         op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
         // add accumulation term
@@ -556,7 +557,8 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
         sol.ViewComponent("face")->PutScalar(0.0);
       }
 
-      op1->Setup(D, Teuchos::null, Teuchos::null, 1.0, 1.0);
+      Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D);
+      op1->Setup(Dptr, Teuchos::null, Teuchos::null, 1.0, 1.0);
       op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
       // add boundary conditions and sources for gaseous components

@@ -69,6 +69,8 @@ class OperatorAccumulation {
 
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
   Teuchos::RCP<Operator> global_operator() { return global_op_; }
+  Teuchos::RCP<const Op> local_matrices() const { return local_op_; }
+  Teuchos::RCP<Op> local_matrices() { return local_op_; }
 
  protected:
   void InitAccumulation_(AmanziMesh::Entity_kind entity);

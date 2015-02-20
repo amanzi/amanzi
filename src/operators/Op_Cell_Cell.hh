@@ -64,6 +64,15 @@ class Op_Cell_Cell : public Op {
     return false;
   }
 
+  virtual void Rescale(const CompositeVector& scaling) {
+    if (scaling.HasComponent("cell")) {
+      const Epetra_MultiVector& s_c = *scaling.ViewComponent("cell",false);
+      for (int i = 0; i != vals.size(); ++i) {
+        vals[i] *= s_c[0][i];
+      }
+    }
+  }
+  
 
 };
 

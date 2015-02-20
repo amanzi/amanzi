@@ -65,14 +65,14 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
 
   /* modify diffusion coefficient */
-  std::vector<WhetStone::Tensor> K;
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
     Kc(0, 0) = 1.0;
-    K.push_back(Kc);
+    K->push_back(Kc);
   }
   double rho(1.0), mu(1.0);
 
@@ -189,14 +189,14 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
 
   /* modify diffusion coefficient */
-  std::vector<WhetStone::Tensor> K;
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
     Kc(0, 0) = 1.0;
-    K.push_back(Kc);
+    K->push_back(Kc);
   }
   double rho(1.0), mu(1.0);
 

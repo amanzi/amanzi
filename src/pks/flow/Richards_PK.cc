@@ -524,12 +524,13 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   SetAbsolutePermeabilityTensor();
 
   op_matrix_->Init();
-  op_matrix_diff_->Setup(K, rel_perm_->Krel(), rel_perm_->dKdP(), rho_, mu_);
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
+  op_matrix_diff_->Setup(Kptr, rel_perm_->Krel(), rel_perm_->dKdP(), rho_, mu_);
   op_matrix_diff_->UpdateMatrices(Teuchos::null, solution);
   op_matrix_->ApplyBCs(op_bc_);
 
   op_preconditioner_->Init();
-  op_preconditioner_diff_->Setup(K, rel_perm_->Krel(), rel_perm_->dKdP(), rho_, mu_);
+  op_preconditioner_diff_->Setup(Kptr, rel_perm_->Krel(), rel_perm_->dKdP(), rho_, mu_);
   op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy, solution);
   op_preconditioner_->ApplyBCs(op_bc_);
   op_preconditioner_->SymbolicAssembleMatrix();

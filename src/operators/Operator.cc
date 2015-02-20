@@ -262,6 +262,18 @@ void Operator::UpdateRHS(const CompositeVector& source, bool volume_included) {
 
 
 /* ******************************************************************
+ * Rescale the local matrices
+ ****************************************************************** */
+void
+Operator::Rescale(const CompositeVector& scaling) {
+  // Dispatch Rescaling to the Ops.
+  scaling.ScatterMasterToGhosted();
+  for (op_iterator it = OpBegin(); it != OpEnd(); ++it) {
+    (*it)->Rescale(scaling);
+  }
+}
+
+/* ******************************************************************
  * Enforce the BCs on local matrices
  ****************************************************************** */
 void

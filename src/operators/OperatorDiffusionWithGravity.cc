@@ -28,104 +28,210 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
   // add the diffusion matrices
   OperatorDiffusion::UpdateMatrices(flux, u);
 
-  // add the gravity terms
-  AmanziGeometry::Point rho_g(g_);
-  rho_g *= rho_ * rho_ / mu_;
+  if (rho_cv_ == Teuchos::null) {
+    // add the gravity terms
+    AmanziGeometry::Point rho_g(g_);
+    rho_g *= rho_ * rho_ / mu_;
 
-  if (global_op_->rhs()->HasComponent("face")) {
-    int dim = mesh_->space_dimension();
+    if (global_op_->rhs()->HasComponent("face")) {
+      int dim = mesh_->space_dimension();
 
-    // preparing upwind data
-    Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
-    Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
-    if (k_ != Teuchos::null) k_cell = k_->ViewComponent("cell");
-    if (upwind_ == OPERATOR_UPWIND_FLUX || 
-        upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION ||
-        upwind_ == OPERATOR_UPWIND_AMANZI_DIVK) {
-      k_face = k_->ViewComponent("face", true);
-    }
-
-    AmanziMesh::Entity_ID_List faces;
-    std::vector<int> dirs;
-
-    Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
-    Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
-    for (int f = nfaces_owned; f < nfaces_wghost; f++) rhs_face[0][f] = 0.0;
-
-    for (int c = 0; c < ncells_owned; c++) {
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-      int nfaces = faces.size();
-      double zc = (mesh_->cell_centroid(c))[dim - 1];
-
-      WhetStone::DenseMatrix& Wff = Wff_cells_[c];
-
-      // Update terms due to nonlinear coefficient
-      double kc(1.0);
-      std::vector<double> kf(nfaces, 1.0);
-      if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
-        kc = (*k_cell)[0][c];
-        for (int n = 0; n < nfaces; n++) kf[n] = kc;
-      } else if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK) {
-        kc = (*k_cell)[0][c];
-        for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
-      } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
-        kc = (*k_cell)[0][c];
-        for (int n = 0; n < nfaces; n++) kf[n] = kc;
-      } else if(upwind_ == OPERATOR_UPWIND_FLUX) {
-        for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+      // preparing upwind data
+      Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
+      Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
+      if (k_ != Teuchos::null) k_cell = k_->ViewComponent("cell");
+      if (upwind_ == OPERATOR_UPWIND_FLUX || 
+          upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION ||
+          upwind_ == OPERATOR_UPWIND_AMANZI_DIVK) {
+        k_face = k_->ViewComponent("face", true);
       }
 
-      if (upwind_ != OPERATOR_UPWIND_AMANZI_DIVK) {
-        WhetStone::Tensor& Kc = (*K_)[c]; 
-        for (int n = 0; n < nfaces; n++) {
-          int f = faces[n];
-          const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-          double tmp, zf = (mesh_->face_centroid(f))[dim - 1];
+      AmanziMesh::Entity_ID_List faces;
+      std::vector<int> dirs;
 
-          if (gravity_special_projection_) {
-            const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
-            double sign = normal * xcc;
+      Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
+      Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
+      for (int f = nfaces_owned; f < nfaces_wghost; f++) rhs_face[0][f] = 0.0;
 
-            tmp = ((Kc * rho_g) * xcc) * kf[n] * dirs[n];
-            tmp *= copysign(norm(normal) / norm(xcc), sign);
-          } else {
-            tmp = ((Kc * rho_g) * normal) * kf[n] * dirs[n];
-          }
+      WhetStone::Tensor Kc(mesh_->space_dimension(),1); Kc(0,0) = 1.0;
 
-          if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
-            double alpha = (*k_face)[0][f] - kc;
-            if (alpha > 0) {
-              alpha *= Wff(n, n) * rho_ * norm(g_);
-              tmp -= alpha * (zf - zc);
+      for (int c = 0; c < ncells_owned; c++) {
+        mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+        int nfaces = faces.size();
+        double zc = (mesh_->cell_centroid(c))[dim - 1];
+
+        WhetStone::DenseMatrix& Wff = Wff_cells_[c];
+
+        // Update terms due to nonlinear coefficient
+        double kc(1.0);
+        std::vector<double> kf(nfaces, 1.0);
+        if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
+          kc = (*k_cell)[0][c];
+          for (int n = 0; n < nfaces; n++) kf[n] = kc;
+        } else if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK) {
+          kc = (*k_cell)[0][c];
+          for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+        } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
+          kc = (*k_cell)[0][c];
+          for (int n = 0; n < nfaces; n++) kf[n] = kc;
+        } else if(upwind_ == OPERATOR_UPWIND_FLUX) {
+          for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+        }
+
+        if (upwind_ != OPERATOR_UPWIND_AMANZI_DIVK) {
+          if (K_.get()) Kc = (*K_)[c];
+          for (int n = 0; n < nfaces; n++) {
+            int f = faces[n];
+            const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+            double tmp, zf = (mesh_->face_centroid(f))[dim - 1];
+
+            if (gravity_special_projection_) {
+              const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
+              double sign = normal * xcc;
+
+              tmp = ((Kc * rho_g) * xcc) * kf[n] * dirs[n];
+              tmp *= copysign(norm(normal) / norm(xcc), sign);
+            } else {
+              tmp = ((Kc * rho_g) * normal) * kf[n] * dirs[n];
             }
+
+            if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
+              double alpha = (*k_face)[0][f] - kc;
+              if (alpha > 0) {
+                alpha *= Wff(n, n) * rho_ * norm(g_);
+                tmp -= alpha * (zf - zc);
+              }
+            }
+
+            rhs_face[0][f] += tmp; 
+            rhs_cell[0][c] -= tmp; 
+          }
+        }
+
+        if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK) {
+          WhetStone::DenseVector v(nfaces), av(nfaces);
+          for (int n = 0; n < nfaces; n++) {
+            int f = faces[n];
+            double zf = (mesh_->face_centroid(f))[dim - 1];
+            v(n) = -(zf - zc) * kf[n] * rho_ * norm(g_) / kc;
           }
 
-          rhs_face[0][f] += tmp; 
-          rhs_cell[0][c] -= tmp; 
+          Wff.Multiply(v, av, false);
+
+          for (int n = 0; n < nfaces; n++) {
+            int f = faces[n];
+            double tmp = av(n) * kf[n];
+
+            rhs_face[0][f] += tmp; 
+            rhs_cell[0][c] -= tmp; 
+          }
         }
       }
-
-      if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK) {
-        WhetStone::DenseVector v(nfaces), av(nfaces);
-        for (int n = 0; n < nfaces; n++) {
-          int f = faces[n];
-          double zf = (mesh_->face_centroid(f))[dim - 1];
-          v(n) = -(zf - zc) * kf[n] * rho_ * norm(g_) / kc;
-        }
-
-        Wff.Multiply(v, av, false);
-
-        for (int n = 0; n < nfaces; n++) {
-          int f = faces[n];
-          double tmp = av(n) * kf[n];
-
-          rhs_face[0][f] += tmp; 
-          rhs_cell[0][c] -= tmp; 
-        }
-      }
+      global_op_->rhs()->GatherGhostedToMaster("face", Epetra_CombineMode(Add));
     }
+    
+  } else {
 
-    global_op_->rhs()->GatherGhostedToMaster("face", Epetra_CombineMode(Add));
+    // not scalar density, rho/mu in k, dkdp
+    if (global_op_->rhs()->HasComponent("face")) {
+      int dim = mesh_->space_dimension();
+
+      // preparing upwind data
+      Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
+      Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
+      if (k_ != Teuchos::null) k_cell = k_->ViewComponent("cell");
+      if (upwind_ == OPERATOR_UPWIND_FLUX || 
+          upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION ||
+          upwind_ == OPERATOR_UPWIND_AMANZI_DIVK) {
+        k_face = k_->ViewComponent("face", true);
+      }
+
+      // collect density
+      const Epetra_MultiVector& rho_c = *rho_cv_->ViewComponent("cell", false);
+      
+      WhetStone::Tensor Kc(mesh_->space_dimension(),1); Kc(0,0) = 1.0;
+      AmanziMesh::Entity_ID_List faces;
+      std::vector<int> dirs;
+
+      Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
+      Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
+      for (int f = nfaces_owned; f < nfaces_wghost; f++) rhs_face[0][f] = 0.0;
+
+      for (int c = 0; c < ncells_owned; c++) {
+        mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+        int nfaces = faces.size();
+        double zc = (mesh_->cell_centroid(c))[dim - 1];
+
+        WhetStone::DenseMatrix& Wff = Wff_cells_[c];
+
+        // Update terms due to nonlinear coefficient
+        double kc(1.0);
+        std::vector<double> kf(nfaces, 1.0);
+        if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
+          kc = (*k_cell)[0][c];
+          for (int n = 0; n < nfaces; n++) kf[n] = kc;
+        } else if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK) {
+          kc = (*k_cell)[0][c];
+          for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+        } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
+          kc = (*k_cell)[0][c];
+          for (int n = 0; n < nfaces; n++) kf[n] = kc;
+        } else if(upwind_ == OPERATOR_UPWIND_FLUX) {
+          for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+        }
+
+        if (upwind_ != OPERATOR_UPWIND_AMANZI_DIVK) {
+          if (K_.get()) Kc = (*K_)[c];
+          WhetStone::Tensor& Kc = (*K_)[c]; 
+          for (int n = 0; n < nfaces; n++) {
+            int f = faces[n];
+            const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+            double tmp, zf = (mesh_->face_centroid(f))[dim - 1];
+
+            if (gravity_special_projection_) {
+              const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
+              double sign = normal * xcc;
+
+              tmp = ((Kc * g_ * rho_c[0][c]) * xcc) * kf[n] * dirs[n];
+              tmp *= copysign(norm(normal) / norm(xcc), sign);
+            } else {
+              tmp = ((Kc * g_ * rho_c[0][c]) * normal) * kf[n] * dirs[n];
+            }
+
+            if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
+              double alpha = (*k_face)[0][f] - kc;
+              if (alpha > 0) {
+                alpha *= Wff(n, n) * rho_c[0][c] * norm(g_);
+                tmp -= alpha * (zf - zc);
+              }
+            }
+
+            rhs_face[0][f] += tmp; 
+            rhs_cell[0][c] -= tmp; 
+          }
+        }
+
+        if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK) {
+          WhetStone::DenseVector v(nfaces), av(nfaces);
+          for (int n = 0; n < nfaces; n++) {
+            int f = faces[n];
+            double zf = (mesh_->face_centroid(f))[dim - 1];
+            v(n) = -(zf - zc) * kf[n] * rho_c[0][c] * norm(g_) / kc;
+          }
+
+          Wff.Multiply(v, av, false);
+
+          for (int n = 0; n < nfaces; n++) {
+            int f = faces[n];
+            double tmp = av(n) * kf[n];
+
+            rhs_face[0][f] += tmp; 
+            rhs_cell[0][c] -= tmp; 
+          }
+        }
+      }
+      global_op_->rhs()->GatherGhostedToMaster("face", Epetra_CombineMode(Add));
+    }
   }
 }
 
@@ -161,6 +267,7 @@ void OperatorDiffusionWithGravity::UpdateFlux(
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
   std::vector<int> flag(nfaces_wghost, 0);
+  WhetStone::Tensor Kc(mesh_->space_dimension(),1); Kc(0,0) = 1.0;
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -187,7 +294,7 @@ void OperatorDiffusionWithGravity::UpdateFlux(
     double zc = mesh_->cell_centroid(c)[dim - 1];
 
     if (upwind_ != OPERATOR_UPWIND_AMANZI_DIVK) {
-      WhetStone::Tensor& Kc = (*K_)[c];
+      if (K_.get()) Kc = (*K_)[c];
       AmanziGeometry::Point Kg(Kc * rho_g);
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];

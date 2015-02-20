@@ -408,7 +408,8 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
                                             .sublist("matrix");
   Operators::OperatorDiffusionFactory opfactory;
   op_diff_ = opfactory.Create(mesh_, op_bc_, oplist, gravity_, 0);  // The last 0 means no upwind
-  op_diff_->Setup(K, Teuchos::null, Teuchos::null, rho_, mu_);
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
+  op_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, rho_, mu_);
   op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op_ = op_diff_->global_operator();
 

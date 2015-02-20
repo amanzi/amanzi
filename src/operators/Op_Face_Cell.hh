@@ -65,6 +65,22 @@ class Op_Face_Cell : public Op {
                        const Teuchos::Ptr<CompositeVector>& rhs,                       
                        bool bc_previously_applied);
 
+  virtual void Rescale(const CompositeVector& scaling) {
+    if (scaling.HasComponent("cell")) {
+      const Epetra_MultiVector& s_c = *scaling.ViewComponent("cell",true);
+      AmanziMesh::Entity_ID_List cells;
+      for (int f = 0; f != matrices.size(); ++f) {
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        matrices[f](0,0) *= s_c[0][cells[0]];
+        if (cells.size() > 1) {
+          matrices[f](0,1) *= s_c[0][cells[0]];          
+          matrices[f](1,0) *= s_c[0][cells[1]];          
+          matrices[f](1,1) *= s_c[0][cells[1]];
+        }          
+      }
+    }
+  }
+
  protected:
   int nfaces_owned;
 };

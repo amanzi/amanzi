@@ -70,7 +70,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
 
   /* modify diffusion coefficient */
-  std::vector<WhetStone::Tensor> K;
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
@@ -78,7 +78,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
     WhetStone::Tensor Kc(2, 1);
     const Point& xc = mesh->cell_centroid(c);
     Kc(0, 0) = 1.0 + xc[0] * xc[0];
-    K.push_back(Kc);
+    K->push_back(Kc);
   }
   double rho(1.0), mu(1.0);
 
@@ -224,7 +224,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
 
   /* modify diffusion coefficient */
-  std::vector<WhetStone::Tensor> K;
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
@@ -232,7 +232,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
     WhetStone::Tensor Kc(2, 1);
     const Point& xc = mesh->cell_centroid(c);
     Kc(0, 0) = 1.0 + xc[0] * xc[0];
-    K.push_back(Kc);
+    K->push_back(Kc);
   }
   double rho(1.0), mu(1.0);
 
@@ -379,7 +379,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
 
   /* modify diffusion coefficient */
-  std::vector<WhetStone::Tensor> K;
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
@@ -387,7 +387,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
     WhetStone::Tensor Kc(2, 1);
     const Point& xc = mesh->cell_centroid(c);
     Kc(0, 0) = 1.0 + xc[0] * xc[0];
-    K.push_back(Kc);
+    K->push_back(Kc);
   }
   double rho(1.0), mu(1.0);
 

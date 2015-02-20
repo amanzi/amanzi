@@ -115,7 +115,7 @@ class Operator {
           MatrixFE& matrix, int my_block_row, int my_block_col) const;
 
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included=true);
-
+  virtual void Rescale(const CompositeVector& scaling);
   virtual void ApplyBCs(const Teuchos::RCP<BCs>& bc);
 
   // -- default functionality

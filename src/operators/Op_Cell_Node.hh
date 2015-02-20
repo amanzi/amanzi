@@ -67,6 +67,21 @@ class Op_Cell_Node : public Op {
     return false;
   }
 
+  virtual void Rescale(const CompositeVector& scaling) {
+    if (scaling.HasComponent("node")) {
+      const Epetra_MultiVector& s_n = *scaling.ViewComponent("node",true);
+      AmanziMesh::Entity_ID_List nodes;
+      for (int c = 0; c != matrices.size(); ++c) {
+        mesh_->cell_get_nodes(c, &nodes);
+        for (int n = 0; n != nodes.size(); ++n) {
+          for (int m = 0; m != nodes.size(); ++m) {
+            matrices[c](n,m) *= s_n[0][nodes[n]];
+          }
+        }
+      }
+    }
+  }
+
 };
 
 }  // namespace Operators

@@ -71,7 +71,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
   // create diffusion coefficient
-  std::vector<WhetStone::Tensor> K;
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   Analytic01 ana(mesh);
@@ -79,7 +79,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
     const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
-    K.push_back(Kc);
+    K->push_back(Kc);
   }
   double rho(1.0), mu(1.0);
 
@@ -227,7 +227,7 @@ TEST(OPERATOR_MIXED_DIFFUSION_SFF) {
   Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
   // create diffusion coefficient
-  std::vector<WhetStone::Tensor> K;
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   Analytic01 ana(mesh);
@@ -235,7 +235,7 @@ TEST(OPERATOR_MIXED_DIFFUSION_SFF) {
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
     const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
-    K.push_back(Kc);
+    K->push_back(Kc);
   }
   double rho(1.0), mu(1.0);
 

@@ -59,10 +59,16 @@ class OperatorDiffusion {
   }
 
   // main members
-  virtual void Setup(std::vector<WhetStone::Tensor>& K,
+  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
+  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K, double rho, double mu);
+  virtual void Setup(Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp);
+  virtual void Setup(Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
+                     Teuchos::RCP<const CompositeVector> rho, Teuchos::RCP<const CompositeVector> mu);
+
+  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
                      Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
                      double rho, double mu);
-  virtual void Setup(std::vector<WhetStone::Tensor>& K,
+  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
                      Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
                      Teuchos::RCP<const CompositeVector> rho, Teuchos::RCP<const CompositeVector> mu);
 
@@ -82,6 +88,8 @@ class OperatorDiffusion {
   // access
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
   Teuchos::RCP<Operator> global_operator() { return global_op_; }
+  Teuchos::RCP<const Op> local_matrices() const { return local_op_; }
+  Teuchos::RCP<Op> local_matrices() { return local_op_; }
 
   int upwind() { return upwind_; }
   
@@ -99,8 +107,9 @@ class OperatorDiffusion {
 
  protected:
   std::vector<WhetStone::DenseMatrix> Wff_cells_;
-  std::vector<WhetStone::Tensor>* K_;
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
   double rho_, mu_;
+  bool scaled_constraint_;
   Teuchos::RCP<const CompositeVector> rho_cv_, mu_cv_;
 
   Teuchos::RCP<const CompositeVector> k_, dkdp_;

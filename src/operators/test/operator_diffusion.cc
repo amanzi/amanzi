@@ -333,7 +333,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_2D) {
   Teuchos::RCP<const Mesh> mesh = meshfactory(file, NULL);
 
   /* modify diffusion coefficient */
-  std::vector<WhetStone::Tensor> K;
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -342,7 +342,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_2D) {
 
   const WhetStone::Tensor Kc(2, 1);
   Kc(0, 0) = 1.0;
-  for (int c = 0; c < ncells; c++) K.push_back(Kc);
+  for (int c = 0; c < ncells; c++) K->push_back(Kc);
 
   double rho(1.0), mu(1.0);
   AmanziGeometry::Point g(0.0, -1.0);
@@ -483,7 +483,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   // Teuchos::RCP<const Mesh> mesh = meshfactory("test/mesh.exo", NULL);
 
   /* modify diffusion coefficient */
-  std::vector<WhetStone::Tensor> K;
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -492,7 +492,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
 
   const WhetStone::Tensor Kc(3, 1);
   Kc(0, 0) = 1.0;
-  for (int c = 0; c < ncells; c++) K.push_back(Kc);
+  for (int c = 0; c < ncells; c++) K->push_back(Kc);
 
   double rho(1.0), mu(1.0);
   AmanziGeometry::Point g(0.0, 0.0, -1.0);
@@ -640,7 +640,7 @@ TEST(OPERATOR_DIFFUSION_SECOND_ORDER) {
   Teuchos::RCP<const Mesh> mesh = meshfactory(file, NULL);
 
   /* modify diffusion coefficient */
-  std::vector<WhetStone::Tensor> K;
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -650,7 +650,7 @@ TEST(OPERATOR_DIFFUSION_SECOND_ORDER) {
   const WhetStone::Tensor Kc(2, 1);
   Kc(0, 0) = 1.0;
   for (int c = 0; c < ncells; c++) {
-    K.push_back(Kc);
+    K->push_back(Kc);
   }
   double rho(1.0), mu(1.0);
   AmanziGeometry::Point g(0.0, -1.0);
@@ -798,7 +798,7 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
   /* modify diffusion coefficient */
-  std::vector<WhetStone::Tensor> K;
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -808,7 +808,7 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
     const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
-    K.push_back(Kc);
+    K->push_back(Kc);
   }
   double rho(1.0), mu(1.0);
   AmanziGeometry::Point g(0.0, -1.0);
@@ -1098,7 +1098,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 5, 8, gm);
 
   /* modify diffusion coefficient */
-  std::vector<WhetStone::Tensor> K;
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
@@ -1113,7 +1113,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
     Kc(0, 1) = 0.0;
     Kc(1, 0) = 0.0;
 
-    K.push_back(Kc);
+    K->push_back(Kc);
   }
   double rho(1.0), mu(1.0);
   AmanziGeometry::Point g(0.0, -1.0);

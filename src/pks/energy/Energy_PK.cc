@@ -107,7 +107,8 @@ void Energy_PK::Initialize()
   op_matrix_diff_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, g, 0);
   op_matrix_ = op_matrix_diff_->global_operator();
   op_matrix_->Init();
-  op_matrix_diff_->Setup(K, Teuchos::null, Teuchos::null, 1.0, 1.0);
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
+  op_matrix_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, 1.0, 1.0);
 }
 
 

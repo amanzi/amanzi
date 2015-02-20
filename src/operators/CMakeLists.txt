@@ -50,7 +50,8 @@ add_definitions("-DMSTK_HAVE_MPI")
 #
 # Library: operators
 #
-set(operators_inc_files 
+set(operators_inc_files
+    BCs.hh
     OperatorDefs.hh
     OperatorUtils.hh
     Op.hh
