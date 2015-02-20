@@ -176,8 +176,6 @@ double Richards_PK::DeriveBoundaryFaceValue(
   }
 }
 
-
-
 }  // namespace Flow
 }  // namespace Amanzi
 

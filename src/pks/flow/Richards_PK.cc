@@ -270,13 +270,12 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     bc_head->ComputeShift(T1, shift_water_table_->Values());
 
   // Process other fundamental structures.
-  K.resize(ncells_wghost);
+  K.resize(ncells_owned);
   SetAbsolutePermeabilityTensor();
 
   // Allocate memory for wells.
-  const Epetra_BlockMap& cmap_owned = mesh_->cell_map(false);
   if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    Kxy = Teuchos::rcp(new Epetra_Vector(cmap_owned));
+    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
   }
 
   // Select a proper matrix class. 
@@ -315,6 +314,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Create the solution (pressure) vector and auxiliary vector for time history.
   solution = Teuchos::rcp(new CompositeVector(op_matrix_->DomainMap()));
   
+  const Epetra_BlockMap& cmap_owned = mesh_->cell_map(false);
   pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap_owned));
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap_owned));
 

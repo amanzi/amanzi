@@ -258,7 +258,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   K.resize(ncells_owned);
 
   if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
+    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
   }
 }
 

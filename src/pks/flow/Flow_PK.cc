@@ -264,6 +264,23 @@ void Flow_PK::CalculatePermeabilityFactorInWell()
     for (int i = 0; i < idim; i++) (*Kxy)[c] += K[c](i, i);
     (*Kxy)[c] /= idim;
   }
+
+  // parallelization using CV capability
+#ifdef HAVE_MPI
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh_);
+  cvs.SetGhosted(true);
+  cvs.SetComponent("cell", AmanziMesh::CELL, 1);
+
+  CompositeVector tmp(cvs, true);
+  Epetra_MultiVector& data = *tmp.ViewComponent("cell", true);
+
+  data = *Kxy;
+  tmp.ScatterMasterToGhosted("cell", true);
+  for (int c = ncells_owned; c < ncells_wghost; c++) {
+    (*Kxy)[c] = data[0][c];
+  }
+#endif
 }
 
 

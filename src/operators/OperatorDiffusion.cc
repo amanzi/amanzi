@@ -51,7 +51,7 @@ void OperatorDiffusion::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> 
 * Initialization of the operator.                                           
 ****************************************************************** */
 void OperatorDiffusion::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-        double rho, double mu)
+                              double rho, double mu)
 {
   scalar_rho_mu_ = true;
   rho_ = rho;
@@ -69,7 +69,7 @@ void OperatorDiffusion::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> 
 * Initialization of the operator.                                           
 ****************************************************************** */
 void OperatorDiffusion::Setup(const Teuchos::RCP<const CompositeVector> k,
-        Teuchos::RCP<const CompositeVector> dkdp)
+                              Teuchos::RCP<const CompositeVector> dkdp)
 {
   k_ = k;
   dkdp_ = dkdp;
@@ -87,13 +87,14 @@ void OperatorDiffusion::Setup(const Teuchos::RCP<const CompositeVector> k,
   }
 }
 
+
 /* ******************************************************************
 * Initialization of the operator.                                           
 ****************************************************************** */
 void OperatorDiffusion::Setup(const Teuchos::RCP<const CompositeVector> k,
-        Teuchos::RCP<const CompositeVector> dkdp,
-        Teuchos::RCP<const CompositeVector> rho,
-        Teuchos::RCP<const CompositeVector> mu)
+                              Teuchos::RCP<const CompositeVector> dkdp,
+                              Teuchos::RCP<const CompositeVector> rho,
+                              Teuchos::RCP<const CompositeVector> mu)
 {
   Setup(k, dkdp);
 
@@ -125,7 +126,7 @@ void OperatorDiffusion::Setup(
     Teuchos::RCP<const CompositeVector> rho, Teuchos::RCP<const CompositeVector> mu)
 {
   Setup(K);
-  Setup(k,dkdp,rho,mu);      
+  Setup(k, dkdp, rho, mu);      
 }
 
 
