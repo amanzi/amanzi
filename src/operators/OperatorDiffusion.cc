@@ -54,8 +54,8 @@ void OperatorDiffusion::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> 
         double rho, double mu)
 {
   scalar_rho_mu_ = true;
-  rho_ = 1.0;
-  mu_ = 1.0;
+  rho_ = rho;
+  mu_ = mu;
   K_ = K;
 
   if (local_op_schema_ == OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
@@ -485,6 +485,122 @@ void OperatorDiffusion::UpdateMatricesTPFA_()
     }
 
     local_op_->matrices[f] = Aface;
+  }
+}
+
+
+/* ******************************************************************
+* Apply boundary conditions to the local matrices
+****************************************************************** */
+void
+OperatorDiffusion::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary) {
+  bc_ = bc;
+  // unclear if this should be done... --etc
+  global_op_->SetBCs(bc);
+  
+  if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
+                           | OPERATOR_SCHEMA_DOFS_FACE
+                           | OPERATOR_SCHEMA_DOFS_CELL)) {
+    // apply diffusion type BCs to FACE-CELL system
+    AmanziMesh::Entity_ID_List faces;
+
+    const std::vector<int>& bc_model = bc->bc_model();
+    const std::vector<double>& bc_value = bc->bc_value();
+    const std::vector<double>& bc_mixed = bc->bc_mixed();
+    ASSERT(bc_model.size() == nfaces_wghost);
+    ASSERT(bc_value.size() == nfaces_wghost);
+
+    global_op_->rhs()->PutScalarGhosted(0.);
+    Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
+    Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
+
+
+    for (int c = 0; c != ncells_owned; ++c) {
+      mesh_->cell_get_faces(c, &faces);
+      int nfaces = faces.size();
+
+      WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
+
+      bool flag(true);
+      for (int n=0; n!=nfaces; ++n) {
+        int f = faces[n];
+        double value = bc_value[f];
+
+        if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+          if (flag) {  // make a copy of elemental matrix
+            local_op_->matrices_shadow[c] = Acell;
+            flag = false;
+          }
+          for (int m = 0; m < nfaces; m++) {
+            if (bc_model[faces[m]] != OPERATOR_BC_DIRICHLET)
+              rhs_face[0][faces[m]] -= Acell(m, n) * value;
+            Acell(n, m) = Acell(m, n) = 0.0;
+          }
+
+          if (primary) {
+            rhs_face[0][f] = value;
+            Acell(n,n) = 1.0;
+          }
+
+          rhs_cell[0][c] -= Acell(nfaces, n) * value;
+          Acell(nfaces, n) = 0.0;
+          Acell(n, nfaces) = 0.0;
+        } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+          rhs_face[0][f] -= value * mesh_->face_area(f);
+        } else if (bc_model[f] == OPERATOR_BC_MIXED) {
+          if (flag) {  // make a copy of elemental matrix
+            local_op_->matrices_shadow[c] = Acell;
+            flag = false;
+          }
+          double area = mesh_->face_area(f);
+          rhs_face[0][f] -= value * area;
+          Acell(n, n) += bc_mixed[f] * area;
+        }
+      }
+    }
+
+    global_op_->rhs()->GatherGhostedToMaster("face");
+    
+  } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_FACE
+          | OPERATOR_SCHEMA_DOFS_CELL)) {
+
+    AmanziMesh::Entity_ID_List cells, nodes;
+
+    const std::vector<int>& bc_model = bc->bc_model();
+    const std::vector<double>& bc_value = bc->bc_value();
+    const std::vector<double>& bc_mixed = bc->bc_mixed();
+    ASSERT(bc_model.size() == nfaces_wghost);
+    ASSERT(bc_value.size() == nfaces_wghost);
+
+    Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
+    
+    for (int f = 0; f != nfaces_owned; ++f) {
+      WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
+      
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        rhs_cell[0][cells[0]] += bc_value[f] * Aface(0, 0);
+      }
+      else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+        local_op_->matrices_shadow[f] = Aface;
+
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        rhs_cell[0][cells[0]] -= bc_value[f] * mesh_->face_area(f);
+        Aface *= 0.0;
+      }
+      // solve system of two equations in three unknowns
+      else if (bc_model[f] == OPERATOR_BC_MIXED) {
+        local_op_->matrices_shadow[f] = Aface;
+
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        double area = mesh_->face_area(f);
+        double factor = area / (1.0 + bc_mixed[f] * area / Aface(0, 0));
+        rhs_cell[0][cells[0]] -= bc_value[f] * factor;
+        Aface(0, 0) = bc_mixed[f] * factor;
+      }
+    }
+  } else {
+    ASSERT(false);
   }
 }
 

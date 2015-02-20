@@ -161,6 +161,15 @@ OperatorAdvection::UpdateMatrices(const CompositeVector& u,
 
 
 /* *******************************************************************
+* Apply boundary condition to the local matrices
+******************************************************************* */
+void OperatorAdvection::ApplyBCs(const Teuchos::RCP<BCs>& bc,
+        bool primary) {
+  // pass?
+}
+
+
+/* *******************************************************************
 * Identify flux direction based on orientation of the face normal 
 * and sign of the  Darcy velocity.                               
 ******************************************************************* */

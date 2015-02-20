@@ -116,7 +116,7 @@ class Operator {
 
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included=true);
   virtual void Rescale(const CompositeVector& scaling);
-  virtual void ApplyBCs(const Teuchos::RCP<BCs>& bc);
+  virtual void SetBCs(const Teuchos::RCP<BCs>& bc) { bc_ = bc; }
 
   // -- default functionality
   const CompositeVectorSpace& DomainMap() const { return *cvs_; }

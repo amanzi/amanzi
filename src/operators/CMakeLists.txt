@@ -86,10 +86,6 @@ set(operators_inc_files
 add_amanzi_library(operators
 
 SOURCE OperatorUtils.cc
-                   Op_Cell_FaceCell.cc
-                   Op_Face_Cell.cc
-                   Op_Cell_Face.cc
-                   Op_Cell_FaceCell.cc
                    Operator.cc
                    Operator_Cell.cc
                    Operator_FaceCell.cc

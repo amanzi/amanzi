@@ -74,6 +74,7 @@ class OperatorDiffusion {
 
   virtual void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u);
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
+  virtual void ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary=true);
 
   // access (for developers mainly)
   void set_factor(double factor) { factor_ = factor; }
@@ -126,6 +127,7 @@ class OperatorDiffusion {
   Teuchos::RCP<Op> local_op_;
   Teuchos::RCP<Op> jac_op_;
   int global_op_schema_, local_op_schema_, jac_op_schema_;
+  Teuchos::RCP<BCs> bc_;
 
   // mesh info
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

@@ -137,7 +137,7 @@ void RunTest(std::string op_list_name) {
 
   // apply BCs and assemble
   global_op->UpdateRHS(source, false);
-  global_op->ApplyBCs(bc);
+  op.ApplyBCs(bc);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -174,7 +174,7 @@ void RunTest(std::string op_list_name) {
   op_acc.AddAccumulationTerm(solution, phi, dT, "cell");
 
   global_op->UpdateRHS(source, false);
-  global_op->ApplyBCs(bc);
+  op.ApplyBCs(bc);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
   global_op->InitPreconditioner("Hypre AMG", slist);

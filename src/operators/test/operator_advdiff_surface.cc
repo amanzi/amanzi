@@ -147,7 +147,8 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   op_acc->AddAccumulationTerm(solution, phi, dT, "cell");
 
   // BCs and assemble
-  global_op->ApplyBCs(bc);
+  op_diff->ApplyBCs(bc);
+  op_adv->ApplyBCs(bc);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 

@@ -61,10 +61,6 @@ class Op_Face_Cell : public Op {
             my_block_row, my_block_col);
   }
   
-  virtual bool ApplyBC(BCs& bc,
-                       const Teuchos::Ptr<CompositeVector>& rhs,                       
-                       bool bc_previously_applied);
-
   virtual void Rescale(const CompositeVector& scaling) {
     if (scaling.HasComponent("cell")) {
       const Epetra_MultiVector& s_c = *scaling.ViewComponent("cell",true);

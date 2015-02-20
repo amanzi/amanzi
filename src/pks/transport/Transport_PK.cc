@@ -505,7 +505,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
         }
         op2->AddAccumulationTerm(sol, factor, dT_MPC, "cell");
  
-        op->ApplyBCs(bc_dummy);
+        op1->ApplyBCs(bc_dummy);
         op->SymbolicAssembleMatrix();
         op->AssembleMatrix();
         op->InitPreconditioner(dispersion_preconditioner, preconditioners_list);
@@ -567,7 +567,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
       Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
       double time = T_physics + dT_MPC;
       ComputeAddSourceTerms(time, 1.0, srcs, rhs_cell, i, i);
-      op->ApplyBCs(bc_dummy);
+      op1->ApplyBCs(bc_dummy);
 
       // add accumulation term
       Epetra_MultiVector& fac1 = *factor.ViewComponent("cell");

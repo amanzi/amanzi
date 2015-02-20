@@ -403,7 +403,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_2D) {
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
-  global_op->ApplyBCs(bc);
+  op->ApplyBCs(bc);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -555,7 +555,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
-  global_op->ApplyBCs(bc);
+  op->ApplyBCs(bc);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -713,7 +713,7 @@ TEST(OPERATOR_DIFFUSION_SECOND_ORDER) {
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
-  global_op->ApplyBCs(bc);
+  op->ApplyBCs(bc);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
   
@@ -851,7 +851,7 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  global_op->ApplyBCs(bc);
+  op->ApplyBCs(bc);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -1154,7 +1154,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  global_op->ApplyBCs(bc_f);
+  op->ApplyBCs(bc_f);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
   

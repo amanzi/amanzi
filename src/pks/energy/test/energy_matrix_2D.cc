@@ -125,7 +125,8 @@ std::cout << "Passed S.InitilizeEvaluators()" << std::endl;
 
   // populate the diffusion operator
   double rho(1.0), mu(1.0);
-  op1->Setup(EPK->get_K(), Teuchos::null, Teuchos::null, rho, mu);
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(EPK->get_K());
+  op1->Setup(Kptr, Teuchos::null, Teuchos::null, rho, mu);
   op1->UpdateMatrices(Teuchos::null, Teuchos::null);
   Teuchos::RCP<Operator> op = op1->global_operator();
 
@@ -172,7 +173,8 @@ std::cout << "Passed S.InitilizeEvaluators()" << std::endl;
   op3->UpdateMatrices(flux);
 
   // build the matrix
-  op->ApplyBCs(bc);
+  op1->ApplyBCs(bc);
+  op3->ApplyBCs(bc);
   op->SymbolicAssembleMatrix();
   op->AssembleMatrix();
 

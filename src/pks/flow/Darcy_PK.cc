@@ -504,7 +504,7 @@ bool Darcy_PK::Advance(double dT_MPC, double& dT_actual)
   op_acc_->AddAccumulationTerm(*solution, ss_g, dT, "cell");
   op_acc_->AddAccumulationTerm(*solution, sy_g, "cell");
 
-  op_->ApplyBCs(op_bc_);
+  op_diff_->ApplyBCs(op_bc_);
   op_->AssembleMatrix();
   op_->InitPreconditioner(ti_specs->preconditioner_name, *preconditioner_list_);
 

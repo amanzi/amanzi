@@ -184,12 +184,13 @@ void HeatConduction::Init(
   op_->Init();
 
   // set up the local matrices
-  op_diff_->Setup(K, k, dkdT, rho, mu);
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
+  op_diff_->Setup(Kptr, k, dkdT, rho, mu);
   op_diff_->UpdateMatrices(flux_, solution_);
   op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
 
   // form the global matrix
-  op_->ApplyBCs(bc_);
+  op_diff_->ApplyBCs(bc_);
   op_->SymbolicAssembleMatrix();
   op_->AssembleMatrix();
 
@@ -236,7 +237,7 @@ void HeatConduction::Residual(const Teuchos::RCP<CompositeVector>& u,
   UpdateValues(*u);
   op_diff_->UpdateMatrices(Teuchos::null, u);
   op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
-  op_->ApplyBCs(bc_);
+  op_diff_->ApplyBCs(bc_);
   op_->ComputeNegativeResidual(*u, *f);
 }
 
@@ -253,7 +254,7 @@ void HeatConduction::UpdatePreconditioner(const Teuchos::RCP<const CompositeVect
   op_->Init();
   op_diff_->UpdateMatrices(flux_, up);
   op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
-  op_->ApplyBCs(bc_);
+  op_diff_->ApplyBCs(bc_);
 
   // Assemble matrix and calculate preconditioner.
   op_->AssembleMatrix();

@@ -51,6 +51,7 @@ class OperatorAdvection {
   void UpdateMatrices(const CompositeVector& u);
   void UpdateMatrices(const CompositeVector& u,
                       const CompositeVector& dhdT);
+  void ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary=true);
 
  protected:
   void InitAdvection_(Teuchos::ParameterList& plist);
@@ -63,6 +64,7 @@ class OperatorAdvection {
   Teuchos::RCP<Operator> global_op_;
   Teuchos::RCP<Op> local_op_;
   int global_op_schema_, local_op_schema_;
+  Teuchos::RCP<BCs> bc_;
 
   // mesh info
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

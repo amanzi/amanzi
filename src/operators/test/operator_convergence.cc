@@ -146,7 +146,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     // get and assmeble the global operator
     Teuchos::RCP<Operator> global_op = op2.global_operator();
     global_op->UpdateRHS(source, false);
-    global_op->ApplyBCs(bc);
+    op2.ApplyBCs(bc);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
     
@@ -301,7 +301,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
 
     // get and assmeble the global operator
     Teuchos::RCP<Operator> global_op = op2->global_operator();
-    global_op->ApplyBCs();
+    op->ApplyBCs();
     global_op->SymbolicAssembleMatrix(schema_dofs);
     global_op->AssembleMatrix(schema_dofs);
 

@@ -85,10 +85,6 @@ class Op {
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const = 0;
 
-  virtual bool ApplyBC(BCs& bc,
-                       const Teuchos::Ptr<CompositeVector>& rhs,                       
-                       bool bc_previously_applied) = 0;
-
   virtual void Rescale(const CompositeVector& scaling) = 0;
   
 

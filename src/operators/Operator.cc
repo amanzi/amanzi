@@ -273,30 +273,30 @@ Operator::Rescale(const CompositeVector& scaling) {
   }
 }
 
-/* ******************************************************************
- * Enforce the BCs on local matrices
- ****************************************************************** */
-void
-Operator::ApplyBCs(const Teuchos::RCP<BCs>& bc) {
-  bc_ = bc;
+// /* ******************************************************************
+//  * Enforce the BCs on local matrices
+//  ****************************************************************** */
+// void
+// Operator::ApplyBCs(const Teuchos::RCP<BCs>& bc) {
+//   bc_ = bc;
 
-  // Dispatch BCs to the Ops.  Note that since we allow multiple Ops, the BC
-  // can be applied in one of several Ops, but all others must, for example,
-  // zero their appropriate row.  The flag here allows Operators to only set
-  // an identity row in one Op while zeroing all others.
-  bool bc_sucessfully_applied = false;
-  for (op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    bc_sucessfully_applied |=
-        (*it)->ApplyBC(*bc, rhs_.ptr(), bc_sucessfully_applied);
-  }
-  // This check is currently broken by adv + diffusion when diffusion is MFD
-  // -- need to reconsider whether this is useful or can be reformulated to be
-  // useful.  
-  // if (!bc_sucessfully_applied) {
-  //   Errors::Message msg("Operators: ApplyBC not sucessful for this bc and operator schema combinations.");
-  //   Exceptions::amanzi_throw(msg);
-  // }    
-}
+//   // Dispatch BCs to the Ops.  Note that since we allow multiple Ops, the BC
+//   // can be applied in one of several Ops, but all others must, for example,
+//   // zero their appropriate row.  The flag here allows Operators to only set
+//   // an identity row in one Op while zeroing all others.
+//   bool bc_sucessfully_applied = false;
+//   for (op_iterator it = OpBegin(); it != OpEnd(); ++it) {
+//     bc_sucessfully_applied |=
+//         (*it)->ApplyBC(*bc, rhs_.ptr(), bc_sucessfully_applied);
+//   }
+//   // This check is currently broken by adv + diffusion when diffusion is MFD
+//   // -- need to reconsider whether this is useful or can be reformulated to be
+//   // useful.  
+//   // if (!bc_sucessfully_applied) {
+//   //   Errors::Message msg("Operators: ApplyBC not sucessful for this bc and operator schema combinations.");
+//   //   Exceptions::amanzi_throw(msg);
+//   // }    
+// }
 
 
 /* ******************************************************************

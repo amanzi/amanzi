@@ -124,7 +124,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   op2->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // create a preconditioner
-  global_op->ApplyBCs(bc);
+  op1->ApplyBCs(bc);
+  op2->ApplyBCs(bc);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -144,7 +145,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   op4->UpdateMatrices(u);
 
   // create a preconditioner
-  global_op2->ApplyBCs(bc);
+  op3->ApplyBCs(bc);
+  op4->ApplyBCs(bc);
   global_op2->SymbolicAssembleMatrix();
   global_op2->AssembleMatrix();
 
@@ -248,7 +250,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   op2->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // create a preconditioner
-  global_op->ApplyBCs(bc);
+  op1->ApplyBCs(bc);
+  op2->ApplyBCs(bc);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -268,7 +271,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   op4->UpdateMatrices(u);
 
   // create a preconditioner
-  global_op2->ApplyBCs(bc);
+  op3->ApplyBCs(bc);
+  op4->ApplyBCs(bc);
   global_op2->SymbolicAssembleMatrix();
   global_op2->AssembleMatrix();
 

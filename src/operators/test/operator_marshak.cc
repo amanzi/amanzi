@@ -225,7 +225,7 @@ void RunTest(std::string op_list_name) {
     op_acc.AddAccumulationTerm(solution, heat_capacity, dT, "cell");
 
     // apply BCs and assemble
-    global_op->ApplyBCs(bc);
+    op.ApplyBCs(bc);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 

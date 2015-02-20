@@ -58,12 +58,6 @@ class Op_Node_Node : public Op {
             my_block_row, my_block_col);
   }
   
-  virtual bool ApplyBC(BCs& bc,
-                       const Teuchos::Ptr<CompositeVector>& rhs,                       
-                       bool bc_previously_applied) {
-    return false;
-  }
-
   virtual void Rescale(const CompositeVector& scaling) {
     if (scaling.HasComponent("node")) {
       const Epetra_MultiVector& s_c = *scaling.ViewComponent("node",false);
