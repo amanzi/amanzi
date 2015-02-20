@@ -15,22 +15,24 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
 
+// Amanzi
+#include "GMVMesh.hh"
+#include "LinearOperatorFactory.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
-#include "GMVMesh.hh"
-
-#include "tensor.hh"
 #include "mfd3d_diffusion.hh"
+#include "tensor.hh"
 
-#include "LinearOperatorFactory.hh"
+// Amanzi::Operators
 #include "OperatorDefs.hh"
 #include "OperatorDiffusion.hh"
+#include "Verification.hh"
 
 
 TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
@@ -116,47 +118,10 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
 
-  // Test SPD properties of the matrix.
-  CompositeVector a(cvs), ha(cvs), b(cvs), hb(cvs);
-  a.Random();
-  b.Random();
-  global_op->Apply(a, ha);
-  global_op->Apply(b, hb);
-
-  double ahb, bha, aha, bhb;
-  a.Dot(hb, &ahb);
-  b.Dot(ha, &bha);
-  a.Dot(ha, &aha);
-  b.Dot(hb, &bhb);
-
-  if (MyPID == 0) {
-    std::cout << "Matrix:\n" 
-              << "  Symmetry test: " << ahb << " = " << bha << std::endl;
-    std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
-  } 
-  CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
-  CHECK(aha > 0.0);
-  CHECK(bhb > 0.0);
-
-  // Test SPD properties of the preconditioner.
-  a.Random();
-  b.Random();
-  global_op->ApplyInverse(a, ha);
-  global_op->ApplyInverse(b, hb);
-
-  a.Dot(hb, &ahb);
-  b.Dot(ha, &bha);
-  a.Dot(ha, &aha);
-  b.Dot(hb, &bhb);
-
-  if (MyPID == 0) {
-    std::cout << "Preconditioner: size=" << global_op->A()->NumGlobalRows() << "\n" 
-              << "  Symmetry test: " << ahb << " = " << bha << std::endl;
-    std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
-  } 
-  CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
-  CHECK(aha > 0.0);
-  CHECK(bhb > 0.0);
+  // Test SPD properties of the matrix and preconditioner.
+  Verification ver(global_op);
+  ver.CheckMatrixSPD();
+  ver.CheckPreconditionerSPD();
 
   // solve the problem
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
@@ -187,6 +152,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   }
 }
 
+
 TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -197,7 +163,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Laplace Beltrami solver: preconditioner Sff" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: Laplace Beltrami solver: preconditioner Scc" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_laplace_beltrami.xml";
@@ -270,47 +236,10 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
 
-  // Test SPD properties of the matrix.
-  CompositeVector a(cvs), ha(cvs), b(cvs), hb(cvs);
-  a.Random();
-  b.Random();
-  global_op->Apply(a, ha);
-  global_op->Apply(b, hb);
-
-  double ahb, bha, aha, bhb;
-  a.Dot(hb, &ahb);
-  b.Dot(ha, &bha);
-  a.Dot(ha, &aha);
-  b.Dot(hb, &bhb);
-
-  if (MyPID == 0) {
-    std::cout << "Matrix:\n" 
-              << "  Symmetry test: " << ahb << " = " << bha << std::endl;
-    std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
-  } 
-  CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
-  CHECK(aha > 0.0);
-  CHECK(bhb > 0.0);
-
-  // Test SPD properties of the preconditioner.
-  a.Random();
-  b.Random();
-  global_op->ApplyInverse(a, ha);
-  global_op->ApplyInverse(b, hb);
-
-  a.Dot(hb, &ahb);
-  b.Dot(ha, &bha);
-  a.Dot(ha, &aha);
-  b.Dot(hb, &bhb);
-
-  if (MyPID == 0) {
-    std::cout << "Preconditioner: size=" << global_op->A()->NumGlobalRows() << "\n" 
-              << "  Symmetry test: " << ahb << " = " << bha << std::endl;
-    std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
-  } 
-  CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
-  CHECK(aha > 0.0);
-  CHECK(bhb > 0.0);
+  // Test SPD properties of the matrix and preconditioner.
+  Verification ver(global_op);
+  ver.CheckMatrixSPD();
+  ver.CheckPreconditionerSPD();
 
   // solve the problem
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
@@ -425,47 +354,10 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
 
-  // Test SPD properties of the matrix.
-  CompositeVector a(cvs), ha(cvs), b(cvs), hb(cvs);
-  a.Random();
-  b.Random();
-  global_op->Apply(a, ha);
-  global_op->Apply(b, hb);
-
-  double ahb, bha, aha, bhb;
-  a.Dot(hb, &ahb);
-  b.Dot(ha, &bha);
-  a.Dot(ha, &aha);
-  b.Dot(hb, &bhb);
-
-  if (MyPID == 0) {
-    std::cout << "Matrix:\n" 
-              << "  Symmetry test: " << ahb << " = " << bha << std::endl;
-    std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
-  } 
-  CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
-  CHECK(aha > 0.0);
-  CHECK(bhb > 0.0);
-
-  // Test SPD properties of the preconditioner.
-  a.Random();
-  b.Random();
-  global_op->ApplyInverse(a, ha);
-  global_op->ApplyInverse(b, hb);
-
-  a.Dot(hb, &ahb);
-  b.Dot(ha, &bha);
-  a.Dot(ha, &aha);
-  b.Dot(hb, &bhb);
-
-  if (MyPID == 0) {
-    std::cout << "Preconditioner: size=" << global_op->A()->NumGlobalRows() << "\n" 
-              << "  Symmetry test: " << ahb << " = " << bha << std::endl;
-    std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
-  } 
-  CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
-  CHECK(aha > 0.0);
-  CHECK(bhb > 0.0);
+  // Test SPD properties of the matrix and preconditioner.
+  Verification ver(global_op);
+  ver.CheckMatrixSPD();
+  ver.CheckPreconditionerSPD();
 
   // solve the problem
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");

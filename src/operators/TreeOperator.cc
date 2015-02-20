@@ -55,15 +55,17 @@ TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs) :
   blocks_.resize(n_blocks, Teuchos::Array<Teuchos::RCP<const Operator> >(n_blocks, Teuchos::null));
 }
 
+
 void
 TreeOperator::SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op) {
   blocks_[i][j] = op;
 }
 
+
 int
 TreeOperator::Apply(const TreeVector& X, TreeVector& Y) const {
   // apply is done matrix-free
-  Y.PutScalar(0.);
+  Y.PutScalar(0.0);
 
   int ierr(0);
   for (int n = 0; n != blocks_.size(); ++n) {
@@ -165,6 +167,7 @@ TreeOperator::AssembleMatrix() {
   ASSERT(!ierr);
 }
 
+
 // preconditioners
 void
 TreeOperator::InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist) {
@@ -172,7 +175,6 @@ TreeOperator::InitPreconditioner(const std::string& prec_name, const Teuchos::Pa
   preconditioner_ = factory.Create(prec_name, plist);
   preconditioner_->Update(A_);
 }
-
 
 }  // namespace Operators
 }  // namespace Amanzi

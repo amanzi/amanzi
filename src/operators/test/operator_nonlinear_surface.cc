@@ -15,24 +15,26 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
 
+// Amanzi
+#include "GMVMesh.hh"
+#include "LinearOperatorFactory.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
-#include "GMVMesh.hh"
-
-#include "tensor.hh"
 #include "mfd3d_diffusion.hh"
+#include "tensor.hh"
 
-#include "LinearOperatorFactory.hh"
-#include "OperatorDefs.hh"
+// Amanzi::Operators
 #include "Operator.hh"
-#include "OperatorDiffusion.hh"
 #include "OperatorAccumulation.hh"
+#include "OperatorDefs.hh"
+#include "OperatorDiffusion.hh"
+#include "Verification.hh"
 
 namespace Amanzi{
 
@@ -82,6 +84,8 @@ class HeatConduction {
 
 }  // namespace Amanzi
 
+
+namespace {
 
 /* *****************************************************************
 * This test replaves tensor and boundary conditions by continuous
@@ -173,7 +177,7 @@ void RunTest(std::string op_list_name) {
   // MAIN LOOP
   double dT = 1.0;
   for (int loop = 0; loop < 3; loop++) {
-    // add diffusion operator
+    // create diffusion operator
     solution.ScatterMasterToGhosted();
     knc->UpdateValues(solution);
 
@@ -181,11 +185,13 @@ void RunTest(std::string op_list_name) {
                                         .get<Teuchos::ParameterList>(op_list_name);
     OperatorDiffusion op(olist, surfmesh);
 
-    op.Setup(K, knc->values(), knc->derivatives(), rho, mu);
-    op.UpdateMatrices(flux, Teuchos::null);
-
     // get the global operator
     Teuchos::RCP<Operator> global_op = op.global_operator();
+    global_op->Init();
+
+    // populate diffusion operator
+    op.Setup(K, knc->values(), knc->derivatives(), rho, mu);
+    op.UpdateMatrices(flux, Teuchos::null);
 
     // add accumulation terms
     OperatorAccumulation op_acc(AmanziMesh::CELL, global_op);
@@ -201,6 +207,13 @@ void RunTest(std::string op_list_name) {
     ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
     global_op->InitPreconditioner("Hypre AMG", slist);
 
+    // Test SPD properties of the matrix and preconditioner.
+    if (loop == 2) {
+      Verification ver(global_op);
+      ver.CheckMatrixSPD(true, true);
+      ver.CheckPreconditionerSPD(true, true);
+    }
+
     // solve the problem
     ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
     AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
@@ -210,9 +223,15 @@ void RunTest(std::string op_list_name) {
     CompositeVector rhs = *global_op->rhs();
     int ierr = solver->ApplyInverse(rhs, solution);
 
+    int num_itrs = solver->num_itrs();
+    CHECK(num_itrs > 5 && num_itrs < 15);
+
     if (MyPID == 0) {
+      double a;
+      rhs.Norm2(&a);
       std::cout << "pressure solver (" << solver->name() 
-                << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
+                << "): ||r||=" << solver->residual() << " itr=" << num_itrs
+                << "  ||f||=" << a 
                 << " code=" << solver->returned_code() << std::endl;
     }
 
@@ -222,22 +241,24 @@ void RunTest(std::string op_list_name) {
     // turn off the source
     source.PutScalar(0.0);
   }
-
-  // THIS TEST IS NOT A TEST!
-  
-  // if (MyPID == 0) {
-  //   // visualization
-  //   const Epetra_MultiVector& p = *solution.ViewComponent("cell");
-  //   GMV::open_data_file(*surfmesh, (std::string)"operators.gmv");
-  //   GMV::start_data();
-  //   GMV::write_cell_data(p, 0, "solution");
-  //   GMV::close_data_file();
-  // }
+ 
+  if (MyPID == 0) {
+    // visualization
+    const Epetra_MultiVector& p = *solution.ViewComponent("cell");
+    GMV::open_data_file(*surfmesh, (std::string)"operators.gmv");
+    GMV::start_data();
+    GMV::write_cell_data(p, 0, "solution");
+    GMV::close_data_file();
+  }
 }
+
+} // end anonymous namespace
+
 
 TEST(NONLINEAR_HEAT_CONDUCTION) {
   RunTest("diffusion operator");
 }
+
 
 TEST(NONLINEAR_HEAT_CONDUCTION_SFF) {
   RunTest("diffusion operator Sff");

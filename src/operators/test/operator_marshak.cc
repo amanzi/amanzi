@@ -278,15 +278,14 @@ void RunTest(std::string op_list_name) {
   CHECK_CLOSE(1.0034, T, 1.e-4); // overshoots the end time?
   CHECK_CLOSE(9.94834, snorm, 1.e-4);
       
-
-  // if (MyPID == 0) {
-  //   // visualization
-  //   const Epetra_MultiVector& p = *solution.ViewComponent("cell");
-  //   GMV::open_data_file(*mesh, (std::string)"operators.gmv");
-  //   GMV::start_data();
-  //   GMV::write_cell_data(p, 0, "solution");
-  //   GMV::close_data_file();
-  // }
+  if (MyPID == 0) {
+    // visualization
+    const Epetra_MultiVector& p = *solution.ViewComponent("cell");
+    GMV::open_data_file(*mesh, (std::string)"operators.gmv");
+    GMV::start_data();
+    GMV::write_cell_data(p, 0, "solution");
+    GMV::close_data_file();
+  }
 }
 
 
@@ -294,9 +293,9 @@ void RunTest(std::string op_list_name) {
 * This test replaves tensor and boundary conditions by continuous
 * functions. This is a prototype forheat conduction solvers.
 * **************************************************************** */
-TEST(MARSHAK_NONLINEAR_WAVE) {
-  RunTest("diffusion operator");
-}
+// TEST(MARSHAK_NONLINEAR_WAVE) {
+//  RunTest("diffusion operator");
+//}
 
 TEST(MARSHAK_NONLINEAR_WAVE_SFF) {
   RunTest("diffusion operator Sff");

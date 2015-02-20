@@ -3333,9 +3333,6 @@ This list contains data collected by the input parser of a higher-level spec.
   for analysis. The simulator will print number of faces(or cells) and the total area 
   (or volume) of these regions if verbosity level is equal to or above *high*.
 
-* `"print unused parameters`" [bool] prints parameters that were not used by the simulation.
-  Default is *false*.
-
 * `"VerboseObject`" [sublist] is the standard verbosity list.
 
 .. code-block:: xml
@@ -3344,7 +3341,6 @@ This list contains data collected by the input parser of a higher-level spec.
     <Parameter name="used boundary condition regions" type="Array(string)" value="{region1,region2}"/>
     <Parameter name="used source and sink regions" type="Array(string)" value="{region3,region4}"/>
     <Parameter name="used observation regions" type="Array(string)" value="{region5}"/>
-    <Parameter name="print unused parameters" type="bool" value="true"/>
     <ParameterList name="VerboseObject">
       <Parameter name="Verbosity Level" type="string" value="high"/>
     </ParameterList>
