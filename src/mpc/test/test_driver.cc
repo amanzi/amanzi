@@ -3,19 +3,17 @@
 #include "math.h"
 #include "UnitTest++.h"
 
-#include <Epetra_Comm.h>
-#include <Epetra_MpiComm.h>
+#include "Epetra_Comm.h"
+#include "Epetra_MpiComm.h"
 #include "Epetra_SerialComm.h"
-
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "State.hh"
 #include "MPC.hh"
-
 #include "MeshFactory.hh"
 #include "Mesh.hh"
-
+#include "State.hh"
 
 
 TEST(DRIVER) {
@@ -28,22 +26,19 @@ using namespace std;
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
   
-  std::string xmlInFileName = "test/driver.xml";
-
   // read the main parameter list
-  Teuchos::ParameterList driver_parameter_list;
-  Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
-  driver_parameter_list = xmlreader.getParameters();
+  std::string xmlInFileName = "test/driver.xml";
+  Teuchos::RCP<Teuchos::ParameterList> driver_parameter_list = Teuchos::getParametersFromXmlFile(xmlInFileName);
   
   // For now create one geometric model from all the regions in the spec
-  Teuchos::ParameterList reg_params = driver_parameter_list.sublist("Regions");
+  Teuchos::ParameterList reg_params = driver_parameter_list->sublist("Regions");
 
   int spdim = 3;
   Amanzi::AmanziGeometry::GeometricModelPtr 
       geom_model_ptr( new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm) );
 
   // get the Mesh sublist
-  Teuchos::ParameterList mesh_parameter_list = driver_parameter_list.sublist("Mesh");
+  Teuchos::ParameterList mesh_parameter_list = driver_parameter_list->sublist("Mesh");
 
   std::string mesh_class = mesh_parameter_list.get<string>("Mesh Class");
 

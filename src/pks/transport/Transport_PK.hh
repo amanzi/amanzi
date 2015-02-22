@@ -61,11 +61,15 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
  public:
   Transport_PK();
 #ifdef ALQUIMIA_ENABLED
-  Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S, const std::string& pk_list_name,
+  Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+               Teuchos::RCP<State> S,
+               const std::string& pk_list_name,
                Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state = Teuchos::null,
                Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine = Teuchos::null);
 #endif
-  Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S, const std::string& pk_list_name,
+  Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+               Teuchos::RCP<State> S,
+               const std::string& pk_list_name,
                std::vector<std::string>& component_names);
   ~Transport_PK();
 
@@ -121,7 +125,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
 
  private:
   // Helper for constructors.
-  void Construct_(Teuchos::ParameterList& glist, 
+  void Construct_(const Teuchos::RCP<Teuchos::ParameterList>& glist, 
                   Teuchos::RCP<State> S,
 		  const std::string& pk_list_name,
                   std::vector<std::string>& component_names);
@@ -165,10 +169,10 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   int FindComponentNumber(const std::string component_name);
 
  public:
-  Teuchos::ParameterList parameter_list;
-  Teuchos::ParameterList preconditioners_list;
-  Teuchos::ParameterList solvers_list;
-  Teuchos::ParameterList nonlin_solvers_list;
+  Teuchos::RCP<Teuchos::ParameterList> tp_list_;
+  Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
+  Teuchos::RCP<const Teuchos::ParameterList> linear_solver_list_;
+  Teuchos::RCP<const Teuchos::ParameterList> nonlinear_solver_list_;
 
   int MyPID;  // parallel information: will be moved to private
   int spatial_disc_order, temporal_disc_order, limiter_model;

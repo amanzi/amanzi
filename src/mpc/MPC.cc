@@ -54,11 +54,11 @@ double rss_usage() { // return ru_maxrss in MBytes
 
 
 /* *******************************************************************/
-MPC::MPC(Teuchos::ParameterList& parameter_list_,
+MPC::MPC(const Teuchos::RCP<Teuchos::ParameterList>& glist_,
          Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_,
          Epetra_MpiComm* comm_,
          Amanzi::ObservationData& output_observations_):
-    parameter_list(parameter_list_),
+    glist(glist_),
     mesh_maps(mesh_maps_),
     chemistry_enabled(false),
     comm(comm_),
@@ -71,7 +71,7 @@ MPC::MPC(Teuchos::ParameterList& parameter_list_,
 
 /* *******************************************************************/
 void MPC::mpc_init() {
-  mpc_parameter_list = parameter_list.sublist("MPC");
+  mpc_parameter_list = glist->sublist("MPC");
 
   vo_ = Teuchos::rcp(new VerboseObject("MPC", mpc_parameter_list));
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -100,7 +100,7 @@ void MPC::mpc_init() {
   }
 
   if (transport_enabled || flow_enabled || chemistry_enabled) {
-    Teuchos::ParameterList state_parameter_list = parameter_list.sublist("State");
+    Teuchos::ParameterList state_parameter_list = glist->sublist("State");
     S = Teuchos::rcp(new State(state_parameter_list));
     S->RegisterMesh("domain",mesh_maps);
   }
@@ -122,7 +122,7 @@ void MPC::mpc_init() {
 
   // chemistry...
   if (chemistry_enabled) {
-    Teuchos::ParameterList chemistry_parameter_list = parameter_list.sublist("PKs").sublist("Chemistry");
+    Teuchos::ParameterList chemistry_parameter_list = glist->sublist("PKs").sublist("Chemistry");
 
 #ifdef ALQUIMIA_ENABLED
     if (chemistry_model == "Alquimia") {
@@ -165,7 +165,6 @@ void MPC::mpc_init() {
   // flow...
   if (flow_enabled) {
     flow_model = mpc_parameter_list.get<std::string>("Flow model", "Darcy");
-    Teuchos::RCP<Teuchos::ParameterList> glist(&parameter_list, Teuchos::RCP_WEAK_NO_DEALLOC);
     if (flow_model == "Darcy") {
       FPK = Teuchos::rcp(new Flow::Darcy_PK(glist, "Flow", S));
     } else if (flow_model == "Steady State Saturated") {
@@ -192,11 +191,11 @@ void MPC::mpc_init() {
       // When Alquimia is used, the Transport PK must interact with the 
       // chemistry engine to obtain boundary values for the components.
       // The component names are fetched from the chemistry engine.
-      TPK = Teuchos::rcp(new Transport::Transport_PK(parameter_list, S, "Transport", CS, chem_engine));
+      TPK = Teuchos::rcp(new Transport::Transport_PK(glist, S, "Transport", CS, chem_engine));
     }
     else {
 #endif
-      TPK = Teuchos::rcp(new Transport::Transport_PK(parameter_list, S, "Transport", component_names));
+      TPK = Teuchos::rcp(new Transport::Transport_PK(glist, S, "Transport", component_names));
 #ifdef ALQUIMIA_ENABLED
     }
 #endif
@@ -224,7 +223,7 @@ void MPC::mpc_init() {
   }
 
   if (transport_enabled) {
-    bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling", false);
+    bool subcycling = glist->sublist("MPC").get<bool>("transport subcycling", false);
     transport_subcycling = (subcycling) ? 1 : 0;
     TPK->Initialize(S.ptr());
   }
@@ -233,13 +232,13 @@ void MPC::mpc_init() {
     try {
       if (chemistry_model == "Alquimia") {
 #ifdef ALQUIMIA_ENABLED
-        CPK = Teuchos::rcp(new AmanziChemistry::Alquimia_Chemistry_PK(parameter_list, CS, chem_engine));
+        CPK = Teuchos::rcp(new AmanziChemistry::Alquimia_Chemistry_PK(*glist, CS, chem_engine));
 #else
         std::cout << "MPC: Alquimia chemistry model is not enabled for this build.\n";
         throw std::exception();
 #endif
       } else if (chemistry_model == "Amanzi") {
-        Teuchos::ParameterList chemistry_parameter_list = parameter_list.sublist("PKs").sublist("Chemistry");
+        Teuchos::ParameterList chemistry_parameter_list = glist->sublist("PKs").sublist("Chemistry");
         CPK = Teuchos::rcp(new AmanziChemistry::Chemistry_PK(chemistry_parameter_list, CS));
       } else {
         std::cout << "MPC: unknown chemistry model: " << chemistry_model << std::endl;
@@ -258,8 +257,8 @@ void MPC::mpc_init() {
   // done creating auxilary state objects and  process models
 
   // create the observations
-  if (parameter_list.isSublist("Observation Data")) {
-    Teuchos::ParameterList observation_plist = parameter_list.sublist("Observation Data");
+  if (glist->isSublist("Observation Data")) {
+    Teuchos::ParameterList observation_plist = glist->sublist("Observation Data");
     observations = Teuchos::rcp(new Amanzi::Unstructured_observations(observation_plist, output_observations, comm));
 
     if (mpc_parameter_list.isParameter("component names")) {
@@ -272,8 +271,8 @@ void MPC::mpc_init() {
   }
 
   // create the visualization object
-  if (parameter_list.isSublist("Visualization Data"))  {
-    Teuchos::ParameterList vis_parameter_list = parameter_list.sublist("Visualization Data");
+  if (glist->isSublist("Visualization Data"))  {
+    Teuchos::ParameterList vis_parameter_list = glist->sublist("Visualization Data");
     visualization = Teuchos::ptr(new Amanzi::Visualization(vis_parameter_list, comm));
     visualization->set_mesh(mesh_maps);
     visualization->CreateFiles();
@@ -283,8 +282,8 @@ void MPC::mpc_init() {
 
 
   // create the restart object
-  if (parameter_list.isSublist("Checkpoint Data")) {
-    Teuchos::ParameterList checkpoint_parameter_list = parameter_list.sublist("Checkpoint Data");
+  if (glist->isSublist("Checkpoint Data")) {
+    Teuchos::ParameterList checkpoint_parameter_list = glist->sublist("Checkpoint Data");
     restart = Teuchos::ptr(new Amanzi::Checkpoint(checkpoint_parameter_list, comm));
   } else {
     restart = Teuchos::ptr(new Amanzi::Checkpoint());
@@ -297,8 +296,8 @@ void MPC::mpc_init() {
 
 
   if (flow_enabled) {
-    if (parameter_list.isSublist("Walkabout Data")) {
-      Teuchos::ParameterList walkabout_parameter_list = parameter_list.sublist("Walkabout Data");
+    if (glist->isSublist("Walkabout Data")) {
+      Teuchos::ParameterList walkabout_parameter_list = glist->sublist("Walkabout Data");
       walkabout = Teuchos::ptr(new Amanzi::Checkpoint(walkabout_parameter_list, comm));
     } else {
       walkabout = Teuchos::ptr(new Amanzi::Checkpoint());

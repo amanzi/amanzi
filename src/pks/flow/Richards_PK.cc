@@ -52,49 +52,19 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   dim = mesh_->space_dimension();
 
   // We need the flow list
-  if (glist->isSublist("PKs")) {
-    if (glist->sublist("PKs").isSublist(pk_list_name)) {
-      if (glist->sublist("PKs").sublist(pk_list_name).isSublist("Richards problem")) {
-         rp_list_ = Teuchos::rcp(&glist->sublist("PKs")
-                                        .sublist(pk_list_name)
-                                        .sublist("Richards problem"), false);
-      } else {
-        Errors::Message msg("Flow PK: sublist \"Richards problem\" is missing.");
-        Exceptions::amanzi_throw(msg);
-      }
-    } else {
-      Errors::Message msg("Flow PK: sublist " + pk_list_name + " is missing.");
-      Exceptions::amanzi_throw(msg);
-    }
-  } else {
-    Errors::Message msg("Flow PK: sublist \"PKs\" is missing.");
-    Exceptions::amanzi_throw(msg);
-  }
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
+  Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_list_name, true);
+  rp_list_ = Teuchos::sublist(flow_list, "Richards problem", true);
   
   new_mpc_driver = glist->get<bool>("new mpc driver", false);
 
-  // We also need iscaleneous sublists
-  if (glist->isSublist("Preconditioners")) {
-    preconditioner_list_ = Teuchos::rcp(&glist->sublist("Preconditioners"), false);  // no memory destructor
-  } else {
-    Errors::Message msg("Flow PK: input XML does not have <Preconditioners> sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  if (glist->isSublist("Solvers")) {
-    linear_operator_list_ = Teuchos::rcp(&glist->sublist("Solvers"), false);
-  } else {
-    Errors::Message msg("Flow PK: input XML does not have <Solvers> sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
+  // We also need miscaleneous sublists
+  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners", true);
+  linear_operator_list_ = Teuchos::sublist(glist, "Solvers", true);
 
   if (rp_list_->isSublist("time integrator")) {
     ti_list_ = rp_list_->sublist("time integrator");
   } 
-  // else {
-  //   Errors::Message msg("Richards PK: input XML does not have <time integrator> sublist.");
-  //   Exceptions::amanzi_throw(msg);
-  // }  
 
   // for creating fields
   std::vector<std::string> names(2);

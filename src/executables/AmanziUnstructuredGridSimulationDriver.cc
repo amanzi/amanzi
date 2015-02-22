@@ -370,7 +370,8 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   }
   else {
     // -------------- NEW MULTI-PROCESS COORDINATOR ----------------------------
-    Amanzi::MPC mpc(new_list, mesh, comm, output_observations);
+    Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(new_list));
+    Amanzi::MPC mpc(glist, mesh, comm, output_observations);
     mpc.cycle_driver();
   }
   

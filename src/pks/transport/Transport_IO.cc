@@ -33,7 +33,7 @@ namespace Transport {
 void Transport_PK::ProcessParameterList()
 {
   Teuchos::ParameterList transport_list;
-  transport_list = parameter_list;
+  transport_list = *tp_list_;
 
   // create verbosity object
   vo_ = new VerboseObject("TransportPK", transport_list); 
@@ -55,8 +55,8 @@ void Transport_PK::ProcessParameterList()
   if (transport_list.isSublist("material properties")) {
     Teuchos::ParameterList& dlist = transport_list.sublist("material properties");
 
-    if (solvers_list.isSublist(dispersion_solver)) {
-      Teuchos::ParameterList& slist = solvers_list.sublist(dispersion_solver);
+    if (linear_solver_list_->isSublist(dispersion_solver)) {
+      Teuchos::ParameterList slist = linear_solver_list_->sublist(dispersion_solver);
       dispersion_preconditioner = slist.get<std::string>("preconditioner", "identity");
     } else {
       Errors::Message msg;

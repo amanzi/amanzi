@@ -14,16 +14,15 @@
 namespace Amanzi {
 namespace Transport {
 
-Transport_PK_Wrapper::Transport_PK_Wrapper(Teuchos::ParameterList& pk_tree,
-        const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+Transport_PK_Wrapper::Transport_PK_Wrapper(
+        Teuchos::ParameterList& pk_tree,
+        const Teuchos::RCP<Teuchos::ParameterList>& glist,
         const Teuchos::RCP<State>& S,
         const Teuchos::RCP<TreeVector>& soln) :
+    glist_(glist),
     S_(S),
     soln_(soln)
 {
-  // Transport expects a single global list with sublist PKs->Transport
-  glist_ = Teuchos::rcp(new Teuchos::ParameterList(*global_list));
-
   std::string pk_name = pk_tree.name();
   const char* result = pk_name.data();
   while ((result = std::strstr(result, "->")) != NULL) {
@@ -57,7 +56,7 @@ Transport_PK_Wrapper::Transport_PK_Wrapper(Teuchos::ParameterList& pk_tree,
   }
  
   // construct
-  pk_ = Teuchos::rcp(new Transport_PK(*glist_, S_, pk_name, comp_names_));
+  pk_ = Teuchos::rcp(new Transport_PK(glist_, S_, pk_name, comp_names_));
 }
 
 

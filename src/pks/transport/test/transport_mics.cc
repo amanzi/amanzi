@@ -9,15 +9,13 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include <iostream>
 #include <vector>
 
-#include "UnitTest++.h"
-
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "UnitTest++.h"
 
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
-
 #include "State.hh"
 #include "Transport_PK.hh"
 
@@ -41,11 +39,10 @@ TEST(CONSTRUCTOR) {
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_mics.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();  
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
  
   /* create an MSTK mesh framework */
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
 
   FrameworkPreference pref;

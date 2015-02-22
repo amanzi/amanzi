@@ -9,15 +9,13 @@
 #include <cmath>
 #include <vector>
 
-#include "UnitTest++.h"
-
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "UnitTest++.h"
 
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-
 #include "State.hh"
 #include "Transport_PK.hh"
 
@@ -39,11 +37,10 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_subcycling.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* create a mesh framework */
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, (Epetra_MpiComm *)comm);
 
   FrameworkPreference pref;

@@ -41,8 +41,7 @@ TEST(LIMITER_BARTH_JESPERSEN) {
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_limiters.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();  
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
  
   /* create an MSTK mesh framework */
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");

@@ -28,7 +28,7 @@ enum time_integration_mode { STEADY, TRANSIENT, INIT_TO_STEADY, TRANSIENT_STATIC
 
 class MPC {
  public:
-  MPC(Teuchos::ParameterList& parameter_list_,
+  MPC(const Teuchos::RCP<Teuchos::ParameterList>& glist_,
       Teuchos::RCP<AmanziMesh::Mesh> mesh_maps_,
       Epetra_MpiComm* comm_,
       Amanzi::ObservationData& output_observations_); 
@@ -54,7 +54,7 @@ class MPC {
 #endif
     
   // misc setup information
-  Teuchos::ParameterList parameter_list;
+  Teuchos::RCP<Teuchos::ParameterList> glist;
   Teuchos::RCP<AmanziMesh::Mesh> mesh_maps;
     
   // storage for the component concentration intermediate values
