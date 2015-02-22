@@ -679,22 +679,20 @@ void OperatorDiffusion::ModifyMatrices(const CompositeVector& u)
   AmanziMesh::Entity_ID_List faces;
   const Epetra_MultiVector& u_c = *u.ViewComponent("cell");
 
-  global_op_->rhs()->PutScalarGhosted(0.);
+  global_op_->rhs()->PutScalarGhosted(0.0);
 
-  {
-    Epetra_MultiVector& rhs_f = *global_op_->rhs()->ViewComponent("face", true);
-    for (int c = 0; c != ncells_owned; ++c) {
-      mesh_->cell_get_faces(c, &faces);
-      int nfaces = faces.size();
+  Epetra_MultiVector& rhs_f = *global_op_->rhs()->ViewComponent("face", true);
+  for (int c = 0; c != ncells_owned; ++c) {
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
 
-      WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
+    WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
 
-      for (int n = 0; n < nfaces; n++) {
-        int f = faces[n];
-        rhs_f[0][f] -= Acell(n, nfaces) * u_c[0][c];
-        Acell(n, nfaces) = 0.0;
-        Acell(nfaces, n) = 0.0;
-      }
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      rhs_f[0][f] -= Acell(n, nfaces) * u_c[0][c];
+      Acell(n, nfaces) = 0.0;
+      Acell(nfaces, n) = 0.0;
     }
   }
 

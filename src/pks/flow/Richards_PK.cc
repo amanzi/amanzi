@@ -198,7 +198,9 @@ Richards_PK::~Richards_PK()
 
 
 /* ******************************************************************
-* Extract information from Richards Problem parameter list.
+* Extract information from Richards Problem parameter list. It is 
+* broken into a few pieces that can be reused in InitXXX routines.
+* Cleaning will be done after switch to 
 ****************************************************************** */
 void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
@@ -322,7 +324,21 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   CompositeVector& pressure = *S->GetFieldData("pressure", passwd_);
   UpdateSourceBoundaryData(T0, T1, pressure);
 
-  darcy_flux_copy = Teuchos::rcp(new CompositeVector(*S->GetFieldData("darcy_flux", passwd_)));
+  // Initialize two fields for upwind operators.
+  InitializeUpwind_();
+
+  // Other quantatities: injected water mass
+  mass_bc = 0.0;
+  seepage_mass_ = 0.0;
+}
+
+
+/* ******************************************************************
+* Set defaults parameters. It should be called once
+****************************************************************** */
+void Richards_PK::InitializeUpwind_()
+{
+  darcy_flux_copy = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("darcy_flux", passwd_)));
 
   // Create RCP pointer to upwind flux.
   if (rel_perm_->method() == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
@@ -336,10 +352,6 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     darcy_flux_upwind = Teuchos::rcp(new CompositeVector(*darcy_flux_copy));
     darcy_flux_upwind->PutScalar(0.0);
   }
-
-  // Other quantatities: injected water mass
-  mass_bc = 0.0;
-  seepage_mass_ = 0.0;
 }
 
 
@@ -509,6 +521,9 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
               << " PC:\"" << ti_specs.preconditioner_name.c_str() << "\"" << std::endl;
   }
 
+  // repeat initialization steps, mainly for old MPC.
+  InitializeUpwind_();
+
   // set up new time integration or solver
   std::string ti_method_name(ti_specs.ti_method_name);
 
@@ -598,7 +613,11 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   DeriveSaturationFromPressure(pstate, ws);
  
   // derive mass flux (state may not have it at time 0)
-  op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
+  double tmp;
+  darcy_flux_copy->Norm2(&tmp);
+  if (tmp == 0.0) {
+    op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
+  }
 
   // re-initialize lambda
   double T1 = T0 + dT0;

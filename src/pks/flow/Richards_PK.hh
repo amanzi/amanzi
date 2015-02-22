@@ -44,7 +44,7 @@ class Richards_PK : public Flow_PK {
   void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
   bool Advance(double dT_MPC, double& dT_actual); 
   double get_dt();
-  void set_dt(double dt){dT = dt; dT_desirable_ = dT;}
+  void set_dt(double dt) { dT = dt; dT_desirable_ = dT; }
   void CommitState(double dt, const Teuchos::Ptr<State>& S);
   void CalculateDiagnostics(const Teuchos::Ptr<State>& S);
 
@@ -113,7 +113,10 @@ class Richards_PK : public Flow_PK {
   double DeriveBoundaryFaceValue(int f, const CompositeVector& u,
           const Model& model);
   virtual double BoundaryFaceValue(int f, const CompositeVector& pressure);
-  
+
+ private:
+  void InitializeUpwind_();
+
  private:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> rp_list_;
