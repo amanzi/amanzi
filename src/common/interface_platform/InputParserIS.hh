@@ -123,7 +123,7 @@ class InputParserIS {
 
   double constant_density;
   int spatial_dimension_;  
-  bool flow_single_phase, use_picard_;
+  bool flow_single_phase, use_picard_, new_mpc_driver_;
   bool need_dispersion_;
   std::vector<std::string> transport_diagnostics_;
 

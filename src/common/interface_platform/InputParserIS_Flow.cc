@@ -22,14 +22,13 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
   Errors::Message msg;
   Teuchos::OSTab tab = vo_->getOSTab();
   Teuchos::ParameterList flw_list;
+  Teuchos::ParameterList *flow_list;
 
   if (plist->isSublist("Execution Control")) {
     Teuchos::ParameterList& exe_list = plist->sublist("Execution Control");
 
     if (exe_list.isParameter("Flow Model")) {
       std::string flow_model = exe_list.get<std::string>("Flow Model");
-
-      Teuchos::ParameterList *flow_list;
 
       // get the expert parameters
       std::string disc_method("MFD: Optimized for Sparsity");
@@ -487,11 +486,17 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           tti_list.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
 
 	  if (time_regime == TRANSIENT_REGIME) { 
-	    flow_list->sublist("time integrator") =  tti_list; 
+	    flow_list->sublist("time integrator") = tti_list; 
 	  }
 	}
       }
     }
+  }
+
+  // cleaning flow for better testing of PKs
+  if (new_mpc_driver_) {
+    flow_list->remove("steady state time integrator", false);
+    flow_list->remove("transient time integrator", false);
   }
 
   return flw_list;
