@@ -602,7 +602,7 @@ void InputParserIS::RegisterPKlist_(Teuchos::ParameterList& pk_tree, Teuchos::Pa
 ****************************************************************** */
 void InputParserIS::FillPKslist_(Teuchos::ParameterList* plist, Teuchos::ParameterList& pks_list)
 {
-  for (Teuchos::ParameterList::ConstIterator it =  pks_list.begin(); it != pks_list.end(); ++it) {
+  for (Teuchos::ParameterList::ConstIterator it = pks_list.begin(); it != pks_list.end(); ++it) {
     if ((it->second).isList()) {
       if (it->first == "Flow") {
 	pks_list.sublist(it->first) = CreateFlowList_(plist, TRANSIENT_REGIME);

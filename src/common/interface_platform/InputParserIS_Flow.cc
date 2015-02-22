@@ -350,10 +350,9 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 	    sti_bdf1.set<bool>("extrapolate initial guess", false);	    
           }
 
-	  if (time_regime == STEADY_REGIME){
+	  if (time_regime == STEADY_REGIME) {
 	    flow_list->sublist("time integrator") = sti_list;
 	  }
-	  
         }
 	
         // only include the transient list if not in steady mode
@@ -487,7 +486,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 
           tti_list.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
 
-	  if (time_regime == TRANSIENT_REGIME){ 
+	  if (time_regime == TRANSIENT_REGIME) { 
 	    flow_list->sublist("time integrator") =  tti_list; 
 	  }
 	}
