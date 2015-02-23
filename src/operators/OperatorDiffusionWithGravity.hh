@@ -48,18 +48,12 @@ class OperatorDiffusionWithGravity : public OperatorDiffusion {
     Init_();
   }
 
-  virtual void Setup(Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
-                     Teuchos::RCP<const CompositeVector> rho) {
-    // this is specifically set up to keep scalar_rho_mu_ = true, rho_ = mu_ = 1, but allow a rho for gravity
-    OperatorDiffusion::Setup(k, dkdp);
-    rho_cv_ = rho;
-  }
-
   // main members
   virtual void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u);
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
 
   void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
+  void SetVectorDensity(const Teuchos::RCP<const CompositeVector>& rho) { rho_cv_ = rho; }
   
 
  protected:
