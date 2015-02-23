@@ -10,8 +10,8 @@
           Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_OPERATOR_DIFFUSION_HH_
-#define AMANZI_OPERATOR_DIFFUSION_HH_
+#ifndef AMANZI_OPERATOR_DIFFUSION_MFD_HH_
+#define AMANZI_OPERATOR_DIFFUSION_MFD_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -25,74 +25,41 @@
 #include "BCs.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
+#include "OperatorDiffusion.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class OperatorDiffusion {
+class OperatorDiffusionMFD : public OperatorDiffusion {
  public:
-  OperatorDiffusion(Teuchos::ParameterList& plist,
-                    Teuchos::RCP<Operator> global_op) :
-      global_op_(global_op),
-      mesh_(Teuchos::null),
+  OperatorDiffusionMFD(Teuchos::ParameterList& plist,
+                    const Teuchos::RCP<Operator>& global_op) :
+      OperatorDiffusion(global_op),
       factor_(1.0)
   {
     InitDiffusion_(plist);
   }
 
-  OperatorDiffusion(Teuchos::ParameterList& plist,
-                    Teuchos::RCP<AmanziMesh::Mesh> mesh) :
-      global_op_(Teuchos::null),
-      mesh_(mesh),      
+  OperatorDiffusionMFD(Teuchos::ParameterList& plist,
+                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      OperatorDiffusion(mesh),
       factor_(1.0)
   {
     InitDiffusion_(plist);
   }
 
-  OperatorDiffusion(Teuchos::ParameterList& plist,
-                    Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      global_op_(Teuchos::null),
-      mesh_(mesh),      
-      factor_(1.0)
-  {
-    InitDiffusion_(plist);
-  }
-
-  // main members
-  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
+  // main virtual members
   virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K, double rho, double mu);
+  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
+                     Teuchos::RCP<const CompositeVector> rho, Teuchos::RCP<const CompositeVector> mu);
   virtual void Setup(Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp);
-  virtual void Setup(Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
-                     Teuchos::RCP<const CompositeVector> rho, Teuchos::RCP<const CompositeVector> mu);
-
-  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-                     Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
-                     double rho, double mu);
-  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-                     Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
-                     Teuchos::RCP<const CompositeVector> rho, Teuchos::RCP<const CompositeVector> mu);
 
   virtual void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u);
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
-  virtual void ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary=true);
-
-  // access (for developers mainly)
-  void set_factor(double factor) { factor_ = factor; }
-  int schema_dofs() { return local_op_schema_; }
-  int schema_prec_dofs() { return global_op_schema_; }
+  virtual void ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary);
+  virtual void ModifyMatrices(const CompositeVector& u);
 
   int nfailed_primary() { return nfailed_primary_; }
-
-  // special members
-  void ModifyMatrices(const CompositeVector& u);
-
-  // access
-  Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
-  Teuchos::RCP<Operator> global_operator() { return global_op_; }
-  Teuchos::RCP<const Op> local_matrices() const { return local_op_; }
-  Teuchos::RCP<Op> local_matrices() { return local_op_; }
-
-  int upwind() { return upwind_; }
   
  protected:
   void InitDiffusion_(Teuchos::ParameterList& plist);
@@ -108,32 +75,12 @@ class OperatorDiffusion {
 
  protected:
   std::vector<WhetStone::DenseMatrix> Wff_cells_;
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
-  double rho_, mu_;
-  bool scaled_constraint_;
-  Teuchos::RCP<const CompositeVector> rho_cv_, mu_cv_;
-
-  Teuchos::RCP<const CompositeVector> k_, dkdp_;
-  int upwind_;
   int newton_correction_;
+  bool exclude_primary_terms_;
   double factor_;
 
   int mfd_primary_, mfd_secondary_, mfd_pc_primary_, mfd_pc_secondary_;
   int nfailed_primary_;
-  bool scalar_rho_mu_;
-
-  // operator
-  Teuchos::RCP<Operator> global_op_;
-  Teuchos::RCP<Op> local_op_;
-  Teuchos::RCP<Op> jac_op_;
-  int global_op_schema_, local_op_schema_, jac_op_schema_;
-  Teuchos::RCP<BCs> bc_;
-
-  // mesh info
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  int ncells_owned, ncells_wghost;
-  int nfaces_owned, nfaces_wghost;
-  int nnodes_owned, nnodes_wghost;
 
 };
 
