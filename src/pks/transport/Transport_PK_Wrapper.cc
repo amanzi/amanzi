@@ -43,18 +43,13 @@ Transport_PK_Wrapper::Transport_PK_Wrapper(
       Exceptions::amanzi_throw(msg);
   }
 
-  if (glist_->isSublist("PKs")){
-    if (glist_->sublist("PKs").isSublist(pk_name)){
-      transport_subsycling = glist_->sublist("PKs").sublist(pk_name).get<bool>("transport subsycling", true);
-    }else{
-      Errors::Message msg("Transport PK: sublist PKs->" + pk_name + " is missing.");
-      Exceptions::amanzi_throw(msg);
-    }   
-  }else{
-    Errors::Message msg("Transport PK: sublist PKs is missing.");
-      Exceptions::amanzi_throw(msg);
-  }
- 
+
+  Teuchos::RCP<Teuchos::ParameterList> pk_list =  Teuchos::sublist(glist_, "PKs", true);
+  Teuchos::RCP<Teuchos::ParameterList> pk_transp_list =  Teuchos::sublist(pk_list, pk_name, true);
+
+  transport_subcycling = pk_transp_list->get<bool>("transport subcycling", true);
+
+   
   // construct
   pk_ = Teuchos::rcp(new Transport_PK(glist_, S_, pk_name, comp_names_));
 }
