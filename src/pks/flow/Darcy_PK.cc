@@ -75,8 +75,8 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
     S->RequireScalar("fluid_viscosity", passwd_);
   }
   if (!S->HasField("gravity")) {
-    S->RequireConstantVector("gravity", passwd_, dim);
-  }
+    S->RequireConstantVector("gravity", passwd_, dim);  // state resets ownership.
+  } 
 
   if (!S->HasField("pressure")) {
     S->RequireField("pressure", passwd_)->SetMesh(mesh_)->SetGhosted(true)
@@ -128,7 +128,6 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
     Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
     S->SetFieldEvaluator("darcy_velocity", eval);
   }
-
 
   if (!S->HasField("hydraulic_head")) {
     S->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(true)

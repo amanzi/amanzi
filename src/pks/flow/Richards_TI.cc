@@ -39,10 +39,12 @@ void Richards_PK::Functional(double T0, double T1,
   rel_perm_->Compute(*u_new); 
 
   RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
-  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
+  upwind_->Compute(*darcy_flux_upwind, *u_new, bc_model, bc_value, 
+                   *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
 
   RelativePermeabilityUpwindFn func2 = &RelativePermeability::Derivative;
-  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
+  upwind_->Compute(*darcy_flux_upwind, *u_new, bc_model, bc_value,
+                   *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
   UpdateSourceBoundaryData(T0, T1, *u_new);
   
   // assemble residual for diffusion operator
@@ -103,14 +105,19 @@ void Richards_PK::ApplyPreconditioner(Teuchos::RCP<const CompositeVector> X,
 void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVector> u, double dTp)
 {
   // update coefficients
+  if (update_upwind == FLOW_UPWIND_UPDATE_ITERATION) {
+    op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
+  }
   darcy_flux_copy->ScatterMasterToGhosted("face");
   rel_perm_->Compute(*u);
 
   RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
-  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
+  upwind_->Compute(*darcy_flux_upwind, *u, bc_model, bc_value,
+                   *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
 
   RelativePermeabilityUpwindFn func2 = &RelativePermeability::Derivative;
-  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
+  upwind_->Compute(*darcy_flux_upwind, *u, bc_model, bc_value,
+                   *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
 
   double T0 = Tp - dTp;
   UpdateSourceBoundaryData(T0, Tp, *u);

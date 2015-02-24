@@ -40,7 +40,7 @@ class UpwindSecondOrder : public Upwind<Model> {
   // main methods
   void Init(Teuchos::ParameterList& plist);
 
-  void Compute(const CompositeVector& flux,
+  void Compute(const CompositeVector& flux, const CompositeVector& solution,
                const std::vector<int>& bc_model, const std::vector<double>& bc_value,
                const CompositeVector& field, CompositeVector& field_upwind,
                double (Model::*Value)(int, double) const);
@@ -76,7 +76,7 @@ void UpwindSecondOrder<Model>::Init(Teuchos::ParameterList& plist)
 ****************************************************************** */
 template<class Model>
 void UpwindSecondOrder<Model>::Compute(
-    const CompositeVector& flux,
+    const CompositeVector& flux, const CompositeVector& solution,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value,
     const CompositeVector& field, CompositeVector& field_upwind,
     double (Model::*Value)(int, double) const)
@@ -90,18 +90,18 @@ void UpwindSecondOrder<Model>::Compute(
   field.ScatterMasterToGhosted("cell");
   flux.ScatterMasterToGhosted("face");
 
-  const Epetra_MultiVector& u = *flux.ViewComponent("face", true);
-  const Epetra_MultiVector& fcells = *field.ViewComponent("cell", true);
-  const Epetra_MultiVector& ffaces = *field.ViewComponent("face", true);
-  const Epetra_MultiVector& fgrads = *field.ViewComponent("grad", true);
+  const Epetra_MultiVector& flx_face = *flux.ViewComponent("face", true);
+  const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
+  const Epetra_MultiVector& fld_grad = *field.ViewComponent("grad", true);
+  const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
-  Epetra_MultiVector& upw = *field_upwind.ViewComponent("face", true);
-  upw.PutScalar(0.0);
+  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent("face", true);
+  upw_face.PutScalar(0.0);
 
-  double umin, umax;
-  u.MinValue(&umin);
-  u.MaxValue(&umax);
-  double tol = tolerance_ * std::max(fabs(umin), fabs(umax));
+  double flxmin, flxmax;
+  flx_face.MinValue(&flxmin);
+  flx_face.MaxValue(&flxmax);
+  double tol = tolerance_ * std::max(fabs(flxmin), fabs(flxmax));
 
   int dim = mesh_->space_dimension();
   std::vector<int> dirs;
@@ -114,16 +114,16 @@ void UpwindSecondOrder<Model>::Compute(
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    double kc(fcells[0][c]);
+    double kc(fld_cell[0][c]);
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    for (int i = 0; i < dim; i++) grad[i] = fgrads[i][c];
+    for (int i = 0; i < dim; i++) grad[i] = fld_grad[i][c];
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      bool flag = (u[0][f] * dirs[n] <= -tol);  // upwind flag
+      bool flag = (flx_face[0][f] * dirs[n] <= -tol);  // upwind flag
       
       // Internal faces. We average field on almost vertical faces. 
-      if (bc_model[f] == OPERATOR_BC_NONE && fabs(u[0][f]) <= tol) { 
+      if (bc_model[f] == OPERATOR_BC_NONE && fabs(flx_face[0][f]) <= tol) { 
         double tmp(0.5);
         int c2 = mfd.cell_get_face_adj_cell(c, f);
         if (c2 >= 0) { 
@@ -132,19 +132,19 @@ void UpwindSecondOrder<Model>::Compute(
           tmp = v2 / (v1 + v2);
         }
         const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-        upw[0][f] += (kc + grad * (xf - xc)) * tmp;
+        upw_face[0][f] += (kc + grad * (xf - xc)) * tmp;
       // Boundary faces. We upwind only on inflow dirichlet faces.
       } else if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
-        upw[0][f] = ((*model_).*Value)(c, bc_value[f]);
+        upw_face[0][f] = ((*model_).*Value)(c, bc_value[f]);
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN && flag) {
-        // upw[0][f] = ((*model_).*Value)(c, ffaces[0][f]);
-        upw[0][f] = kc;
+        // upw[0][f] = ((*model_).*Value)(c, sol_face[0][f]);
+        upw_face[0][f] = kc;
       } else if (bc_model[f] == OPERATOR_BC_MIXED && flag) {
-        upw[0][f] = kc;
+        upw_face[0][f] = kc;
       // Internal and boundary faces. 
       } else if (!flag) {
         const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-        upw[0][f] = kc + grad * (xf - xc);
+        upw_face[0][f] = kc + grad * (xf - xc);
       }
     }
   }

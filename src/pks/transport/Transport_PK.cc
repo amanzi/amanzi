@@ -177,12 +177,11 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   ProcessParameterList();
  
   // state pre-prosessing
-  Teuchos::RCP<CompositeVector> cv1;
-  S->GetFieldData("darcy_flux", passwd_)->ScatterMasterToGhosted("face");
-  cv1 = S->GetFieldData("darcy_flux", passwd_);
-  darcy_flux = cv1->ViewComponent("face", true);
-
   Teuchos::RCP<const CompositeVector> cv2;
+  S->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
+  cv2 = S->GetFieldData("darcy_flux");
+  darcy_flux = cv2->ViewComponent("face", true);
+
   cv2 = S->GetFieldData("water_saturation");
   ws = cv2->ViewComponent("cell", false);
 
@@ -250,7 +249,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 * ***************************************************************** */
 double Transport_PK::CalculateTransportDt()
 {
-  S_->GetFieldData("darcy_flux", passwd_)->ScatterMasterToGhosted("face");
+  S_->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
 
   IdentifyUpwindCells();
 

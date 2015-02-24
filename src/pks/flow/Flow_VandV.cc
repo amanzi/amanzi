@@ -41,11 +41,11 @@ void Flow_PK::InitializeFields()
     S_->GetField("fluid_viscosity", passwd_)->set_initialized();
   }
 
-  if (!S_->GetField("gravity", passwd_)->initialized()) {
-    Epetra_Vector& gvec = *S_->GetConstantVectorData("gravity", passwd_);
+  if (!S_->GetField("gravity", "state")->initialized()) {
+    Epetra_Vector& gvec = *S_->GetConstantVectorData("gravity", "state");
     gvec.PutScalar(0.0);
     gvec[dim - 1] = -9.80;
-    S_->GetField("gravity", passwd_)->set_initialized();
+    S_->GetField("gravity", "state")->set_initialized();
   }
 
   if (!S_->GetField("permeability", passwd_)->initialized()) {

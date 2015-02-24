@@ -85,7 +85,7 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
     S->RequireScalar("fluid_viscosity", passwd_);
   }
   if (!S->HasField("gravity")) {
-    S->RequireConstantVector("gravity", passwd_, dim);
+    S->RequireConstantVector("gravity", passwd_, dim);  // state resets ownerships.
   }
 
   if (!S->HasField("pressure")) {
@@ -603,10 +603,12 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     rel_perm_->Compute(pressure);
 
     RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
-    upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
+    upwind_->Compute(*darcy_flux_upwind, *solution, bc_model, bc_value,
+                     *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
 
     RelativePermeabilityUpwindFn func2 = &RelativePermeability::Derivative;
-    upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
+    upwind_->Compute(*darcy_flux_upwind, *solution, bc_model, bc_value,
+                     *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
 
     if (ti_specs.inflow_krel_correction) {
       Epetra_MultiVector& k_face = *rel_perm_->Krel()->ViewComponent("face", true);
@@ -772,13 +774,11 @@ void Richards_PK::CommitState(double dt, const Teuchos::Ptr<State>& S)
   for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
   *darcy_flux_copy->ViewComponent("face", true) = flux;
 
-  
   // update time derivative
   *pdot_cells_prev = *pdot_cells;
 
   // update mass balance
   // ImproveAlgebraicConsistency(ws_prev, ws);
-  
  
   dT = dTnext;
 }

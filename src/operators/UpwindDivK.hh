@@ -40,7 +40,7 @@ class UpwindDivK : public Upwind<Model> {
   // main methods
   void Init(Teuchos::ParameterList& plist);
 
-  void Compute(const CompositeVector& flux,
+  void Compute(const CompositeVector& flux, const CompositeVector& solution,
                const std::vector<int>& bc_model, const std::vector<double>& bc_value,
                const CompositeVector& field, CompositeVector& field_upwind,
                double (Model::*Value)(int, double) const);
@@ -76,7 +76,7 @@ void UpwindDivK<Model>::Init(Teuchos::ParameterList& plist)
 ****************************************************************** */
 template<class Model>
 void UpwindDivK<Model>::Compute(
-    const CompositeVector& flux,
+    const CompositeVector& flux, const CompositeVector& solution,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value,
     const CompositeVector& field, CompositeVector& field_upwind,
     double (Model::*Value)(int, double) const)
@@ -89,17 +89,17 @@ void UpwindDivK<Model>::Compute(
   field.ScatterMasterToGhosted("cell");
   flux.ScatterMasterToGhosted("face");
 
-  const Epetra_MultiVector& u = *flux.ViewComponent("face", true);
-  const Epetra_MultiVector& fcells = *field.ViewComponent("cell", true);
-  const Epetra_MultiVector& ffaces = *field.ViewComponent("face", true);
+  const Epetra_MultiVector& flx_face = *flux.ViewComponent("face", true);
+  const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
+  const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
-  Epetra_MultiVector& upw = *field_upwind.ViewComponent("face", true);
-  upw.PutScalar(0.0);
+  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent("face", true);
+  upw_face.PutScalar(0.0);
 
-  double umin, umax;
-  u.MinValue(&umin);
-  u.MaxValue(&umax);
-  double tol = tolerance_ * std::max(fabs(umin), fabs(umax));
+  double flxmin, flxmax;
+  flx_face.MinValue(&flxmin);
+  flx_face.MaxValue(&flxmax);
+  double tol = tolerance_ * std::max(fabs(flxmin), fabs(flxmax));
 
   std::vector<int> dirs;
   AmanziMesh::Entity_ID_List faces;
@@ -109,14 +109,14 @@ void UpwindDivK<Model>::Compute(
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
-    double kc(fcells[0][c]);
+    double kc(fld_cell[0][c]);
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      bool flag = (u[0][f] * dirs[n] <= -tol);  // upwind flag
+      bool flag = (flx_face[0][f] * dirs[n] <= -tol);  // upwind flag
       
       // Internal faces. We average field on almost vertical faces. 
-      if (bc_model[f] == OPERATOR_BC_NONE && fabs(u[0][f]) <= tol) { 
+      if (bc_model[f] == OPERATOR_BC_NONE && fabs(flx_face[0][f]) <= tol) { 
         double tmp(0.5);
         int c2 = mfd.cell_get_face_adj_cell(c, f);
         if (c2 >= 0) { 
@@ -124,23 +124,23 @@ void UpwindDivK<Model>::Compute(
           double v2 = mesh_->cell_volume(c2);
           tmp = v2 / (v1 + v2);
         }
-        upw[0][f] += kc * tmp; 
+        upw_face[0][f] += kc * tmp; 
       // Boundary faces. We upwind only on inflow dirichlet faces.
       } else if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
-        upw[0][f] = ((*model_).*Value)(c, bc_value[f]);
+        upw_face[0][f] = ((*model_).*Value)(c, bc_value[f]);
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN && flag) {
-        // upw[0][f] = ((*model_).*Value)(c, ffaces[0][f]);
-        upw[0][f] = kc;
+        // upw_face[0][f] = ((*model_).*Value)(c, sol_face[0][f]);
+        upw_face[0][f] = kc;
       } else if (bc_model[f] == OPERATOR_BC_MIXED && flag) {
-        upw[0][f] = kc;
+        upw_face[0][f] = kc;
       // Internal and boundary faces. 
       } else if (!flag) {
         int c2 = mfd.cell_get_face_adj_cell(c, f);
         if (c2 >= 0) {
-          double kc2(fcells[0][c2]);
-          upw[0][f] = std::pow(kc * (kc + kc2) / 2, 0.5);
+          double kc2(fld_cell[0][c2]);
+          upw_face[0][f] = std::pow(kc * (kc + kc2) / 2, 0.5);
         } else {
-          upw[0][f] = kc;
+          upw_face[0][f] = kc;
         }
       }
     }

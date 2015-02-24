@@ -60,7 +60,7 @@ class Upwind {
   // main methods
   virtual void Init(Teuchos::ParameterList& plist) = 0;
 
-  virtual void Compute(const CompositeVector& flux,
+  virtual void Compute(const CompositeVector& flux, const CompositeVector& solution,
                        const std::vector<int>& bc_model, const std::vector<double>& bc_value,
                        const CompositeVector& field, CompositeVector& field_upwind,
                        double (Model::*Value)(int, double) const) = 0;

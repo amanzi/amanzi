@@ -193,7 +193,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
 
   Teuchos::RCP<CompositeVector> tcc_tmp;  // next tcc
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 
-  Teuchos::RCP<Epetra_MultiVector> darcy_flux;
+  Teuchos::RCP<const Epetra_MultiVector> darcy_flux;
   Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi;
   
 #ifdef ALQUIMIA_ENABLED

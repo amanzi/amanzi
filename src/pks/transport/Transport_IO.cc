@@ -37,6 +37,7 @@ void Transport_PK::ProcessParameterList()
 
   // create verbosity object
   vo_ = new VerboseObject("TransportPK", transport_list); 
+  Teuchos::OSTab tab = vo_->getOSTab();
 
   // global transport parameters
   cfl_ = transport_list.get<double>("cfl", 1.0);
@@ -130,7 +131,6 @@ void Transport_PK::ProcessParameterList()
             mat_properties_[iblock]->alphaTH == 0.0 &&
             mat_properties_[iblock]->alphaTV == 0.0) {
           if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
-            Teuchos::OSTab tab = vo_->getOSTab();
             *vo_->os() << vo_->color("yellow") << "Zero dispersion for sublist \"" 
                        << dlist.name(i) << "\"" << vo_->reset() << std::endl;
           }
@@ -202,7 +202,9 @@ void Transport_PK::ProcessParameterList()
       }
     }
   } else {
-    printf("Transport PK: does not have boundary conditions.\n");
+    if (vo_->getVerbLevel() > Teuchos::VERB_NONE) {
+      *vo_->os() << vo_->color("yellow") << "No BCs were specified." << vo_->reset() << std::endl;
+    }
   }
 
   // Create the source object if any

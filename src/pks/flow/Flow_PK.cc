@@ -37,7 +37,7 @@ Flow_PK::Flow_PK() :
     src_sink(NULL),
     ti_specs(NULL),
     vo_(NULL),
-    passwd_("state")
+    passwd_("flow")
 {
 }
 

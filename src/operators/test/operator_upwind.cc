@@ -133,7 +133,8 @@ TEST(UPWIND) {
     cvs->SetGhosted(true);
     cvs->SetComponent("face", AmanziMesh::FACE, 1);
 
-    CompositeVector flux(*cvs), upw_field1(*cvs), upw_field2(*cvs);
+    CompositeVector flux(*cvs), solution(*cvs);
+    CompositeVector upw_field1(*cvs), upw_field2(*cvs);
     Epetra_MultiVector& u = *flux.ViewComponent("face", true);
   
     Point vel(1.0, 2.0, 3.0);
@@ -148,11 +149,11 @@ TEST(UPWIND) {
     upwind1.Init(ulist);
 
     ModelUpwindFn func = &Model::Value;
-    upwind1.Compute(flux, bc_model, bc_value, field, upw_field1, func);
+    upwind1.Compute(flux, solution, bc_model, bc_value, field, upw_field1, func);
 
     UpwindDivK<Model> upwind2(mesh, model);
     upwind2.Init(ulist);
-    upwind2.Compute(flux, bc_model, bc_value, field, upw_field2, func);
+    upwind2.Compute(flux, solution, bc_model, bc_value, field, upw_field2, func);
 
     // calculate errors
     Epetra_MultiVector& upw1 = *upw_field1.ViewComponent("face");
