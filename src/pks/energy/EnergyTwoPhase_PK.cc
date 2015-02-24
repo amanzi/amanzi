@@ -26,8 +26,12 @@ namespace Energy {
 * Default constructor for Thermal Richrads PK.
 ****************************************************************** */
 EnergyTwoPhase_PK::EnergyTwoPhase_PK(
-    Teuchos::RCP<const Teuchos::ParameterList>& glist, Teuchos::RCP<State>& S)
-    : Energy_PK(glist, S) {};
+    Teuchos::ParameterList& pk_tree,
+    const Teuchos::RCP<Teuchos::ParameterList>& glist,
+    const Teuchos::RCP<State>& S,
+    const Teuchos::RCP<TreeVector>& soln) : Energy_PK(glist, S) 
+{
+};
 
 
 /* ******************************************************************

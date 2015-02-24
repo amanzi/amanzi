@@ -4,7 +4,7 @@
   <Parameter isUsed="true" name="input file name" type="string" value="amanzi-u-1d-ion-exchange-valocchi.xml"/>
 
   <ParameterList name="Visualization Data">
-    <Parameter name="file name base" type="string" value="ion-exchange-valocchi"/>
+    <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/>
   </ParameterList>
   <ParameterList name="Checkpoint Data">

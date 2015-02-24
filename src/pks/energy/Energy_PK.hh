@@ -36,7 +36,7 @@ namespace Energy {
 
 class Energy_PK : public PK, public Amanzi::BDFFnBase<TreeVector> {
  public:
-  Energy_PK(Teuchos::RCP<const Teuchos::ParameterList>& glist, Teuchos::RCP<State> S);
+  Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist, Teuchos::RCP<State> S);
   virtual ~Energy_PK() {};
 
   // main PK methods

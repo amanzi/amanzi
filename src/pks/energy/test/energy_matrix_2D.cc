@@ -50,7 +50,7 @@ TEST(ENERGY_2D_MATRIX) {
   // read parameter list 
   std::string xmlFileName = "test/energy_matrix_2D.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
-  Teuchos::RCP<const Teuchos::ParameterList> plist = 
+  const Teuchos::RCP<Teuchos::ParameterList> plist = 
       Teuchos::rcp(new Teuchos::ParameterList(xmlreader.getParameters()));
 
   // create a mesh framework
@@ -74,7 +74,9 @@ TEST(ENERGY_2D_MATRIX) {
   S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
   // initialize the Energy process kernel 
-  EnergyTwoPhase_PK* EPK = new EnergyTwoPhase_PK(plist, S);
+  Teuchos::ParameterList pk_tree;
+  Teuchos::RCP<TreeVector> soln;
+  EnergyTwoPhase_PK* EPK = new EnergyTwoPhase_PK(pk_tree, plist, S, soln);
   EPK->Setup();
 std::cout << "Passes EPK.Setup()" << std::endl;
   S->Setup();

@@ -29,8 +29,8 @@ namespace Energy {
 /* ******************************************************************
 * Default constructor for Energy PK.
 ****************************************************************** */
-Energy_PK::Energy_PK(
-    Teuchos::RCP<const Teuchos::ParameterList>& glist, Teuchos::RCP<State> S)
+Energy_PK::Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                     Teuchos::RCP<State> S)
     : glist_(glist), vo_(NULL), passwd_("thermal")
 {
   S_ = S;
