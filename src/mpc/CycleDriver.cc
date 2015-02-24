@@ -77,11 +77,11 @@ void CycleDriver::init_pk(int time_pr_id){
 
   std::ostringstream ss; ss << time_pr_id;
   std::string tp_list_name = "TP "+ ss.str();
-  //  std::cout<<*time_periods_list<<"\n";
-  //std::cout<<time_periods_list->sublist(tp_list_name.data())<<"\n";
+  // std::cout<<*time_periods_list<<"\n";
+  // std::cout<<time_periods_list->sublist(tp_list_name.data())<<"\n";
 
   Teuchos::ParameterList pk_tree_list = time_periods_list->sublist(tp_list_name.data()).sublist("PK Tree");
-  //std::cout<<pk_tree_list<<"\n";
+  // std::cout<<pk_tree_list<<"\n";
   if (pk_tree_list.numParams() == 0 || pk_tree_list.numParams() > 1) {
     Errors::Message message("CycleDriver: PK Tree list should contain exactly one root node list");
     Exceptions::amanzi_throw(message);
@@ -90,7 +90,7 @@ void CycleDriver::init_pk(int time_pr_id){
   const std::string &pk_name = pk_tree_list.name(pk_item);
 
   if (!pk_tree_list.isSublist(pk_name)) {
-    Errors::Message message("CycleDriver: PK Tree list should contain exactly one root node list");
+    Errors::Message message("CycleDriver: PK Tree list does not have node \"" + pk_name + "\".");
     Exceptions::amanzi_throw(message);
   }
 

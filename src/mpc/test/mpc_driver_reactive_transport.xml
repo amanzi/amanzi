@@ -2,6 +2,7 @@
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
   <Parameter name="grid_option" type="string" value="Unstructured"/>
   <Parameter isUsed="true" name="input file name" type="string" value="amanzi-u-1d-ion-exchange-valocchi.xml"/>
+
   <ParameterList name="Visualization Data">
     <Parameter name="file name base" type="string" value="ion-exchange-valocchi"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/>
@@ -11,6 +12,7 @@
     <Parameter name="file name digits" type="int" value="5"/>
     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1, -1}" />
   </ParameterList>  
+
   <ParameterList name="Regions">
     <ParameterList name="Entire Domain">
       <ParameterList name="Region: Box">
@@ -61,71 +63,36 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="Domain">
     <Parameter isUsed="true" name="Spatial Dimension" type="int" value="3"/>
   </ParameterList>
 
   <ParameterList name="Cycle Driver">
     <Parameter name="start time" type="double" value="0"/>
-    <Parameter name="end time" type="double" value="10000000"/>
-    <ParameterList name="time intervals">
-      <ParameterList name="TI 0">
-	<Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
+    <Parameter name="end time" type="double" value="10000000.0"/>
+    <ParameterList name="time periods">
+      <ParameterList name="TP 0">
 	<Parameter name="physical model" type="string" value="PK tree"/>
-	<Parameter name="start interval time" type="double" value="0.0e+00"/>
-	<Parameter name="end interval time" type="double" value="1.00000000000000000e+02"/>
-	<ParameterList name="PK Tree">
-	  <ParameterList name="Flow">
-	    <Parameter name="PK type" type="string" value="Reactive Transport"/>
-	  </ParameterList>
-	</ParameterList>
+	<Parameter name="start period time" type="double" value="0.0e+00"/>
+	<Parameter name="end period time" type="double" value="1.0e+02"/>
+        <ParameterList name="PK Tree">
+          <ParameterList name="Reactive Transport">
+            <Parameter name="PK type" type="string" value="reactive transport"/>
+            <ParameterList name="Transport">
+	      <Parameter name="PK type" type="string" value="transport"/>
+            </ParameterList>
+            <ParameterList name="Chemistry">
+	      <Parameter name="PK type" type="string" value="chemistry"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Restart from Checkpoint Data File">
-      <Parameter name="Checkpoint Data File Name" type="string" value="test/restart.h5"/>
-    </ParameterList>
-  </ParameterList>
-
-  <ParameterList name="PK Tree">
-    <ParameterList name="Reactive Transport">
-      <Parameter name="PK type" type="string" value="reactivetransport pk"/>
-      <ParameterList name="Transport">
-	<Parameter name="PK type" type="string" value="transport pk"/>
-      </ParameterList>
-      <ParameterList name="Chemistry">
-	<Parameter name="PK type" type="string" value="chemistry pk"/>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-
-  <ParameterList name="MPC">
-    <ParameterList name="Restart from Checkpoint Data File">
-      <Parameter name="Checkpoint Data File Name" type="string" value="restart.h5"/>
-    </ParameterList>
-    <ParameterList name="Time Integration Mode">
-      <ParameterList name="Transient">
-        <Parameter name="Start" type="double" value="0.0e+00"/>
-        <Parameter name="End" type="double" value="3.15360000000000000e+07"/>
-        <Parameter name="Initial Time Step" type="double" value="1.57680000000000000e+05"/>
-        <Parameter name="Maximum Time Step" type="double" value="1.57680000000000000e+05"/>
-        <Parameter name="Maximum Time Step Size" type="double" value="1.57680000000000000e+05"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Time Period Control">
-      <Parameter name="Start Times" type="Array(double)" value="{}"/>
-      <Parameter name="Initial Time Step" type="Array(double)" value="{}"/>
-    </ParameterList>
-    <Parameter name="disable Transport_PK" type="string" value="no"/>
-    <Parameter isUsed="true" name="Chemistry Model" type="string" value="Amanzi"/>
-    <Parameter name="transport subcycling" type="bool" value="true"/>
-    <Parameter name="max chemistry to transport timestep ratio" type="double" value="1.0e+00"/>
     <Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
-    <Parameter name="disable Flow_PK" type="string" value="no"/>
-    <Parameter name="Flow model" type="string" value="Steady State Saturated"/>
-    <Parameter name="time integration rescue reduction factor" type="double" value="5.00000000000000000e-01"/>
-    <ParameterList name="VerboseObject">
-      <Parameter name="Verbosity Level" type="string" value="high"/>
-    </ParameterList>
+    <!--ParameterList name="Restart from Checkpoint Data File">
+      <Parameter name="Checkpoint Data File Name" type="string" value="test/restart.h5"/>
+    </ParameterList-->
   </ParameterList>
 
   <ParameterList name="PKs">
@@ -138,7 +105,7 @@
       <Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
       <ParameterList name="Thermodynamic Database">
 	<Parameter name="Format" type="string" value="simple"/>
-	<Parameter name="File" type="string" value="test/ion-exchange-valocchi.bgd"/>
+	<Parameter name="File" type="string" value="test/mpc_driver_reactive_transport.bgd"/>
       </ParameterList>
       <Parameter name="Activity Model" type="string" value="unit"/>
       <Parameter name="Verbosity" type="Array(string)" value="{verbose}"/>
@@ -167,7 +134,7 @@
 		<Parameter name="Function type" type="string" value="composite function"/>
 		<ParameterList name="DoF 1 Function">
 		  <ParameterList name="function-constant">
-		    <Parameter name="value" type="double" value="2.00000000000000010e-04"/>
+		    <Parameter name="value" type="double" value="2.0e-04"/>
 		  </ParameterList>
 		</ParameterList>
 	      </ParameterList>
@@ -197,7 +164,7 @@
 		<Parameter name="Function type" type="string" value="composite function"/>
 		<ParameterList name="DoF 1 Function">
 		  <ParameterList name="function-constant">
-		    <Parameter name="value" type="double" value="2.00000000000000000e+00"/>
+		    <Parameter name="value" type="double" value="2.0"/>
 		  </ParameterList>
 		</ParameterList>
 	      </ParameterList>
@@ -214,7 +181,7 @@
 		<Parameter name="Function type" type="string" value="composite function"/>
 		<ParameterList name="DoF 1 Function">
 		  <ParameterList name="function-constant">
-		    <Parameter name="value" type="double" value="7.50000000000000000e+02"/>
+		    <Parameter name="value" type="double" value="7.5e+02"/>
 		  </ParameterList>
 		</ParameterList>
 	      </ParameterList>
@@ -227,7 +194,7 @@
 		<Parameter name="Function type" type="string" value="composite function"/>
 		<ParameterList name="DoF 1 Function">
 		  <ParameterList name="function-constant">
-		    <Parameter name="value" type="double" value="2.50000000000000000e+02"/>
+		    <Parameter name="value" type="double" value="2.5e+02"/>
 		  </ParameterList>
 		</ParameterList>
 	      </ParameterList>
@@ -274,22 +241,22 @@
 		<Parameter name="Function type" type="string" value="composite function"/>
 		<ParameterList name="DoF 1 Function">
 		  <ParameterList name="function-constant">
-		    <Parameter name="value" type="double" value="8.67463299999999965e-02"/>
+		    <Parameter name="value" type="double" value="8.674633e-02"/>
 		  </ParameterList>
 		</ParameterList>
 		<ParameterList name="DoF 2 Function">
 		  <ParameterList name="function-constant">
-		    <Parameter name="value" type="double" value="1.82518300000000001e-02"/>
+		    <Parameter name="value" type="double" value="1.825183e-02"/>
 		  </ParameterList>
 		</ParameterList>
 		<ParameterList name="DoF 3 Function">
 		  <ParameterList name="function-constant">
-		    <Parameter name="value" type="double" value="1.11316100000000001e-02"/>
+		    <Parameter name="value" type="double" value="1.113161e-02"/>
 		  </ParameterList>
 		</ParameterList>
 		<ParameterList name="DoF 4 Function">
 		  <ParameterList name="function-constant">
-		    <Parameter name="value" type="double" value="1.45513210000000004e-01"/>
+		    <Parameter name="value" type="double" value="1.4551321e-01"/>
 		  </ParameterList>
 		</ParameterList>
 	      </ParameterList>
@@ -359,6 +326,7 @@
 	<Parameter name="Verbosity Level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
+
     <ParameterList name="Transport">
       <Parameter name="PK type" type="string" value="transport pk"/>
       <Parameter name="spatial discretization order" type="int" value="1"/>
@@ -432,6 +400,7 @@
       <Parameter name="runtime diagnostics: regions" type="Array(string)" value="{}"/>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="State">
     <ParameterList name="initial conditions">
       <ParameterList name="gravity">
@@ -451,6 +420,34 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="9.98200000000000045e+02"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="darcy_flux">
+        <Parameter name="dot with normal" type="bool" value="true"/>
+        <ParameterList name="function">
+          <ParameterList name="All domain">
+            <Parameter name="regions" type="Array(string)" value="{Entire Domain}"/>
+            <Parameter name="component" type="string" value="face"/>
+            <ParameterList name="function">
+              <Parameter name="Number of DoFs" type="int" value="3"/>
+              <Parameter name="Function type" type="string" value="composite function"/>
+              <ParameterList name="DoF 1 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.0"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 2 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.00000000000000000e+00"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 3 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.86340000000000002e-06"/>
+                </ParameterList>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -580,6 +577,7 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="Flow">
     <ParameterList name="Darcy problem">
       <ParameterList name="VerboseObject">
@@ -678,6 +676,7 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="Preconditioners">
     <ParameterList name="Trilinos ML">
       <Parameter name="preconditioner type" type="string" value="ml"/>
@@ -728,6 +727,7 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="Solvers">
     <ParameterList name="AztecOO">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>

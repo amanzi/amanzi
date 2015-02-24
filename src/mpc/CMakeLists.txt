@@ -111,13 +111,13 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_driver_transport.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-if(0)
     # Test: mpc-new driver reactive transport
     add_amanzi_test(mpc_driver_reactive_transport mpc_driver_reactive_transport
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_reactive_transport.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+if(0)
     # Test: mpc-new driver dummy
     add_amanzi_test(mpc_driver_dummy mpc_driver_dummy
                     KIND      int

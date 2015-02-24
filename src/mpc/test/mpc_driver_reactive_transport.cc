@@ -14,13 +14,17 @@
 #include "MeshFactory.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_reactivetransport_registration.hh"
+#include "mpc_pks_registration.hh"
 #include "pks_transport_registration.hh"
 #include "pks_chemistry_registration.hh"
 #include "State.hh"
 
 
-TEST(NEW_DRIVER_Reactive_Transport) {
+TEST(MPC_DRIVER_REACTIVE_TRANSPORT) {
+
+using namespace Amanzi;
+using namespace Amanzi::AmanziMesh;
+using namespace Amanzi::AmanziGeometry;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   
@@ -42,27 +46,22 @@ TEST(NEW_DRIVER_Reactive_Transport) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory("test/mpc_driver_transport_mesh_10x10.exo", gm);
+  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 100, 1, 1, gm);
   ASSERT(!mesh.is_null());
 
   bool mpc_new = true;
   
-  // if (input_parameter_list.isParameter("New multi-process coordinator")){
-  //   mpc_new = input_parameter_list.get<bool>("New multi-process coordinator",false);
-  //   //mpc_new = true;
-  // }
-
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
 
   if (mpc_new) {
-    if (driver_parameter_list.isSublist("State")){
+    if (plist.isSublist("State")) {
       // Create the state.    
-      Teuchos::ParameterList state_plist = driver_parameter_list.sublist("State");
+      Teuchos::ParameterList state_plist = plist.sublist("State");
       Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
       S->RegisterMesh("domain",mesh);      
 
-      Amanzi::CycleDriver cycle_driver(driver_parameter_list, S, comm, obs_data);
+      Amanzi::CycleDriver cycle_driver(plist, S, &comm, obs_data);
       cycle_driver.go();
     }
   }
