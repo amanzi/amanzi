@@ -94,45 +94,46 @@ if (BUILD_TESTS)
                     geometry whetstone mesh_functions functions pks)
     
     # Test: mpc-mstk
-    add_amanzi_test(mpc-mstk test_mpc_mstk
+    add_amanzi_test(mpc_old_driver test_old_driver
                     KIND      int
-                    SOURCE    test/Main.cc test/test_driver.cc
+                    SOURCE    test/Main.cc test/test_old_driver.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: mpc-new driver flow
-    add_amanzi_test(mpc-new-flow test_mpc_new_flow
+    add_amanzi_test(mpc_driver_flow mpc_driver_flow
                     KIND      int
-                    SOURCE    test/Main.cc test/test_new_driver_flow.cc
+                    SOURCE    test/Main.cc test/mpc_driver_flow.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: mpc-new driver transport
-    add_amanzi_test(mpc-new-transport test_mpc_new_transport
+    add_amanzi_test(mpc_driver_transport mpc_driver_transport
                     KIND      int
-                    SOURCE    test/Main.cc test/test_new_driver_transport.cc
+                    SOURCE    test/Main.cc test/mpc_driver_transport.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
 if(0)
     # Test: mpc-new driver reactive transport
-    add_amanzi_test(mpc-new-reactive-transport test_mpc_new_reactive_transport
+    add_amanzi_test(mpc_driver_reactive_transport mpc_driver_reactive_transport
                     KIND      int
-                    SOURCE    test/Main.cc test/test_new_driver_reactive_transport.cc
+                    SOURCE    test/Main.cc test/mpc_driver_reactive_transport.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: mpc-new driver dummy
-    add_amanzi_test(mpc-new-dummy test_mpc_new_dummy
+    add_amanzi_test(mpc_driver_dummy mpc_driver_dummy
                     KIND      int
-                    SOURCE    test/Main.cc test/test_dummy_pk.cc
+                    SOURCE    test/Main.cc test/mpc_driver_dummy_pk.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: mpc-new driver richards reactive transport
-    add_amanzi_test(mpc-new-flow-reac-transport test_mpc_new_flow_reac_transport
+    add_amanzi_test(mpc_driver_flow_reactive_transport mpc_driver_flow_reactive_transport
                     KIND      int
-                    SOURCE    test/Main.cc test/test_new_driver_frt.cc
+                    SOURCE    test/Main.cc test/mpc_driver_frt.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
     # Test: mpc-new driver pressure saturation
-    add_amanzi_test(mpc-new-impes test_mpc_new_impes
+    add_amanzi_test(mpc_driver_impes mpc_driver_impes
                     KIND      int
-                    SOURCE    test/Main.cc test/test_new_driver_impes.cc
+                    SOURCE    test/Main.cc test/mpc_driver_impes.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

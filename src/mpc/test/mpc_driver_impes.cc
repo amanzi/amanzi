@@ -14,7 +14,9 @@
 #include "CycleDriver.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_flow_registration.hh"
+#include "pks_pressuresaturation_registration.hh"
+#include "pks_pressure_registration.hh"
+#include "pks_saturation_registration.hh"
 
 #include "MeshFactory.hh"
 #include "Mesh.hh"
@@ -22,11 +24,9 @@
 #include "GeometricModel.hh"
 
 
-TEST(NEW_DRIVER_FLOW) {
+TEST(NEW_DRIVER_COUPLED_MULTIPHASE) {
 
 using namespace std;
-
-//Amanzi::PKFactory::map_ =  NULL;
 
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
@@ -34,7 +34,7 @@ using namespace std;
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
   
-  std::string xmlInFileName = "test/test_new_driver_flow.xml";
+  std::string xmlInFileName = "test/mpc_driver_impes.xml";
 
   // read the main parameter list
   Teuchos::ParameterList driver_parameter_list;
@@ -43,7 +43,7 @@ using namespace std;
   
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList reg_params = driver_parameter_list.sublist("Regions");
-
+   
   int spdim = 2;
   Amanzi::AmanziGeometry::GeometricModelPtr 
       geom_model_ptr( new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm) );

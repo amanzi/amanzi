@@ -10,29 +10,32 @@
 #include "UnitTest++.h"
 
 #include "CycleDriver.hh"
+#include "Domain.hh"
+#include "GeometricModel.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_reactivetransport_registration.hh"
 #include "pks_transport_registration.hh"
-#include "pks_chemistry_registration.hh"
 #include "State.hh"
 
 
-TEST(NEW_DRIVER_Reactive_Transport) {
+TEST(MPC_DRIVER_TRANSPORT) {
+
+using namespace Amanzi;
+using namespace Amanzi::AmanziMesh;
+using namespace Amanzi::AmanziGeometry;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   
-  std::string xmlInFileName = "test/test_new_driver_reactive_transport.xml";
-
   // read the main parameter list
+  std::string xmlInFileName = "test/mpc_driver_transport.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
-  
+
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
+  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
   // create mesh
   FrameworkPreference pref;
@@ -47,37 +50,20 @@ TEST(NEW_DRIVER_Reactive_Transport) {
 
   bool mpc_new = true;
   
-  // if (input_parameter_list.isParameter("New multi-process coordinator")){
-  //   mpc_new = input_parameter_list.get<bool>("New multi-process coordinator",false);
-  //   //mpc_new = true;
-  // }
-
   // create dummy observation data object
-  Amanzi::ObservationData obs_data;    
+  Amanzi::ObservationData obs_data;
 
-
-
-
-
-   
-
-  if (mpc_new){
-    if (driver_parameter_list.isSublist("State")){
+  if (mpc_new) {
+    if (plist.isSublist("State")) {
       // Create the state.    
-      Teuchos::ParameterList state_plist = driver_parameter_list.sublist("State");
+      Teuchos::ParameterList state_plist = plist.sublist("State");
       Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
-      S->RegisterMesh("domain",mesh);      
+      S->RegisterMesh("domain", mesh);      
 
-      // -------------- MULTI-PROCESS COORDINATOR------- --------------------
-      Amanzi::CycleDriver cycle_driver(driver_parameter_list, S, comm, obs_data);
-      //--------------- DO THE SIMULATION -----------------------------------
+      CycleDriver cycle_driver(plist, S, &comm, obs_data);
       cycle_driver.go();
-      //-----------------------------------------------------
     }
   }
-
-  
-  delete comm;
 }
 
 

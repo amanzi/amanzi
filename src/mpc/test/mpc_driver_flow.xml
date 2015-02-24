@@ -4,7 +4,7 @@
   <Parameter isUsed="true" name="input file name" type="string" value="dvz_3layer_2D_short.xml"/>
   <Parameter name="New multi-process coordinator" type="bool" value="true"/>
   <ParameterList name="Checkpoint Data">
-    <Parameter name="file name base" type="string" value="checkpoint"/>
+    <Parameter name="file name base" type="string" value="chkpoint"/>
     <Parameter name="file name digits" type="int" value="5"/>
     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
   </ParameterList>

@@ -27,7 +27,7 @@ using namespace std;
 #endif
   
   // read the main parameter list
-  std::string xmlInFileName = "test/driver.xml";
+  std::string xmlInFileName = "test/old_driver.xml";
   Teuchos::RCP<Teuchos::ParameterList> driver_parameter_list = Teuchos::getParametersFromXmlFile(xmlInFileName);
   
   // For now create one geometric model from all the regions in the spec

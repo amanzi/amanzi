@@ -10,17 +10,15 @@
 #include "UnitTest++.h"
 
 #include "CycleDriver.hh"
-#include "Domain.hh"
-#include "GeometricModel.hh"
-#include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "Mesh.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_transport_registration.hh"
+#include "pks_flow_registration.hh"
 #include "State.hh"
 
 
-TEST(NEW_DRIVER_TRANSPORT) {
+TEST(MPC_DRIVER_FLOW) {
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -29,10 +27,10 @@ using namespace Amanzi::AmanziGeometry;
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   
   // read the main parameter list
-  std::string xmlInFileName = "test/test_new_driver_transport.xml";
+  std::string xmlInFileName = "test/mpc_driver_flow.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
-
+  
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
@@ -41,17 +39,16 @@ using namespace Amanzi::AmanziGeometry;
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);
-  pref.push_back(STKMESH);
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory("test/rect2D_10x10_ss.exo", gm);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = meshfactory(0.0, 0.0, 216.0, 120.0, 54, 60, gm);
   ASSERT(!mesh.is_null());
 
   bool mpc_new = true;
-  
+
   // create dummy observation data object
-  Amanzi::ObservationData obs_data;
+  Amanzi::ObservationData obs_data;    
 
   if (mpc_new) {
     if (plist.isSublist("State")) {
@@ -60,7 +57,7 @@ using namespace Amanzi::AmanziGeometry;
       Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
       S->RegisterMesh("domain", mesh);      
 
-      CycleDriver cycle_driver(plist, S, &comm, obs_data);
+      Amanzi::CycleDriver cycle_driver(plist, S, &comm, obs_data);
       cycle_driver.go();
     }
   }

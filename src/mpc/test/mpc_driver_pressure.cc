@@ -14,11 +14,7 @@
 #include "CycleDriver.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_flow_registration.hh"
-#include "pks_reactivetransport_registration.hh"
-#include "pks_flowreactivetransport_registration.hh"
-#include "pks_transport_registration.hh"
-#include "pks_chemistry_registration.hh"
+#include "pks_pressure_registration.hh"
 
 #include "MeshFactory.hh"
 #include "Mesh.hh"
@@ -26,9 +22,11 @@
 #include "GeometricModel.hh"
 
 
-TEST(NEW_DRIVER_Richards_Reactive_Transport) {
+TEST(NEW_DRIVER_PRESSURE) {
 
 using namespace std;
+
+//Amanzi::PKFactory::map_ =  NULL;
 
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
@@ -36,8 +34,7 @@ using namespace std;
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
   
-  std::string xmlInFileName = "test/test_new_driver_frt.xml";
-
+  std::string xmlInFileName = "test/mpc_driver_pressure.xml";
 
   // read the main parameter list
   Teuchos::ParameterList driver_parameter_list;
@@ -46,8 +43,8 @@ using namespace std;
   
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList reg_params = driver_parameter_list.sublist("Regions");
-   
-  int spdim = 3;
+
+  int spdim = 2;
   Amanzi::AmanziGeometry::GeometricModelPtr 
       geom_model_ptr( new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm) );
 
@@ -113,21 +110,19 @@ using namespace std;
   // }
 
   // create dummy observation data object
-  Amanzi::ObservationData obs_data;    
-
-
-   
+  Amanzi::ObservationData obs_data;
 
   if (mpc_new){
     if (driver_parameter_list.isSublist("State")){
-      // Create the state.    
+      // Create the state.
       Teuchos::ParameterList state_plist = driver_parameter_list.sublist("State");
       Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
-      S->RegisterMesh("domain",mesh);      
+      S->RegisterMesh("domain",mesh);
 
-      // -------------- MULTI-PROCESS COORDINATOR------- --------------------
+      // -------------- MULTI-PROCESS COORDINATOR----------------------------
       Amanzi::CycleDriver cycle_driver(driver_parameter_list, S, comm, obs_data);
       //--------------- DO THE SIMULATION -----------------------------------
+      std::cout << "NOW GO!!!!! \n";
       cycle_driver.go();
       //-----------------------------------------------------
     }
