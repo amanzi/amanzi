@@ -8,6 +8,7 @@
 
   Authors: Neil Carlson (nnc@lanl.gov), 
            Konstantin Lipnikov (lipnikov@lanl.gov)
+           Daniil Svyatskiy (dasvyat@lanl.gov)
 
   The routine implements interface to the BDF1 time integrator.  
 */
@@ -86,6 +87,102 @@ void Richards_PK::Functional(double T0, double T1,
       }
     }
   }
+
+  // add vapor diffusion 
+  if (vapor_diffusion_) {
+    Functional_AddVaporDiffusion_(f);
+  }
+}
+
+
+/* ******************************************************************
+* Calculate additional conribution to Richards functional:
+*  f += -div (\phi s_g \tau_g n_g D_g grad \omega).
+****************************************************************** */
+void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
+{
+  CompositeVector g(*f);
+  g.PutScalar(0.0);
+
+  // Extract fields
+  Teuchos::RCP<const CompositeVector> pres = S_->GetFieldData("pressure");
+  Teuchos::RCP<const CompositeVector> temp = S_->GetFieldData("temperature");
+
+  // Populate vapor matrix
+  CalculateVaporDiffusionTensor_();
+
+  op_vapor_matrix_->Init();
+  op_vapor_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_vapor_matrix_diff_->ApplyBCs(op_bc_);
+
+  // Calculate the residual
+  CompositeVector omega(*f);
+  omega.PutScalar(1.0);
+  op_vapor_matrix_->ComputeNegativeResidual(omega, g);
+
+  f->Update(1.0, g, 1.0);
+}
+
+
+/* ******************************************************************
+* Calculation of diffusion coefficient for vapor diffusion operator.
+****************************************************************** */
+void Richards_PK::CalculateVaporDiffusionTensor_()
+{
+   S_->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S_.ptr(), passwd_);
+   const Epetra_MultiVector& n_l = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell");
+
+   S_->GetFieldEvaluator("molar_density_gas")->HasFieldChanged(S_.ptr(), passwd_);
+   const Epetra_MultiVector& n_g = *S_->GetFieldData("molar_density_gas")->ViewComponent("cell");
+
+   S_->GetFieldEvaluator("porosity")->HasFieldChanged(S_.ptr(), passwd_);
+   const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell");
+
+   S_->GetFieldEvaluator("saturation_gas")->HasFieldChanged(S_.ptr(), passwd_);
+   const Epetra_MultiVector& s_g = *S_->GetFieldData("saturation_gas")->ViewComponent("cell");
+
+   S_->GetFieldEvaluator("mol_frac_gas")->HasFieldChanged(S_.ptr(), passwd_);
+   const Epetra_MultiVector& mlf_g = *S_->GetFieldData("mol_frac_gas")->ViewComponent("cell");
+
+   std::string key("temperature");
+   S_->GetFieldEvaluator("mol_frac_gas")->HasFieldDerivativeChanged(S_.ptr(), passwd_, key);
+   const Epetra_MultiVector& dmlf_g_dt = *S_->GetFieldData("dmol_frac_gas_dtemperature")->ViewComponent("cell");
+
+   const Epetra_MultiVector& temp = *S_->GetFieldData("temperature")->ViewComponent("cell");
+   const Epetra_MultiVector& pres = *S_->GetFieldData("pressure")->ViewComponent("cell");
+
+   double R = 8.3144621;
+   double a = 4./3.;
+   double b = 10./3.;
+   double Dref = 0.282;
+   double Pref = atm_pressure_;
+   double Tref = 298;  // Kelvins
+
+   K_vapor.clear();
+   WhetStone::Tensor Kc(dim, 1);
+
+   for (int c = 0; c != ncells_owned; ++c) {
+     double tmp = Dref * (Pref / atm_pressure_) * pow(temp[0][c] / Tref, 1.8);
+
+     tmp *= pow(phi[0][c], a) * pow(s_g[0][c], b) * n_g[0][c];
+     tmp *= exp(-(atm_pressure_ - pres[0][c]) / (n_l[0][c] * R * temp[0][c]));
+
+     Kc(0, 0) = tmp;
+     K_vapor.push_back(Kc);
+   }
+
+   /*
+   if (var_name == "pressure"){
+     for (unsigned int c=0; c!=ncells; ++c){
+       diff_coef[0][c] *= mlf_g[0][c] * (1./ (n_l[0][c]*R*temp[0][c]));
+     }
+   }
+   else if (var_name == "temperature"){
+     for (unsigned int c=0; c!=ncells; ++c){
+       diff_coef[0][c] *= (1./Patm)*dmlf_g_dt[0][c] + mlf_g[0][c]* (Patm - pressure[0][c])/ (n_l[0][c]*R*temp[0][c]*temp[0][c]);
+     }
+   }
+   */
 }
 
 

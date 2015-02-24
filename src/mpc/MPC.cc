@@ -120,6 +120,29 @@ void MPC::mpc_init() {
     }
   }
 
+  // flow...
+  if (flow_enabled) {
+    flow_model = mpc_parameter_list.get<std::string>("Flow model", "Darcy");
+    if (flow_model == "Darcy") {
+      FPK = Teuchos::rcp(new Flow::Darcy_PK(glist, "Flow", S));
+    } else if (flow_model == "Steady State Saturated") {
+      FPK = Teuchos::rcp(new Flow::Darcy_PK(glist,"Flow", S));
+    } else if (flow_model == "Richards") {
+      FPK = Teuchos::rcp(new Flow::Richards_PK(glist, "Flow", S));
+    } else if (flow_model == "Steady State Richards") {
+      FPK = Teuchos::rcp(new Flow::Richards_PK(glist, "Flow", S));
+    } else {
+      std::cout << "MPC: unknown flow model: " << flow_model << std::endl;
+      throw std::exception();
+    }
+  }
+
+  if (flow_model == "Steady State Richards") {
+    if (vo_->os_OK(Teuchos::VERB_LOW)) {
+      *vo_->os() << "Flow will be off during the transient phase" << std::endl;
+    }
+  }
+
   // chemistry...
   if (chemistry_enabled) {
     Teuchos::ParameterList chemistry_parameter_list = glist->sublist("PKs").sublist("Chemistry");
@@ -162,29 +185,7 @@ void MPC::mpc_init() {
 #endif
   }
 
-  // flow...
-  if (flow_enabled) {
-    flow_model = mpc_parameter_list.get<std::string>("Flow model", "Darcy");
-    if (flow_model == "Darcy") {
-      FPK = Teuchos::rcp(new Flow::Darcy_PK(glist, "Flow", S));
-    } else if (flow_model == "Steady State Saturated") {
-      FPK = Teuchos::rcp(new Flow::Darcy_PK(glist,"Flow", S));
-    } else if (flow_model == "Richards") {
-      FPK = Teuchos::rcp(new Flow::Richards_PK(glist, "Flow", S));
-    } else if (flow_model == "Steady State Richards") {
-      FPK = Teuchos::rcp(new Flow::Richards_PK(glist, "Flow", S));
-    } else {
-      std::cout << "MPC: unknown flow model: " << flow_model << std::endl;
-      throw std::exception();
-    }
-  }
-
-  if (flow_model == "Steady State Richards") {
-    if (vo_->os_OK(Teuchos::VERB_LOW)) {
-      *vo_->os() << "Flow will be off during the transient phase" << std::endl;
-    }
-  }
-
+  // chemistry...
   if (transport_enabled) {
 #ifdef ALQUIMIA_ENABLED
     if (chemistry_model == "Alquimia") {
@@ -841,10 +842,10 @@ void MPC::cycle_driver() {
               Amanzi::timer_manager.stop("Chemistry PK");
 
               chem_step_succeeded = true;
-              *S->GetFieldData("total_component_concentration","state")->ViewComponent("cell", true)
+              *S->GetFieldData("total_component_concentration", "state")->ViewComponent("cell", true)
                 = * CPK->get_total_component_concentration();
             } else if (transport_enabled) {
-              *S->GetFieldData("total_component_concentration","state")->ViewComponent("cell", true)
+              *S->GetFieldData("total_component_concentration", "state")->ViewComponent("cell", true)
                   = *total_component_concentration_star;
             }
 

@@ -53,10 +53,7 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
-  RCP<const Mesh> mesh = meshfactory("test/rect3D_50x50x1.exo", gm);
-
-  //Amanzi::MeshAudit audit(mesh);
-  //audit.Verify();   
+  RCP<const Mesh> mesh = meshfactory(0.0,0.0,0.0, 1.0,1.0,1.0, 100, 1, 1, gm);
 
   /* create a simple state and populate it */
   Amanzi::VerboseObject::hide_line_prefix = false;

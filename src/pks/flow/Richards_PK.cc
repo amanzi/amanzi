@@ -66,6 +66,9 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
     ti_list_ = rp_list_->sublist("time integrator");
   } 
 
+  // coupling with other physical PKs
+  vapor_diffusion_ = false;
+
   // for creating fields
   std::vector<std::string> names(2);
   names[0] = "cell"; 

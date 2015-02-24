@@ -98,6 +98,7 @@ if (BUILD_TESTS)
                     KIND      int
                     SOURCE    test/Main.cc test/test_driver.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
     # Test: mpc-new driver flow
     add_amanzi_test(mpc-new-flow test_mpc_new_flow
                     KIND      int
@@ -111,16 +112,16 @@ if (BUILD_TESTS)
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
 if(0)
+    # Test: mpc-new driver reactive transport
+    add_amanzi_test(mpc-new-reactive-transport test_mpc_new_reactive_transport
+                    KIND      int
+                    SOURCE    test/Main.cc test/test_new_driver_reactive_transport.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
     # Test: mpc-new driver dummy
     add_amanzi_test(mpc-new-dummy test_mpc_new_dummy
                     KIND      int
                     SOURCE    test/Main.cc test/test_dummy_pk.cc
-		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-    # Test: mpc-new driver reactive transport
-    add_amanzi_test(mpc-new-reac-transport test_mpc_new_reac_transport
-                    KIND      int
-                    SOURCE    test/Main.cc test/test_new_driver_reactive_transport.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: mpc-new driver richards reactive transport
@@ -128,12 +129,12 @@ if(0)
                     KIND      int
                     SOURCE    test/Main.cc test/test_new_driver_frt.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-endif()
     # Test: mpc-new driver pressure saturation
-    #add_amanzi_test(mpc-new-impes test_mpc_new_impes
-    #                KIND      int
-    #                SOURCE    test/Main.cc test/test_new_driver_impes.cc
-    #    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(mpc-new-impes test_mpc_new_impes
+                    KIND      int
+                    SOURCE    test/Main.cc test/test_new_driver_impes.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+endif()
 
 #    add_executable(test_vis test/Main.cc test/test_vis.cpp)
 #    target_link_libraries(test_vis state mpc stk_mesh ${UnitTest_LIBRARIES})

@@ -102,7 +102,7 @@ void Transport_PK::Construct_(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 
   dT = 0.0;
   bc_scaling = 0.0;
-  passwd_ = "state";  //  state password
+  passwd_ = "state";  // owner's password
 
   // require state variables when Flow is off
   if (!S->HasField("permeability")) {
