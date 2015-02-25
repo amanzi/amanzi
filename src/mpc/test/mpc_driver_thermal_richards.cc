@@ -10,17 +10,20 @@
 #include "UnitTest++.h"
 
 #include "CycleDriver.hh"
+#include "energy_thermal_conductivity_registration.hh"
+#include "energy_internal_energy_registration.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "mpc_pks_registration.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "mpc_pks_registration.hh"
 #include "energy_twophase_registration.hh"
+#include "pks_flow_registration.hh"
 #include "pks_transport_registration.hh"
 #include "State.hh"
 
 
-TEST(MPC_DRIVER_REACTIVE_TRANSPORT) {
+TEST(MPC_DRIVER_THERMAL_RICHARDS) {
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -59,7 +62,7 @@ using namespace Amanzi::AmanziGeometry;
       // Create the state.    
       Teuchos::ParameterList state_plist = plist.sublist("State");
       Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
-      S->RegisterMesh("domain",mesh);      
+      S->RegisterMesh("domain", mesh);
 
       Amanzi::CycleDriver cycle_driver(plist, S, &comm, obs_data);
       cycle_driver.go();

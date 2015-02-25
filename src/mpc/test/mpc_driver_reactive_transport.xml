@@ -97,7 +97,7 @@
 
   <ParameterList name="PKs">
     <ParameterList name="Reactive Transport">
-      <Parameter name="PK type" type="string" value="reactivetransport pk"/>      
+      <Parameter name="PK type" type="string" value="reactive transport"/>      
       <Parameter name="PKs order" type="Array(string)" value="{Chemistry, Transport}"/> 
     </ParameterList>
     <ParameterList name="Chemistry">

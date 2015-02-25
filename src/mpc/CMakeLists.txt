@@ -91,9 +91,9 @@ if (BUILD_TESTS)
           copy_directory ${MPC_SOURCE_DIR}/test ${MPC_BINARY_DIR}/test) 
     endif()
 
-    set(amanzi_libs mpc flow transport chemistry_pk energy eos 
+    set(amanzi_libs mpc pks flow transport chemistry_pk energy eos 
                     state operators mesh_factory 
-                    geometry whetstone mesh_functions functions pks)
+                    geometry whetstone mesh_functions functions)
     
     # Test: mpc old driver
     add_amanzi_test(mpc_old_driver test_old_driver
@@ -125,17 +125,17 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_driver_thermal_richards.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+    # Test: mpc-new driver richards reactive transport
+    add_amanzi_test(mpc_driver_flow_reactive_transport mpc_driver_flow_reactive_transport
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_driver_frt.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
 if(0)
     # Test: mpc-new driver dummy
     add_amanzi_test(mpc_driver_dummy mpc_driver_dummy
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_dummy_pk.cc
-		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-    # Test: mpc-new driver richards reactive transport
-    add_amanzi_test(mpc_driver_flow_reactive_transport mpc_driver_flow_reactive_transport
-                    KIND      int
-                    SOURCE    test/Main.cc test/mpc_driver_frt.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: mpc-new driver pressure saturation

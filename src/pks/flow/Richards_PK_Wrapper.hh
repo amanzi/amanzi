@@ -17,10 +17,10 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "TreeVector.hh"
 #include "FnTimeIntegratorPK.hh"
 #include "Richards_PK.hh"
 #include "PK_Factory.hh"
+#include "TreeVector.hh"
 
 namespace Amanzi {
 

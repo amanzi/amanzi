@@ -82,7 +82,7 @@ void CycleDriver::init_pk(int time_pr_id){
 
   Teuchos::ParameterList pk_tree_list = time_periods_list->sublist(tp_list_name.data()).sublist("PK Tree");
   // std::cout<<pk_tree_list<<"\n";
-  if (pk_tree_list.numParams() == 0 || pk_tree_list.numParams() > 1) {
+  if (pk_tree_list.numParams() != 1) {
     Errors::Message message("CycleDriver: PK Tree list should contain exactly one root node list");
     Exceptions::amanzi_throw(message);
   }
@@ -124,7 +124,6 @@ void CycleDriver::setup() {
 
   // create the time step manager
   tsm_ = Teuchos::ptr(new TimeStepManager());
-
 
   S_->RequireScalar("dt", "coordinator");
   S_->Setup();

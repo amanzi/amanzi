@@ -361,7 +361,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       // Create the state.    
       Teuchos::ParameterList state_plist = new_list.sublist("State");
       Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
-      S->RegisterMesh("domain",mesh);      
+      S->RegisterMesh("domain", mesh);      
 
       // -------------- OLD MULTI-PROCESS COORDINATOR --------------------------
       Amanzi::CycleDriver cycle_driver(new_list, S, comm, output_observations);

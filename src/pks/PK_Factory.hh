@@ -66,7 +66,6 @@ class PKFactory {
           const Teuchos::RCP<State>& state,
           const Teuchos::RCP<TreeVector>& soln) {
 
-
     if (!global_list->isSublist("PKs")) {
       Errors::Message message("PK_Factory: Missing sublist \"PKs\" in global list.");
       Exceptions::amanzi_throw(message);

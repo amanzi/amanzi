@@ -35,6 +35,7 @@ public:
   // Initialize owned (dependent) variables.
   virtual void Setup();
   virtual void Initialize();
+  virtual std::string name() { return "two-phase energy"; }
 
  protected:
   // models for evaluating enthalpy
