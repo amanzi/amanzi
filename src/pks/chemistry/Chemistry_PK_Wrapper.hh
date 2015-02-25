@@ -27,7 +27,7 @@ class Chemistry_PK_Wrapper : public PK {
                        const Teuchos::RCP<State>& S,
                        const Teuchos::RCP<TreeVector>& soln);
   // Setup
-  virtual void Setup() {};
+  virtual void Setup() { CS->Setup(); }
 
   // Initialize owned (dependent) variables.
   virtual void Initialize() {  

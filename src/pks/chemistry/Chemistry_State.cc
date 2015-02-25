@@ -44,8 +44,8 @@ Chemistry_State::Chemistry_State(Teuchos::ParameterList& plist,
   }
 
   ParseMeshBlocks_();
-  RequireData_();
-  RequireAuxData_();
+  // RequireData_();
+  // RequireAuxData_();
 }
 
 
@@ -68,9 +68,16 @@ Chemistry_State::Chemistry_State(const Teuchos::RCP<State>& S,
     compnames_(component_names),
     num_aux_data_(-1) {
   mesh_ = S_->GetMesh();
+  // RequireData_();  
+  // RequireAuxData_();
+}
+
+
+void Chemistry_State::Setup() {
   RequireData_();  
   RequireAuxData_();
 }
+
 
 void Chemistry_State::SetupMineralNames_() {
   // do we need to worry about minerals?

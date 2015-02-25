@@ -175,6 +175,7 @@ void MPC::mpc_init() {
 #endif
     // Initialize the chemistry state.
     CS = Teuchos::rcp(new AmanziChemistry::Chemistry_State(chemistry_parameter_list, component_names, S));
+    CS->Setup();
 
 #ifdef ALQUIMIA_ENABLED
     // Set up auxiliary chemistry data using the ChemistryEngine.
