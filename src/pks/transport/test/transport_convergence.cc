@@ -82,6 +82,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     S->set_intermediate_time(0.0);
 
     Transport_PK TPK(plist, S, "Transport", component_names);
+    TPK.Setup();
     TPK.CreateDefaultState(mesh, 1);
 
     /* modify the default state for the problem at hand */
@@ -109,7 +110,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
-    TPK.Initialize(S.ptr());
+    TPK.Initialize();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
     if (nx == 20) TPK.PrintStatistics();
  
@@ -192,6 +193,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
     S->set_intermediate_time(0.0);
 
     Transport_PK TPK(plist, S, "Transport", component_names);
+    TPK.Setup();
     TPK.CreateDefaultState(mesh, 1);
 
     /* modify the default state for the problem at hand */
@@ -219,7 +221,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
-    TPK.Initialize(S.ptr());
+    TPK.Initialize();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
     if (nx == 20) TPK.PrintStatistics();
  
@@ -306,6 +308,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
     Transport_PK TPK(plist, S, "Transport", component_names);
+    TPK.Setup();
     TPK.CreateDefaultState(mesh, 1);
 
     /* modify the default state for the problem at hand */
@@ -333,7 +336,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
-    TPK.Initialize(S.ptr());
+    TPK.Initialize();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 2;
     if (nx == 20) TPK.PrintStatistics();
  
@@ -432,6 +435,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
     S->set_intermediate_time(0.0);
 
     Transport_PK TPK(plist, S, "Transport", component_names);
+    TPK.Setup();
     TPK.CreateDefaultState(mesh, 1);
 
     /* modify the default state for the problem at hand */
@@ -459,7 +463,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
-    TPK.Initialize(S.ptr());
+    TPK.Initialize();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
     if (loop == 0) TPK.PrintStatistics();
  
@@ -551,6 +555,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
     S->set_intermediate_time(0.0);
 
     Transport_PK TPK(plist, S, "Transport", component_names);
+    TPK.Setup();
     TPK.CreateDefaultState(mesh, 1);
 
     /* modify the default state for the problem at hand */
@@ -578,7 +583,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
-    TPK.Initialize(S.ptr());
+    TPK.Initialize();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 2;
     if (loop == 0) TPK.PrintStatistics();
  

@@ -81,6 +81,7 @@ TEST(DISPERSION) {
   S->set_final_time(0.0);
 
   Transport_PK TPK(plist, S, "Transport", component_names);
+  TPK.Setup();
   TPK.CreateDefaultState(mesh, 1);
 
   /* modify the default state for the problem at hand */
@@ -109,7 +110,7 @@ TEST(DISPERSION) {
 
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::hide_line_prefix = true;
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
   TPK.PrintStatistics();
 
   /* advance the state */
@@ -181,6 +182,7 @@ TEST(DIFFUSION) {
   S->set_final_time(0.0);
 
   Transport_PK TPK(plist, S, "Transport", component_names);
+  TPK.Setup();
   TPK.CreateDefaultState(mesh, 1);
 
   /* modify the default state for the problem at hand */
@@ -203,7 +205,7 @@ TEST(DIFFUSION) {
 
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::hide_line_prefix = true;
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
   TPK.PrintStatistics();
 
   /* advance the state */

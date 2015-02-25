@@ -68,6 +68,8 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
 
   Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
   Richards_PK* RPK = new Richards_PK(global_list, "Flow", S);
+
+  RPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -75,7 +77,7 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
   S->CheckAllFieldsInitialized();
 
   /* create Richards problem */
-  RPK->Initialize(S.ptr());
+  RPK->Initialize();
   RPK->ti_specs_sss().T1 = 100.0;
   RPK->ti_specs_sss().max_itrs = 400;
 

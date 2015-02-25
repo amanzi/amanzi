@@ -30,25 +30,23 @@ Transport_PK_Wrapper::Transport_PK_Wrapper(
     pk_name = result;   
   }
 
-  if (glist_->isSublist("Cycle Driver")){
-    if (glist_->sublist("Cycle Driver").isParameter("component names")){
+  if (glist_->isSublist("Cycle Driver")) {
+    if (glist_->sublist("Cycle Driver").isParameter("component names")) {
       // grab the component names
       comp_names_ = glist_->sublist("Cycle Driver").get<Teuchos::Array<std::string> >("component names").toVector();
-    }else{
+    } else {
       Errors::Message msg("Transport PK: parameter component names is missing.");
       Exceptions::amanzi_throw(msg);
     }
-  }else{
+  } else {
     Errors::Message msg("Transport PK: sublist Cycle Driver is missing.");
-      Exceptions::amanzi_throw(msg);
+    Exceptions::amanzi_throw(msg);
   }
 
-
-  Teuchos::RCP<Teuchos::ParameterList> pk_list =  Teuchos::sublist(glist_, "PKs", true);
-  Teuchos::RCP<Teuchos::ParameterList> pk_transp_list =  Teuchos::sublist(pk_list, pk_name, true);
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist_, "PKs", true);
+  Teuchos::RCP<Teuchos::ParameterList> pk_transp_list = Teuchos::sublist(pk_list, pk_name, true);
 
   transport_subcycling = pk_transp_list->get<bool>("transport subcycling", true);
-
    
   // construct
   pk_ = Teuchos::rcp(new Transport_PK(glist_, S_, pk_name, comp_names_));

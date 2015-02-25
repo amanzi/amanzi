@@ -31,14 +31,18 @@ namespace Flow {
 class Darcy_PK : public Flow_PK {
  public:
   Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-           const std::string& pk_list_name, Teuchos::RCP<State> S);
+           const std::string& pk_list_name,
+           Teuchos::RCP<State> S);
   ~Darcy_PK();
 
   // main PK methods
-  void Initialize(const Teuchos::Ptr<State>& S);
+  void Setup();
+  void Initialize();
   bool Advance(double dT, double &dT_actual); 
+
   void set_dt(double dt){dT = dt; dT_desirable_ = dT;}
   double get_dt() { return dT_desirable_; }
+
   void CommitState(double dt, const Teuchos::Ptr<State>& S);
   void CalculateDiagnostics(const Teuchos::Ptr<State>& S);
 

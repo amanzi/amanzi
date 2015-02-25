@@ -135,6 +135,7 @@ void MPC::mpc_init() {
       std::cout << "MPC: unknown flow model: " << flow_model << std::endl;
       throw std::exception();
     }
+    FPK->Setup();
   }
 
   if (flow_model == "Steady State Richards") {
@@ -193,10 +194,12 @@ void MPC::mpc_init() {
       // chemistry engine to obtain boundary values for the components.
       // The component names are fetched from the chemistry engine.
       TPK = Teuchos::rcp(new Transport::Transport_PK(glist, S, "Transport", CS, chem_engine));
+      TPK->Setup();
     }
     else {
 #endif
       TPK = Teuchos::rcp(new Transport::Transport_PK(glist, S, "Transport", component_names));
+      TPK->Setup();
 #ifdef ALQUIMIA_ENABLED
     }
 #endif
@@ -207,26 +210,22 @@ void MPC::mpc_init() {
   S->InitializeEvaluators();
   S->GetMeshPartition("materials");
 
-  if (chemistry_enabled) {
-    CS->Initialize();
-  }
-  if (flow_enabled) {
-    FPK->InitializeFields();
-  }
-  if (transport_enabled) {
-    TPK->InitializeFields();
-  }
+  if (chemistry_enabled) CS->Initialize();
+  if (flow_enabled) FPK->InitializeFields();
+  if (transport_enabled) TPK->InitializeFields();
 
   S->CheckAllFieldsInitialized();
 
+  // We are done with initialization of all fields.
+  // It is time for remaining initialization of PKs. 
   if (flow_enabled) {
-    FPK->Initialize(S.ptr());
+    FPK->Initialize();
   }
 
   if (transport_enabled) {
     bool subcycling = glist->sublist("MPC").get<bool>("transport subcycling", false);
     transport_subcycling = (subcycling) ? 1 : 0;
-    TPK->Initialize(S.ptr());
+    TPK->Initialize();
   }
 
   if (chemistry_enabled) {

@@ -47,21 +47,19 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   Flow_PK();
   virtual ~Flow_PK() {};
 
-  void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
   std::string name() { return "flow"; }
 
   // main flow methods
-  void Init();
   virtual void InitPicard(double T0) = 0;
   virtual void InitSteadyState(double T0, double dT0) = 0;
   virtual void InitTransient(double T0, double dT0) = 0;
   virtual void InitTimeInterval() = 0;
 
-  virtual void Initialize(const Teuchos::Ptr<State>& S) = 0;
+  virtual void Setup() = 0;
+  virtual void Initialize();
   virtual void CommitState(double dt, const Teuchos::Ptr<State>& S) = 0;
   virtual double get_dt() = 0;
-  virtual void set_dt(double dt){dT = dt;}
-
+  virtual void set_dt(double dt) { dT = dt; }
   
   virtual bool Advance(double dT, double &dT_actual) = 0;
   virtual int AdvanceToSteadyState(double T0, double dT0) = 0;

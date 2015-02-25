@@ -93,6 +93,7 @@ class DarcyProblem {
 
     Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
     DPK = new Darcy_PK(global_list, "Flow", S);
+    DPK->Setup();
     S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
@@ -214,7 +215,7 @@ TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
     createBClist("pressure", "BC 2", regions, 1.0);
     // DPK->ResetParameterList(dp_list);
  
-    DPK->Initialize(S.ptr());  // setup the problem
+    DPK->Initialize();
     DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState(0.0, 1.0);
     DPK->CommitState(0.0, S.ptr());
@@ -252,7 +253,7 @@ TEST_FIXTURE(DarcyProblem, DirichletNeumann) {
     createBClist("pressure", "BC 2", regions, 1.0);
     // DPK->ResetParameterList(dp_list);
 
-    DPK->Initialize(S.ptr());  // setup the problem
+    DPK->Initialize();
     DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState(0.0, 1.0);
     DPK->CommitState(0.0, S.ptr());
@@ -290,7 +291,7 @@ TEST_FIXTURE(DarcyProblem, StaticHeadDirichlet) {
     createBClist("static head", "BC 2", regions, 0.25);
     // DPK->ResetParameterList(dp_list);
 
-    DPK->Initialize(S.ptr());  // setup the problem
+    DPK->Initialize();
     DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState(0.0, 1.0);
     DPK->CommitState(0.0, S.ptr());
@@ -330,7 +331,7 @@ TEST_FIXTURE(DarcyProblem, DDprisms) {
     createBClist("pressure", "BC 2", regions, 1.0);
     // DPK->ResetParameterList(dp_list);
 
-    DPK->Initialize(S.ptr());  // setup the problem
+    DPK->Initialize();
     DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState(0.0, 1.0);
     DPK->CommitState(0.0, S.ptr());
@@ -371,7 +372,7 @@ TEST_FIXTURE(DarcyProblem, DNtetrahedra) {
     createBClist("pressure", "BC 2", regions, 1.0);
     // DPK->ResetParameterList(dp_list);
 
-    DPK->Initialize(S.ptr());  // setup the problem
+    DPK->Initialize();
     DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState(0.0, 1.0);
     DPK->CommitState(0.0, S.ptr());
@@ -412,7 +413,7 @@ TEST_FIXTURE(DarcyProblem, DDmixed) {
     createBClist("pressure", "BC 2", regions, 1.0);
     // DPK->ResetParameterList(dp_list);
 
-    DPK->Initialize(S.ptr());  // setup the problem
+    DPK->Initialize();
     DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState(0.0, 1.0);
     DPK->CommitState(0.0, S.ptr());
