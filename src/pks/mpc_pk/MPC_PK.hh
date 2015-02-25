@@ -148,7 +148,6 @@ MPC_PK<PK_Base>::MPC_PK(Teuchos::ParameterList& pk_tree,
 template <class PK_Base>
 void MPC_PK<PK_Base>::Setup() {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
-std::cout << (*pk)->name() << std::endl;
     (*pk)->Setup();
   }
 }
