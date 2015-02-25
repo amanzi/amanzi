@@ -353,7 +353,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   analysis.RegionAnalysis();
   analysis.OutputBCs();
 
-
+  Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(new_list));
   bool new_mpc_driver = new_list.get<bool>("new mpc driver", false);
 
   if (new_mpc_driver) {
@@ -362,15 +362,14 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       Teuchos::ParameterList state_plist = new_list.sublist("State");
       Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
       S->RegisterMesh("domain", mesh);      
+      // -------------- NEW MULTI-PROCESS COORDINATOR ----------------------------
 
-      // -------------- OLD MULTI-PROCESS COORDINATOR --------------------------
-      Amanzi::CycleDriver cycle_driver(new_list, S, comm, output_observations);
+      Amanzi::CycleDriver cycle_driver(glist, S, comm, output_observations);
       cycle_driver.go();
     }
   }
   else {
-    // -------------- NEW MULTI-PROCESS COORDINATOR ----------------------------
-    Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(new_list));
+    // -------------- OLD MULTI-PROCESS COORDINATOR --------------------------
     Amanzi::MPC mpc(glist, mesh, comm, output_observations);
     mpc.cycle_driver();
   }

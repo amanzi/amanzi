@@ -107,6 +107,8 @@ using namespace std;
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;
+  Teuchos::RCP<Teuchos::ParameterList> glist_rcp = Teuchos::rcp(new Teuchos::ParameterList(plist));
+  
 
   if (mpc_new){
     if (driver_parameter_list.isSublist("State")){
@@ -116,7 +118,7 @@ using namespace std;
       S->RegisterMesh("domain",mesh);      
 
       // -------------- MULTI-PROCESS COORDINATOR------- --------------------
-      Amanzi::CycleDriver cycle_driver(driver_parameter_list, S, comm, obs_data);
+      Amanzi::CycleDriver cycle_driver(glist_rcp, S, comm, obs_data);
       //--------------- DO THE SIMULATION -----------------------------------
       cycle_driver.go();
       //-----------------------------------------------------

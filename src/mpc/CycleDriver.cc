@@ -43,11 +43,11 @@ namespace Amanzi {
 
 double rss_usage();
 
-CycleDriver::CycleDriver(Teuchos::ParameterList& parameter_list,
+CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist_,
                          Teuchos::RCP<State>& S,
                          Epetra_MpiComm* comm,
                          Amanzi::ObservationData& output_observations) :
-    parameter_list_(Teuchos::rcp(new Teuchos::ParameterList(parameter_list))),
+    parameter_list_(glist_),
     S_(S),
     comm_(comm),
     output_observations_(output_observations),
@@ -73,15 +73,12 @@ void CycleDriver::init_pk(int time_pr_id){
   // create the pk tree root node (which then creates the rest of the tree)
   PKFactory pk_factory;
 
-  Teuchos::RCP<Teuchos::ParameterList> time_periods_list = Teuchos::sublist(coordinator_list_, "time periods");
+  Teuchos::RCP<Teuchos::ParameterList> time_periods_list = Teuchos::sublist(coordinator_list_, "time periods", true);
 
   std::ostringstream ss; ss << time_pr_id;
   std::string tp_list_name = "TP "+ ss.str();
-  // std::cout<<*time_periods_list<<"\n";
-  // std::cout<<time_periods_list->sublist(tp_list_name.data())<<"\n";
-
-  Teuchos::ParameterList pk_tree_list = time_periods_list->sublist(tp_list_name.data()).sublist("PK Tree");
-  // std::cout<<pk_tree_list<<"\n";
+  Teuchos::RCP<Teuchos::ParameterList> tp_list =Teuchos::sublist( time_periods_list, tp_list_name.data(), true);
+  Teuchos::ParameterList pk_tree_list = tp_list->sublist("PK Tree");
   if (pk_tree_list.numParams() != 1) {
     Errors::Message message("CycleDriver: PK Tree list should contain exactly one root node list");
     Exceptions::amanzi_throw(message);
@@ -126,6 +123,8 @@ void CycleDriver::setup() {
   tsm_ = Teuchos::ptr(new TimeStepManager());
 
   S_->RequireScalar("dt", "coordinator");
+
+
   S_->Setup();
 
   S_->InitializeFields();

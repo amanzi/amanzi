@@ -49,6 +49,7 @@ using namespace Amanzi::AmanziGeometry;
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
+  Teuchos::RCP<Teuchos::ParameterList> glist_rcp = Teuchos::rcp(new Teuchos::ParameterList(plist));
 
   if (mpc_new) {
     if (plist.isSublist("State")) {
@@ -57,7 +58,7 @@ using namespace Amanzi::AmanziGeometry;
       Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
       S->RegisterMesh("domain", mesh);      
 
-      Amanzi::CycleDriver cycle_driver(plist, S, &comm, obs_data);
+      Amanzi::CycleDriver cycle_driver(glist_rcp, S, &comm, obs_data);
       cycle_driver.go();
     }
   }

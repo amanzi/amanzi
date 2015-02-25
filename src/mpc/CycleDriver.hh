@@ -38,7 +38,7 @@ class UnstructuredObservations;
 class CycleDriver {
 
 public:
-  CycleDriver(Teuchos::ParameterList& parameter_list,
+  CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist_,
               Teuchos::RCP<State>& S,
               Epetra_MpiComm* comm,
               Amanzi::ObservationData& output_observations);
