@@ -33,7 +33,7 @@
 #include "Operator.hh"
 #include "OperatorAccumulation.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusion.hh"
+#include "OperatorDiffusionMFD.hh"
 #include "Verification.hh"
 
 namespace Amanzi{
@@ -183,7 +183,8 @@ void RunTest(std::string op_list_name) {
 
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                         .get<Teuchos::ParameterList>(op_list_name);
-    OperatorDiffusion op(olist, surfmesh);
+    OperatorDiffusionMFD op(olist, surfmesh);
+    op.SetBCs(bc);
 
     // get the global operator
     Teuchos::RCP<Operator> global_op = op.global_operator();
@@ -191,7 +192,7 @@ void RunTest(std::string op_list_name) {
 
     // populate diffusion operator
     op.Setup(K, knc->values(), knc->derivatives(), rho, mu);
-    op.UpdateMatrices(flux, Teuchos::null);
+    op.UpdateMatrices(flux.ptr(), Teuchos::null);
 
     // add accumulation terms
     OperatorAccumulation op_acc(AmanziMesh::CELL, global_op);
@@ -199,7 +200,7 @@ void RunTest(std::string op_list_name) {
 
     // apply BCs and assemble
     global_op->UpdateRHS(source, false);
-    op.ApplyBCs(bc);
+    op.ApplyBCs();
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
     

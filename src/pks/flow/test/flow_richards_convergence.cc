@@ -145,6 +145,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
     Richards_PK* RPK = new Richards_PK(plist, "Flow", S);
+    RPK->Setup();
     S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
@@ -152,7 +153,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     S->CheckAllFieldsInitialized();
 
     /* create Richards process kernel */
-    RPK->Initialize(S.ptr());
+    RPK->Initialize();
     RPK->ti_specs_sss().T1 = 1e+4;
     RPK->ti_specs_sss().max_itrs = 1000;
 

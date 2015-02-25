@@ -67,6 +67,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
   Darcy_PK* DPK = new Darcy_PK(global_list, "Flow", S);
+  DPK->Setup();
   S->Setup();
   S->InitializeFields();
 
@@ -92,7 +93,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   }
 
   /* initialize Darcy process kernel */
-  DPK->Initialize(S.ptr());
+  DPK->Initialize();
   DPK->InitTransient(0.0, 1e-8);
 
   /* transient solution */

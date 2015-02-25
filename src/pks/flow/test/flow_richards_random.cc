@@ -152,6 +152,8 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
 
     Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
     Richards_PK* RPK = new Richards_PK(global_list, "Flow", S);
+
+    RPK->Setup();
     S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
@@ -159,7 +161,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     S->CheckAllFieldsInitialized();
 
     /* create Richards process kernel */
-    RPK->Initialize(S.ptr());
+    RPK->Initialize();
     RPK->ti_specs_sss().T1 = 1e+4;
     RPK->ti_specs_sss().max_itrs = 400;
 

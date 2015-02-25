@@ -21,19 +21,17 @@ namespace Transport {
 class Transport_PK_Wrapper : public PK {
  public:
   Transport_PK_Wrapper(Teuchos::ParameterList& pk_tree,
-                       const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                       const Teuchos::RCP<Teuchos::ParameterList>& glist,
                        const Teuchos::RCP<State>& S,
                        const Teuchos::RCP<TreeVector>& soln);
 
-  // Setup
-  virtual void Setup() {
+  // Delegeting routines
+  virtual void Setup() { pk_->Setup(); }
+  virtual void Initialize() { 
     pk_->InitializeFields();
+    pk_->Initialize();
   }
-  
-  // Initialize owned (dependent) variables.
-  virtual void Initialize() {
-    pk_->Initialize(S_.ptr());
-  }
+  virtual std::string name() { return pk_->name(); }
 
   // Choose a time step compatible with physics.
   virtual double get_dt() {
@@ -47,7 +45,7 @@ class Transport_PK_Wrapper : public PK {
 
   // Advance from state S0 to state S1 at time S0.time + dt.
   // Due to Transport PK / MPC conflict (FIXME when MPC will be upgraded)
-  //  virtual int Advance(double dt, double& dt_actual) = 0;
+  // virtual int Advance(double dt, double& dt_actual) = 0;
   virtual bool AdvanceStep(double t_old, double t_new);
 
   // Commit any secondary (dependent) variables.
@@ -57,10 +55,6 @@ class Transport_PK_Wrapper : public PK {
 
   // Calculate any diagnostics prior to doing vis
   virtual void CalculateDiagnostics() {};
-
-  virtual std::string name() {
-    return pk_->name();
-  }
 
   Teuchos::RCP<CompositeVector> total_component_concentration() {
     return pk_->total_component_concentration();
@@ -78,7 +72,6 @@ class Transport_PK_Wrapper : public PK {
  private:
   // factory registration
   static RegisteredPKFactory<Transport_PK_Wrapper> reg_;
-    
 };
 
 }  // namespace Transport

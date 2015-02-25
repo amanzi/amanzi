@@ -70,6 +70,7 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
   S->set_intermediate_time(0.0);
 
   Transport_PK TPK(plist, S, "Transport", component_names);
+  TPK.Setup();
   TPK.CreateDefaultState(mesh, 1);
 
   /* modify the default state for the problem at hand */
@@ -85,7 +86,7 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
   }
 
   /* initialize a transport process kernel */
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
   TPK.PrintStatistics();
 
   /* advance the transport state */

@@ -44,7 +44,7 @@ Flow_PK::Flow_PK() :
 /* ******************************************************************
 * Initiazition of fundamental flow sturctures.                                              
 ****************************************************************** */
-void Flow_PK::Init()
+void Flow_PK::Initialize()
 {
   T_physics = dT = 0.0;
 

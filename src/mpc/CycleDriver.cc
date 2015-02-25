@@ -122,6 +122,8 @@ void CycleDriver::setup() {
   // create the time step manager
   tsm_ = Teuchos::ptr(new TimeStepManager());
 
+  pk_->Setup();
+
   S_->RequireScalar("dt", "coordinator");
 
 
@@ -129,8 +131,6 @@ void CycleDriver::setup() {
 
   S_->InitializeFields();
   S_->InitializeEvaluators();
-
-  pk_->Setup();
 }
 
 
@@ -141,10 +141,16 @@ void CycleDriver::initialize() {
   S_->GetField("dt", "coordinator")->set_initialized();
 
   // Initialize the state (initializes all dependent variables).
-  S_->Initialize();
+  S_->InitializeFields();
+  S_->InitializeEvaluators();
 
   // Initialize the process kernels (initializes all independent variables)
   pk_->Initialize();
+
+  // Final checks.
+  S_->CheckNotEvaluatedFieldsInitialized();
+  S_->CheckAllFieldsInitialized();
+  // S_->WriteDependencyGraph();
 
   S_->GetMeshPartition("materials");
 
@@ -741,8 +747,8 @@ void CycleDriver::reset_driver(int time_pr_id) {
   S_->RegisterMesh("domain", mesh);
 
   //delete the old global solution vector
-  //soln_ = Teuchos::null;
-  //pk_ = Teuchos::null;
+  // soln_ = Teuchos::null;
+  // pk_ = Teuchos::null;
   
   //if (pk_.get()) delete pk_.get(); 
   pk_ = Teuchos::null;
@@ -750,17 +756,18 @@ void CycleDriver::reset_driver(int time_pr_id) {
   //if (soln_.get()) delete soln_.get(); 
   soln_ = Teuchos::null;
 
-   // create the global solution vector
+  // create the global solution vector
   soln_ = Teuchos::rcp(new TreeVector());
   
   // create new pk;
   init_pk(time_pr_id);
 
-  
   // register observation times with the time step manager
   //if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(tsm_);
 
   // Setup
+  pk_->Setup();
+
   S_->RequireScalar("dt", "coordinator");
   S_->Setup();
 
@@ -768,15 +775,16 @@ void CycleDriver::reset_driver(int time_pr_id) {
   S_->InitializeFields();
   S_->InitializeEvaluators();
 
-  pk_->Setup();
-
   // Initialize the state from the old state.
   S_->Initialize(S_old_);
 
   // Initialize the process kernels variables 
   pk_->Initialize();
 
-  //S_->Initialize();
+  // Final checks
+  S_->CheckNotEvaluatedFieldsInitialized();
+  S_->CheckAllFieldsInitialized();
+
   S_->GetMeshPartition("materials");
 
   S_->set_cycle(S_old_->cycle());
@@ -785,8 +793,8 @@ void CycleDriver::reset_driver(int time_pr_id) {
 
   S_old_ = Teuchos::null;
 
-  //WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), tp_dt_[time_pr_id]);
-  //exit(0);
+  // WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), tp_dt_[time_pr_id]);
+  // exit(0);
 }
 
 }  // namespace Amanzi

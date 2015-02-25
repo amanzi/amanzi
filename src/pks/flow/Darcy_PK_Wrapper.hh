@@ -37,20 +37,19 @@ class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
   // Setup
   virtual void Setup() {
     dt_ = -1;
-    pk_->InitializeFields();
+    pk_->Setup();
   }
   
   // Initialize owned (dependent) variables.
   virtual void Initialize() {
-    pk_->Initialize(S_.ptr());
+    pk_->InitializeFields();
+    pk_->Initialize();
     pk_->InitializeAuxiliaryData(); 
     pk_->InitTimeInterval();
   }
 
   // Choose a time step compatible with physics.
-  virtual double get_dt() {
-    return pk_->get_dt();
-  }
+  virtual double get_dt() { return pk_->get_dt(); }
 
   //  Set a time step 
   virtual void set_dt(double dt){
@@ -71,16 +70,13 @@ class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
     pk_->CalculateDiagnostics(S_.ptr());
   }
 
-  virtual std::string name() {
-    return pk_->name();
-  }
+  virtual std::string name() { return pk_->name(); }
 
   // Time integration interface
   // computes the non-linear functional f = f(t,u,udot)
   virtual void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                           Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
-    pk_->Functional(t_old, t_new, u_old->Data(),
-		    u_new->Data(), f->Data());    
+    pk_->Functional(t_old, t_new, u_old->Data(), u_new->Data(), f->Data());    
   }
 
   // applies preconditioner to u and returns the result in Pu
@@ -95,8 +91,7 @@ class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
   }
 
   // updates the preconditioner
-  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, 
-				    double h) {
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
     pk_->UpdatePreconditioner(t, up->Data(), h);
   }
 
@@ -129,11 +124,8 @@ class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
   }
 
   // experimental approach -- calling this indicates that the time
-  // integration scheme is changing the value of the solution in
-  // state.
-  virtual void ChangedSolution() {
-    pk_->ChangedSolution();
-  }
+  // integration scheme is changing the value of the solution in state.
+  virtual void ChangedSolution() { pk_->ChangedSolution(); }
 
  protected:
   Teuchos::RCP<Darcy_PK> pk_;

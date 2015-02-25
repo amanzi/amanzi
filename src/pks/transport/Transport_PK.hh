@@ -74,7 +74,8 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   ~Transport_PK();
 
   // main PK members
-  void Initialize(const Teuchos::Ptr<State>& S);
+  void Setup();
+  void Initialize();
   int Advance(double dT, double& dT_actual); 
   void CommitState(double dummy_dT, const Teuchos::Ptr<State>& S);
 
@@ -124,12 +125,6 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
                              Teuchos::RCP<Epetra_Vector>& limiter);
 
  private:
-  // Helper for constructors.
-  void Construct_(const Teuchos::RCP<Teuchos::ParameterList>& glist, 
-                  Teuchos::RCP<State> S,
-		  const std::string& pk_list_name,
-                  std::vector<std::string>& component_names);
-
   // advection members
   void AdvanceDonorUpwind(double dT);
   void AdvanceSecondOrderUpwindGeneric(double dT);

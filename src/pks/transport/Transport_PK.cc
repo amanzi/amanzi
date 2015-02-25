@@ -41,9 +41,17 @@ namespace Transport {
 Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
                            Teuchos::RCP<State> S, 
                            const std::string& pk_list_name,
-                           std::vector<std::string>& component_names)
+                           std::vector<std::string>& component_names) :
+    S_(S),
+    component_names_(component_names)
 {
-  Construct_(glist, S, pk_list_name, component_names);
+  // Create miscaleneous lists.
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
+  tp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
+
+  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners");
+  linear_solver_list_ = Teuchos::sublist(glist, "Solvers");
+  nonlinear_solver_list_ = Teuchos::sublist(glist, "Nonlinear solvers");
 }
 
 
@@ -55,86 +63,68 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
                            Teuchos::RCP<State> S,
                            const std::string& pk_list_name,
                            Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
-                           Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
-    : chem_state_(chem_state), chem_engine_(chem_engine)
+                           Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine) :
+    S_(S),
+    chem_state_(chem_state),
+    chem_engine_(chem_engine)
 {
+  // Create miscaleneous lists.
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
+  tp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
+
+  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners");
+  linear_solver_list_ = Teuchos::sublist(glist, "Solvers");
+  nonlinear_solver_list_ = Teuchos::sublist(glist, "Nonlinear solvers");
+
   // Retrieve the component names from the chemistry engine.
   std::vector<std::string> component_names;
   chem_engine_->GetPrimarySpeciesNames(component_names);
-  Construct_(glist, S, pk_list_name, component_names);
+  component_names_ = component_names;
 }
 #endif
 
 
 /* ******************************************************************
-* High-level initialization.
+* Define structure of this PK.
 ****************************************************************** */
-void Transport_PK::Construct_(const Teuchos::RCP<Teuchos::ParameterList>& glist, 
-                              Teuchos::RCP<State> S,
-                              const std::string& pk_list_name,
-                              std::vector<std::string>& component_names)
+void Transport_PK::Setup()
 {
-  vo_ = NULL;
-  S_ = S;
-  component_names_ = component_names;
-
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  tp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
-
-  // Create miscaleneous lists.
-  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners");
-  linear_solver_list_ = Teuchos::sublist(glist, "Solvers");
-  nonlinear_solver_list_ = Teuchos::sublist(glist, "Nonlinear solvers");
-
-  dT = dT_debug = T_physics = 0.0;
-  double time = S->time();
-  if (time >= 0.0) T_physics = time;
-
-  dispersion_models_ = 0; 
-  dispersion_preconditioner = "identity";
-
-  internal_tests = 0;
-  tests_tolerance = TRANSPORT_CONCENTRATION_OVERSHOOT;
-
-  MyPID = 0;
-  mesh_ = S->GetMesh();
-  dim = mesh_->space_dimension();
-
-  dT = 0.0;
-  bc_scaling = 0.0;
   passwd_ = "state";  // owner's password
 
+  mesh_ = S_->GetMesh();
+  dim = mesh_->space_dimension();
+
   // require state variables when Flow is off
-  if (!S->HasField("permeability")) {
-    S->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, dim);
+  if (!S_->HasField("permeability")) {
+    S_->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, dim);
   }
-  if (!S->HasField("porosity")) {
-    S->RequireField("porosity", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-  if (!S->HasField("darcy_flux")) {
-    S->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, 1);
-  }
-  if (!S->HasField("water_saturation")) {
-    S->RequireField("water_saturation", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S_->HasField("porosity")) {
+    S_->RequireField("porosity", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
-  if (!S->HasField("prev_water_saturation")) {
-    S->RequireField("prev_water_saturation", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S_->HasField("darcy_flux")) {
+    S_->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("face", AmanziMesh::FACE, 1);
+  }
+  if (!S_->HasField("water_saturation")) {
+    S_->RequireField("water_saturation", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+  if (!S_->HasField("prev_water_saturation")) {
+    S_->RequireField("prev_water_saturation", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // require state variables when Transport is on
-  if (!S->HasField("total_component_concentration")) {
+  if (!S_->HasField("total_component_concentration")) {
     std::vector<std::vector<std::string> > subfield_names(1);
     int ncomponents = component_names_.size();
     for (int i = 0; i != ncomponents; ++i) {
       subfield_names[0].push_back(component_names_[i]);
     }
 
-    S->RequireField("total_component_concentration", passwd_, subfield_names)->SetMesh(mesh_)
+    S_->RequireField("total_component_concentration", passwd_, subfield_names)->SetMesh(mesh_)
       ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, ncomponents);
   }
 }
@@ -158,10 +148,30 @@ Transport_PK::~Transport_PK()
 * Routine processes parameter list. It needs to be called only once
 * on each processor.                                                     
 ****************************************************************** */
-void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
+void Transport_PK::Initialize()
 {
-  // Check that stars are oriented favorably for transport PK.
-  Policy(S);
+  // Set initial values for transport variables.
+  dT = dT_debug = T_physics = 0.0;
+  double time = S_->time();
+  if (time >= 0.0) T_physics = time;
+
+  dispersion_models_ = 0; 
+  dispersion_preconditioner = "identity";
+
+  internal_tests = 0;
+  tests_tolerance = TRANSPORT_CONCENTRATION_OVERSHOOT;
+
+  bc_scaling = 0.0;
+
+  // Create verbosity object.
+  Teuchos::ParameterList vlist;
+  vlist.sublist("VerboseObject") = tp_list_->sublist("VerboseObject");
+  vo_ = new VerboseObject("TransportPK", vlist); 
+
+  MyPID = mesh_->get_comm()->MyPID();
+
+  // Check input parameters. Due to limited checks, we can do it earlier.
+  Policy(S_.ptr());
 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -171,30 +181,28 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
-  MyPID = mesh_->get_comm()->MyPID();
-
   // extract control parameters
   ProcessParameterList();
  
   // state pre-prosessing
-  Teuchos::RCP<const CompositeVector> cv2;
-  S->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
-  cv2 = S->GetFieldData("darcy_flux");
-  darcy_flux = cv2->ViewComponent("face", true);
+  Teuchos::RCP<const CompositeVector> cv;
+  S_->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
+  cv = S_->GetFieldData("darcy_flux");
+  darcy_flux = cv->ViewComponent("face", true);
 
-  cv2 = S->GetFieldData("water_saturation");
-  ws = cv2->ViewComponent("cell", false);
+  cv = S_->GetFieldData("water_saturation");
+  ws = cv->ViewComponent("cell", false);
 
-  cv2 = S->GetFieldData("prev_water_saturation");
-  ws_prev = cv2->ViewComponent("cell", false);
+  cv = S_->GetFieldData("prev_water_saturation");
+  ws_prev = cv->ViewComponent("cell", false);
 
-  cv2 = S->GetFieldData("porosity");
-  phi = cv2->ViewComponent("cell", false);
+  cv = S_->GetFieldData("porosity");
+  phi = cv->ViewComponent("cell", false);
 
-  tcc = S->GetFieldData("total_component_concentration", passwd_);
+  tcc = S_->GetFieldData("total_component_concentration", passwd_);
 
   // memory for new components
-  tcc_tmp = Teuchos::rcp(new CompositeVector(*(S->GetFieldData("total_component_concentration"))));
+  tcc_tmp = Teuchos::rcp(new CompositeVector(*(S_->GetFieldData("total_component_concentration"))));
   *tcc_tmp = *tcc;
 
   // upwind 
@@ -216,7 +224,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   lifting_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
 
   // boundary conditions initialization
-  double time = T_physics;
+  time = T_physics;
   for (int i = 0; i < bcs.size(); i++) {
     bcs[i]->Compute(time);
   }
@@ -453,6 +461,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
 
     Operators::OperatorDiffusionFactory opfactory;
     Teuchos::RCP<Operators::OperatorDiffusion> op1 = opfactory.Create(mesh_, bc_dummy, op_list, g, 0);
+    op1->SetBCs(bc_dummy);
     Teuchos::RCP<Operators::Operator> op = op1->global_operator();
     Teuchos::RCP<Operators::OperatorAccumulation> op2 =
         Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op));
@@ -509,7 +518,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
         }
         op2->AddAccumulationTerm(sol, factor, dT_MPC, "cell");
  
-        op1->ApplyBCs(bc_dummy);
+        op1->ApplyBCs(true);
         op->SymbolicAssembleMatrix();
         op->AssembleMatrix();
         op->InitPreconditioner(dispersion_preconditioner, *preconditioner_list_);
@@ -571,7 +580,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
       Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
       double time = T_physics + dT_MPC;
       ComputeAddSourceTerms(time, 1.0, srcs, rhs_cell, i, i);
-      op1->ApplyBCs(bc_dummy);
+      op1->ApplyBCs();
 
       // add accumulation term
       Epetra_MultiVector& fac1 = *factor.ViewComponent("cell");

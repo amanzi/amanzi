@@ -63,6 +63,7 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
   S->set_intermediate_time(0.0);
 
   Transport_PK TPK(plist, S, "Transport", component_names);
+  TPK.Setup();
   TPK.CreateDefaultState(mesh, 2);
 
   /* modify the default state for the problem at hand */
@@ -78,7 +79,7 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
   }
 
   /* initialize a transport process kernel */
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
   TPK.PrintStatistics();
 
   /* advance the state */

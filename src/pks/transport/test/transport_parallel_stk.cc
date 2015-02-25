@@ -67,6 +67,7 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
   S->set_intermediate_time(0.0);
 
   Transport_PK TPK(plist, S, "Transport", component_names);
+  TPK.Setup();
   TPK.CreateDefaultState(mesh, 2);
 
   /* modify the default state for the problem at hand */
@@ -92,7 +93,7 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
   }
 
   /* initialize a transport process kernel */
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
 
   /* advance the state */
   double dummy_dT, dT = TPK.CalculateTransportDt();  

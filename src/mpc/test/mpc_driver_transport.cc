@@ -45,7 +45,7 @@ using namespace Amanzi::AmanziGeometry;
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory("test/rect2D_10x10_ss.exo", gm);
+  Teuchos::RCP<Mesh> mesh = meshfactory("test/mpc_driver_transport_mesh_10x10.exo", gm);
   ASSERT(!mesh.is_null());
 
   bool mpc_new = true;

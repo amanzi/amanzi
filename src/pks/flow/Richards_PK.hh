@@ -35,16 +35,19 @@ namespace Flow {
 
 class Richards_PK : public Flow_PK {
  public:
-  Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-              const std::string& pk_list_name, Teuchos::RCP<State> S);
+  Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+              const std::string& pk_list_name,
+              Teuchos::RCP<State> S);
   ~Richards_PK();
 
   // main PK methods
-  void Initialize(const Teuchos::Ptr<State>& S);
-  void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
+  void Setup();
+  void Initialize();
   bool Advance(double dT_MPC, double& dT_actual); 
+
   double get_dt();
   void set_dt(double dt) { dT = dt; dT_desirable_ = dT; }
+
   void CommitState(double dt, const Teuchos::Ptr<State>& S);
   void CalculateDiagnostics(const Teuchos::Ptr<State>& S);
 
@@ -110,8 +113,8 @@ class Richards_PK : public Flow_PK {
   void ImproveAlgebraicConsistency(const Epetra_Vector& ws_prev, Epetra_Vector& ws);
 
   template <class Model> 
-  double DeriveBoundaryFaceValue(int f, const CompositeVector& u,
-          const Model& model);
+  double DeriveBoundaryFaceValue(int f, const CompositeVector& u, const Model& model);
+
   virtual double BoundaryFaceValue(int f, const CompositeVector& pressure);
 
  private:

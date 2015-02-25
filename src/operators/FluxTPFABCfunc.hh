@@ -76,15 +76,15 @@ struct Tol_ {
 
 
 template <class WRM>
-double OperatorDiffusionTPFA::DeriveBoundaryFaceValue(
+double OperatorDiffusionFV::DeriveBoundaryFaceValue(
     int f, const CompositeVector& u, const WRM& wrm)
 {
   if (u.HasComponent("face")) {
     const Epetra_MultiVector& u_face = *u.ViewComponent("face");
     return u_face[f][0];
   } else {
-    const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
-    const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
+    const std::vector<int>& bc_model = bc_->bc_model();
+    const std::vector<double>& bc_value = bc_->bc_value();
 
     if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
       return bc_value[f];

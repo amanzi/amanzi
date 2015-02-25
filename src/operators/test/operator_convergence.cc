@@ -30,7 +30,7 @@
 
 #include "BCs.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusion.hh"
+#include "OperatorDiffusionMFD.hh"
 
 #include "Analytic01.hh"
 
@@ -128,7 +128,8 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     // create the local diffusion operator
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
                                         .get<Teuchos::ParameterList>("mixed diffusion");
-    OperatorDiffusion op2(olist, mesh);
+    OperatorDiffusionMFD op2(olist, mesh);
+    op2.SetBCs(bc);
 
     int schema_dofs = op2.schema_dofs();
     int schema_prec_dofs = op2.schema_prec_dofs();
@@ -146,7 +147,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     // get and assmeble the global operator
     Teuchos::RCP<Operator> global_op = op2.global_operator();
     global_op->UpdateRHS(source, false);
-    op2.ApplyBCs(bc);
+    op2.ApplyBCs();
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
     

@@ -756,9 +756,7 @@ void State::InitializeEvaluators() {
 
 void State::InitializeFields() {
   for (FieldMap::iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
-    //std::cout<<f_it->second->fieldname()<<"\n";
     if (!f_it->second->initialized()) {
-      //std::cout<<f_it->second->fieldname()<<" "<<f_it->first<<"\n";
       if (state_plist_.isSublist("initial conditions")) {
         if (state_plist_.sublist("initial conditions").isSublist(f_it->first)) {
           Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(f_it->first);

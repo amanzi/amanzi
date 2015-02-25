@@ -67,6 +67,8 @@ TEST(FLOW_2D_RICHARDS) {
 
   Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
   Richards_PK* RPK = new Richards_PK(global_list, "Flow", S);
+
+  RPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -106,7 +108,7 @@ TEST(FLOW_2D_RICHARDS) {
   }
 
   /* initialize the Richards process kernel */
-  RPK->Initialize(S.ptr());
+  RPK->Initialize();
   RPK->ti_specs_sss().T1 = 100.0;
   RPK->ti_specs_sss().max_itrs = 400;
 

@@ -68,6 +68,8 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
 
   Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
   Richards_PK* RPK = new Richards_PK(global_list, "Flow", S);
+
+  RPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -100,7 +102,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   //RPK->DeriveFaceValuesFromCellValues(p, lambda); 
 
   /* create Richards process kernel */
-  RPK->Initialize(S.ptr());
+  RPK->Initialize();
   RPK->ti_specs_sss().T1 = 1e+10;
   RPK->ti_specs_sss().dTmax = 1e+8;
   RPK->ti_specs_sss().residual_tol = 1e-5;

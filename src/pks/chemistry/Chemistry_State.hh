@@ -41,8 +41,9 @@ class Chemistry_State {
                   bool using_sorption,
                   bool using_sorption_isotherms);
 
-  virtual ~Chemistry_State() {}
+  virtual ~Chemistry_State() {};
 
+  void Setup();
   void AllocateAdditionalChemistryStorage(const Beaker::BeakerComponents&);
   void AllocateAdditionalChemistryStorage(int num_aqueous_components);
   void SetAuxDataNames(const std::vector<std::string>& aux_data_names);
