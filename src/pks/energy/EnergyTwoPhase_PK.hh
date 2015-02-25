@@ -26,12 +26,16 @@ namespace Energy {
 class EnergyTwoPhase_PK : public Energy_PK {
 
 public:
-  EnergyTwoPhase_PK(Teuchos::RCP<const Teuchos::ParameterList>& glist, Teuchos::RCP<State>& S);
+  EnergyTwoPhase_PK(Teuchos::ParameterList& pk_tree,
+                    const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                    const Teuchos::RCP<State>& S,
+                    const Teuchos::RCP<TreeVector>& soln);
   virtual ~EnergyTwoPhase_PK() {};
 
   // Initialize owned (dependent) variables.
   virtual void Setup();
   virtual void Initialize();
+  virtual std::string name() { return "two-phase energy"; }
 
  protected:
   // models for evaluating enthalpy
@@ -40,10 +44,10 @@ public:
 
 private:
   // factory registration
-  // static RegisteredPKFactory<TwoPhase> reg_;
+  static RegisteredPKFactory<EnergyTwoPhase_PK> reg_;
 };
 
-} // namespace Energy
-} // namespace Amanzi
+}  // namespace Energy
+}  // namespace Amanzi
 
 #endif

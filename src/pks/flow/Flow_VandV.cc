@@ -26,14 +26,18 @@ namespace Flow {
 void Flow_PK::InitializeFields()
 {
   // set popular default values
-  if (!S_->GetField("porosity", passwd_)->initialized()) {
-    S_->GetFieldData("porosity", passwd_)->PutScalar(0.2);
-    S_->GetField("porosity", passwd_)->set_initialized();
+  if (S_->GetField("porosity")->owner() == passwd_) {
+    if (!S_->GetField("porosity", passwd_)->initialized()) {
+      S_->GetFieldData("porosity", passwd_)->PutScalar(0.2);
+      S_->GetField("porosity", passwd_)->set_initialized();
+    }
   }
 
-  if (!S_->GetField("fluid_density", passwd_)->initialized()) {
-    *(S_->GetScalarData("fluid_density", passwd_)) = 1000.0;
-    S_->GetField("fluid_density", passwd_)->set_initialized();
+  if (S_->GetField("fluid_density")->owner() == passwd_) {
+    if (!S_->GetField("fluid_density", passwd_)->initialized()) {
+      *(S_->GetScalarData("fluid_density", passwd_)) = 1000.0;
+      S_->GetField("fluid_density", passwd_)->set_initialized();
+    }
   }
 
   if (!S_->GetField("fluid_viscosity", passwd_)->initialized()) {
@@ -41,11 +45,11 @@ void Flow_PK::InitializeFields()
     S_->GetField("fluid_viscosity", passwd_)->set_initialized();
   }
 
-  if (!S_->GetField("gravity", passwd_)->initialized()) {
-    Epetra_Vector& gvec = *S_->GetConstantVectorData("gravity", passwd_);
+  if (!S_->GetField("gravity", "state")->initialized()) {
+    Epetra_Vector& gvec = *S_->GetConstantVectorData("gravity", "state");
     gvec.PutScalar(0.0);
     gvec[dim - 1] = -9.80;
-    S_->GetField("gravity", passwd_)->set_initialized();
+    S_->GetField("gravity", "state")->set_initialized();
   }
 
   if (!S_->GetField("permeability", passwd_)->initialized()) {
@@ -53,10 +57,12 @@ void Flow_PK::InitializeFields()
     S_->GetField("permeability", passwd_)->set_initialized();
   }
 
-  if (S_->HasField("water_saturation")) {
-    if (!S_->GetField("water_saturation", passwd_)->initialized()) {
-      S_->GetFieldData("water_saturation", passwd_)->PutScalar(1.0);
-      S_->GetField("water_saturation", passwd_)->set_initialized();
+  if (S_->GetField("water_saturation")->owner() == passwd_) {
+    if (S_->HasField("water_saturation")) {
+      if (!S_->GetField("water_saturation", passwd_)->initialized()) {
+        S_->GetFieldData("water_saturation", passwd_)->PutScalar(1.0);
+        S_->GetField("water_saturation", passwd_)->set_initialized();
+      }
     }
   }
 

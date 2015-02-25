@@ -146,10 +146,12 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     rel_perm_->Compute(*solution);
 
     RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
-    upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
+    upwind_->Compute(*darcy_flux_upwind, *solution, bc_model, bc_value,
+                     *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
 
     RelativePermeabilityUpwindFn func2 = &RelativePermeability::Derivative;
-    upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
+    upwind_->Compute(*darcy_flux_upwind, *solution, bc_model, bc_value,
+                     *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
 
     // create algebraic problem (matrix = preconditioner)
     op_preconditioner_->Init();

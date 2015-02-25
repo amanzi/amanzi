@@ -93,7 +93,7 @@ public:
   static TBase* CreateInstance(const std::string& s, Teuchos::ParameterList& plist) {
     typename map_type::iterator iter = GetMap()->find(s);
     if (iter == GetMap()->end()) {
-      std::cout << "cannot get item of type: " << s << std::endl;
+      std::cout << "Factory: cannot get item of type: " << s << std::endl;
 
       for (typename map_type::iterator iter=GetMap()->begin();
            iter!=GetMap()->end(); ++iter) {

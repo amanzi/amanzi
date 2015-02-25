@@ -12,7 +12,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "UnitTest++.h"
 
 #include "FrameworkTraits.hh"
@@ -46,12 +46,10 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
     // read parameter list
     std::string xmlFileName("test/transport_advance.xml");
     if (frm == 2) xmlFileName = "test/transport_advance_simple.xml";
-
-    ParameterXMLFileReader xmlreader(xmlFileName);
-    ParameterList plist = xmlreader.getParameters();
+    Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
     // create a mesh
-    ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+    ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
 
     FrameworkPreference pref;

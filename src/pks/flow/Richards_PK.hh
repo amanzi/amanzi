@@ -44,7 +44,7 @@ class Richards_PK : public Flow_PK {
   void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
   bool Advance(double dT_MPC, double& dT_actual); 
   double get_dt();
-  void set_dt(double dt){dT = dt; dT_desirable_ = dT;}
+  void set_dt(double dt) { dT = dt; dT_desirable_ = dT; }
   void CommitState(double dt, const Teuchos::Ptr<State>& S);
   void CalculateDiagnostics(const Teuchos::Ptr<State>& S);
 
@@ -113,7 +113,12 @@ class Richards_PK : public Flow_PK {
   double DeriveBoundaryFaceValue(int f, const CompositeVector& u,
           const Model& model);
   virtual double BoundaryFaceValue(int f, const CompositeVector& pressure);
-  
+
+ private:
+  void InitializeUpwind_();
+  void Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f);
+  void CalculateVaporDiffusionTensor_();
+
  private:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> rp_list_;
@@ -124,6 +129,9 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
   Teuchos::RCP<Operators::Upwind<RelativePermeability> > upwind_;
   Teuchos::RCP<Operators::BCs> op_bc_;
+
+  Teuchos::RCP<Operators::Operator> op_vapor_matrix_;  // thermal Richards
+  Teuchos::RCP<Operators::OperatorDiffusion> op_vapor_matrix_diff_;
 
   Teuchos::RCP<BDF1_TI<CompositeVector, CompositeVectorSpace> > bdf1_dae;  // Time integrators
   int block_picard;
@@ -140,8 +148,11 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;
 
-  int update_upwind;
-  Teuchos::RCP<CompositeVector> darcy_flux_upwind;  // used in  
+  int update_upwind;  // upwind section
+  Teuchos::RCP<CompositeVector> darcy_flux_upwind;
+
+  bool vapor_diffusion_;  // thermal richards section
+  std::vector<WhetStone::Tensor> K_vapor; 
 
  private:
   void operator=(const Richards_PK& RPK);
@@ -175,8 +186,6 @@ double Richards_PK::DeriveBoundaryFaceValue(
     }
   }
 }
-
-
 
 }  // namespace Flow
 }  // namespace Amanzi

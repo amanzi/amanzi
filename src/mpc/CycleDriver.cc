@@ -77,12 +77,12 @@ void CycleDriver::init_pk(int time_pr_id){
 
   std::ostringstream ss; ss << time_pr_id;
   std::string tp_list_name = "TP "+ ss.str();
-  //  std::cout<<*time_periods_list<<"\n";
-  //std::cout<<time_periods_list->sublist(tp_list_name.data())<<"\n";
+  // std::cout<<*time_periods_list<<"\n";
+  // std::cout<<time_periods_list->sublist(tp_list_name.data())<<"\n";
 
   Teuchos::ParameterList pk_tree_list = time_periods_list->sublist(tp_list_name.data()).sublist("PK Tree");
-  //std::cout<<pk_tree_list<<"\n";
-  if (pk_tree_list.numParams() == 0 || pk_tree_list.numParams() > 1) {
+  // std::cout<<pk_tree_list<<"\n";
+  if (pk_tree_list.numParams() != 1) {
     Errors::Message message("CycleDriver: PK Tree list should contain exactly one root node list");
     Exceptions::amanzi_throw(message);
   }
@@ -90,7 +90,7 @@ void CycleDriver::init_pk(int time_pr_id){
   const std::string &pk_name = pk_tree_list.name(pk_item);
 
   if (!pk_tree_list.isSublist(pk_name)) {
-    Errors::Message message("CycleDriver: PK Tree list should contain exactly one root node list");
+    Errors::Message message("CycleDriver: PK Tree list does not have node \"" + pk_name + "\".");
     Exceptions::amanzi_throw(message);
   }
 
@@ -105,7 +105,8 @@ void CycleDriver::setup() {
   if (parameter_list_->isSublist("Observation Data")) {
     Teuchos::ParameterList observation_plist = parameter_list_->sublist("Observation Data");
     observations_ = Teuchos::rcp(new Amanzi::Unstructured_observations(observation_plist, output_observations_, comm_));
-    if (coordinator_list_->isSublist("component names")) {
+    //std::cout<<*coordinator_list_<<"\n";
+    if (coordinator_list_->isParameter("component names")) {
       Teuchos::Array<std::string> comp_names =
           coordinator_list_->get<Teuchos::Array<std::string> >("component names");
       observations_->RegisterComponentNames(comp_names.toVector());
@@ -124,7 +125,6 @@ void CycleDriver::setup() {
   // create the time step manager
   tsm_ = Teuchos::ptr(new TimeStepManager());
 
-
   S_->RequireScalar("dt", "coordinator");
   S_->Setup();
 
@@ -137,7 +137,6 @@ void CycleDriver::setup() {
 
 void CycleDriver::initialize() {
   // register observation times with the time step manager
-  //if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(tsm_);
  
   *S_->GetScalarData("dt", "coordinator") = tp_dt_[0];
   S_->GetField("dt", "coordinator")->set_initialized();
@@ -237,7 +236,8 @@ void CycleDriver::initialize() {
   // -- register checkpoint times
   checkpoint_->RegisterWithTimeStepManager(tsm_.ptr());
   // -- register observation times
-  if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(tsm_.ptr());
+  if (observations_ != Teuchos::null) 
+    observations_->RegisterWithTimeStepManager(tsm_.ptr());
   // -- register the final time
   // register reset_times
   for(std::vector<std::pair<double,double> >::const_iterator it = reset_info_.begin();
@@ -246,6 +246,7 @@ void CycleDriver::initialize() {
   for (int i=0;i<num_time_periods_; i++) tsm_->RegisterTimeEvent(tp_end_[i]);
   
   //tsm_->RegisterTimeEvent(t1_);
+
 }
 
 
@@ -666,6 +667,7 @@ void CycleDriver::go() {
     pk_->set_dt(dt);
   }
 
+  
   *S_->GetScalarData("dt", "coordinator") = dt;
   S_->GetField("dt","coordinator")->set_initialized();
 

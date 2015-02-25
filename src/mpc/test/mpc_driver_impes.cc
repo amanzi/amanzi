@@ -14,11 +14,9 @@
 #include "CycleDriver.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_flow_registration.hh"
-#include "pks_reactivetransport_registration.hh"
-#include "pks_flowreactivetransport_registration.hh"
-#include "pks_transport_registration.hh"
-#include "pks_chemistry_registration.hh"
+#include "pks_pressuresaturation_registration.hh"
+#include "pks_pressure_registration.hh"
+#include "pks_saturation_registration.hh"
 
 #include "MeshFactory.hh"
 #include "Mesh.hh"
@@ -26,7 +24,7 @@
 #include "GeometricModel.hh"
 
 
-TEST(NEW_DRIVER_Richards_Reactive_Transport) {
+TEST(NEW_DRIVER_COUPLED_MULTIPHASE) {
 
 using namespace std;
 
@@ -36,8 +34,7 @@ using namespace std;
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
   
-  std::string xmlInFileName = "test/test_new_driver_frt.xml";
-
+  std::string xmlInFileName = "test/mpc_driver_impes.xml";
 
   // read the main parameter list
   Teuchos::ParameterList driver_parameter_list;
@@ -47,7 +44,7 @@ using namespace std;
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList reg_params = driver_parameter_list.sublist("Regions");
    
-  int spdim = 3;
+  int spdim = 2;
   Amanzi::AmanziGeometry::GeometricModelPtr 
       geom_model_ptr( new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm) );
 
@@ -114,6 +111,9 @@ using namespace std;
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
+
+
+
 
 
    

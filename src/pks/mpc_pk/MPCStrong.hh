@@ -124,7 +124,7 @@ MPCStrong<PK_Base>::MPCStrong(Teuchos::ParameterList& pk_tree,
 // -----------------------------------------------------------------------------
 template<class PK_Base>
 void MPCStrong<PK_Base>::Setup() {
-  // Tweak the sub-PK parameter lists.  This allows the PK to
+  // Tweak the sub-PK parameter lists. This allows the PK to
   // potentially not assemble things.
   Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(global_list_, "PKs");
   for (Teuchos::ParameterList::ConstIterator param = pk_tree_.begin();
@@ -132,8 +132,6 @@ void MPCStrong<PK_Base>::Setup() {
     std::string pname = param->first;
     if (pks_list->isSublist(pname)) {
       pks_list->sublist(pname).set("strongly coupled PK", true);
-    } else {
-      ASSERT(0);
     }
   }
 

@@ -84,16 +84,19 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
   CompositeVector utmp(u);
   Epetra_MultiVector& utmp_face = *utmp.ViewComponent("face");
   Epetra_MultiVector& u_face = *u.ViewComponent("face");
+  Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
 
   // update relative permeability coefficients
   darcy_flux_copy->ScatterMasterToGhosted("face");
   rel_perm_->Compute(u);
 
   RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
-  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
+  upwind_->Compute(*darcy_flux_upwind, u, bc_model, bc_value,
+                   *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
 
   RelativePermeabilityUpwindFn func2 = &RelativePermeability::Derivative;
-  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
+  upwind_->Compute(*darcy_flux_upwind, u, bc_model, bc_value,
+                   *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
 
   // modify relative permeability coefficient for influx faces
   if (ti_specs->inflow_krel_correction) {
@@ -104,12 +107,16 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
       if ((bc_model[f] == Operators::OPERATOR_BC_NEUMANN || 
            bc_model[f] == Operators::OPERATOR_BC_MIXED) && bc_value[f] < 0.0) {
         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        int c = cells[0];
 
         const AmanziGeometry::Point& normal = mesh_->face_normal(f);
         double area = mesh_->face_area(f);
-        double Knn = ((K[cells[0]] * normal) * normal) / (area * area);
-        double save = 3.0;
-        k_face[0][f] = std::min(1.0, -save * bc_value[f] * mu_ / (Knn * rho_ * rho_ * g_));
+        double Knn = ((K[c] * normal) * normal) / (area * area);
+        // double save = 3.0;
+        // k_face[0][f] = std::min(1.0, -save * bc_value[f] * mu_ / (Knn * rho_ * rho_ * g_));
+        double kr1 = rel_perm_->Value(c, u_cell[0][c]);
+        double kr2 = std::min(1.0, -bc_value[f] * mu_ / (Knn * rho_ * rho_ * g_));
+        k_face[0][f] = (kr1 + kr2) / 2;
       } 
     }
   }

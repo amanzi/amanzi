@@ -110,18 +110,16 @@ MPC_PK<PK_Base>::MPC_PK(Teuchos::ParameterList& pk_tree,
   my_list_ = Teuchos::sublist(Teuchos::sublist(global_list_, "PKs"), name_);
 
   Teuchos::RCP<Teuchos::ParameterList> plist;
-  // Teuchos::sublist(Teuchos::sublist(global_list, "PKs"), name_);
-
   if (global_list_->isSublist("PKs")){
-    plist =  Teuchos::sublist(global_list, "PKs");
+    plist = Teuchos::sublist(global_list, "PKs");
   }
 
   std::vector<std::string> pk_name = my_list_->get<Teuchos::Array<std::string> >("PKs order").toVector();
 
   // loop over sub-PKs in the PK sublist, constructing the hierarchy recursively
   PKFactory pk_factory;
-  // for (Teuchos::ParameterList::ConstIterator sub=plist->begin(); sub!=plist->end(); ++sub) {
-  for (int i=0; i<pk_name.size(); ++i) {
+
+  for (int i = 0; i < pk_name.size(); ++i) {
     //const std::string& sub_name = sub->first;
     const std::string& sub_name = pk_name[i];
     if (!plist->isSublist(sub_name)) {
@@ -130,15 +128,14 @@ MPC_PK<PK_Base>::MPC_PK(Teuchos::ParameterList& pk_tree,
     }
   }
 
-  for (int i=0; i<pk_name.size(); i++){
+  for (int i = 0; i < pk_name.size(); i++) {
     // Collect arguments to the constructor
     Teuchos::ParameterList& pk_sub_tree = pk_tree.sublist(pk_name[i]);
     Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector());
     solution_->PushBack(pk_soln);
 
     // create the PK
-    Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(
-        pk_sub_tree, global_list, S, pk_soln);
+    Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_sub_tree, global_list, S, pk_soln);
     Teuchos::RCP<PK_Base> pk = Teuchos::rcp_dynamic_cast<PK_Base>(pk_notype);
     sub_pks_.push_back(pk);
   }
@@ -150,8 +147,7 @@ MPC_PK<PK_Base>::MPC_PK(Teuchos::ParameterList& pk_tree,
 // -----------------------------------------------------------------------------
 template <class PK_Base>
 void MPC_PK<PK_Base>::Setup() {
-  for (typename SubPKList::iterator pk = sub_pks_.begin();
-      pk != sub_pks_.end(); ++pk) {
+  for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     (*pk)->Setup();
   }
 }
@@ -162,8 +158,7 @@ void MPC_PK<PK_Base>::Setup() {
 // -----------------------------------------------------------------------------
 template <class PK_Base>
 void MPC_PK<PK_Base>::Initialize() {
-  for (typename SubPKList::iterator pk = sub_pks_.begin();
-      pk != sub_pks_.end(); ++pk) {
+  for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     (*pk)->Initialize();
   }
 }
@@ -174,8 +169,7 @@ void MPC_PK<PK_Base>::Initialize() {
 // -----------------------------------------------------------------------------
 template <class PK_Base>
 void MPC_PK<PK_Base>::CommitStep(double t_old, double t_new) {
-  for (typename SubPKList::iterator pk = sub_pks_.begin();
-      pk != sub_pks_.end(); ++pk) {
+  for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     (*pk)->CommitStep(t_old, t_new);
   }
 }
@@ -186,8 +180,7 @@ void MPC_PK<PK_Base>::CommitStep(double t_old, double t_new) {
 // -----------------------------------------------------------------------------
 template <class PK_Base>
 void MPC_PK<PK_Base>::CalculateDiagnostics() {
-  for (typename SubPKList::iterator pk = sub_pks_.begin();
-      pk != sub_pks_.end(); ++pk) {
+  for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     (*pk)->CalculateDiagnostics();
   }
 }

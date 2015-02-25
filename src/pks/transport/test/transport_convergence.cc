@@ -9,17 +9,16 @@
 #include <iostream>
 #include <vector>
 
-#include "UnitTest++.h"
-
+#include "Epetra_SerialComm.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-#include "Epetra_SerialComm.h"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "UnitTest++.h"
 
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
 #include "Point.hh"
-
 #include "State.hh"
 #include "Transport_PK.hh"
 
@@ -51,7 +50,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
   /* read parameter list */
   std::string xmlFileName = "test/transport_convergence.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* convergence estimate */
   std::vector<double> h;
@@ -59,7 +58,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
 
   for (int nx = 20; nx < 321; nx *= 2) {
     /* create a SIMPLE mesh framework */
-    ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+    ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
 
     FrameworkPreference pref;
@@ -161,8 +160,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_convergence.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* convergence estimate */
   std::vector<double> h;
@@ -170,7 +168,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
 
   for (int nx = 20; nx < 321; nx *= 2) {
     /* create a SIMPLE mesh framework */
-    ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+    ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
 
     FrameworkPreference pref;
@@ -278,11 +276,10 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_convergence.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* create a SIMPLE mesh framework */
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
  
   /* convergence estimate */
@@ -395,8 +392,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_convergence_poly.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* convergence estimate */
   std::vector<double> h;
@@ -404,7 +400,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
 
   for (int loop = 0; loop < 3; loop++) {
     /* create a mesh framework */
-    ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+    ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(2, region_list, comm);
 
     FrameworkPreference pref;
@@ -515,8 +511,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_convergence_poly.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* convergence estimate */
   std::vector<double> h;
@@ -524,7 +519,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
 
   for (int loop = 0; loop < 3; loop++) {
     /* create a mesh framework */
-    ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+    ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(2, region_list, comm);
 
     FrameworkPreference pref;

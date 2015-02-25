@@ -9,11 +9,10 @@
 #include <cmath>
 #include <vector>
 
-#include "UnitTest++.h"
-
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "UnitTest++.h"
 
 #include "MeshFactory.hh"
 #include "State.hh"
@@ -42,11 +41,10 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_parallel_mstk.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* create an MSTK mesh framework */
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
 
   FrameworkPreference pref;

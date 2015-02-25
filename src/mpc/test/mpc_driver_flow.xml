@@ -2,9 +2,10 @@
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
   <Parameter name="grid_option" type="string" value="Unstructured"/>
   <Parameter isUsed="true" name="input file name" type="string" value="dvz_3layer_2D_short.xml"/>
-  <Parameter name="New multi-process coordinator" type="bool" value="true"/>
+  <Parameter name="new mpc driver" type="bool" value="true"/>
+
   <ParameterList name="Checkpoint Data">
-    <Parameter name="file name base" type="string" value="checkpoint"/>
+    <Parameter name="file name base" type="string" value="chkpoint"/>
     <Parameter name="file name digits" type="int" value="5"/>
     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
   </ParameterList>
@@ -12,6 +13,7 @@
     <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
   </ParameterList>
+
   <ParameterList name="Regions">
     <ParameterList name="Bottom Surface Outside All">
       <ParameterList name="Region: Box">
@@ -83,17 +85,16 @@
   <ParameterList name="Mesh">
     <ParameterList name="Unstructured">
       <ParameterList name="Generate Mesh">
-<!--        <ParameterList name="Uniform Structured"> -->
-          <Parameter name="Number of Cells" type="Array(int)" value="{54, 60}"/>
-          <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
-          <Parameter name="Domain High Coordinate" type="Array(double)" value="{2.16000000000000000e+02, 1.20000000000000000e+02}"/>
-<!--        </ParameterList> -->
+        <Parameter name="Number of Cells" type="Array(int)" value="{54, 60}"/>
+        <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
+        <Parameter name="Domain High Coordinate" type="Array(double)" value="{2.16000000000000000e+02, 1.20000000000000000e+02}"/>
       </ParameterList>
       <ParameterList name="Expert">
         <Parameter name="Framework" type="string" value="MSTK"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="Domain">
     <Parameter isUsed="true" name="Spatial Dimension" type="int" value="2"/>
   </ParameterList>
@@ -112,33 +113,6 @@
 	<Parameter name="end period time" type="double" value="1.00000000000000000e+02"/>
 	<Parameter name="initial time step" type="double" value="1.00000000000000000e+01"/>
       </ParameterList>
-    </ParameterList>
-  </ParameterList>
-
-  <ParameterList name="MPC">
-    <ParameterList name="Time Integration Mode">
-      <ParameterList name="Initialize To Steady">
-        <Parameter name="Start" type="double" value="0.0e+00"/>
-        <Parameter name="Switch" type="double" value="6.17266656000000000e+10"/>
-        <Parameter name="End" type="double" value="9.46728000000000000e+10"/>
-        <Parameter name="Steady Initial Time Step" type="double" value="1.00000000000000000e+03"/>
-        <Parameter name="Transient Initial Time Step" type="double" value="1.00000000000000000e+01"/>
-        <Parameter name="Use Picard" type="bool" value="false"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Time Period Control">
-      <Parameter name="Start Times" type="Array(double)" value="{6.17293440000000000e+10, 6.17317848100000000e+10, 6.17370552100000000e+10, 9.46727980000000000e+10}"/>
-      <Parameter name="Initial Time Step" type="Array(double)" value="{1.00000000000000000e+01, 1.00000000000000000e+01, 1.00000000000000000e+01, 1.0e+00}"/>
-    </ParameterList>
-    <Parameter name="disable Transport_PK" type="string" value="yes"/>
-    <Parameter isUsed="true" name="Chemistry Model" type="string" value="Off"/>
-    <Parameter name="transport subcycling" type="bool" value="true"/>
-    <Parameter name="component names" type="Array(string)" value="{Tc-99}"/>
-    <Parameter name="disable Flow_PK" type="string" value="no"/>
-    <Parameter name="Flow model" type="string" value="Richards"/>
-    <Parameter name="time integration rescue reduction factor" type="double" value="5.00000000000000000e-01"/>
-    <ParameterList name="VerboseObject">
-      <Parameter name="Verbosity Level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
 
@@ -294,6 +268,7 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="PKs">
     <ParameterList name="Flow">
       <ParameterList name="Richards problem">
@@ -478,6 +453,7 @@
     </ParameterList>
    </ParameterList>
   </ParameterList>
+
   <ParameterList name="Preconditioners">
     <ParameterList name="Trilinos ML">
       <Parameter name="preconditioner type" type="string" value="ml"/>
@@ -527,6 +503,7 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="Solvers">
     <ParameterList name="AztecOO">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>

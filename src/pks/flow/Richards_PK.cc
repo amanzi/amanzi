@@ -52,49 +52,22 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   dim = mesh_->space_dimension();
 
   // We need the flow list
-  if (glist->isSublist("PKs")) {
-    if (glist->sublist("PKs").isSublist(pk_list_name)) {
-      if (glist->sublist("PKs").sublist(pk_list_name).isSublist("Richards problem")) {
-         rp_list_ = Teuchos::rcp(&glist->sublist("PKs")
-                                        .sublist(pk_list_name)
-                                        .sublist("Richards problem"), false);
-      } else {
-        Errors::Message msg("Flow PK: sublist \"Richards problem\" is missing.");
-        Exceptions::amanzi_throw(msg);
-      }
-    } else {
-      Errors::Message msg("Flow PK: sublist " + pk_list_name + " is missing.");
-      Exceptions::amanzi_throw(msg);
-    }
-  } else {
-    Errors::Message msg("Flow PK: sublist \"PKs\" is missing.");
-    Exceptions::amanzi_throw(msg);
-  }
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
+  Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_list_name, true);
+  rp_list_ = Teuchos::sublist(flow_list, "Richards problem", true);
   
   new_mpc_driver = glist->get<bool>("new mpc driver", false);
 
-  // We also need iscaleneous sublists
-  if (glist->isSublist("Preconditioners")) {
-    preconditioner_list_ = Teuchos::rcp(&glist->sublist("Preconditioners"), false);  // no memory destructor
-  } else {
-    Errors::Message msg("Flow PK: input XML does not have <Preconditioners> sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  if (glist->isSublist("Solvers")) {
-    linear_operator_list_ = Teuchos::rcp(&glist->sublist("Solvers"), false);
-  } else {
-    Errors::Message msg("Flow PK: input XML does not have <Solvers> sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
+  // We also need miscaleneous sublists
+  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners", true);
+  linear_operator_list_ = Teuchos::sublist(glist, "Solvers", true);
 
   if (rp_list_->isSublist("time integrator")) {
     ti_list_ = rp_list_->sublist("time integrator");
   } 
-  // else {
-  //   Errors::Message msg("Richards PK: input XML does not have <time integrator> sublist.");
-  //   Exceptions::amanzi_throw(msg);
-  // }  
+
+  // coupling with other physical PKs
+  vapor_diffusion_ = false;
 
   // for creating fields
   std::vector<std::string> names(2);
@@ -115,7 +88,7 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
     S->RequireScalar("fluid_viscosity", passwd_);
   }
   if (!S->HasField("gravity")) {
-    S->RequireConstantVector("gravity", passwd_, dim);
+    S->RequireConstantVector("gravity", passwd_, dim);  // state resets ownerships.
   }
 
   if (!S->HasField("pressure")) {
@@ -198,7 +171,9 @@ Richards_PK::~Richards_PK()
 
 
 /* ******************************************************************
-* Extract information from Richards Problem parameter list.
+* Extract information from Richards Problem parameter list. It is 
+* broken into a few pieces that can be reused in InitXXX routines.
+* Cleaning will be done after switch to 
 ****************************************************************** */
 void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
@@ -270,13 +245,12 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     bc_head->ComputeShift(T1, shift_water_table_->Values());
 
   // Process other fundamental structures.
-  K.resize(ncells_wghost);
+  K.resize(ncells_owned);
   SetAbsolutePermeabilityTensor();
 
   // Allocate memory for wells.
-  const Epetra_BlockMap& cmap_owned = mesh_->cell_map(false);
   if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    Kxy = Teuchos::rcp(new Epetra_Vector(cmap_owned));
+    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
   }
 
   // Select a proper matrix class. 
@@ -315,6 +289,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Create the solution (pressure) vector and auxiliary vector for time history.
   solution = Teuchos::rcp(new CompositeVector(op_matrix_->DomainMap()));
   
+  const Epetra_BlockMap& cmap_owned = mesh_->cell_map(false);
   pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap_owned));
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap_owned));
 
@@ -322,7 +297,21 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   CompositeVector& pressure = *S->GetFieldData("pressure", passwd_);
   UpdateSourceBoundaryData(T0, T1, pressure);
 
-  darcy_flux_copy = Teuchos::rcp(new CompositeVector(*S->GetFieldData("darcy_flux", passwd_)));
+  // Initialize two fields for upwind operators.
+  InitializeUpwind_();
+
+  // Other quantatities: injected water mass
+  mass_bc = 0.0;
+  seepage_mass_ = 0.0;
+}
+
+
+/* ******************************************************************
+* Set defaults parameters. It should be called once
+****************************************************************** */
+void Richards_PK::InitializeUpwind_()
+{
+  darcy_flux_copy = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("darcy_flux", passwd_)));
 
   // Create RCP pointer to upwind flux.
   if (rel_perm_->method() == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
@@ -336,10 +325,6 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     darcy_flux_upwind = Teuchos::rcp(new CompositeVector(*darcy_flux_copy));
     darcy_flux_upwind->PutScalar(0.0);
   }
-
-  // Other quantatities: injected water mass
-  mass_bc = 0.0;
-  seepage_mass_ = 0.0;
 }
 
 
@@ -509,6 +494,9 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
               << " PC:\"" << ti_specs.preconditioner_name.c_str() << "\"" << std::endl;
   }
 
+  // repeat initialization steps, mainly for old MPC.
+  InitializeUpwind_();
+
   // set up new time integration or solver
   std::string ti_method_name(ti_specs.ti_method_name);
 
@@ -600,7 +588,11 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   DeriveSaturationFromPressure(pstate, ws);
  
   // derive mass flux (state may not have it at time 0)
-  op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
+  double tmp;
+  darcy_flux_copy->Norm2(&tmp);
+  if (tmp == 0.0) {
+    op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
+  }
 
   // re-initialize lambda
   double T1 = T0 + dT0;
@@ -616,10 +608,12 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     rel_perm_->Compute(pressure);
 
     RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
-    upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
+    upwind_->Compute(*darcy_flux_upwind, *solution, bc_model, bc_value,
+                     *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
 
     RelativePermeabilityUpwindFn func2 = &RelativePermeability::Derivative;
-    upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
+    upwind_->Compute(*darcy_flux_upwind, *solution, bc_model, bc_value,
+                     *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
 
     if (ti_specs.inflow_krel_correction) {
       Epetra_MultiVector& k_face = *rel_perm_->Krel()->ViewComponent("face", true);
@@ -785,13 +779,11 @@ void Richards_PK::CommitState(double dt, const Teuchos::Ptr<State>& S)
   for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
   *darcy_flux_copy->ViewComponent("face", true) = flux;
 
-  
   // update time derivative
   *pdot_cells_prev = *pdot_cells;
 
   // update mass balance
   // ImproveAlgebraicConsistency(ws_prev, ws);
-  
  
   dT = dTnext;
 }

@@ -44,47 +44,17 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   dim = mesh_->space_dimension();
 
   // We need the flow list
-  if (glist->isSublist("PKs")){
-    if (glist->sublist("PKs").isSublist(pk_list_name)) {
-      if (glist->sublist("PKs").sublist(pk_list_name).isSublist("Darcy problem")) {
-        dp_list_ = Teuchos::rcp(&glist->sublist("PKs")
-                                       .sublist(pk_list_name)
-                                       .sublist("Darcy problem"), false);
-      } else {
-        Errors::Message msg("Flow PK: \"Darcy problem\" sublist is missing.");
-        Exceptions::amanzi_throw(msg);
-      }
-    } else {
-      Errors::Message msg("Flow PK: "+pk_list_name+" sublist is missing.");
-      Exceptions::amanzi_throw(msg);
-    }
-  } else {
-    Errors::Message msg("Flow PK: input parameter list does not have PKs sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
+  Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_list_name, true);
+  dp_list_ = Teuchos::sublist(flow_list, "Darcy problem", true);
 
   // We also need iscaleneous sublists
-  if (glist->isSublist("Preconditioners")) {
-    preconditioner_list_ = Teuchos::rcp(&glist->sublist("Preconditioners"), false);
-  } else {
-    Errors::Message msg("Flow PK: input XML does not have <Preconditioners> sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  if (glist->isSublist("Solvers")) {
-    linear_operator_list_ = Teuchos::rcp(&glist->sublist("Solvers"), false);
-  } else {
-    Errors::Message msg("Flow PK: input XML does not have <Solvers> sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
+  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners", true);
+  linear_operator_list_ = Teuchos::sublist(glist, "Solvers", true);
 
   if (dp_list_->isSublist("time integrator")) {
     ti_list_ = dp_list_->sublist("time integrator");
   } 
-  // else {
-  //   Errors::Message msg("Darcy PK: input XML does not have <time integrator> sublist.");
-  //   Exceptions::amanzi_throw(msg);
-  // }  
 
   // for creating fields
   std::vector<std::string> names(2);
@@ -105,8 +75,8 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
     S->RequireScalar("fluid_viscosity", passwd_);
   }
   if (!S->HasField("gravity")) {
-    S->RequireConstantVector("gravity", passwd_, dim);
-  }
+    S->RequireConstantVector("gravity", passwd_, dim);  // state resets ownership.
+  } 
 
   if (!S->HasField("pressure")) {
     S->RequireField("pressure", passwd_)->SetMesh(mesh_)->SetGhosted(true)
@@ -158,7 +128,6 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
     Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
     S->SetFieldEvaluator("darcy_velocity", eval);
   }
-
 
   if (!S->HasField("hydraulic_head")) {
     S->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(true)
@@ -258,7 +227,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   K.resize(ncells_owned);
 
   if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
+    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
   }
 }
 

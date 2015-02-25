@@ -75,7 +75,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
   S->CheckAllFieldsInitialized();
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state"); 
+  std::string passwd("flow"); 
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell");
   
   for (int c = 0; c != K.MyLength(); ++c) {
@@ -85,7 +85,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
 
   double rho = *S->GetScalarData("fluid_density", passwd) = 998.0;
   *S->GetScalarData("fluid_viscosity", passwd) = 0.00089;
-  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", passwd);
+  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
   double g = gravity[1] = -9.81;
 
   /* create the initial pressure function */

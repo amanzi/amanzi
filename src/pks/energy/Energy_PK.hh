@@ -17,26 +17,25 @@
 #include "Epetra_FECrsMatrix.h"
 #include "Teuchos_RCP.hpp"
 
-#include "BDFFnBase.hh"
 #include "CompositeVector.hh"
+#include "FnTimeIntegratorPK.hh"
 #include "PK.hh"
 #include "primary_variable_field_evaluator.hh"
-#include "tensor.hh"
-#include "TreeVector.hh"
-#include "VerboseObject.hh"
-
 #include "Operator.hh"
 #include "OperatorDiffusion.hh"
 #include "OperatorAccumulation.hh"
+#include "tensor.hh"
+#include "TreeVector.hh"
+#include "VerboseObject.hh"
 
 #include "EnergyBoundaryFunction.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-class Energy_PK : public PK, public Amanzi::BDFFnBase<TreeVector> {
+class Energy_PK : public FnTimeIntegratorPK {
  public:
-  Energy_PK(Teuchos::RCP<const Teuchos::ParameterList>& glist, Teuchos::RCP<State> S);
+  Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist, Teuchos::RCP<State> S);
   virtual ~Energy_PK() {};
 
   // main PK methods
@@ -50,7 +49,7 @@ class Energy_PK : public PK, public Amanzi::BDFFnBase<TreeVector> {
   double get_dt() { return 0.0; }
   void set_dt(double dt) {}
   void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
-  std::string name() { return "energy"; }
+  virtual std::string name() { return "energy"; }
 
   // main energy methods
   void InitializeFields();

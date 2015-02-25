@@ -38,8 +38,9 @@ namespace Transport {
 * We set up minimum default values and call Construct_() to complete 
 * the initialization process.
 ****************************************************************** */
-Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S, 
-			   const std::string& pk_list_name,
+Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                           Teuchos::RCP<State> S, 
+                           const std::string& pk_list_name,
                            std::vector<std::string>& component_names)
 {
   Construct_(glist, S, pk_list_name, component_names);
@@ -50,8 +51,9 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
 * Constructor for Alquimia. 
 ****************************************************************** */
 #ifdef ALQUIMIA_ENABLED
-Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
-			   const std::string& pk_list_name,
+Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                           Teuchos::RCP<State> S,
+                           const std::string& pk_list_name,
                            Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
                            Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
     : chem_state_(chem_state), chem_engine_(chem_engine)
@@ -67,19 +69,22 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
 /* ******************************************************************
 * High-level initialization.
 ****************************************************************** */
-void Transport_PK::Construct_(Teuchos::ParameterList& glist, 
+void Transport_PK::Construct_(const Teuchos::RCP<Teuchos::ParameterList>& glist, 
                               Teuchos::RCP<State> S,
-			      const std::string& pk_list_name,
+                              const std::string& pk_list_name,
                               std::vector<std::string>& component_names)
 {
   vo_ = NULL;
   S_ = S;
   component_names_ = component_names;
 
-  parameter_list = glist.sublist("PKs").sublist(pk_list_name);
-  preconditioners_list = glist.sublist("Preconditioners");
-  solvers_list = glist.sublist("Solvers");
-  nonlin_solvers_list = glist.sublist("Nonlinear solvers");
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
+  tp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
+
+  // Create miscaleneous lists.
+  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners");
+  linear_solver_list_ = Teuchos::sublist(glist, "Solvers");
+  nonlinear_solver_list_ = Teuchos::sublist(glist, "Nonlinear solvers");
 
   dT = dT_debug = T_physics = 0.0;
   double time = S->time();
@@ -97,7 +102,7 @@ void Transport_PK::Construct_(Teuchos::ParameterList& glist,
 
   dT = 0.0;
   bc_scaling = 0.0;
-  passwd_ = "state";  //  state password
+  passwd_ = "state";  // owner's password
 
   // require state variables when Flow is off
   if (!S->HasField("permeability")) {
@@ -172,12 +177,11 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   ProcessParameterList();
  
   // state pre-prosessing
-  Teuchos::RCP<CompositeVector> cv1;
-  S->GetFieldData("darcy_flux", passwd_)->ScatterMasterToGhosted("face");
-  cv1 = S->GetFieldData("darcy_flux", passwd_);
-  darcy_flux = cv1->ViewComponent("face", true);
-
   Teuchos::RCP<const CompositeVector> cv2;
+  S->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
+  cv2 = S->GetFieldData("darcy_flux");
+  darcy_flux = cv2->ViewComponent("face", true);
+
   cv2 = S->GetFieldData("water_saturation");
   ws = cv2->ViewComponent("cell", false);
 
@@ -245,7 +249,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 * ***************************************************************** */
 double Transport_PK::CalculateTransportDt()
 {
-  S_->GetFieldData("darcy_flux", passwd_)->ScatterMasterToGhosted("face");
+  S_->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
 
   IdentifyUpwindCells();
 
@@ -461,7 +465,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
     // instantiale solver
     AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
     Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
-        solver = sfactory.Create(dispersion_solver, solvers_list, op);
+        solver = sfactory.Create(dispersion_solver, *linear_solver_list_, op);
 
     solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
 
@@ -509,7 +513,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
         op1->ApplyBCs(true);
         op->SymbolicAssembleMatrix();
         op->AssembleMatrix();
-        op->InitPreconditioner(dispersion_preconditioner, preconditioners_list);
+        op->InitPreconditioner(dispersion_preconditioner, *preconditioner_list_);
       } else {
         Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
         for (int c = 0; c < ncells_owned; c++) {
@@ -583,7 +587,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
  
       op->SymbolicAssembleMatrix();
       op->AssembleMatrix();
-      op->InitPreconditioner(dispersion_preconditioner, preconditioners_list);
+      op->InitPreconditioner(dispersion_preconditioner, *preconditioner_list_);
   
       CompositeVector& rhs = *op->rhs();
       int ierr = solver->ApplyInverse(rhs, sol);

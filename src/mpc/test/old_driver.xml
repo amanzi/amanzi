@@ -9,7 +9,7 @@
   <ParameterList name="Mesh">
     <Parameter name="Mesh Class" type="string" value="MSTK"/>
     <ParameterList name="MSTK Mesh Parameters">
-      <Parameter name="Exodus file name" type="string" value="test/mesh.exo"/>
+      <Parameter name="Exodus file name" type="string" value="test/old_driver_mesh.exo"/>
     </ParameterList>   
   </ParameterList>
 
@@ -27,7 +27,7 @@
     <ParameterList name="SS0">
       <ParameterList name="Region: Labeled Set">
 	<Parameter name="Label" type="string" value="1"/>
-	<Parameter name="File" type="string" value="mesh.exo"/>
+	<Parameter name="File" type="string" value="old_driver_mesh.exo"/>
 	<Parameter name="Format" type="string" value="Exodus II"/>
 	<Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
@@ -36,7 +36,7 @@
     <ParameterList name="SS1">
       <ParameterList name="Region: Labeled Set">
 	<Parameter name="Label" type="string" value="2"/>
-	<Parameter name="File" type="string" value="mesh.exo"/>
+	<Parameter name="File" type="string" value="old_driver_mesh.exo"/>
 	<Parameter name="Format" type="string" value="Exodus II"/>
 	<Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
@@ -45,7 +45,7 @@
     <ParameterList name="SS2">
       <ParameterList name="Region: Labeled Set">
 	<Parameter name="Label" type="string" value="3"/>
-	<Parameter name="File" type="string" value="mesh.exo"/>
+	<Parameter name="File" type="string" value="old_driver_mesh.exo"/>
 	<Parameter name="Format" type="string" value="Exodus II"/>
 	<Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
@@ -54,7 +54,7 @@
     <ParameterList name="SS3">
       <ParameterList name="Region: Labeled Set">
 	<Parameter name="Label" type="string" value="4"/>
-	<Parameter name="File" type="string" value="mesh.exo"/>
+	<Parameter name="File" type="string" value="old_driver_mesh.exo"/>
 	<Parameter name="Format" type="string" value="Exodus II"/>
 	<Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
@@ -63,7 +63,7 @@
     <ParameterList name="SS4">
       <ParameterList name="Region: Labeled Set">
 	<Parameter name="Label" type="string" value="5"/>
-	<Parameter name="File" type="string" value="mesh.exo"/>
+	<Parameter name="File" type="string" value="old_driver_mesh.exo"/>
 	<Parameter name="Format" type="string" value="Exodus II"/>
 	<Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
@@ -72,7 +72,7 @@
     <ParameterList name="SS5">
       <ParameterList name="Region: Labeled Set">
 	<Parameter name="Label" type="string" value="6"/>
-	<Parameter name="File" type="string" value="mesh.exo"/>
+	<Parameter name="File" type="string" value="old_driver_mesh.exo"/>
 	<Parameter name="Format" type="string" value="Exodus II"/>
 	<Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
@@ -271,7 +271,7 @@
       
       <ParameterList name="Thermodynamic Database">
 	<Parameter name="Format" type="string" value="simple" />
-	<Parameter name="File" type="string" value="test/test_chemistry_pk.bgd" />
+	<Parameter name="File" type="string" value="test/old_driver_chemistry.bgd" />
       </ParameterList> 
       
 
@@ -441,7 +441,6 @@
 	  <ParameterList name="BDF1">
 	    <Parameter name="error abs tol" type="double" value="0.1"/>
 	    <Parameter name="error rel tol" type="double" value="1e-5"/>
-	    <Parameter name="time step increase factor" type="double" value="1.0"/>
 	    <Parameter name="convergence tolerance" type="double" value="1e-12"/>
 	    <Parameter name="maximal number of iterations" type="int" value="200"/>
 	    <Parameter name="start time" type="double" value="0.0"/>
@@ -541,13 +540,13 @@
 
 
   <ParameterList name="Checkpoint Data">
-    <Parameter name="file name base" type="string" value="restartdump"/>
+    <Parameter name="file name base" type="string" value="chkpoint"/>
     <Parameter name="file name digits" type="int" value="5"/>    
     <Parameter name="cycle start period stop" type="Array(double)" value="{0,1,10}"/>
   </ParameterList>
 
   <ParameterList name="Visualization Data">
-    <Parameter name="file name base" type="string" value="visdump"/>
+    <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="file name digits" type="int" value="5"/>    
     <Parameter name="cycle start period stop" type="Array(double)" value="{0,1,10}"/>
   </ParameterList>

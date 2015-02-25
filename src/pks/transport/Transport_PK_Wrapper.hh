@@ -37,8 +37,10 @@ class Transport_PK_Wrapper : public PK {
 
   // Choose a time step compatible with physics.
   virtual double get_dt() {
-    if (transport_subsycling) return 1e+99;
-    else return pk_->get_dt();
+    if (transport_subcycling) 
+      return 1e+99;
+    else 
+      return pk_->get_dt();
   }
 
   virtual void set_dt(double dt) {};
@@ -66,7 +68,7 @@ class Transport_PK_Wrapper : public PK {
 
  protected:
   std::vector<std::string> comp_names_;
-  bool transport_subsycling;
+  bool transport_subcycling;
   Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::ParameterList ti_list_;
   Teuchos::RCP<Transport_PK> pk_;

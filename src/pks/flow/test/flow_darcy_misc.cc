@@ -48,7 +48,7 @@ class DarcyProblem {
   std::vector<std::string> framework_name;
 
   DarcyProblem() {
-    passwd = "state"; 
+    passwd = "flow"; 
     comm = new Epetra_MpiComm(MPI_COMM_WORLD);
     MyPID = comm->MyPID();    
 

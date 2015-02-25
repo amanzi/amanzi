@@ -5,7 +5,7 @@
   <Parameter name="new cycle driver" type="bool" value="true"/>
 
   <ParameterList name="Checkpoint Data">
-    <Parameter name="file name base" type="string" value="checkpoint"/>
+    <Parameter name="file name base" type="string" value="chkpoint"/>
     <Parameter name="file name digits" type="int" value="5"/>
     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
   </ParameterList>
@@ -17,7 +17,7 @@
     <ParameterList name="Computational domain">
       <ParameterList name="Region: Labeled Set">
         <Parameter name="Label" type="string" value="1"/>
-        <Parameter name="File" type="string" value="rect2D_10x10_ss.exo"/>
+        <Parameter name="File" type="string" value="mpc_driver_transport_mesh.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Cell"/>
       </ParameterList>
@@ -31,7 +31,7 @@
     <ParameterList name="Left side">
       <ParameterList name="Region: Labeled Set">
         <Parameter name="Label" type="string" value="3"/>
-        <Parameter name="File" type="string" value="rect2D_10x10_ss.exo"/>
+        <Parameter name="File" type="string" value="mpc_driver_transport_mesh.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
@@ -39,7 +39,7 @@
     <ParameterList name="Bottom side">
       <ParameterList name="Region: Labeled Set">
         <Parameter name="Label" type="string" value="2"/>
-        <Parameter name="File" type="string" value="rect2D_10x10_ss.exo"/>
+        <Parameter name="File" type="string" value="mpc_driver_transport_mesh.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
@@ -52,7 +52,7 @@
       </ParameterList>
 
       <ParameterList name="Read Mesh File">
-	<Parameter name="File" type="string" value="test/rect2D_10x10_ss.exo"/>
+	<Parameter name="File" type="string" value="test/mpc_driver_transport_mesh.exo"/>
 	<Parameter name="Format" type="string" value="Exodus II"/>
       </ParameterList>
     </ParameterList>
@@ -316,6 +316,7 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="Solvers">
     <ParameterList name="AztecOO">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>

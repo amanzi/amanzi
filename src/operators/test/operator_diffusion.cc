@@ -367,6 +367,9 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_2D) {
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create and initialize state variables.
+  CompositeVector solution(cvs);
+  solution.PutScalar(0.0);
+
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs));
   Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
 
@@ -386,7 +389,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_2D) {
 
   knc->UpdateValues(*flux);  // argument is not used
   ModelUpwindFn func = &HeatConduction::Conduction;
-  upwind.Compute(*flux, bc_model, bc_value, *knc->values(), *knc->values(), func);
+  upwind.Compute(*flux, solution, bc_model, bc_value, *knc->values(), *knc->values(), func);
 
   // create source 
   CompositeVector source(cvs);
@@ -408,7 +411,6 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_2D) {
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
-
   // create preconditoner using the base operator class
   Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
@@ -420,8 +422,6 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_2D) {
      solver = factory.Create("AztecOO CG", lop_list, global_op);
 
   CompositeVector& rhs = *global_op->rhs();
-  CompositeVector solution(rhs);
-  solution.PutScalar(0.0);
   int ierr = solver->ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
@@ -520,6 +520,9 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create and initialize state variables.
+  CompositeVector solution(cvs);
+  solution.PutScalar(0.0);
+
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs));
   Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
 
@@ -539,7 +542,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
 
   knc->UpdateValues(*flux);  // argument is not used
   ModelUpwindFn func = &HeatConduction::Conduction;
-  upwind.Compute(*flux, bc_model, bc_value, *knc->values(), *knc->values(), func);
+  upwind.Compute(*flux, solution, bc_model, bc_value, *knc->values(), *knc->values(), func);
 
   // create source 
   CompositeVector source(cvs);
@@ -572,9 +575,6 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
      solver = factory.Create("AztecOO CG", lop_list, global_op);
 
   CompositeVector rhs = *global_op->rhs();
-  CompositeVector solution(rhs);
-  solution.PutScalar(0.0);
-
   int ierr = solver->ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
@@ -686,6 +686,9 @@ TEST(OPERATOR_DIFFUSION_SECOND_ORDER) {
   }
 
   // create and initialize state variables.
+  CompositeVector solution(cvs);
+  solution.PutScalar(0.0);
+
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs));
   Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
 
@@ -705,7 +708,7 @@ TEST(OPERATOR_DIFFUSION_SECOND_ORDER) {
 
   knc->UpdateValues(*flux);  // argument is not used
   ModelUpwindFn func = &HeatConduction::Conduction;
-  upwind.Compute(*flux, bc_model, bc_value, *knc->values(), *knc->values(), func);
+  upwind.Compute(*flux, solution, bc_model, bc_value, *knc->values(), *knc->values(), func);
 
   knc->UpdateValuesPostUpwind();
 
@@ -731,9 +734,6 @@ TEST(OPERATOR_DIFFUSION_SECOND_ORDER) {
      solver = factory.Create("AztecOO CG", lop_list, global_op);
 
   CompositeVector rhs = *global_op->rhs();
-  CompositeVector solution(rhs);
-  solution.PutScalar(0.0);
-
   int ierr = solver->ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {

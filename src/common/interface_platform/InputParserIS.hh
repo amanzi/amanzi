@@ -42,6 +42,7 @@ class InputParserIS {
   InputParserIS() : vo_(NULL) {
     flow_single_phase = false;
     verbosity_level = "low";
+    use_picard_ = USE_PICARD;
   };
   ~InputParserIS() {
     if (vo_ != NULL) delete vo_;
@@ -122,7 +123,7 @@ class InputParserIS {
 
   double constant_density;
   int spatial_dimension_;  
-  bool flow_single_phase, use_picard_;
+  bool flow_single_phase, use_picard_, new_mpc_driver_;
   bool need_dispersion_;
   std::vector<std::string> transport_diagnostics_;
 

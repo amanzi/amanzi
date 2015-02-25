@@ -72,7 +72,7 @@ TEST(FLOW_2D_DARCY_WELL) {
   S->InitializeFields();
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state"); 
+  std::string passwd("flow"); 
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
   
   for (int c = 0; c < K.MyLength(); c++) {
@@ -82,7 +82,7 @@ TEST(FLOW_2D_DARCY_WELL) {
 
   *S->GetScalarData("fluid_density", passwd) = 1.0;
   *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
-  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", passwd);
+  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
   gravity[1] = -1.0;
   S->GetFieldData("porosity", passwd)->PutScalar(0.2);
   S->GetFieldData("specific_storage", passwd)->PutScalar(0.1);

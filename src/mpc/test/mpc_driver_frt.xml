@@ -2,14 +2,15 @@
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
   <Parameter name="grid_option" type="string" value="Unstructured"/>
   <Parameter isUsed="true" name="input file name" type="string" value="amanzi-u-1d-ion-exchange-valocchi.xml"/>
+
   <ParameterList name="Visualization Data">
-    <Parameter name="file name base" type="string" value="ion-exchange-valocchi"/>
+    <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/>
   </ParameterList>
   <ParameterList name="Checkpoint Data">
     <Parameter name="file name base" type="string" value="chkpoint"/>
     <Parameter name="file name digits" type="int" value="5"/>
-    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1, -1}" />
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 5, -1}" />
   </ParameterList>  
   <ParameterList name="Regions">
     <ParameterList name="Entire Domain">
@@ -61,71 +62,72 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="Domain">
     <Parameter isUsed="true" name="Spatial Dimension" type="int" value="3"/>
   </ParameterList>
 
   <ParameterList name="Cycle Driver">
     <Parameter name="start time" type="double" value="0"/>
-    <Parameter name="end time" type="double" value="1.0e+6"/>
+    <Parameter name="end time" type="double" value="1.0e+4"/>
     <Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
 	<ParameterList name="PK Tree">
 	  <ParameterList name="Flow and Reactive Transport">
-	    <Parameter name="PK type" type="string" value="flow reactive transport pk"/>      
+	    <Parameter name="PK type" type="string" value="flow reactive transport"/>      
 	    <ParameterList name="Reactive Transport">
-	      <Parameter name="PK type" type="string" value="reactivetransport pk"/>
+	      <Parameter name="PK type" type="string" value="reactive transport"/>
 	      <ParameterList name="Transport">
-		<Parameter name="PK type" type="string" value="transport pk"/>
+		<Parameter name="PK type" type="string" value="transport"/>
 	      </ParameterList>
 	      <ParameterList name="Chemistry">
-		<Parameter name="PK type" type="string" value="chemistry pk"/>
+		<Parameter name="PK type" type="string" value="chemistry"/>
 	      </ParameterList>
 	    </ParameterList>
 	    <ParameterList name="Flow">
-	      <Parameter name="PK type" type="string" value="Darcy"/>
+	      <Parameter name="PK type" type="string" value="darcy"/>
 	    </ParameterList>    
 	  </ParameterList>    
 	</ParameterList>
-	<Parameter name="start interval time" type="double" value="0.00000000000000000e+00"/>
-	<Parameter name="end interval time" type="double" value="1.00000000000000000e+06"/>
+	<Parameter name="start period time" type="double" value="0.0"/>
+	<Parameter name="end period time" type="double" value="1.0e+04"/>
+        <Parameter name="initial time step" type="double" value="350.0"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Restart from Checkpoint Data File">
+    <!--ParameterList name="Restart from Checkpoint Data File">
       <Parameter name="Checkpoint Data File Name" type="string" value="test/restart.h5"/>
-    </ParameterList>
+    </ParameterList-->
   </ParameterList>
 
   <ParameterList name="PKs">
     <ParameterList name="Flow and Reactive Transport">
-      <Parameter name="PK type" type="string" value="flow reactive transport pk"/>      
+      <Parameter name="PK type" type="string" value="flow reactive transport"/>      
       <Parameter name="PKs order" type="Array(string)" value="{Flow, Reactive Transport}"/> 
       <Parameter name="master PK index" type="int" value="0"/>
     </ParameterList>
     <ParameterList name="Reactive Transport">
-      <Parameter name="PK type" type="string" value="reactivetransport pk"/>      
+      <Parameter name="PK type" type="string" value="reactive transport"/>      
       <Parameter name="PKs order" type="Array(string)" value="{Chemistry, Transport}"/> 
     </ParameterList>
     <ParameterList name="Flow">
       <ParameterList name="Darcy problem">
-	<!-- <Parameter name="PK type" type="string" value="Darcy"/> -->
 	<ParameterList name="VerboseObject">
 	  <Parameter name="Verbosity Level" type="string" value="high"/>
 	</ParameterList>
-	<Parameter name="atmospheric pressure" type="double" value="1.01325000000000000e+05"/>
+	<Parameter name="atmospheric pressure" type="double" value="1.01325e+05"/>
 	<ParameterList name="operators">
 	  <ParameterList name="diffusion operator">
 	    <ParameterList name="matrix">
-	      <Parameter name="discretization primary" type="string" value="optimized mfd scaled"/>
-	      <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+	      <Parameter name="discretization primary" type="string" value="mfd: default"/>
+	      <Parameter name="discretization secondary" type="string" value="mfd: default"/>
 	      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
 	      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
 	      <Parameter name="gravity" type="bool" value="true"/>
 	    </ParameterList>
 	    <ParameterList name="preconditioner">
-	      <Parameter name="discretization primary" type="string" value="optimized mfd scaledy"/>
-	      <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+	      <Parameter name="discretization primary" type="string" value="mfd: default"/>
+	      <Parameter name="discretization secondary" type="string" value="mfd: default"/>
 	      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
 	      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
 	      <Parameter name="gravity" type="bool" value="true"/>
@@ -206,12 +208,13 @@
 	</ParameterList>
       </ParameterList>
     </ParameterList>
+
     <ParameterList name="Chemistry">
       <Parameter name="PK type" type="string" value="chemistry pk"/>
       <Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
       <ParameterList name="Thermodynamic Database">
 	<Parameter name="Format" type="string" value="simple"/>
-	<Parameter name="File" type="string" value="test/ion-exchange-valocchi.bgd"/>
+	<Parameter name="File" type="string" value="test/mpc_driver_reactive_transport.bgd"/>
       </ParameterList>
       <Parameter name="Activity Model" type="string" value="unit"/>
       <Parameter name="Verbosity" type="Array(string)" value="{verbose}"/>
@@ -432,8 +435,9 @@
 	<Parameter name="Verbosity Level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
+
     <ParameterList name="Transport">
-      <Parameter name="PK type" type="string" value="transport pk"/>
+      <!--Parameter name="PK type" type="string" value="transport pk"/-->
       <Parameter name="spatial discretization order" type="int" value="1"/>
       <Parameter name="temporal discretization order" type="int" value="1"/>
       <Parameter name="cfl" type="double" value="1.00000000000000000e+00"/>
@@ -505,6 +509,7 @@
       <Parameter name="runtime diagnostics: regions" type="Array(string)" value="{}"/>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="State">
     <ParameterList name="initial conditions">
       <ParameterList name="gravity">
@@ -654,7 +659,6 @@
     </ParameterList>
   </ParameterList>
 
-
   <ParameterList name="Preconditioners">
     <ParameterList name="Trilinos ML">
       <Parameter name="preconditioner type" type="string" value="ml"/>
@@ -705,6 +709,7 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="Solvers">
     <ParameterList name="AztecOO">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>

@@ -205,7 +205,7 @@ void RunTest(std::string op_list_name) {
     // upwind heat conduction coefficient
     knc->UpdateValues(solution);
     ModelUpwindFn func = &HeatConduction::Conduction;
-    upwind.Compute(*flux, bc_model, bc_value, *knc->values(), *knc->values(), func);
+    upwind.Compute(*flux, solution, bc_model, bc_value, *knc->values(), *knc->values(), func);
 
     // add diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);

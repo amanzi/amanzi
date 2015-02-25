@@ -78,7 +78,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   S->CheckAllFieldsInitialized();
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state"); 
+  std::string passwd("flow"); 
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
 
   AmanziMesh::Entity_ID_List block;
@@ -98,7 +98,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   *S->GetScalarData("fluid_density", passwd) = 1.0;
   *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
-  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", passwd);
+  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
   gravity[1] = -1.0;
 
   S->GetFieldData("specific_storage", passwd)->PutScalar(2.0);
@@ -193,7 +193,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   S->InitializeFields();
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state"); 
+  std::string passwd("flow"); 
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
   
   AmanziMesh::Entity_ID_List block;
@@ -215,7 +215,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
 
   *S->GetScalarData("fluid_density", passwd) = 1.0;
   *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
-  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", passwd);
+  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
   gravity[2] = -1.0;
 
   S->GetFieldData("specific_storage", passwd)->PutScalar(1.0);

@@ -1,14 +1,13 @@
 #include <iostream>
 #include "stdlib.h"
 #include "math.h"
-#include "UnitTest++.h"
 
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
-
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
 
 #include "CycleDriver.hh"
 #include "Domain.hh"
@@ -21,7 +20,7 @@
 #include "State.hh"
 
 
-TEST(NEW_DRIVER_TRANSPORT) {
+TEST(MPC_DRIVER_TRANSPORT) {
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -30,7 +29,7 @@ using namespace Amanzi::AmanziGeometry;
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   
   // read the main parameter list
-  std::string xmlInFileName = "test/test_new_driver_transport.xml";
+  std::string xmlInFileName = "test/mpc_driver_transport.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
 
