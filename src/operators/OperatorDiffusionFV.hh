@@ -10,8 +10,8 @@
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_OPERATOR_DIFFUSION_TPFA_HH_
-#define AMANZI_OPERATOR_DIFFUSION_TPFA_HH_
+#ifndef AMANZI_OPERATOR_DIFFUSION_FV_HH_
+#define AMANZI_OPERATOR_DIFFUSION_FV_HH_
 
 #include <strings.h>
 
@@ -30,29 +30,55 @@ namespace Operators {
 
 class BCs;
 
-class OperatorDiffusionTPFA : public OperatorDiffusion {
+class OperatorDiffusionFV : public OperatorDiffusion {
  public:
-  OperatorDiffusionTPFA() { g_.set(mesh_->space_dimension(), 0.0); }
-  OperatorDiffusionTPFA(Teuchos::RCP<const CompositeVectorSpace> cvs,
-                        Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc);
-  OperatorDiffusionTPFA(const Operator& op, Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc);
-  ~OperatorDiffusionTPFA() {};
 
-  // re-implementation of basic operator virtual members
-  void Setup(std::vector<WhetStone::Tensor>& K,
-             Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
-             double rho, double mu);
+  OperatorDiffusionFV(Teuchos::ParameterList& plist,
+                    const Teuchos::RCP<Operator>& global_op) :
+      OperatorDiffusion(global_op),
+      gravity_(false)      
+  {
+    InitDiffusion_(plist);
+  }
 
-  void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u);
-  void ApplyBCs(); 
-  void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
+  OperatorDiffusionFV(Teuchos::ParameterList& plist,
+                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      OperatorDiffusion(mesh),
+      gravity_(false)
+  {
+    InitDiffusion_(plist);
+  }
 
-  int Apply(const CompositeVector& X, CompositeVector& Y) const;
-  int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
+  OperatorDiffusionFV(Teuchos::ParameterList& plist,
+                    const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+      OperatorDiffusion(mesh),
+      gravity_(false)
+  {
+    InitDiffusion_(plist);
+  }
 
-  void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
-  void SetUpwind(int upwind_method) { upwind_ = upwind_method; }
+  // main virtual members
+  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
+                     double rho, double mu);
+  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
+                     const Teuchos::RCP<const CompositeVector>& rho,
+                     const Teuchos::RCP<const CompositeVector>& mu);
+  virtual void Setup(const Teuchos::RCP<const CompositeVector>& k,
+                     const Teuchos::RCP<const CompositeVector>& dkdp);
+  using OperatorDiffusion::Setup;
 
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
+          const Teuchos::Ptr<const CompositeVector>& u);
+  virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
+  virtual void ApplyBCs(bool primary=true);
+  virtual void ModifyMatrices(const CompositeVector& u) {}
+
+  virtual void SetGravity(const AmanziGeometry::Point& g) {
+    g_ = g;
+    gravity_ = true;
+  }
+  virtual void SetVectorDensity(const Teuchos::RCP<const CompositeVector>& rho) { rho_cv_ = rho; }
+  
   template <class Model> 
   double DeriveBoundaryFaceValue(int f, const CompositeVector& u, const Model& model);
 
@@ -60,7 +86,7 @@ class OperatorDiffusionTPFA : public OperatorDiffusion {
   const Epetra_Vector transmissibilities() { return *transmissibility_; }
   const Epetra_Vector gravity_terms() { return *gravity_term_; }
 
- private:
+ protected:
   void ComputeTransmissibilities_();
 
   void AnalyticJacobian_(const CompositeVector& solution);
@@ -70,13 +96,20 @@ class OperatorDiffusionTPFA : public OperatorDiffusion {
       int bc_model, double bc_value,
       double *pres, double *dkdp_cell,
       WhetStone::DenseMatrix& Jpp);
-         
- private:
-  AmanziGeometry::Point g_;
-  Teuchos::RCP<Epetra_Vector> transmissibility_;
-  Teuchos::RCP<Epetra_Vector> gravity_term_;
 
-  mutable Teuchos::ParameterList slist_;
+  void InitDiffusion_(Teuchos::ParameterList& plist);
+
+  
+ protected:
+  AmanziGeometry::Point g_;
+  Teuchos::RCP<Epetra_Vector> gravity_term_;
+  bool gravity_;
+
+  Teuchos::RCP<Epetra_Vector> transmissibility_;
+
+  int newton_correction_;
+  bool exclude_primary_terms_;
+  
 };
 
 }  // namespace Operators
