@@ -386,6 +386,7 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   Operators::OperatorDiffusionFactory opfactory;
   op_diff_ = opfactory.Create(mesh_, op_bc_, oplist, gravity_, 0);  // The last 0 means no upwind
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
+  op_diff_->SetBCs(op_bc_);
   op_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, rho_, mu_);
   op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op_ = op_diff_->global_operator();
@@ -481,7 +482,7 @@ bool Darcy_PK::Advance(double dT_MPC, double& dT_actual)
   op_acc_->AddAccumulationTerm(*solution, ss_g, dT, "cell");
   op_acc_->AddAccumulationTerm(*solution, sy_g, "cell");
 
-  op_diff_->ApplyBCs(op_bc_);
+  op_diff_->ApplyBCs(true);
   op_->AssembleMatrix();
   op_->InitPreconditioner(ti_specs->preconditioner_name, *preconditioner_list_);
 

@@ -461,6 +461,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
 
     Operators::OperatorDiffusionFactory opfactory;
     Teuchos::RCP<Operators::OperatorDiffusion> op1 = opfactory.Create(mesh_, bc_dummy, op_list, g, 0);
+    op1->SetBCs(bc_dummy);
     Teuchos::RCP<Operators::Operator> op = op1->global_operator();
     Teuchos::RCP<Operators::OperatorAccumulation> op2 =
         Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op));
@@ -517,7 +518,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
         }
         op2->AddAccumulationTerm(sol, factor, dT_MPC, "cell");
  
-        op1->ApplyBCs(bc_dummy);
+        op1->ApplyBCs(true);
         op->SymbolicAssembleMatrix();
         op->AssembleMatrix();
         op->InitPreconditioner(dispersion_preconditioner, *preconditioner_list_);
@@ -579,7 +580,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
       Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
       double time = T_physics + dT_MPC;
       ComputeAddSourceTerms(time, 1.0, srcs, rhs_cell, i, i);
-      op1->ApplyBCs(bc_dummy);
+      op1->ApplyBCs();
 
       // add accumulation term
       Epetra_MultiVector& fac1 = *factor.ViewComponent("cell");

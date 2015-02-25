@@ -91,7 +91,7 @@ void UpwindStandard<Model>::Compute(
 
   const Epetra_MultiVector& flx_face = *flux.ViewComponent("face", true);
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
-  const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
+  // const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
   Epetra_MultiVector& upw_face = *field_upwind.ViewComponent("face", true);
   upw_face.PutScalar(0.0);

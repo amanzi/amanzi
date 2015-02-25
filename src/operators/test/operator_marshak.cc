@@ -32,7 +32,7 @@
 #include "OperatorDefs.hh"
 #include "Operator.hh"
 #include "OperatorAccumulation.hh"
-#include "OperatorDiffusion.hh"
+#include "OperatorDiffusionMFD.hh"
 #include "UpwindStandard.hh"
 
 const double TemperatureSource = 100.0; 
@@ -209,13 +209,14 @@ void RunTest(std::string op_list_name) {
 
     // add diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
-    OperatorDiffusion op(olist, mesh);
+    OperatorDiffusionMFD op(olist, mesh);
+    op.SetBCs(bc);
 
     int schema_dofs = op.schema_dofs();
     int schema_prec_dofs = op.schema_prec_dofs();
 
     op.Setup(K, knc->values(), knc->derivatives(), rho, mu);
-    op.UpdateMatrices(flux, Teuchos::null);
+    op.UpdateMatrices(flux.ptr(), Teuchos::null);
 
     // get the global operator
     Teuchos::RCP<Operator> global_op = op.global_operator();
@@ -225,7 +226,7 @@ void RunTest(std::string op_list_name) {
     op_acc.AddAccumulationTerm(solution, heat_capacity, dT, "cell");
 
     // apply BCs and assemble
-    op.ApplyBCs(bc);
+    op.ApplyBCs();
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 

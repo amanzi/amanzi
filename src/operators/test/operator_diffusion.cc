@@ -30,7 +30,7 @@
 #include "mfd3d_diffusion.hh"
 
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionFactory.hh"
+#include "OperatorDiffusionMFD.hh"
 #include "UpwindSecondOrder.hh"
 #include "UpwindStandard.hh"
 
@@ -362,7 +362,8 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_2D) {
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusion(op_list, mesh));
+  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
+  op->SetBCs(bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create and initialize state variables.
@@ -401,12 +402,12 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_2D) {
 
   // populate the diffusion operator
   op->Setup(K, knc->values(), knc->derivatives(), rho, mu);
-  op->UpdateMatrices(flux, Teuchos::null);
+  op->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
-  op->ApplyBCs(bc);
+  op->ApplyBCs();
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -514,7 +515,8 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
 
   // create diffusion operator 
   Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator divk");
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusion(op_list, mesh));
+  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
+  op->SetBCs(bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create and initialize state variables.
@@ -553,12 +555,12 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
 
   // populate the diffusion operator
   op->Setup(K, knc->values(), knc->derivatives(), rho, mu);
-  op->UpdateMatrices(flux, Teuchos::null);
+  op->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
-  op->ApplyBCs(bc);
+  op->ApplyBCs();
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -670,7 +672,8 @@ TEST(OPERATOR_DIFFUSION_SECOND_ORDER) {
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusion(op_list, mesh));
+  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
+  op->SetBCs(bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create source 
@@ -711,12 +714,12 @@ TEST(OPERATOR_DIFFUSION_SECOND_ORDER) {
 
   // set up the diffusion operator
   op->Setup(K, knc->values(), knc->derivatives(), rho, mu);
-  op->UpdateMatrices(flux, Teuchos::null);
+  op->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
-  op->ApplyBCs(bc);
+  op->ApplyBCs();
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
   
@@ -842,7 +845,8 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator mixed");
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusion(op_list, mesh));
+  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
+  op->SetBCs(bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // set up the diffusion operator
@@ -851,7 +855,7 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs(bc);
+  op->ApplyBCs();
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -1145,7 +1149,8 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
 
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator cell");
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusion(op_list, mesh));
+  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
+  op->SetBCs(bc_f);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // set up the diffusion operator
@@ -1154,7 +1159,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs(bc_f);
+  op->ApplyBCs();
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
   

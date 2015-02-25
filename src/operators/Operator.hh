@@ -114,9 +114,9 @@ class Operator {
   virtual void AssembleMatrix(const SuperMap& map,
           MatrixFE& matrix, int my_block_row, int my_block_col) const;
 
+  virtual void SetBCs(const Teuchos::RCP<BCs>& bc) { bc_ = bc; }
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included=true);
   virtual void Rescale(const CompositeVector& scaling);
-  virtual void SetBCs(const Teuchos::RCP<BCs>& bc) { bc_ = bc; }
 
   // -- default functionality
   const CompositeVectorSpace& DomainMap() const { return *cvs_; }
@@ -234,8 +234,8 @@ class Operator {
   mutable bool data_validity_;
 
   mutable std::vector<Teuchos::RCP<Op> > ops_;
-  Teuchos::RCP<BCs> bc_;
   Teuchos::RCP<CompositeVector> rhs_, rhs_checkpoint_;
+  Teuchos::RCP<BCs> bc_;
 
   int ncells_owned, nfaces_owned, nnodes_owned;
   int ncells_wghost, nfaces_wghost, nnodes_wghost;

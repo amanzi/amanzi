@@ -11,17 +11,14 @@
 */
 
 #include <vector>
-
-#include "Epetra_FECrsGraph.h"
-
-#include "LinearOperatorFactory.hh"
-#include "mfd3d_diffusion.hh"
-#include "PreconditionerFactory.hh"
+#include <boost/math/tools/roots.hpp>
 
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionTPFA.hh"
+#include "OperatorDiffusionFV.hh"
 #include "FluxTPFABCfunc.hh"
-#include <boost/math/tools/roots.hpp>
+#include "Op.hh"
+#include "Op_Face_Cell.hh"
+#include "Operator_Cell.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -29,125 +26,216 @@ namespace Operators {
 #define DEBUG_FLAG 0
 
 /* ******************************************************************
-* Constructors. 
+* Initialization
 ****************************************************************** */
-OperatorDiffusionTPFA::OperatorDiffusionTPFA(
-    Teuchos::RCP<const CompositeVectorSpace> cvs, 
-    Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc)
-    : OperatorDiffusion(cvs, plist, bc)
+void
+OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
 {
-  g_.set(mesh_->space_dimension(), 0.0);
-  slist_ = plist.sublist("linear operator");
-}
+  // Define stencil for the FV diffusion method.
+  local_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
 
+  // create or check the existing Operator
+  if (global_op_ == Teuchos::null) {
+    // constructor was given a mesh
+    global_op_schema_ = OPERATOR_SCHEMA_DOFS_CELL;
 
-OperatorDiffusionTPFA::OperatorDiffusionTPFA(
-    const Operator& op, Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc)
-    : OperatorDiffusion(op, plist, bc) 
-{ 
-  g_.set(mesh_->space_dimension(), 0.0); 
-  slist_ = plist.sublist("linear operator");
-}
+    // build the CVS from the global schema
+    Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
+    cvs->SetMesh(mesh_)->SetGhosted(true);
+    cvs->AddComponent("cell", AmanziMesh::CELL, 1);
 
+    global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist, global_op_schema_));
 
-/* ******************************************************************
-* Constructor.                                           
-****************************************************************** */
-void OperatorDiffusionTPFA::Setup(
-    std::vector<WhetStone::Tensor>& K,
-    Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
-    double rho, double mu)
-{
-  K_ = &K;
-  k_ = k;
-  dkdp_ = dkdp;
+  } else {
+    // constructor was given an Operator
+    global_op_schema_ = global_op_->schema();
+    mesh_ = global_op_->DomainMap().Mesh();
+  }
 
-  rho_ = rho;
-  mu_ = mu;
-  scalar_rho_mu_ = true;
+  // create the local Op and register it with the global Operator
+  std::string name = "Diffusion: FACE_CELL";
+  local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+  global_op_->OpPushBack(local_op_);
+  
+  // // scaled constraint -- enables zero rel perm
+  // scaled_constraint_ = plist.get<bool>("scaled constraint equation", false);
+
+  // upwind options
+  std::string uwname = plist.get<std::string>("upwind method", "none");
+  if (uwname == "standard") {
+    upwind_ = OPERATOR_UPWIND_FLUX;
+  } else if (uwname == "artificial diffusion") {  
+    upwind_ = OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION;
+  } else if (uwname == "divk") {  
+    upwind_ = OPERATOR_UPWIND_AMANZI_DIVK;
+  } else if (uwname == "second-order") {  
+    upwind_ = OPERATOR_UPWIND_AMANZI_SECOND_ORDER;
+  } else if (uwname == "none") {
+    upwind_ = OPERATOR_UPWIND_NONE;  // cell-centered scheme.
+  } else {
+    ASSERT(false);
+  }
+
+  // Do we need to exclude the primary terms?
+  exclude_primary_terms_ = plist.get<bool>("exclude primary terms", false);
+  
+  // Do we need to calculate Newton correction terms?
+  newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
+  std::string jacobian = plist.get<std::string>("newton correction", "none");
+  if (jacobian == "true jacobian") {
+    newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
+  } else if (jacobian == "approximate jacobian") {
+    newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
+  }
+  if (newton_correction_ != OPERATOR_DIFFUSION_JACOBIAN_NONE) {
+    std::string name = "Diffusion: FACE_CELL Jacobian terms";
+    jac_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+    global_op_->OpPushBack(jac_op_);
+  }  
+
+  // mesh info
+  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+
+  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
   // solution-independent data
   const Epetra_BlockMap& fmap_wghost = mesh_->face_map(true);
   transmissibility_ = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
-  gravity_term_ = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
+  g_.set(mesh_->space_dimension(), 0.0);
+}
+
+
+/* ******************************************************************
+* Setup methods: scalar coefficients
+****************************************************************** */
+void
+OperatorDiffusionFV::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
+                           double rho, double mu)
+{
+  K_ = K;
+  rho_ = rho;
+  mu_ = mu;
+  scalar_rho_mu_ = true;
+
+  if (gravity_ && !gravity_term_.get())
+    gravity_term_ = Teuchos::rcp(new Epetra_Vector(mesh_->face_map(true)));
+  
+  ComputeTransmissibilities_();
+}
+
+
+/* ******************************************************************
+* Setup methods: vector coefficients
+****************************************************************** */
+void
+OperatorDiffusionFV::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
+                           const Teuchos::RCP<const CompositeVector>& rho,
+                           const Teuchos::RCP<const CompositeVector>& mu)
+{
+  K_ = K;
+  rho_cv_ = rho;
+  mu_cv_ = mu;
+  scalar_rho_mu_ = false;
+
+  if (gravity_ && !gravity_term_.get())
+    gravity_term_ = Teuchos::rcp(new Epetra_Vector(mesh_->face_map(true)));
 
   ComputeTransmissibilities_();
 }
 
 
 /* ******************************************************************
+* Setup methods: krel and deriv -- must be called after calling a
+* setup with K abs
+****************************************************************** */
+void
+OperatorDiffusionFV::Setup(const Teuchos::RCP<const CompositeVector>& k,
+                           const Teuchos::RCP<const CompositeVector>& dkdp)
+{
+  k_ = k;
+  dkdp_ = dkdp;
+  if (k_ != Teuchos::null) {
+    ASSERT(k_->HasComponent("face"));
+    // NOTE: it seems that Amanzi passes in a cell based kr which is then
+    // ignored, and assumed = 1.  This seems dangerous to me. --etc
+    //    ASSERT(!k_->HasComponent("cell"));
+  }
+  if (dkdp_ != Teuchos::null) {
+    ASSERT(dkdp_->HasComponent("cell"));
+    ASSERT(dkdp_->HasComponent("face"));
+  }
+
+}
+
+
+/* ******************************************************************
 * Populate face-based matrices.
 ****************************************************************** */
-void OperatorDiffusionTPFA::UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, 
-                                           Teuchos::RCP<const CompositeVector> p)
+void
+OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
+        const Teuchos::Ptr<const CompositeVector>& u)
 {
-  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
+  if (!exclude_primary_terms_) {
 
-  // find location of matrix blocks
-  int schema_my = OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL;
-  int m = FindMatrixBlock(schema_my, OPERATOR_SCHEMA_RULE_EXACT, false);
-  bool flag = (m >= 0);
+    const std::vector<int>& bc_model = bc_->bc_model();
 
-  if (flag == false) { 
-    m = blocks_.size();
-    blocks_schema_.push_back(OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL);
-    blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
-    blocks_shadow_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
-  }
-  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
-  std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
-  WhetStone::DenseMatrix null_matrix;
+    WhetStone::DenseMatrix null_matrix;
 
-  // preparing upwind data
-  const Epetra_MultiVector& k_face = *k_->ViewComponent("face", true);
+    // preparing upwind data
+    Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
+    if (k_ != Teuchos::null) {
+      k_face = k_->ViewComponent("face", true);
+    }
 
-  // updating matrix blocks
-  AmanziMesh::Entity_ID_List cells, faces;
-  std::vector<int> dirs;
+    // updating matrix blocks
+    AmanziMesh::Entity_ID_List cells, faces;
+    std::vector<int> dirs;
 
-  for (int f = 0; f < nfaces_owned; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    int ncells = cells.size();
+    for (int f = 0; f != nfaces_owned; ++f) {
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int ncells = cells.size();
 
-    WhetStone::DenseMatrix Aface(ncells, ncells);
-    Aface = 0.;
+      WhetStone::DenseMatrix Aface(ncells, ncells);
+      Aface = 0.;
 
-    if (bc_model[f] != OPERATOR_BC_NEUMANN){
-      double tij = (*transmissibility_)[f] * k_face[0][f];
-      for (int i = 0; i < ncells; i++) {
-	Aface(i, i) = tij;
-	for (int j = i + 1; j < ncells; j++) {
-	  Aface(i, j) = -tij;
-	  Aface(j, i) = -tij;
-	}
+      if (bc_model[f] != OPERATOR_BC_NEUMANN){
+        double tij = (*transmissibility_)[f] * (k_face.get() ? (*k_face)[0][f] : 1.);
+        for (int i = 0; i != ncells; ++i) {
+          Aface(i, i) = tij;
+          for (int j = i + 1; j != ncells; ++j) {
+            Aface(i, j) = -tij;
+            Aface(j, i) = -tij;
+          }
+        }
       }
+
+      local_op_->matrices[f] = Aface;
     }
 
-    if (flag) {
-      matrix[f] += Aface;
-    } else {
-      matrix.push_back(Aface);
-      matrix_shadow.push_back(null_matrix);
-    }
-  }
+    // populating right-hand side
+    if (gravity_) {
+      Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
 
-  // populating right-hand side
-  Epetra_MultiVector& rhs_cell = *rhs_->ViewComponent("cell");
+      for (int c = 0; c != ncells_owned; ++c) {
+        mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+        int nfaces = faces.size();
 
-  for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    for (int n = 0; n < nfaces; n++) {
-      int f = faces[n];
-      if (bc_model[f] == OPERATOR_BC_NEUMANN) continue;
-      rhs_cell[0][c] -= dirs[n] * (*gravity_term_)[f] * k_face[0][f];  
+        for (int n = 0; n != nfaces; ++n) {
+          int f = faces[n];
+          if (bc_model[f] == OPERATOR_BC_NEUMANN) continue;
+          rhs_cell[0][c] -= dirs[n] * (*gravity_term_)[f] * (k_face.get() ? (*k_face)[0][f] : 1.0);
+        }
+      }
     }
   }
 
   // Add derivatives to the matrix (Jacobian in this case)
-  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE) {
-    AnalyticJacobian_(*p);
+  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
+    AnalyticJacobian_(*u);
   }
 }
 
@@ -155,13 +243,16 @@ void OperatorDiffusionTPFA::UpdateMatrices(Teuchos::RCP<const CompositeVector> f
 /* ******************************************************************
 * Special implementation of boundary conditions.
 ****************************************************************** */
-void OperatorDiffusionTPFA::ApplyBCs()
+void OperatorDiffusionFV::ApplyBCs(bool primary)
 {
-  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
-  const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
+  const std::vector<int>& bc_model = bc_->bc_model();
+  const std::vector<double>& bc_value = bc_->bc_value();
 
-  const Epetra_MultiVector& k_face = *k_->ViewComponent("face", true);
-  Epetra_MultiVector& rhs_cell = *rhs_->ViewComponent("cell");
+  Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
+  if (k_ != Teuchos::null) {
+    k_face = k_->ViewComponent("face", true);
+  }
+  Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
 
   AmanziMesh::Entity_ID_List cells;
 
@@ -171,7 +262,7 @@ void OperatorDiffusionTPFA::ApplyBCs()
       int c = cells[0];
 
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-        rhs_cell[0][c] += bc_value[f] * (*transmissibility_)[f] * k_face[0][f];
+        rhs_cell[0][c] += bc_value[f] * (*transmissibility_)[f] * (k_face.get() ? (*k_face)[0][f] : 1.);
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         rhs_cell[0][c] -= bc_value[f] * mesh_->face_area(f);
         //(*transmissibility_)[f] = 0.0;
@@ -183,56 +274,13 @@ void OperatorDiffusionTPFA::ApplyBCs()
 
 
 /* ******************************************************************
-* Parallel matvec product Y = A_ * X.
-****************************************************************** */
-int OperatorDiffusionTPFA::Apply(const CompositeVector& X, CompositeVector& Y) const
-{
-  const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
-  Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
-
-  int ierr = A_->Multiply(false, Xc, Yc);
-
-  if (ierr) {
-    Errors::Message msg("OperatorDiffusionTPFA::Apply has failed to calculate y = A*x.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  return 0;
-}
-
-
-/* ******************************************************************
-* Invert Jacobian with a GMRES solver.
-****************************************************************** */
-int OperatorDiffusionTPFA::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
-{
-  if (slist_.numParams() != 0) {
-    // delegating preconditioning to the base operator
-    Teuchos::RCP<const OperatorDiffusionTPFA> op_matrix = Teuchos::rcp(this, false);
-    Teuchos::RCP<const Operator> op_preconditioner = Teuchos::rcp(new Operator(*this));
-
-    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> > 
-        solver = factory.Create(slist_, op_matrix, op_preconditioner);
-
-    Y.PutScalar(0.0);
-    solver->ApplyInverse(X, Y);
-  } else {
-    Operator::ApplyInverse(X, Y);
-  }
-
-  return 0;
-}
-
-
-/* ******************************************************************
 * Calculate flux from cell-centered data
 ****************************************************************** */
-void OperatorDiffusionTPFA::UpdateFlux(
+void OperatorDiffusionFV::UpdateFlux(
     const CompositeVector& solution, CompositeVector& darcy_mass_flux)
 {
-  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
-  const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
+  const std::vector<int>& bc_model = bc_->bc_model();
+  const std::vector<double>& bc_value = bc_->bc_value();
 
   solution.ScatterMasterToGhosted("cell");
 
@@ -266,7 +314,7 @@ void OperatorDiffusionTPFA::UpdateFlux(
 	if (f < nfaces_owned && !flag[f]) {
 	  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
 	  if (cells.size() <= 1) {
-	    Errors::Message msg("Flow PK: These boundary conditions are not supported by TPFA.");
+	    Errors::Message msg("Flow PK: These boundary conditions are not supported by FV.");
 	    Exceptions::amanzi_throw(msg);
 	  }
           int c1 = cells[0];
@@ -291,17 +339,10 @@ void OperatorDiffusionTPFA::UpdateFlux(
 * of the relative permeability wrt to capillary pressure. They must
 * be added to the existing matrix structure.
 ****************************************************************** */
-void OperatorDiffusionTPFA::AnalyticJacobian_(const CompositeVector& u)
+void OperatorDiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 {
-  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
-  const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
-
-  // find location of matrix blocks
-  int schema_my = OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL;
-  int m = FindMatrixBlock(schema_my, OPERATOR_SCHEMA_RULE_EXACT, true);
-
-  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
-  std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
+  const std::vector<int>& bc_model = bc_->bc_model();
+  const std::vector<double>& bc_value = bc_->bc_value();
 
   u.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
@@ -310,48 +351,46 @@ void OperatorDiffusionTPFA::AnalyticJacobian_(const CompositeVector& u)
   AmanziMesh::Entity_ID_List cells, faces;
   std::vector<int> dirs;
 
-  int gid[2];
   double k_rel[2], dkdp[2], pres[2], dist;
 
   const Epetra_MultiVector& dKdP_cell = *dkdp_->ViewComponent("cell");
   const Epetra_MultiVector& dKdP_face = *dkdp_->ViewComponent("face", true);
 
   std::vector<int> flag(nfaces_owned, 0);
-
-  for (int c = 0; c < ncells_owned; c++) {
+  for (int c = 0; c != ncells_owned; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    for (int i = 0; i < nfaces; i++) {
+    for (int i = 0; i != nfaces; ++i) {
       int f = faces[i];
       if (f < nfaces_owned && !flag[f]) {
-	mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-	int mcells = cells.size();
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        int mcells = cells.size();
 
-	WhetStone::DenseMatrix Aface(mcells, mcells);
+        WhetStone::DenseMatrix Aface(mcells, mcells);
 
-	int face_dir;   	
-	// face_dir is equal to 1 if normal direction points from cells[0],
-	// otherwise face_dir is -1
-	if (cells[0] == c) face_dir = dirs[i];
-	else face_dir = -dirs[i];
+        int face_dir;   	
+        // face_dir is equal to 1 if normal direction points from cells[0],
+        // otherwise face_dir is -1
+        if (cells[0] == c) face_dir = dirs[i];
+        else face_dir = -dirs[i];
 
-	for (int n = 0; n < mcells; n++) {
+        for (int n = 0; n < mcells; n++) {
           int c1 = cells[n];
-	  gid[n] = cmap_wghost.GID(c1);
-	  pres[n] = uc[0][c1];
-	  dkdp[n] = dKdP_cell[0][c1];
-	}
+          pres[n] = uc[0][c1];
+          dkdp[n] = dKdP_cell[0][c1];
+        }
 
-	if (mcells == 1) {
-	  dkdp[0] = dKdP_face[0][f];
-	}
+        if (mcells == 1) {
+          dkdp[0] = dKdP_face[0][f];
+        }
 
-	// const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0], &dir);
-	ComputeJacobianLocal_(mcells, f, face_dir, upwind_, bc_model[f], bc_value[f], pres, dkdp, Aface);
+        // const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0], &dir);
+        ComputeJacobianLocal_(mcells, f, face_dir, upwind_,
+                bc_model[f], bc_value[f], pres, dkdp, Aface);
 
-        matrix[f] += Aface;
-	flag[f] = 1;
+        jac_op_->matrices[f] = Aface;
+        flag[f] = 1;
       }
     }
   }
@@ -362,7 +401,7 @@ void OperatorDiffusionTPFA::AnalyticJacobian_(const CompositeVector& u)
 * Computation of a local submatrix of the analytical Jacobian 
 * (its nonlinear part) on face f.
 ****************************************************************** */
-void OperatorDiffusionTPFA::ComputeJacobianLocal_(
+void OperatorDiffusionFV::ComputeJacobianLocal_(
     int mcells, int f, int face_dir, int Krel_method,
     int bc_model_f, double bc_value_f,
     double *pres, double *dkdp_cell,
@@ -427,7 +466,7 @@ void OperatorDiffusionTPFA::ComputeJacobianLocal_(
 /* ******************************************************************
 * Compute transmissibilities on faces 
 ****************************************************************** */
-void OperatorDiffusionTPFA::ComputeTransmissibilities_()
+void OperatorDiffusionFV::ComputeTransmissibilities_()
 {
   transmissibility_->PutScalar(0.0);
 
@@ -478,7 +517,8 @@ void OperatorDiffusionTPFA::ComputeTransmissibilities_()
     } 
 
     (*transmissibility_)[f] = trans_f;
-    (*gravity_term_)[f] = (*transmissibility_)[f] * grav;
+    if (gravity_)
+      (*gravity_term_)[f] = (*transmissibility_)[f] * grav;
   }
 
   // parallelization using CV capability
@@ -497,10 +537,12 @@ void OperatorDiffusionTPFA::ComputeTransmissibilities_()
     (*transmissibility_)[f] = data[0][f];
   }
 
-  data = *gravity_term_;
-  tmp.ScatterMasterToGhosted("face", true);
-  for (int f = nfaces_owned; f < nfaces_wghost; f++) {
-    (*gravity_term_)[f] = data[0][f];
+  if (gravity_) {
+    data = *gravity_term_;
+    tmp.ScatterMasterToGhosted("face", true);
+    for (int f = nfaces_owned; f < nfaces_wghost; f++) {
+      (*gravity_term_)[f] = data[0][f];
+    }
   }
 #endif
 }

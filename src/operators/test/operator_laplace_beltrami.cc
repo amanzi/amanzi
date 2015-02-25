@@ -31,7 +31,7 @@
 
 // Amanzi::Operators
 #include "OperatorDefs.hh"
-#include "OperatorDiffusion.hh"
+#include "OperatorDiffusionMFD.hh"
 #include "Verification.hh"
 
 
@@ -102,7 +102,8 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   // create diffusion operator 
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator Sff");
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusion(olist, surfmesh));
+  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(olist, surfmesh));
+  op->SetBCs(bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
@@ -110,7 +111,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs(bc);
+  op->ApplyBCs();
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -220,7 +221,8 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   // create diffusion operator 
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator Scc");
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusion(olist, surfmesh));
+  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(olist, surfmesh));
+  op->SetBCs(bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
@@ -228,7 +230,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs(bc);
+  op->ApplyBCs();
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -338,7 +340,8 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   // create diffusion operator 
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator");
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusion(olist, surfmesh));
+  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(olist, surfmesh));
+  op->SetBCs(bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
@@ -346,7 +349,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs(bc);
+  op->ApplyBCs();
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 

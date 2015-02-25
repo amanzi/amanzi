@@ -32,26 +32,17 @@
 #include "Operator_FaceCellScc.hh"
 #include "Operator_FaceCellSff.hh"
 
-#include "OperatorDiffusion.hh"
+#include "OperatorDiffusionMFD.hh"
 
 namespace Amanzi {
 namespace Operators {
 
 
 /* ******************************************************************
-* Initialization of the operator, kr, rho, mu set later.
+* Initialization of the operator, scalar coefficients.
 ****************************************************************** */
-void OperatorDiffusion::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
-{
-  Setup(K, 1.0, 1.0);
-}
-
-
-/* ******************************************************************
-* Initialization of the operator.                                           
-****************************************************************** */
-void OperatorDiffusion::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-                              double rho, double mu)
+void OperatorDiffusionMFD::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
+        double rho, double mu)
 {
   scalar_rho_mu_ = true;
   rho_ = rho;
@@ -66,10 +57,29 @@ void OperatorDiffusion::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> 
 
 
 /* ******************************************************************
+* Initialization of the operator, vector coefficients.
+****************************************************************** */
+void OperatorDiffusionMFD::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
+        const Teuchos::RCP<const CompositeVector>& rho,
+        const Teuchos::RCP<const CompositeVector>& mu)
+{
+  scalar_rho_mu_ = false;
+  rho_cv_ = rho;
+  mu_cv_ = mu;
+  K_ = K;
+
+  if (local_op_schema_ == OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
+    if (K_.get()) ASSERT(K_->size() == ncells_owned);
+    CreateMassMatrices_();
+  }
+}
+
+
+/* ******************************************************************
 * Initialization of the operator.                                           
 ****************************************************************** */
-void OperatorDiffusion::Setup(const Teuchos::RCP<const CompositeVector> k,
-                              Teuchos::RCP<const CompositeVector> dkdp)
+void OperatorDiffusionMFD::Setup(const Teuchos::RCP<const CompositeVector>& k,
+        const Teuchos::RCP<const CompositeVector>& dkdp)
 {
   k_ = k;
   dkdp_ = dkdp;
@@ -89,64 +99,25 @@ void OperatorDiffusion::Setup(const Teuchos::RCP<const CompositeVector> k,
 
 
 /* ******************************************************************
-* Initialization of the operator.                                           
-****************************************************************** */
-void OperatorDiffusion::Setup(const Teuchos::RCP<const CompositeVector> k,
-                              Teuchos::RCP<const CompositeVector> dkdp,
-                              Teuchos::RCP<const CompositeVector> rho,
-                              Teuchos::RCP<const CompositeVector> mu)
-{
-  Setup(k, dkdp);
-
-  scalar_rho_mu_ = false;
-  rho_cv_ = rho;
-  mu_cv_ = mu;
-}
-
-
-/* ******************************************************************
-* Initialization of the operator.                                           
-****************************************************************** */
-void OperatorDiffusion::Setup(
-    const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K, 
-    Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
-    double rho, double mu)
-{
-  Setup(K, rho, mu);
-  Setup(k, dkdp);
-}
-
-
-/* ******************************************************************
-* Initialization of the operator.                                           
-****************************************************************** */
-void OperatorDiffusion::Setup(
-    const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-    Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
-    Teuchos::RCP<const CompositeVector> rho, Teuchos::RCP<const CompositeVector> mu)
-{
-  Setup(K);
-  Setup(k, dkdp, rho, mu);      
-}
-
-
-/* ******************************************************************
 * Calculate elemental matrices.
 ****************************************************************** */
-void OperatorDiffusion::UpdateMatrices(Teuchos::RCP<const CompositeVector> flux,
-                                       Teuchos::RCP<const CompositeVector> u)
+void OperatorDiffusionMFD::UpdateMatrices(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u)
 {
-  if (local_op_schema_ & OPERATOR_SCHEMA_DOFS_NODE) {
-    UpdateMatricesNodal_();
-  } else if ((local_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) &&
-             (local_op_schema_ & OPERATOR_SCHEMA_DOFS_FACE)) {
-    if (upwind_ == OPERATOR_UPWIND_AMANZI_SECOND_ORDER) {
-      UpdateMatricesMixedWithGrad_(flux);
-    } else {
-      UpdateMatricesMixed_(flux);
+  if (!exclude_primary_terms_) {
+    if (local_op_schema_ & OPERATOR_SCHEMA_DOFS_NODE) {
+      UpdateMatricesNodal_();
+    } else if ((local_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) &&
+               (local_op_schema_ & OPERATOR_SCHEMA_DOFS_FACE)) {
+      if (upwind_ == OPERATOR_UPWIND_AMANZI_SECOND_ORDER) {
+        UpdateMatricesMixedWithGrad_(flux);
+      } else {
+        UpdateMatricesMixed_(flux);
+      }
+    } else if (local_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
+      UpdateMatricesTPFA_();
     }
-  } else if (local_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
-    UpdateMatricesTPFA_();
   }
 
   // add Newton-type corrections
@@ -164,7 +135,8 @@ void OperatorDiffusion::UpdateMatrices(Teuchos::RCP<const CompositeVector> flux,
 /* ******************************************************************
 * Second-order upwind. Mass matrices are recalculated.
 ****************************************************************** */
-void OperatorDiffusion::UpdateMatricesMixedWithGrad_(Teuchos::RCP<const CompositeVector> flux)
+void OperatorDiffusionMFD::UpdateMatricesMixedWithGrad_(
+    const Teuchos::Ptr<const CompositeVector>& flux)
 {
   ASSERT(!scaled_constraint_);
 
@@ -237,7 +209,8 @@ void OperatorDiffusion::UpdateMatricesMixedWithGrad_(Teuchos::RCP<const Composit
 /* ******************************************************************
 * Basic routine of each operator: creation of matrices.
 ****************************************************************** */
-void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector> flux)
+void OperatorDiffusionMFD::UpdateMatricesMixed_(
+    const Teuchos::Ptr<const CompositeVector>& flux)
 {
   // un-rolling upwind data
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
@@ -378,7 +351,7 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
 /* ******************************************************************
 * Calculate elemental inverse mass matrices.                                           
 ****************************************************************** */
-void OperatorDiffusion::UpdateMatricesNodal_()
+void OperatorDiffusionMFD::UpdateMatricesNodal_()
 {
   ASSERT(!scaled_constraint_);
 
@@ -429,7 +402,7 @@ void OperatorDiffusion::UpdateMatricesNodal_()
 /* ******************************************************************
 * Calculate and assemble fluxes using the TPFA scheme.
 ****************************************************************** */
-void OperatorDiffusion::UpdateMatricesTPFA_()
+void OperatorDiffusionMFD::UpdateMatricesTPFA_()
 {
   // populate transmissibilities
   WhetStone::MFD3D_Diffusion mfd(mesh_);
@@ -494,20 +467,16 @@ void OperatorDiffusion::UpdateMatricesTPFA_()
 * Apply boundary conditions to the local matrices
 ****************************************************************** */
 void
-OperatorDiffusion::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary) {
-  bc_ = bc;
-  // unclear if this should be done... --etc
-  global_op_->SetBCs(bc);
-  
+OperatorDiffusionMFD::ApplyBCs(bool primary) {
   if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
                            | OPERATOR_SCHEMA_DOFS_FACE
                            | OPERATOR_SCHEMA_DOFS_CELL)) {
     // apply diffusion type BCs to FACE-CELL system
     AmanziMesh::Entity_ID_List faces;
 
-    const std::vector<int>& bc_model = bc->bc_model();
-    const std::vector<double>& bc_value = bc->bc_value();
-    const std::vector<double>& bc_mixed = bc->bc_mixed();
+    const std::vector<int>& bc_model = bc_->bc_model();
+    const std::vector<double>& bc_value = bc_->bc_value();
+    const std::vector<double>& bc_mixed = bc_->bc_mixed();
     ASSERT(bc_model.size() == nfaces_wghost);
     ASSERT(bc_value.size() == nfaces_wghost);
 
@@ -567,9 +536,9 @@ OperatorDiffusion::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary) {
 
     AmanziMesh::Entity_ID_List cells, nodes;
 
-    const std::vector<int>& bc_model = bc->bc_model();
-    const std::vector<double>& bc_value = bc->bc_value();
-    const std::vector<double>& bc_mixed = bc->bc_mixed();
+    const std::vector<int>& bc_model = bc_->bc_model();
+    const std::vector<double>& bc_value = bc_->bc_value();
+    const std::vector<double>& bc_mixed = bc_->bc_mixed();
     ASSERT(bc_model.size() == nfaces_wghost);
     ASSERT(bc_value.size() == nfaces_wghost);
 
@@ -610,8 +579,9 @@ OperatorDiffusion::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary) {
 * Modify operator by addition approximation of Newton corection.
 * We ignore the right-hand side for the moment.
 ****************************************************************** */
-void OperatorDiffusion::AddNewtonCorrectionCell_(
-    Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u)
+void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u)
 {
   // hack: ignore correction if no flux provided.
   if (flux == Teuchos::null) return;
@@ -667,7 +637,7 @@ void OperatorDiffusion::AddNewtonCorrectionCell_(
 /* ******************************************************************
 * Special assemble of elemental face-based matrices. 
 ****************************************************************** */
-void OperatorDiffusion::ModifyMatrices(const CompositeVector& u)
+void OperatorDiffusionMFD::ModifyMatrices(const CompositeVector& u)
 {
   if (local_op_schema_ != (OPERATOR_SCHEMA_BASE_CELL |
                            OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
@@ -705,7 +675,7 @@ void OperatorDiffusion::ModifyMatrices(const CompositeVector& u)
 * WARNING: Since diffusive flux is not continuous, we derive it only
 * once (using flag) and in exactly the same manner as other routines.
 * **************************************************************** */
-void OperatorDiffusion::UpdateFlux(const CompositeVector& u, CompositeVector& flux)
+void OperatorDiffusionMFD::UpdateFlux(const CompositeVector& u, CompositeVector& flux)
 {
 
   // Initialize intensity in ghost faces.
@@ -750,7 +720,7 @@ void OperatorDiffusion::UpdateFlux(const CompositeVector& u, CompositeVector& fl
 /* ******************************************************************
 * Calculate elemental inverse mass matrices.
 ****************************************************************** */
-void OperatorDiffusion::CreateMassMatrices_()
+void OperatorDiffusionMFD::CreateMassMatrices_()
 {
   WhetStone::MFD3D_Diffusion mfd(mesh_);
   mfd.ModifyStabilityScalingFactor(factor_);
@@ -818,7 +788,7 @@ void OperatorDiffusion::CreateMassMatrices_()
 /* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
-void OperatorDiffusion::InitDiffusion_(Teuchos::ParameterList& plist)
+void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
 {
   // Determine discretization
   std::string primary = plist.get<std::string>("discretization primary");
@@ -980,6 +950,9 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::ParameterList& plist)
     ASSERT(false);
   }
 
+  // Do we need to exclude the primary terms?
+  exclude_primary_terms_ = plist.get<bool>("exclude primary terms", false);
+  
   // Do we need to calculate Newton correction terms?
   newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
   std::string jacobian = plist.get<std::string>("newton correction", "none");

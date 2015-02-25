@@ -12,8 +12,8 @@
 #include "BCs.hh"
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionFactory.hh"
-#include "OperatorDiffusion.hh"
-//#include "OperatorDiffusionTPFA.hh"
+#include "OperatorDiffusionMFD.hh"
+#include "OperatorDiffusionFV.hh"
 #include "OperatorDiffusionWithGravity.hh"
 
 namespace Amanzi {
@@ -29,45 +29,25 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
     const AmanziGeometry::Point& g,
     int upwind_method)
 {
-  std::vector<std::string> names;
-  names = oplist.get<Teuchos::Array<std::string> > ("schema").toVector();
-  int nnames = names.size();
-
-  Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(mesh);
-  cvs->SetGhosted(true);
-
-  std::vector<AmanziMesh::Entity_kind> locations(nnames);
-  std::vector<int> num_dofs(nnames, 1);
- 
-  for (int i = 0; i < nnames; i++) {
-    if (names[i] == "cell") {
-      locations[i] = AmanziMesh::CELL;
-    } else if (names[i] == "node") {
-      locations[i] = AmanziMesh::NODE;
-    } else if (names[i] == "face") {
-      locations[i] = AmanziMesh::FACE;
-    }
-  }
-
-  cvs->SetComponents(names, locations, num_dofs);
-  cvs->SetOwned(false);
-
   // Let us try to identify a FV scheme.
   std::string name = oplist.get<std::string>("discretization primary");
   if (name == "fv: default") {
-
-    Errors::Message msg("OperatorDiffusionFactory: TPFA not yet implemented");
-    Exceptions::amanzi_throw(msg);
+    Teuchos::RCP<OperatorDiffusionFV> op = Teuchos::rcp(new OperatorDiffusionFV(oplist, mesh));
+    if (oplist.get<bool>("gravity", false)) op->SetGravity(g);
+    op->SetBCs(bc);
+    return op;
   }
 
   // Let us see if we have gravity.
   bool flag = oplist.get<bool>("gravity", false);
   if (!flag) {
-    return Teuchos::rcp(new OperatorDiffusion(oplist, mesh));
+    Teuchos::RCP<OperatorDiffusionMFD> op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, mesh));
+    op->SetBCs(bc);
+    return op;
   } else {
     Teuchos::RCP<OperatorDiffusionWithGravity> op = Teuchos::rcp(new OperatorDiffusionWithGravity(oplist, mesh));
     op->SetGravity(g);
+    op->SetBCs(bc);
     return op;
   }
 }
