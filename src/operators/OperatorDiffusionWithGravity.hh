@@ -17,7 +17,7 @@
 #include "DenseMatrix.hh"
 
 #include "OperatorDefs.hh"
-#include "OperatorDiffusion.hh"
+#include "OperatorDiffusionMFD.hh"
 
 
 namespace Amanzi {
@@ -25,37 +25,37 @@ namespace Operators {
 
 class BCs;
 
-class OperatorDiffusionWithGravity : public OperatorDiffusion {
+class OperatorDiffusionWithGravity : public OperatorDiffusionMFD {
  public:
   OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
-                    Teuchos::RCP<Operator> global_op) :
-      OperatorDiffusion(plist, global_op)
+                    const Teuchos::RCP<Operator>& global_op) :
+      OperatorDiffusionMFD(plist, global_op)
   {
     Init_();
   }
 
   OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
-                    Teuchos::RCP<AmanziMesh::Mesh> mesh) :
-      OperatorDiffusion(plist, mesh)
+                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      OperatorDiffusionMFD(plist, mesh)
   {
     Init_();
   }
 
   OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
-                    Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      OperatorDiffusion(plist, mesh)
+                    const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+      OperatorDiffusionMFD(plist, mesh)
   {
     Init_();
   }
-
+  
   // main members
-  virtual void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u);
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
+          const Teuchos::Ptr<const CompositeVector>& u);
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
 
-  void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
-  void SetVectorDensity(const Teuchos::RCP<const CompositeVector>& rho) { rho_cv_ = rho; }
+  virtual void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
+  virtual void SetVectorDensity(const Teuchos::RCP<const CompositeVector>& rho) { rho_cv_ = rho; }
   
-
  protected:
   inline AmanziGeometry::Point GravitySpecialDirection_(int f) const;
   void Init_() { gravity_special_projection_ = (mfd_primary_ == WhetStone::DIFFUSION_TPFA); }

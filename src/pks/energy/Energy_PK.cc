@@ -105,6 +105,7 @@ void Energy_PK::Initialize()
 
   Operators::OperatorDiffusionFactory opfactory;
   op_matrix_diff_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, g, 0);
+  op_matrix_diff_->SetBCs(op_bc_);
   op_matrix_ = op_matrix_diff_->global_operator();
   op_matrix_->Init();
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);

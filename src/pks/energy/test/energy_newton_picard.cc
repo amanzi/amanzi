@@ -14,7 +14,7 @@
 #include "UpwindStandard.hh"
 
 #include "Operator.hh"
-#include "OperatorDiffusion.hh"
+#include "OperatorDiffusionMFD.hh"
 #include "OperatorAdvection.hh"
 #include "OperatorAccumulation.hh"
 #include "OperatorDiffusionFactory.hh"
@@ -178,7 +178,8 @@ void HeatConduction::Init(
 
   // create the operators
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_name_);
-  op_diff_ = Teuchos::rcp(new Operators::OperatorDiffusion(olist, mesh_));
+  op_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionMFD(olist, mesh_));
+  op_diff_->SetBCs(bc_);
   op_ = op_diff_->global_operator();
   op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_));
   op_->Init();
@@ -186,11 +187,11 @@ void HeatConduction::Init(
   // set up the local matrices
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
   op_diff_->Setup(Kptr, k, dkdT, rho, mu);
-  op_diff_->UpdateMatrices(flux_, solution_);
+  op_diff_->UpdateMatrices(flux_.ptr(), solution_.ptr());
   op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
 
   // form the global matrix
-  op_diff_->ApplyBCs(bc_);
+  op_diff_->ApplyBCs();
   op_->SymbolicAssembleMatrix();
   op_->AssembleMatrix();
 
@@ -235,9 +236,9 @@ void HeatConduction::Residual(const Teuchos::RCP<CompositeVector>& u,
 {
   op_->Init();
   UpdateValues(*u);
-  op_diff_->UpdateMatrices(Teuchos::null, u);
+  op_diff_->UpdateMatrices(Teuchos::null, u.ptr());
   op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
-  op_diff_->ApplyBCs(bc_);
+  op_diff_->ApplyBCs();
   op_->ComputeNegativeResidual(*u, *f);
 }
 
@@ -252,9 +253,9 @@ void HeatConduction::UpdatePreconditioner(const Teuchos::RCP<const CompositeVect
   // Calculate new matrix.
   UpdateValues(*up);
   op_->Init();
-  op_diff_->UpdateMatrices(flux_, up);
+  op_diff_->UpdateMatrices(flux_.ptr(), up.ptr());
   op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
-  op_diff_->ApplyBCs(bc_);
+  op_diff_->ApplyBCs();
 
   // Assemble matrix and calculate preconditioner.
   op_->AssembleMatrix();

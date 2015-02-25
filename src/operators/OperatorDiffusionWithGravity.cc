@@ -20,13 +20,14 @@ namespace Operators {
 /* ******************************************************************
 * Add a gravity term to the diffusion operator.
 ****************************************************************** */
-void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVector> flux,
-                                                  Teuchos::RCP<const CompositeVector> u)
+void OperatorDiffusionWithGravity::UpdateMatrices(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u)
 {
   ASSERT(scalar_rho_mu_);
 
   // add the diffusion matrices
-  OperatorDiffusion::UpdateMatrices(flux, u);
+  OperatorDiffusionMFD::UpdateMatrices(flux, u);
 
   if (rho_cv_ == Teuchos::null) {
     // add the gravity terms
@@ -246,7 +247,7 @@ void OperatorDiffusionWithGravity::UpdateFlux(
   ASSERT(scalar_rho_mu_);
 
   // Calculate diffusive part of the flux.
-  OperatorDiffusion::UpdateFlux(u, flux);
+  OperatorDiffusionMFD::UpdateFlux(u, flux);
 
   // preparing upwind data
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;

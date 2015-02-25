@@ -30,7 +30,7 @@
 #include "tensor.hh"
 
 // Amanzi::Operators
-#include "OperatorDiffusion.hh"
+#include "OperatorDiffusionMFD.hh"
 #include "OperatorAdvection.hh"
 #include "OperatorAccumulation.hh"
 #include "OperatorDefs.hh"
@@ -107,7 +107,8 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   // create diffusion operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator");
-  Teuchos::RCP<OperatorDiffusion> op_diff = Teuchos::rcp(new OperatorDiffusion(olist, surfmesh));
+  Teuchos::RCP<OperatorDiffusion> op_diff = Teuchos::rcp(new OperatorDiffusionMFD(olist, (Teuchos::RCP<const AmanziMesh::Mesh>) surfmesh));
+  op_diff->SetBCs(bc);
   const CompositeVectorSpace& cvs = op_diff->global_operator()->DomainMap();
 
   // set up the diffusion operator
@@ -147,7 +148,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   op_acc->AddAccumulationTerm(solution, phi, dT, "cell");
 
   // BCs and assemble
-  op_diff->ApplyBCs(bc);
+  op_diff->ApplyBCs();
   op_adv->ApplyBCs(bc);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();

@@ -48,18 +48,32 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
     InitDiffusion_(plist);
   }
 
+  OperatorDiffusionMFD(Teuchos::ParameterList& plist,
+                    const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+      OperatorDiffusion(mesh),
+      factor_(1.0)
+  {
+    InitDiffusion_(plist);
+  }
+  
   // main virtual members
-  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K, double rho, double mu);
   virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-                     Teuchos::RCP<const CompositeVector> rho, Teuchos::RCP<const CompositeVector> mu);
-  virtual void Setup(Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp);
+                     double rho, double mu);
+  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
+                     const Teuchos::RCP<const CompositeVector>& rho,
+                     const Teuchos::RCP<const CompositeVector>& mu);
+  virtual void Setup(const Teuchos::RCP<const CompositeVector>& k,
+                     const Teuchos::RCP<const CompositeVector>& dkdp);
+  using OperatorDiffusion::Setup;
 
-  virtual void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u);
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
+          const Teuchos::Ptr<const CompositeVector>& u);
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
-  virtual void ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary);
+  virtual void ApplyBCs(bool primary=true);
   virtual void ModifyMatrices(const CompositeVector& u);
 
   int nfailed_primary() { return nfailed_primary_; }
+  void set_factor(double factor) { factor_ = factor; }
   
  protected:
   void InitDiffusion_(Teuchos::ParameterList& plist);
@@ -67,17 +81,18 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
 
   void UpdateMatricesNodal_();
   void UpdateMatricesTPFA_();
-  void UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector> flux);
-  void UpdateMatricesMixedWithGrad_(Teuchos::RCP<const CompositeVector> flux);
+  void UpdateMatricesMixed_(const Teuchos::Ptr<const CompositeVector>& flux);
+  void UpdateMatricesMixedWithGrad_(const Teuchos::Ptr<const CompositeVector>& flux);
 
-  void AddNewtonCorrectionCell_(Teuchos::RCP<const CompositeVector> flux,
-          Teuchos::RCP<const CompositeVector> u);
+  void AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVector>& flux,
+          const Teuchos::Ptr<const CompositeVector>& u);
 
  protected:
   std::vector<WhetStone::DenseMatrix> Wff_cells_;
   int newton_correction_;
   bool exclude_primary_terms_;
   double factor_;
+  bool scaled_constraint_;
 
   int mfd_primary_, mfd_secondary_, mfd_pc_primary_, mfd_pc_secondary_;
   int nfailed_primary_;

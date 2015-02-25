@@ -35,41 +35,67 @@ namespace Amanzi {
 namespace Operators {
 
 class OperatorDiffusion {
-
+ public:
   OperatorDiffusion(const Teuchos::RCP<Operator>& global_op) :
       global_op_(global_op) {}
 
   OperatorDiffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       mesh_(mesh) {}
+
+  OperatorDiffusion(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+      mesh_(mesh) {}
   
 
   // main virtual members
-  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K, double rho, double mu) = 0;
   virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-                     Teuchos::RCP<const CompositeVector> rho, Teuchos::RCP<const CompositeVector> mu) = 0;
-  virtual void Setup(Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp) = 0;
+                     double rho, double mu) = 0;
+  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
+                     const Teuchos::RCP<const CompositeVector>& rho,
+                     const Teuchos::RCP<const CompositeVector>& mu) = 0;
+  virtual void Setup(const Teuchos::RCP<const CompositeVector>& k,
+                     const Teuchos::RCP<const CompositeVector>& dkdp) = 0;
 
-  virtual void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u) = 0;
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
+          const Teuchos::Ptr<const CompositeVector>& u) = 0;
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux) = 0;
-  virtual void ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary=true) = 0;
+  virtual void ApplyBCs(bool primary=true) = 0;
   virtual void ModifyMatrices(const CompositeVector& u) = 0;
 
   // default implementation  
   virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) {
     Setup(K, 1.0, 1.0); }
   virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-                     Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
+                     const Teuchos::RCP<const CompositeVector>& k,
+                     const Teuchos::RCP<const CompositeVector>& dkdp,
                      double rho, double mu) {
     Setup(K, rho, mu);
     Setup(k, dkdp);
   }
   virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-                     Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
-                     Teuchos::RCP<const CompositeVector> rho, Teuchos::RCP<const CompositeVector> mu) {
+                     const Teuchos::RCP<const CompositeVector>& k,
+                     const Teuchos::RCP<const CompositeVector>& dkdp,
+                     const Teuchos::RCP<const CompositeVector>& rho,
+                     const Teuchos::RCP<const CompositeVector>& mu) {
     Setup(K, rho, mu);
     Setup(k, dkdp);
   }
 
+  // boundary conditions
+  virtual void SetBCs(const Teuchos::RCP<BCs>& bc) {
+    bc_ = bc;
+    global_op_->SetBCs(bc);
+  }
+
+  // gravity terms -- may not be implemented
+  virtual void SetGravity(const AmanziGeometry::Point& g) {
+    Errors::Message msg("OperatorDiffusion: This diffusion implementation does not support gravity.");
+    Exceptions::amanzi_throw(msg);
+  }
+  virtual void SetGravityDensity(const Teuchos::RCP<const CompositeVector>& rho) {
+    Errors::Message msg("OperatorDiffusion: This diffusion implementation does not support gravity.");
+    Exceptions::amanzi_throw(msg);
+  }
+  
   // access
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
   Teuchos::RCP<Operator> global_operator() { return global_op_; }

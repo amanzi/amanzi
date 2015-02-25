@@ -525,14 +525,16 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 
   op_matrix_->Init();
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
+  op_matrix_diff_->SetBCs(op_bc_);
   op_matrix_diff_->Setup(Kptr, rel_perm_->Krel(), rel_perm_->dKdP(), rho_, mu_);
-  op_matrix_diff_->UpdateMatrices(Teuchos::null, solution);
-  op_matrix_diff_->ApplyBCs(op_bc_);
+  op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
+  op_matrix_diff_->ApplyBCs(true);
 
   op_preconditioner_->Init();
+  op_preconditioner_->SetBCs(op_bc_);
   op_preconditioner_diff_->Setup(Kptr, rel_perm_->Krel(), rel_perm_->dKdP(), rho_, mu_);
-  op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy, solution);
-  op_preconditioner_diff_->ApplyBCs(op_bc_);
+  op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
+  op_preconditioner_diff_->ApplyBCs(true);
   op_preconditioner_->SymbolicAssembleMatrix();
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -606,7 +608,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     EnforceConstraints(T1, *solution);
     // update mass flux
     op_matrix_->Init();
-    op_matrix_diff_->UpdateMatrices(Teuchos::null, solution);
+    op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
     op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
   } else {
     CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);

@@ -90,9 +90,9 @@ void Energy_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up
 
   // assemble residual for diffusion operator
   op_matrix_->Init();
-  // op_matrix_diff_->Setup(conductivity.ptr());
-  // op_matrix_diff_->UpdateMatrices(darcy_flux_copy, *up->Data());
-  op_matrix_diff_->ApplyBCs(op_bc_);
+  // op_matrix_diff_->Setup(conductivity, Teuchos::null);
+  // op_matrix_diff_->UpdateMatrices(darcy_flux_copy.ptr(), *up->Data().ptr());
+  op_matrix_diff_->ApplyBCs();
   // op_matrix_->ComputeNegativeResidual(*u_new, *f);
 
   // update with accumulation terms
@@ -126,7 +126,7 @@ void Energy_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up
   // AddSourcesToPrecon_(S_next_.ptr(), h);
 
   // Apply boundary conditions.
-  op_preconditioner_diff_->ApplyBCs(op_bc_);
+  op_preconditioner_diff_->ApplyBCs();
 };
 
 

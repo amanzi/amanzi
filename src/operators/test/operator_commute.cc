@@ -27,6 +27,8 @@
 
 #include "LinearOperatorFactory.hh"
 #include "OperatorDefs.hh"
+#include "OperatorDiffusionMFD.hh"
+#include "OperatorDiffusionFV.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorAdvection.hh"
 #include "Operator_FaceCell.hh"
@@ -119,13 +121,14 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   // add the diffusion operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator mfd");
-  Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusion(olist, global_op));
+  Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusionMFD(olist, global_op));
+  op2->SetBCs(bc);
   op2->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op2->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // create a preconditioner
   op1->ApplyBCs(bc);
-  op2->ApplyBCs(bc);
+  op2->ApplyBCs(true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -135,7 +138,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   
   Teuchos::ParameterList olist2 = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator mfd");
-  Teuchos::RCP<OperatorDiffusion> op3 = Teuchos::rcp(new OperatorDiffusion(olist2, global_op2));
+  Teuchos::RCP<OperatorDiffusion> op3 = Teuchos::rcp(new OperatorDiffusionMFD(olist2, global_op2));
+  op3->SetBCs(bc);
   op3->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op3->UpdateMatrices(Teuchos::null, Teuchos::null);
 
@@ -145,7 +149,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   op4->UpdateMatrices(u);
 
   // create a preconditioner
-  op3->ApplyBCs(bc);
+  op3->ApplyBCs(true);
   op4->ApplyBCs(bc);
   global_op2->SymbolicAssembleMatrix();
   global_op2->AssembleMatrix();
@@ -245,13 +249,14 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   // add the diffusion operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator fv");
-  Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusion(olist, global_op));
+  Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusionFV(olist, global_op));
+  op2->SetBCs(bc);
   op2->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op2->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // create a preconditioner
   op1->ApplyBCs(bc);
-  op2->ApplyBCs(bc);
+  op2->ApplyBCs(false);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -261,7 +266,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   
   Teuchos::ParameterList olist2 = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator fv");
-  Teuchos::RCP<OperatorDiffusion> op3 = Teuchos::rcp(new OperatorDiffusion(olist2, global_op2));
+  Teuchos::RCP<OperatorDiffusion> op3 = Teuchos::rcp(new OperatorDiffusionFV(olist2, global_op2));
+  op3->SetBCs(bc);
   op3->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op3->UpdateMatrices(Teuchos::null, Teuchos::null);
 
@@ -271,7 +277,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   op4->UpdateMatrices(u);
 
   // create a preconditioner
-  op3->ApplyBCs(bc);
+  op3->ApplyBCs(false);
   op4->ApplyBCs(bc);
   global_op2->SymbolicAssembleMatrix();
   global_op2->AssembleMatrix();

@@ -30,7 +30,7 @@
 
 #include "BCs.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusion.hh"
+#include "OperatorDiffusionMFD.hh"
 
 #include "TreeOperator.hh"
 
@@ -126,7 +126,8 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   // populate the diffusion operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
       .get<Teuchos::ParameterList>("mixed diffusion");
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusion(olist, mesh));
+  Teuchos::RCP<OperatorDiffusionMFD> op = Teuchos::rcp(new OperatorDiffusionMFD(olist, mesh));
+  op->SetBCs(bc);
 
   op->set_factor(factor);  // for developers only
   op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
@@ -135,7 +136,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
-  op->ApplyBCs(bc);
+  op->ApplyBCs();
 
   // create the TreeOperator, which combines two copies of op1 in a block-diagonal operator.
   Teuchos::RCP<TreeVectorSpace> tvs = Teuchos::rcp(new TreeVectorSpace());

@@ -33,7 +33,7 @@
 #include "Operator.hh"
 #include "OperatorAccumulation.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusion.hh"
+#include "OperatorDiffusionMFD.hh"
 #include "Verification.hh"
 
 
@@ -124,7 +124,8 @@ void RunTest(std::string op_list_name) {
   // add the diffusion operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>(op_list_name);
-  OperatorDiffusion op(olist, surfmesh);
+  OperatorDiffusionMFD op(olist, surfmesh);
+  op.SetBCs(bc);
   op.Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op.UpdateMatrices(Teuchos::null, Teuchos::null);
 
@@ -137,7 +138,7 @@ void RunTest(std::string op_list_name) {
 
   // apply BCs and assemble
   global_op->UpdateRHS(source, false);
-  op.ApplyBCs(bc);
+  op.ApplyBCs();
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -174,7 +175,7 @@ void RunTest(std::string op_list_name) {
   op_acc.AddAccumulationTerm(solution, phi, dT, "cell");
 
   global_op->UpdateRHS(source, false);
-  op.ApplyBCs(bc);
+  op.ApplyBCs();
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
   global_op->InitPreconditioner("Hypre AMG", slist);

@@ -122,6 +122,7 @@ std::cout << "Passed S.InitilizeEvaluators()" << std::endl;
   OperatorDiffusionFactory opfactory;
   AmanziGeometry::Point g(2);
   Teuchos::RCP<OperatorDiffusion> op1 = opfactory.Create(mesh, bc, oplist, g, 0);
+  op1->SetBCs(bc);
 
   // populate the diffusion operator
   double rho(1.0), mu(1.0);
@@ -173,7 +174,7 @@ std::cout << "Passed S.InitilizeEvaluators()" << std::endl;
   op3->UpdateMatrices(flux);
 
   // build the matrix
-  op1->ApplyBCs(bc);
+  op1->ApplyBCs(true);
   op3->ApplyBCs(bc);
   op->SymbolicAssembleMatrix();
   op->AssembleMatrix();
