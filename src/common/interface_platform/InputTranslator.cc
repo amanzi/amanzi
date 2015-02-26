@@ -5807,8 +5807,8 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
 
                 }
                 //sclist.sublist(scname) = newsclist;
-                //sclist.sublist("Solute SOURCE").sublist(phase).sublist(component).sublist(soluteName).sublist(scname) = newsclist;
-                sclist.sublist("Solute SOURCE").sublist(phase).sublist(soluteName).sublist(scname) = newsclist;
+                sclist.sublist("Solute SOURCE").sublist(phase).sublist(component).sublist(soluteName).sublist(scname) = newsclist;
+                //sclist.sublist("Solute SOURCE").sublist(phase).sublist(soluteName).sublist(scname) = newsclist;
 	      }
 	    }
 	  }
