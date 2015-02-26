@@ -26,6 +26,7 @@ namespace Flow {
 * Moving flux calculation here impose restrictions on multiple 
 * possible scenarios of data flow.
 ****************************************************************** */
+// When this is used by Init, shouldn't this also get preconditioner_name_ini instead of preconditioner_name? --etc
 void Richards_PK::SolveFullySaturatedProblem(
     double T0, CompositeVector& u, const std::string& solver_name)
 {
@@ -46,9 +47,16 @@ void Richards_PK::SolveFullySaturatedProblem(
   op_preconditioner_->InitPreconditioner(ti_specs->preconditioner_name, *preconditioner_list_);
 
   AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
-     solver = sfactory.Create(solver_name, *linear_operator_list_, op_matrix_, op_preconditioner_);
 
+  // this is wierd -- old version has both GMRES wrapping PC and then another
+  // solver wrapping that with the matrix as the forward operator?
+  // NOTE we do not use the class data here as it would overwrite what was done abovee in InitNextTI() --etc
+  Teuchos::RCP<Operators::Operator> pc_solver = sfactory.Create(ti_specs->solver_name, *linear_operator_list_,
+          op_preconditioner_, op_preconditioner_);
+
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
+     solver = sfactory.Create(solver_name, *linear_operator_list_, op_matrix_, pc_solver);
+  
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
 
   CompositeVector& rhs = *op_matrix_->rhs();

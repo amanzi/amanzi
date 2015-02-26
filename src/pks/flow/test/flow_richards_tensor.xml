@@ -90,7 +90,7 @@
 	</ParameterList>
 
 	<ParameterList name="steady state time integrator">
-	  <Parameter name="linear solver" type="string" value="AztecOO"/>
+	  <Parameter name="linear solver" type="string" value="none"/>
 	  <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
 
 	  <ParameterList name="pressure-lambda constraints">

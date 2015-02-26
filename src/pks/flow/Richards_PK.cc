@@ -535,6 +535,14 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   op_preconditioner_diff_->ApplyBCs(true);
   op_preconditioner_->SymbolicAssembleMatrix();
 
+  // potentially wrap the preconditioner in a linear solver, i.e. for Newton
+  if (ti_specs.solver_name != "none") {
+    AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
+    op_pc_solver_ = sfactory.Create(ti_specs.solver_name, *linear_operator_list_, op_preconditioner_);
+  } else {
+    op_pc_solver_ = op_preconditioner_;
+  }
+  
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     int missed_tmp = missed_bc_faces_;
     int dirichlet_tmp = dirichlet_bc_faces_;

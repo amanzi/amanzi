@@ -127,7 +127,7 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Teuchos::ParameterList> rp_list_;
 
   Teuchos::RCP<RelativePermeability> rel_perm_;
-  Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_;
+  Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_, op_pc_solver_;
   Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_diff_, op_preconditioner_diff_;
   Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
   Teuchos::RCP<Operators::Upwind<RelativePermeability> > upwind_;

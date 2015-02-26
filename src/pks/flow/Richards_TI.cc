@@ -192,7 +192,8 @@ void Richards_PK::CalculateVaporDiffusionTensor_()
 void Richards_PK::ApplyPreconditioner(Teuchos::RCP<const CompositeVector> X, 
                                       Teuchos::RCP<CompositeVector> Y)
 {
-  op_preconditioner_->ApplyInverse(*X, *Y);
+  Y->PutScalar(0.);
+  op_pc_solver_->ApplyInverse(*X, *Y);
 }
 
 
@@ -242,7 +243,7 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
 
   // finalize preconditioner
   op_preconditioner_->AssembleMatrix();
-  op_preconditioner_->InitPreconditioner(ti_specs->preconditioner_name, *preconditioner_list_); 
+  op_preconditioner_->InitPreconditioner(ti_specs->preconditioner_name, *preconditioner_list_);
 }
 
 
