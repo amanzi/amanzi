@@ -101,6 +101,11 @@ void Richards_PK::Setup()
   if (!S_->HasField("pressure")) {
     S_->RequireField("pressure", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("evaluator name", "pressure");
+    pressure_eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    S_->SetFieldEvaluator("pressure", pressure_eval);
   }
   if (!S_->HasField("hydraulic_head")) {
     S_->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(true)

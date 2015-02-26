@@ -141,11 +141,11 @@ void Richards_PK::CalculateVaporDiffusionTensor_()
    S_->GetFieldEvaluator("saturation_gas")->HasFieldChanged(S_.ptr(), passwd_);
    const Epetra_MultiVector& s_g = *S_->GetFieldData("saturation_gas")->ViewComponent("cell");
 
-   S_->GetFieldEvaluator("mol_frac_gas")->HasFieldChanged(S_.ptr(), passwd_);
-   const Epetra_MultiVector& mlf_g = *S_->GetFieldData("mol_frac_gas")->ViewComponent("cell");
+   S_->GetFieldEvaluator("molar_fraction_gas")->HasFieldChanged(S_.ptr(), passwd_);
+   const Epetra_MultiVector& mlf_g = *S_->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
 
    std::string key("temperature");
-   S_->GetFieldEvaluator("mol_frac_gas")->HasFieldDerivativeChanged(S_.ptr(), passwd_, key);
+   S_->GetFieldEvaluator("molar_fraction_gas")->HasFieldDerivativeChanged(S_.ptr(), passwd_, key);
    const Epetra_MultiVector& dmlf_g_dt = *S_->GetFieldData("dmol_frac_gas_dtemperature")->ViewComponent("cell");
 
    const Epetra_MultiVector& temp = *S_->GetFieldData("temperature")->ViewComponent("cell");

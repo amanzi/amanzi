@@ -16,6 +16,8 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "independent_variable_field_evaluator_fromfunction.hh"
+#include "secondary_variable_field_evaluator.hh"
 #include "FnTimeIntegratorPK.hh"
 #include "MPCStrong.hh"
 #include "PK_Factory.hh"
@@ -25,11 +27,13 @@ namespace Amanzi {
 class FlowEnergy_PK : public MPCStrong<FnTimeIntegratorPK> {
  public:
   FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
-                const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                const Teuchos::RCP<Teuchos::ParameterList>& glist,
                 const Teuchos::RCP<State>& S,
                 const Teuchos::RCP<TreeVector>& soln);
 
   // PK methods
+  virtual void Setup();
+
   // -- dt is the minimum of the sub pks
   double get_dt() {};
   virtual void set_dt(double dt) {};
@@ -44,6 +48,13 @@ class FlowEnergy_PK : public MPCStrong<FnTimeIntegratorPK> {
   virtual void CalculateDiagnostics() {};
 
  private:
+  const Teuchos::RCP<Teuchos::ParameterList>& glist_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+
+  Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> density_rock_eval;
+  Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> porosity_eval;
+  Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> saturation_liquid_eval;
+
   // factory registration
   static RegisteredPKFactory<FlowEnergy_PK> reg_;
 };

@@ -196,6 +196,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
 
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
   Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval;
 
  protected:
   VerboseObject* vo_;
