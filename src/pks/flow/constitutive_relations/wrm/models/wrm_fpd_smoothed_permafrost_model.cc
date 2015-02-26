@@ -38,7 +38,7 @@ WRMFPDSmoothedPermafrostModel::WRMFPDSmoothedPermafrostModel(Teuchos::ParameterL
 void
 WRMFPDSmoothedPermafrostModel::saturations(double pc_liq, double pc_ice,
         double (&sats)[3]) {
-  if (pc_ice <= pc_liq) { // unfrozen
+  if (pc_ice <= std::max(pc_liq,0.)) { // unfrozen
     sats[2] = 0.; // ice
     sats[1] = wrm_->saturation(pc_liq);  // liquid
     sats[0] = 1.0 - sats[1];  // gas
@@ -48,12 +48,14 @@ WRMFPDSmoothedPermafrostModel::saturations(double pc_liq, double pc_ice,
     double sstar_ice = wrm_->saturation(pc_ice);
     double sstar_liq = wrm_->saturation(pc_liq);
     double sr = wrm_->residualSaturation();
-    double sl_sm = (sstar_liq - sr)*std::exp( (pc_liq - pc_ice)/dp_) + sr;
-    sats[1] = std::max(sstar_ice, sl_sm);
     if (pc_liq <= 0.) { // saturated
+      double sl_sm = (sstar_liq - sr)*std::exp( -pc_ice/dp_) + sr;
+      sats[1] = std::max(sstar_ice, sl_sm);
       sats[2] = 1. - sats[1]; // ice
       sats[0] = 0.; // gas
     } else {
+      double sl_sm = (sstar_liq - sr)*std::exp( (pc_liq - pc_ice) / dp_) + sr;
+      sats[1] = std::max(sstar_ice, sl_sm);
       sats[2] = 1. - sats[1] / sstar_liq;
       sats[0] = 1. - sats[1] - sats[2];
     }      
@@ -63,7 +65,7 @@ WRMFPDSmoothedPermafrostModel::saturations(double pc_liq, double pc_ice,
 void
 WRMFPDSmoothedPermafrostModel::dsaturations_dpc_liq(double pc_liq, double pc_ice,
         double (&dsats)[3]) {
-  if (pc_ice <= pc_liq) { // unfrozen
+  if (pc_ice <= std::max(pc_liq,0.)) { // unfrozen
     dsats[2] = 0.; // ice
     dsats[1] = wrm_->d_saturation(pc_liq);  // liquid
     dsats[0] = - dsats[1];  // gas
@@ -73,27 +75,32 @@ WRMFPDSmoothedPermafrostModel::dsaturations_dpc_liq(double pc_liq, double pc_ice
     double sstar_ice = wrm_->saturation(pc_ice);
     double sstar_liq = wrm_->saturation(pc_liq);
     double sr = wrm_->residualSaturation();
-    double sl_sm = (sstar_liq - sr)*std::exp( (pc_liq - pc_ice)/dp_) + sr;
 
-    if (sstar_ice > sl_sm) { // max is given by sstar_ice
-      dsats[1] = 0.;
-      if (pc_liq <= 0.) {
+    if (pc_liq <= 0.) { // saturated
+      double sl_sm = (sstar_liq - sr)*std::exp(-pc_ice/dp_) + sr;
+      if (sstar_ice > sl_sm) { // max is given by sstar_ice
+        dsats[1] = 0.;
         dsats[2] = 0.;
         dsats[0] = 0.;
-      } else {
+      } else { // max is given by sl_sm
+        double sstarprime_liq = wrm_->d_saturation(pc_liq);
+        dsats[1] =  sstarprime_liq * std::exp(-pc_ice/dp_);
+        dsats[2] = -dsats[1];
+        dsats[0] = 0.; // no gas
+      }
+
+    } else { // unsaturated
+      double sl_sm = (sstar_liq - sr)*std::exp( (pc_liq - pc_ice) / dp_) + sr;
+      if (sstar_ice > sl_sm) { // max is given by sstar_ice
+        dsats[1] = 0.;
         dsats[2] = sstar_ice / std::pow(sstar_liq,2)
             * wrm_->d_saturation(pc_liq);
         dsats[0] = - dsats[2];
-      }
 
-    } else { // max is given by sl_sm
-      double sstarprime_liq = wrm_->d_saturation(pc_liq);
-      dsats[1] =  sstarprime_liq * std::exp( (pc_liq - pc_ice)/dp_ )
-          + (sstar_liq - sr) * std::exp((pc_liq - pc_ice)/dp_) / dp_;
-      if (pc_liq <= 0.) { // saturated
-        dsats[2] = -dsats[1];
-        dsats[0] = 0.; // no gas
-      } else {
+      } else { // max is given by sl_sm
+        double sstarprime_liq = wrm_->d_saturation(pc_liq);
+        dsats[1] =  sstarprime_liq * std::exp( (pc_liq - pc_ice)/dp_ )
+            + (sstar_liq - sr) * std::exp((pc_liq - pc_ice)/dp_) / dp_;
         dsats[2] = -dsats[1] / sstar_liq + sl_sm / std::pow(sstar_liq, 2) * sstarprime_liq;
         dsats[0] = -dsats[1] - dsats[2];            
       }
@@ -104,7 +111,7 @@ WRMFPDSmoothedPermafrostModel::dsaturations_dpc_liq(double pc_liq, double pc_ice
 void
 WRMFPDSmoothedPermafrostModel::dsaturations_dpc_ice(double pc_liq, double pc_ice,
         double (&dsats)[3]) {
-  if (pc_ice <= pc_liq) { // unfrozen
+  if (pc_ice <= std::max(pc_liq,0.)) { // unfrozen
     dsats[0] = 0.;
     dsats[1] = 0.;
     dsats[2] = 0.;
@@ -114,32 +121,29 @@ WRMFPDSmoothedPermafrostModel::dsaturations_dpc_ice(double pc_liq, double pc_ice
     double sstar_ice = wrm_->saturation(pc_ice);
     double sstar_liq = wrm_->saturation(pc_liq);
     double sr = wrm_->residualSaturation();
-    double sl_sm = (sstar_liq - sr)*std::exp( (pc_liq - pc_ice)/dp_) + sr;
 
-    if (sstar_ice > sl_sm) { // max is given by sstar_ice
-      dsats[1] = wrm_->d_saturation(pc_ice);
-      if (pc_liq <= 0.) { // saturated
-        dsats[2] = -dsats[1];
-        dsats[0] = 0.;
-      } else {
-        dsats[2] = -dsats[1] / sstar_liq;
-        dsats[0] = -dsats[1] - dsats[2];
+    if (pc_liq <= 0.) { // saturated
+      double sl_sm = (sstar_liq - sr)*std::exp(-pc_ice/dp_) + sr;
+      if (sstar_ice > sl_sm) { // max is given by sstar_ice
+        dsats[1] = wrm_->d_saturation(pc_ice);
+      } else { // max is given by sl_sm
+        dsats[1] = -(sstar_liq - sr) * std::exp(-pc_ice/dp_) / dp_;
       }
+      dsats[2] = -dsats[1];
+      dsats[0] = 0.;
 
-    } else { // max is given by sl_sm
-      dsats[1] = -(sstar_liq - sr) * std::exp((pc_liq - pc_ice)/dp_) / dp_;
-
-      if (pc_liq <= 0.) { // saturated
-        dsats[2] = -dsats[1];
-        dsats[0] = 0.;
-      } else {
-        dsats[2] = -dsats[1] / sstar_liq;
-        dsats[0] = -dsats[1] - dsats[2];
+    } else { // unsaturated
+      double sl_sm = (sstar_liq - sr)*std::exp( (pc_liq - pc_ice)/dp_) + sr;
+      if (sstar_ice > sl_sm) { // max is given by sstar_ice
+        dsats[1] = wrm_->d_saturation(pc_ice);
+      } else { // max is given by sl_sm
+        dsats[1] = -(sstar_liq - sr) * std::exp( (pc_liq - pc_ice)/dp_) / dp_;
       }
+      dsats[2] = -dsats[1] / sstar_liq;
+      dsats[0] = -dsats[1] - dsats[2];
     }
   }
 }
-
 
 } // namespace FlowRelations
 } // namespace Flow

@@ -32,7 +32,8 @@ if ( BUILD_TESTS )
       test/test_old_permafrost.cc 
       test/test_implicit_permafrost.cc
       test/test_fpd_permafrost.cc
-      test/test_fpd_smoothed_permafrost.cc)
+      test/test_fpd_smoothed_permafrost.cc
+      test/test_pc_ice_liq.cc)
     target_link_libraries(test_wrm flow_relations_wrm_models amanzi_whetstone amanzi_error_handling ${Amanzi_TPL_UnitTest_LIBRARIES} ${Amanzi_TPL_Trilinos_LIBRARIES})
 endif()
 
