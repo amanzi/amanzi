@@ -126,7 +126,6 @@ void CycleDriver::setup() {
 
   S_->RequireScalar("dt", "coordinator");
 
-
   S_->Setup();
 
   S_->InitializeFields();

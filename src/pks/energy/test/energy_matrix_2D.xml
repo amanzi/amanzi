@@ -252,9 +252,9 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="mol_frac_gas">
+      <ParameterList name="molar_fraction_gas">
         <Parameter name="field evaluator type" type="string" value="molar fraction gas"/>
-        <Parameter name="molar fraction key" type="string" value="mol_frac_gas"/>
+        <Parameter name="molar fraction key" type="string" value="molar_fraction_gas"/>
         <ParameterList name="vapor pressure model parameters">
           <Parameter name="vapor pressure model type" type="string" value="water vapor over water/ice"/>
         </ParameterList>

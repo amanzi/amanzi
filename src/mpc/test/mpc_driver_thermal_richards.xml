@@ -75,8 +75,8 @@
     </ParameterList>
     <ParameterList name="All">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{-9.99999999999999967e+98, -9.99999999999999967e+98}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{9.99999999999999967e+98, 9.99999999999999967e+98}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{-9.9e+98, -9.9e+98}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{9.9e+98, 9.9e+98}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -126,23 +126,6 @@
 
   <ParameterList name="State">
     <ParameterList name="field evaluators">
-      <ParameterList name="density_rock">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant"> <!-- time component -->
-                <Parameter name="value" type="double" value="2500."/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="extreme"/>
-        </ParameterList>
-      </ParameterList>
     </ParameterList>
 
     <ParameterList name="initial conditions">
@@ -173,30 +156,25 @@
       </ParameterList>
       <ParameterList name="porosity">
         <ParameterList name="function">
-          <ParameterList name="RegionMiddle">
-            <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="4.08200000000000007e-01"/>
+                <Parameter name="value" type="double" value="0.2"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
-          <ParameterList name="RegionBottom">
-            <Parameter name="regions" type="Array(string)" value="{RegionBottom}"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="density_rock">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.20599999999999991e-01"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="RegionTop">
-            <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.34000000000000014e-01"/>
+                <Parameter name="value" type="double" value="2500."/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
