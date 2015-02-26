@@ -139,8 +139,12 @@ Transport_PK::~Transport_PK()
   if (vo_ != NULL) {
     delete vo_;
   }
-  for (int i=0; i<bcs.size(); i++) delete bcs[i]; 
-  for (int i=0; i<srcs.size(); i++) delete srcs[i]; 
+  for (int i=0; i<bcs.size(); i++) {
+    if (bcs[i] != NULL) delete bcs[i]; 
+  }
+  for (int i=0; i<srcs.size(); i++) {
+    if (srcs[i] != NULL) delete srcs[i]; 
+  }
 }
 
 
