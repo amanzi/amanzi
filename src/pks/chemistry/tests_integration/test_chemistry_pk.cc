@@ -126,6 +126,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     component_names.push_back("SiO2(aq)");
     component_names.push_back("UO2++");
     chemistry_state_ = Teuchos::rcp(new ac::Chemistry_State(chemistry_parameter_list_, component_names, state_));
+    chemistry_state_->Setup();
 
     state_->Setup();
     chemistry_state_->Initialize();
