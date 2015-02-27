@@ -11,7 +11,7 @@ Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "errors.hh"
 
-#include "WaterRetentionModel.hh"
+#include "WRM.hh"
 #include "WRM_vanGenuchten.hh"
 #include "WRM_BrooksCorey.hh"
 #include "WRM_fake.hh"

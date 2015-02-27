@@ -16,12 +16,12 @@
 #ifndef AMANZI_FAKE_MODEL_HH_
 #define AMANZI_FAKE_MODEL_HH_
 
-#include "WaterRetentionModel.hh"
+#include "WRM.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-class WRM_fake : public WaterRetentionModel {
+class WRM_fake : public WRM {
  public:
   explicit WRM_fake(std::string region);
   ~WRM_fake() {};

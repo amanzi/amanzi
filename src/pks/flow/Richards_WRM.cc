@@ -23,7 +23,7 @@ namespace Flow {
 ****************************************************************** */
 void Richards_PK::DeriveSaturationFromPressure(const Epetra_MultiVector& p, Epetra_MultiVector& s)
 {
-  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm_->WRM();  
+  std::vector<Teuchos::RCP<WRM> >& WRM = rel_perm_->wrm();  
 
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
@@ -44,7 +44,7 @@ void Richards_PK::DeriveSaturationFromPressure(const Epetra_MultiVector& p, Epet
 ****************************************************************** */
 void Richards_PK::DerivePressureFromSaturation(const Epetra_MultiVector& s, Epetra_MultiVector& p)
 {
-  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm_->WRM();  
+  std::vector<Teuchos::RCP<WRM> >& WRM = rel_perm_->wrm();  
 
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
@@ -74,7 +74,7 @@ void Richards_PK::ClipHydrostaticPressure(double pmin, Epetra_MultiVector& p)
 ****************************************************************** */
 void Richards_PK::ClipHydrostaticPressure(double pmin, double s0, Epetra_MultiVector& p)
 {
-  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm_->WRM();  
+  std::vector<Teuchos::RCP<WRM> >& WRM = rel_perm_->wrm();  
 
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();

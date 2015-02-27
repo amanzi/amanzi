@@ -13,12 +13,12 @@
 #ifndef AMANZI_VAN_GENUCHTEN_MODEL_HH_
 #define AMANZI_VAN_GENUCHTEN_MODEL_HH_
 
-#include "WaterRetentionModel.hh"
+#include "WRM.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-class WRM_vanGenuchten : public WaterRetentionModel {
+class WRM_vanGenuchten : public WRM {
  public:
   explicit WRM_vanGenuchten(std::string region, double m, double l, double alpha, 
                             double sr, std::string krel_function, double pc0 = 0.0);

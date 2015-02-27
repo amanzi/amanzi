@@ -18,7 +18,7 @@
 namespace Amanzi {
 namespace Flow {
 
-class WaterRetentionModel {
+class WRM {
  public:
   virtual double k_relative(double pc) = 0;
   virtual double saturation(double pc) = 0;

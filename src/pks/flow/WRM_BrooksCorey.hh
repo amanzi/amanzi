@@ -12,12 +12,12 @@
 #ifndef AMANZI_BROOKS_COREY_MODEL_HH_
 #define AMANZI_BROOKS_COREY_MODEL_HH_
 
-#include "WaterRetentionModel.hh"
+#include "WRM.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-class WRM_BrooksCorey : public WaterRetentionModel {
+class WRM_BrooksCorey : public WRM {
  public:
   explicit WRM_BrooksCorey(std::string region, double lambda, double l, double alpha, 
                            double sr, std::string krel_function, double pc0 = 0.0);

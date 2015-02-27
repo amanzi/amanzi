@@ -26,7 +26,7 @@
 #include "tensor.hh"
 #include "VerboseObject.hh"
 
-#include "WaterRetentionModel.hh"
+#include "WRM.hh"
 #include "FlowTypeDefs.hh"
 
 namespace Amanzi {
@@ -65,7 +65,7 @@ class RelativePermeability {
   void PlotWRMcurves(Teuchos::ParameterList& plist);
 
   // access methods
-  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM() { return WRM_; }
+  std::vector<Teuchos::RCP<WRM> >& wrm() { return WRM_; }
 
   Teuchos::RCP<CompositeVector> dKdP() { return dKdP_; }
   Teuchos::RCP<CompositeVector> Krel() { return Krel_; }
@@ -81,7 +81,7 @@ class RelativePermeability {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<ParallelCommunication> pp_;
 
-  std::vector<Teuchos::RCP<WaterRetentionModel> > WRM_;
+  std::vector<Teuchos::RCP<WRM> > WRM_;
   double atm_pressure;
 
   int method_;  // method for calculating relative permeability

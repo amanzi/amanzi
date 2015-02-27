@@ -108,10 +108,10 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   RPK->ti_specs_sss().residual_tol = 1e-5;
   RPK->ti_specs_sss().max_itrs = 100;
 
-  RPK->InitSteadyState(0.0, 0.01);
+  RPK->InitSteadyState(0.0, 100.0);
 
   /* solve the steady-state problem */
-  RPK->AdvanceToSteadyState(0.0, 0.01);
+  RPK->AdvanceToSteadyState(0.0, 100.0);
   RPK->CommitState(0.0, S.ptr());
 
   const Epetra_MultiVector& ws = *S->GetFieldData("water_saturation")->ViewComponent("cell");

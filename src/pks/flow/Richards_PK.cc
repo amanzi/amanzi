@@ -902,7 +902,7 @@ double Richards_PK::BoundaryFaceValue(int f, const CompositeVector& u)
     Epetra_MultiVector& k_face = *rel_perm_->Krel()->ViewComponent("face");
     Epetra_MultiVector& dk_face = *rel_perm_->dKdP()->ViewComponent("face");
 
-    std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm_->WRM();
+    std::vector<Teuchos::RCP<WRM> >& WRM = rel_perm_->wrm();
     const Epetra_IntVector& map_c2mb = rel_perm_->map_c2mb();
 
     int c = BoundaryFaceGetCell(f);

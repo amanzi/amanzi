@@ -65,7 +65,7 @@ void Richards_PK::Functional(double T0, double T1,
   functional_max_norm = 0.0;
   functional_max_cell = 0;
 
-  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm_->WRM();  
+  std::vector<Teuchos::RCP<WRM> >& WRM = rel_perm_->wrm();  
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
     AmanziMesh::Entity_ID_List block;
@@ -336,7 +336,7 @@ double Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVect
       *vo_->os() << std::endl;
 
       int mb = map[c];
-      double s = (rel_perm_->WRM())[mb]->saturation(atm_pressure_ - uc[0][c]);
+      double s = (rel_perm_->wrm())[mb]->saturation(atm_pressure_ - uc[0][c]);
       *vo_->os() << "saturation=" << s << " pressure=" << uc[0][c] << std::endl;
     }
   }
@@ -369,7 +369,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 
   int nsat_clipped(0), npre_clipped(0);
 
-  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm_->WRM(); 
+  std::vector<Teuchos::RCP<WRM> >& WRM = rel_perm_->wrm(); 
   const Epetra_IntVector& map = rel_perm_->map_c2mb();
  
   for (int c = 0; c < ncells_owned; c++) {

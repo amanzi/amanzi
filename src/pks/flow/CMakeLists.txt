@@ -79,6 +79,7 @@ set(flow_src_files Flow_PK.cc Flow_IO.cc
                    Richards_SteadyState.cc Richards_LinearOperator.cc
                    RelativePermeability.cc RelativePermeability_IO.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
+                   WRM_evaluator.cc
                    darcy_velocity_evaluator.cc
                    Darcy_PK_Wrapper.cc Richards_PK_Wrapper.cc
                    )
@@ -108,10 +109,11 @@ set(flow_inc_files
   RelativePermeability.hh
   Richards_PK.hh
   TI_Specs.hh
-  WaterRetentionModel.hh
+  WRM.hh
   WRM_BrooksCorey.hh
   WRM_fake.hh
-  WRM_vanGenuchten.hh)  
+  WRM_vanGenuchten.hh
+  WRM_evaluator.hh)  
 
 
 add_install_include_file(${flow_inc_files})

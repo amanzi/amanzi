@@ -55,6 +55,7 @@
 	<Parameter name="relative permeability" type="string" value="upwind: gravity"/>
 	<Parameter name="atmospheric pressure" type="double" value="10.0"/>
 	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
+	<Parameter name="upwind update" type="string" value="every nonlinear iteration"/>
 
 	<ParameterList name="VerboseObject">
 	  <Parameter name="Verbosity Level" type="string" value="high"/>
