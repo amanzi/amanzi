@@ -51,11 +51,11 @@ void Richards_PK::SolveFullySaturatedProblem(
   // this is wierd -- old version has both GMRES wrapping PC and then another
   // solver wrapping that with the matrix as the forward operator?
   // NOTE we do not use the class data here as it would overwrite what was done abovee in InitNextTI() --etc
-  Teuchos::RCP<Operators::Operator> pc_solver = sfactory.Create(ti_specs->solver_name, *linear_operator_list_,
-          op_preconditioner_, op_preconditioner_);
+  Teuchos::RCP<Operators::Operator> pc_solver = sfactory.Create(solver_name, *linear_operator_list_,
+                      op_preconditioner_, op_preconditioner_);
 
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
-     solver = sfactory.Create(solver_name, *linear_operator_list_, op_matrix_, pc_solver);
+      solver = sfactory.Create(solver_name, *linear_operator_list_, op_matrix_, pc_solver);
   
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
 
@@ -146,7 +146,7 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
   // solve non-symmetric problem
   AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create(ti_specs->solver_name_constraint, *linear_operator_list_, op_matrix_, op_preconditioner_);
+      solver = factory.Create(ti_specs->solver_name_constraint, *linear_operator_list_, op_matrix_, op_preconditioner_);
 
   CompositeVector& rhs = *op_preconditioner_->rhs();
   int ierr = solver->ApplyInverse(rhs, utmp);
