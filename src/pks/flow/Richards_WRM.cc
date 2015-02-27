@@ -23,17 +23,17 @@ namespace Flow {
 ****************************************************************** */
 void Richards_PK::DeriveSaturationFromPressure(const Epetra_MultiVector& p, Epetra_MultiVector& s)
 {
-  std::vector<Teuchos::RCP<WRM> >& WRM = rel_perm_->wrm();  
+  std::vector<Teuchos::RCP<WRM> >& wrm = rel_perm_->wrm();  
 
-  for (int mb = 0; mb < WRM.size(); mb++) {
-    std::string region = WRM[mb]->region();
+  for (int mb = 0; mb < wrm.size(); mb++) {
+    std::string region = wrm[mb]->region();
     AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
       double pc = atm_pressure_ - p[0][*i];
-      s[0][*i] = WRM[mb]->saturation(pc);
+      s[0][*i] = wrm[mb]->saturation(pc);
     }
   }
 }
@@ -44,16 +44,16 @@ void Richards_PK::DeriveSaturationFromPressure(const Epetra_MultiVector& p, Epet
 ****************************************************************** */
 void Richards_PK::DerivePressureFromSaturation(const Epetra_MultiVector& s, Epetra_MultiVector& p)
 {
-  std::vector<Teuchos::RCP<WRM> >& WRM = rel_perm_->wrm();  
+  std::vector<Teuchos::RCP<WRM> >& wrm = rel_perm_->wrm();  
 
-  for (int mb = 0; mb < WRM.size(); mb++) {
-    std::string region = WRM[mb]->region();
+  for (int mb = 0; mb < wrm.size(); mb++) {
+    std::string region = wrm[mb]->region();
     AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
-      double pc = WRM[mb]->capillaryPressure(s[0][*i]);
+      double pc = wrm[mb]->capillaryPressure(s[0][*i]);
       p[0][*i] = atm_pressure_ - pc;
     }
   }
@@ -74,17 +74,17 @@ void Richards_PK::ClipHydrostaticPressure(double pmin, Epetra_MultiVector& p)
 ****************************************************************** */
 void Richards_PK::ClipHydrostaticPressure(double pmin, double s0, Epetra_MultiVector& p)
 {
-  std::vector<Teuchos::RCP<WRM> >& WRM = rel_perm_->wrm();  
+  std::vector<Teuchos::RCP<WRM> >& wrm = rel_perm_->wrm();  
 
-  for (int mb = 0; mb < WRM.size(); mb++) {
-    std::string region = WRM[mb]->region();
+  for (int mb = 0; mb < wrm.size(); mb++) {
+    std::string region = wrm[mb]->region();
     AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
       if (p[0][*i] < pmin) {
-        double pc = WRM[mb]->capillaryPressure(s0);
+        double pc = wrm[mb]->capillaryPressure(s0);
         p[0][*i] = atm_pressure_ - pc;
       }
     }

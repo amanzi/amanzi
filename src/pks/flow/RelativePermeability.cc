@@ -58,8 +58,8 @@ void RelativePermeability::Compute(const CompositeVector& pressure)
   Epetra_MultiVector& Krel_cell = *Krel_->ViewComponent("cell");
   Epetra_MultiVector& dKdP_cell = *dKdP_->ViewComponent("cell");
 
-  for (int mb = 0; mb < WRM_.size(); mb++) {
-    std::string region = WRM_[mb]->region();
+  for (int mb = 0; mb < wrm_.size(); mb++) {
+    std::string region = wrm_[mb]->region();
 
     std::vector<AmanziMesh::Entity_ID> block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
@@ -67,8 +67,8 @@ void RelativePermeability::Compute(const CompositeVector& pressure)
     AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
       double pc = atm_pressure - p[0][*i];
-      Krel_cell[0][*i] = WRM_[mb]->k_relative(pc);
-      dKdP_cell[0][*i] = -WRM_[mb]->dKdPc(pc);  // Negative sign indicates that dKdP = -dKdPc.
+      Krel_cell[0][*i] = wrm_[mb]->k_relative(pc);
+      dKdP_cell[0][*i] = -wrm_[mb]->dKdPc(pc);  // Negative sign indicates that dKdP = -dKdPc.
     }
   }
 }
@@ -79,15 +79,15 @@ void RelativePermeability::Compute(const CompositeVector& pressure)
 ****************************************************************** */
 void RelativePermeability::DerivedSdP(const Epetra_MultiVector& p, Epetra_MultiVector& ds)
 {
-  for (int mb = 0; mb < WRM_.size(); mb++) {
-    std::string region = WRM_[mb]->region();
+  for (int mb = 0; mb < wrm_.size(); mb++) {
+    std::string region = wrm_[mb]->region();
     AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
       double pc = atm_pressure - p[0][*i];
-      ds[0][*i] = -WRM_[mb]->dSdPc(pc);  // Negative sign indicates that dSdP = -dSdPc.
+      ds[0][*i] = -wrm_[mb]->dSdPc(pc);  // Negative sign indicates that dSdP = -dSdPc.
     }
   }
 }
@@ -98,15 +98,15 @@ void RelativePermeability::DerivedSdP(const Epetra_MultiVector& p, Epetra_MultiV
 ****************************************************************** */
 void RelativePermeability::DerivedKdP(const Epetra_MultiVector& p, Epetra_MultiVector& dk)
 {
-  for (int mb = 0; mb < WRM_.size(); mb++) {
-    std::string region = WRM_[mb]->region();
+  for (int mb = 0; mb < wrm_.size(); mb++) {
+    std::string region = wrm_[mb]->region();
     AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
       double pc = atm_pressure - p[0][*i];
-      dk[0][*i] = -WRM_[mb]->dKdPc(pc);  // Negative sign indicates that dKdP = -dKdPc.
+      dk[0][*i] = -wrm_[mb]->dKdPc(pc);  // Negative sign indicates that dKdP = -dKdPc.
     }
   }
 }
@@ -151,8 +151,8 @@ void RelativePermeability::PopulateMapC2MB_()
   Epetra_IntVector& map = *map_c2mb_;
   map.PutValue(-1);
 
-  for (int mb = 0; mb < WRM_.size(); mb++) {
-    std::string region = WRM_[mb]->region();
+  for (int mb = 0; mb < wrm_.size(); mb++) {
+    std::string region = wrm_[mb]->region();
     AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 

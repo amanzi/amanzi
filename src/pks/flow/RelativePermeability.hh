@@ -44,14 +44,14 @@ class RelativePermeability {
   void DerivedSdP(const Epetra_MultiVector& p, Epetra_MultiVector& ds);
   void DerivedKdP(const Epetra_MultiVector& p, Epetra_MultiVector& dk);
 
-  double Value(int c, double pc) const { return WRM_[(*map_c2mb_)[c]]->k_relative(atm_pressure - pc); } 
-  double Derivative(int c, double pc) const { return WRM_[(*map_c2mb_)[c]]->dKdPc(atm_pressure - pc); } 
+  double Value(int c, double pc) const { return wrm_[(*map_c2mb_)[c]]->k_relative(atm_pressure - pc); } 
+  double Derivative(int c, double pc) const { return wrm_[(*map_c2mb_)[c]]->dKdPc(atm_pressure - pc); } 
 
   double Value(int c, double pc, const std::string name) const { 
     if (name == "k_relative"){
-      return WRM_[(*map_c2mb_)[c]]->k_relative(atm_pressure - pc); 
+      return wrm_[(*map_c2mb_)[c]]->k_relative(atm_pressure - pc); 
     } else if (name == "dkdpc"){
-      return WRM_[(*map_c2mb_)[c]]->dKdPc(atm_pressure - pc); 
+      return wrm_[(*map_c2mb_)[c]]->dKdPc(atm_pressure - pc); 
     }
     return 0.0;
   } 
@@ -65,7 +65,7 @@ class RelativePermeability {
   void PlotWRMcurves(Teuchos::ParameterList& plist);
 
   // access methods
-  std::vector<Teuchos::RCP<WRM> >& wrm() { return WRM_; }
+  std::vector<Teuchos::RCP<WRM> >& wrm() { return wrm_; }
 
   Teuchos::RCP<CompositeVector> dKdP() { return dKdP_; }
   Teuchos::RCP<CompositeVector> Krel() { return Krel_; }
@@ -81,7 +81,7 @@ class RelativePermeability {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<ParallelCommunication> pp_;
 
-  std::vector<Teuchos::RCP<WRM> > WRM_;
+  std::vector<Teuchos::RCP<WRM> > wrm_;
   double atm_pressure;
 
   int method_;  // method for calculating relative permeability

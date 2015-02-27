@@ -38,7 +38,7 @@ void RelativePermeability::ProcessParameterList_(Teuchos::ParameterList& plist)
     if (plist.isSublist(plist.name(i))) nblocks++;
   }
 
-  WRM_.resize(nblocks);
+  wrm_.resize(nblocks);
 
   int iblock = 0;
   for (Teuchos::ParameterList::ConstIterator i = plist.begin(); i != plist.end(); i++) {
@@ -64,7 +64,7 @@ void RelativePermeability::ProcessParameterList_(Teuchos::ParameterList& plist)
         VerifyWRMparameters(m, alpha, sr, pc0);
         VerifyStringMualemBurdine(krel_function);
 
-        WRM_[iblock] = Teuchos::rcp(new WRM_vanGenuchten(region, m, l, alpha, sr, krel_function, pc0));
+        wrm_[iblock] = Teuchos::rcp(new WRM_vanGenuchten(region, m, l, alpha, sr, krel_function, pc0));
 
       } else if (wrm_list.get<std::string>("water retention model") == "Brooks Corey") {
         double lambda = wrm_list.get<double>("Brooks Corey lambda", FLOW_WRM_EXCEPTION);
@@ -77,10 +77,10 @@ void RelativePermeability::ProcessParameterList_(Teuchos::ParameterList& plist)
         VerifyWRMparameters(lambda, alpha, sr, pc0);
         VerifyStringMualemBurdine(krel_function);
 
-        WRM_[iblock] = Teuchos::rcp(new WRM_BrooksCorey(region, lambda, l, alpha, sr, krel_function, pc0));
+        wrm_[iblock] = Teuchos::rcp(new WRM_BrooksCorey(region, lambda, l, alpha, sr, krel_function, pc0));
 
       } else if (wrm_list.get<std::string>("water retention model") == "fake") {
-        WRM_[iblock] = Teuchos::rcp(new WRM_fake(region));
+        wrm_[iblock] = Teuchos::rcp(new WRM_fake(region));
 
       } else {
         msg << "Flow PK: unknown water retention model.";
@@ -174,13 +174,13 @@ void RelativePermeability::PlotWRMcurves(Teuchos::ParameterList& plist)
           int ndata = out_list.get<int>("number of points", 100);
           ndata = std::max(ndata, 1);
 
-          double sr = WRM_[mb]->residualSaturation();
+          double sr = wrm_[mb]->residualSaturation();
           double ds = (1.0 - sr) / ndata;
 
           for (int i = 0; i < ndata; i++) {
             double sat = sr + ds * (i + 0.5);
-            double pc = WRM_[mb]->capillaryPressure(sat);
-            double krel = WRM_[mb]->k_relative(pc);
+            double pc = wrm_[mb]->capillaryPressure(sat);
+            double krel = wrm_[mb]->k_relative(pc);
             ofile << sat << " " << krel << " " << pc << std::endl;
           }
           ofile << std::endl;

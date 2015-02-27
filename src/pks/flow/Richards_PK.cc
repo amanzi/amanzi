@@ -29,13 +29,14 @@
 #include "mfd3d_diffusion.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "Point.hh"
+#include "primary_variable_field_evaluator.hh"
 #include "UpwindFactory.hh"
 #include "XMLParameterListWriter.hh"
 
 #include "darcy_velocity_evaluator.hh"
 #include "Flow_BC_Factory.hh"
-#include "primary_variable_field_evaluator.hh"
 #include "Richards_PK.hh"
+#include "WRM_evaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -148,6 +149,19 @@ void Richards_PK::Setup()
     Teuchos::ParameterList elist;
     Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
     S_->SetFieldEvaluator("darcy_velocity", eval);
+  }
+
+  // testing
+  if (!S_->HasField("saturation_liquid")) {
+    S_->RequireField("saturation_liquid", "saturation_liquid")->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+    Teuchos::ParameterList elist;
+    elist.sublist("VerboseObject").set<std::string>("Verbosity Level", "extreme");
+    Teuchos::RCP<Teuchos::ParameterList>
+        wrm_list = Teuchos::sublist(rp_list_, "water retention models", true);
+    Teuchos::RCP<WRMEvaluator> eval = Teuchos::rcp(new WRMEvaluator(elist, wrm_list, mesh_));
+    S_->SetFieldEvaluator("saturation_liquid", eval);
   }
 }
 
@@ -784,6 +798,7 @@ void Richards_PK::CommitState(double dt, const Teuchos::Ptr<State>& S)
   if (solution->HasComponent("face")) {
     *pressure.ViewComponent("face") = *solution->ViewComponent("face");
   }
+  pressure_eval->SetFieldAsChanged(S.ptr());
 
   // ws -> ws_prev
   Epetra_MultiVector& ws = *S->GetFieldData("water_saturation", passwd_)->ViewComponent("cell", false);
@@ -793,6 +808,7 @@ void Richards_PK::CommitState(double dt, const Teuchos::Ptr<State>& S)
   // calculate new water saturation
   const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell", false);
   DeriveSaturationFromPressure(p, ws);
+  S->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S.ptr(), "saturation_liquid");
 
   // calculate Darcy flux as diffusive part + advective part.
   CompositeVector& darcy_flux = *S->GetFieldData("darcy_flux", passwd_);
