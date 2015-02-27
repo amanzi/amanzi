@@ -59,10 +59,10 @@ register_evaluator_with_factory(
   LISTNAME   PKS_FLOW_REGISTRATIONS
   )
 
-register_evaluator_with_factory(
-  HEADERFILE WRM_evaluator_reg.hh
-  LISTNAME   PKS_FLOW_REGISTRATIONS
-  )
+#register_evaluator_with_factory(
+#  HEADERFILE WRM_evaluator_reg.hh
+#  LISTNAME   PKS_FLOW_REGISTRATIONS
+#  )
 
 generate_evaluators_registration_header( 
   HEADERFILE pks_flow_registration.hh   
