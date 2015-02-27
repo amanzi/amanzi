@@ -33,7 +33,7 @@ Chemistry_State::Chemistry_State(Teuchos::ParameterList& plist,
     num_aux_data_(-1) {
 
   mesh_ = S_->GetMesh();
-//  SetupSoluteNames_();
+  // SetupSoluteNames_();
   SetupMineralNames_();
   SetupSorptionSiteNames_();
 

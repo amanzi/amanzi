@@ -131,7 +131,6 @@ SUITE(GeochemistryTestsChemistryPK) {
     state_->Setup();
     chemistry_state_->Initialize();
     state_->InitializeFields();
-
   }
 
   ChemistryPKTest::~ChemistryPKTest() {

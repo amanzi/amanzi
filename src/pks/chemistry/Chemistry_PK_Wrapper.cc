@@ -23,8 +23,6 @@ Chemistry_PK_Wrapper::Chemistry_PK_Wrapper(Teuchos::ParameterList& pk_tree,
     soln_(soln),
     glist_(global_list)
 {
-
-
   std::string pk_name = pk_tree.name();
 
   const char* result = pk_name.data();
@@ -54,11 +52,9 @@ Chemistry_PK_Wrapper::Chemistry_PK_Wrapper(Teuchos::ParameterList& pk_tree,
 
   //CS->Initialize();
  
-// construct
+  // construct
   pk_ = Teuchos::rcp(new Chemistry_PK(chemistry_parameter_list, CS));
-
 }
 
-
-}//namespace
-}//namespace
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
