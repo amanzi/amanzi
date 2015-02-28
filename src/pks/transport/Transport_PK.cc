@@ -114,6 +114,7 @@ void Transport_PK::Setup()
   if (!S_->HasField("prev_water_saturation")) {
     S_->RequireField("prev_water_saturation", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->GetField("prev_water_saturation", passwd_)->set_io_vis(false);
   }
 
   // require state variables when Transport is on
