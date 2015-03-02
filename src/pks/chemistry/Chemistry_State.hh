@@ -66,7 +66,7 @@ class Chemistry_State {
   }
 
   Teuchos::RCP<const Epetra_Vector> water_saturation() const {
-    return Teuchos::rcpFromRef(*(*S_->GetFieldData("water_saturation")->ViewComponent("cell", ghosted_))(0));
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("saturation_liquid")->ViewComponent("cell", ghosted_))(0));
   }
 
   Teuchos::RCP<const Epetra_Vector> water_density() const {

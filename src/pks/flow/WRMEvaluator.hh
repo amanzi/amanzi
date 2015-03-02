@@ -18,6 +18,7 @@
 #include "factory.hh"
 #include "secondary_variables_field_evaluator.hh"
 #include "WRM.hh"
+#include "WRMPartition.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -26,9 +27,7 @@ class WRMEvaluator : public SecondaryVariablesFieldEvaluator {
  public:
   // constructor format for all derived classes
   explicit
-  WRMEvaluator(Teuchos::ParameterList& plist,
-               Teuchos::RCP<Teuchos::ParameterList> wrm_list,
-               Teuchos::RCP<const AmanziMesh::Mesh> mesh);
+  WRMEvaluator(Teuchos::ParameterList& plist, Teuchos::RCP<WRMPartition> wrm);
   WRMEvaluator(const WRMEvaluator& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
@@ -44,14 +43,11 @@ class WRMEvaluator : public SecondaryVariablesFieldEvaluator {
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  std::vector<Teuchos::RCP<WRM> > wrm_;
-  Teuchos::RCP<Epetra_IntVector> cell2region_;
+  Teuchos::RCP<WRMPartition> wrm_;
   Key pressure_key_;
 
  private:
-  void CreateWRM_(Teuchos::ParameterList& plist);
-  void CreateCell2Region_();
-  static Utils::RegisteredFactory<FieldEvaluator,WRMEvaluator> factory_;
+  static Utils::RegisteredFactory<FieldEvaluator, WRMEvaluator> factory_;
 };
 
 }  // namespace Flow

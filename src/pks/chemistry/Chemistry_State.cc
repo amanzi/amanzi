@@ -325,8 +325,8 @@ void Chemistry_State::RequireData_() {
     S_->RequireField("porosity", name_)->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
-  if (!S_->HasField("water_saturation")) {
-    S_->RequireField("water_saturation", name_)->SetMesh(mesh_)->SetGhosted(false)
+  if (!S_->HasField("saturation_liquid")) {
+    S_->RequireField("saturation_liquid", name_)->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
   

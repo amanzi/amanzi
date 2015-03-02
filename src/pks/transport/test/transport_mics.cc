@@ -9,14 +9,17 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include <iostream>
 #include <vector>
 
+// TPLs
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "UnitTest++.h"
 
+// Amanzi
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
 #include "State.hh"
+
 #include "Transport_PK.hh"
 
 
@@ -61,7 +64,8 @@ TEST(CONSTRUCTOR) {
   component_names.push_back("Component 0");
   component_names.push_back("Component 1");
 
-  RCP<State> S = rcp(new State());
+  Teuchos::ParameterList state_list = plist->sublist("State");
+  RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
   S->set_time(0.0);
   S->set_intermediate_time(0.0);

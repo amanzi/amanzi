@@ -1,28 +1,31 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-ATS
+/*
+  This is the MPC component of the Amanzi code. 
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Interface for the Coordinator.  Coordinator is basically just a class to hold
-the cycle driver, which runs the overall, top level timestep loop.  It
-instantiates states, ensures they are initialized, and runs the timestep loop
-including Vis and restart/checkpoint dumps.  It contains one and only one PK
--- most likely this PK is an MPC of some type -- to do the actual work.
-------------------------------------------------------------------------- */
+  Authors: Ethan Coon
+           Daniil Svyatskiy
 
-#ifndef AMANZI_COORDINATOR_HH_
-#define AMANZI_COORDINATOR_HH_
+  Interface for the Coordinator.  Coordinator is basically just a class to hold
+  the cycle driver, which runs the overall, top level timestep loop.  It
+  instantiates states, ensures they are initialized, and runs the timestep loop
+  including Vis and restart/checkpoint dumps.  It contains one and only one PK
+  -- most likely this PK is an MPC of some type -- to do the actual work.
+*/
 
+#ifndef AMANZI_CYCLE_DRIVER_HH_
+#define AMANZI_CYCLE_DRIVER_HH_
+
+#include "Epetra_MpiComm.h"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_MpiComm.h"
-#include "TI_Specs.hh"
+
 #include "ObservationData.hh"
 #include "Unstructured_observations.hh"
-
 #include "VerboseObject.hh"
 
 namespace Amanzi {
@@ -36,13 +39,11 @@ class PK;
 class UnstructuredObservations;
 
 class CycleDriver {
-
-public:
+ public:
   CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist_,
               Teuchos::RCP<State>& S,
               Epetra_MpiComm* comm,
               Amanzi::ObservationData& output_observations);
-
 
   // PK methods
   void setup();
@@ -61,7 +62,7 @@ public:
   // one stop shopping
   void go();
 
-private:
+ private:
   void coordinator_init_();
   void read_parameter_list_();
 
@@ -93,10 +94,6 @@ private:
   Amanzi::ObservationData&  output_observations_;
   Teuchos::RCP<Amanzi::Unstructured_observations> observations_;
 
-  // time interval
-  std::vector<Amanzi::Flow::TI_Specs> ti_specs_;
-
-
   // vis and checkpointing
   std::vector<Teuchos::RCP<Visualization> > visualization_;
   std::vector<Teuchos::RCP<Visualization> > failed_visualization_;
@@ -117,6 +114,6 @@ private:
   Teuchos::RCP<VerboseObject> vo_;
 };
 
-} // close namespace Amanzi
+}  // namespace Amanzi
 
 #endif

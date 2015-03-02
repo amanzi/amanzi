@@ -76,7 +76,8 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     std::vector<std::string> component_names;
     component_names.push_back("Component 0");
 
-    RCP<State> S = rcp(new State());
+    Teuchos::ParameterList state_list = plist->sublist("State");
+    RCP<State> S = rcp(new State(state_list));
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
     S->set_time(0.0);
     S->set_intermediate_time(0.0);
@@ -84,6 +85,8 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     Transport_PK TPK(plist, S, "Transport", component_names);
     TPK.Setup();
     TPK.CreateDefaultState(mesh, 1);
+    S->InitializeFields();
+    S->InitializeEvaluators();
 
     /* modify the default state for the problem at hand */
     std::string passwd("state"); 
@@ -106,7 +109,6 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
       (*tcc)[0][c] = f_cubic(xc, 0.0);
     }
 
-    S->GetFieldData("porosity", passwd)->PutScalar(1.0);
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
@@ -187,7 +189,8 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
     std::vector<std::string> component_names;
     component_names.push_back("Component 0");
 
-    RCP<State> S = rcp(new State());
+    Teuchos::ParameterList state_list = plist->sublist("State");
+    RCP<State> S = rcp(new State(state_list));
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
     S->set_time(0.0);
     S->set_intermediate_time(0.0);
@@ -195,6 +198,8 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
     Transport_PK TPK(plist, S, "Transport", component_names);
     TPK.Setup();
     TPK.CreateDefaultState(mesh, 1);
+    S->InitializeFields();
+    S->InitializeEvaluators();
 
     /* modify the default state for the problem at hand */
     std::string passwd("state"); 
@@ -217,7 +222,6 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
       (*tcc)[0][c] = f_cubic(xc, 0.0);
     }
 
-    S->GetFieldData("porosity", passwd)->PutScalar(1.0);
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
@@ -304,12 +308,15 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     std::vector<std::string> component_names;
     component_names.push_back("Component 0");
 
-    RCP<State> S = rcp(new State());
+    Teuchos::ParameterList state_list = plist->sublist("State");
+    RCP<State> S = rcp(new State(state_list));
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
     Transport_PK TPK(plist, S, "Transport", component_names);
     TPK.Setup();
     TPK.CreateDefaultState(mesh, 1);
+    S->InitializeFields();
+    S->InitializeEvaluators();
 
     /* modify the default state for the problem at hand */
     std::string passwd("state"); 
@@ -332,7 +339,6 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
       (*tcc)[0][c] = f_cubic(xc, 0.0);
     }
 
-    S->GetFieldData("porosity", passwd)->PutScalar(1.0);
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
@@ -429,7 +435,8 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
     std::vector<std::string> component_names;
     component_names.push_back("Component 0");
 
-    RCP<State> S = rcp(new State());
+    Teuchos::ParameterList state_list = plist->sublist("State");
+    RCP<State> S = rcp(new State(state_list));
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
     S->set_time(0.0);
     S->set_intermediate_time(0.0);
@@ -437,6 +444,8 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
     Transport_PK TPK(plist, S, "Transport", component_names);
     TPK.Setup();
     TPK.CreateDefaultState(mesh, 1);
+    S->InitializeFields();
+    S->InitializeEvaluators();
 
     /* modify the default state for the problem at hand */
     std::string passwd("state"); 
@@ -459,7 +468,6 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
       (*tcc)[0][c] = f_cubic_unit(xc, 0.0);
     }
 
-    S->GetFieldData("porosity", passwd)->PutScalar(1.0);
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
@@ -549,7 +557,8 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
     std::vector<std::string> component_names;
     component_names.push_back("Component 0");
 
-    RCP<State> S = rcp(new State());
+    Teuchos::ParameterList state_list = plist->sublist("State");
+    RCP<State> S = rcp(new State(state_list));
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
     S->set_time(0.0);
     S->set_intermediate_time(0.0);
@@ -557,6 +566,8 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
     Transport_PK TPK(plist, S, "Transport", component_names);
     TPK.Setup();
     TPK.CreateDefaultState(mesh, 1);
+    S->InitializeFields();
+    S->InitializeEvaluators();
 
     /* modify the default state for the problem at hand */
     std::string passwd("state"); 
@@ -579,7 +590,6 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
       (*tcc)[0][c] = f_cubic_unit(xc, 0.0);
     }
 
-    S->GetFieldData("porosity", passwd)->PutScalar(1.0);
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */

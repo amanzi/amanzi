@@ -21,21 +21,20 @@
 #include "Teuchos_RCP.hpp"
 
 #include "BDFFnBase.hh"
-#include "CompositeVectorSpace.hh"
-#include "TI_Specs.hh"
-#include "VerboseObject.hh"
-
 #include "checkpoint.hh"
+#include "CompositeVectorSpace.hh"
+#include "independent_variable_field_evaluator_fromfunction.hh"
 #include "PK.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "tensor.hh"
+#include "VerboseObject.hh"
 
-#include "FlowDefs.hh"
-#include "FlowTypeDefs.hh"
-#include "FlowBoundaryFunction.hh"
-#include "FlowDomainFunction.hh"
 #include "Flow_BC_Factory.hh"
 #include "Flow_SourceFactory.hh"
+#include "FlowBoundaryFunction.hh"
+#include "FlowDefs.hh"
+#include "FlowDomainFunction.hh"
+#include "FlowTypeDefs.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -50,9 +49,6 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   std::string name() { return "flow"; }
 
   // main flow methods
-  virtual void InitPicard(double T0) = 0;
-  virtual void InitSteadyState(double T0, double dT0) = 0;
-  virtual void InitTransient(double T0, double dT0) = 0;
   virtual void InitTimeInterval() = 0;
 
   virtual void Setup() = 0;
@@ -62,9 +58,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   virtual void set_dt(double dt) { dT = dt; }
   
   virtual bool Advance(double dT, double &dT_actual) = 0;
-  virtual int AdvanceToSteadyState(double T0, double dT0) = 0;
   virtual void InitializeAuxiliaryData() = 0;
-  virtual void InitializeSteadySaturated() = 0;
 
   void UpdateAuxilliaryData();  // auxilliary data management
   void InitializeFields();
@@ -91,15 +85,9 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
 
   // io members
   void ProcessParameterList(Teuchos::ParameterList& list);
-  void ProcessSublistTimeIntegration(Teuchos::ParameterList& list, const std::string name, TI_Specs& ti_specs);
   void ProcessStringSourceDistribution(const std::string name, int* method);
   void ProcessStringTimeIntegration(const std::string name, int* method);
   void ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control);
-  void ProcessSublistTimeInterval(Teuchos::ParameterList& ti_list,  TI_Specs& ti_specs);
-
-
-  std::string FindStringLinearSolver(const Teuchos::ParameterList& plist);
-  std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
 
   void OutputTimeHistory(const Teuchos::ParameterList& plist, std::vector<dt_tuple>& dT_history);
   void WriteGMVfile(Teuchos::RCP<State> S) const;
@@ -135,7 +123,6 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   double rho() { return rho_; }
   double mu() { return mu_; }
   const AmanziGeometry::Point& gravity() { return gravity_; }
-  TI_Specs& ti_specs_sss() { return ti_specs_sss_; }
 
  public:
   int ncells_owned, ncells_wghost;
@@ -150,6 +137,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
  public:
   Teuchos::RCP<const Teuchos::ParameterList> linear_operator_list_;
   Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
+  Teuchos::RCP<Teuchos::ParameterList> ti_list_;
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -184,19 +172,10 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   int src_sink_distribution; 
   mutable double mass_bc, seepage_mass_;
 
-  // time integration phases
-  Teuchos::ParameterList ti_list_, ti_sss_list_, ti_trs_list_, ti_igs_list_;
-  TI_Specs ti_specs_generic_;
-  TI_Specs ti_specs_igs_;
-  TI_Specs ti_specs_sss_;
-  TI_Specs ti_specs_trs_;
-  TI_Specs* ti_specs;
-
-  bool new_mpc_driver;
-
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval_;
+  Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> porosity_eval_;
 
  protected:
   VerboseObject* vo_;

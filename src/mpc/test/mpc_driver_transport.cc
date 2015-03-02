@@ -48,23 +48,18 @@ using namespace Amanzi::AmanziGeometry;
   Teuchos::RCP<Mesh> mesh = meshfactory("test/mpc_driver_transport_mesh_10x10.exo", gm);
   ASSERT(!mesh.is_null());
 
-  bool mpc_new = true;
-  
   // create dummy observation data object
   Amanzi::ObservationData obs_data;
 
   Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(plist));
 
-  if (mpc_new) {
-    if (plist.isSublist("State")) {
-      // Create the state.    
-      Teuchos::ParameterList state_plist = plist.sublist("State");
-      Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
-      S->RegisterMesh("domain", mesh);      
+  if (plist.isSublist("State")) {
+    Teuchos::ParameterList state_plist = plist.sublist("State");
+    Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
+    S->RegisterMesh("domain", mesh);      
 
-      CycleDriver cycle_driver(glist, S, &comm, obs_data);
-      cycle_driver.go();
-    }
+    CycleDriver cycle_driver(glist, S, &comm, obs_data);
+    cycle_driver.go();
   }
 }
 

@@ -23,7 +23,6 @@
 #include "OperatorAccumulation.hh"
 
 #include "Flow_PK.hh"
-#include "TI_Specs.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -47,15 +46,8 @@ class Darcy_PK : public Flow_PK {
   void CalculateDiagnostics(const Teuchos::Ptr<State>& S);
 
   // main flow methods
-  void InitSteadyState(double T0, double dT0);
-  void InitTransient(double T0, double dT0);
-  void InitPicard(double T0) {};  // not used yet.
-  void InitNextTI(double T0, double dT0, TI_Specs& ti_specs);
   void InitTimeInterval();
-
-  int AdvanceToSteadyState(double T0, double dT0);
   void InitializeAuxiliaryData();
-  void InitializeSteadySaturated();
 
   // methods required for time integration
   void Functional(const double Told, double Tnew, 
@@ -96,7 +88,12 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<Operators::BCs> op_bc_;
 
   int error_control_;
-  double dT_desirable_;
+  double dT_desirable_, dTmax_, dTfactor_;
+  std::vector<std::pair<double, double> > dT_history_;  // statistics
+
+  std::string preconditioner_name_, solver_name_;
+  bool initialize_with_darcy_;
+  int num_itrs_;
 
   Teuchos::RCP<CompositeVector> solution;  // next pressure state
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure

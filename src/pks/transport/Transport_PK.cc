@@ -52,6 +52,8 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners");
   linear_solver_list_ = Teuchos::sublist(glist, "Solvers");
   nonlinear_solver_list_ = Teuchos::sublist(glist, "Nonlinear solvers");
+
+  vo_ = NULL;
 }
 
 
@@ -80,6 +82,8 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   std::vector<std::string> component_names;
   chem_engine_->GetPrimarySpeciesNames(component_names);
   component_names_ = component_names;
+
+  vo_ = NULL;
 }
 #endif
 
@@ -99,22 +103,18 @@ void Transport_PK::Setup()
     S_->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, dim);
   }
-  if (!S_->HasField("porosity")) {
-    S_->RequireField("porosity", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
   if (!S_->HasField("darcy_flux")) {
     S_->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
   }
-  if (!S_->HasField("water_saturation")) {
-    S_->RequireField("water_saturation", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S_->HasField("saturation_liquid")) {
+    S_->RequireField("saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
-  if (!S_->HasField("prev_water_saturation")) {
-    S_->RequireField("prev_water_saturation", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S_->HasField("prev_saturation_liquid")) {
+    S_->RequireField("prev_saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->GetField("prev_water_saturation", passwd_)->set_io_vis(false);
+    S_->GetField("prev_saturation_liquid", passwd_)->set_io_vis(false);
   }
 
   // require state variables when Transport is on
@@ -128,6 +128,13 @@ void Transport_PK::Setup()
     S_->RequireField("total_component_concentration", passwd_, subfield_names)->SetMesh(mesh_)
       ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, ncomponents);
   }
+
+  // testing evaluators
+  if (!S_->HasField("porosity")) {
+    S_->RequireField("porosity", "porosity")->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireFieldEvaluator("porosity");
+  }
 }
 
 
@@ -140,10 +147,10 @@ Transport_PK::~Transport_PK()
   if (vo_ != NULL) {
     delete vo_;
   }
-  for (int i=0; i<bcs.size(); i++) {
+  for (int i = 0; i < bcs.size(); i++) {
     if (bcs[i] != NULL) delete bcs[i]; 
   }
-  for (int i=0; i<srcs.size(); i++) {
+  for (int i = 0; i < srcs.size(); i++) {
     if (srcs[i] != NULL) delete srcs[i]; 
   }
 }
@@ -195,10 +202,10 @@ void Transport_PK::Initialize()
   cv = S_->GetFieldData("darcy_flux");
   darcy_flux = cv->ViewComponent("face", true);
 
-  cv = S_->GetFieldData("water_saturation");
+  cv = S_->GetFieldData("saturation_liquid");
   ws = cv->ViewComponent("cell", false);
 
-  cv = S_->GetFieldData("prev_water_saturation");
+  cv = S_->GetFieldData("prev_saturation_liquid");
   ws_prev = cv->ViewComponent("cell", false);
 
   cv = S_->GetFieldData("porosity");

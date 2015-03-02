@@ -16,6 +16,10 @@
 #ifndef AMANZI_FAKE_MODEL_HH_
 #define AMANZI_FAKE_MODEL_HH_
 
+#include "Teuchos_ParameterList.hpp"
+
+#include "factory.hh"
+
 #include "WRM.hh"
 
 namespace Amanzi {
@@ -23,6 +27,7 @@ namespace Flow {
 
 class WRM_fake : public WRM {
  public:
+  explicit WRM_fake(Teuchos::ParameterList& plist);
   explicit WRM_fake(std::string region);
   ~WRM_fake() {};
   
@@ -35,6 +40,8 @@ class WRM_fake : public WRM {
 
  private:
   double m, n, alpha;
+
+  static Utils::RegisteredFactory<WRM, WRM_fake> factory_;
 };
 
 }  // namespace Flow

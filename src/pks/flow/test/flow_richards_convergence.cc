@@ -14,19 +14,19 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
+#include "Epetra_MpiComm.h"
+#include "Epetra_SerialComm.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
-
-#include "Epetra_SerialComm.h"
-#include "Epetra_MpiComm.h"
+#include "UnitTest++.h"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "Richards_PK.hh"
+
+#include "Richards_SteadyState.hh"
 
 
 using namespace Amanzi;
@@ -154,11 +154,16 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
 
     /* create Richards process kernel */
     RPK->Initialize();
-    RPK->ti_specs_sss().T1 = 1e+4;
-    RPK->ti_specs_sss().max_itrs = 1000;
+    RPK->InitTimeInterval();
 
-    RPK->InitSteadyState(0.0, 0.001);
-    RPK->AdvanceToSteadyState(0.0, 0.001);
+    // solve the problem
+    TI_Specs ti_specs;
+    ti_specs.T0 = 0.0;
+    ti_specs.dT0 = 1.0;
+    ti_specs.T1 = 1.0e+4;
+    ti_specs.max_itrs = 1000;
+
+    AdvanceToSteadyState(*RPK, ti_specs, S->GetFieldData("pressure", "flow"));
     RPK->CommitState(0.0, S.ptr());
 
     double pressure_err, flux_err, div_err;  // error checks

@@ -12,6 +12,7 @@
 #include <cmath>
 #include <string>
 
+#include "FlowDefs.hh"
 #include "WRM_BrooksCorey.hh"
 
 namespace Amanzi {
@@ -21,12 +22,47 @@ namespace Flow {
 * Setup fundamental parameters for this model.
 * Default value of the regularization interval is pc0 = 0.                                           
 ****************************************************************** */
+WRM_BrooksCorey::WRM_BrooksCorey(Teuchos::ParameterList& plist)
+{
+  double lambda = plist.get<double>("Brooks Corey lambda", FLOW_WRM_EXCEPTION);
+  double alpha = plist.get<double>("Brooks Corey alpha", FLOW_WRM_EXCEPTION);
+  double l = plist.get<double>("Brooks Corey l", FLOW_WRM_BROOKS_COREY_L);
+  double sr = plist.get<double>("residual saturation", FLOW_WRM_EXCEPTION);
+  double pc0 = plist.get<double>("regularization interval", FLOW_WRM_REGULARIZATION_INTERVAL);
+  std::string krel_function = plist.get<std::string>("relative permeability model", "Mualem");
+
+  set_region("dummy");
+  Init_(lambda, l, alpha, sr, krel_function, pc0);
+}
+
+
+/* ******************************************************************
+* Setup fundamental parameters for this model.
+* Default value of the regularization interval is pc0 = 0.                                           
+****************************************************************** */
 WRM_BrooksCorey::WRM_BrooksCorey(
-    std::string region, double lambda, double l, double alpha, 
-    double sr, std::string krel_function, double pc0)
-    : lambda_(lambda), l_(l), alpha_(alpha), sr_(sr), pc0_(pc0)
+    std::string& region, double lambda, double l, double alpha, 
+    double sr, std::string& krel_function, double pc0)
 {
   set_region(region);
+  Init_(lambda, l, alpha, sr, krel_function, pc0);
+}
+
+
+/* ******************************************************************
+* Setup fundamental parameters for this model.
+* Default value of the regularization interval is pc0 = 0.                                           
+****************************************************************** */
+void WRM_BrooksCorey::Init_(
+    double lambda, double l, double alpha, 
+    double sr, std::string& krel_function, double pc0)
+{
+  lambda_ = lambda;
+  l_ = l; 
+  alpha_ = alpha;
+  sr_ = sr;
+  pc0_ = pc0;
+
   if (krel_function == "Mualem") {
     factor_ = -2.0 - (l_ + 2.0) * lambda_;
   } else if (krel_function == "Burdine") {

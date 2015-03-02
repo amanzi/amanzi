@@ -4,7 +4,6 @@
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
-
 #include "Teuchos_ParameterList.hpp"
 #include "XMLParameterListWriter.hh"
 
@@ -16,7 +15,6 @@
 #include "InputAnalysis.hh"
 #include "MeshAudit.hh"
 #include "MeshFactory.hh"
-#include "MPC.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
 #include "State.hh"
@@ -29,6 +27,7 @@
 #include "pks_chemistry_registration.hh"
 #include "pks_flow_registration.hh"
 #include "pks_transport_registration.hh"
+#include "wrm_flow_registration.hh"
 
 
 Amanzi::Simulator::ReturnType
@@ -354,24 +353,13 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   analysis.OutputBCs();
 
   Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(new_list));
-  bool new_mpc_driver = new_list.get<bool>("new mpc driver", false);
+  if (new_list.isSublist("State")) {
+    Teuchos::ParameterList state_plist = new_list.sublist("State");
+    Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
+    S->RegisterMesh("domain", mesh);      
 
-  if (new_mpc_driver) {
-    if (new_list.isSublist("State")) {
-      // Create the state.    
-      Teuchos::ParameterList state_plist = new_list.sublist("State");
-      Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
-      S->RegisterMesh("domain", mesh);      
-      // -------------- NEW MULTI-PROCESS COORDINATOR ----------------------------
-
-      Amanzi::CycleDriver cycle_driver(glist, S, comm, output_observations);
-      cycle_driver.go();
-    }
-  }
-  else {
-    // -------------- OLD MULTI-PROCESS COORDINATOR --------------------------
-    Amanzi::MPC mpc(glist, mesh, comm, output_observations);
-    mpc.cycle_driver();
+    Amanzi::CycleDriver cycle_driver(glist, S, comm, output_observations);
+    cycle_driver.go();
   }
   
   // Clean up

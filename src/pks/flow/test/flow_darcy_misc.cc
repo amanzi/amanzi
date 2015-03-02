@@ -216,8 +216,8 @@ TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
     // DPK->ResetParameterList(dp_list);
  
     DPK->Initialize();
-    DPK->InitSteadyState(0.0, 1.0);
-    DPK->AdvanceToSteadyState(0.0, 1.0);
+    DPK->InitTimeInterval();
+    DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
     DPK->CommitState(0.0, S.ptr());
 
     // calculate errors
@@ -254,8 +254,8 @@ TEST_FIXTURE(DarcyProblem, DirichletNeumann) {
     // DPK->ResetParameterList(dp_list);
 
     DPK->Initialize();
-    DPK->InitSteadyState(0.0, 1.0);
-    DPK->AdvanceToSteadyState(0.0, 1.0);
+    DPK->InitTimeInterval();
+    DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
     DPK->CommitState(0.0, S.ptr());
 
     // calculate errors
@@ -292,8 +292,8 @@ TEST_FIXTURE(DarcyProblem, StaticHeadDirichlet) {
     // DPK->ResetParameterList(dp_list);
 
     DPK->Initialize();
-    DPK->InitSteadyState(0.0, 1.0);
-    DPK->AdvanceToSteadyState(0.0, 1.0);
+    DPK->InitTimeInterval();
+    DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
     DPK->CommitState(0.0, S.ptr());
 
     // calculate errors
@@ -332,8 +332,8 @@ TEST_FIXTURE(DarcyProblem, DDprisms) {
     // DPK->ResetParameterList(dp_list);
 
     DPK->Initialize();
-    DPK->InitSteadyState(0.0, 1.0);
-    DPK->AdvanceToSteadyState(0.0, 1.0);
+    DPK->InitTimeInterval();
+    DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
     DPK->CommitState(0.0, S.ptr());
 
     // calculate errors
@@ -373,8 +373,8 @@ TEST_FIXTURE(DarcyProblem, DNtetrahedra) {
     // DPK->ResetParameterList(dp_list);
 
     DPK->Initialize();
-    DPK->InitSteadyState(0.0, 1.0);
-    DPK->AdvanceToSteadyState(0.0, 1.0);
+    DPK->InitTimeInterval();
+    DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
     DPK->CommitState(0.0, S.ptr());
 
     // calculate errors
@@ -414,8 +414,8 @@ TEST_FIXTURE(DarcyProblem, DDmixed) {
     // DPK->ResetParameterList(dp_list);
 
     DPK->Initialize();
-    DPK->InitSteadyState(0.0, 1.0);
-    DPK->AdvanceToSteadyState(0.0, 1.0);
+    DPK->InitTimeInterval();
+    DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
     DPK->CommitState(0.0, S.ptr());
 
     // calculate errors

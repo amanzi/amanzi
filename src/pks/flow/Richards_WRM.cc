@@ -19,48 +19,6 @@ namespace Amanzi {
 namespace Flow {
 
 /* ******************************************************************
-* Convertion p -> s.                                               
-****************************************************************** */
-void Richards_PK::DeriveSaturationFromPressure(const Epetra_MultiVector& p, Epetra_MultiVector& s)
-{
-  std::vector<Teuchos::RCP<WRM> >& wrm = rel_perm_->wrm();  
-
-  for (int mb = 0; mb < wrm.size(); mb++) {
-    std::string region = wrm[mb]->region();
-    AmanziMesh::Entity_ID_List block;
-    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
-
-    AmanziMesh::Entity_ID_List::iterator i;
-    for (i = block.begin(); i != block.end(); i++) {
-      double pc = atm_pressure_ - p[0][*i];
-      s[0][*i] = wrm[mb]->saturation(pc);
-    }
-  }
-}
-
-
-/* ******************************************************************
-* Convertion s -> p.                                               
-****************************************************************** */
-void Richards_PK::DerivePressureFromSaturation(const Epetra_MultiVector& s, Epetra_MultiVector& p)
-{
-  std::vector<Teuchos::RCP<WRM> >& wrm = rel_perm_->wrm();  
-
-  for (int mb = 0; mb < wrm.size(); mb++) {
-    std::string region = wrm[mb]->region();
-    AmanziMesh::Entity_ID_List block;
-    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
-
-    AmanziMesh::Entity_ID_List::iterator i;
-    for (i = block.begin(); i != block.end(); i++) {
-      double pc = wrm[mb]->capillaryPressure(s[0][*i]);
-      p[0][*i] = atm_pressure_ - pc;
-    }
-  }
-}
-
-
-/* ******************************************************************
 * Clip pressure using pressure threshold.
 ****************************************************************** */
 void Richards_PK::ClipHydrostaticPressure(double pmin, Epetra_MultiVector& p)

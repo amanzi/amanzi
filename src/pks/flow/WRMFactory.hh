@@ -6,18 +6,29 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
-           Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Ethan Coon
+
+  Self-registering factory for WRM implementations.
 */
 
-#include "WRM_evaluator.hh"
+#ifndef PK_FLOW_WRM_FACTORY_HH_
+#define PK_FLOW_WRM_FACTORY_HH_
+
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
+
+#include "WRM.hh"
+#include "factory.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-// registry of method
-Utils::RegisteredFactory<FieldEvaluator,WRMEvaluator> WRMEvaluator::factory_("WRM");
+class WRMFactory : public Utils::Factory<WRM> {
+ public:
+  Teuchos::RCP<WRM> Create(Teuchos::ParameterList& plist);
+};
 
 }  // namespace Flow
 }  // namespace Amanzi
 
+#endif

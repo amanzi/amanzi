@@ -1,8 +1,13 @@
 /*
-  Amanzi & ATS
+  This is the MPC component of the Amanzi code. 
 
-  License: see $ATS_DIR/COPYRIGHT
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Author: Ethan Coon
+          Daniil Svyatskiy
 
   Implementation for the CycleDriver.  CycleDriver is basically just a class to hold
   the cycle driver, which runs the overall, top level timestep loop.  It
@@ -41,7 +46,24 @@
 
 namespace Amanzi {
 
-double rss_usage();
+bool reset_info_compfunc(std::pair<double,double> x, std::pair<double,double> y) {
+  return (x.first < y.first);
+}
+
+double rss_usage() { // return ru_maxrss in MBytes
+#if (defined(__unix__) || defined(__unix) || defined(unix) || defined(__APPLE__) || defined(__MACH__))
+  struct rusage usage;
+  getrusage(RUSAGE_SELF, &usage);
+#if (defined(__APPLE__) || defined(__MACH__))
+  return static_cast<double>(usage.ru_maxrss)/1024.0/1024.0;
+#else
+  return static_cast<double>(usage.ru_maxrss)/1024.0;
+#endif
+#else
+  return 0.0;
+#endif
+}
+
 
 CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist_,
                          Teuchos::RCP<State>& S,

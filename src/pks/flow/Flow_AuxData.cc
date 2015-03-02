@@ -57,7 +57,7 @@ void Flow_PK::UpdateAuxilliaryData()
   aux_compute_hydraulic_head(
       hydraulic_head, atm_pressure_, pressure, rho, gravity_, &z_centroid);
 
-  darcy_flux_eval->SetFieldAsChanged(S_.ptr());
+  darcy_flux_eval_->SetFieldAsChanged(S_.ptr());
   S_->GetFieldEvaluator("darcy_velocity")->HasFieldChanged(S_.ptr(), "darcy_velocity");
 }
 

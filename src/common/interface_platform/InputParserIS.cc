@@ -26,13 +26,10 @@ Teuchos::ParameterList InputParserIS::Translate(Teuchos::ParameterList* plist, i
   // unstructured header
   Teuchos::ParameterList new_list, tmp_list, pks_list, cd_list;
   
-  new_mpc_driver_ = plist->get<bool>("new mpc driver", false);
-
   new_list.set<bool>("Native Unstructured Input", true);
   new_list.set<std::string>("grid_option", "Unstructured");
   new_list.set<std::string>("input file name",
                             plist->get<std::string>("input file name", "unit_test.xml"));
-  new_list.set<bool>("new mpc driver", new_mpc_driver_);
 
   // checkpoint list is optional
   tmp_list = CreateCheckpointDataList_(plist);
@@ -59,33 +56,21 @@ Teuchos::ParameterList InputParserIS::Translate(Teuchos::ParameterList* plist, i
     }
   }
 
+  // mesh and geometry
   new_list.sublist("Regions") = CopyRegionsList_(plist);
   new_list.sublist("Mesh") = CreateMeshList_(plist);
   new_list.sublist("Domain") = CopyDomainList_(plist);
-  if (new_mpc_driver_) {
-    // Create Cycle Driver list
-    cd_list = CreateCycleDriver_List_(plist);
-    new_list.sublist("Cycle Driver") = cd_list;
-    CreatePKslist_(cd_list, pks_list);
-  } else {
-    new_list.sublist("MPC") = CreateMPC_List_(plist);
-    pks_list.sublist("Transport");
-    pks_list.sublist("Flow");
-    if (plist->isSublist("Execution Control")){
-      if (plist->sublist("Execution Control").get<std::string>("Chemistry Model") != "Off") {
-	//new_list.sublist("Chemistry") = CreateChemistryList_(plist);
-	pks_list.sublist("Chemistry");// = CreateChemistryList_(plist);
-      }
-    }
-  }
+
+  // cycle driver
+  cd_list = CreateCycleDriverList_(plist);
+  new_list.sublist("Cycle Driver") = cd_list;
+  CreatePKslist_(cd_list, pks_list);
 
   FillPKslist_(plist, pks_list);
-
 
   new_list.sublist("State") = CreateStateList_(plist);
   new_list.sublist("Preconditioners") = CreatePreconditionersList_(plist);
   new_list.sublist("Solvers") = CreateSolversList_(plist);
-
 
   new_list.sublist("PKs") = pks_list;
 

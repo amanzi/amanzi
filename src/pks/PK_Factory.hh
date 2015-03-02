@@ -74,7 +74,7 @@ class PKFactory {
     std::string pk_type;
     if (pk_tree.isParameter("PK type")){
       pk_type = pk_tree.get<std::string>("PK type");
-	//if (!global_list->sublist("PKs").isSublist(pk_tree.name(pk_ite)) {
+      // if (!global_list->sublist("PKs").isSublist(pk_tree.name(pk_ite)) {
     }
     else{
       std::stringstream errmsg;

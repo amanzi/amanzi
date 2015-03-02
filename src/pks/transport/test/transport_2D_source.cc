@@ -63,12 +63,15 @@ std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
   component_names.push_back("Component 0");
   component_names.push_back("Component 1");
 
-  RCP<State> S = rcp(new State());
+  Teuchos::ParameterList state_list = plist->sublist("State");
+  RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   Transport_PK TPK(plist, S, "Transport", component_names);
   TPK.Setup();
   TPK.CreateDefaultState(mesh, 2);
+  S->InitializeFields();
+  S->InitializeEvaluators();
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 

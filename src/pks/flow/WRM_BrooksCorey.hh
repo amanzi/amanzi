@@ -12,6 +12,10 @@
 #ifndef AMANZI_BROOKS_COREY_MODEL_HH_
 #define AMANZI_BROOKS_COREY_MODEL_HH_
 
+#include "Teuchos_ParameterList.hpp"
+
+#include "factory.hh"
+
 #include "WRM.hh"
 
 namespace Amanzi {
@@ -19,8 +23,9 @@ namespace Flow {
 
 class WRM_BrooksCorey : public WRM {
  public:
-  explicit WRM_BrooksCorey(std::string region, double lambda, double l, double alpha, 
-                           double sr, std::string krel_function, double pc0 = 0.0);
+  explicit WRM_BrooksCorey(Teuchos::ParameterList& plist);
+  explicit WRM_BrooksCorey(std::string& region, double lambda, double l, double alpha, 
+                           double sr, std::string& krel_function, double pc0 = 0.0);
   ~WRM_BrooksCorey() {};
   
   // required methods from the base class
@@ -32,12 +37,18 @@ class WRM_BrooksCorey : public WRM {
   double dKdPc(double pc);
 
  private:
+  void Init_(double lambda, double l, double alpha, 
+             double sr, std::string& krel_function, double pc0);
+
+ private:
   double lambda_, l_, alpha_;  // Brooks and Corey parameters: lambda, alpha
   double sr_;  // residual saturation
   int krel_function_;  // Mualem or Burdine
 
   double pc0_;  // regularization threshold (usually 0 to 500 Pa)
   double a_, b_, factor_, pc_bubble_;  // frequently used constant
+
+  static Utils::RegisteredFactory<WRM, WRM_BrooksCorey> factory_;
 };
 
 }  // namespace Flow

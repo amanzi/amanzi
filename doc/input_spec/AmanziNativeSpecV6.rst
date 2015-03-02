@@ -16,7 +16,7 @@ Parameters labeled by [O] (Obsolete) are old capabilities and will be removed so
 Changes V5 -> V6
 ================
 
-* Added new MPC driver
+* Switched to a more flexible MPC driver.
 
 
 ParameterList XML
@@ -214,202 +214,6 @@ CHECK00123.h5. All other initialization of field variables that might be called
 out in the input file is ignored.  Recall that the value for the current time and current cycle
 is read from the checkpoint file.
 
-
-Multi-process coordinator (MPC), obsolete
-=========================================
-
-The MPC stands for Multi-Process Coordinators. 
-This version of management time periods is obsolete in this version of native spec 
-and will phase out in the next version.
-In the MPC sublist the user specifies which process kernels are on or off, which 
-flow model is active, and the time integration mode that the MPC should run in.
-
-To turn a particular process kernel on or off use these options:
-
- * `"disable Transport_PK`" [string] accepts either `"yes`" or `"no`".
-
- * `"disable Flow_PK`" [string] accepts either `"yes`" or `"no`".
-
- * `"Chemistry Model`" [string] accepts either `"On`", or `"Off`", or `"Alquimia`".
-
-To select a particular flow model, use this option:
-
- * `"Flow model`" [string] accepts the following options:`"Darcy`", `"Steady State Saturated`" 
-   (both will cause the instantiation of a Darcy_PK process kernel), `"Richards`", or
-   `"Steady State Richards`" (both will cause the instantiation of a Richards_PK 
-   process kernel.
-
-The following parameters control MPC options related to particular process kernels:
-
- * `"transport subcycling`" [bool] allows flow and transport PKs use different time steps.
-   Usually transport will subcycled with respect to flow. Default value is `"false`".
-
- * `"max chemistry to transport time step ratio`" [double] Default value is 1.
-
- * `"time integration rescue reduction factor`" [double] Default value is 0.5.
-
-.. code-block:: xml
-
-  <ParameterList name="MPC">
-    <Parameter name="disable Transport_PK" type="string" value="no"/>
-    <Parameter isUsed="true" name="Chemistry Model" type="string" value="Off"/>
-    <Parameter name="transport subcycling" type="bool" value="false"/>
-    <Parameter name="component names" type="Array(string)" value="{Tc-99}"/>
-    <Parameter name="disable Flow_PK" type="string" value="yes"/>
-  </ParameterList>
-
-
-Time integration mode
----------------------
-
-`"MPC`" requires sublist `"Time Integration Mode`" if flow is enabled.
-This sublist must have exactly one of the following three sublists: `"Steady`",
-`"Initialize To Steady`", `"Transient with Static Flow`", or `"Transient`". 
-The first one is used to find a steady-state solution and terminate the simulation. 
-The steady-state calculations starts at time `"Start`" and terminates at time `"End`". 
-The corresponding values as well as the initial time step are given in seconds.
-
-.. code-block:: xml
-
-  <ParameterList name="MPC">
-    <ParameterList name="Time Integration Mode">
-      <ParameterList name="Steady">
-        <Parameter name="Start" type="double" value="0.0"/>
-        <Parameter name="End" type="double" value="5.0"/>
-        <Parameter name="Initial Time Step" type="double" value="0.1"/>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-
-The second time integration mode is used to find a steady-state solution and 
-continue with a transient simulation. The transition from a steady-state phase
-to a transient phase happens at time `"Switch`".
-
-.. code-block:: xml
-
-  <ParameterList name="MPC">
-    ...
-    <ParameterList name="Time Integration Mode">
-      <ParameterList name="Initialize To Steady">
-        <Parameter name="Start" type="double" value="0.0"/>
-        <Parameter name="Switch" type="double" value="0.5"/>
-        <Parameter name="End" type="double" value="5.0"/>
-        <Parameter name="Steady Initial Time Step" type="double" value="0.1"/>
-        <Parameter name="Transient Initial Time Step" type="double" value="0.1"/>
-      </ParameterList>
-    </ParameterList>
-    ...
-  </ParameterList>
-
-The third time integration mode is used for a transient simulation only.
-
-.. code-block:: xml
-
-  <ParameterList name="MPC">
-    ...
-    <ParameterList name="Time Integration Mode">
-      <ParameterList name="Transient">
-        <Parameter name="Start" type="double" value="0.0"/>
-        <Parameter name="End" type="double" value="5.0"/>
-        <Parameter name="Initial Time Step" type="double" value="0.1"/>
-      </ParameterList>
-    </ParameterList>
-    ...
-  </ParameterList>
-
-The fourth time integration mode is used for a transient simulation only.
-The flow field is static so no flow solver is called during time stepping. 
-During initialization the flow field is set in one of two ways: 
-(1) A constant Darcy velocity is specified in the initial condition; 
-(2) Boundary conditions for the flow (e.g., pressure), along with the 
-initial condition for the pressure field are used to solve for the Darcy velocity. 
-At present this mode only supports the `"Single Phase`" flow model.
-
-.. code-block:: xml
-
-  <ParameterList name="MPC">
-    ...
-    <ParameterList name="Time Integration Mode">
-      <ParameterList name="Transient With Static Flow">
-        <Parameter name="Start" type="double" value="0.0"/>
-        <Parameter name="End" type="double" value="1e+8"/>
-        <Parameter name="Initial Time Step" type="double" value="0.1"/>
-      </ParameterList>
-    </ParameterList>
-    ...
-  </ParameterList>
-
-Here, we start simulation at time `"Start=0`" and run it for 100 million seconds.
-The initial time step is 0.1 seconds.
-
-
-Restart from checkpoint data file
----------------------------------
-
-A user may request a restart from a Checkpoint Data file by including the MPC sublist 
-`"Restart from Checkpoint Data File`". This mode of restarting
-will overwrite all other initialization of data that are called out in the input file.
-The purpose of restarting Amanzi in this fashion is mostly to continue a run that has been 
-terminated because its allocation of time ran out.
-
-* `"Restart from Checkpoint Data File`" [list]
-
-  * `"Checkpoint Data File Name`" [string] provides name of the existing checkpoint data file to restart from.
-
-  * `"initialize from checkpoint data file and do not restart`" [bool] (optional) If this is set to false 
-    (default), then a restart is performed, if it is set to true, then all fields are initialized from 
-    the checkpoint data file.
-
-.. code-block:: xml
-  
-  <ParameterList name="MPC">
-    ...
-    <ParameterList name="Restart from Checkpoint Data File">
-      <Parameter name="Checkpoint Data File Name" type="string" value="CHECK00123.h5"/>
-    </ParameterList>
-    ...
-  </ParameterList>
-
-
-In this example, Amanzi is restarted with all state data initialized from file
-CHECK00123.h5. All other initialization of field variables that might be called 
-out in the input file is ignored.  Recall that the value for the current time and current cycle
-is read from the checkpoint file.
-
-
-Example for a complete MPC list
--------------------------------
-
-The following is an example of a complete MPC list:
-
-.. code-block:: xml
-
-  <ParameterList name="MPC">
-    <ParameterList name="Time Integration Mode">
-      <ParameterList name="Initialize To Steady">
-        <Parameter name="Start" type="double" value="0.0"/>
-        <Parameter name="Switch" type="double" value="1e+8"/>
-        <Parameter name="End" type="double" value="1e+10"/>
-        <Parameter name="Steady Initial Time Step" type="double" value="1.0"/>
-        <Parameter name="Transient Initial Time Step" type="double" value="0.1"/>
-      </ParameterList>
-    </ParameterList>
-    <Parameter name="disable Transport_PK" type="string" value="yes"/>
-    <Parameter name="Chemistry Model" type="string" value="Off"/>
-    <Parameter name="disable Flow_PK" type="string" value="no"/>
-    <Parameter name="Flow model" type="string" value="Steady State Saturated"/>
-    <ParameterList name="Restart from Checkpoint Data File">
-      <Parameter name="Checkpoint Data File Name" type="string" value="steady-checkpoint.h5"/>
-    </ParameterList>
-    <ParameterList name="VerboseObject">
-      <Parameter name="Verbosity Level" type="string" value="high"/>
-    </ParameterList>
-  </ParameterList>
-
-In this example, we included `"VerboseObject`" sublist. Its parameter `"Verbosity Level`"
-controls the number of output messages. Note that higher verbosity levels come with
-additional (but usually small) computational overhead. 
-Such a sublist can be added safely to various sublists of an XML file.
 
 
 State
@@ -1052,47 +856,14 @@ Again, constant functions can be replaced by any of the available time-functions
      </ParameterList>
 
 
-Initial guess pseudo time integrator (obsolete)
-...............................................
+Time integrator
+...............
 
-The sublist `"initial guess pseudo time integrator`" defines parameters controlling linear and 
-nonlinear solvers during calculation of an initial guess.
-This sublist will disappear as nonlinear solvers become more mature.
-Detailed description of parameters is in the next two subsections.
-
-.. code-block:: xml
-
-   <ParameterList name="initial guess pseudo time integrator">
-     <Parameter name="time integration method" type="string" value="Picard"/>
-     <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
-     <Parameter name="linear solver" type="string" value="GMRES_with_ML"/>
-
-     <ParameterList name="initialization">
-       <Parameter name="method" type="string" value="saturated solver"/>
-       <Parameter name="linear solver" type="string" value="PCG_with_AMG"/>
-       <Parameter name="clipping saturation value" type="double" value="0.9"/>
-     </ParameterList>
-
-     <ParameterList name="pressure-lambda constraints">
-       <Parameter name="method" type="string" value="projection"/>
-       <Parameter name="inflow krel correction" type="bool" value="false"/>
-       <Parameter name="linear solver" type="string" value="PCG_with_AMG"/>
-     </ParameterList>
-
-     <ParameterList name="Picard">
-       <ParameterList name="Picard parameters">
-         <Parameter name="convergence tolerance" type="double" value="1e-08"/>
-         <Parameter name="maximum number of iterations" type="int" value="400"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
-
-
-Steady state time integrator
-............................
-
-The sublist `"steady state time integrator`" defines parameters controlling linear and 
-nonlinear solvers during steady state time integration. 
+The sublist `"time integrator`" defines a generic time integrator used
+by the cycle driver. 
+This driver assumes that each PK has only one time integrator.
+The sublist `"time integrator`" defines parameters controlling linear and 
+nonlinear solvers during a time integration period.
 We break this long sublist into smaller parts. 
 The first part controls preliminary steps in the time integrator.
 
@@ -1111,8 +882,9 @@ The first part controls preliminary steps in the time integrator.
   It can be used to obtain pressure field which is consistent with the boundary conditions.
   Default is empty list.
 
-  * `"method`" [string] is a placeholder for different initialization methods. Now, the only
-    available option is `"saturated solver`" which lead to solving a Darcy problem.
+  * `"method`" [string] specifies an optional initialization methods. The available 
+    options are `"picard`" and `"saturated solver`". The latter option leads to solving 
+    a Darcy problem.
 
   * `"linear solver`" [string] refers to a solver sublist of the list `"Solvers`".
 
@@ -1157,8 +929,6 @@ The first part controls preliminary steps in the time integrator.
      </ParameterList>
    </ParameterList>
 
-A specific time integration method is invoked by parameter `"time integration method`".
-The available options are `"BDF1`" and `"Picard`".
 The time step change is controlled by parameter `"time step controller type`".
 Available options are `"fixed`", `"standard`", `"smarter`", and `"adaptive`".
 The later is under development and is based on a posteriori error estimates.
@@ -1284,45 +1054,6 @@ those needed for unit tests, and future code development.
        <Parameter name="error rel tol" type="double" value="0"/>
      </ParameterList>
    </ParameterList>
-
-
-Transient time integrator
-.........................
-
-The sublist `"transient time integrator`" defines parameters controlling linear and 
-nonlinear solvers during transient time integration. Its parameters are similar to 
-that in the sublist `"steady state time integrator`".
-Here is a short example:
-Note that the transient time integrator can be restarted multiple times, 
-preferably every time a simulation goes through a stress test (e.g. external sourced 
-are turning on and off abruptly).
-If a non-empty `"initialization`" list is specified, it will be executed only once.
-
-.. code-block:: xml
-
-   <ParameterList name="transient time integrator">
-     <Parameter name="time integration method" type="string" value="BDF1"/>
-     <Parameter name="error control options" type="Array(string)" value="{pressure, saturation}"/>
-     <Parameter name="linear solver" type="string" value="GMRES_with_AMG"/>
-     <Parameter name="time stepping strategy" type="string" value="adaptive"/>
-
-     <ParameterList name="pressure-lambda constraints">
-       <Parameter name="method" type="string" value="projection"/>
-       <Parameter name="linear solver" type="string" value="PCG_with_AMG"/>
-     </ParameterList>
-
-     <ParameterList name="BDF1">
-       ...
-     </ParameterList>
-   </ParameterList>
-
-
-Time integrator
-...............
-
-The sublist `"time integrator`" defines a generic time integrator used
-by new mpc driver. The new mpc driver assumes that each PK has only
-one time integrator.
 
 
 Other parameters

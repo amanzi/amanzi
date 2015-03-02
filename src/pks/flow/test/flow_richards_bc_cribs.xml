@@ -20,7 +20,6 @@
       <ParameterList name="Richards problem">
 	<Parameter name="relative permeability" type="string" value="upwind: gravity"/>
 	<Parameter name="atmospheric pressure" type="double" value="101325"/>
-	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 
 	<ParameterList name="VerboseObject">
 	  <Parameter name="Verbosity Level" type="string" value="high"/>
@@ -52,26 +51,42 @@
 	  </ParameterList>
 	</ParameterList>
 
-	<ParameterList name="steady state time integrator">
+	<ParameterList name="time integrator">
 	  <Parameter name="linear solver" type="string" value="AztecOO"/>
 	  <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+	  <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 
 	  <ParameterList name="initialization">
-	    <Parameter name="method" type="string" value="saturated solver"/>
+	    <Parameter name="method" type="string" value="picard"/>
 	    <Parameter name="linear solver" type="string" value="AztecOO"/>
 	    <Parameter name="clipping saturation value" type="double" value="0.6"/>
+	    <ParameterList name="picard parameters">
+              <Parameter name="convergence tolerance" type="double" value="1e-12"/> 
+              <Parameter name="maximum number of iterations" type="int" value="600"/> 
+	    </ParameterList>
 	  </ParameterList>
 
-	  <ParameterList name="pressure-lambda constraints">
-	    <Parameter name="method" type="string" value="projection"/>
-	    <Parameter name="inflow krel correction" type="bool" value="false"/>
-	    <Parameter name="linear solver" type="string" value="AztecOO"/>
-	  </ParameterList>
+	  <Parameter name="time integration method" type="string" value="BDF1"/>
+	  <ParameterList name="BDF1">
+	    <Parameter name="timestep controller type" type="string" value="standard"/>
+	    <ParameterList name="timestep controller standard parameters">
+	      <Parameter name="min iterations" type="int" value="5"/>
+	      <Parameter name="max iterations" type="int" value="7"/>
+	      <Parameter name="time step increase factor" type="double" value="1.2"/>
+	      <Parameter name="time step reduction factor" type="double" value="0.5"/>
+	      <Parameter name="max time step" type="double" value="100.0"/>
+	      <Parameter name="min time step" type="double" value="0.0"/>
+	    </ParameterList>
 
-	  <Parameter name="time integration method" type="string" value="Picard"/>
-	  <ParameterList name="Picard">
-            <Parameter name="convergence tolerance" type="double" value="1e-12"/> 
-            <Parameter name="maximum number of iterations" type="int" value="600"/> 
+	    <Parameter name="solver type" type="string" value="nka"/>
+	    <ParameterList name="nka parameters">
+	      <Parameter name="nonlinear tolerance" type="double" value="1e-4"/>
+	      <Parameter name="diverged tolerance" type="double" value="1+10"/>
+	      <Parameter name="limit iterations" type="int" value="12"/>
+	      <Parameter name="max du growth factor" type="double" value="1e+5"/>
+	      <Parameter name="max divergent iterations" type="int" value="3"/>
+	      <Parameter name="max nka vectors" type="int" value="10"/>
+	    </ParameterList>
 	  </ParameterList>
 	</ParameterList>
 
@@ -332,104 +347,9 @@
 
   <!--  STATE:  -->
   <ParameterList name="State">
-    <ParameterList name="initial conditions">
-      <ParameterList name="fluid_density">
-        <Parameter name="value" type="double" value="998"/>
-      </ParameterList>
-
-      <ParameterList name="fluid_viscosity">
-        <Parameter name="value" type="double" value="0.00089"/>
-      </ParameterList>
-
-      <ParameterList name="gravity">
-        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.81}"/>
-      </ParameterList>
-
-      <ParameterList name="pressure">
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="101325."/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="specific_storage">
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant"> 
-                <Parameter name="value" type="double" value="0.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="specific_yield">
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant"> 
-                <Parameter name="value" type="double" value="0.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="darcy_flux">
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
-            <Parameter name="component" type="string" value="face"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="water_saturation">
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="prev_water_saturation">
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
+    <ParameterList name="field evaluators">
       <ParameterList name="porosity">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="Mesh Block 1">
             <Parameter name="region" type="string" value="Bfr"/>
@@ -512,7 +432,104 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+    </ParameterList>
 
+    <ParameterList name="initial conditions">
+      <ParameterList name="fluid_density">
+        <Parameter name="value" type="double" value="998"/>
+      </ParameterList>
+
+      <ParameterList name="fluid_viscosity">
+        <Parameter name="value" type="double" value="0.00089"/>
+      </ParameterList>
+
+      <ParameterList name="gravity">
+        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.81}"/>
+      </ParameterList>
+
+      <ParameterList name="pressure">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="101325."/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="specific_storage">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant"> 
+                <Parameter name="value" type="double" value="0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="specific_yield">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant"> 
+                <Parameter name="value" type="double" value="0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="darcy_flux">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="face"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="saturation_liquid">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="prev_saturation_liquid">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
 
       <ParameterList name="permeability">
         <ParameterList name="function">

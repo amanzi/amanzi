@@ -93,9 +93,10 @@
 	  </ParameterList>
 	</ParameterList>
 
-	<ParameterList name="steady state time integrator">
+	<ParameterList name="time integrator">
 	  <Parameter name="linear solver" type="string" value="linear operator"/>
 	  <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+	  <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 
 	  <ParameterList name="initialization">
 	    <Parameter name="method" type="string" value="saturated solver"/>
@@ -257,7 +258,22 @@
   </ParameterList>
 
   <ParameterList name="State">
-    <!-- State is not used in the unit test -->
+    <ParameterList name="field evaluators">
+      <ParameterList name="porosity">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Material 1"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.2"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 </ParameterList>
 

@@ -16,6 +16,7 @@
 #include "PK.hh"
 #include "pks_flow_registration.hh"
 #include "State.hh"
+#include "wrm_flow_registration.hh"
 
 
 TEST(MPC_DRIVER_FLOW) {
@@ -45,22 +46,17 @@ using namespace Amanzi::AmanziGeometry;
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = meshfactory(0.0, 0.0, 216.0, 120.0, 54, 60, gm);
   ASSERT(!mesh.is_null());
 
-  bool mpc_new = true;
-
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
   Teuchos::RCP<Teuchos::ParameterList> glist_rcp = Teuchos::rcp(new Teuchos::ParameterList(plist));
 
-  if (mpc_new) {
-    if (plist.isSublist("State")) {
-      // Create the state.    
-      Teuchos::ParameterList state_plist = plist.sublist("State");
-      Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
-      S->RegisterMesh("domain", mesh);      
+  if (plist.isSublist("State")) {
+    Teuchos::ParameterList state_plist = plist.sublist("State");
+    Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
+    S->RegisterMesh("domain", mesh);      
 
-      Amanzi::CycleDriver cycle_driver(glist_rcp, S, &comm, obs_data);
-      cycle_driver.go();
-    }
+    Amanzi::CycleDriver cycle_driver(glist_rcp, S, &comm, obs_data);
+    cycle_driver.go();
   }
 }
 

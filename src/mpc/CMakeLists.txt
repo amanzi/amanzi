@@ -68,12 +68,12 @@ list(REMOVE_DUPLICATES mpc_tpl_libs) # Concerned about command line length! --lp
 list(REVERSE mpc_tpl_libs)
 
 set(mpc_inc_files
-  MPC.hh
+  CycleDriver.hh
   Unstructured_observations.hh
 )
 
 add_amanzi_library(mpc 
-                   SOURCE MPC.cc Unstructured_observations.cc CycleDriver.cc
+                   SOURCE CycleDriver.cc Unstructured_observations.cc
                    HEADERS ${mpc_inc_files}
                    LINK_LIBS time_integration solvers output state mesh dbg ${mpc_tpl_libs})
 
@@ -95,12 +95,6 @@ if (BUILD_TESTS)
                     state operators mesh_factory 
                     geometry whetstone mesh_functions functions)
     
-    # Test: mpc old driver
-    add_amanzi_test(mpc_old_driver test_old_driver
-                    KIND      int
-                    SOURCE    test/Main.cc test/test_old_driver.cc
-		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
     # Test: mpc driver for flow
     add_amanzi_test(mpc_driver_flow mpc_driver_flow
                     KIND      int

@@ -554,7 +554,7 @@ Teuchos::RCP<Field> State::GetField(Key fieldname, Key pk_name) {
 
   if (record == Teuchos::null) {
     std::stringstream messagestream;
-    messagestream << "Field " << fieldname << " does not exist in the state.";
+    messagestream << "Field " << fieldname << " does not exist in the state, pk=" << pk_name;
     Errors::Message message(messagestream.str());
     Exceptions::amanzi_throw(message);
   } else if (record->owner() != pk_name) {

@@ -68,6 +68,7 @@
 #define TR_NONLIN_INIT_TS_FACTOR_DAMP   1.0
 #define TR_PRECOND                      "Hypre AMG" 
 #define TR_SOLVER                       "none"
+#define TR_SOLVER_DARCY                 "AztecOO"
 #define TR_INIT_SOLVER                  "AztecOO"
 #define TR_PLAMB_SOLVER                 "AztecOO"
 #define TR_DIVERG_FACT                  1000.0

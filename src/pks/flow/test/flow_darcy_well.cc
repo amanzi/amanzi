@@ -63,7 +63,8 @@ TEST(FLOW_2D_DARCY_WELL) {
   /* create a simple state and populate it */
   Amanzi::VerboseObject::hide_line_prefix = true;
 
-  RCP<State> S = rcp(new State());
+  Teuchos::ParameterList state_list = plist.sublist("State");
+  RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
@@ -85,12 +86,11 @@ TEST(FLOW_2D_DARCY_WELL) {
   *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
   Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
   gravity[1] = -1.0;
-  S->GetFieldData("porosity", passwd)->PutScalar(0.2);
   S->GetFieldData("specific_storage", passwd)->PutScalar(0.1);
 
   /* initialize the Darcy process kernel */
   DPK->Initialize();
-  DPK->InitTransient(0.0, 1e-8);
+  DPK->InitTimeInterval();
 
   /* transient solution */
   double dT = 0.5;

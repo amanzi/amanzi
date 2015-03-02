@@ -20,6 +20,15 @@ namespace Flow {
 /* ******************************************************************
 * Setup fundamental parameters for this model.                                            
 ****************************************************************** */
+WRM_fake::WRM_fake(Teuchos::ParameterList& plist)
+{
+  set_region("dummy");
+  alpha = 1.0;
+  n = 2.0;
+  m = 1.0;
+}
+
+
 WRM_fake::WRM_fake(const std::string region)
 {
   set_region(region);

@@ -59,31 +59,57 @@ register_evaluator_with_factory(
   LISTNAME   PKS_FLOW_REGISTRATIONS
   )
 
-#register_evaluator_with_factory(
-#  HEADERFILE WRM_evaluator_reg.hh
-#  LISTNAME   PKS_FLOW_REGISTRATIONS
-#  )
-
 generate_evaluators_registration_header( 
   HEADERFILE pks_flow_registration.hh   
   LISTNAME   PKS_FLOW_REGISTRATIONS
   INSTALL    True
   )
 
+#register_evaluator_with_factory(
+#  HEADERFILE WRMEvaluator_reg.hh
+#  LISTNAME   WRM_FLOW_REGISTRATIONS
+#  )
+
+register_evaluator_with_factory(
+  HEADERFILE WRMFactory_reg.hh
+  LISTNAME   WRM_FLOW_REGISTRATIONS
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE WRM_vanGenuchten_reg.hh
+  LISTNAME   WRM_FLOW_REGISTRATIONS
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE WRM_BrooksCorey_reg.hh
+  LISTNAME   WRM_FLOW_REGISTRATIONS
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE WRM_fake_reg.hh
+  LISTNAME   WRM_FLOW_REGISTRATIONS
+  )
+
+generate_evaluators_registration_header( 
+  HEADERFILE wrm_flow_registration.hh   
+  LISTNAME   WRM_FLOW_REGISTRATIONS
+  INSTALL    True
+  )
+
 #
 # Library: flow
 #
-set(flow_src_files Flow_PK.cc Flow_IO.cc
+set(flow_src_files Flow_PK.cc 
                    Flow_BC_Factory.cc Flow_BC_Actions.cc Flow_SeepageFace.cc
                    Flow_SourceFactory.cc Flow_VandV.cc 
                    Flow_Utilities.cc Flow_AuxData.cc
                    FlowDomainFunction.cc FlowBoundaryFunction.cc
                    Darcy_PK.cc Darcy_TI.cc Darcy_LinearOperator.cc
                    Richards_PK.cc Richards_TI.cc Richards_WRM.cc
-                   Richards_SteadyState.cc Richards_LinearOperator.cc
+                   Richards_Picard.cc Richards_LinearOperator.cc
                    RelativePermeability.cc RelativePermeability_IO.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
-                   WRM_evaluator.cc
+                   WRMPartition.cc WRMFactory.cc WRMEvaluator.cc 
                    darcy_velocity_evaluator.cc
                    Darcy_PK_Wrapper.cc Richards_PK_Wrapper.cc
                    )
@@ -110,14 +136,15 @@ set(flow_inc_files
   Flow_PK.hh
   Flow_SourceFactory.hh
   FlowTypeDefs.hh
-  RelativePermeability.hh
+  RelPerm_evaluator.hh
   Richards_PK.hh
-  TI_Specs.hh
   WRM.hh
   WRM_BrooksCorey.hh
   WRM_fake.hh
   WRM_vanGenuchten.hh
-  WRM_evaluator.hh)  
+  WRMEvaluator.hh
+  WRMFactory.hh
+  WRMPartition.hh)
 
 
 add_install_include_file(${flow_inc_files})

@@ -89,9 +89,10 @@
 	  </ParameterList>
 	</ParameterList>
 
-	<ParameterList name="steady state time integrator">
+	<ParameterList name="time integrator">
 	  <Parameter name="linear solver" type="string" value="none"/>
 	  <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+	  <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 
 	  <ParameterList name="pressure-lambda constraints">
 	    <Parameter name="method" type="string" value="projection"/>
@@ -250,21 +251,9 @@
   <!--  STATE: this super input desk will be used to cut-off smaller 
   input deks for other flow tests -->
   <ParameterList name="State">
-    <ParameterList name="initial conditions">
-      <ParameterList name="fluid_density">
-        <Parameter name="value" type="double" value="2.0"/>
-      </ParameterList>
-
-      <ParameterList name="fluid_viscosity">
-        <Parameter name="value" type="double" value="0.3"/>
-      </ParameterList>
-
-      <ParameterList name="gravity">
-        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -1.e-9}"/>
-      </ParameterList>
-
-
+    <ParameterList name="field evaluators">
       <ParameterList name="porosity">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="Computational domain"/>
@@ -276,6 +265,20 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="initial conditions">
+      <ParameterList name="fluid_density">
+        <Parameter name="value" type="double" value="2.0"/>
+      </ParameterList>
+
+      <ParameterList name="fluid_viscosity">
+        <Parameter name="value" type="double" value="0.3"/>
+      </ParameterList>
+
+      <ParameterList name="gravity">
+        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -1.e-9}"/>
       </ParameterList>
 
       <ParameterList name="permeability">
@@ -368,7 +371,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="water_saturation">
+      <ParameterList name="saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="Computational domain"/>
@@ -382,7 +385,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="prev_water_saturation">
+      <ParameterList name="prev_saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="Computational domain"/>

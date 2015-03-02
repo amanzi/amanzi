@@ -35,7 +35,6 @@ Flow_PK::Flow_PK() :
     bc_head(NULL),
     bc_seepage(NULL),
     src_sink(NULL),
-    ti_specs(NULL),
     vo_(NULL),
     passwd_("flow")
 {
@@ -436,8 +435,60 @@ void Flow_PK::WriteGMVfile(Teuchos::RCP<State> FS) const
   GMV::open_data_file(*mesh_, (std::string)"flow.gmv");
   GMV::start_data();
   GMV::write_cell_data(*(S_->GetFieldData("pressure")->ViewComponent("cell")), 0, "pressure");
-  GMV::write_cell_data(*(S_->GetFieldData("water_saturation")->ViewComponent("cell")), 0, "saturation");
+  GMV::write_cell_data(*(S_->GetFieldData("saturation_liquid")->ViewComponent("cell")), 0, "saturation");
   GMV::close_data_file();
+}
+
+
+/* ******************************************************************
+* Routine processes parameter list. It needs to be called only once
+* on each processor.                                                     
+****************************************************************** */
+void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
+{
+  double rho = *(S_->GetScalarData("fluid_density"));
+
+  // Process main one-line options (not sublists)
+  atm_pressure_ = plist.get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);
+  coordinate_system = plist.get<std::string>("absolute permeability coordinate system", "cartesian");
+
+  // Create the BC objects.
+  Teuchos::RCP<Teuchos::ParameterList>
+      bc_list = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("boundary conditions", true)));
+  FlowBCFactory bc_factory(mesh_, bc_list);
+
+  bc_pressure = bc_factory.CreatePressure(bc_submodel);
+  bc_head = bc_factory.CreateStaticHead(atm_pressure_, rho, gravity_, bc_submodel);
+  bc_flux = bc_factory.CreateMassFlux(bc_submodel);
+  bc_seepage = bc_factory.CreateSeepageFace(atm_pressure_, bc_submodel);
+
+  VV_ValidateBCs();
+  ProcessBCs();
+
+  // Create the source object if any
+  if (plist.isSublist("source terms")) {
+    std::string distribution_method_name = plist.get<std::string>("source and sink distribution method", "none");
+    ProcessStringSourceDistribution(distribution_method_name, &src_sink_distribution); 
+
+    Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(plist.sublist("source terms", true));
+    FlowSourceFactory src_factory(mesh_, src_list);
+    src_sink = src_factory.createSource();
+    src_sink_distribution = src_sink->CollectActionsList();
+  }
+}
+
+
+/* ****************************************************************
+* Process string for the linear solver.
+**************************************************************** */
+void Flow_PK::ProcessStringSourceDistribution(const std::string name, int* method)
+{
+  if (name != "none") {
+    Errors::Message msg;
+    msg << "\nFlow_PK: \"source and sink distribution method\" is obsolete.\n"
+        << "         see desription of sublist \"source terms\" in the native spec.\n";
+    Exceptions::amanzi_throw(msg);
+  }
 }
 
 }  // namespace Flow

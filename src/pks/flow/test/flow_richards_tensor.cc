@@ -15,18 +15,17 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-
-#include "State.hh"
 #include "Richards_PK.hh"
+#include "State.hh"
 
+#include "Richards_SteadyState.hh"
 
 /* **************************************************************** */
 TEST(FLOW_RICHARDS_ACCURACY) {
@@ -78,10 +77,7 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
 
   /* create Richards problem */
   RPK->Initialize();
-  RPK->ti_specs_sss().T1 = 100.0;
-  RPK->ti_specs_sss().max_itrs = 400;
-
-  RPK->InitSteadyState(0.0, 1.0);
+  RPK->InitTimeInterval();
 
   /* calculate the constant Darcy mass velocity */
   double rho = *S->GetScalarData("fluid_density");
@@ -102,7 +98,14 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
   std::cout << "K=" << K << "  gravity=" << g << std::endl;
   std::cout << "grad(p)=" << v0 << std::endl;
 
-  RPK->AdvanceToSteadyState(0.0, 1.0);
+  // solver the problem
+  TI_Specs ti_specs;
+  ti_specs.T0 = 0.0;
+  ti_specs.dT0 = 1.0;
+  ti_specs.T1 = 100.0;
+  ti_specs.max_itrs = 400;
+
+  AdvanceToSteadyState(*RPK, ti_specs, S->GetFieldData("pressure", "flow"));
   RPK->CommitState(0.0, S.ptr());
 
   /* check accuracy */

@@ -80,20 +80,13 @@ TEST(FLOW_3D_RICHARDS) {
 
   /* initialize the Richards process kernel */
   RPK->Initialize();
-  RPK->ti_specs_sss().T1 = 1e+10;
-  RPK->ti_specs_sss().max_itrs = 600;
-  RPK->ti_specs_sss().residual_tol = 1e-12;
-
   RPK->InitializeAuxiliaryData();
-  RPK->InitSteadyState(0.0, 1e-7);
-
-  /* solve the problem */
-  RPK->AdvanceToSteadyState(0.0, 1e-7);
+  RPK->InitTimeInterval();
   RPK->CommitState(0.0, S.ptr());
 
   /* derive dependent variable */
   const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
-  const Epetra_MultiVector& ws = *S->GetFieldData("water_saturation")->ViewComponent("cell");
+  const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
   const Epetra_MultiVector& K = *S->GetFieldData("permeability")->ViewComponent("cell");
 
   GMV::open_data_file(*mesh, (std::string)"flow.gmv");

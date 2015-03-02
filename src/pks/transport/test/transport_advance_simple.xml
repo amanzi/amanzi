@@ -60,5 +60,27 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
+  <ParameterList name="State">
+    <ParameterList name="field evaluators">
+      <ParameterList name="porosity">
+        <ParameterList name="VerboseObject">
+	  <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        </ParameterList>
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.2"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
 </ParameterList>
 

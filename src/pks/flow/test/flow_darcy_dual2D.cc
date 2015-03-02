@@ -62,7 +62,8 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   /* create a simple state populate it */
   Amanzi::VerboseObject::hide_line_prefix = true;
 
-  RCP<State> S = rcp(new State());
+  Teuchos::ParameterList state_list = plist.sublist("State");
+  RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
@@ -94,7 +95,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   /* initialize Darcy process kernel */
   DPK->Initialize();
-  DPK->InitTransient(0.0, 1e-8);
+  DPK->InitTimeInterval();
 
   /* transient solution */
   double dT = 0.1;

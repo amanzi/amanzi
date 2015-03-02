@@ -269,7 +269,7 @@ void Unstructured_observations::MakeObservations(State& state)
       if (obs_aqueous) {
         double rho = *state.GetScalarData("fluid_density");
         const Epetra_MultiVector& porosity = *state.GetFieldData("porosity")->ViewComponent("cell");    
-        const Epetra_MultiVector& ws = *state.GetFieldData("water_saturation")->ViewComponent("cell");
+        const Epetra_MultiVector& ws = *state.GetFieldData("saturation_liquid")->ViewComponent("cell");
         const Epetra_MultiVector& pressure = *state.GetFieldData("pressure")->ViewComponent("cell");
   
         if (var == "Volumetric water content") {

@@ -51,20 +51,16 @@ using namespace Amanzi::AmanziGeometry;
   Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 216.0, 120.0, 54, 60, gm);
   ASSERT(!mesh.is_null());
 
-  bool mpc_new = true;
-  
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
 
-  if (mpc_new) {
-    // Create the state.    
-    Teuchos::RCP<Teuchos::ParameterList> state_plist = Teuchos::sublist(plist, "State", true);
-    Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(*state_plist));
-    S->RegisterMesh("domain", mesh);
+  // Create the state.    
+  Teuchos::RCP<Teuchos::ParameterList> state_plist = Teuchos::sublist(plist, "State", true);
+  Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(*state_plist));
+  S->RegisterMesh("domain", mesh);
 
-    Amanzi::CycleDriver cycle_driver(plist, S, &comm, obs_data);
-    cycle_driver.go();
-  }
+  Amanzi::CycleDriver cycle_driver(plist, S, &comm, obs_data);
+  cycle_driver.go();
 }
 
 

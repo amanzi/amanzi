@@ -64,7 +64,8 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");
 
-  RCP<State> S = rcp(new State());
+  Teuchos::ParameterList state_list = plist->sublist("State");
+  RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
   S->set_time(0.0);
   S->set_intermediate_time(0.0);
@@ -72,6 +73,8 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
   Transport_PK TPK(plist, S, "Transport", component_names);
   TPK.Setup();
   TPK.CreateDefaultState(mesh, 1);
+  S->InitializeFields();
+  S->InitializeEvaluators();
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 

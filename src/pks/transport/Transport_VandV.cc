@@ -29,20 +29,20 @@ namespace Transport {
 void Transport_PK::InitializeFields()
 {
   // set popular default values when Flow is off
-  if (S_->HasField("water_saturation")) {
-    if (S_->GetField("water_saturation")->owner() == passwd_) {
-      if (!S_->GetField("water_saturation", passwd_)->initialized()) {
-        S_->GetFieldData("water_saturation", passwd_)->PutScalar(1.0);
-        S_->GetField("water_saturation", passwd_)->set_initialized();
+  if (S_->HasField("saturation_liquid")) {
+    if (S_->GetField("saturation_liquid")->owner() == passwd_) {
+      if (!S_->GetField("saturation_liquid", passwd_)->initialized()) {
+        S_->GetFieldData("saturation_liquid", passwd_)->PutScalar(1.0);
+        S_->GetField("saturation_liquid", passwd_)->set_initialized();
       }
     }
   }
 
-  if (S_->HasField("prev_water_saturation")) {
-    if (S_->GetField("prev_water_saturation")->owner() == passwd_) {
-      if (!S_->GetField("prev_water_saturation", passwd_)->initialized()) {
-        *S_->GetFieldData("prev_water_saturation", passwd_) = *S_->GetFieldData("water_saturation", passwd_);
-        S_->GetField("prev_water_saturation", passwd_)->set_initialized();
+  if (S_->HasField("prev_saturation_liquid")) {
+    if (S_->GetField("prev_saturation_liquid")->owner() == passwd_) {
+      if (!S_->GetField("prev_saturation_liquid", passwd_)->initialized()) {
+        *S_->GetFieldData("prev_saturation_liquid", passwd_) = *S_->GetFieldData("saturation_liquid", passwd_);
+        S_->GetField("prev_saturation_liquid", passwd_)->set_initialized();
       }
     }
   }
@@ -58,18 +58,13 @@ void Transport_PK::CreateDefaultState(
   std::string name("state"); 
   S_->RequireScalar("fluid_density", name);
 
-  if (!S_->HasField("porosity")) {
-    S_->RequireField("porosity", name)->SetMesh(mesh)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
- 
-  if (!S_->HasField("water_saturation")) {
-    S_->RequireField("water_saturation", name)->SetMesh(mesh)->SetGhosted(true)
+  if (!S_->HasField("saturation_liquid")) {
+    S_->RequireField("saturation_liquid", name)->SetMesh(mesh)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
   
-  if (!S_->HasField("prev_water_saturation")) {
-    S_->RequireField("prev_water_saturation", name)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S_->HasField("prev_saturation_liquid")) {
+    S_->RequireField("prev_saturation_liquid", name)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
@@ -89,19 +84,16 @@ void Transport_PK::CreateDefaultState(
 
   // initialize fields
   S_->Setup();
-
+ 
   // set popular default values
-  S_->GetFieldData("porosity", name)->PutScalar(0.2);
-  S_->GetField("porosity", name)->set_initialized();
-
   *(S_->GetScalarData("fluid_density", name)) = 1000.0;
   S_->GetField("fluid_density", name)->set_initialized();
 
-  S_->GetFieldData("water_saturation", name)->PutScalar(1.0);
-  S_->GetField("water_saturation", name)->set_initialized();
+  S_->GetFieldData("saturation_liquid", name)->PutScalar(1.0);
+  S_->GetField("saturation_liquid", name)->set_initialized();
 
-  S_->GetFieldData("prev_water_saturation", name)->PutScalar(1.0);
-  S_->GetField("prev_water_saturation", name)->set_initialized();
+  S_->GetFieldData("prev_saturation_liquid", name)->PutScalar(1.0);
+  S_->GetField("prev_saturation_liquid", name)->set_initialized();
 
   S_->GetFieldData("total_component_concentration", name)->PutScalar(0.0);
   S_->GetField("total_component_concentration", name)->set_initialized();

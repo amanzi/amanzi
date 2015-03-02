@@ -378,7 +378,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="water_saturation">
+      <ParameterList name="saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>

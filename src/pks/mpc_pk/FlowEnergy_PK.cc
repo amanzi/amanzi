@@ -43,11 +43,7 @@ void FlowEnergy_PK::Setup()
   if (!S_->HasField("density_rock")) {
     S_->RequireField("density_rock", "density_rock")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-
-    Teuchos::ParameterList ev_list;
-    ev_list.set<std::string>("evaluator name", "density_rock");
-    density_rock_eval = Teuchos::rcp(new IndependentVariableFieldEvaluatorFromFunction(ev_list));
-    S_->SetFieldEvaluator("density_rock", density_rock_eval);
+    S_->RequireFieldEvaluator("density_rock");
   }
 
   if (!S_->HasField("internal_energy_rock")) {
@@ -112,26 +108,6 @@ void FlowEnergy_PK::Setup()
   if (!S_->HasField("effective_pressure")) {
     elist.sublist("effective_pressure")
          .set<std::string>("field evaluator type", "effective_pressure");
-  }
-
-  if (!S_->HasField("porosity")) {
-    S_->RequireField("porosity", "porosity")->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-
-    Teuchos::ParameterList ev_list;
-    ev_list.set<std::string>("evaluator name", "porosity");
-    porosity_eval = Teuchos::rcp(new IndependentVariableFieldEvaluatorFromFunction(ev_list));
-    S_->SetFieldEvaluator("porosity", porosity_eval);
-  }
-
-  if (!S_->HasField("saturation_liquid")) {
-    S_->RequireField("saturation_liquid", "saturation_liquid")->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-
-    Teuchos::ParameterList ev_list;
-    ev_list.set<std::string>("evaluator name", "saturation_liquid");
-    saturation_liquid_eval = Teuchos::rcp(new IndependentVariableFieldEvaluatorFromFunction(ev_list));
-    S_->SetFieldEvaluator("saturation_liquid", saturation_liquid_eval);
   }
 
   // process other PKs.

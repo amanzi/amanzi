@@ -243,7 +243,7 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
 
   // finalize preconditioner
   op_preconditioner_->AssembleMatrix();
-  op_preconditioner_->InitPreconditioner(ti_specs->preconditioner_name, *preconditioner_list_);
+  op_preconditioner_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 }
 
 

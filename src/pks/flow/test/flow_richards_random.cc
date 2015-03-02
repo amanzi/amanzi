@@ -14,20 +14,19 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
+#include "Epetra_MpiComm.h"
+#include "Epetra_SerialComm.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-
-#include "Epetra_SerialComm.h"
-#include "Epetra_MpiComm.h"
+#include "UnitTest++.h"
 
 #include "GMVMesh.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "Richards_PK.hh"
 
+#include "Richards_SteadyState.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -162,12 +161,17 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
 
     /* create Richards process kernel */
     RPK->Initialize();
-    RPK->ti_specs_sss().T1 = 1e+4;
-    RPK->ti_specs_sss().max_itrs = 400;
-
     RPK->InitializeAuxiliaryData();
-    RPK->InitSteadyState(0.0, 1.0);
-    RPK->AdvanceToSteadyState(0.0, 1.0);
+    RPK->InitTimeInterval();
+
+    // solver the problem
+    TI_Specs ti_specs;
+    ti_specs.T0 = 0.0;
+    ti_specs.dT0 = 1.0;
+    ti_specs.T1 = 1.0e+4;
+    ti_specs.max_itrs = 400;
+
+    AdvanceToSteadyState(*RPK, ti_specs, S->GetFieldData("pressure", "flow"));
     RPK->CommitState(0.0, S.ptr());
 
     S->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
@@ -179,7 +183,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     flux_err = calculateDarcyFluxError(mesh, flux);
     div_err = calculateDarcyDivergenceError(mesh, flux);
 
-    int num_bdf1_steps = RPK->ti_specs_sss().num_itrs;
+    int num_bdf1_steps = ti_specs.num_itrs;
     printf("mesh=%d bdf1_steps=%d  L2_pressure_err=%7.3e  l2_flux_err=%7.3e  L2_div_err=%7.3e\n",
         n, num_bdf1_steps, pressure_err, flux_err, div_err);
 

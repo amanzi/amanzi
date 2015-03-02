@@ -57,19 +57,19 @@ void Flow_PK::InitializeFields()
     S_->GetField("permeability", passwd_)->set_initialized();
   }
 
-  if (S_->GetField("water_saturation")->owner() == passwd_) {
-    if (S_->HasField("water_saturation")) {
-      if (!S_->GetField("water_saturation", passwd_)->initialized()) {
-        S_->GetFieldData("water_saturation", passwd_)->PutScalar(1.0);
-        S_->GetField("water_saturation", passwd_)->set_initialized();
+  if (S_->GetField("saturation_liquid")->owner() == passwd_) {
+    if (S_->HasField("saturation_liquid")) {
+      if (!S_->GetField("saturation_liquid", passwd_)->initialized()) {
+        S_->GetFieldData("saturation_liquid", passwd_)->PutScalar(1.0);
+        S_->GetField("saturation_liquid", passwd_)->set_initialized();
       }
     }
   }
 
-  if (S_->HasField("prev_water_saturation")) {
-    if (!S_->GetField("prev_water_saturation", passwd_)->initialized()) {
-      S_->GetFieldData("prev_water_saturation", passwd_)->PutScalar(1.0);
-      S_->GetField("prev_water_saturation", passwd_)->set_initialized();
+  if (S_->HasField("prev_saturation_liquid")) {
+    if (!S_->GetField("prev_saturation_liquid", passwd_)->initialized()) {
+      S_->GetFieldData("prev_saturation_liquid", passwd_)->PutScalar(1.0);
+      S_->GetField("prev_saturation_liquid", passwd_)->set_initialized();
     }
   }
 
@@ -185,7 +185,7 @@ void Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
 {
   const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell", false);
   const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
-  const Epetra_MultiVector& ws = *S->GetFieldData("water_saturation")->ViewComponent("cell", false);
+  const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
 
   double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flux) * rho_ * dT;
 
@@ -298,6 +298,31 @@ void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
 }
 
  
+/* ****************************************************************
+* Find string for the preconditoner.
+**************************************************************** */
+void Flow_PK::OutputTimeHistory(
+    const Teuchos::ParameterList& plist, std::vector<dt_tuple>& dT_history)
+{
+  if (plist.isParameter("plot time history") && 
+      vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "saving time history in file flow_dt_history.txt..." << std::endl;
+
+    char file_name[30];
+    sprintf(file_name, "flow_dt_history_%d.txt", ti_phase_counter++);
+
+    std::ofstream ofile;
+    ofile.open(file_name);
+
+    for (double n = 0; n < dT_history.size(); n++) {
+      ofile << std::setprecision(10) << dT_history[n].first / FLOW_YEAR << " " << dT_history[n].second << std::endl;
+    }
+    ofile.close();
+  }
+}
+
+
 /* *******************************************************************
 * Calculates best least square fit for data (h[i], error[i]).                       
 ******************************************************************* */

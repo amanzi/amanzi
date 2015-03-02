@@ -92,9 +92,8 @@ class InputParserIS {
   Teuchos::ParameterList CreatePartitionList_(Teuchos::ParameterList* plist);
   
   // MPC and state
-  Teuchos::ParameterList CreateMPC_List_(Teuchos::ParameterList* plist);
   Teuchos::ParameterList CreateTimePeriodControlList_(Teuchos::ParameterList* plist);
-  Teuchos::ParameterList CreateCycleDriver_List_(Teuchos::ParameterList* plist);
+  Teuchos::ParameterList CreateCycleDriverList_(Teuchos::ParameterList* plist);
   void CreatePKslist_(Teuchos::ParameterList& cycle_driver_list, Teuchos::ParameterList& pks_list);
   void RegisterPKlist_(Teuchos::ParameterList& pk_tree, Teuchos::ParameterList& pks_list);
   void FillPKslist_(Teuchos::ParameterList* plist, Teuchos::ParameterList& pks_list);
@@ -123,7 +122,7 @@ class InputParserIS {
 
   double constant_density;
   int spatial_dimension_;  
-  bool flow_single_phase, use_picard_, new_mpc_driver_;
+  bool flow_single_phase, use_picard_;
   bool need_dispersion_;
   std::vector<std::string> transport_diagnostics_;
 

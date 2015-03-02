@@ -62,7 +62,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   Amanzi::VerboseObject::hide_line_prefix = true;
   Amanzi::VerboseObject::global_default_level = Teuchos::VERB_EXTREME;
 
-  ParameterList state_list;
+  Teuchos::ParameterList state_list = plist.sublist("State");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
@@ -114,7 +114,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   /* initialize the Darcy process kernel */
   DPK->Initialize();
-  DPK->InitTransient(0.0, 1e-8);
+  DPK->InitTimeInterval();
 
   /* transient solution */
   double dT = 0.1;
@@ -184,7 +184,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   /* create and populate flow state */
   Amanzi::VerboseObject::hide_line_prefix = true;
 
-  ParameterList state_list;
+  Teuchos::ParameterList state_list = plist.sublist("State");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
@@ -233,7 +233,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
 
   /* initialize the Darcy process kernel */
   DPK->Initialize();
-  DPK->InitTransient(0.0, 1e-8);
+  DPK->InitTimeInterval();
 
   /* transient solution */
   double dT = 0.1;

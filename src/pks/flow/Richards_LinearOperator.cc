@@ -44,7 +44,7 @@ void Richards_PK::SolveFullySaturatedProblem(
   op_preconditioner_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
   op_preconditioner_diff_->ApplyBCs(true);
   op_preconditioner_->AssembleMatrix();
-  op_preconditioner_->InitPreconditioner(ti_specs->preconditioner_name, *preconditioner_list_);
+  op_preconditioner_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 
   AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
 
@@ -107,7 +107,8 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
                    *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
 
   // modify relative permeability coefficient for influx faces
-  if (ti_specs->inflow_krel_correction) {
+  bool inflow_krel_correction(true);
+  if (inflow_krel_correction) {
     Epetra_MultiVector& k_face = *rel_perm_->Krel()->ViewComponent("face", true);
     AmanziMesh::Entity_ID_List cells;
 
@@ -141,12 +142,12 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
   op_preconditioner_diff_->ApplyBCs(true);
   op_preconditioner_diff_->ModifyMatrices(u);
   op_preconditioner_->AssembleMatrix();
-  op_preconditioner_->InitPreconditioner(ti_specs->preconditioner_name, *preconditioner_list_);
+  op_preconditioner_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 
   // solve non-symmetric problem
   AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
-      solver = factory.Create(ti_specs->solver_name_constraint, *linear_operator_list_, op_matrix_, op_preconditioner_);
+      solver = factory.Create(solver_name_constraint_, *linear_operator_list_, op_matrix_, op_preconditioner_);
 
   CompositeVector& rhs = *op_preconditioner_->rhs();
   int ierr = solver->ApplyInverse(rhs, utmp);

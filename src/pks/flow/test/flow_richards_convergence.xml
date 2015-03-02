@@ -101,9 +101,10 @@
 	  </ParameterList>
 	</ParameterList>
 
-	<ParameterList name="steady state time integrator">
+	<ParameterList name="time integrator">
 	  <Parameter name="linear solver" type="string" value="none"/>
 	  <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+	  <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 
 	  <ParameterList name="initialization">
 	    <Parameter name="method" type="string" value="saturated solver"/>
@@ -254,6 +255,23 @@
   </ParameterList>
 
   <ParameterList name="State">
+    <ParameterList name="field evaluators">
+     <ParameterList name="porosity">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant"> <!-- time component -->
+                <Parameter name="value" type="double" value="0.2"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
     <ParameterList name="initial conditions">
       <ParameterList name="fluid_density">
         <Parameter name="value" type="double" value="1.0"/>
@@ -295,7 +313,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="prev_water_saturation">
+      <ParameterList name="prev_saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="Computational domain"/>
@@ -309,7 +327,7 @@
         </ParameterList>
       </ParameterList>
       
-      <ParameterList name="water_saturation">
+      <ParameterList name="saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="Computational domain"/>
@@ -345,20 +363,6 @@
             <ParameterList name="function">
               <ParameterList name="function-constant"> <!-- time component -->
                 <Parameter name="value" type="double" value="0."/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-     <ParameterList name="porosity">
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant"> <!-- time component -->
-                <Parameter name="value" type="double" value="0.2"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

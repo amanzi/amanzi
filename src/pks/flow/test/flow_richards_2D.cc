@@ -15,18 +15,21 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
 
-#include "MeshFactory.hh"
-#include "MeshAudit.hh"
+// Amanzi
 #include "GMVMesh.hh"
-
+#include "MeshAudit.hh"
+#include "MeshFactory.hh"
 #include "State.hh"
+
+// Flow
 #include "Richards_PK.hh"
+#include "Richards_SteadyState.hh"
 
 /* **************************************************************** */
 TEST(FLOW_2D_RICHARDS) {
@@ -61,7 +64,7 @@ TEST(FLOW_2D_RICHARDS) {
   /* create a simple state and populate it */
   Amanzi::VerboseObject::hide_line_prefix = false;
 
-  Teuchos::ParameterList state_list;
+  Teuchos::ParameterList state_list = plist.sublist("State");
   Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
   S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
@@ -109,14 +112,18 @@ TEST(FLOW_2D_RICHARDS) {
 
   /* initialize the Richards process kernel */
   RPK->Initialize();
-  RPK->ti_specs_sss().T1 = 100.0;
-  RPK->ti_specs_sss().max_itrs = 400;
 
   RPK->InitializeAuxiliaryData();
-  RPK->InitSteadyState(0.0, 1e-8);
+  RPK->InitTimeInterval();
 
   /* solve the problem */
-  RPK->AdvanceToSteadyState(0.0, 0.1);
+  TI_Specs ti_specs;
+  ti_specs.T0 = 0.0;
+  ti_specs.dT0 = 1.0;
+  ti_specs.T1 = 100.0;
+  ti_specs.max_itrs = 400;
+
+  AdvanceToSteadyState(*RPK, ti_specs, S->GetFieldData("pressure", "flow"));
   RPK->CommitState(0.0, S.ptr());
 
   if (MyPID == 0) {

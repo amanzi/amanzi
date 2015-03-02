@@ -124,64 +124,19 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           flow_list->sublist("source terms") = flow_src;
         }
 
+        // do need to add picard list to initialization?
+        bool have_picard_params(false);
+        Teuchos::ParameterList pic_params;
         if (use_picard_) {
-          bool have_picard_params(false);
-          Teuchos::ParameterList picard_params;
           if (exe_list.isSublist("Numerical Control Parameters")) {
             Teuchos::ParameterList& ncp_list = exe_list.sublist("Numerical Control Parameters");
             if (ncp_list.isSublist("Unstructured Algorithm")) {
               Teuchos::ParameterList& ua_list = ncp_list.sublist("Unstructured Algorithm");
               if (ua_list.isSublist("Steady-State Pseudo-Time Implicit Solver")) {
                 have_picard_params = true;
-                picard_params = ua_list.sublist("Steady-State Pseudo-Time Implicit Solver");
+                pic_params = ua_list.sublist("Steady-State Pseudo-Time Implicit Solver");
               }
             }
-          }
-
-          Teuchos::ParameterList& picard_list = flow_list->sublist("initial guess pseudo time integrator");
-          if (have_picard_params) {
-            bool ini = picard_params.get<bool>("pseudo time integrator initialize with darcy", PIC_INIT_DARCY);
-            if (ini) { 
-              Teuchos::ParameterList& picard_ini = picard_list.sublist("initialization");
-              picard_ini.set<std::string>("method", "saturated solver");
-              picard_ini.set<std::string>("linear solver",
-                  picard_params.get<std::string>("pseudo time integrator linear solver", PIC_SOLVE));
-              picard_ini.set<double>("clipping saturation value", 
-                  picard_params.get<double>("pseudo time integrator clipping saturation value", PIC_CLIP_SAT));
-            }
-
-            picard_list.set<std::string>("time integration method", 
-                picard_params.get<std::string>("pseudo time integrator time integration method", PIC_METHOD));
-            picard_list.set<std::string>("preconditioner",
-                picard_params.get<std::string>("pseudo time integrator preconditioner", PIC_PRECOND));
-            picard_list.set<std::string>("linear solver",
-                picard_params.get<std::string>("pseudo time integrator linear solver", PIC_SOLVE));
-
-            Teuchos::Array<std::string> error_ctrl(1);
-            error_ctrl[0] = std::string(PIC_ERROR_METHOD);
-            picard_list.set<Teuchos::Array<std::string> >("error control options",
-                picard_params.get<Teuchos::Array<std::string> >("pseudo time integrator error control options",
-                error_ctrl));
-            picard_list.sublist("Picard").set<double>("convergence tolerance",
-                picard_params.get<double>("pseudo time integrator picard convergence tolerance", PICARD_TOLERANCE));
-            picard_list.sublist("Picard").set<int>("maximum number of iterations",
-                picard_params.get<int>("pseudo time integrator picard maximum number of iterations", PIC_MAX_ITER));
-          } else {
-            if (PIC_INIT_DARCY) {
-              Teuchos::ParameterList& picard_ini = picard_list.sublist("initialization");
-              picard_ini.set<std::string>("method", "saturated solver");
-              picard_ini.set<std::string>("linear solver", PIC_SOLVE);
-              picard_ini.set<double>("clipping saturation value", PIC_CLIP_SAT);
-            }
-            picard_list.set<std::string>("time integration method", PIC_METHOD);
-            picard_list.set<std::string>("preconditioner", PIC_PRECOND);
-            picard_list.set<std::string>("linear solver", PIC_SOLVE);
-
-            Teuchos::Array<std::string> error_ctrl(1);
-            error_ctrl[0] = std::string(PIC_ERROR_METHOD);
-            picard_list.set<Teuchos::Array<std::string> >("error control options", error_ctrl);
-            picard_list.sublist("Picard").set<double>("convergence tolerance", PICARD_TOLERANCE);
-            picard_list.sublist("Picard").set<int>("maximum number of iterations", PIC_MAX_ITER);
           }
         }
 
@@ -333,10 +288,33 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
                       num_list.get<double>("steady time step increase factor",ST_SP_DT_INCR_FACTOR));
                 }
 		// initialization
-		if (!use_picard_ && num_list.get<bool>("steady initialize with darcy", ST_INIT_DARCY_BOOL)) {
+std::cout << have_picard_params << " " << use_picard_ << std::endl;
+		if (num_list.get<bool>("steady initialize with darcy", ST_INIT_DARCY_BOOL)) {
 		  Teuchos::ParameterList& sti_init = sti_list.sublist("initialization");
-		  sti_init.set<std::string>("method", "saturated solver");
-		  sti_init.set<std::string>("linear solver", ST_INIT_SOLVER);
+                  if (have_picard_params && use_picard_) {
+		    sti_init.set<std::string>("method", "picard");
+                    sti_init.set<std::string>("linear solver",
+                        pic_params.get<std::string>("pseudo time integrator linear solver", PIC_SOLVE));
+                    sti_init.set<double>("clipping saturation value", 
+                        pic_params.get<double>("pseudo time integrator clipping saturation value", PIC_CLIP_SAT));
+
+                    Teuchos::ParameterList& pic_list = sti_init.sublist("picard parameters");
+                    pic_list.set<double>("convergence tolerance",
+                        pic_params.get<double>("pseudo time integrator picard convergence tolerance", PICARD_TOLERANCE));
+                    pic_list.set<int>("maximum number of iterations",
+                        pic_params.get<int>("pseudo time integrator picard maximum number of iterations", PIC_MAX_ITER));
+                  } else if (use_picard_) {
+		    sti_init.set<std::string>("method", "picard");
+                    sti_init.set<double>("clipping saturation value", PIC_CLIP_SAT);
+
+                    Teuchos::ParameterList& pic_list = sti_init.sublist("picard parameters");
+                    pic_list.set<std::string>("linear solver", PIC_SOLVE);
+                    pic_list.set<double>("convergence tolerance", PICARD_TOLERANCE);
+                    pic_list.set<int>("maximum number of iterations", PIC_MAX_ITER);
+                  } else {
+		    sti_init.set<std::string>("method", "saturated solver");
+                    sti_init.set<std::string>("linear solver", ST_INIT_SOLVER);
+                  }
 		}
               }
             }
@@ -353,7 +331,8 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 	    flow_list->sublist("time integrator") = sti_list;
 	  }
         }
-	
+
+
         // only include the transient list if not in steady mode
         if (! ti_mode_list.isSublist("Steady")) {
           // create sublists for the transient state time integrator
@@ -366,7 +345,13 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           tti_list.set<Teuchos::Array<std::string> >("error control options", err_opts);
 
           // linear solver
-          tti_list.set<std::string>("linear solver", TR_SOLVER);
+          if (flow_single_phase) {
+            tti_list.set<std::string>("linear solver", TR_SOLVER_DARCY);
+          } else if (nonlinear_solver == std::string("Newton")) {
+            tti_list.set<std::string>("linear solver", "GMRESforNewton");
+          } else {
+            tti_list.set<std::string>("linear solver", TR_SOLVER);
+          }
           tti_list.set<std::string>("preconditioner", TR_PRECOND);
 
           // pressure-lambda constraints
@@ -494,10 +479,8 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
   }
 
   // cleaning flow for better testing of PKs
-  if (new_mpc_driver_) {
-    flow_list->remove("steady state time integrator", false);
-    flow_list->remove("transient time integrator", false);
-  }
+  flow_list->remove("steady state time integrator", false);
+  flow_list->remove("transient time integrator", false);
 
   return flw_list;
  }

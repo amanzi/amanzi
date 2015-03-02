@@ -102,10 +102,10 @@
 	  </ParameterList>
 	</ParameterList>
 
-	<ParameterList name="steady state time integrator">
+	<ParameterList name="time integrator">
 	  <Parameter name="linear solver" type="string" value="none"/>
 	  <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-	  <Parameter name="error control options" type="Array(string)" value="{residual}"/>
+	  <Parameter name="error control options" type="Array(string)" value="{pressure,residual}"/>
 
 	  <ParameterList name="initialization">
 	    <Parameter name="method" type="string" value="saturated solver"/>
@@ -132,7 +132,7 @@
 	    <Parameter name="solver type" type="string" value="nka"/>
 	    <ParameterList name="nka parameters">
 	      <Parameter name="nonlinear tolerance" type="double" value="1e-3"/>
-	      <Parameter name="diverged tolerance" type="double" value="1+10"/>
+	      <Parameter name="diverged tolerance" type="double" value="1e+10"/>
 	      <Parameter name="limit iterations" type="int" value="20"/>
 	      <Parameter name="max du growth factor" type="double" value="1e+5"/>
 	      <Parameter name="max divergent iterations" type="int" value="3"/>
@@ -250,20 +250,9 @@
   <!--  STATE: this super input desk will be used to cut-off smaller 
   input deks for other flow tests -->
   <ParameterList name="State">
-    <ParameterList name="initial conditions">
-      <ParameterList name="fluid_density">
-        <Parameter name="value" type="double" value="1.0"/>
-      </ParameterList>
-
-      <ParameterList name="fluid_viscosity">
-        <Parameter name="value" type="double" value="1.0"/>
-      </ParameterList>
-
-      <ParameterList name="gravity">
-        <Parameter name="value" type="Array(double)" value="{0.0, -2.0}"/>
-      </ParameterList>
-
+    <ParameterList name="field evaluators">
       <ParameterList name="porosity">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="Computational domain"/>
@@ -275,6 +264,20 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="initial conditions">
+      <ParameterList name="fluid_density">
+        <Parameter name="value" type="double" value="1.0"/>
+      </ParameterList>
+
+      <ParameterList name="fluid_viscosity">
+        <Parameter name="value" type="double" value="1.0"/>
+      </ParameterList>
+
+      <ParameterList name="gravity">
+        <Parameter name="value" type="Array(double)" value="{0.0, -2.0}"/>
       </ParameterList>
 
       <ParameterList name="pressure">
@@ -291,7 +294,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="water_saturation">
+      <ParameterList name="saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="Computational domain"/>
@@ -305,7 +308,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="prev_water_saturation">
+      <ParameterList name="prev_saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="Computational domain"/>

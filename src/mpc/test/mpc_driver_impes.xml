@@ -366,7 +366,7 @@
       <ParameterList name="porosity">
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
-      <ParameterList name="water_saturation">
+      <ParameterList name="saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
