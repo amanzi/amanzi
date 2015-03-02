@@ -136,7 +136,7 @@ set(flow_inc_files
   Flow_PK.hh
   Flow_SourceFactory.hh
   FlowTypeDefs.hh
-  RelPerm_evaluator.hh
+  RelPermEvaluator.hh
   Richards_PK.hh
   WRM.hh
   WRM_BrooksCorey.hh
