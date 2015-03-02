@@ -36,7 +36,7 @@ class Richards_PK_Wrapper : public FnTimeIntegratorPK {
                       const Teuchos::RCP<TreeVector>& soln);
 
   ~Richards_PK_Wrapper() {
-    std::cout<<"Destructor Richards_PK_Wrapper\n";
+    //std::cout<<"Destructor Richards_PK_Wrapper\n";
   };
 
   // Delegeting routines

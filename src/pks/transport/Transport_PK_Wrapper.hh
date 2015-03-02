@@ -26,7 +26,7 @@ class Transport_PK_Wrapper : public PK {
                        const Teuchos::RCP<TreeVector>& soln);
 
   ~Transport_PK_Wrapper(){
-    std::cout<<"Destructor Transport_PK_Wrapper\n";
+    //std::cout<<"Destructor Transport_PK_Wrapper\n";
   }
 
   // Delegeting routines

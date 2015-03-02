@@ -34,7 +34,7 @@ class ReactiveTransport_PK : public MPCWeak {
 
 
   ~ReactiveTransport_PK(){
-    std::cout<<"Destructor ReactiveTransport_PK\n";
+    //std::cout<<"Destructor ReactiveTransport_PK\n";
   }
 
   // PK methods
