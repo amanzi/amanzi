@@ -32,6 +32,11 @@ class ReactiveTransport_PK : public MPCWeak {
                const Teuchos::RCP<State>& S,
                const Teuchos::RCP<TreeVector>& soln);
 
+
+  ~ReactiveTransport_PK(){
+    std::cout<<"Destructor ReactiveTransport_PK\n";
+  }
+
   // PK methods
   // -- dt is the minimum of the sub pks
   virtual double get_dt();

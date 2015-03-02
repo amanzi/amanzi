@@ -150,8 +150,8 @@ void CycleDriver::setup() {
 
   S_->Setup();
 
-  S_->InitializeFields();
-  S_->InitializeEvaluators();
+  // S_->InitializeFields();
+  // S_->InitializeEvaluators();
 
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -176,6 +176,8 @@ void CycleDriver::initialize() {
   // Final checks.
   S_->CheckNotEvaluatedFieldsInitialized();
   S_->CheckAllFieldsInitialized();
+
+
   // S_->WriteDependencyGraph();
 
   S_->GetMeshPartition("materials");

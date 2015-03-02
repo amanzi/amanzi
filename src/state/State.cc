@@ -733,13 +733,13 @@ void State::Initialize(Teuchos::RCP<State> S) {
   InitializeFields();
 
   // Ensure that non-evaluator-based fields are initialized.
-  CheckNotEvaluatedFieldsInitialized();
+  //  CheckNotEvaluatedFieldsInitialized();
 
   // Initialize other field evaluators.
   InitializeEvaluators();
 
   // Ensure everything is owned and initialized.
-  CheckAllFieldsInitialized();
+  // CheckAllFieldsInitialized();
 
   // Write dependency graph.
   WriteDependencyGraph();

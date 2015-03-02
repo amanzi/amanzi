@@ -25,6 +25,10 @@ class Transport_PK_Wrapper : public PK {
                        const Teuchos::RCP<State>& S,
                        const Teuchos::RCP<TreeVector>& soln);
 
+  ~Transport_PK_Wrapper(){
+    std::cout<<"Destructor Transport_PK_Wrapper\n";
+  }
+
   // Delegeting routines
   virtual void Setup() { pk_->Setup(); }
   virtual void Initialize() { 
