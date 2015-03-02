@@ -46,15 +46,13 @@ Energy_PK::Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   energy_key_ = "energy";
   enthalpy_key_ = "enthalpy";
   conductivity_key_ = "thermal_conductivity";
-
-  Initialize();
 }
 
 
 /* ******************************************************************
 * Construction of PK global variables.
 ****************************************************************** */
-void Energy_PK::Initialize()
+void Energy_PK::Setup()
 {
   // require first-requested state variables
   if (!S_->HasField("atmospheric_pressure")) {
@@ -81,7 +79,14 @@ void Energy_PK::Initialize()
     temperature_eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
     S_->SetFieldEvaluator("temperature", temperature_eval);
   }
+}
 
+
+/* ******************************************************************
+* Initialiation.
+****************************************************************** */
+void Energy_PK::Initialize()
+{
   // create verbosity object
   Teuchos::ParameterList vlist;
   vlist.sublist("VerboseObject") = glist_->sublist("PKs").sublist("Energy").sublist("VerboseObject");
@@ -110,6 +115,12 @@ void Energy_PK::Initialize()
   op_matrix_->Init();
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
   op_matrix_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, 1.0, 1.0);
+
+  op_preconditioner_diff_ = opfactory.Create(mesh_, op_bc_, oplist_pc, g, 0);
+  op_preconditioner_diff_->SetBCs(op_bc_);
+  op_preconditioner_ = op_preconditioner_diff_->global_operator();
+  op_preconditioner_->Init();
+  op_preconditioner_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, 1.0, 1.0);
 }
 
 

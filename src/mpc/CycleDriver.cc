@@ -152,6 +152,11 @@ void CycleDriver::setup() {
 
   S_->InitializeFields();
   S_->InitializeEvaluators();
+
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Setup is complete." << std::endl;
+  }
 }
 
 

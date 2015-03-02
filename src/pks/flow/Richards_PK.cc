@@ -528,11 +528,11 @@ void Richards_PK::InitTimeInterval()
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << std::endl 
-        << vo_->color("green") << "Initalization of TI period is complete: " << ti_method_name.c_str() 
-        << vo_->reset() << std::endl << std::endl;
+        << vo_->color("green") << "Initalization of TI period is complete." << vo_->reset() << std::endl;
     *vo_->os()<< "EC:" << error_control_ << " Src:" << src_sink_distribution
               << " Upwind:" << rel_perm_->method() << op_matrix_diff_->upwind()
-              << " PC:\"" << preconditioner_name_.c_str() << "\"" << std::endl;
+              << " PC:\"" << preconditioner_name_.c_str() << "\"" 
+              << " TI:\"" << ti_method_name.c_str() << "\"" << std::endl;
 
     int missed_tmp = missed_bc_faces_;
     int dirichlet_tmp = dirichlet_bc_faces_;

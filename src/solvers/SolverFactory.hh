@@ -29,8 +29,8 @@ struct SolverFactory {
   Create(Teuchos::ParameterList& solver_list);
 };
 
-} // namespace
-} // namespace
+}  // namespace Amanzisolvers
+}  // namespace Amanzi
 
 #include "SolverNKA.hh"
 #include "SolverNKA_BT.hh"

@@ -110,6 +110,10 @@ void FlowEnergy_PK::Setup()
          .set<std::string>("field evaluator type", "effective_pressure");
   }
 
+  if (!S_->HasField("mass_density_liquid")) {
+    S_->RequireFieldEvaluator("mass_density_liquid");
+  }
+
   // process other PKs.
   MPCStrong<FnTimeIntegratorPK>::Setup();
 }

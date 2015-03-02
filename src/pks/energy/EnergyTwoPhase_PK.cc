@@ -31,6 +31,8 @@ EnergyTwoPhase_PK::EnergyTwoPhase_PK(
     const Teuchos::RCP<State>& S,
     const Teuchos::RCP<TreeVector>& soln) : Energy_PK(glist, S) 
 {
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
+  ep_list_ = Teuchos::sublist(pk_list, "Energy", true);
 };
 
 
@@ -40,6 +42,8 @@ EnergyTwoPhase_PK::EnergyTwoPhase_PK(
 ****************************************************************** */
 void EnergyTwoPhase_PK::Setup()
 {
+  Energy_PK::Setup();
+
   // Get data and evaluators needed by the PK
   // -- energy, the conserved quantity
   S_->RequireField(energy_key_)->SetMesh(mesh_)->SetGhosted()
@@ -77,6 +81,11 @@ void EnergyTwoPhase_PK::Initialize()
   // Call the base class's initialize.
   Energy_PK::Initialize();
 
+  // create verbosity object
+  Teuchos::ParameterList vlist;
+  vlist.sublist("VerboseObject") = ep_list_->sublist("VerboseObject");
+  vo_ = new VerboseObject("EnergyPK::2Phase", vlist); 
+
   // create evaluators
   Teuchos::RCP<FieldEvaluator> eos_fe = S_->GetFieldEvaluator("molar_density_liquid");
   Teuchos::RCP<Relations::EOSEvaluator> eos_eval = Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(eos_fe);
@@ -87,6 +96,12 @@ void EnergyTwoPhase_PK::Initialize()
   Teuchos::RCP<IEMEvaluator> iem_eval = Teuchos::rcp_dynamic_cast<IEMEvaluator>(iem_fe);
   ASSERT(iem_eval != Teuchos::null);
   iem_liquid_ = iem_eval->get_IEM();
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << std::endl 
+        << vo_->color("green") << "Initalization of TI period is complete." << vo_->reset() << std::endl;
+  }
 }
 
 }  // namespace Energy
