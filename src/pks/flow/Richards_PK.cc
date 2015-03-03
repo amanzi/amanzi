@@ -74,26 +74,23 @@ void Richards_PK::Setup()
   mesh_ = S_->GetMesh();
   dim = mesh_->space_dimension();
 
-  // for creating fields
-  std::vector<std::string> names(2);
-  names[0] = "cell"; 
-  names[1] = "face";
+  // Require primary field for this PK.
+  std::vector<std::string> names;
+  std::vector<AmanziMesh::Entity_kind> locations;
+  std::vector<int> ndofs;
 
-  std::vector<AmanziMesh::Entity_kind> locations(2);
-  locations[0] = AmanziMesh::CELL; 
-  locations[1] = AmanziMesh::FACE;
+  Teuchos::RCP<Teuchos::ParameterList> list1 = Teuchos::sublist(rp_list_, "operators", true);
+  Teuchos::RCP<Teuchos::ParameterList> list2 = Teuchos::sublist(list1, "diffusion operator", true);
+  Teuchos::RCP<Teuchos::ParameterList> list3 = Teuchos::sublist(list2, "matrix", true);
+  std::string name = list3->get<std::string>("discretization primary");
 
-  std::vector<int> ndofs(2, 1);
-
-  // Require additional state fields for this PK.
-  if (!S_->HasField("fluid_density")) {
-    S_->RequireScalar("fluid_density", passwd_);
-  }
-  if (!S_->HasField("fluid_viscosity")) {
-    S_->RequireScalar("fluid_viscosity", passwd_);
-  }
-  if (!S_->HasField("gravity")) {
-    S_->RequireConstantVector("gravity", passwd_, dim);  // state resets ownerships.
+  names.push_back("cell");
+  locations.push_back(AmanziMesh::CELL);
+  ndofs.push_back(1);
+  if (name != "fv: default") {
+    names.push_back("face");
+    locations.push_back(AmanziMesh::FACE);
+    ndofs.push_back(1);
   }
 
   if (!S_->HasField("pressure")) {
@@ -106,9 +103,20 @@ void Richards_PK::Setup()
     S_->SetFieldEvaluator("pressure", pressure_eval_);
   }
 
+  // Require additional fields for this PK.
   if (!S_->HasField("permeability")) {
     S_->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, dim);
+  }
+
+  if (!S_->HasField("fluid_density")) {
+    S_->RequireScalar("fluid_density", passwd_);
+  }
+  if (!S_->HasField("fluid_viscosity")) {
+    S_->RequireScalar("fluid_viscosity", passwd_);
+  }
+  if (!S_->HasField("gravity")) {
+    S_->RequireConstantVector("gravity", passwd_, dim);  // state resets ownerships.
   }
 
   if (!S_->HasField("prev_saturation_liquid")) {
@@ -345,9 +353,11 @@ void Richards_PK::InitializeAuxiliaryData()
   // pressures
   CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
   const Epetra_MultiVector& p_cell = *pressure.ViewComponent("cell");
-  Epetra_MultiVector& p_face = *pressure.ViewComponent("face");
 
-  DeriveFaceValuesFromCellValues(p_cell, p_face);
+  if (pressure.HasComponent("face")) {
+    Epetra_MultiVector& p_face = *pressure.ViewComponent("face");
+    DeriveFaceValuesFromCellValues(p_cell, p_face);
+  }
 
   double T1 = T_physics, T0 = T1 - dT;
   UpdateSourceBoundaryData(T0, T1, pressure);

@@ -33,7 +33,7 @@ namespace Operators {
 class OperatorDiffusionMFD : public OperatorDiffusion {
  public:
   OperatorDiffusionMFD(Teuchos::ParameterList& plist,
-                    const Teuchos::RCP<Operator>& global_op) :
+                       const Teuchos::RCP<Operator>& global_op) :
       OperatorDiffusion(global_op),
       factor_(1.0)
   {
@@ -41,7 +41,7 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   }
 
   OperatorDiffusionMFD(Teuchos::ParameterList& plist,
-                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+                       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       OperatorDiffusion(mesh),
       factor_(1.0)
   {
@@ -67,7 +67,7 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   using OperatorDiffusion::Setup;
 
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-          const Teuchos::Ptr<const CompositeVector>& u);
+                              const Teuchos::Ptr<const CompositeVector>& u);
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
   virtual void ApplyBCs(bool primary=true);
   virtual void ModifyMatrices(const CompositeVector& u);
@@ -85,7 +85,7 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   void UpdateMatricesMixedWithGrad_(const Teuchos::Ptr<const CompositeVector>& flux);
 
   void AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVector>& flux,
-          const Teuchos::Ptr<const CompositeVector>& u);
+                                const Teuchos::Ptr<const CompositeVector>& u);
 
  protected:
   std::vector<WhetStone::DenseMatrix> Wff_cells_;
@@ -96,7 +96,6 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
 
   int mfd_primary_, mfd_secondary_, mfd_pc_primary_, mfd_pc_secondary_;
   int nfailed_primary_;
-
 };
 
 }  // namespace Operators

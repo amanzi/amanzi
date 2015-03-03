@@ -29,7 +29,7 @@
 
 /*
   Pure interface for Diffusion operators  
- */ 
+*/ 
 
 namespace Amanzi {
 namespace Operators {
@@ -37,15 +37,14 @@ namespace Operators {
 class OperatorDiffusion {
  public:
   OperatorDiffusion(const Teuchos::RCP<Operator>& global_op) :
-      global_op_(global_op) {}
+      global_op_(global_op) {};
 
   OperatorDiffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      mesh_(mesh) {}
+      mesh_(mesh) {};
 
   OperatorDiffusion(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      mesh_(mesh) {}
+      mesh_(mesh) {};
   
-
   // main virtual members
   virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
                      double rho, double mu) = 0;
@@ -135,12 +134,10 @@ class OperatorDiffusion {
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
   int nnodes_owned, nnodes_wghost;
-
 };
 
 }  // namespace Operators
 }  // namespace Amanzi
-
 
 #endif
 

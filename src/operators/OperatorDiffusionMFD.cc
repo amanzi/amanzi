@@ -37,7 +37,6 @@
 namespace Amanzi {
 namespace Operators {
 
-
 /* ******************************************************************
 * Initialization of the operator, scalar coefficients.
 ****************************************************************** */

@@ -112,6 +112,7 @@ TEST(FLOW_3D_RICHARDS) {
   /* initialize the Richards process kernel */
   RPK->Initialize();
   S->CheckAllFieldsInitialized();
+
   RPK->InitializeAuxiliaryData();
   RPK->InitTimeInterval();
 
