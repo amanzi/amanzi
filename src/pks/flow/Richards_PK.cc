@@ -36,6 +36,7 @@
 
 #include "darcy_velocity_evaluator.hh"
 #include "Flow_BC_Factory.hh"
+#include "RelPermEvaluator.hh"
 #include "Richards_PK.hh"
 #include "WRMEvaluator.hh"
 
@@ -143,7 +144,7 @@ void Richards_PK::Setup()
     S_->RequireFieldEvaluator("porosity");
   }
 
-  // saturation
+  // saturation and rel perm
   Teuchos::RCP<Teuchos::ParameterList>
       wrm_list = Teuchos::sublist(rp_list_, "water retention models", true);
   wrm_ = CreateWRMPartition(mesh_, wrm_list);
@@ -153,7 +154,6 @@ void Richards_PK::Setup()
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList elist;
-    elist.sublist("VerboseObject").set<std::string>("Verbosity Level", "extreme");
     Teuchos::RCP<WRMEvaluator> eval = Teuchos::rcp(new WRMEvaluator(elist, wrm_));
     S_->SetFieldEvaluator("saturation_liquid", eval);
   }

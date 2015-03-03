@@ -27,6 +27,8 @@
 
 #include "Flow_PK.hh"
 #include "RelativePermeability.hh"
+#include "RelPermEvaluator.hh"
+
 #include "WRMPartition.hh"
 
 namespace Amanzi {
@@ -144,6 +146,9 @@ class Richards_PK : public Flow_PK {
   // upwind
   int update_upwind;
   Teuchos::RCP<CompositeVector> darcy_flux_upwind;
+
+  // evaluators
+  Teuchos::RCP<RelPermEvaluator> rel_perm_eval_;
 
  private:
   void operator=(const Richards_PK& RPK);

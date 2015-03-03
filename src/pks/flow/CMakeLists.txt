@@ -107,6 +107,7 @@ set(flow_src_files Flow_PK.cc
                    Richards_PK.cc Richards_TI.cc Richards_WRM.cc
                    Richards_Picard.cc Richards_LinearOperator.cc
                    RelativePermeability.cc RelativePermeability_IO.cc
+                   RelPermEvaluator.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
                    WRMPartition.cc WRMFactory.cc WRMEvaluator.cc 
                    darcy_velocity_evaluator.cc

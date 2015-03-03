@@ -38,6 +38,15 @@ void Richards_PK::Functional(double T0, double T1,
   // update coefficients
   darcy_flux_copy->ScatterMasterToGhosted("face");
   rel_perm_->Compute(*u_new); 
+/*
+{
+Teuchos::RCP<CompositeVector> krel = Teuchos::rcp(new CompositeVector(*u_new));
+rel_perm_eval_->Value(u_new, krel);
+Epetra_MultiVector err(*krel->ViewComponent("cell"));
+err.Update(-1.0, *rel_perm_->Krel()->ViewComponent("cell"), 1.0);
+double a; err.Norm2(&a); std::cout << a << std::endl;
+}
+*/
 
   RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
   upwind_->Compute(*darcy_flux_upwind, *u_new, bc_model, bc_value, 
