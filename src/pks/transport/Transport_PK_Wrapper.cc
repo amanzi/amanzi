@@ -59,7 +59,10 @@ Transport_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
   bool failed = false;
   double dt = t_new - t_old;
   double dt_actual(dt);
+
+  S_->set_intermediate_time(t_old);
   int ierr = pk_->Advance(dt, dt_actual);
+
   if (std::abs(dt - dt_actual) > 1.e-10 || ierr) {
     failed = true;
   }

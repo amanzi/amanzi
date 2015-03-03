@@ -641,7 +641,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
     *vo_->os() << ncycles << " sub-cycles, dT_stable=" << dT_original 
                << " [sec]  dT_MPC=" << dT_MPC << " [sec]" << std::endl;
 
-    VV_PrintSoluteExtrema(tcc_next, dT_MPC);
+    //VV_PrintSoluteExtrema(tcc_next, dT_MPC);
   }
 
   return 0;
