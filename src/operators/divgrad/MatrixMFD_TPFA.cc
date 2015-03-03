@@ -1,4 +1,4 @@
-/*
+/*
   This is the flow component of the Amanzi code.
 
   Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL.
@@ -213,7 +213,11 @@ void MatrixMFD_TPFA::AssembleRHS_() const {
 
   // Schur complement RHS
   for (int f=0; f!=nfaces_owned; ++f) {
-    (*rhs_faces)[0][f] /= Dff_f[0][f];
+    if (std::abs(Dff_f[0][f]) > 0) {
+      (*rhs_faces)[0][f] /= Dff_f[0][f];
+    } else {
+      ASSERT( (*rhs_faces)[0][f] == 0. );
+    }
   }
   ApplyAcf(*rhs_, *rhs_, -1.);
   rhs_cells->Scale(-1.);
@@ -326,7 +330,7 @@ void MatrixMFD_TPFA::AssembleApp_() const {
 
       mesh_->cell_get_faces(c, &faces);
       Bpp(n, n) = Dcc_c[0][c] / faces.size();
-      ASSERT(std::abs(Dcc_c[0][c] / faces.size()) < 1.e40);
+      //      ASSERT(std::abs(Dcc_c[0][c] / faces.size()) < 1.e40);
 
       if (c < ncells_owned) {
         int i = FindPosition<AmanziMesh::Entity_ID>(faces, f);
@@ -341,8 +345,12 @@ void MatrixMFD_TPFA::AssembleApp_() const {
 
     for (int n = 0; n < mcells; n++) {
       for (int m = 0; m < mcells; m++) {
-        Bpp(n, m) -= Acf_copy[n] / Dff_f[0][f] * Afc_copy[m];
-	ASSERT(std::abs(Acf_copy[n] / Dff_f[0][f] * Afc_copy[m]) < 1.e40);
+        if (std::abs(Dff_f[0][f] * Afc_copy[m]) == 0.) {
+          ASSERT(std::abs(Acf_copy[n]) == 0.);
+        } else {
+          Bpp(n, m) -= Acf_copy[n] / Dff_f[0][f] * Afc_copy[m];
+        }
+        //ASSERT(std::abs(Acf_copy[n] / Dff_f[0][f] * Afc_copy[m]) < 1.e40);
       }
     }
 
