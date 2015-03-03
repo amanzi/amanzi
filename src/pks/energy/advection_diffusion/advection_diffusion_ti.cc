@@ -17,11 +17,8 @@ namespace Energy {
 // computes the non-linear functional g = g(t,u,udot)
 void AdvectionDiffusion::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                  Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
-  S_inter_->set_time(t_old);
-  S_next_->set_time(t_new);
 
   // pointer-copy temperature into states and update any auxilary data
-  solution_to_state(*u_old, S_inter_);
   solution_to_state(*u_new, S_next_);
 
   bc_temperature_->Compute(t_new);
@@ -29,8 +26,10 @@ void AdvectionDiffusion::Functional(double t_old, double t_new, Teuchos::RCP<Tre
   UpdateBoundaryConditions_();
 
   Teuchos::RCP<CompositeVector> u = u_new->Data();
-  std::cout << "Residual calculation:" << std::endl;
-  std::cout << "  u: " << (*u)("cell",0) << " " << (*u)("face",0) << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "Residual calculation:" << std::endl;
+    *vo_->os() << "  u: " << (*u)("cell",0) << std::endl;
+  }
 
   // get access to the solution
   Teuchos::RCP<CompositeVector> res = g->Data();
@@ -38,34 +37,39 @@ void AdvectionDiffusion::Functional(double t_old, double t_new, Teuchos::RCP<Tre
 
   // diffusion term, implicit
   ApplyDiffusion_(S_next_, res);
-  std::cout << "  res (after diffusion): " << (*res)("cell",0) << " " << (*res)("face",0) << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) 
+    *vo_->os() << "  res (after diffusion): " << (*res)("cell",0) << std::endl;
 
   // accumulation term
   AddAccumulation_(res);
-  std::cout << "  res (after accumulation): " << (*res)("cell",0) << " " << (*res)("face",0) << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "  res (after accumulation): " << (*res)("cell",0) << std::endl;
 
   // advection term, explicit
   AddAdvection_(S_inter_, res, true);
-  std::cout << "  res (after advection): " << (*res)("cell",0) << " " << (*res)("face",0) << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "  res (after advection): " << (*res)("cell",0) << std::endl;
 };
 
 // applies preconditioner to u and returns the result in Pu
 void AdvectionDiffusion::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
-  std::cout << "Precon application:" << std::endl;
-  std::cout << "  u: " << (*u->Data())("cell",0) << " " << (*u->Data())("face",0) << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "Precon application:" << std::endl;
+    *vo_->os() << "  u: " << (*u->Data())("cell",0) << std::endl;
+  }
   // preconditioner for accumulation only:
   //  *Pu = *u;
 
   // MFD ML preconditioner
   mfd_preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
-
-  std::cout << "  Pu: " << (*Pu->Data())("cell",0) << " " << (*Pu->Data())("face",0) << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "  Pu: " << (*Pu->Data())("cell",0)  << std::endl;
 };
 
 
 // updates the preconditioner
 void AdvectionDiffusion::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
-  S_next_->set_time(t);
+  ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PKDefaultBase::solution_to_state(*up, S_next_);
 
   // div K_e grad u
@@ -94,7 +98,6 @@ void AdvectionDiffusion::UpdatePreconditioner(double t, Teuchos::RCP<const TreeV
   for (int c=0; c!=ncells; ++c) {
     double factor = (*cell_volume)("cell",c);
     Acc_cells[c] += factor/h;
-    Fc_cells[c] += factor/h * (*temp0)("cell",c);
   }
 
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);

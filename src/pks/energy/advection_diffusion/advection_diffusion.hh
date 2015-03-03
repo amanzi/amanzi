@@ -43,7 +43,9 @@ public:
   virtual void initialize(const Teuchos::Ptr<State>& S);
 
   // -- Commit any secondary (dependent) variables.
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {}
+  virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {
+    PKPhysicalBDFBase::commit_state(dt, S);
+  }
 
   // -- Calculate any diagnostics prior to doing vis
   virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {}
@@ -73,7 +75,6 @@ private:
   void ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature);
 
   // misc setup information
-  Teuchos::ParameterList energy_plist_;
   double dt_;
 
   // boundary conditions
