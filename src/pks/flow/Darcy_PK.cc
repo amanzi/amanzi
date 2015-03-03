@@ -102,6 +102,7 @@ void Darcy_PK::Setup()
     S_->RequireField("specific_yield", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
+
   if (!S_->HasField("saturation_liquid")) {
     S_->RequireField("saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -110,6 +111,7 @@ void Darcy_PK::Setup()
     S_->RequireField("prev_saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
+
   if (!S_->HasField("darcy_flux")) {
     S_->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
@@ -120,7 +122,21 @@ void Darcy_PK::Setup()
     S_->SetFieldEvaluator("darcy_flux", darcy_flux_eval_);
   }
 
-  // secondary fields and evaluators
+  // Require additional field evaluators for this PK.
+  // porosity
+  if (!S_->HasField("porosity")) {
+    S_->RequireField("porosity", "porosity")->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireFieldEvaluator("porosity");
+  }
+
+  // Local fields and evaluators.
+  if (!S_->HasField("hydraulic_head")) {
+    S_->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  // full velocity vector
   if (!S_->HasField("darcy_velocity")) {
     S_->RequireField("darcy_velocity", "darcy_velocity")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, dim);
@@ -128,18 +144,6 @@ void Darcy_PK::Setup()
     Teuchos::ParameterList elist;
     Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
     S_->SetFieldEvaluator("darcy_velocity", eval);
-  }
-
-  if (!S_->HasField("hydraulic_head")) {
-    S_->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-
-  // testing evaluators
-  if (!S_->HasField("porosity")) {
-    S_->RequireField("porosity", "porosity")->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireFieldEvaluator("porosity");
   }
 }
 
@@ -184,6 +188,15 @@ void Darcy_PK::Initialize()
   ResetPKtimes(0.0, FLOW_INITIAL_DT);
   dT_desirable_ = dT;
 
+  // create verbosity object
+  Teuchos::ParameterList vlist;
+  vlist.sublist("VerboseObject") = dp_list_->sublist("VerboseObject");
+  vo_ = new VerboseObject("FlowPK::Darcy", vlist); 
+
+  // Create local evaluators. Initialize local fields.
+  InitializeFields_();
+  UpdateLocalFields_();
+
   // Allocate memory for boundary data. 
   bc_model.resize(nfaces_wghost, 0);
   bc_submodel.resize(nfaces_wghost, 0);
@@ -192,11 +205,6 @@ void Darcy_PK::Initialize()
   op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   rainfall_factor.resize(nfaces_wghost, 1.0);
-
-  // create verbosity object
-  Teuchos::ParameterList vlist;
-  vlist.sublist("VerboseObject") = dp_list_->sublist("VerboseObject");
-  vo_ = new VerboseObject("FlowPK::Darcy", vlist); 
 
   // Process Native XML.
   ProcessParameterList(*dp_list_);
@@ -556,8 +564,12 @@ void Darcy_PK::UpdateSpecificYield_()
   }
 }
 
-void  Darcy_PK::CalculateDiagnostics(const Teuchos::Ptr<State>& S){
-  UpdateAuxilliaryData();
+
+/* ******************************************************************
+* This is strange.
+****************************************************************** */
+void Darcy_PK::CalculateDiagnostics(const Teuchos::Ptr<State>& S) {
+  UpdateLocalFields_();
 }
 
 }  // namespace Flow

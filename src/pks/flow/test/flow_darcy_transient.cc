@@ -75,8 +75,6 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
-  DPK->InitializeFields();
-  S->CheckAllFieldsInitialized();
 
   /* modify the default state for the problem at hand */
   std::string passwd("flow"); 
@@ -114,6 +112,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   /* initialize the Darcy process kernel */
   DPK->Initialize();
+  S->CheckAllFieldsInitialized();
   DPK->InitTimeInterval();
 
   /* transient solution */
@@ -132,7 +131,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   }
 
   // Testing secondary fields
-  DPK->UpdateAuxilliaryData();
+  DPK->UpdateLocalFields_();
   const Epetra_MultiVector& darcy_velocity = *S->GetFieldData("darcy_velocity")->ViewComponent("cell");
   Point p5(darcy_velocity[0][5], darcy_velocity[1][5]);
 
@@ -162,7 +161,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "Test: 3D transient Darcy, 3-layer model" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: 3D transient Darcy, 3-layer model" << std::endl;
 
   /* read parameter list */
   std::string xmlFileName = "test/flow_darcy_transient_3D.xml";
@@ -193,6 +192,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   DPK->Setup();
   S->Setup();
   S->InitializeFields();
+  S->InitializeEvaluators();
 
   /* modify the default state for the problem at hand */
   std::string passwd("flow"); 
@@ -233,6 +233,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
 
   /* initialize the Darcy process kernel */
   DPK->Initialize();
+  S->CheckAllFieldsInitialized();
   DPK->InitTimeInterval();
 
   /* transient solution */

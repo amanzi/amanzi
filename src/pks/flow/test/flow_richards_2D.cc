@@ -75,8 +75,6 @@ TEST(FLOW_2D_RICHARDS) {
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
-  RPK->InitializeFields();
-  S->CheckAllFieldsInitialized();
 
   /* modify the default state for the problem at hand */
   std::string passwd("flow"); 
@@ -112,9 +110,9 @@ TEST(FLOW_2D_RICHARDS) {
 
   /* initialize the Richards process kernel */
   RPK->Initialize();
-
   RPK->InitializeAuxiliaryData();
   RPK->InitTimeInterval();
+  S->CheckAllFieldsInitialized();
 
   /* solve the problem */
   TI_Specs ti_specs;

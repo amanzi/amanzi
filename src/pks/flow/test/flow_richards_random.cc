@@ -156,11 +156,11 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
-    RPK->InitializeFields();
-    S->CheckAllFieldsInitialized();
 
     /* create Richards process kernel */
     RPK->Initialize();
+    S->CheckAllFieldsInitialized();
+
     RPK->InitializeAuxiliaryData();
     RPK->InitTimeInterval();
 

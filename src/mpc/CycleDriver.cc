@@ -65,6 +65,9 @@ double rss_usage() { // return ru_maxrss in MBytes
 }
 
 
+/* ******************************************************************
+* Constructor.
+****************************************************************** */
 CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist_,
                          Teuchos::RCP<State>& S,
                          Epetra_MpiComm* comm,
@@ -76,23 +79,28 @@ CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist_,
     restart_requested_(false) {
 
   // create and start the global timer
-  coordinator_init_();
+  CoordinatorInit_();
 
   vo_ = Teuchos::rcp(new VerboseObject("CycleDriver", parameter_list_->sublist("Cycle Driver")));
 };
 
 
-void CycleDriver::coordinator_init_() {
+/* ******************************************************************
+* High-level initialization.
+****************************************************************** */
+void CycleDriver::CoordinatorInit_() {
   coordinator_list_ = Teuchos::sublist(parameter_list_, "Cycle Driver");
-  read_parameter_list_();
+  ReadParameterList_();
 
   // create the global solution vector
   soln_ = Teuchos::rcp(new TreeVector());
 }
 
 
-void CycleDriver::init_pk(int time_pr_id){
-  // create the pk tree root node (which then creates the rest of the tree)
+/* ******************************************************************
+* Create the pk tree root node which then creates the rest of the tree.
+****************************************************************** */
+void CycleDriver::Init_PK(int time_pr_id) {
   PKFactory pk_factory;
 
   Teuchos::RCP<Teuchos::ParameterList> time_periods_list = Teuchos::sublist(coordinator_list_, "time periods", true);
@@ -117,7 +125,10 @@ void CycleDriver::init_pk(int time_pr_id){
 }
 
 
-void CycleDriver::setup() {
+/* ******************************************************************
+* Setup PK first follwed by State's setup.
+****************************************************************** */
+void CycleDriver::Setup() {
   // Set up the states, creating all data structures.
 
   // create the observations
@@ -150,17 +161,16 @@ void CycleDriver::setup() {
 
   S_->Setup();
 
-  // S_->InitializeFields();
-  // S_->InitializeEvaluators();
-
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Setup is complete." << std::endl;
   }
 }
 
-
-void CycleDriver::initialize() {
+/* ******************************************************************
+* Initialize PK followed by initialization of State.
+****************************************************************** */
+void CycleDriver::Initialize() {
   // register observation times with the time step manager
  
   *S_->GetScalarData("dt", "coordinator") = tp_dt_[0];
@@ -170,7 +180,7 @@ void CycleDriver::initialize() {
   S_->InitializeFields();
   S_->InitializeEvaluators();
 
-  // Initialize the process kernels (initializes all independent variables)
+  // Initialize the process kernels
   pk_->Initialize();
 
   // Final checks.
@@ -279,18 +289,19 @@ void CycleDriver::initialize() {
   for (int i=0;i<num_time_periods_; i++) tsm_->RegisterTimeEvent(tp_end_[i]);
   
   //tsm_->RegisterTimeEvent(t1_);
-
 }
 
 
-void CycleDriver::finalize() {
-  // Force checkpoint at the end of simulation.
-  // Only do if the checkpoint was not already written, or we would be writing
-  // the same file twice.
-  // This really should be removed, but for now is left to help stupid developers.
+/* ******************************************************************
+* Force checkpoint at the end of simulation.
+* Only do if the checkpoint was not already written, or we would be writing
+* the same file twice.
+* This really should be removed, but for now is left to help stupid developers.
+****************************************************************** */
+void CycleDriver::Finalize() {
   if (!checkpoint_->DumpRequested(S_->cycle(), S_->time())) {
     pk_->CalculateDiagnostics();
-    WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), 0.0);
+    Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), 0.0);
   }
 }
 
@@ -310,9 +321,11 @@ void CycleDriver::finalize() {
 // }
 
 
-void CycleDriver::report_memory() {
-  // report the memory high water mark (using ru_maxrss)
-  // this should be called at the very end of a simulation
+/* ******************************************************************
+* Report the memory high water mark (using ru_maxrss)
+* this should be called at the very end of a simulation
+****************************************************************** */
+void CycleDriver::ReportMemory() {
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     double global_ncells(0.0);
     double local_ncells(0.0);
@@ -380,8 +393,11 @@ void CycleDriver::report_memory() {
 }
 
 
-void CycleDriver::read_parameter_list_() {
-  //  std::cout<<*coordinator_list_<<"\n";
+/* ******************************************************************
+* TBW.
+****************************************************************** */
+void CycleDriver::ReadParameterList_() {
+  // std::cout<<*coordinator_list_<<"\n";
   // t0_ = coordinator_list_->get<double>("start time");
   // t1_ = coordinator_list_->get<double>("end time");
   // std::string t0_units = coordinator_list_->get<std::string>("start time units", "s");
@@ -502,9 +518,9 @@ void CycleDriver::read_parameter_list_() {
 }
 
 
-// -----------------------------------------------------------------------------
-// acquire the chosen timestep size
-// -----------------------------------------------------------------------------
+/* ******************************************************************
+* Acquire the chosen timestep size
+****************************************************************** */
 double CycleDriver::get_dt() {
   // get the physical step size
   double dt = pk_->get_dt();
@@ -526,6 +542,9 @@ double CycleDriver::get_dt() {
 }
 
 
+/* ******************************************************************
+* Time step management.
+****************************************************************** */
 void CycleDriver::set_dt(double dt) {
   double dt_;
 
@@ -548,8 +567,10 @@ void CycleDriver::set_dt(double dt) {
 }
 
 
-// This is used by CLM
-bool CycleDriver::advance(double dt) {
+/* ******************************************************************
+* This is used by CLM
+****************************************************************** */
+bool CycleDriver::Advance(double dt) {
   Teuchos::OSTab tab = vo_->getOSTab();
   //bool fail = pk_->AdvanceStep(S_->last_time(), S_->time());
   bool fail = pk_->AdvanceStep(S_->time(), S_->time()+dt);
@@ -581,9 +602,9 @@ bool CycleDriver::advance(double dt) {
 
     // make observations, vis, and checkpoints
     //Amanzi::timer_manager.start("I/O");
-    observations(force_obser);
-    visualize(force_vis);
-    checkpoint(dt, force_check);
+    Observations(force_obser);
+    Visualize(force_vis);
+    WriteCheckpoint(dt, force_check);
     //Amanzi::timer_manager.start("I/O");
 
     // we're done with this time step, advance the state
@@ -608,7 +629,10 @@ bool CycleDriver::advance(double dt) {
 }
 
 
-void CycleDriver::observations(bool force) {
+/* ******************************************************************
+* Make observations.
+****************************************************************** */
+void CycleDriver::Observations(bool force) {
   if (observations_ != Teuchos::null) {
     if (observations_->DumpRequested(S_->cycle(), S_->time()) || force) {
       pk_->CalculateDiagnostics();
@@ -618,8 +642,10 @@ void CycleDriver::observations(bool force) {
 }
 
 
-void CycleDriver::visualize(bool force) {
-  // write visualization if requested
+/* ******************************************************************
+* Write visualization if requested.
+****************************************************************** */
+void CycleDriver::Visualize(bool force) {
   bool dump = force;
   if (!dump) {
     for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
@@ -646,9 +672,12 @@ void CycleDriver::visualize(bool force) {
 }
 
 
-void CycleDriver::checkpoint(double dt, bool force) {
+/* ******************************************************************
+* Write a checkpoint file if requested.
+****************************************************************** */
+void CycleDriver::WriteCheckpoint(double dt, bool force) {
   if (force || checkpoint_->DumpRequested(S_->cycle(), S_->time())) {
-    WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt);
+    Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt);
     pk_->CalculateDiagnostics();
 
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -657,16 +686,16 @@ void CycleDriver::checkpoint(double dt, bool force) {
 }
 
 
-// -----------------------------------------------------------------------------
-// timestep loop
-// -----------------------------------------------------------------------------
-void CycleDriver::go() {
+/* ******************************************************************
+* timestep loop.
+****************************************************************** */
+void CycleDriver::Go() {
   time_period_id_ = 0;
-  init_pk(time_period_id_);
+  Init_PK(time_period_id_);
 
   // start at time t = t0 and initialize the state.
-  setup();
-  initialize();
+  Setup();
+  Initialize();
 
   S_->set_time(tp_start_[time_period_id_]);
   S_->set_cycle(cycle0_);
@@ -689,7 +718,7 @@ void CycleDriver::go() {
       if (tp_end_[i] <=S_->time()) time_period_id_++;
     }
     if (time_period_id_ > 0){
-        reset_driver(time_period_id_); 
+        ResetDriver(time_period_id_); 
     }
     
     dt = restart_dT;
@@ -700,15 +729,14 @@ void CycleDriver::go() {
     pk_->set_dt(dt);
   }
 
-  
   *S_->GetScalarData("dt", "coordinator") = dt;
   S_->GetField("dt","coordinator")->set_initialized();
 
   // visualization at IC
   //Amanzi::timer_manager.start("I/O");
   pk_->CalculateDiagnostics();
-  visualize();
-  checkpoint(dt);
+  Visualize();
+  WriteCheckpoint(dt);
   //Amanzi::timer_manager.stop("I/O");
  
   // iterate process kernels
@@ -729,14 +757,14 @@ void CycleDriver::go() {
         *S_->GetScalarData("dt", "coordinator") = dt;
 	S_->set_initial_time(S_->time());
 	S_->set_final_time(S_->time() + dt);
-        fail = advance(dt);
+        fail = Advance(dt);
         dt = get_dt();
       }  // while not finished
       while ((S_->time() < tp_end_[time_period_id_]) &&  ((tp_max_cycle_[time_period_id_] == -1) 
                                      || (S_->cycle() - start_cycle_num <= tp_max_cycle_[time_period_id_])));
       time_period_id_++;
       if (time_period_id_ < num_time_periods_){
-        reset_driver(time_period_id_); 
+        ResetDriver(time_period_id_); 
         dt = get_dt();
       }      
     }
@@ -761,12 +789,15 @@ void CycleDriver::go() {
 #endif
   }
   
-  report_memory();
-  //finalize();
+  ReportMemory();
+  // Finalize();
 } 
 
 
-void CycleDriver::reset_driver(int time_pr_id) {
+/* ******************************************************************
+* TBW.
+****************************************************************** */
+void CycleDriver::ResetDriver(int time_pr_id) {
   Teuchos::RCP<AmanziMesh::Mesh> mesh = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(S_->GetMesh("domain"));
   S_old_ = S_;
 
@@ -788,7 +819,7 @@ void CycleDriver::reset_driver(int time_pr_id) {
   soln_ = Teuchos::rcp(new TreeVector());
   
   // create new pk;
-  init_pk(time_pr_id);
+  Init_PK(time_pr_id);
 
   // register observation times with the time step manager
   //if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(tsm_);

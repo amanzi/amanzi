@@ -75,8 +75,6 @@ TEST(FLOW_3D_RICHARDS) {
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
-  RPK->InitializeFields();
-  S->CheckAllFieldsInitialized();
 
   /* modify the default state for the problem at hand */
   std::string passwd("flow"); 
@@ -114,7 +112,7 @@ TEST(FLOW_3D_RICHARDS) {
 
   /* initialize the Richards process kernel */
   RPK->Initialize();
-
+  S->CheckAllFieldsInitialized();
   RPK->InitializeAuxiliaryData();
   RPK->InitTimeInterval();
 

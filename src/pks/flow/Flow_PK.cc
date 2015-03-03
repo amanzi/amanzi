@@ -76,6 +76,155 @@ void Flow_PK::Initialize()
 }
 
 
+/* ****************************************************************
+* This completes initialization of missed fields in the state.
+* This is useful for unit tests.
+**************************************************************** */
+void Flow_PK::InitializeFields_()
+{
+  Teuchos::OSTab tab = vo_->getOSTab();
+
+  // set popular default values for missed fields.
+  if (S_->GetField("porosity")->owner() == passwd_) {
+    if (!S_->GetField("porosity", passwd_)->initialized()) {
+      S_->GetFieldData("porosity", passwd_)->PutScalar(0.2);
+      S_->GetField("porosity", passwd_)->set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initilized porosity to default value 0.2" << std::endl;  
+    }
+  }
+
+  if (S_->GetField("fluid_density")->owner() == passwd_) {
+    if (!S_->GetField("fluid_density", passwd_)->initialized()) {
+      *(S_->GetScalarData("fluid_density", passwd_)) = 1000.0;
+      S_->GetField("fluid_density", passwd_)->set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initilized fluid_density to default value 1000.0" << std::endl;  
+    }
+  }
+
+  if (!S_->GetField("fluid_viscosity", passwd_)->initialized()) {
+    *(S_->GetScalarData("fluid_viscosity", passwd_)) = 0.001;
+    S_->GetField("fluid_viscosity", passwd_)->set_initialized();
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+        *vo_->os() << "initilized fluid_viscosity to default value 0.001" << std::endl;  
+  }
+
+  if (!S_->GetField("gravity", "state")->initialized()) {
+    Epetra_Vector& gvec = *S_->GetConstantVectorData("gravity", "state");
+    gvec.PutScalar(0.0);
+    gvec[dim - 1] = -9.80;
+    S_->GetField("gravity", "state")->set_initialized();
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+        *vo_->os() << "initilized gravity to default value -9.8" << std::endl;  
+  }
+
+  if (!S_->GetField("permeability", passwd_)->initialized()) {
+    S_->GetFieldData("permeability", passwd_)->PutScalar(1.0);
+    S_->GetField("permeability", passwd_)->set_initialized();
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+        *vo_->os() << "initilized permeability to default value 1.0" << std::endl;  
+  }
+
+  if (S_->GetField("saturation_liquid")->owner() == passwd_) {
+    if (S_->HasField("saturation_liquid")) {
+      if (!S_->GetField("saturation_liquid", passwd_)->initialized()) {
+        S_->GetFieldData("saturation_liquid", passwd_)->PutScalar(1.0);
+        S_->GetField("saturation_liquid", passwd_)->set_initialized();
+
+        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+            *vo_->os() << "initilized saturation_liquid to default value 1.0" << std::endl;  
+      }
+    }
+  }
+
+  if (S_->HasField("prev_saturation_liquid")) {
+    if (!S_->GetField("prev_saturation_liquid", passwd_)->initialized()) {
+      S_->GetFieldData("prev_saturation_liquid", passwd_)->PutScalar(1.0);
+      S_->GetField("prev_saturation_liquid", passwd_)->set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initilized prev_saturation_liquid to default value 1.0" << std::endl;  
+    }
+  }
+
+  if (S_->HasField("specific_storage")) {
+    if (!S_->GetField("specific_storage", passwd_)->initialized()) {
+      S_->GetFieldData("specific_storage", passwd_)->PutScalar(0.0);
+      S_->GetField("specific_storage", passwd_)->set_initialized();
+    }
+  }
+
+  if (S_->HasField("specific_yield")) {
+    if (!S_->GetField("specific_yield", passwd_)->initialized()) {
+      S_->GetFieldData("specific_yield", passwd_)->PutScalar(0.0);
+      S_->GetField("specific_yield", passwd_)->set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initilized specific_yield to default value 1.0" << std::endl;  
+    }
+  }
+
+  if (!S_->GetField("pressure", passwd_)->initialized()) {
+    S_->GetFieldData("pressure", passwd_)->PutScalar(0.0);
+    S_->GetField("pressure", passwd_)->set_initialized();
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+        *vo_->os() << "initilized pressure to default value 0.0" << std::endl;  
+  }
+
+  if (!S_->GetField("hydraulic_head", passwd_)->initialized()) {
+    S_->GetFieldData("hydraulic_head", passwd_)->PutScalar(0.0);
+    S_->GetField("hydraulic_head", passwd_)->set_initialized();
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+        *vo_->os() << "initilized hydraulic_head to default value 0.0" << std::endl;  
+  }
+
+  if (!S_->GetField("darcy_flux", passwd_)->initialized()) {
+    S_->GetFieldData("darcy_flux", passwd_)->PutScalar(0.0);
+    S_->GetField("darcy_flux", passwd_)->set_initialized();
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+        *vo_->os() << "initilized darcy_flux to default value 0.0" << std::endl;  
+  }
+}
+
+
+/* ****************************************************************
+* Hydraulic head support for Flow PKs.
+**************************************************************** */
+void Flow_PK::UpdateLocalFields_() 
+{
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    *vo_->os() << "Secondary fields: hydraulic head, darcy_velocity" << std::endl;  
+  }  
+
+  Epetra_MultiVector& hydraulic_head = *(S_->GetFieldData("hydraulic_head", passwd_)->ViewComponent("cell"));
+  const Epetra_MultiVector& pressure = *(S_->GetFieldData("pressure")->ViewComponent("cell"));
+  double rho = *(S_->GetScalarData("fluid_density"));
+
+  // calculate hydraulic head
+  double g = fabs(gravity_[dim - 1]);
+
+  for (int c = 0; c != ncells_owned; ++c) {
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c); 
+    double z = xc[dim - 1]; 
+    hydraulic_head[0][c] = z + (pressure[0][c] - atm_pressure_) / (g * rho);
+  }
+
+  // calculate full velocity vector
+  darcy_flux_eval_->SetFieldAsChanged(S_.ptr());
+  S_->GetFieldEvaluator("darcy_velocity")->HasFieldChanged(S_.ptr(), "darcy_velocity");
+}
+
+
 /* ******************************************************************
 * Populate data needed by submodels.
 ****************************************************************** */

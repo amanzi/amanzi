@@ -97,8 +97,6 @@ class DarcyProblem {
     S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
-    DPK->InitializeFields();
-    S->CheckAllFieldsInitialized();
 
     return 0;
   }
@@ -216,6 +214,8 @@ TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
     // DPK->ResetParameterList(dp_list);
  
     DPK->Initialize();
+    S->CheckAllFieldsInitialized();
+
     DPK->InitTimeInterval();
     DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
     DPK->CommitState(0.0, S.ptr());
@@ -251,9 +251,10 @@ TEST_FIXTURE(DarcyProblem, DirichletNeumann) {
 
     regions[0] = std::string("Bottom side");
     createBClist("pressure", "BC 2", regions, 1.0);
-    // DPK->ResetParameterList(dp_list);
 
     DPK->Initialize();
+    S->CheckAllFieldsInitialized();
+
     DPK->InitTimeInterval();
     DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
     DPK->CommitState(0.0, S.ptr());
@@ -292,6 +293,8 @@ TEST_FIXTURE(DarcyProblem, StaticHeadDirichlet) {
     // DPK->ResetParameterList(dp_list);
 
     DPK->Initialize();
+    S->CheckAllFieldsInitialized();
+
     DPK->InitTimeInterval();
     DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
     DPK->CommitState(0.0, S.ptr());
@@ -332,6 +335,8 @@ TEST_FIXTURE(DarcyProblem, DDprisms) {
     // DPK->ResetParameterList(dp_list);
 
     DPK->Initialize();
+    S->CheckAllFieldsInitialized();
+
     DPK->InitTimeInterval();
     DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
     DPK->CommitState(0.0, S.ptr());
@@ -373,6 +378,8 @@ TEST_FIXTURE(DarcyProblem, DNtetrahedra) {
     // DPK->ResetParameterList(dp_list);
 
     DPK->Initialize();
+    S->CheckAllFieldsInitialized();
+
     DPK->InitTimeInterval();
     DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
     DPK->CommitState(0.0, S.ptr());
@@ -414,6 +421,8 @@ TEST_FIXTURE(DarcyProblem, DDmixed) {
     // DPK->ResetParameterList(dp_list);
 
     DPK->Initialize();
+    S->CheckAllFieldsInitialized();
+
     DPK->InitTimeInterval();
     DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
     DPK->CommitState(0.0, S.ptr());

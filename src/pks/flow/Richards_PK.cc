@@ -66,7 +66,8 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 
 
 /* ******************************************************************
-* Define structure of this PK.
+* Define structure of this PK. We requiest global fields and their
+* evaluators. 
 ****************************************************************** */
 void Richards_PK::Setup()
 {
@@ -84,7 +85,7 @@ void Richards_PK::Setup()
 
   std::vector<int> ndofs(2, 1);
 
-  // require state variables for the Richards PK
+  // Require additional state fields for this PK.
   if (!S_->HasField("fluid_density")) {
     S_->RequireScalar("fluid_density", passwd_);
   }
@@ -103,10 +104,6 @@ void Richards_PK::Setup()
     elist.set<std::string>("evaluator name", "pressure");
     pressure_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
     S_->SetFieldEvaluator("pressure", pressure_eval_);
-  }
-  if (!S_->HasField("hydraulic_head")) {
-    S_->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   if (!S_->HasField("permeability")) {
@@ -130,21 +127,19 @@ void Richards_PK::Setup()
     S_->SetFieldEvaluator("darcy_flux", darcy_flux_eval_);
   }
 
-  if (!S_->HasField("darcy_velocity")) {
-    S_->RequireField("darcy_velocity", "darcy_velocity")->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, dim);
-
-    Teuchos::ParameterList elist;
-    Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
-    S_->SetFieldEvaluator("darcy_velocity", eval);
+  // Require additional field evaluators for this PK.
+  // porosity
+  if (!S_->HasField("porosity")) {
+    S_->RequireField("porosity", "porosity")->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireFieldEvaluator("porosity");
   }
 
-  // Additional structutors for evaluators to work properly.
+  // saturation
   Teuchos::RCP<Teuchos::ParameterList>
       wrm_list = Teuchos::sublist(rp_list_, "water retention models", true);
   wrm_ = CreateWRMPartition(mesh_, wrm_list);
 
-  // requesting evaluators
   if (!S_->HasField("saturation_liquid")) {
     S_->RequireField("saturation_liquid", "saturation_liquid")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -155,11 +150,19 @@ void Richards_PK::Setup()
     S_->SetFieldEvaluator("saturation_liquid", eval);
   }
 
-  if (!S_->HasField("porosity")) {
-    S_->RequireField("porosity", "porosity")->SetMesh(mesh_)->SetGhosted(true)
+  // Local fields and evaluators.
+  if (!S_->HasField("hydraulic_head")) {
+    S_->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireFieldEvaluator("porosity");
   }
+
+  // Postpone initialization of local evaluatior.
+  S_->RequireField("darcy_velocity", "darcy_velocity")->SetMesh(mesh_)->SetGhosted(true)
+    ->SetComponent("cell", AmanziMesh::CELL, dim);
+
+  Teuchos::ParameterList elist;
+  Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
+  S_->SetFieldEvaluator("darcy_velocity", eval);
 }
 
 
@@ -190,9 +193,8 @@ Richards_PK::~Richards_PK()
 
 
 /* ******************************************************************
-* Extract information from Richards Problem parameter list. It is 
-* broken into a few pieces that can be reused in InitXXX routines.
-* Cleaning will be done after switch to 
+* Extract information from Richards PK parameter list to initialize
+* various local objects: solvers, matrices, local evaluators.
 ****************************************************************** */
 void Richards_PK::Initialize()
 {
@@ -209,6 +211,15 @@ void Richards_PK::Initialize()
   ResetPKtimes(0.0, FLOW_INITIAL_DT);
   dT_desirable_ = dT;
 
+  // create verbosity object
+  Teuchos::ParameterList vlist;
+  vlist.sublist("VerboseObject") = rp_list_->sublist("VerboseObject");
+  vo_ = new VerboseObject("FlowPK::Richards", vlist); 
+
+  // Create local evaluators. Initialize local fields.
+  InitializeFields_();
+  UpdateLocalFields_();
+
   // Allocate memory for boundary data.
   bc_model.resize(nfaces_wghost, 0);
   bc_submodel.resize(nfaces_wghost, 0);
@@ -217,11 +228,6 @@ void Richards_PK::Initialize()
   op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   rainfall_factor.resize(nfaces_wghost, 1.0);
-
-  // create verbosity object
-  Teuchos::ParameterList vlist;
-  vlist.sublist("VerboseObject") = rp_list_->sublist("VerboseObject");
-  vo_ = new VerboseObject("FlowPK::Richards", vlist); 
 
   // Process Native XML.
   ProcessParameterList(*rp_list_);
@@ -709,8 +715,12 @@ double Richards_PK::BoundaryFaceValue(int f, const CompositeVector& u)
   return face_value;
 }
 
-void  Richards_PK::CalculateDiagnostics(const Teuchos::Ptr<State>& S){
-  UpdateAuxilliaryData();
+
+/* ******************************************************************
+* This is strange.
+****************************************************************** */
+void  Richards_PK::CalculateDiagnostics(const Teuchos::Ptr<State>& S) {
+  UpdateLocalFields_();
 }
 
 }  // namespace Flow

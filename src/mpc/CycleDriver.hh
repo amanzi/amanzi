@@ -46,25 +46,25 @@ class CycleDriver {
               Amanzi::ObservationData& output_observations);
 
   // PK methods
-  void setup();
-  void initialize();
-  void init_pk(int);
-  void reset_pk();
-  void finalize();
-  void report_memory();
-  bool advance(double dt);
-  void visualize(bool force=false);
-  void observations(bool force=false);
-  void checkpoint(double dt, bool force=false);
+  void Setup();
+  void Initialize();
+  void Init_PK(int);
+  void Reset_PK();
+  void Finalize();
+  void ReportMemory();
+  bool Advance(double dt);
+  void Visualize(bool force = false);
+  void Observations(bool force = false);
+  void WriteCheckpoint(double dt, bool force = false);
   double get_dt();
   void set_dt(double dt);
-  void reset_driver(int time_period_id);
+  void ResetDriver(int time_period_id);
   // one stop shopping
-  void go();
+  void Go();
 
  private:
-  void coordinator_init_();
-  void read_parameter_list_();
+  void CoordinatorInit_();
+  void ReadParameterList_();
 
   // PK container and factory
   Teuchos::RCP<PK> pk_;

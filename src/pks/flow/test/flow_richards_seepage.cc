@@ -72,8 +72,6 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
-  RPK->InitializeFields();
-  S->CheckAllFieldsInitialized();
 
   /* modify the default state for the problem at hand */
   std::string passwd("flow"); 
@@ -102,6 +100,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
 
   /* create Richards process kernel */
   RPK->Initialize();
+  S->CheckAllFieldsInitialized();
 
   RPK->InitTimeInterval();
 

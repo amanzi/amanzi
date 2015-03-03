@@ -48,20 +48,17 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
 
   std::string name() { return "flow"; }
 
-  // main flow methods
+  // required flow methods
   virtual void InitTimeInterval() = 0;
-
   virtual void Setup() = 0;
-  virtual void Initialize();
+  virtual void Initialize() = 0;
   virtual void CommitState(double dt, const Teuchos::Ptr<State>& S) = 0;
   virtual double get_dt() = 0;
   virtual void set_dt(double dt) { dT = dt; }
-  
   virtual bool Advance(double dT, double &dT_actual) = 0;
   virtual void InitializeAuxiliaryData() = 0;
 
-  void UpdateAuxilliaryData();  // auxilliary data management
-  void InitializeFields();
+  void UpdateLocalFields_();
 
   // boundary and source teerms
   void ProcessBCs();
@@ -138,6 +135,9 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   Teuchos::RCP<const Teuchos::ParameterList> linear_operator_list_;
   Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
   Teuchos::RCP<Teuchos::ParameterList> ti_list_;
+
+ protected:
+  void InitializeFields_();
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

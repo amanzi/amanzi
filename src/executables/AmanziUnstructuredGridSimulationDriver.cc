@@ -359,7 +359,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     S->RegisterMesh("domain", mesh);      
 
     Amanzi::CycleDriver cycle_driver(glist, S, comm, output_observations);
-    cycle_driver.go();
+    cycle_driver.Go();
   }
   
   // Clean up

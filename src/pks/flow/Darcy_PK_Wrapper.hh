@@ -42,7 +42,6 @@ class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
   
   // Initialize owned (dependent) variables.
   virtual void Initialize() {
-    pk_->InitializeFields();
     pk_->Initialize();
     pk_->InitializeAuxiliaryData(); 
     pk_->InitTimeInterval();

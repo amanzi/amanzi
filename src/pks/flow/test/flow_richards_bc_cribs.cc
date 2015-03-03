@@ -75,12 +75,12 @@ TEST(FLOW_3D_RICHARDS) {
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
-  RPK->InitializeFields();
-  S->CheckAllFieldsInitialized();
 
   /* initialize the Richards process kernel */
   RPK->Initialize();
   RPK->InitializeAuxiliaryData();
+  S->CheckAllFieldsInitialized();
+
   RPK->InitTimeInterval();
   RPK->CommitState(0.0, S.ptr());
 

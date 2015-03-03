@@ -72,11 +72,10 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
-  RPK->InitializeFields();
-  S->CheckAllFieldsInitialized();
 
   /* create Richards problem */
   RPK->Initialize();
+  S->CheckAllFieldsInitialized();
   RPK->InitTimeInterval();
 
   /* calculate the constant Darcy mass velocity */

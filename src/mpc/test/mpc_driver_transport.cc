@@ -59,7 +59,7 @@ using namespace Amanzi::AmanziGeometry;
     S->RegisterMesh("domain", mesh);      
 
     CycleDriver cycle_driver(glist, S, &comm, obs_data);
-    cycle_driver.go();
+    cycle_driver.Go();
   }
 }
 
