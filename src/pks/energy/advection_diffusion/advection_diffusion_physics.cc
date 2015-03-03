@@ -22,6 +22,8 @@ namespace Energy {
 
 // dT/dt portion of the residual function
 void AdvectionDiffusion::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
+  S_next_->GetFieldEvaluator("temperature")->HasFieldChanged(S_next_.ptr(), name_);
+  S_inter_->GetFieldEvaluator("temperature")->HasFieldChanged(S_inter_.ptr(), name_);
   Teuchos::RCP<const CompositeVector> temp0 =
     S_inter_->GetFieldData("temperature");
   Teuchos::RCP<const CompositeVector> temp1 =
@@ -33,6 +35,7 @@ void AdvectionDiffusion::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
     S_next_->GetFieldData("cell_volume");
 
   double dt = S_next_->time() - S_inter_->time();
+  ASSERT(dt > 0.);
 
   //  --   g <-- g - (cv*h)_t0/dt
   g->ViewComponent("cell",false)->Multiply(-1./dt,
@@ -41,6 +44,7 @@ void AdvectionDiffusion::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
   g->ViewComponent("cell",false)->Multiply(1./dt,
           *cv1->ViewComponent("cell",false), *temp1->ViewComponent("cell",false), 1.);
 };
+
 
 
 // u dot grad T portion of the residual function
@@ -52,21 +56,23 @@ void AdvectionDiffusion::AddAdvection_(const Teuchos::RCP<State> S,
 
   // set the flux field as the darcy flux
   Teuchos::RCP<const CompositeVector> darcy_flux = S->GetFieldData("darcy_flux");
-  const Epetra_MultiVector& flux_f = *darcy_flux->ViewComponent("face",true);
   advection_->set_flux(darcy_flux);
 
   // put the advected quantity in cells
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
-  const Epetra_MultiVector& temp_f = *temp->ViewComponent("face", true);
-
   *field->ViewComponent("cell", false) = *temp->ViewComponent("cell", false);
-  Epetra_MultiVector& field_f = *field->ViewComponent("face",true);
 
+
+  // put the boundary fluxes in incoming faces for Dirichlet BCs.
+  const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")
+      ->ViewComponent("face",false);
   // put the boundary fluxes in faces -- assumes all Dirichlet BC in temperature!
+  Epetra_MultiVector& field_f = *field->ViewComponent("face",true);
   for (Functions::BoundaryFunction::Iterator bc = bc_temperature_->begin();
        bc!=bc_temperature_->end(); ++bc) {
+    //    std::cout << "putting Adv bc in face at " << mesh_->face_centroid(bc->first) << " at val " << bc->second << " with flux " << flux[0][bc->first] << std::endl;
     int f = bc->first;
-    field_f[0][f] = temp_f[0][f] * std::abs(flux_f[0][f]);
+    field_f[0][f] = bc->second * std::abs(flux[0][f]);
   }
 
   // apply the advection operator and add to residual

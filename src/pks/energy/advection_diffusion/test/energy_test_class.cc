@@ -1,36 +1,39 @@
 #include "energy_test_class.hh"
 
-EnergyTest::EnergyTest(Teuchos::ParameterList& plist_,
+EnergyTest::EnergyTest(Teuchos::RCP<Teuchos::ParameterList> plist_,
                              const Teuchos::RCP<AmanziMesh::Mesh>& mesh_,
                              int num_components_) :
     mesh(mesh_), parameter_list(plist_), num_components(num_components_) {
 
   // create states
   Teuchos::ParameterList state_plist =
-    parameter_list.get<Teuchos::ParameterList>("State");
+    parameter_list->get<Teuchos::ParameterList>("State");
   S0 = Teuchos::rcp(new State(state_plist));
   S0->RegisterDomainMesh(mesh);
 
-  Teuchos::ParameterList energy_plist =
-    parameter_list.get<Teuchos::ParameterList>("Energy");
-  Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector("solution"));
+  Teuchos::RCP<Teuchos::ParameterList> energy_plist =
+      Teuchos::sublist(parameter_list, "Energy");
+  Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
 
   // create the PK
-  EPK = Teuchos::rcp(new Energy::AdvectionDiffusion(energy_plist, S0, soln));
+  EPK = Teuchos::rcp(new Energy::AdvectionDiffusion(energy_plist, S0->FEList(), soln));
+  EPK->setup(S0.ptr());
+  S0->Setup();
 }
 
 void EnergyTest::initialize() {
+  // initialize energy
+  initialize_owned();
+  initialize_darcy_flux();
+  EPK->initialize(S0.ptr());
+
   // initialize state, including darcy flux, sat, density, poro from parameter list
   S0->Initialize();
   S0->set_time(0.0);
 
-  // initialize energy
-  EPK->initialize(S0);
-  initialize_owned();
-  initialize_darcy_flux();
 
   // finish checking state and create the state at the new timestep
-  if (!S0->CheckAllInitialized()) {
+  if (!S0->CheckAllFieldsInitialized()) {
     std::cout << "DID NOT INITIALIZE THINGS!" << std::endl;
   }
   S1 = Teuchos::rcp(new State(*S0));
@@ -38,7 +41,8 @@ void EnergyTest::initialize() {
   EPK->set_states(S0,S0,S1);
 }
 
-void EnergyTest::commit_step() {
+void EnergyTest::commit_step(double dt) {
+  EPK->commit_state(dt, S1);
   *S0 = *S1;
 }
 
@@ -46,24 +50,41 @@ void EnergyTest::initialize_owned() {
   Teuchos::RCP<CompositeVector> temp = S0->GetFieldData("temperature", "energy");
 
   int c_owned = temp->size("cell", false);
+  Epetra_MultiVector& temp_c = *temp->ViewComponent("cell",false);
+  Epetra_MultiVector& tc_c = *S0->GetFieldData("thermal_conductivity", "energy")
+      ->ViewComponent("cell",false);
   for (int c=0; c != c_owned; ++c) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     for (int lcv_comp=0; lcv_comp != num_components; ++lcv_comp) {
-      (*temp)("cell",lcv_comp,c) = my_f(xc, 0.0);
+      temp_c[lcv_comp][c] = my_f(xc, 0.0);
+    }
+    tc_c[0][c] = my_K();
+  }
+
+  if (temp->HasComponent("face")) {
+    int f_owned = temp->size("face", false);
+    Epetra_MultiVector& temp_f = *temp->ViewComponent("face",false);
+    for (int f=0; f != f_owned; ++f) {
+      const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+      for (int lcv_comp=0; lcv_comp != num_components; ++lcv_comp) {
+        temp_f[lcv_comp][f] = my_f(xf, 0.0);
+      }
     }
   }
+
   S0->GetField("temperature", "energy")->set_initialized();
+  S0->GetField("thermal_conductivity", "energy")->set_initialized();
 }
 
 void EnergyTest::initialize_darcy_flux() {
   const Epetra_BlockMap& fmap = mesh->face_map(true);
-  Teuchos::RCP<CompositeVector> darcy_flux =
-    S0->GetFieldData("darcy_flux", "state");
+  Epetra_MultiVector& darcy_flux = *S0->GetFieldData("darcy_flux", "state")
+      ->ViewComponent("face", true);
 
   for (int f=fmap.MinLID(); f<=fmap.MaxLID(); f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
     const AmanziGeometry::Point& fc = mesh->face_centroid(f);
-    (*darcy_flux)("face",0,f) = my_u(fc, 0.0) * normal;
+    darcy_flux[0][f] = my_u(fc, 0.0) * normal;
   }
   S0->GetField("darcy_flux", "state")->set_initialized();
 }
@@ -89,31 +110,8 @@ void EnergyTest::evaluate_error_temp(double t, double* L1, double* L2) {
   *L2 = sqrt(*L2);
 }
 
-AmanziGeometry::Point EnergyTest::my_u(const AmanziGeometry::Point& x, double t) {
-  return AmanziGeometry::Point(1.0, 0.0, 0.0);
-}
-
-// test problem with constant solution of 1
-EnergyTestOne::EnergyTestOne(Teuchos::ParameterList& plist_,
-        const Teuchos::RCP<AmanziMesh::Mesh>& mesh_, int num_components_) :
-  EnergyTest::EnergyTest(plist_, mesh_, num_components_) {}
-
-double EnergyTestOne::my_f(const AmanziGeometry::Point& x, double t) {
-  return 1.0;
-}
-
-// test problem with step solution
-EnergyTestStep::EnergyTestStep(Teuchos::ParameterList& plist_,
-        const Teuchos::RCP<AmanziMesh::Mesh>& mesh_, int num_components_) :
-  EnergyTest::EnergyTest(plist_, mesh_, num_components_) {}
-
-double EnergyTestStep::my_f(const AmanziGeometry::Point& x, double t) {
-  if (x[0] <= 1 + t) return 1.0;
-  return 0;
-}
-
 // // test problem with smooth solution
-// EnergyTestSmooth::EnergyTestSmooth(Teuchos::ParameterList& plist_,
+// EnergyTestSmooth::EnergyTestSmooth(Teuchos::RCP<Teuchos::ParameterList> plist_,
 //         const Teuchos::RCP<AmanziMesh::Mesh>& mesh_, int num_components_) :
 //   EnergyTest::EnergyTest(plist_, mesh_, num_components_) {}
 
@@ -122,7 +120,7 @@ double EnergyTestStep::my_f(const AmanziGeometry::Point& x, double t) {
 // }
 
 // // test problem with cubic solution
-// EnergyTestCubic::EnergyTestCubic(Teuchos::ParameterList& plist_,
+// EnergyTestCubic::EnergyTestCubic(Teuchos::RCP<Teuchos::ParameterList> plist_,
 //         const Teuchos::RCP<AmanziMesh::Mesh>& mesh_, int num_components_) :
 //   EnergyTest::EnergyTest(plist_, mesh_, num_components_) {}
 
@@ -134,10 +132,6 @@ double EnergyTestStep::my_f(const AmanziGeometry::Point& x, double t) {
 // }
 
 // test problem on 2D square with velocity in the <1,1> x-y direction, still virtual
-EnergyTestTwoDOne::EnergyTestTwoDOne(Teuchos::ParameterList& plist_,
-        const Teuchos::RCP<AmanziMesh::Mesh>& mesh_, int num_components_) :
-  EnergyTest::EnergyTest(plist_, mesh_, num_components_) {}
-
 AmanziGeometry::Point EnergyTestTwoDOne::my_u(const AmanziGeometry::Point& x, double t) {
   return AmanziGeometry::Point(1.0, 1.0);
 }
