@@ -64,7 +64,6 @@ double ReactiveTransport_PK::get_dt() {
      dTchem_ *= 0.5;
   } 
 
-  //std::cout<<"Transport dT="<<dTtran_<<" Chemistry dT="<<dTchem_<<"\n";
   if (dTtran_ > dTchem_) dTtran_= dTchem_; 
   
   return dTchem_;

@@ -38,9 +38,7 @@ class FlowFluxTPFA_BCFunc {
   double operator()(double face_p) {
     lambda_ = face_p;
     double Krel = nln_rcp_ptr->k_relative(patm_ - lambda_);
-    //std::cout << "Fluxes: " << std::endl;
     double q = flux_();
-    //std::cout << "  K grad p = " << q << ", K grad gz = " << g_flux_*Krel << ", bc = " << bc_flux_ << std::endl;
     return flux_() + g_flux_*Krel - bc_flux_;
   }
 
@@ -83,6 +81,9 @@ double OperatorDiffusionFV::DeriveBoundaryFaceValue(
     const Epetra_MultiVector& u_face = *u.ViewComponent("face");
     return u_face[f][0];
   } else {
+    const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
+    const Epetra_MultiVector& gravity_face = *gravity_term_->ViewComponent("face", true);
+
     const std::vector<int>& bc_model = bc_->bc_model();
     const std::vector<double>& bc_value = bc_->bc_value();
 
@@ -100,11 +101,11 @@ double OperatorDiffusionFV::DeriveBoundaryFaceValue(
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       for (int i=0; i<faces.size(); i++) {
       	if (faces[i] == f) {
-      	  double a = dirs[i] * (*transmissibility_)[f];
+      	  double a = dirs[i] * trans_face[0][f];
       	  double b = bc_value[f]* mesh_->face_area(f);	  
-      	  double face_val = u_cell[0][c] + (*gravity_term_)[f]/a - b/(a*Krel_face[0][f]);
-	  double trans = (*transmissibility_)[f];
-	  double gflux = (*gravity_term_)[f];
+      	  double face_val = u_cell[0][c] + gravity_face[0][f]/a - b/(a*Krel_face[0][f]);
+	  double trans = trans_face[0][f];
+	  double gflux = gravity_face[0][f];
 	  double bc_flux = bc_value[f]* mesh_->face_area(f);
 	  double atm_pressure_ = 101325;
 

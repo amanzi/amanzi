@@ -135,7 +135,7 @@ double Richards_PK::CalculateRelaxationFactor(const Epetra_MultiVector& uold,
 
   if (error_control_ & FLOW_TI_ERROR_CONTROL_SATURATION) {
     Epetra_MultiVector dSdP(uold);
-    relperm_->DerivedSdP(uold, dSdP);
+    relperm_->Compute_dSdP(uold, dSdP);
 
     for (int c = 0; c < ncells_owned; c++) {
       double diff = dSdP[0][c] * fabs(unew[0][c] - uold[0][c]);

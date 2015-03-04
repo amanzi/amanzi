@@ -83,11 +83,11 @@ class OperatorDiffusionFV : public OperatorDiffusion {
   double DeriveBoundaryFaceValue(int f, const CompositeVector& u, const Model& model);
 
   //access function
-  const Epetra_Vector transmissibilities() { return *transmissibility_; }
-  const Epetra_Vector gravity_terms() { return *gravity_term_; }
+  const CompositeVector transmissibility() { return *transmissibility_; }
+  const CompositeVector gravity_terms() { return *gravity_term_; }
 
  protected:
-  void ComputeTransmissibilities_();
+  void ComputeTransmissibility_();
 
   void AnalyticJacobian_(const CompositeVector& solution);
 
@@ -102,14 +102,13 @@ class OperatorDiffusionFV : public OperatorDiffusion {
   
  protected:
   AmanziGeometry::Point g_;
-  Teuchos::RCP<Epetra_Vector> gravity_term_;
   bool gravity_;
 
-  Teuchos::RCP<Epetra_Vector> transmissibility_;
+  Teuchos::RCP<CompositeVector> transmissibility_;
+  Teuchos::RCP<CompositeVector> gravity_term_;
 
   int newton_correction_;
   bool exclude_primary_terms_;
-  
 };
 
 }  // namespace Operators

@@ -223,8 +223,8 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
   cvs.SetGhosted(false);
   cvs.SetComponent("cell", AmanziMesh::CELL, 1);
 
-  CompositeVector dSdP(cvs);
-  relperm_->DerivedSdP(*u->ViewComponent("cell"), *dSdP.ViewComponent("cell"));
+  S_->GetFieldEvaluator("saturation_liquid")->HasFieldDerivativeChanged(S_.ptr(), passwd_, "pressure");
+  CompositeVector dSdP(*S_->GetFieldData("dsaturation_liquid_dpressure"));
 
   const CompositeVector& phi = *S_->GetFieldData("porosity");
   dSdP.Multiply(rho_, phi, dSdP, 0.0);

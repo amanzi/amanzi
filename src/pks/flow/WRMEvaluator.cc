@@ -94,7 +94,8 @@ void WRMEvaluator::EvaluateFieldPartialDerivative_(
 
   int ncells = sat_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
-    sat_c[0][c] = wrm_->second[(*wrm_->first)[c]]->dSdPc(patm_ - pres_c[0][c]);
+    // Negative sign indicates that dSdP = -dSdPc.
+    sat_c[0][c] = -wrm_->second[(*wrm_->first)[c]]->dSdPc(patm_ - pres_c[0][c]);
   }
 }
 

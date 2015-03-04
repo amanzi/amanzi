@@ -45,7 +45,7 @@ class RelPerm {
   double Compute(int c, double p) const;
   double ComputeDerivative(int c, double p) const;
 
-  void DerivedSdP(const Epetra_MultiVector& p, Epetra_MultiVector& ds);
+  void Compute_dSdP(const Epetra_MultiVector& p, Epetra_MultiVector& dSdP);
 
   // other
   void PlotWRMcurves();

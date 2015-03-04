@@ -156,8 +156,6 @@ void MPCStrong<PK_Base>::Initialize() {
   // Initialize all sub PKs.
   MPC_PK<PK_Base>::Initialize();
 
-std::cout << solution_->SubVector(0) << std::endl;
-std::cout << solution_->SubVector(0)->Data() << std::endl;
   // set up the timestepping algorithm if this is not strongly coupled
   if (!my_list_->template get<bool>("strongly coupled PK", false)) {
     // -- instantiate time stepper
@@ -386,10 +384,6 @@ bool MPCStrong<PK_Base>::ModifyPredictor(double h, Teuchos::RCP<const TreeVector
       Exceptions::amanzi_throw(message);
     }
 
-std::cout << pk_u0->Data()<< std::endl;
-std::cout << pk_u->Data()<< std::endl;
-std::cout << pk_u0->Data()->HasComponent("cell") << " " << pk_u0->Data()->HasComponent("face") << std::endl;
-std::cout << pk_u->Data()->HasComponent("cell") << " " << pk_u->Data()->HasComponent("face") << std::endl;
     modified |= sub_pks_[i]->ModifyPredictor(h, pk_u0, pk_u);
   }
   return modified;
