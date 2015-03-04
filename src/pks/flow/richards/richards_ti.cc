@@ -195,15 +195,17 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
         min_kr_lid = f;
       }
     }
+    ASSERT(min_kr_lid >= 0);
 
-#ifdef HAVE_MPI
-    ENorm_t min_kr_struct, global_min_kr;
-    min_kr_struct.value = min_kr;
-    min_kr_struct.gid = kr.Map().GID(min_kr_lid);
-
-    MPI_Allreduce(&global_min_kr, &min_kr, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
-#else
     ENorm_t global_min_kr;
+#ifdef HAVE_MPI
+    ENorm_t local_min_kr;
+    local_min_kr.value = min_kr;
+    local_min_kr.gid = kr.Map().GID(min_kr_lid);
+    ASSERT(local_min_kr.gid >= 0);
+
+    MPI_Allreduce(&local_min_kr, &global_min_kr, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
+#else
     global_min_kr.value = min_kr;
     global_min_kr.gid = min_kr_lid;
 #endif
@@ -261,6 +263,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   unsigned int ncells = dwc_dp.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
+    ASSERT(dwc_dp[0][c] > 1.e-10);
     Acc_cells[c] += dwc_dp[0][c] / h;
   }
 

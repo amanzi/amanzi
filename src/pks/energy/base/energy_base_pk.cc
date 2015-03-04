@@ -188,7 +188,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
   // operator for advection terms
   explicit_advection_ = plist_->get<bool>("explicit advection", false);
-  explicit_advection_iter_ = plist_->get<int>("explicit advection iteration", 1e10);
+  explicit_advection_iter_ = plist_->get<int>("explicit advection iteration", 1e3);
   Operators::AdvectionFactory advection_factory;
   Teuchos::ParameterList advect_plist = plist_->sublist("Advection");
   advection_ = advection_factory.create(advect_plist, mesh_);
@@ -391,19 +391,84 @@ bool EnergyBase::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
   // For some reason, wandering PKs break most frequently with an unreasonable
   // temperature.  This simply tries to catch that before it happens.
   Teuchos::RCP<const CompositeVector> temp = up->Data();
+  double minT, maxT;
+  
+  const Epetra_MultiVector& temp_c = *temp->ViewComponent("cell",false);
+  double minT_c(1.e6), maxT_c(-1.e6);
+  int min_c(-1), max_c(-1);
+  for (int c=0; c!=temp_c.MyLength(); ++c) {
+    if (temp_c[0][c] < minT_c) {
+      minT_c = temp_c[0][c];
+      min_c = c;
+    }
+    if (temp_c[0][c] > maxT_c) {
+      maxT_c = temp_c[0][c];
+      max_c = c;
+    }
+  }
 
-  const Epetra_MultiVector& temp_v = *temp->ViewComponent("cell",false);
-  double minT(0.), maxT(0.);
-  int ierr = temp_v.MinValue(&minT);
-  ierr |= temp_v.MaxValue(&maxT);
+  double minT_f(1.e6), maxT_f(-1.e6);
+  int min_f(-1), max_f(-1);
+  if (temp->HasComponent("face")) {
+    const Epetra_MultiVector& temp_f = *temp->ViewComponent("face",false);
+    for (int f=0; f!=temp_f.MyLength(); ++f) {
+      if (temp_f[0][f] < minT_f) {
+        minT_f = temp_f[0][f];
+        min_f = f;
+      }
+      if (temp_f[0][f] > maxT_f) {
+        maxT_f = temp_f[0][f];
+        max_f = f;
+      }
+    }
+    minT = std::min(minT_c, minT_f);
+    maxT = std::max(maxT_c, maxT_f);
 
+  } else {
+    minT = minT_c;
+    maxT = maxT_c;
+  }
+
+  double minT_l = minT;
+  double maxT_l = maxT;
+  mesh_->get_comm()->MaxAll(&maxT_l, &maxT, 1);
+  mesh_->get_comm()->MinAll(&minT_l, &minT, 1);
+  
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "    Admissible T? (min/max): " << minT << ",  " << maxT << std::endl;
   }
 
-  if (ierr || minT < 200.0 || maxT > 300.0) {
+  if (minT < 200.0 || maxT > 300.0) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      *vo_->os() << " is not admissible, as it is not within bounds of constitutive models: min(T) = " << minT << ", max(T) = " << maxT << std::endl;
+      *vo_->os() << " is not admissible, as it is not within bounds of constitutive models:" << std::endl;
+      ENorm_t global_minT_c, local_minT_c;
+      ENorm_t global_maxT_c, local_maxT_c;
+
+      local_minT_c.value = minT_c;
+      local_minT_c.gid = temp_c.Map().GID(min_c);
+      local_maxT_c.value = maxT_c;
+      local_maxT_c.gid = temp_c.Map().GID(max_c);
+
+      MPI_Allreduce(&local_minT_c, &global_minT_c, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
+      MPI_Allreduce(&local_maxT_c, &global_maxT_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+      *vo_->os() << "   cells (min/max): [" << global_minT_c.gid << "] " << global_minT_c.value
+                 << ", [" << global_maxT_c.gid << "] " << global_maxT_c.value << std::endl;
+
+      if (temp->HasComponent("face")) {
+        const Epetra_MultiVector& temp_f = *temp->ViewComponent("face",false);
+        ENorm_t global_minT_f, local_minT_f;
+        ENorm_t global_maxT_f, local_maxT_f;
+
+        local_minT_f.value = minT_f;
+        local_minT_f.gid = temp_f.Map().GID(min_f);
+        local_maxT_f.value = maxT_f;
+        local_maxT_f.gid = temp_f.Map().GID(max_f);
+        
+        MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
+        MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+        *vo_->os() << "   cells (min/max): [" << global_minT_f.gid << "] " << global_minT_f.value
+                   << ", [" << global_maxT_f.gid << "] " << global_maxT_f.value << std::endl;
+      }
     }
     return false;
   }

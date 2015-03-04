@@ -151,6 +151,11 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/wrm/models/wrm_fpd_smoothed_permafrost_model_reg.hh
+  LISTNAME   WRM_MODELS_EVALUATORS_FACTORIES
+  )
+
+register_evaluator_with_factory(
   HEADERFILE constitutive_relations/wrm/models/wrm_implicit_permafrost_model_reg.hh
   LISTNAME   WRM_MODELS_EVALUATORS_FACTORIES
   )
