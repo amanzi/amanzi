@@ -485,13 +485,23 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
 
-  transmissibility_->PutScalar(0.0);
+  // Compute auxiliary structure. Note that first components of both 
+  // fields are used symmetrically (no specific order).
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh_);
+  cvs.SetGhosted(true);
+  cvs.SetComponent("face", AmanziMesh::FACE, 2);
 
-  AmanziGeometry::Point gravity(g_ * rho_);
+  CompositeVector beta(cvs, true);
+  Epetra_MultiVector& beta_face = *beta.ViewComponent("face", true);
+  beta.PutScalar(0.0);
+
+  CompositeVector h(cvs, true);
+  Epetra_MultiVector& h_face = *h.ViewComponent("face", true);
+  h.PutScalar(0.0);
 
   AmanziMesh::Entity_ID_List cells;
-  AmanziGeometry::Point a_dist, a[2];
-  double h[2], perm[2], beta[2], trans_f;
+  AmanziGeometry::Point a_dist, a;
 
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -501,36 +511,60 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     double area = mesh_->face_area(f);
 
+    int k(0);
+    for (int i = 0; i < ncells; i++) {
+      int c = cells[i];
+      if (c < ncells_owned) {
+        a = xf - mesh_->cell_centroid(c);
+        double h_tmp = norm(a);
+        double s = area / h_tmp;
+        double perm = (rho_ / mu_) * (((*K_)[c] * a) * normal) * s;
+        double dxn = a * normal;
+
+        h_face[k][f] = h_tmp;
+        beta_face[k][f] = fabs(perm / dxn);
+        k++;
+      } 
+    }
+    if (k != ncells) {
+      h_face[1][f] = h_face[0][f];
+      beta_face[1][f] = beta_face[0][f];
+    }  
+  }
+
+  beta.ScatterMasterToGhosted(true);
+  h.ScatterMasterToGhosted(true);
+
+  // Compute transmissibilities. Since it is done only, we repeat
+  // some calculatons.
+  transmissibility_->PutScalar(0.0);
+
+  AmanziGeometry::Point gravity(g_ * rho_);
+
+  for (int f = 0; f < nfaces_owned; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
     if (ncells == 2) {
       a_dist = mesh_->cell_centroid(cells[1]) - mesh_->cell_centroid(cells[0]);
     } else if (ncells == 1) {    
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
       a_dist = xf - mesh_->cell_centroid(cells[0]);
     } 
-
     a_dist *= 1.0 / norm(a_dist);
 
-    for (int i = 0; i < ncells; i++) {
-      int c = cells[i];
-      a[i] = xf - mesh_->cell_centroid(c);
-      h[i] = norm(a[i]);
-      double s = area / h[i];
-      perm[i] = (rho_ / mu_) * (((*K_)[c] * a[i]) * normal) * s;
-
-      double dxn = a[i] * normal;
-      beta[i] = fabs(perm[i] / dxn);
-    }
-
     // double grav = (gravity * normal) / area;
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     double dir = copysign(1.0, normal * a_dist);
     double grav = (gravity * a_dist) * dir;
-    trans_f = 0.0;
 
+    double trans_f = 0.0;
     if (ncells == 2) {
-      grav *= (h[0] + h[1]);
-      trans_f = (beta[0] * beta[1]) / (beta[0] + beta[1]);
+      grav *= (h_face[0][f] + h_face[1][f]);
+      trans_f = (beta_face[0][f] * beta_face[1][f]) / (beta_face[0][f] + beta_face[1][f]);
     } else if (ncells == 1) {    
-      grav *= h[0];
-      trans_f = beta[0];
+      grav *= h_face[0][f];
+      trans_f = beta_face[0][f];
     } 
 
     trans_face[0][f] = trans_f;
