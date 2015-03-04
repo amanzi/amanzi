@@ -246,11 +246,13 @@ OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& f
 
 /* ******************************************************************
 * Special implementation of boundary conditions.
-****************************************************************** */
+**********************************;******************************** */
 void OperatorDiffusionFV::ApplyBCs(bool primary)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
-  const Epetra_MultiVector& gravity_face = *gravity_term_->ViewComponent("face", true);
+  Epetra_MultiVector* gravity_face;
+  if (gravity_) 
+      gravity_face = &*gravity_term_->ViewComponent("face", true);
 
   const std::vector<int>& bc_model = bc_->bc_model();
   const std::vector<double>& bc_value = bc_->bc_value();
@@ -273,7 +275,7 @@ void OperatorDiffusionFV::ApplyBCs(bool primary)
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         rhs_cell[0][c] -= bc_value[f] * mesh_->face_area(f);
         // trans_face[0][f] = 0.0;
-        gravity_face[0][f] = 0.0;
+        if (gravity_) (*gravity_face)[0][f] = 0.0;
       }
     }
   }
@@ -482,7 +484,6 @@ void OperatorDiffusionFV::ComputeJacobianLocal_(
 void OperatorDiffusionFV::ComputeTransmissibility_()
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
-  const Epetra_MultiVector& gravity_face = *gravity_term_->ViewComponent("face", true);
 
   transmissibility_->PutScalar(0.0);
 
@@ -533,8 +534,10 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
     } 
 
     trans_face[0][f] = trans_f;
-    if (gravity_)
-        gravity_face[0][f] = trans_face[0][f] * grav;
+    if (gravity_) {
+      Epetra_MultiVector& gravity_face = *gravity_term_->ViewComponent("face", true);
+      gravity_face[0][f] = trans_face[0][f] * grav;
+    }
   }
 
 #ifdef HAVE_MPI
