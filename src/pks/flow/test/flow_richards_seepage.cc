@@ -111,7 +111,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
   ti_specs.T1 = 50.0;
   ti_specs.max_itrs = 30;
 
-  AdvanceToSteadyState(*RPK, ti_specs, S->GetFieldData("pressure", "flow"));
+  AdvanceToSteadyState(S, *RPK, ti_specs, S->GetFieldData("pressure", "flow"));
   RPK->CommitState(0.0, S.ptr());
 
   const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");

@@ -29,7 +29,8 @@ class TI_Specs {
 
 
 int AdvanceToSteadyState(
-    Richards_PK& RPK, TI_Specs& ti_specs, Teuchos::RCP<CompositeVector> solution)
+    Teuchos::RCP<State> S, Richards_PK& RPK, 
+    TI_Specs& ti_specs, Teuchos::RCP<CompositeVector> solution)
 {
   bool last_step = false;
 
@@ -66,6 +67,18 @@ int AdvanceToSteadyState(
       last_step = true;
     }
     if (last_step && dT < 1e-3) break;
+
+    // reset primary field
+    Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval = 
+       Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator("pressure"));
+    *S->GetFieldData("pressure", "flow") = *solution;
+    pressure_eval->SetFieldAsChanged(S.ptr());
+ 
+    // update and swap saturations
+    S->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S.ptr(), "flow");
+    const Epetra_MultiVector& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
+    Epetra_MultiVector& s_l_prev = *S->GetFieldData("prev_saturation_liquid", "flow")->ViewComponent("cell");
+    s_l_prev = s_l;
   }
 
   ti_specs.num_itrs = itrs;

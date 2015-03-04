@@ -66,15 +66,14 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 
     // update permeabilities
     darcy_flux_copy->ScatterMasterToGhosted("face");
-    rel_perm_->Compute(*solution);
 
-    RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
-    upwind_->Compute(*darcy_flux_upwind, *solution, bc_model, bc_value,
-                     *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
+    relperm_->Compute(solution, krel_);
+    RelPermUpwindFn func1 = &RelPerm::Compute;
+    upwind_->Compute(*darcy_flux_upwind, *solution, bc_model, bc_value, *krel_, *krel_, func1);
 
-    RelativePermeabilityUpwindFn func2 = &RelativePermeability::Derivative;
-    upwind_->Compute(*darcy_flux_upwind, *solution, bc_model, bc_value,
-                     *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
+    relperm_->ComputeDerivative(solution, dKdP_);
+    RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
+    upwind_->Compute(*darcy_flux_upwind, *solution, bc_model, bc_value, *dKdP_, *dKdP_, func2);
 
     // create algebraic problem (matrix = preconditioner)
     op_preconditioner_->Init();
@@ -136,7 +135,7 @@ double Richards_PK::CalculateRelaxationFactor(const Epetra_MultiVector& uold,
 
   if (error_control_ & FLOW_TI_ERROR_CONTROL_SATURATION) {
     Epetra_MultiVector dSdP(uold);
-    rel_perm_->DerivedSdP(uold, dSdP);
+    relperm_->DerivedSdP(uold, dSdP);
 
     for (int c = 0; c < ncells_owned; c++) {
       double diff = dSdP[0][c] * fabs(unew[0][c] - uold[0][c]);

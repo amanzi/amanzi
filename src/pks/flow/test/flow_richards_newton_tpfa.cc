@@ -123,7 +123,7 @@ TEST(FLOW_3D_RICHARDS) {
   ti_specs.T1 = 100.0;
   ti_specs.max_itrs = 400;
 
-  AdvanceToSteadyState(*RPK, ti_specs, S->GetFieldData("pressure", "flow"));
+  AdvanceToSteadyState(S, *RPK, ti_specs, S->GetFieldData("pressure", "flow"));
   RPK->CommitState(0.0, S.ptr());
 
   if (MyPID == 0) {

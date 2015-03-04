@@ -162,7 +162,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     ti_specs.T1 = 1.0e+4;
     ti_specs.max_itrs = 1000;
 
-    AdvanceToSteadyState(*RPK, ti_specs, S->GetFieldData("pressure", "flow"));
+    AdvanceToSteadyState(S, *RPK, ti_specs, S->GetFieldData("pressure", "flow"));
     RPK->CommitState(0.0, S.ptr());
 
     double pressure_err, flux_err, div_err;  // error checks

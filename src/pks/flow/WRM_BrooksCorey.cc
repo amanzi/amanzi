@@ -12,6 +12,7 @@
 #include <cmath>
 #include <string>
 
+#include "errors.hh"
 #include "FlowDefs.hh"
 #include "WRM_BrooksCorey.hh"
 
@@ -62,6 +63,16 @@ void WRM_BrooksCorey::Init_(
   alpha_ = alpha;
   sr_ = sr;
   pc0_ = pc0;
+
+  Errors::Message msg;
+  if (l_ < 0.0 || lambda_ < 0.0 || sr_ < 0.0 || pc0_ < 0.0) {
+    msg << "Brooks Corey: negative parameter in a water retention model.";
+    Exceptions::amanzi_throw(msg);
+  }
+  if (sr_ > 1.0) {
+    msg << "Brooks Corey: residual saturation is greater than 1.";
+    Exceptions::amanzi_throw(msg);
+  }
 
   if (krel_function == "Mualem") {
     factor_ = -2.0 - (l_ + 2.0) * lambda_;

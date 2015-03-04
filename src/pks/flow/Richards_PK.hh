@@ -26,7 +26,7 @@
 #include "Upwind.hh"
 
 #include "Flow_PK.hh"
-#include "RelativePermeability.hh"
+#include "RelPerm.hh"
 #include "RelPermEvaluator.hh"
 
 #include "WRMPartition.hh"
@@ -77,7 +77,7 @@ class Richards_PK : public Flow_PK {
 
   // initization members
   void SolveFullySaturatedProblem(double T0, CompositeVector& u, const std::string& solver_name);
-  void EnforceConstraints(double T1, CompositeVector& u);
+  void EnforceConstraints(double T1, Teuchos::RCP<CompositeVector> u);
 
   void ClipHydrostaticPressure(const double pmin, Epetra_MultiVector& p);
   void ClipHydrostaticPressure(const double pmin, const double s0, Epetra_MultiVector& p);
@@ -107,13 +107,19 @@ class Richards_PK : public Flow_PK {
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> rp_list_;
 
-  Teuchos::RCP<RelativePermeability> rel_perm_;
+  // water retention models
+  Teuchos::RCP<WRMPartition> wrm_;
+
+  Teuchos::RCP<RelPerm> relperm_;
+  int krel_upwind_method_;
+  Teuchos::RCP<CompositeVector> krel_;
+  Teuchos::RCP<CompositeVector> dKdP_;
 
   // solvers
   Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_, op_pc_solver_;
   Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_diff_, op_preconditioner_diff_;
   Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
-  Teuchos::RCP<Operators::Upwind<RelativePermeability> > upwind_;
+  Teuchos::RCP<Operators::Upwind<RelPerm> > upwind_;
   Teuchos::RCP<Operators::BCs> op_bc_;
   std::string preconditioner_name_, solver_name_, solver_name_constraint_;
 
@@ -135,9 +141,6 @@ class Richards_PK : public Flow_PK {
 
   double functional_max_norm;
   int functional_max_cell;
-
-  // water retention models
-  Teuchos::RCP<WRMPartition> wrm_;
 
   // copies of state variables
   Teuchos::RCP<CompositeVector> solution;

@@ -21,9 +21,13 @@ namespace Flow {
 * Two constructors.
 ****************************************************************** */
 RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist,
+                                   Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                                   double patm,
                                    const Teuchos::RCP<WRMPartition>& wrm) :
     SecondaryVariableFieldEvaluator(plist),
+    mesh_(mesh),
     wrm_(wrm),
+    patm_(patm),
     min_value_(0.0),
     max_value_(1.0) {
   InitializeFromPlist_();
@@ -33,6 +37,7 @@ RelPermEvaluator::RelPermEvaluator(const RelPermEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     wrm_(other.wrm_),
     pressure_key_(other.pressure_key_),
+    patm_(other.patm_),
     min_value_(other.min_value_),
     max_value_(other.max_value_) {};
 
@@ -58,6 +63,10 @@ void RelPermEvaluator::InitializeFromPlist_()
   // my dependency is pressure.
   pressure_key_ = plist_.get<std::string>("pressure key", "pressure");
   dependencies_.insert(pressure_key_);
+
+  // use rel perm class for calcualtion
+  Teuchos::ParameterList plist;
+  relperm_ = Teuchos::rcp(new RelPerm(plist, mesh_, patm_, wrm_));
 }
 
 
@@ -68,16 +77,7 @@ void RelPermEvaluator::EvaluateField_(
     const Teuchos::Ptr<State>& S,
     const Teuchos::Ptr<CompositeVector>& result)
 {
-  // Evaluate the model to calculate krel on cells.
-  Epetra_MultiVector& relperm_c = *result->ViewComponent("cell", false);
-  const Epetra_MultiVector& pres_c = *S->GetFieldData(pressure_key_)->ViewComponent("cell", false);
-
-  int ncells = relperm_c.MyLength();
-  double patm = FLOW_PRESSURE_ATMOSPHERIC;
-
-  for (int c = 0; c != ncells; ++c) {
-    relperm_c[0][c] = wrm_->second[(*wrm_->first)[c]]->k_relative(patm - pres_c[0][c]);
-  }
+  // relperm_->Compute(S->GetFieldData(pressure_key_), result);
 }
 
 
@@ -90,46 +90,7 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<CompositeVector>& result)
 {
   ASSERT(wrt_key == pressure_key_);
-
-  Epetra_MultiVector& relperm_c = *result->ViewComponent("cell", false);
-  const Epetra_MultiVector& pres_c = *S->GetFieldData(pressure_key_)->ViewComponent("cell", false);
-
-  int ncells = relperm_c.MyLength();
-  double patm = FLOW_PRESSURE_ATMOSPHERIC;
-
-  for (int c = 0; c != ncells; ++c) {
-    relperm_c[0][c] = wrm_->second[(*wrm_->first)[c]]->dKdPc(patm - pres_c[0][c]);
-  }
-}
-
-
-/* ******************************************************************
-* Single pressure functions.
-****************************************************************** */
-double RelPermEvaluator::Value(int c, double p) const {
-  return wrm_->second[(*wrm_->first)[c]]->k_relative(FLOW_PRESSURE_ATMOSPHERIC - p);
-}
-
-
-double RelPermEvaluator::Derivative(int c, double p) const {
-  return wrm_->second[(*wrm_->first)[c]]->dKdPc(FLOW_PRESSURE_ATMOSPHERIC - p);
-}
-
-
-/* ******************************************************************
-* CV pressure functions.
-****************************************************************** */
-void RelPermEvaluator::Value(Teuchos::RCP<CompositeVector>& p, Teuchos::RCP<CompositeVector>& relperm)
-{
-  Epetra_MultiVector& relperm_c = *relperm->ViewComponent("cell", false);
-  const Epetra_MultiVector& p_c = *p->ViewComponent("cell", false);
-
-  int ncells = relperm_c.MyLength();
-  double patm = FLOW_PRESSURE_ATMOSPHERIC;
-
-  for (int c = 0; c != ncells; ++c) {
-    relperm_c[0][c] = wrm_->second[(*wrm_->first)[c]]->k_relative(patm - p_c[0][c]);
-  }
+  // relperm_->ComputeDerivative(S->GetFieldData(pressure_key_), result);
 }
 
 }  // namespace Flow

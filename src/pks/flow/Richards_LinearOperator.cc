@@ -31,8 +31,8 @@ void Richards_PK::SolveFullySaturatedProblem(
     double T0, CompositeVector& u, const std::string& solver_name)
 {
   UpdateSourceBoundaryData(T0, T0, u);
-  rel_perm_->Krel()->PutScalar(1.0);
-  rel_perm_->dKdP()->PutScalar(0.0);
+  krel_->PutScalar(1.0);
+  dKdP_->PutScalar(0.0);
 
   // create diffusion operator
   op_matrix_->Init();
@@ -85,31 +85,30 @@ void Richards_PK::SolveFullySaturatedProblem(
 * Enforce constraints at time Tp by solving diagonalized MFD problem.
 * Algorithm is based on de-coupling pressure-lambda system.
 ****************************************************************** */
-void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
+void Richards_PK::EnforceConstraints(double Tp, Teuchos::RCP<CompositeVector> u)
 {
-  UpdateSourceBoundaryData(Tp, Tp, u);
+  UpdateSourceBoundaryData(Tp, Tp, *u);
 
-  CompositeVector utmp(u);
+  CompositeVector utmp(*u);
   Epetra_MultiVector& utmp_face = *utmp.ViewComponent("face");
-  Epetra_MultiVector& u_face = *u.ViewComponent("face");
-  Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
+  Epetra_MultiVector& u_face = *u->ViewComponent("face");
+  Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
 
   // update relative permeability coefficients
   darcy_flux_copy->ScatterMasterToGhosted("face");
-  rel_perm_->Compute(u);
 
-  RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
-  upwind_->Compute(*darcy_flux_upwind, u, bc_model, bc_value,
-                   *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
+  relperm_->Compute(u, krel_);
+  RelPermUpwindFn func1 = &RelPerm::Compute;
+  upwind_->Compute(*darcy_flux_upwind, *u, bc_model, bc_value, *krel_, *krel_, func1);
 
-  RelativePermeabilityUpwindFn func2 = &RelativePermeability::Derivative;
-  upwind_->Compute(*darcy_flux_upwind, u, bc_model, bc_value,
-                   *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
+  relperm_->ComputeDerivative(u, dKdP_);
+  RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
+  upwind_->Compute(*darcy_flux_upwind, *u, bc_model, bc_value, *dKdP_, *dKdP_, func2);
 
   // modify relative permeability coefficient for influx faces
   bool inflow_krel_correction(true);
   if (inflow_krel_correction) {
-    Epetra_MultiVector& k_face = *rel_perm_->Krel()->ViewComponent("face", true);
+    Epetra_MultiVector& k_face = *krel_->ViewComponent("face", true);
     AmanziMesh::Entity_ID_List cells;
 
     for (int f = 0; f < nfaces_wghost; f++) {
@@ -123,7 +122,7 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
         double Knn = ((K[c] * normal) * normal) / (area * area);
         // double save = 3.0;
         // k_face[0][f] = std::min(1.0, -save * bc_value[f] * mu_ / (Knn * rho_ * rho_ * g_));
-        double kr1 = rel_perm_->Value(c, u_cell[0][c]);
+        double kr1 = relperm_->Compute(c, u_cell[0][c]);
         double kr2 = std::min(1.0, -bc_value[f] * mu_ / (Knn * rho_ * rho_ * g_));
         k_face[0][f] = (kr1 + kr2) / 2;
       } 
@@ -134,13 +133,13 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
   op_matrix_->Init();
   op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
   op_matrix_diff_->ApplyBCs(true);
-  op_matrix_diff_->ModifyMatrices(u);
+  op_matrix_diff_->ModifyMatrices(*u);
 
   // calculate diffusion preconditioner
   op_preconditioner_->Init();
   op_preconditioner_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
   op_preconditioner_diff_->ApplyBCs(true);
-  op_preconditioner_diff_->ModifyMatrices(u);
+  op_preconditioner_diff_->ModifyMatrices(*u);
   op_preconditioner_->AssembleMatrix();
   op_preconditioner_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 
@@ -159,7 +158,7 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
     double residual = solver->residual();
     int code = solver->returned_code();
     double pnorm;
-    u.Norm2(&pnorm);
+    u->Norm2(&pnorm);
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "constraints solver (" << solver->name() 

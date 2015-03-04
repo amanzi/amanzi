@@ -25,8 +25,11 @@ namespace Flow {
 /* ******************************************************************
 * Two constructors.
 ****************************************************************** */
-WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& plist, Teuchos::RCP<WRMPartition> wrm) :
+WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& plist,
+                           double patm,
+                           Teuchos::RCP<WRMPartition> wrm) :
     SecondaryVariablesFieldEvaluator(plist),
+    patm_(patm),
     wrm_(wrm)
 {
   InitializeFromPlist_();
@@ -36,6 +39,7 @@ WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& plist, Teuchos::RCP<WRMPartit
 WRMEvaluator::WRMEvaluator(const WRMEvaluator& other) :
     SecondaryVariablesFieldEvaluator(other),
     pressure_key_(other.pressure_key_),
+    patm_(other.patm_),
     wrm_(other.wrm_) {};
 
 
@@ -71,10 +75,8 @@ void WRMEvaluator::EvaluateField_(
   const Epetra_MultiVector& pres_c = *S->GetFieldData(pressure_key_)->ViewComponent("cell", false);
 
   int ncells = sat_c.MyLength();
-  double patm = FLOW_PRESSURE_ATMOSPHERIC;
-
   for (int c = 0; c != ncells; ++c) {
-    sat_c[0][c] = wrm_->second[(*wrm_->first)[c]]->saturation(patm - pres_c[0][c]);
+    sat_c[0][c] = wrm_->second[(*wrm_->first)[c]]->saturation(patm_ - pres_c[0][c]);
   }
 }
 
@@ -91,10 +93,8 @@ void WRMEvaluator::EvaluateFieldPartialDerivative_(
   const Epetra_MultiVector& pres_c = *S->GetFieldData(pressure_key_)->ViewComponent("cell", false);
 
   int ncells = sat_c.MyLength();
-  double patm = FLOW_PRESSURE_ATMOSPHERIC;
-
   for (int c = 0; c != ncells; ++c) {
-    sat_c[0][c] = wrm_->second[(*wrm_->first)[c]]->dSdPc(patm - pres_c[0][c]);
+    sat_c[0][c] = wrm_->second[(*wrm_->first)[c]]->dSdPc(patm_ - pres_c[0][c]);
   }
 }
 

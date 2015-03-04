@@ -32,29 +32,17 @@ void Richards_PK::Functional(double T0, double T1,
 { 
   double dTp(T1 - T0);
 
-  const Epetra_MultiVector& uold_cell = *u_old->ViewComponent("cell");
-  const Epetra_MultiVector& unew_cell = *u_new->ViewComponent("cell");
-
   // update coefficients
   darcy_flux_copy->ScatterMasterToGhosted("face");
-  rel_perm_->Compute(*u_new); 
-/*
-{
-Teuchos::RCP<CompositeVector> krel = Teuchos::rcp(new CompositeVector(*u_new));
-rel_perm_eval_->Value(u_new, krel);
-Epetra_MultiVector err(*krel->ViewComponent("cell"));
-err.Update(-1.0, *rel_perm_->Krel()->ViewComponent("cell"), 1.0);
-double a; err.Norm2(&a); std::cout << a << std::endl;
-}
-*/
 
-  RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
-  upwind_->Compute(*darcy_flux_upwind, *u_new, bc_model, bc_value, 
-                   *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
+  relperm_->Compute(u_new, krel_); 
+  RelPermUpwindFn func1 = &RelPerm::Compute;
+  upwind_->Compute(*darcy_flux_upwind, *u_new, bc_model, bc_value, *krel_, *krel_, func1);
 
-  RelativePermeabilityUpwindFn func2 = &RelativePermeability::Derivative;
-  upwind_->Compute(*darcy_flux_upwind, *u_new, bc_model, bc_value,
-                   *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
+  relperm_->ComputeDerivative(u_new, dKdP_); 
+  RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
+  upwind_->Compute(*darcy_flux_upwind, *u_new, bc_model, bc_value, *dKdP_, *dKdP_, func2);
+
   UpdateSourceBoundaryData(T0, T1, *u_new);
   
   // assemble residual for diffusion operator
@@ -73,27 +61,23 @@ double a; err.Norm2(&a); std::cout << a << std::endl;
 
   functional_max_norm = 0.0;
   functional_max_cell = 0;
+  
+  pressure_eval_->SetFieldAsChanged(S_.ptr());
+  S_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_.ptr(), "flow");
+  const Epetra_MultiVector& sat_c = *S_->GetFieldData("saturation_liquid")->ViewComponent("cell");
+  const Epetra_MultiVector& sat_prev_c = *S_->GetFieldData("prev_saturation_liquid")->ViewComponent("cell");
 
-  std::vector<Teuchos::RCP<WRM> >& WRM = rel_perm_->wrm();  
-  for (int mb = 0; mb < WRM.size(); mb++) {
-    std::string region = WRM[mb]->region();
-    AmanziMesh::Entity_ID_List block;
-    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  for (int c = 0; c < ncells_owned; ++c) {
+    double s1 = sat_c[0][c];
+    double s2 = sat_prev_c[0][c];
+ 
+    double factor = rho_ * phi[0][c] * mesh_->cell_volume(c) / dTp;
+    f_cell[0][c] += (s1 - s2) * factor;
 
-    double s1, s2, volume;
-    for (int i = 0; i < block.size(); i++) {
-      int c = block[i];
-      s1 = WRM[mb]->saturation(atm_pressure_ - unew_cell[0][c]);
-      s2 = WRM[mb]->saturation(atm_pressure_ - uold_cell[0][c]);
-
-      double factor = rho_ * phi[0][c] * mesh_->cell_volume(c) / dTp;
-      f_cell[0][c] += (s1 - s2) * factor;
-
-      double tmp = fabs(f_cell[0][c]) / factor;  // calculate errors
-      if (tmp > functional_max_norm) {
-        functional_max_norm = tmp;
-        functional_max_cell = c;        
-      }
+    double tmp = fabs(f_cell[0][c]) / factor;  // calculate errors
+    if (tmp > functional_max_norm) {
+      functional_max_norm = tmp;
+      functional_max_cell = c;        
     }
   }
 
@@ -216,15 +200,14 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
     op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
   }
   darcy_flux_copy->ScatterMasterToGhosted("face");
-  rel_perm_->Compute(*u);
 
-  RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
-  upwind_->Compute(*darcy_flux_upwind, *u, bc_model, bc_value,
-                   *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
+  relperm_->Compute(u, krel_);
+  RelPermUpwindFn func1 = &RelPerm::Compute;
+  upwind_->Compute(*darcy_flux_upwind, *u, bc_model, bc_value, *krel_, *krel_, func1);
 
-  RelativePermeabilityUpwindFn func2 = &RelativePermeability::Derivative;
-  upwind_->Compute(*darcy_flux_upwind, *u, bc_model, bc_value,
-                   *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
+  relperm_->ComputeDerivative(u, dKdP_);
+  RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
+  upwind_->Compute(*darcy_flux_upwind, *u, bc_model, bc_value, *dKdP_, *dKdP_, func2);
 
   double T0 = Tp - dTp;
   UpdateSourceBoundaryData(T0, Tp, *u);
@@ -241,7 +224,7 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
   cvs.SetComponent("cell", AmanziMesh::CELL, 1);
 
   CompositeVector dSdP(cvs);
-  rel_perm_->DerivedSdP(*u->ViewComponent("cell"), *dSdP.ViewComponent("cell"));
+  relperm_->DerivedSdP(*u->ViewComponent("cell"), *dSdP.ViewComponent("cell"));
 
   const CompositeVector& phi = *S_->GetFieldData("porosity");
   dSdP.Multiply(rho_, phi, dSdP, 0.0);
@@ -326,8 +309,6 @@ double Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVect
 
   // maximum error is printed out only on one processor
   if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-    const Epetra_IntVector& map = rel_perm_->map_c2mb();
-
     if (error == buf) {
       int c = functional_max_cell;
       const AmanziGeometry::Point& xp = mesh_->cell_centroid(c);
@@ -344,8 +325,7 @@ double Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVect
       for (int i = 0; i < dim; i++) *vo_->os() << " " << yp[i];
       *vo_->os() << std::endl;
 
-      int mb = map[c];
-      double s = (rel_perm_->wrm())[mb]->saturation(atm_pressure_ - uc[0][c]);
+      double s = wrm_->second[(*wrm_->first)[c]]->saturation(atm_pressure_ - uc[0][c]);
       *vo_->os() << "saturation=" << s << " pressure=" << uc[0][c] << std::endl;
     }
   }
@@ -378,18 +358,14 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 
   int nsat_clipped(0), npre_clipped(0);
 
-  std::vector<Teuchos::RCP<WRM> >& WRM = rel_perm_->wrm(); 
-  const Epetra_IntVector& map = rel_perm_->map_c2mb();
- 
   for (int c = 0; c < ncells_owned; c++) {
-    int mb = map[c];
     double pc = atm_pressure_ - uc[0][c];
-    double sat = WRM[mb]->saturation(pc);
+    double sat = wrm_->second[(*wrm_->first)[c]]->saturation(pc);
     double sat_pert;
     if (sat >= 0.5) sat_pert = sat - max_sat_pert;
     else sat_pert = sat + max_sat_pert;
     
-    double press_pert = atm_pressure_ - WRM[mb]->capillaryPressure(sat_pert);
+    double press_pert = atm_pressure_ - wrm_->second[(*wrm_->first)[c]]->capillaryPressure(sat_pert);
     double du_pert_max = fabs(uc[0][c] - press_pert); 
     double tmp = duc[0][c];
 

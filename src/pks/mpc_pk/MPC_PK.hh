@@ -138,11 +138,6 @@ MPC_PK<PK_Base>::MPC_PK(Teuchos::ParameterList& pk_tree,
     Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_sub_tree, global_list, S, pk_soln);
     Teuchos::RCP<PK_Base> pk = Teuchos::rcp_dynamic_cast<PK_Base>(pk_notype);
     sub_pks_.push_back(pk);
-
-std::cout << "AAA" << std::endl;
-std::cout << solution_->SubVector(0) << std::endl;
-std::cout << solution_->SubVector(0)->Data() << std::endl;
-std::cout << pk_soln << std::endl;
   }
 }
 
