@@ -29,10 +29,10 @@ class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
   virtual void SymbolicAssembleGlobalMatrices();
 
   virtual void SetOffDiagonals(const Teuchos::RCP<const Epetra_MultiVector>& Ccc,
-		const Teuchos::RCP<const Epetra_MultiVector>& Dcc,
-		const Teuchos::RCP<const Epetra_MultiVector>& Ccc_surf=Teuchos::null,
-		const Teuchos::RCP<const Epetra_MultiVector>& Dcc_surf=Teuchos::null,
-    	        double scaling=1.);
+          const Teuchos::RCP<const Epetra_MultiVector>& Dcc,
+          const Teuchos::RCP<const Epetra_MultiVector>& Ccc_surf,
+          const Teuchos::RCP<const Epetra_MultiVector>& Dcc_surf,
+          double scaling);
   
   void SetSurfaceOperators(const Teuchos::RCP<MatrixMFD_TPFA>& surface_A,
                            const Teuchos::RCP<MatrixMFD_TPFA>& surface_B);

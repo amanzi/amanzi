@@ -75,6 +75,11 @@ void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
     ASSERT(0);
   } else if (predictor_string == "smart ewc") {
     predictor_type_ = PREDICTOR_SMART_EWC;
+  } else {
+    Errors::Message message;
+    message << "EWC Delegate: invalid predictor string: \"" << predictor_string
+            << "\", valid are \"none\", \"ewc\", \"smart ewc\"";
+    Exceptions::amanzi_throw(message);
   }
 
   // Smart EWC uses a heuristic to guess when we need the EWC instead of using

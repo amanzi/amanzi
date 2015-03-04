@@ -4,6 +4,8 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_RCP.hpp"
 #include "EpetraExt_RowMatrixOut.h"
+#include "EpetraExt_CrsMatrixIn.h"
+#include "Epetra_SerialComm.h"
 
 #include "MeshFactory.hh"
 #include "Mesh.hh"
@@ -16,6 +18,7 @@ using namespace Amanzi;
 
 struct mfd {
   Epetra_MpiComm *comm;
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm;
   Teuchos::RCP<AmanziMesh::Mesh> mesh;
   Teuchos::RCP<Teuchos::ParameterList> plist;
   Teuchos::RCP<Operators::MatrixMFD_TPFA> A;
@@ -28,7 +31,7 @@ struct mfd {
     comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
     plist = Teuchos::rcp(new Teuchos::ParameterList());
-    Teuchos::updateParametersFromXmlFile("test-mesh.xml",plist.ptr());
+    Teuchos::updateParametersFromXmlFile("test/test-mesh.xml",plist.ptr());
 
     AmanziMesh::MeshFactory factory(comm);
     AmanziMesh::FrameworkPreference prefs(factory.preference());
@@ -37,8 +40,9 @@ struct mfd {
     factory.preference(prefs);
 
     // create the meshes
-    AmanziGeometry::GeometricModel gm(3, plist->sublist("Regions"), comm);
-    mesh = factory.create(plist->sublist("Mesh").sublist("Generate Mesh"), &gm);
+    Teuchos::ParameterList& regionlist = plist->sublist("Regions");
+    gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, regionlist, comm));
+    mesh = factory.create(plist->sublist("Mesh").sublist("Generate Mesh"), &*gm);
 
     // Boundary conditions
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -127,6 +131,14 @@ struct mfd {
     }
   }
 
+  void setDirichletOne() {
+    AmanziMesh::Entity_ID_List bottom;
+    mesh->get_set_entities("bottom side", AmanziMesh::FACE, AmanziMesh::USED, &bottom);
+    for (int f=0; f!=bottom.size(); ++f) {
+      bc_markers[bottom[f]] = Operators::MATRIX_BC_DIRICHLET;
+    }
+  }
+  
   void setSolution(const Teuchos::Ptr<CompositeVector>& x) {
     if (x->HasComponent("cell")) {
       Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
@@ -268,7 +280,6 @@ TEST_FIXTURE(mfd, ApplyRandomTPFAKr) {
   CompositeVector r(*b);
   r = *b;
 
-
   // test A * A^1 * r - r == 0
   x->PutScalar(0.);
 
@@ -326,6 +337,108 @@ TEST_FIXTURE(mfd, ApplyInverseRandomTPFAKr) {
   CHECK_CLOSE(0., norm, 1.e-8);
 }
 
+
+TEST_FIXTURE(mfd, AssembleRandomTPFANormed) {
+  CompositeVectorSpace kr_sp;
+  kr_sp.SetMesh(mesh)->SetGhosted()->SetComponent("face",AmanziMesh::FACE,1);
+
+  Teuchos::RCP<CompositeVector> kr = 
+    Teuchos::rcp(new CompositeVector(kr_sp));
+  Epetra_MultiVector& kr_f = *kr->ViewComponent("face",false);
+  for (int f=0; f!=kr_f.MyLength(); ++f) {
+    AmanziGeometry::Point fc = mesh->face_centroid(f);
+    kr_f[0][f] = std::sqrt(std::abs(fc[0]) + std::abs(fc[1]) + std::abs(fc[2]));
+  }
+
+  setDirichletOne();
+  createMFD("two point flux approximation", kr.ptr(), true);
+  
+  Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
+  for (int c=0; c!=x_c.MyLength(); ++c) {
+    AmanziGeometry::Point fc = mesh->cell_centroid(c);
+    x_c[0][c] = 3. * std::pow(fc[0],2) - 1.123 * std::sqrt(std::abs(fc[1])) + std::pow(fc[2],3);
+  }
+
+  b->PutScalar(0.);
+  A->Schur()->Apply(x_c, *b->ViewComponent("cell",false));
+  double norm_Acc(0.);
+  b->ViewComponent("cell",false)->Norm2(&norm_Acc);
+  std::cout << std::setprecision(15) << "norm = " << norm_Acc << std::endl;
+
+  CHECK_CLOSE(3.54171767185051, norm_Acc, 1.e-8);
+
+  // const Epetra_Map& fmap = mesh->face_map(false);
+  // const Epetra_Map& fmap_ghosted = mesh->face_map(true);
+  // Epetra_Vector Aff_diag(fmap);
+  // A->Aff()->ExtractDiagonalCopy(Aff_diag);
+
+  // for (int f=0; f!=fmap_ghosted.NumMyElements(); ++f) {
+  //   AmanziGeometry::Point fc = mesh->face_centroid(f);
+  //   if (std::abs(fc[0] - 0.5) < 1.e-8 && std::abs(fc[1] - 0.166666666666666666) < 1.e-8 &&
+  //       std::abs(fc[2] - 0.3333333333333) < 1.e-8) {
+  //     std::cout << "We is here!" << std::endl;
+  //     AmanziMesh::Entity_ID_List cells;
+  //     mesh->face_get_cells(f, AmanziMesh::OWNED, &cells);
+  //     std::cout << "On proc: " << comm->MyPID() << "face gid: " << fmap_ghosted.GID(f) << " is in " << cells.size() << " cells." << std::endl;
+  //   }
+  // }
+
+  // for (int pid=0; pid!=comm->NumProc(); ++pid) {
+  //   if (pid == comm->MyPID()) {
+  //     for (int f=0; f!=fmap.NumMyElements(); ++f) {
+  //       AmanziGeometry::Point fc = mesh->face_centroid(f);
+  //       std::cout << "GID: " << fmap.GID(f) << ", Centroid: " << fc << " val=" << Aff_diag[f] << " b=" << b_f[0][f] << std::endl;
+  //     }
+  //   }
+  //   comm->Barrier();
+  // }
+
+  // dump matrices for later comparison
+  std::stringstream filename_Sff;
+  filename_Sff << "test/MatrixMFD_TPFA_Scc_np" << comm->NumProc() << ".txt";
+  EpetraExt::RowMatrixToMatlabFile(filename_Sff.str().c_str(), *A->Schur());
+
+  if (comm->MyPID() == 0) {
+    Epetra_SerialComm mycomm;
+    
+    // load matrices for comparison
+    std::stringstream filename_Sff_ref;
+    filename_Sff_ref << "test/MatrixMFD_TPFA_Scc_ref_np" << comm->NumProc() << ".txt";
+    Epetra_CrsMatrix* Sref;
+    EpetraExt::MatlabFileToCrsMatrix(filename_Sff_ref.str().c_str(), mycomm, Sref);
+
+    // load matrices for comparison
+    std::stringstream filename_Sff_test;
+    filename_Sff_test << "test/MatrixMFD_TPFA_Scc_np" << comm->NumProc() << ".txt";
+    Epetra_CrsMatrix* Stest;
+    EpetraExt::MatlabFileToCrsMatrix(filename_Sff_test.str().c_str(), mycomm, Stest);
+    
+    // compare
+    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    for (int c=0; c!=ncells; ++c) {
+      std::vector<int> inds(20);
+      std::vector<double> vals(20);
+      std::vector<int> inds_ref(20);
+      std::vector<double> vals_ref(20);
+      int num_entries;
+
+      Stest->ExtractMyRowCopy(c, 20, num_entries, &vals[0], &inds[0]);
+      inds.resize(num_entries);
+      vals.resize(num_entries);
+      
+      Sref->ExtractMyRowCopy(c, 20, num_entries, &vals_ref[0], &inds_ref[0]);
+      inds_ref.resize(num_entries);
+      vals_ref.resize(num_entries);
+
+      CHECK(inds_ref == inds);
+      CHECK(vals_ref == vals);
+    }
+
+    delete Sref;
+    delete Stest;
+  }
+  
+}
 
 TEST_FIXTURE(mfd, TPFACompareMFD) {
   CompositeVectorSpace kr_sp;

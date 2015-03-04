@@ -18,6 +18,7 @@ add_library(flow_relations_wrm_models
   wrm_old_permafrost_model.cc
   wrm_implicit_permafrost_model.cc
   wrm_fpd_permafrost_model.cc
+  wrm_fpd_smoothed_permafrost_model.cc
   )
 
 install(TARGETS flow_relations_wrm_models DESTINATION lib)
@@ -26,7 +27,13 @@ if ( BUILD_TESTS )
     include_directories(${Amanzi_TPL_UnitTest_INCLUDE_DIRS})
     include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm/models)
 
-    add_executable(test_wrm test/main.cc test/test_vanGenuchten.cc test/test_old_permafrost.cc test/test_implicit_permafrost.cc)
+    add_executable(test_wrm test/main.cc 
+      test/test_vanGenuchten.cc 
+      test/test_old_permafrost.cc 
+      test/test_implicit_permafrost.cc
+      test/test_fpd_permafrost.cc
+      test/test_fpd_smoothed_permafrost.cc
+      test/test_pc_ice_liq.cc)
     target_link_libraries(test_wrm flow_relations_wrm_models amanzi_whetstone amanzi_error_handling ${Amanzi_TPL_UnitTest_LIBRARIES} ${Amanzi_TPL_Trilinos_LIBRARIES})
 endif()
 

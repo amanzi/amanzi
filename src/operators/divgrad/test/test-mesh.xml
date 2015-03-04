@@ -5,8 +5,8 @@
     <ParameterList name="Generate Mesh">
       <Parameter name="Number of Cells" type="Array(int)" value="{3,3,3}"/>
       <!-- \hat{z} is in the up direction, placing the origin at the surface -->
-      <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0,0.0,0.0}"/>
-      <Parameter name="Domain High Corner" type="Array(double)" value="{1.0,1.0,1.0}"/>
+      <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
+      <Parameter name="Domain High Coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
 
       <!-- in the future, mesh blocks may be used to define ice-rich regions -->
       <!-- not currently used in richards mode (same models everywhere) -->

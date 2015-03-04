@@ -4,6 +4,8 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_RCP.hpp"
 #include "EpetraExt_RowMatrixOut.h"
+#include "EpetraExt_CrsMatrixIn.h"
+#include "Epetra_SerialComm.h"
 
 #include "MeshFactory.hh"
 #include "Mesh.hh"
@@ -17,6 +19,7 @@ using namespace Amanzi;
 
 struct mfd {
   Epetra_MpiComm *comm;
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm;
   Teuchos::RCP<AmanziMesh::Mesh> mesh;
   Teuchos::RCP<Teuchos::ParameterList> plist;
   Teuchos::RCP<Operators::MatrixMFD> A;
@@ -34,7 +37,7 @@ struct mfd {
     comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
     plist = Teuchos::rcp(new Teuchos::ParameterList());
-    Teuchos::updateParametersFromXmlFile("test-mesh.xml",plist.ptr());
+    Teuchos::updateParametersFromXmlFile("test/test-mesh.xml",plist.ptr());
 
     AmanziMesh::MeshFactory factory(comm);
     AmanziMesh::FrameworkPreference prefs(factory.preference());
@@ -43,8 +46,9 @@ struct mfd {
     factory.preference(prefs);
 
     // create the meshes
-    AmanziGeometry::GeometricModel gm(3, plist->sublist("Regions"), comm);
-    mesh = factory.create(plist->sublist("Mesh").sublist("Generate Mesh"), &gm);
+    Teuchos::ParameterList& regionlist = plist->sublist("Regions");
+    gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, regionlist, comm));
+    mesh = factory.create(plist->sublist("Mesh").sublist("Generate Mesh"), &*gm);
 
     // Boundary conditions
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -110,7 +114,7 @@ struct mfd {
 
     // set up of block system
     C->SetOffDiagonals(offdiag->SubVector(0)->Data()->ViewComponent("cell",false),
-		       offdiag->SubVector(1)->Data()->ViewComponent("cell",false));
+                       offdiag->SubVector(1)->Data()->ViewComponent("cell",false), 1.0);
 
   }
 
@@ -130,6 +134,14 @@ struct mfd {
     }
   }
 
+  void setDirichletOne() {
+    AmanziMesh::Entity_ID_List bottom;
+    mesh->get_set_entities("bottom side", AmanziMesh::FACE, AmanziMesh::USED, &bottom);
+    for (int f=0; f!=bottom.size(); ++f) {
+      bc_markers[bottom[f]] = Operators::MATRIX_BC_DIRICHLET;
+    }
+  }
+  
   void setSolution(const Teuchos::Ptr<TreeVector>& x) {
     setSolution(x->SubVector(0)->Data().ptr());
     setSolution(x->SubVector(1)->Data().ptr());
@@ -339,4 +351,121 @@ TEST_FIXTURE(mfd, ApplyInverseRandomTwoPointKr) {
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
+
+TEST_FIXTURE(mfd, AssembleRandomTwoPointNormed) {
+  CompositeVectorSpace kr_sp;
+  kr_sp.SetMesh(mesh)->SetGhosted()->SetComponent("face",AmanziMesh::FACE,1);
+
+  Teuchos::RCP<CompositeVector> kr = 
+    Teuchos::rcp(new CompositeVector(kr_sp));
+  Epetra_MultiVector& kr_f = *kr->ViewComponent("face",false);
+  for (int f=0; f!=kr_f.MyLength(); ++f) {
+    AmanziGeometry::Point fc = mesh->face_centroid(f);
+    kr_f[0][f] = std::sqrt(std::abs(fc[0]) + std::abs(fc[1]) + std::abs(fc[2]));
+  }
+
+  setDirichletOne();
+  createMFD("two point flux approximation", "boomer amg", kr.ptr());
+
+  x->PutScalar(0.);
+  Epetra_MultiVector& xA_f = *xA->ViewComponent("face",false);
+  Epetra_MultiVector& xB_f = *xB->ViewComponent("face",false);
+  for (int f=0; f!=xA_f.MyLength(); ++f) {
+    AmanziGeometry::Point fc = mesh->face_centroid(f);
+    xA_f[0][f] = 3. * std::pow(fc[0],2) - 1.123 * std::sqrt(std::abs(fc[1])) + std::pow(fc[2],3);
+    xB_f[0][f] = 8. * std::pow(fc[0],1.1) - 1.335 * std::sqrt(std::abs(fc[1])) + std::pow(fc[2],2.);
+  }
+
+  b->PutScalar(0.);
+  C->Apply(*x,*b);
+  double norm_Aff(0.);
+  b->Norm2(&norm_Aff);
+
+  b->PutScalar(0.);
+  C->ApplyInverse(*x, *b);
+  double norm_schur(0.);
+
+  b->Norm2(&norm_schur);
+  std::cout << std::setprecision(15) << "norms = " << norm_Aff << ", " << norm_schur << std::endl;
+
+  CHECK_CLOSE(95.4184136431808, norm_Aff, 1.e-8);
+  CHECK_CLOSE(1642.03839496382, norm_schur, 1.e-8);
+
+  // DUMPING THESE MATRICES FAIL FOR TRILINOS REASONS?
+  // const Epetra_Map& fmap = mesh->face_map(false);
+  // const Epetra_Map& fmap_ghosted = mesh->face_map(true);
+
+  // // dump matrices for later comparison
+  // // std::stringstream filename_Aff;
+  // // filename_Aff << "test/MatrixMFD_Coupled_Aff_np" << comm->NumProc() << ".txt";
+  // // EpetraExt::RowMatrixToMatlabFile(filename_Aff.str().c_str(), *C->Aff());
+
+  // std::stringstream filename_Sff;
+  // filename_Sff << "test/MatrixMFD_Coupled_Sff_np" << comm->NumProc() << ".txt";
+  // EpetraExt::RowMatrixToMatlabFile(filename_Sff.str().c_str(), *C->Schur());
+
+  // if (comm->MyPID() == 0) {
+  //   Epetra_SerialComm mycomm;
+    
+  //   // load matrices for comparison
+  //   // std::stringstream filename_Aff_ref;
+  //   // filename_Aff_ref << "test/MatrixMFD_Coupled_Aff_ref_np" << comm->NumProc() << ".txt";
+  //   // Epetra_CrsMatrix* Aref;
+  //   // EpetraExt::MatlabFileToCrsMatrix(filename_Aff_ref.str().c_str(), mycomm, Aref);
+
+  //   std::stringstream filename_Sff_ref;
+  //   filename_Sff_ref << "test/MatrixMFD_Coupled_Sff_ref_np" << comm->NumProc() << ".txt";
+  //   Epetra_CrsMatrix* Sref;
+  //   EpetraExt::MatlabFileToCrsMatrix(filename_Sff_ref.str().c_str(), mycomm, Sref);
+
+  //   // load matrices for comparison
+  //   // std::stringstream filename_Aff_test;
+  //   // filename_Aff_test << "test/MatrixMFD_Coupled_Aff_np" << comm->NumProc() << ".txt";
+  //   // Epetra_CrsMatrix* Atest;
+  //   // EpetraExt::MatlabFileToCrsMatrix(filename_Aff_test.str().c_str(), mycomm, Atest);
+
+  //   std::stringstream filename_Sff_test;
+  //   filename_Sff_test << "test/MatrixMFD_Coupled_Sff_np" << comm->NumProc() << ".txt";
+  //   Epetra_CrsMatrix* Stest;
+  //   EpetraExt::MatlabFileToCrsMatrix(filename_Sff_test.str().c_str(), mycomm, Stest);
+    
+  //   // compare
+  //   for (int f=0; f!=2*fmap.NumGlobalElements(); ++f) {
+  //     std::vector<int> inds(40);
+  //     std::vector<double> vals(40);
+  //     std::vector<int> inds_ref(40);
+  //     std::vector<double> vals_ref(40);
+  //     int num_entries;
+
+  //     // Atest->ExtractMyRowCopy(f, 40, num_entries, &vals[0], &inds[0]);
+  //     // inds.resize(num_entries);
+  //     // vals.resize(num_entries);
+    
+  //     // Aref->ExtractMyRowCopy(f, 40, num_entries, &vals_ref[0], &inds_ref[0]);
+  //     // inds_ref.resize(num_entries);
+  //     // vals_ref.resize(num_entries);
+
+  //     // CHECK(inds_ref == inds);
+  //     // CHECK(vals_ref == vals);
+
+  //     Stest->ExtractMyRowCopy(f, 40, num_entries, &vals[0], &inds[0]);
+  //     inds.resize(num_entries);
+  //     vals.resize(num_entries);
+      
+  //     Sref->ExtractMyRowCopy(f, 40, num_entries, &vals_ref[0], &inds_ref[0]);
+  //     inds_ref.resize(num_entries);
+  //     vals_ref.resize(num_entries);
+
+  //     CHECK(inds_ref == inds);
+  //     CHECK(vals_ref == vals);
+  //   }
+
+  //   // delete Aref;
+  //   delete Sref;
+  //   // delete Atest;
+  //   delete Stest;
+  // }
+  
+}
+
 
