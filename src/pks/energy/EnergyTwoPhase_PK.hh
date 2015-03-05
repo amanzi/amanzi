@@ -32,7 +32,7 @@ public:
                     const Teuchos::RCP<TreeVector>& soln);
   virtual ~EnergyTwoPhase_PK() {};
 
-  // Initialize owned (dependent) variables.
+  // Required PK members.
   virtual void Setup();
   virtual void Initialize();
   virtual std::string name() { return "two-phase energy"; }
@@ -47,6 +47,7 @@ public:
 
   // primary field
   const Teuchos::RCP<TreeVector> soln_;
+  Teuchos::RCP<CompositeVector> solution;
 
 private:
   // factory registration

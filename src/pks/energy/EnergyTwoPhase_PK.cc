@@ -16,7 +16,7 @@
 #include "eos_evaluator.hh"
 #include "enthalpy_evaluator.hh"
 #include "iem_evaluator.hh"
-#include "twophase_energy_evaluator.hh"
+#include "TwoPhaseEnergyEvaluator.hh"
 #include "twophase_thermal_conductivity_evaluator.hh"
 
 namespace Amanzi {
@@ -45,6 +45,7 @@ EnergyTwoPhase_PK::EnergyTwoPhase_PK(
 ****************************************************************** */
 void EnergyTwoPhase_PK::Setup()
 {
+  // basic class setup
   Energy_PK::Setup();
 
   // Get data and evaluators needed by the PK
@@ -57,19 +58,21 @@ void EnergyTwoPhase_PK::Setup()
   Teuchos::RCP<TwoPhaseEnergyEvaluator> ee = Teuchos::rcp(new TwoPhaseEnergyEvaluator(ee_list));
   S_->SetFieldEvaluator(energy_key_, ee);
 
-  // -- advection of enthalpy
+  // advection of enthalpy
   S_->RequireField(enthalpy_key_)->SetMesh(mesh_)
-      ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+    ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
 
   Teuchos::ParameterList enth_plist = glist_->sublist("PKs").sublist("Energy").sublist("enthalpy evaluator");
   enth_plist.set("enthalpy key", enthalpy_key_);
   Teuchos::RCP<EnthalpyEvaluator> enth = Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
   S_->SetFieldEvaluator(enthalpy_key_, enth);
 
-  // -- thermal conductivity
+  // thermal conductivity
   S_->RequireField(conductivity_key_)->SetMesh(mesh_)
-      ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList tcm_plist = glist_->sublist("PKs").sublist("Energy").sublist("thermal conductivity evaluator");
+    ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList tcm_plist = glist_->sublist("PKs")
+                                            .sublist("Energy")
+                                            .sublist("thermal conductivity evaluator");
   Teuchos::RCP<ThermalConductivityTwoPhaseEvaluator> tcm =
       Teuchos::rcp(new ThermalConductivityTwoPhaseEvaluator(tcm_plist));
   S_->SetFieldEvaluator(conductivity_key_, tcm);
@@ -81,16 +84,24 @@ void EnergyTwoPhase_PK::Setup()
 ****************************************************************** */
 void EnergyTwoPhase_PK::Initialize()
 {
-  // Call the base class's initialize.
-  Energy_PK::Initialize();
-
-  // Create pointers to the primary flow field pressure.
-  soln_->Data() = S_->GetFieldData("temperature", passwd_); 
-
   // create verbosity object
   Teuchos::ParameterList vlist;
   vlist.sublist("VerboseObject") = ep_list_->sublist("VerboseObject");
   vo_ = new VerboseObject("EnergyPK::2Phase", vlist); 
+
+  // Create a scalar tensor so far
+  K.resize(ncells_owned);
+  for (int c = 0; c < ncells_owned; c++) {
+    K[c].Init(dim, 1);
+    K[c](0, 0) = 1.0;
+  }
+
+  // Call the base class initialize.
+  Energy_PK::Initialize();
+
+  // Create pointers to the primary flow field pressure.
+  solution = S_->GetFieldData("temperature", passwd_);
+  soln_->SetData(solution); 
 
   // create evaluators
   Teuchos::RCP<FieldEvaluator> eos_fe = S_->GetFieldEvaluator("molar_density_liquid");
@@ -105,8 +116,8 @@ void EnergyTwoPhase_PK::Initialize()
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << std::endl 
-        << vo_->color("green") << "Initalization of TI period is complete." << vo_->reset() << std::endl;
+    *vo_->os() << std::endl << vo_->color("green")
+               << "Initalization of TI period is complete." << vo_->reset() << std::endl;
   }
 }
 

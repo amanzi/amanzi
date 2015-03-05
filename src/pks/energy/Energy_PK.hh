@@ -39,7 +39,7 @@ class Energy_PK : public FnTimeIntegratorPK {
   virtual ~Energy_PK() {};
 
   // main PK methods
-  virtual void Setup() = 0;
+  virtual void Setup();
   virtual void Initialize();
 
   bool AdvanceStep(double t_old, double t_new) { return true; }
@@ -88,12 +88,19 @@ class Energy_PK : public FnTimeIntegratorPK {
   int nfaces_owned, nfaces_wghost;
 
  protected:
+  const Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> temperature_eval;
 
+  // sate and primary field
   Teuchos::RCP<State> S_;
   std::string passwd_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> temperature_eval;
+
+  Key energy_key_;  // keys
+  Key enthalpy_key_;
+  Key conductivity_key_;
+  Key uw_conductivity_key_;
 
   // conductivity tensor
   std::vector<WhetStone::Tensor> K; 
@@ -113,13 +120,7 @@ class Energy_PK : public FnTimeIntegratorPK {
   Teuchos::RCP<Operators::BCs> op_bc_;
 
  protected:
-  const Teuchos::RCP<Teuchos::ParameterList> glist_;
   VerboseObject* vo_;
-
-  Key energy_key_;  // keys
-  Key enthalpy_key_;
-  Key conductivity_key_;
-  Key uw_conductivity_key_;
 };
 
 }  // namespace Energy

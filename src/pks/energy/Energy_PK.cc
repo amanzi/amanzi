@@ -21,6 +21,7 @@
 #include "State.hh"
 
 #include "OperatorDiffusionFactory.hh"
+#include "Energy_BC_Factory.hh"
 #include "Energy_PK.hh"
 
 namespace Amanzi {
@@ -85,37 +86,25 @@ void Energy_PK::Setup()
 
 
 /* ******************************************************************
-* Initialiation.
+* Basic initialization of energy classes.
 ****************************************************************** */
 void Energy_PK::Initialize()
 {
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist_, "PKs", true);
   Teuchos::RCP<Teuchos::ParameterList> ep_list = Teuchos::sublist(pk_list, "Energy", true);
 
-  // create verbosity object
-  Teuchos::ParameterList vlist;
-  vlist.sublist("VerboseObject") = ep_list->sublist("VerboseObject");
-  vo_ = new VerboseObject("EnergyPK", vlist);
-
-  // Create the BC objects.
+  // Create BCs objects.
   bc_model_.resize(nfaces_wghost, 0);
   bc_submodel_.resize(nfaces_wghost, 0);
 
   Teuchos::RCP<Teuchos::ParameterList>
       bc_list = Teuchos::rcp(new Teuchos::ParameterList(ep_list->sublist("boundary conditions", true)));
-/*
   EnergyBCFactory bc_factory(mesh_, bc_list);
 
   bc_temperature = bc_factory.CreateTemperature(bc_submodel_);
-  bc_flux = bc_factory.CreateMassFlux(bc_submodel_);
-*/
+  bc_flux = bc_factory.CreateEnergyFlux(bc_submodel_);
 
-  // Create a scalar tensor so far
-  K.resize(ncells_wghost);
-  for (int c = 0; c < ncells_wghost; c++) {
-    K[c].Init(dim, 1);
-    K[c](0, 0) = 1.0;
-  }
+  op_bc_ = Teuchos::rcp(new Operators:: BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_, bc_value_, bc_mixed_));
 
   // Select a proper matrix class. 
   Teuchos::ParameterList tmp_list = glist_->sublist("PKs").sublist("Energy")
@@ -123,7 +112,6 @@ void Energy_PK::Initialize()
   Teuchos::ParameterList oplist_matrix = tmp_list.sublist("matrix");
   Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
 
-  op_bc_ = Teuchos::rcp(new Operators:: BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_, bc_value_, bc_mixed_));
   AmanziGeometry::Point g(dim);
 
   Operators::OperatorDiffusionFactory opfactory;

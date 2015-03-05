@@ -99,8 +99,8 @@ generate_evaluators_registration_header(
 # Library: energy
 #
 set(energy_src_files Energy_PK.cc Energy_TI.cc
-                     EnergyBoundaryFunction.cc
                      EnergyTwoPhase_PK.cc 
+                     Energy_BC_Factory.cc
                      Energy_VandV.cc
                      iem_linear.cc
                      iem_water_vapor.cc 
@@ -109,7 +109,7 @@ set(energy_src_files Energy_PK.cc Energy_TI.cc
                      enthalpy_evaluator.cc
                      twophase_thermal_conductivity_wetdry.cc
                      twophase_thermal_conductivity_peterslidard.cc
-                     twophase_energy_evaluator.cc 
+                     TwoPhaseEnergyEvaluator.cc 
                      twophase_thermal_conductivity_evaluator.cc
                      twophase_thermal_conductivity_factory.cc)
 
@@ -126,7 +126,9 @@ add_amanzi_library(energy SOURCE ${energy_src_files}
 set(flow_inc_files 
   Energy_PK.hh
   EnergyBoundaryFunction.hh
+  EnergyDefs.hh
   EnergyTwoPhase_PK.hh
+  Energy_BC_Factory.hh
   energy_twophase_registration.hh
   iem.hh
   iem_linear.hh
@@ -135,7 +137,7 @@ set(flow_inc_files
   iem_factory.hh
   iem_evaluator.hh
   energy_internal_energy_registration.hh
-  twophase_energy_evaluator.hh
+  TwoPhaseEnergyEvaluator.hh
   twophase_thermal_conductivity.hh
   twophase_thermal_conductivity_evaluator.hh
   twophase_thermal_conductivity_factory.hh
@@ -160,7 +162,7 @@ if (BUILD_TESTS)
     # Add the flow directory to the include paths
     include_directories(${ENERGY_SOURCE_DIR})
 
-    set(amanzi_libs geometry mesh mesh_factory eos energy eos state operators whetstone data_structures)
+    set(amanzi_libs geometry mesh mesh_factory eos energy pks eos state operators whetstone data_structures)
 
     # Test: 1
     add_amanzi_test(energy_matrix_2D energy_matrix_2D
