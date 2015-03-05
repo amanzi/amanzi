@@ -55,7 +55,7 @@
 #   0.92.11      - update MSTK to v 2.22rc3 (fixed parallel mesh partitioning bug)
 #   0.92.12      - update PETSc to 3.5.2, Alquimia to 0.2, and PFlotran to commit 611092f80ddb.
 #   0.92.13      - update MSTK to v2.22, includes installation of mesh utilities
-#   0.92.14      - update Hypre to v2.10.0b
+#   0.92.14      - update Hypre to v2.10.0b (and added patch for to ensure tol>0)
 
 include(CMakeParseArguments)
 
