@@ -11,7 +11,7 @@ Author: Ethan Coon
 #include "energy_bc_factory.hh"
 #include "CompositeVectorSpace.hh"
 
-#include "MatrixMFD_Factory.hh"
+#include "OperatorDiffusionMFD.hh"
 #include "advection_diffusion.hh"
 
 namespace Amanzi {
@@ -32,17 +32,10 @@ void AdvectionDiffusion::setup(const Teuchos::Ptr<State>& S) {
   names2[0] = "cell";
   names2[1] = "face";
 
-  Teuchos::ParameterList mfd_plist = plist_->sublist("Diffusion");
-  bool tpfa = mfd_plist.get<bool>("TPFA", false);
-
   factory = S->RequireField("temperature", "energy");
   factory->SetMesh(S->GetMesh());
   factory->SetGhosted(true);
-  if (tpfa) {
-    factory->SetComponent("cell", AmanziMesh::CELL, 1);
-  } else {
-    factory->SetComponents(names2, locations2, num_dofs2);
-  }
+  factory->SetComponents(names2, locations2, num_dofs2);
 
   // -- thermal conductivity -- just cells
   factory = S->RequireField("thermal_conductivity", "energy");
@@ -68,6 +61,12 @@ void AdvectionDiffusion::setup(const Teuchos::Ptr<State>& S) {
   bc_temperature_ = bc_factory.CreateTemperature();
   bc_flux_ = bc_factory.CreateEnthalpyFlux();
 
+  int nfaces = S->GetMesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
+  bc_values_.resize(nfaces, 0.0);
+  std::vector<double> mixed;
+  bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_markers_, bc_values_, mixed));
+
   // operator for advection terms
   Operators::AdvectionFactory advection_factory;
   Teuchos::ParameterList advect_plist = plist_->sublist("Advection");
@@ -75,30 +74,28 @@ void AdvectionDiffusion::setup(const Teuchos::Ptr<State>& S) {
   advection_->set_num_dofs(1);
 
   // operator for the diffusion terms
-  matrix_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
-  matrix_->set_symmetric(true);
-  matrix_->SymbolicAssembleGlobalMatrices();
-  matrix_->CreateMFDmassMatrices(Teuchos::null);
+  Teuchos::ParameterList mfd_plist = plist_->sublist("Diffusion");
+  matrix_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionMFD(mfd_plist, mesh_));
+  matrix_diff_->SetBCs(bc_);
+  matrix_diff_->Setup(Teuchos::null);
+  matrix_ = matrix_diff_->global_operator();
 
   // preconditioner
-  // NOTE: may want to allow these to be the same/different?
   Teuchos::ParameterList mfd_pc_plist = plist_->sublist("Diffusion PC");
-  mfd_preconditioner_ = Operators::CreateMatrixMFD(mfd_pc_plist, mesh_);
-  mfd_preconditioner_->set_symmetric(true);
-  mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
-  mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);
-  mfd_preconditioner_->InitPreconditioner();
+  preconditioner_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionMFD(mfd_pc_plist, mesh_));
+  preconditioner_diff_->SetBCs(bc_);
+  preconditioner_diff_->Setup(Teuchos::null);
+  preconditioner_ = preconditioner_diff_->global_operator();
+  preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, preconditioner_));
+  preconditioner_->SymbolicAssembleMatrix();
+  preconditioner_->InitPreconditioner("preconditioner", mfd_pc_plist);
+
 };
 
 
 // -- Initialize owned (dependent) variables.
 void AdvectionDiffusion::initialize(const Teuchos::Ptr<State>& S) {
   PKPhysicalBDFBase::initialize(S);
-
-  // initialize boundary conditions
-  int nfaces = S->GetMesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers_.resize(nfaces, Operators::MATRIX_BC_NULL);
-  bc_values_.resize(nfaces, 0.0);
 
   double time = S->time();
   bc_temperature_->Compute(time);
@@ -110,20 +107,20 @@ void AdvectionDiffusion::initialize(const Teuchos::Ptr<State>& S) {
 // Evaluate BCs
 void AdvectionDiffusion::UpdateBoundaryConditions_() {
   for (unsigned int n=0; n!=bc_markers_.size(); ++n) {
-    bc_markers_[n] = Operators::MATRIX_BC_NULL;
+    bc_markers_[n] = Operators::OPERATOR_BC_NONE;
     bc_values_[n] = 0.0;
   }
 
   Functions::BoundaryFunction::Iterator bc;
   for (bc=bc_temperature_->begin(); bc!=bc_temperature_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+    bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
     bc_values_[f] = bc->second;
   }
 
   for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
+    bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
     bc_values_[f] = bc->second;
   }
 };
@@ -134,7 +131,7 @@ void AdvectionDiffusion::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVe
   Epetra_MultiVector& temp_f = *temperature->ViewComponent("face",true);
   int nfaces = temperature->size("face",false);
   for (int f=0; f!=nfaces; ++f) {
-    if (bc_markers_[f] == Operators::MATRIX_BC_DIRICHLET) {
+    if (bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET) {
       temp_f[0][f] = bc_values_[f];
     }
   }

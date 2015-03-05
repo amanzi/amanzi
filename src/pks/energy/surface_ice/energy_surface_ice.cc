@@ -22,6 +22,7 @@ Process kernel for energy equation for overland flow.
 #include "FunctionFactory.hh"
 #include "independent_variable_field_evaluator.hh"
 #include "overland_source_from_subsurface_flux_evaluator.hh"
+#include "Op.hh"
 
 #include "energy_surface_ice.hh"
 
@@ -214,7 +215,7 @@ void EnergySurfaceIce::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S
   for (unsigned int f=0; f!=nfaces; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     if (cells.size() == 1) {
-      double T = bc_markers_[f] == Operators::MATRIX_BC_DIRICHLET ?
+      double T = bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET ?
           bc_values_[f] : temp_f[0][f];
       double p = pres_c[0][cells[0]];
       double dens = eos_liquid_->MolarDensity(T,p);
@@ -312,7 +313,7 @@ void EnergySurfaceIce::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double 
     // (i.e. SEB PK) has defined a dsource_dT, but 3, the source
     // evaluator does not think it depends upon T (because it is
     // hacked in by the PK).
-    std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
+    std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
 
     const Epetra_MultiVector& dsource_dT =
         *S->GetFieldData("dsurface_conducted_energy_source_dsurface_temperature")->ViewComponent("cell",false);

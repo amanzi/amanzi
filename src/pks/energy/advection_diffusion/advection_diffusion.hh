@@ -16,7 +16,10 @@ us to the air-water system.
 
 #include "pk_factory.hh"
 #include "advection.hh"
-#include "MatrixMFD.hh"
+#include "Operator.hh"
+#include "OperatorDiffusion.hh"
+#include "OperatorAdvection.hh"
+#include "OperatorAccumulation.hh"
 #include "pk_physical_bdf_base.hh"
 
 namespace Amanzi {
@@ -81,10 +84,19 @@ private:
   Teuchos::RCP<Functions::BoundaryFunction> bc_temperature_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
 
-  // operators
-  Teuchos::RCP<Operators::Advection> advection_;
-  Teuchos::RCP<Operators::MatrixMFD> matrix_;
 
+  // mathematical operators
+  Teuchos::RCP<Operators::Operator> matrix_; // pc in PKPhysicalBDFBase
+  Teuchos::RCP<Operators::OperatorDiffusion> matrix_diff_;
+
+  Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
+  Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
+  Teuchos::RCP<Operators::OperatorAdvection> preconditioner_adv_;
+
+  // to be replaced
+  Teuchos::RCP<Operators::Advection> advection_;
+
+  
   // time integration
   double atol_;
   double rtol_;

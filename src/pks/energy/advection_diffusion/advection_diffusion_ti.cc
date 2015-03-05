@@ -9,6 +9,7 @@ Author: Ethan Coon
 
 #include "Epetra_Vector.h"
 #include "advection_diffusion.hh"
+#include "Op.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -61,7 +62,7 @@ void AdvectionDiffusion::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, T
   //  *Pu = *u;
 
   // MFD ML preconditioner
-  mfd_preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
+  preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "  Pu: " << (*Pu->Data())("cell",0)  << std::endl;
 };
@@ -72,35 +73,31 @@ void AdvectionDiffusion::UpdatePreconditioner(double t, Teuchos::RCP<const TreeV
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PKDefaultBase::solution_to_state(*up, S_next_);
 
-  // div K_e grad u
-  Teuchos::RCP<const CompositeVector> thermal_conductivity =
-      S_next_->GetFieldData("thermal_conductivity");
-
   // update boundary conditions
   bc_temperature_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditions_();
 
-  mfd_preconditioner_->CreateMFDstiffnessMatrices(thermal_conductivity.ptr());
-  mfd_preconditioner_->CreateMFDrhsVectors();
+  // div K_e grad u
+  Teuchos::RCP<const CompositeVector> thermal_conductivity =
+      S_next_->GetFieldData("thermal_conductivity");
+  preconditioner_->Init();
+  preconditioner_diff_->Setup(thermal_conductivity, Teuchos::null);
+  preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // update with accumulation terms
-  Teuchos::RCP<const CompositeVector> temp1 =
-    S_next_->GetFieldData("temperature");
-  Teuchos::RCP<const CompositeVector> temp0 =
-    S_inter_->GetFieldData("temperature");
   Teuchos::RCP<const CompositeVector> cell_volume =
     S_next_->GetFieldData("cell_volume");
 
-  std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
-  std::vector<double>& Fc_cells = mfd_preconditioner_->Fc_cells();
+  std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
   int ncells = cell_volume->size("cell",false);
   for (int c=0; c!=ncells; ++c) {
     double factor = (*cell_volume)("cell",c);
     Acc_cells[c] += factor/h;
   }
 
-  mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  preconditioner_diff_->ApplyBCs(true);
+  preconditioner_->AssembleMatrix();
 };
 
 

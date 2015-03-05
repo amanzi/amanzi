@@ -11,6 +11,7 @@ Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
 #include "boost/math/special_functions/fpclassify.hpp"
 #include "Mesh_MSTK.hh"
 
+#include "Op.hh"
 #include "richards.hh"
 
 namespace Amanzi {
@@ -40,7 +41,7 @@ void Richards::Functional(double t_old,
   solution_to_state(*u_new, S_next_);
   Teuchos::RCP<CompositeVector> u = u_new->Data();
 
-  if (dynamic_mesh_) matrix_->CreateMFDmassMatrices(K_.ptr());
+  if (dynamic_mesh_) matrix_diff_->Setup(K_);
 
 #if DEBUG_FLAG
   if (vo_->os_OK(Teuchos::VERB_HIGH))
@@ -70,7 +71,7 @@ void Richards::Functional(double t_old,
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
   
-  if (vapor_diffusion_) AddVaporDiffusionResidual_(S_next_.ptr(), res.ptr());
+  // if (vapor_diffusion_) AddVaporDiffusionResidual_(S_next_.ptr(), res.ptr());
 
 
 
@@ -136,7 +137,7 @@ void Richards::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RC
 #endif
 
   // Apply the preconditioner
-  mfd_preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
+  preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
 
 #if DEBUG_FLAG
   db_->WriteVector("PC*p_res", Pu->Data().ptr(), true);
@@ -162,8 +163,8 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   // Recreate mass matrices
   if (dynamic_mesh_) {
-    matrix_->CreateMFDmassMatrices(K_.ptr());
-    mfd_preconditioner_->CreateMFDmassMatrices(K_.ptr());
+    matrix_diff_->Setup(K_);
+    preconditioner_diff_->Setup(K_);
   }
 
   // update state with the solution up.
@@ -227,21 +228,21 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   
   // Update the preconditioner with darcy and gravity fluxes
   //  mfd_preconditioner_->CreateMFDstiffnessMatrices(rel_perm.ptr());
-  mfd_preconditioner_->CreateMFDstiffnessMatrices(rel_perm_modified.ptr());
-  mfd_preconditioner_->CreateMFDrhsVectors();
-  AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), mfd_preconditioner_.ptr());
+  preconditioner_diff_->Setup(rel_perm_modified, Teuchos::null);
+  preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  if (vapor_diffusion_){
-    Teuchos::RCP<CompositeVector> vapor_diff_pres = S_next_->GetFieldData("vapor_diffusion_pressure", name_);
-    ComputeVaporDiffusionCoef(S_next_.ptr(), vapor_diff_pres, "pressure");   
+  // if (vapor_diffusion_){
+  //   Teuchos::RCP<CompositeVector> vapor_diff_pres = S_next_->GetFieldData("vapor_diffusion_pressure", name_);
+  //   ComputeVaporDiffusionCoef(S_next_.ptr(), vapor_diff_pres, "pressure");   
 
   // // update the stiffness matrix
-    matrix_vapor_->CreateMFDstiffnessMatrices(vapor_diff_pres.ptr());    
-    mfd_preconditioner_->Add2MFDstiffnessMatrices(&matrix_vapor_->Acc_cells(),
-                                                  &matrix_vapor_->Aff_cells(),
-                                                  &matrix_vapor_->Acf_cells(),
-                                                  &matrix_vapor_->Afc_cells());
-  }
+    // matrix_vapor_->CreateMFDstiffnessMatrices(vapor_diff_pres.ptr());    
+    // mfd_preconditioner_->Add2MFDstiffnessMatrices(&matrix_vapor_->Acc_cells(),
+    //                                               &matrix_vapor_->Aff_cells(),
+    //                                               &matrix_vapor_->Acf_cells(),
+    //                                               &matrix_vapor_->Afc_cells());
+  // }
+
   // Update the preconditioner with accumulation terms.
   // -- update the accumulation derivatives
   S_next_->GetFieldEvaluator("water_content")
@@ -258,9 +259,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 #endif
 
   // -- update the cell-cell block
-  std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
-  std::vector<double>& Fc_cells = mfd_preconditioner_->Fc_cells();
-
+  std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
   unsigned int ncells = dwc_dp.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
     ASSERT(dwc_dp[0][c] > 1.e-10);
@@ -271,8 +270,11 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   AddSourcesToPrecon_(S_next_.ptr(), h);
   
   // -- apply BCs
-  mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  preconditioner_diff_->ApplyBCs(bc_);
+
+  if (precon_used_) preconditioner_->AssembleMatrix();
 };
+
 
 double Richards::ErrorNorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du) {
@@ -377,47 +379,47 @@ double Richards::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 };
 
 
-void Richards::PreconWC_(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
-  Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_EXTREME))
-    *vo_->os() << "  Apply precon variable switching to Liquid Saturation" << std::endl;
+// void Richards::PreconWC_(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+//   Teuchos::OSTab tab = vo_->getOSTab();
+//   if (vo_->os_OK(Teuchos::VERB_EXTREME))
+//     *vo_->os() << "  Apply precon variable switching to Liquid Saturation" << std::endl;
 
-    // get old p, sat
-  const Epetra_MultiVector& pres_prev =
-      *S_next_->GetFieldData("pressure")->ViewComponent("cell",false);
-  const Epetra_MultiVector& sat_prev =
-      *S_next_->GetFieldData("saturation_liquid")->ViewComponent("cell",false);
-  const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
+//     // get old p, sat
+//   const Epetra_MultiVector& pres_prev =
+//       *S_next_->GetFieldData("pressure")->ViewComponent("cell",false);
+//   const Epetra_MultiVector& sat_prev =
+//       *S_next_->GetFieldData("saturation_liquid")->ViewComponent("cell",false);
+//   const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
 
-  // calculate ds/dp
-  S_next_->GetFieldEvaluator("saturation_liquid")
-      ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+//   // calculate ds/dp
+//   S_next_->GetFieldEvaluator("saturation_liquid")
+//       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
 
-  const Epetra_MultiVector& dsdp =
-      *S_next_->GetFieldData("dsaturation_liquid_dpressure")->ViewComponent("cell",false);
-  Epetra_MultiVector& dp = *Pu->Data()->ViewComponent("cell",false);
+//   const Epetra_MultiVector& dsdp =
+//       *S_next_->GetFieldData("dsaturation_liquid_dpressure")->ViewComponent("cell",false);
+//   Epetra_MultiVector& dp = *Pu->Data()->ViewComponent("cell",false);
 
-  Epetra_MultiVector s_new(dp);
-  s_new.Multiply(1., dp, dsdp, 0.);
-  s_new.Update(1., sat_prev, -1.); // s_new <-- s - ds
+//   Epetra_MultiVector s_new(dp);
+//   s_new.Multiply(1., dp, dsdp, 0.);
+//   s_new.Update(1., sat_prev, -1.); // s_new <-- s - ds
 
-  AmanziMesh::Entity_ID ncells = s_new.MyLength();
-  for (AmanziMesh::Entity_ID c=0; c!=ncells; ++c) {
+//   AmanziMesh::Entity_ID ncells = s_new.MyLength();
+//   for (AmanziMesh::Entity_ID c=0; c!=ncells; ++c) {
 
-    double p_prev = pres_prev[0][c];
-    double p_standard = p_prev - dp[0][c];
+//     double p_prev = pres_prev[0][c];
+//     double p_standard = p_prev - dp[0][c];
 
-    // cannot use if saturated, likely not useful if decreasing in saturation
-    if (p_standard > p_prev && p_prev < patm && s_new[0][c] < 0.99) {
-      double pc = wrms_->second[(*wrms_->first)[c]]->capillaryPressure(s_new[0][c]);
-      double p_wc = patm - pc;
-      dp[0][c] = p_prev - p_wc;
-    }
-  }
+//     // cannot use if saturated, likely not useful if decreasing in saturation
+//     if (p_standard > p_prev && p_prev < patm && s_new[0][c] < 0.99) {
+//       double pc = wrms_->second[(*wrms_->first)[c]]->capillaryPressure(s_new[0][c]);
+//       double p_wc = patm - pc;
+//       dp[0][c] = p_prev - p_wc;
+//     }
+//   }
 
-  // Now that we have monkeyed with cells, fix faces
-  mfd_preconditioner_->UpdateConsistentFaceCorrection(*u->Data(), Pu->Data().ptr());
-}
+//   // Now that we have monkeyed with cells, fix faces
+//   mfd_preconditioner_->UpdateConsistentFaceCorrection(*u->Data(), Pu->Data().ptr());
+// }
 
 }  // namespace Flow
 }  // namespace Amanzi

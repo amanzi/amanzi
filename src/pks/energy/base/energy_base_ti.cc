@@ -11,10 +11,10 @@ Author: Ethan Coon
 #include <boost/test/floating_point_comparison.hpp>
 
 #include "Debugger.hh"
-
 #include "boundary_function.hh"
 #include "FieldEvaluator.hh"
 #include "energy_base.hh"
+#include "Op.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -129,7 +129,7 @@ void EnergyBase::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::
 #endif
 
   // apply the preconditioner
-  mfd_preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
+  preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
 
 #if DEBUG_FLAG
   db_->WriteVector("PC*T_res", Pu->Data().ptr(), true);
@@ -160,8 +160,8 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   Teuchos::RCP<const CompositeVector> conductivity =
       S_next_->GetFieldData(uw_conductivity_key_);
 
-  mfd_preconditioner_->CreateMFDstiffnessMatrices(conductivity.ptr());
-  mfd_preconditioner_->CreateMFDrhsVectors();
+  preconditioner_diff_->Setup(conductivity, Teuchos::null);
+  preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // update with accumulation terms
   // -- update the accumulation derivatives, de/dT
@@ -175,7 +175,7 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 #endif
 
   // -- get the matrices/rhs that need updating
-  std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
+  std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
 
   // -- update the diagonal
   unsigned int ncells = de_dT.MyLength();
@@ -198,7 +198,8 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   AddSourcesToPrecon_(S_next_.ptr(), h);
 
   // Apply boundary conditions.
-  mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  preconditioner_diff_->ApplyBCs(bc_);
+  if (precon_used_) preconditioner_->AssembleMatrix();
 };
 
 

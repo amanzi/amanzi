@@ -16,7 +16,11 @@ This provides the base of an advection-diffusion equation for energy.
 #define PKS_ENERGY_BASE_HH_
 
 #include "pk_factory.hh"
-#include "MatrixMFD.hh"
+
+#include "OperatorDiffusion.hh"
+#include "OperatorAccumulation.hh"
+#include "OperatorAdvection.hh"
+
 #include "pk_physical_bdf_base.hh"
 #include "upwinding.hh"
 
@@ -146,9 +150,15 @@ protected:
   Operators::UpwindMethod Krel_method_;
   Teuchos::RCP<Operators::Upwinding> upwinding_;
 
+  // mathematical operators
+  Teuchos::RCP<Operators::Operator> matrix_; // pc in PKPhysicalBDFBase
+  Teuchos::RCP<Operators::OperatorDiffusion> matrix_diff_;
+
+  Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
+  Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
+  Teuchos::RCP<Operators::OperatorAdvection> preconditioner_adv_;
+
   Teuchos::RCP<Operators::Advection> advection_;
-  Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  // note PC is in PKPhysicalBDFBase
 
   // custom enorm tolerances
   double flux_tol_;

@@ -23,8 +23,8 @@ void OverlandHeadFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   // update the stiffness matrix
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_overland_conductivity", name_);
-  matrix_->CreateMFDstiffnessMatrices(cond.ptr());
-  matrix_->CreateMFDrhsVectors();
+  matrix_diff_->Setup(cond, Teuchos::null);
+  matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // update the potential
   S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S.ptr(), name_);
@@ -35,17 +35,17 @@ void OverlandHeadFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   if (update_flux_ == UPDATE_FLUX_ITERATION) {
     Teuchos::RCP<CompositeVector> flux =
         S->GetFieldData("surface_flux", name_);
-    matrix_->DeriveFlux(*pres_elev, flux.ptr());
+    matrix_diff_->UpdateFlux(*pres_elev, *flux);
   }
 
   // Patch up BCs for zero-gradient
   FixBCsForOperator_(S_next_.ptr());
 
   // assemble the stiffness matrix
-  matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  matrix_diff_->ApplyBCs(bc_);
 
   // calculate the residual
-  matrix_->ComputeNegativeResidual(*pres_elev, g.ptr());
+  matrix_->ComputeNegativeResidual(*pres_elev, *g);
 };
 
 

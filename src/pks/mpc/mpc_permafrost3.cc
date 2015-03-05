@@ -205,8 +205,8 @@ MPCPermafrost3::initialize(const Teuchos::Ptr<State>& S) {
   // Initialize my timestepper.
   PKBDFBase::initialize(S);
 
-  // advection mass matrices
-  *pcAdv_ = *pc_flow_;
+  // // advection mass matrices
+  // *pcAdv_ = *pc_flow_;
 }
 
 void
@@ -451,39 +451,39 @@ MPCPermafrost3::UpdatePreconditioner(double t,
                            dEdp_surf->ViewComponent("cell",false),
                            1./h);
 
-  // update advective components
-  if (adv_flux_ == Teuchos::null) {
-    Teuchos::RCP<Energy::EnergyBase> pk_as_energy = Teuchos::rcp_dynamic_cast<Energy::EnergyBase>(domain_energy_pk_);
-    ASSERT(pk_as_energy != Teuchos::null);
-    adv_flux_ = pk_as_energy->advection()->flux();
-  }
+  // // update advective components
+  // if (adv_flux_ == Teuchos::null) {
+  //   Teuchos::RCP<Energy::EnergyBase> pk_as_energy = Teuchos::rcp_dynamic_cast<Energy::EnergyBase>(domain_energy_pk_);
+  //   ASSERT(pk_as_energy != Teuchos::null);
+  //   adv_flux_ = pk_as_energy->advection()->flux();
+  // }
 
-  //     if (dynamic_mesh_) *pcAdv_ = *sub_pks_[0]->preconditioner();
-  Teuchos::RCP<const CompositeVector> rel_perm =
-      S_next_->GetFieldData("numerical_rel_perm");
-  Teuchos::RCP<CompositeVector> rel_perm_times_enthalpy =
-      Teuchos::rcp(new CompositeVector(*rel_perm));
-  *rel_perm_times_enthalpy = *rel_perm;
-  {
-    Epetra_MultiVector& kr_f = *rel_perm_times_enthalpy->ViewComponent("face",false);
-    const Epetra_MultiVector& enth_u = *adv_field_->ViewComponent("face",false);
-    const Epetra_MultiVector& enth_c = *adv_field_->ViewComponent("cell",true);
-    const Epetra_MultiVector& flux = *adv_flux_->ViewComponent("face",false);
-    for (int f=0; f!=kr_f.MyLength(); ++f) {
-      if (std::abs(flux[0][f]) > 1.e-12) {
-        kr_f[0][f] *= enth_u[0][f] / std::abs(flux[0][f]);
-      } else {
-        AmanziMesh::Entity_ID_List cells;
-        domain_mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-        if (cells.size() == 1) {
-          kr_f[0][f] *= enth_c[0][cells[0]];
-        } else {
-          kr_f[0][f] *= (enth_c[0][cells[0]] + enth_c[0][cells[1]])/2.;
-        }
-      }
-    }
-  }
-  pcAdv_->CreateMFDstiffnessMatrices(rel_perm_times_enthalpy.ptr());
+  // //     if (dynamic_mesh_) *pcAdv_ = *sub_pks_[0]->preconditioner();
+  // Teuchos::RCP<const CompositeVector> rel_perm =
+  //     S_next_->GetFieldData("numerical_rel_perm");
+  // Teuchos::RCP<CompositeVector> rel_perm_times_enthalpy =
+  //     Teuchos::rcp(new CompositeVector(*rel_perm));
+  // *rel_perm_times_enthalpy = *rel_perm;
+  // {
+  //   Epetra_MultiVector& kr_f = *rel_perm_times_enthalpy->ViewComponent("face",false);
+  //   const Epetra_MultiVector& enth_u = *adv_field_->ViewComponent("face",false);
+  //   const Epetra_MultiVector& enth_c = *adv_field_->ViewComponent("cell",true);
+  //   const Epetra_MultiVector& flux = *adv_flux_->ViewComponent("face",false);
+  //   for (int f=0; f!=kr_f.MyLength(); ++f) {
+  //     if (std::abs(flux[0][f]) > 1.e-12) {
+  //       kr_f[0][f] *= enth_u[0][f] / std::abs(flux[0][f]);
+  //     } else {
+  //       AmanziMesh::Entity_ID_List cells;
+  //       domain_mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  //       if (cells.size() == 1) {
+  //         kr_f[0][f] *= enth_c[0][cells[0]];
+  //       } else {
+  //         kr_f[0][f] *= (enth_c[0][cells[0]] + enth_c[0][cells[1]])/2.;
+  //       }
+  //     }
+  //   }
+  // }
+  // pcAdv_->CreateMFDstiffnessMatrices(rel_perm_times_enthalpy.ptr());
   
   // update ewc Precons if needed
   sub_ewc_->UpdatePreconditioner(t, up, h);

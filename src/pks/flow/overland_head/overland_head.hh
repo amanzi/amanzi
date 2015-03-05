@@ -10,9 +10,11 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #define PK_FLOW_OVERLAND_HEAD_HH_
 
 #include "boundary_function.hh"
-#include "MatrixMFD.hh"
-#include "MatrixMFD_TPFA.hh"
 #include "upwinding.hh"
+
+#include "Operator.hh"
+#include "OperatorDiffusion.hh"
+#include "OperatorAccumulation.hh"
 
 #include "pk_factory.hh"
 #include "pk_physical_bdf_base.hh"
@@ -155,14 +157,12 @@ protected:
   Teuchos::RCP<Operators::Upwinding> upwinding_;
 
   // mathematical operators
-  Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD_TPFA> tpfa_preconditioner_;
+  Teuchos::RCP<Operators::Operator> matrix_; // pc in PKPhysicalBDFBase
+  Teuchos::RCP<Operators::OperatorDiffusion> matrix_diff_;
+  Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
+  Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
+
   bool precon_used_;
-  // note PC is in PKPhysicalBDFBase
-
-  bool tpfa_;
-
-  // accumulation smoothing
 
   // boundary condition data
   Teuchos::RCP<Functions::BoundaryFunction> bc_zero_gradient_;

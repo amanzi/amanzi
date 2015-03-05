@@ -12,10 +12,10 @@
 
 #include "wrm_partition.hh"
 #include "boundary_function.hh"
-#include "MatrixMFD.hh"
-#include "Matrix_TPFA.hh"
-#include "MatrixMFD_Defs.hh"
 #include "upwinding.hh"
+
+#include "OperatorDiffusionWithGravity.hh"
+#include "OperatorAccumulation.hh"
 
 #include "pk_factory.hh"
 #include "pk_physical_bdf_base.hh"
@@ -113,20 +113,20 @@ protected:
   virtual void AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h);
   
   // -- gravity contributions to matrix or vector
-  virtual void AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
-          const Teuchos::Ptr<const CompositeVector>& rel_perm,
-          const Teuchos::Ptr<const CompositeVector>& rho,
-          const Teuchos::Ptr<Operators::MatrixMFD>& matrix);
+  // virtual void AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
+  //         const Teuchos::Ptr<const CompositeVector>& rel_perm,
+  //         const Teuchos::Ptr<const CompositeVector>& rho,
+  //         const Teuchos::Ptr<Operators::MatrixMFD>& matrix);
 
-  virtual void AddGravityFluxes_FV_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
-          const Teuchos::Ptr<const CompositeVector>& rel_perm,
-          const Teuchos::Ptr<const CompositeVector>& rho,
-          const Teuchos::Ptr<Operators::Matrix_TPFA>& matrix);
+  // virtual void AddGravityFluxes_FV_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
+  //         const Teuchos::Ptr<const CompositeVector>& rel_perm,
+  //         const Teuchos::Ptr<const CompositeVector>& rho,
+  //         const Teuchos::Ptr<Operators::Matrix_TPFA>& matrix);
 
-  virtual void AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
-          const Teuchos::Ptr<const CompositeVector>& rel_perm,
-          const Teuchos::Ptr<const CompositeVector>& rho,
-          const Teuchos::Ptr<CompositeVector>& darcy_flux);
+  // virtual void AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
+  //         const Teuchos::Ptr<const CompositeVector>& rel_perm,
+  //         const Teuchos::Ptr<const CompositeVector>& rho,
+  //         const Teuchos::Ptr<CompositeVector>& darcy_flux);
 
   // Nonlinear version of CalculateConsistentFaces()
   virtual void CalculateConsistentFacesForInfiltration_(
@@ -160,7 +160,6 @@ protected:
   bool explicit_source_;
   bool precon_used_;
   bool clobber_surf_kr_;
-  bool tpfa_;
   
   // coupling terms
   bool coupled_to_surface_via_head_; // surface-subsurface Dirichlet coupler
@@ -178,10 +177,11 @@ protected:
   bool upwind_from_prev_flux_;
 
   // mathematical operators
-  Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD> matrix_vapor_;
-  //Teuchos::RCP<Operators::MatrixMFD> matrix_vapor_en_;
-  Teuchos::RCP<Operators::MatrixMFD> face_matrix_;
+  Teuchos::RCP<Operators::Operator> matrix_; // pc in PKPhysicalBDFBase
+  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> matrix_diff_;
+  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> preconditioner_diff_;
+  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> face_matrix_diff_;
+  Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
 
   // residual vector for vapor diffusion
   Teuchos::RCP<CompositeVector> res_vapor;
@@ -207,9 +207,6 @@ protected:
 
   // is vapor turned on
   bool vapor_diffusion_;
-
-  // using constraint equations scaled by rel perm?
-  bool scaled_constraint_;
 
   // scale for perm
   double perm_scale_;
