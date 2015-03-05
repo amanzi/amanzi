@@ -76,7 +76,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
         rel_perm = std::string("Upwind: Darcy Velocity");
 	update_upwind = std::string("every nonlinear iteration");	
         if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
-          *vo_->os() << vo_->color("yellow") << "Newton enforces: \"Upwind: Darcy Velocity\" "
+          *vo_->os() << vo_->color("yellow") << "FV enforces: \"Upwind: Darcy Velocity\" "
                      << ", \"modify correction\", and \"FV: Default\"." 
                      << vo_->reset() << std::endl;
         }
@@ -288,7 +288,6 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
                       num_list.get<double>("steady time step increase factor",ST_SP_DT_INCR_FACTOR));
                 }
 		// initialization
-std::cout << have_picard_params << " " << use_picard_ << std::endl;
 		if (num_list.get<bool>("steady initialize with darcy", ST_INIT_DARCY_BOOL)) {
 		  Teuchos::ParameterList& sti_init = sti_list.sublist("initialization");
                   if (have_picard_params && use_picard_) {
@@ -325,6 +324,7 @@ std::cout << have_picard_params << " " << use_picard_ << std::endl;
               nonlinear_solver == std::string("Newton-Picard")) {
             sti_bdf1.set<int>("max preconditioner lag iterations", 0);
 	    sti_bdf1.set<bool>("extrapolate initial guess", false);	    
+            sti_list.set<std::string>("linear solver", "GMRES for Newton");
           }
 
 	  if (time_regime == STEADY_REGIME) {
@@ -466,6 +466,7 @@ std::cout << have_picard_params << " " << use_picard_ << std::endl;
           if (nonlinear_solver == std::string("Newton")) {
             tti_bdf1.set<int>("max preconditioner lag iterations", 0);
 	    tti_bdf1.set<bool>("extrapolate initial guess", false);
+            tti_list.set<std::string>("linear solver", "GMRES for Newton");
           }
 
           tti_list.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
