@@ -20,7 +20,6 @@
 #include "primary_variable_field_evaluator.hh"
 #include "State.hh"
 
-#include "OperatorDiffusionFactory.hh"
 #include "Energy_BC_Factory.hh"
 #include "Energy_PK.hh"
 
@@ -96,6 +95,8 @@ void Energy_PK::Initialize()
   // Create BCs objects.
   bc_model_.resize(nfaces_wghost, 0);
   bc_submodel_.resize(nfaces_wghost, 0);
+  bc_value_.resize(nfaces_wghost, 0.0);
+  bc_mixed_.resize(nfaces_wghost, 0.0);
 
   Teuchos::RCP<Teuchos::ParameterList>
       bc_list = Teuchos::rcp(new Teuchos::ParameterList(ep_list->sublist("boundary conditions", true)));
@@ -105,28 +106,6 @@ void Energy_PK::Initialize()
   bc_flux = bc_factory.CreateEnergyFlux(bc_submodel_);
 
   op_bc_ = Teuchos::rcp(new Operators:: BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_, bc_value_, bc_mixed_));
-
-  // Select a proper matrix class. 
-  Teuchos::ParameterList tmp_list = glist_->sublist("PKs").sublist("Energy")
-                                           .sublist("operators").sublist("diffusion operator");
-  Teuchos::ParameterList oplist_matrix = tmp_list.sublist("matrix");
-  Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
-
-  AmanziGeometry::Point g(dim);
-
-  Operators::OperatorDiffusionFactory opfactory;
-  op_matrix_diff_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, g, 0);
-  op_matrix_diff_->SetBCs(op_bc_);
-  op_matrix_ = op_matrix_diff_->global_operator();
-  op_matrix_->Init();
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
-  op_matrix_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, 1.0, 1.0);
-
-  op_preconditioner_diff_ = opfactory.Create(mesh_, op_bc_, oplist_pc, g, 0);
-  op_preconditioner_diff_->SetBCs(op_bc_);
-  op_preconditioner_ = op_preconditioner_diff_->global_operator();
-  op_preconditioner_->Init();
-  op_preconditioner_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, 1.0, 1.0);
 }
 
 
@@ -155,16 +134,6 @@ bool Energy_PK::UpdateConductivityData(const Teuchos::Ptr<State>& S)
 ****************************************************************** */
 void Energy_PK::UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u)
 {
-  /* 
-  if (src_sink != NULL) {
-    if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      src_sink->ComputeDistribute(T0, T1, Kxy->Values());
-    } else {
-      src_sink->ComputeDistribute(T0, T1, NULL);
-    }
-  }
-  */
-
   bc_temperature->Compute(T1);
   bc_flux->Compute(T1);
 

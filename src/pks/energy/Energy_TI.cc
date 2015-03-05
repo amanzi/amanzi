@@ -86,17 +86,14 @@ void Energy_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up
 
   // div K_e grad u
   UpdateConductivityData(S_.ptr());
-  Teuchos::RCP<const CompositeVector> conductivity = S_->GetFieldData(uw_conductivity_key_);
 
   // assemble residual for diffusion operator
-  op_matrix_->Init();
-  // op_matrix_diff_->Setup(conductivity, Teuchos::null);
-  // op_matrix_diff_->UpdateMatrices(darcy_flux_copy.ptr(), *up->Data().ptr());
-  op_matrix_diff_->ApplyBCs();
-  // op_matrix_->ComputeNegativeResidual(*u_new, *f);
+  op_preconditioner_->Init();
+  op_preconditioner_diff_->UpdateMatrices(Teuchos::null, up->Data().ptr());
+  op_preconditioner_diff_->ApplyBCs(true);
 
   // update with accumulation terms
-  // -- update the accumulation derivatives, de/dT
+  // update the accumulation derivatives, de/dT
   /*
   S_->GetFieldEvaluator(energy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, key_);
   const Epetra_MultiVector& de_dT = *S_next_->GetFieldData(de_dT_key_)->ViewComponent("cell",false);
@@ -125,8 +122,9 @@ void Energy_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up
   // -- update preconditioner with source term derivatives if needed
   // AddSourcesToPrecon_(S_next_.ptr(), h);
 
-  // Apply boundary conditions.
-  op_preconditioner_diff_->ApplyBCs();
+  // finalize preconditioner
+  op_preconditioner_->AssembleMatrix();
+  op_preconditioner_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 };
 
 

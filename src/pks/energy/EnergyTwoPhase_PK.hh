@@ -36,6 +36,7 @@ public:
   virtual void Setup();
   virtual void Initialize();
   virtual std::string name() { return "two-phase energy"; }
+  virtual void CommitStep(double t_old, double t_new);
 
  protected:
   // models for evaluating enthalpy

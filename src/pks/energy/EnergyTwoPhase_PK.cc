@@ -12,6 +12,8 @@
   Process kernel for thermal Richards' flow.
 */
 
+#include "OperatorDiffusionFactory.hh"
+
 #include "EnergyTwoPhase_PK.hh"
 #include "eos_evaluator.hh"
 #include "enthalpy_evaluator.hh"
@@ -36,6 +38,10 @@ EnergyTwoPhase_PK::EnergyTwoPhase_PK(
 {
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   ep_list_ = Teuchos::sublist(pk_list, "Energy", true);
+
+  // We also need miscaleneous sublists
+  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners", true);
+  ti_list_ = Teuchos::sublist(ep_list_, "time integrator");
 };
 
 
@@ -119,6 +125,43 @@ void EnergyTwoPhase_PK::Initialize()
     *vo_->os() << std::endl << vo_->color("green")
                << "Initalization of TI period is complete." << vo_->reset() << std::endl;
   }
+
+  // initialize matrix and preconditioner operators
+  Teuchos::ParameterList tmp_list = glist_->sublist("PKs").sublist("Energy")
+                                           .sublist("operators").sublist("diffusion operator");
+  Teuchos::ParameterList oplist_matrix = tmp_list.sublist("matrix");
+  Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
+
+  AmanziGeometry::Point g(dim);
+
+  Operators::OperatorDiffusionFactory opfactory;
+  op_matrix_diff_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, g, 0);
+  op_matrix_diff_->SetBCs(op_bc_);
+  op_matrix_ = op_matrix_diff_->global_operator();
+  op_matrix_->Init();
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
+  op_matrix_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, 1.0, 1.0);
+
+  op_preconditioner_diff_ = opfactory.Create(mesh_, op_bc_, oplist_pc, g, 0);
+  op_preconditioner_diff_->SetBCs(op_bc_);
+  op_preconditioner_ = op_preconditioner_diff_->global_operator();
+  op_preconditioner_->Init();
+  op_preconditioner_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, 1.0, 1.0);
+  op_preconditioner_->SymbolicAssembleMatrix();
+
+  // preconditioner and optional linear solver
+  ASSERT(ti_list_->isParameter("preconditioner"));
+  preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
+}
+
+/* ******************************************************************
+ * * Transfer part of the internal data needed by transport to the 
+ * * flow state FS_MPC. MPC may request to populate the original FS.
+ * * The consistency condition is improved by adjusting saturation while
+ * * preserving its LED property.
+ * ****************************************************************** */
+void EnergyTwoPhase_PK::CommitStep(double t_old, double t_new)
+{
 }
 
 }  // namespace Energy

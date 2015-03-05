@@ -42,8 +42,8 @@ class Energy_PK : public FnTimeIntegratorPK {
   virtual void Setup();
   virtual void Initialize();
 
-  bool AdvanceStep(double t_old, double t_new) { return true; }
-  void CommitStep(double t_old, double t_new) {};
+  virtual bool AdvanceStep(double t_old, double t_new) { return true; }
+  virtual void CommitStep(double t_old, double t_new) {};
   void CalculateDiagnostics() {};
 
   double get_dt() { return 0.0; }
@@ -88,9 +88,13 @@ class Energy_PK : public FnTimeIntegratorPK {
   int nfaces_owned, nfaces_wghost;
 
  protected:
-  const Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim;
+
+  const Teuchos::RCP<Teuchos::ParameterList> glist_;
+  Teuchos::RCP<Teuchos::ParameterList> ep_list_;
+  Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
+  Teuchos::RCP<Teuchos::ParameterList> ti_list_;
 
   // sate and primary field
   Teuchos::RCP<State> S_;
@@ -113,11 +117,12 @@ class Energy_PK : public FnTimeIntegratorPK {
   std::vector<double> bc_value_, bc_mixed_; 
   int dirichlet_bc_faces_;
 
-  // operators
+  // operators and solvers
   Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_diff_, op_preconditioner_diff_;
   Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
   Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_;
   Teuchos::RCP<Operators::BCs> op_bc_;
+  std::string preconditioner_name_;
 
  protected:
   VerboseObject* vo_;
