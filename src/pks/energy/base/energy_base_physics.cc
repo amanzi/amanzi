@@ -14,6 +14,7 @@ de/dt + q dot grad h = div Ke grad T + S?
 #include "advection.hh"
 #include "FieldEvaluator.hh"
 #include "energy_base.hh"
+#include "Op.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -102,21 +103,21 @@ void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
       S_next_->GetFieldData(uw_conductivity_key_);
 
   // update the stiffness matrix
-  matrix_->CreateMFDstiffnessMatrices(conductivity.ptr());
+  matrix_diff_->Setup(conductivity, Teuchos::null);
+  matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
 
   // update the flux if needed
   if (update_flux_ == UPDATE_FLUX_ITERATION) {
     Teuchos::RCP<CompositeVector> flux = S->GetFieldData(energy_flux_key_, name_);
-    matrix_->DeriveFlux(*temp, flux.ptr());
+    matrix_diff_->UpdateFlux(*temp, *flux);
   }
 
   // finish assembly of the stiffness matrix
-  matrix_->CreateMFDrhsVectors();
-  matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  matrix_diff_->ApplyBCs(bc_);
 
   // calculate the residual
-  matrix_->ComputeNegativeResidual(*temp, g);
+  matrix_->ComputeNegativeResidual(*temp, *g);
 };
 
 
@@ -155,7 +156,7 @@ void EnergyBase::AddSources_(const Teuchos::Ptr<State>& S,
 void EnergyBase::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
   // external sources of energy (temperature dependent source)
   if (is_source_term_ && S->GetFieldEvaluator(source_key_)->IsDependency(S, key_)) {
-    std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
+    std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
 
     S->GetFieldEvaluator(source_key_)->HasFieldDerivativeChanged(S, name_, key_);
     const Epetra_MultiVector& dsource_dT =

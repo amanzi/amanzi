@@ -165,7 +165,7 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
 
     // -- Add in the Jacobian
     int nfaces = mesh_->num_entities(AmanziMesh::FACE,AmanziMesh::USED);
-    std::vector<Operators::MatrixBC> markers(nfaces, Operators::MATRIX_BC_NULL);
+    std::vector<Operators::MatrixBC> markers(nfaces, Operators::OPERATOR_BC_NONE);
     std::vector<double> values(nfaces,0.);
 
     tpfa_preconditioner_->AnalyticJacobian(*upwinding_, S_next_.ptr(),

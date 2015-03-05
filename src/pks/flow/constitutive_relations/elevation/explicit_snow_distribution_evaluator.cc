@@ -113,7 +113,7 @@ void ExplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
     // Gather null boundary conditions (no flux of snow into or out of domain)
-    std::vector<Operators::MatrixBC> bc_markers(nfaces, Operators::MATRIX_BC_NULL);
+    std::vector<Operators::MatrixBC> bc_markers(nfaces, Operators::OPERATOR_BC_NONE);
     std::vector<double> bc_values(nfaces, 0.0);
 
     // Create temporary work space

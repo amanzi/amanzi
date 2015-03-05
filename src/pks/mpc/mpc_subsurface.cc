@@ -9,7 +9,6 @@ Interface for the derived MPC for coupling energy and water in the subsurface,
 with freezing.
 
 ------------------------------------------------------------------------- */
-#include "Epetra_FEVbrMatrix.h"
 #include "EpetraExt_RowMatrixOut.h"
 
 #include "energy_base.hh"
@@ -35,17 +34,17 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
   plist_->set("mesh key", "domain");
   MPCCoupledCells::setup(S);
 
-  // set up the advective term -- this is very hackish and demonstrates why coupled PKs should be redesigned --etc
-  // -- clone the surface flow operator
-  Teuchos::RCP<CompositeMatrix> pcAdv_mat = sub_pks_[0]->preconditioner()->Clone();
-  pcAdv_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(pcAdv_mat);
-  ASSERT(pcAdv_ != Teuchos::null);
-  mfd_preconditioner_->SetAdvectiveBlock(pcAdv_);
-  // -- get the field
-  Teuchos::RCP<Energy::EnergyBase> pk_as_energy = Teuchos::rcp_dynamic_cast<Energy::EnergyBase>(sub_pks_[1]);
-  ASSERT(pk_as_energy != Teuchos::null);
-  adv_field_ = pk_as_energy->advection()->field();
-  adv_flux_ = pk_as_energy->advection()->flux();
+  // // set up the advective term -- this is very hackish and demonstrates why coupled PKs should be redesigned --etc
+  // // -- clone the surface flow operator
+  // Teuchos::RCP<CompositeMatrix> pcAdv_mat = sub_pks_[0]->preconditioner()->Clone();
+  // pcAdv_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(pcAdv_mat);
+  // ASSERT(pcAdv_ != Teuchos::null);
+  // mfd_preconditioner_->SetAdvectiveBlock(pcAdv_);
+  // // -- get the field
+  // Teuchos::RCP<Energy::EnergyBase> pk_as_energy = Teuchos::rcp_dynamic_cast<Energy::EnergyBase>(sub_pks_[1]);
+  // ASSERT(pk_as_energy != Teuchos::null);
+  // adv_field_ = pk_as_energy->advection()->field();
+  // adv_flux_ = pk_as_energy->advection()->flux();
   
   // select the method used for preconditioning
   std::string precon_string = plist_->get<std::string>("preconditioner type", "picard");
@@ -84,7 +83,7 @@ void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
   if (ewc_ != Teuchos::null) ewc_->initialize(S);
 
   // advection mass matrices
-  *pcAdv_ = *sub_pks_[0]->preconditioner();
+  //  *pcAdv_ = *sub_pks_[0]->preconditioner();
   
 }
 
@@ -125,40 +124,39 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
   } else if (precon_type_ == PRECON_PICARD || precon_type_ == PRECON_EWC) {
     MPCCoupledCells::UpdatePreconditioner(t,up,h);
 
-    // update advective components
-    // update advective components
-    if (adv_flux_ == Teuchos::null) {
-      Teuchos::RCP<Energy::EnergyBase> pk_as_energy = Teuchos::rcp_dynamic_cast<Energy::EnergyBase>(sub_pks_[1]);
-      ASSERT(pk_as_energy != Teuchos::null);
-      adv_flux_ = pk_as_energy->advection()->flux();
-    }
+    // // update advective components
+    // if (adv_flux_ == Teuchos::null) {
+    //   Teuchos::RCP<Energy::EnergyBase> pk_as_energy = Teuchos::rcp_dynamic_cast<Energy::EnergyBase>(sub_pks_[1]);
+    //   ASSERT(pk_as_energy != Teuchos::null);
+    //   adv_flux_ = pk_as_energy->advection()->flux();
+    // }
 
-    //     if (dynamic_mesh_) *pcAdv_ = *sub_pks_[0]->preconditioner();
-    Teuchos::RCP<const CompositeVector> rel_perm =
-        S_next_->GetFieldData("numerical_rel_perm");
-    Teuchos::RCP<CompositeVector> rel_perm_times_enthalpy =
-        Teuchos::rcp(new CompositeVector(*rel_perm));
-    *rel_perm_times_enthalpy = *rel_perm;
-    {
-      Epetra_MultiVector& kr_f = *rel_perm_times_enthalpy->ViewComponent("face",false);
-      const Epetra_MultiVector& enth_u = *adv_field_->ViewComponent("face",false);
-      const Epetra_MultiVector& enth_c = *adv_field_->ViewComponent("cell",true);
-      const Epetra_MultiVector& flux = *adv_flux_->ViewComponent("face",false);
-      for (int f=0; f!=kr_f.MyLength(); ++f) {
-        if (std::abs(flux[0][f]) > 1.e-12) {
-          kr_f[0][f] *= enth_u[0][f] / std::abs(flux[0][f]);
-        } else {
-          AmanziMesh::Entity_ID_List cells;
-          mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-          if (cells.size() == 1) {
-            kr_f[0][f] *= enth_c[0][cells[0]];
-          } else {
-            kr_f[0][f] *= (enth_c[0][cells[0]] + enth_c[0][cells[1]])/2.;
-          }
-        }
-      }
-    }
-    pcAdv_->CreateMFDstiffnessMatrices(rel_perm_times_enthalpy.ptr());
+    // //     if (dynamic_mesh_) *pcAdv_ = *sub_pks_[0]->preconditioner();
+    // Teuchos::RCP<const CompositeVector> rel_perm =
+    //     S_next_->GetFieldData("numerical_rel_perm");
+    // Teuchos::RCP<CompositeVector> rel_perm_times_enthalpy =
+    //     Teuchos::rcp(new CompositeVector(*rel_perm));
+    // *rel_perm_times_enthalpy = *rel_perm;
+    // {
+    //   Epetra_MultiVector& kr_f = *rel_perm_times_enthalpy->ViewComponent("face",false);
+    //   const Epetra_MultiVector& enth_u = *adv_field_->ViewComponent("face",false);
+    //   const Epetra_MultiVector& enth_c = *adv_field_->ViewComponent("cell",true);
+    //   const Epetra_MultiVector& flux = *adv_flux_->ViewComponent("face",false);
+    //   for (int f=0; f!=kr_f.MyLength(); ++f) {
+    //     if (std::abs(flux[0][f]) > 1.e-12) {
+    //       kr_f[0][f] *= enth_u[0][f] / std::abs(flux[0][f]);
+    //     } else {
+    //       AmanziMesh::Entity_ID_List cells;
+    //       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    //       if (cells.size() == 1) {
+    //         kr_f[0][f] *= enth_c[0][cells[0]];
+    //       } else {
+    //         kr_f[0][f] *= (enth_c[0][cells[0]] + enth_c[0][cells[1]])/2.;
+    //       }
+    //     }
+    //   }
+    // }
+    // pcAdv_->CreateMFDstiffnessMatrices(rel_perm_times_enthalpy.ptr());
   }
   
   if (precon_type_ == PRECON_EWC) {
@@ -256,26 +254,26 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
     db_->WriteVectors(vnames, vecs, true);
   }
 
-  if (precon_type_ == PRECON_EWC) {
-    // make sure we can back-calc face corrections that preserve residuals on faces
-    Teuchos::RCP<TreeVector> res0 = Teuchos::rcp(new TreeVector(*res));
-    res0->PutScalar(0.);
-    Teuchos::RCP<TreeVector> du_std = Teuchos::rcp(new TreeVector(*du));
-    *du_std = *du;
+  // if (precon_type_ == PRECON_EWC) {
+  //   // make sure we can back-calc face corrections that preserve residuals on faces
+  //   Teuchos::RCP<TreeVector> res0 = Teuchos::rcp(new TreeVector(*res));
+  //   res0->PutScalar(0.);
+  //   Teuchos::RCP<TreeVector> du_std = Teuchos::rcp(new TreeVector(*du));
+  //   *du_std = *du;
 
-    // call EWC, which does du_p <-- du_p_std + ddu_p
-    ewc_->ApplyPreconditioner(res, du);
+  //   // call EWC, which does du_p <-- du_p_std + ddu_p
+  //   ewc_->ApplyPreconditioner(res, du);
 
-    // calculate ddu_lambda from ddu_p
-    du_std->Update(1.0, *du, -1.0);
-    mfd_preconditioner_->UpdateConsistentFaceCorrection(*res0, du_std.ptr());
+  //   // calculate ddu_lambda from ddu_p
+  //   du_std->Update(1.0, *du, -1.0);
+  //   preconditioner_->UpdateConsistentFaceCorrection(*res0, du_std.ptr());
 
-    // update du_lambda <-- du_lambda_std + ddu_lambda
-    du->SubVector(0)->Data()->ViewComponent("face",false)->Update(1.,
-            *du_std->SubVector(0)->Data()->ViewComponent("face",false), 1.);
-    du->SubVector(1)->Data()->ViewComponent("face",false)->Update(1.,
-            *du_std->SubVector(1)->Data()->ViewComponent("face",false), 1.);
-  }
+  //   // update du_lambda <-- du_lambda_std + ddu_lambda
+  //   du->SubVector(0)->Data()->ViewComponent("face",false)->Update(1.,
+  //           *du_std->SubVector(0)->Data()->ViewComponent("face",false), 1.);
+  //   du->SubVector(1)->Data()->ViewComponent("face",false)->Update(1.,
+  //           *du_std->SubVector(1)->Data()->ViewComponent("face",false), 1.);
+  // }
 
   return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
 }

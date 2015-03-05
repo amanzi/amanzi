@@ -99,19 +99,24 @@ void AdvectionDiffusion::AddAdvection_(const Teuchos::RCP<State> S,
 // - div K grad T part of the residual
 void AdvectionDiffusion::ApplyDiffusion_(const Teuchos::RCP<State> S,
           const Teuchos::RCP<CompositeVector> g) {
-  // compute the stiffness matrix at the new time
-  Teuchos::RCP<const CompositeVector> temp =
-    S->GetFieldData("temperature");
-
-  // get conductivity, and push it into whetstone tensor
+  // update the stiffness matrix
   Teuchos::RCP<const CompositeVector> thermal_conductivity =
     S->GetFieldData("thermal_conductivity");
 
+  matrix_->Init();
+  matrix_diff_->Setup(thermal_conductivity, Teuchos::null);
+  matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+
   // calculate the div-grad operator, apply it to temperature, and add to residual
-  matrix_->CreateMFDstiffnessMatrices(thermal_conductivity.ptr());
-  matrix_->CreateMFDrhsVectors();
-  matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  matrix_->ComputeNegativeResidual(*temp, g.ptr());
+  Teuchos::RCP<const CompositeVector> temp =
+    S->GetFieldData("temperature");
+
+
+  // finish assembly of the stiffness matrix
+  matrix_diff_->ApplyBCs(true);
+
+  // calculate the residual
+  matrix_->ComputeNegativeResidual(*temp, *g);
 };
 
 } //namespace Energy

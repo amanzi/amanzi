@@ -239,7 +239,7 @@ void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
 
   // Initialize BC data structures
   unsigned int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers_.resize(nfaces, Operators::MATRIX_BC_NULL);
+  bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
   bc_values_.resize(nfaces, 0.0);
 
   // // Initialize elevation, whose faces need to be updated so that h=0 is a
@@ -439,7 +439,7 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
 
   // initialize all as null
   for (unsigned int n=0; n!=bc_markers_.size(); ++n) {
-    bc_markers_[n] = Operators::MATRIX_BC_NULL;
+    bc_markers_[n] = Operators::OPERATOR_BC_NONE;
     bc_values_[n] = 0.0;
   }
 
@@ -447,7 +447,7 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
   for (Functions::BoundaryFunction::Iterator bc=bc_head_->begin();
        bc!=bc_head_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+    bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
     bc_values_[f] = bc->second + elevation[0][f];
   }
 
@@ -455,7 +455,7 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
   for (Functions::BoundaryFunction::Iterator bc=bc_flux_->begin();
        bc!=bc_flux_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
+    bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
     bc_values_[f] = bc->second;
   }
 
@@ -481,10 +481,10 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
       double dz = elevation_cells[0][c] - elevation[0][f];
 
       if (h_cells[0][c] + dz < h0) {
-        bc_markers_[f] = Operators::MATRIX_BC_NULL;
+        bc_markers_[f] = Operators::OPERATOR_BC_NONE;
         bc_values_[f] = 0.0;
       } else {
-        bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+        bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
         bc_values_[f] = h0 + elevation[0][f];
       }
     }
@@ -606,7 +606,7 @@ void OverlandFlow::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
   Epetra_MultiVector& pres_f = *pres->ViewComponent("face",true);
   unsigned int nfaces = pres->size("face",true);
   for (unsigned int f=0; f!=nfaces; ++f) {
-    if (bc_markers_[f] == Operators::MATRIX_BC_DIRICHLET) {
+    if (bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET) {
       pres_f[0][f] = bc_values_[f];
     }
   }

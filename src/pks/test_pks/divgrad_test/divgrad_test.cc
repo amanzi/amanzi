@@ -84,7 +84,7 @@ void DivGradTest::initialize(const Teuchos::Ptr<State>& S) {
 
   // initialize boundary conditions
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers_.resize(nfaces, Operators::MATRIX_BC_NULL);
+  bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
   bc_values_.resize(nfaces, 0.0);
 
   // assemble and set BCs
@@ -126,20 +126,20 @@ void DivGradTest::initialize(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 void DivGradTest::UpdateBoundaryConditions_() {
   for (unsigned int n=0; n!=bc_markers_.size(); ++n) {
-    bc_markers_[n] = Operators::MATRIX_BC_NULL;
+    bc_markers_[n] = Operators::OPERATOR_BC_NONE;
     bc_values_[n] = 0.0;
   }
 
   Functions::BoundaryFunction::Iterator bc;
   for (bc=bc_dirichlet_->begin(); bc!=bc_dirichlet_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+    bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
     bc_values_[f] = bc->second;
   }
 
   for (bc=bc_neumann_->begin(); bc!=bc_neumann_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
+    bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
     bc_values_[f] = bc->second;
   }
 };
@@ -153,7 +153,7 @@ DivGradTest::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& pres)
   Epetra_MultiVector& pres_f = *pres->ViewComponent("face",true);
   int nfaces = pres->size("face");
   for (int f=0; f!=nfaces; ++f) {
-    if (bc_markers_[f] == Operators::MATRIX_BC_DIRICHLET) {
+    if (bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET) {
       pres_f[0][f] = bc_values_[f];
     }
   }
@@ -170,10 +170,10 @@ bool DivGradTest::TestRegularFaceValues_(const Teuchos::RCP<CompositeVector>& pr
     mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
 
     if (cells.size() == 1) {
-      if (bc_markers_[f] == Operators::MATRIX_BC_DIRICHLET) {
+      if (bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET) {
         if (std::abs( (*pres)("face",f) - bc_values_[f] ) > eps) nfail++;
       } else {
-        if (bc_markers_[f] == Operators::MATRIX_BC_NULL) {
+        if (bc_markers_[f] == Operators::OPERATOR_BC_NONE) {
           bc_values_[f] = 0.0;
         }
 
