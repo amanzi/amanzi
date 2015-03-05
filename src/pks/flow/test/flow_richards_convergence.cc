@@ -145,7 +145,8 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
     /* create Richards process kernel */
-    Richards_PK* RPK = new Richards_PK(plist, "Flow", S);
+    Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
+    Richards_PK* RPK = new Richards_PK(plist, "Flow", S, soln);
     RPK->Setup();
     S->Setup();
     S->InitializeFields();

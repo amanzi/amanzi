@@ -42,6 +42,12 @@ public:
   Teuchos::RCP<Relations::EOS> eos_liquid_;
   Teuchos::RCP<IEM> iem_liquid_;
 
+ private:
+  Teuchos::RCP<Teuchos::ParameterList> ep_list_;
+
+  // primary field
+  const Teuchos::RCP<TreeVector> soln_;
+
 private:
   // factory registration
   static RegisteredPKFactory<EnergyTwoPhase_PK> reg_;

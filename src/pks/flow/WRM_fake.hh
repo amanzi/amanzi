@@ -28,7 +28,6 @@ namespace Flow {
 class WRM_fake : public WRM {
  public:
   explicit WRM_fake(Teuchos::ParameterList& plist);
-  explicit WRM_fake(std::string region);
   ~WRM_fake() {};
   
   // required methods from the base class

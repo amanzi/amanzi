@@ -177,20 +177,12 @@ Darcy_PK::~Darcy_PK()
 void Darcy_PK::Initialize()
 {
   // Initialize defaults
-  bc_pressure = NULL; 
-  bc_head = NULL;
-  bc_flux = NULL;
   bc_seepage = NULL; 
-  src_sink = NULL;
-
   src_sink = NULL;
   src_sink_distribution = 0;
 
   initialize_with_darcy_ = true;
   num_itrs_ = 0;
-
-  // Initilize various common data depending on mesh and state.
-  Flow_PK::Initialize();
 
   // Time control specific to this PK.
   ResetPKtimes(0.0, FLOW_INITIAL_DT);
@@ -201,21 +193,16 @@ void Darcy_PK::Initialize()
   vlist.sublist("VerboseObject") = dp_list_->sublist("VerboseObject");
   vo_ = new VerboseObject("FlowPK::Darcy", vlist); 
 
+  // Initilize various common data depending on mesh and state.
+  Flow_PK::Initialize();
+
   // Create local evaluators. Initialize local fields.
   InitializeFields_();
   UpdateLocalFields_();
 
-  // Allocate memory for boundary data. 
-  bc_model.resize(nfaces_wghost, 0);
-  bc_submodel.resize(nfaces_wghost, 0);
-  bc_value.resize(nfaces_wghost, 0.0);
-  bc_mixed.resize(nfaces_wghost, 0.0);
+  // Initialize BCs and source terms.
+  InitializeBCsSources_(*dp_list_);
   op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
-
-  rainfall_factor.resize(nfaces_wghost, 1.0);
-
-  // Process Native XML.
-  ProcessParameterList(*dp_list_);
 
   // Create solution and auxiliary data for time history.
   // solution = Teuchos::rcp(new CompositeVector(*(S_->GetFieldData("pressure"))));

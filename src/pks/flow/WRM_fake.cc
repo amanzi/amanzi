@@ -29,15 +29,6 @@ WRM_fake::WRM_fake(Teuchos::ParameterList& plist)
 }
 
 
-WRM_fake::WRM_fake(const std::string region)
-{
-  set_region(region);
-  alpha = 1.0;
-  n = 2.0;
-  m = 1.0;
-}
-
-
 /* ******************************************************************
 * Relative permeability formula.                                          
 ****************************************************************** */

@@ -41,19 +41,6 @@ WRM_BrooksCorey::WRM_BrooksCorey(Teuchos::ParameterList& plist)
 * Setup fundamental parameters for this model.
 * Default value of the regularization interval is pc0 = 0.                                           
 ****************************************************************** */
-WRM_BrooksCorey::WRM_BrooksCorey(
-    std::string& region, double lambda, double l, double alpha, 
-    double sr, std::string& krel_function, double pc0)
-{
-  set_region(region);
-  Init_(lambda, l, alpha, sr, krel_function, pc0);
-}
-
-
-/* ******************************************************************
-* Setup fundamental parameters for this model.
-* Default value of the regularization interval is pc0 = 0.                                           
-****************************************************************** */
 void WRM_BrooksCorey::Init_(
     double lambda, double l, double alpha, 
     double sr, std::string& krel_function, double pc0)

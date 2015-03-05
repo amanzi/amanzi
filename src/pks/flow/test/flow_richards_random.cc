@@ -149,8 +149,9 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
     S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
+    Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
     Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
-    Richards_PK* RPK = new Richards_PK(global_list, "Flow", S);
+    Richards_PK* RPK = new Richards_PK(global_list, "Flow", S, soln);
 
     RPK->Setup();
     S->Setup();

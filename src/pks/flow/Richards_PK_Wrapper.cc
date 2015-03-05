@@ -36,7 +36,7 @@ Richards_PK_Wrapper::Richards_PK_Wrapper(Teuchos::ParameterList& pk_tree,
     pk_name = result;   
   }
 
-  pk_ = Teuchos::rcp(new Richards_PK(global_list, pk_name, S_));
+  pk_ = Teuchos::rcp(new Richards_PK(global_list, pk_name, S_, soln_));
 }
 
 

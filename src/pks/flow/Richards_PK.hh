@@ -13,22 +13,25 @@
 #ifndef AMANZI_RICHARDS_PK_HH_
 #define AMANZI_RICHARDS_PK_HH_
 
+// TPLs
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
 #include "Epetra_Import.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
+// Amanzi
 #include "BCs.hh"
 #include "BDF1_TI.hh"
 #include "OperatorDiffusion.hh"
 #include "OperatorAccumulation.hh"
+#include "TreeVector.hh"
 #include "Upwind.hh"
 
+// Flow
 #include "Flow_PK.hh"
 #include "RelPerm.hh"
 #include "RelPermEvaluator.hh"
-
 #include "WRMPartition.hh"
 
 namespace Amanzi {
@@ -38,7 +41,8 @@ class Richards_PK : public Flow_PK {
  public:
   Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
               const std::string& pk_list_name,
-              Teuchos::RCP<State> S);
+              Teuchos::RCP<State> S,
+              const Teuchos::RCP<TreeVector>& soln);
   ~Richards_PK();
 
   // methods required for PK interface
@@ -107,6 +111,10 @@ class Richards_PK : public Flow_PK {
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> rp_list_;
 
+  // pointerds to primary field
+  const Teuchos::RCP<TreeVector> soln_;
+  Teuchos::RCP<CompositeVector> solution;
+
   // water retention models
   Teuchos::RCP<WRMPartition> wrm_;
 
@@ -142,8 +150,7 @@ class Richards_PK : public Flow_PK {
   double functional_max_norm;
   int functional_max_cell;
 
-  // copies of state variables
-  Teuchos::RCP<CompositeVector> solution;
+  // copies of state fields
   Teuchos::RCP<CompositeVector> darcy_flux_copy;
 
   // upwind

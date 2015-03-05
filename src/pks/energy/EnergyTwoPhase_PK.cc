@@ -26,10 +26,13 @@ namespace Energy {
 * Default constructor for Thermal Richrads PK.
 ****************************************************************** */
 EnergyTwoPhase_PK::EnergyTwoPhase_PK(
-    Teuchos::ParameterList& pk_tree,
-    const Teuchos::RCP<Teuchos::ParameterList>& glist,
-    const Teuchos::RCP<State>& S,
-    const Teuchos::RCP<TreeVector>& soln) : Energy_PK(glist, S) 
+                   Teuchos::ParameterList& pk_tree,
+                   const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                   const Teuchos::RCP<State>& S,
+                   const Teuchos::RCP<TreeVector>& soln) :
+    Energy_PK(glist, S),
+    soln_(soln)
+    
 {
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   ep_list_ = Teuchos::sublist(pk_list, "Energy", true);
@@ -80,6 +83,9 @@ void EnergyTwoPhase_PK::Initialize()
 {
   // Call the base class's initialize.
   Energy_PK::Initialize();
+
+  // Create pointers to the primary flow field pressure.
+  soln_->Data() = S_->GetFieldData("temperature", passwd_); 
 
   // create verbosity object
   Teuchos::ParameterList vlist;

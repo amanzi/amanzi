@@ -73,7 +73,7 @@ void Energy_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up
   // VerboseObject stuff.
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-    *vo_->os() << "Precon update at t = " << t << std::endl;
+    *vo_->os() << "updating preconditioner, T=" << t << std::endl;
   }
 
   // update state with the solution up.

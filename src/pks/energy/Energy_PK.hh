@@ -113,8 +113,7 @@ class Energy_PK : public FnTimeIntegratorPK {
   Teuchos::RCP<Operators::BCs> op_bc_;
 
  protected:
-  Teuchos::RCP<const Teuchos::ParameterList> glist_;
-  Teuchos::RCP<Teuchos::ParameterList> ep_list_;
+  const Teuchos::RCP<Teuchos::ParameterList> glist_;
   VerboseObject* vo_;
 
   Key energy_key_;  // keys

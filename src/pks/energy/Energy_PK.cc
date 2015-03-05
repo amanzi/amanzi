@@ -30,8 +30,10 @@ namespace Energy {
 * Default constructor for Energy PK.
 ****************************************************************** */
 Energy_PK::Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                     Teuchos::RCP<State> S)
-    : glist_(glist), vo_(NULL), passwd_("thermal")
+                     Teuchos::RCP<State> S) :
+    glist_(glist),
+    vo_(NULL),
+    passwd_("thermal")
 {
   S_ = S;
   mesh_ = S->GetMesh();
@@ -87,12 +89,28 @@ void Energy_PK::Setup()
 ****************************************************************** */
 void Energy_PK::Initialize()
 {
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist_, "PKs", true);
+  Teuchos::RCP<Teuchos::ParameterList> ep_list = Teuchos::sublist(pk_list, "Energy", true);
+
   // create verbosity object
   Teuchos::ParameterList vlist;
-  vlist.sublist("VerboseObject") = glist_->sublist("PKs").sublist("Energy").sublist("VerboseObject");
+  vlist.sublist("VerboseObject") = ep_list->sublist("VerboseObject");
   vo_ = new VerboseObject("EnergyPK", vlist);
 
-  // ProcessParameterList(plist_);
+  // Create the BC objects.
+  bc_model_.resize(nfaces_wghost, 0);
+  bc_submodel_.resize(nfaces_wghost, 0);
+
+  Teuchos::RCP<Teuchos::ParameterList>
+      bc_list = Teuchos::rcp(new Teuchos::ParameterList(ep_list->sublist("boundary conditions", true)));
+/*
+  EnergyBCFactory bc_factory(mesh_, bc_list);
+
+  bc_temperature = bc_factory.CreateTemperature(bc_submodel_);
+  bc_flux = bc_factory.CreateMassFlux(bc_submodel_);
+*/
+
+  // Create a scalar tensor so far
   K.resize(ncells_wghost);
   for (int c = 0; c < ncells_wghost; c++) {
     K[c].Init(dim, 1);

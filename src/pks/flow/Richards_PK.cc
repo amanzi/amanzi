@@ -48,8 +48,10 @@ namespace Flow {
 ****************************************************************** */
 Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
                          const std::string& pk_list_name,
-                         Teuchos::RCP<State> S) :
+                         Teuchos::RCP<State> S,
+                         const Teuchos::RCP<TreeVector>& soln) :
     glist_(glist),
+    soln_(soln),
     Flow_PK()
 {
   S_ = S;
@@ -231,17 +233,9 @@ void Richards_PK::Initialize()
   InitializeFields_();
   UpdateLocalFields_();
 
-  // Allocate memory for boundary data.
-  bc_model.resize(nfaces_wghost, 0);
-  bc_submodel.resize(nfaces_wghost, 0);
-  bc_value.resize(nfaces_wghost, 0.0);
-  bc_mixed.resize(nfaces_wghost, 0.0);
+  // Initialize BCs and source terms.
+  InitializeBCsSources_(*rp_list_);
   op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
-
-  rainfall_factor.resize(nfaces_wghost, 1.0);
-
-  // Process Native XML.
-  ProcessParameterList(*rp_list_);
 
   // Create relative permeability
   relperm_ = Teuchos::rcp(new RelPerm(*rp_list_, mesh_, atm_pressure_, wrm_));
@@ -329,10 +323,11 @@ void Richards_PK::Initialize()
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
   op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_preconditioner_));
 
-  // Create the solution (pressure) vector and auxiliary vector for time history.
-  // solution = Teuchos::rcp(new CompositeVector(op_matrix_->DomainMap()));
+  // Create pointers to the primary flow field pressure.
   solution = S_->GetFieldData("pressure", passwd_);
+  soln_->SetData(solution); 
   
+  // Create auxiliary vectors for time history and error estimates.
   const Epetra_BlockMap& cmap_owned = mesh_->cell_map(false);
   pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap_owned));
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap_owned));

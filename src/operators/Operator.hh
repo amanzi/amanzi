@@ -175,18 +175,12 @@ class Operator {
       const CompositeVector& X, CompositeVector& Y) const;
 
   // visit methods for RHS
-  virtual void AssembleRHSOp(const Op_Cell_FaceCell& op,
-                            CompositeVector& rhs) const;
-  virtual void AssembleRHSOp(const Op_Cell_Face& op,
-                            CompositeVector& rhs) const;
-  virtual void AssembleRHSOp(const Op_Cell_Node& op,
-          CompositeVector& rhs) const;
-  virtual void AssembleRHSOp(const Op_Cell_Cell& op,
-          CompositeVector& rhs) const;
-  virtual void AssembleRHSOp(const Op_Face_Cell& op,
-          CompositeVector& rhs) const;
-  virtual void AssembleRHSOp(const Op_Node_Node& op,
-          CompositeVector& rhs) const;
+  virtual void AssembleRHSOp(const Op_Cell_FaceCell& op, CompositeVector& rhs) const;
+  virtual void AssembleRHSOp(const Op_Cell_Face& op, CompositeVector& rhs) const;
+  virtual void AssembleRHSOp(const Op_Cell_Node& op, CompositeVector& rhs) const;
+  virtual void AssembleRHSOp(const Op_Cell_Cell& op, CompositeVector& rhs) const;
+  virtual void AssembleRHSOp(const Op_Face_Cell& op, CompositeVector& rhs) const;
+  virtual void AssembleRHSOp(const Op_Node_Node& op, CompositeVector& rhs) const;
 
   // visit methods for symbolic assemble
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
