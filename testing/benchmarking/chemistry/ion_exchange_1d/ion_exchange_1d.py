@@ -42,7 +42,7 @@ def GetXY_AmanziS(path,root,time,comp):
     except:
         fsnok = False
 
-    #import pdb; pdb.set_trace()
+   # import pdb; pdb.set_trace()
 
     plotfile = os.path.join(path,root)
     if os.path.isdir(plotfile) & fsnok:
@@ -357,12 +357,12 @@ if __name__ == "__main__":
     if (struct_c > 0):
         
         for j in range(len(amanzi_compS)):
-            ax[0].plot(x_amanziS_c, u_amanziS_c[j],color=colors[j],linestyle='--',linewidth=2)      
+            ax[0].plot(x_amanziS_c, u_amanziS_c[j],color=colors[j],linestyle='None',marker='o',markerfacecolor='None',linewidth=2)      
         
         for j in range(len(amanzi_sorbS)-1):
-            ax[1].plot(x_amanziS_c, v_amanziS_c[j],color=colors[j],linestyle='--',linewidth=2) 
+            ax[1].plot(x_amanziS_c, v_amanziS_c[j],color=colors[j],linestyle='None',marker='o',markerfacecolor='None',linewidth=2) 
 
-        ax[1].plot(x_amanziS_c, v_amanziS_c[len(amanzi_sorbS)-1],color=colors[len(amanzi_sorbS)-1],linestyle='--',label='AmanziS+Alquimia(Crunch)',linewidth=2)
+        ax[1].plot(x_amanziS_c, v_amanziS_c[len(amanzi_sorbS)-1],color=colors[len(amanzi_sorbS)-1],linestyle='None',marker='o',label='AmanziS+Alquimia(Crunch)',linewidth=2,markerfacecolor='None')
 
     # axes
     ax[1].set_xlabel("Distance (m)",fontsize=15)
