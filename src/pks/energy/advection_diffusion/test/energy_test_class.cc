@@ -51,20 +51,20 @@ void EnergyTest::initialize_owned() {
 
   int c_owned = temp->size("cell", false);
   Epetra_MultiVector& temp_c = *temp->ViewComponent("cell",false);
-  Epetra_MultiVector& tc_c = *S0->GetFieldData("thermal_conductivity", "energy")
-      ->ViewComponent("cell",false);
   for (int c=0; c != c_owned; ++c) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     for (int lcv_comp=0; lcv_comp != num_components; ++lcv_comp) {
       temp_c[lcv_comp][c] = my_f(xc, 0.0);
     }
-    tc_c[0][c] = my_K();
   }
 
+  Epetra_MultiVector& tc_f = *S0->GetFieldData("thermal_conductivity", "energy")
+      ->ViewComponent("face",false);
+  tc_f.PutScalar(my_K());
+
   if (temp->HasComponent("face")) {
-    int f_owned = temp->size("face", false);
     Epetra_MultiVector& temp_f = *temp->ViewComponent("face",false);
-    for (int f=0; f != f_owned; ++f) {
+    for (int f=0; f != temp_f.MyLength(); ++f) {
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
       for (int lcv_comp=0; lcv_comp != num_components; ++lcv_comp) {
         temp_f[lcv_comp][f] = my_f(xf, 0.0);

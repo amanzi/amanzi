@@ -10,6 +10,7 @@ Author: Ethan Coon
 #include "Epetra_Vector.h"
 #include "advection_diffusion.hh"
 #include "Op.hh"
+#include "EpetraExt_RowMatrixOut.h"
 
 namespace Amanzi {
 namespace Energy {
@@ -39,7 +40,7 @@ void AdvectionDiffusion::Functional(double t_old, double t_new, Teuchos::RCP<Tre
   // diffusion term, implicit
   ApplyDiffusion_(S_next_, res);
   if (vo_->os_OK(Teuchos::VERB_HIGH)) 
-    *vo_->os() << "  res (after diffusion): " << (*res)("cell",0) << std::endl;
+    *vo_->os() << "  res (after diffusion): " << (*res)("cell",0) << "," << (*res)("cell",1) << std::endl;
 
   // accumulation term
   AddAccumulation_(res);
@@ -98,6 +99,8 @@ void AdvectionDiffusion::UpdatePreconditioner(double t, Teuchos::RCP<const TreeV
 
   preconditioner_diff_->ApplyBCs(true);
   preconditioner_->AssembleMatrix();
+  preconditioner_->InitPreconditioner("preconditioner", plist_->sublist("Diffusion PC"));
+
 };
 
 

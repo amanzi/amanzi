@@ -15,7 +15,7 @@
 #include "energy_test_class.hh"
 
 /* **************************************************************** */
-void RunTest(std::string testname) {
+void RunTest(std::string filename, std::string testname) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -28,8 +28,7 @@ void RunTest(std::string testname) {
 #endif
 
   // read parameter list
-  std::string xmlFileName = "test/advection_diffusion_advance_simple.xml";
-  Teuchos::RCP<Teuchos::ParameterList> parameter_list = Teuchos::getParametersFromXmlFile(xmlFileName);
+  Teuchos::RCP<Teuchos::ParameterList> parameter_list = Teuchos::getParametersFromXmlFile(filename);
 
   // create an SIMPLE mesh framework
   Teuchos::ParameterList region_list =
@@ -87,23 +86,45 @@ void RunTest(std::string testname) {
   delete comm;
 }
 
-TEST(ADV_DIFF_ONE) {
+TEST(ADV_DIFF_ONE_FV) {
   std::cout << "Advance ADV-DIFF problem with solution = 1" << std::endl;
-  RunTest("one");
+  RunTest("test/advection_diffusion_advance_simple_fv.xml", "one");
 }
 
-TEST(ADV_DIFF_ADVECTED_STEP) {
+TEST(ADV_DIFF_ADVECTED_STEP_FV) {
   std::cout << "Advance ADV-DIFF problem with an advected step function" << std::endl;
-  RunTest("step");
+  RunTest("test/advection_diffusion_advance_simple_fv.xml", "step");
 }
 
-TEST(ADV_DIFF_DIFFUSION) {
+TEST(ADV_DIFF_DIFFUSION_FV) {
   std::cout << "Advance ADV-DIFF problem with diffused flux across the domain" << std::endl;
-  RunTest("diffused step");
+  RunTest("test/advection_diffusion_advance_simple_fv.xml", "diffused step");
 }
 
 
-TEST(ADV_DIFF_ADV_DIFFUSION) {
+TEST(ADV_DIFF_ADV_DIFFUSION_FV) {
   std::cout << "Advance ADV-DIFF problem with advected and  diffused flux across the domain" << std::endl;
-  RunTest("advected diffused step");
+  RunTest("test/advection_diffusion_advance_simple_fv.xml", "advected diffused step");
+}
+
+
+TEST(ADV_DIFF_ONE_MFD) {
+  std::cout << "Advance ADV-DIFF problem with solution = 1" << std::endl;
+  RunTest("test/advection_diffusion_advance_simple_mfd.xml", "one");
+}
+
+TEST(ADV_DIFF_ADVECTED_STEP_MFD) {
+  std::cout << "Advance ADV-DIFF problem with an advected step function" << std::endl;
+  RunTest("test/advection_diffusion_advance_simple_mfd.xml", "step");
+}
+
+TEST(ADV_DIFF_DIFFUSION_MFD) {
+  std::cout << "Advance ADV-DIFF problem with diffused flux across the domain" << std::endl;
+  RunTest("test/advection_diffusion_advance_simple_mfd.xml", "diffused step");
+}
+
+
+TEST(ADV_DIFF_ADV_DIFFUSION_MFD) {
+  std::cout << "Advance ADV-DIFF problem with advected and  diffused flux across the domain" << std::endl;
+  RunTest("test/advection_diffusion_advance_simple_mfd.xml", "advected diffused step");
 }
