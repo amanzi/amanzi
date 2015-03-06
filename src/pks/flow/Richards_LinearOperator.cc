@@ -48,14 +48,8 @@ void Richards_PK::SolveFullySaturatedProblem(
 
   AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
 
-  // this is wierd -- old version has both GMRES wrapping PC and then another
-  // solver wrapping that with the matrix as the forward operator?
-  // NOTE we do not use the class data here as it would overwrite what was done abovee in InitNextTI() --etc
-  Teuchos::RCP<Operators::Operator> pc_solver = sfactory.Create(solver_name, *linear_operator_list_,
-                      op_preconditioner_, op_preconditioner_);
-
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
-      solver = sfactory.Create(solver_name, *linear_operator_list_, op_matrix_, pc_solver);
+      solver = sfactory.Create(solver_name, *linear_operator_list_, op_matrix_, op_preconditioner_);
   
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
 
