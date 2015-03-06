@@ -216,7 +216,7 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
   Teuchos::RCP<const Epetra_MultiVector> k_twin = Teuchos::null;
   if (k_ != Teuchos::null) {
-    k_cell = k_->ViewComponent("cell");
+    if (k_->HasComponent("cell")) k_cell = k_->ViewComponent("cell");
     if (k_->HasComponent("twin")) k_twin = k_->ViewComponent("twin", true);
   }
   if (upwind_ == OPERATOR_UPWIND_FLUX || 
@@ -240,13 +240,13 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
     double kc(1.0);
     std::vector<double> kf(nfaces, 1.0); 
     if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
-      kc = (*k_cell)[0][c];
+      kc = k_cell.get() ? (*k_cell)[0][c] : 1.;
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
     } else if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK && k_twin == Teuchos::null) {
-      kc = (*k_cell)[0][c];
+      kc = k_cell.get() ? (*k_cell)[0][c] : 1.;
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
     } else if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK && k_twin != Teuchos::null) {
-      kc = (*k_cell)[0][c];
+      kc = k_cell.get() ? (*k_cell)[0][c] : 1.;
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -403,6 +403,8 @@ void OperatorDiffusionMFD::UpdateMatricesNodal_()
 ****************************************************************** */
 void OperatorDiffusionMFD::UpdateMatricesTPFA_()
 {
+  // This does not seem to consider Krel? --etc
+
   // populate transmissibilities
   WhetStone::MFD3D_Diffusion mfd(mesh_);
 

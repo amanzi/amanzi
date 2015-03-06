@@ -180,7 +180,6 @@ OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& f
         const Teuchos::Ptr<const CompositeVector>& u)
 {
   if (!exclude_primary_terms_) {
-
     const std::vector<int>& bc_model = bc_->bc_model();
 
     WhetStone::DenseMatrix null_matrix;
@@ -188,7 +187,8 @@ OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& f
     // preparing upwind data
     Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
     if (k_ != Teuchos::null) {
-      k_face = k_->ViewComponent("face", true);
+      if (k_->HasComponent("face"))
+        k_face = k_->ViewComponent("face", true);
     }
 
     // updating matrix blocks
@@ -266,7 +266,7 @@ void OperatorDiffusionFV::ApplyBCs(bool primary)
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         rhs_cell[0][c] -= bc_value[f] * mesh_->face_area(f);
         //(*transmissibility_)[f] = 0.0;
-        (*gravity_term_)[f] = 0.0;
+        if (gravity_) (*gravity_term_)[f] = 0.0;
       }
     }
   }
@@ -475,6 +475,7 @@ void OperatorDiffusionFV::ComputeTransmissibilities_()
   AmanziMesh::Entity_ID_List cells;
   AmanziGeometry::Point a_dist, a[2];
   double h[2], perm[2], beta[2], trans_f;
+  WhetStone::Tensor Kc(mesh_->space_dimension(),1); Kc(0,0) = 1.0;
 
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -494,10 +495,12 @@ void OperatorDiffusionFV::ComputeTransmissibilities_()
 
     for (int i = 0; i < ncells; i++) {
       int c = cells[i];
+      if (K_.get()) Kc = (*K_)[c];
+      
       a[i] = xf - mesh_->cell_centroid(c);
       h[i] = norm(a[i]);
       double s = area / h[i];
-      perm[i] = (rho_ / mu_) * (((*K_)[c] * a[i]) * normal) * s;
+      perm[i] = (rho_ / mu_) * ((Kc * a[i]) * normal) * s;
 
       double dxn = a[i] * normal;
       beta[i] = fabs(perm[i] / dxn);
