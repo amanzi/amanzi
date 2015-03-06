@@ -111,7 +111,7 @@ void Richards_PK::EnforceConstraints(double Tp, Teuchos::RCP<CompositeVector> u)
     Epetra_MultiVector& k_face = *krel_->ViewComponent("face", true);
     AmanziMesh::Entity_ID_List cells;
 
-    for (int f = 0; f < nfaces_wghost; f++) {
+    for (int f = 0; f < nfaces_owned; f++) {
       if ((bc_model[f] == Operators::OPERATOR_BC_NEUMANN || 
            bc_model[f] == Operators::OPERATOR_BC_MIXED) && bc_value[f] < 0.0) {
         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -127,6 +127,8 @@ void Richards_PK::EnforceConstraints(double Tp, Teuchos::RCP<CompositeVector> u)
         k_face[0][f] = (kr1 + kr2) / 2;
       } 
     }
+
+    krel_->ScatterMasterToGhosted("face");
   }
 
   // calculate diffusion operator

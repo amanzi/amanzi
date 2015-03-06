@@ -146,7 +146,7 @@ void OperatorDiffusionMFD::UpdateMatricesMixedWithGrad_(
   Teuchos::RCP<const Epetra_MultiVector> k_twin = Teuchos::null;
   if (k_ != Teuchos::null) {
     k_cell = k_->ViewComponent("cell");
-    k_face = k_->ViewComponent("face");
+    k_face = k_->ViewComponent("face", true);
     k_grad = k_->ViewComponent("grad");
     if (k_->HasComponent("twin")) k_twin = k_->ViewComponent("twin", true);
   }
@@ -158,7 +158,7 @@ void OperatorDiffusionMFD::UpdateMatricesMixedWithGrad_(
   AmanziMesh::Entity_ID_List faces, cells;
   std::vector<int> dirs;
 
-  WhetStone::Tensor Kc(mesh_->space_dimension(),1); Kc(0,0) = 1.0;
+  WhetStone::Tensor Kc(mesh_->space_dimension(), 1); Kc(0,0) = 1.0;
   
   for (int c = 0; c < ncells_owned; c++) {
     // mean value and gradient of nonlinear factor
@@ -240,10 +240,10 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
     double kc(1.0);
     std::vector<double> kf(nfaces, 1.0); 
     if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
-      kc = k_cell.get() ? (*k_cell)[0][c] : 1.;
+      kc = k_cell.get() ? (*k_cell)[0][c] : 1.0;
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
     } else if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK && k_twin == Teuchos::null) {
-      kc = k_cell.get() ? (*k_cell)[0][c] : 1.;
+      kc = k_cell.get() ? (*k_cell)[0][c] : 1.0;
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
     } else if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK && k_twin != Teuchos::null) {
       kc = k_cell.get() ? (*k_cell)[0][c] : 1.;

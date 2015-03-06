@@ -487,12 +487,12 @@ void CycleDriver::ReadParameterList_() {
   // first assume we're not
   restart_requested_ = false;
 
-  if (coordinator_list_->isSublist("Restart from Checkpoint Data File")) {
-    restart_requested_ = ! coordinator_list_->sublist("Restart from Checkpoint Data File")
+  if (coordinator_list_->isSublist("Restart")) {
+    restart_requested_ = ! coordinator_list_->sublist("Restart")
         .get<bool>("initialize from checkpoint data file and do not restart",false);
 
     if (restart_requested_) {
-      Teuchos::ParameterList restart_list = coordinator_list_->sublist("Restart from Checkpoint Data File");
+      Teuchos::ParameterList restart_list = coordinator_list_->sublist("Restart");
       restart_filename_ = restart_list.get<std::string>("Checkpoint Data File Name");
 
       // make sure that the restart file actually exists, if not throw an error
