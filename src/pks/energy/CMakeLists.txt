@@ -98,8 +98,8 @@ generate_evaluators_registration_header(
 #
 # Library: energy
 #
-set(energy_src_files Energy_PK.cc Energy_TI.cc
-                     EnergyTwoPhase_PK.cc 
+set(energy_src_files Energy_PK.cc
+                     EnergyTwoPhase_PK.cc EnergyTwoPhase_TI.cc
                      Energy_BC_Factory.cc
                      Energy_VandV.cc
                      iem_linear.cc

@@ -54,22 +54,18 @@ class Energy_PK : public FnTimeIntegratorPK {
   // main energy methods
   void InitializeFields();
 
-  // methods required for time integration (EMPTY so far)
-  void Functional(const double Told, double Tnew,
-                  Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new,
-                  Teuchos::RCP<TreeVector> f);
-  void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Hu);
-  void UpdatePreconditioner(double T, Teuchos::RCP<const TreeVector> up, double dT);
-
-  double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
-  bool IsAdmissible(Teuchos::RCP<const TreeVector> up) {
-   return true;
+  // methods required for time integration
+  virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> hu) {
+    op_preconditioner_->ApplyInverse(*u->Data(), *hu->Data());
   }
-  bool ModifyPredictor(double dT, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) {
+  bool IsAdmissible(Teuchos::RCP<const TreeVector> up) {
+    return true;
+  }
+  bool ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) {
     return false;
   }
   AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-      ModifyCorrection(double dT, Teuchos::RCP<const TreeVector> res,
+      ModifyCorrection(double dt, Teuchos::RCP<const TreeVector> res,
                        Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<TreeVector> du) {};
   void ChangedSolution() {};
@@ -96,15 +92,15 @@ class Energy_PK : public FnTimeIntegratorPK {
   Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
   Teuchos::RCP<Teuchos::ParameterList> ti_list_;
 
-  // sate and primary field
+  // state and primary field
   Teuchos::RCP<State> S_;
   std::string passwd_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> temperature_eval;
 
-  Key energy_key_;  // keys
+  // keys
+  Key energy_key_, prev_energy_key_;
   Key enthalpy_key_;
   Key conductivity_key_;
-  Key uw_conductivity_key_;
 
   // conductivity tensor
   std::vector<WhetStone::Tensor> K; 

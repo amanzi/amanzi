@@ -46,6 +46,7 @@ Energy_PK::Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
   energy_key_ = "energy";
+  prev_energy_key_ = "prev_energy";
   enthalpy_key_ = "enthalpy";
   conductivity_key_ = "thermal_conductivity";
 }
@@ -132,10 +133,10 @@ bool Energy_PK::UpdateConductivityData(const Teuchos::Ptr<State>& S)
 /* ******************************************************************
 * A wrapper for updating boundary conditions.
 ****************************************************************** */
-void Energy_PK::UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u)
+void Energy_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u)
 {
-  bc_temperature->Compute(T1);
-  bc_flux->Compute(T1);
+  bc_temperature->Compute(t_new);
+  bc_flux->Compute(t_new);
 
   ComputeBCs(u);
 }

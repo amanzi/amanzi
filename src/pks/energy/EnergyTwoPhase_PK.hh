@@ -38,6 +38,13 @@ public:
   virtual std::string name() { return "two-phase energy"; }
   virtual void CommitStep(double t_old, double t_new);
 
+  virtual void Functional(const double t_old, double t_new,
+                          Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new,
+                          Teuchos::RCP<TreeVector> g);
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt);
+
+  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
+
  protected:
   // models for evaluating enthalpy
   Teuchos::RCP<Relations::EOS> eos_liquid_;

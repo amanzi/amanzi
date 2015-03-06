@@ -190,7 +190,7 @@ bool MPCStrong<PK_Base>::AdvanceStep(double t_old, double t_new) {
 
   if (!fail) {
     // commit the step as successful
-    // time_stepper_->CommitSolution(dt_, solution_);
+    time_stepper_->CommitSolution(dt_, solution_);
     // commit_state(dt_, S_);
 
     // update the timestep size

@@ -148,6 +148,7 @@ void EnergyTwoPhase_PK::Initialize()
   op_preconditioner_->Init();
   op_preconditioner_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, 1.0, 1.0);
   op_preconditioner_->SymbolicAssembleMatrix();
+  op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_preconditioner_));
 
   // preconditioner and optional linear solver
   ASSERT(ti_list_->isParameter("preconditioner"));
