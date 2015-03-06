@@ -18,6 +18,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_CrsMatrix.h"
+#include "EpetraExt_RowMatrixOut.h"
 
 #include "Mesh.hh"
 #include "CompositeVectorSpace.hh"
