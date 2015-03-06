@@ -30,7 +30,6 @@ class FlowReactiveTransport_PK : public MPCSubcycled {
                            const Teuchos::RCP<TreeVector>& soln);
 
   ~FlowReactiveTransport_PK(){
-    //std::cout<<"Destructor FlowReactiveTransport_PK\n";
   }
 
   // PK methods

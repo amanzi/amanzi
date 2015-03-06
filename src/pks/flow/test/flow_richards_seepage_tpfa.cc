@@ -65,8 +65,9 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
+  Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
-  Richards_PK* RPK = new Richards_PK(global_list, "Flow", S);
+  Richards_PK* RPK = new Richards_PK(global_list, "Flow", S, soln);
 
   RPK->Setup();
   S->Setup();
@@ -110,7 +111,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   ti_specs.T1 = 1e+10;
   ti_specs.max_itrs = 100;
 
-  AdvanceToSteadyState(*RPK, ti_specs, S->GetFieldData("pressure", "flow"));
+  AdvanceToSteadyState(S, *RPK, ti_specs, S->GetFieldData("pressure", "flow"));
   RPK->CommitState(0.0, S.ptr());
 
   const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");

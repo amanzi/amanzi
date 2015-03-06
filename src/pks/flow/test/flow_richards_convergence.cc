@@ -145,7 +145,8 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
     /* create Richards process kernel */
-    Richards_PK* RPK = new Richards_PK(plist, "Flow", S);
+    Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
+    Richards_PK* RPK = new Richards_PK(plist, "Flow", S, soln);
     RPK->Setup();
     S->Setup();
     S->InitializeFields();
@@ -162,7 +163,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     ti_specs.T1 = 1.0e+4;
     ti_specs.max_itrs = 1000;
 
-    AdvanceToSteadyState(*RPK, ti_specs, S->GetFieldData("pressure", "flow"));
+    AdvanceToSteadyState(S, *RPK, ti_specs, S->GetFieldData("pressure", "flow"));
     RPK->CommitState(0.0, S.ptr());
 
     double pressure_err, flux_err, div_err;  // error checks

@@ -65,8 +65,9 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
+  Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
-  Richards_PK* RPK = new Richards_PK(global_list, "Flow", S);
+  Richards_PK* RPK = new Richards_PK(global_list, "Flow", S, soln);
 
   RPK->Setup();
   S->Setup();
@@ -104,7 +105,7 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
   ti_specs.T1 = 100.0;
   ti_specs.max_itrs = 400;
 
-  AdvanceToSteadyState(*RPK, ti_specs, S->GetFieldData("pressure", "flow"));
+  AdvanceToSteadyState(S, *RPK, ti_specs, S->GetFieldData("pressure", "flow"));
   RPK->CommitState(0.0, S.ptr());
 
   /* check accuracy */

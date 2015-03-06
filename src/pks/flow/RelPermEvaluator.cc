@@ -11,6 +11,7 @@
   Rel perm( pc ( sat ) ).
 */
 
+#include "FlowDefs.hh"
 #include "RelPermEvaluator.hh"
 
 namespace Amanzi {
@@ -20,25 +21,25 @@ namespace Flow {
 * Two constructors.
 ****************************************************************** */
 RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist,
+                                   Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                                   double patm,
                                    const Teuchos::RCP<WRMPartition>& wrm) :
     SecondaryVariableFieldEvaluator(plist),
+    mesh_(mesh),
     wrm_(wrm),
-    min_val_(0.0) {
+    patm_(patm),
+    min_value_(0.0),
+    max_value_(1.0) {
   InitializeFromPlist_();
 }
 
 RelPermEvaluator::RelPermEvaluator(const RelPermEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     wrm_(other.wrm_),
-    sat_key_(other.sat_key_),
-    dens_key_(other.dens_key_),
-    visc_key_(other.visc_key_),
-    surf_rel_perm_key_(other.surf_rel_perm_key_),
-    is_dens_visc_(other.is_dens_visc_),
-    is_surf_(other.is_surf_),
-    surf_mesh_key_(other.surf_mesh_key_),
-    perm_scale_(other.perm_scale_),
-    min_val_(other.min_val_) {}
+    pressure_key_(other.pressure_key_),
+    patm_(other.patm_),
+    min_value_(other.min_value_),
+    max_value_(other.max_value_) {};
 
 
 /* ******************************************************************
@@ -52,194 +53,44 @@ Teuchos::RCP<FieldEvaluator> RelPermEvaluator::Clone() const {
 /* ******************************************************************
 * Initialization.
 ****************************************************************** */
-void RelPermEvaluator::InitializeFromPlist_() {
-  // my keys are for saturation and rel perm.
+void RelPermEvaluator::InitializeFromPlist_()
+{
+  // my keys is for rel perm.
   if (my_key_ == std::string("")) {
     my_key_ = plist_.get<std::string>("rel perm key", "relative_permeability");
   }
 
-  // dependencies
-  sat_key_ = plist_.get<std::string>("saturation key", "saturation_liquid");
-  dependencies_.insert(sat_key_);
+  // my dependency is pressure.
+  pressure_key_ = plist_.get<std::string>("pressure key", "pressure");
+  dependencies_.insert(pressure_key_);
 
-  is_dens_visc_ = plist_.get<bool>("use density on viscosity in rel perm", true);
-  if (is_dens_visc_) {
-    dens_key_ = plist_.get<std::string>("density key", "molar_density_liquid");
-    dependencies_.insert(dens_key_);
-
-    visc_key_ = plist_.get<std::string>("viscosity key", "viscosity_liquid");
-    dependencies_.insert(visc_key_);
-  }
-
-  // surface alterations
-  is_surf_ = plist_.get<bool>("use surface rel perm", false);
-  if (is_surf_) {
-    surf_rel_perm_key_ = plist_.get<std::string>("surface rel perm key", "surface_relative_permeability");
-    dependencies_.insert(surf_rel_perm_key_);
-
-    surf_mesh_key_ = plist_.get<std::string>("surface mesh key", "surface");
-  }
-  
-  // cutoff above 0?
-  min_val_ = plist_.get<double>("minimum rel perm cutoff", 0.);
-  perm_scale_ = plist_.get<double>("permeability rescaling");
+  // use rel perm class for calcualtion
+  Teuchos::ParameterList plist;
+  relperm_ = Teuchos::rcp(new RelPerm(plist, mesh_, patm_, wrm_));
 }
 
 
-// Special purpose EnsureCompatibility required because of surface rel perm.
-void RelPermEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
-  if (!is_surf_) {
-    SecondaryVariableFieldEvaluator::EnsureCompatibility(S);
-  } else {
-
-    // Ensure my field exists.  Requirements should be already set.
-    ASSERT(my_key_ != std::string(""));
-    Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
-
-    // check plist for vis or checkpointing control
-    bool io_my_key = plist_.get<bool>(std::string("visualize ")+my_key_, true);
-    S->GetField(my_key_, my_key_)->set_io_vis(io_my_key);
-    bool checkpoint_my_key = plist_.get<bool>(std::string("checkpoint ")+my_key_, false);
-    S->GetField(my_key_, my_key_)->set_io_checkpoint(checkpoint_my_key);
-
-    // If my requirements have not yet been set, we'll have to hope they
-    // get set by someone later.  For now just defer.
-    if (my_fac->Mesh() != Teuchos::null) {
-      // Create an unowned factory to check my dependencies.
-      Teuchos::RCP<CompositeVectorSpace> dep_fac =
-          Teuchos::rcp(new CompositeVectorSpace(*my_fac));
-      dep_fac->SetOwned(false);
-
-      // Loop over my dependencies, ensuring they meet the requirements.
-      for (KeySet::const_iterator key=dependencies_.begin();
-           key!=dependencies_.end(); ++key) {
-        if (*key != surf_rel_perm_key_) {
-          Teuchos::RCP<CompositeVectorSpace> fac = S->RequireField(*key);
-          fac->Update(*dep_fac);
-        }
-      }
-
-      // Recurse into the tree to propagate info to leaves.
-      for (KeySet::const_iterator key=dependencies_.begin();
-           key!=dependencies_.end(); ++key) {
-        S->RequireFieldEvaluator(*key)->EnsureCompatibility(S);
-      }
-
-      // Check the dependency for surf rel perm
-      S->RequireField(surf_rel_perm_key_)
-          ->SetMesh(S->GetMesh("surface"))
-          ->AddComponent("cell",AmanziMesh::CELL,1);
-      S->RequireFieldEvaluator(surf_rel_perm_key_)->EnsureCompatibility(S);
-      
-    }
-  }
+/* ******************************************************************
+* Required member function.
+****************************************************************** */
+void RelPermEvaluator::EvaluateField_(
+    const Teuchos::Ptr<State>& S,
+    const Teuchos::Ptr<CompositeVector>& result)
+{
+  // relperm_->Compute(S->GetFieldData(pressure_key_), result);
 }
 
 
-void RelPermEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
-        const Teuchos::Ptr<CompositeVector>& result) {
-
-  // Initialize the MeshPartition
-  if (!wrms_->first->initialized()) {
-    wrms_->first->Initialize(result->Mesh(), -1);
-    wrms_->first->Verify();
-  }
-
-  // Evaluate k_rel.
-  // -- Evaluate the model to calculate krel on cells.
-  const Epetra_MultiVector& sat_c = *S->GetFieldData(sat_key_)
-      ->ViewComponent("cell",false);
-  Epetra_MultiVector& res_c = *result->ViewComponent("cell",false);
-
-  int ncells = res_c.MyLength();
-  for (unsigned int c=0; c!=ncells; ++c) {
-    int index = (*wrms_->first)[c];
-    double pc = wrms_->second[index]->capillaryPressure(sat_c[0][c]);
-    res_c[0][c] = std::max(wrms_->second[index]->k_relative(pc), min_val_);
-  }
-
-  // -- Potentially evaluate the model on boundary faces as well.
-  if (result->HasComponent("boundary_face")) {
-    const Epetra_MultiVector& sat_bf = *S->GetFieldData(sat_key_)
-        ->ViewComponent("boundary_face",false);
-    Epetra_MultiVector& res_bf = *result->ViewComponent("boundary_face",false);
-
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh = result->Mesh();
-    const Epetra_Map& vandelay_map = mesh->exterior_face_map();
-    const Epetra_Map& face_map = mesh->face_map(false);
-  
-    // Evaluate the model to calculate krel.
-    AmanziMesh::Entity_ID_List cells;
-    int nbfaces = res_bf.MyLength();
-    for (unsigned int bf=0; bf!=nbfaces; ++bf) {
-      // given a boundary face, we need the internal cell to choose the right WRM
-      AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
-      mesh->face_get_cells(f, AmanziMesh::USED, &cells);
-      ASSERT(cells.size() == 1);
-
-      int index = (*wrms_->first)[cells[0]];
-      double pc = wrms_->second[index]->capillaryPressure(sat_bf[0][bf]);
-      res_bf[0][bf] = std::max(wrms_->second[index]->k_relative(pc), min_val_);
-    }
-  }
-
-  // Patch k_rel with surface rel perm values
-  if (is_surf_) {
-    const Epetra_MultiVector& surf_kr = *S->GetFieldData(surf_rel_perm_key_)
-        ->ViewComponent("cell",false);
-    Epetra_MultiVector& res_bf = *result->ViewComponent("boundary_face",false);
-
-    Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh = S->GetMesh(surf_mesh_key_);
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh = result->Mesh();
-    const Epetra_Map& vandelay_map = mesh->exterior_face_map();
-    const Epetra_Map& face_map = mesh->face_map(false);
-    
-    unsigned int nsurf_cells = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    for (unsigned int sc=0; sc!=nsurf_cells; ++sc) {
-      // need to map from surface quantity on cells to subsurface boundary_face quantity
-      AmanziMesh::Entity_ID f = surf_mesh->entity_get_parent(AmanziMesh::CELL, sc);
-      AmanziMesh::Entity_ID bf = vandelay_map.LID(face_map.GID(f));
-
-      res_bf[0][bf] = std::max(surf_kr[0][sc], min_val_);
-    }
-  }
-
-  // Potentially scale quantities by dens / visc
-  if (is_dens_visc_) {
-    // -- Scale cells.
-    const Epetra_MultiVector& dens_c = *S->GetFieldData(dens_key_)
-        ->ViewComponent("cell",false);
-    const Epetra_MultiVector& visc_c = *S->GetFieldData(visc_key_)
-        ->ViewComponent("cell",false);
-
-    for (unsigned int c=0; c!=ncells; ++c) {
-      res_c[0][c] *= dens_c[0][c] / visc_c[0][c];
-    }
-        
-    // Potentially scale boundary faces.
-    if (result->HasComponent("boundary_face")) {
-      const Epetra_MultiVector& dens_bf = *S->GetFieldData(dens_key_)
-          ->ViewComponent("boundary_face",false);
-      const Epetra_MultiVector& visc_bf = *S->GetFieldData(visc_key_)
-          ->ViewComponent("boundary_face",false);
-      Epetra_MultiVector& res_bf = *result->ViewComponent("boundary_face",false);
-
-      // Evaluate the evaluator to calculate sat.
-      int nbfaces = res_bf.MyLength();
-      for (unsigned int bf=0; bf!=nbfaces; ++bf) {
-        res_bf[0][bf] *= dens_bf[0][bf] / visc_bf[0][bf];
-      }
-    }
-  }
-
-  // Finally, scale by a permeability rescaling from absolute perm.
-  result->Scale(1./perm_scale_);
-}
-
-
-void RelPermEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-        Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-  ASSERT(0);
+/* ******************************************************************
+* Required member function.
+****************************************************************** */
+void RelPermEvaluator::EvaluateFieldPartialDerivative_(
+    const Teuchos::Ptr<State>& S,
+    Key wrt_key,
+    const Teuchos::Ptr<CompositeVector>& result)
+{
+  ASSERT(wrt_key == pressure_key_);
+  // relperm_->ComputeDerivative(S->GetFieldData(pressure_key_), result);
 }
 
 }  // namespace Flow

@@ -226,6 +226,48 @@ void Flow_PK::UpdateLocalFields_()
 
 
 /* ******************************************************************
+* Routine processes parameter list. It needs to be called only once
+* on each processor.                                                     
+****************************************************************** */
+void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
+{
+  // Process main one-line options (not sublists)
+  atm_pressure_ = plist.get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);
+  coordinate_system = plist.get<std::string>("absolute permeability coordinate system", "cartesian");
+
+  // Create the BC objects.
+  bc_model.resize(nfaces_wghost, 0);
+  bc_submodel.resize(nfaces_wghost, 0);
+  bc_value.resize(nfaces_wghost, 0.0);
+  bc_mixed.resize(nfaces_wghost, 0.0);
+  rainfall_factor.resize(nfaces_wghost, 1.0);
+
+  Teuchos::RCP<Teuchos::ParameterList>
+      bc_list = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("boundary conditions", true)));
+  FlowBCFactory bc_factory(mesh_, bc_list);
+
+  bc_pressure = bc_factory.CreatePressure(bc_submodel);
+  bc_head = bc_factory.CreateStaticHead(atm_pressure_, rho_, gravity_, bc_submodel);
+  bc_flux = bc_factory.CreateMassFlux(bc_submodel);
+  bc_seepage = bc_factory.CreateSeepageFace(atm_pressure_, bc_submodel);
+
+  VV_ValidateBCs();
+  ProcessBCs();
+
+  // Create the source object if any
+  if (plist.isSublist("source terms")) {
+    std::string distribution_method_name = plist.get<std::string>("source and sink distribution method", "none");
+    ProcessStringSourceDistribution(distribution_method_name, &src_sink_distribution); 
+
+    Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(plist.sublist("source terms", true));
+    FlowSourceFactory src_factory(mesh_, src_list);
+    src_sink = src_factory.createSource();
+    src_sink_distribution = src_sink->CollectActionsList();
+  }
+}
+
+
+/* ******************************************************************
 * Populate data needed by submodels.
 ****************************************************************** */
 void Flow_PK::ProcessBCs()
@@ -586,44 +628,6 @@ void Flow_PK::WriteGMVfile(Teuchos::RCP<State> FS) const
   GMV::write_cell_data(*(S_->GetFieldData("pressure")->ViewComponent("cell")), 0, "pressure");
   GMV::write_cell_data(*(S_->GetFieldData("saturation_liquid")->ViewComponent("cell")), 0, "saturation");
   GMV::close_data_file();
-}
-
-
-/* ******************************************************************
-* Routine processes parameter list. It needs to be called only once
-* on each processor.                                                     
-****************************************************************** */
-void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
-{
-  double rho = *(S_->GetScalarData("fluid_density"));
-
-  // Process main one-line options (not sublists)
-  atm_pressure_ = plist.get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);
-  coordinate_system = plist.get<std::string>("absolute permeability coordinate system", "cartesian");
-
-  // Create the BC objects.
-  Teuchos::RCP<Teuchos::ParameterList>
-      bc_list = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("boundary conditions", true)));
-  FlowBCFactory bc_factory(mesh_, bc_list);
-
-  bc_pressure = bc_factory.CreatePressure(bc_submodel);
-  bc_head = bc_factory.CreateStaticHead(atm_pressure_, rho, gravity_, bc_submodel);
-  bc_flux = bc_factory.CreateMassFlux(bc_submodel);
-  bc_seepage = bc_factory.CreateSeepageFace(atm_pressure_, bc_submodel);
-
-  VV_ValidateBCs();
-  ProcessBCs();
-
-  // Create the source object if any
-  if (plist.isSublist("source terms")) {
-    std::string distribution_method_name = plist.get<std::string>("source and sink distribution method", "none");
-    ProcessStringSourceDistribution(distribution_method_name, &src_sink_distribution); 
-
-    Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(plist.sublist("source terms", true));
-    FlowSourceFactory src_factory(mesh_, src_list);
-    src_sink = src_factory.createSource();
-    src_sink_distribution = src_sink->CollectActionsList();
-  }
 }
 
 

@@ -24,8 +24,6 @@ namespace Flow {
 class WRM_BrooksCorey : public WRM {
  public:
   explicit WRM_BrooksCorey(Teuchos::ParameterList& plist);
-  explicit WRM_BrooksCorey(std::string& region, double lambda, double l, double alpha, 
-                           double sr, std::string& krel_function, double pc0 = 0.0);
   ~WRM_BrooksCorey() {};
   
   // required methods from the base class

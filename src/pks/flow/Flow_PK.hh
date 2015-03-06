@@ -81,11 +81,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   int FindPosition(int f, AmanziMesh::Entity_ID_List faces);
 
   // io members
-  void ProcessParameterList(Teuchos::ParameterList& list);
   void ProcessStringSourceDistribution(const std::string name, int* method);
-  void ProcessStringTimeIntegration(const std::string name, int* method);
-  void ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control);
-
   void OutputTimeHistory(const Teuchos::ParameterList& plist, std::vector<dt_tuple>& dT_history);
   void WriteGMVfile(Teuchos::RCP<State> S) const;
 
@@ -138,6 +134,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
 
  protected:
   void InitializeFields_();
+  void InitializeBCsSources_(Teuchos::ParameterList& list);
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

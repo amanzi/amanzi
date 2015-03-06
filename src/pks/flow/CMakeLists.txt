@@ -106,7 +106,7 @@ set(flow_src_files Flow_PK.cc
                    Darcy_PK.cc Darcy_TI.cc Darcy_LinearOperator.cc
                    Richards_PK.cc Richards_TI.cc Richards_WRM.cc
                    Richards_Picard.cc Richards_LinearOperator.cc
-                   RelativePermeability.cc RelativePermeability_IO.cc
+                   RelPerm.cc RelPermEvaluator.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
                    WRMPartition.cc WRMFactory.cc WRMEvaluator.cc 
                    darcy_velocity_evaluator.cc
@@ -135,6 +135,7 @@ set(flow_inc_files
   Flow_PK.hh
   Flow_SourceFactory.hh
   FlowTypeDefs.hh
+  RelPerm.hh
   RelPermEvaluator.hh
   Richards_PK.hh
   WRM.hh
@@ -162,7 +163,7 @@ if (BUILD_TESTS)
     # Add the flow directory to the include paths
     include_directories(${FLOW_SOURCE_DIR})
 
-    set(amanzi_libs geometry mesh mesh_factory state flow operators whetstone data_structures)
+    set(amanzi_libs geometry mesh mesh_factory state flow pks operators whetstone data_structures)
 
     # Test: transient Darcy flow 
     add_amanzi_test(flow_darcy_transient flow_darcy_transient
@@ -246,7 +247,7 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
     # Test: 3D Richards
-    set(amanzi_libs geometry mesh mesh_factory flow operators state whetstone solvers output data_structures)
+    set(amanzi_libs geometry mesh mesh_factory flow pks operators state whetstone solvers output data_structures)
     
     add_amanzi_test(flow_richards_tensor flow_richards_tensor
                     KIND unit

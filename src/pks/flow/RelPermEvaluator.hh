@@ -16,41 +16,41 @@
 #define AMANZI_FLOW_REL_PERM_EVALUATOR_HH_
 
 #include "secondary_variable_field_evaluator.hh"
+#include "RelPerm.hh"
 #include "WRM.hh"
+#include "WRMPartition.hh"
 
 namespace Amanzi {
 namespace Flow {
 
 class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
  public:
-  RelPermEvaluator(Teuchos::ParameterList& plist, const Teuchos::RCP<WRMPartition>& wrm);
+  RelPermEvaluator(Teuchos::ParameterList& plist,
+                   Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                   double patm,
+                   const Teuchos::RCP<WRMPartition>& wrm);
   RelPermEvaluator(const RelPermEvaluator& other);
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
-  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
-  
  protected:
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& result);
+      const Teuchos::Ptr<CompositeVector>& result);
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
+      Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
   void InitializeFromPlist_();
 
-  Teuchos::RCP<WRMPartition> wrm_;
-  Key sat_key_;
-  Key dens_key_;
-  Key visc_key_;
-  Key surf_rel_perm_key_;
+ protected:
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<RelPerm> relperm_;
 
-  bool is_dens_visc_;
-  bool is_surf_;
-  Key surf_mesh_key_;
-  
-  double perm_scale_;
-  double min_val_;
+  Teuchos::RCP<WRMPartition> wrm_;
+  Key pressure_key_;
+
+  double patm_;
+  double min_value_, max_value_;
 };
 
 }  // namespace Flow

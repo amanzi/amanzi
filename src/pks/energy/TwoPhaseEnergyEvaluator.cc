@@ -18,7 +18,7 @@
   This is simply the conserved quantity in Richards equation.
 */
 
-#include "twophase_energy_evaluator.hh"
+#include "TwoPhaseEnergyEvaluator.hh"
 
 namespace Amanzi {
 namespace Energy {

@@ -162,7 +162,7 @@ void MPCStrong<PK_Base>::Initialize() {
     Teuchos::ParameterList& ts_plist = my_list_->sublist("time integrator").sublist("BDF1");
     ts_plist.set("initial time", S_->time());
     time_stepper_ = Teuchos::rcp(new Amanzi::BDF1_TI<TreeVector,
-            TreeVectorSpace>(*this, ts_plist, solution_));
+        TreeVectorSpace>(*this, ts_plist, solution_));
 
     // -- initialize time derivative
     Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp(new TreeVector(*solution_));
@@ -190,7 +190,7 @@ bool MPCStrong<PK_Base>::AdvanceStep(double t_old, double t_new) {
 
   if (!fail) {
     // commit the step as successful
-    // time_stepper_->CommitSolution(dt_, solution_);
+    time_stepper_->CommitSolution(dt_, solution_);
     // commit_state(dt_, S_);
 
     // update the timestep size
@@ -372,10 +372,10 @@ bool MPCStrong<PK_Base>::IsAdmissible(Teuchos::RCP<const TreeVector> u) {
 // -----------------------------------------------------------------------------
 template<class PK_Base>
 bool MPCStrong<PK_Base>::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
-        Teuchos::RCP<TreeVector> u) {
+                                         Teuchos::RCP<TreeVector> u) {
   // loop over sub-PKs
   bool modified = false;
-  for (unsigned int i=0; i!=sub_pks_.size(); ++i) {
+  for (unsigned int i = 0; i != sub_pks_.size(); ++i) {
     // pull out the u sub-vector
     Teuchos::RCP<const TreeVector> pk_u0 = u0->SubVector(i);
     Teuchos::RCP<TreeVector> pk_u = u->SubVector(i);

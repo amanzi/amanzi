@@ -20,7 +20,7 @@
 #include "primary_variable_field_evaluator.hh"
 #include "State.hh"
 
-#include "OperatorDiffusionFactory.hh"
+#include "Energy_BC_Factory.hh"
 #include "Energy_PK.hh"
 
 namespace Amanzi {
@@ -30,8 +30,10 @@ namespace Energy {
 * Default constructor for Energy PK.
 ****************************************************************** */
 Energy_PK::Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                     Teuchos::RCP<State> S)
-    : glist_(glist), vo_(NULL), passwd_("thermal")
+                     Teuchos::RCP<State> S) :
+    glist_(glist),
+    vo_(NULL),
+    passwd_("thermal")
 {
   S_ = S;
   mesh_ = S->GetMesh();
@@ -44,6 +46,7 @@ Energy_PK::Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
   energy_key_ = "energy";
+  prev_energy_key_ = "prev_energy";
   enthalpy_key_ = "enthalpy";
   conductivity_key_ = "thermal_conductivity";
 }
@@ -83,44 +86,27 @@ void Energy_PK::Setup()
 
 
 /* ******************************************************************
-* Initialiation.
+* Basic initialization of energy classes.
 ****************************************************************** */
 void Energy_PK::Initialize()
 {
-  // create verbosity object
-  Teuchos::ParameterList vlist;
-  vlist.sublist("VerboseObject") = glist_->sublist("PKs").sublist("Energy").sublist("VerboseObject");
-  vo_ = new VerboseObject("EnergyPK", vlist);
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist_, "PKs", true);
+  Teuchos::RCP<Teuchos::ParameterList> ep_list = Teuchos::sublist(pk_list, "Energy", true);
 
-  // ProcessParameterList(plist_);
-  K.resize(ncells_wghost);
-  for (int c = 0; c < ncells_wghost; c++) {
-    K[c].Init(dim, 1);
-    K[c](0, 0) = 1.0;
-  }
+  // Create BCs objects.
+  bc_model_.resize(nfaces_wghost, 0);
+  bc_submodel_.resize(nfaces_wghost, 0);
+  bc_value_.resize(nfaces_wghost, 0.0);
+  bc_mixed_.resize(nfaces_wghost, 0.0);
 
-  // Select a proper matrix class. 
-  Teuchos::ParameterList tmp_list = glist_->sublist("PKs").sublist("Energy")
-                                           .sublist("operators").sublist("diffusion operator");
-  Teuchos::ParameterList oplist_matrix = tmp_list.sublist("matrix");
-  Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
+  Teuchos::RCP<Teuchos::ParameterList>
+      bc_list = Teuchos::rcp(new Teuchos::ParameterList(ep_list->sublist("boundary conditions", true)));
+  EnergyBCFactory bc_factory(mesh_, bc_list);
+
+  bc_temperature = bc_factory.CreateTemperature(bc_submodel_);
+  bc_flux = bc_factory.CreateEnergyFlux(bc_submodel_);
 
   op_bc_ = Teuchos::rcp(new Operators:: BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_, bc_value_, bc_mixed_));
-  AmanziGeometry::Point g(dim);
-
-  Operators::OperatorDiffusionFactory opfactory;
-  op_matrix_diff_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, g, 0);
-  op_matrix_diff_->SetBCs(op_bc_);
-  op_matrix_ = op_matrix_diff_->global_operator();
-  op_matrix_->Init();
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
-  op_matrix_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, 1.0, 1.0);
-
-  op_preconditioner_diff_ = opfactory.Create(mesh_, op_bc_, oplist_pc, g, 0);
-  op_preconditioner_diff_->SetBCs(op_bc_);
-  op_preconditioner_ = op_preconditioner_diff_->global_operator();
-  op_preconditioner_->Init();
-  op_preconditioner_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, 1.0, 1.0);
 }
 
 
@@ -147,20 +133,10 @@ bool Energy_PK::UpdateConductivityData(const Teuchos::Ptr<State>& S)
 /* ******************************************************************
 * A wrapper for updating boundary conditions.
 ****************************************************************** */
-void Energy_PK::UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u)
+void Energy_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u)
 {
-  /* 
-  if (src_sink != NULL) {
-    if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      src_sink->ComputeDistribute(T0, T1, Kxy->Values());
-    } else {
-      src_sink->ComputeDistribute(T0, T1, NULL);
-    }
-  }
-  */
-
-  bc_temperature->Compute(T1);
-  bc_flux->Compute(T1);
+  bc_temperature->Compute(t_new);
+  bc_flux->Compute(t_new);
 
   ComputeBCs(u);
 }

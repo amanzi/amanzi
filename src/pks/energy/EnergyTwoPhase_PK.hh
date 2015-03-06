@@ -32,15 +32,30 @@ public:
                     const Teuchos::RCP<TreeVector>& soln);
   virtual ~EnergyTwoPhase_PK() {};
 
-  // Initialize owned (dependent) variables.
+  // Required PK members.
   virtual void Setup();
   virtual void Initialize();
   virtual std::string name() { return "two-phase energy"; }
+  virtual void CommitStep(double t_old, double t_new);
+
+  virtual void Functional(const double t_old, double t_new,
+                          Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new,
+                          Teuchos::RCP<TreeVector> g);
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt);
+
+  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
 
  protected:
   // models for evaluating enthalpy
   Teuchos::RCP<Relations::EOS> eos_liquid_;
   Teuchos::RCP<IEM> iem_liquid_;
+
+ private:
+  Teuchos::RCP<Teuchos::ParameterList> ep_list_;
+
+  // primary field
+  const Teuchos::RCP<TreeVector> soln_;
+  Teuchos::RCP<CompositeVector> solution;
 
 private:
   // factory registration

@@ -59,9 +59,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   meshfactory.preference(pref);
   RCP<const Mesh> mesh = meshfactory("test/dual2D.exo", gm);
 
-  /* create a simple state populate it */
-  Amanzi::VerboseObject::hide_line_prefix = true;
-
+  // create a state and populate it
   Teuchos::ParameterList state_list = plist.sublist("State");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));

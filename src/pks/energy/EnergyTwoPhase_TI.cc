@@ -16,7 +16,7 @@
 
 #include "boundary_function.hh"
 #include "FieldEvaluator.hh"
-#include "Energy_PK.hh"
+#include "EnergyTwoPhase_PK.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -24,7 +24,7 @@ namespace Energy {
 /* ******************************************************************
 * Computes the non-linear functional g = g(t,u,udot)
 ****************************************************************** */
-void Energy_PK::Functional(
+void EnergyTwoPhase_PK::Functional(
     double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
     Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g)
 {
@@ -33,108 +33,85 @@ void Energy_PK::Functional(
 
   // pointer-copy temperature into states and update any auxilary data
   // solution_to_state(*u_new, S_next_);
-  Teuchos::RCP<CompositeVector> u = u_new->Data();
 
-  UpdateSourceBoundaryData(t_old, t_new, *u);
+  // update BCs and conductivity
+  UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
+  UpdateConductivityData(S_.ptr());
 
-  // zero out residual
-  Teuchos::RCP<CompositeVector> res = g->Data();
-  res->PutScalar(0.0);
+  // assemble residual for diffusion operator
+  op_matrix_->Init();
+  op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
+  op_matrix_diff_->ApplyBCs(true);
 
-  // diffusion term, implicit
-  // ApplyDiffusion_(S_next_.ptr(), res.ptr());
+  op_matrix_->ComputeNegativeResidual(*u_new->Data(), *g->Data());
 
-  // accumulation term
-  // AddAccumulation_(res.ptr());
+  // add accumulation term
+  double dt = t_new - t_old;
+
+  // update the energy at both the old and new times.
+  S_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_.ptr(), passwd_);
+
+  Teuchos::RCP<const CompositeVector> e1 = S_->GetFieldData(energy_key_);
+  // Teuchos::RCP<const CompositeVector> e0 = S_->GetFieldData(prev_energy_key_);
+
+  // Update the residual with the accumulation of energy over the
+  // timestep, on cells.
+  /*
+  g->ViewComponent("cell", false)->Update(1.0/dt, *e1->ViewComponent("cell", false),
+          -1.0/dt, *e0->ViewComponent("cell", false), 1.0);
+  */
 
   // advection term, implicit by default, options for explicit
   // AddAdvection_(S_next_.ptr(), res.ptr(), true);
-
-  // source terms
-  // AddSources_(S_next_.ptr(), res.ptr());
 };
-
-
-/* ******************************************************************
-* Apply the preconditioner to u and return the result in Pu.
-****************************************************************** */
-void Energy_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
-                                    Teuchos::RCP<TreeVector> Pu)
-{
-  op_preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
-}
 
 
 /* ******************************************************************
 * Update the preconditioner at time t and u = up
 ****************************************************************** */
-void Energy_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h)
+void EnergyTwoPhase_PK::UpdatePreconditioner(
+    double t, Teuchos::RCP<const TreeVector> up, double dt)
 {
   // VerboseObject stuff.
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-    *vo_->os() << "Precon update at t = " << t << std::endl;
+    *vo_->os() << "updating preconditioner, T=" << t << std::endl;
   }
 
   // update state with the solution up.
   // PKDefaultBase::solution_to_state(*up, S_next_);
 
   // update boundary conditions
-  bc_temperature->Compute(S_->time());
-  bc_flux->Compute(S_->time());
-  UpdateSourceBoundaryData(t, t + h, *up->Data());
+  UpdateSourceBoundaryData(t, t + dt, *up->Data());
 
   // div K_e grad u
   UpdateConductivityData(S_.ptr());
-  Teuchos::RCP<const CompositeVector> conductivity = S_->GetFieldData(uw_conductivity_key_);
 
   // assemble residual for diffusion operator
-  op_matrix_->Init();
-  // op_matrix_diff_->Setup(conductivity, Teuchos::null);
-  // op_matrix_diff_->UpdateMatrices(darcy_flux_copy.ptr(), *up->Data().ptr());
-  op_matrix_diff_->ApplyBCs();
-  // op_matrix_->ComputeNegativeResidual(*u_new, *f);
+  op_preconditioner_->Init();
+  op_preconditioner_diff_->UpdateMatrices(Teuchos::null, up->Data().ptr());
+  op_preconditioner_diff_->ApplyBCs(true);
 
   // update with accumulation terms
-  // -- update the accumulation derivatives, de/dT
-  /*
-  S_->GetFieldEvaluator(energy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, key_);
-  const Epetra_MultiVector& de_dT = *S_next_->GetFieldData(de_dT_key_)->ViewComponent("cell",false);
+  // update the accumulation derivatives, dE/dT
+  S_->GetFieldEvaluator(energy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, "temperature");
+  CompositeVector& dEdT = *S_->GetFieldData("denergy_dtemperature", energy_key_);
 
-  // -- get the matrices/rhs that need updating
-  std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
-
-  // -- update the diagonal
-  unsigned int ncells = de_dT.MyLength();
-
-  if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_) {
-    // do not add in de/dT if the height is 0
-    const Epetra_MultiVector& pres = *S_next_->GetFieldData("surface_pressure")
-        ->ViewComponent("cell",false);
-    const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
-    for (unsigned int c=0; c!=ncells; ++c) {
-      Acc_cells[c] += pres[0][c] >= patm ? de_dT[0][c] / h : 0.;
-    }
-  } else {
-    for (unsigned int c=0; c!=ncells; ++c) {
-      Acc_cells[c] += de_dT[0][c] / h;
-    }
+  if (dt > 0.0) {
+    op_acc_->AddAccumulationTerm(*up->Data().ptr(), dEdT, dt, "cell");
   }
-  */
 
-  // -- update preconditioner with source term derivatives if needed
-  // AddSourcesToPrecon_(S_next_.ptr(), h);
-
-  // Apply boundary conditions.
-  op_preconditioner_diff_->ApplyBCs();
+  // finalize preconditioner
+  op_preconditioner_->AssembleMatrix();
+  op_preconditioner_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 };
 
 
 /* ******************************************************************
 * TBW
 ****************************************************************** */
-double Energy_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                            Teuchos::RCP<const TreeVector> du)
+double EnergyTwoPhase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
+                                    Teuchos::RCP<const TreeVector> du)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 

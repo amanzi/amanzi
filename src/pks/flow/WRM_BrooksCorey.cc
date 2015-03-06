@@ -12,6 +12,7 @@
 #include <cmath>
 #include <string>
 
+#include "errors.hh"
 #include "FlowDefs.hh"
 #include "WRM_BrooksCorey.hh"
 
@@ -40,19 +41,6 @@ WRM_BrooksCorey::WRM_BrooksCorey(Teuchos::ParameterList& plist)
 * Setup fundamental parameters for this model.
 * Default value of the regularization interval is pc0 = 0.                                           
 ****************************************************************** */
-WRM_BrooksCorey::WRM_BrooksCorey(
-    std::string& region, double lambda, double l, double alpha, 
-    double sr, std::string& krel_function, double pc0)
-{
-  set_region(region);
-  Init_(lambda, l, alpha, sr, krel_function, pc0);
-}
-
-
-/* ******************************************************************
-* Setup fundamental parameters for this model.
-* Default value of the regularization interval is pc0 = 0.                                           
-****************************************************************** */
 void WRM_BrooksCorey::Init_(
     double lambda, double l, double alpha, 
     double sr, std::string& krel_function, double pc0)
@@ -62,6 +50,16 @@ void WRM_BrooksCorey::Init_(
   alpha_ = alpha;
   sr_ = sr;
   pc0_ = pc0;
+
+  Errors::Message msg;
+  if (l_ < 0.0 || lambda_ < 0.0 || sr_ < 0.0 || pc0_ < 0.0) {
+    msg << "Brooks Corey: negative parameter in a water retention model.";
+    Exceptions::amanzi_throw(msg);
+  }
+  if (sr_ > 1.0) {
+    msg << "Brooks Corey: residual saturation is greater than 1.";
+    Exceptions::amanzi_throw(msg);
+  }
 
   if (krel_function == "Mualem") {
     factor_ = -2.0 - (l_ + 2.0) * lambda_;

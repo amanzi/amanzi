@@ -106,7 +106,7 @@ MPC_PK<PK_Base>::MPC_PK(Teuchos::ParameterList& pk_tree,
     name_ = result;   
   }
 
-  // get my ParameterList
+  // get my parameter list
   my_list_ = Teuchos::sublist(Teuchos::sublist(global_list_, "PKs"), name_);
 
   Teuchos::RCP<Teuchos::ParameterList> plist;

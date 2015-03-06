@@ -32,19 +32,10 @@ void Richards_PK::ClipHydrostaticPressure(double pmin, Epetra_MultiVector& p)
 ****************************************************************** */
 void Richards_PK::ClipHydrostaticPressure(double pmin, double s0, Epetra_MultiVector& p)
 {
-  std::vector<Teuchos::RCP<WRM> >& wrm = rel_perm_->wrm();  
-
-  for (int mb = 0; mb < wrm.size(); mb++) {
-    std::string region = wrm[mb]->region();
-    AmanziMesh::Entity_ID_List block;
-    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
-
-    AmanziMesh::Entity_ID_List::iterator i;
-    for (i = block.begin(); i != block.end(); i++) {
-      if (p[0][*i] < pmin) {
-        double pc = wrm[mb]->capillaryPressure(s0);
-        p[0][*i] = atm_pressure_ - pc;
-      }
+  for (int c = 0; c < ncells_owned; c++) {
+    if (p[0][c] < pmin) {
+      double pc = wrm_->second[(*wrm_->first)[c]]->capillaryPressure(s0);
+      p[0][c] = atm_pressure_ - pc;
     }
   }
 }

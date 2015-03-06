@@ -13,6 +13,7 @@
 #include <cmath>
 #include <string>
 
+#include "errors.hh"
 #include "FlowDefs.hh"
 #include "WRM_vanGenuchten.hh"
 
@@ -64,6 +65,16 @@ void WRM_vanGenuchten::Init_(
   sr_ = sr;
   pc0_ = pc0; 
   tol_ = FLOW_WRM_TOLERANCE;
+
+  Errors::Message msg;
+  if (m_ < 0.0 || alpha_ < 0.0 || sr_ < 0.0 || pc0_ < 0.0) {
+    msg << "vanGenuchten: negative parameter in a water retention model.";
+    Exceptions::amanzi_throw(msg);
+  }
+  if (sr_ > 1.0) {
+    msg << "vanGenuchten: residual saturation is greater than 1.";
+    Exceptions::amanzi_throw(msg);
+  }
 
   if (krel_function == "Mualem") {
     n_ = 1.0 / (1.0 - m_);
