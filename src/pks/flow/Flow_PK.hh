@@ -52,7 +52,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   virtual void InitTimeInterval() = 0;
   virtual void Setup() = 0;
   virtual void Initialize() = 0;
-  virtual void CommitState(double dt, const Teuchos::Ptr<State>& S) = 0;
+  virtual void CommitStep(double dt, const Teuchos::Ptr<State>& S) = 0;
   virtual double get_dt() = 0;
   virtual void set_dt(double dt) { dT = dt; }
   virtual bool Advance(double dT, double &dT_actual) = 0;

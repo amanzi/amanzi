@@ -106,7 +106,7 @@ set(energy_src_files Energy_PK.cc
                      iem_water_vapor.cc 
                      iem_water_vapor_evaluator.cc
                      iem_factory.cc iem_evaluator.cc 
-                     enthalpy_evaluator.cc
+                     EnthalpyEvaluator.cc
                      twophase_thermal_conductivity_wetdry.cc
                      twophase_thermal_conductivity_peterslidard.cc
                      TwoPhaseEnergyEvaluator.cc 
@@ -143,7 +143,7 @@ set(flow_inc_files
   twophase_thermal_conductivity_factory.hh
   twophase_thermal_conductivity_registration.hh
   twophase_thermal_conductivity_peterslidard.hh
-  enthalpy_evaluator.hh)
+  EnthalpyEvaluator.hh)
 
 add_install_include_file(${energy_inc_files})
 

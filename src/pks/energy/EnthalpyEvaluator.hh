@@ -8,7 +8,7 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 
-  FieldEvaluator for enthalpy.
+  Field evaluator for enthalpy, H = U - p / rho. 
 */
 
 #ifndef AMANZI_ENTHALPY_EVALUATOR_HH_

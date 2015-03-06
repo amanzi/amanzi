@@ -168,7 +168,7 @@ void CycleDriver::Setup() {
 }
 
 /* ******************************************************************
-* Initialize PK followed by initialization of State.
+* Initialize State followed by initialization of PK.
 ****************************************************************** */
 void CycleDriver::Initialize() {
   // register observation times with the time step manager
@@ -186,7 +186,6 @@ void CycleDriver::Initialize() {
   // Final checks.
   S_->CheckNotEvaluatedFieldsInitialized();
   S_->CheckAllFieldsInitialized();
-
 
   // S_->WriteDependencyGraph();
 

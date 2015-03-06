@@ -59,6 +59,7 @@ bool Richards_PK_Wrapper::AdvanceStep(double t_old, double t_new)
     failed = true;
   }
   if (failed) {
+    // revover the original solution
     *S_->GetFieldData("pressure", passwd) = pressure_copy;
     pk_->pressure_eval()->SetFieldAsChanged(S_.ptr());
 

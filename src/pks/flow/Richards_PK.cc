@@ -122,12 +122,6 @@ void Richards_PK::Setup()
     S_->RequireConstantVector("gravity", passwd_, dim);  // state resets ownerships.
   }
 
-  if (!S_->HasField("prev_saturation_liquid")) {
-    S_->RequireField("prev_saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->GetField("prev_saturation_liquid", passwd_)->set_io_vis(false);
-  }
-
   if (!S_->HasField("darcy_flux")) {
     S_->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
@@ -136,6 +130,13 @@ void Richards_PK::Setup()
     elist.set<std::string>("evaluator name", "darcy_flux");
     darcy_flux_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
     S_->SetFieldEvaluator("darcy_flux", darcy_flux_eval_);
+  }
+
+  // conserved quantity from the last time step.
+  if (!S_->HasField("prev_saturation_liquid")) {
+    S_->RequireField("prev_saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->GetField("prev_saturation_liquid", passwd_)->set_io_vis(false);
   }
 
   // Require additional field evaluators for this PK.
@@ -651,12 +652,10 @@ bool Richards_PK::Advance(double dT_MPC, double& dT_actual)
 
 
 /* ******************************************************************
-* Transfer part of the internal data needed by transport to the 
-* flow state FS_MPC. MPC may request to populate the original FS.
-* The consistency condition is improved by adjusting saturation while
-* preserving its LED property.
+* Transfer part of the internal data needed by flow PK in the next
+* time step.
 ****************************************************************** */
-void Richards_PK::CommitState(double dt, const Teuchos::Ptr<State>& S)
+void Richards_PK::CommitStep(double dt, const Teuchos::Ptr<State>& S)
 {
   // ws -> ws_prev
   S->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S.ptr(), "flow");

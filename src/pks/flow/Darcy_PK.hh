@@ -42,7 +42,7 @@ class Darcy_PK : public Flow_PK {
   void set_dt(double dt){dT = dt; dT_desirable_ = dT;}
   double get_dt() { return dT_desirable_; }
 
-  void CommitState(double dt, const Teuchos::Ptr<State>& S);
+  void CommitStep(double dt, const Teuchos::Ptr<State>& S);
   void CalculateDiagnostics(const Teuchos::Ptr<State>& S);
 
   // main flow methods

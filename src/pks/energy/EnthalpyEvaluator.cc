@@ -8,10 +8,10 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 
-  FieldEvaluator for enthalpy.
+  Field evaluator for enthalpy, H = U - p / rho. 
 */
 
-#include "enthalpy_evaluator.hh"
+#include "EnthalpyEvaluator.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -97,9 +97,6 @@ void EnthalpyEvaluator::EvaluateField_(
       int ncomp = result->size(*comp, false);
       for (int i = 0; i != ncomp; ++i) {
         result_v[0][i] += pres_v[0][i] / nl_v[0][i];
-        if (vo_->os_OK(Teuchos::VERB_EXTREME))
-          *vo_->os() << "h(p=" << pres_v[0][i] << ", n=" << nl_v[0][i] 
-                     << ", u=" << (*u_l)("cell",0,i) << ") = " << result_v[0][i] << std::endl;
       }
     }
   }

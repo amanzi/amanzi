@@ -21,7 +21,6 @@ namespace Operators {
 
 class OperatorAdvection {
  public:
-
   OperatorAdvection(Teuchos::ParameterList& plist,
                     Teuchos::RCP<Operator> global_op) :
       global_op_(global_op),

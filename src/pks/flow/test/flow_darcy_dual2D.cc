@@ -100,7 +100,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   for (int n = 0; n < 2; n++) {
     double dT_actual(dT);
     DPK->Advance(dT, dT_actual);
-    DPK->CommitState(dT, S.ptr());
+    DPK->CommitStep(dT, S.ptr());
 
     if (MyPID == 0) {
       GMV::open_data_file(*mesh, (std::string)"flow.gmv");

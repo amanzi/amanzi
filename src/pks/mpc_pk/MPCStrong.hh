@@ -7,6 +7,8 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
+          Daniil Svyatskiy
+          Konstantin Lipnikov
 
   Interface for the derived MPCStrong class.  Is both a PK and a Model
   Evalulator, providing needed methods for BDF time integration of the
@@ -33,7 +35,8 @@
 namespace Amanzi {
 
 template<class PK_Base>
-class MPCStrong : public MPC_PK<PK_Base>, public FnTimeIntegratorPK {
+class MPCStrong : public MPC_PK<PK_Base>, public FnTimeIntegratorPK
+{
  public:
   MPCStrong(Teuchos::ParameterList& pk_tree,
             const Teuchos::RCP<Teuchos::ParameterList>& global_list,
@@ -123,7 +126,8 @@ MPCStrong<PK_Base>::MPCStrong(Teuchos::ParameterList& pk_tree,
 // Setup
 // -----------------------------------------------------------------------------
 template<class PK_Base>
-void MPCStrong<PK_Base>::Setup() {
+void MPCStrong<PK_Base>::Setup()
+{
   // Tweak the sub-PK parameter lists. This allows the PK to
   // potentially not assemble things.
   Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(global_list_, "PKs");
@@ -140,14 +144,15 @@ void MPCStrong<PK_Base>::Setup() {
 
   // Set the initial timestep as the min of the sub-pk sizes.
   dt_ = get_dt();
-};
+}
 
 
 // -----------------------------------------------------------------------------
 // Initialize each sub-PK and the time integrator.
 // -----------------------------------------------------------------------------
 template<class PK_Base>
-void MPCStrong<PK_Base>::Initialize() {
+void MPCStrong<PK_Base>::Initialize()
+{
   // Just calls both subclass's initialize.  NOTE - order is important
   // here -- MPC<PK_Base> grabs the primary variables from each sub-PK
   // and stuffs them into the solution, which must be done prior to
@@ -178,7 +183,11 @@ void MPCStrong<PK_Base>::Initialize() {
 // Make one time step 
 // -----------------------------------------------------------------------------
 template<class PK_Base>
-bool MPCStrong<PK_Base>::AdvanceStep(double t_old, double t_new) {
+bool MPCStrong<PK_Base>::AdvanceStep(double t_old, double t_new)
+{
+  // save a copy of solution, i.e. primary variables
+  TreeVector solution_copy(*solution_);
+
   // take a bdf timestep
   double dt_solver;
   bool fail;
@@ -204,6 +213,9 @@ bool MPCStrong<PK_Base>::AdvanceStep(double t_old, double t_new) {
   } else {
     // take the decreased timestep size
     dt_ = dt_solver;
+
+    // recover the original solution
+    *solution_ = solution_copy;
   }
 
   return fail;
@@ -254,7 +266,8 @@ void MPCStrong<PK_Base>::Functional(
 // -----------------------------------------------------------------------------
 template<class PK_Base>
 void MPCStrong<PK_Base>::ApplyPreconditioner(
-    Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+    Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu)
+{
   // loop over sub-PKs
   for (unsigned int i = 0; i != sub_pks_.size(); ++i) {
     // pull out the u sub-vector
@@ -283,7 +296,8 @@ void MPCStrong<PK_Base>::ApplyPreconditioner(
 // -----------------------------------------------------------------------------
 template<class PK_Base>
 double MPCStrong<PK_Base>::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                                     Teuchos::RCP<const TreeVector> du) {
+                                     Teuchos::RCP<const TreeVector> du)
+{
   double norm = 0.0;
 
   // loop over sub-PKs
@@ -315,7 +329,8 @@ double MPCStrong<PK_Base>::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 // -----------------------------------------------------------------------------
 template<class PK_Base>
 void MPCStrong<PK_Base>::UpdatePreconditioner(
-    double t, Teuchos::RCP<const TreeVector> up, double h) {
+    double t, Teuchos::RCP<const TreeVector> up, double h)
+{
   // loop over sub-PKs
   for (unsigned int i = 0; i != sub_pks_.size(); ++i) {
     // pull out the up sub-vector
@@ -349,7 +364,8 @@ void MPCStrong<PK_Base>::ChangedSolution() {
 // Check admissibility of each sub-pk
 // -----------------------------------------------------------------------------
 template<class PK_Base>
-bool MPCStrong<PK_Base>::IsAdmissible(Teuchos::RCP<const TreeVector> u) {
+bool MPCStrong<PK_Base>::IsAdmissible(Teuchos::RCP<const TreeVector> u)
+{
   // First ensure each PK thinks we are admissible -- this will ensure
   // the residual can at least be evaluated.
   for (unsigned int i = 0; i != sub_pks_.size(); ++i) {
@@ -372,7 +388,8 @@ bool MPCStrong<PK_Base>::IsAdmissible(Teuchos::RCP<const TreeVector> u) {
 // -----------------------------------------------------------------------------
 template<class PK_Base>
 bool MPCStrong<PK_Base>::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
-                                         Teuchos::RCP<TreeVector> u) {
+                                         Teuchos::RCP<TreeVector> u)
+{
   // loop over sub-PKs
   bool modified = false;
   for (unsigned int i = 0; i != sub_pks_.size(); ++i) {
@@ -397,7 +414,8 @@ template<class PK_Base>
 AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
     MPCStrong<PK_Base>::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
                                          Teuchos::RCP<const TreeVector> u,
-                                         Teuchos::RCP<TreeVector> du) {
+                                         Teuchos::RCP<TreeVector> du)
+{
   // loop over sub-PKs
   AmanziSolvers::FnBaseDefs::ModifyCorrectionResult 
       modified = AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;

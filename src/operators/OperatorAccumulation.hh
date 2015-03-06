@@ -36,7 +36,7 @@ class OperatorAccumulation {
   }
 
   OperatorAccumulation(AmanziMesh::Entity_kind entity,
-                    Teuchos::RCP<AmanziMesh::Mesh> mesh) :
+                       Teuchos::RCP<AmanziMesh::Mesh> mesh) :
       global_op_(Teuchos::null),
       mesh_(mesh)
   {
@@ -44,7 +44,7 @@ class OperatorAccumulation {
   }
 
   OperatorAccumulation(AmanziMesh::Entity_kind entity,
-                    Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+                       Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       global_op_(Teuchos::null),
       mesh_(mesh)
   {
@@ -86,9 +86,7 @@ class OperatorAccumulation {
   int ncells_owned;
   int nfaces_owned;
   int nnodes_owned;
-
 };
-
 
 }  // namespace Operators
 }  // namespace Amanzi

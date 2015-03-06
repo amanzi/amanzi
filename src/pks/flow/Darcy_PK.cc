@@ -490,7 +490,7 @@ bool Darcy_PK::Advance(double dT_MPC, double& dT_actual)
 * Transfer data from the external flow state FS_MPC. MPC may request
 * to populate the original state FS. 
 ****************************************************************** */
-void Darcy_PK::CommitState(double dt, const Teuchos::Ptr<State>& S)
+void Darcy_PK::CommitStep(double dt, const Teuchos::Ptr<State>& S)
 {
   CompositeVector& p = *S->GetFieldData("pressure", passwd_);
   p = *solution;

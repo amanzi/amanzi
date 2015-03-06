@@ -106,7 +106,7 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
   ti_specs.max_itrs = 400;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, S->GetFieldData("pressure", "flow"));
-  RPK->CommitState(0.0, S.ptr());
+  RPK->CommitStep(0.0, S.ptr());
 
   /* check accuracy */
   const Epetra_MultiVector& pressure = *S->GetFieldData("pressure", passwd)->ViewComponent("cell");

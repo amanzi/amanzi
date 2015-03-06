@@ -173,7 +173,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     ti_specs.max_itrs = 400;
 
     AdvanceToSteadyState(S, *RPK, ti_specs, S->GetFieldData("pressure", "flow"));
-    RPK->CommitState(0.0, S.ptr());
+    RPK->CommitStep(0.0, S.ptr());
 
     S->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
     const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");

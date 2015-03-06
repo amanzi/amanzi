@@ -19,11 +19,12 @@
 
 #include "CompositeVector.hh"
 #include "FnTimeIntegratorPK.hh"
+#include "Operator.hh"
+#include "OperatorAccumulation.hh"
+#include "OperatorAdvection.hh"
+#include "OperatorDiffusion.hh"
 #include "PK.hh"
 #include "primary_variable_field_evaluator.hh"
-#include "Operator.hh"
-#include "OperatorDiffusion.hh"
-#include "OperatorAccumulation.hh"
 #include "tensor.hh"
 #include "TreeVector.hh"
 #include "VerboseObject.hh"
@@ -43,7 +44,7 @@ class Energy_PK : public FnTimeIntegratorPK {
   virtual void Initialize();
 
   virtual bool AdvanceStep(double t_old, double t_new) { return true; }
-  virtual void CommitStep(double t_old, double t_new) {};
+  virtual void CommitStep(double t_old, double t_new);
   void CalculateDiagnostics() {};
 
   double get_dt() { return 0.0; }
@@ -77,7 +78,10 @@ class Energy_PK : public FnTimeIntegratorPK {
 
   // access methods for unit tests
   std::vector<WhetStone::Tensor>& get_K() { return K; } 
-  Teuchos::RCP<PrimaryVariableFieldEvaluator>& get_temperature_eval() { return temperature_eval; }
+  Teuchos::RCP<PrimaryVariableFieldEvaluator>& temperature_eval() { return temperature_eval_; }
+
+ protected:
+  void InitializeFields_();
 
  public:
   int ncells_owned, ncells_wghost;
@@ -95,7 +99,7 @@ class Energy_PK : public FnTimeIntegratorPK {
   // state and primary field
   Teuchos::RCP<State> S_;
   std::string passwd_;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> temperature_eval;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> temperature_eval_;
 
   // keys
   Key energy_key_, prev_energy_key_;
@@ -116,6 +120,7 @@ class Energy_PK : public FnTimeIntegratorPK {
   // operators and solvers
   Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_diff_, op_preconditioner_diff_;
   Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
+  Teuchos::RCP<Operators::OperatorAdvection> op_advection_;
   Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_;
   Teuchos::RCP<Operators::BCs> op_bc_;
   std::string preconditioner_name_;

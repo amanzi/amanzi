@@ -71,7 +71,6 @@
             <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
             <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
             <Parameter name="gravity" type="bool" value="true"/>
           </ParameterList>
           <ParameterList name="preconditioner">
@@ -82,39 +81,43 @@
             <Parameter name="gravity" type="bool" value="true"/>
           </ParameterList>
         </ParameterList>
+        <ParameterList name="advection operator">
+          <Parameter name="discretization primary" type="string" value="upwind"/>
+          <Parameter name="reconstruction order" type="int" value="0"/>
+        </ParameterList>
+      </ParameterList>
 
-        <ParameterList name="boundary conditions">
-          <ParameterList name="mass flux">
-            <ParameterList name="BC 0">
-              <Parameter name="regions" type="Array(string)" value="{Left side, Right side Top}"/>
-              <ParameterList name="outward mass flux">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
-                </ParameterList>
+      <ParameterList name="boundary conditions">
+        <ParameterList name="energy flux">
+          <ParameterList name="BC 0">
+            <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+            <ParameterList name="outward energy flux">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
-          <ParameterList name="temperature">
-            <ParameterList name="BC 1">
-              <Parameter name="regions" type="Array(string)" value="{Top side}"/>
-              <ParameterList name="boundary pressure">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-            <ParameterList name="BC 2">
-              <Parameter name="regions" type="Array(string)" value="{Bottom side, Right side Bottom}"/>
-              <ParameterList name="boundary pressure">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
-                </ParameterList>
+        </ParameterList>
+        <ParameterList name="temperature">
+          <ParameterList name="BC 1">
+            <Parameter name="regions" type="Array(string)" value="{Top side}"/>
+            <ParameterList name="boundary temperature">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="273.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="time integrator">
+        <Parameter name="error control options" type="Array(string)" value="{temperature}"/>
+        <Parameter name="linear solver" type="string" value="none"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      </ParameterList>
+
     </ParameterList>
+
   </ParameterList>
 
   <!-- STATE -->
@@ -164,7 +167,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="8000.0"/>
+                <Parameter name="value" type="double" value="50000.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -284,6 +287,33 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1000.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="darcy_flux">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="face"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="temperature">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="300.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

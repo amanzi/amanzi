@@ -61,7 +61,7 @@ class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
 
   // Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new) {
-    pk_->CommitState(t_new-t_old, S_.ptr());
+    pk_->CommitStep(t_new-t_old, S_.ptr());
   }
 
   // Calculate any diagnostics prior to doing vis

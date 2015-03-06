@@ -53,7 +53,7 @@ class Richards_PK : public Flow_PK {
   double get_dt() { return dT; }
   void set_dt(double dTnew) { dT = dTnew; dT_desirable_ = dTnew; }
 
-  void CommitState(double dt, const Teuchos::Ptr<State>& S);
+  void CommitStep(double dt, const Teuchos::Ptr<State>& S);
   void CalculateDiagnostics(const Teuchos::Ptr<State>& S);
 
   // main flow methods

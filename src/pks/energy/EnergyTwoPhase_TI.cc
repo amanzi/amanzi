@@ -31,9 +31,6 @@ void EnergyTwoPhase_PK::Functional(
   Teuchos::OSTab tab = vo_->getOSTab();
   double h = t_new - t_old;  // get timestep
 
-  // pointer-copy temperature into states and update any auxilary data
-  // solution_to_state(*u_new, S_next_);
-
   // update BCs and conductivity
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
   UpdateConductivityData(S_.ptr());
@@ -51,18 +48,18 @@ void EnergyTwoPhase_PK::Functional(
   // update the energy at both the old and new times.
   S_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_.ptr(), passwd_);
 
-  Teuchos::RCP<const CompositeVector> e1 = S_->GetFieldData(energy_key_);
-  // Teuchos::RCP<const CompositeVector> e0 = S_->GetFieldData(prev_energy_key_);
+  const Epetra_MultiVector& e1 = *S_->GetFieldData(energy_key_)->ViewComponent("cell");
+  const Epetra_MultiVector& e0 = *S_->GetFieldData(prev_energy_key_)->ViewComponent("cell");
+  Epetra_MultiVector& g_c = *g->Data()->ViewComponent("cell");
 
-  // Update the residual with the accumulation of energy over the
-  // timestep, on cells.
-  /*
-  g->ViewComponent("cell", false)->Update(1.0/dt, *e1->ViewComponent("cell", false),
-          -1.0/dt, *e0->ViewComponent("cell", false), 1.0);
-  */
+  int nsize = g_c.MyLength();
+  for (int i = 0; i < nsize; ++i) {
+    g_c[0][i] += (e1[0][i] - e0[0][i]) / dt;
+  }
 
-  // advection term, implicit by default, options for explicit
-  // AddAdvection_(S_next_.ptr(), res.ptr(), true);
+  // advection term, implicit by default.
+  const CompositeVector& flux = *S_->GetFieldData("darcy_flux");
+  op_advection_->UpdateMatrices(flux);
 };
 
 
@@ -72,19 +69,13 @@ void EnergyTwoPhase_PK::Functional(
 void EnergyTwoPhase_PK::UpdatePreconditioner(
     double t, Teuchos::RCP<const TreeVector> up, double dt)
 {
-  // VerboseObject stuff.
   Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     *vo_->os() << "updating preconditioner, T=" << t << std::endl;
   }
 
-  // update state with the solution up.
-  // PKDefaultBase::solution_to_state(*up, S_next_);
-
-  // update boundary conditions
+  // update BCs and conductivity
   UpdateSourceBoundaryData(t, t + dt, *up->Data());
-
-  // div K_e grad u
   UpdateConductivityData(S_.ptr());
 
   // assemble residual for diffusion operator

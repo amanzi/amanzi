@@ -164,7 +164,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     ti_specs.max_itrs = 1000;
 
     AdvanceToSteadyState(S, *RPK, ti_specs, S->GetFieldData("pressure", "flow"));
-    RPK->CommitState(0.0, S.ptr());
+    RPK->CommitStep(0.0, S.ptr());
 
     double pressure_err, flux_err, div_err;  // error checks
     const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");

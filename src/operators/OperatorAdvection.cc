@@ -20,8 +20,10 @@
 namespace Amanzi {
 namespace Operators {
 
-void
-OperatorAdvection::InitAdvection_(Teuchos::ParameterList& plist)
+/* ******************************************************************
+* Initialize operator from parameter list.
+****************************************************************** */
+void OperatorAdvection::InitAdvection_(Teuchos::ParameterList& plist)
 {
   if (global_op_ == Teuchos::null) {
     // constructor was given a mesh
@@ -64,21 +66,22 @@ OperatorAdvection::InitAdvection_(Teuchos::ParameterList& plist)
   nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 }
 
+
 /* ******************************************************************
-* Initialization
+* Advection requires a velocity field.
 ****************************************************************** */
-void
-OperatorAdvection::Setup(const CompositeVector& u)
+void OperatorAdvection::Setup(const CompositeVector& u)
 {
   IdentifyUpwindCells_(u);
 }
 
   
 /* ******************************************************************
-* Add a simple first-order transport method 
+* A simple first-order transport method.
+* Advection operator is of the form: div (u C), where u is the given
+* velocity field and C is the * advected field.
 ****************************************************************** */
-void
-OperatorAdvection::UpdateMatrices(const CompositeVector& u)
+void OperatorAdvection::UpdateMatrices(const CompositeVector& u)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
@@ -113,18 +116,16 @@ OperatorAdvection::UpdateMatrices(const CompositeVector& u)
 
 
 /* ******************************************************************
-* Add a simple first-order transport method where the advected quantity is
-* not the primary variable (used in Jacobians).
-*  Adv is of the form: div (u h(T))
+* Add a simple first-order transport method where the advected quantity
+* is not the primary variable (used in Jacobians).
+* Advection operator is of the form: div (u h(T))
 *     u: flux
 *     h: advected quantity (i.e. enthalpy)
 *     T: primary varaible (i.e. temperature)
 ****************************************************************** */
-void
-OperatorAdvection::UpdateMatrices(const CompositeVector& u,
+void OperatorAdvection::UpdateMatrices(const CompositeVector& u,
                                   const CompositeVector& dhdT)
 {
-
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
@@ -163,9 +164,8 @@ OperatorAdvection::UpdateMatrices(const CompositeVector& u,
 /* *******************************************************************
 * Apply boundary condition to the local matrices
 ******************************************************************* */
-void OperatorAdvection::ApplyBCs(const Teuchos::RCP<BCs>& bc,
-        bool primary) {
-  // pass?
+void OperatorAdvection::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary) {
+  // ASSERT(false);
 }
 
 
@@ -173,8 +173,7 @@ void OperatorAdvection::ApplyBCs(const Teuchos::RCP<BCs>& bc,
 * Identify flux direction based on orientation of the face normal 
 * and sign of the  Darcy velocity.                               
 ******************************************************************* */
-void
-OperatorAdvection::IdentifyUpwindCells_(const CompositeVector& u)
+void OperatorAdvection::IdentifyUpwindCells_(const CompositeVector& u)
 {
   u.ScatterMasterToGhosted("face");
   const Epetra_MultiVector& uf = *u.ViewComponent("face", true);

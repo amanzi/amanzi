@@ -97,7 +97,7 @@ TEST(FLOW_2D_DARCY_WELL) {
   for (int n = 0; n < 10; n++) {
     double dT_actual(dT);
     DPK->Advance(dT, dT_actual);
-    DPK->CommitState(dT, S.ptr());
+    DPK->CommitStep(dT, S.ptr());
 
     if (MyPID == 0) {
       const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
