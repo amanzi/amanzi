@@ -991,7 +991,7 @@ void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk,
       field->second->WriteCheckpoint(chk);
     }
 
-    chk->WriteAttributes(S->time(), dt, S->cycle());
+    chk->WriteAttributes(S->time(), dt, S->cycle(), S->position());
     
     chk->Finalize();
   }
@@ -1015,6 +1015,10 @@ double ReadCheckpoint(Epetra_MpiComm* comm,
   int cycle(0);
   checkpoint->readAttrInt(cycle, "cycle");
   S->set_cycle(cycle);
+
+  int pos(0);
+  checkpoint->readAttrInt(pos, "position");
+  S->set_position(pos);
 
   // load the number of processes and ensure they are the same -- otherwise
   // the below just gives crap.
@@ -1053,6 +1057,19 @@ double ReadCheckpointInitialTime(Epetra_MpiComm* comm,
   checkpoint->readAttrReal(time, "time");
   checkpoint->close_h5file();
   return time;
+};
+
+// Non-member function for checkpointing.
+double ReadCheckpointPosition(Epetra_MpiComm* comm,
+        std::string filename) {
+  Teuchos::Ptr<HDF5_MPI> checkpoint = Teuchos::ptr(new HDF5_MPI(*comm, filename));
+
+  // load the attributes
+  double pos(0.);
+  checkpoint->open_h5file();
+  checkpoint->readAttrReal(pos, "position");
+  checkpoint->close_h5file();
+  return pos;
 };
 
 // Non-member function for deforming the mesh after reading a checkpoint file
