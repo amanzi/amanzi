@@ -105,7 +105,8 @@ class Richards_PK : public Flow_PK {
   void InitializeUpwind_();
 
   void Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f);
-  void CalculateVaporDiffusionTensor_();
+  void CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& kvapor_pres,
+                                      Teuchos::RCP<CompositeVector>& kvapor_temp);
 
  private:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
@@ -132,10 +133,9 @@ class Richards_PK : public Flow_PK {
   std::string preconditioner_name_, solver_name_, solver_name_constraint_;
 
   // coupling with energy
-  Teuchos::RCP<Operators::Operator> op_vapor_matrix_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op_vapor_matrix_diff_;
+  Teuchos::RCP<Operators::Operator> op_vapor_;
+  Teuchos::RCP<Operators::OperatorDiffusion> op_vapor_diff_;
   bool vapor_diffusion_;
-  std::vector<WhetStone::Tensor> K_vapor; 
 
   // time integrators
   Teuchos::RCP<BDF1_TI<CompositeVector, CompositeVectorSpace> > bdf1_dae;

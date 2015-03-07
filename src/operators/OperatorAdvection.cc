@@ -124,7 +124,7 @@ void OperatorAdvection::UpdateMatrices(const CompositeVector& u)
 *     T: primary varaible (i.e. temperature)
 ****************************************************************** */
 void OperatorAdvection::UpdateMatrices(const CompositeVector& u,
-                                  const CompositeVector& dhdT)
+                                       const CompositeVector& dhdT)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;

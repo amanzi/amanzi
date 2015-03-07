@@ -65,7 +65,6 @@ class Operator_FaceCell : public Operator_Cell {
     set_schema_string("FACE+CELL");
   }
 
-
   // visit methods for Apply
   virtual int ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
       const CompositeVector& X, CompositeVector& Y) const;
@@ -87,14 +86,10 @@ class Operator_FaceCell : public Operator_Cell {
   virtual void AssembleMatrixOp(const Op_Cell_Face& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
-
-
 };
-
 
 }  // namespace Operators
 }  // namespace Amanzi
-
 
 #endif
 

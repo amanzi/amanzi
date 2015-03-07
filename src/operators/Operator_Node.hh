@@ -10,14 +10,14 @@
            Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_OPERATOR_WITH_CELL_HH_
-#define AMANZI_OPERATOR_WITH_CELL_HH_
+#ifndef AMANZI_OPERATOR_NODE_HH_
+#define AMANZI_OPERATOR_NODE_HH_
 
 #include "DenseMatrix.hh"
-#include "Operator.hh"
+#include "Operator_Node.hh"
 
 /* ******************************************************************
-Operator whose unknowns are CELLs
+Operator whose unknowns are NODE
 
 NOTE that the only thing really implemented here is the visitor pattern Op
 acceptors.  Everything else should be done in the base class, with the
@@ -54,44 +54,38 @@ Note. The operators can be initialized from other operators.
 namespace Amanzi {
 namespace Operators {
 
-class Operator_Cell : public Operator {
+class Operator_Node : public Operator {
  public:
   // constuctors
   // main constructor
   //   The CVS is the domain and range of the operator
-  Operator_Cell(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-                    Teuchos::ParameterList& plist,
-                    int schema) :
-      Operator(cvs, plist, schema) {};
+  Operator_Node(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
+               Teuchos::ParameterList& plist) :
+      Operator(cvs, plist, OPERATOR_SCHEMA_DOFS_NODE) {
+    set_schema_string("NODE");
+  }
 
   // rhs update which multiplies by cell
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included);
-  
+
   // visit methods for Apply
-  virtual int ApplyMatrixFreeOp(const Op_Cell_Cell& op,
-      const CompositeVector& X, CompositeVector& Y) const;
-  virtual int ApplyMatrixFreeOp(const Op_Face_Cell& op,
+  virtual int ApplyMatrixFreeOp(const Op_Cell_Node& op,
       const CompositeVector& X, CompositeVector& Y) const;
 
   // visit methods for symbolic assemble
-  virtual void SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
-          const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const;
-  virtual void SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
+  virtual void SymbolicAssembleMatrixOp(const Op_Cell_Node& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
   
   // visit methods for assemble
-  virtual void AssembleMatrixOp(const Op_Cell_Cell& op,
-          const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const;
-  virtual void AssembleMatrixOp(const Op_Face_Cell& op,
+  virtual void AssembleMatrixOp(const Op_Cell_Node& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
 };
 
 }  // namespace Operators
 }  // namespace Amanzi
+
 
 #endif
 

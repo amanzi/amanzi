@@ -66,7 +66,7 @@ set(operators_inc_files
     Operator_FaceCell.hh
     Operator_FaceCellScc.hh
     Operator_FaceCellSff.hh
-    # OperatorTypeDefs.hh
+    Operator_Node.hh
     OperatorDiffusion.hh
     OperatorDiffusionFactory.hh
     OperatorDiffusionMFD.hh
@@ -92,6 +92,7 @@ SOURCE OperatorUtils.cc
                    Operator_FaceCell.cc
                    Operator_FaceCellScc.cc
                    Operator_FaceCellSff.cc
+                   Operator_Node.cc
                    OperatorDiffusionMFD.cc
                    OperatorDiffusionWithGravity.cc
                    OperatorDiffusionFV.cc

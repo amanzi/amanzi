@@ -27,10 +27,10 @@
 #include "Op_Face_Cell.hh"
 
 #include "OperatorDefs.hh"
-//#include "Operator_Node.hh"
 #include "Operator_FaceCell.hh"
 #include "Operator_FaceCellScc.hh"
 #include "Operator_FaceCellSff.hh"
+#include "Operator_Node.hh"
 
 #include "OperatorDiffusionMFD.hh"
 
@@ -41,7 +41,7 @@ namespace Operators {
 * Initialization of the operator, scalar coefficients.
 ****************************************************************** */
 void OperatorDiffusionMFD::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-        double rho, double mu)
+                                 double rho, double mu)
 {
   scalar_rho_mu_ = true;
   rho_ = rho;
@@ -59,8 +59,8 @@ void OperatorDiffusionMFD::Setup(const Teuchos::RCP<std::vector<WhetStone::Tenso
 * Initialization of the operator, vector coefficients.
 ****************************************************************** */
 void OperatorDiffusionMFD::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-        const Teuchos::RCP<const CompositeVector>& rho,
-        const Teuchos::RCP<const CompositeVector>& mu)
+                                 const Teuchos::RCP<const CompositeVector>& rho,
+                                 const Teuchos::RCP<const CompositeVector>& mu)
 {
   scalar_rho_mu_ = false;
   rho_cv_ = rho;
@@ -78,7 +78,7 @@ void OperatorDiffusionMFD::Setup(const Teuchos::RCP<std::vector<WhetStone::Tenso
 * Initialization of the operator.                                           
 ****************************************************************** */
 void OperatorDiffusionMFD::Setup(const Teuchos::RCP<const CompositeVector>& k,
-        const Teuchos::RCP<const CompositeVector>& dkdp)
+                                 const Teuchos::RCP<const CompositeVector>& dkdp)
 {
   k_ = k;
   dkdp_ = dkdp;
@@ -146,7 +146,7 @@ void OperatorDiffusionMFD::UpdateMatricesMixedWithGrad_(
   Teuchos::RCP<const Epetra_MultiVector> k_twin = Teuchos::null;
   if (k_ != Teuchos::null) {
     k_cell = k_->ViewComponent("cell");
-    k_face = k_->ViewComponent("face");
+    k_face = k_->ViewComponent("face", true);
     k_grad = k_->ViewComponent("grad");
     if (k_->HasComponent("twin")) k_twin = k_->ViewComponent("twin", true);
   }
@@ -158,7 +158,7 @@ void OperatorDiffusionMFD::UpdateMatricesMixedWithGrad_(
   AmanziMesh::Entity_ID_List faces, cells;
   std::vector<int> dirs;
 
-  WhetStone::Tensor Kc(mesh_->space_dimension(),1); Kc(0,0) = 1.0;
+  WhetStone::Tensor Kc(mesh_->space_dimension(), 1); Kc(0,0) = 1.0;
   
   for (int c = 0; c < ncells_owned; c++) {
     // mean value and gradient of nonlinear factor
@@ -240,10 +240,10 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
     double kc(1.0);
     std::vector<double> kf(nfaces, 1.0); 
     if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
-      kc = k_cell.get() ? (*k_cell)[0][c] : 1.;
+      kc = k_cell.get() ? (*k_cell)[0][c] : 1.0;
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
     } else if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK && k_twin == Teuchos::null) {
-      kc = k_cell.get() ? (*k_cell)[0][c] : 1.;
+      kc = k_cell.get() ? (*k_cell)[0][c] : 1.0;
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
     } else if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK && k_twin != Teuchos::null) {
       kc = k_cell.get() ? (*k_cell)[0][c] : 1.;
@@ -467,11 +467,11 @@ void OperatorDiffusionMFD::UpdateMatricesTPFA_()
 /* ******************************************************************
 * Apply boundary conditions to the local matrices
 ****************************************************************** */
-void
-OperatorDiffusionMFD::ApplyBCs(bool primary) {
+void OperatorDiffusionMFD::ApplyBCs(bool primary)
+{
   if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
-                           | OPERATOR_SCHEMA_DOFS_FACE
-                           | OPERATOR_SCHEMA_DOFS_CELL)) {
+                         | OPERATOR_SCHEMA_DOFS_FACE
+                         | OPERATOR_SCHEMA_DOFS_CELL)) {
     // apply diffusion type BCs to FACE-CELL system
     AmanziMesh::Entity_ID_List faces;
 
@@ -485,7 +485,6 @@ OperatorDiffusionMFD::ApplyBCs(bool primary) {
     Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
     Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
 
-
     for (int c = 0; c != ncells_owned; ++c) {
       mesh_->cell_get_faces(c, &faces);
       int nfaces = faces.size();
@@ -493,7 +492,7 @@ OperatorDiffusionMFD::ApplyBCs(bool primary) {
       WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
 
       bool flag(true);
-      for (int n=0; n!=nfaces; ++n) {
+      for (int n = 0; n != nfaces; ++n) {
         int f = faces[n];
         double value = bc_value[f];
 
@@ -503,8 +502,7 @@ OperatorDiffusionMFD::ApplyBCs(bool primary) {
             flag = false;
           }
           for (int m = 0; m < nfaces; m++) {
-            if (bc_model[faces[m]] != OPERATOR_BC_DIRICHLET)
-              rhs_face[0][faces[m]] -= Acell(m, n) * value;
+            rhs_face[0][faces[m]] -= Acell(m, n) * value;
             Acell(n, m) = Acell(m, n) = 0.0;
           }
 
@@ -533,8 +531,8 @@ OperatorDiffusionMFD::ApplyBCs(bool primary) {
     global_op_->rhs()->GatherGhostedToMaster("face");
     
   } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_FACE
-          | OPERATOR_SCHEMA_DOFS_CELL)) {
-
+                                | OPERATOR_SCHEMA_DOFS_CELL)) {
+    // apply diffusion type BCs to CELL system
     AmanziMesh::Entity_ID_List cells, nodes;
 
     const std::vector<int>& bc_model = bc_->bc_model();
@@ -570,8 +568,49 @@ OperatorDiffusionMFD::ApplyBCs(bool primary) {
         Aface(0, 0) = bc_mixed[f] * factor;
       }
     }
-  } else {
-    ASSERT(false);
+  } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
+                                | OPERATOR_SCHEMA_DOFS_NODE)) {
+    // apply diffusion type BCs to NODE system
+    AmanziMesh::Entity_ID_List nodes, cells;
+
+    const std::vector<int>& bc_model = bc_->bc_model();
+    const std::vector<double>& bc_value = bc_->bc_value();
+
+    global_op_->rhs()->PutScalarGhosted(0.);
+    Epetra_MultiVector& rhs_node = *global_op_->rhs()->ViewComponent("node", true);
+
+    for (int v = nnodes_owned; v < nnodes_wghost; ++v) rhs_node[0][v] = 0.0;
+
+    for (int c = 0; c != ncells_owned; ++c) {
+      mesh_->cell_get_nodes(c, &nodes);
+      int nnodes = nodes.size();
+
+      WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
+
+      bool flag(true);
+      for (int n = 0; n != nnodes; ++n) {
+        int v = nodes[n];
+        double value = bc_value[v];
+
+        if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
+          if (flag) {  // make a copy of elemental matrix
+            local_op_->matrices_shadow[c] = Acell;
+            flag = false;
+          }
+          for (int m = 0; m < nnodes; m++) {
+            rhs_node[0][nodes[m]] -= Acell(m, n) * value;
+            Acell(n, m) = Acell(m, n) = 0.0;
+          }
+
+          if (primary) {
+            rhs_node[0][v] = value;
+            mesh_->node_get_cells(v, AmanziMesh::USED, &cells);
+            Acell(n,n) = 1.0 / cells.size();
+          }
+        }
+      }
+    }
+    global_op_->rhs()->GatherGhostedToMaster("node");
   }
 }
 
@@ -731,7 +770,8 @@ void OperatorDiffusionMFD::CreateMassMatrices_()
 
   Wff_cells_.resize(ncells_owned);
 
-  WhetStone::Tensor Kc(mesh_->space_dimension(),1); Kc(0,0) = 1.0;
+  WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
+  Kc(0,0) = 1.0;
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
@@ -740,6 +780,7 @@ void OperatorDiffusionMFD::CreateMassMatrices_()
     int ok;
     if (K_.get()) Kc = (*K_)[c];
     WhetStone::DenseMatrix Wff(nfaces, nfaces);
+
     if (surface_mesh) {
       ok = mfd.MassMatrixInverseSurface(c, Kc, Wff);
     } else {
@@ -892,8 +933,7 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
     // choose the Operator from the prec schema
     Teuchos::ParameterList operator_list = plist.sublist("operator");
     if (schema_prec_dofs == OPERATOR_SCHEMA_DOFS_NODE) {
-      ASSERT(0);
-      //      global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist));
+      global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist));
     } else if (schema_prec_dofs == OPERATOR_SCHEMA_DOFS_CELL) {
       //      cvs->AddComponent("face", AmanziMesh::FACE, 1);
       //      global_op_ = Teuchos::rcp(new Operator_FaceCellScc(cvs, plist));

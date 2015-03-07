@@ -13,7 +13,7 @@
 
 #include "mfd3d_diffusion.hh"
 
-#include "darcy_velocity_evaluator.hh"
+#include "DarcyVelocityEvaluator.hh"
 
 namespace Amanzi {
 namespace Flow {

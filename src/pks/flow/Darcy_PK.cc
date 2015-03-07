@@ -26,7 +26,7 @@
 #include "FlowDefs.hh"
 #include "Flow_SourceFactory.hh"
 
-#include "darcy_velocity_evaluator.hh"
+#include "DarcyVelocityEvaluator.hh"
 #include "primary_variable_field_evaluator.hh"
 
 namespace Amanzi {

@@ -114,6 +114,11 @@ void FlowEnergy_PK::Setup()
     S_->RequireFieldEvaluator("mass_density_liquid");
   }
 
+  // inform other PKs about strong coupling
+  Teuchos::ParameterList& tmp = glist_->sublist("PKs").sublist("Flow")
+                                       .sublist("Richards problem").sublist("physics coupling");
+  tmp.set("vapor diffusion", true);
+
   // process other PKs.
   MPCStrong<FnTimeIntegratorPK>::Setup();
 }

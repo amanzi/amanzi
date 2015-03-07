@@ -8,26 +8,24 @@
 
   Author: Ethan Coon
 
-  Internal energy model -- function of temperature only.
-  UNITS: J/{mol/kg}
+  Self-registering factory for IEM implementations.
 */
 
-#ifndef AMANZI_ENERGYR_IEM_HH_
-#define AMANZI_ENERGYR_IEM_HH_
+#ifndef AMANZI_ENERGY_IEM_FACTORY_HH_
+#define AMANZI_ENERGY_IEM_FACTORY_HH_
 
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+
+#include "IEM.hh"
+#include "factory.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-class IEM {
+class IEMFactory : public Utils::Factory<IEM> {
  public:
-  virtual ~IEM() {}
-
-  // IEM(Teuchos::ParameterList& plist);
-  virtual bool IsMolarBasis() = 0;
-  virtual double InternalEnergy(double temp) = 0;
-  virtual double DInternalEnergyDT(double temp) = 0;
+  Teuchos::RCP<IEM> createIEM(Teuchos::ParameterList& plist);
 };
 
 }  // namespace Energy

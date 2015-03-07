@@ -6,29 +6,18 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon (ecoon@lanl.gov)
 
-  Self-registering factory for IEM implementations.
+  The internal energy model evaluator simply calls the IEM with
+  the correct arguments.
 */
 
-#ifndef AMANZI_ENERGY_IEM_FACTORY_HH_
-#define AMANZI_ENERGY_IEM_FACTORY_HH_
-
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"
-
-#include "iem.hh"
-#include "factory.hh"
+#include "IEM_WaterVaporEvaluator.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-class IEMFactory : public Utils::Factory<IEM> {
- public:
-  Teuchos::RCP<IEM> createIEM(Teuchos::ParameterList& plist);
-};
+Utils::RegisteredFactory<FieldEvaluator,IEM_WaterVaporEvaluator> IEM_WaterVaporEvaluator::factory_("iem water vapor");
 
 }  // namespace Energy
 }  // namespace Amanzi
-
-#endif

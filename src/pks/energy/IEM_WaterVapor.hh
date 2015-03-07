@@ -9,11 +9,7 @@
   Author: Ethan Coon
 
   Internal energy model for water_vapor, relative to water @237.15K
-
-  See ATS process model documentation's permafrost physical properties
-  documentation for details.
-
-  UNITS: J/mol
+  UNITS: [J/mol]
 */
 
 #ifndef AMANZI_ENERGY_IEM_WATER_VAPOR_HH_
@@ -24,9 +20,9 @@
 namespace Amanzi {
 namespace Energy {
 
-class IEMWaterVapor {
+class IEM_WaterVapor {
  public:
-  IEMWaterVapor(Teuchos::ParameterList& plist);
+  IEM_WaterVapor(Teuchos::ParameterList& plist);
 
   bool IsMolarBasis() { return molar_basis_; }
 

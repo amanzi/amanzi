@@ -57,12 +57,13 @@ class OperatorDiffusion {
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
           const Teuchos::Ptr<const CompositeVector>& u) = 0;
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux) = 0;
-  virtual void ApplyBCs(bool primary=true) = 0;
+  virtual void ApplyBCs(bool primary = true) = 0;
   virtual void ModifyMatrices(const CompositeVector& u) = 0;
 
   // default implementation  
   virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) {
-    Setup(K, 1.0, 1.0); }
+    Setup(K, 1.0, 1.0);
+  }
   virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
                      const Teuchos::RCP<const CompositeVector>& k,
                      const Teuchos::RCP<const CompositeVector>& dkdp,

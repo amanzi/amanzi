@@ -8,15 +8,16 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 
-  The WRM Evaluator simply calls the WRM with the correct arguments.
+  The internal energy model evaluator simply calls the IEM with
+  the correct arguments.
 */
 
-#include "iem_water_vapor_evaluator.hh"
+#include "IEMEvaluator.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-Utils::RegisteredFactory<FieldEvaluator,IEMWaterVaporEvaluator> IEMWaterVaporEvaluator::factory_("iem water vapor");
+Utils::RegisteredFactory<FieldEvaluator,IEMEvaluator> IEMEvaluator::factory_("iem");
 
 }  // namespace Energy
 }  // namespace Amanzi

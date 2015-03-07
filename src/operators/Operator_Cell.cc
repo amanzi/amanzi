@@ -20,46 +20,20 @@
 #include "Operator_Cell.hh"
 
 /* ******************************************************************
-   Operator whose unknowns are CELL + FACE
+Operator whose unknowns are CELL
 
-   1. Operator is a linear operator acting from linear space X to linear
-   space Y. These spaces are described by CompositeVectors (CV). A few
-   maps X->Y is supported.
-
-   At the moment X = Y. Extension to TreeVectors should not be done in
-   this class.
-
-   2. Operator is an un-ordered additive collection of lower-rank (or
-   equal) simple operators. During its construction, an operator can
-   only grow by assimilating more operators.
-
-   At the moment, an operator cannot be split into two operators, but
-   there are no desing restriction for doing it in the future.
-
-   3. A simple operator (a set of 1 operators) is defined by triple:
-   scheme + elemental matrices + diagonal matrix. The schema specifies
-   structure of elemental matrices, e.g. cell-based matrices
-   representing interation between face-based unknowns.
-
-   4. Operator can be converted to Epetra_FECrsMatrix matrix to generate
-   a preconditioner. This operation cannot be applied to a subset of
-   defining operators.
-
-   Note. The operators can be initialized from other operators.
-   Since data are never copied by default, we have to track
-   down the ownership of data.
-   ****************************************************************** */
+See Operator_Cell.hh for more detail.
+****************************************************************** */
 
 namespace Amanzi {
 namespace Operators {
 
-
 /* ******************************************************************
- * Apply a source which may or may not have cell volume included already. 
- ****************************************************************** */
-void
-Operator_Cell::UpdateRHS(const CompositeVector& source,
-                         bool volume_included) {
+* Apply a source which may or may not have cell volume included already. 
+****************************************************************** */
+void Operator_Cell::UpdateRHS(const CompositeVector& source,
+                              bool volume_included)
+{
   if (volume_included) {
     Operator::UpdateRHS(source);
   } else {
@@ -72,14 +46,13 @@ Operator_Cell::UpdateRHS(const CompositeVector& source,
 }
 
 
-// visit methods for Apply
-
 /* ******************************************************************
- * Apply the local matrices directly as schema is a subset of assembled schema.
- ****************************************************************** */
-int
-Operator_Cell::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
-        const CompositeVector& X, CompositeVector& Y) const
+* Visit methods for Apply.
+* Apply the local matrices directly as schema is a subset of 
+* assembled schema.
+****************************************************************** */
+int Operator_Cell::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
+                                     const CompositeVector& X, CompositeVector& Y) const
 {
   ASSERT(op.vals.size() == ncells_owned);
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
@@ -93,11 +66,11 @@ Operator_Cell::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
 
 
 /* ******************************************************************
- * Apply the local matrices directly as schema is a subset of assembled schema
- ****************************************************************** */
-int
-Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
-        const CompositeVector& X, CompositeVector& Y) const
+* Apply the local matrices directly as schema is a subset of
+* assembled schema
+****************************************************************** */
+int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
+                                     const CompositeVector& X, CompositeVector& Y) const
 {
   ASSERT(op.matrices.size() == nfaces_owned);
   
@@ -130,14 +103,13 @@ Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
 }
 
 
-// visit methods for symbolic assemble
 /* ******************************************************************
- * Insert the diagonal on cells
- ****************************************************************** */
-void
-Operator_Cell::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
-        const SuperMap& map, GraphFE& graph,
-        int my_block_row, int my_block_col) const
+* Visit methods for symbolic assemble.
+* Insert the diagonal on cells
+****************************************************************** */
+void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
+                                             const SuperMap& map, GraphFE& graph,
+                                             int my_block_row, int my_block_col) const
 {
   const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
   const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
@@ -154,12 +126,11 @@ Operator_Cell::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
 
 
 /* ******************************************************************
- * Insert each cells neighboring cells.
- ****************************************************************** */
-void
-Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
-        const SuperMap& map, GraphFE& graph,
-        int my_block_row, int my_block_col) const
+* Insert each cells neighboring cells.
+****************************************************************** */
+void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
+                                             const SuperMap& map, GraphFE& graph,
+                                             int my_block_row, int my_block_col) const
 {
   // ELEMENT: face, DOF: cell
   int lid_r[2];
@@ -181,15 +152,16 @@ Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
     ierr |= graph.InsertMyIndices(ncells, lid_r, ncells, lid_c);
   }
   ASSERT(!ierr);
-  
 }
 
 
-// visit methods for assemble
-void
-Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
-        const SuperMap& map, MatrixFE& mat,
-        int my_block_row, int my_block_col) const
+/* ******************************************************************
+* Visit methods for assemble
+* Insert each cells neighboring cells.
+****************************************************************** */
+void Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
+                                     const SuperMap& map, MatrixFE& mat,
+                                     int my_block_row, int my_block_col) const
 {
   ASSERT(op.vals.size() == ncells_owned);
 
@@ -206,10 +178,10 @@ Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
   ASSERT(!ierr);
 }
 
-void
-Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
-        const SuperMap& map, MatrixFE& mat,
-        int my_block_row, int my_block_col) const
+
+void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
+                                     const SuperMap& map, MatrixFE& mat,
+                                     int my_block_row, int my_block_col) const
 {
   ASSERT(op.matrices.size() == nfaces_owned);
   
@@ -234,7 +206,6 @@ Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
   }
   ASSERT(!ierr);
 }
-
 
 }  // namespace Operators
 }  // namespace Amanzi

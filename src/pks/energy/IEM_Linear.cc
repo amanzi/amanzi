@@ -15,22 +15,22 @@
   UNITS: J/{mol/kg}
 */
 
-#include "iem_linear.hh"
+#include "IEM_Linear.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-IEMLinear::IEMLinear(Teuchos::ParameterList& plist) : plist_(plist) {
+IEM_Linear::IEM_Linear(Teuchos::ParameterList& plist) : plist_(plist) {
   InitializeFromPlist_();
 };
 
 
-double IEMLinear::InternalEnergy(double temp) {
+double IEM_Linear::InternalEnergy(double temp) {
   return Cv_ * (temp - T_ref_);
 };
 
 
-void IEMLinear::InitializeFromPlist_()
+void IEM_Linear::InitializeFromPlist_()
 {
   if (plist_.isParameter("heat capacity [J/kg-K]")) {
     Cv_ = plist_.get<double>("heat capacity [J/kg-K]");

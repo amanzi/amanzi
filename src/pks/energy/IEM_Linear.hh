@@ -8,7 +8,7 @@
 
   Author: Ethan Coon
 
-  Linear internal energy model -- function of Cv and temperature
+  Linear internal energy model is function of Cv and temperature.
   UNITS: J/{mol/kg}
 */
 
@@ -17,15 +17,15 @@
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "iem.hh"
+#include "IEM.hh"
 #include "factory.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-class IEMLinear : public IEM {
+class IEM_Linear : public IEM {
  public:
-  explicit IEMLinear(Teuchos::ParameterList& plist);
+  explicit IEM_Linear(Teuchos::ParameterList& plist);
 
   bool IsMolarBasis() { return molar_basis_; }
 
@@ -43,7 +43,7 @@ class IEMLinear : public IEM {
 
  private:
   // iem factor registration
-  static Utils::RegisteredFactory<IEM,IEMLinear> factory_;
+  static Utils::RegisteredFactory<IEM,IEM_Linear> factory_;
 };
 
 }  // namespace Energy

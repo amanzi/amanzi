@@ -16,7 +16,7 @@
 #define AMANZI_ENERGY_TWOPHASE_PK_HH_
 
 #include "eos.hh"
-#include "iem.hh"
+#include "IEM.hh"
 #include "PK_Factory.hh"
 #include "Energy_PK.hh"
 

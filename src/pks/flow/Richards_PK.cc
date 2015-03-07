@@ -34,7 +34,7 @@
 #include "UpwindFactory.hh"
 #include "XMLParameterListWriter.hh"
 
-#include "darcy_velocity_evaluator.hh"
+#include "DarcyVelocityEvaluator.hh"
 #include "Flow_BC_Factory.hh"
 #include "RelPermEvaluator.hh"
 #include "Richards_PK.hh"
@@ -65,6 +65,34 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "Solvers", true);
   ti_list_ = Teuchos::sublist(rp_list_, "time integrator");
+
+  vo_ = NULL;
+}
+
+
+/* ******************************************************************
+* Clean memory.
+****************************************************************** */
+Richards_PK::~Richards_PK()
+{
+  if (bc_pressure != NULL) delete bc_pressure;
+  if (bc_flux != NULL) delete bc_flux;
+  if (bc_head != NULL) delete bc_head;
+  if (bc_seepage != NULL) delete bc_seepage;
+
+  if (src_sink != NULL) delete src_sink;
+  if (vo_ != NULL) delete vo_;
+
+#ifdef ENABLE_NATIVE_XML_OUTPUT
+  /*
+  if (glist_->sublist("Analysis").get<bool>("print unused parameters", false)) {
+    std::cout << "\n***** Unused XML parameters *****" << std::endl;
+    Teuchos::Amanzi_XMLParameterListWriter out; 
+    out.unused(*rp_list_, std::cout);
+    std::cout << std::endl;
+  }
+  */
+#endif
 }
 
 
@@ -181,32 +209,6 @@ void Richards_PK::Setup()
 
 
 /* ******************************************************************
-* Clean memory.
-****************************************************************** */
-Richards_PK::~Richards_PK()
-{
-  if (bc_pressure != NULL) delete bc_pressure;
-  if (bc_flux != NULL) delete bc_flux;
-  if (bc_head != NULL) delete bc_head;
-  if (bc_seepage != NULL) delete bc_seepage;
-
-  if (src_sink != NULL) delete src_sink;
-  if (vo_ != NULL) delete vo_;
-
-#ifdef ENABLE_NATIVE_XML_OUTPUT
-  /*
-  if (glist_->sublist("Analysis").get<bool>("print unused parameters", false)) {
-    std::cout << "\n***** Unused XML parameters *****" << std::endl;
-    Teuchos::Amanzi_XMLParameterListWriter out; 
-    out.unused(*rp_list_, std::cout);
-    std::cout << std::endl;
-  }
-  */
-#endif
-}
-
-
-/* ******************************************************************
 * Extract information from Richards PK parameter list to initialize
 * various local objects: solvers, matrices, local evaluators.
 ****************************************************************** */
@@ -270,6 +272,10 @@ void Richards_PK::Initialize()
   double T1 = S_->time(), T0 = T1 - dT;
   if (T1 >= 0.0) T_physics = T1;
 
+  // coupling with other physical PKs
+  Teuchos::RCP<Teuchos::ParameterList> coupling = Teuchos::sublist(rp_list_, "physics coupling");
+  vapor_diffusion_ = coupling->get<bool>("vapor diffusion", false);
+
   // Initialize actions on boundary condtions. 
   ProcessShiftWaterTableList(*rp_list_);
 
@@ -324,6 +330,13 @@ void Richards_PK::Initialize()
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
   op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_preconditioner_));
 
+  if (vapor_diffusion_) {
+    Teuchos::ParameterList oplist_vapor(oplist_matrix);
+    oplist_vapor.remove("gravity");
+    op_vapor_diff_ = opfactory.Create(mesh_, op_bc_, oplist_vapor, gravity_, upw_id);
+    op_vapor_ = op_vapor_diff_->global_operator();
+  }
+
   // Create pointers to the primary flow field pressure.
   solution = S_->GetFieldData("pressure", passwd_);
   soln_->SetData(solution); 
@@ -345,9 +358,6 @@ void Richards_PK::Initialize()
   seepage_mass_ = 0.0;
   initialize_with_darcy_ = true;
   num_itrs_ = 0;
-
-  // coupling with other physical PKs
-  vapor_diffusion_ = false;
 }
 
 
@@ -431,8 +441,6 @@ void Richards_PK::InitTimeInterval()
   InitializeUpwind_();
 
   // initialize matrix and preconditioner operators
-  SetAbsolutePermeabilityTensor();
-
   op_matrix_->Init();
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
   op_matrix_diff_->SetBCs(op_bc_);
@@ -446,6 +454,11 @@ void Richards_PK::InitTimeInterval()
   op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
   op_preconditioner_diff_->ApplyBCs(true);
   op_preconditioner_->SymbolicAssembleMatrix();
+
+  if (vapor_diffusion_) {
+    op_vapor_diff_->SetBCs(op_bc_);
+    op_vapor_diff_->Setup(Teuchos::null, 1.0, 1.0);
+  }
 
   // preconditioner and optional linear solver
   ASSERT(ti_list_->isParameter("preconditioner"));

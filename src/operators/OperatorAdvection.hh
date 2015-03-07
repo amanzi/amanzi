@@ -48,9 +48,12 @@ class OperatorAdvection {
   // main members
   void Setup(const CompositeVector& u);
   void UpdateMatrices(const CompositeVector& u);
-  void UpdateMatrices(const CompositeVector& u,
-                      const CompositeVector& dhdT);
+  void UpdateMatrices(const CompositeVector& u, const CompositeVector& dhdT);
   void ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary=true);
+
+  // access
+  Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
+  Teuchos::RCP<Operator> global_operator() { return global_op_; }
 
  protected:
   void InitAdvection_(Teuchos::ParameterList& plist);
