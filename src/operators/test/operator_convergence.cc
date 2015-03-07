@@ -33,6 +33,7 @@
 #include "OperatorDiffusionMFD.hh"
 
 #include "Analytic01.hh"
+#include "Analytic02.hh"
 
 /* *****************************************************************
 * This test replaves tensor and boundary conditions by continuous
@@ -72,11 +73,11 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
 
   // create diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   Analytic01 ana(mesh);
 
-  for (int c = 0; c < ncells; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     const Point& xc = mesh->cell_centroid(c);
     const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
     K->push_back(Kc);
@@ -101,7 +102,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   }
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
-  // create diffusion operator 
+  // create space for diffusion operator 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(mesh);
   cvs->SetGhosted(true);
@@ -116,7 +117,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   source.PutScalarMasterAndGhosted(0.0);
   
   Epetra_MultiVector& src = *source.ViewComponent("cell");
-  for (int c = 0; c < ncells; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     const Point& xc = mesh->cell_centroid(c);
     src[0][c] += ana.source_exact(xc, 0.0);
   }
@@ -134,17 +135,16 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     int schema_dofs = op2.schema_dofs();
     int schema_prec_dofs = op2.schema_prec_dofs();
     CHECK(schema_dofs == (Operators::OPERATOR_SCHEMA_BASE_CELL
-                          + Operators::OPERATOR_SCHEMA_DOFS_FACE
-                          + Operators::OPERATOR_SCHEMA_DOFS_CELL));
+                        + Operators::OPERATOR_SCHEMA_DOFS_FACE
+                        + Operators::OPERATOR_SCHEMA_DOFS_CELL));
     CHECK(schema_prec_dofs == (Operators::OPERATOR_SCHEMA_DOFS_FACE
-            + Operators::OPERATOR_SCHEMA_DOFS_CELL));
+                             + Operators::OPERATOR_SCHEMA_DOFS_CELL));
             
-
     op2.set_factor(factor);  // for developers only
     op2.Setup(K, Teuchos::null, Teuchos::null, rho, mu);
     op2.UpdateMatrices(Teuchos::null, Teuchos::null);
 
-    // get and assmeble the global operator
+    // get and assemeble the global operator
     Teuchos::RCP<Operator> global_op = op2.global_operator();
     global_op->UpdateRHS(source, false);
     op2.ApplyBCs();
@@ -199,7 +199,6 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
 * This test replaces tensor and boundary conditions by continuous
 * functions. This is a prototype for future solvers.
 * **************************************************************** */
-/*
 TEST(OPERATOR_NODAL_DIFFUSION) {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -227,13 +226,15 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, gm);
   RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 5, 5, gm);
   // RCP<const Mesh> mesh = meshfactory("test/median255x256.exo", gm);
 
   // create diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int nnodes_owned = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
   Analytic01 ana(mesh);
 
@@ -274,7 +275,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
   source.PutScalarMasterAndGhosted(0.0);
   
   Epetra_MultiVector& src = *source.ViewComponent("node", true);
-  for (int v = 0; v < nnodes_owned; v++) {
+  for (int v = 0; v < nnodes_wghost; v++) {
     mesh->node_get_coordinates(v, &xv);
     src[0][v] = ana.source_exact(xv, 0.0);
   }
@@ -284,29 +285,28 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     // double factor = pow(10.0, (double)(n - 50) / 100.0) / 2;
     double factor = pow(10.0, (double)(n - 150) / 100.0) / 2;
 
-    // create source operator 
-    Teuchos::RCP<OperatorSource> op1 = Teuchos::rcp(new OperatorSource(cvs, 0));
-    op1->Init();
-    op1->UpdateMatrices(source);
-
-    // populate the diffusion operator
+    // create the local diffusion operator
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
                                         .get<Teuchos::ParameterList>("nodal diffusion");
-    Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusion(*op1, olist, bc));
-    int schema_dofs = op2->schema_dofs();
-    CHECK(schema_dofs == Operators::OPERATOR_SCHEMA_DOFS_NODE);
+    OperatorDiffusionMFD op2(olist, mesh);
+    op2.SetBCs(bc);
 
-    op2->set_factor(factor);  // for developers only
-    op2->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
-    op2->UpdateMatrices(Teuchos::null, Teuchos::null);
+    int schema_dofs = op2.schema_dofs();
+    CHECK(schema_dofs == Operators::OPERATOR_SCHEMA_BASE_CELL
+                       | Operators::OPERATOR_SCHEMA_DOFS_NODE);
 
-    // get and assmeble the global operator
-    Teuchos::RCP<Operator> global_op = op2->global_operator();
-    op->ApplyBCs();
-    global_op->SymbolicAssembleMatrix(schema_dofs);
-    global_op->AssembleMatrix(schema_dofs);
+    op2.set_factor(factor);  // for developers only
+    op2.Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+    op2.UpdateMatrices(Teuchos::null, Teuchos::null);
 
-    ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
+    // get and assemeble the global operator
+    Teuchos::RCP<Operator> global_op = op2.global_operator();
+    global_op->UpdateRHS(source, false);
+    op2.ApplyBCs();
+    global_op->SymbolicAssembleMatrix();
+    global_op->AssembleMatrix();
+    
+    Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
     global_op->InitPreconditioner("Hypre AMG", slist);
 
     // solve the problem
@@ -333,7 +333,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     if (MyPID == 0) {
       pl2_err /= pnorm;
       ph1_err /= hnorm;
-      double tmp = op2->nfailed_primary() * 100.0 / ncells_owned; 
+      double tmp = op2.nfailed_primary() * 100.0 / ncells_owned; 
       printf("scale=%7.4g  L2(p)=%9.6f  Inf(p)=%9.6f  H1(p)=%9.6g  itr=%3d  nfailed=%4.1f\n", 
           factor, pl2_err, pinf_err, ph1_err, solver->num_itrs(), tmp); 
 
@@ -341,5 +341,4 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     }
   }
 }
-*/
 

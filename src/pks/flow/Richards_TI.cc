@@ -83,7 +83,7 @@ void Richards_PK::Functional(double T0, double T1,
 
   // add vapor diffusion 
   if (vapor_diffusion_) {
-    Functional_AddVaporDiffusion_(f);
+    // Functional_AddVaporDiffusion_(f);
   }
 }
 
@@ -131,15 +131,15 @@ void Richards_PK::CalculateVaporDiffusionTensor_()
    S_->GetFieldEvaluator("porosity")->HasFieldChanged(S_.ptr(), passwd_);
    const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell");
 
-   S_->GetFieldEvaluator("saturation_gas")->HasFieldChanged(S_.ptr(), passwd_);
-   const Epetra_MultiVector& s_g = *S_->GetFieldData("saturation_gas")->ViewComponent("cell");
+   S_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_.ptr(), passwd_);
+   const Epetra_MultiVector& s_l = *S_->GetFieldData("saturation_liquid")->ViewComponent("cell");
 
    S_->GetFieldEvaluator("molar_fraction_gas")->HasFieldChanged(S_.ptr(), passwd_);
    const Epetra_MultiVector& mlf_g = *S_->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
 
    std::string key("temperature");
    S_->GetFieldEvaluator("molar_fraction_gas")->HasFieldDerivativeChanged(S_.ptr(), passwd_, key);
-   const Epetra_MultiVector& dmlf_g_dt = *S_->GetFieldData("dmol_frac_gas_dtemperature")->ViewComponent("cell");
+   const Epetra_MultiVector& dmlf_g_dt = *S_->GetFieldData("dmolar_fraction_gas_dtemperature")->ViewComponent("cell");
 
    const Epetra_MultiVector& temp = *S_->GetFieldData("temperature")->ViewComponent("cell");
    const Epetra_MultiVector& pres = *S_->GetFieldData("pressure")->ViewComponent("cell");
@@ -157,7 +157,7 @@ void Richards_PK::CalculateVaporDiffusionTensor_()
    for (int c = 0; c != ncells_owned; ++c) {
      double tmp = Dref * (Pref / atm_pressure_) * pow(temp[0][c] / Tref, 1.8);
 
-     tmp *= pow(phi[0][c], a) * pow(s_g[0][c], b) * n_g[0][c];
+     tmp *= pow(phi[0][c], a) * pow((1.0 - s_l[0][c]), b) * n_g[0][c];
      tmp *= exp(-(atm_pressure_ - pres[0][c]) / (n_l[0][c] * R * temp[0][c]));
 
      Kc(0, 0) = tmp;

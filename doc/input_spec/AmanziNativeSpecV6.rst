@@ -1056,6 +1056,18 @@ those needed for unit tests, and future code development.
    </ParameterList>
 
 
+Physics couplig
+...............
+
+To couple with other PKs, we have to specify additional parameters.
+
+.. code-block:: xml
+
+   <ParameterList name="physics coupling">
+     <Parameter name="vapor diffusion" type="bool" value="false"/>
+   </ParameterList>
+
+
 Other parameters
 ................
 
@@ -1568,9 +1580,6 @@ Alquimia chemistry kernel reads initial conditions from the `"State`" list.
 
 Energy PK
 ---------
-
-This process kernel will appear in Amanzi, version 0.84.
-
 
 Diffusion operator
 ..................

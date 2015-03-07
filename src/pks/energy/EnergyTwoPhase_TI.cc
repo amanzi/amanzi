@@ -57,9 +57,21 @@ void EnergyTwoPhase_PK::Functional(
     g_c[0][i] += (e1[0][i] - e0[0][i]) / dt;
   }
 
-  // advection term, implicit by default.
+  // advect tmp = molar_density_liquid * enthalpy 
+  S_->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  const CompositeVector& enthalpy = *S_->GetFieldData(enthalpy_key_);
+  const CompositeVector& n_l = *S_->GetFieldData("molar_density_liquid");
+
   const CompositeVector& flux = *S_->GetFieldData("darcy_flux");
-  op_advection_->UpdateMatrices(flux);
+  op_matrix_advection_->Setup(flux);
+  op_matrix_advection_->UpdateMatrices(flux);
+
+  CompositeVector g_adv(g->Data()->Map());
+  CompositeVector tmp(enthalpy);
+  tmp.Multiply(1.0, tmp, n_l, 0.0);
+
+  op_advection_->Apply(tmp, g_adv);
+  g->Data()->Update(1.0, g_adv, 1.0);
 };
 
 

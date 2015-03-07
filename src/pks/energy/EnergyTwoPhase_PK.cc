@@ -123,7 +123,7 @@ void EnergyTwoPhase_PK::Initialize()
   // Create local evaluators. Initialize local fields.
   InitializeFields_();
 
-  // initialize matrix and preconditioner operators
+  // initialize independent operators: diffusion and advection 
   Teuchos::ParameterList tmp_list = ep_list_->sublist("operators").sublist("diffusion operator");
   Teuchos::ParameterList oplist_matrix = tmp_list.sublist("matrix");
   Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
@@ -139,11 +139,13 @@ void EnergyTwoPhase_PK::Initialize()
   op_matrix_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, 1.0, 1.0);
 
   Teuchos::ParameterList oplist_adv = ep_list_->sublist("operators").sublist("advection operator");
-  op_advection_ = Teuchos::rcp(new Operators::OperatorAdvection(oplist_adv, op_matrix_));
+  op_matrix_advection_ = Teuchos::rcp(new Operators::OperatorAdvection(oplist_adv, mesh_));
 
   const CompositeVector& flux = *S_->GetFieldData("darcy_flux");
-  op_advection_->Setup(flux);
+  op_matrix_advection_->Setup(flux);
+  op_advection_ = op_matrix_advection_->global_operator();
 
+  // initialize copuled operators: diffusion + advection + accumulation
   op_preconditioner_diff_ = opfactory.Create(mesh_, op_bc_, oplist_pc, g, 0);
   op_preconditioner_diff_->SetBCs(op_bc_);
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
@@ -152,6 +154,7 @@ void EnergyTwoPhase_PK::Initialize()
   op_preconditioner_->SymbolicAssembleMatrix();
 
   op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_preconditioner_));
+  op_preconditioner_advection_ = Teuchos::rcp(new Operators::OperatorAdvection(oplist_adv, op_preconditioner_));
 
   // preconditioner and optional linear solver
   ASSERT(ti_list_->isParameter("preconditioner"));

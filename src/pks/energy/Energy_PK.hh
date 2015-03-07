@@ -120,8 +120,8 @@ class Energy_PK : public FnTimeIntegratorPK {
   // operators and solvers
   Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_diff_, op_preconditioner_diff_;
   Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
-  Teuchos::RCP<Operators::OperatorAdvection> op_advection_;
-  Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_;
+  Teuchos::RCP<Operators::OperatorAdvection> op_matrix_advection_, op_preconditioner_advection_;
+  Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_, op_advection_;
   Teuchos::RCP<Operators::BCs> op_bc_;
   std::string preconditioner_name_;
 

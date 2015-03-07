@@ -347,7 +347,8 @@ void Richards_PK::Initialize()
   num_itrs_ = 0;
 
   // coupling with other physical PKs
-  vapor_diffusion_ = false;
+  Teuchos::RCP<Teuchos::ParameterList> coupling = Teuchos::sublist(rp_list_, "physics coupling");
+  vapor_diffusion_ = coupling->get<bool>("vapor diffusion", false);
 }
 
 
