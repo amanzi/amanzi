@@ -341,15 +341,17 @@ int BlockVector::Norm2(double* norm) const {
 
 
 // Debugging?
-void BlockVector::Print(std::ostream& os) const {
+void BlockVector::Print(std::ostream& os, bool data_io) const {
   os << "Block Vector" << std::endl;
   os << "  components: ";
   for (int i = 0; i != num_components_; ++i) {
     os << names_[i] << " ";
   }
   os << std::endl;
-  for (int i = 0; i != num_components_; ++i) {
-    data_[i]->Print(os);
+  if (data_io) {
+    for (int i = 0; i != num_components_; ++i) {
+      data_[i]->Print(os);
+    }
   }
 };
 
