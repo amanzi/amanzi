@@ -8,29 +8,29 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 
-  The IEM Evaluator simply calls the IEM with the correct arguments.
+  The internal energy model (IEM) evaluator simply calls the
+  IEM with the correct arguments.
 */
 
-#ifndef AMANZI_ENERGY_IEM_WATER_VAPOR_EVALUATOR_HH_
-#define AMANZI_ENERGY_IEM_WATER_VAPOR_EVALUATOR_HH_
+#ifndef AMANZI_ENERGY_IEM_EVALUATOR_HH_
+#define AMANZI_ENERGY_IEM_EVALUATOR_HH_
 
 #include "factory.hh"
+#include "IEM.hh"
 #include "secondary_variable_field_evaluator.hh"
-#include "iem_water_vapor.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-class IEMWaterVaporEvaluator : public SecondaryVariableFieldEvaluator {
+class IEMEvaluator : public SecondaryVariableFieldEvaluator {
  public:
   // constructor format for all derived classes
   explicit
-  IEMWaterVaporEvaluator(Teuchos::ParameterList& plist);
-  IEMWaterVaporEvaluator(Teuchos::ParameterList& plist,
-                         const Teuchos::RCP<IEMWaterVapor>& iem);
-  IEMWaterVaporEvaluator(const IEMWaterVaporEvaluator& other);
+  IEMEvaluator(Teuchos::ParameterList& plist);
+  IEMEvaluator(Teuchos::ParameterList& plist, const Teuchos::RCP<IEM>& iem);
+  IEMEvaluator(const IEMEvaluator& other);
 
-  Teuchos::RCP<FieldEvaluator> Clone() const;
+  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
@@ -38,17 +38,16 @@ class IEMWaterVaporEvaluator : public SecondaryVariableFieldEvaluator {
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& results);
 
-  Teuchos::RCP<IEMWaterVapor> get_IEM() { return iem_; }
+  Teuchos::RCP<IEM> get_IEM() { return iem_; }
 
  protected:
   void InitializeFromPlist_();
 
   Key temp_key_;
-  Key mol_frac_key_;
-  Teuchos::RCP<IEMWaterVapor> iem_;
+  Teuchos::RCP<IEM> iem_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,IEMWaterVaporEvaluator> factory_;
+  static Utils::RegisteredFactory<FieldEvaluator,IEMEvaluator> factory_;
 };
 
 }  // namespace Energy

@@ -6,17 +6,15 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
-
-  The WRM Evaluator simply calls the WRM with the correct arguments.
+  Author: Ethan Coon
 */
 
-#include "iem_evaluator.hh"
+#include "IEM_Linear.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-Utils::RegisteredFactory<FieldEvaluator,IEMEvaluator> IEMEvaluator::factory_("iem");
+Utils::RegisteredFactory<IEM,IEM_Linear> IEM_Linear::factory_("linear");
 
 }  // namespace Energy
 }  // namespace Amanzi

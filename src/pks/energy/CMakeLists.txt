@@ -64,23 +64,23 @@ generate_evaluators_registration_header(
   )
 
 register_evaluator_with_factory(
-  HEADERFILE iem_evaluator_reg.hh
+  HEADERFILE IEMEvaluator_reg.hh
   LISTNAME   ENERGY_INTERNAL_ENERGY_REG
   )
 register_evaluator_with_factory(
-  HEADERFILE iem_factory_reg.hh
+  HEADERFILE IEMFactory_reg.hh
   LISTNAME   ENERGY_INTERNAL_ENERGY_REG
   )
 register_evaluator_with_factory(
-  HEADERFILE iem_linear_reg.hh
+  HEADERFILE IEM_Linear_reg.hh
   LISTNAME   ENERGY_INTERNAL_ENERGY_REG
   )
 register_evaluator_with_factory(
-  HEADERFILE iem_water_vapor_evaluator_reg.hh
+  HEADERFILE IEM_WaterVaporEvaluator_reg.hh
   LISTNAME   ENERGY_INTERNAL_ENERGY_REG
   )
 generate_evaluators_registration_header(
-  HEADERFILE energy_internal_energy_registration.hh
+  HEADERFILE energy_iem_registration.hh
   LISTNAME   ENERGY_INTERNAL_ENERGY_REG
   INSTALL    True
   )
@@ -102,10 +102,10 @@ set(energy_src_files Energy_PK.cc
                      EnergyTwoPhase_PK.cc EnergyTwoPhase_TI.cc
                      Energy_BC_Factory.cc
                      Energy_VandV.cc
-                     iem_linear.cc
-                     iem_water_vapor.cc 
-                     iem_water_vapor_evaluator.cc
-                     iem_factory.cc iem_evaluator.cc 
+                     IEM_Linear.cc
+                     IEM_WaterVapor.cc 
+                     IEM_WaterVaporEvaluator.cc
+                     IEMFactory.cc IEMEvaluator.cc 
                      EnthalpyEvaluator.cc
                      twophase_thermal_conductivity_wetdry.cc
                      twophase_thermal_conductivity_peterslidard.cc
@@ -130,13 +130,13 @@ set(flow_inc_files
   EnergyTwoPhase_PK.hh
   Energy_BC_Factory.hh
   energy_twophase_registration.hh
-  iem.hh
-  iem_linear.hh
-  iem_water_vapor.hh
-  iem_water_vapor_evaluator.hh
-  iem_factory.hh
-  iem_evaluator.hh
-  energy_internal_energy_registration.hh
+  IEM.hh
+  IEM_Linear.hh
+  IEM_WaterVapor.hh
+  IEM_WaterVaporEvaluator.hh
+  IEMFactory.hh
+  IEMEvaluator.hh
+  energy_iem_registration.hh
   TwoPhaseEnergyEvaluator.hh
   twophase_thermal_conductivity.hh
   twophase_thermal_conductivity_evaluator.hh

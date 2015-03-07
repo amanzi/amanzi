@@ -17,6 +17,8 @@
 namespace Amanzi {
 namespace CommonDefs {
 
+const double IDEAL_GAS_CONSTANT_R = 8.3144621;
+
 const int BOUNDARY_FUNCTION_ACTION_NONE = 0;
 const int BOUNDARY_FUNCTION_ACTION_HEAD_RELATIVE = 1;
 

@@ -8,11 +8,12 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 
-  The IEM Evaluator simply calls the IEM with the correct arguments.
+  The internal energy model evaluator simply calls the IEM with 
+  the correct arguments.
 */
 
-#include "iem_evaluator.hh"
-#include "iem_factory.hh"
+#include "IEMEvaluator.hh"
+#include "IEMFactory.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -38,13 +39,12 @@ IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& plist) :
 IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& plist, const Teuchos::RCP<IEM>& iem) :
     SecondaryVariableFieldEvaluator(plist),
     iem_(iem) {
-
   InitializeFromPlist_();
 }
 
 
 /* ******************************************************************
-* Copy constructor.
+* Copy constructors.
 ****************************************************************** */
 IEMEvaluator::IEMEvaluator(const IEMEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
@@ -52,9 +52,6 @@ IEMEvaluator::IEMEvaluator(const IEMEvaluator& other) :
     temp_key_(other.temp_key_) {};
 
 
-/* ******************************************************************
-* TBW.
-****************************************************************** */
 Teuchos::RCP<FieldEvaluator> IEMEvaluator::Clone() const
 {
   return Teuchos::rcp(new IEMEvaluator(*this));
@@ -94,12 +91,12 @@ void IEMEvaluator::EvaluateField_(
 {
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
 
-  for (CompositeVector::name_iterator comp=result->begin(); comp!=result->end(); ++comp) {
-    const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
-    Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
+  for (CompositeVector::name_iterator comp = result->begin(); comp != result->end(); ++comp) {
+    const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp, false);
+    Epetra_MultiVector& result_v = *result->ViewComponent(*comp, false);
 
     int ncomp = result->size(*comp, false);
-    for (int i=0; i!=ncomp; ++i) {
+    for (int i = 0; i != ncomp; ++i) {
       result_v[0][i] = iem_->InternalEnergy(temp_v[0][i]);
     }
   }
@@ -116,13 +113,12 @@ void IEMEvaluator::EvaluateFieldPartialDerivative_(
   ASSERT(wrt_key == temp_key_);
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
 
-  for (CompositeVector::name_iterator comp=result->begin();
-       comp!=result->end(); ++comp) {
-    const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
-    Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
+  for (CompositeVector::name_iterator comp = result->begin(); comp != result->end(); ++comp) {
+    const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp, false);
+    Epetra_MultiVector& result_v = *result->ViewComponent(*comp, false);
 
     int ncomp = result->size(*comp, false);
-    for (int i=0; i!=ncomp; ++i) {
+    for (int i = 0; i != ncomp; ++i) {
       result_v[0][i] = iem_->DInternalEnergyDT(temp_v[0][i]);
     }
   }

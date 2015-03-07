@@ -17,7 +17,7 @@
 #include "EnergyTwoPhase_PK.hh"
 #include "eos_evaluator.hh"
 #include "EnthalpyEvaluator.hh"
-#include "iem_evaluator.hh"
+#include "IEMEvaluator.hh"
 #include "TwoPhaseEnergyEvaluator.hh"
 #include "twophase_thermal_conductivity_evaluator.hh"
 

@@ -41,7 +41,7 @@ namespace Operators {
 * Initialization of the operator, scalar coefficients.
 ****************************************************************** */
 void OperatorDiffusionMFD::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-        double rho, double mu)
+                                 double rho, double mu)
 {
   scalar_rho_mu_ = true;
   rho_ = rho;
@@ -59,8 +59,8 @@ void OperatorDiffusionMFD::Setup(const Teuchos::RCP<std::vector<WhetStone::Tenso
 * Initialization of the operator, vector coefficients.
 ****************************************************************** */
 void OperatorDiffusionMFD::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-        const Teuchos::RCP<const CompositeVector>& rho,
-        const Teuchos::RCP<const CompositeVector>& mu)
+                                 const Teuchos::RCP<const CompositeVector>& rho,
+                                 const Teuchos::RCP<const CompositeVector>& mu)
 {
   scalar_rho_mu_ = false;
   rho_cv_ = rho;
@@ -78,7 +78,7 @@ void OperatorDiffusionMFD::Setup(const Teuchos::RCP<std::vector<WhetStone::Tenso
 * Initialization of the operator.                                           
 ****************************************************************** */
 void OperatorDiffusionMFD::Setup(const Teuchos::RCP<const CompositeVector>& k,
-        const Teuchos::RCP<const CompositeVector>& dkdp)
+                                 const Teuchos::RCP<const CompositeVector>& dkdp)
 {
   k_ = k;
   dkdp_ = dkdp;
@@ -770,7 +770,8 @@ void OperatorDiffusionMFD::CreateMassMatrices_()
 
   Wff_cells_.resize(ncells_owned);
 
-  WhetStone::Tensor Kc(mesh_->space_dimension(),1); Kc(0,0) = 1.0;
+  WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
+  Kc(0,0) = 1.0;
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
@@ -779,6 +780,7 @@ void OperatorDiffusionMFD::CreateMassMatrices_()
     int ok;
     if (K_.get()) Kc = (*K_)[c];
     WhetStone::DenseMatrix Wff(nfaces, nfaces);
+
     if (surface_mesh) {
       ok = mfd.MassMatrixInverseSurface(c, Kc, Wff);
     } else {

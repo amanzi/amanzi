@@ -12,7 +12,7 @@
 */
 
 #include <string>
-#include "iem_factory.hh"
+#include "IEMFactory.hh"
 
 namespace Amanzi {
 namespace Energy {

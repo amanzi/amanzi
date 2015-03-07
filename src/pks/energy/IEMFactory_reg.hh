@@ -11,7 +11,7 @@
   Self-registering factory for IEM implementations.
 */
 
-#include "iem_factory.hh"
+#include "IEMFactory.hh"
 
 // explicity instantitate the static data of Factory<IEM>
 template<> 

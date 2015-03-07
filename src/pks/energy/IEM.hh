@@ -7,14 +7,30 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
+
+  Internal energy model is function of temperature only.
+  UNITS: J/{mol/kg}
 */
 
-#include "iem_linear.hh"
+#ifndef AMANZI_ENERGY_IEM_HH_
+#define AMANZI_ENERGY_IEM_HH_
+
+#include "Teuchos_ParameterList.hpp"
 
 namespace Amanzi {
 namespace Energy {
 
-Utils::RegisteredFactory<IEM,IEMLinear> IEMLinear::factory_("linear");
+class IEM {
+ public:
+  virtual ~IEM() {}
+
+  // IEM(Teuchos::ParameterList& plist);
+  virtual bool IsMolarBasis() = 0;
+  virtual double InternalEnergy(double temp) = 0;
+  virtual double DInternalEnergyDT(double temp) = 0;
+};
 
 }  // namespace Energy
 }  // namespace Amanzi
+
+#endif
