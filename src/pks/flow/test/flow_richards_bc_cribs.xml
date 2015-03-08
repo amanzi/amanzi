@@ -205,7 +205,7 @@
 
   <!--  REGIONS:  -->
   <ParameterList name="Regions">
-    <ParameterList name="Computational domain">
+    <ParameterList name="All">
       <ParameterList name="Region: Box">
         <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 1, 103.2}"/>
         <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0, 0}"/>
@@ -450,7 +450,7 @@
       <ParameterList name="pressure">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -464,7 +464,7 @@
       <ParameterList name="specific_storage">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant"> 
@@ -478,7 +478,7 @@
       <ParameterList name="specific_yield">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant"> 
@@ -492,7 +492,7 @@
       <ParameterList name="darcy_flux">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="face"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -506,7 +506,7 @@
       <ParameterList name="saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -520,7 +520,7 @@
       <ParameterList name="prev_saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">

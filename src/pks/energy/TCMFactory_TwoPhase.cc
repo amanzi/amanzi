@@ -8,11 +8,11 @@
 
   Author: Ethan Coon
 
-  Self-registering factory for TC implementations.
+  Self-registering factory for thermal conductivity models.
 */
 
 #include <string>
-#include "twophase_thermal_conductivity_factory.hh"
+#include "TCMFactory_TwoPhase.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -20,8 +20,7 @@ namespace Energy {
 /* ******************************************************************
 * method for instantiating implementations
 ****************************************************************** */
-Teuchos::RCP<ThermalConductivityTwoPhase> 
-   ThermalConductivityTwoPhaseFactory::createThermalConductivityModel(Teuchos::ParameterList& plist)
+Teuchos::RCP<TCM_TwoPhase> TCMFactory_TwoPhase::CreateTCM(Teuchos::ParameterList& plist)
 {
   std::string tc_typename = plist.get<std::string>("thermal conductivity type");
   return Teuchos::rcp(CreateInstance(tc_typename, plist));

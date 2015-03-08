@@ -52,9 +52,6 @@ class Energy_PK : public FnTimeIntegratorPK {
   void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
   virtual std::string name() { return "energy"; }
 
-  // main energy methods
-  void InitializeFields();
-
   // methods required for time integration
   virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> hu) {
     op_preconditioner_->ApplyInverse(*u->Data(), *hu->Data());
@@ -80,7 +77,7 @@ class Energy_PK : public FnTimeIntegratorPK {
   std::vector<WhetStone::Tensor>& get_K() { return K; } 
   Teuchos::RCP<PrimaryVariableFieldEvaluator>& temperature_eval() { return temperature_eval_; }
 
- protected:
+ private:
   void InitializeFields_();
 
  public:

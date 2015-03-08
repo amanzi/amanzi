@@ -25,7 +25,7 @@ namespace Energy {
 
 class IEMFactory : public Utils::Factory<IEM> {
  public:
-  Teuchos::RCP<IEM> createIEM(Teuchos::ParameterList& plist);
+  Teuchos::RCP<IEM> CreateIEM(Teuchos::ParameterList& plist);
 };
 
 }  // namespace Energy

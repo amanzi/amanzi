@@ -45,10 +45,6 @@ class Darcy_PK : public Flow_PK {
   void CommitStep(double dt, const Teuchos::Ptr<State>& S);
   void CalculateDiagnostics(const Teuchos::Ptr<State>& S);
 
-  // main flow methods
-  void InitTimeInterval();
-  void InitializeAuxiliaryData();
-
   // methods required for time integration
   void Functional(const double Told, double Tnew, 
                   Teuchos::RCP<CompositeVector> u, Teuchos::RCP<CompositeVector> udot, 
@@ -77,6 +73,7 @@ class Darcy_PK : public Flow_PK {
   int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) { Y = X; return 1; }
 
  private:
+  void InitializeFields_();
   void UpdateSpecificYield_();
   double ErrorEstimate_(double* dTfactor);
 

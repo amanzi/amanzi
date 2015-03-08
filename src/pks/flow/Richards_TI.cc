@@ -17,6 +17,8 @@
 #include <string>
 #include <vector>
 
+#include "CommonDefs.hh"
+
 #include "LinearOperatorFactory.hh"
 #include "Richards_PK.hh"
 
@@ -149,6 +151,9 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
   S_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_.ptr(), passwd_);
   const Epetra_MultiVector& s_l = *S_->GetFieldData("saturation_liquid")->ViewComponent("cell");
 
+  S_->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S_.ptr(), passwd_);
+  const Epetra_MultiVector& n_l = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell");
+
   S_->GetFieldEvaluator("molar_fraction_gas")->HasFieldDerivativeChanged(S_.ptr(), passwd_, "temperature");
   const Epetra_MultiVector& dmlf_g_dt = *S_->GetFieldData("dmolar_fraction_gas_dtemperature")->ViewComponent("cell");
 
@@ -162,6 +167,7 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
   double Dref = 0.282;
   double Pref = atm_pressure_;
   double Tref = 298.0;  // Kelvins
+  double R = CommonDefs::IDEAL_GAS_CONSTANT_R;
 
   for (int c = 0; c != ncells_owned; ++c) {
     // Millington Quirk fit for tortuosity
@@ -169,7 +175,7 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
     double D_g = Dref * (Pref / atm_pressure_) * pow(temp[0][c] / Tref, 1.8);
     double tmp = tau_phi_sat_g * n_g[0][c] * D_g;
 
-    kp_cell[0][c] = tmp;
+    kp_cell[0][c] = tmp / (n_l[0][c] * temp[0][c] * R);
     kt_cell[0][c] = tmp * dmlf_g_dt[0][c];
   }
 }

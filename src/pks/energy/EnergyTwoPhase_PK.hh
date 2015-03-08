@@ -45,6 +45,9 @@ public:
 
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
 
+ private:
+  void InitializeFields_();
+
  protected:
   // models for evaluating enthalpy
   Teuchos::RCP<Relations::EOS> eos_liquid_;
@@ -57,7 +60,6 @@ public:
   const Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<CompositeVector> solution;
 
-private:
   // factory registration
   static RegisteredPKFactory<EnergyTwoPhase_PK> reg_;
 };

@@ -114,9 +114,6 @@ TEST(FLOW_3D_RICHARDS) {
   RPK->Initialize();
   S->CheckAllFieldsInitialized();
 
-  RPK->InitializeAuxiliaryData();
-  RPK->InitTimeInterval();
-
   /* solve the problem */
   TI_Specs ti_specs;
   ti_specs.T0 = 0.0;

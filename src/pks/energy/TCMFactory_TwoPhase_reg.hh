@@ -11,10 +11,9 @@
   Self-registering factory for TC implementations.
 */
 
-#include "twophase_thermal_conductivity_factory.hh"
+#include "TCMFactory_TwoPhase.hh"
 
-// explicity instantitate the static data of Factory<EOS>
-template<> 
-Amanzi::Utils::Factory<Amanzi::Energy::ThermalConductivityTwoPhase>::map_type* 
-Amanzi::Utils::Factory<Amanzi::Energy::ThermalConductivityTwoPhase>::map_;
+// explicity instantitate the static data of Factory<TCM_TwoPhase>
+template<> Amanzi::Utils::Factory<Amanzi::Energy::TCM_TwoPhase>::map_type* 
+    Amanzi::Utils::Factory<Amanzi::Energy::TCM_TwoPhase>::map_;
 

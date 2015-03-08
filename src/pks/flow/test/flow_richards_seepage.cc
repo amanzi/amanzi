@@ -103,8 +103,6 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
   RPK->Initialize();
   S->CheckAllFieldsInitialized();
 
-  RPK->InitTimeInterval();
-
   /* solve the steady-state problem */
   TI_Specs ti_specs;
   ti_specs.T0 = 0.0;

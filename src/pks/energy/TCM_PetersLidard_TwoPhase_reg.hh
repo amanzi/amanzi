@@ -11,14 +11,14 @@
   Linear interpolant of thermal conductivity.
 */
 
-#include "twophase_thermal_conductivity_peterslidard.hh"
+#include "TCM_PetersLidard_TwoPhase.hh"
 
 namespace Amanzi {
 namespace Energy {
 
 // registry of method
-Utils::RegisteredFactory<ThermalConductivityTwoPhase, ThermalConductivityTwoPhasePetersLidard>
-    ThermalConductivityTwoPhasePetersLidard::factory_("two-phase Peters-Lidard");
+Utils::RegisteredFactory<TCM_TwoPhase,TCM_PetersLidard_TwoPhase>
+    TCM_PetersLidard_TwoPhase::factory_("two-phase Peters-Lidard");
 
 }  // namespace Energy
 }  // namespace Amanzi

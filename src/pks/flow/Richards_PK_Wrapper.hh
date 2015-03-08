@@ -45,11 +45,7 @@ class Richards_PK_Wrapper : public FnTimeIntegratorPK {
   }
 
   // Initialize owned (dependent) variables.
-  virtual void Initialize() {
-    pk_->Initialize();
-    pk_->InitializeAuxiliaryData(); 
-    pk_->InitTimeInterval();
-  }
+  virtual void Initialize() { pk_->Initialize(); }
 
   // Choose a time step compatible with physics.
   virtual double get_dt() { return pk_->get_dt(); }

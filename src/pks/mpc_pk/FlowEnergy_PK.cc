@@ -104,6 +104,12 @@ void FlowEnergy_PK::Setup()
          .set<std::string>("EOS type", "liquid water");
   }
 
+  if (!S_->HasField("mass_density_liquid")) {
+    S_->RequireField("mass_density_liquid", "mass_density_liquid")->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireFieldEvaluator("mass_density_liquid");
+  }
+
   // other
   if (!S_->HasField("effective_pressure")) {
     elist.sublist("effective_pressure")

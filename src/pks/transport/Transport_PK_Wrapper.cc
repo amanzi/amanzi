@@ -53,9 +53,8 @@ Transport_PK_Wrapper::Transport_PK_Wrapper(
 }
 
 
-bool
-Transport_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
-
+bool Transport_PK_Wrapper::AdvanceStep(double t_old, double t_new)
+{
   bool failed = false;
   double dt = t_new - t_old;
   double dt_actual(dt);

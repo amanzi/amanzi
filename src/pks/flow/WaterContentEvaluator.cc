@@ -38,7 +38,7 @@ WaterContentEvaluator::WaterContentEvaluator(Teuchos::ParameterList& plist) :
   dependencies_.insert(std::string("saturation_liquid"));
   dependencies_.insert(std::string("molar_density_liquid"));
 
-  vapor_phase_ = plist_.get<bool>("water vapor phase", true);
+  vapor_phase_ = plist_.get<bool>("water vapor phase", false);
   if (vapor_phase_) {
     dependencies_.insert(std::string("molar_density_gas"));
     dependencies_.insert(std::string("molar_fraction_gas"));

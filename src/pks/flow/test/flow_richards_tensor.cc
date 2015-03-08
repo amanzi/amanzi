@@ -77,7 +77,6 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
   /* create Richards problem */
   RPK->Initialize();
   S->CheckAllFieldsInitialized();
-  RPK->InitTimeInterval();
 
   /* calculate the constant Darcy mass velocity */
   double rho = *S->GetScalarData("fluid_density");

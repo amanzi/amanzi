@@ -12,8 +12,8 @@
 */
 
 #include "dbc.hh"
-#include "twophase_thermal_conductivity_factory.hh"
-#include "twophase_thermal_conductivity_evaluator.hh"
+#include "TCMFactory_TwoPhase.hh"
+#include "TCMEvaluator_TwoPhase.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -21,8 +21,7 @@ namespace Energy {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-ThermalConductivityTwoPhaseEvaluator::ThermalConductivityTwoPhaseEvaluator(
-    Teuchos::ParameterList& plist) :
+TCMEvaluator_TwoPhase::TCMEvaluator_TwoPhase(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
 {
   if (my_key_ == std::string("")) {
@@ -37,16 +36,15 @@ ThermalConductivityTwoPhaseEvaluator::ThermalConductivityTwoPhaseEvaluator(
 
   ASSERT(plist_.isSublist("thermal conductivity parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters");
-  ThermalConductivityTwoPhaseFactory fac;
-  tc_ = fac.createThermalConductivityModel(sublist);
+  TCMFactory_TwoPhase fac;
+  tc_ = fac.CreateTCM(sublist);
 }
 
 
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-ThermalConductivityTwoPhaseEvaluator::ThermalConductivityTwoPhaseEvaluator(
-    const ThermalConductivityTwoPhaseEvaluator& other) :
+TCMEvaluator_TwoPhase::TCMEvaluator_TwoPhase(const TCMEvaluator_TwoPhase& other) :
     SecondaryVariableFieldEvaluator(other),
     poro_key_(other.poro_key_),
     sat_key_(other.sat_key_),
@@ -56,16 +54,15 @@ ThermalConductivityTwoPhaseEvaluator::ThermalConductivityTwoPhaseEvaluator(
 /* ******************************************************************
 * TBW.
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator> ThermalConductivityTwoPhaseEvaluator::Clone() const
-{
-  return Teuchos::rcp(new ThermalConductivityTwoPhaseEvaluator(*this));
+Teuchos::RCP<FieldEvaluator> TCMEvaluator_TwoPhase::Clone() const {
+  return Teuchos::rcp(new TCMEvaluator_TwoPhase(*this));
 }
 
 
 /* ******************************************************************
 * Evaluator body.
 ****************************************************************** */
-void ThermalConductivityTwoPhaseEvaluator::EvaluateField_(
+void TCMEvaluator_TwoPhase::EvaluateField_(
     const Teuchos::Ptr<State>& S, const Teuchos::Ptr<CompositeVector>& result)
 {
   // pull out the dependencies
@@ -89,10 +86,11 @@ void ThermalConductivityTwoPhaseEvaluator::EvaluateField_(
 /* ******************************************************************
 * Evaluator of derivarives.
 ****************************************************************** */
-void ThermalConductivityTwoPhaseEvaluator::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S, Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+void TCMEvaluator_TwoPhase::EvaluateFieldPartialDerivative_(
+    const Teuchos::Ptr<State>& S,
+    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
-  ASSERT(0); // not implemented, not yet needed
+  ASSERT(0);
 }
 
 }  // namespace Energy

@@ -216,7 +216,6 @@ TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
     DPK->Initialize();
     S->CheckAllFieldsInitialized();
 
-    DPK->InitTimeInterval();
     DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
     DPK->CommitStep(0.0, S.ptr());
 
@@ -255,7 +254,6 @@ TEST_FIXTURE(DarcyProblem, DirichletNeumann) {
     DPK->Initialize();
     S->CheckAllFieldsInitialized();
 
-    DPK->InitTimeInterval();
     DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
     DPK->CommitStep(0.0, S.ptr());
 
@@ -295,7 +293,6 @@ TEST_FIXTURE(DarcyProblem, StaticHeadDirichlet) {
     DPK->Initialize();
     S->CheckAllFieldsInitialized();
 
-    DPK->InitTimeInterval();
     DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
     DPK->CommitStep(0.0, S.ptr());
 
@@ -337,7 +334,6 @@ TEST_FIXTURE(DarcyProblem, DDprisms) {
     DPK->Initialize();
     S->CheckAllFieldsInitialized();
 
-    DPK->InitTimeInterval();
     DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
     DPK->CommitStep(0.0, S.ptr());
 
@@ -380,7 +376,6 @@ TEST_FIXTURE(DarcyProblem, DNtetrahedra) {
     DPK->Initialize();
     S->CheckAllFieldsInitialized();
 
-    DPK->InitTimeInterval();
     DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
     DPK->CommitStep(0.0, S.ptr());
 
@@ -423,7 +418,6 @@ TEST_FIXTURE(DarcyProblem, DDmixed) {
     DPK->Initialize();
     S->CheckAllFieldsInitialized();
 
-    DPK->InitTimeInterval();
     DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
     DPK->CommitStep(0.0, S.ptr());
 

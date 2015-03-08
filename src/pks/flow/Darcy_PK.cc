@@ -62,6 +62,8 @@ void Darcy_PK::Setup()
   mesh_ = S_->GetMesh();
   dim = mesh_->space_dimension();
 
+  Flow_PK::Setup();
+
   // Require primary field for this PK.
   std::vector<std::string> names;
   std::vector<AmanziMesh::Entity_kind> locations;
@@ -87,21 +89,6 @@ void Darcy_PK::Setup()
   }
 
   // require additional fields for this PK
-  if (!S_->HasField("fluid_density")) {
-    S_->RequireScalar("fluid_density", passwd_);
-  }
-  if (!S_->HasField("fluid_viscosity")) {
-    S_->RequireScalar("fluid_viscosity", passwd_);
-  }
-  if (!S_->HasField("gravity")) {
-    S_->RequireConstantVector("gravity", passwd_, dim);  // state resets ownership.
-  } 
-
-  if (!S_->HasField("permeability")) {
-    S_->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, dim);
-  }
-
   if (!S_->HasField("specific_storage")) {
     S_->RequireField("specific_storage", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -176,6 +163,19 @@ Darcy_PK::~Darcy_PK()
 ****************************************************************** */
 void Darcy_PK::Initialize()
 {
+  // times
+  double T0 = ti_list_->get<double>("start interval time", 0.0);
+  double dT0 = ti_list_->get<double>("initial time step", 1.0);
+  double T1 = T0 + dT0;
+  ResetPKtimes(T0, dT0);
+
+  T_physics = T0;
+
+  dT = dT0;
+  dTnext = dT0;
+  dT_desirable_ = dT0;  // The minimum desirable time step from now on.
+  dT_history_.clear();
+
   // Initialize defaults
   bc_seepage = NULL; 
   src_sink = NULL;
@@ -212,24 +212,19 @@ void Darcy_PK::Initialize()
   pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap));
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap));
   
-  // Initialize times.
-  double time = S_->time();
-  if (time >= 0.0) T_physics = time;
-
   // Initialize boundary condtions. 
   ProcessShiftWaterTableList(*dp_list_);
 
-  time = T_physics;
-  bc_pressure->Compute(time);
-  bc_flux->Compute(time);
-  bc_seepage->Compute(time);
+  bc_pressure->Compute(T1);
+  bc_flux->Compute(T1);
+  bc_seepage->Compute(T1);
   if (shift_water_table_.getRawPtr() == NULL) {
-    bc_head->Compute(time);
+    bc_head->Compute(T1);
   } else {
-    bc_head->ComputeShift(time, shift_water_table_->Values());
+    bc_head->ComputeShift(T1, shift_water_table_->Values());
   }
 
-  const CompositeVector& pressure = *S_->GetFieldData("pressure");
+  CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
   ComputeBCs(pressure);
 
   // Allocate memory for other fundamental structures
@@ -238,50 +233,10 @@ void Darcy_PK::Initialize()
   if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
   }
-}
 
-
-/* ******************************************************************
-* Initialization of auxiliary variables (lambda and two saturations).
-* WARNING: Flow_PK may use complex initialization of the remaining 
-* state variables.
-****************************************************************** */
-void Darcy_PK::InitializeAuxiliaryData()
-{
   // pressures (lambda is not important when solver is very accurate)
-  CompositeVector& cv = *S_->GetFieldData("pressure", passwd_);
-  const Epetra_MultiVector& pressure = *(cv.ViewComponent("cell"));
-  Epetra_MultiVector& lambda = *(cv.ViewComponent("face"));
-
-  DeriveFaceValuesFromCellValues(pressure, lambda);
-
-  // saturations
-  if (!S_->GetField("saturation_liquid", passwd_)->initialized()) {
-    S_->GetFieldData("saturation_liquid", passwd_)->PutScalar(1.0);
-    S_->GetField("saturation_liquid", passwd_)->set_initialized();
-  }
-  if (!S_->GetField("prev_saturation_liquid", passwd_)->initialized()) {
-    S_->GetFieldData("prev_saturation_liquid", passwd_)->PutScalar(1.0);
-    S_->GetField("prev_saturation_liquid", passwd_)->set_initialized();
-  }
-}
-
-
-/* ******************************************************************
-* Specific initialization of a steady state time integration phase.
-* WARNING: now it is equivalent to transient phase.
-****************************************************************** */
-void Darcy_PK::InitTimeInterval()
-{
-  // times
-  double T0 = ti_list_->get<double>("start interval time", 0.0);
-  double dT0 = ti_list_->get<double>("initial time step", 1.0);
-  ResetPKtimes(T0, dT0);
-
-  dT = dT0;
-  dTnext = dT0;
-  dT_desirable_ = dT0;  // The minimum desirable time step from now on.
-  dT_history_.clear();
+  DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
+                                 *pressure.ViewComponent("face"));
 
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
   ASSERT(ti_method_name == "BDF1");
@@ -362,11 +317,11 @@ void Darcy_PK::InitTimeInterval()
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << std::endl 
-        << vo_->color("green") << "New TI period: " << ti_method_name.c_str() 
-        << vo_->reset() << std::endl;
-    *vo_->os()<< "dT controller:" << dT_method_name << " Src:" << src_sink_distribution
-              << " LS:\"" << solver_name_.c_str() << "\""
-              << " PC:\"" << preconditioner_name_.c_str() << "\"" << std::endl;
+        << vo_->color("green") << "Initalization of TI period is complete." << vo_->reset() << std::endl;
+    *vo_->os() << "TI:\"" << ti_method_name.c_str() << "\""
+               << " dT:" << dT_method_name << " Src:" << src_sink_distribution
+               << " LS:\"" << solver_name_.c_str() << "\""
+               << " PC:\"" << preconditioner_name_.c_str() << "\"" << std::endl;
 
     if (initialize_with_darcy_) {
       *vo_->os() << "initial pressure guess: \"saturated solution\"\n" << std::endl;
@@ -375,6 +330,39 @@ void Darcy_PK::InitTimeInterval()
     }
 
     VV_PrintHeadExtrema(*solution);
+  }
+}
+
+
+/* ****************************************************************
+* This completes initialization of common fields that were not 
+* initialized by the state.
+**************************************************************** */
+void Darcy_PK::InitializeFields_()
+{
+  Teuchos::OSTab tab = vo_->getOSTab();
+
+  // set popular default values for missed fields.
+  if (S_->GetField("saturation_liquid")->owner() == passwd_) {
+    if (S_->HasField("saturation_liquid")) {
+      if (!S_->GetField("saturation_liquid", passwd_)->initialized()) {
+        S_->GetFieldData("saturation_liquid", passwd_)->PutScalar(1.0);
+        S_->GetField("saturation_liquid", passwd_)->set_initialized();
+
+        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+            *vo_->os() << "initilized saturation_liquid to default value 1.0" << std::endl;  
+      }
+    }
+  }
+
+  if (S_->HasField("prev_saturation_liquid")) {
+    if (!S_->GetField("prev_saturation_liquid", passwd_)->initialized()) {
+      S_->GetFieldData("prev_saturation_liquid", passwd_)->PutScalar(1.0);
+      S_->GetField("prev_saturation_liquid", passwd_)->set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initilized prev_saturation_liquid to default value 1.0" << std::endl;  
+    }
   }
 }
 

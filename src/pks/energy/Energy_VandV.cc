@@ -20,24 +20,8 @@ namespace Amanzi {
 namespace Energy {
 
 /* ****************************************************************
-* Construct default state for unit tests. It completes
-* initialization of all missed objects in the state.
+*
 **************************************************************** */
-void Energy_PK::InitializeFields()
-{
-  // set popular default values
-  /*
-  if (!S_->GetField("fluid_density", passwd_)->initialized()) {
-    *(S_->GetScalarData("fluid_density", passwd_)) = 1000.0;
-    S_->GetField("fluid_density", passwd_)->set_initialized();
-  }
-  */
-
-  if (!S_->GetField("temperature", passwd_)->initialized()) {
-    S_->GetFieldData("temperature", passwd_)->PutScalar(300.0);
-    S_->GetField("temperature", passwd_)->set_initialized();
-  }
-}
 
 }  // namespace Energy
 }  // namespace Amanzi

@@ -28,20 +28,20 @@
   Units: ????
 */
 
-#ifndef PK_ENERGY_RELATIONS_THERMAL_CONDUCTIVITY_TWOPHASE_WETDRY_HH_
-#define PK_ENERGY_RELATIONS_THERMAL_CONDUCTIVITY_TWOPHASE_WETDRY_HH_
+#ifndef PK_ENERGY_TCM_WETDRY_TWOPHASE_HH_
+#define PK_ENERGY_TCM_WETDRY_TWOPHASE_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
 #include "factory.hh"
-#include "twophase_thermal_conductivity.hh"
+#include "TCM_TwoPhase.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-class ThermalConductivityTwoPhaseWetDry : public ThermalConductivityTwoPhase {
+class TCM_WetDry_TwoPhase : public TCM_TwoPhase {
  public:
-  ThermalConductivityTwoPhaseWetDry(Teuchos::ParameterList& plist);
+  TCM_WetDry_TwoPhase(Teuchos::ParameterList& plist);
 
   double ThermalConductivity(double porosity, double sat_liq);
 
@@ -56,8 +56,7 @@ class ThermalConductivityTwoPhaseWetDry : public ThermalConductivityTwoPhase {
   double k_dry_;
 
  private:
-  static Utils::RegisteredFactory<ThermalConductivityTwoPhase,
-                                  ThermalConductivityTwoPhaseWetDry> factory_;
+  static Utils::RegisteredFactory<TCM_TwoPhase,TCM_WetDry_TwoPhase> factory_;
 };
 
 }  // namespace Energy

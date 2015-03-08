@@ -11,21 +11,21 @@
   Interface for a thermal conductivity model with two phases.
 */
 
-#ifndef AMANZI_ENERGY_TWOPHASE_THERMAL_CONDUCTIVITY_EVALUATOR_HH_
-#define AMANZI_ENERGY_TWOPHASE_THERMAL_CONDUCTIVITY_EVALUATOR_HH_
+#ifndef AMANZI_ENERGY_TCM_EVALUATOR_TWOPHASE_HH_
+#define AMANZI_ENERGY_TCM_EVALUATOR_TWOPHASE_HH_
 
 #include "secondary_variable_field_evaluator.hh"
-#include "twophase_thermal_conductivity.hh"
+#include "TCM_TwoPhase.hh"
 
 namespace Amanzi {
 namespace Energy {
 
 // Equation of State model
-class ThermalConductivityTwoPhaseEvaluator : public SecondaryVariableFieldEvaluator {
+class TCMEvaluator_TwoPhase : public SecondaryVariableFieldEvaluator {
  public:
   // constructor format for all derived classes
-  ThermalConductivityTwoPhaseEvaluator(Teuchos::ParameterList& plist);
-  ThermalConductivityTwoPhaseEvaluator(const ThermalConductivityTwoPhaseEvaluator& other);
+  TCMEvaluator_TwoPhase(Teuchos::ParameterList& plist);
+  TCMEvaluator_TwoPhase(const TCMEvaluator_TwoPhase& other);
 
   Teuchos::RCP<FieldEvaluator> Clone() const;
 
@@ -36,7 +36,7 @@ class ThermalConductivityTwoPhaseEvaluator : public SecondaryVariableFieldEvalua
       const Teuchos::Ptr<State>& S, Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
-  Teuchos::RCP<ThermalConductivityTwoPhase> tc_;
+  Teuchos::RCP<TCM_TwoPhase> tc_;
 
   // Keys for fields dependencies
   Key poro_key_;

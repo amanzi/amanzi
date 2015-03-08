@@ -15,29 +15,28 @@
 */
 
 #include <cmath>
-#include "twophase_thermal_conductivity_wetdry.hh"
+#include "TCM_WetDry_TwoPhase.hh"
 
 namespace Amanzi {
 namespace Energy {
 
 // constructor
-ThermalConductivityTwoPhaseWetDry::ThermalConductivityTwoPhaseWetDry(
-      Teuchos::ParameterList& plist) : plist_(plist) {
+TCM_WetDry_TwoPhase::TCM_WetDry_TwoPhase(Teuchos::ParameterList& plist) :
+    plist_(plist) {
   InitializeFromPlist_();
-};
+}
 
 
 // do the physics
-double ThermalConductivityTwoPhaseWetDry::ThermalConductivity(
-    double poro, double sat_liq)
+double TCM_WetDry_TwoPhase::ThermalConductivity(double poro, double sat_liq)
 {
   double kersten = pow(sat_liq + eps_, alpha_);
-  return k_dry_ + (k_wet_ - k_dry_)*kersten;
+  return k_dry_ + (k_wet_ - k_dry_) * kersten;
 };
 
 
 // initialization
-void ThermalConductivityTwoPhaseWetDry::InitializeFromPlist_()
+void TCM_WetDry_TwoPhase::InitializeFromPlist_()
 {
   eps_ = plist_.get<double>("epsilon", 1.e-10);
   alpha_ = plist_.get<double>("unsaturated alpha", 1.0);

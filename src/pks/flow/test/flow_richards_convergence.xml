@@ -8,7 +8,7 @@
 
   <!--  REGIONS  -->
   <ParameterList name="Regions">
-    <ParameterList name="Computational domain">
+    <ParameterList name="All">
       <ParameterList name="Region: Box">
         <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,-10.0}"/>
         <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0,0.0}"/>
@@ -260,7 +260,7 @@
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant"> <!-- time component -->
@@ -288,7 +288,7 @@
       <ParameterList name="pressure">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="components" type="Array(string)" value="{cell,face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant"> <!-- time component -->
@@ -302,7 +302,7 @@
       <ParameterList name="darcy_flux">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="face"/>
             <ParameterList name="function">
               <ParameterList name="function-constant"> <!-- time component -->
@@ -316,7 +316,7 @@
       <ParameterList name="prev_saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant"> <!-- time component -->
@@ -330,7 +330,7 @@
       <ParameterList name="saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant"> <!-- time component -->
@@ -344,10 +344,10 @@
       <ParameterList name="specific_yield">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <ParameterList name="function-constant"> <!-- time component -->
+              <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0."/>
               </ParameterList>
             </ParameterList>
@@ -358,10 +358,10 @@
        <ParameterList name="specific_storage">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <ParameterList name="function-constant"> <!-- time component -->
+              <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0."/>
               </ParameterList>
             </ParameterList>

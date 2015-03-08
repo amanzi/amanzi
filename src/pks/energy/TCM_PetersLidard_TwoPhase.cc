@@ -12,25 +12,26 @@
 */
 
 #include <cmath>
-#include "twophase_thermal_conductivity_peterslidard.hh"
+#include "TCM_PetersLidard_TwoPhase.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-ThermalConductivityTwoPhasePetersLidard::ThermalConductivityTwoPhasePetersLidard(Teuchos::ParameterList& plist)
-    : plist_(plist) {
+TCM_PetersLidard_TwoPhase::TCM_PetersLidard_TwoPhase(Teuchos::ParameterList& plist) :
+    plist_(plist) {
   InitializeFromPlist_();
-};
+}
 
-double ThermalConductivityTwoPhasePetersLidard::ThermalConductivity(double poro,
-        double sat_liq) {
+
+double TCM_PetersLidard_TwoPhase::ThermalConductivity(double poro, double sat_liq) {
   double k_dry = (d_*(1-poro)*k_rock_ + k_gas_*poro)/(d_*(1-poro) + poro);
   double k_sat = pow(k_rock_,(1-poro)) * pow(k_liquid_,poro);
   double kersten = pow(sat_liq + eps_, alpha_);
-  return k_dry + (k_sat - k_dry)*kersten;
-};
+  return k_dry + (k_sat - k_dry) * kersten;
+}
 
-void ThermalConductivityTwoPhasePetersLidard::InitializeFromPlist_() {
+
+void TCM_PetersLidard_TwoPhase::InitializeFromPlist_() {
   d_ = 0.053; // unitless empericial parameter
 
   eps_ = plist_.get<double>("epsilon", 1.e-10);

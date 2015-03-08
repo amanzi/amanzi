@@ -14,14 +14,12 @@
   See ATS process model documentation's permafrost model for details.
 */
 
-#include "twophase_thermal_conductivity_wetdry.hh"
+#include "TCM_WetDry_TwoPhase.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-// registry of method
-Utils::RegisteredFactory<ThermalConductivityTwoPhase,ThermalConductivityTwoPhaseWetDry>
-    ThermalConductivityTwoPhaseWetDry::factory_("two-phase wet/dry");
+Utils::RegisteredFactory<TCM_TwoPhase,TCM_WetDry_TwoPhase> TCM_WetDry_TwoPhase::factory_("two-phase wet/dry");
 
 }  // namespace Energy
 }  // namespace Amanzi

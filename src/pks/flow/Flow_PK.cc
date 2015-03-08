@@ -40,8 +40,31 @@ Flow_PK::Flow_PK() :
 {
 }
 
+
 /* ******************************************************************
-* Initiazition of fundamental flow sturctures.                                              
+* Setup of static fields common for Darcy and Richards.
+****************************************************************** */
+void Flow_PK::Setup()
+{
+  if (!S_->HasField("fluid_density")) {
+    S_->RequireScalar("fluid_density", passwd_);
+  }
+  if (!S_->HasField("fluid_viscosity")) {
+    S_->RequireScalar("fluid_viscosity", passwd_);
+  }
+  if (!S_->HasField("gravity")) {
+    S_->RequireConstantVector("gravity", passwd_, dim);  // state resets ownership.
+  } 
+
+  if (!S_->HasField("permeability")) {
+    S_->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, dim);
+  }
+}
+
+
+/* ******************************************************************
+* Initiazition of fundamental flow sturctures.
 ****************************************************************** */
 void Flow_PK::Initialize()
 {
@@ -65,20 +88,22 @@ void Flow_PK::Initialize()
   g_ = fabs(gravity_[dim - 1]);
 
   // Other constant (temporarily) physical quantaties
-  rho_ = *(S_->GetScalarData("fluid_density"));
-  mu_ = *(S_->GetScalarData("fluid_viscosity"));
+  rho_ = *S_->GetScalarData("fluid_density");
+  mu_ = *S_->GetScalarData("fluid_viscosity");
 
   // parallel execution data
   MyPID = 0;
 #ifdef HAVE_MPI
   MyPID = mesh_->cell_map(false).Comm().MyPID();
 #endif
+
+  InitializeFields_();
 }
 
 
 /* ****************************************************************
-* This completes initialization of missed fields in the state.
-* This is useful for unit tests.
+* This completes initialization of common fields that were not 
+* initialized by the state.
 **************************************************************** */
 void Flow_PK::InitializeFields_()
 {
@@ -129,28 +154,6 @@ void Flow_PK::InitializeFields_()
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
         *vo_->os() << "initilized permeability to default value 1.0" << std::endl;  
-  }
-
-  if (S_->GetField("saturation_liquid")->owner() == passwd_) {
-    if (S_->HasField("saturation_liquid")) {
-      if (!S_->GetField("saturation_liquid", passwd_)->initialized()) {
-        S_->GetFieldData("saturation_liquid", passwd_)->PutScalar(1.0);
-        S_->GetField("saturation_liquid", passwd_)->set_initialized();
-
-        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-            *vo_->os() << "initilized saturation_liquid to default value 1.0" << std::endl;  
-      }
-    }
-  }
-
-  if (S_->HasField("prev_saturation_liquid")) {
-    if (!S_->GetField("prev_saturation_liquid", passwd_)->initialized()) {
-      S_->GetFieldData("prev_saturation_liquid", passwd_)->PutScalar(1.0);
-      S_->GetField("prev_saturation_liquid", passwd_)->set_initialized();
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized prev_saturation_liquid to default value 1.0" << std::endl;  
-    }
   }
 
   if (S_->HasField("specific_storage")) {

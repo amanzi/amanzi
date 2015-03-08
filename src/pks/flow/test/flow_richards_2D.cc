@@ -109,8 +109,6 @@ TEST(FLOW_2D_RICHARDS) {
 
   /* initialize the Richards process kernel */
   RPK->Initialize();
-  RPK->InitializeAuxiliaryData();
-  RPK->InitTimeInterval();
   S->CheckAllFieldsInitialized();
 
   /* solve the problem */

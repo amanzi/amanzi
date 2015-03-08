@@ -27,7 +27,7 @@ IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& plist) :
   ASSERT(plist_.isSublist("IEM parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("IEM parameters");
   IEMFactory fac;
-  iem_ = fac.createIEM(sublist);
+  iem_ = fac.CreateIEM(sublist);
 
   InitializeFromPlist_();
 }

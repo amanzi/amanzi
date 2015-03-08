@@ -102,7 +102,6 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   /* create Richards process kernel */
   RPK->Initialize();
   S->CheckAllFieldsInitialized();
-  RPK->InitTimeInterval();
 
   /* solve the steady-state problem */
   TI_Specs ti_specs;

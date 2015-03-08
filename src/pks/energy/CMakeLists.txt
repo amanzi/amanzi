@@ -46,19 +46,19 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 # Energy registrations
 #
 register_evaluator_with_factory(
-  HEADERFILE twophase_thermal_conductivity_factory_reg.hh
+  HEADERFILE TCMFactory_TwoPhase_reg.hh
   LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
   )
 register_evaluator_with_factory(
-  HEADERFILE twophase_thermal_conductivity_peterslidard_reg.hh
+  HEADERFILE TCM_PetersLidard_TwoPhase_reg.hh
   LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
   )
 register_evaluator_with_factory(
-  HEADERFILE twophase_thermal_conductivity_wetdry_reg.hh
+  HEADERFILE TCM_WetDry_TwoPhase_reg.hh
   LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
   )
 generate_evaluators_registration_header(
-  HEADERFILE energy_thermal_conductivity_registration.hh
+  HEADERFILE energy_tcm_registration.hh
   LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
   INSTALL    True
   )
@@ -107,11 +107,11 @@ set(energy_src_files Energy_PK.cc
                      IEM_WaterVaporEvaluator.cc
                      IEMFactory.cc IEMEvaluator.cc 
                      EnthalpyEvaluator.cc
-                     twophase_thermal_conductivity_wetdry.cc
-                     twophase_thermal_conductivity_peterslidard.cc
-                     TwoPhaseEnergyEvaluator.cc 
-                     twophase_thermal_conductivity_evaluator.cc
-                     twophase_thermal_conductivity_factory.cc)
+                     TCM_WetDry_TwoPhase.cc
+                     TCM_PetersLidard_TwoPhase.cc
+                     TCMEvaluator_TwoPhase.cc
+                     TCMFactory_TwoPhase.cc
+                     TwoPhaseEnergyEvaluator.cc)
 
 set(energy_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )
@@ -138,11 +138,11 @@ set(flow_inc_files
   IEMEvaluator.hh
   energy_iem_registration.hh
   TwoPhaseEnergyEvaluator.hh
-  twophase_thermal_conductivity.hh
-  twophase_thermal_conductivity_evaluator.hh
-  twophase_thermal_conductivity_factory.hh
-  twophase_thermal_conductivity_registration.hh
-  twophase_thermal_conductivity_peterslidard.hh
+  TCM_PetersLidard_TwoPhase.hh
+  TCM_TwoPhase.hh
+  TCM_TwoPhase_registration.hh
+  TCMEvaluator_TwoPhase.hh
+  TCMFactory_TwoPhase.hh
   EnthalpyEvaluator.hh)
 
 add_install_include_file(${energy_inc_files})
