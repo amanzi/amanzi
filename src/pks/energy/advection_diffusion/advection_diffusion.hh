@@ -79,6 +79,7 @@ private:
 
   // misc setup information
   double dt_;
+  bool implicit_advection_;
 
   // boundary conditions
   Teuchos::RCP<Functions::BoundaryFunction> bc_temperature_;

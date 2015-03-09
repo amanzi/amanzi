@@ -94,26 +94,46 @@ void RunTest(std::string filename, std::string testname) {
   delete comm;
 }
 
+// solution: u = 1
 TEST(ADV_DIFF_ONE_FV) {
   std::cout << "Advance ADV-DIFF problem with solution = 1" << std::endl;
   RunTest("test/advection_diffusion_advance_simple_fv.xml", "one");
 }
 
+// solution (forward time upwind space): slightly diffused interface
 TEST(ADV_DIFF_ADVECTED_STEP_FV) {
   std::cout << "Advance ADV-DIFF problem with an advected step function" << std::endl;
   RunTest("test/advection_diffusion_advance_simple_fv.xml", "step");
 }
 
+// solution (backward time upwind space): implicit advection is MORE diffusive then explicit
+TEST(ADV_DIFF_ADV_DIFFUSION_FV_IMPLICIT) {
+  std::cout << "Advance ADV problem with advected and  diffused flux across the domain" << std::endl;
+  RunTest("test/advection_diffusion_advance_simple_fv_implicit.xml", "step");
+}
+
+// solution: diffusion
 TEST(ADV_DIFF_DIFFUSION_FV) {
   std::cout << "Advance ADV-DIFF problem with diffused flux across the domain" << std::endl;
   RunTest("test/advection_diffusion_advance_simple_fv.xml", "diffused step");
 }
 
+// solution: advection and diffusion
 TEST(ADV_DIFF_ADV_DIFFUSION_FV) {
   std::cout << "Advance ADV-DIFF problem with advected and  diffused flux across the domain" << std::endl;
   RunTest("test/advection_diffusion_advance_simple_fv.xml", "advected diffused step");
 }
 
+// solution: advection and diffusion, but with constant flux.  not the same
+// solution as the previous, as in the above the diffusive flux changes as a function
+// of time
+TEST(ADV_DIFF_ADVECTED_STEP_FV_NEUMANN) {
+  std::cout << "Advance ADV-DIFF problem with advected flux across the domain, using a Neumann BC" << std::endl;
+  RunTest("test/advection_diffusion_advance_simple_fv_neumann.xml", "advected diffused step");
+}
+
+
+// repeat all with MFD
 TEST(ADV_DIFF_ONE_MFD) {
   std::cout << "Advance ADV-DIFF problem with solution = 1" << std::endl;
   RunTest("test/advection_diffusion_advance_simple_mfd.xml", "one");
@@ -122,6 +142,11 @@ TEST(ADV_DIFF_ONE_MFD) {
 TEST(ADV_DIFF_ADVECTED_STEP_MFD) {
   std::cout << "Advance ADV-DIFF problem with an advected step function" << std::endl;
   RunTest("test/advection_diffusion_advance_simple_mfd.xml", "step");
+}
+
+TEST(ADV_DIFF_ADVECTED_STEP_MFD_IMPLICIT) {
+  std::cout << "Advance ADV-DIFF problem with an advected step function" << std::endl;
+  RunTest("test/advection_diffusion_advance_simple_mfd_implicit.xml", "step");
 }
 
 TEST(ADV_DIFF_DIFFUSION_MFD) {
@@ -133,12 +158,6 @@ TEST(ADV_DIFF_DIFFUSION_MFD) {
 TEST(ADV_DIFF_ADV_DIFFUSION_MFD) {
   std::cout << "Advance ADV-DIFF problem with advected and  diffused flux across the domain" << std::endl;
   RunTest("test/advection_diffusion_advance_simple_mfd.xml", "advected diffused step");
-}
-
-
-TEST(ADV_DIFF_ADVECTED_STEP_FV_NEUMANN) {
-  std::cout << "Advance ADV-DIFF problem with advected flux across the domain, using a Neumann BC" << std::endl;
-  RunTest("test/advection_diffusion_advance_simple_fv_neumann.xml", "advected diffused step");
 }
 
 TEST(ADV_DIFF_ADVECTED_STEP_MFD_NEUMANN) {

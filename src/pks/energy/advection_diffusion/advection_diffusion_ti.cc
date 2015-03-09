@@ -48,7 +48,11 @@ void AdvectionDiffusion::Functional(double t_old, double t_new, Teuchos::RCP<Tre
     *vo_->os() << "  res (after accumulation): " << (*res)("cell",0) << "," << (*res)("cell",19) << std::endl;
 
   // advection term, explicit
-  AddAdvection_(S_inter_, res, true);
+  if (implicit_advection_) {
+    AddAdvection_(S_next_, res, true);
+  } else {
+    AddAdvection_(S_inter_, res, true);
+  }
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "  res (after advection): " << (*res)("cell",0) << "," << (*res)("cell",19) << std::endl;
 };
@@ -62,11 +66,9 @@ void AdvectionDiffusion::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, T
       *vo_->os() << "  f: " << (*u->Data())("face",80);
     *vo_->os() << std::endl;
   }
-  // preconditioner for accumulation only:
-  //  *Pu = *u;
 
-  // MFD ML preconditioner
   preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
+
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "  Pu: " << (*Pu->Data())("cell",0);
     if (Pu->Data()->HasComponent("face"))
@@ -92,6 +94,7 @@ void AdvectionDiffusion::UpdatePreconditioner(double t, Teuchos::RCP<const TreeV
   preconditioner_->Init();
   preconditioner_diff_->Setup(thermal_conductivity, Teuchos::null);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  preconditioner_diff_->ApplyBCs(true);
 
   // update with accumulation terms
   Teuchos::RCP<const CompositeVector> cell_volume =
@@ -104,7 +107,15 @@ void AdvectionDiffusion::UpdatePreconditioner(double t, Teuchos::RCP<const TreeV
     Acc_cells[c] += factor/h;
   }
 
-  preconditioner_diff_->ApplyBCs(true);
+  // update with advection terms
+  if (implicit_advection_) {
+    Teuchos::RCP<const CompositeVector> darcy_flux = S_next_->GetFieldData("darcy_flux");
+    preconditioner_adv_->Setup(*darcy_flux);
+    preconditioner_adv_->UpdateMatrices(*darcy_flux);
+    preconditioner_adv_->ApplyBCs(bc_, false);
+  }
+  
+  // assemble and create PC
   preconditioner_->AssembleMatrix();
   preconditioner_->InitPreconditioner("preconditioner", plist_->sublist("Diffusion PC"));
 
