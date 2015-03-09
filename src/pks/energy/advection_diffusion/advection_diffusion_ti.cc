@@ -40,32 +40,39 @@ void AdvectionDiffusion::Functional(double t_old, double t_new, Teuchos::RCP<Tre
   // diffusion term, implicit
   ApplyDiffusion_(S_next_, res);
   if (vo_->os_OK(Teuchos::VERB_HIGH)) 
-    *vo_->os() << "  res (after diffusion): " << (*res)("cell",0) << "," << (*res)("cell",1) << std::endl;
+    *vo_->os() << "  res (after diffusion): " << (*res)("cell",0) << "," << (*res)("cell",19) << std::endl;
 
   // accumulation term
   AddAccumulation_(res);
   if (vo_->os_OK(Teuchos::VERB_HIGH))
-    *vo_->os() << "  res (after accumulation): " << (*res)("cell",0) << std::endl;
+    *vo_->os() << "  res (after accumulation): " << (*res)("cell",0) << "," << (*res)("cell",19) << std::endl;
 
   // advection term, explicit
   AddAdvection_(S_inter_, res, true);
   if (vo_->os_OK(Teuchos::VERB_HIGH))
-    *vo_->os() << "  res (after advection): " << (*res)("cell",0) << std::endl;
+    *vo_->os() << "  res (after advection): " << (*res)("cell",0) << "," << (*res)("cell",19) << std::endl;
 };
 
 // applies preconditioner to u and returns the result in Pu
 void AdvectionDiffusion::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "Precon application:" << std::endl;
-    *vo_->os() << "  u: " << (*u->Data())("cell",0) << std::endl;
+    *vo_->os() << "  u: " << (*u->Data())("cell",0);
+    if (u->Data()->HasComponent("face"))
+      *vo_->os() << "  f: " << (*u->Data())("face",80);
+    *vo_->os() << std::endl;
   }
   // preconditioner for accumulation only:
   //  *Pu = *u;
 
   // MFD ML preconditioner
   preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
-  if (vo_->os_OK(Teuchos::VERB_HIGH))
-    *vo_->os() << "  Pu: " << (*Pu->Data())("cell",0)  << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "  Pu: " << (*Pu->Data())("cell",0);
+    if (Pu->Data()->HasComponent("face"))
+      *vo_->os() << "  f: " << (*Pu->Data())("face",80);
+    *vo_->os() << std::endl;
+  }
 };
 
 

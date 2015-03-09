@@ -58,7 +58,11 @@ void RunTest(std::string filename, std::string testname) {
 
   iter = 0;
   if (iter < 10) {
-    printf( "T=%6.2f  C_0(x):", T );
+    printf( "T=%6.2f", T);
+    if (test->S1->GetFieldData("temperature")->HasComponent("face")) {
+      printf(" F(x=0)=%6.2f", (*test->S1->GetFieldData("temperature")->ViewComponent("face",false))[0][80]);
+    }
+    printf(" C(x):");
     for( int k=0; k<20; k++ ) printf("%7.4f", temp[0][k]);
     std::cout << std::endl;
   }
@@ -73,7 +77,11 @@ void RunTest(std::string filename, std::string testname) {
     iter++;
 
     if (iter < 10) {
-      printf( "T=%6.2f  C_0(x):", T );
+      printf( "T=%6.2f", T);
+      if (test->S1->GetFieldData("temperature")->HasComponent("face")) {
+        printf(" F(x=0)=%6.2f  ", (*test->S1->GetFieldData("temperature")->ViewComponent("face",false))[0][80]);
+      }
+      printf("C(x):");
       for( int k=0; k<20; k++ ) printf("%7.4f", temp[0][k]);
       std::cout << std::endl;
     }
@@ -101,12 +109,10 @@ TEST(ADV_DIFF_DIFFUSION_FV) {
   RunTest("test/advection_diffusion_advance_simple_fv.xml", "diffused step");
 }
 
-
 TEST(ADV_DIFF_ADV_DIFFUSION_FV) {
   std::cout << "Advance ADV-DIFF problem with advected and  diffused flux across the domain" << std::endl;
   RunTest("test/advection_diffusion_advance_simple_fv.xml", "advected diffused step");
 }
-
 
 TEST(ADV_DIFF_ONE_MFD) {
   std::cout << "Advance ADV-DIFF problem with solution = 1" << std::endl;
@@ -127,4 +133,15 @@ TEST(ADV_DIFF_DIFFUSION_MFD) {
 TEST(ADV_DIFF_ADV_DIFFUSION_MFD) {
   std::cout << "Advance ADV-DIFF problem with advected and  diffused flux across the domain" << std::endl;
   RunTest("test/advection_diffusion_advance_simple_mfd.xml", "advected diffused step");
+}
+
+
+TEST(ADV_DIFF_ADVECTED_STEP_FV_NEUMANN) {
+  std::cout << "Advance ADV-DIFF problem with advected flux across the domain, using a Neumann BC" << std::endl;
+  RunTest("test/advection_diffusion_advance_simple_fv_neumann.xml", "advected diffused step");
+}
+
+TEST(ADV_DIFF_ADVECTED_STEP_MFD_NEUMANN) {
+  std::cout << "Advance ADV-DIFF problem with diffused flux across the domain, using a Neumann BC" << std::endl;
+  RunTest("test/advection_diffusion_advance_simple_mfd_neumann.xml", "advected diffused step");
 }

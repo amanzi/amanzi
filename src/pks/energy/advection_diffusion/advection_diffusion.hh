@@ -86,17 +86,13 @@ private:
 
 
   // mathematical operators
-  Teuchos::RCP<Operators::Operator> matrix_; // pc in PKPhysicalBDFBase
   Teuchos::RCP<Operators::OperatorDiffusion> matrix_diff_;
+  Teuchos::RCP<Operators::OperatorAdvection> matrix_adv_;
 
   Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
   Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
   Teuchos::RCP<Operators::OperatorAdvection> preconditioner_adv_;
 
-  // to be replaced
-  Teuchos::RCP<Operators::Advection> advection_;
-
-  
   // time integration
   double atol_;
   double rtol_;

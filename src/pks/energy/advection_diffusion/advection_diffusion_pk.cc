@@ -11,6 +11,7 @@ Author: Ethan Coon
 #include "energy_bc_factory.hh"
 #include "CompositeVectorSpace.hh"
 
+#include "OperatorAdvection.hh"
 #include "OperatorDiffusion.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "advection_diffusion.hh"
@@ -79,17 +80,17 @@ void AdvectionDiffusion::setup(const Teuchos::Ptr<State>& S) {
   bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_markers_, bc_values_, mixed));
 
   // operator for advection terms
-  Operators::AdvectionFactory advection_factory;
   Teuchos::ParameterList advect_plist = plist_->sublist("Advection");
-  advection_ = advection_factory.create(advect_plist, S->GetMesh());
-  advection_->set_num_dofs(1);
+  //  Operators::AdvectionFactory advection_factory;
+  //  advection_ = advection_factory.create(advect_plist, S->GetMesh());
+  //  advection_->set_num_dofs(1);
+  matrix_adv_ = Teuchos::rcp(new Operators::OperatorAdvection(advect_plist, mesh_));
 
   // operator for the diffusion terms
   Operators::OperatorDiffusionFactory opfactory;
   AmanziGeometry::Point g;
   matrix_diff_ = opfactory.Create(mesh_, bc_, mfd_plist, g, 0);
   matrix_diff_->Setup(Teuchos::null);
-  matrix_ = matrix_diff_->global_operator();
 
   // preconditioner
   Teuchos::ParameterList mfd_pc_plist = plist_->sublist("Diffusion PC");
