@@ -705,17 +705,11 @@ bool Richards_PK::Advance(double dT_MPC, double& dT_actual)
 
 
 /* ******************************************************************
-* Transfer part of the internal data needed by flow PK in the next
-* time step.
+* Save internal data needed by time integration. Calculate temporarily
+* the Darcy flux.
 ****************************************************************** */
 void Richards_PK::CommitStep(double dt, const Teuchos::Ptr<State>& S)
 {
-  // ws -> ws_prev
-  S->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S.ptr(), "flow");
-  const Epetra_MultiVector& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
-  Epetra_MultiVector& s_l_prev = *S->GetFieldData("prev_saturation_liquid", passwd_)->ViewComponent("cell");
-  s_l_prev = s_l;
-
   // calculate Darcy flux as diffusive part + advective part.
   CompositeVector& darcy_flux = *S->GetFieldData("darcy_flux", passwd_);
   op_matrix_diff_->UpdateFlux(*solution, darcy_flux);
