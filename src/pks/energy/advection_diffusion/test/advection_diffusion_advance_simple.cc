@@ -21,11 +21,7 @@ TEST(ADVANCE_WITH_SIMPLE) {
   using namespace Amanzi::AmanziGeometry;
 
   std::cout << "Test: advance using simple mesh" << endl;
-#ifdef HAVE_MPI
   Epetra_MpiComm  *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm  *comm = new Epetra_SerialComm();
-#endif
 
   // read parameter list
   Teuchos::ParameterList parameter_list;

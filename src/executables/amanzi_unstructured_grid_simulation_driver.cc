@@ -54,11 +54,7 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
   Teuchos::RCP<Teuchos::FancyOStream> out = getOStream();
   OSTab tab = getOSTab(); // This sets the line prefix and adds one tab
 
-#ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(mpi_comm);
-#else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
-#endif
 
   int rank;
   MPI_Comm_rank(mpi_comm,&rank);

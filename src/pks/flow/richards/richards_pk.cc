@@ -634,8 +634,10 @@ void Richards::UpdateBoundaryConditions_() {
     int f = bc->first;
     bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
     bc_values_[f] = bc->second;
-    std::cout << "DIRICHLET BC in Richards: f=" << f << ", at " << mesh_->face_centroid(f) << " value = " << bc_values_[f] << std::endl;
+    //    std::cout << "DIRICHLET BC in Richards: f=" << f << ", at " << mesh_->face_centroid(f) << " value = " << bc_values_[f] << std::endl;
   }
+  if (bc_pressure_->size() > 0)
+    std::cout << "Dirichlet with " << bc_pressure_->size() << " faces" << std::endl;
 
   if (!infiltrate_only_if_unfrozen_) {
     // Standard Neuman boundary conditions
@@ -663,15 +665,18 @@ void Richards::UpdateBoundaryConditions_() {
   const double& p_atm = *S_next_->GetScalarData("atmospheric_pressure");
   for (bc=bc_seepage_->begin(); bc!=bc_seepage_->end(); ++bc) {
     int f = bc->first;
+    //    std::cout << "Found seepage face: " << f << " at: " << mesh_->face_centroid(f) << " with normal: " << mesh_->face_normal(f) << std::endl;
     double bc_pressure = BoundaryValue(S_next_->GetFieldData(key_), f);
-    if (bc_pressure < p_atm) {
+    if (bc_pressure < bc->second) {
       bc_markers_[f] = Operators::MATRIX_BC_FLUX;
-      bc_values_[f] = bc->second;
+      bc_values_[f] = 0.;
     } else {
       bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
-      bc_values_[f] = p_atm;
+      bc_values_[f] = bc->second;
     }
   }
+  if (bc_seepage_->size() > 0)
+    std::cout << "Seepage with " << bc_seepage_->size() << " faces" << std::endl;
 
   // surface coupling
   if (coupled_to_surface_via_head_) {

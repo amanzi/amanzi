@@ -852,7 +852,6 @@ void Matrix_TPFA::ComputeTransmissibilities_(const Teuchos::Ptr<std::vector<Whet
   }
 
   // parallelization using CV capability
-#ifdef HAVE_MPI
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh_);
   cvs.SetGhosted(true);
@@ -872,7 +871,6 @@ void Matrix_TPFA::ComputeTransmissibilities_(const Teuchos::Ptr<std::vector<Whet
   for (int f = nfaces_owned; f < nfaces_wghost; f++) {
     (*gravity_term_)[f] = data[0][f];
   }
-#endif
 }
 
 void Matrix_TPFA::CreateMFDmassMatrices(const Teuchos::Ptr<std::vector<WhetStone::Tensor> >& K) {

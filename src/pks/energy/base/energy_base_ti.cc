@@ -190,6 +190,7 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
     }
   } else {
     for (unsigned int c=0; c!=ncells; ++c) {
+      ASSERT(de_dT[0][c] > 1.e-10);
       Acc_cells[c] += de_dT[0][c] / h;
     }
   }
@@ -255,7 +256,6 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     res_f.NormInf(&infnorm_f);
 
     ENorm_t err_f, err_c;
-#ifdef HAVE_MPI
     ENorm_t l_err_f, l_err_c;
     l_err_f.value = enorm_face;
     l_err_f.gid = res_f.Map().GID(bad_face);
@@ -264,12 +264,6 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
     MPI_Allreduce(&l_err_c, &err_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
     MPI_Allreduce(&l_err_f, &err_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
-#else
-    err_f.value = enorm_face;
-    err_f.gid = bad_face;
-    err_c.value = enorm_cell;
-    err_c.gid = bad_cell;
-#endif
 
     *vo_->os() << "ENorm (cells) = " << err_c.value << "[" << err_c.gid << "] (" << infnorm_c << ")" << std::endl;
     *vo_->os() << "ENorm (faces) = " << err_f.value << "[" << err_f.gid << "] (" << infnorm_f << ")" << std::endl;
@@ -277,10 +271,8 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
   // Communicate and take the max.
   double enorm_val(std::max<double>(enorm_face, enorm_cell));
-#ifdef HAVE_MPI
   double buf = enorm_val;
   MPI_Allreduce(&buf, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-#endif
   return enorm_val;
 };
 
