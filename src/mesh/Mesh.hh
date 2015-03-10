@@ -337,7 +337,13 @@ class Mesh
 				const bool ordered=false) const;
 
 
-  // Get the local ID of a face edge in a cell edge list
+  // Get the local index of a face edge in a cell edge list
+  // Example:
+  //
+  // face_get_edges(face=5) --> {20, 21, 35, 9, 10}
+  // cell_get_edges(cell=18) --> {1, 2, 3, 5, 8, 9, 10, 13, 21, 35, 20, 37, 40}
+  // face_to_cell_edge_map(face=5,cell=18) --> {10, 8, 9, 5, 6}
+
 
   void face_to_cell_edge_map(const Entity_ID faceid, const Entity_ID cellid,
 			     std::vector<int> *map) const;
