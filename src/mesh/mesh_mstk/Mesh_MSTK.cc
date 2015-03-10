@@ -679,12 +679,14 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
 
     mset = MESH_MSetByName(inmesh_mstk,internal_name.c_str());
 
-    idx = 0;
-    MEntity_ptr ment;
-    while ((ment = (MEntity_ptr) MSet_Next_Entry(mset,&idx))) {
-      if (!MEnt_IsMarked(ment,mkid) && MEnt_PType(ment) != PGHOST) {
-        MSet_Add(src_ents,ment);
-        MEnt_Mark(ment,mkid);
+    if (mset) {
+      idx = 0;
+      MEntity_ptr ment;
+      while ((ment = (MEntity_ptr) MSet_Next_Entry(mset,&idx))) {
+	if (!MEnt_IsMarked(ment,mkid) && MEnt_PType(ment) != PGHOST) {
+	  MSet_Add(src_ents,ment);
+	  MEnt_Mark(ment,mkid);
+	}
       }
     }
   }
@@ -3078,8 +3080,9 @@ Entity_ID Mesh_MSTK::entity_get_parent (const Entity_kind kind, const Entity_ID 
 
 
 
-// Epetra map for cells - basically a structure specifying the
-// global IDs of cells owned or used by this processor
+// Epetra map for cells - basically a structure specifying the global
+// IDs of cells owned or used by this processor. This helps Epetra
+// understand inter-partition dependencies of the data.
 
 // Amanzi/Epetra want global IDs to start at 0
 
@@ -3136,9 +3139,11 @@ void Mesh_MSTK::init_cell_map ()
 
 
 
+// Epetra map for faces - basically a structure specifying the global
+// IDs of faces owned or used by this processor. This helps Epetra
+// understand inter-partition dependencies of the data.
 
-// Epetra map for faces - basically a structure specifying the
-// global IDs of cells owned or used by this processor
+// Amanzi/Epetra want global IDs to start at 0
 
 void Mesh_MSTK::init_face_map ()
 {
@@ -3253,8 +3258,12 @@ void Mesh_MSTK::init_face_map ()
 
 
 
-// Epetra map for nodes - basically a structure specifying the
-// global IDs of cells owned or used by this processor
+
+// Epetra map for nodes - basically a structure specifying the global
+// IDs of nodes owned or used by this processor. This helps Epetra
+// understand inter-partition dependencies of the data.
+
+// Amanzi/Epetra want global IDs to start at 0
 
 void Mesh_MSTK::init_node_map ()
 {
@@ -4743,11 +4752,10 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt) {
         internal_name = internal_name_of_set(rgn,NODE);
 
 
-      MSet_ptr mset_parent = MESH_MSetByName(parent_mstk_mesh,internal_name.c_str());
-      if (!mset_parent) {
-        Errors::Message mesg("Cannot find labeled set in parent mesh");
-        amanzi_throw(mesg);
-      }
+      MSet_ptr mset_parent = MESH_MSetByName(parent_mstk_mesh,
+					     internal_name.c_str());
+      if (!mset_parent)
+	continue;
 
       // Create the set in this mesh
 
