@@ -75,7 +75,9 @@ class MeshFactory {
   /// Create a mesh by reading the specified file (or set of files)
   Teuchos::RCP<Mesh> create(const std::string& filename, 
                             const AmanziGeometry::GeometricModelPtr &gm = 
-                            (AmanziGeometry::GeometricModelPtr) NULL);
+                            (AmanziGeometry::GeometricModelPtr) NULL,
+                            const bool request_faces = true,
+                            const bool request_edges = false);
 
 
   /// Create a hexahedral mesh of the specified dimensions
@@ -83,7 +85,9 @@ class MeshFactory {
                             double x1, double y1, double z1,
                             int nx, int ny, int nz, 
                             const AmanziGeometry::GeometricModelPtr &gm = 
-                            (AmanziGeometry::GeometricModelPtr) NULL);
+                            (AmanziGeometry::GeometricModelPtr) NULL,
+                            const bool request_faces = true,
+                            const bool request_edges = false);
 
     
   /// Create a quadrilateral mesh of the specified dimensions
@@ -91,26 +95,34 @@ class MeshFactory {
                             double x1, double y1,
                             int nx, int ny,
                             const AmanziGeometry::GeometricModelPtr &gm = 
-                            (AmanziGeometry::GeometricModelPtr) NULL);
+                            (AmanziGeometry::GeometricModelPtr) NULL,
+                            const bool request_faces = true,
+                            const bool request_edges = false);
 
     
   /// Create a quadrilateral/hexahedral mesh using the specified parameter list
   Teuchos::RCP<Mesh> create(Teuchos::ParameterList &parameter_list, 
                             const AmanziGeometry::GeometricModelPtr &gm = 
-                            (AmanziGeometry::GeometricModelPtr) NULL);
+                            (AmanziGeometry::GeometricModelPtr) NULL,
+                            const bool request_faces = true,
+                            const bool request_edges = false);
 
   /// Create a mesh by extract subsets of entities from an existing mesh
   Teuchos::RCP<Mesh> create(const Mesh *inmesh,
                             const std::vector<std::string> setnames,
                             const Entity_kind setkind,
                             const bool flatten = false,
-                            const bool extrude = false);
+                            const bool extrude = false,
+                            const bool request_faces = true,
+                            const bool request_edges = false);
 
 
   /// Create a mesh by reading the specified file (or set of files) -- operator
   Teuchos::RCP<Mesh> operator() (const std::string& filename, 
                                  const AmanziGeometry::GeometricModelPtr &gm = 
-                                 (AmanziGeometry::GeometricModelPtr) NULL) {
+                                 (AmanziGeometry::GeometricModelPtr) NULL,
+                                 const bool request_faces = true,
+                                 const bool request_edges = false) {
 
     return create(filename, gm);
   }
@@ -130,7 +142,9 @@ class MeshFactory {
                                  double x1, double y1,
                                  int nx, int ny,
                                  const AmanziGeometry::GeometricModelPtr &gm = 
-                                 (AmanziGeometry::GeometricModelPtr) NULL)  {
+                                 (AmanziGeometry::GeometricModelPtr) NULL,
+                                 const bool request_faces = true,
+                                 const bool request_edges = false)  {
  
     return create(x0, y0, x1, y1, nx, ny, gm);
   }
@@ -138,7 +152,9 @@ class MeshFactory {
   /// Create a quadrilateral/hexahedral mesh using the specified parameter list
   Teuchos::RCP<Mesh> operator() (Teuchos::ParameterList &parameter_list, 
                                  const AmanziGeometry::GeometricModelPtr &gm = 
-                                 (AmanziGeometry::GeometricModelPtr) NULL) {
+                                 (AmanziGeometry::GeometricModelPtr) NULL,
+                                 const bool request_faces = true,
+                                 const bool request_edges = false) {
 
     return create(parameter_list, gm);
   }
@@ -148,7 +164,9 @@ class MeshFactory {
                                  const std::vector<std::string> setnames,
                                  const Entity_kind setkind,
                                  const bool flatten = false,
-                                 const bool extrude = false) {
+                                 const bool extrude = false,
+                                 const bool request_faces = true,
+                                 const bool request_edges = false) {
 
     return create(inmesh, setnames, setkind, flatten, extrude);
   }

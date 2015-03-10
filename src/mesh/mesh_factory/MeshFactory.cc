@@ -86,7 +86,9 @@ MeshFactory::preference(const FrameworkPreference& pref)
  */
 Teuchos::RCP<Mesh> 
 MeshFactory::create(const std::string& filename, 
-                    const AmanziGeometry::GeometricModelPtr &gm)
+                    const AmanziGeometry::GeometricModelPtr &gm,
+                    const bool request_faces, 
+                    const bool request_edges)
 {
   // check the file format
   Format fmt = file_format(*my_comm, filename);
@@ -155,7 +157,9 @@ Teuchos::RCP<Mesh>
 MeshFactory::create(double x0, double y0, double z0,
                     double x1, double y1, double z1,
                     int nx, int ny, int nz, 
-                    const AmanziGeometry::GeometricModelPtr &gm)
+                    const AmanziGeometry::GeometricModelPtr &gm,
+                    const bool request_faces, 
+                    const bool request_edges)
 {
   Teuchos::RCP<Mesh> result;
   Message e("MeshFactory::create: error: ");
@@ -232,7 +236,9 @@ Teuchos::RCP<Mesh>
 MeshFactory::create(double x0, double y0,
                     double x1, double y1,
                     int nx, int ny,
-                    const AmanziGeometry::GeometricModelPtr &gm)
+                    const AmanziGeometry::GeometricModelPtr &gm,
+                    const bool request_faces, 
+                    const bool request_edges)
 {
   Teuchos::RCP<Mesh> result;
   Message e("MeshFactory::create: error: ");
@@ -299,7 +305,9 @@ MeshFactory::create(double x0, double y0,
  */
 Teuchos::RCP<Mesh> 
 MeshFactory::create(Teuchos::ParameterList &parameter_list, 
-                    const AmanziGeometry::GeometricModelPtr &gm)
+                    const AmanziGeometry::GeometricModelPtr &gm,
+                    const bool request_faces, 
+                    const bool request_edges)
 {
   Teuchos::RCP<Mesh> result;
   Message e("MeshFactory::create: error: ");
@@ -354,7 +362,9 @@ Teuchos::RCP<Mesh>
 MeshFactory::create(const Mesh *inmesh, 
                     const std::vector<std::string> setnames,
                     const Entity_kind setkind,
-                    const bool flatten, const bool extrude)
+                    const bool flatten, const bool extrude,
+                    const bool request_faces, 
+                    const bool request_edges)
 {
   Teuchos::RCP<Mesh> result;
   Message e("MeshFactory::create: error: ");

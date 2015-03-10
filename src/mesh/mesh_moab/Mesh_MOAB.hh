@@ -187,12 +187,43 @@ class Mesh_MOAB : public Mesh
                                 Entity_ID_List *cellids) const;
     
 
+  // Edges of a cell
+
+  void cell_get_edges_internal (const Entity_ID cellid,
+                                Entity_ID_List *edgeids) const 
+  { 
+    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
+    Exceptions::amanzi_throw(mesg);
+  }
+
+  // Edges and edge directions of a face
+
+  void face_get_edges_and_dirs_internal (const Entity_ID cellid,
+					 Entity_ID_List *edgeids,
+					 std::vector<int> *edgedirs,
+					 bool ordered=true) const
+  {
+    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
+    amanzi_throw(mesg);
+  };
+
+
 public:
+
+  // the request_faces and request_edges arguments have to be at the
+  // end and not in the middle because if we omit them and specify a
+  // pointer argument like gm or verbosity_obj, then there is implicit
+  // conversion of the pointer to bool, thereby defeating the intent
+  // of the call and making the pointer argument seem NULL. In C++11,
+  // we could "delete" the illegal version of the call effectively
+  // blocking the implicit conversion.
   
-  Mesh_MOAB (const char *filename, const Epetra_MpiComm *comm, 
+  Mesh_MOAB (const char *filename, const Epetra_MpiComm *comm,
 	     const AmanziGeometry::GeometricModelPtr& gm = 
 	     (AmanziGeometry::GeometricModelPtr) NULL,
-           const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
+	     const VerboseObject *verbosity_obj = (VerboseObject *) NULL, 
+	     const bool request_faces = true,
+	     const bool request_edges = false);
 
   // Construct a mesh by extracting a subset of entities from another
   // mesh. In some cases like extracting a surface mesh from a volume
@@ -204,13 +235,17 @@ public:
             const std::vector<std::string>& setnames,
             const Entity_kind setkind,
             const bool flatten = false,
-            const bool extrude = false);
+            const bool extrude = false,
+	    const bool request_faces = true,
+	    const bool request_edges = false);
 
   Mesh_MOAB(const Mesh_MOAB& inmesh,
             const std::vector<std::string>& setnames,
             const Entity_kind setkind,
             const bool flatten = false,
-            const bool extrude = false);
+            const bool extrude = false,
+	    const bool request_faces = true,
+	    const bool request_edges = false);
 
   ~Mesh_MOAB();
   
@@ -267,6 +302,17 @@ public:
 		       Entity_ID_List *nodeids) const;
     
     
+  // Edges and edge directions of a face
+
+  void face_get_edges_and_dirs_internal (const Entity_ID cellid,
+					 Entity_ID_List *edgeids,
+					 std::vector<int> *edgedirs,
+					 bool ordered=true) const
+  {
+    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
+    amanzi_throw(mesg);
+  };
+    
   // Get nodes of face 
   // On a distributed mesh, all nodes (OWNED or GHOST) of the face 
   // are returned
@@ -277,6 +323,15 @@ public:
   void face_get_nodes (const Entity_ID faceid, 
 		       Entity_ID_List *nodeids) const;
     
+
+
+  // Get nodes of edge
+
+  void edge_get_nodes (const Entity_ID edgeid, Entity_ID *nodeid0,
+		       Entity_ID *nodeid1) const {
+    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
+    amanzi_throw(mesg);
+  }
 
 
   // Upward adjacencies
