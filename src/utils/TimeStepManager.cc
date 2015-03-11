@@ -4,25 +4,32 @@
 
 namespace Amanzi {
 
-void TimeStepManager::RegisterTimeEvent(double start, double period, double stop) {
-  timeEvents_.push_back(TimeEvent(start, period, stop));
+  void TimeStepManager::RegisterTimeEvent(double start, double period, double stop,  bool phys) {
+    timeEvents_.push_back(TimeEvent(start, period, stop, phys));
 }
 
-void TimeStepManager::RegisterTimeEvent(std::vector<double> times) {
+void TimeStepManager::RegisterTimeEvent(std::vector<double> times, bool phys) {
   // make sure we only admit sorted arrays with unique entries
   std::vector<double> loc_times;
   loc_times = times;
   std::sort(loc_times.begin(), loc_times.end());
   loc_times.erase(std::unique(loc_times.begin(), loc_times.end(), near_equal), loc_times.end());  
-  timeEvents_.push_back(TimeEvent(loc_times));
+  timeEvents_.push_back(TimeEvent(loc_times, phys));
 }
 
-void TimeStepManager::RegisterTimeEvent(double time) {
-  timeEvents_.push_back(TimeEvent(time));
+void TimeStepManager::RegisterTimeEvent(double time, bool phys) {
+  timeEvents_.push_back(TimeEvent(time, phys));
 }
 
-double TimeStepManager::TimeStep(double T, double dT) const {
+double TimeStepManager::TimeStep(double T, double dT) {
   double next_T_all_events(1e99);
+  bool physical = true;
+
+  if (dt_stable_storage > 0) {
+    dT = dt_stable_storage;
+    dt_stable_storage = -1.;
+  }
+
   // loop over all events to find the next event time
   for (std::list<TimeEvent>::const_iterator i = timeEvents_.begin(); i != timeEvents_.end(); ++i) {
     double next_T_this_event(1e99);
@@ -48,13 +55,20 @@ double TimeStepManager::TimeStep(double T, double dT) const {
         }
       }
     }
-    next_T_all_events = std::min(next_T_all_events, next_T_this_event);
+    //next_T_all_events = std::min(next_T_all_events, next_T_this_event);
+    if (next_T_this_event < next_T_all_events){
+      physical = i->isPhysical();
+      next_T_all_events = next_T_this_event;
+    }
   }
+
   if (next_T_all_events == 1e99) return dT;
   double time_remaining(next_T_all_events - T);
   if (dT >= time_remaining) {
+    if (!physical) dt_stable_storage = dT;
     return time_remaining;
   } else if ( dT > 0.75*time_remaining) {
+    if (!physical) dt_stable_storage = dT;
     return 0.5*time_remaining;
   } else {
     return dT;
