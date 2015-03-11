@@ -49,7 +49,11 @@ TEST(MASS_MATRIX_3D) {
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
-  RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
+
+  bool request_faces=true, request_edges=true;
+
+  RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, NULL, 
+			       request_faces, request_edges); 
   // RCP<Mesh> mesh = meshfactory("test/one_cell.exo"); 
  
   MFD3D_Electromagnetics mfd(mesh);
