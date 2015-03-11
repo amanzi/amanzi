@@ -162,9 +162,6 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     RPK->Initialize();
     S->CheckAllFieldsInitialized();
 
-    RPK->InitializeAuxiliaryData();
-    RPK->InitTimeInterval();
-
     // solver the problem
     TI_Specs ti_specs;
     ti_specs.T0 = 0.0;

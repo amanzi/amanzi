@@ -24,6 +24,16 @@ namespace Amanzi
 namespace AmanziMesh 
 {
 
+// Mesh class based on the MSTK framework. 
+//
+// Instantiating a const version of this class only guarantees that
+// the underlying mesh topology and geometry does not change. For
+// purposes of memory savings we use lazy initialization of face and
+// edge lists (they are already present in the underlying MSTK mesh
+// data structures), which means that the data structures holding the
+// mesh information may still change.
+
+
 class Mesh_MSTK : public Mesh
 {
       
@@ -60,9 +70,17 @@ private:
 
   MSet_ptr OwnedVerts, NotOwnedVerts;
   
-  MSet_ptr OwnedFaces, NotOwnedFaces;
+  mutable MSet_ptr OwnedEdges, NotOwnedEdges;
+
+  mutable MSet_ptr OwnedFaces, NotOwnedFaces;
   
   MSet_ptr OwnedCells, GhostCells;
+
+  // Flags to indicate if face and edge info is initialized
+
+  mutable bool faces_initialized, edges_initialized;
+
+  // Marker to indicate if an entity is not owned
 
   int notwownedmark;
 
@@ -75,14 +93,17 @@ private:
   // Local ID to MSTK handle map
 
   std::vector<MEntity_ptr> vtx_id_to_handle;
-  std::vector<MEntity_ptr> face_id_to_handle;
+  mutable std::vector<MEntity_ptr> edge_id_to_handle;
+  mutable std::vector<MEntity_ptr> face_id_to_handle;
   std::vector<MEntity_ptr> cell_id_to_handle;
 
 
   // Maps
 
-  Epetra_Map *cell_map_wo_ghosts_, *face_map_wo_ghosts_, *node_map_wo_ghosts_;
-  Epetra_Map *cell_map_w_ghosts_, *face_map_w_ghosts_, *node_map_w_ghosts_;
+  Epetra_Map *cell_map_w_ghosts_, *cell_map_wo_ghosts_;
+  mutable Epetra_Map *face_map_w_ghosts_, *face_map_wo_ghosts_;
+  mutable Epetra_Map *edge_map_w_ghosts_, *edge_map_wo_ghosts_;
+  Epetra_Map *node_map_w_ghosts_, *node_map_wo_ghosts_;
   Epetra_Map *extface_map_wo_ghosts_; // exterior faces (connected to only 1 cell)
 
 // Epetra importer that will allow apps to import values from a Epetra
@@ -91,9 +112,15 @@ private:
                                            
   Epetra_Import *owned_to_extface_importer_; 
   
-  // flag whether to flip a face dir or not when returning nodes of a face
+  // flag whether to flip a face dir or not when returning nodes of a
+  // face (relevant only on partition boundaries)
   
-  bool *faceflip;
+  mutable bool *faceflip;
+
+  // flag whether to flip an edge dir or not when returning nodes of an edge
+  // (relevant only on partition boundaries)
+
+  mutable bool *edgeflip;
 
   // Attribute to precompute and store celltype
 
@@ -122,7 +149,7 @@ private:
 
   void pre_create_steps_(const int space_dimension, const Epetra_MpiComm *incomm, 
                          const AmanziGeometry::GeometricModelPtr& gm);
-  void post_create_steps_();
+  void post_create_steps_(const bool request_faces, const bool request_edges);
 
   void collapse_degen_edges();
   Cell_type MFace_Celltype(MFace_ptr f);
@@ -130,17 +157,28 @@ private:
   void label_celltype();
 
   void init_pvert_lists();
+  void init_pedge_lists();
+  void init_pedge_dirs();
   void init_pface_lists();
-  void init_pcell_lists();
   void init_pface_dirs();
+  void init_pcell_lists();
   
-  void init_id_handle_maps();
+  void init_vertex_id2handle_maps();
+  void init_edge_id2handle_maps();
+  void init_face_id2handle_maps();
+  void init_cell_id2handle_maps();
   void init_global_ids();
   
   void init_cell_map();
   void init_face_map();
+  void init_edge_map();
   void init_node_map();
   
+  void init_nodes();
+  void init_edges();
+  void init_faces();
+  void init_cells();
+
   void init_set_info();
   void inherit_labeled_sets(MAttrib_ptr copyatt);
   std::string internal_name_of_set(const AmanziGeometry::RegionPtr region,
@@ -156,7 +194,9 @@ private:
                          const std::vector<std::string>& setnames,
                          const Entity_kind setkind,
                          const bool flatten = false,
-                         const bool extrude = false);
+                         const bool extrude = false,
+			 const bool request_faces = true,
+			 const bool request_edges = false);
 
   MSet_ptr build_set(const AmanziGeometry::RegionPtr region,
                      const Entity_kind kind) const;
@@ -227,22 +267,47 @@ private:
   void face_get_cells_internal (const Entity_ID faceid, 
                                 const Parallel_type ptype,
                                 Entity_ID_List *cellids) const;
-    
 
+
+  // Get edges of a cell
+
+  void cell_get_edges_internal (const Entity_ID cellid,
+				Entity_ID_List *edgeids) const;
+
+  // Edges and edge directions of a face
+
+  void face_get_edges_and_dirs_internal (const Entity_ID cellid,
+					 Entity_ID_List *edgeids,
+					 std::vector<int> *edgedirs,
+					 bool ordered=true) const;
+    
 public:
 
   // Constructors that read the mesh from a file
 
+  // The request_faces and request_edges arguments have to be at the
+  // end and not in the middle because if we omit them and specify a
+  // pointer argument like gm or verbosity_obj, then there is implicit
+  // conversion of the pointer to bool, thereby defeating the intent
+  // of the call and making the pointer argument seem NULL. In C++11,
+  // we could "delete" the illegal version of the call effectively
+  // blocking the implicit conversion.
+  
+
   Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
 	     const AmanziGeometry::GeometricModelPtr& gm = 
 	     (AmanziGeometry::GeometricModelPtr) NULL,
-             const VerboseObject * verbosity_obj = (VerboseObject *) NULL);
+             const VerboseObject * verbosity_obj = (VerboseObject *) NULL,
+	     const bool request_faces = true,
+	     const bool request_edges = false);
 
   Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm, 
              int space_dimension,
 	     const AmanziGeometry::GeometricModelPtr& gm = 
 	     (AmanziGeometry::GeometricModelPtr) NULL,
-             const VerboseObject * verbosity_obj = (VerboseObject *) NULL);
+             const VerboseObject * verbosity_obj = (VerboseObject *) NULL,
+	     const bool request_faces = true,
+	     const bool request_edges = false);
 
   // Constructors that generate a mesh internally (regular hexahedral mesh only)
 
@@ -254,7 +319,9 @@ public:
             const Epetra_MpiComm *incomm,
             const AmanziGeometry::GeometricModelPtr& gm = 
             (AmanziGeometry::GeometricModelPtr) NULL,
-            const VerboseObject * verbosity_obj = (VerboseObject *) NULL);
+            const VerboseObject * verbosity_obj = (VerboseObject *) NULL,
+	    const bool request_faces = true,
+	    const bool request_edges = false);
 
 
   // 2D
@@ -264,14 +331,18 @@ public:
 	    const Epetra_MpiComm *comm,
 	    const AmanziGeometry::GeometricModelPtr& gm = 
 	    (AmanziGeometry::GeometricModelPtr) NULL,
-             const VerboseObject * verbosity_obj = (VerboseObject *) NULL);
+             const VerboseObject * verbosity_obj = (VerboseObject *) NULL,
+	    const bool request_faces = true,
+	    const bool request_edges = false);
 
   // Construct a hexahedral mesh from specs 
   Mesh_MSTK(const GenerationSpec& gspec,
 	    const Epetra_MpiComm *comm,
 	    const AmanziGeometry::GeometricModelPtr& gm = 
 	    (AmanziGeometry::GeometricModelPtr) NULL,
-            const VerboseObject * verbosity_obj = (VerboseObject *) NULL);
+            const VerboseObject * verbosity_obj = (VerboseObject *) NULL,
+	    const bool request_faces = true,
+	    const bool request_edges = false);
 
 
   // Construct a mesh by extracting a subset of entities from another
@@ -284,13 +355,17 @@ public:
             const std::vector<std::string>& setnames,
             const Entity_kind setkind,
             const bool flatten = false,
-            const bool extrude = false);
+            const bool extrude = false,
+	    const bool request_faces = true,
+	    const bool request_edges = false);
 
   Mesh_MSTK(const Mesh_MSTK& inmesh,
             const std::vector<std::string>& setnames,
             const Entity_kind setkind,
             const bool flatten = false,
-            const bool extrude = false);
+            const bool extrude = false,
+	    const bool request_faces = true,
+	    const bool request_edges = false);
 
 
   ~Mesh_MSTK ();
@@ -361,6 +436,11 @@ public:
 		       Entity_ID_List *nodeids) const;
     
 
+  // Get nodes of edge On a distributed mesh all nodes (OWNED or
+  // GHOST) of the face are returned
+
+  void edge_get_nodes (const Entity_ID edgeid, Entity_ID *point0,
+		       Entity_ID *point1) const;
 
   // Upward adjacencies
   //-------------------
@@ -452,6 +532,8 @@ public:
   const Epetra_Map& cell_map (bool include_ghost) const;
     
   const Epetra_Map& face_map (bool include_ghost) const; 
+
+  const Epetra_Map& edge_map (bool include_ghost) const;
 
   const Epetra_Map& node_map (bool include_ghost) const;
     

@@ -4,7 +4,7 @@
 
 #include "VerboseObject_objs.hh"
 #include "state_evaluators_registration.hh"
-#include "energy_thermal_conductivity_registration.hh"
+#include "energy_tcm_registration.hh"
 #include "energy_iem_registration.hh"
 #include "eos_registration.hh"
 

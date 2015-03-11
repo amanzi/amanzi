@@ -79,10 +79,8 @@ TEST(FLOW_3D_RICHARDS) {
 
   /* initialize the Richards process kernel */
   RPK->Initialize();
-  RPK->InitializeAuxiliaryData();
   S->CheckAllFieldsInitialized();
 
-  RPK->InitTimeInterval();
   RPK->CommitStep(0.0, S.ptr());
 
   /* derive dependent variable */

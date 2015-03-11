@@ -90,7 +90,6 @@ TEST(FLOW_2D_DARCY_WELL) {
 
   /* initialize the Darcy process kernel */
   DPK->Initialize();
-  DPK->InitTimeInterval();
 
   /* transient solution */
   double dT = 0.5;

@@ -113,7 +113,6 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   /* initialize the Darcy process kernel */
   DPK->Initialize();
   S->CheckAllFieldsInitialized();
-  DPK->InitTimeInterval();
 
   /* transient solution */
   double dT = 0.1;
@@ -234,7 +233,6 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   /* initialize the Darcy process kernel */
   DPK->Initialize();
   S->CheckAllFieldsInitialized();
-  DPK->InitTimeInterval();
 
   /* transient solution */
   double dT = 0.1;

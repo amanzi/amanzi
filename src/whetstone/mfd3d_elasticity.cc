@@ -29,19 +29,19 @@ namespace WhetStone {
 * Only the upper triangular part of Ac is calculated.
 * Requires mesh_get_edges to complete the implementation.
 ****************************************************************** */
-int MFD3D_Elasticity::L2consistency(int cell, const Tensor& T,
+int MFD3D_Elasticity::L2consistency(int c, const Tensor& T,
                                     DenseMatrix& N, DenseMatrix& Mc)
 {
   Entity_ID_List faces;
 
-  mesh_->cell_get_faces(cell, &faces);
+  mesh_->cell_get_faces(c, &faces);
   int nfaces = faces.size();
 
   int d = mesh_->space_dimension();
-  double volume = mesh_->cell_volume(cell);
+  double volume = mesh_->cell_volume(c);
 
   AmanziGeometry::Point v1(d), v2(d);
-  const AmanziGeometry::Point& cm = mesh_->cell_centroid(cell);
+  const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
   Tensor Tinv(T);
   Tinv.Inverse();
@@ -64,7 +64,7 @@ int MFD3D_Elasticity::L2consistency(int cell, const Tensor& T,
 * Consistency condition for stiffness matrix in mechanics. 
 * Only the upper triangular part of Ac is calculated.
 ****************************************************************** */
-int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
+int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
                                     DenseMatrix& N, DenseMatrix& Ac)
 {
   int nrows = N.NumRows();
@@ -72,10 +72,10 @@ int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
   Entity_ID_List nodes, faces;
   std::vector<int> dirs;
 
-  mesh_->cell_get_nodes(cell, &nodes);
+  mesh_->cell_get_nodes(c, &nodes);
   int num_nodes = nodes.size();
 
-  mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
   int d = mesh_->space_dimension();
   AmanziGeometry::Point p(d), pnext(d), pprev(d), v1(d), v2(d), v3(d);
@@ -148,7 +148,7 @@ int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
   Tensor Tinv(T);
   Tinv.Inverse();
 
-  double volume = mesh_->cell_volume(cell);
+  double volume = mesh_->cell_volume(c);
   Tinv *= 1.0 / volume;
 
   DenseMatrix RT(nrows, nd);
@@ -169,7 +169,7 @@ int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
 
   // calculate matrix N
   N.PutScalar(0.0);
-  const AmanziGeometry::Point& cm = mesh_->cell_centroid(cell);
+  const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
   for (int i = 0; i < num_nodes; i++) {
     int v = nodes[i];
@@ -207,8 +207,7 @@ int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
 /* ******************************************************************
 * Lame stiffness matrix: a wrapper for other low-level routines
 ****************************************************************** */
-int MFD3D_Elasticity::StiffnessMatrix(int cell, const Tensor& deformation,
-                                      DenseMatrix& A)
+int MFD3D_Elasticity::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
 {
   int d = mesh_->space_dimension();
   int nd = d * (d + 1);
@@ -217,10 +216,10 @@ int MFD3D_Elasticity::StiffnessMatrix(int cell, const Tensor& deformation,
   DenseMatrix N(nrows, nd);
   DenseMatrix Ac(nrows, nrows);
 
-  int ok = H1consistency(cell, deformation, N, Ac);
+  int ok = H1consistency(c, T, N, Ac);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  StabilityScalar(cell, N, Ac, A);
+  StabilityScalar(c, N, Ac, A);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -228,8 +227,7 @@ int MFD3D_Elasticity::StiffnessMatrix(int cell, const Tensor& deformation,
 /* ******************************************************************
 * Lame stiffness matrix: a wrapper for other low-level routines
 ****************************************************************** */
-int MFD3D_Elasticity::StiffnessMatrixOptimized(
-    int cell, const Tensor& deformation, DenseMatrix& A)
+int MFD3D_Elasticity::StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A)
 {
   int d = mesh_->space_dimension();
   int nd = d * (d + 1);
@@ -238,19 +236,19 @@ int MFD3D_Elasticity::StiffnessMatrixOptimized(
   DenseMatrix N(nrows, nd);
   DenseMatrix Ac(nrows, nrows);
 
-  int ok = H1consistency(cell, deformation, N, Ac);
+  int ok = H1consistency(c, T, N, Ac);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  StabilityOptimized(deformation, N, Ac, A);
+  StabilityOptimized(T, N, Ac, A);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
 
 /* ******************************************************************
 * Lame stiffness matrix: a wrapper for other low-level routines
+* For education purpose only: ther are no M-matrices in elasticity.
 ****************************************************************** */
-int MFD3D_Elasticity::StiffnessMatrixMMatrix(
-    int cell, const Tensor& deformation, DenseMatrix& A)
+int MFD3D_Elasticity::StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A)
 {
   int d = mesh_->space_dimension();
   int nd = d * (d + 1);
@@ -259,11 +257,12 @@ int MFD3D_Elasticity::StiffnessMatrixMMatrix(
   DenseMatrix N(nrows, nd);
   DenseMatrix Ac(nrows, nrows);
 
-  int ok = H1consistency(cell, deformation, N, Ac);
+  int ok = H1consistency(c, T, N, Ac);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   int objective = WHETSTONE_SIMPLEX_FUNCTIONAL_TRACE;
-  ok = StabilityMMatrix_(cell, N, Ac, A, objective);
+  ok = StabilityMMatrix_(c, N, Ac, A, objective);
+
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }

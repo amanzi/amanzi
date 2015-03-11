@@ -19,7 +19,7 @@
 #include "EnthalpyEvaluator.hh"
 #include "IEMEvaluator.hh"
 #include "TwoPhaseEnergyEvaluator.hh"
-#include "twophase_thermal_conductivity_evaluator.hh"
+#include "TCMEvaluator_TwoPhase.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -79,8 +79,7 @@ void EnergyTwoPhase_PK::Setup()
   Teuchos::ParameterList tcm_plist = glist_->sublist("PKs")
                                             .sublist("Energy")
                                             .sublist("thermal conductivity evaluator");
-  Teuchos::RCP<ThermalConductivityTwoPhaseEvaluator> tcm =
-      Teuchos::rcp(new ThermalConductivityTwoPhaseEvaluator(tcm_plist));
+  Teuchos::RCP<TCMEvaluator_TwoPhase> tcm = Teuchos::rcp(new TCMEvaluator_TwoPhase(tcm_plist));
   S_->SetFieldEvaluator(conductivity_key_, tcm);
 }
 
@@ -109,8 +108,13 @@ void EnergyTwoPhase_PK::Initialize()
   solution = S_->GetFieldData("temperature", passwd_);
   soln_->SetData(solution); 
 
-  // create evaluators
+  // Create local evaluators. Initialize local fields.
+  InitializeFields_();
+
+  // Create specific evaluators (not used yet)
+  /*
   Teuchos::RCP<FieldEvaluator> eos_fe = S_->GetFieldEvaluator("molar_density_liquid");
+  eos_fe->HasFieldChanged(S_.ptr(), "molar_density_liquid");
   Teuchos::RCP<Relations::EOSEvaluator> eos_eval = Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(eos_fe);
   ASSERT(eos_eval != Teuchos::null);
   eos_liquid_ = eos_eval->get_EOS();
@@ -119,9 +123,7 @@ void EnergyTwoPhase_PK::Initialize()
   Teuchos::RCP<IEMEvaluator> iem_eval = Teuchos::rcp_dynamic_cast<IEMEvaluator>(iem_fe);
   ASSERT(iem_eval != Teuchos::null);
   iem_liquid_ = iem_eval->get_IEM();
-
-  // Create local evaluators. Initialize local fields.
-  InitializeFields_();
+  */
 
   // initialize independent operators: diffusion and advection 
   Teuchos::ParameterList tmp_list = ep_list_->sublist("operators").sublist("diffusion operator");
@@ -169,12 +171,34 @@ void EnergyTwoPhase_PK::Initialize()
 }
 
 
+/* ****************************************************************
+* This completes initialization of missed fields in the state.
+**************************************************************** */
+void EnergyTwoPhase_PK::InitializeFields_()
+{
+  Teuchos::OSTab tab = vo_->getOSTab();
+
+  if (S_->HasField(prev_energy_key_)) {
+    if (!S_->GetField(prev_energy_key_, passwd_)->initialized()) {
+      temperature_eval_->SetFieldAsChanged(S_.ptr());
+      S_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_.ptr(), passwd_);
+
+      const CompositeVector& e1 = *S_->GetFieldData(energy_key_);
+      CompositeVector& e0 = *S_->GetFieldData(prev_energy_key_, passwd_);
+      e0 = e1;
+
+      S_->GetField(prev_energy_key_, passwd_)->set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initilized prev_energy to previous energy" << std::endl;  
+    }
+  }
+}
+
+
 /* ******************************************************************
- * * Transfer part of the internal data needed by transport to the 
- * * flow state FS_MPC. MPC may request to populate the original FS.
- * * The consistency condition is improved by adjusting saturation while
- * * preserving its LED property.
- * ****************************************************************** */
+* TBW 
+****************************************************************** */
 void EnergyTwoPhase_PK::CommitStep(double t_old, double t_new)
 {
 }

@@ -60,7 +60,7 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
-  HEADERFILE WaterContentEvaluator_reg.hh
+  HEADERFILE VWContentEvaluator_reg.hh
   LISTNAME   PKS_FLOW_REGISTRATIONS
   )
 
@@ -114,7 +114,7 @@ set(flow_src_files Flow_PK.cc
                    RelPerm.cc RelPermEvaluator.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
                    WRMPartition.cc WRMFactory.cc WRMEvaluator.cc 
-                   WaterContentEvaluator.cc
+                   VWContentEvaluator.cc VWContentEvaluator_ConstDensity.cc
                    DarcyVelocityEvaluator.cc
                    Darcy_PK_Wrapper.cc Richards_PK_Wrapper.cc
                    )

@@ -120,6 +120,8 @@ void Energy_PK::Initialize()
   bc_flux = bc_factory.CreateEnergyFlux(bc_submodel_);
 
   op_bc_ = Teuchos::rcp(new Operators:: BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_, bc_value_, bc_mixed_));
+
+  InitializeFields_();
 }
 
 
@@ -131,20 +133,12 @@ void Energy_PK::InitializeFields_()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  if (S_->HasField(prev_energy_key_)) {
-    if (!S_->GetField(prev_energy_key_, passwd_)->initialized()) {
-      temperature_eval_->SetFieldAsChanged(S_.ptr());
-      S_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  if (!S_->GetField("temperature", passwd_)->initialized()) {
+    S_->GetFieldData("temperature", passwd_)->PutScalar(298.0);
+    S_->GetField("temperature", passwd_)->set_initialized();
 
-      const CompositeVector& e1 = *S_->GetFieldData(energy_key_);
-      CompositeVector& e0 = *S_->GetFieldData(prev_energy_key_, passwd_);
-      e0 = e1;
-
-      S_->GetField(prev_energy_key_, passwd_)->set_initialized();
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized prev_energy to previous energy" << std::endl;  
-    }
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+        *vo_->os() << "initilized temperature to default value 298 K." << std::endl;  
   }
 
   if (S_->GetField("darcy_flux")->owner() == passwd_) {

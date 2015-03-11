@@ -67,7 +67,9 @@ Mesh_STK::Mesh_STK (const Mesh *inmesh,
                     const std::vector<std::string>& setnames, 
                     const Entity_kind setkind,
                     const bool flatten,
-                    const bool extrude)
+                    const bool extrude,
+		    const bool request_faces,
+		    const bool request_edges)
 {  
   Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the STK framework\n");
   Exceptions::amanzi_throw(mesg);
@@ -77,7 +79,9 @@ Mesh_STK::Mesh_STK (const Mesh_STK& inmesh,
                     const std::vector<std::string>& setnames, 
                     const Entity_kind setkind,
                     const bool flatten,
-                    const bool extrude)
+                    const bool extrude,
+		    const bool request_faces,
+		    const bool request_edges)
 {  
   Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the STK framework\n");
   Exceptions::amanzi_throw(mesg);
@@ -679,7 +683,7 @@ const Epetra_Map&
 Mesh_STK::exterior_face_map(void) const
 {
   Errors::Message mesg("not implemented");
-  amanzi_throw(mesg);
+  Exceptions::amanzi_throw(mesg);
 }
 
 // Epetra importer that will allow apps to import values from a Epetra
@@ -690,7 +694,7 @@ const Epetra_Import&
 Mesh_STK::exterior_face_importer (void) const
 {
   Errors::Message mesg("not implemented");
-  amanzi_throw(mesg);
+  Exceptions::amanzi_throw(mesg);
 }
 
 
@@ -906,7 +910,7 @@ int Mesh_STK::deform(const std::vector<double>& target_cell_volumes_in,
                      const Entity_ID_List& fixed_nodes,
                      const bool move_vertical) {
     Errors::Message mesg("deformation not implemented for STK mesh");
-    amanzi_throw(mesg);
+    Exceptions::amanzi_throw(mesg);
 }
 
 
@@ -1077,7 +1081,7 @@ Mesh_STK::redistribute(const Teuchos::ParameterList &paramlist)
 void
 Mesh_STK::write_to_exodus_file(const std::string filename) const {
   Errors::Message mesg("Not implemented");
-  amanzi_throw(mesg);
+  Exceptions::amanzi_throw(mesg);
 }
 
 } // namespace AmanziMesh
