@@ -8,21 +8,21 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 
-  Field evaluator for total water content which is the 
-  conserved quantity in Richards's equation.
+  Field evaluator for total volumetric water content which is the 
+  conserved quantity density in Richards's equation.
 
   Wrapping this conserved quantity as a field evaluator makes it
   easier to take derivatives, keep updated, and the like.
   The equation for this is simply:
 
-    WC = phi * (s_liquid * n_liquid + X_gas * s_gas * n_gas)
+    VWC = phi * (s_liquid * n_liquid + X_gas * s_gas * n_gas)
 
   where X_gas is the molar fraction of water in the gas phase.
 */
 
 
-#ifndef AMANZI_FLOW_WATER_CONTENT_EVALUATOR_HH_
-#define AMANZI_FLOW_WATER_CONTENT_EVALUATOR_HH_
+#ifndef AMANZI_FLOW_VWCONTENT_EVALUATOR_HH_
+#define AMANZI_FLOW_VWCONTENT_EVALUATOR_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -32,12 +32,14 @@
 namespace Amanzi {
 namespace Flow {
 
-class WaterContentEvaluator : public SecondaryVariableFieldEvaluator {
+class VWContentEvaluator : public SecondaryVariableFieldEvaluator {
  public:
-  explicit WaterContentEvaluator(Teuchos::ParameterList& plist);
-  WaterContentEvaluator(const WaterContentEvaluator& other);
+  explicit VWContentEvaluator(Teuchos::ParameterList& plist);
+  VWContentEvaluator(const VWContentEvaluator& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
+
+  virtual void Init_();
 
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
@@ -47,9 +49,10 @@ class WaterContentEvaluator : public SecondaryVariableFieldEvaluator {
 
  protected:
   bool vapor_phase_;
+  Teuchos::ParameterList plist_;
   
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,WaterContentEvaluator> reg_;
+  static Utils::RegisteredFactory<FieldEvaluator,VWContentEvaluator> reg_;
 };
 
 }  // namespace Flow

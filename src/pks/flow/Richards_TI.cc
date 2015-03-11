@@ -69,6 +69,9 @@ void Richards_PK::Functional(double T0, double T1,
   const Epetra_MultiVector& sat_c = *S_->GetFieldData("saturation_liquid")->ViewComponent("cell");
   const Epetra_MultiVector& sat_prev_c = *S_->GetFieldData("prev_saturation_liquid")->ViewComponent("cell");
 
+  // S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
+  // const Epetra_MultiVector& vwc = *S_->GetFieldData("water_content")->ViewComponent("cell");
+
   for (int c = 0; c < ncells_owned; ++c) {
     double s1 = sat_c[0][c];
     double s2 = sat_prev_c[0][c];

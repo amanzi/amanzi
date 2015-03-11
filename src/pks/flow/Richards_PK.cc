@@ -38,7 +38,8 @@
 #include "Flow_BC_Factory.hh"
 #include "RelPermEvaluator.hh"
 #include "Richards_PK.hh"
-#include "WaterContentEvaluator.hh"
+#include "VWContentEvaluator.hh"
+#include "VWContentEvaluatorFactory.hh"
 #include "WRMEvaluator.hh"
 
 namespace Amanzi {
@@ -153,9 +154,11 @@ void Richards_PK::Setup()
     S_->RequireField("water_content", "water_content")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-    Teuchos::ParameterList elist;
+    Teuchos::ParameterList elist, vwc_list;
     elist.sublist("VerboseObject").set<std::string>("Verbosity Level", "extreme");
-    Teuchos::RCP<WaterContentEvaluator> eval = Teuchos::rcp(new WaterContentEvaluator(elist));
+    VWContentEvaluatorFactory fac;
+
+    Teuchos::RCP<VWContentEvaluator> eval = fac.Create("constant density", vwc_list);
     S_->SetFieldEvaluator("water_content", eval);
   }
 

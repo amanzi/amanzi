@@ -8,7 +8,7 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 
-  Field evaluator for total water content which is the 
+  Field evaluator for total volumetric water content which is the 
   conserved quantity in Richards's equation.
 
   Wrapping this conserved quantity as a field evaluator makes it
@@ -20,7 +20,7 @@
   where X_gas is the molar fraction of water in the gas phase.
 */
 
-#include "WaterContentEvaluator.hh"
+#include "VWContentEvaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -28,13 +28,19 @@ namespace Flow {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-WaterContentEvaluator::WaterContentEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist)
+VWContentEvaluator::VWContentEvaluator(Teuchos::ParameterList& plist) :
+    SecondaryVariableFieldEvaluator(plist),
+    plist_(plist) {}; 
+
+
+/* ******************************************************************
+* Initialization.
+****************************************************************** */
+void VWContentEvaluator::Init_()
 {
   my_key_ = std::string("water_content");
 
   dependencies_.insert(std::string("porosity"));
-
   dependencies_.insert(std::string("saturation_liquid"));
   dependencies_.insert(std::string("molar_density_liquid"));
 
@@ -49,21 +55,21 @@ WaterContentEvaluator::WaterContentEvaluator(Teuchos::ParameterList& plist) :
 /* ******************************************************************
 * Copy constructors.
 ****************************************************************** */
-WaterContentEvaluator::WaterContentEvaluator(const WaterContentEvaluator& other) :
+VWContentEvaluator::VWContentEvaluator(const VWContentEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     vapor_phase_(other.vapor_phase_) {};
 
 
-Teuchos::RCP<FieldEvaluator> WaterContentEvaluator::Clone() const {
-  return Teuchos::rcp(new WaterContentEvaluator(*this));
+Teuchos::RCP<FieldEvaluator> VWContentEvaluator::Clone() const {
+  return Teuchos::rcp(new VWContentEvaluator(*this));
 };
 
 
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void WaterContentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
-                                           const Teuchos::Ptr<CompositeVector>& result)
+void VWContentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+                                        const Teuchos::Ptr<CompositeVector>& result)
 {
   const Epetra_MultiVector& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
   const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
@@ -92,7 +98,7 @@ void WaterContentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void WaterContentEvaluator::EvaluateFieldPartialDerivative_(
+void VWContentEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
