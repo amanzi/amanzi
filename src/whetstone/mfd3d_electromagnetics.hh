@@ -10,8 +10,8 @@
   Author: Tonstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_MFD3D_ELASTICITY_HH_
-#define AMANZI_MFD3D_ELASTICITY_HH_
+#ifndef AMANZI_MFD3D_ELECTROMAGNETICS_HH_
+#define AMANZI_MFD3D_ELECTROMAGNETICS_HH_
 
 /*
   The package uses the formula M = Mc + Ms, where matrix Mc is build from a 
@@ -36,10 +36,10 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_Elasticity : public MFD3D { 
+class MFD3D_Electromagnetics : public MFD3D { 
  public:
-  explicit MFD3D_Elasticity(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : MFD3D(mesh) {};
-  ~MFD3D_Elasticity() {};
+  explicit MFD3D_Electromagnetics(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : MFD3D(mesh) {};
+  ~MFD3D_Electromagnetics() {};
 
   // required implementation of two consistency conditions
   int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
@@ -48,22 +48,19 @@ class MFD3D_Elasticity : public MFD3D {
     return WHETSTONE_ELEMENTAL_MATRIX_OK;
   }
 
-  int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
-
-  int MassMatrix(int c, const Tensor& T, DenseMatrix& M) { 
-    return WHETSTONE_ELEMENTAL_MATRIX_OK; 
+  // consistency condition for stiffness matrix.
+  int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc) {
+    return WHETSTONE_ELEMENTAL_MATRIX_OK;
   } 
+
+  int MassMatrix(int c, const Tensor& T, DenseMatrix& M);
   int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) {
     return WHETSTONE_ELEMENTAL_MATRIX_OK; 
   } 
 
-  int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
-  int StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A);
-  int StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A);
-
- private:
-  void MatrixMatrixProduct_(
-      const DenseMatrix& A, const DenseMatrix& B, bool transposeB, DenseMatrix& AB);
+  int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) {
+    return WHETSTONE_ELEMENTAL_MATRIX_OK; 
+  } 
 };
 
 }  // namespace WhetStone
