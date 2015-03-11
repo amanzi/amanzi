@@ -110,7 +110,8 @@ MeshFactory::create(const std::string& filename,
        i != my_preference.end(); i++) {
     if (framework_reads(*i, fmt, my_comm->NumProc() > 1)) {
       try {
-        result = framework_read(my_comm, *i, filename, gm, verbosity_obj);
+        result = framework_read(my_comm, *i, filename, gm, verbosity_obj,
+                                request_faces, request_edges);
         if (gm && (gm->dimension() != result->space_dimension())) {
           Errors::Message mesg("Geometric model and mesh dimension do not match");
           amanzi_throw(mesg);
@@ -197,7 +198,8 @@ MeshFactory::create(double x0, double y0, double z0,
         result = framework_generate(my_comm, *i, 
                                     x0, y0, z0, x1, y1, z1, 
                                     nx, ny, nz,
-                                    gm, verbosity_obj);
+                                    gm, verbosity_obj,
+                                    request_faces, request_edges);
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;
@@ -276,7 +278,8 @@ MeshFactory::create(double x0, double y0,
         result = framework_generate(my_comm, *i, 
                                     x0, y0, x1, y1,
                                     nx, ny,
-                                    gm, verbosity_obj);
+                                    gm, verbosity_obj,
+                                    request_faces, request_edges);
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;
@@ -323,7 +326,8 @@ MeshFactory::create(Teuchos::ParameterList &parameter_list,
     if (framework_generates(*i, my_comm->NumProc() > 1, dim)) {
       try {
         result = framework_generate(my_comm, *i, parameter_list, gm, 
-                                    verbosity_obj);
+                                    verbosity_obj,
+                                    request_faces, request_edges);
         if (gm && (gm->dimension() != result->space_dimension())) {
           Errors::Message mesg("Geometric model and mesh dimension do not match");
           amanzi_throw(mesg);
@@ -378,7 +382,9 @@ MeshFactory::create(const Mesh *inmesh,
        i != my_preference.end(); i++) {
     if (framework_extracts(*i, my_comm->NumProc() > 1, dim)) {
       try {
-        result = framework_extract(my_comm, *i, inmesh, setnames, setkind, flatten, extrude);
+        result = framework_extract(my_comm, *i, inmesh, setnames, setkind, 
+                                   flatten, extrude,
+                                   request_faces, request_edges);
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;

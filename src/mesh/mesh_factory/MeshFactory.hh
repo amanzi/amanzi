@@ -124,7 +124,7 @@ class MeshFactory {
                                  const bool request_faces = true,
                                  const bool request_edges = false) {
 
-    return create(filename, gm);
+    return create(filename, gm, request_faces, request_edges);
   }
   
   /// Create a hexahedral mesh of the specified dimensions -- operator
@@ -132,9 +132,12 @@ class MeshFactory {
                                  double x1, double y1, double z1,
                                  int nx, int ny, int nz, 
                                  const AmanziGeometry::GeometricModelPtr &gm = 
-                                 (AmanziGeometry::GeometricModelPtr) NULL) {
+                                 (AmanziGeometry::GeometricModelPtr) NULL,
+                                 const bool request_faces = true,
+                                 const bool request_edges = false) {
 
-    return create(x0, y0, z0, x1, y1, z1, nx, ny, nz, gm);
+    return create(x0, y0, z0, x1, y1, z1, nx, ny, nz, gm, 
+                  request_faces, request_edges);
   }
 
   /// Create a quadrilateral mesh of the specified dimensions -- operator
@@ -146,7 +149,7 @@ class MeshFactory {
                                  const bool request_faces = true,
                                  const bool request_edges = false)  {
  
-    return create(x0, y0, x1, y1, nx, ny, gm);
+    return create(x0, y0, x1, y1, nx, ny, gm, request_faces, request_edges);
   }
 
   /// Create a quadrilateral/hexahedral mesh using the specified parameter list
@@ -156,7 +159,7 @@ class MeshFactory {
                                  const bool request_faces = true,
                                  const bool request_edges = false) {
 
-    return create(parameter_list, gm);
+    return create(parameter_list, gm, request_faces, request_edges);
   }
 
   /// Create a mesh by extract subsets of entities from an existing mesh
@@ -168,7 +171,8 @@ class MeshFactory {
                                  const bool request_faces = true,
                                  const bool request_edges = false) {
 
-    return create(inmesh, setnames, setkind, flatten, extrude);
+    return create(inmesh, setnames, setkind, flatten, extrude,
+                  request_faces, request_edges);
   }
 
 };
