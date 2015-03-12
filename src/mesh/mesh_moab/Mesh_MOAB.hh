@@ -38,175 +38,6 @@ namespace AmanziMesh
 class Mesh_MOAB : public Mesh
 {
 
-  private:
-
-    MBCore *mbcore;
-    MBParallelComm *mbcomm;
-
-    int serial_run;
-
-    int spacedim;
-    int celldim; // Topological dimension of highest level entities
-    int facedim; // Topological dimension of 2nd highest level entities
-
-
-
-    // Local handles to entity lists (Vertices, "Faces", "Cells")
-
-    // For a surface mesh, "Faces" refers to mesh edges and "Cells"
-    // refers to mesh faces
-    //
-    // For a solid mesh, "Faces" refers to mesh faces and "Cells"
-    // refers to mesh regions
-    
-
-    // These are MOAB's definitions of types of parallel mesh entities
-    // These definitions are slightly different from what Amanzi has defined
-    //
-    // There are 2 types of cells - Owned and Ghost
-
-    // There are 4 types of lower dimensional entities 
-    //
-    // 1. OWNED - owned by this processor
-    //
-    // 2. NOTOWNED - not owned by this processor
-    //
-    // 3. USED - connected to at least one cell owned by this
-    // processor (may or may not be owned by this processor)
-    //
-    // 4. GHOST - neither the entity nor a cell connected to the
-    // entity is owned by the processor
-
-    // UNFORTUNATELY, THE TERMINOLOGY USED BY THE API USES GHOST TO
-    // MEAN NOTOWNED
-
-    // ALL = OWNED + NOTOWNED or USED + GHOST
-
-
-    MBRange AllVerts, OwnedVerts, NotOwnedVerts;
-
-    MBRange AllFaces, OwnedFaces, NotOwnedFaces;
-
-    MBRange AllCells, OwnedCells, GhostCells;
-
-
-    // tag handles
-
-    MBTag lid_tag;        // Local ID
-    MBTag gid_tag;        // Global ID
-    MBTag mattag;         // Material tag
-    MBTag sstag;          // Sideset tag
-    MBTag nstag;          // Nodeset tag
-
-
-    // Local ID to MOAB handle map
-
-    std::vector<MBEntityHandle> vtx_id_to_handle;
-    std::vector<MBEntityHandle> face_id_to_handle;
-    std::vector<MBEntityHandle> cell_id_to_handle;
-
-
-    // Maps
-
-    Epetra_Map *cell_map_wo_ghosts_, *face_map_wo_ghosts_, *node_map_wo_ghosts_;
-    Epetra_Map *cell_map_w_ghosts_, *face_map_w_ghosts_, *node_map_w_ghosts_;
-
-
-    // Sets (material sets, sidesets, nodesets)
-    // We store the number of sets in the whole problem regardless of whether
-    // they are represented on this processor or not
-    // We also store the IDs of the sets and the dimension of entities 
-    // in those sets
-  
-    int nsets;
-    int *setids_, *setdims_;
-
-
-    // Minimum and maximum global IDs of faces
-
-    unsigned int minFGID, maxFGID;
-
-
-    // flag whether to flip a face dir or not when returning nodes of a face
-
-    bool *faceflip;
-    
-    // Private methods
-    // ----------------------------
-
-    bool valid_entity_kind_ (int kind) const;
-
-
-    void clear_internals_();
-
-    void init_pvert_lists();
-    void init_pface_lists();
-    void init_pcell_lists();
-    void init_pface_dirs();
-
-    void init_id_handle_maps();
-    void init_global_ids();
-
-    void init_cell_map();
-    void init_face_map();
-    void init_node_map();
-
-    void init_set_info();
-
-    MBTag build_set(AmanziGeometry::RegionPtr rgn, Entity_kind kind) const;
-
-    std::string internal_name_of_set(const AmanziGeometry::RegionPtr r,
-                                     const Entity_kind entity_kind) const;
-
-  // Get faces of a cell and directions in which the cell uses the face 
-
-  // The Amanzi coding guidelines regarding function arguments is purposely
-  // violated here to allow for a default input argument
-
-  // On a distributed mesh, this will return all the faces of the
-  // cell, OWNED or GHOST. If ordered = true, the faces will be
-  // returned in a standard order according to Exodus II convention
-  // for standard cells; in all other situations (ordered = false or
-  // non-standard cells), the list of faces will be in arbitrary order
-
-  // In 3D, direction is 1 if face normal points out of cell
-  // and -1 if face normal points into cell
-  // In 2D, direction is 1 if face/edge is defined in the same
-  // direction as the cell polygon, and -1 otherwise
-
-  void cell_get_faces_and_dirs_internal (const Entity_ID cellid,
-                                Entity_ID_List *faceids,
-                                std::vector<int> *face_dirs,
-				const bool ordered=false) const;
-
-
-  // Cells connected to a face
-    
-  void face_get_cells_internal (const Entity_ID faceid, 
-                                const Parallel_type ptype,
-                                Entity_ID_List *cellids) const;
-    
-
-  // Edges of a cell
-
-  void cell_get_edges_internal (const Entity_ID cellid,
-                                Entity_ID_List *edgeids) const 
-  { 
-    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
-    Exceptions::amanzi_throw(mesg);
-  }
-
-  // Edges and edge directions of a face
-
-  void face_get_edges_and_dirs_internal (const Entity_ID cellid,
-					 Entity_ID_List *edgeids,
-					 std::vector<int> *edgedirs,
-					 bool ordered=true) const
-  {
-    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
-    amanzi_throw(mesg);
-  };
-
 
 public:
 
@@ -487,6 +318,175 @@ public:
  // Miscellaneous
   
   void write_to_exodus_file (const std::string filename) const;
+
+  private:
+
+    MBCore *mbcore;
+    MBParallelComm *mbcomm;
+
+    int serial_run;
+
+    int spacedim;
+    int celldim; // Topological dimension of highest level entities
+    int facedim; // Topological dimension of 2nd highest level entities
+
+
+
+    // Local handles to entity lists (Vertices, "Faces", "Cells")
+
+    // For a surface mesh, "Faces" refers to mesh edges and "Cells"
+    // refers to mesh faces
+    //
+    // For a solid mesh, "Faces" refers to mesh faces and "Cells"
+    // refers to mesh regions
+    
+
+    // These are MOAB's definitions of types of parallel mesh entities
+    // These definitions are slightly different from what Amanzi has defined
+    //
+    // There are 2 types of cells - Owned and Ghost
+
+    // There are 4 types of lower dimensional entities 
+    //
+    // 1. OWNED - owned by this processor
+    //
+    // 2. NOTOWNED - not owned by this processor
+    //
+    // 3. USED - connected to at least one cell owned by this
+    // processor (may or may not be owned by this processor)
+    //
+    // 4. GHOST - neither the entity nor a cell connected to the
+    // entity is owned by the processor
+
+    // UNFORTUNATELY, THE TERMINOLOGY USED BY THE API USES GHOST TO
+    // MEAN NOTOWNED
+
+    // ALL = OWNED + NOTOWNED or USED + GHOST
+
+
+    MBRange AllVerts, OwnedVerts, NotOwnedVerts;
+
+    MBRange AllFaces, OwnedFaces, NotOwnedFaces;
+
+    MBRange AllCells, OwnedCells, GhostCells;
+
+
+    // tag handles
+
+    MBTag lid_tag;        // Local ID
+    MBTag gid_tag;        // Global ID
+    MBTag mattag;         // Material tag
+    MBTag sstag;          // Sideset tag
+    MBTag nstag;          // Nodeset tag
+
+
+    // Local ID to MOAB handle map
+
+    std::vector<MBEntityHandle> vtx_id_to_handle;
+    std::vector<MBEntityHandle> face_id_to_handle;
+    std::vector<MBEntityHandle> cell_id_to_handle;
+
+
+    // Maps
+
+    Epetra_Map *cell_map_wo_ghosts_, *face_map_wo_ghosts_, *node_map_wo_ghosts_;
+    Epetra_Map *cell_map_w_ghosts_, *face_map_w_ghosts_, *node_map_w_ghosts_;
+
+
+    // Sets (material sets, sidesets, nodesets)
+    // We store the number of sets in the whole problem regardless of whether
+    // they are represented on this processor or not
+    // We also store the IDs of the sets and the dimension of entities 
+    // in those sets
+  
+    int nsets;
+    int *setids_, *setdims_;
+
+
+    // Minimum and maximum global IDs of faces
+
+    unsigned int minFGID, maxFGID;
+
+
+    // flag whether to flip a face dir or not when returning nodes of a face
+
+    bool *faceflip;
+    
+    // Private methods
+    // ----------------------------
+
+    bool valid_entity_kind_ (int kind) const;
+
+
+    void clear_internals_();
+
+    void init_pvert_lists();
+    void init_pface_lists();
+    void init_pcell_lists();
+    void init_pface_dirs();
+
+    void init_id_handle_maps();
+    void init_global_ids();
+
+    void init_cell_map();
+    void init_face_map();
+    void init_node_map();
+
+    void init_set_info();
+
+    MBTag build_set(AmanziGeometry::RegionPtr rgn, Entity_kind kind) const;
+
+    std::string internal_name_of_set(const AmanziGeometry::RegionPtr r,
+                                     const Entity_kind entity_kind) const;
+
+  // Get faces of a cell and directions in which the cell uses the face 
+
+  // The Amanzi coding guidelines regarding function arguments is purposely
+  // violated here to allow for a default input argument
+
+  // On a distributed mesh, this will return all the faces of the
+  // cell, OWNED or GHOST. If ordered = true, the faces will be
+  // returned in a standard order according to Exodus II convention
+  // for standard cells; in all other situations (ordered = false or
+  // non-standard cells), the list of faces will be in arbitrary order
+
+  // In 3D, direction is 1 if face normal points out of cell
+  // and -1 if face normal points into cell
+  // In 2D, direction is 1 if face/edge is defined in the same
+  // direction as the cell polygon, and -1 otherwise
+
+  void cell_get_faces_and_dirs_internal (const Entity_ID cellid,
+                                Entity_ID_List *faceids,
+                                std::vector<int> *face_dirs,
+				const bool ordered=false) const;
+
+
+  // Cells connected to a face
+    
+  void face_get_cells_internal (const Entity_ID faceid, 
+                                const Parallel_type ptype,
+                                Entity_ID_List *cellids) const;
+    
+
+  // Edges of a cell
+
+  void cell_get_edges_internal (const Entity_ID cellid,
+                                Entity_ID_List *edgeids) const 
+  { 
+    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
+    Exceptions::amanzi_throw(mesg);
+  }
+
+  // Edges and edge directions of a face
+
+  void face_get_edges_and_dirs_internal (const Entity_ID cellid,
+					 Entity_ID_List *edgeids,
+					 std::vector<int> *edgedirs,
+					 bool ordered=true) const
+  {
+    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
+    amanzi_throw(mesg);
+  };
 
 };
 
