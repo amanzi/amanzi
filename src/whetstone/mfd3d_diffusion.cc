@@ -192,7 +192,7 @@ int MFD3D_Diffusion::H1consistency(
     int v = nodes[i];
     mesh_->node_get_coordinates(v, &p);
     for (int k = 0; k < d; k++) N(i, k) = p[k] - cm[k];
-    N(i, d) = 1;  // additional colum is added to the consistency condition
+    N(i, d) = 1;  // additional column is added to the consistency condition
   }
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
