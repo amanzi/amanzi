@@ -156,9 +156,12 @@ void Richards_PK::Setup()
 
     Teuchos::ParameterList elist, vwc_list;
     elist.sublist("VerboseObject").set<std::string>("Verbosity Level", "extreme");
-    VWContentEvaluatorFactory fac;
 
-    Teuchos::RCP<VWContentEvaluator> eval = fac.Create("constant density", vwc_list);
+    VWContentEvaluatorFactory fac;
+    Teuchos::RCP<Teuchos::ParameterList> coupling = Teuchos::sublist(rp_list_, "physics coupling");
+    std::string vwc_model = coupling->get<std::string>("water content model", "constant density");
+
+    Teuchos::RCP<VWContentEvaluator> eval = fac.Create(vwc_model, vwc_list);
     S_->SetFieldEvaluator("water_content", eval);
   }
 
@@ -511,13 +514,17 @@ void Richards_PK::Initialize()
     }
     pressure_eval_->SetFieldAsChanged(S_.ptr());
 
-    // initialization is usually doen at time 0, so we need to update other
+    // initialization is usually done at time 0, so we need to update other
     // fields such as prev_saturation_liquid
     S_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_.ptr(), "flow");
-    Epetra_MultiVector& s_l = *S_->GetFieldData("saturation_liquid", "saturation_liquid")->ViewComponent("cell");
-
-    Epetra_MultiVector& s_l_prev = *S_->GetFieldData("prev_saturation_liquid", passwd_)->ViewComponent("cell");
+    CompositeVector& s_l = *S_->GetFieldData("saturation_liquid", "saturation_liquid");
+    CompositeVector& s_l_prev = *S_->GetFieldData("prev_saturation_liquid", passwd_);
     s_l_prev = s_l;
+
+    S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
+    CompositeVector& wc = *S_->GetFieldData("water_content", "water_content");
+    CompositeVector& wc_prev = *S_->GetFieldData("prev_water_content", passwd_);
+    wc_prev = wc;
   }
 
   // Trigger update of secondary fields depending on the primary pressure.

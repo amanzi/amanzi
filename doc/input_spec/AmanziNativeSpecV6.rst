@@ -1061,10 +1061,17 @@ Physics couplig
 
 To couple with other PKs, we have to specify additional parameters.
 
+  * `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
+    e.g. by EnergyFlow PK. The default value is `"false`".
+
+  * `"water content evaluator`" [string] changes the evaluator for water
+    content. Available options are `"generic`" and `"constant density`" (default).
+
 .. code-block:: xml
 
    <ParameterList name="physics coupling">
      <Parameter name="vapor diffusion" type="bool" value="false"/>
+     <Parameter name="water content evaluator" type="string" value="constant density"/>
    </ParameterList>
 
 

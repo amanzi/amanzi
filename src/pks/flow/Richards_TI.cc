@@ -58,26 +58,22 @@ void Richards_PK::Functional(double T0, double T1,
   op_matrix_->ComputeNegativeResidual(*u_new, *f);
 
   // add accumulation term 
-  const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell");
   Epetra_MultiVector& f_cell = *f->ViewComponent("cell");
 
   functional_max_norm = 0.0;
   functional_max_cell = 0;
   
   pressure_eval_->SetFieldAsChanged(S_.ptr());
-  S_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_.ptr(), "flow");
-  const Epetra_MultiVector& sat_c = *S_->GetFieldData("saturation_liquid")->ViewComponent("cell");
-  const Epetra_MultiVector& sat_prev_c = *S_->GetFieldData("prev_saturation_liquid")->ViewComponent("cell");
-
-  // S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
-  // const Epetra_MultiVector& vwc = *S_->GetFieldData("water_content")->ViewComponent("cell");
+  S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
+  const Epetra_MultiVector& wc_c = *S_->GetFieldData("water_content")->ViewComponent("cell");
+  const Epetra_MultiVector& wc_prev_c = *S_->GetFieldData("prev_water_content")->ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
-    double s1 = sat_c[0][c];
-    double s2 = sat_prev_c[0][c];
- 
-    double factor = rho_ * phi[0][c] * mesh_->cell_volume(c) / dTp;
-    f_cell[0][c] += (s1 - s2) * factor;
+    double wc1 = wc_c[0][c];
+    double wc2 = wc_prev_c[0][c];
+
+    double factor = mesh_->cell_volume(c) / dTp;
+    f_cell[0][c] += (wc1 - wc2) * factor;
 
     double tmp = fabs(f_cell[0][c]) / factor;  // calculate errors
     if (tmp > functional_max_norm) {
