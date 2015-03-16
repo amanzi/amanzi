@@ -1,4 +1,4 @@
-# plots calcium concentration along x at last time step 
+`# plots calcium concentration along x at last time step 
 # benchmark: compares to pflotran simulation results
 # author: S.Molins - Sept. 2013
 
@@ -457,8 +457,8 @@ if __name__ == "__main__":
     #plt.close()
 
     # set x lim
-    ax[0].set_xlim((30,70))
-    plt.savefig(local_path+"calcite_1d_2.png",format="png")
+#    ax[0].set_xlim((30,70))
+#    plt.savefig(local_path+"calcite_1d_2.png",format="png")
 
     #finally:
     #    pass 

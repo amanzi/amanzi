@@ -1,5 +1,5 @@
 TITLE
-Calcite dissolution for Amanzi isotherm_1d benchmark - S. Molins Jan, 2015
+Crunchlow test for Amanzi isotherm_1d benchmark - S. Molins Jan, 2015
 END
 
 RUNTIME
@@ -39,7 +39,9 @@ MINERALS
 END
 
 RETARDATION
-A   0.00126155152498843
+A   0.00504620609995372
+!     L-H2O / Kg-solid
+!A   0.00126155152498843
 END
 
 Condition initial

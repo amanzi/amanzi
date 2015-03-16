@@ -156,14 +156,18 @@ if __name__ == "__main__":
     path_to_crunchflow = "crunchflow"
 
      # hardwired for 1d-isotherms-crunch.in: time and comp
-    times_CF = ['totcon5.out']
-    comp = 0
-    u_crunchflow = []
-    ignore = 4
-    for i, time in enumerate(times_CF):
-       x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
-       u_crunchflow = u_crunchflow + [c_crunchflow]
-    crunch = True
+    try: 
+        times_CF = ['totcon5.out']
+        comp = 0
+        u_crunchflow = []
+        ignore = 4
+        for i, time in enumerate(times_CF):
+           x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
+           u_crunchflow = u_crunchflow + [c_crunchflow]
+        crunch = True
+
+    except: 
+        crunch = False
 
 #   crunchflow does not explicitly calculate sorbed concs in Kd approach   
 
@@ -267,26 +271,28 @@ if __name__ == "__main__":
 
     # +pflotran
     try:
-        # import pdb; pdb.set_trace()
         input_filename = os.path.join("amanzi-s-1d-isotherms-alq-pflo.xml")
         path_to_amanziS = "struct_amanzi-output-pflo"
         run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
         root_amanziS = "plt00051"
         compS = "A_Aqueous_Concentration"
         x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        compS = "A_Sorbed_Concentration"
+        x_amanziS, v_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
         struct = len(x_amanziS)
     except:
         struct = 0
 
     # +crunchflow
     try:
-        # import pdb; pdb.set_trace()
         input_filename = os.path.join("amanzi-s-1d-isotherms-alq-crunch.xml")
         path_to_amanziS = "struct_amanzi-output-crunch"
         run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
         root_amanziS = "plt00051"
         compS = "A_Aqueous_Concentration"
         x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        compS = "A_Sorbed_Concentration"
+        x_amanziS_crunch, v_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)        
         struct_c = len(x_amanziS_crunch)
     except:
         struct_c = 0
@@ -301,41 +307,52 @@ if __name__ == "__main__":
 
     # for i, time in enumerate(times):
     i = 1 # hardwired 50 years
-    for j, comp in enumerate(components):
-            if alq:
-                   ax[0].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2)
-            if isv2:
-                   ax[0].plot(x_amanzi_native_isv2, u_amanzi_native_isv2[i][j],color=colors[j],marker=styles[1],markeredgecolor=colors[j],linestyle='None')
-            ax[0].plot(x_amanzi_native, u_amanzi_native[i][j],markeredgecolor=colors[j],marker=styles[2],linewidth=2,label=comp,mfc='None',markeredgewidth=2,linestyle='None')
-            ax[0].plot(x_pflotran, u_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[3],linewidth=2)
 
-    #import pdb; pdb.set_trace()
+#  pflotran
+    ax[0].plot(x_pflotran, u_pflotran[i][0],color='m',linestyle='-',linewidth=2,label='PFloTran')    
+    ax[1].plot(x_pflotran, v_pflotran[i][0],color='m',linestyle='-',linewidth=2)
+
+# crunchflow
     if crunch:
-             ax[0].plot(x_crunchflow, u_crunchflow[0],color=colors[0],linestyle='--',marker='|',linewidth=5, label='CrunchFlow')
+        ax[0].plot(x_crunchflow, u_crunchflow[0],color='m',linestyle='None',marker='*', label='CrunchFlow OS3D')
 
+# native 1.2
+    ax[0].plot(x_amanzi_native, u_amanzi_native[i][0],color='b',linestyle='None',marker='x')
+    ax[1].plot(x_amanzi_native, v_amanzi_native[i][0],color='b',linestyle='None',marker='x',label='AmanziU (2nd-Ord.) Native(v1.2)')
+
+# native 2.0
+    if isv2:
+       ax[0].plot(x_amanzi_native_isv2, u_amanzi_native_isv2[i][0],color='b',marker='o',markeredgecolor='b',markerfacecolor='None',linestyle='None')  
+       ax[1].plot(x_amanzi_native_isv2, v_amanzi_native_isv2[i][0],color='b',linestyle='None',marker='o',markeredgecolor='b',markerfacecolor='None',label='AmanziU (2nd-Ord.) Native(v2)')
+
+# unstructured alquimia pflotran
+    if alq:
+            ax[0].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][0],color='r',linestyle='-',linewidth=2)
+            ax[1].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][0],color='r',linestyle='-',linewidth=2,label='AmanziU (2nd-Ord.)+Alq(PFT)')
+
+# unstructured alquimia crunch
     if alqc:
-            comp=='A'
-            ax[0].plot(x_amanzi_alquimia_crunch, u_amanzi_alquimia_crunch[i][0],color=colors[0],linestyle='None',marker='*',linewidth=2)
+            ax[0].plot(x_amanzi_alquimia_crunch, u_amanzi_alquimia_crunch[i][0],color='r',linestyle='None',marker='*',linewidth=2)
+            ax[1].plot(x_amanzi_alquimia_crunch, v_amanzi_alquimia_crunch[i][0],color='r',linestyle='None',marker='*',linewidth=2,label='AmanziU (2nd-Ord.)+Alq(CF)')
 
-    # for i, time in enumerate(times):
-    for j, comp in enumerate(components):
-            if alq:
-                   ax[1].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2,label=codes[j*len(styles)])
-            if isv2:
-                   ax[1].plot(x_amanzi_native_isv2, v_amanzi_native_isv2[i][j],color=colors[j],linestyle='None',marker=styles[1],markeredgecolor=colors[j],label=codes[j*len(styles)+1])
-            ax[1].plot(x_amanzi_native, v_amanzi_native[i][j],markeredgecolor=colors[j],marker=styles[2],linewidth=2,label=codes[j*len(styles)+2],mfc='None',markeredgewidth=2,linestyle='None')
-            ax[1].plot(x_pflotran, v_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[3],linewidth=2,label=codes[j*len(styles)+3])
-
-    if alqc:
-            comp=='A'
-            ax[1].plot(x_amanzi_alquimia_crunch, v_amanzi_alquimia_crunch[i][0],color=colors[0],linestyle='None',marker='*',linewidth=2,label='AmanziU (2nd-Ord.)+Alq(CF)')
-
-    #import pdb; pdb.set_trace()
+# structured alquimia pflotran
     if (struct>0):
-        sam = ax[0].plot(x_amanziS, c_amanziS,'g--',label='AmanziS+Alq(PFT)',linewidth=2)     
+        sam = ax[0].plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alq(PFT)',linewidth=2)
+        samv = ax[1].plot(x_amanziS, v_amanziS,'g-',linewidth=2)
 
+# structured alquimia crunch
     if (struct_c>0):
         samc = ax[0].plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alq(CF)',linewidth=2) 
+        samcv = ax[1].plot(x_amanziS_crunch, v_amanziS_crunch,'g*',linewidth=2) #,markersize=20) 
+
+    # for i, time in enumerate(times):
+    ##for j, comp in enumerate(components):
+    ##        if alq:
+    ##               ax[1].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2,label=codes[j*len(styles)])
+     ##       if isv2:
+     ##              
+     ##       ax[1].plot(x_amanzi_native, v_amanzi_native[i][j],markeredgecolor=colors[j],marker=styles[2],linewidth=2,label=codes[j*len(styles)+2],mfc='None',markeredgewidth=2,linestyle='None')
+     ##       ax[1].plot(x_pflotran, v_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[3],linewidth=2,label=codes[j*len(styles)+3])
 
     # axes
     ax[1].set_xlabel("Distance (m)",fontsize=15)
