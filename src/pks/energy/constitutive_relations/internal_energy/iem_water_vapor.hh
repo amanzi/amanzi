@@ -11,7 +11,7 @@ Internal energy model for water_vapor, relative to water @237.15K
 See ATS process model documentation's permafrost physical properties
 documentation for details.
 
-UNITS: J/mol
+UNITS: MJ/mol
 ------------------------------------------------------------------------- */
 
 #ifndef AMANZI_ENERGY_RELATIONS_IE_WATER_VAPOR_
@@ -39,8 +39,8 @@ private:
 
   Teuchos::ParameterList plist_;
 
-  double Cv_air_; // units: J/(mol-K)
-  double heat_vaporization_; // units: J/mol
+  double Cv_air_; // units: MJ/(mol-K)
+  double heat_vaporization_; // units: MJ/mol
   bool molar_basis_;
 };
 

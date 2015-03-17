@@ -10,7 +10,7 @@ Linear internal energy model -- function of Cv and temperature
 
 u = C * (T - T_ref)
 
-UNITS: J/{mol/kg}
+UNITS: MJ/{mol/kg}
 ------------------------------------------------------------------------- */
 
 #include "iem_linear.hh"
@@ -30,10 +30,16 @@ double IEMLinear::InternalEnergy(double temp) {
 
 void IEMLinear::InitializeFromPlist_() {
   if (plist_.isParameter("heat capacity [J/kg-K]")) {
-    Cv_ = plist_.get<double>("heat capacity [J/kg-K]");
+    Cv_ = 1.e-6 * plist_.get<double>("heat capacity [J/kg-K]");
     molar_basis_ = false;
+  } else if (plist_.isParameter("heat capacity [MJ/kg-K]")) {
+    Cv_ = plist_.get<double>("heat capacity [MJ/kg-K]");
+    molar_basis_ = false;
+  } else if (plist_.isParameter("heat capacity [MJ/mol-K]")) {
+    Cv_ = plist_.get<double>("heat capacity [MJ/mol-K]");
+    molar_basis_ = true;
   } else {
-    Cv_ = plist_.get<double>("heat capacity [J/mol-K]");
+    Cv_ = 1.e-6 * plist_.get<double>("heat capacity [J/mol-K]");
     molar_basis_ = true;
   }
 

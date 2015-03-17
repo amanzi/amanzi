@@ -13,7 +13,7 @@ documentation for details.
 
 u = u0 + a(T - T_ref) + b(T - T_ref)^2 
 
-UNITS: J/{mol,kg}
+UNITS: M/{mol,kg}
 ------------------------------------------------------------------------- */
 
 #ifndef AMANZI_ENERGYRELATIONS_IEM_QUADRATIC_
