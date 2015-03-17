@@ -356,6 +356,11 @@ class Mesh
     return column_cells[columnID];
   }
 
+  Entity_ID_List const & faces_of_column(const int columnID) const {
+    if (!columns_built) build_columns();
+    return column_faces[columnID];
+  }
+
   // Given a cell get its column ID
 
   int column_ID(const Entity_ID cellid) const {
@@ -717,6 +722,7 @@ class Mesh
     face_centroids, face_normal0, face_normal1, edge_vectors;
   mutable Entity_ID_List cell_cellabove, cell_cellbelow, node_nodeabove;
   mutable std::vector<Entity_ID_List> column_cells;
+  mutable std::vector<Entity_ID_List> column_faces;
   mutable std::vector<Entity_ID> columnID;
   mutable std::vector<Entity_ID_List> cell_face_ids;
   mutable std::vector< std::vector<int> > cell_face_dirs;
