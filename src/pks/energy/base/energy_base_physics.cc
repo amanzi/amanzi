@@ -47,10 +47,8 @@ void EnergyBase::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
 void EnergyBase::AddAdvection_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& g, bool negate) {
 
-  Teuchos::RCP<CompositeVector> field = advection_->field();
-  field->PutScalar(0);
+  // set up the operator
 
-  // set the flux field
   // NOTE: fluxes are a MOLAR flux by choice of the flow pk, i.e.
   // [flux] =  mol/s
 
@@ -61,36 +59,19 @@ void EnergyBase::AddAdvection_(const Teuchos::Ptr<State>& S,
   //  S->GetFieldEvaluator(flux_key_)->HasFieldChanged(S.ptr(), name_);
   Teuchos::RCP<const CompositeVector> flux = S->GetFieldData(flux_key_);
   db_->WriteVector(" adv flux", flux.ptr(), true);
-  advection_->set_flux(flux);
+  matrix_adv_->global_operator()->Init();
+  matrix_adv_->Setup(*flux);
+  matrix_adv_->UpdateMatrices(*flux);
 
-  // put the advected quantity in cells
+  // apply to enthalpy
   S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S.ptr(), name_);
-  Teuchos::RCP<const CompositeVector> enthalpy = S->GetFieldData(enthalpy_key_);
-  *field->ViewComponent("cell", false) = *enthalpy->ViewComponent("cell", false);
+  Teuchos::RCP<const CompositeVector> enth = S->GetFieldData(enthalpy_key_);;
+  ApplyDirichletBCsToEnthalpy_(S.ptr());
+  matrix_adv_->ApplyBCs(bc_adv_, true);
 
-  // put the boundary fluxes in faces for Dirichlet BCs.
-  ApplyDirichletBCsToEnthalpy_(S.ptr(), field.ptr());
-
-  // apply the advection operator and add to residual
-  advection_->Apply(bc_flux_);
-
-  Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
-  Teuchos::RCP<const CompositeVector> field_const(field);
-  const Epetra_MultiVector& field_c =
-      *field_const->ViewComponent("cell", false);
-
-  int c_owned = g_c.MyLength();
-  if (negate) {
-    for (int c=0; c!=c_owned; ++c) {
-      g_c[0][c] -= field_c[0][c];
-    }
-  } else {
-    for (int c=0; c!=c_owned; ++c) {
-      g_c[0][c] += field_c[0][c];
-    }
-  }
-};
-
+  // apply
+  matrix_adv_->global_operator()->ComputeNegativeResidual(*enth, *g, false);
+}
 
 // -------------------------------------------------------------
 // Diffusion term, div K grad T
@@ -103,6 +84,7 @@ void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
       S_next_->GetFieldData(uw_conductivity_key_);
 
   // update the stiffness matrix
+  matrix_diff_->global_operator()->Init();
   matrix_diff_->Setup(conductivity, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
@@ -114,10 +96,10 @@ void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   }
 
   // finish assembly of the stiffness matrix
-  matrix_diff_->ApplyBCs(bc_);
+  matrix_diff_->ApplyBCs(true);
 
   // calculate the residual
-  matrix_->ComputeNegativeResidual(*temp, *g);
+  matrix_diff_->global_operator()->ComputeNegativeResidual(*temp, *g);
 };
 
 

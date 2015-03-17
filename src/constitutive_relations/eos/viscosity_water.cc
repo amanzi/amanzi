@@ -37,7 +37,7 @@ double ViscosityWater::Viscosity(double T) {
     double A = (kbv2_ + kcv2_*dT)*dT;
     xi = A/(T - 168.15);
   }
-  double visc = 0.001 * pow(10.0, xi);
+  double visc = 0.001 * std::pow(10.0, xi);
 
   if (visc < 1.e-16) {
     std::cout << "Invalid temperature, T = " << T << std::endl;
@@ -49,11 +49,25 @@ double ViscosityWater::Viscosity(double T) {
 double ViscosityWater::DViscosityDT(double T) {
   double dT = kT1_ - T;
   double xi;
+  double dxi_dT;
 
-  Errors::Message message("EOS Visc Water: derivative not implemented");
-  Exceptions::amanzi_throw(message);
-  return -1.;
+  if (T < kT1_) {
+    double A = kav1_ + (kbv1_ + kcv1_*dT)*dT;
+    double dxi_dA = -1301. * std::pow(A, -2);
+    double dA_dT = -(kbv1_ + 2*kcv1_*dT);
+    xi = 1301.0 * (1.0/A - 1.0/kav1_);
+    dxi_dT = dxi_dA * dA_dT;
 
+  } else {
+    double A = (kbv2_ + kcv2_*dT)*dT;
+    double dA_dT = kbv2_ + 2*kcv2_*dT;
+    xi = A/(T - 168.15);
+    dxi_dT = dA_dT / (T-168.15) - A * std::pow(T-168.15, -2);
+  }
+
+
+  double dvisc_dxi = 0.001 * std::pow(10.0, xi) * std::log(10.);
+  return dvisc_dxi * dxi_dT;
 };
 
 

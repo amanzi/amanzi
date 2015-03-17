@@ -13,13 +13,26 @@ with freezing.
 #ifndef MPC_SUBSURFACE_HH_
 #define MPC_SUBSURFACE_HH_
 
-#include "mpc_coupled_cells.hh"
+#include "TreeOperator.hh"
+#include "pk_physical_bdf_base.hh"
+#include "strong_mpc.hh"
 
 namespace Amanzi {
 
 class MPCDelegateEWCSubsurface;
 
-class MPCSubsurface : public MPCCoupledCells {
+namespace Operators {
+class OperatorDiffusion;
+class OperatorDiffusionWithGravity;
+class OperatorAdvection;
+class OperatorAccumulation;
+class Operator;
+class UpwindTotalFlux;
+class Upwinding;
+}
+
+
+class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
 
  public:
 
@@ -27,7 +40,9 @@ class MPCSubsurface : public MPCCoupledCells {
                 Teuchos::ParameterList& FElist,
                 const Teuchos::RCP<TreeVector>& soln) :
       PKDefaultBase(plist, FElist, soln),
-      MPCCoupledCells(plist, FElist, soln) {}
+      StrongMPC<PKPhysicalBDFBase>(plist, FElist, soln) {
+    dump_ = plist->get<bool>("dump preconditioner", false);
+  }
 
   // -- Initialize owned (dependent) variables.
   virtual void setup(const Teuchos::Ptr<State>& S);
@@ -52,6 +67,8 @@ class MPCSubsurface : public MPCCoupledCells {
       ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
                        Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
 
+  Teuchos::RCP<Operators::TreeOperator> preconditioner() { return preconditioner_; }
+  
  protected:
 
   enum PreconditionerType {
@@ -61,19 +78,37 @@ class MPCSubsurface : public MPCCoupledCells {
     PRECON_EWC = 3
   };
 
+  Teuchos::RCP<Operators::TreeOperator> preconditioner_;
+  Teuchos::RCP<Operators::TreeOperator> linsolve_preconditioner_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+
   // preconditioner methods
   PreconditionerType precon_type_;
 
-  // operator for advection in PC
-  //  Teuchos::RCP<Operators::MatrixMFD> pcAdv_;
-  Teuchos::RCP<const CompositeVector> adv_field_;
-  Teuchos::RCP<const CompositeVector> adv_flux_;
+  // off-diagonal precon terms
+  // equations are given by:
+  // dWC/dt + div q = 0
+  // dE/dt + div K grad T + div hq = 0
+  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> ddivq_dT_;
+  Teuchos::RCP<Operators::Upwinding> uw_dkrdT_;
 
+  Teuchos::RCP<Operators::OperatorAccumulation> dWC_dT_;
+  Teuchos::RCP<Operators::Operator> dWC_dT_block_;
+
+  Teuchos::RCP<Operators::OperatorDiffusion> ddivKgT_dp_;
+  Teuchos::RCP<Operators::OperatorDiffusion> ddivhq_dp_;
+  Teuchos::RCP<Operators::OperatorAccumulation> dE_dp_;
+  Teuchos::RCP<Operators::Operator> dE_dp_block_;
+
+  Teuchos::RCP<Operators::UpwindTotalFlux> upwinding_hkr_;
+  
   // EWC delegate
   Teuchos::RCP<MPCDelegateEWCSubsurface> ewc_;
 
-  bool dumped_;
-
+  // cruft for easier global debugging
+  bool dump_;
+  Teuchos::RCP<Debugger> db_;
+  
  private:
   // factory registration
   static RegisteredPKFactory<MPCSubsurface> reg_;

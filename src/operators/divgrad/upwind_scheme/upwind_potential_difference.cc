@@ -128,7 +128,7 @@ void
 UpwindPotentialDifference::UpdateDerivatives(const Teuchos::Ptr<State>& S,
                                         std::string potential_key, 
                                         const CompositeVector& dconductivity,
-                                        const std::vector<MatrixBC>& bc_markers,
+                                        const std::vector<int>& bc_markers,
                                         const std::vector<double>& bc_values,
                                         std::vector<Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > >* Jpp_faces) const {
   double eps = 1.e-16;
@@ -170,7 +170,7 @@ UpwindPotentialDifference::UpdateDerivatives(const Teuchos::Ptr<State>& S,
     (*Jpp_faces)[f] = Jpp;
 
     if (mcells == 1) {
-      if (bc_markers[f] == MATRIX_BC_DIRICHLET) {
+      if (bc_markers[f] == Operators::OPERATOR_BC_DIRICHLET) {
         // determine flux
         p[0] = pres_v[0][cells[0]];
         p[1] = bc_values[f];

@@ -10,6 +10,8 @@
 #include <boost/math/tools/roots.hpp>
 #include "predictor_delegate_bc_flux.hh"
 
+#include "Op.hh"
+
 namespace Amanzi {
 namespace Flow {
 
@@ -62,13 +64,13 @@ PredictorDelegateBCFlux::CreateFunctor_(int f,
 
   // fill the arrays
   for (unsigned int i=0; i!=faces.size(); ++i) {
-    (*Aff)[i] = matrix_->Aff_cells()[c](n,i) / Krel;
+    (*Aff)[i] = matrix_->local_matrices()->matrices[c](n,i) / Krel;
     (*lambda)[i] = (*pres)("face",faces[i]);
   }
 
   // gravity flux
   double bc_flux = mesh_->face_area(f) * (*bc_values_)[f];
-  double gflux = (matrix_->Ff_cells()[c][n] + bc_flux) / Krel;
+  double gflux = ((*matrix_->global_operator()->rhs()->ViewComponent("face",false))[0][faces[n]] + bc_flux) / Krel;
 
 #if DEBUG_FLAG
   std::cout << "   Aff = ";
@@ -108,6 +110,9 @@ int PredictorDelegateBCFlux::CalculateLambdaToms_(int f,
   double right = 0.;
   double lres = 0.;
   double rres = 0.;
+
+  if (res == 0) return 0;
+    
 
   if (res > 0.) {
     left = lambda;

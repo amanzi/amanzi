@@ -94,7 +94,6 @@ void AdvectionDiffusion::UpdatePreconditioner(double t, Teuchos::RCP<const TreeV
   preconditioner_->Init();
   preconditioner_diff_->Setup(thermal_conductivity, Teuchos::null);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  preconditioner_diff_->ApplyBCs(true);
 
   // update with accumulation terms
   Teuchos::RCP<const CompositeVector> cell_volume =
@@ -116,6 +115,7 @@ void AdvectionDiffusion::UpdatePreconditioner(double t, Teuchos::RCP<const TreeV
   }
   
   // assemble and create PC
+  preconditioner_diff_->ApplyBCs(true);
   preconditioner_->AssembleMatrix();
   preconditioner_->InitPreconditioner("preconditioner", plist_->sublist("Diffusion PC"));
 

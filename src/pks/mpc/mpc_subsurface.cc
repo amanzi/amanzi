@@ -11,11 +11,19 @@ with freezing.
 ------------------------------------------------------------------------- */
 #include "EpetraExt_RowMatrixOut.h"
 
-#include "energy_base.hh"
+#include "MultiplicativeEvaluator.hh"
+#include "TreeOperator.hh"
+#include "OperatorDiffusionWithGravity.hh"
+#include "OperatorAdvection.hh"
+#include "OperatorAccumulation.hh"
+#include "Operator.hh"
+#include "upwind_total_flux.hh"
+
 #include "permafrost_model.hh"
+#include "richards.hh"
+
 #include "mpc_delegate_ewc_subsurface.hh"
 #include "mpc_subsurface.hh"
-#include "advection.hh"
 
 #define DEBUG_FLAG 1
 
@@ -23,28 +31,24 @@ namespace Amanzi {
 
 // -- Initialize owned (dependent) variables.
 void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
-  dumped_ = false;
+  StrongMPC<PKPhysicalBDFBase>::setup(S);
+  mesh_ = S->GetMesh("domain");
 
-  // off-diagonal terms needed by MPCCoupledCells
-  plist_->set("conserved quantity A", "water_content");
-  plist_->set("conserved quantity B", "energy");
-  plist_->set("primary variable A", "pressure");
-  plist_->set("primary variable B", "temperature");
+  // set up debugger
+  db_ = Teuchos::rcp(new Debugger(mesh_, name_, *plist_));
 
-  plist_->set("mesh key", "domain");
-  MPCCoupledCells::setup(S);
+  // Get the sub-blocks from the sub-PK's preconditioners.
+  Teuchos::RCP<Operators::Operator> pcA = sub_pks_[0]->preconditioner();
+  Teuchos::RCP<Operators::Operator> pcB = sub_pks_[1]->preconditioner();
 
-  // // set up the advective term -- this is very hackish and demonstrates why coupled PKs should be redesigned --etc
-  // // -- clone the surface flow operator
-  // Teuchos::RCP<CompositeMatrix> pcAdv_mat = sub_pks_[0]->preconditioner()->Clone();
-  // pcAdv_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(pcAdv_mat);
-  // ASSERT(pcAdv_ != Teuchos::null);
-  // mfd_preconditioner_->SetAdvectiveBlock(pcAdv_);
-  // // -- get the field
-  // Teuchos::RCP<Energy::EnergyBase> pk_as_energy = Teuchos::rcp_dynamic_cast<Energy::EnergyBase>(sub_pks_[1]);
-  // ASSERT(pk_as_energy != Teuchos::null);
-  // adv_field_ = pk_as_energy->advection()->field();
-  // adv_flux_ = pk_as_energy->advection()->flux();
+  // Create the combined operator
+  Teuchos::RCP<TreeVectorSpace> tvs = Teuchos::rcp(new TreeVectorSpace());
+  tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(pcA->DomainMap()))));
+  tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(pcB->DomainMap()))));
+
+  preconditioner_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+  preconditioner_->SetOperatorBlock(0, 0, pcA);
+  preconditioner_->SetOperatorBlock(1, 1, pcB);
   
   // select the method used for preconditioning
   std::string precon_string = plist_->get<std::string>("preconditioner type", "picard");
@@ -55,14 +59,139 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
   } else if (precon_string == "picard") {
     precon_type_ = PRECON_PICARD;
   } else if (precon_string == "ewc") {
+    ASSERT(0);
     precon_type_ = PRECON_EWC;
   } else if (precon_string == "smart ewc") {
+    ASSERT(0);
     precon_type_ = PRECON_EWC;
   } else {
     Errors::Message message(std::string("Invalid preconditioner type ")+precon_string);
     Exceptions::amanzi_throw(message);
   }
 
+  // create offdiagonal blocks
+  if (precon_type_ != PRECON_NONE && precon_type_ != PRECON_BLOCK_DIAGONAL) {
+    Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
+
+    std::vector<AmanziMesh::Entity_kind> locations2(2);
+    std::vector<std::string> names2(2);
+    std::vector<int> num_dofs2(2,1);
+    locations2[0] = AmanziMesh::CELL;
+    names2[0] = "cell";
+
+      // Create the block for derivatives of mass conservation with respect to temperature
+    // -- derivatives of kr with respect to temperature
+    if (!plist_->get<bool>("supress Jacobian terms: d div q / dT", false)) {
+      // need to upwind dkr/dT
+      S->RequireField("dnumerical_rel_perm_dtemperature", name_)
+          ->SetMesh(mesh_)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
+      S->GetField("dnumerical_rel_perm_dtemperature",name_)->set_io_vis(false);
+      uw_dkrdT_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_, "drelative_permeability_dtemperature",
+              "dnumerical_rel_perm_dtemperature", "darcy_flux_direction", 1.e-8));
+
+      // set up the operator
+      Teuchos::ParameterList divq_plist(plist_->sublist("PKs").sublist(pk_order[0]).sublist("Diffusion PC"));
+      divq_plist.set("newton correction", "approximate jacobian");
+      divq_plist.set("exclude primary terms", true);
+      ddivq_dT_ = Teuchos::rcp(new Operators::OperatorDiffusionWithGravity(divq_plist,mesh_));
+      dWC_dT_block_ = ddivq_dT_->global_operator();
+    }
+
+    // -- derivatives of water content with respect to temperature
+    if (dWC_dT_block_ == Teuchos::null) {
+      dWC_dT_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, mesh_));
+      dWC_dT_block_ = dWC_dT_->global_operator();
+    } else {
+      dWC_dT_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, dWC_dT_block_));
+    }
+
+    // Create the block for derivatives of energy conservation with respect to pressure
+    // -- derivatives of thermal conductivity with respect to pressure
+    if (!plist_->get<bool>("supress Jacobian terms: d div K grad T / dp", false)) {
+      ASSERT(0); // this is not useful until newton corrections are added for non-upwinded schemes
+      Teuchos::ParameterList divq_plist(plist_->sublist("PKs").sublist(pk_order[1]).sublist("Diffusion PC"));
+      divq_plist.set("newton correction", "approximate jacobian");
+      divq_plist.set("exclude primary terms", true);
+      ddivKgT_dp_ = Teuchos::rcp(new Operators::OperatorDiffusionMFD(divq_plist,mesh_));
+      ddivKgT_dp_->SetBCs(sub_pks_[1]->BCs());
+      dE_dp_block_ = ddivKgT_dp_->global_operator();
+    }
+
+    // -- derivatives of advection term with respect to pressure
+    if (!plist_->get<bool>("supress Jacobian terms: div hq / dp", false)) {
+      Teuchos::ParameterList divq_plist(plist_->sublist("PKs").sublist(pk_order[0]).sublist("Diffusion PC"));
+      divq_plist.set("newton correction", "approximate jacobian");
+
+      if (dE_dp_block_ == Teuchos::null) {
+        ddivhq_dp_ = Teuchos::rcp(new Operators::OperatorDiffusionMFD(divq_plist,mesh_));
+        dE_dp_block_ = ddivhq_dp_->global_operator();
+      } else {
+        ddivhq_dp_ = Teuchos::rcp(new Operators::OperatorDiffusionMFD(divq_plist, dE_dp_block_));
+      }
+      ddivhq_dp_->SetBCs(sub_pks_[1]->BCs());
+
+      // need a field, evaluator, and upwinding for h * kr * rho/mu
+      // -- first the evaluator
+      Teuchos::ParameterList hkr_eval_list;
+      hkr_eval_list.set("evaluator name", "enthalpy_times_relative_permeability");
+      Teuchos::Array<std::string> deps(2);
+      deps[0] = "enthalpy"; deps[1] = "relative_permeability";
+      hkr_eval_list.set("evaluator dependencies", deps);
+      Teuchos::RCP<FieldEvaluator> hkr_eval = Teuchos::rcp(new Relations::MultiplicativeEvaluator(hkr_eval_list));
+
+      // -- now the field
+      names2[1] = "boundary_face";
+      locations2[1] = AmanziMesh::BOUNDARY_FACE;
+      S->RequireField("enthalpy_times_relative_permeability")->SetMesh(mesh_)->SetGhosted()
+          ->AddComponents(names2, locations2, num_dofs2);
+      S->SetFieldEvaluator("enthalpy_times_relative_permeability", hkr_eval);
+
+      // -- and the upwinded field
+      names2[1] = "face";
+      locations2[1] = AmanziMesh::FACE;
+      S->RequireField("numerical_enthalpy_times_relative_permeability", name_)
+          ->SetMesh(mesh_)->SetGhosted()
+          ->SetComponents(names2, locations2, num_dofs2);
+
+      // -- and the upwinding
+      std::string method_name = plist_->sublist("PKs").sublist(pk_order[0])
+          .get<std::string>("relative permeability method", "upwind with gravity");
+      if (method_name != "upwind with Darcy flux") {
+        Errors::Message msg;
+        msg << "Subsurface coupler with advective Jacobian terms only supports a Richards upwind scheme of "
+            << "\"upwind with Darcy flux\", but the method \"" << method_name << "\" was requested.";
+        Exceptions::amanzi_throw(msg);
+      }
+      upwinding_hkr_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_, "enthalpy_times_relative_permeability",
+              "numerical_enthalpy_times_relative_permeability", "darcy_flux_direction", 1.e-8));
+    }
+
+    // -- derivatives of energy with respect to pressure
+    if (dE_dp_block_ == Teuchos::null) {
+      dE_dp_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, mesh_));
+      dE_dp_block_ = dE_dp_->global_operator();
+    } else {
+      dE_dp_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, dE_dp_block_));
+    }
+
+    ASSERT(dWC_dT_block_ != Teuchos::null);
+    ASSERT(dE_dp_block_ != Teuchos::null);
+    preconditioner_->SetOperatorBlock(0, 1, dWC_dT_block_);
+    preconditioner_->SetOperatorBlock(1, 0, dE_dp_block_);
+  }
+  
+  // set up sparsity structure
+  preconditioner_->SymbolicAssembleMatrix();
+
+  // create the linear solver
+  if (plist_->isSublist("linear solver")) {
+    Teuchos::ParameterList& lin_solver_list = plist_->sublist("linear solver");
+    AmanziSolvers::LinearOperatorFactory<Operators::TreeOperator, TreeVector, TreeVectorSpace> fac;
+    linsolve_preconditioner_ = fac.Create(lin_solver_list, preconditioner_);
+  } else {
+    linsolve_preconditioner_ = preconditioner_;
+  }
+  
   // create the EWC delegate
   if (plist_->isSublist("ewc delegate")) {
     Teuchos::RCP<Teuchos::ParameterList> sub_ewc_list = Teuchos::sublist(plist_, "ewc delegate");
@@ -79,24 +208,46 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
 }
 
 void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
-  MPCCoupledCells::initialize(S);
+  StrongMPC<PKPhysicalBDFBase>::initialize(S);
   if (ewc_ != Teuchos::null) ewc_->initialize(S);
 
-  // advection mass matrices
-  //  *pcAdv_ = *sub_pks_[0]->preconditioner();
-  
+  // initialize offdiagonal operators
+  Teuchos::RCP<Flow::Richards> richards_pk = Teuchos::rcp_dynamic_cast<Flow::Richards>(sub_pks_[0]);
+  ASSERT(richards_pk != Teuchos::null);
+
+  if (ddivq_dT_ != Teuchos::null) {
+    S->GetFieldData("dnumerical_rel_perm_dtemperature",name_)->PutScalar(1.0);
+    S->GetField("dnumerical_rel_perm_dtemperature",name_)->set_initialized();
+
+    Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
+    AmanziGeometry::Point g(3);
+    g[0] = (*gvec)[0]; g[1] = (*gvec)[1]; g[2] = (*gvec)[2];
+    ddivq_dT_->SetGravity(g);    
+    ddivq_dT_->SetBCs(sub_pks_[0]->BCs());
+    ddivq_dT_->Setup(richards_pk->K_);
+  }
+
+  if (ddivKgT_dp_ != Teuchos::null) {
+    ddivKgT_dp_->Setup(Teuchos::null);
+  }
+
+  if (ddivhq_dp_ != Teuchos::null) {
+    S->GetFieldData("numerical_enthalpy_times_relative_permeability", name_)->PutScalar(1.);
+    S->GetField("numerical_enthalpy_times_relative_permeability", name_)->set_initialized();
+    ddivhq_dp_->Setup(richards_pk->K_);
+  }  
 }
 
 
 void MPCSubsurface::set_states(const Teuchos::RCP<const State>& S,
         const Teuchos::RCP<State>& S_inter,
         const Teuchos::RCP<State>& S_next) {
-  MPCCoupledCells::set_states(S,S_inter,S_next);
+  StrongMPC<PKPhysicalBDFBase>::set_states(S,S_inter,S_next);
   if (ewc_ != Teuchos::null) ewc_->set_states(S,S_inter,S_next);
 }
 
 void MPCSubsurface::commit_state(double dt, const Teuchos::RCP<State>& S) {
-  MPCCoupledCells::commit_state(dt,S);
+  StrongMPC<PKPhysicalBDFBase>::commit_state(dt,S);
   if (ewc_ != Teuchos::null) ewc_->commit_state(dt,S);
 }
 
@@ -110,7 +261,7 @@ bool MPCSubsurface::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> up0
   }
 
   // potentially update faces
-  modified |= MPCCoupledCells::ModifyPredictor(h, up0, up);
+  modified |= StrongMPC<PKPhysicalBDFBase>::ModifyPredictor(h, up0, up);
   return modified;
 }
 
@@ -122,41 +273,109 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
   } else if (precon_type_ == PRECON_BLOCK_DIAGONAL) {
     StrongMPC::UpdatePreconditioner(t,up,h);
   } else if (precon_type_ == PRECON_PICARD || precon_type_ == PRECON_EWC) {
-    MPCCoupledCells::UpdatePreconditioner(t,up,h);
+    StrongMPC::UpdatePreconditioner(t,up,h);
 
-    // // update advective components
-    // if (adv_flux_ == Teuchos::null) {
-    //   Teuchos::RCP<Energy::EnergyBase> pk_as_energy = Teuchos::rcp_dynamic_cast<Energy::EnergyBase>(sub_pks_[1]);
-    //   ASSERT(pk_as_energy != Teuchos::null);
-    //   adv_flux_ = pk_as_energy->advection()->flux();
-    // }
+    // Update operators for off-diagonals
+    dWC_dT_block_->Init();
+    dE_dp_block_->Init();
+    
+    // dWC / dT block
+    // -- dkr/dT
+    if (ddivq_dT_ != Teuchos::null) {
+      S_next_->GetFieldEvaluator("relative_permeability")
+          ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "temperature");
+      Teuchos::RCP<CompositeVector> dkrdT_uw =
+          S_next_->GetFieldData("dnumerical_rel_perm_dtemperature", name_);
+      dkrdT_uw->PutScalar(0.);
+      uw_dkrdT_->Update(S_next_.ptr());
+      Teuchos::RCP<const CompositeVector> kr_uw = S_next_->GetFieldData("numerical_rel_perm");
+      Teuchos::RCP<const CompositeVector> flux = S_next_->GetFieldData("darcy_flux");
+      Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData("mass_density_liquid");
 
-    // //     if (dynamic_mesh_) *pcAdv_ = *sub_pks_[0]->preconditioner();
-    // Teuchos::RCP<const CompositeVector> rel_perm =
-    //     S_next_->GetFieldData("numerical_rel_perm");
-    // Teuchos::RCP<CompositeVector> rel_perm_times_enthalpy =
-    //     Teuchos::rcp(new CompositeVector(*rel_perm));
-    // *rel_perm_times_enthalpy = *rel_perm;
-    // {
-    //   Epetra_MultiVector& kr_f = *rel_perm_times_enthalpy->ViewComponent("face",false);
-    //   const Epetra_MultiVector& enth_u = *adv_field_->ViewComponent("face",false);
-    //   const Epetra_MultiVector& enth_c = *adv_field_->ViewComponent("cell",true);
-    //   const Epetra_MultiVector& flux = *adv_flux_->ViewComponent("face",false);
-    //   for (int f=0; f!=kr_f.MyLength(); ++f) {
-    //     if (std::abs(flux[0][f]) > 1.e-12) {
-    //       kr_f[0][f] *= enth_u[0][f] / std::abs(flux[0][f]);
-    //     } else {
-    //       AmanziMesh::Entity_ID_List cells;
-    //       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    //       if (cells.size() == 1) {
-    //         kr_f[0][f] *= enth_c[0][cells[0]];
-    //       } else {
-    //         kr_f[0][f] *= (enth_c[0][cells[0]] + enth_c[0][cells[1]])/2.;
-    //       }
-    //     }
-    //   }
-    // }
-    // pcAdv_->CreateMFDstiffnessMatrices(rel_perm_times_enthalpy.ptr());
+      Teuchos::RCP<CompositeVector> kr_uw_modified =
+          Teuchos::rcp(new CompositeVector(*kr_uw));
+      *kr_uw_modified = *kr_uw;
+      
+      {
+        Epetra_MultiVector& kr_uw_mod_f = *kr_uw_modified->ViewComponent("face",false);
+        unsigned int nfaces = kr_uw_mod_f.MyLength();
+        for (unsigned int f=0; f!=nfaces; ++f) {
+          kr_uw_mod_f[0][f] = std::max(kr_uw_mod_f[0][f], 1.e-18);
+        }
+      }      
+
+      ddivq_dT_->SetVectorDensity(rho);
+      ddivq_dT_->Setup(kr_uw_modified, dkrdT_uw);
+      ddivq_dT_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
+      ddivq_dT_->ApplyBCs(false);
+    }
+
+    // -- dWC/dT diagonal term
+    S_next_->GetFieldEvaluator("water_content")
+        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "temperature");
+    Teuchos::RCP<const CompositeVector> dWC_dT = S_next_->GetFieldData("dwater_content_dtemperature");
+    dWC_dT_->AddAccumulationTerm(*dWC_dT->ViewComponent("cell", false), h);
+
+    // std::cout << "1/h * DWC/DT" << std::endl;
+    // CompositeVector dbg(*dWC_dT); dbg = *dWC_dT; dbg.Scale(1./h); dbg.Print(std::cout);
+    
+
+    // dE / dp block
+    // -- d Kappa / dp
+    if (ddivKgT_dp_ != Teuchos::null) {
+      S_next_->GetFieldEvaluator("thermal_conductivity")
+          ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "pressure");
+      Teuchos::RCP<const CompositeVector> dKdp = S_next_->GetFieldData("dthermal_conductivity_dpressure");
+      Teuchos::RCP<const CompositeVector> Kappa = S_next_->GetFieldData("numerical_thermal_conductivity");
+      ddivKgT_dp_->Setup(Kappa, dKdp);
+      ddivKgT_dp_->UpdateMatrices(Teuchos::null, up->SubVector(1)->Data().ptr());
+      ddivKgT_dp_->ApplyBCs(false);
+    }
+
+    // -- d adv / dp   This one is a bit more complicated...
+    if (ddivhq_dp_ != Teuchos::null) {
+      // update and upwind enthalpy * kr * rho/mu
+      S_next_->GetFieldEvaluator("enthalpy_times_relative_permeability")->HasFieldChanged(S_next_.ptr(), name_);
+      S_next_->GetFieldEvaluator("enthalpy_times_relative_permeability")
+          ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "pressure");
+      upwinding_hkr_->Update(S_next_.ptr(), db_.ptr());
+
+      Teuchos::RCP<const CompositeVector> enth_kr =
+          S_next_->GetFieldData("numerical_enthalpy_times_relative_permeability");
+      Teuchos::RCP<const CompositeVector> denth_kr_dp =
+          S_next_->GetFieldData("dnumerical_enthalpy_times_relative_permeability_dpressure");
+      Teuchos::RCP<const CompositeVector> flux_dir = S_next_->GetFieldData("darcy_flux_direction");
+      ddivhq_dp_->Setup(enth_kr, denth_kr_dp);
+      ddivhq_dp_->UpdateMatrices(flux_dir.ptr(), up->SubVector(0)->Data().ptr());
+      ddivhq_dp_->ApplyBCs(false);
+    }
+
+    // -- dWC/dT diagonal term
+    S_next_->GetFieldEvaluator("energy")
+        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "pressure");
+    Teuchos::RCP<const CompositeVector> dE_dp = S_next_->GetFieldData("denergy_dpressure");
+    dE_dp_->AddAccumulationTerm(*dE_dp->ViewComponent("cell", false), h);
+
+    // std::cout << "1/h * DE/Dp" << std::endl;
+    // dbg = *dE_dp; dbg.Scale(1./h); dbg.Print(std::cout);
+    
+    // write for debugging
+    std::vector<std::string> vnames;
+    vnames.push_back("  dwc_dT"); vnames.push_back("  de_dp"); 
+    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    vecs.push_back(dWC_dT.ptr()); vecs.push_back(dE_dp.ptr());
+    db_->WriteVectors(vnames, vecs, false);
+
+    // finally assemble the full system, dump if requested, and form the inverse
+    preconditioner_->AssembleMatrix();
+    if (dump_) {
+      std::stringstream filename;
+      filename << "Subsurface_PC_" << S_next_->cycle() << ".txt";
+      EpetraExt::RowMatrixToMatlabFile(filename.str().c_str(), *preconditioner_->A());
+    }
+    Teuchos::ParameterList& pc_sublist = plist_->sublist("preconditioner");
+    preconditioner_->InitPreconditioner(pc_sublist);
+
   }
   
   if (precon_type_ == PRECON_EWC) {
@@ -191,9 +410,9 @@ void MPCSubsurface::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
   } else if (precon_type_ == PRECON_BLOCK_DIAGONAL) {
     StrongMPC::ApplyPreconditioner(u,Pu);
   } else if (precon_type_ == PRECON_PICARD) {
-    MPCCoupledCells::ApplyPreconditioner(u,Pu);
+    linsolve_preconditioner_->ApplyInverse(*u, *Pu);
   } else if (precon_type_ == PRECON_EWC) {
-    MPCCoupledCells::ApplyPreconditioner(u,Pu);
+    linsolve_preconditioner_->ApplyInverse(*u, *Pu);
 
   //   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
   //     *vo_->os() << "PC_std * residuals:" << std::endl;

@@ -85,11 +85,11 @@ void EnergyBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector>
   db_->WriteVector("res (acc)", res.ptr());
 #endif
 
-  // advection term, implicit by default, options for explicit
-  if (explicit_advection_ && niter_ <= explicit_advection_iter_) {
-    AddAdvection_(S_inter_.ptr(), res.ptr(), true);
-  } else {
+  // advection term
+  if (implicit_advection_) {
     AddAdvection_(S_next_.ptr(), res.ptr(), true);
+  } else {
+    AddAdvection_(S_inter_.ptr(), res.ptr(), true);
   }
 #if DEBUG_FLAG
   db_->WriteVector("res (adv)", res.ptr());
@@ -160,6 +160,7 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   Teuchos::RCP<const CompositeVector> conductivity =
       S_next_->GetFieldData(uw_conductivity_key_);
 
+  preconditioner_->Init();
   preconditioner_diff_->Setup(conductivity, Teuchos::null);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
@@ -197,9 +198,24 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   // -- update preconditioner with source term derivatives if needed
   AddSourcesToPrecon_(S_next_.ptr(), h);
 
+  // update with advection terms
+  if (implicit_advection_ && implicit_advection_in_pc_) {
+    Teuchos::RCP<const CompositeVector> darcy_flux = S_next_->GetFieldData("darcy_flux");
+    S_next_->GetFieldEvaluator(enthalpy_key_)
+        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+    Teuchos::RCP<const CompositeVector> dhdT = S_next_->GetFieldData(denthalpy_key_);
+    preconditioner_adv_->Setup(*darcy_flux);
+    preconditioner_adv_->UpdateMatrices(*darcy_flux, *dhdT);
+    ApplyDirichletBCsToEnthalpy_(S_next_.ptr());
+    preconditioner_adv_->ApplyBCs(bc_adv_, true);
+  }
+
   // Apply boundary conditions.
-  preconditioner_diff_->ApplyBCs(bc_);
-  if (precon_used_) preconditioner_->AssembleMatrix();
+  preconditioner_diff_->ApplyBCs(true);
+  if (precon_used_) {
+    preconditioner_->AssembleMatrix();
+    preconditioner_->InitPreconditioner(plist_->sublist("Diffusion PC").sublist("preconditioner"));
+  }
 };
 
 

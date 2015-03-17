@@ -14,7 +14,7 @@
 #include "State.hh"
 
 #include "TreeVector.hh"
-#include "MatrixMFD.hh"
+#include "OperatorDiffusion.hh"
 #include "wrm_partition.hh"
 
 namespace Amanzi {
@@ -25,9 +25,9 @@ class PredictorDelegateBCFlux {
  public:
   PredictorDelegateBCFlux(const Teuchos::RCP<const State>& S_next,
                           const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                          const Teuchos::RCP<Operators::MatrixMFD>& matrix,
+                          const Teuchos::RCP<Operators::OperatorDiffusion>& matrix,
                           const Teuchos::RCP<FlowRelations::WRMPartition>& wrms,
-                          std::vector<Operators::MatrixBC>* bc_markers,
+                          std::vector<int>* bc_markers,
                           std::vector<double>* bc_values) :
       S_next_(S_next),
       mesh_(mesh),
@@ -113,10 +113,10 @@ class PredictorDelegateBCFlux {
  protected:
   Teuchos::RCP<const State> S_next_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<Operators::MatrixMFD> matrix_;
+  Teuchos::RCP<Operators::OperatorDiffusion> matrix_;
   Teuchos::RCP<FlowRelations::WRMPartition> wrms_;
 
-  std::vector<Operators::MatrixBC>* bc_markers_;
+  std::vector<int>* bc_markers_;
   std::vector<double>* bc_values_;
 
 };

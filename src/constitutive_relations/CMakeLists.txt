@@ -4,7 +4,7 @@
 add_subdirectory(eos)
 add_subdirectory(surface_subsurface_fluxes)
 add_subdirectory(ewc)
-
+add_subdirectory(generic_evaluators)
 
 #================================================================
 # register evaluators/factories/pks
@@ -101,3 +101,13 @@ generate_evaluators_registration_header(
   )
 
 
+register_evaluator_with_factory(
+  HEADERFILE generic_evaluators/MultiplicativeEvaluator_reg.hh
+  LISTNAME CONSTITUTIVE_RELATIONS_GENERIC_EVALUATORS
+  )
+
+generate_evaluators_registration_header(
+  HEADERFILE constitutive_relations_generic_evaluators_registration.hh
+  LISTNAME   CONSTITUTIVE_RELATIONS_GENERIC_EVALUATORS
+  INSTALL    True
+  )

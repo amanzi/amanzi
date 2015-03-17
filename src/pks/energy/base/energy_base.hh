@@ -46,7 +46,7 @@ public:
       coupled_to_surface_via_temp_(false),
       coupled_to_surface_via_flux_(false),
       niter_(0),
-      explicit_advection_(false) {}
+      implicit_advection_(true) {}
 
   // Virtual destructor
   virtual ~EnergyBase() {}
@@ -87,12 +87,8 @@ public:
           Teuchos::RCP<TreeVector> u);
     
   // evaluating consistent faces for given BCs and cell values
-  virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
+  //  virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
 
-
-  Teuchos::RCP<Operators::Advection>& advection() { return advection_; }
-
-  
 protected:
   // These must be provided by the deriving PK.
   // -- setup the evaluators
@@ -101,8 +97,7 @@ protected:
   // -- get enthalpy as a function of Dirichlet boundary data.  Note that this
   //    will get replaced by a better system when we get maps on the boundary
   //    faces.
-  virtual void ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& enth) = 0;
+  virtual void ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S) = 0;
 
   // -- Add any source terms into the residual.
   virtual void AddSources_(const Teuchos::Ptr<State>& S,
@@ -146,19 +141,21 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_temperature_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
 
+  std::vector<int> bc_markers_adv_;
+  std::vector<double> bc_values_adv_;
+  Teuchos::RCP<Operators::BCs> bc_adv_;
+
   // operators
   Operators::UpwindMethod Krel_method_;
   Teuchos::RCP<Operators::Upwinding> upwinding_;
 
   // mathematical operators
-  Teuchos::RCP<Operators::Operator> matrix_; // pc in PKPhysicalBDFBase
   Teuchos::RCP<Operators::OperatorDiffusion> matrix_diff_;
+  Teuchos::RCP<Operators::OperatorAdvection> matrix_adv_;
 
   Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
   Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
   Teuchos::RCP<Operators::OperatorAdvection> preconditioner_adv_;
-
-  Teuchos::RCP<Operators::Advection> advection_;
 
   // custom enorm tolerances
   double flux_tol_;
@@ -169,8 +166,8 @@ protected:
   bool modify_predictor_with_consistent_faces_;
   bool is_source_term_;
   bool is_mass_source_term_;
-  bool explicit_advection_;
-  int explicit_advection_iter_;
+  bool implicit_advection_;
+  bool implicit_advection_in_pc_;
   bool precon_used_;
 
   bool coupled_to_subsurface_via_temp_;
@@ -182,6 +179,7 @@ protected:
   Key energy_key_;
   Key cell_vol_key_;
   Key enthalpy_key_;
+  Key denthalpy_key_;
   Key flux_key_;
   Key energy_flux_key_;
   Key conductivity_key_;

@@ -25,6 +25,7 @@ include_directories(${ATS_BINARY_DIR}/src/xlib)
 include_evaluators_directories(LISTNAME ATS_POROSITY_EVAL_INCLUDES)
 include_evaluators_directories(LISTNAME CONSTITUTIVE_RELATIONS_EOS_EVALUATORS_INCLUDES)
 include_evaluators_directories(LISTNAME CONSTITUTIVE_RELATIONS_SURFACE_SUBSURFACE_FLUXES_EVALUATORS_INCLUDES)
+include_evaluators_directories(LISTNAME CONSTITUTIVE_RELATIONS_GENERIC_EVALUATORS_INCLUDES)
 include_evaluators_directories(LISTNAME FLOW_CONSTITUTIVE_RELATIONS_OVERLAND_CONDUCTIVITY_INCLUDES)
 include_evaluators_directories(LISTNAME FLOW_CONSTITUTIVE_RELATIONS_POROSITY_EVALUATORS_INCLUDES)
 include_evaluators_directories(LISTNAME WRM_MODELS_EVALUATORS_FACTORIES_INCLUDES)
@@ -54,26 +55,26 @@ add_executable(ats amanzi_unstructured_grid_simulation_driver.cc main.cc )
 set(ATS_LIBS
 		     coordinator
                      mpc
-                      pk_test_pks
-                      pk_energy_constant_temperature
+                     #  pk_test_pks
+                      # pk_energy_constant_temperature
                       pk_energy_advection_diffusion
 		              pk_energy_two_phase
                       pk_energy_three_phase
-                      pk_energy_surface_ice
+                      # pk_energy_surface_ice
                       pk_energy_base
 		              pk_flow_permafrost
                       pk_flow_richards
-                      pk_flow_snow_distribution
-                      pk_flow_overland
-                      pk_flow_overland_head
-                      pk_flow_icy_overland
-		              pk_prescribed_deformation
+                      # pk_flow_snow_distribution
+                      # pk_flow_overland
+                      # pk_flow_overland_head
+                      # pk_flow_icy_overland
+		              # pk_prescribed_deformation
 #                      pk_prescribed_volumetric_deformation
-                      pk_volumetric_deformation
-                      pk_surface_balance_SEB
-                      pk_BGC
+                      # pk_volumetric_deformation
+                      # pk_surface_balance_SEB
+                      # pk_BGC
                       pk_bases
-                      deform_relations_porosity
+                      # deform_relations_porosity
                       energy_relations_thermal_conductivity
                       energy_relations_internal_energy
                       energy_relations_enthalpy
@@ -93,6 +94,7 @@ set(ATS_LIBS
 )
 
 set(AMANZI_LIBS
+                      amanzi_operators
                       amanzi_state
 	                  amanzi_whetstone
                       amanzi_time_integration
