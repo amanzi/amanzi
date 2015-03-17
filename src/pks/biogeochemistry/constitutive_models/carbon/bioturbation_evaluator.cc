@@ -53,10 +53,10 @@ void BioturbationEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   Epetra_MultiVector& res_c = *result->ViewComponent("cell",false);
 
   // iterate over columns of the mesh
-  const AmanziMesh::Entity_ID_List& columns = mesh.cell_column_indices();
-  for (AmanziMesh::Entity_ID_List::const_iterator i=columns.begin(); i!=columns.end(); ++i) {
+  int ncolumns = mesh.num_columns();
+  for (int i=0; i<ncolumns; ++i) {
     // grab the column
-    const AmanziMesh::Entity_ID_List& col = mesh.cell_column(*i);
+    const AmanziMesh::Entity_ID_List& col = mesh.cells_of_column(i);
 
     Epetra_SerialDenseVector dC_up(carbon.NumVectors());
     Epetra_SerialDenseVector dC_dn(carbon.NumVectors());
