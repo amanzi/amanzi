@@ -121,9 +121,18 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
     Exceptions::amanzi_throw(Errors::Message("extraction not supported"));
   }
 
-  bogus_mesh(const bogus_mesh& inmesh,
+  bogus_mesh(const Mesh& inmesh,
              const std::vector<std::string>& setnames,
              const Amanzi::AmanziMesh::Entity_kind setkind,
+             const bool flatten, const bool extrude,
+             const bool request_faces, const bool request_edges)
+  {
+    Exceptions::amanzi_throw(Errors::Message("extraction not supported"));
+  }
+
+  bogus_mesh(const Mesh& inmesh,
+             const std::vector<int>& entity_list,
+             const Amanzi::AmanziMesh::Entity_kind entity_kind,
              const bool flatten, const bool extrude,
              const bool request_faces, const bool request_edges)
   {
@@ -603,9 +612,49 @@ struct FrameworkTraits {
           const bool request_edges = false)
   {
     Teuchos::RCP<Mesh> 
-      result(new typename extract_mesh::type(inmesh,setnames,setkind,
+      result(new typename extract_mesh::type(inmesh,
+                                             setnames,setkind,
                                              flatten,extrude,
                                              request_faces,request_edges));
+    return result;
+  }
+
+  /// Construct a new mesh by extracting mesh entities from an existing mesh
+  static Teuchos::RCP<Mesh>
+  extract(const Epetra_MpiComm *comm,            // unused for now
+          const Mesh& inmesh, 
+          const std::vector<std::string>& setnames,
+          const Entity_kind setkind,
+          const bool flatten = false,
+          const bool extrude = false,
+          const bool request_faces = true, 
+          const bool request_edges = false)
+  {
+    Teuchos::RCP<Mesh> 
+      result(new typename extract_mesh::type(inmesh,
+                                             setnames,setkind,
+                                             flatten,extrude,
+                                             request_faces,request_edges));
+    return result;
+  }
+
+  /// Construct a new mesh by extracting mesh entities from an existing mesh
+  static Teuchos::RCP<Mesh>
+  extract(const Epetra_MpiComm *comm,            // unused for now
+          const Mesh& inmesh, 
+          const std::vector<int>& entity_id_list,
+          const Entity_kind entity_kind,
+          const bool flatten = false,
+          const bool extrude = false,
+          const bool request_faces = true, 
+          const bool request_edges = false)
+  {
+    Teuchos::RCP<Mesh> 
+      result(new typename extract_mesh::type(inmesh,
+                                             entity_id_list, entity_kind,
+                                             flatten, extrude,
+                                             request_faces,
+                                             request_edges));
     return result;
   }
 
@@ -1024,6 +1073,7 @@ framework_extracts(const Framework& f, const bool& parallel, const unsigned int&
 // -------------------------------------------------------------
 // framework_extract
 // -------------------------------------------------------------
+
 Teuchos::RCP<Mesh> 
 framework_extract(const Epetra_MpiComm *comm, const Framework& f, 
                   const Mesh *inmesh, 
@@ -1035,22 +1085,130 @@ framework_extract(const Epetra_MpiComm *comm, const Framework& f,
   Teuchos::RCP<Mesh> result;
   switch (f) {
   case Simple:
-    result = FrameworkTraits<Simple>::extract(comm, inmesh, setnames, setkind, 
+    result = FrameworkTraits<Simple>::extract(comm, 
+                                              inmesh,
+                                              setnames, setkind, 
                                               flatten, extrude, 
                                               request_faces, request_edges);
     break;
   case STKMESH:
-    result = FrameworkTraits<STKMESH>::extract(comm, inmesh, setnames, setkind,
+    result = FrameworkTraits<STKMESH>::extract(comm, 
+                                               inmesh, 
+                                               setnames, setkind,
                                                flatten, extrude,
                                                request_faces, request_edges);
     break;
   case MOAB:
-    result = FrameworkTraits<MOAB>::extract(comm, inmesh, setnames, setkind,
+    result = FrameworkTraits<MOAB>::extract(comm, 
+                                            inmesh, 
+                                            setnames, setkind,
                                             flatten, extrude, 
                                             request_faces, request_edges);
     break;
   case MSTK:
-    result = FrameworkTraits<MSTK>::extract(comm, inmesh, setnames, setkind,
+    result = FrameworkTraits<MSTK>::extract(comm, 
+                                            inmesh, 
+                                            setnames, setkind,
+                                            flatten, extrude, 
+                                            request_faces, request_edges);
+    break;
+  default:
+    {
+      std::string msg = 
+        boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
+      Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
+    }
+  }
+  return result;
+}
+
+Teuchos::RCP<Mesh> 
+framework_extract(const Epetra_MpiComm *comm, const Framework& f, 
+                  const Mesh& inmesh, 
+                  const std::vector<std::string>& setnames,
+                  const Entity_kind setkind,
+                  const bool request_faces, const bool request_edges,
+                  const bool flatten, const bool extrude)
+{
+  Teuchos::RCP<Mesh> result;
+  switch (f) {
+  case Simple:
+    result = FrameworkTraits<Simple>::extract(comm, 
+                                              inmesh, 
+                                              setnames, setkind, 
+                                              flatten, extrude, 
+                                              request_faces, request_edges);
+    break;
+  case STKMESH:
+    result = FrameworkTraits<STKMESH>::extract(comm, 
+                                               inmesh, 
+                                               setnames, setkind,
+                                               flatten, extrude,
+                                               request_faces, request_edges);
+    break;
+  case MOAB:
+    result = FrameworkTraits<MOAB>::extract(comm, 
+                                            inmesh, 
+                                            setnames, setkind,
+                                            flatten, extrude, 
+                                            request_faces, request_edges);
+    break;
+  case MSTK:
+    result = FrameworkTraits<MSTK>::extract(comm, 
+                                            inmesh, 
+                                            setnames, setkind,
+                                            flatten, extrude, 
+                                            request_faces, request_edges);
+    break;
+  default:
+    {
+      std::string msg = 
+        boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
+      Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
+    }
+  }
+  return result;
+}
+
+Teuchos::RCP<Mesh> 
+framework_extract(const Epetra_MpiComm *comm, const Framework& f, 
+                  const Mesh& inmesh, 
+                  const std::vector<int>& entity_id_list,
+                  const Entity_kind entity_kind,
+                  const bool request_faces, const bool request_edges,
+                  const bool flatten, const bool extrude)
+{
+  Teuchos::RCP<Mesh> result;
+  switch (f) {
+  case Simple:
+    result = FrameworkTraits<Simple>::extract(comm, 
+                                              inmesh, 
+                                              entity_id_list, 
+                                              entity_kind, 
+                                              flatten, extrude, 
+                                              request_faces, request_edges);
+    break;
+  case STKMESH:
+    result = FrameworkTraits<STKMESH>::extract(comm, 
+                                               inmesh, 
+                                               entity_id_list, 
+                                               entity_kind,
+                                               flatten, extrude,
+                                               request_faces, request_edges);
+    break;
+  case MOAB:
+    result = FrameworkTraits<MOAB>::extract(comm, 
+                                            inmesh, 
+                                            entity_id_list, 
+                                            entity_kind,
+                                            flatten, extrude, 
+                                            request_faces, request_edges);
+    break;
+  case MSTK:
+    result = FrameworkTraits<MSTK>::extract(comm, 
+                                            inmesh, 
+                                            entity_id_list, 
+                                            entity_kind,
                                             flatten, extrude, 
                                             request_faces, request_edges);
     break;

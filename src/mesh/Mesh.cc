@@ -1320,8 +1320,10 @@ int Mesh::build_columns() const {
   // negative z-direction
 
   int nn = num_entities(NODE,USED);
-  int nf = num_entities(FACE,USED);
-  int nc = num_entities(CELL,USED);
+  int nf = num_entities(FACE,USED); // Can we ignore ghost columns?
+  int nc = num_entities(CELL,USED); // Can we ignore ghost columns?
+
+  columnID.resize(nc);
 
   // Initialize cell_below and cell_above so that we can assign using
   // cell_below[i] = j type operations below
@@ -1527,10 +1529,19 @@ int Mesh::build_columns() const {
   }
 
   // now build the columns
+  int ncolumns = 0;
+
   for (int i = 0; i < nc; i++) {
     if (cell_cellabove[i] == -1) {
+
+      // create column 
+
+      Entity_ID_List& col = columns[ncolumns];
+      int colid = ncolumns;
+      ncolumns++;
+
       // calculate the size
-      Entity_ID_List& col = columns[i];
+
       int ncells_in_col = 1;
       int j = cell_cellbelow[i];
       while (j >= 0) {
@@ -1538,13 +1549,17 @@ int Mesh::build_columns() const {
         j = cell_cellbelow[j];
       }
 
+      // populate the column
+
       col.resize(ncells_in_col);
       int index = 0;
-      col[index] = i;
+      col[index++] = i;
+      columnID[i] = colid;
+
       j = cell_cellbelow[i];
       while (j >= 0) {
-        index++;
-        col[index] = j;
+        col[index++] = j;
+        columnID[j] = colid;
         j = cell_cellbelow[j];
       }
     }
@@ -1554,41 +1569,6 @@ int Mesh::build_columns() const {
   return status;
 }
 
-
-const Entity_ID_List&
-Mesh::cell_column(Entity_ID cellid) const {
-  return columns[cellid];
-}
-
-const Entity_ID_List&
-Mesh::cell_column_indices() const {
-  return column_indices;
-}
-
-
-Entity_ID Mesh::cell_get_cell_above(const Entity_ID cellid) const {
-
-  if (!columns_built)
-    build_columns();
-
-  return cell_cellabove[cellid];
-}
-
-Entity_ID Mesh::cell_get_cell_below(const Entity_ID cellid) const {
-
-  if (!columns_built)
-    build_columns();
-
-  return cell_cellbelow[cellid];
-}
-
-Entity_ID Mesh::node_get_node_above(const Entity_ID nodeid) const {
-
-  if (!columns_built)
-    build_columns();
-
-  return node_nodeabove[nodeid];
-}
 
 std::string Mesh::cell_type_to_name (const Cell_type type)
 {

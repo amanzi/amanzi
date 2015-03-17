@@ -550,6 +550,158 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
 }
 
 
+//---------------------------------------------------------
+// Extract MSTK entities from a named set in an input mesh and make a
+// new MSTK mesh
+//---------------------------------------------------------
+
+Mesh_MSTK::Mesh_MSTK (const Mesh *inmesh, 
+                      const std::vector<std::string>& setnames, 
+                      const Entity_kind setkind,
+                      const bool flatten,
+                      const bool extrude,
+		      const bool request_faces,
+		      const bool request_edges) :
+  mpicomm(inmesh->get_comm()->GetMpiComm()),
+  Mesh(inmesh->verbosity_obj(),request_faces,request_edges)
+{  
+
+  Mesh_ptr inmesh_mstk = ((Mesh_MSTK *)inmesh)->mesh;
+
+  int mkid = MSTK_GetMarker();
+  List_ptr src_ents = List_New(10);
+  for (int i = 0; i < setnames.size(); ++i) {
+    MSet_ptr mset;
+    
+    AmanziGeometry::GeometricModelPtr gm = inmesh->geometric_model();
+    AmanziGeometry::RegionPtr rgn = gm->FindRegion(setnames[i]);
+
+    // access the set in Amanzi so that the set gets created in 'inmesh'
+    // if it already does not exist
+
+    int setsize = ((Mesh_MSTK *) inmesh)->get_set_size(setnames[i],setkind,OWNED);
+
+    // Now retrieve the entities in the set from MSTK
+
+    std::string internal_name = internal_name_of_set(rgn,setkind);
+
+    mset = MESH_MSetByName(inmesh_mstk,internal_name.c_str());
+
+    if (mset) {
+      int idx = 0;
+      MEntity_ptr ment;
+      while ((ment = (MEntity_ptr) MSet_Next_Entry(mset,&idx))) {
+	if (!MEnt_IsMarked(ment,mkid) && MEnt_PType(ment) != PGHOST) {
+	  List_Add(src_ents,ment);
+	  MEnt_Mark(ment,mkid);
+	}
+      }
+    }
+  }
+
+  MType entity_dim = ((Mesh_MSTK *) inmesh)->entity_kind_to_mtype(setkind);
+
+  extract_mstk_mesh(*((Mesh_MSTK *) inmesh), src_ents, entity_dim,
+		    flatten, extrude, request_faces, request_edges);
+
+  List_Delete(src_ents);
+}
+
+Mesh_MSTK::Mesh_MSTK (const Mesh& inmesh, 
+                      const std::vector<std::string>& setnames, 
+                      const Entity_kind setkind,
+                      const bool flatten,
+                      const bool extrude,
+		      const bool request_faces,
+		      const bool request_edges) :
+  mpicomm(inmesh.get_comm()->GetMpiComm()),
+  Mesh(inmesh.verbosity_obj(),request_faces,request_edges)
+{  
+
+  Mesh_ptr inmesh_mstk = ((Mesh_MSTK&) inmesh).mesh;
+
+  int mkid = MSTK_GetMarker();
+  List_ptr src_ents = List_New(10);
+  for (int i = 0; i < setnames.size(); ++i) {
+    MSet_ptr mset;
+    
+    AmanziGeometry::GeometricModelPtr gm = inmesh.geometric_model();
+    AmanziGeometry::RegionPtr rgn = gm->FindRegion(setnames[i]);
+
+
+    // access the set in Amanzi so that the set gets created in 'inmesh'
+    // if it already does not exist
+
+    int setsize = ((Mesh_MSTK&) inmesh).get_set_size(setnames[i],setkind,OWNED);
+
+    //  Now retrieve the entities in the set from MSTK
+
+    std::string internal_name = internal_name_of_set(rgn,setkind);
+
+    mset = MESH_MSetByName(inmesh_mstk,internal_name.c_str());
+
+    if (mset) {
+      int idx = 0;
+      MEntity_ptr ment;
+      while ((ment = (MEntity_ptr) MSet_Next_Entry(mset,&idx))) {
+	if (!MEnt_IsMarked(ment,mkid) && MEnt_PType(ment) != PGHOST) {
+	  List_Add(src_ents,ment);
+	  MEnt_Mark(ment,mkid);
+	}
+      }
+    }
+  }
+
+  MType entity_dim = ((Mesh_MSTK&) inmesh).entity_kind_to_mtype(setkind);
+
+  extract_mstk_mesh((Mesh_MSTK&) inmesh, src_ents, entity_dim, flatten, extrude,
+		    request_faces, request_edges);
+
+  List_Delete(src_ents);
+}
+
+
+
+//---------------------------------------------------------
+// Extract MSTK entities from an ID list and make a new MSTK mesh
+//---------------------------------------------------------
+
+Mesh_MSTK::Mesh_MSTK (const Mesh& inmesh, 
+                      const Entity_ID_List& entity_ids, 
+                      const Entity_kind entity_kind,
+                      const bool flatten,
+                      const bool extrude,
+		      const bool request_faces,
+		      const bool request_edges) :
+  mpicomm(inmesh.get_comm()->GetMpiComm()),
+  Mesh(inmesh.verbosity_obj(),request_faces,request_edges)
+{  
+  // store pointers to the MESH_XXXFromID functions so that they can
+  // be called without a switch statement 
+
+  static MEntity_ptr (*MEntFromID[4])(Mesh_ptr,int) =
+    {MESH_VertexFromID, MESH_EdgeFromID, MESH_FaceFromID, MESH_RegionFromID};
+
+  MType entity_dim = ((Mesh_MSTK&) inmesh).entity_kind_to_mtype(entity_kind);
+
+  Mesh_ptr inmesh_mstk = ((Mesh_MSTK&) inmesh).mesh;
+
+  int nent = entity_ids.size();
+  List_ptr src_ents = List_New(nent);
+  for (int i = 0; i < nent; ++i) {
+    MEntity_ptr ent = MEntFromID[entity_dim](inmesh_mstk,entity_ids[i]+1);
+    List_Add(src_ents,ent);
+  }
+  
+  extract_mstk_mesh((Mesh_MSTK&) inmesh, src_ents, entity_dim, flatten, extrude,
+                    request_faces, request_edges);
+
+  List_Delete(src_ents);
+}
+
+// Translate a setname into a special string with decorations
+// indicating which type of entity is in that set
+
 std::string 
 Mesh_MSTK::internal_name_of_set(const AmanziGeometry::RegionPtr r,
                                 const Entity_kind entity_kind) const {
@@ -587,22 +739,17 @@ Mesh_MSTK::internal_name_of_set(const AmanziGeometry::RegionPtr r,
 
 
 
-//--------------------------------------
-// Constructor - Construct a new mesh from a subset of an existing mesh
-//--------------------------------------
+// Extract a list of MSTK entities and make a new MSTK mesh
+// For private use of Mesh_MSTK class only
 
 void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
-                                  const std::vector<std::string>& setnames, 
-                                  const Entity_kind setkind,
+                                  List_ptr src_entities, 
+                                  const MType entity_dim,
                                   const bool flatten,
                                   const bool extrude,
 				  const bool request_faces,
 				  const bool request_edges)
 {
-                         
-  // Assume three dimensional problem if constructor called without 
-  // the space_dimension parameter
-
   int ok, ival, idx;
   double rval, xyz[3];
   void *pval;
@@ -616,28 +763,18 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
 
 
   if (flatten || extrude) {
-    if ((setkind == CELL  && inmesh.cell_dimension() == 3) || setkind == NODE) {
+    if (entity_dim == MREGION || entity_dim == MVERTEX) {
       Errors::Message mesg("Flattening or extruding allowed only for sets of FACEs in volume mesh or CELLs in surface meshes");
       amanzi_throw(mesg);
     }
   }
 
 
-  if ((inmesh.cell_dimension() == 2) && (setkind == FACE) && flatten) {
+  if (entity_dim == MEDGE) {
     Errors::Message mesg("Requested mesh constructor produces 1D mesh which is not supported by Amanzi");
     amanzi_throw(mesg);
   }
 
-
-  // CODE_LABEL_NUMBER 1 - referred to by a comment later 
-  //
-  // Access all the requested sets to make sure they get
-  // created within MSTK (they get created the first time
-  // this set is accessed)
-
-  for (int i = 0; i < setnames.size(); ++i)
-    inmesh.get_set_size(setnames[i],setkind,OWNED);
-    
 
   // Pre-processing (init, MPI queries etc)
 
@@ -658,68 +795,50 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
   
   parent_mesh = &inmesh;
 
+  // What is the cell dimension of new mesh
+
+  switch (entity_dim) {
+  case MREGION:
+    if (extrude) {
+      Errors::Message mesg("Cannot extrude 3D cells");
+      amanzi_throw(mesg);
+    }
+    else 
+      set_cell_dimension(3); // extract regions/cells from mesh
+    break;
+    
+  case MFACE:
+    if (extrude)
+      set_cell_dimension(3); // extract faces and extrude them into regions/cells
+    else
+      set_cell_dimension(2); // extract faces from mesh
+    break;
+    
+  case MEDGE:
+    if (extrude)
+      set_cell_dimension(2); // extract edges and extrude them into faces/cells
+    else {
+      Errors::Message mesg("Edge list passed into extract mesh. Cannot extract a wire or point mesh");
+      amanzi_throw(mesg);
+    }
+    break;
+    
+  case NODE: {
+    Errors::Message mesg("Vertex list passed into extract mesh. Cannot extract a point mesh");
+    amanzi_throw(mesg);
+    break;
+  }
+
+  default:
+    Errors::Message mesg1("Unrecognized Entity_kind");
+    amanzi_throw(mesg1);
+  }
+
+
 
   // Create new mesh in MSTK
 
   mesh = MESH_New(MESH_RepType(inmesh_mstk));
-
-  MType entdim;
-  switch (setkind) {
-  case CELL:
-    if (inmesh.space_dimension() == 3)
-      entdim = inmesh.cell_dimension() == 3 ? MREGION : MFACE;
-    else if (inmesh.space_dimension() == 2)
-      entdim = MFACE;
-    set_cell_dimension(inmesh.cell_dimension()); 
-    break;
-  case FACE:
-    if (inmesh.space_dimension() == 3)
-      entdim = inmesh.cell_dimension() == 3 ? MFACE : MEDGE;
-    else if (inmesh.space_dimension() == 2)
-      entdim = MEDGE; // We are not supporting 1D meshes 
-    if (extrude)
-      set_cell_dimension(inmesh.cell_dimension());
-    else
-      set_cell_dimension(inmesh.cell_dimension()-1); 
-    break;
-  case NODE:
-    entdim = MVERTEX;
-    set_cell_dimension(0);
-    break;
-  default:
-    Errors::Message mesg("Unrecognized Entity_kind");
-    amanzi_throw(mesg);
-  }
-
-
-
-  int mkid = MSTK_GetMarker();
-  MSet_ptr src_ents = MSet_New(inmesh_mstk,"src_ents",entdim);
-  for (int i = 0; i < setnames.size(); ++i) {
-    MSet_ptr mset;
-    
-    AmanziGeometry::GeometricModelPtr gm = inmesh.geometric_model();
-    AmanziGeometry::RegionPtr rgn = gm->FindRegion(setnames[i]);
-
-    std::string internal_name = internal_name_of_set(rgn,setkind);
-
-    mset = MESH_MSetByName(inmesh_mstk,internal_name.c_str());
-
-    if (mset) {
-      idx = 0;
-      MEntity_ptr ment;
-      while ((ment = (MEntity_ptr) MSet_Next_Entry(mset,&idx))) {
-	if (!MEnt_IsMarked(ment,mkid) && MEnt_PType(ment) != PGHOST) {
-	  MSet_Add(src_ents,ment);
-	  MEnt_Mark(ment,mkid);
-	}
-      }
-    }
-  }
-
-  MSet_Unmark(src_ents,mkid);
-  MSTK_FreeMarker(mkid);  
-
 
   // Have to do some additional work for extruding an extracted mesh
   // Extrusion applicable only in the case of entdim = MFACE/MEDGE
@@ -729,13 +848,13 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
   eparentatt = MAttrib_New(mesh,"eparentatt",POINTER,MEDGE);
   fparentatt = MAttrib_New(mesh,"fparentatt",POINTER,MFACE);
   rparentatt = MAttrib_New(mesh,"rparentatt",POINTER,MREGION);
-
-  switch (entdim) {
+  
+  switch (entity_dim) {
   case MREGION:
       
     idx = 0; 
     MRegion_ptr mr;
-    while ((mr = (MRegion_ptr) MSet_Next_Entry(src_ents,&idx))) {
+    while ((mr = (MRegion_ptr) List_Next_Entry(src_entities,&idx))) {
 
       List_ptr rfaces = MR_Faces(mr);                                  
       int nrf = List_Num_Entries(rfaces);
@@ -797,7 +916,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
 
     idx = 0; 
     MFace_ptr mf;
-    while ((mf = (MFace_ptr) MSet_Next_Entry(src_ents,&idx))) {
+    while ((mf = (MFace_ptr) List_Next_Entry(src_entities,&idx))) {
 
       List_ptr fedges = MF_Edges(mf,1,0);
       int nfe = List_Num_Entries(fedges);
@@ -854,7 +973,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
 
     idx = 0;
     MEdge_ptr me;
-    while ((me = (MEdge_ptr) MSet_Next_Entry(src_ents,&idx))) {
+    while ((me = (MEdge_ptr) List_Next_Entry(src_entities,&idx))) {
 
       MEdge_ptr me_new = ME_New(mesh);
 
@@ -894,7 +1013,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
 
     idx = 0;
     MVertex_ptr mv;
-    while ((mv = (MVertex_ptr) MSet_Next_Entry(src_ents,&idx))) {
+    while ((mv = (MVertex_ptr) List_Next_Entry(src_entities,&idx))) {
 
       MVertex_ptr mv_new = MV_New(mesh);
       MV_Set_Coords(mv_new,xyz);
@@ -1024,8 +1143,8 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
 
 
 
-  // For this constructor, we have to do an extra step to build new
-  // labeled sets based on the base mesh
+  // We have to do an extra step to build new labeled sets based on
+  // labeled sets of the base mesh
 
   inherit_labeled_sets(copyatt);
 
@@ -1037,11 +1156,11 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
 
   // Clean up
 
-  switch (entdim) {
+  switch (entity_dim) {
   case MREGION:
     MRegion_ptr mr;
     idx = 0; 
-    while ((mr = (MRegion_ptr) MSet_Next_Entry(src_ents,&idx))) {
+    while ((mr = (MRegion_ptr) List_Next_Entry(src_entities,&idx))) {
 
       List_ptr rfaces = MR_Faces(mr);                                  
       int nrf = List_Num_Entries(rfaces);
@@ -1071,7 +1190,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
   case MFACE:
     MFace_ptr mf;
     idx = 0; 
-    while ((mf = (MFace_ptr) MSet_Next_Entry(src_ents,&idx))) {
+    while ((mf = (MFace_ptr) List_Next_Entry(src_entities,&idx))) {
 
       List_ptr fedges = MF_Edges(mf,1,0);
       int nfe = List_Num_Entries(fedges);
@@ -1091,7 +1210,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
   case MEDGE:
     MEdge_ptr me;
     idx = 0;
-    while ((me = (MEdge_ptr) MSet_Next_Entry(src_ents,&idx))) {
+    while ((me = (MEdge_ptr) List_Next_Entry(src_entities,&idx))) {
       for (int j = 0; j < 2; ++j)  {
         MVertex_ptr mv = ME_Vertex(me,j);
         MEnt_Rem_AttVal(mv,copyatt);
@@ -1104,7 +1223,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
   case MVERTEX:
     MVertex_ptr mv;
     idx = 0;
-    while ((mv = (MVertex_ptr) MSet_Next_Entry(src_ents,&idx)))
+    while ((mv = (MVertex_ptr) List_Next_Entry(src_entities,&idx)))
       MEnt_Rem_AttVal(mv,copyatt);
 
     break;
@@ -1115,42 +1234,8 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
   }
   
   MAttrib_Delete(copyatt);
-  MSet_Delete(src_ents);
 
 }
-
-Mesh_MSTK::Mesh_MSTK (const Mesh *inmesh, 
-                      const std::vector<std::string>& setnames, 
-                      const Entity_kind setkind,
-                      const bool flatten,
-                      const bool extrude,
-		      const bool request_faces,
-		      const bool request_edges) :
-  mpicomm(inmesh->get_comm()->GetMpiComm()),
-  Mesh(inmesh->verbosity_obj(),request_faces,request_edges)
-{  
-
-  extract_mstk_mesh(*((Mesh_MSTK *) inmesh),setnames,setkind,
-		    flatten,extrude,request_faces,request_edges);
-
-}
-
-Mesh_MSTK::Mesh_MSTK (const Mesh_MSTK& inmesh, 
-                      const std::vector<std::string>& setnames, 
-                      const Entity_kind setkind,
-                      const bool flatten,
-                      const bool extrude,
-		      const bool request_faces,
-		      const bool request_edges) :
-  mpicomm(inmesh.get_comm()->GetMpiComm()),
-  Mesh(inmesh.verbosity_obj(),request_faces,request_edges)
-{  
-
-  extract_mstk_mesh(inmesh,setnames,setkind,flatten,extrude,
-		    request_faces,request_edges);
-
-}
-
 
 
 // Destructor with cleanup
