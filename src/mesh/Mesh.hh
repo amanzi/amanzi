@@ -353,7 +353,7 @@ class Mesh
 
   Entity_ID_List const & cells_of_column(const int columnID) const {
     if (!columns_built) build_columns();
-    return columns[columnID];
+    return column_cells[columnID];
   }
 
   // Given a cell get its column ID
@@ -367,7 +367,7 @@ class Mesh
 
   int num_columns() const {
     if (!columns_built) build_columns();
-    return columns.size();
+    return column_cells.size(); // number of vector of vectors
   }
   
   Entity_ID cell_get_cell_above(const Entity_ID cellid) const {
@@ -716,7 +716,7 @@ class Mesh
   mutable std::vector<AmanziGeometry::Point> cell_centroids,
     face_centroids, face_normal0, face_normal1, edge_vectors;
   mutable Entity_ID_List cell_cellabove, cell_cellbelow, node_nodeabove;
-  mutable std::map<int,Entity_ID_List> columns;
+  mutable std::vector<Entity_ID_List> column_cells;
   mutable std::vector<Entity_ID> columnID;
   mutable std::vector<Entity_ID_List> cell_face_ids;
   mutable std::vector< std::vector<int> > cell_face_dirs;

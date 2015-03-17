@@ -1335,7 +1335,7 @@ int Mesh::build_columns() const {
   node_nodeabove.resize(nn);
   node_nodeabove.assign(nn,-1);
 
-
+  int ncolumns = 0;
   for (int i = 0; i < nf; i++) {
 
     Entity_ID_List fcells;
@@ -1389,6 +1389,7 @@ int Mesh::build_columns() const {
     Entity_ID_List fcells2, cfaces;
     std::vector<int> cfdirs;
 
+    ncolumns++;
     bool done = false;
     while (!done) {
 
@@ -1529,16 +1530,15 @@ int Mesh::build_columns() const {
   }
 
   // now build the columns
-  int ncolumns = 0;
+  column_cells.resize(ncolumns);
 
+  int colid = 0;
   for (int i = 0; i < nc; i++) {
     if (cell_cellabove[i] == -1) {
 
       // create column 
 
-      Entity_ID_List& col = columns[ncolumns];
-      int colid = ncolumns;
-      ncolumns++;
+      Entity_ID_List& col = column_cells[colid++];
 
       // calculate the size
 
