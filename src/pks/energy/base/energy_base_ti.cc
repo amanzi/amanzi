@@ -243,7 +243,7 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   int bad_cell = -1;
   unsigned int ncells = res_c.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
-    double tmp = std::abs(h*res_c[0][c]) / (atol_ * cv[0][c]*2.e6 + rtol_* std::abs(energy[0][c]));
+    double tmp = std::abs(h*res_c[0][c]) / (atol_ * cv[0][c] + rtol_* std::abs(energy[0][c]));
     if (tmp > enorm_cell) {
       enorm_cell = tmp;
       bad_cell = c;
@@ -258,7 +258,7 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
     //    double tmp = flux_tol_ * std::abs(res_f[0][f]) / (atol_+rtol_*273.15);
-    double tmp = flux_tol_ * std::abs(h*res_f[0][f])  / (atol_ * cv[0][cells[0]]*2.e6 + rtol_* std::abs(energy[0][cells[0]]));
+    double tmp = flux_tol_ * std::abs(h*res_f[0][f])  / (atol_ * cv[0][cells[0]] + rtol_* std::abs(energy[0][cells[0]]));
     if (tmp > enorm_face) {
       enorm_face = tmp;
       bad_face = f;

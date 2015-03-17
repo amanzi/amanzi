@@ -67,6 +67,7 @@ void ThermalConductivityTwoPhaseEvaluator::EvaluateField_(
       result_v[0][i] = tc_->ThermalConductivity(poro_v[0][i], sat_v[0][i]);
     }
   }
+  result->Scale(1.e-6); // convert to MJ
 }
 
 
@@ -74,6 +75,7 @@ void ThermalConductivityTwoPhaseEvaluator::EvaluateFieldPartialDerivative_(
       const Teuchos::Ptr<State>& S, Key wrt_key,
       const Teuchos::Ptr<CompositeVector>& result) {
   ASSERT(0); // not implemented, not yet needed
+  result->Scale(1.e-6); // convert to MJ
 }
 
 } //namespace
