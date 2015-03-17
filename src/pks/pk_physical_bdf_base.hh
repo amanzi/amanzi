@@ -54,6 +54,7 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
   // BC access
   std::vector<int>& bc_markers() { return bc_markers_; }
   std::vector<double>& bc_values() { return bc_values_; }
+  Teuchos::RCP<Operators::BCs> BCs() { return bc_; }
 
  protected:
   // PC

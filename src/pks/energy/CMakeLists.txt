@@ -16,7 +16,7 @@ add_subdirectory(advection_diffusion)
 add_subdirectory(base)
 add_subdirectory(two_phase)
 add_subdirectory(three_phase)
-add_subdirectory(surface_ice)
+#add_subdirectory(surface_ice)
 
 #================================================
 # register evaluators/factories/pks
@@ -138,18 +138,18 @@ generate_evaluators_registration_header(
   INSTALL    True
   )
 
-# surface_ice/
+# # surface_ice/
 
-register_evaluator_with_factory(
-  HEADERFILE surface_ice/energy_surface_ice_reg.hh
-  LISTNAME   ENERGY_SURFACE_ICE_REG
-  )
+# register_evaluator_with_factory(
+#   HEADERFILE surface_ice/energy_surface_ice_reg.hh
+#   LISTNAME   ENERGY_SURFACE_ICE_REG
+#   )
 
-generate_evaluators_registration_header(
-  HEADERFILE energy_surface_ice_registration.hh
-  LISTNAME   ENERGY_SURFACE_ICE_REG
-  INSTALL    True
-  )
+# generate_evaluators_registration_header(
+#   HEADERFILE energy_surface_ice_registration.hh
+#   LISTNAME   ENERGY_SURFACE_ICE_REG
+#   INSTALL    True
+#   )
 
 
 # three_phase/

@@ -17,7 +17,7 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 
 #include "dbc.hh"
-#include "MatrixMFD_Defs.hh"
+#include "OperatorDefs.hh"
 #include "CompositeVector.hh"
 
 namespace Amanzi {
@@ -46,7 +46,7 @@ class Upwinding {
   UpdateDerivatives(const Teuchos::Ptr<State>& S, 
                     std::string potential_key,
                     const CompositeVector& dconductivity,
-                    const std::vector<MatrixBC>& bc_markers,
+                    const std::vector<int>& bc_markers,
                     const std::vector<double>& bc_values,
                     std::vector<Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > >* Jpp_faces) const {
     ASSERT(0);

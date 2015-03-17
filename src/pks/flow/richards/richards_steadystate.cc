@@ -41,12 +41,19 @@ void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const Tree
   // Create the preconditioner
   Teuchos::RCP<const CompositeVector> rel_perm =
       S_next_->GetFieldData("numerical_rel_perm");
+  preconditioner_->Init();
   preconditioner_diff_->Setup(rel_perm, Teuchos::null);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // Assemble and precompute the Schur complement for inversion.
-  preconditioner_diff_->ApplyBCs(bc_);
+  preconditioner_diff_->ApplyBCs(true);
 
+  if (precon_used_) {
+    preconditioner_->AssembleMatrix();
+    preconditioner_->InitPreconditioner("preconditioner", plist_->sublist("Diffusion PC"));
+  }      
+  
+  
   // // TEST
   // if (S_next_->cycle() == 0 && niter_ == 0) {
   //   // Dump the Schur complement

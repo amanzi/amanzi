@@ -143,12 +143,12 @@ void Richards::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RC
   db_->WriteVector("PC*p_res", Pu->Data().ptr(), true);
 #endif
 
-  if (precon_wc_) {
-    PreconWC_(u, Pu);
-#if DEBUG_FLAG
-    db_->WriteVector("PC_WC*p_res", Pu->Data().ptr(), true);
-#endif
-  }
+//   if (precon_wc_) {
+//     PreconWC_(u, Pu);
+// #if DEBUG_FLAG
+//     db_->WriteVector("PC_WC*p_res", Pu->Data().ptr(), true);
+// #endif
+//   }
 };
 
 
@@ -171,8 +171,9 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PKDefaultBase::solution_to_state(*up, S_next_);
 
-  // update the rel perm according to the scheme of choice
+  // update the rel perm according to the scheme of choice, also upwind derivatives of rel perm
   UpdatePermeabilityData_(S_next_.ptr());
+  UpdatePermeabilityDerivativeData_(S_next_.ptr());
 
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
@@ -181,10 +182,6 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   Teuchos::RCP<const CompositeVector> rel_perm =
       S_next_->GetFieldData("numerical_rel_perm");
-  Teuchos::RCP<const CompositeVector> rho =
-      S_next_->GetFieldData("mass_density_liquid");
-  Teuchos::RCP<const Epetra_Vector> gvec =
-      S_next_->GetConstantVectorData("gravity");
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     const Epetra_MultiVector& kr = *rel_perm->ViewComponent("face",false);
@@ -227,9 +224,21 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   }      
   
   // Update the preconditioner with darcy and gravity fluxes
-  //  mfd_preconditioner_->CreateMFDstiffnessMatrices(rel_perm.ptr());
-  preconditioner_diff_->Setup(rel_perm_modified, Teuchos::null);
+  preconditioner_->Init();
+
+  S_next_->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S_next_.ptr(), name_);
+  Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData("mass_density_liquid");
+  preconditioner_diff_->SetVectorDensity(rho);
+  
+  Teuchos::RCP<const CompositeVector> dkrdp = S_next_->GetFieldData("dnumerical_rel_perm_dpressure");
+  preconditioner_diff_->Setup(rel_perm_modified, dkrdp);
+  // Teuchos::RCP<const CompositeVector> flux = S_next_->GetFieldData("darcy_flux");
+  // preconditioner_diff_->UpdateMatrices(flux.ptr(), up->Data().ptr());
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData("darcy_flux", name_);
+  preconditioner_diff_->UpdateFlux(*up->Data(), *flux);
+  preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
+  
 
   // if (vapor_diffusion_){
   //   Teuchos::RCP<CompositeVector> vapor_diff_pres = S_next_->GetFieldData("vapor_diffusion_pressure", name_);
@@ -270,9 +279,12 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   AddSourcesToPrecon_(S_next_.ptr(), h);
   
   // -- apply BCs
-  preconditioner_diff_->ApplyBCs(bc_);
+  preconditioner_diff_->ApplyBCs(true);
 
-  if (precon_used_) preconditioner_->AssembleMatrix();
+  if (precon_used_) {
+    preconditioner_->AssembleMatrix();
+    preconditioner_->InitPreconditioner(plist_->sublist("Diffusion PC").sublist("preconditioner"));
+  }      
 };
 
 

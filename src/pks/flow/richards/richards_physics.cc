@@ -24,27 +24,30 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   // update the rel perm according to the scheme of choice
   bool update = UpdatePermeabilityData_(S.ptr());
 
-  // update the stiffness matrix
+  // update the matrix
+  matrix_->Init();
+
+  S_next_->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S_next_.ptr(), name_);
+  Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
+  matrix_diff_->SetVectorDensity(rho);
+
   Teuchos::RCP<const CompositeVector> rel_perm =
     S->GetFieldData("numerical_rel_perm");
   matrix_diff_->Setup(rel_perm, Teuchos::null);
+
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
+  // derive fluxes
   Teuchos::RCP<const CompositeVector> pres =
       S->GetFieldData(key_, name_);
-    
-  // derive fluxes
-  if (update_flux_ == UPDATE_FLUX_ITERATION) {
+  //  if (update_flux_ == UPDATE_FLUX_ITERATION) {
     // update the flux
-    Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
-    matrix_diff_->SetVectorDensity(rho);
-
     Teuchos::RCP<CompositeVector> flux =
         S->GetFieldData("darcy_flux", name_);
     matrix_diff_->UpdateFlux(*pres, *flux);
-  }
+    //  }
 
-  matrix_diff_->ApplyBCs(bc_);
+  matrix_diff_->ApplyBCs(true);
 
   // calculate the residual
   matrix_->ComputeNegativeResidual(*pres, *g);

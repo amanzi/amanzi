@@ -6,12 +6,11 @@
 #
 
 add_subdirectory(constitutive_relations)
-#add_subdirectory(Darcy)
 add_subdirectory(richards)
 add_subdirectory(permafrost)
 #add_subdirectory(overland)
-add_subdirectory(icy_overland)
-add_subdirectory(overland_head)
+#add_subdirectory(icy_overland)
+#add_subdirectory(overland_head)
 #add_subdirectory(snow_distribution)
 
 #=========================================================================================
@@ -24,35 +23,35 @@ register_evaluator_with_factory(
   LISTNAME   FLOW_CONSTITUTIVE_RELATIONS_OVERLAND_CONDUCTIVITY
   )
 
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/elevation/snow_skin_potential_evaluator_reg.hh
-  LISTNAME   FLOW_CONSTITUTIVE_RELATIONS_OVERLAND_CONDUCTIVITY
-  )
+# register_evaluator_with_factory(
+#   HEADERFILE constitutive_relations/elevation/snow_skin_potential_evaluator_reg.hh
+#   LISTNAME   FLOW_CONSTITUTIVE_RELATIONS_OVERLAND_CONDUCTIVITY
+#   )
 
 register_evaluator_with_factory(
   HEADERFILE constitutive_relations/overland_conductivity/overland_conductivity_evaluator_reg.hh
   LISTNAME   FLOW_CONSTITUTIVE_RELATIONS_OVERLAND_CONDUCTIVITY
   )
 
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/elevation/snow_distribution_evaluator_reg.hh
-  LISTNAME   FLOW_CONSTITUTIVE_RELATIONS_OVERLAND_CONDUCTIVITY
-  )
+# register_evaluator_with_factory(
+#   HEADERFILE constitutive_relations/elevation/snow_distribution_evaluator_reg.hh
+#   LISTNAME   FLOW_CONSTITUTIVE_RELATIONS_OVERLAND_CONDUCTIVITY
+#   )
 
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/elevation/explicit_snow_distribution_evaluator_reg.hh
-  LISTNAME   FLOW_CONSTITUTIVE_RELATIONS_OVERLAND_CONDUCTIVITY
-  )
+# register_evaluator_with_factory(
+#   HEADERFILE constitutive_relations/elevation/explicit_snow_distribution_evaluator_reg.hh
+#   LISTNAME   FLOW_CONSTITUTIVE_RELATIONS_OVERLAND_CONDUCTIVITY
+#   )
 
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/elevation/implicit_snow_distribution_evaluator_reg.hh
-  LISTNAME   FLOW_CONSTITUTIVE_RELATIONS_OVERLAND_CONDUCTIVITY
-  )
+# register_evaluator_with_factory(
+#   HEADERFILE constitutive_relations/elevation/implicit_snow_distribution_evaluator_reg.hh
+#   LISTNAME   FLOW_CONSTITUTIVE_RELATIONS_OVERLAND_CONDUCTIVITY
+#   )
 
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/elevation/implicit_snow_distribution_uwflux_evaluator_reg.hh
-  LISTNAME   FLOW_CONSTITUTIVE_RELATIONS_OVERLAND_CONDUCTIVITY
-  )
+# register_evaluator_with_factory(
+#   HEADERFILE constitutive_relations/elevation/implicit_snow_distribution_uwflux_evaluator_reg.hh
+#   LISTNAME   FLOW_CONSTITUTIVE_RELATIONS_OVERLAND_CONDUCTIVITY
+#   )
 
 register_evaluator_with_factory(
   HEADERFILE constitutive_relations/elevation/meshed_elevation_evaluator_reg.hh
@@ -196,62 +195,62 @@ generate_evaluators_registration_header(
   INSTALL    True
   )
 
-# icy_overland/
-register_evaluator_with_factory(
-  HEADERFILE icy_overland/icy_height_evaluator_reg.hh
-  LISTNAME   FLOW_ICY_OVERLAND_EVAL_FAC
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE icy_overland/icy_overland_reg.hh
-  LISTNAME   FLOW_ICY_OVERLAND_EVAL_FAC
-  )
-
-generate_evaluators_registration_header(
-  HEADERFILE flow_icy_overland_registration.hh
-  LISTNAME   FLOW_ICY_OVERLAND_EVAL_FAC
-  INSTALL    True
-  )
-
-# overland/
+# # icy_overland/
 # register_evaluator_with_factory(
-#   HEADERFILE overland/overland_pk_reg.hh
-#   LISTNAME   FLOW_OVERLAND_EVAL_FAC
+#   HEADERFILE icy_overland/icy_height_evaluator_reg.hh
+#   LISTNAME   FLOW_ICY_OVERLAND_EVAL_FAC
 #   )
 
 # register_evaluator_with_factory(
-#   HEADERFILE snow_distribution/snow_distribution_reg.hh
-#   LISTNAME   FLOW_OVERLAND_EVAL_FAC
+#   HEADERFILE icy_overland/icy_overland_reg.hh
+#   LISTNAME   FLOW_ICY_OVERLAND_EVAL_FAC
 #   )
 
-generate_evaluators_registration_header(
-  HEADERFILE flow_overland_registration.hh
-  LISTNAME   FLOW_OVERLAND_EVAL_FAC
-  INSTALL    True
-  )
+# generate_evaluators_registration_header(
+#   HEADERFILE flow_icy_overland_registration.hh
+#   LISTNAME   FLOW_ICY_OVERLAND_EVAL_FAC
+#   INSTALL    True
+#   )
+
+# # overland/
+# # register_evaluator_with_factory(
+# #   HEADERFILE overland/overland_pk_reg.hh
+# #   LISTNAME   FLOW_OVERLAND_EVAL_FAC
+# #   )
+
+# # register_evaluator_with_factory(
+# #   HEADERFILE snow_distribution/snow_distribution_reg.hh
+# #   LISTNAME   FLOW_OVERLAND_EVAL_FAC
+# #   )
+
+# generate_evaluators_registration_header(
+#   HEADERFILE flow_overland_registration.hh
+#   LISTNAME   FLOW_OVERLAND_EVAL_FAC
+#   INSTALL    True
+#   )
 
 
-# overland_head/
-register_evaluator_with_factory(
-  HEADERFILE overland_head/height_evaluator_reg.hh
-  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
-  )
+# # overland_head/
+# register_evaluator_with_factory(
+#   HEADERFILE overland_head/height_evaluator_reg.hh
+#   LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
+#   )
 
-register_evaluator_with_factory(
-  HEADERFILE overland_head/effective_height_evaluator_reg.hh
-  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
-  )
+# register_evaluator_with_factory(
+#   HEADERFILE overland_head/effective_height_evaluator_reg.hh
+#   LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
+#   )
 
-register_evaluator_with_factory(
-  HEADERFILE overland_head/overland_head_pk_reg.hh
-  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
-  )
+# register_evaluator_with_factory(
+#   HEADERFILE overland_head/overland_head_pk_reg.hh
+#   LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
+#   )
 
-generate_evaluators_registration_header(
-  HEADERFILE flow_overland_head_registration.hh
-  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
-  INSTALL    True
-  )
+# generate_evaluators_registration_header(
+#   HEADERFILE flow_overland_head_registration.hh
+#   LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
+#   INSTALL    True
+#   )
 
 
 # permafrost/

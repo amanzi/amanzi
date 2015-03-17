@@ -22,7 +22,6 @@
 #include "CompositeVector.hh"
 #include "TreeVector.hh"
 #include "State.hh"
-#include "MatrixMFD.hh"
 #include "upwinding.hh"
 #include "boundary_function.hh"
 
