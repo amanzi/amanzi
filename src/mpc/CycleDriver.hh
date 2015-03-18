@@ -56,7 +56,7 @@ class CycleDriver {
   void Visualize(bool force = false);
   void Observations(bool force = false);
   void WriteCheckpoint(double dt, bool force = false);
-  double get_dt();
+  double get_dt(bool after_failuer = false);
   void set_dt(double dt);
   void ResetDriver(int time_period_id);
   // one stop shopping
