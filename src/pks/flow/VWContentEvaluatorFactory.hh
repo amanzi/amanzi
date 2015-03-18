@@ -35,6 +35,7 @@ class VWContentEvaluatorFactory {
     } else {
       Teuchos::RCP<VWContentEvaluator>
           vwc = Teuchos::rcp(new VWContentEvaluator(vwc_list));
+      vwc->Init_();
       return vwc;
     }
   }

@@ -37,250 +37,6 @@ namespace AmanziMesh
 class Mesh_MSTK : public Mesh
 {
       
-private:
-
-  MPI_Comm mpicomm;
-  int myprocid, numprocs;
-
-  Mesh_ptr mesh;
-
-  int serial_run;
-  
-
-  // Local handles to entity lists (Vertices, "Faces", "Cells")
-  
-  // For a surface mesh, "Faces" refers to mesh edges and "Cells"
-  // refers to mesh faces
-  //
-  // For a solid mesh, "Faces" refers to mesh faces and "Cells"
-  // refers to mesh regions
-  
-  
-  // These are MSTK's definitions of types of parallel mesh entities
-  // These definitions are slightly different from what Amanzi has defined
-  //
-  // There are 2 types of entities relevant to this code - Owned and Ghost
-  //
-  // 1. OWNED - owned by this processor
-  //
-  // 2. GHOST - not owned by this processor
-  
-  // ALL = OWNED + GHOST in parallel, ALL = OWNED in serial
-  
-
-  MSet_ptr OwnedVerts, NotOwnedVerts;
-  
-  mutable MSet_ptr OwnedEdges, NotOwnedEdges;
-
-  mutable MSet_ptr OwnedFaces, NotOwnedFaces;
-  
-  MSet_ptr OwnedCells, GhostCells;
-
-  // Flags to indicate if face and edge info is initialized
-
-  mutable bool faces_initialized, edges_initialized;
-
-  // Marker to indicate if an entity is not owned
-
-  int notwownedmark;
-
-  // Deleted entity lists if some pre-processing had to be done
-  // to the mesh to eliminate degenerate entities
-
-  bool entities_deleted;
-  List_ptr deleted_vertices, deleted_edges, deleted_faces, deleted_regions;
-
-  // Local ID to MSTK handle map
-
-  std::vector<MEntity_ptr> vtx_id_to_handle;
-  mutable std::vector<MEntity_ptr> edge_id_to_handle;
-  mutable std::vector<MEntity_ptr> face_id_to_handle;
-  std::vector<MEntity_ptr> cell_id_to_handle;
-
-
-  // Maps
-
-  Epetra_Map *cell_map_w_ghosts_, *cell_map_wo_ghosts_;
-  mutable Epetra_Map *face_map_w_ghosts_, *face_map_wo_ghosts_;
-  mutable Epetra_Map *edge_map_w_ghosts_, *edge_map_wo_ghosts_;
-  Epetra_Map *node_map_w_ghosts_, *node_map_wo_ghosts_;
-  Epetra_Map *extface_map_wo_ghosts_; // exterior faces (connected to only 1 cell)
-
-// Epetra importer that will allow apps to import values from a Epetra
-// vector defined on all owned faces into an Epetra vector defined
-// only on exterior faces
-                                           
-  Epetra_Import *owned_to_extface_importer_; 
-  
-  // flag whether to flip a face dir or not when returning nodes of a
-  // face (relevant only on partition boundaries)
-  
-  mutable bool *faceflip;
-
-  // flag whether to flip an edge dir or not when returning nodes of an edge
-  // (relevant only on partition boundaries)
-
-  mutable bool *edgeflip;
-
-  // Attribute to precompute and store celltype
-
-  MAttrib_ptr celltype_att;
-
-  // Parent entity attribute - populated if the mesh is derived from
-  // another mesh
-
-  MAttrib_ptr rparentatt, fparentatt, eparentatt, vparentatt;
-
-  const Mesh_MSTK *parent_mesh;
-
-  // variables needed for mesh deformation
-
-  double *meshxyz;
-  double *target_cell_volumes, *min_cell_volumes, *target_weights;
-
-  // Teuchos Verbose Object to control how much diagnostic info is printed
-
-  VerboseObject* verbose_obj_;
-  
-  // Private methods
-  // ----------------------------
-  
-  void clear_internals_();
-
-  void pre_create_steps_(const int space_dimension, const Epetra_MpiComm *incomm, 
-                         const AmanziGeometry::GeometricModelPtr& gm);
-  void post_create_steps_(const bool request_faces, const bool request_edges);
-
-  void collapse_degen_edges();
-  Cell_type MFace_Celltype(MFace_ptr f);
-  Cell_type MRegion_Celltype(MRegion_ptr r);
-  void label_celltype();
-
-  void init_pvert_lists();
-  void init_pedge_lists();
-  void init_pedge_dirs();
-  void init_pface_lists();
-  void init_pface_dirs();
-  void init_pcell_lists();
-  
-  void init_vertex_id2handle_maps();
-  void init_edge_id2handle_maps();
-  void init_face_id2handle_maps();
-  void init_cell_id2handle_maps();
-  void init_global_ids();
-  
-  void init_cell_map();
-  void init_face_map();
-  void init_edge_map();
-  void init_node_map();
-  
-  void init_nodes();
-  void init_edges();
-  void init_faces();
-  void init_cells();
-
-  void init_set_info();
-  void inherit_labeled_sets(MAttrib_ptr copyatt);
-  std::string internal_name_of_set(const AmanziGeometry::RegionPtr region,
-                                   const Entity_kind entity_kind) const;
-
-  int  generate_regular_mesh(Mesh_ptr mesh, double x0, double y0, double z0,
-			     double x1, double y1, double z1, int nx,
-			     int ny, int nz);
-  int  generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
-			     double x1, double y1, int nx, int ny);
-
-  void extract_mstk_mesh(const Mesh_MSTK& inmesh,
-                         const std::vector<std::string>& setnames,
-                         const Entity_kind setkind,
-                         const bool flatten = false,
-                         const bool extrude = false,
-			 const bool request_faces = true,
-			 const bool request_edges = false);
-
-  MSet_ptr build_set(const AmanziGeometry::RegionPtr region,
-                     const Entity_kind kind) const;
-
-
-  // Compute the value of the LOCAL component of the GLOBAL
-  // deformation objective function given a new position 'nodexyz' for
-  // node 'nodeid' i.e. only those terms in the global function that
-  // are affected by the movement of this node. 
-
-  double deform_function(const int nodeid, double const * const nodexyz) const;
-  
-  // Finite difference gradient of deformation objective function
-
-  void deform_gradient(const int nodeid, double const * const vxyz, 
-                       double *gradient) const;
-
-  // Finite difference hessian of deformation objective function
-
-  void deform_hessian(const int nodeid, double const * const nodexyz, 
-                      double hessian[3][3]) const;
-
-  // Minimum eigen value of a matrix (rank 2 and rank 3)
-
-  double mineigenvalue(const double A[3][3]) const;
-
-  // Inverse of Hessian of rank 2 or 3
-
-  int hessian_inverse(const double H[3][3],double iH[3][3]) const;
-
-
-
-  // Downward Adjacencies
-  //---------------------
-    
-  // Get faces of a cell and directions in which the cell uses the face 
-
-  // The Amanzi coding guidelines regarding function arguments is purposely
-  // violated here to allow for a default input argument
-
-  // On a distributed mesh, this will return all the faces of the
-  // cell, OWNED or GHOST. If ordered = true, the faces will be
-  // returned in a standard order according to Exodus II convention
-  // for standard cells; in all other situations (ordered = false or
-  // non-standard cells), the list of faces will be in arbitrary order
-
-  // In 3D, direction is 1 if face normal points out of cell
-  // and -1 if face normal points into cell
-  // In 2D, direction is 1 if face/edge is defined in the same
-  // direction as the cell polygon, and -1 otherwise
-
-  void cell_get_faces_and_dirs_internal (const Entity_ID cellid,
-                                         Entity_ID_List *faceids,
-                                         std::vector<int> *face_dirs,
-                                         const bool ordered=false) const;
-
-  void cell_get_faces_and_dirs_ordered (const Entity_ID cellid,
-                                         Entity_ID_List *faceids,
-                                         std::vector<int> *face_dirs) const;
-
-  void cell_get_faces_and_dirs_unordered (const Entity_ID cellid,
-                                         Entity_ID_List *faceids,
-                                          std::vector<int> *face_dirs) const;
-
-
-  // Cells connected to a face
-    
-  void face_get_cells_internal (const Entity_ID faceid, 
-                                const Parallel_type ptype,
-                                Entity_ID_List *cellids) const;
-
-
-  // Get edges of a cell
-
-  void cell_get_edges_internal (const Entity_ID cellid,
-				Entity_ID_List *edgeids) const;
-
-  // Edges and edge directions of a face
-
-  void face_get_edges_and_dirs_internal (const Entity_ID cellid,
-					 Entity_ID_List *edgeids,
-					 std::vector<int> *edgedirs,
-					 bool ordered=true) const;
-    
 public:
 
   // Constructors that read the mesh from a file
@@ -346,22 +102,31 @@ public:
 
 
   // Construct a mesh by extracting a subset of entities from another
-  // mesh. In some cases like extracting a surface mesh from a volume
-  // mesh, constructor can be asked to "flatten" the mesh to a lower
-  // dimensional space or to extrude the mesh to give higher
+  // mesh. The subset may be specified by a setname or a list of
+  // entities. In some cases like extracting a surface mesh from a
+  // volume mesh, constructor can be asked to "flatten" the mesh to a
+  // lower dimensional space or to extrude the mesh to give higher
   // dimensional cells
 
   Mesh_MSTK(const Mesh *inmesh,
             const std::vector<std::string>& setnames,
-            const Entity_kind setkind,
+            const Entity_kind entity_kind,
             const bool flatten = false,
             const bool extrude = false,
 	    const bool request_faces = true,
 	    const bool request_edges = false);
 
-  Mesh_MSTK(const Mesh_MSTK& inmesh,
+  Mesh_MSTK(const Mesh& inmesh,
             const std::vector<std::string>& setnames,
-            const Entity_kind setkind,
+            const Entity_kind entity_kind,
+            const bool flatten = false,
+            const bool extrude = false,
+	    const bool request_faces = true,
+	    const bool request_edges = false);
+
+  Mesh_MSTK(const Mesh& inmesh,
+            const std::vector<int>& entity_list,
+            const Entity_kind entity_kind,
             const bool flatten = false,
             const bool extrude = false,
 	    const bool request_faces = true,
@@ -596,6 +361,274 @@ public:
 
   void write_to_exodus_file(const std::string filename) const;
 
+private:
+
+  MPI_Comm mpicomm;
+  int myprocid, numprocs;
+
+  Mesh_ptr mesh;
+
+  int serial_run;
+  
+
+  // Local handles to entity lists (Vertices, "Faces", "Cells")
+  
+  // For a surface mesh, "Faces" refers to mesh edges and "Cells"
+  // refers to mesh faces
+  //
+  // For a solid mesh, "Faces" refers to mesh faces and "Cells"
+  // refers to mesh regions
+  
+  
+  // These are MSTK's definitions of types of parallel mesh entities
+  // These definitions are slightly different from what Amanzi has defined
+  //
+  // There are 2 types of entities relevant to this code - Owned and Ghost
+  //
+  // 1. OWNED - owned by this processor
+  //
+  // 2. GHOST - not owned by this processor
+  
+  // ALL = OWNED + GHOST in parallel, ALL = OWNED in serial
+  
+
+  MSet_ptr OwnedVerts, NotOwnedVerts;
+  
+  mutable MSet_ptr OwnedEdges, NotOwnedEdges;
+
+  mutable MSet_ptr OwnedFaces, NotOwnedFaces;
+  
+  MSet_ptr OwnedCells, GhostCells;
+
+  // Flags to indicate if face and edge info is initialized
+
+  mutable bool faces_initialized, edges_initialized;
+
+  // Marker to indicate if an entity is not owned
+
+  int notwownedmark;
+
+  // Deleted entity lists if some pre-processing had to be done
+  // to the mesh to eliminate degenerate entities
+
+  bool entities_deleted;
+  List_ptr deleted_vertices, deleted_edges, deleted_faces, deleted_regions;
+
+  // Local ID to MSTK handle map
+
+  std::vector<MEntity_ptr> vtx_id_to_handle;
+  mutable std::vector<MEntity_ptr> edge_id_to_handle;
+  mutable std::vector<MEntity_ptr> face_id_to_handle;
+  std::vector<MEntity_ptr> cell_id_to_handle;
+
+
+  // Maps
+
+  Epetra_Map *cell_map_w_ghosts_, *cell_map_wo_ghosts_;
+  mutable Epetra_Map *face_map_w_ghosts_, *face_map_wo_ghosts_;
+  mutable Epetra_Map *edge_map_w_ghosts_, *edge_map_wo_ghosts_;
+  Epetra_Map *node_map_w_ghosts_, *node_map_wo_ghosts_;
+  Epetra_Map *extface_map_wo_ghosts_; // exterior faces (connected to only 1 cell)
+
+// Epetra importer that will allow apps to import values from a Epetra
+// vector defined on all owned faces into an Epetra vector defined
+// only on exterior faces
+                                           
+  Epetra_Import *owned_to_extface_importer_; 
+  
+  // flag whether to flip a face dir or not when returning nodes of a
+  // face (relevant only on partition boundaries)
+  
+  mutable bool *faceflip;
+
+  // flag whether to flip an edge dir or not when returning nodes of an edge
+  // (relevant only on partition boundaries)
+
+  mutable bool *edgeflip;
+
+  // Attribute to precompute and store celltype
+
+  MAttrib_ptr celltype_att;
+
+  // Parent entity attribute - populated if the mesh is derived from
+  // another mesh
+
+  MAttrib_ptr rparentatt, fparentatt, eparentatt, vparentatt;
+
+  const Mesh_MSTK *parent_mesh;
+
+  // variables needed for mesh deformation
+
+  double *meshxyz;
+  double *target_cell_volumes, *min_cell_volumes, *target_weights;
+
+  // Teuchos Verbose Object to control how much diagnostic info is printed
+
+  VerboseObject* verbose_obj_;
+  
+  // Private methods
+  // ----------------------------
+  
+  void clear_internals_();
+
+  void pre_create_steps_(const int space_dimension, const Epetra_MpiComm *incomm, 
+                         const AmanziGeometry::GeometricModelPtr& gm);
+  void post_create_steps_(const bool request_faces, const bool request_edges);
+
+  void collapse_degen_edges();
+  Cell_type MFace_Celltype(MFace_ptr f);
+  Cell_type MRegion_Celltype(MRegion_ptr r);
+  void label_celltype();
+
+  void init_pvert_lists();
+  void init_pedge_lists();
+  void init_pedge_dirs();
+  void init_pface_lists();
+  void init_pface_dirs();
+  void init_pcell_lists();
+  
+  void init_vertex_id2handle_maps();
+  void init_edge_id2handle_maps();
+  void init_face_id2handle_maps();
+  void init_cell_id2handle_maps();
+  void init_global_ids();
+  
+  void init_cell_map();
+  void init_face_map();
+  void init_edge_map();
+  void init_node_map();
+  
+  void init_nodes();
+  void init_edges();
+  void init_faces();
+  void init_cells();
+
+  void init_set_info();
+  void inherit_labeled_sets(MAttrib_ptr copyatt);
+  std::string internal_name_of_set(const AmanziGeometry::RegionPtr region,
+                                   const Entity_kind entity_kind) const;
+
+  int  generate_regular_mesh(Mesh_ptr mesh, double x0, double y0, double z0,
+			     double x1, double y1, double z1, int nx,
+			     int ny, int nz);
+  int  generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
+			     double x1, double y1, int nx, int ny);
+
+  void extract_mstk_mesh(const Mesh_MSTK& inmesh,
+                         const List_ptr entity_ids,
+                         const MType entity_dim,
+                         const bool flatten = false,
+                         const bool extrude = false,
+			 const bool request_faces = true,
+			 const bool request_edges = false);
+
+  MSet_ptr build_set(const AmanziGeometry::RegionPtr region,
+                     const Entity_kind kind) const;
+
+
+  // Compute the value of the LOCAL component of the GLOBAL
+  // deformation objective function given a new position 'nodexyz' for
+  // node 'nodeid' i.e. only those terms in the global function that
+  // are affected by the movement of this node. 
+
+  double deform_function(const int nodeid, double const * const nodexyz) const;
+  
+  // Finite difference gradient of deformation objective function
+
+  void deform_gradient(const int nodeid, double const * const vxyz, 
+                       double *gradient) const;
+
+  // Finite difference hessian of deformation objective function
+
+  void deform_hessian(const int nodeid, double const * const nodexyz, 
+                      double hessian[3][3]) const;
+
+  // Minimum eigen value of a matrix (rank 2 and rank 3)
+
+  double mineigenvalue(const double A[3][3]) const;
+
+  // Inverse of Hessian of rank 2 or 3
+
+  int hessian_inverse(const double H[3][3],double iH[3][3]) const;
+
+
+
+  // Downward Adjacencies
+  //---------------------
+    
+  // Get faces of a cell and directions in which the cell uses the face 
+
+  // The Amanzi coding guidelines regarding function arguments is purposely
+  // violated here to allow for a default input argument
+
+  // On a distributed mesh, this will return all the faces of the
+  // cell, OWNED or GHOST. If ordered = true, the faces will be
+  // returned in a standard order according to Exodus II convention
+  // for standard cells; in all other situations (ordered = false or
+  // non-standard cells), the list of faces will be in arbitrary order
+
+  // In 3D, direction is 1 if face normal points out of cell
+  // and -1 if face normal points into cell
+  // In 2D, direction is 1 if face/edge is defined in the same
+  // direction as the cell polygon, and -1 otherwise
+
+  void cell_get_faces_and_dirs_internal (const Entity_ID cellid,
+                                         Entity_ID_List *faceids,
+                                         std::vector<int> *face_dirs,
+                                         const bool ordered=false) const;
+
+  void cell_get_faces_and_dirs_ordered (const Entity_ID cellid,
+                                         Entity_ID_List *faceids,
+                                         std::vector<int> *face_dirs) const;
+
+  void cell_get_faces_and_dirs_unordered (const Entity_ID cellid,
+                                         Entity_ID_List *faceids,
+                                          std::vector<int> *face_dirs) const;
+
+
+  // Cells connected to a face
+    
+  void face_get_cells_internal (const Entity_ID faceid, 
+                                const Parallel_type ptype,
+                                Entity_ID_List *cellids) const;
+
+
+  // Get edges of a cell
+
+  void cell_get_edges_internal (const Entity_ID cellid,
+				Entity_ID_List *edgeids) const;
+
+  // Edges and edge directions of a face
+
+  void face_get_edges_and_dirs_internal (const Entity_ID cellid,
+					 Entity_ID_List *edgeids,
+					 std::vector<int> *edgedirs,
+					 bool ordered=true) const;
+
+  // Map from Amanzi's mesh entity kind to MSTK's mesh type.
+  
+  MType entity_kind_to_mtype(const Entity_kind kind) const {
+    
+    // The first index is cell dimension (0,1,2,3) and the second index
+    // is the entity kind
+    //
+    // map order in each row is NODE, EDGE, FACE, CELL
+    //
+    // So, for a 1D mesh, nodes are MVERTEX type in MSTK, edges and faces
+    // are also MVERTEX type, and cells are MEDGE type
+    //
+    // For a 2D mesh, nodes are MVERTEX type, edges and faces are MEDGE
+    // type, and cells are MFACE type
+    
+    static MType const 
+      kind2mtype[4][4] = {{MVERTEX, MVERTEX, MVERTEX, MVERTEX},  // 0d meshes
+                          {MVERTEX, MVERTEX, MVERTEX, MEDGE},    // 1d meshes
+                          {MVERTEX, MEDGE,   MEDGE,   MFACE},    // 2d meshes
+                          {MVERTEX, MEDGE,   MFACE,   MREGION}}; // 3d meshes
+    
+    return kind2mtype[cell_dimension()][(int)kind];
+  }
+    
 };
 
 

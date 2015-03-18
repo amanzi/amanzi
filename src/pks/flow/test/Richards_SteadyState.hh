@@ -76,9 +76,15 @@ int AdvanceToSteadyState(
  
     // update and swap saturations
     S->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S.ptr(), "flow");
-    const Epetra_MultiVector& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
-    Epetra_MultiVector& s_l_prev = *S->GetFieldData("prev_saturation_liquid", "flow")->ViewComponent("cell");
+    const CompositeVector& s_l = *S->GetFieldData("saturation_liquid");
+    CompositeVector& s_l_prev = *S->GetFieldData("prev_saturation_liquid", "flow");
     s_l_prev = s_l;
+
+    // update and swap water content
+    S->GetFieldEvaluator("water_content")->HasFieldChanged(S.ptr(), "flow");
+    const CompositeVector& wc = *S->GetFieldData("water_content");
+    CompositeVector& wc_prev = *S->GetFieldData("prev_water_content", "flow");
+    wc_prev = wc;
   }
 
   ti_specs.num_itrs = itrs;

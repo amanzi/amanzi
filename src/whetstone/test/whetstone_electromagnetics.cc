@@ -50,17 +50,27 @@ TEST(MASS_MATRIX_3D) {
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
 
-  bool request_faces=true, request_edges=true;
+  bool request_faces(true), request_edges(true);
 
-  RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, NULL, 
-			       request_faces, request_edges); 
-  // RCP<Mesh> mesh = meshfactory("test/one_cell.exo"); 
+  // RCP<Mesh> mesh = meshfactory("test/dodecahedron.exo", NULL, request_faces, request_edges); 
+  RCP<Mesh> mesh = meshfactory("test/one_cell.exo", NULL, request_faces, request_edges); 
+  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, NULL, true, true); 
  
   MFD3D_Electromagnetics mfd(mesh);
 
-  int nrows = 12, nedges = 12, cell = 0;
-  Tensor T(3, 1);
-  T(0, 0) = 1;
+  int cell = 0;
+  AmanziMesh::Entity_ID_List edges;
+  mesh->cell_get_edges(cell, &edges);
+
+  int nedges = edges.size();
+  int nrows = nedges;
+
+  Tensor T(3, 2);
+  T(0, 0) = 2.0;
+  T(1, 1) = 1.0;
+  T(0, 1) = 1.0;
+  T(1, 0) = 1.0;
+  T(2, 2) = 1.0;
 
   DenseMatrix M(nrows, nrows);
   mfd.MassMatrix(cell, T, M);
@@ -75,29 +85,26 @@ TEST(MASS_MATRIX_3D) {
   for (int i = 0; i < nrows; i++) CHECK(M(i, i) > 0.0);
 
   // verify exact integration property
-  AmanziMesh::Entity_ID_List edges;
-  mesh->cell_get_edges(cell, &edges);
-    
-  int d = mesh->space_dimension();
-  Point p(d);
-
   double xi, yi, xj;
   double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
   for (int i = 0; i < nedges; i++) {
-    int e = edges[i];
-    const AmanziGeometry::Point& tau = mesh->edge_vector(e);
-    xi = tau[0];
-    yi = tau[1];
+    int e1 = edges[i];
+    const AmanziGeometry::Point& t1 = mesh->edge_vector(e1);
+    double a1 = mesh->edge_length(e1);
+
+    xi = t1[0] / a1;
+    yi = t1[1] / a1;
     for (int j = 0; j < nedges; j++) {
-      e = edges[j];
-      const AmanziGeometry::Point& tau = mesh->edge_vector(e);
-      xj = p[0];
+      int e2 = edges[j];
+      const AmanziGeometry::Point& t2 = mesh->edge_vector(e2);
+      double a2 = mesh->edge_length(e2);
+      xj = t2[0] / a2;
       vxx += M(i, j) * xi * xj;
       vxy += M(i, j) * yi * xj;
     }
   }
-  // CHECK_CLOSE(vxx, volume, 1e-10);
-  // CHECK_CLOSE(vxy, 0.0, 1e-10);
+  CHECK_CLOSE(volume, vxx, 1e-10);
+  CHECK_CLOSE(-volume, vxy, 1e-10);
 
   delete comm;
 }

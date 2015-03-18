@@ -94,9 +94,9 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.0"/>
-        <Parameter name="end period time" type="double" value="5.0e+5"/>
+        <Parameter name="end period time" type="double" value="1.0e+3"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="10000.0"/>
+        <Parameter name="initial time step" type="double" value="500.0"/>
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{}"/>

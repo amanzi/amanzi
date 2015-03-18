@@ -50,6 +50,7 @@ void VWContentEvaluator_ConstDensity::Init_()
 void VWContentEvaluator_ConstDensity::EvaluateField_(
     const Teuchos::Ptr<State>& S, const Teuchos::Ptr<CompositeVector>& result)
 {
+  S->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S.ptr(), "flow");
   const Epetra_MultiVector& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
   const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell");
   double rho = *S->GetScalarData("fluid_density");

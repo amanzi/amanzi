@@ -207,6 +207,15 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
+
+    <ParameterList name="initial conditions">
+      <ParameterList name="fluid_density">
+        <Parameter name="value" type="double" value="1.0.0"/>
+      </ParameterList>
+      <ParameterList name="fluid_viscosity">
+        <Parameter name="value" type="double" value="1.0.0"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
   <!-- SOLVERS -->

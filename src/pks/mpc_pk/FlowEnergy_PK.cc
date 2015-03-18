@@ -124,6 +124,7 @@ void FlowEnergy_PK::Setup()
   Teuchos::ParameterList& tmp = glist_->sublist("PKs").sublist("Flow")
                                        .sublist("Richards problem").sublist("physics coupling");
   tmp.set("vapor diffusion", true);
+  tmp.set<std::string>("water content model", "generic");
 
   // process other PKs.
   MPCStrong<FnTimeIntegratorPK>::Setup();

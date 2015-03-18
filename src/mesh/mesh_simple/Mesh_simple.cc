@@ -106,9 +106,21 @@ Mesh_simple::Mesh_simple (const Mesh *inmesh,
   Exceptions::amanzi_throw(mesg);
 }
 
-Mesh_simple::Mesh_simple (const Mesh_simple& inmesh, 
+Mesh_simple::Mesh_simple (const Mesh& inmesh, 
                           const std::vector<std::string>& setnames, 
                           const Entity_kind setkind,
+                          const bool flatten,
+                          const bool extrude,
+                          const bool request_faces,
+                          const bool request_edges)
+{  
+  Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the Simple mesh framework\n");
+  Exceptions::amanzi_throw(mesg);
+}
+
+Mesh_simple::Mesh_simple (const Mesh& inmesh, 
+                          const std::vector<int>& entity_id_list, 
+                          const Entity_kind entity_kind,
                           const bool flatten,
                           const bool extrude,
                           const bool request_faces,

@@ -75,14 +75,6 @@ public:
   // dimensional space or to extrude the mesh to give higher
   // dimensional cells
 
-  Mesh_simple(const Mesh_simple& inmesh,
-              const std::vector<std::string>& setnames,
-              const Entity_kind setkind,
-              const bool flatten = false,
-              const bool extrude = false,
-	      const bool request_faces = true,
-	      const bool request_edges = false);
-
   Mesh_simple(const Mesh *inmesh,
               const std::vector<std::string>& setnames,
               const Entity_kind setkind,
@@ -91,6 +83,22 @@ public:
 	      const bool request_faces = true,
 	      const bool request_edges = false);
 
+  Mesh_simple(const Mesh& inmesh,
+              const std::vector<std::string>& setnames,
+              const Entity_kind setkind,
+              const bool flatten = false,
+              const bool extrude = false,
+	      const bool request_faces = true,
+	      const bool request_edges = false);
+
+  Mesh_simple(const Mesh& inmesh, 
+              const std::vector<int>& entity_id_list, 
+              const Entity_kind entity_kind,
+              const bool flatten = false,
+              const bool extrude = false,
+              const bool request_faces = true,
+              const bool request_edges = false);
+  
   virtual ~Mesh_simple ();
   
   void update ();

@@ -246,7 +246,7 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
       kc = k_cell.get() ? (*k_cell)[0][c] : 1.0;
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
     } else if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK && k_twin != Teuchos::null) {
-      kc = k_cell.get() ? (*k_cell)[0][c] : 1.;
+      kc = k_cell.get() ? (*k_cell)[0][c] : 1.0;
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);

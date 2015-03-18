@@ -1,4 +1,6 @@
 Attaches integer attributes to cells and nodes of 4x4x4 node (3x3x3 cell) mesh.
+You will need to link or point to exoatt.
+exoatt will install in the bin directory ($AMANZI_INSTALL_DIR/bin)
 
 Base mesh generation (requires lagrit and pylagrit):
 python create_mesh.py
