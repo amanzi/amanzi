@@ -56,6 +56,9 @@ class OperatorDiffusion {
 
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
           const Teuchos::Ptr<const CompositeVector>& u) = 0;
+  virtual void UpdateMatricesNewtonCorrection(
+          const Teuchos::Ptr<const CompositeVector>& flux,
+          const Teuchos::Ptr<const CompositeVector>& u) {}
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux) = 0;
   virtual void ApplyBCs(bool primary=true) = 0;
   virtual void ModifyMatrices(const CompositeVector& u) = 0;

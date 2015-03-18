@@ -510,6 +510,8 @@ void State::RequireGravity() {
   Teuchos::RCP<Field_ConstantVector> cvfield =
     Teuchos::rcp_dynamic_cast<Field_ConstantVector>(field, true);
   cvfield->set_subfield_names(subfield_names);
+  cvfield->CreateData();
+  cvfield->Initialize(state_plist_.sublist("initial conditions").sublist("gravity"));
 };
 
 
@@ -673,7 +675,9 @@ void State::Setup() {
   // -- Now create the data for all fields.
   for (field_iterator f_it = field_begin();
        f_it != field_end(); ++f_it) {
-    f_it->second->CreateData();
+    if (!f_it->second->initialized()) {
+      f_it->second->CreateData();
+    }
   }
 };
 

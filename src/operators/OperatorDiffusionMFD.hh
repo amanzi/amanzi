@@ -67,7 +67,10 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   using OperatorDiffusion::Setup;
 
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-                              const Teuchos::Ptr<const CompositeVector>& u);
+          const Teuchos::Ptr<const CompositeVector>& u);
+  virtual void UpdateMatricesNewtonCorrection(
+          const Teuchos::Ptr<const CompositeVector>& flux,
+          const Teuchos::Ptr<const CompositeVector>& u);
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
   virtual void ApplyBCs(bool primary=true);
   virtual void ModifyMatrices(const CompositeVector& u);
@@ -96,6 +99,7 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
 
   int mfd_primary_, mfd_secondary_, mfd_pc_primary_, mfd_pc_secondary_;
   int nfailed_primary_;
+
 };
 
 }  // namespace Operators

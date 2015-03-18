@@ -510,7 +510,8 @@ int CompositeVector::Dot(const CompositeVector& other, double* result) const {
 CompositeVector& CompositeVector::Update(double scalarA, const CompositeVector& A, double scalarThis) {
   ChangedValue();
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
-    ViewComponent(*lcv, false)->Update(scalarA, *A.ViewComponent(*lcv,false), scalarThis);
+    if (A.HasComponent(*lcv))
+      ViewComponent(*lcv, false)->Update(scalarA, *A.ViewComponent(*lcv,false), scalarThis);
   }
   return *this;
 };
@@ -521,8 +522,9 @@ CompositeVector& CompositeVector::Update(double scalarA, const CompositeVector& 
                  double scalarB, const CompositeVector& B, double scalarThis) {
   ChangedValue();
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
-    ViewComponent(*lcv, false)->Update(scalarA, *A.ViewComponent(*lcv,false),
-            scalarB, *B.ViewComponent(*lcv,false), scalarThis);
+    if (A.HasComponent(*lcv))
+      ViewComponent(*lcv, false)->Update(scalarA, *A.ViewComponent(*lcv,false),
+              scalarB, *B.ViewComponent(*lcv,false), scalarThis);
   }
   return *this;
 };
@@ -534,11 +536,11 @@ int CompositeVector::Multiply(double scalarAB, const CompositeVector& A,
   ChangedValue();
   int ierr = 0;
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
-    ierr = ViewComponent(*lcv, false)->Multiply(scalarAB, *A.ViewComponent(*lcv,false),
-            *B.ViewComponent(*lcv,false), scalarThis);
-    if (ierr) return ierr;
+    if (A.HasComponent(*lcv))
+      ierr |= ViewComponent(*lcv, false)->Multiply(scalarAB, *A.ViewComponent(*lcv,false),
+              *B.ViewComponent(*lcv,false), scalarThis);
   }
-  return 0;
+  return ierr;
 };
 
 // -- this <- scalarAB * B / A + scalarThis*this  (/ is the elementwise division
@@ -547,11 +549,11 @@ int CompositeVector::ReciprocalMultiply(double scalarAB, const CompositeVector& 
   ChangedValue();
   int ierr = 0;
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
-    ierr = ViewComponent(*lcv, false)->ReciprocalMultiply(scalarAB,
-            *A.ViewComponent(*lcv,false), *B.ViewComponent(*lcv,false), scalarThis);
-    if (ierr) return ierr;
+    if (A.HasComponent(*lcv))
+      ierr |= ViewComponent(*lcv, false)->ReciprocalMultiply(scalarAB,
+              *A.ViewComponent(*lcv,false), *B.ViewComponent(*lcv,false), scalarThis);
   }
-  return 0;
+  return ierr;
 };
 
 

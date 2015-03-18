@@ -54,6 +54,7 @@ class OperatorAccumulation {
   // update methods
   // -- update method for just adding to PC
   void AddAccumulationTerm(const Epetra_MultiVector& du);
+  void AddAccumulationTerm(const Epetra_MultiVector& du, double dT);
 
   // -- linearized update methods with storage terms
   void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& s0, 

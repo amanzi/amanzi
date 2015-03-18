@@ -11,6 +11,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Ifpack_Hypre.h"
 
+#include "errors.hh"
 #include "exceptions.hh"
 #include "PreconditionerBoomerAMG.hh"
 
@@ -34,6 +35,13 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
 {
   plist_ = list;
 #ifdef HAVE_HYPRE
+  // check for old input spec and error
+  if (plist_.isParameter("number of cycles")) {
+    Errors::Message msg("\"boomer amg\" ParameterList uses old style, \"number of cycles\".  Please update to the new style.");
+    Exceptions::amanzi_throw(msg);
+  }
+    
+  
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetTol,
 						      plist_.get<double>("tolerance", 0.0))));
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetPrintLevel,
