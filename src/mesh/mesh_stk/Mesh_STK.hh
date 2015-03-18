@@ -53,6 +53,14 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   /// Construct a mesh from a
   explicit Mesh_STK(STK::Mesh_STK_Impl_p mesh);
 
+  // the request_faces and request_edges arguments have to be at the
+  // end and not in the middle because if we omit them and specify a
+  // pointer argument like gm or verbosity_obj, then there is implicit
+  // conversion of the pointer to bool, thereby defeating the intent
+  // of the call and making the pointer argument seem NULL. In C++11,
+  // we could "delete" the illegal version of the call effectively
+  // blocking the implicit conversion.
+  
   /// Construct hexahedral mesh of the given size and spacing
   Mesh_STK(const Epetra_MpiComm *comm, 
            const unsigned int& ni, const unsigned int& nj, const unsigned int& nk,
@@ -64,7 +72,9 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const double& zdelta = 1.0,
            const AmanziGeometry::GeometricModelPtr& gm = 
            (AmanziGeometry::GeometricModelPtr) NULL,
-           const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
+           const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+           const bool request_faces = true,
+           const bool request_edges = false);
   
   /// Construct hexahedral mesh (Mesh_simple alternative)
   Mesh_STK(double x0, double y0, double z0,
@@ -73,7 +83,9 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const Epetra_MpiComm *comm,
            const AmanziGeometry::GeometricModelPtr& gm = 
            (AmanziGeometry::GeometricModelPtr) NULL,
-           const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
+           const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+           const bool request_faces = true,
+           const bool request_edges = false);
 
   Mesh_STK(const double x0, 
            const double y0,
@@ -84,34 +96,44 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const Epetra_MpiComm *communicator,
            const AmanziGeometry::GeometricModelPtr &gm = 
            (AmanziGeometry::GeometricModelPtr) NULL,
-           const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
+           const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+           const bool request_faces = true,
+           const bool request_edges = false);
   
   /// Construct a hexedral mesh from a parameter list (Mesh_simple alternative)
   Mesh_STK(Teuchos::ParameterList &parameter_list,
            const Epetra_MpiComm *comm,
            const AmanziGeometry::GeometricModelPtr& gm = 
            (AmanziGeometry::GeometricModelPtr) NULL,
-           const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
+           const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+           const bool request_faces = true,
+           const bool request_edges = false);
 
   /// Construct a hexedral mesh from specs (Mesh_simple alternative)
   Mesh_STK(const GenerationSpec& gspec,
            const Epetra_MpiComm *comm,
            const AmanziGeometry::GeometricModelPtr& gm = 
            (AmanziGeometry::GeometricModelPtr) NULL,
-           const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
+           const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+           const bool request_faces = true,
+           const bool request_edges = false);
 
   /// Construct a mesh from a Exodus II file or file set
   Mesh_STK(const Epetra_MpiComm *comm, 
            const std::string& fname,
            const AmanziGeometry::GeometricModelPtr& gm = 
            (AmanziGeometry::GeometricModelPtr) NULL,
-           const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
+           const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+           const bool request_faces = true,
+           const bool request_edges = false);
 
   /// Construct a mesh from a Exodus II file or file set
   Mesh_STK(const char *filename, const Epetra_MpiComm *comm,
            const AmanziGeometry::GeometricModelPtr& gm = 
            (AmanziGeometry::GeometricModelPtr) NULL,
-           const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
+           const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+           const bool request_faces = true,
+           const bool request_edges = false);
 
   // Construct a mesh by extracting a subset of entities from another
   // mesh. In some cases like extracting a surface mesh from a volume
@@ -123,13 +145,25 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const std::vector<std::string>& setnames,
            const Entity_kind setkind,
            const bool flatten = false,
-           const bool extrude = false);
+           const bool extrude = false,
+           const bool request_faces = true,
+           const bool request_edges = false);
 
-  Mesh_STK(const Mesh_STK& inmesh,
+  Mesh_STK(const Mesh& inmesh,
            const std::vector<std::string>& setnames,
            const Entity_kind setkind,
            const bool flatten = false,
-           const bool extrude = false);
+           const bool extrude = false,
+           const bool request_faces = true,
+           const bool request_edges = false);
+
+  Mesh_STK (const Mesh& inmesh, 
+            const std::vector<int>& entity_id_list, 
+            const Entity_kind entity_kind,
+            const bool flatten = false,
+            const bool extrude = false,
+            const bool request_faces = true,
+            const bool request_edges = false);
 
 
   /// Destructor
@@ -185,6 +219,15 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   // In 2D, nfnodes is 2
   void face_get_nodes (const Entity_ID faceid, 
                        Entity_ID_List *nodeids) const;
+
+
+  // Get nodes of edge
+
+  void edge_get_nodes (const Entity_ID edgeid, Entity_ID *nodeid0,
+		       Entity_ID *nodeid1) const {
+    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
+    amanzi_throw(mesg);
+  }
 
   // Upward adjacencies
   //-------------------
@@ -403,14 +446,32 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
                                 std::vector<int> *face_dirs,
                                 const bool ordered=false) const;
 
+  // Edges of a cell
+
+  void cell_get_edges_internal (const Entity_ID cellid,
+                                Entity_ID_List *edgeids) const 
+  { 
+    Errors::Message mesg("Edges not implemented in this interface. Use MSTK");
+    Exceptions::amanzi_throw(mesg);
+  }
+
   // Cells connected to a face
 
   void face_get_cells_internal (const Entity_ID faceid, 
                                 const Parallel_type ptype,
                                 Entity_ID_List *cellids) const;
     
+  // Edges and edge directions of a face
 
-
+  void face_get_edges_and_dirs_internal (const Entity_ID cellid,
+					 Entity_ID_List *edgeids,
+					 std::vector<int> *edgedirs,
+					 bool ordered=true) const
+  {
+    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
+    amanzi_throw(mesg);
+  };
+    
 };
 
 } // namespace AmanziMesh

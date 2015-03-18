@@ -185,12 +185,12 @@ Restart from checkpoint data file
 ---------------------------------
 
 A user may request a restart from a Checkpoint Data file by including the MPC sublist 
-`"Restart from Checkpoint Data File`". This mode of restarting
+`"Restart`". This mode of restarting
 will overwrite all other initialization of data that are called out in the input file.
 The purpose of restarting Amanzi in this fashion is mostly to continue a run that has been 
 terminated because its allocation of time ran out.
 
-* `"Restart from Checkpoint Data File`" [list]
+* `"Restart`" [list]
 
   * `"Checkpoint Data File Name`" [string] provides name of the existing checkpoint data file to restart from.
 
@@ -202,7 +202,7 @@ terminated because its allocation of time ran out.
   
   <ParameterList name="Cycle Driver">
     ...
-    <ParameterList name="Restart from Checkpoint Data File">
+    <ParameterList name="Restart">
       <Parameter name="Checkpoint Data File Name" type="string" value="CHECK00123.h5"/>
     </ParameterList>
     ...
@@ -1056,6 +1056,25 @@ those needed for unit tests, and future code development.
    </ParameterList>
 
 
+Physics couplig
+...............
+
+To couple with other PKs, we have to specify additional parameters.
+
+  * `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
+    e.g. by EnergyFlow PK. The default value is `"false`".
+
+  * `"water content evaluator`" [string] changes the evaluator for water
+    content. Available options are `"generic`" and `"constant density`" (default).
+
+.. code-block:: xml
+
+   <ParameterList name="physics coupling">
+     <Parameter name="vapor diffusion" type="bool" value="false"/>
+     <Parameter name="water content evaluator" type="string" value="constant density"/>
+   </ParameterList>
+
+
 Other parameters
 ................
 
@@ -1568,9 +1587,6 @@ Alquimia chemistry kernel reads initial conditions from the `"State`" list.
 
 Energy PK
 ---------
-
-This process kernel will appear in Amanzi, version 0.84.
-
 
 Diffusion operator
 ..................

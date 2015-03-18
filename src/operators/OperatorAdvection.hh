@@ -21,7 +21,6 @@ namespace Operators {
 
 class OperatorAdvection {
  public:
-
   OperatorAdvection(Teuchos::ParameterList& plist,
                     Teuchos::RCP<Operator> global_op) :
       global_op_(global_op),
@@ -49,8 +48,7 @@ class OperatorAdvection {
   // main members
   void Setup(const CompositeVector& u);
   void UpdateMatrices(const CompositeVector& u);
-  void UpdateMatrices(const CompositeVector& u,
-                      const CompositeVector& dhdT);
+  void UpdateMatrices(const CompositeVector& u, const CompositeVector& dhdT);
   void ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary=true);
 
   // access

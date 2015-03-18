@@ -41,6 +41,7 @@ add_amanzi_library(whetstone
                           mfd3d_diffusion.cc mfd3d_diffusion_surface.cc 
                           mfd3d_diffusion_other.cc 
                           mfd3d_elasticity.cc 
+                          mfd3d_electromagnetics.cc 
                           nlfv.cc tensor.cc DenseMatrix.cc
                    HEADERS ${whetstone_inc_files}
                    LINK_LIBS geometry mesh error_handling ${Epetra_LIBRARIES})
@@ -71,13 +72,19 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/whetstone_elasticity.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+    # Test: matrices for electromagnetics
+    add_amanzi_test(whetstone_electromagnetics whetstone_electromagnetics
+                    KIND unit
+                    SOURCE test/Main.cc test/whetstone_electromagnetics.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
     # Test: various operations with tensors 
     add_amanzi_test(whetstone_tensors whetstone_tensors
                     KIND unit
                     SOURCE test/Main.cc test/whetstone_tensors.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    # Test: vsurface matrices for diffusion
+    # Test: surface matrices for diffusion
     add_amanzi_test(whetstone_surface whetstone_surface
                     KIND unit
                     SOURCE test/Main.cc test/whetstone_surface.cc

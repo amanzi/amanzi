@@ -1,7 +1,7 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 
-ATS
+ATS and Amanzi
 
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon

@@ -1,0 +1,7 @@
+# PyLaGriT generated LaGriT script
+cmo/create/mo1/0/0/tet
+cmo select mo1
+createpts/brick/xyz/433,1,257/0.0,0.0,0.0/216.0,1.0,107.52/1,1,1/0,0,0/1,1,1
+cmo select mo1
+dump/exo/mesh.exo/mo1/ / 
+finish

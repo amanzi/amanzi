@@ -53,16 +53,9 @@ class Richards_PK : public Flow_PK {
   double get_dt() { return dT; }
   void set_dt(double dTnew) { dT = dTnew; dT_desirable_ = dTnew; }
 
-  void CommitState(double dt, const Teuchos::Ptr<State>& S);
+  void CommitStep(double dt, const Teuchos::Ptr<State>& S);
   void CalculateDiagnostics(const Teuchos::Ptr<State>& S);
 
-  // main flow methods
-  void InitTimeInterval();
-  void InitializeAuxiliaryData();
-
-  void UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u);
-  double ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du);
- 
   // methods required for time integration interface
   void Functional(const double T0, double T1, 
                   Teuchos::RCP<CompositeVector> u_old, Teuchos::RCP<CompositeVector> u_new, 
@@ -89,6 +82,10 @@ class Richards_PK : public Flow_PK {
   int AdvanceToSteadyState_Picard(Teuchos::ParameterList& picard_list);
   double CalculateRelaxationFactor(const Epetra_MultiVector& uold, const Epetra_MultiVector& unew);
 
+  // other flow methods
+  void UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u);
+  double ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du);
+ 
   // access methods
   Teuchos::RCP<Operators::Operator> op_matrix() { return op_matrix_; }
   const Teuchos::RCP<CompositeVector> get_solution() { return solution; }
@@ -102,10 +99,12 @@ class Richards_PK : public Flow_PK {
   void PlotWRMcurves(Teuchos::ParameterList& plist);
 
  private:
+  void InitializeFields_();
   void InitializeUpwind_();
 
   void Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f);
-  void CalculateVaporDiffusionTensor_();
+  void CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& kvapor_pres,
+                                      Teuchos::RCP<CompositeVector>& kvapor_temp);
 
  private:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
@@ -132,10 +131,9 @@ class Richards_PK : public Flow_PK {
   std::string preconditioner_name_, solver_name_, solver_name_constraint_;
 
   // coupling with energy
-  Teuchos::RCP<Operators::Operator> op_vapor_matrix_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op_vapor_matrix_diff_;
+  Teuchos::RCP<Operators::Operator> op_vapor_;
+  Teuchos::RCP<Operators::OperatorDiffusion> op_vapor_diff_;
   bool vapor_diffusion_;
-  std::vector<WhetStone::Tensor> K_vapor; 
 
   // time integrators
   Teuchos::RCP<BDF1_TI<CompositeVector, CompositeVectorSpace> > bdf1_dae;

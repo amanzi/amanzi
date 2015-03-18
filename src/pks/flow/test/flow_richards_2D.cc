@@ -109,8 +109,6 @@ TEST(FLOW_2D_RICHARDS) {
 
   /* initialize the Richards process kernel */
   RPK->Initialize();
-  RPK->InitializeAuxiliaryData();
-  RPK->InitTimeInterval();
   S->CheckAllFieldsInitialized();
 
   /* solve the problem */
@@ -121,7 +119,7 @@ TEST(FLOW_2D_RICHARDS) {
   ti_specs.max_itrs = 400;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, S->GetFieldData("pressure", "flow"));
-  RPK->CommitState(0.0, S.ptr());
+  RPK->CommitStep(0.0, S.ptr());
 
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");

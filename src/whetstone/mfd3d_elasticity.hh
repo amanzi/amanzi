@@ -7,7 +7,7 @@
   provided in the top-level COPYRIGHT file.
 
   Release name: naka-to.
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Tonstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #ifndef AMANZI_MFD3D_ELASTICITY_HH_
@@ -21,8 +21,6 @@
   The material properties are imbedded into the the matrix Mc. 
 
   Notation used below: M (mass), W (inverse of M), A (stiffness).
-
-  IMPORTANT: all matrices must be reshaped before calling member functions.
 */
 
 #include "Teuchos_RCP.hpp"
@@ -44,23 +42,24 @@ class MFD3D_Elasticity : public MFD3D {
   ~MFD3D_Elasticity() {};
 
   // required implementation of two consistency conditions
-  int L2consistency(int cell, const Tensor& deformation, DenseMatrix& N, DenseMatrix& Mc);
+  int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
 
-  int L2consistencyInverse(int cell, const Tensor& deformation,
-                           DenseMatrix& R, DenseMatrix& Wc) { return WHETSTONE_ELEMENTAL_MATRIX_OK; }
+  int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc) {
+    return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  }
 
-  int H1consistency(int cell, const Tensor& deformation, DenseMatrix& N, DenseMatrix& Mc);
+  int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
 
-  int MassMatrix(int cell, const Tensor& deformation, DenseMatrix& M) { 
+  int MassMatrix(int c, const Tensor& T, DenseMatrix& M) { 
     return WHETSTONE_ELEMENTAL_MATRIX_OK; 
   } 
-  int MassMatrixInverse(int cell, const Tensor& deformation, DenseMatrix& W) {
+  int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) {
     return WHETSTONE_ELEMENTAL_MATRIX_OK; 
   } 
 
-  int StiffnessMatrix(int cell, const Tensor& deformation, DenseMatrix& A);
-  int StiffnessMatrixOptimized(int cell, const Tensor& deformation, DenseMatrix& A);
-  int StiffnessMatrixMMatrix(int cell, const Tensor& deformation, DenseMatrix& A);
+  int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
+  int StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A);
+  int StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A);
 
  private:
   void MatrixMatrixProduct_(

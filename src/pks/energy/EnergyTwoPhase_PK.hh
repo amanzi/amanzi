@@ -16,7 +16,7 @@
 #define AMANZI_ENERGY_TWOPHASE_PK_HH_
 
 #include "eos.hh"
-#include "iem.hh"
+#include "IEM.hh"
 #include "PK_Factory.hh"
 #include "Energy_PK.hh"
 
@@ -45,6 +45,9 @@ public:
 
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
 
+ private:
+  void InitializeFields_();
+
  protected:
   // models for evaluating enthalpy
   Teuchos::RCP<Relations::EOS> eos_liquid_;
@@ -57,7 +60,6 @@ public:
   const Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<CompositeVector> solution;
 
-private:
   // factory registration
   static RegisteredPKFactory<EnergyTwoPhase_PK> reg_;
 };

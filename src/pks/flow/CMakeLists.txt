@@ -59,6 +59,11 @@ register_evaluator_with_factory(
   LISTNAME   PKS_FLOW_REGISTRATIONS
   )
 
+register_evaluator_with_factory(
+  HEADERFILE VWContentEvaluator_reg.hh
+  LISTNAME   PKS_FLOW_REGISTRATIONS
+  )
+
 generate_evaluators_registration_header( 
   HEADERFILE pks_flow_registration.hh   
   LISTNAME   PKS_FLOW_REGISTRATIONS
@@ -106,10 +111,12 @@ set(flow_src_files Flow_PK.cc
                    Darcy_PK.cc Darcy_TI.cc Darcy_LinearOperator.cc
                    Richards_PK.cc Richards_TI.cc Richards_WRM.cc
                    Richards_Picard.cc Richards_LinearOperator.cc
+                   PorosityModelPartition.cc
                    RelPerm.cc RelPermEvaluator.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
                    WRMPartition.cc WRMFactory.cc WRMEvaluator.cc 
-                   darcy_velocity_evaluator.cc
+                   VWContentEvaluator.cc VWContentEvaluator_ConstDensity.cc
+                   DarcyVelocityEvaluator.cc
                    Darcy_PK_Wrapper.cc Richards_PK_Wrapper.cc
                    )
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
@@ -135,6 +142,8 @@ set(flow_inc_files
   Flow_PK.hh
   Flow_SourceFactory.hh
   FlowTypeDefs.hh
+  PorosityModel.hh
+  PorosityModelPartition.hh
   RelPerm.hh
   RelPermEvaluator.hh
   Richards_PK.hh

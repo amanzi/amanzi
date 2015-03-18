@@ -10,8 +10,8 @@
 #include "UnitTest++.h"
 
 #include "CycleDriver.hh"
-#include "energy_thermal_conductivity_registration.hh"
-#include "energy_internal_energy_registration.hh"
+#include "energy_tcm_registration.hh"
+#include "energy_iem_registration.hh"
 #include "eos_registration.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"

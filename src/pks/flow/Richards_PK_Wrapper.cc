@@ -52,6 +52,22 @@ bool Richards_PK_Wrapper::AdvanceStep(double t_old, double t_new)
   std::string passwd = pk_->name();
   CompositeVector pressure_copy(*S_->GetFieldData("pressure", passwd));
 
+  // swap saturations (may go to a high-level PK)
+  S_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_.ptr(), "flow");
+  const CompositeVector& sat = *S_->GetFieldData("saturation_liquid");
+  CompositeVector& sat_prev = *S_->GetFieldData("prev_saturation_liquid", passwd);
+
+  CompositeVector sat_prev_copy(sat_prev);
+  sat_prev = sat;
+
+  // swap water_content (may go to a high-level PK)
+  S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
+  CompositeVector& wc = *S_->GetFieldData("water_content", "water_content");
+  CompositeVector& wc_prev = *S_->GetFieldData("prev_water_content", passwd);
+
+  CompositeVector wc_prev_copy(wc_prev);
+  wc_prev = wc;
+
   bool failed = false;
   failed = pk_->Advance(dt, dt_actual);
 
@@ -59,11 +75,16 @@ bool Richards_PK_Wrapper::AdvanceStep(double t_old, double t_new)
     failed = true;
   }
   if (failed) {
+    // revover the original primary solution, pressure
     *S_->GetFieldData("pressure", passwd) = pressure_copy;
     pk_->pressure_eval()->SetFieldAsChanged(S_.ptr());
 
+    // revover the original fields
+    *S_->GetFieldData("prev_saturation_liquid", passwd) = sat_prev_copy;
+    *S_->GetFieldData("prev_water_content", passwd) = wc_prev_copy;
+
     Teuchos::OSTab tab = pk_->vo_->getOSTab();
-    *(pk_->vo_->os()) << "Step failed " << std::endl;
+    *(pk_->vo_->os()) << "Step failed. Restored pressure, prev_saturation_liquid, prev_water_content" << std::endl;
   }
 
   return failed;

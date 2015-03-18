@@ -161,7 +161,7 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::Para
         /* EIB: proposed v1.2.2 update - Add Maximum Cycle Number for Transient modes */
         if (exe_sublist.sublist("Time Integration Mode").sublist("Transient").isParameter("Maximum Cycle Number"))
             max_cycle_number =exe_sublist.sublist("Time Integration Mode").sublist("Transient").get<double>("Maximum Cycle Number");
-      }	
+      }      
     }
   }
 
@@ -209,11 +209,11 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::ParameterL
 
     if (exe_sublist.isParameter("Transport Model")) {
       if (exe_sublist.get<std::string>("Transport Model") == "Off" || exe_sublist.get<std::string>("Transport Model") == "off") {
-  	transport_on = false;
+        transport_on = false;
       } else if (exe_sublist.get<std::string>("Transport Model") == "On" || exe_sublist.get<std::string>("Transport Model") == "on") {
-  	transport_on = true;
+        transport_on = true;
       } else {
-  	Exceptions::amanzi_throw(Errors::Message("Transport Model must either be On or Off"));
+        Exceptions::amanzi_throw(Errors::Message("Transport Model must either be On or Off"));
       }
     }
     else {
@@ -222,15 +222,15 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::ParameterL
 
     if (exe_sublist.isParameter("Flow Model")) {
       if (exe_sublist.get<std::string>("Flow Model") == "Off" || exe_sublist.get<std::string>("Flow Model") == "off") {
-  	flow_on = false;
+        flow_on = false;
       } else if (exe_sublist.get<std::string>("Flow Model") == "Richards") {
-  	flow_pk = "richards";
-  	flow_on = true;
+        flow_pk = "richards";
+        flow_on = true;
       } else if (exe_sublist.get<std::string>("Flow Model") == "Single Phase") {
-  	flow_pk = "darcy";
-  	flow_on = true;
+        flow_pk = "darcy";
+        flow_on = true;
       } else {
-  	Exceptions::amanzi_throw(Errors::Message("Flow Model must either be Richards, Single Phase, or Off"));
+        Exceptions::amanzi_throw(Errors::Message("Flow Model must either be Richards, Single Phase, or Off"));
       }
     }
     else {
@@ -239,14 +239,14 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::ParameterL
 
     if (exe_sublist.isParameter("Chemistry Model")) {
       if (exe_sublist.get<std::string>("Chemistry Model") == "Off") {
-  	chemistry_on = false;
+        chemistry_on = false;
       } else if  (exe_sublist.get<std::string>("Chemistry Model") == "Amanzi") {
-  	chemistry_on = true;
-  	chemistry_pk = "chemistry";    
+        chemistry_on = true;
+        chemistry_pk = "chemistry";    
       } else if  (exe_sublist.get<std::string>("Chemistry Model") == "Alquimia") {
-  	// chemistry_on = true;
-  	// std::string chemistry_pk = "chemistry_pk";
-  	Exceptions::amanzi_throw(Errors::Message("New MPC driver doesn't support Alquimia chemistry model."));
+        // chemistry_on = true;
+        // std::string chemistry_pk = "chemistry_pk";
+        Exceptions::amanzi_throw(Errors::Message("New MPC driver doesn't support Alquimia chemistry model."));
       }
     }
     else {
@@ -260,27 +260,27 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::ParameterL
         start_time = exe_sublist.sublist("Time Integration Mode").sublist("Initialize To Steady").get<double>("Start");
         switch_time = exe_sublist.sublist("Time Integration Mode").sublist("Initialize To Steady").get<double>("Switch");
         end_time = exe_sublist.sublist("Time Integration Mode").sublist("Initialize To Steady").get<double>("End");
-	
-	dt_steady = exe_sublist.sublist("Time Integration Mode").sublist("Initialize To Steady").get<double>("Steady Initial Time Step", 1);
-	dt_tran = exe_sublist.sublist("Time Integration Mode").sublist("Initialize To Steady").get<double>("Transient Initial Time Step", 1);
-	flow_name = "Flow";
+      
+      dt_steady = exe_sublist.sublist("Time Integration Mode").sublist("Initialize To Steady").get<double>("Steady Initial Time Step", 1);
+      dt_tran = exe_sublist.sublist("Time Integration Mode").sublist("Initialize To Steady").get<double>("Transient Initial Time Step", 1);
+      flow_name = "Flow";
 
-	model_pre = 4*flow_on;
+      model_pre = 4*flow_on;
       }
       if (exe_sublist.sublist("Time Integration Mode").isSublist("Steady")) {
         start_time = exe_sublist.sublist("Time Integration Mode").sublist("Steady").get<double>("Start");
         end_time = exe_sublist.sublist("Time Integration Mode").sublist("Steady").get<double>("End");
-	dt_steady = exe_sublist.sublist("Time Integration Mode").sublist("Steady").get<double>("Initial Time Step",  1);
-	switch_time = start_time;
-	dt_tran = dt_steady;
-	flow_name = "Flow Steady";
+        dt_steady = exe_sublist.sublist("Time Integration Mode").sublist("Steady").get<double>("Initial Time Step",  1);
+        switch_time = start_time;
+        dt_tran = dt_steady;
+        flow_name = "Flow Steady";
       }
       if (exe_sublist.sublist("Time Integration Mode").isSublist("Transient")) {
         start_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient").get<double>("Start");
         end_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient").get<double>("End");
-	switch_time = start_time;
-	dt_tran = exe_sublist.sublist("Time Integration Mode").sublist("Transient").get<double>("Initial Time Step", 1);
-	flow_name = "Flow";
+        switch_time = start_time;
+        dt_tran = exe_sublist.sublist("Time Integration Mode").sublist("Transient").get<double>("Initial Time Step", 1);
+        flow_name = "Flow";
         
         /* EIB: proposed v1.2.2 update - Add Maximum Cycle Number for Transient modes */
         if (exe_sublist.sublist("Time Integration Mode").sublist("Transient").isParameter("Maximum Cycle Number"))
@@ -289,14 +289,14 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::ParameterL
       if (exe_sublist.sublist("Time Integration Mode").isSublist("Transient with Static Flow")) {
         start_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("Start");
         end_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("End");
-	switch_time = start_time;
-	dt_tran = exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("Initial Time Step", 1);
-	flow_name = "Flow";
+        switch_time = start_time;
+        dt_tran = exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("Initial Time Step", 1);
+        flow_name = "Flow";
 
         /* EIB: proposed v1.2.2 update - Add Maximum Cycle Number for Transient modes */
         if (exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").isParameter("Maximum Cycle Number"))
             max_cycle_number =exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("Maximum Cycle Number");
-      }	
+      }      
     }
   }
 
@@ -304,8 +304,8 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::ParameterL
   std::string tp_list_name;
 
   if (model_pre > 0) {
-     std::ostringstream ss; ss << time_pr_id;
-     tp_list_name = "TP "+ ss.str();
+    std::ostringstream ss; ss << time_pr_id;
+    tp_list_name = "TP "+ ss.str();
 
     pk_tree_list_pre.sublist("Flow Steady").set<std::string>("PK type", flow_pk);
     cycle_driver_list.sublist("time periods").sublist(tp_list_name.data()).sublist("PK Tree") = pk_tree_list_pre;
@@ -378,6 +378,25 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::ParameterL
 
   cycle_driver_list.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
 
+  /* EIB: proposed v1.2.2 update - Change Restart name */
+  if (plist->sublist("Execution Control").isSublist("Restart") &&
+    plist->sublist("Initial Conditions").isParameter("Init from Checkpoint File")) {
+    // this is an error, you can either restart or re-init, but not both
+    Exceptions::amanzi_throw(Errors::Message("You can either restart from a checkpoint or initialize from a checkpoint, but not both."));
+  }
+    
+  if (plist->sublist("Execution Control").isSublist("Restart")) {
+    cycle_driver_list.sublist("Restart") = plist->sublist("Execution Control").sublist("Restart");
+  }
+    
+  /* EIB: proposed v1.2.2 update - Change Restart name */
+  if (plist->sublist("Initial Conditions").isParameter("Init from Checkpoint File")) {
+    Teuchos::ParameterList& rest_list = cycle_driver_list.sublist("Restart");
+    std::string file = plist->sublist("Initial Conditions").get<std::string>("Init from Checkpoint File");
+    rest_list.set<std::string>("File Name", file);
+    rest_list.set<bool>("initialize from checkpoint data file and do not restart", true);
+  }
+
   return cycle_driver_list;
 }
 
@@ -422,36 +441,36 @@ void InputParserIS::FillPKslist_(Teuchos::ParameterList* plist, Teuchos::Paramet
   for (Teuchos::ParameterList::ConstIterator it = pks_list.begin(); it != pks_list.end(); ++it) {
     if ((it->second).isList()) {
       if (it->first == "Flow") {
-	pks_list.sublist(it->first) = CreateFlowList_(plist, TRANSIENT_REGIME);
+        pks_list.sublist(it->first) = CreateFlowList_(plist, TRANSIENT_REGIME);
       }
       if (it->first == "Flow Steady") {
-	pks_list.sublist(it->first) = CreateFlowList_(plist, STEADY_REGIME);
+        pks_list.sublist(it->first) = CreateFlowList_(plist, STEADY_REGIME);
       }
       else if (it->first == "Transport") {
-	pks_list.sublist(it->first) = CreateTransportList_(plist);
+        pks_list.sublist(it->first) = CreateTransportList_(plist);
       }
       else if (it->first == "Chemistry") {
-	pks_list.sublist(it->first) =  CreateChemistryList_(plist);
+        pks_list.sublist(it->first) =  CreateChemistryList_(plist);
       }
       else if (it->first == "Reactive Transport") {
-	Teuchos::Array<std::string> pk_names;
-	pk_names.push_back("Chemistry");
-	pk_names.push_back("Transport");
-	pks_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        Teuchos::Array<std::string> pk_names;
+        pk_names.push_back("Chemistry");
+        pk_names.push_back("Transport");
+        pks_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
       }
       else if (it->first == "Flow and Reactive Transport") {
-	Teuchos::Array<std::string> pk_names;
-	pk_names.push_back("Flow");
-	pk_names.push_back("Reactive Transport");
-	pks_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
-	pks_list.sublist(it->first).set<int>("master PK index", 0);
+        Teuchos::Array<std::string> pk_names;
+        pk_names.push_back("Flow");
+        pk_names.push_back("Reactive Transport");
+        pks_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        pks_list.sublist(it->first).set<int>("master PK index", 0);
       }
       else if (it->first == "Flow and Transport") {
-	Teuchos::Array<std::string> pk_names;
-	pk_names.push_back("Flow");
-	pk_names.push_back("Transport");
-	pks_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
-	pks_list.sublist(it->first).set<int>("master PK index", 0);
+        Teuchos::Array<std::string> pk_names;
+        pk_names.push_back("Flow");
+        pk_names.push_back("Transport");
+        pks_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        pks_list.sublist(it->first).set<int>("master PK index", 0);
       }
     }
   }

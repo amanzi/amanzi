@@ -17,6 +17,8 @@
 #include <string>
 #include <vector>
 
+#include "CommonDefs.hh"
+
 #include "LinearOperatorFactory.hh"
 #include "Richards_PK.hh"
 
@@ -56,23 +58,22 @@ void Richards_PK::Functional(double T0, double T1,
   op_matrix_->ComputeNegativeResidual(*u_new, *f);
 
   // add accumulation term 
-  const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell");
   Epetra_MultiVector& f_cell = *f->ViewComponent("cell");
 
   functional_max_norm = 0.0;
   functional_max_cell = 0;
   
   pressure_eval_->SetFieldAsChanged(S_.ptr());
-  S_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_.ptr(), "flow");
-  const Epetra_MultiVector& sat_c = *S_->GetFieldData("saturation_liquid")->ViewComponent("cell");
-  const Epetra_MultiVector& sat_prev_c = *S_->GetFieldData("prev_saturation_liquid")->ViewComponent("cell");
+  S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
+  const Epetra_MultiVector& wc_c = *S_->GetFieldData("water_content")->ViewComponent("cell");
+  const Epetra_MultiVector& wc_prev_c = *S_->GetFieldData("prev_water_content")->ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
-    double s1 = sat_c[0][c];
-    double s2 = sat_prev_c[0][c];
- 
-    double factor = rho_ * phi[0][c] * mesh_->cell_volume(c) / dTp;
-    f_cell[0][c] += (s1 - s2) * factor;
+    double wc1 = wc_c[0][c];
+    double wc2 = wc_prev_c[0][c];
+
+    double factor = mesh_->cell_volume(c) / dTp;
+    f_cell[0][c] += (wc1 - wc2) * factor;
 
     double tmp = fabs(f_cell[0][c]) / factor;  // calculate errors
     if (tmp > functional_max_norm) {
@@ -90,29 +91,46 @@ void Richards_PK::Functional(double T0, double T1,
 
 /* ******************************************************************
 * Calculate additional conribution to Richards functional:
-*  f += -div (\phi s_g \tau_g n_g D_g grad \omega).
+*  f += -div (phi s_g tau_g n_g D_g \grad X_g), where
+*    s_g   - gas saturation
+*    tau_g - gas tortuosity
+*    n_g   - molar density of gas
+*    D_g   - diffusion coefficient
+*    X_g   - the molar fraction of water in gas (vapor) phase
+*
+* Accumulation term due to water vapor is included in the volumetric
+* water content field.
 ****************************************************************** */
 void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
 {
+  const CompositeVector& pres = *S_->GetFieldData("pressure");
+  const CompositeVector& temp = *S_->GetFieldData("temperature");
+
+  // Compute conductivities
+  Teuchos::RCP<CompositeVector> kvapor_pres = Teuchos::rcp(new CompositeVector(f->Map()));
+  Teuchos::RCP<CompositeVector> kvapor_temp = Teuchos::rcp(new CompositeVector(f->Map()));
+  CalculateVaporDiffusionTensor_(kvapor_pres, kvapor_temp);
+
+  // Populate vapor matrix for pressure
+  // We assume the same matrix structure for pressure and temperature.
+  op_vapor_->Init();
+  op_vapor_diff_->Setup(kvapor_pres, Teuchos::null);
+  op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_vapor_diff_->ApplyBCs(false);
+
+  // -- Calculate residual due to pressure
   CompositeVector g(*f);
-  g.PutScalar(0.0);
+  op_vapor_->ComputeNegativeResidual(pres, g);
+  f->Update(1.0, g, 1.0);
 
-  // Extract fields
-  Teuchos::RCP<const CompositeVector> pres = S_->GetFieldData("pressure");
-  Teuchos::RCP<const CompositeVector> temp = S_->GetFieldData("temperature");
+  // Populate vapor matrix for temperature
+  op_vapor_->Init();
+  op_vapor_diff_->Setup(kvapor_temp, Teuchos::null);
+  op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_vapor_diff_->ApplyBCs(false);
 
-  // Populate vapor matrix
-  CalculateVaporDiffusionTensor_();
-
-  op_vapor_matrix_->Init();
-  op_vapor_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op_vapor_matrix_diff_->ApplyBCs(false);
-
-  // Calculate the residual
-  CompositeVector omega(*f);
-  omega.PutScalar(1.0);
-  op_vapor_matrix_->ComputeNegativeResidual(omega, g);
-
+  // -- Calculate residual due to pressure
+  op_vapor_->ComputeNegativeResidual(temp, g);
   f->Update(1.0, g, 1.0);
 }
 
@@ -120,62 +138,45 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
 /* ******************************************************************
 * Calculation of diffusion coefficient for vapor diffusion operator.
 ****************************************************************** */
-void Richards_PK::CalculateVaporDiffusionTensor_()
+void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& kvapor_pres,
+                                                 Teuchos::RCP<CompositeVector>& kvapor_temp)
 {
-   S_->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S_.ptr(), passwd_);
-   const Epetra_MultiVector& n_l = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell");
+  S_->GetFieldEvaluator("molar_density_gas")->HasFieldChanged(S_.ptr(), passwd_);
+  const Epetra_MultiVector& n_g = *S_->GetFieldData("molar_density_gas")->ViewComponent("cell");
 
-   S_->GetFieldEvaluator("molar_density_gas")->HasFieldChanged(S_.ptr(), passwd_);
-   const Epetra_MultiVector& n_g = *S_->GetFieldData("molar_density_gas")->ViewComponent("cell");
+  S_->GetFieldEvaluator("porosity")->HasFieldChanged(S_.ptr(), passwd_);
+  const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell");
 
-   S_->GetFieldEvaluator("porosity")->HasFieldChanged(S_.ptr(), passwd_);
-   const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell");
+  S_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_.ptr(), passwd_);
+  const Epetra_MultiVector& s_l = *S_->GetFieldData("saturation_liquid")->ViewComponent("cell");
 
-   S_->GetFieldEvaluator("saturation_gas")->HasFieldChanged(S_.ptr(), passwd_);
-   const Epetra_MultiVector& s_g = *S_->GetFieldData("saturation_gas")->ViewComponent("cell");
+  S_->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S_.ptr(), passwd_);
+  const Epetra_MultiVector& n_l = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell");
 
-   S_->GetFieldEvaluator("molar_fraction_gas")->HasFieldChanged(S_.ptr(), passwd_);
-   const Epetra_MultiVector& mlf_g = *S_->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
+  S_->GetFieldEvaluator("molar_fraction_gas")->HasFieldDerivativeChanged(S_.ptr(), passwd_, "temperature");
+  const Epetra_MultiVector& dmlf_g_dt = *S_->GetFieldData("dmolar_fraction_gas_dtemperature")->ViewComponent("cell");
 
-   std::string key("temperature");
-   S_->GetFieldEvaluator("molar_fraction_gas")->HasFieldDerivativeChanged(S_.ptr(), passwd_, key);
-   const Epetra_MultiVector& dmlf_g_dt = *S_->GetFieldData("dmol_frac_gas_dtemperature")->ViewComponent("cell");
+  const Epetra_MultiVector& temp = *S_->GetFieldData("temperature")->ViewComponent("cell");
 
-   const Epetra_MultiVector& temp = *S_->GetFieldData("temperature")->ViewComponent("cell");
-   const Epetra_MultiVector& pres = *S_->GetFieldData("pressure")->ViewComponent("cell");
+  Epetra_MultiVector& kp_cell = *kvapor_pres->ViewComponent("cell");
+  Epetra_MultiVector& kt_cell = *kvapor_temp->ViewComponent("cell");
 
-   double R = 8.3144621;
-   double a = 4./3.;
-   double b = 10./3.;
-   double Dref = 0.282;
-   double Pref = atm_pressure_;
-   double Tref = 298;  // Kelvins
+  double a = 4.0 / 3.0;
+  double b = 10.0 / 3.0;
+  double Dref = 0.282;
+  double Pref = atm_pressure_;
+  double Tref = 298.0;  // Kelvins
+  double R = CommonDefs::IDEAL_GAS_CONSTANT_R;
 
-   K_vapor.clear();
-   WhetStone::Tensor Kc(dim, 1);
+  for (int c = 0; c != ncells_owned; ++c) {
+    // Millington Quirk fit for tortuosity
+    double tau_phi_sat_g = pow(phi[0][c], a) * pow((1.0 - s_l[0][c]), b);
+    double D_g = Dref * (Pref / atm_pressure_) * pow(temp[0][c] / Tref, 1.8);
+    double tmp = tau_phi_sat_g * n_g[0][c] * D_g;
 
-   for (int c = 0; c != ncells_owned; ++c) {
-     double tmp = Dref * (Pref / atm_pressure_) * pow(temp[0][c] / Tref, 1.8);
-
-     tmp *= pow(phi[0][c], a) * pow(s_g[0][c], b) * n_g[0][c];
-     tmp *= exp(-(atm_pressure_ - pres[0][c]) / (n_l[0][c] * R * temp[0][c]));
-
-     Kc(0, 0) = tmp;
-     K_vapor.push_back(Kc);
-   }
-
-   /*
-   if (var_name == "pressure"){
-     for (unsigned int c=0; c!=ncells; ++c){
-       diff_coef[0][c] *= mlf_g[0][c] * (1./ (n_l[0][c]*R*temp[0][c]));
-     }
-   }
-   else if (var_name == "temperature"){
-     for (unsigned int c=0; c!=ncells; ++c){
-       diff_coef[0][c] *= (1./Patm)*dmlf_g_dt[0][c] + mlf_g[0][c]* (Patm - pressure[0][c])/ (n_l[0][c]*R*temp[0][c]*temp[0][c]);
-     }
-   }
-   */
+    kp_cell[0][c] = tmp / (n_l[0][c] * temp[0][c] * R);
+    kt_cell[0][c] = tmp * dmlf_g_dt[0][c];
+  }
 }
 
 

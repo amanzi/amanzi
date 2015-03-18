@@ -4,7 +4,7 @@
 
   <!-- REGIONS -->
   <ParameterList name="Regions">
-    <ParameterList name="Computational domain">
+    <ParameterList name="All">
       <ParameterList name="Region: Box">
         <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,-2.0}"/>
         <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0,0.0}"/>
@@ -198,15 +198,25 @@
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <ParameterList name="function-constant"> <!-- time component -->
+              <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.2"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="initial conditions">
+      <ParameterList name="fluid_density">
+        <Parameter name="value" type="double" value="1.0"/>
+      </ParameterList>
+
+      <ParameterList name="fluid_viscosity">
+        <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

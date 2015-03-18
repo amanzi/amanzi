@@ -361,7 +361,7 @@ public:
   // -- Utilities --
 
   // Write components to outstream.
-  void Print(std::ostream &os) const;
+  void Print(std::ostream &os, bool data_io = true) const;
 
   // Populate by random numbers between -1 and 1.
   int Random();
@@ -499,8 +499,8 @@ CompositeVector::Norm2(double* norm) const {
 }
 
 inline void
-CompositeVector::Print(std::ostream &os) const {
-  return mastervec_->Print(os);
+CompositeVector::Print(std::ostream &os, bool data_io) const {
+  return mastervec_->Print(os, data_io);
 }
 
 inline int

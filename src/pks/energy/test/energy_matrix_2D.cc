@@ -75,7 +75,7 @@ TEST(ENERGY_2D_MATRIX) {
 
   // initialize the Energy process kernel 
   Teuchos::ParameterList pk_tree;
-  Teuchos::RCP<TreeVector> soln;
+  Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   EnergyTwoPhase_PK* EPK = new EnergyTwoPhase_PK(pk_tree, plist, S, soln);
   EPK->Setup();
 std::cout << "Passes EPK.Setup()" << std::endl;
@@ -83,10 +83,10 @@ std::cout << "Passes EPK.Setup()" << std::endl;
 std::cout << "Passed S.Setup()" << std::endl;
   S->InitializeFields();
 std::cout << "Passed S.InitilizeFields()" << std::endl;
-  EPK->InitializeFields();
-std::cout << "Passed EPK.InitilizeField()" << std::endl;
   S->InitializeEvaluators();
 std::cout << "Passed S.InitilizeEvaluators()" << std::endl;
+  EPK->Initialize();
+std::cout << "Passed EPK.Initilize()" << std::endl;
   S->WriteDependencyGraph();
   S->CheckAllFieldsInitialized();
 
@@ -95,7 +95,7 @@ std::cout << "Passed S.InitilizeEvaluators()" << std::endl;
   std::string passwd("thermal");
   Epetra_MultiVector& temperature = *S->GetFieldData("temperature", passwd)->ViewComponent("cell");
   temperature.PutScalar(273.0);
-  EPK->get_temperature_eval()->SetFieldAsChanged(S.ptr());
+  EPK->temperature_eval()->SetFieldAsChanged(S.ptr());
 
   // compute conductivity
   EPK->UpdateConductivityData(S.ptr());

@@ -79,11 +79,9 @@ TEST(FLOW_3D_RICHARDS) {
 
   /* initialize the Richards process kernel */
   RPK->Initialize();
-  RPK->InitializeAuxiliaryData();
   S->CheckAllFieldsInitialized();
 
-  RPK->InitTimeInterval();
-  RPK->CommitState(0.0, S.ptr());
+  RPK->CommitStep(0.0, S.ptr());
 
   /* derive dependent variable */
   const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");

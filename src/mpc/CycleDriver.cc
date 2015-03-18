@@ -168,7 +168,7 @@ void CycleDriver::Setup() {
 }
 
 /* ******************************************************************
-* Initialize PK followed by initialization of State.
+* Initialize State followed by initialization of PK.
 ****************************************************************** */
 void CycleDriver::Initialize() {
   // register observation times with the time step manager
@@ -186,7 +186,6 @@ void CycleDriver::Initialize() {
   // Final checks.
   S_->CheckNotEvaluatedFieldsInitialized();
   S_->CheckAllFieldsInitialized();
-
 
   // S_->WriteDependencyGraph();
 
@@ -286,7 +285,10 @@ void CycleDriver::Initialize() {
   for(std::vector<std::pair<double,double> >::const_iterator it = reset_info_.begin();
       it != reset_info_.end(); ++it) tsm_->RegisterTimeEvent(it->first);
 
-  for (int i=0;i<num_time_periods_; i++) tsm_->RegisterTimeEvent(tp_end_[i]);
+  for (int i=0;i<num_time_periods_; i++) {
+    tsm_->RegisterTimeEvent(tp_end_[i]);
+    tsm_->RegisterTimeEvent(tp_start_[i] + tp_dt_[i]);
+  }
   
   //tsm_->RegisterTimeEvent(t1_);
 }
@@ -488,12 +490,12 @@ void CycleDriver::ReadParameterList_() {
   // first assume we're not
   restart_requested_ = false;
 
-  if (coordinator_list_->isSublist("Restart from Checkpoint Data File")) {
-    restart_requested_ = ! coordinator_list_->sublist("Restart from Checkpoint Data File")
+  if (coordinator_list_->isSublist("Restart")) {
+    restart_requested_ = ! coordinator_list_->sublist("Restart")
         .get<bool>("initialize from checkpoint data file and do not restart",false);
 
     if (restart_requested_) {
-      Teuchos::ParameterList restart_list = coordinator_list_->sublist("Restart from Checkpoint Data File");
+      Teuchos::ParameterList restart_list = coordinator_list_->sublist("Restart");
       restart_filename_ = restart_list.get<std::string>("Checkpoint Data File Name");
 
       // make sure that the restart file actually exists, if not throw an error
@@ -521,7 +523,7 @@ void CycleDriver::ReadParameterList_() {
 /* ******************************************************************
 * Acquire the chosen timestep size
 ****************************************************************** */
-double CycleDriver::get_dt() {
+double CycleDriver::get_dt( bool after_failure) {
   // get the physical step size
   double dt = pk_->get_dt();
 
@@ -537,7 +539,7 @@ double CycleDriver::get_dt() {
   }
 
   // ask the step manager if this step is ok
-  dt = tsm_->TimeStep(S_->time(), dt);
+  dt = tsm_->TimeStep(S_->time(), dt, after_failure);
   return dt;
 }
 
@@ -590,10 +592,11 @@ bool CycleDriver::Advance(double dt) {
     bool force_check(false);
     bool force_obser(false);
 
-    if (abs(S_->time() - tp_end_[time_period_id_]) < 1e-7){
+    if (abs(S_->time() - tp_end_[time_period_id_]) < 1e-10){
       force_vis = true;
       force_check = true;                       
       force_obser = true;
+      S_->set_position(TIME_PERIOD_END);
     }
 
     if (!reset_info_.empty())
@@ -601,7 +604,9 @@ bool CycleDriver::Advance(double dt) {
             force_check = true;
 
     // make observations, vis, and checkpoints
+
     //Amanzi::timer_manager.start("I/O");
+
     Observations(force_obser);
     Visualize(force_vis);
     WriteCheckpoint(dt, force_check);
@@ -690,7 +695,20 @@ void CycleDriver::WriteCheckpoint(double dt, bool force) {
 * timestep loop.
 ****************************************************************** */
 void CycleDriver::Go() {
+
   time_period_id_ = 0;
+  int position = 0;
+
+   if (restart_requested_) {
+     double restart_time = ReadCheckpointInitialTime(comm_, restart_filename_);
+     position = ReadCheckpointPosition(comm_, restart_filename_);
+
+     for (int i=0;i<num_time_periods_;i++){
+       if (restart_time - tp_end_[i] > 1e-10) time_period_id_++;
+     }
+     if (position == TIME_PERIOD_END) time_period_id_--;    
+   }
+
   Init_PK(time_period_id_);
 
   // start at time t = t0 and initialize the state.
@@ -699,6 +717,7 @@ void CycleDriver::Go() {
 
   S_->set_time(tp_start_[time_period_id_]);
   S_->set_cycle(cycle0_);
+  S_->set_position(TIME_PERIOD_START);
 
   double dt;
   double restart_dT(1.0e99);
@@ -711,21 +730,24 @@ void CycleDriver::Go() {
       if (it->first < S_->time()) it = reset_info_.erase(it);
       if (it == reset_info_.end() ) break;
     }
-    S_->set_initial_time(S_->time());
 
-    // Restart time after the first time period create new PK
-    for (int i=0;i<num_time_periods_;i++){
-      if (tp_end_[i] <=S_->time()) time_period_id_++;
+    if (position == TIME_PERIOD_END){
+      time_period_id_++;
+      ResetDriver(time_period_id_); 
+      restart_dT =  tp_dt_[time_period_id_];
     }
-    if (time_period_id_ > 0){
-        ResetDriver(time_period_id_); 
-    }
-    
-    dt = restart_dT;
+  }
+
+
+
+  if (restart_requested_) {
+    S_->set_initial_time(S_->time());
+    dt = tsm_->TimeStep(S_->time(), restart_dT);
     pk_->set_dt(dt);
   }
   else {    
     dt = tp_dt_[time_period_id_];
+    dt = tsm_->TimeStep(S_->time(), dt);
     pk_->set_dt(dt);
   }
 
@@ -757,16 +779,20 @@ void CycleDriver::Go() {
         *S_->GetScalarData("dt", "coordinator") = dt;
 	S_->set_initial_time(S_->time());
 	S_->set_final_time(S_->time() + dt);
+	S_->set_position(TIME_PERIOD_INSIDE);
+
         fail = Advance(dt);
-        dt = get_dt();
+        dt = get_dt(fail);
       }  // while not finished
       while ((S_->time() < tp_end_[time_period_id_]) &&  ((tp_max_cycle_[time_period_id_] == -1) 
                                      || (S_->cycle() - start_cycle_num <= tp_max_cycle_[time_period_id_])));
+
       time_period_id_++;
       if (time_period_id_ < num_time_periods_){
         ResetDriver(time_period_id_); 
-        dt = get_dt();
+        dt = get_dt(false);
       }      
+
     }
 
 #if !DEBUG_MODE

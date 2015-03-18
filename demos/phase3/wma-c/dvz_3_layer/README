@@ -1,0 +1,15 @@
+Attaches permeability attribute to cells of phase2_dvz problem
+You will need to link or point to exoatt.
+exoatt will install in the bin directory ($AMANZI_INSTALL_DIR/bin)
+
+Base mesh generation (requires lagrit and pylagrit):
+python create_mesh.py
+
+Attach perms to mesh:
+../exoatt mesh.exo dvz_att.txt mesh_att.exo
+
+Run amanzi:
+amanzi --xml_file=dvz_3_layer_2d-isv2_1.xml
+
+Results:
+phase2_dvz_exo_perms0000.png

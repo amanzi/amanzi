@@ -62,13 +62,11 @@ class Operator_Cell : public Operator {
   Operator_Cell(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
                     Teuchos::ParameterList& plist,
                     int schema) :
-      Operator(cvs, plist, schema) {}
+      Operator(cvs, plist, schema) {};
 
   // rhs update which multiplies by cell
-  virtual void UpdateRHS(const CompositeVector& source,
-                         bool volume_included);
+  virtual void UpdateRHS(const CompositeVector& source, bool volume_included);
   
-
   // visit methods for Apply
   virtual int ApplyMatrixFreeOp(const Op_Cell_Cell& op,
       const CompositeVector& X, CompositeVector& Y) const;
@@ -90,13 +88,10 @@ class Operator_Cell : public Operator {
   virtual void AssembleMatrixOp(const Op_Face_Cell& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
-
 };
-
 
 }  // namespace Operators
 }  // namespace Amanzi
-
 
 #endif
 

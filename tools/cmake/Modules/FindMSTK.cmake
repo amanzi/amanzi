@@ -208,19 +208,7 @@ else(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS)
 
 endif(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS )    
 
-# Send useful message if everything is found
-find_package_handle_standard_args(MSTK DEFAULT_MSG
-                                           MSTK_LIBRARIES
-                                           MSTK_INCLUDE_DIRS)
-
-# find_package)handle)standard_args should set MSTK_FOUND but it does not!
-if ( MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS)
-    set(MSTK_FOUND TRUE)
-else()
-    set(MSTK_FOUND FALSE)
-endif()
-
-
+# Check MSTK Version to set interface compatibility
 if ( MSTK_VERSION_MINOR )
    MESSAGE(STATUS "JDM>> MSTK: MSTK_VERSION = ${MSTK_VERSION}")
    MESSAGE(STATUS "JDM>> MSTK: MSTK_VERSION_MINOR = ${MSTK_VERSION_MINOR}")
@@ -235,12 +223,39 @@ else()
 endif()
 MESSAGE(STATUS "JDM>> MSTK: WITH_MSTK_2_21rc1_OR_NEWER = ${WITH_MSTK_2_21rc1_OR_NEWER}")
 
-# Define the version
+# Look for installed utilities
+if (MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS AND WITH_MSTK_2_21rc1_OR_NEWER)
 
+   MESSAGE(STATUS "JDM>> MSTK: searching for utilities in ${MSTK_INCLUDE_DIR}/../bin/")
+   set(mstk_utility_names "chkmesh;exoatt;meshconvert")
+   foreach (utility ${mstk_utility_names})
+     if (EXISTS "${MSTK_INCLUDE_DIR}/../bin/${utility}")
+	LIST(APPEND MSTK_UTILITIES ${MSTK_INCLUDE_DIR}/../bin/${utility})
+        LIST(APPEND MSTK_UTILITIES_shortnames ${utility})
+     endif()
+   endforeach()
+   MESSAGE(STATUS "JDM>> MSTK: found utilities ${MSTK_UTILITIES_shortnames}")
+
+endif()
+
+# Send useful message if everything is found
+find_package_handle_standard_args(MSTK DEFAULT_MSG
+                                           MSTK_LIBRARIES
+                                           MSTK_INCLUDE_DIRS)
+
+# find_package_handle_standard_args should set MSTK_FOUND but it does not!
+if ( MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS)
+    set(MSTK_FOUND TRUE)
+else()
+    set(MSTK_FOUND FALSE)
+endif()
+
+# Define the version
 mark_as_advanced(
   MSTK_INCLUDE_DIR
   MSTK_INCLUDE_DIRS
   MSTK_LIBRARY
   MSTK_LIBRARIES
   MSTK_LIBRARY_DIR
+  MSTK_UTILITIES
 )

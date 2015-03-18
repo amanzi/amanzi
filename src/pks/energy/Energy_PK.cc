@@ -79,8 +79,21 @@ void Energy_PK::Setup()
 
     Teuchos::ParameterList elist;
     elist.set<std::string>("evaluator name", "temperature");
-    temperature_eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S_->SetFieldEvaluator("temperature", temperature_eval);
+    temperature_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    S_->SetFieldEvaluator("temperature", temperature_eval_);
+  }
+
+  // conserved quantity from the last time step.
+  if (!S_->HasField("prev_energy")) {
+    S_->RequireField("prev_energy", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->GetField("prev_energy", passwd_)->set_io_vis(false);
+  }
+
+  // Fields for energy as independent PK
+  if (!S_->HasField("darcy_flux")) {
+    S_->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("face", AmanziMesh::FACE, 1);
   }
 }
 
@@ -107,6 +120,50 @@ void Energy_PK::Initialize()
   bc_flux = bc_factory.CreateEnergyFlux(bc_submodel_);
 
   op_bc_ = Teuchos::rcp(new Operators:: BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_, bc_value_, bc_mixed_));
+
+  InitializeFields_();
+}
+
+
+/* ****************************************************************
+* This completes initialization of missed fields in the state.
+* This is useful for unit tests.
+**************************************************************** */
+void Energy_PK::InitializeFields_()
+{
+  Teuchos::OSTab tab = vo_->getOSTab();
+
+  if (!S_->GetField("temperature", passwd_)->initialized()) {
+    S_->GetFieldData("temperature", passwd_)->PutScalar(298.0);
+    S_->GetField("temperature", passwd_)->set_initialized();
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+        *vo_->os() << "initilized temperature to default value 298 K." << std::endl;  
+  }
+
+  if (S_->GetField("darcy_flux")->owner() == passwd_) {
+    if (!S_->GetField("darcy_flux", passwd_)->initialized()) {
+      S_->GetFieldData("darcy_flux", passwd_)->PutScalar(0.0);
+      S_->GetField("darcy_flux", passwd_)->set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initilized darcy_flux to default value 0.0" << std::endl;  
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Transfer part of the internal data needed by energy PK in the next
+* time step.
+****************************************************************** */
+void Energy_PK::CommitStep(double t_old, double t_new)
+{
+  // energy -> prev_prev_energy
+  S_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  const Epetra_MultiVector& e = *S_->GetFieldData(energy_key_)->ViewComponent("cell");
+  Epetra_MultiVector& e_prev = *S_->GetFieldData(prev_energy_key_, passwd_)->ViewComponent("cell");
+  e_prev = e;
 }
 
 

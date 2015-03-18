@@ -216,9 +216,8 @@ TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
     DPK->Initialize();
     S->CheckAllFieldsInitialized();
 
-    DPK->InitTimeInterval();
     DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
-    DPK->CommitState(0.0, S.ptr());
+    DPK->CommitStep(0.0, S.ptr());
 
     // calculate errors
     double p0 = 1.0;
@@ -255,9 +254,8 @@ TEST_FIXTURE(DarcyProblem, DirichletNeumann) {
     DPK->Initialize();
     S->CheckAllFieldsInitialized();
 
-    DPK->InitTimeInterval();
     DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
-    DPK->CommitState(0.0, S.ptr());
+    DPK->CommitStep(0.0, S.ptr());
 
     // calculate errors
     double p0 = 1.0;
@@ -295,9 +293,8 @@ TEST_FIXTURE(DarcyProblem, StaticHeadDirichlet) {
     DPK->Initialize();
     S->CheckAllFieldsInitialized();
 
-    DPK->InitTimeInterval();
     DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
-    DPK->CommitState(0.0, S.ptr());
+    DPK->CommitStep(0.0, S.ptr());
 
     // calculate errors
     double p0 = 2.0;
@@ -337,9 +334,8 @@ TEST_FIXTURE(DarcyProblem, DDprisms) {
     DPK->Initialize();
     S->CheckAllFieldsInitialized();
 
-    DPK->InitTimeInterval();
     DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
-    DPK->CommitState(0.0, S.ptr());
+    DPK->CommitStep(0.0, S.ptr());
 
     // calculate errors
     double p0 = 1.0;
@@ -380,9 +376,8 @@ TEST_FIXTURE(DarcyProblem, DNtetrahedra) {
     DPK->Initialize();
     S->CheckAllFieldsInitialized();
 
-    DPK->InitTimeInterval();
     DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
-    DPK->CommitState(0.0, S.ptr());
+    DPK->CommitStep(0.0, S.ptr());
 
     // calculate errors
     double p0 = 1.0;
@@ -423,9 +418,8 @@ TEST_FIXTURE(DarcyProblem, DDmixed) {
     DPK->Initialize();
     S->CheckAllFieldsInitialized();
 
-    DPK->InitTimeInterval();
     DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
-    DPK->CommitState(0.0, S.ptr());
+    DPK->CommitStep(0.0, S.ptr());
 
     // calculate errors
     double p0 = 1.0;

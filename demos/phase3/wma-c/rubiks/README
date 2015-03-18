@@ -1,0 +1,15 @@
+Attaches integer attributes to cells and nodes of 4x4x4 node (3x3x3 cell) mesh.
+You will need to link or point to exoatt.
+exoatt will install in the bin directory ($AMANZI_INSTALL_DIR/bin)
+
+Base mesh generation (requires lagrit and pylagrit):
+python create_mesh.py
+
+Run:
+../exoatt rubiks.exo rubiks_att.txt rubiks_att.exo
+
+Results:
+cell_att_dec.png
+cell_att_inc.png
+node_att_dec.png
+node_att_inc.png

@@ -103,8 +103,6 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
   RPK->Initialize();
   S->CheckAllFieldsInitialized();
 
-  RPK->InitTimeInterval();
-
   /* solve the steady-state problem */
   TI_Specs ti_specs;
   ti_specs.T0 = 0.0;
@@ -113,7 +111,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
   ti_specs.max_itrs = 30;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, S->GetFieldData("pressure", "flow"));
-  RPK->CommitState(0.0, S.ptr());
+  RPK->CommitStep(0.0, S.ptr());
 
   const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
   if (MyPID == 0) {

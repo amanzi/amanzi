@@ -47,6 +47,12 @@ enum StateConstructMode {
   STATE_CONSTRUCT_MODE_COPY_POINTERS,
   STATE_CONSTRUCT_MODE_COPY_DATA
 };
+enum StatePosition {
+  TIME_PERIOD_START,
+  TIME_PERIOD_INSIDE,
+  TIME_PERIOD_END
+};
+
 
 class State {
 
@@ -274,6 +280,10 @@ class State {
   void set_cycle(int cycle) { cycle_ = cycle; }
   void advance_cycle(int dcycle=1) { cycle_ += dcycle; }
 
+  // Position accessor and mutators.
+  int position() const { return position_in_tp_; }
+  void set_position(int pos ) { position_in_tp_ = pos;}
+
 private:
 
   // Accessors that return null if the Key does not exist.
@@ -302,6 +312,7 @@ private:
   double initial_time_;
 
   int cycle_;
+  int position_in_tp_;
 
   // parameter list
   Teuchos::ParameterList state_plist_;
@@ -325,6 +336,9 @@ double ReadCheckpoint(Epetra_MpiComm* comm,
                       std::string filename);
 
 double ReadCheckpointInitialTime(Epetra_MpiComm* comm,
+                      std::string filename);
+
+double ReadCheckpointPosition(Epetra_MpiComm* comm,
                       std::string filename);
 
 void DeformCheckpointMesh(const Teuchos::Ptr<State>& S);

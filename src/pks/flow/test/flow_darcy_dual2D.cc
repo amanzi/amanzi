@@ -91,16 +91,15 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
     p[0][c] = xc[1] * (xc[1] + 2.0);
   }
 
-  /* initialize Darcy process kernel */
+  // Initialize Darcy process kernel.
   DPK->Initialize();
-  DPK->InitTimeInterval();
 
   /* transient solution */
   double dT = 0.1;
   for (int n = 0; n < 2; n++) {
     double dT_actual(dT);
     DPK->Advance(dT, dT_actual);
-    DPK->CommitState(dT, S.ptr());
+    DPK->CommitStep(dT, S.ptr());
 
     if (MyPID == 0) {
       GMV::open_data_file(*mesh, (std::string)"flow.gmv");

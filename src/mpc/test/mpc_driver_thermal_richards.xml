@@ -1,12 +1,11 @@
 <ParameterList>
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
   <Parameter name="grid_option" type="string" value="Unstructured"/>
-  <Parameter name="new mpc driver" type="bool" value="true"/>
 
   <ParameterList name="Checkpoint Data">
     <Parameter name="file name base" type="string" value="chkpoint"/>
     <Parameter name="file name digits" type="int" value="5"/>
-    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1000, -1}"/>
   </ParameterList>
   <ParameterList name="Visualization Data">
     <Parameter name="file name base" type="string" value="plot"/>
@@ -95,9 +94,9 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.0"/>
-        <Parameter name="end period time" type="double" value="5000.0"/>
+        <Parameter name="end period time" type="double" value="1.0e+3"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1000.0"/>
+        <Parameter name="initial time step" type="double" value="500.0"/>
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{}"/>
@@ -139,8 +138,8 @@
       <ParameterList name="mass_density_liquid">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
-          <ParameterList name="Aquifer">
-            <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -380,9 +379,6 @@
             <Parameter name="max nka vectors" type="int" value="10"/>
             <Parameter name="limit iterations" type="int" value="20"/>
             <Parameter name="modify correction" type="bool" value="false"/>
-            <ParameterList name="VerboseObject">
-              <Parameter name="Verbosity Level" type="string" value="high"/>
-            </ParameterList>
           </ParameterList>
           <Parameter name="max preconditioner lag iterations" type="int" value="20"/>
           <Parameter name="extrapolate initial guess" type="bool" value="true"/>
@@ -390,6 +386,9 @@
           <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
           <Parameter name="restart tolerance relaxation factor" type="double" value="1.00000e+00"/>
           <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.00000e+00"/>
+          <ParameterList name="VerboseObject">
+            <Parameter name="Verbosity Level" type="string" value="high"/>
+          </ParameterList>
         </ParameterList>
         <ParameterList name="VerboseObject">
           <Parameter name="Verbosity Level" type="string" value="extreme"/>
@@ -429,7 +428,6 @@
             <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
             <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
             <Parameter name="gravity" type="bool" value="true"/>
           </ParameterList>
           <ParameterList name="preconditioner">
@@ -439,6 +437,10 @@
             <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="true"/>
           </ParameterList>
+        </ParameterList>
+        <ParameterList name="advection operator">
+          <Parameter name="discretization primary" type="string" value="upwind"/>
+          <Parameter name="reconstruction order" type="int" value="0"/>
         </ParameterList>
       </ParameterList>
 
@@ -582,9 +584,9 @@
               <Parameter name="rainfall" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
-                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 6.1729344e+10, 9.46727980000e+10}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 3.0e+8, 6.0e+8, 1.0e+9}"/>
                   <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -2.54022e-03, -1.48666e-07, -1.48666e-07}"/>
-                  <Parameter name="forms" type="Array(string)" value="{constant, constant, constant}"/>
+                  <Parameter name="forms" type="Array(string)" value="{linear, constant, constant}"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
