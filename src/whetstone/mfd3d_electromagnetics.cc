@@ -40,7 +40,7 @@ int MFD3D_Electromagnetics::L2consistency(int c, const Tensor& T,
   int n1, n2, d = mesh_->space_dimension();
   ASSERT(d == 3);
   AmanziGeometry::Point v1(d), v2(d), v3(d), tau(d), p1(d), p2(d);
-  AmanziGeometry::Point vv[d];
+  AmanziGeometry::Point vv[3];
 
   // To calculate matrix R, we re-use matrix N
   N.PutScalar(0.0);
