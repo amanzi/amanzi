@@ -152,9 +152,14 @@ void Operator::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
 /* ******************************************************************
 * Linear algebra operations with matrices: r = f - A * u.
 ****************************************************************** */
-int Operator::ComputeResidual(const CompositeVector& u, CompositeVector& r)
+int Operator::ComputeResidual(const CompositeVector& u, CompositeVector& r, bool zero)
 {
-  int ierr = Apply(u, r);
+  int ierr;
+  if (zero) {
+    ierr = Apply(u, r);
+  } else {
+    ierr = Apply(u, r, -1.0);
+  }
   r.Update(1.0, *rhs_, -1.0);
   return ierr;
 }
@@ -163,9 +168,14 @@ int Operator::ComputeResidual(const CompositeVector& u, CompositeVector& r)
 /* ******************************************************************
 * Linear algebra operations with matrices: r = A * u - f.
 ****************************************************************** */
-int Operator::ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r)
+int Operator::ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r, bool zero)
 {
-  int ierr = Apply(u, r);
+  int ierr;
+  if (zero) {
+    ierr = Apply(u, r);
+  } else {
+    ierr = Apply(u, r, 1.0);
+  }    
   r.Update(-1.0, *rhs_, 1.0);
   return ierr;
 }
@@ -223,9 +233,9 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
   int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, 0);
 
   // // dump the schur complement
-  // std::stringstream filename_s2;
-  // filename_s2 << "schur_PC_" << 0 << ".txt";
-  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *A_);
+  std::stringstream filename_s2;
+  filename_s2 << "schur_PC_" << 0 << ".txt";
+  EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *A_);
 
   ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
   ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, 0);
@@ -243,6 +253,18 @@ void Operator::InitPreconditioner(const std::string& prec_name, const Teuchos::P
 {
   AmanziPreconditioners::PreconditionerFactory factory;
   preconditioner_ = factory.Create(prec_name, plist);
+  preconditioner_->Update(A_);
+}
+
+
+/* ******************************************************************
+* Initialization of the preconditioner. Note that boundary conditions
+* may be used in re-implementation of this virtual function.
+****************************************************************** */
+void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
+{
+  AmanziPreconditioners::PreconditionerFactory factory;
+  preconditioner_ = factory.Create(plist);
   preconditioner_->Update(A_);
 }
 

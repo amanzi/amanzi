@@ -71,8 +71,9 @@ TreeOperator::Apply(const TreeVector& X, TreeVector& Y) const {
   for (int n = 0; n != blocks_.size(); ++n) {
     CompositeVector& yN = *Y.SubVectors()[n]->Data();
     for (int m = 0; m != blocks_.size(); ++m) {
-      if (blocks_[n][m] != Teuchos::null)
+      if (blocks_[n][m] != Teuchos::null) {
         ierr |= blocks_[n][m]->Apply(*X.SubVectors()[m]->Data(), yN, 1.0);
+      }
     }
   }
   return ierr;
@@ -84,6 +85,10 @@ TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const {
   Epetra_Vector Xcopy(A_->RowMap());
   Epetra_Vector Ycopy(A_->RowMap());
   int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
+
+  // std::cout << "r - staggered" << std::endl;
+  // Xcopy.Print(std::cout);
+  
   ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
   ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, Y);
   ASSERT(!ierr);
@@ -173,6 +178,15 @@ void
 TreeOperator::InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist) {
   AmanziPreconditioners::PreconditionerFactory factory;
   preconditioner_ = factory.Create(prec_name, plist);
+  preconditioner_->Update(A_);
+}
+
+
+// preconditioners
+void
+TreeOperator::InitPreconditioner(Teuchos::ParameterList& plist) {
+  AmanziPreconditioners::PreconditionerFactory factory;
+  preconditioner_ = factory.Create(plist);
   preconditioner_->Update(A_);
 }
 

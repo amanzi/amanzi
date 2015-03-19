@@ -149,13 +149,21 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const bool request_faces = true,
            const bool request_edges = false);
 
-  Mesh_STK(const Mesh_STK& inmesh,
+  Mesh_STK(const Mesh& inmesh,
            const std::vector<std::string>& setnames,
            const Entity_kind setkind,
            const bool flatten = false,
            const bool extrude = false,
            const bool request_faces = true,
            const bool request_edges = false);
+
+  Mesh_STK (const Mesh& inmesh, 
+            const std::vector<int>& entity_id_list, 
+            const Entity_kind entity_kind,
+            const bool flatten = false,
+            const bool extrude = false,
+            const bool request_faces = true,
+            const bool request_edges = false);
 
 
   /// Destructor

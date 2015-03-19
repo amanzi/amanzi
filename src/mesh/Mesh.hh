@@ -67,7 +67,8 @@ class Mesh
   {
   }
 
-  // destructor
+  // destructor - must be virtual to downcast base class to derived class
+  // (I don't understand why but the stackoverflow prophets say so)
 
   virtual ~Mesh() {}
 
@@ -347,14 +348,50 @@ class Mesh
   // if these operators are never called. The above and below cells
   // are computed for all cells the first time one of these routines
   // is called and then cached
-  const Entity_ID_List& cell_column(Entity_ID cellid) const;
-  const Entity_ID_List& cell_column_indices() const;
+
+  // Number of columns in mesh
+
+  int num_columns() const {
+    if (!columns_built) build_columns();
+    return column_cells.size(); // number of vector of vectors
+  }
   
-  Entity_ID cell_get_cell_above(const Entity_ID cellid) const;
+  // Given a column ID, get the cells of the column
 
-  Entity_ID cell_get_cell_below(const Entity_ID cellid) const;
+  Entity_ID_List const & cells_of_column(const int columnID) const {
+    if (!columns_built) build_columns();
+    return column_cells[columnID];
+  }
 
-  Entity_ID node_get_node_above(const Entity_ID nodeid) const;
+  // Given a column ID, get the cells of the column
+
+  Entity_ID_List const & faces_of_column(const int columnID) const {
+    if (!columns_built) build_columns();
+    return column_faces[columnID];
+  }
+
+  // Given a cell get its column ID
+
+  int column_ID(const Entity_ID cellid) const {
+    if (!columns_built) build_columns();
+    return columnID[cellid];
+  }
+
+  Entity_ID cell_get_cell_above(const Entity_ID cellid) const {
+    if (!columns_built) build_columns();
+    return cell_cellabove[cellid];
+  }
+
+
+  Entity_ID cell_get_cell_below(const Entity_ID cellid) const {
+    if (!columns_built) build_columns();
+    return cell_cellbelow[cellid];
+  }
+
+  Entity_ID node_get_node_above(const Entity_ID nodeid) const {
+    if (!columns_built) build_columns();
+    return node_nodeabove[nodeid];
+  }
 
   //
   // Mesh entity geometry
@@ -686,8 +723,9 @@ class Mesh
   mutable std::vector<AmanziGeometry::Point> cell_centroids,
     face_centroids, face_normal0, face_normal1, edge_vectors;
   mutable Entity_ID_List cell_cellabove, cell_cellbelow, node_nodeabove;
-  mutable std::map<int,Entity_ID_List> columns;
-  mutable Entity_ID_List column_indices;
+  mutable std::vector<Entity_ID_List> column_cells;
+  mutable std::vector<Entity_ID_List> column_faces;
+  mutable std::vector<Entity_ID> columnID;
   mutable std::vector<Entity_ID_List> cell_face_ids;
   mutable std::vector< std::vector<int> > cell_face_dirs;
   mutable std::vector<Entity_ID_List > face_cell_ids;

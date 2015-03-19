@@ -292,8 +292,8 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     op2.SetBCs(bc);
 
     int schema_dofs = op2.schema_dofs();
-    CHECK(schema_dofs == Operators::OPERATOR_SCHEMA_BASE_CELL
-                       | Operators::OPERATOR_SCHEMA_DOFS_NODE);
+    CHECK(schema_dofs == (Operators::OPERATOR_SCHEMA_BASE_CELL
+                          | Operators::OPERATOR_SCHEMA_DOFS_NODE));
 
     op2.set_factor(factor);  // for developers only
     op2.Setup(K, Teuchos::null, Teuchos::null, rho, mu);

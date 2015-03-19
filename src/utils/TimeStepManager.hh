@@ -43,7 +43,7 @@ class TimeStepManager {
   void RegisterTimeEvent(double start, double period, double stop, bool phys=true);
   void RegisterTimeEvent(std::vector<double> times, bool phys=true);
   void RegisterTimeEvent(double time, bool phys=true);
-  double TimeStep(const double T, const double dT);
+  double TimeStep(const double T, const double dT, bool after_failure=false);
   void print(std::ostream& os, double start, double end) const;
 
  private:

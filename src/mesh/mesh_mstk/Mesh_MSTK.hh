@@ -102,22 +102,31 @@ public:
 
 
   // Construct a mesh by extracting a subset of entities from another
-  // mesh. In some cases like extracting a surface mesh from a volume
-  // mesh, constructor can be asked to "flatten" the mesh to a lower
-  // dimensional space or to extrude the mesh to give higher
+  // mesh. The subset may be specified by a setname or a list of
+  // entities. In some cases like extracting a surface mesh from a
+  // volume mesh, constructor can be asked to "flatten" the mesh to a
+  // lower dimensional space or to extrude the mesh to give higher
   // dimensional cells
 
   Mesh_MSTK(const Mesh *inmesh,
             const std::vector<std::string>& setnames,
-            const Entity_kind setkind,
+            const Entity_kind entity_kind,
             const bool flatten = false,
             const bool extrude = false,
 	    const bool request_faces = true,
 	    const bool request_edges = false);
 
-  Mesh_MSTK(const Mesh_MSTK& inmesh,
+  Mesh_MSTK(const Mesh& inmesh,
             const std::vector<std::string>& setnames,
-            const Entity_kind setkind,
+            const Entity_kind entity_kind,
+            const bool flatten = false,
+            const bool extrude = false,
+	    const bool request_faces = true,
+	    const bool request_edges = false);
+
+  Mesh_MSTK(const Mesh& inmesh,
+            const std::vector<int>& entity_list,
+            const Entity_kind entity_kind,
             const bool flatten = false,
             const bool extrude = false,
 	    const bool request_faces = true,
@@ -506,8 +515,8 @@ private:
 			     double x1, double y1, int nx, int ny);
 
   void extract_mstk_mesh(const Mesh_MSTK& inmesh,
-                         const std::vector<std::string>& setnames,
-                         const Entity_kind setkind,
+                         const List_ptr entity_ids,
+                         const MType entity_dim,
                          const bool flatten = false,
                          const bool extrude = false,
 			 const bool request_faces = true,
@@ -595,6 +604,30 @@ private:
 					 Entity_ID_List *edgeids,
 					 std::vector<int> *edgedirs,
 					 bool ordered=true) const;
+
+  // Map from Amanzi's mesh entity kind to MSTK's mesh type.
+  
+  MType entity_kind_to_mtype(const Entity_kind kind) const {
+    
+    // The first index is cell dimension (0,1,2,3) and the second index
+    // is the entity kind
+    //
+    // map order in each row is NODE, EDGE, FACE, CELL
+    //
+    // So, for a 1D mesh, nodes are MVERTEX type in MSTK, edges and faces
+    // are also MVERTEX type, and cells are MEDGE type
+    //
+    // For a 2D mesh, nodes are MVERTEX type, edges and faces are MEDGE
+    // type, and cells are MFACE type
+    
+    static MType const 
+      kind2mtype[4][4] = {{MVERTEX, MVERTEX, MVERTEX, MVERTEX},  // 0d meshes
+                          {MVERTEX, MVERTEX, MVERTEX, MEDGE},    // 1d meshes
+                          {MVERTEX, MEDGE,   MEDGE,   MFACE},    // 2d meshes
+                          {MVERTEX, MEDGE,   MFACE,   MREGION}}; // 3d meshes
+    
+    return kind2mtype[cell_dimension()][(int)kind];
+  }
     
 };
 

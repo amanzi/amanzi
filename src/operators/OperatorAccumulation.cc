@@ -32,6 +32,17 @@ OperatorAccumulation::AddAccumulationTerm(const Epetra_MultiVector& du)
   }
 }
 
+// -- update method for just adding to PC
+void
+OperatorAccumulation::AddAccumulationTerm(const Epetra_MultiVector& du, double dT)
+{
+  std::vector<double>& diag = local_op_->vals;
+  ASSERT(diag.size() == du.MyLength());
+  for (int i=0; i!=du.MyLength(); ++i) {
+    diag[i] += du[0][i] / dT;
+  }
+}
+
 // -- linearized update methods with storage terms
 void
 OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
