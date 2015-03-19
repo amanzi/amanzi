@@ -79,7 +79,7 @@ class DenseMatrix {
   }
 
   int Multiply(const DenseMatrix& A, const DenseMatrix& B, bool transposeA);
-  int Multiply(const DenseVector& A, DenseVector& B, bool transpose);
+  int Multiply(const DenseVector& A, DenseVector& B, bool transpose) const;
 
   void PutScalar(double val) {
     for (int i = 0; i < m_ * n_; i++) data_[i] = val;
@@ -92,6 +92,7 @@ class DenseMatrix {
   double* Values() { return data_; }
   double* Value(int i, int j)  { return data_ + j * m_ + i; } 
   const double* Values() const { return data_; }
+  const double* Value(int i, int j) const { return data_ + j * m_ + i; } 
 
   // output 
   friend std::ostream& operator << (std::ostream& os, DenseMatrix& A) {
@@ -103,7 +104,7 @@ class DenseMatrix {
     }
     return os;
   }
-  void PrintMatrix() {
+  void PrintMatrix() const {
     for (int i = 0; i < m_; i++) {
       for (int j = 0; j < n_; j++) {
         printf("%12.5f", *(data_ + j * m_ + i));

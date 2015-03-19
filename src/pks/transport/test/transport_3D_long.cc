@@ -14,6 +14,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
@@ -40,11 +41,10 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_3D_long.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* create a mesh framework */
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
   FrameworkPreference pref;
   pref.clear();
@@ -64,13 +64,17 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");
 
-  RCP<State> S = rcp(new State());
+  Teuchos::ParameterList state_list = plist->sublist("State");
+  RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
   S->set_time(0.0);
   S->set_intermediate_time(0.0);
 
-  Transport_PK TPK(plist, S, component_names);
+  Transport_PK TPK(plist, S, "Transport", component_names);
+  TPK.Setup();
   TPK.CreateDefaultState(mesh, 1);
+  S->InitializeFields();
+  S->InitializeEvaluators();
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
@@ -85,7 +89,7 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
   }
 
   /* initialize a transport process kernel */
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
   TPK.PrintStatistics();
 
   /* advance the transport state */

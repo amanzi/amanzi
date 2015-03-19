@@ -97,7 +97,7 @@ public:
           const Teuchos::Ptr<State>& S) {
     typename map_type::iterator iter = GetMap()->find(s);
     if (iter == GetMap()->end()) {
-      std::cout << "cannot get item of type: " << s << std::endl;
+      std::cout << "FactoryWithState: cannot get item of type: " << s << std::endl;
 
       for (typename map_type::iterator iter=GetMap()->begin();
            iter!=GetMap()->end(); ++iter) {

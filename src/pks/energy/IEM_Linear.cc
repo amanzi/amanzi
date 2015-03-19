@@ -1,0 +1,47 @@
+/*
+  This is the energy component of the ATS and Amanzi codes. 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ethan Coon
+
+  Linear internal energy model -- function of Cv and temperature
+
+   IE = Cv * (T - T_ref)
+
+  UNITS: J/{mol/kg}
+*/
+
+#include "IEM_Linear.hh"
+
+namespace Amanzi {
+namespace Energy {
+
+IEM_Linear::IEM_Linear(Teuchos::ParameterList& plist) : plist_(plist) {
+  InitializeFromPlist_();
+};
+
+
+double IEM_Linear::InternalEnergy(double temp) {
+  return Cv_ * (temp - T_ref_);
+};
+
+
+void IEM_Linear::InitializeFromPlist_()
+{
+  if (plist_.isParameter("heat capacity [J/kg-K]")) {
+    Cv_ = plist_.get<double>("heat capacity [J/kg-K]");
+    molar_basis_ = false;
+  } else {
+    Cv_ = plist_.get<double>("heat capacity [J/mol-K]");
+    molar_basis_ = true;
+  }
+
+  T_ref_ = plist_.get<double>("Reference temperature [K]", 273.15);
+};
+
+}  // namespace Energy
+}  // namespace Amanzi

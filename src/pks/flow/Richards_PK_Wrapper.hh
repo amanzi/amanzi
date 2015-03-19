@@ -1,5 +1,11 @@
 /*
-  License: see $AMANZI_DIR/COPYRIGHT
+  This is the flow component of the Amanzi code. 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Authors: Ethan Coon
 
   Temporary wrapper converting the Richards_PK, which inherits from
@@ -11,10 +17,10 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "TreeVector.hh"
 #include "FnTimeIntegratorPK.hh"
 #include "Richards_PK.hh"
 #include "PK_Factory.hh"
+#include "TreeVector.hh"
 
 namespace Amanzi {
 
@@ -29,18 +35,24 @@ class Richards_PK_Wrapper : public FnTimeIntegratorPK {
                       const Teuchos::RCP<State>& S,
                       const Teuchos::RCP<TreeVector>& soln);
 
-  // Setup
-  virtual void Setup() {};
+  ~Richards_PK_Wrapper() {};
 
-  // Initialize owned (dependent) variables.
-  virtual void Initialize() {
-    pk_->Initialize(S_.ptr());
-    pk_->InitializeAuxiliaryData();
+  // Delegeting routines
+  // Setup PK's structure
+  virtual void Setup() {
+    dt_ = -1.0;
+    pk_->Setup();
   }
 
+  // Initialize owned (dependent) variables.
+  virtual void Initialize() { pk_->Initialize(); }
+
   // Choose a time step compatible with physics.
-  virtual double get_dt() {
-    return pk_->get_dt();
+  virtual double get_dt() { return pk_->get_dt(); }
+
+  virtual void set_dt(double dt) {
+    dt_ = dt;
+    pk_->set_dt(dt);
   }
 
   // Advance PK by step size dt.
@@ -48,7 +60,7 @@ class Richards_PK_Wrapper : public FnTimeIntegratorPK {
 
   // Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new) {
-    pk_->CommitState(t_new-t_old, S_.ptr());
+    pk_->CommitStep(t_new - t_old, S_.ptr());
   }
 
   // Calculate any diagnostics prior to doing vis
@@ -56,20 +68,18 @@ class Richards_PK_Wrapper : public FnTimeIntegratorPK {
     pk_->CalculateDiagnostics(S_.ptr());
   }
 
-  virtual std::string name() {
-    return pk_->name();
-  }
+  virtual std::string name() { return pk_->name(); }
 
   // Time integration interface
   // computes the non-linear functional f = f(t,u,udot)
   virtual void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                           Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
-    pk_->Functional(t_old, t_new, u_old->Data(),
-                    u_new->Data(), f->Data());
+    pk_->Functional(t_old, t_new, u_old->Data(), u_new->Data(), f->Data());
   }
 
   // applies preconditioner to u and returns the result in Pu
-  virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+  virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
+                                   Teuchos::RCP<TreeVector> Pu) {
     pk_->ApplyPreconditioner(u->Data(), Pu->Data());
   }
 
@@ -80,8 +90,7 @@ class Richards_PK_Wrapper : public FnTimeIntegratorPK {
   }
 
   // updates the preconditioner
-  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
-          double h) {
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
     pk_->UpdatePreconditioner(t, up->Data(), h);
   }
 
@@ -98,7 +107,7 @@ class Richards_PK_Wrapper : public FnTimeIntegratorPK {
   // this predictor this function returns true if the predictor was
   // modified, false if not
   virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
-          Teuchos::RCP<TreeVector> u) {
+                               Teuchos::RCP<TreeVector> u) {
     return pk_->ModifyPredictor(h, u0->Data(), u->Data());
   }
 
@@ -114,17 +123,15 @@ class Richards_PK_Wrapper : public FnTimeIntegratorPK {
   }
 
   // experimental approach -- calling this indicates that the time
-  // integration scheme is changing the value of the solution in
-  // state.
-  virtual void ChangedSolution() {
-    pk_->ChangedSolution();
-  }
+  // integration scheme is changing the value of the solution in state.
+  virtual void ChangedSolution() { pk_->ChangedSolution(); }
 
  protected:
-  Teuchos::RCP<Teuchos::ParameterList> glist_;
-  Teuchos::RCP<Richards_PK> pk_;
+  Teuchos::ParameterList ti_list_;
+  Teuchos::RCP<Richards_PK> pk_; 
   Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<State> S_;
+  double dt_;
 
  private:
   // factory registration

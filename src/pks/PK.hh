@@ -1,11 +1,15 @@
 /*
-  Amanzi
+  This is the PKs component of the Amanzi code. 
 
-  Licenses: see $ASCEM_DIR/COPYRIGHT
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Author: Ethan Coon
 
   Virtual interface for Process Kernels.  Note that PKs deriving from this
-  class mustimplement the commented constructor interface as well, and should
+  class must implement the commented constructor interface as well, and should
   add the private static member (following the Usage notes in
   src/pks/PK_Factory.hh) to register the derived PK with the PK factory.
 */
@@ -38,6 +42,9 @@ class PK {
 
   // Choose a time step compatible with physics.
   virtual double get_dt() = 0;
+
+  // Set a time step for a PK.
+  virtual void set_dt(double dt) = 0;
 
   // Advance PK by step size dt.
   virtual bool AdvanceStep(double t_old, double t_new) = 0;

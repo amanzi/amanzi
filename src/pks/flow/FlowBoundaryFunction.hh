@@ -26,51 +26,25 @@
 #include "CommonDefs.hh"
 #include "Mesh.hh"
 #include "MultiFunction.hh"
+#include "PK_BoundaryFunction.hh"
 #include "unique_mesh_function.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-class FlowBoundaryFunction : public Functions::UniqueMeshFunction {
+class FlowBoundaryFunction : public PK_BoundaryFunction {
  public:
   FlowBoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      UniqueMeshFunction(mesh),
-      finalized_(false), 
-      global_size_(0) {};
+                       PK_BoundaryFunction(mesh) {};
   
-  void Define(const std::vector<std::string>& regions,
-              const Teuchos::RCP<const MultiFunction>& f, 
-              int method);
-  void Define(std::string& region,
-              const Teuchos::RCP<const MultiFunction>& f,
-              int method);
-
-  void Compute(double time);
   void ComputeShift(double T, double* shift);
 
-  void Finalize();
-
   // access / set
-  const std::vector<CommonDefs::Action>& actions() { return actions_; } 
   double reference_pressure() { return reference_pressure_; }
-  int global_size() { return global_size_; }
   void set_reference_pressure(double p0) { reference_pressure_ = p0; }
 
-  // iterator methods
-  typedef std::map<int,double>::const_iterator Iterator;
-  Iterator begin() const { return value_.begin(); }
-  Iterator end() const  { return value_.end(); }
-  Iterator find(const int j) const { return value_.find(j); }
-  std::map<int,double>::size_type size() { return value_.size(); }
-
- protected:
-  std::map<int,double> value_;
-  bool finalized_;
-
  private:
-  std::vector<CommonDefs::Action> actions_;
   double reference_pressure_;
-  int global_size_;  // number of data stored on all processors
 };
 
 }  // namespace Flow

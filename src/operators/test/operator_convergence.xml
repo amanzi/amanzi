@@ -38,7 +38,21 @@
       <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
       <Parameter name="discretization primary" type="string" value="mfd: default"/>
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{cell,face}"/>
+    </ParameterList>
+
+    <ParameterList name="mixed diffusion sff">
+      <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
+      <Parameter name="discretization primary" type="string" value="mfd: default"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+    </ParameterList>
+
+    <ParameterList name="mixed diffusion scc">
+      <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
+      <Parameter name="discretization primary" type="string" value="mfd: two-point flux approximation"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
     </ParameterList>
 
     <ParameterList name="nodal diffusion">

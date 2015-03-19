@@ -53,7 +53,7 @@ void ReconstructionCell::Init(
   // process parameters for limiters
   bc_scaling_ = 0.0;
 
-  std::string name = plist.get<std::string>("limiter", "none");
+  std::string name = plist.get<std::string>("limiter");
   limiter_id_ = 0;
   if (name == "Barth-Jespersen") {
     limiter_id_ = OPERATOR_LIMITER_BARTH_JESPERSEN;
@@ -62,6 +62,9 @@ void ReconstructionCell::Init(
   } else if (name == "Kuzmin") {
     limiter_id_ = OPERATOR_LIMITER_KUZMIN;
   }
+
+  poly_order_ = plist.get<int>("polynomial order", 0);
+  limiter_correction_ = plist.get<bool>("limiter extension for transport", false);
 }
 
 

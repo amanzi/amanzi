@@ -14,6 +14,7 @@
 #include "Teuchos_Array.hpp"
 
 #include "VerboseObject.hh"
+#include "InputParserIS_Defs.hh"
 
 namespace Amanzi {
 namespace AmanziInput {
@@ -41,6 +42,7 @@ class InputParserIS {
   InputParserIS() : vo_(NULL) {
     flow_single_phase = false;
     verbosity_level = "low";
+    use_picard_ = USE_PICARD;
   };
   ~InputParserIS() {
     if (vo_ != NULL) delete vo_;
@@ -52,10 +54,12 @@ class InputParserIS {
 
  private:
   // flow 
-  Teuchos::ParameterList CreateFlowList_(Teuchos::ParameterList* plist);
+  Teuchos::ParameterList CreateFlowList_(Teuchos::ParameterList* plist, int time_regime = BOTH_REGIMES);
   Teuchos::ParameterList CreateFlowSrcList_(Teuchos::ParameterList* plist);
   Teuchos::ParameterList CreateSS_FlowBC_List_(Teuchos::ParameterList* plist);
-  Teuchos::ParameterList CreateFlowOperatorList_(const std::string& disc_method, const std::string& rel_perm);
+  Teuchos::ParameterList CreateFlowOperatorList_(
+     const std::string& disc_method, const std::string& prec_method,
+     const std::string& nonlinear_solver, const std::string& rel_perm);
   Teuchos::ParameterList CreateWRM_List_(Teuchos::ParameterList* plist);
 
   // transport
@@ -88,8 +92,11 @@ class InputParserIS {
   Teuchos::ParameterList CreatePartitionList_(Teuchos::ParameterList* plist);
   
   // MPC and state
-  Teuchos::ParameterList CreateMPC_List_(Teuchos::ParameterList* plist);
   Teuchos::ParameterList CreateTimePeriodControlList_(Teuchos::ParameterList* plist);
+  Teuchos::ParameterList CreateCycleDriverList_(Teuchos::ParameterList* plist);
+  void CreatePKslist_(Teuchos::ParameterList& cycle_driver_list, Teuchos::ParameterList& pks_list);
+  void RegisterPKlist_(Teuchos::ParameterList& pk_tree, Teuchos::ParameterList& pks_list);
+  void FillPKslist_(Teuchos::ParameterList* plist, Teuchos::ParameterList& pks_list);
 
   // mesh and geometry
   Teuchos::ParameterList CreateMeshList_(Teuchos::ParameterList* plist);

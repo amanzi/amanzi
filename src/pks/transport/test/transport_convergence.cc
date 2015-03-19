@@ -9,17 +9,16 @@
 #include <iostream>
 #include <vector>
 
-#include "UnitTest++.h"
-
+#include "Epetra_SerialComm.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-#include "Epetra_SerialComm.h"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "UnitTest++.h"
 
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
 #include "Point.hh"
-
 #include "State.hh"
 #include "Transport_PK.hh"
 
@@ -51,7 +50,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
   /* read parameter list */
   std::string xmlFileName = "test/transport_convergence.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* convergence estimate */
   std::vector<double> h;
@@ -59,7 +58,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
 
   for (int nx = 20; nx < 321; nx *= 2) {
     /* create a SIMPLE mesh framework */
-    ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+    ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
 
     FrameworkPreference pref;
@@ -77,13 +76,17 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     std::vector<std::string> component_names;
     component_names.push_back("Component 0");
 
-    RCP<State> S = rcp(new State());
+    Teuchos::ParameterList state_list = plist->sublist("State");
+    RCP<State> S = rcp(new State(state_list));
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
     S->set_time(0.0);
     S->set_intermediate_time(0.0);
 
-    Transport_PK TPK(plist, S, component_names);
+    Transport_PK TPK(plist, S, "Transport", component_names);
+    TPK.Setup();
     TPK.CreateDefaultState(mesh, 1);
+    S->InitializeFields();
+    S->InitializeEvaluators();
 
     /* modify the default state for the problem at hand */
     std::string passwd("state"); 
@@ -106,11 +109,10 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
       (*tcc)[0][c] = f_cubic(xc, 0.0);
     }
 
-    S->GetFieldData("porosity", passwd)->PutScalar(1.0);
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
-    TPK.Initialize(S.ptr());
+    TPK.Initialize();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
     if (nx == 20) TPK.PrintStatistics();
  
@@ -161,8 +163,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_convergence.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* convergence estimate */
   std::vector<double> h;
@@ -170,7 +171,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
 
   for (int nx = 20; nx < 321; nx *= 2) {
     /* create a SIMPLE mesh framework */
-    ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+    ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
 
     FrameworkPreference pref;
@@ -188,13 +189,17 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
     std::vector<std::string> component_names;
     component_names.push_back("Component 0");
 
-    RCP<State> S = rcp(new State());
+    Teuchos::ParameterList state_list = plist->sublist("State");
+    RCP<State> S = rcp(new State(state_list));
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
     S->set_time(0.0);
     S->set_intermediate_time(0.0);
 
-    Transport_PK TPK(plist, S, component_names);
+    Transport_PK TPK(plist, S, "Transport", component_names);
+    TPK.Setup();
     TPK.CreateDefaultState(mesh, 1);
+    S->InitializeFields();
+    S->InitializeEvaluators();
 
     /* modify the default state for the problem at hand */
     std::string passwd("state"); 
@@ -217,11 +222,10 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
       (*tcc)[0][c] = f_cubic(xc, 0.0);
     }
 
-    S->GetFieldData("porosity", passwd)->PutScalar(1.0);
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
-    TPK.Initialize(S.ptr());
+    TPK.Initialize();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
     if (nx == 20) TPK.PrintStatistics();
  
@@ -278,11 +282,10 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_convergence.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* create a SIMPLE mesh framework */
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
  
   /* convergence estimate */
@@ -305,11 +308,15 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     std::vector<std::string> component_names;
     component_names.push_back("Component 0");
 
-    RCP<State> S = rcp(new State());
+    Teuchos::ParameterList state_list = plist->sublist("State");
+    RCP<State> S = rcp(new State(state_list));
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-    Transport_PK TPK(plist, S, component_names);
+    Transport_PK TPK(plist, S, "Transport", component_names);
+    TPK.Setup();
     TPK.CreateDefaultState(mesh, 1);
+    S->InitializeFields();
+    S->InitializeEvaluators();
 
     /* modify the default state for the problem at hand */
     std::string passwd("state"); 
@@ -332,11 +339,10 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
       (*tcc)[0][c] = f_cubic(xc, 0.0);
     }
 
-    S->GetFieldData("porosity", passwd)->PutScalar(1.0);
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
-    TPK.Initialize(S.ptr());
+    TPK.Initialize();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 2;
     if (nx == 20) TPK.PrintStatistics();
  
@@ -395,8 +401,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_convergence_poly.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* convergence estimate */
   std::vector<double> h;
@@ -404,7 +409,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
 
   for (int loop = 0; loop < 3; loop++) {
     /* create a mesh framework */
-    ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+    ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(2, region_list, comm);
 
     FrameworkPreference pref;
@@ -430,13 +435,17 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
     std::vector<std::string> component_names;
     component_names.push_back("Component 0");
 
-    RCP<State> S = rcp(new State());
+    Teuchos::ParameterList state_list = plist->sublist("State");
+    RCP<State> S = rcp(new State(state_list));
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
     S->set_time(0.0);
     S->set_intermediate_time(0.0);
 
-    Transport_PK TPK(plist, S, component_names);
+    Transport_PK TPK(plist, S, "Transport", component_names);
+    TPK.Setup();
     TPK.CreateDefaultState(mesh, 1);
+    S->InitializeFields();
+    S->InitializeEvaluators();
 
     /* modify the default state for the problem at hand */
     std::string passwd("state"); 
@@ -459,11 +468,10 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
       (*tcc)[0][c] = f_cubic_unit(xc, 0.0);
     }
 
-    S->GetFieldData("porosity", passwd)->PutScalar(1.0);
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
-    TPK.Initialize(S.ptr());
+    TPK.Initialize();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
     if (loop == 0) TPK.PrintStatistics();
  
@@ -515,8 +523,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_convergence_poly.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* convergence estimate */
   std::vector<double> h;
@@ -524,7 +531,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
 
   for (int loop = 0; loop < 3; loop++) {
     /* create a mesh framework */
-    ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+    ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(2, region_list, comm);
 
     FrameworkPreference pref;
@@ -550,13 +557,17 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
     std::vector<std::string> component_names;
     component_names.push_back("Component 0");
 
-    RCP<State> S = rcp(new State());
+    Teuchos::ParameterList state_list = plist->sublist("State");
+    RCP<State> S = rcp(new State(state_list));
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
     S->set_time(0.0);
     S->set_intermediate_time(0.0);
 
-    Transport_PK TPK(plist, S, component_names);
+    Transport_PK TPK(plist, S, "Transport", component_names);
+    TPK.Setup();
     TPK.CreateDefaultState(mesh, 1);
+    S->InitializeFields();
+    S->InitializeEvaluators();
 
     /* modify the default state for the problem at hand */
     std::string passwd("state"); 
@@ -579,11 +590,10 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
       (*tcc)[0][c] = f_cubic_unit(xc, 0.0);
     }
 
-    S->GetFieldData("porosity", passwd)->PutScalar(1.0);
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
-    TPK.Initialize(S.ptr());
+    TPK.Initialize();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 2;
     if (loop == 0) TPK.PrintStatistics();
  

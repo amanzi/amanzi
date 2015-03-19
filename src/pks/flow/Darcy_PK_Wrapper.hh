@@ -1,5 +1,11 @@
 /*
-  License: see $AMANZI_DIR/COPYRIGHT
+  This is the flow component of the Amanzi code. 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Authors: Ethan Coon
 
   Temporary wrapper converting the Darcy_PK, which inherits from 
@@ -26,17 +32,24 @@ class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
                    const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& soln);
 
+  ~Darcy_PK_Wrapper() {};
+
   // Setup
-  virtual void Setup() {};
+  virtual void Setup() {
+    dt_ = -1;
+    pk_->Setup();
+  }
   
   // Initialize owned (dependent) variables.
-  virtual void Initialize() {
-    pk_->Initialize(S_.ptr());
-  }
+  virtual void Initialize() { pk_->Initialize(); }
 
   // Choose a time step compatible with physics.
-  virtual double get_dt() {
-    return pk_->get_dt();
+  virtual double get_dt() { return pk_->get_dt(); }
+
+  //  Set a time step 
+  virtual void set_dt(double dt){
+    dt_ = dt;
+    pk_->set_dt(dt);
   }
 
   // Advance from t_old to t_new
@@ -44,22 +57,21 @@ class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
 
   // Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new) {
-    pk_->CommitState(t_new-t_old, S_.ptr());
+    pk_->CommitStep(t_new-t_old, S_.ptr());
   }
 
   // Calculate any diagnostics prior to doing vis
-  virtual void CalculateDiagnostics() {}
-
-  virtual std::string name() {
-    return pk_->name();
+  virtual void CalculateDiagnostics() {
+    pk_->CalculateDiagnostics(S_.ptr());
   }
+
+  virtual std::string name() { return pk_->name(); }
 
   // Time integration interface
   // computes the non-linear functional f = f(t,u,udot)
   virtual void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                           Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
-    pk_->Functional(t_old, t_new, u_old->Data(),
-		    u_new->Data(), f->Data());    
+    pk_->Functional(t_old, t_new, u_old->Data(), u_new->Data(), f->Data());    
   }
 
   // applies preconditioner to u and returns the result in Pu
@@ -74,8 +86,7 @@ class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
   }
 
   // updates the preconditioner
-  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, 
-				    double h) {
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
     pk_->UpdatePreconditioner(t, up->Data(), h);
   }
 
@@ -108,17 +119,14 @@ class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
   }
 
   // experimental approach -- calling this indicates that the time
-  // integration scheme is changing the value of the solution in
-  // state.
-  virtual void ChangedSolution() {
-    pk_->ChangedSolution();
-  }
+  // integration scheme is changing the value of the solution in state.
+  virtual void ChangedSolution() { pk_->ChangedSolution(); }
 
  protected:
-  Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Darcy_PK> pk_;
   Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<State> S_;
+  double dt_;
 
  private:
   // factory registration

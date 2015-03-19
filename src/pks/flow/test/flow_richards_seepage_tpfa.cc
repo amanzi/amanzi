@@ -15,18 +15,17 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
 
-#include "MeshFactory.hh"
 #include "GMVMesh.hh"
-
-#include "State.hh"
+#include "MeshFactory.hh"
 #include "Richards_PK.hh"
+#include "State.hh"
 
+#include "Richards_SteadyState.hh"
 
 /* **************************************************************** */
 TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
@@ -62,19 +61,21 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   /* create a simple state and populate it */
   Amanzi::VerboseObject::hide_line_prefix = true;
 
-  ParameterList state_list;
+  Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("State");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Richards_PK* RPK = new Richards_PK(plist, S);
+  Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
+  Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
+  Richards_PK* RPK = new Richards_PK(global_list, "Flow", S, soln);
+
+  RPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
-  RPK->InitializeFields();
-  S->CheckAllFieldsInitialized();
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state"); 
+  std::string passwd("flow"); 
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell");
   
   for (int c = 0; c != K.MyLength(); ++c) {
@@ -84,7 +85,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
 
   double rho = *S->GetScalarData("fluid_density", passwd) = 998.0;
   *S->GetScalarData("fluid_viscosity", passwd) = 0.00089;
-  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", passwd);
+  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
   double g = gravity[1] = -9.81;
 
   /* create the initial pressure function */
@@ -99,19 +100,20 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   //RPK->DeriveFaceValuesFromCellValues(p, lambda); 
 
   /* create Richards process kernel */
-  RPK->Initialize(S.ptr());
-  RPK->ti_specs_sss().T1 = 1e+10;
-  RPK->ti_specs_sss().dTmax = 1e+8;
-  RPK->ti_specs_sss().residual_tol = 1e-5;
-  RPK->ti_specs_sss().max_itrs = 100;
-
-  RPK->InitSteadyState(0.0, 0.01);
+  RPK->Initialize();
+  S->CheckAllFieldsInitialized();
 
   /* solve the steady-state problem */
-  RPK->AdvanceToSteadyState(0.0, 0.01);
-  RPK->CommitState(0.0, S.ptr());
+  TI_Specs ti_specs;
+  ti_specs.T0 = 0.0;
+  ti_specs.dT0 = 1.0;
+  ti_specs.T1 = 1e+10;
+  ti_specs.max_itrs = 100;
 
-  const Epetra_MultiVector& ws = *S->GetFieldData("water_saturation")->ViewComponent("cell");
+  AdvanceToSteadyState(S, *RPK, ti_specs, S->GetFieldData("pressure", "flow"));
+  RPK->CommitStep(0.0, S.ptr());
+
+  const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");
     GMV::start_data();

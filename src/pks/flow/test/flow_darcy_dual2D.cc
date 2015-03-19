@@ -59,18 +59,19 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   meshfactory.preference(pref);
   RCP<const Mesh> mesh = meshfactory("test/dual2D.exo", gm);
 
-  /* create a simple state populate it */
-  Amanzi::VerboseObject::hide_line_prefix = true;
-
-  RCP<State> S = rcp(new State());
+  // create a state and populate it
+  Teuchos::ParameterList state_list = plist.sublist("State");
+  RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Darcy_PK* DPK = new Darcy_PK(plist, S);
+  Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
+  Darcy_PK* DPK = new Darcy_PK(global_list, "Flow", S);
+  DPK->Setup();
   S->Setup();
   S->InitializeFields();
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state"); 
+  std::string passwd("flow"); 
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
   for (int c = 0; c < K.MyLength(); c++) {
     K[0][c] = 0.1;
@@ -79,7 +80,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   *S->GetScalarData("fluid_density", passwd) = 1.0;
   *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
-  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", passwd);
+  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
   gravity[1] = -1.0;
 
   /* create the initial pressure function */
@@ -90,16 +91,15 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
     p[0][c] = xc[1] * (xc[1] + 2.0);
   }
 
-  /* initialize Darcy process kernel */
-  DPK->Initialize(S.ptr());
-  DPK->InitTransient(0.0, 1e-8);
+  // Initialize Darcy process kernel.
+  DPK->Initialize();
 
   /* transient solution */
   double dT = 0.1;
   for (int n = 0; n < 2; n++) {
     double dT_actual(dT);
     DPK->Advance(dT, dT_actual);
-    DPK->CommitState(dT, S.ptr());
+    DPK->CommitStep(dT, S.ptr());
 
     if (MyPID == 0) {
       GMV::open_data_file(*mesh, (std::string)"flow.gmv");

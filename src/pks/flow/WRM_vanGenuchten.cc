@@ -13,6 +13,8 @@
 #include <cmath>
 #include <string>
 
+#include "errors.hh"
+#include "FlowDefs.hh"
 #include "WRM_vanGenuchten.hh"
 
 namespace Amanzi {
@@ -26,12 +28,53 @@ const double FLOW_WRM_TOLERANCE = 1e-10;
 * Setup fundamental parameters for this model.
 * Default value of the regularization interval is pc0 = 0.                                           
 ****************************************************************** */
+WRM_vanGenuchten::WRM_vanGenuchten(Teuchos::ParameterList& plist)
+{
+  double m = plist.get<double>("van Genuchten m", FLOW_WRM_EXCEPTION);
+  double alpha = plist.get<double>("van Genuchten alpha", FLOW_WRM_EXCEPTION);
+  double l = plist.get<double>("van Genuchten l", FLOW_WRM_VANGENUCHTEN_L);
+  double sr = plist.get<double>("residual saturation", FLOW_WRM_EXCEPTION);
+  double pc0 = plist.get<double>("regularization interval", FLOW_WRM_REGULARIZATION_INTERVAL);
+  std::string krel_function = plist.get<std::string>("relative permeability model", "Mualem");
+
+  set_region("dummy");
+  Init_(m, l, alpha, sr, krel_function, pc0);
+}
+
+
 WRM_vanGenuchten::WRM_vanGenuchten(
-    std::string region, double m, double l, double alpha, 
-    double sr, std::string krel_function, double pc0)
-    : m_(m), l_(l), alpha_(alpha), sr_(sr), pc0_(pc0), tol_(FLOW_WRM_TOLERANCE)
+    std::string& region, double m, double l, double alpha, 
+    double sr, std::string& krel_function, double pc0)
 {
   set_region(region);
+  Init_(m, l, alpha, sr, krel_function, pc0);
+}
+
+
+/* ******************************************************************
+* Setup fundamental parameters for this model.
+* Default value of the regularization interval is pc0 = 0.                                           
+****************************************************************** */
+void WRM_vanGenuchten::Init_(
+    double m, double l, double alpha,
+    double sr, std::string& krel_function, double pc0)
+{
+  m_ = m;
+  l_ = l;
+  alpha_ = alpha;
+  sr_ = sr;
+  pc0_ = pc0; 
+  tol_ = FLOW_WRM_TOLERANCE;
+
+  Errors::Message msg;
+  if (m_ < 0.0 || alpha_ < 0.0 || sr_ < 0.0 || pc0_ < 0.0) {
+    msg << "vanGenuchten: negative parameter in a water retention model.";
+    Exceptions::amanzi_throw(msg);
+  }
+  if (sr_ > 1.0) {
+    msg << "vanGenuchten: residual saturation is greater than 1.";
+    Exceptions::amanzi_throw(msg);
+  }
 
   if (krel_function == "Mualem") {
     n_ = 1.0 / (1.0 - m_);

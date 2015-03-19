@@ -19,6 +19,7 @@ namespace Operators {
 const int OPERATOR_SCHEMA_DOFS_FACE =  1;
 const int OPERATOR_SCHEMA_DOFS_CELL =  2;
 const int OPERATOR_SCHEMA_DOFS_NODE =  4;
+
 const int OPERATOR_SCHEMA_BASE_FACE =  8;
 const int OPERATOR_SCHEMA_BASE_CELL = 16;
 const int OPERATOR_SCHEMA_BASE_NODE = 32;
@@ -45,6 +46,11 @@ const int OPERATOR_QUAD_EDGES = 4;
 const int OPERATOR_MAX_FACES = 14;  // Kelvin's tetrakaidecahedron
 const int OPERATOR_MAX_NODES = 47;  // These polyhedron parameters must
 const int OPERATOR_MAX_EDGES = 60;  // be calculated in Init().
+
+// Newton-correction options
+const int OPERATOR_DIFFUSION_JACOBIAN_NONE = 0;
+const int OPERATOR_DIFFUSION_JACOBIAN_TRUE = 1;
+const int OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE = 2;
 
 // upwind options
 const int OPERATOR_UPWIND_NONE = 0;

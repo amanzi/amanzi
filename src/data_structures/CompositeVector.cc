@@ -1,7 +1,7 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 
-ATS
+ATS and Amanzi
 
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
@@ -168,7 +168,7 @@ void CompositeVector::InitMap_(const CompositeVectorSpace& space) {
     } else if (space.Location(*name) == AmanziMesh::BOUNDARY_FACE) {
       mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->exterior_face_map()));
     }
-   }
+  }
 
   // create the master BlockVector
   mastervec_ = Teuchos::rcp(new BlockVector(Comm(), names_,
@@ -493,6 +493,7 @@ int CompositeVector::Dot(const CompositeVector& other, double* result) const {
   *result = 0.0;
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
     double intermediate_result[NumVectors(*lcv)];
+    for (int n=0; n!=NumVectors(*lcv); ++n) intermediate_result[n] = 0.0;
     int ierr = ViewComponent(*lcv, false)->Dot(*other.ViewComponent(*lcv,false),
             intermediate_result);
     if (ierr) return ierr;
@@ -509,7 +510,8 @@ int CompositeVector::Dot(const CompositeVector& other, double* result) const {
 CompositeVector& CompositeVector::Update(double scalarA, const CompositeVector& A, double scalarThis) {
   ChangedValue();
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
-    ViewComponent(*lcv, false)->Update(scalarA, *A.ViewComponent(*lcv,false), scalarThis);
+    if (A.HasComponent(*lcv))
+      ViewComponent(*lcv, false)->Update(scalarA, *A.ViewComponent(*lcv,false), scalarThis);
   }
   return *this;
 };
@@ -520,8 +522,9 @@ CompositeVector& CompositeVector::Update(double scalarA, const CompositeVector& 
                  double scalarB, const CompositeVector& B, double scalarThis) {
   ChangedValue();
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
-    ViewComponent(*lcv, false)->Update(scalarA, *A.ViewComponent(*lcv,false),
-            scalarB, *B.ViewComponent(*lcv,false), scalarThis);
+    if (A.HasComponent(*lcv))
+      ViewComponent(*lcv, false)->Update(scalarA, *A.ViewComponent(*lcv,false),
+              scalarB, *B.ViewComponent(*lcv,false), scalarThis);
   }
   return *this;
 };
@@ -533,11 +536,11 @@ int CompositeVector::Multiply(double scalarAB, const CompositeVector& A,
   ChangedValue();
   int ierr = 0;
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
-    ierr = ViewComponent(*lcv, false)->Multiply(scalarAB, *A.ViewComponent(*lcv,false),
-            *B.ViewComponent(*lcv,false), scalarThis);
-    if (ierr) return ierr;
+    if (A.HasComponent(*lcv))
+      ierr |= ViewComponent(*lcv, false)->Multiply(scalarAB, *A.ViewComponent(*lcv,false),
+              *B.ViewComponent(*lcv,false), scalarThis);
   }
-  return 0;
+  return ierr;
 };
 
 // -- this <- scalarAB * B / A + scalarThis*this  (/ is the elementwise division
@@ -546,11 +549,11 @@ int CompositeVector::ReciprocalMultiply(double scalarAB, const CompositeVector& 
   ChangedValue();
   int ierr = 0;
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
-    ierr = ViewComponent(*lcv, false)->ReciprocalMultiply(scalarAB,
-            *A.ViewComponent(*lcv,false), *B.ViewComponent(*lcv,false), scalarThis);
-    if (ierr) return ierr;
+    if (A.HasComponent(*lcv))
+      ierr |= ViewComponent(*lcv, false)->ReciprocalMultiply(scalarAB,
+              *A.ViewComponent(*lcv,false), *B.ViewComponent(*lcv,false), scalarThis);
   }
-  return 0;
+  return ierr;
 };
 
 

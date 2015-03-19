@@ -61,22 +61,27 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
  public:
   Transport_PK();
 #ifdef ALQUIMIA_ENABLED
-  Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
+  Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+               Teuchos::RCP<State> S,
+               const std::string& pk_list_name,
                Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state = Teuchos::null,
                Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine = Teuchos::null);
 #endif
-  Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
+  Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+               Teuchos::RCP<State> S,
+               const std::string& pk_list_name,
                std::vector<std::string>& component_names);
   ~Transport_PK();
 
   // main PK members
-  void Initialize(const Teuchos::Ptr<State>& S);
-  int Advance(double dT, double &dT_actual); 
+  void Setup();
+  void Initialize();
+  int Advance(double dT, double& dT_actual); 
   void CommitState(double dummy_dT, const Teuchos::Ptr<State>& S);
 
   void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
   double get_dt();
-  std::string name() { return passwd_; }
+  std::string name() { return "transport"; }
 
   // main transport members
   void InitializeFields();
@@ -101,7 +106,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
                             double lower_bound, double upper_bound, double tol = 0.0) const;
   void VV_CheckInfluxBC() const;
   void VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, double dT_MPC);
-  double VV_TracerVolumeChangePerSecond(int idx_tracer);
+  double VV_SoluteVolumeChangePerSecond(int idx_solute);
 
   void CalculateLpErrors(AnalyticFunction f, double t, Epetra_Vector* sol, double* L1, double* L2);
 
@@ -120,11 +125,6 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
                              Teuchos::RCP<Epetra_Vector>& limiter);
 
  private:
-  // Helper for constructors.
-  void Construct_(Teuchos::ParameterList& glist, 
-                  Teuchos::RCP<State> S,
-                  std::vector<std::string>& component_names);
-
   // advection members
   void AdvanceDonorUpwind(double dT);
   void AdvanceSecondOrderUpwindGeneric(double dT);
@@ -133,25 +133,6 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
 
   // time integration members
   void Functional(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
-
-  // limiters 
-  void LimiterTensorial(const int component,
-                        Teuchos::RCP<const Epetra_Vector> scalar_field, 
-                        Teuchos::RCP<CompositeVector>& gradient);
-
-  void LimiterKuzmin(const int component,
-                     Teuchos::RCP<const Epetra_Vector>& scalar_field, 
-                     Teuchos::RCP<CompositeVector>& gradient);
-
-  void CalculateDescentDirection(std::vector<AmanziGeometry::Point>& normals,
-                                 AmanziGeometry::Point& normal_new,
-                                 double& L22normal_new, 
-                                 AmanziGeometry::Point& direction);
-
-  void ApplyDirectionalLimiter(AmanziGeometry::Point& normal, 
-                               AmanziGeometry::Point& p,
-                               AmanziGeometry::Point& direction, 
-                               AmanziGeometry::Point& gradient);
 
   void IdentifyUpwindCells();
 
@@ -178,16 +159,15 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   // I/O methods
   void ProcessParameterList();
   void ProcessStringDispersionModel(const std::string name, int* model);
-  void ProcessStringAdvectionLimiter(const std::string name, int* method);
 
   // miscaleneous methods
   int FindComponentNumber(const std::string component_name);
 
  public:
-  Teuchos::ParameterList parameter_list;
-  Teuchos::ParameterList preconditioners_list;
-  Teuchos::ParameterList solvers_list;
-  Teuchos::ParameterList nonlin_solvers_list;
+  Teuchos::RCP<Teuchos::ParameterList> tp_list_;
+  Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
+  Teuchos::RCP<const Teuchos::ParameterList> linear_solver_list_;
+  Teuchos::RCP<const Teuchos::ParameterList> nonlinear_solver_list_;
 
   int MyPID;  // parallel information: will be moved to private
   int spatial_disc_order, temporal_disc_order, limiter_model;
@@ -208,7 +188,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
 
   Teuchos::RCP<CompositeVector> tcc_tmp;  // next tcc
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 
-  Teuchos::RCP<Epetra_MultiVector> darcy_flux;
+  Teuchos::RCP<const Epetra_MultiVector> darcy_flux;
   Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi;
   
 #ifdef ALQUIMIA_ENABLED
@@ -222,12 +202,8 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   Teuchos::RCP<const Epetra_MultiVector> ws_start, ws_end;  // data for subcycling 
   Teuchos::RCP<Epetra_MultiVector> ws_subcycle_start, ws_subcycle_end;
 
-  int advection_limiter;  // data for limiters
-  int current_component_;
-  // Teuchos::RCP<Epetra_Vector> limiter_;
+  int current_component_;  // data for lifting
   Teuchos::RCP<Operators::ReconstructionCell> lifting_;
-  std::vector<double> component_local_min_;
-  std::vector<double> component_local_max_;
 
   std::vector<TransportDomainFunction*> srcs;  // Source or sink for components
   std::vector<TransportBoundaryFunction*> bcs;  // influx BC for components
@@ -238,7 +214,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   Teuchos::RCP<Epetra_Import> face_importer;
 
   std::vector<Teuchos::RCP<MaterialProperties> > mat_properties_;  // vector of materials
-  std::vector<Teuchos::RCP<DiffusionPhase> >  diffusion_phase_;   // vector of phases
+  std::vector<Teuchos::RCP<DiffusionPhase> > diffusion_phase_;   // vector of phases
 
   std::vector<WhetStone::Tensor> D;
   int dispersion_models_;
@@ -248,8 +224,8 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
 
   double cfl_, dT, dT_debug, T_physics;  
 
-  double mass_tracer_exact, mass_tracer_source;  // statistics for tracers or solutes
-  std::vector<std::string> runtime_solutes_;
+  std::vector<double> mass_solutes_exact_, mass_solutes_source_;  // mass for all solutes
+  std::vector<std::string> runtime_solutes_;  // names of trached solutes
   std::vector<std::string> runtime_regions_;
 
   int ncells_owned, ncells_wghost;
@@ -262,6 +238,8 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   // Forbidden.
   Transport_PK(const Transport_PK&);
   Transport_PK& operator=(const Transport_PK&);
+
+  friend class Transport_PK_Wrapper;
 };
 
 }  // namespace Transport

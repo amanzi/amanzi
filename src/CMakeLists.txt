@@ -12,12 +12,12 @@ add_subdirectory(geometry)
 
 # Grid-option agnostic chemistry and interfaces
 if (ENABLE_Physics)
-  add_subdirectory(chemistry)
+  add_subdirectory(common/chemistry)
 
   if (ENABLE_ALQUIMIA)
     # Use Alquimia as a chemistry engine.
     add_definitions(-DALQUIMIA_ENABLED)
-    add_subdirectory(common/geochemistry)
+    add_subdirectory(common/alquimia)
   endif()
 endif()
 
@@ -31,14 +31,14 @@ if (ENABLE_Unstructured)
   # Debug helpers
   add_subdirectory(debug)
 
+  # Discretization
+  add_subdirectory(whetstone)
+
   # Data structures
   add_subdirectory(data_structures)
 
   # Mesh functions
   add_subdirectory(mesh_functions)
-
-  # Discretization
-  add_subdirectory(whetstone)
 
   # Output
   add_subdirectory(output)
@@ -50,11 +50,7 @@ if (ENABLE_Unstructured)
   add_subdirectory(operators)
 
   # Time integration
-  if (ENABLE_NewTimeIntegrators)
-    add_subdirectory(time_integration_new)
-  else()
-    add_subdirectory(time_integration)
-  endif()
+  add_subdirectory(time_integration)
 
   # Build State
   add_subdirectory(state)
@@ -62,7 +58,6 @@ if (ENABLE_Unstructured)
 endif()
 
 if (ENABLE_Unstructured AND ENABLE_Physics)  
-  add_subdirectory(chemistry_pk) 
   add_subdirectory(pks)
 
   # Multiprocess coordinator

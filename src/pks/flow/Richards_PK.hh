@@ -13,57 +13,50 @@
 #ifndef AMANZI_RICHARDS_PK_HH_
 #define AMANZI_RICHARDS_PK_HH_
 
+// TPLs
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
 #include "Epetra_Import.h"
-
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
+// Amanzi
 #include "BCs.hh"
 #include "BDF1_TI.hh"
 #include "OperatorDiffusion.hh"
+#include "OperatorAccumulation.hh"
+#include "TreeVector.hh"
 #include "Upwind.hh"
 
+// Flow
 #include "Flow_PK.hh"
-#include "RelativePermeability.hh"
-#include "TI_Specs.hh"
+#include "RelPerm.hh"
+#include "RelPermEvaluator.hh"
+#include "WRMPartition.hh"
 
 namespace Amanzi {
 namespace Flow {
 
 class Richards_PK : public Flow_PK {
  public:
-  Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<State> S);
+  Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+              const std::string& pk_list_name,
+              Teuchos::RCP<State> S,
+              const Teuchos::RCP<TreeVector>& soln);
   ~Richards_PK();
 
-  // main PK methods
-  void Initialize(const Teuchos::Ptr<State>& S);
-  void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
-  int Advance(double dT_MPC, double& dT_actual); 
-  double get_dt();
-  void CommitState(double dt, const Teuchos::Ptr<State>& S);
-  void CalculateDiagnostics(const Teuchos::Ptr<State>& S) {}
+  // methods required for PK interface
+  void Setup();
+  void Initialize();
+  bool Advance(double dT_MPC, double& dT_actual); 
 
-  // main flow methods
-  void InitSteadyState(double T0, double dT0);
-  void InitTransient(double T0, double dT0);
-  void InitPicard(double T0);
-  void InitNextTI(double T0, double dT0, TI_Specs& ti_specs);
+  double get_dt() { return dT; }
+  void set_dt(double dTnew) { dT = dTnew; dT_desirable_ = dTnew; }
 
-  int AdvanceToSteadyState(double T0, double dT0);
-  void InitializeAuxiliaryData();
-  void InitializeSteadySaturated();
+  void CommitStep(double dt, const Teuchos::Ptr<State>& S);
+  void CalculateDiagnostics(const Teuchos::Ptr<State>& S);
 
-  int AdvanceToSteadyState_Picard(TI_Specs& ti_specs);
-  int AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs);
-  int AdvanceToSteadyState_BDF1(TI_Specs& ti_specs);
-
-  // methods for experimental time integration
-  double ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du);
-  double ErrorNormPicardExperimental(const CompositeVector& uold, const CompositeVector& unew);
- 
-  // methods required for time integration
+  // methods required for time integration interface
   void Functional(const double T0, double T1, 
                   Teuchos::RCP<CompositeVector> u_old, Teuchos::RCP<CompositeVector> u_new, 
                   Teuchos::RCP<CompositeVector> f);
@@ -79,67 +72,124 @@ class Richards_PK : public Flow_PK {
                        Teuchos::RCP<CompositeVector> du);
   void ChangedSolution() {};
 
-  // other main methods
-  double ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot);
-  void UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u);
-
-  // linear problems and solvers
-  void SolveFullySaturatedProblem(double T0, CompositeVector& u, const std::string& solver_name);
-  void EnforceConstraints(double T1, CompositeVector& u);
-
-  // water retention models
-  void DeriveSaturationFromPressure(const Epetra_MultiVector& p, Epetra_MultiVector& s);
-  void DerivePressureFromSaturation(const Epetra_MultiVector& s, Epetra_MultiVector& p);
-
   // initization members
+  void SolveFullySaturatedProblem(double T0, CompositeVector& u, const std::string& solver_name);
+  void EnforceConstraints(double T1, Teuchos::RCP<CompositeVector> u);
+
   void ClipHydrostaticPressure(const double pmin, Epetra_MultiVector& p);
   void ClipHydrostaticPressure(const double pmin, const double s0, Epetra_MultiVector& p);
 
-  double CalculateRelaxationFactor(const Epetra_MultiVector& uold,
-                                   const Epetra_MultiVector& unew);
+  int AdvanceToSteadyState_Picard(Teuchos::ParameterList& picard_list);
+  double CalculateRelaxationFactor(const Epetra_MultiVector& uold, const Epetra_MultiVector& unew);
 
-  // control method
-  void ResetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list_ = rp_list_new; }
-  
+  // other flow methods
+  void UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u);
+  double ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du);
+ 
   // access methods
-  Teuchos::RCP<Operators::OperatorDiffusion> op_matrix() { return op_matrix_; }
+  Teuchos::RCP<Operators::Operator> op_matrix() { return op_matrix_; }
   const Teuchos::RCP<CompositeVector> get_solution() { return solution; }
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval() { return pressure_eval_; }
+  Teuchos::RCP<BDF1_TI<CompositeVector, CompositeVectorSpace> > get_bdf1_dae() { return bdf1_dae; }
 
   // developement members
-  void ImproveAlgebraicConsistency(const Epetra_Vector& ws_prev, Epetra_Vector& ws);
-
+  template <class Model> 
+  double DeriveBoundaryFaceValue(int f, const CompositeVector& u, const Model& model);
   virtual double BoundaryFaceValue(int f, const CompositeVector& pressure);
-  
- public:
-  Teuchos::ParameterList rp_list_;
+  void PlotWRMcurves(Teuchos::ParameterList& plist);
 
  private:
-  Teuchos::RCP<RelativePermeability> rel_perm_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_, op_preconditioner_;
-  Teuchos::RCP<Operators::Upwind<RelativePermeability> > upwind_;
+  void InitializeFields_();
+  void InitializeUpwind_();
+
+  void Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f);
+  void CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& kvapor_pres,
+                                      Teuchos::RCP<CompositeVector>& kvapor_temp);
+
+ private:
+  const Teuchos::RCP<Teuchos::ParameterList> glist_;
+  Teuchos::RCP<Teuchos::ParameterList> rp_list_;
+
+  // pointerds to primary field
+  const Teuchos::RCP<TreeVector> soln_;
+  Teuchos::RCP<CompositeVector> solution;
+
+  // water retention models
+  Teuchos::RCP<WRMPartition> wrm_;
+
+  Teuchos::RCP<RelPerm> relperm_;
+  int krel_upwind_method_;
+  Teuchos::RCP<CompositeVector> krel_;
+  Teuchos::RCP<CompositeVector> dKdP_;
+
+  // solvers
+  Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_, op_pc_solver_;
+  Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_diff_, op_preconditioner_diff_;
+  Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
+  Teuchos::RCP<Operators::Upwind<RelPerm> > upwind_;
   Teuchos::RCP<Operators::BCs> op_bc_;
+  std::string preconditioner_name_, solver_name_, solver_name_constraint_;
 
-  Teuchos::RCP<BDF1_TI<CompositeVector, CompositeVectorSpace> > bdf1_dae;  // Time integrators
-  int block_picard;
+  // coupling with energy
+  Teuchos::RCP<Operators::Operator> op_vapor_;
+  Teuchos::RCP<Operators::OperatorDiffusion> op_vapor_diff_;
+  bool vapor_diffusion_;
 
-  int error_control_;
+  // time integrators
+  Teuchos::RCP<BDF1_TI<CompositeVector, CompositeVectorSpace> > bdf1_dae;
+  int error_control_, num_itrs_;
   double dT_desirable_;
-
-  double functional_max_norm;
-  int functional_max_cell;
-
-  Teuchos::RCP<CompositeVector> solution;  // copies of state variables
-  Teuchos::RCP<CompositeVector> darcy_flux_copy;
+  std::vector<std::pair<double, double> > dT_history_;
+  bool initialize_with_darcy_;  // global state of initialization.
 
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;
 
+  double functional_max_norm;
+  int functional_max_cell;
+
+  // copies of state fields
+  Teuchos::RCP<CompositeVector> darcy_flux_copy;
+
+  // upwind
   int update_upwind;
-  Teuchos::RCP<CompositeVector> darcy_flux_upwind;  // used in  
+  Teuchos::RCP<CompositeVector> darcy_flux_upwind;
+
+  // evaluators
+  Teuchos::RCP<RelPermEvaluator> rel_perm_eval_;
 
  private:
   void operator=(const Richards_PK& RPK);
+
+  friend class Richards_PK_Wrapper;
 };
+
+
+/* ******************************************************************
+* Calculates solution value on the boundary.
+****************************************************************** */
+template <class Model> 
+double Richards_PK::DeriveBoundaryFaceValue(
+    int f, const CompositeVector& u, const Model& model) 
+{
+  if (u.HasComponent("face")) {
+    const Epetra_MultiVector& u_face = *u.ViewComponent("face");
+    return u_face[f][0];
+  } else {
+    const std::vector<int>& bc_model = op_bc_->bc_model();
+    const std::vector<double>& bc_value = op_bc_->bc_value();
+
+    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+      return bc_value[f];
+    } else {
+      const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
+      AmanziMesh::Entity_ID_List cells;
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int c = cells[0];
+      return u_cell[0][c];
+    }
+  }
+}
 
 }  // namespace Flow
 }  // namespace Amanzi

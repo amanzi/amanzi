@@ -39,12 +39,12 @@ void IOEvent::disable(bool disabled) { disabled_ = disabled; }
 // -----------------------------------------------------------------------------
 void IOEvent::RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm) {
   if (times_.size() != 0) {
-    tsm->RegisterTimeEvent(times_.toVector());
+    tsm->RegisterTimeEvent(times_.toVector(), false);
   }
   if (times_sps_.size() != 0) {
     for (Teuchos::Array<Teuchos::Array<double> >::const_iterator sps=times_sps_.begin();
          sps!=times_sps_.end(); ++sps) {
-      tsm->RegisterTimeEvent((*sps)[0], (*sps)[1], (*sps)[2]);
+      tsm->RegisterTimeEvent((*sps)[0], (*sps)[1], (*sps)[2], false);
     }
   }
 }

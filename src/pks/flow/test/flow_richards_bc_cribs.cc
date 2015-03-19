@@ -68,29 +68,24 @@ TEST(FLOW_3D_RICHARDS) {
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Richards_PK* RPK = new Richards_PK(plist, S);
+  Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
+  Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
+  Richards_PK* RPK = new Richards_PK(global_list, "Flow", S, soln);
+
+  RPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
-  RPK->InitializeFields();
-  S->CheckAllFieldsInitialized();
 
   /* initialize the Richards process kernel */
-  RPK->Initialize(S.ptr());
-  RPK->ti_specs_sss().T1 = 1e+10;
-  RPK->ti_specs_sss().max_itrs = 600;
-  RPK->ti_specs_sss().residual_tol = 1e-12;
+  RPK->Initialize();
+  S->CheckAllFieldsInitialized();
 
-  RPK->InitializeAuxiliaryData();
-  RPK->InitSteadyState(0.0, 1e-7);
-
-  /* solve the problem */
-  RPK->AdvanceToSteadyState(0.0, 1e-7);
-  RPK->CommitState(0.0, S.ptr());
+  RPK->CommitStep(0.0, S.ptr());
 
   /* derive dependent variable */
   const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
-  const Epetra_MultiVector& ws = *S->GetFieldData("water_saturation")->ViewComponent("cell");
+  const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
   const Epetra_MultiVector& K = *S->GetFieldData("permeability")->ViewComponent("cell");
 
   GMV::open_data_file(*mesh, (std::string)"flow.gmv");

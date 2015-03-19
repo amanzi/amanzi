@@ -18,35 +18,32 @@
 
 #include "BCs.hh"
 #include "FnBaseDefs.hh"
+#include "Operator.hh"
 #include "OperatorDiffusion.hh"
+#include "OperatorAccumulation.hh"
 
 #include "Flow_PK.hh"
-#include "TI_Specs.hh"
 
 namespace Amanzi {
 namespace Flow {
 
 class Darcy_PK : public Flow_PK {
  public:
-  Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S);
+  Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+           const std::string& pk_list_name,
+           Teuchos::RCP<State> S);
   ~Darcy_PK();
 
   // main PK methods
-  void Initialize(const Teuchos::Ptr<State>& S);
-  int Advance(double dT, double &dT_actual); 
+  void Setup();
+  void Initialize();
+  bool Advance(double dT, double &dT_actual); 
+
+  void set_dt(double dt){dT = dt; dT_desirable_ = dT;}
   double get_dt() { return dT_desirable_; }
-  void CommitState(double dt, const Teuchos::Ptr<State>& S);
-  void CalculateDiagnostics(const Teuchos::Ptr<State>& S) {}
 
-  // main flow methods
-  void InitSteadyState(double T0, double dT0);
-  void InitTransient(double T0, double dT0);
-  void InitPicard(double T0) {};  // not used yet.
-  void InitNextTI(double T0, double dT0, TI_Specs& ti_specs);
-
-  int AdvanceToSteadyState(double T0, double dT0);
-  void InitializeAuxiliaryData();
-  void InitializeSteadySaturated();
+  void CommitStep(double dt, const Teuchos::Ptr<State>& S);
+  void CalculateDiagnostics(const Teuchos::Ptr<State>& S);
 
   // methods required for time integration
   void Functional(const double Told, double Tnew, 
@@ -75,21 +72,25 @@ class Darcy_PK : public Flow_PK {
   void SolveFullySaturatedProblem(double T, CompositeVector& u);
   int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) { Y = X; return 1; }
 
-  // methods for unit tests
-  void ResetParameterList(const Teuchos::ParameterList& dp_list_new) { dp_list_ = dp_list_new; }
-  Teuchos::RCP<CompositeVector> get_solution() { return solution; }
-
  private:
+  void InitializeFields_();
   void UpdateSpecificYield_();
   double ErrorEstimate_(double* dTfactor);
 
  private:
-  Teuchos::ParameterList dp_list_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op_;
+  Teuchos::RCP<Teuchos::ParameterList> dp_list_;
+  Teuchos::RCP<Operators::Operator> op_;
+  Teuchos::RCP<Operators::OperatorDiffusion> op_diff_;
+  Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
   Teuchos::RCP<Operators::BCs> op_bc_;
 
   int error_control_;
-  double dT_desirable_;
+  double dT_desirable_, dTmax_, dTfactor_;
+  std::vector<std::pair<double, double> > dT_history_;  // statistics
+
+  std::string preconditioner_name_, solver_name_;
+  bool initialize_with_darcy_;
+  int num_itrs_;
 
   Teuchos::RCP<CompositeVector> solution;  // next pressure state
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure

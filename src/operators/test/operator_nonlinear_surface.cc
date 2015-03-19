@@ -15,24 +15,26 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
 
+// Amanzi
+#include "GMVMesh.hh"
+#include "LinearOperatorFactory.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
-#include "GMVMesh.hh"
-
-#include "tensor.hh"
 #include "mfd3d_diffusion.hh"
+#include "tensor.hh"
 
-#include "LinearOperatorFactory.hh"
-#include "OperatorDefs.hh"
+// Amanzi::Operators
 #include "Operator.hh"
-#include "OperatorDiffusionSurface.hh"
-#include "OperatorSource.hh"
+#include "OperatorAccumulation.hh"
+#include "OperatorDefs.hh"
+#include "OperatorDiffusionMFD.hh"
+#include "Verification.hh"
 
 namespace Amanzi{
 
@@ -83,11 +85,13 @@ class HeatConduction {
 }  // namespace Amanzi
 
 
+namespace {
+
 /* *****************************************************************
 * This test replaves tensor and boundary conditions by continuous
 * functions. This is a prototype forheat conduction solvers.
 * **************************************************************** */
-TEST(NONLINEAR_HEAT_CONDUCTION) {
+void RunTest(std::string op_list_name) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -124,14 +128,14 @@ TEST(NONLINEAR_HEAT_CONDUCTION) {
   RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
 
   /* modify diffusion coefficient */
-  std::vector<WhetStone::Tensor> K;
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
     Kc(0, 0) = 1.0;
-    K.push_back(Kc);
+    K->push_back(Kc);
   }
   double rho(1.0), mu(1.0);
 
@@ -173,60 +177,72 @@ TEST(NONLINEAR_HEAT_CONDUCTION) {
   // MAIN LOOP
   double dT = 1.0;
   for (int loop = 0; loop < 3; loop++) {
-    Teuchos::RCP<OperatorSource> op1 = Teuchos::rcp(new OperatorSource(cvs, 0));
-    op1->Init();
-    op1->UpdateMatrices(source);
-
-    // add accumulation terms
-    op1->AddAccumulationTerm(solution, phi, dT, "cell");
-
-    // add diffusion operator
+    // create diffusion operator
     solution.ScatterMasterToGhosted();
     knc->UpdateValues(solution);
 
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                        .get<Teuchos::ParameterList>("diffusion operator Sff");
-    Teuchos::RCP<OperatorDiffusionSurface> op2 = Teuchos::rcp(new OperatorDiffusionSurface(*op1, olist, bc));
+                                        .get<Teuchos::ParameterList>(op_list_name);
+    OperatorDiffusionMFD op(olist, surfmesh);
+    op.SetBCs(bc);
 
-    int schema_dofs = op2->schema_dofs();
-    CHECK(schema_dofs == Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL);
-    int schema_prec_dofs = op2->schema_prec_dofs();
-    CHECK(schema_prec_dofs == Operators::OPERATOR_SCHEMA_DOFS_FACE);
+    // get the global operator
+    Teuchos::RCP<Operator> global_op = op.global_operator();
+    global_op->Init();
 
-    op2->Setup(K, knc->values(), knc->derivatives(), rho, mu);
-    op2->UpdateMatrices(flux, Teuchos::null);
-    op2->ApplyBCs();
-    op2->SymbolicAssembleMatrix(schema_prec_dofs);
-    op2->AssembleMatrix(schema_prec_dofs);
+    // populate diffusion operator
+    op.Setup(K, knc->values(), knc->derivatives(), rho, mu);
+    op.UpdateMatrices(flux.ptr(), Teuchos::null);
 
+    // add accumulation terms
+    OperatorAccumulation op_acc(AmanziMesh::CELL, global_op);
+    op_acc.AddAccumulationTerm(solution, phi, dT, "cell");
+
+    // apply BCs and assemble
+    global_op->UpdateRHS(source, false);
+    op.ApplyBCs();
+    global_op->SymbolicAssembleMatrix();
+    global_op->AssembleMatrix();
+    
     // create preconditoner
     ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-    op2->InitPreconditioner("Hypre AMG", slist);
+    global_op->InitPreconditioner("Hypre AMG", slist);
+
+    // Test SPD properties of the matrix and preconditioner.
+    if (loop == 2) {
+      Verification ver(global_op);
+      ver.CheckMatrixSPD(true, true);
+      ver.CheckPreconditionerSPD(true, true);
+    }
 
     // solve the problem
     ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
-    AmanziSolvers::LinearOperatorFactory<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create("Amanzi GMRES", lop_list, op2);
+    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
+       solver = factory.Create("Amanzi GMRES", lop_list, global_op);
 
-    CompositeVector rhs = *op2->rhs();
+    CompositeVector rhs = *global_op->rhs();
     int ierr = solver->ApplyInverse(rhs, solution);
 
+    int num_itrs = solver->num_itrs();
+    CHECK(num_itrs > 5 && num_itrs < 15);
+
     if (MyPID == 0) {
+      double a;
+      rhs.Norm2(&a);
       std::cout << "pressure solver (" << solver->name() 
-                << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
+                << "): ||r||=" << solver->residual() << " itr=" << num_itrs
+                << "  ||f||=" << a 
                 << " code=" << solver->returned_code() << std::endl;
     }
 
     // derive diffusion flux.
-    op2->UpdateFlux(solution, *flux);
-    // const Epetra_MultiVector& flux_data = *flux->ViewComponent("face");
-    // std::cout << flux_data << std::endl;
+    op.UpdateFlux(solution, *flux);
 
     // turn off the source
     source.PutScalar(0.0);
   }
-
+ 
   if (MyPID == 0) {
     // visualization
     const Epetra_MultiVector& p = *solution.ViewComponent("cell");
@@ -237,4 +253,14 @@ TEST(NONLINEAR_HEAT_CONDUCTION) {
   }
 }
 
+} // end anonymous namespace
 
+
+TEST(NONLINEAR_HEAT_CONDUCTION) {
+  RunTest("diffusion operator");
+}
+
+
+TEST(NONLINEAR_HEAT_CONDUCTION_SFF) {
+  RunTest("diffusion operator Sff");
+}

@@ -1,4 +1,11 @@
 /*
+  This is the solver component of the Amanzi code.
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Authors: Ethan Coon (ecoon@lanl.gov)
 
   This decorator class wraps a nonlinear SolverFnBase as a Matrix
@@ -7,9 +14,7 @@
   the action of the Jacobian.  When used with, for instance, NKA, this
   residual evaluation reduces to GMRES on the linear system, giving as
   a solution the standard JFNK correction to the nonlinear problem.
-
 */
-
 
 #ifndef AMANZI_JF_MATRIX_HH_
 #define AMANZI_JF_MATRIX_HH_
@@ -24,9 +29,8 @@ namespace AmanziSolvers {
 
 template<class Vector, class VectorSpace>
 class MatrixJF {
-
  public:
-  MatrixJF() {} // default constructor for LinOp usage
+  MatrixJF() {};  // default constructor for LinOp usage
 
   MatrixJF(Teuchos::ParameterList& plist,
            const Teuchos::RCP<SolverFnBase<Vector> > fn,
@@ -36,6 +40,8 @@ class MatrixJF {
     map_ = Teuchos::rcp(new VectorSpace(map));
     r0_ = Teuchos::rcp(new Vector(*map_));
     u0_ = Teuchos::rcp(new Vector(*map_));
+
+    Init_();
   }
 
   // Space for the domain of the operator.
@@ -54,6 +60,7 @@ class MatrixJF {
 
  protected:
   double CalculateEpsilon_(const Vector& u, const Vector& x) const;
+  void Init_();
 
  protected:
   Teuchos::RCP<const VectorSpace> map_;
@@ -62,12 +69,22 @@ class MatrixJF {
   Teuchos::RCP<Vector> u0_;
   Teuchos::RCP<Vector> r0_;
 
+  double eps_;
+  std::string method_name_;
 };
 
 
+// Forward (Apply) operator
 template<class Vector, class VectorSpace>
-int
-MatrixJF<Vector,VectorSpace>::Apply(const Vector& x, Vector& b) const {
+void MatrixJF<Vector,VectorSpace>::Init_() {
+  eps_ = plist_.get<double>("finite difference epsilon", 1.0e-8);
+  method_name_ = plist_.get<std::string>("method for epsilon", "Knoll-Keyes");
+}
+
+
+// Forward (Apply) operator
+template<class Vector, class VectorSpace>
+int MatrixJF<Vector,VectorSpace>::Apply(const Vector& x, Vector& b) const {
   Teuchos::RCP<Vector> r1 = Teuchos::rcp(new Vector(*map_));
 
   double eps = CalculateEpsilon_(*u0_, x);
@@ -79,18 +96,19 @@ MatrixJF<Vector,VectorSpace>::Apply(const Vector& x, Vector& b) const {
 
   // evaluate Jx = (r1 - r0) / eps
   b = *r1;
-  b.Update(-1./eps, *r0_, 1./eps);
+  b.Update(-1.0/eps, *r0_, 1.0/eps);
 
   // revert to old u0
-  u0_->Update(-eps, x, 1);
+  u0_->Update(-eps, x, 1.0);
   fn_->ChangedSolution();
 
   return 0;
 }
 
+
+// Forward (Apply) operator
 template<class Vector, class VectorSpace>
-int
-MatrixJF<Vector,VectorSpace>::ApplyInverse(const Vector& b, Vector& x) const {
+int MatrixJF<Vector,VectorSpace>::ApplyInverse(const Vector& b, Vector& x) const {
   // ugliness in interfaces...
   Teuchos::RCP<const Vector> b_ptr = Teuchos::rcpFromRef(b);
   Teuchos::RCP<Vector> x_ptr = Teuchos::rcpFromRef(x);
@@ -101,8 +119,7 @@ MatrixJF<Vector,VectorSpace>::ApplyInverse(const Vector& b, Vector& x) const {
 
 
 template<class Vector, class VectorSpace>
-void
-MatrixJF<Vector,VectorSpace>::set_linearization_point(const Teuchos::RCP<const Vector>& u) {
+void MatrixJF<Vector,VectorSpace>::set_linearization_point(const Teuchos::RCP<const Vector>& u) {
   // std::cout << "setting lin point:" << std::endl;
   // u->Print(std::cout);
   *u0_ = *u;
@@ -113,22 +130,20 @@ MatrixJF<Vector,VectorSpace>::set_linearization_point(const Teuchos::RCP<const V
 
 
 template<class Vector, class VectorSpace>
-double
-MatrixJF<Vector,VectorSpace>::CalculateEpsilon_(const Vector& u, const Vector& x) const {
+double MatrixJF<Vector,VectorSpace>::CalculateEpsilon_(const Vector& u, const Vector& x) const {
   // simple algorithm eqn 14 from Knoll and Keyes
-  double uinf = 0;
-  double xinf = 0;
+  double uinf(0.0), xinf(0.0);
   u.NormInf(&uinf);
   x.NormInf(&xinf);
 
-  double eps = 1.e-8;
-  if (xinf > 0.)
-    eps = std::sqrt((1 + uinf)*1.e-12) / xinf;
+  double eps = eps_;
+  if (xinf > 0.0 && method_name_ == "Knoll-Keyes")
+    eps = std::sqrt((1 + uinf) * 1.0e-12) / xinf;
   return eps;
 }
 
-} // namespace
-} // namespace
+}  // namespace AmanziSolvers
+}  // namespace Amanzi
 
 #endif
 

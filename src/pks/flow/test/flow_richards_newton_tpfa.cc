@@ -15,18 +15,18 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
 
+#include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
-#include "GMVMesh.hh"
-
-#include "State.hh"
 #include "Richards_PK.hh"
+#include "State.hh"
+
+#include "Richards_SteadyState.hh"
 
 
 /* **************************************************************** */
@@ -63,19 +63,21 @@ TEST(FLOW_3D_RICHARDS) {
   /* create a simple state and populate it */
   Amanzi::VerboseObject::hide_line_prefix = false;
 
-  Teuchos::ParameterList state_list;
+  Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("State");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Richards_PK* RPK = new Richards_PK(plist, S);
+  Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
+  Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
+  Richards_PK* RPK = new Richards_PK(global_list, "Flow", S, soln);
+
+  RPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
-  RPK->InitializeFields();
-  S->CheckAllFieldsInitialized();
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state"); 
+  std::string passwd("flow"); 
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell");
   
   AmanziMesh::Entity_ID_List block;
@@ -97,7 +99,7 @@ TEST(FLOW_3D_RICHARDS) {
 
   *S->GetScalarData("fluid_density", passwd) = 1.0;
   *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
-  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", passwd);
+  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
   gravity[2] = -1.0;
 
   /* create the initial pressure function */
@@ -109,16 +111,18 @@ TEST(FLOW_3D_RICHARDS) {
   }
 
   /* initialize the Richards process kernel */
-  RPK->Initialize(S.ptr());
-  RPK->ti_specs_sss().T1 = 100.0;
-  RPK->ti_specs_sss().max_itrs = 400;
-
-  RPK->InitializeAuxiliaryData();
-  RPK->InitSteadyState(0.0, 0.01);  // dT0 is not used
+  RPK->Initialize();
+  S->CheckAllFieldsInitialized();
 
   /* solve the problem */
-  RPK->AdvanceToSteadyState(0.0, 0.01);
-  RPK->CommitState(0.0, S.ptr());
+  TI_Specs ti_specs;
+  ti_specs.T0 = 0.0;
+  ti_specs.dT0 = 1.0;
+  ti_specs.T1 = 100.0;
+  ti_specs.max_itrs = 400;
+
+  AdvanceToSteadyState(S, *RPK, ti_specs, S->GetFieldData("pressure", "flow"));
+  RPK->CommitStep(0.0, S.ptr());
 
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");

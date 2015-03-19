@@ -18,57 +18,105 @@ include(TestManager)
 # through these variables.
 project(FLOW)
 
+# External instruction
+if(ENABLE_NATIVE_XML_OUTPUT)
+  add_definitions("-DENABLE_NATIVE_XML_OUTPUT")
+endif()
+
+# External (TPL) include directories
+include_directories(${ASCEMIO_INCLUDE_DIR})
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
+include_directories(${FUNCS_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
-include_directories(${GEOMETRY_SOURCE_DIR})
-include_directories(${DATA_STRUCTURES_SOURCE_DIR})
-include_directories(${STATE_SOURCE_DIR})
-include_directories(${WHETSTONE_SOURCE_DIR})
-include_directories(${SOLVERS_SOURCE_DIR})
-include_directories(${TIME_INTEGRATION_SOURCE_DIR})
-include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${PKS_SOURCE_DIR})
+include_directories(${SOLVERS_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR})
+include_directories(${TIME_INTEGRATION_SOURCE_DIR})
+include_directories(${WHETSTONE_SOURCE_DIR})
 
-# External (TPL) include directories
-include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_C_INCLUDE_DIR})
-include_directories(${ASCEMIO_INCLUDE_DIR})
+include_directories(${Teuchos_INCLUDE_DIRS})
 
 #
 # Flow registrations
 #
-register_evaluator_with_factory( HEADERFILE Darcy_PK_Wrapper_reg.hh
-  LISTNAME   PKS_FLOW_REGISTRATIONS )
-register_evaluator_with_factory( HEADERFILE Richards_PK_Wrapper_reg.hh
-  LISTNAME   PKS_FLOW_REGISTRATIONS )
+register_evaluator_with_factory(
+  HEADERFILE Darcy_PK_Wrapper_reg.hh
+  LISTNAME   PKS_FLOW_REGISTRATIONS
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE Richards_PK_Wrapper_reg.hh
+  LISTNAME   PKS_FLOW_REGISTRATIONS
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE VWContentEvaluator_reg.hh
+  LISTNAME   PKS_FLOW_REGISTRATIONS
+  )
 
 generate_evaluators_registration_header( 
   HEADERFILE pks_flow_registration.hh   
   LISTNAME   PKS_FLOW_REGISTRATIONS
-  INSTALL    True )
+  INSTALL    True
+  )
 
+#register_evaluator_with_factory(
+#  HEADERFILE WRMEvaluator_reg.hh
+#  LISTNAME   WRM_FLOW_REGISTRATIONS
+#  )
+
+register_evaluator_with_factory(
+  HEADERFILE WRMFactory_reg.hh
+  LISTNAME   WRM_FLOW_REGISTRATIONS
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE WRM_vanGenuchten_reg.hh
+  LISTNAME   WRM_FLOW_REGISTRATIONS
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE WRM_BrooksCorey_reg.hh
+  LISTNAME   WRM_FLOW_REGISTRATIONS
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE WRM_fake_reg.hh
+  LISTNAME   WRM_FLOW_REGISTRATIONS
+  )
+
+generate_evaluators_registration_header( 
+  HEADERFILE wrm_flow_registration.hh   
+  LISTNAME   WRM_FLOW_REGISTRATIONS
+  INSTALL    True
+  )
 
 #
 # Library: flow
 #
-set(flow_src_files Flow_PK.cc Flow_IO.cc
+set(flow_src_files Flow_PK.cc 
                    Flow_BC_Factory.cc Flow_BC_Actions.cc Flow_SeepageFace.cc
-                   Flow_SourceFactory.cc Flow_VandV.cc 
-                   Flow_Utilities.cc Flow_AuxData.cc
+                   Flow_SourceFactory.cc Flow_VandV.cc Flow_Utilities.cc 
                    FlowDomainFunction.cc FlowBoundaryFunction.cc
                    Darcy_PK.cc Darcy_TI.cc Darcy_LinearOperator.cc
                    Richards_PK.cc Richards_TI.cc Richards_WRM.cc
-                   Richards_SteadyState.cc Richards_LinearOperator.cc
-                   RelativePermeability.cc RelativePermeability_IO.cc
+                   Richards_Picard.cc Richards_LinearOperator.cc
+                   PorosityModelPartition.cc
+                   RelPerm.cc RelPermEvaluator.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
-                   darcy_velocity_evaluator.cc
+                   WRMPartition.cc WRMFactory.cc WRMEvaluator.cc 
+                   VWContentEvaluator.cc VWContentEvaluator_ConstDensity.cc
+                   DarcyVelocityEvaluator.cc
                    Darcy_PK_Wrapper.cc Richards_PK_Wrapper.cc
                    )
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
@@ -94,20 +142,23 @@ set(flow_inc_files
   Flow_PK.hh
   Flow_SourceFactory.hh
   FlowTypeDefs.hh
-  RelativePermeability.hh
+  PorosityModel.hh
+  PorosityModelPartition.hh
+  RelPerm.hh
+  RelPermEvaluator.hh
   Richards_PK.hh
-  TI_Specs.hh
-  WaterRetentionModel.hh
+  WRM.hh
   WRM_BrooksCorey.hh
   WRM_fake.hh
-  WRM_vanGenuchten.hh)  
+  WRM_vanGenuchten.hh
+  WRMEvaluator.hh
+  WRMFactory.hh
+  WRMPartition.hh)
 
 
 add_install_include_file(${flow_inc_files})
 
 if (BUILD_TESTS) 
-  
-#if (0)
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
     include_directories(${MESH_FACTORY_SOURCE_DIR})
@@ -121,7 +172,7 @@ if (BUILD_TESTS)
     # Add the flow directory to the include paths
     include_directories(${FLOW_SOURCE_DIR})
 
-    set(amanzi_libs geometry mesh mesh_factory state flow operators whetstone data_structures)
+    set(amanzi_libs geometry mesh mesh_factory state flow pks operators whetstone data_structures)
 
     # Test: transient Darcy flow 
     add_amanzi_test(flow_darcy_transient flow_darcy_transient
@@ -205,7 +256,7 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
     # Test: 3D Richards
-    set(amanzi_libs geometry mesh mesh_factory flow operators state whetstone solvers output data_structures)
+    set(amanzi_libs geometry mesh mesh_factory flow pks operators state whetstone solvers output data_structures)
     
     add_amanzi_test(flow_richards_tensor flow_richards_tensor
                     KIND unit

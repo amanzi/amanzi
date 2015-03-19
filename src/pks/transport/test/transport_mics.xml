@@ -28,100 +28,89 @@
     </ParameterList>
   </ParameterList>
  
-  <ParameterList name="Transport">
-    <Parameter name="cfl" type="double" value="0.5"/>   
-    <Parameter name="spatial discretization order" type="int" value="1"/>   
-    <Parameter name="temporal discretization order" type="int" value="1"/>   
-    <Parameter name="advection limiter" type="string" value="tensorial"/>
+  <ParameterList name="PKs">
+    <ParameterList name="Transport">
+      <Parameter name="cfl" type="double" value="0.5"/>   
+      <Parameter name="spatial discretization order" type="int" value="1"/>   
+      <Parameter name="temporal discretization order" type="int" value="1"/>   
 
-    <!-- developers parameters --> 
-    <Parameter name="enable internal tests" type="string" value="yes"/>   
-    <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
-    <!-- end of developers parameters -->
+      <!-- developers parameters --> 
+      <Parameter name="enable internal tests" type="string" value="yes"/>   
+      <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
+      <!-- end of developers parameters -->
 
-    <ParameterList name="VerboseObject">
-      <Parameter name="Verbosity Level" type="string" value="medium"/>
-    </ParameterList>
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="medium"/>
+      </ParameterList>
 
-
-    <ParameterList name="boundary conditions">
-      <ParameterList name="concentration">
-        <ParameterList name="Component 0">
-	  <ParameterList name="BC for left side">
-            <Parameter name="regions" type="Array(string)" value="{Left side}"/>
-            <ParameterList name="boundary concentration">
-              <ParameterList name="function-tabular">
-		<Parameter name="forms" type="Array(string)" value="{constant}"/>
-		<Parameter name="x values" type="Array(double)" value="{0.0, 1.0}"/>
-		<Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
-	      </ParameterList>
+      <ParameterList name="boundary conditions">
+        <ParameterList name="concentration">
+          <ParameterList name="Component 0">
+            <ParameterList name="BC for left side">
+              <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+              <ParameterList name="boundary concentration">
+                <ParameterList name="function-tabular">
+                  <Parameter name="forms" type="Array(string)" value="{constant}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 1.0}"/>
+                  <Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+            <ParameterList name="BC for bottom side">
+              <Parameter name="regions" type="Array(string)" value="{Bottom side}"/>
+              <ParameterList name="boundary concentration">
+                <ParameterList name="function-tabular">
+                  <Parameter name="forms" type="Array(string)" value="{constant}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 1.0}"/>
+                  <Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
+                </ParameterList>
+              </ParameterList>
             </ParameterList>
           </ParameterList>
-	  <ParameterList name="BC for bottom side">
-            <Parameter name="regions" type="Array(string)" value="{Bottom side}"/>
-            <ParameterList name="boundary concentration">
-              <ParameterList name="function-tabular">
-		<Parameter name="forms" type="Array(string)" value="{constant}"/>
-		<Parameter name="x values" type="Array(double)" value="{0.0, 1.0}"/>
-		<Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
-	      </ParameterList>
+          <ParameterList name="Component 1">
+            <ParameterList name="BC for left side">
+              <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+              <ParameterList name="boundary concentration">
+                <ParameterList name="function-tabular">
+                  <Parameter name="forms" type="Array(string)" value="{constant}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 1.0}"/>
+                  <Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+            <ParameterList name="BC for bottom side">
+              <Parameter name="regions" type="Array(string)" value="{Bottom side}"/>
+              <ParameterList name="boundary concentration">
+                <ParameterList name="function-tabular">
+                  <Parameter name="forms" type="Array(string)" value="{constant}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 1.0}"/>
+                  <Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
+                </ParameterList>
+              </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <ParameterList name="Component 1">
-	  <ParameterList name="BC for left side">
-            <Parameter name="regions" type="Array(string)" value="{Left side}"/>
-            <ParameterList name="boundary concentration">
-              <ParameterList name="function-tabular">
-		<Parameter name="forms" type="Array(string)" value="{constant}"/>
-		<Parameter name="x values" type="Array(double)" value="{0.0, 1.0}"/>
-		<Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
-	      </ParameterList>
-            </ParameterList>
-          </ParameterList>
-	  <ParameterList name="BC for bottom side">
-            <Parameter name="regions" type="Array(string)" value="{Bottom side}"/>
-            <ParameterList name="boundary concentration">
-              <ParameterList name="function-tabular">
-		<Parameter name="forms" type="Array(string)" value="{constant}"/>
-		<Parameter name="x values" type="Array(double)" value="{0.0, 1.0}"/>
-		<Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
-	      </ParameterList>
+      </ParameterList>	
+    </ParameterList>	
+  </ParameterList>
+
+  <ParameterList name="State">
+    <ParameterList name="field evaluators">
+      <ParameterList name="porosity">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.2"/>
+              </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
-    </ParameterList>	
-
-<!--
-    <ParameterList name="Transport BCs">
-      <Parameter name="number of BCs" type="int" value="4"/>
-      <ParameterList name="BC 0">
-        <Parameter name="Component 0" type="Array(double)" value="{1.0, 1.0}"/>
-        <Parameter name="Regions" type="Array(string)" value="{Left side}"/>
-        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Times" type="Array(double)" value="{0.0, 1.0}"/>
-      </ParameterList>  
-      <ParameterList name="BC 1">
-        <Parameter name="Component 1" type="Array(double)" value="{1.0, 1.0}"/>
-        <Parameter name="Regions" type="Array(string)" value="{Left side}"/>
-        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Times" type="Array(double)" value="{0.0, 1.0}"/>
-      </ParameterList>  
-      <ParameterList name="BC 2">
-        <Parameter name="Component 0" type="Array(double)" value="{1.0, 1.0}"/>
-        <Parameter name="Regions" type="Array(string)" value="{Bottom side}"/>
-        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Times" type="Array(double)" value="{0.0, 1.0}"/>
-      </ParameterList>  
-      <ParameterList name="BC 3">
-        <Parameter name="Component 1" type="Array(double)" value="{1.0, 1.0}"/>
-        <Parameter name="Regions" type="Array(string)" value="{Bottom side}"/>
-        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Times" type="Array(double)" value="{0.0, 1.0}"/>
-      </ParameterList>  
-    </ParameterList>  
--->
-   </ParameterList>
+    </ParameterList>
+  </ParameterList>
 </ParameterList>
 

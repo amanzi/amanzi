@@ -19,90 +19,6 @@
 namespace Amanzi {
 namespace Flow {
 
-/* ****************************************************************
-* Construct default state for unit tests. It completes
-* initialization of all missed objects in the state.
-**************************************************************** */
-void Flow_PK::InitializeFields()
-{
-  // set popular default values
-  if (!S_->GetField("porosity", passwd_)->initialized()) {
-    S_->GetFieldData("porosity", passwd_)->PutScalar(0.2);
-    S_->GetField("porosity", passwd_)->set_initialized();
-  }
-
-  if (!S_->GetField("fluid_density", passwd_)->initialized()) {
-    *(S_->GetScalarData("fluid_density", passwd_)) = 1000.0;
-    S_->GetField("fluid_density", passwd_)->set_initialized();
-  }
-
-  if (!S_->GetField("fluid_viscosity", passwd_)->initialized()) {
-    *(S_->GetScalarData("fluid_viscosity", passwd_)) = 0.001;
-    S_->GetField("fluid_viscosity", passwd_)->set_initialized();
-  }
-
-  if (!S_->GetField("gravity", passwd_)->initialized()) {
-    Epetra_Vector& gvec = *S_->GetConstantVectorData("gravity", passwd_);
-    gvec.PutScalar(0.0);
-    gvec[dim - 1] = -9.80;
-    S_->GetField("gravity", passwd_)->set_initialized();
-  }
-
-  if (!S_->GetField("permeability", passwd_)->initialized()) {
-    S_->GetFieldData("permeability", passwd_)->PutScalar(1.0);
-    S_->GetField("permeability", passwd_)->set_initialized();
-  }
-
-  if (S_->HasField("water_saturation")) {
-    if (!S_->GetField("water_saturation", passwd_)->initialized()) {
-      S_->GetFieldData("water_saturation", passwd_)->PutScalar(1.0);
-      S_->GetField("water_saturation", passwd_)->set_initialized();
-    }
-  }
-
-  if (S_->HasField("prev_water_saturation")) {
-    if (!S_->GetField("prev_water_saturation", passwd_)->initialized()) {
-      S_->GetFieldData("prev_water_saturation", passwd_)->PutScalar(1.0);
-      S_->GetField("prev_water_saturation", passwd_)->set_initialized();
-    }
-  }
-
-  if (S_->HasField("specific_storage")) {
-    if (!S_->GetField("specific_storage", passwd_)->initialized()) {
-      S_->GetFieldData("specific_storage", passwd_)->PutScalar(0.0);
-      S_->GetField("specific_storage", passwd_)->set_initialized();
-    }
-  }
-
-  if (S_->HasField("specific_yield")) {
-    if (!S_->GetField("specific_yield", passwd_)->initialized()) {
-      S_->GetFieldData("specific_yield", passwd_)->PutScalar(0.0);
-      S_->GetField("specific_yield", passwd_)->set_initialized();
-    }
-  }
-
-  if (!S_->GetField("pressure", passwd_)->initialized()) {
-    S_->GetFieldData("pressure", passwd_)->PutScalar(0.0);
-    S_->GetField("pressure", passwd_)->set_initialized();
-  }
-
-  if (!S_->GetField("hydraulic_head", passwd_)->initialized()) {
-    S_->GetFieldData("hydraulic_head", passwd_)->PutScalar(0.0);
-    S_->GetField("hydraulic_head", passwd_)->set_initialized();
-  }
-
-  if (!S_->GetField("darcy_flux", passwd_)->initialized()) {
-    S_->GetFieldData("darcy_flux", passwd_)->PutScalar(0.0);
-    S_->GetField("darcy_flux", passwd_)->set_initialized();
-  }
-
-  // if (!S_->GetField("darcy_velocity", passwd_)->initialized()) {
-  //   S_->GetFieldData("darcy_velocity", passwd_)->PutScalar(0.0);
-  //   S_->GetField("darcy_velocity", passwd_)->set_initialized();
-  // }
-}
-
-
 /* ******************************************************************
 * TODO: Verify that a BC has been applied to every boundary face.
 * Right now faces without BC are considered no-mass-flux.
@@ -179,7 +95,7 @@ void Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
 {
   const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell", false);
   const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
-  const Epetra_MultiVector& ws = *S->GetFieldData("water_saturation")->ViewComponent("cell", false);
+  const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
 
   double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flux) * rho_ * dT;
 
@@ -292,6 +208,31 @@ void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
 }
 
  
+/* ****************************************************************
+* Find string for the preconditoner.
+**************************************************************** */
+void Flow_PK::OutputTimeHistory(
+    const Teuchos::ParameterList& plist, std::vector<dt_tuple>& dT_history)
+{
+  if (plist.isParameter("plot time history") && 
+      vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "saving time history in file flow_dt_history.txt..." << std::endl;
+
+    char file_name[30];
+    sprintf(file_name, "flow_dt_history_%d.txt", ti_phase_counter++);
+
+    std::ofstream ofile;
+    ofile.open(file_name);
+
+    for (double n = 0; n < dT_history.size(); n++) {
+      ofile << std::setprecision(10) << dT_history[n].first / FLOW_YEAR << " " << dT_history[n].second << std::endl;
+    }
+    ofile.close();
+  }
+}
+
+
 /* *******************************************************************
 * Calculates best least square fit for data (h[i], error[i]).                       
 ******************************************************************* */

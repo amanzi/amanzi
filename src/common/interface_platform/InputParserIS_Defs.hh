@@ -37,7 +37,7 @@
 #define ST_NONLIN_INIT_TS_FACTOR        1.0
 #define ST_NONLIN_INIT_TS_FACTOR_DAMP   1.0
 #define ST_PRECOND                      "Hypre AMG"
-#define ST_SOLVER                       "AztecOO"
+#define ST_SOLVER                       "none"
 #define ST_INIT_SOLVER                  "AztecOO"
 #define ST_PLAMB_SOLVER                 "AztecOO"
 #define ST_INIT_DARCY_BOOL              true
@@ -67,7 +67,8 @@
 #define TR_NONLIN_INIT_TS_FACTOR        1.0
 #define TR_NONLIN_INIT_TS_FACTOR_DAMP   1.0
 #define TR_PRECOND                      "Hypre AMG" 
-#define TR_SOLVER                       "AztecOO"
+#define TR_SOLVER                       "none"
+#define TR_SOLVER_DARCY                 "AztecOO"
 #define TR_INIT_SOLVER                  "AztecOO"
 #define TR_PLAMB_SOLVER                 "AztecOO"
 #define TR_DIVERG_FACT                  1000.0
@@ -126,5 +127,9 @@
 
 #define RESTART_TIME_STEP               1.0
 #define TI_RESCUE_REDUCTION_FACTOR      0.5
+
+#define STEADY_REGIME                   1
+#define TRANSIENT_REGIME                2
+#define BOTH_REGIMES                    3
 
 #endif

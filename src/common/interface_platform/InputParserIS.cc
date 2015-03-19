@@ -24,8 +24,8 @@ Teuchos::ParameterList InputParserIS::Translate(Teuchos::ParameterList* plist, i
   InitGlobalInfo_(plist);
 
   // unstructured header
-  Teuchos::ParameterList new_list, tmp_list;
-
+  Teuchos::ParameterList new_list, tmp_list, pks_list, cd_list;
+  
   new_list.set<bool>("Native Unstructured Input", true);
   new_list.set<std::string>("grid_option", "Unstructured");
   new_list.set<std::string>("input file name",
@@ -56,20 +56,23 @@ Teuchos::ParameterList InputParserIS::Translate(Teuchos::ParameterList* plist, i
     }
   }
 
+  // mesh and geometry
   new_list.sublist("Regions") = CopyRegionsList_(plist);
   new_list.sublist("Mesh") = CreateMeshList_(plist);
   new_list.sublist("Domain") = CopyDomainList_(plist);
-  new_list.sublist("MPC") = CreateMPC_List_(plist);
-  new_list.sublist("Transport") = CreateTransportList_(plist);
+
+  // cycle driver
+  cd_list = CreateCycleDriverList_(plist);
+  new_list.sublist("Cycle Driver") = cd_list;
+  CreatePKslist_(cd_list, pks_list);
+
+  FillPKslist_(plist, pks_list);
+
   new_list.sublist("State") = CreateStateList_(plist);
-  new_list.sublist("Flow") = CreateFlowList_(plist);
   new_list.sublist("Preconditioners") = CreatePreconditionersList_(plist);
   new_list.sublist("Solvers") = CreateSolversList_(plist);
 
-  // chemistry list is optional
-  if (new_list.sublist("MPC").get<std::string>("Chemistry Model") != "Off") {
-    new_list.sublist("Chemistry") = CreateChemistryList_(plist);
-  }
+  new_list.sublist("PKs") = pks_list;
 
   // analysis list
   new_list.sublist("Analysis") = CreateAnalysisList_();
@@ -352,9 +355,9 @@ Teuchos::ParameterList InputParserIS::CreateAnalysisList_()
   alist.set<Teuchos::Array<std::string> >("used observation regions", vv_obs_regions);
 
   alist.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
+
   return alist;
 }
-
 
 }  // namespace AmanziInput
 }  // namespace Amanzi

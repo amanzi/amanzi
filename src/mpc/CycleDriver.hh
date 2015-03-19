@@ -1,25 +1,31 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-ATS
+/*
+  This is the MPC component of the Amanzi code. 
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Interface for the Coordinator.  Coordinator is basically just a class to hold
-the cycle driver, which runs the overall, top level timestep loop.  It
-instantiates states, ensures they are initialized, and runs the timestep loop
-including Vis and restart/checkpoint dumps.  It contains one and only one PK
--- most likely this PK is an MPC of some type -- to do the actual work.
-------------------------------------------------------------------------- */
+  Authors: Ethan Coon
+           Daniil Svyatskiy
 
-#ifndef AMANZI_COORDINATOR_HH_
-#define AMANZI_COORDINATOR_HH_
+  Interface for the Coordinator.  Coordinator is basically just a class to hold
+  the cycle driver, which runs the overall, top level timestep loop.  It
+  instantiates states, ensures they are initialized, and runs the timestep loop
+  including Vis and restart/checkpoint dumps.  It contains one and only one PK
+  -- most likely this PK is an MPC of some type -- to do the actual work.
+*/
 
+#ifndef AMANZI_CYCLE_DRIVER_HH_
+#define AMANZI_CYCLE_DRIVER_HH_
+
+#include "Epetra_MpiComm.h"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_MpiComm.h"
 
+#include "ObservationData.hh"
+#include "Unstructured_observations.hh"
 #include "VerboseObject.hh"
 
 namespace Amanzi {
@@ -33,48 +39,53 @@ class PK;
 class UnstructuredObservations;
 
 class CycleDriver {
-
-public:
-  CycleDriver(Teuchos::ParameterList& parameter_list,
+ public:
+  CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist_,
               Teuchos::RCP<State>& S,
               Epetra_MpiComm* comm,
               Amanzi::ObservationData& output_observations);
 
-
   // PK methods
-  void setup();
-  void initialize();
-  void finalize();
-  void report_memory();
-  bool advance(double dt);
-  void visualize(bool force=false);
-  void checkpoint(double dt, bool force=false);
-  double get_dt();
-
+  void Setup();
+  void Initialize();
+  void Init_PK(int);
+  void Reset_PK();
+  void Finalize();
+  void ReportMemory();
+  bool Advance(double dt);
+  void Visualize(bool force = false);
+  void Observations(bool force = false);
+  void WriteCheckpoint(double dt, bool force = false);
+  double get_dt(bool after_failuer = false);
+  void set_dt(double dt);
+  void ResetDriver(int time_period_id);
   // one stop shopping
-  void go();
+  void Go();
 
-private:
-  void coordinator_init_();
-  void read_parameter_list_();
+ private:
+  void CoordinatorInit_();
+  void ReadParameterList_();
 
   // PK container and factory
   Teuchos::RCP<PK> pk_;
 
   // states
-  Teuchos::RCP<State> S_;
+  Teuchos::RCP<State> S_, S_old_;
   Teuchos::RCP<TreeVector> soln_;
 
   // time step manager
-  Teuchos::RCP<TimeStepManager> tsm_;
+  Teuchos::Ptr<TimeStepManager> tsm_;
 
   // misc setup information
   Teuchos::RCP<Teuchos::ParameterList> parameter_list_;
   Teuchos::RCP<Teuchos::ParameterList> coordinator_list_;
 
   double t0_, t1_;
+  std::vector<double> t_, tp_start_, tp_end_, tp_dt_, tp_max_cycle_;  
   double max_dt_, min_dt_;
   int cycle0_, cycle1_;
+  int num_time_periods_;
+  int time_period_id_;
 
   // Epetra communicator
   Epetra_MpiComm* comm_;
@@ -87,13 +98,22 @@ private:
   std::vector<Teuchos::RCP<Visualization> > visualization_;
   std::vector<Teuchos::RCP<Visualization> > failed_visualization_;
   Teuchos::RCP<Checkpoint> checkpoint_;
-  bool restart_;
+  bool restart_requested_;
   std::string restart_filename_;
+
+  // time period control
+  std::vector<std::pair<double,double> > reset_info_;
+
+  // //  checkpoint/restart 
+  // Teuchos::RCP<Amanzi::Checkpoint> restart_;
+ 
+  // walkabout
+  Teuchos::RCP<Amanzi::Checkpoint> walkabout;  
 
   // fancy OS
   Teuchos::RCP<VerboseObject> vo_;
 };
 
-} // close namespace Amanzi
+}  // namespace Amanzi
 
 #endif

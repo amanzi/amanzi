@@ -1,3 +1,4 @@
+
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 
@@ -312,6 +313,10 @@ public:
   // Different name is given so it cannot be used in a templated code.   
   int PutScalarMasterAndGhosted(double scalar);
 
+  // Sets ghost elements to value.
+  // Different name is given so it cannot be used in a templated code.   
+  int PutScalarGhosted(double scalar);
+
   // v(name,:,:) = scalar
   int PutScalar(std::string name, double scalar);
 
@@ -356,7 +361,7 @@ public:
   // -- Utilities --
 
   // Write components to outstream.
-  void Print(std::ostream &os) const;
+  void Print(std::ostream &os, bool data_io = true) const;
 
   // Populate by random numbers between -1 and 1.
   int Random();
@@ -426,6 +431,23 @@ CompositeVector::PutScalarMasterAndGhosted(double scalar) {
 }
 
 inline int
+CompositeVector::PutScalarGhosted(double scalar) {
+  ChangedValue();
+  for (int lcv_comp = 0; lcv_comp != NumComponents(); ++lcv_comp) {
+    int size_owned = mastervec_->size(names_[lcv_comp]);
+    int size_ghosted = ghostvec_->size(names_[lcv_comp]);
+
+    Epetra_MultiVector& vec = *ghostvec_->ViewComponent(names_[lcv_comp]);
+    for (int j = 0; j != vec.NumVectors(); ++j) {
+      for (int i = size_owned; i != size_ghosted; ++i) {
+        vec[j][i] = scalar;
+      }
+    }
+  }
+  return 0;
+}
+
+inline int
 CompositeVector::PutScalar(std::string name, double scalar) {
   ChangedValue(name);
   return mastervec_->PutScalar(name, scalar);
@@ -477,8 +499,8 @@ CompositeVector::Norm2(double* norm) const {
 }
 
 inline void
-CompositeVector::Print(std::ostream &os) const {
-  return mastervec_->Print(os);
+CompositeVector::Print(std::ostream &os, bool data_io) const {
+  return mastervec_->Print(os, data_io);
 }
 
 inline int

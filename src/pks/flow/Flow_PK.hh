@@ -21,21 +21,20 @@
 #include "Teuchos_RCP.hpp"
 
 #include "BDFFnBase.hh"
-#include "CompositeVectorSpace.hh"
-#include "TI_Specs.hh"
-#include "VerboseObject.hh"
-
 #include "checkpoint.hh"
+#include "CompositeVectorSpace.hh"
+#include "independent_variable_field_evaluator_fromfunction.hh"
 #include "PK.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "tensor.hh"
+#include "VerboseObject.hh"
 
-#include "FlowDefs.hh"
-#include "FlowTypeDefs.hh"
-#include "FlowBoundaryFunction.hh"
-#include "FlowDomainFunction.hh"
 #include "Flow_BC_Factory.hh"
 #include "Flow_SourceFactory.hh"
+#include "FlowBoundaryFunction.hh"
+#include "FlowDefs.hh"
+#include "FlowDomainFunction.hh"
+#include "FlowTypeDefs.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -47,27 +46,17 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   Flow_PK();
   virtual ~Flow_PK() {};
 
-  void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
   std::string name() { return "flow"; }
 
-  // main flow methods
-  void Init();
-  virtual void InitPicard(double T0) = 0;
-  virtual void InitSteadyState(double T0, double dT0) = 0;
-  virtual void InitTransient(double T0, double dT0) = 0;
-
-  virtual void Initialize(const Teuchos::Ptr<State>& S) = 0;
-  virtual void CommitState(double dt, const Teuchos::Ptr<State>& S) = 0;
+  // required flow methods
+  virtual void Setup() = 0;
+  virtual void Initialize() = 0;
+  virtual void CommitStep(double dt, const Teuchos::Ptr<State>& S) = 0;
   virtual double get_dt() = 0;
+  virtual void set_dt(double dt) { dT = dt; }
+  virtual bool Advance(double dT, double &dT_actual) = 0;
 
-  
-  virtual int Advance(double dT, double &dT_actual) = 0;
-  virtual int AdvanceToSteadyState(double T0, double dT0) = 0;
-  virtual void InitializeAuxiliaryData() = 0;
-  virtual void InitializeSteadySaturated() = 0;
-
-  void UpdateAuxilliaryData();  // auxilliary data management
-  void InitializeFields();
+  void UpdateLocalFields_();
 
   // boundary and source teerms
   void ProcessBCs();
@@ -90,15 +79,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   int FindPosition(int f, AmanziMesh::Entity_ID_List faces);
 
   // io members
-  void ProcessParameterList(Teuchos::ParameterList& list);
-  void ProcessSublistTimeIntegration(Teuchos::ParameterList& list, const std::string name, TI_Specs& ti_specs);
   void ProcessStringSourceDistribution(const std::string name, int* method);
-  void ProcessStringTimeIntegration(const std::string name, int* method);
-  void ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control);
-
-  std::string FindStringLinearSolver(const Teuchos::ParameterList& plist);
-  std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
-
   void OutputTimeHistory(const Teuchos::ParameterList& plist, std::vector<dt_tuple>& dT_history);
   void WriteGMVfile(Teuchos::RCP<State> S) const;
 
@@ -133,7 +114,12 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   double rho() { return rho_; }
   double mu() { return mu_; }
   const AmanziGeometry::Point& gravity() { return gravity_; }
-  TI_Specs& ti_specs_sss() { return ti_specs_sss_; }
+
+ private:
+  void InitializeFields_();
+
+ protected:
+  void InitializeBCsSources_(Teuchos::ParameterList& list);
 
  public:
   int ncells_owned, ncells_wghost;
@@ -146,8 +132,9 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   int ti_phase_counter;
 
  public:
-  Teuchos::ParameterList linear_operator_list_;
-  Teuchos::ParameterList preconditioner_list_;
+  Teuchos::RCP<const Teuchos::ParameterList> linear_operator_list_;
+  Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
+  Teuchos::RCP<Teuchos::ParameterList> ti_list_;
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -182,14 +169,10 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   int src_sink_distribution; 
   mutable double mass_bc, seepage_mass_;
 
-  // time integration phases
-  TI_Specs ti_specs_igs_;
-  TI_Specs ti_specs_sss_;
-  TI_Specs ti_specs_trs_;
-  TI_Specs* ti_specs;
-
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval_;
+  Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> porosity_eval_;
 
  protected:
   VerboseObject* vo_;

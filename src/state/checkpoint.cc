@@ -77,6 +77,16 @@ void Checkpoint::WriteVector(const Epetra_MultiVector& vec,
   }
 };
 
+  void Checkpoint::WriteAttributes(double time, double dt, int cycle, int position) const {
+  checkpoint_output_->writeAttrReal(time, "time");
+  checkpoint_output_->writeAttrReal(dt, "dt");
+  checkpoint_output_->writeAttrInt(cycle, "cycle");
+  checkpoint_output_->writeAttrInt(position, "position");
+  checkpoint_output_->writeAttrInt(comm_->NumProc(), "mpi_comm_world_rank");
+};
+
+
+
 void Checkpoint::WriteAttributes(double time, double dt, int cycle) const {
   checkpoint_output_->writeAttrReal(time, "time");
   checkpoint_output_->writeAttrReal(dt, "dt");

@@ -19,12 +19,15 @@ Mesh_simple::Mesh_simple (double x0, double y0, double z0,
  			  double x1, double y1, double z1,
 			  int nx, int ny, int nz,
 			  const Epetra_MpiComm *communicator,
-			  const AmanziGeometry::GeometricModelPtr &gm,
-                          const VerboseObject *verbosity_obj):
+			  const AmanziGeometry::GeometricModelPtr gm,
+                          const VerboseObject *verbosity_obj,
+                          const bool request_faces,
+                          const bool request_edges):
     nx_(nx), ny_(ny), nz_(nz),
     x0_(x0), x1_(x1),
     y0_(y0), y1_(y1),
-    z0_(z0), z1_(z1)
+    z0_(z0), z1_(z1),
+    Mesh(verbosity_obj,request_faces,request_edges)
 {
   Mesh::set_comm(communicator);
   Mesh::set_mesh_type(RECTANGULAR);
@@ -45,7 +48,9 @@ Mesh_simple::Mesh_simple (double x0, double y0,
                           int nx, int ny, 
                           const Epetra_MpiComm *communicator,
                           const AmanziGeometry::GeometricModelPtr &gm,
-                          const VerboseObject *verbosity_obj) 
+                          const VerboseObject *verbosity_obj,
+                          const bool request_faces,
+                          const bool request_edges) 
 {
   Exceptions::amanzi_throw(Errors::Message("Simple mesh cannot generate 2D meshes"));
 }
@@ -55,7 +60,10 @@ Mesh_simple::Mesh_simple (double x0, double y0,
 Mesh_simple::Mesh_simple ( Teuchos::ParameterList &parameter_list,
 			   const Epetra_MpiComm *communicator,
 			   const AmanziGeometry::GeometricModelPtr &gm,
-                          const VerboseObject *verbosity_obj)
+                           const VerboseObject *verbosity_obj,
+                           const bool request_faces,
+                           const bool request_edges) :
+  Mesh(verbosity_obj,request_faces,request_edges)
 {
   Mesh::set_comm(communicator);
   Mesh::set_mesh_type(RECTANGULAR);
@@ -69,7 +77,10 @@ Mesh_simple::Mesh_simple ( Teuchos::ParameterList &parameter_list,
 Mesh_simple::Mesh_simple (const GenerationSpec& gspec,
                           const Epetra_MpiComm *communicator,
                           const AmanziGeometry::GeometricModelPtr &gm,
-                          const VerboseObject *verbosity_obj)
+                          const VerboseObject *verbosity_obj,
+                          const bool request_faces,
+                          const bool request_edges) :
+  Mesh(verbosity_obj,request_faces,request_edges)
 {
   Mesh::set_comm(communicator);
   Mesh::set_mesh_type(RECTANGULAR);
@@ -87,17 +98,33 @@ Mesh_simple::Mesh_simple (const Mesh *inmesh,
                           const std::vector<std::string>& setnames, 
                           const Entity_kind setkind,
                           const bool flatten,
-                          const bool extrude)
+                          const bool extrude,
+                          const bool request_faces,
+                          const bool request_edges)
 {  
   Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the Simple mesh framework\n");
   Exceptions::amanzi_throw(mesg);
 }
 
-Mesh_simple::Mesh_simple (const Mesh_simple& inmesh, 
+Mesh_simple::Mesh_simple (const Mesh& inmesh, 
                           const std::vector<std::string>& setnames, 
                           const Entity_kind setkind,
                           const bool flatten,
-                          const bool extrude)
+                          const bool extrude,
+                          const bool request_faces,
+                          const bool request_edges)
+{  
+  Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the Simple mesh framework\n");
+  Exceptions::amanzi_throw(mesg);
+}
+
+Mesh_simple::Mesh_simple (const Mesh& inmesh, 
+                          const std::vector<int>& entity_id_list, 
+                          const Entity_kind entity_kind,
+                          const bool flatten,
+                          const bool extrude,
+                          const bool request_faces,
+                          const bool request_edges)
 {  
   Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the Simple mesh framework\n");
   Exceptions::amanzi_throw(mesg);

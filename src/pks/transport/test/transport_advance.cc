@@ -12,7 +12,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "UnitTest++.h"
 
 #include "FrameworkTraits.hh"
@@ -46,12 +46,10 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
     // read parameter list
     std::string xmlFileName("test/transport_advance.xml");
     if (frm == 2) xmlFileName = "test/transport_advance_simple.xml";
-
-    ParameterXMLFileReader xmlreader(xmlFileName);
-    ParameterList plist = xmlreader.getParameters();
+    Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
     // create a mesh
-    ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+    ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
 
     FrameworkPreference pref;
@@ -74,13 +72,17 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
     component_names.push_back("Component 0");
     component_names.push_back("Component 1");
 
-    RCP<State> S = rcp(new State());
+    Teuchos::ParameterList state_list = plist->sublist("State");
+    RCP<State> S = rcp(new State(state_list));
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
     S->set_time(0.0);
     S->set_intermediate_time(0.0);
 
-    Transport_PK TPK(plist, S, component_names);
+    Transport_PK TPK(plist, S, "Transport", component_names);
+    TPK.Setup();
     TPK.CreateDefaultState(mesh, 2);
+    S->InitializeFields();
+    S->InitializeEvaluators();
 
     // modify the default state for the problem at hand
     std::string passwd("state"); 
@@ -95,7 +97,7 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
     }
 
     // initialize a transport process kernel
-    TPK.Initialize(S.ptr());
+    TPK.Initialize();
     TPK.PrintStatistics();
 
     // advance the state

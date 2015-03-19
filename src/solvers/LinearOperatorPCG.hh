@@ -117,15 +117,6 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
   r.Norm2(&rnorm0);
   residual_ = rnorm0;
 
-  h_->ApplyInverse(r, p);  // gamma = (H r,r)
-  double gamma0;
-  p.Dot(r, &gamma0);
-  if (gamma0 <= 0) {
-    if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-      *vo_->os() << "Failed: non-SPD ApplyInverse: gamma0 = " << gamma0 << std::endl;
-    return LIN_SOLVER_NON_SPD_APPLY_INVERSE;
-  }
-
   // Ignore all criteria if one iteration is enforced.
   if (rnorm0 > overflow_tol_) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
@@ -148,6 +139,22 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
 	return LIN_SOLVER_ABSOLUTE_RESIDUAL;
       }
     }
+  }
+
+  // rare case that can happen in practise
+  if (rnorm0 == 0.0) {
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+      *vo_->os() << "Converged, itr = " << num_itrs_ << " ||r|| = " << residual_ << std::endl;
+    return criteria;  // Convergence for all criteria
+  }
+
+  h_->ApplyInverse(r, p);  // gamma = (H r,r)
+  double gamma0;
+  p.Dot(r, &gamma0);
+  if (gamma0 <= 0) {
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+      *vo_->os() << "Failed: non-SPD ApplyInverse: gamma0=" << gamma0 << std::endl;
+    return LIN_SOLVER_NON_SPD_APPLY_INVERSE;
   }
 
   for (int i = 0; i < max_itrs; i++) {

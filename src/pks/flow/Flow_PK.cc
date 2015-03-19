@@ -35,16 +35,38 @@ Flow_PK::Flow_PK() :
     bc_head(NULL),
     bc_seepage(NULL),
     src_sink(NULL),
-    ti_specs(NULL),
     vo_(NULL),
-    passwd_("state")
+    passwd_("flow")
 {
 }
 
+
 /* ******************************************************************
-* Initiazition of fundamental flow sturctures.                                              
+* Setup of static fields common for Darcy and Richards.
 ****************************************************************** */
-void Flow_PK::Init()
+void Flow_PK::Setup()
+{
+  if (!S_->HasField("fluid_density")) {
+    S_->RequireScalar("fluid_density", passwd_);
+  }
+  if (!S_->HasField("fluid_viscosity")) {
+    S_->RequireScalar("fluid_viscosity", passwd_);
+  }
+  if (!S_->HasField("gravity")) {
+    S_->RequireConstantVector("gravity", passwd_, dim);  // state resets ownership.
+  } 
+
+  if (!S_->HasField("permeability")) {
+    S_->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, dim);
+  }
+}
+
+
+/* ******************************************************************
+* Initiazition of fundamental flow sturctures.
+****************************************************************** */
+void Flow_PK::Initialize()
 {
   T_physics = dT = 0.0;
 
@@ -66,14 +88,185 @@ void Flow_PK::Init()
   g_ = fabs(gravity_[dim - 1]);
 
   // Other constant (temporarily) physical quantaties
-  rho_ = *(S_->GetScalarData("fluid_density"));
-  mu_ = *(S_->GetScalarData("fluid_viscosity"));
+  rho_ = *S_->GetScalarData("fluid_density");
+  mu_ = *S_->GetScalarData("fluid_viscosity");
 
   // parallel execution data
   MyPID = 0;
 #ifdef HAVE_MPI
   MyPID = mesh_->cell_map(false).Comm().MyPID();
 #endif
+
+  InitializeFields_();
+}
+
+
+/* ****************************************************************
+* This completes initialization of common fields that were not 
+* initialized by the state.
+**************************************************************** */
+void Flow_PK::InitializeFields_()
+{
+  Teuchos::OSTab tab = vo_->getOSTab();
+
+  // set popular default values for missed fields.
+  if (S_->GetField("porosity")->owner() == passwd_) {
+    if (!S_->GetField("porosity", passwd_)->initialized()) {
+      S_->GetFieldData("porosity", passwd_)->PutScalar(0.2);
+      S_->GetField("porosity", passwd_)->set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initilized porosity to default value 0.2" << std::endl;  
+    }
+  }
+
+  if (S_->GetField("fluid_density")->owner() == passwd_) {
+    if (!S_->GetField("fluid_density", passwd_)->initialized()) {
+      *(S_->GetScalarData("fluid_density", passwd_)) = 1000.0;
+      S_->GetField("fluid_density", passwd_)->set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initilized fluid_density to default value 1000.0" << std::endl;  
+    }
+  }
+
+  if (!S_->GetField("fluid_viscosity", passwd_)->initialized()) {
+    *(S_->GetScalarData("fluid_viscosity", passwd_)) = 0.001;
+    S_->GetField("fluid_viscosity", passwd_)->set_initialized();
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+        *vo_->os() << "initilized fluid_viscosity to default value 0.001" << std::endl;  
+  }
+
+  if (!S_->GetField("gravity", "state")->initialized()) {
+    Epetra_Vector& gvec = *S_->GetConstantVectorData("gravity", "state");
+    gvec.PutScalar(0.0);
+    gvec[dim - 1] = -9.80;
+    S_->GetField("gravity", "state")->set_initialized();
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+        *vo_->os() << "initilized gravity to default value -9.8" << std::endl;  
+  }
+
+  if (!S_->GetField("permeability", passwd_)->initialized()) {
+    S_->GetFieldData("permeability", passwd_)->PutScalar(1.0);
+    S_->GetField("permeability", passwd_)->set_initialized();
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+        *vo_->os() << "initilized permeability to default value 1.0" << std::endl;  
+  }
+
+  if (S_->HasField("specific_storage")) {
+    if (!S_->GetField("specific_storage", passwd_)->initialized()) {
+      S_->GetFieldData("specific_storage", passwd_)->PutScalar(0.0);
+      S_->GetField("specific_storage", passwd_)->set_initialized();
+    }
+  }
+
+  if (S_->HasField("specific_yield")) {
+    if (!S_->GetField("specific_yield", passwd_)->initialized()) {
+      S_->GetFieldData("specific_yield", passwd_)->PutScalar(0.0);
+      S_->GetField("specific_yield", passwd_)->set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initilized specific_yield to default value 1.0" << std::endl;  
+    }
+  }
+
+  if (!S_->GetField("pressure", passwd_)->initialized()) {
+    S_->GetFieldData("pressure", passwd_)->PutScalar(0.0);
+    S_->GetField("pressure", passwd_)->set_initialized();
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+        *vo_->os() << "initilized pressure to default value 0.0" << std::endl;  
+  }
+
+  if (!S_->GetField("hydraulic_head", passwd_)->initialized()) {
+    S_->GetFieldData("hydraulic_head", passwd_)->PutScalar(0.0);
+    S_->GetField("hydraulic_head", passwd_)->set_initialized();
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+        *vo_->os() << "initilized hydraulic_head to default value 0.0" << std::endl;  
+  }
+
+  if (!S_->GetField("darcy_flux", passwd_)->initialized()) {
+    S_->GetFieldData("darcy_flux", passwd_)->PutScalar(0.0);
+    S_->GetField("darcy_flux", passwd_)->set_initialized();
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+        *vo_->os() << "initilized darcy_flux to default value 0.0" << std::endl;  
+  }
+}
+
+
+/* ****************************************************************
+* Hydraulic head support for Flow PKs.
+**************************************************************** */
+void Flow_PK::UpdateLocalFields_() 
+{
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    *vo_->os() << "Secondary fields: hydraulic head, darcy_velocity" << std::endl;  
+  }  
+
+  Epetra_MultiVector& hydraulic_head = *(S_->GetFieldData("hydraulic_head", passwd_)->ViewComponent("cell"));
+  const Epetra_MultiVector& pressure = *(S_->GetFieldData("pressure")->ViewComponent("cell"));
+  double rho = *(S_->GetScalarData("fluid_density"));
+
+  // calculate hydraulic head
+  double g = fabs(gravity_[dim - 1]);
+
+  for (int c = 0; c != ncells_owned; ++c) {
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c); 
+    double z = xc[dim - 1]; 
+    hydraulic_head[0][c] = z + (pressure[0][c] - atm_pressure_) / (g * rho);
+  }
+
+  // calculate full velocity vector
+  darcy_flux_eval_->SetFieldAsChanged(S_.ptr());
+  S_->GetFieldEvaluator("darcy_velocity")->HasFieldChanged(S_.ptr(), "darcy_velocity");
+}
+
+
+/* ******************************************************************
+* Routine processes parameter list. It needs to be called only once
+* on each processor.                                                     
+****************************************************************** */
+void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
+{
+  // Process main one-line options (not sublists)
+  atm_pressure_ = plist.get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);
+  coordinate_system = plist.get<std::string>("absolute permeability coordinate system", "cartesian");
+
+  // Create the BC objects.
+  bc_model.resize(nfaces_wghost, 0);
+  bc_submodel.resize(nfaces_wghost, 0);
+  bc_value.resize(nfaces_wghost, 0.0);
+  bc_mixed.resize(nfaces_wghost, 0.0);
+  rainfall_factor.resize(nfaces_wghost, 1.0);
+
+  Teuchos::RCP<Teuchos::ParameterList>
+      bc_list = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("boundary conditions", true)));
+  FlowBCFactory bc_factory(mesh_, bc_list);
+
+  bc_pressure = bc_factory.CreatePressure(bc_submodel);
+  bc_head = bc_factory.CreateStaticHead(atm_pressure_, rho_, gravity_, bc_submodel);
+  bc_flux = bc_factory.CreateMassFlux(bc_submodel);
+  bc_seepage = bc_factory.CreateSeepageFace(atm_pressure_, bc_submodel);
+
+  VV_ValidateBCs();
+  ProcessBCs();
+
+  // Create the source object if any
+  if (plist.isSublist("source terms")) {
+    std::string distribution_method_name = plist.get<std::string>("source and sink distribution method", "none");
+    ProcessStringSourceDistribution(distribution_method_name, &src_sink_distribution); 
+
+    Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(plist.sublist("source terms", true));
+    FlowSourceFactory src_factory(mesh_, src_list);
+    src_sink = src_factory.createSource();
+    src_sink_distribution = src_sink->CollectActionsList();
+  }
 }
 
 
@@ -264,6 +457,23 @@ void Flow_PK::CalculatePermeabilityFactorInWell()
     for (int i = 0; i < idim; i++) (*Kxy)[c] += K[c](i, i);
     (*Kxy)[c] /= idim;
   }
+
+  // parallelization using CV capability
+#ifdef HAVE_MPI
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh_);
+  cvs.SetGhosted(true);
+  cvs.SetComponent("cell", AmanziMesh::CELL, 1);
+
+  CompositeVector tmp(cvs, true);
+  Epetra_MultiVector& data = *tmp.ViewComponent("cell", true);
+
+  data = *Kxy;
+  tmp.ScatterMasterToGhosted("cell", true);
+  for (int c = ncells_owned; c < ncells_wghost; c++) {
+    (*Kxy)[c] = data[0][c];
+  }
+#endif
 }
 
 
@@ -419,8 +629,22 @@ void Flow_PK::WriteGMVfile(Teuchos::RCP<State> FS) const
   GMV::open_data_file(*mesh_, (std::string)"flow.gmv");
   GMV::start_data();
   GMV::write_cell_data(*(S_->GetFieldData("pressure")->ViewComponent("cell")), 0, "pressure");
-  GMV::write_cell_data(*(S_->GetFieldData("water_saturation")->ViewComponent("cell")), 0, "saturation");
+  GMV::write_cell_data(*(S_->GetFieldData("saturation_liquid")->ViewComponent("cell")), 0, "saturation");
   GMV::close_data_file();
+}
+
+
+/* ****************************************************************
+* Process string for the linear solver.
+**************************************************************** */
+void Flow_PK::ProcessStringSourceDistribution(const std::string name, int* method)
+{
+  if (name != "none") {
+    Errors::Message msg;
+    msg << "\nFlow_PK: \"source and sink distribution method\" is obsolete.\n"
+        << "         see desription of sublist \"source terms\" in the native spec.\n";
+    Exceptions::amanzi_throw(msg);
+  }
 }
 
 }  // namespace Flow

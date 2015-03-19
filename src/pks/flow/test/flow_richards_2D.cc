@@ -15,22 +15,24 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
 
-#include "MeshFactory.hh"
-#include "MeshAudit.hh"
+// Amanzi
 #include "GMVMesh.hh"
-
+#include "MeshAudit.hh"
+#include "MeshFactory.hh"
 #include "State.hh"
+
+// Flow
 #include "Richards_PK.hh"
+#include "Richards_SteadyState.hh"
 
 /* **************************************************************** */
 TEST(FLOW_2D_RICHARDS) {
-  using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -43,11 +45,11 @@ TEST(FLOW_2D_RICHARDS) {
 
   /* read parameter list */
   std::string xmlFileName = "test/flow_richards_2D.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
+  Teuchos::ParameterList plist = xmlreader.getParameters();
 
   /* create a mesh framework */
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
   FrameworkPreference pref;
@@ -57,24 +59,24 @@ TEST(FLOW_2D_RICHARDS) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  RCP<const Mesh> mesh = meshfactory(0.0, -2.0, 1.0, 0.0, 18, 18, gm);
+  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, -2.0, 1.0, 0.0, 18, 18, gm);
 
   /* create a simple state and populate it */
-  Amanzi::VerboseObject::hide_line_prefix = false;
+  Teuchos::ParameterList state_list = plist.sublist("State");
+  Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
+  S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
-  ParameterList state_list;
-  RCP<State> S = rcp(new State(state_list));
-  S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+  Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
+  Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
+  Richards_PK* RPK = new Richards_PK(global_list, "Flow", S, soln);
 
-  Richards_PK* RPK = new Richards_PK(plist, S);
+  RPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
-  RPK->InitializeFields();
-  S->CheckAllFieldsInitialized();
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state"); 
+  std::string passwd("flow"); 
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell");
   
   AmanziMesh::Entity_ID_List block;
@@ -94,7 +96,7 @@ TEST(FLOW_2D_RICHARDS) {
 
   *S->GetScalarData("fluid_density", passwd) = 1.0;
   *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
-  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", passwd);
+  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
   gravity[1] = -1.0;
 
   /* create the initial pressure function */
@@ -106,16 +108,18 @@ TEST(FLOW_2D_RICHARDS) {
   }
 
   /* initialize the Richards process kernel */
-  RPK->Initialize(S.ptr());
-  RPK->ti_specs_sss().T1 = 100.0;
-  RPK->ti_specs_sss().max_itrs = 400;
-
-  RPK->InitializeAuxiliaryData();
-  RPK->InitSteadyState(0.0, 1e-8);
+  RPK->Initialize();
+  S->CheckAllFieldsInitialized();
 
   /* solve the problem */
-  RPK->AdvanceToSteadyState(0.0, 0.1);
-  RPK->CommitState(0.0, S.ptr());
+  TI_Specs ti_specs;
+  ti_specs.T0 = 0.0;
+  ti_specs.dT0 = 1.0;
+  ti_specs.T1 = 100.0;
+  ti_specs.max_itrs = 400;
+
+  AdvanceToSteadyState(S, *RPK, ti_specs, S->GetFieldData("pressure", "flow"));
+  RPK->CommitStep(0.0, S.ptr());
 
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");

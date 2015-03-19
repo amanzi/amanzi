@@ -140,7 +140,7 @@ int DenseMatrix::Multiply(const DenseMatrix& A,
 /* ******************************************************************
 * Matrix-vector product. The matrix is ordered by columns.
 ****************************************************************** */
-int DenseMatrix::Multiply(const DenseVector& A, DenseVector& B, bool transpose)
+int DenseMatrix::Multiply(const DenseVector& A, DenseVector& B, bool transpose) const
 {
   const double* dataA = A.Values();
   double* dataB = B.Values();
