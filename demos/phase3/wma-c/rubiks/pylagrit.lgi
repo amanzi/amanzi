@@ -1,6 +1,0 @@
-# PyLaGriT generated LaGriT script
-cmo/create/mo1/0/0/tet
-cmo select mo1
-createpts/brick/xyz/4,4,4/0.0,0.0,0.0/1.0,1.0,1.0/1,1,1/0,0,0/1,1,1
-cmo select mo1
-dump/exo/rubiks.exo/mo1/ / 
