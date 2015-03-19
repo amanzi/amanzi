@@ -35,6 +35,27 @@ def GetXY_Amanzi(path,root,time,comp):
     
     return (x_amanzi_alquimia, c_amanzi_alquimia)
 
+def GetXY_AmanziS(path,root,time,comp):
+    try:
+        import fsnapshot
+        fsnok = True
+    except:
+        fsnok = False
+
+    #import pdb; pdb.set_trace()
+
+    plotfile = os.path.join(path,root)
+    if os.path.isdir(plotfile) & fsnok:
+        (nx, ny, nz) = fsnapshot.fplotfile_get_size(plotfile)
+        x = np.zeros( (nx), dtype=np.float64)
+        y = np.zeros( (nx), dtype=np.float64)
+        (y, x, npts, err) = fsnapshot.fplotfile_get_data_1d(plotfile, comp, y, x)
+    else:
+        x = np.zeros( (0), dtype=np.float64)
+        y = np.zeros( (0), dtype=np.float64)
+    
+    return (x, y)
+
 # ----------- PFLOTRAN STANDALONE ------------------------------------------------------------
 
 def GetXY_PFloTran(path,root,time,comp):
@@ -100,8 +121,8 @@ if __name__ == "__main__":
     times_CF_surf = ['totsurface5.out']
     times_CF_pH = ['pH5.out']
 
-# amanzi output (native and alquimia)
-    amanzi_totc_templ = "total_component_concentration.cell.{} conc" #Component {0} conc"
+# amanzi output (unstructured - native and alquimia)
+    amanzi_totc_templ = "total_component_concentration.cell.{0} conc" #Component {0} conc"
     amanzi_totc = [amanzi_totc_templ.format(x) for x in components] #range(len(components))]
     amanzi_totc_crunch = [amanzi_totc_templ.format(x) for x in compcrunch] #range(len(components))]
 
@@ -109,7 +130,14 @@ if __name__ == "__main__":
     amanzi_sorb = [amanzi_sorb_templ.format(x) for x in range(len(components))]
     amanzi_sorb_crunch = [amanzi_sorb_templ.format(x) for x in range(len(compcrunch))]
 
-# read pflotran results
+# amanzi output (structured - alquimia)
+    amanzi_totc_templ = "{0}_Aqueous_Concentration"
+    amanzi_totcS = [amanzi_totc_templ.format(x) for x in components]
+
+    amanzi_sorb_templ = "{0}_Sorbed_Concentration"
+    amanzi_sorbS = [amanzi_sorb_templ.format(x) for x in components]
+
+# read pflotran results --->
     path_to_pflotran = "pflotran"
 
     u_pflotran = [[[] for x in range(len(comppflo))] for x in range(len(timespflo))]
@@ -130,7 +158,7 @@ if __name__ == "__main__":
           x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,comp)
           pH_pflotran[i] = c_pflotran
 
-# read crunchflow results
+# read crunchflow results --->
     path_to_crunch = "crunchflow"
 
     try: 
@@ -160,23 +188,7 @@ if __name__ == "__main__":
     except: 
         crunch = False
 
-# define subplots as a subgrid
-    fig = plt.figure(figsize=(15,12))
-
-    ax = [] # total concentrations
-    bx = [] # sorbed concentrations
-
-    nrows = len(components) + 1
-    ncols = 2 
-
-    for comp in range(len(components)):
-
-        ax += [plt.subplot(nrows,ncols,2*comp+1)]
-        bx += [plt.subplot(nrows,ncols,2*comp+2)]
-
-    px = plt.subplot(nrows,1,nrows)
-
-# Amanzi native chemistry
+# Amanzi native chemistry --->
     try:
 
         input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
@@ -205,7 +217,7 @@ if __name__ == "__main__":
         
         pass
 
-# Amanzi-Alquimia-PFlotran
+# Amanzi-Alquimia-PFlotran --->
     try:  
 
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq.xml")
@@ -216,9 +228,6 @@ if __name__ == "__main__":
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_totc):
                 x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
-##              if j == 0:
-##                       u_amanzi_alquimia[i][j] = -np.log10(c_amanzi_alquimia)
-##              else:         
                 u_amanzi_alquimia[i][j] = c_amanzi_alquimia
               
         v_amanzi_alquimia = [[[] for x in range(len(amanzi_sorb))] for x in range(len(times))]
@@ -239,6 +248,102 @@ if __name__ == "__main__":
 
         alq = False
 
+# Amanzi-Alquimia-Crunch --->
+    try:
+        input_filename = os.path.join("amanzi-u-1d-surface-complexation-alq-crunch.xml")
+        path_to_amanzi = "amanzi-alquimia-crunch-output"
+        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-surface-complexation-crunch.in","surface-complexation.dbs"])
+
+        u_amanzi_alquimia_crunch = [[[] for x in range(len(amanzi_totc))] for x in range(len(times))]
+        for i, time in enumerate(times):
+           for j, comp in enumerate(amanzi_totc):
+                x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+                u_amanzi_alquimia_crunch[i][j] = c_amanzi_alquimia_crunch
+              
+        v_amanzi_alquimia_crunch = [[[] for x in range(len(amanzi_sorb))] for x in range(len(times))]
+        for i, time in enumerate(times):
+           for j, comp in enumerate(amanzi_sorb):
+              x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+              v_amanzi_alquimia_crunch[i][j] = c_amanzi_alquimia_crunch
+
+        pH_amanzi_alquimia_crunch = [ [] for x in range(len(times)) ]
+        comp = 'pH.cell.0'
+        for i, time in enumerate(times):
+              x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+              pH_amanzi_alquimia_crunch[i] = c_amanzi_alquimia_crunch ## -np.log10(c_amanzi_native)
+
+        alq_crunch = True
+
+    except:
+        
+        alq_crunch = False
+
+
+    # amanziS data  ------>
+    
+    # +pflotran
+    try:
+        input_filename = os.path.join("amanzi-s-1d-surface-complexation-alq.xml")
+        path_to_amanziS = "struct_amanzi-output-pflo"
+        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
+        root_amanziS = "plt00501"
+
+        u_amanziS = [[[] for x in range(len(amanzi_totcS))] for x in range(len(times))]
+        for i, time in enumerate(times):
+           for j, comp in enumerate(amanzi_totcS):
+                x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,comp)
+                u_amanziS[i][j] = c_amanziS
+              
+        struct = len(x_amanziS)
+
+        v_amanziS = [[[] for x in range(len(amanzi_sorbS))] for x in range(len(times))]
+        for i, time in enumerate(times):
+           for j, comp in enumerate(amanzi_sorbS):
+              x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,comp)
+              v_amanziS[i][j] = c_amanziS
+
+        pH_amanziS = [ [] for x in range(len(times)) ]
+        comp = 'H+_Free_Ion_Guess'
+        for i, time in enumerate(times):
+              x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,comp)
+              pH_amanziS[i] = -np.log10(c_amanziS)
+
+    except:
+        struct = 0
+
+    # +crunchflow
+    try:
+        input_filename = os.path.join("amanzi-s-1d-surface-complexation-alq-crunch.xml")
+        path_to_amanziS = "struct_amanzi-output-crunch"
+        import pdb; pdb.set_trace()
+        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
+        root_amanziS = "plt00501"
+
+        u_amanziS_crunch = [[[] for x in range(len(amanzi_totcS))] for x in range(len(times))]
+        for i, time in enumerate(times):
+           for j, comp in enumerate(amanzi_totcS):
+                x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,comp)
+                u_amanziS_crunch[i][j] = c_amanziS_crunch
+              
+        struct_c = len(x_amanziS_crunch)
+
+        v_amanziS_crunch = [[[] for x in range(len(amanzi_sorbS))] for x in range(len(times))]
+        for i, time in enumerate(times):
+           for j, comp in enumerate(amanzi_sorbS):
+              x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,comp)
+              v_amanziS_crunch[i][j] = c_amanziS_crunch
+
+        pH_amanziS_crunch = [ [] for x in range(len(times)) ]
+        comp = 'H+_Free_Ion_Guess'
+        for i, time in enumerate(times):
+              x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,comp)
+              pH_amanziS_crunch[i] = -np.log10(c_amanziS_crunch)
+
+    except:
+        struct_c = 0
+
+## ------------------------------------------------------------------------
+
     ## colors= ['r','b','m','g'] # components
     ## styles = ['-','--','x'] # codes
     ## codes = ['Amanzi+Alquimia(PFloTran)','Amanzi Native Chemistry','PFloTran'] + [None,]*9
@@ -251,6 +356,22 @@ if __name__ == "__main__":
     # first
     # ax[0],b[0] ---> Aqueous concentrations
     # ax[1]      ---> pH
+
+# define subplots as a subgrid
+    fig = plt.figure(figsize=(15,12))
+
+    ax = [] # total concentrations
+    bx = [] # sorbed concentrations
+
+    nrows = len(components) + 1
+    ncols = 2 
+
+    for comp in range(len(components)):
+
+        ax += [plt.subplot(nrows,ncols,2*comp+1)]
+        bx += [plt.subplot(nrows,ncols,2*comp+2)]
+
+    px = plt.subplot(nrows,1,nrows)
 
     # for i, time in enumerate(times):
     i = 0 # only one time point at 50 years
@@ -277,18 +398,49 @@ if __name__ == "__main__":
     for j, comp in enumerate(components):
 
            ax[j].plot(x_amanzi_native, u_amanzi_native[i][j],color='b',linestyle='None',marker='x',linewidth=2)
-           bx[j].plot(x_amanzi_native, v_amanzi_native[i][j],color='b',linestyle='None',marker='x',linewidth=2,label='Amanzi Native Chemistry')
+           bx[j].plot(x_amanzi_native, v_amanzi_native[i][j],color='b',linestyle='None',marker='x',linewidth=2,label='AmanziU Native Chemistry')
 
-    px.plot(x_amanzi_native, pH_amanzi_native[i],color='b',linestyle='None',marker='x',linewidth=2,label='Amanzi Native Chemistry')
+    px.plot(x_amanzi_native, pH_amanzi_native[i],color='b',linestyle='None',marker='x',linewidth=2,label='AmanziU Native Chemistry')
 
+# amanzi-unstructured-alquimia-pflotran
     if alq:
 
         for j, comp in enumerate(components):
 
             ax[j].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],color='r',linestyle='-',linewidth=2)
-            bx[j].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],color='r',linestyle='-',linewidth=2,label='Amanzi+Alquimia(PFloTran)')
+            bx[j].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],color='r',linestyle='-',linewidth=2,label='AmanziU+Alquimia(PFloTran)')
 
-        px.plot(x_amanzi_alquimia, pH_amanzi_alquimia[i],color='r',linestyle='-',linewidth=2,label='Amanzi+Alquimia(PFloTran)')
+        px.plot(x_amanzi_alquimia, pH_amanzi_alquimia[i],color='r',linestyle='-',linewidth=2,label='AmanziU+Alquimia(PFloTran)')
+
+# amanzi-unstructured-alquimia-crunchflow
+    if alq_crunch:
+
+        for j, comp in enumerate(components):
+
+            ax[j].plot(x_amanzi_alquimia_crunch, u_amanzi_alquimia_crunch[i][j],color='r',linestyle='None',marker='*',linewidth=2)
+            bx[j].plot(x_amanzi_alquimia_crunch, v_amanzi_alquimia_crunch[i][j],color='r',linestyle='None',marker='*',linewidth=2,label='AmanziU+Alquimia(CrunchFlow)')
+
+        px.plot(x_amanzi_alquimia_crunch, pH_amanzi_alquimia_crunch[i],color='r',linestyle='None',marker='*',linewidth=2,label='AmanziU+Alquimia(CrunchFlow)')
+
+# amanzi-structured-alquimia-pflotran
+    if struct:
+
+        for j, comp in enumerate(components):
+
+            ax[j].plot(x_amanziS, u_amanziS[i][j],color='g',linestyle='-',linewidth=2)
+            bx[j].plot(x_amanziS, v_amanziS[i][j],color='g',linestyle='-',linewidth=2,label='AmanziS+Alquimia(PFloTran)')
+
+        px.plot(x_amanziS, pH_amanziS[i],color='r',linestyle='-',linewidth=2,label='AmanziS+Alquimia(PFloTran)')
+
+# amanzi-structured-alquimia-crunchflow
+    if alq_crunch:
+
+        for j, comp in enumerate(components):
+
+            ax[j].plot(x_amanziS_crunch, u_amanziS_crunch[i][j],color='g',linestyle='None',marker='*',linewidth=2)
+            bx[j].plot(x_amanziS_crunch, v_amanziS_crunch[i][j],color='g',linestyle='None',marker='*',linewidth=2,label='AmanziS+Alquimia(CrunchFlow)')
+
+        px.plot(x_amanziS_crunch, pH_amanziS_crunch[i],color='g',linestyle='None',marker='*',linewidth=2,label='AmanziS+Alquimia(CrunchFlow)')
 
     # axes
     ax[len(components)-1].set_xlabel("Distance (m)",fontsize=15)

@@ -1,4 +1,4 @@
-`# plots calcium concentration along x at last time step 
+# plots calcium concentration along x at last time step 
 # benchmark: compares to pflotran simulation results
 # author: S.Molins - Sept. 2013
 
@@ -403,7 +403,7 @@ if __name__ == "__main__":
 ##            ax[2].plot(x_pflotran, VF_pflotran[i],'bx',label='PFloTran',linewidth=2)
             ax[2].plot(x_pflotran_OS, VF_pflotran_OS[i],'m-',label='PFloTran OS',linewidth=2)
 ##            ax[2].plot(x_crunchflow, VF_crunchflow[i],'y.',label='CrunchFlow GIMRT')
-            ax[2].plot(x_crunchflow, VF_crunchOS3D[i],'m*',label='CrunchFlow OS3D') #,markersize=20)
+            ax[2].plot(x_crunchflow, VF_crunchOS3D[i],'m*',label='CrunchFlow OS3D',markersize=7)
           else:
             if alq:
                    ax[2].plot(x_amanzi_alquimia, VF_amanzi_alquimia[i],'r-',linewidth=2)

@@ -94,10 +94,10 @@
         <Parameter name="Value" type="double" value="1.E-12"/>
       </ParameterList>
       <ParameterList name="Surface Complexation Sites">
-	<ParameterList name=">FeOH_s">
+	<ParameterList name=">FeOH_w">
 	  <Parameter name="Site Density" type="double" value="7.63550E-02"/>
 	</ParameterList>
-	<ParameterList name=">FeOH_w">
+	<ParameterList name=">FeOH_s">
 	  <Parameter name="Site Density" type="double" value="1.90800E-03"/>
 	</ParameterList>
       </ParameterList>
