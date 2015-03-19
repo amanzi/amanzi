@@ -112,7 +112,12 @@ class AnalyticBase {
         mesh_->node_get_coordinates(v, &xv);
         double tmp = pressure_exact(xv, t);
 
-        // std::cout << v << " " << tmp << " " << p[0][v] << std::endl;
+
+        if (std::abs(tmp - p[0][v]) > .01) {
+          Amanzi::AmanziGeometry::Point xv(2);
+          mesh_->node_get_coordinates(v, &xv);
+          std::cout << v << " at " << xv << " error: " << tmp << " " << p[0][v] << std::endl;
+        }
         l2_err += std::pow(tmp - p[0][v], 2.0) * volume / nnodes;
         inf_err = std::max(inf_err, tmp - p[0][v]);
         pnorm += std::pow(tmp, 2.0) * volume / nnodes;

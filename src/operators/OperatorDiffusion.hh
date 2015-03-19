@@ -85,8 +85,15 @@ class OperatorDiffusion {
 
   // boundary conditions
   virtual void SetBCs(const Teuchos::RCP<BCs>& bc) {
-    bc_ = bc;
+    if (bcs_.size() == 0) {
+      bcs_.resize(1);
+    }
+    bcs_[0] = bc;
     global_op_->SetBCs(bc);
+  }
+
+  virtual void AddBCs(const Teuchos::RCP<BCs>& bc) {
+    bcs_.push_back(bc);
   }
 
   // gravity terms -- may not be implemented
@@ -131,7 +138,7 @@ class OperatorDiffusion {
   Teuchos::RCP<Op> local_op_;
   Teuchos::RCP<Op> jac_op_;
   int global_op_schema_, local_op_schema_, jac_op_schema_;
-  Teuchos::RCP<BCs> bc_;
+  std::vector<Teuchos::RCP<BCs> > bcs_;
 
   // mesh info
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
