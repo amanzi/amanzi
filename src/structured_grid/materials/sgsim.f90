@@ -1065,7 +1065,7 @@
       end do
 
       if (idbg.gt.1) then
-         write(*,*) ' do_cond = ',do_cond
+!         write(*,*) ' do_cond = ',do_cond
          write(*,*) ' data file = ',datafl(1:40)
          write(*,*) ' input columns = ',ixl,iyl,izl,ivrl,iwt,isecvr
          write(*,*) ' trimming limits = ',tmin,tmax
