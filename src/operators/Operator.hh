@@ -83,6 +83,7 @@ class Op_Cell_FaceCell;
 class Op_Cell_Face;
 class Op_Cell_Cell;
 class Op_Cell_Node;
+class Op_Cell_Edge;
 class Op_Face_Cell;
 class Op_Node_Node;
 
@@ -169,6 +170,8 @@ class Operator {
       const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_Cell_Node& op,
       const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Cell_Edge& op,
+      const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_Cell_Cell& op,
       const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_Face_Cell& op,
@@ -194,6 +197,9 @@ class Operator {
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Node& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
+  virtual void SymbolicAssembleMatrixOp(const Op_Cell_Edge& op,
+          const SuperMap& map, GraphFE& graph,
+          int my_block_row, int my_block_col) const;
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
@@ -212,6 +218,9 @@ class Operator {
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
   virtual void AssembleMatrixOp(const Op_Cell_Node& op,
+          const SuperMap& map, MatrixFE& mat,
+          int my_block_row, int my_block_col) const;
+  virtual void AssembleMatrixOp(const Op_Cell_Edge& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
   virtual void AssembleMatrixOp(const Op_Cell_Cell& op,

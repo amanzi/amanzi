@@ -10,22 +10,18 @@
            Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_OPERATOR_CELLFACE_SCC_HH_
-#define AMANZI_OPERATOR_CELLFACE_SCC_HH_
+#ifndef AMANZI_OPERATOR_EDGE_HH_
+#define AMANZI_OPERATOR_EDGE_HH_
 
 #include "DenseMatrix.hh"
-#include "Operator_Cell.hh"
+#include "Operator.hh"
 
 /* ******************************************************************
-Operator whose unknowns are CELL + FACE, but which assembles the CELL only
-system and Schur complements the face.
+Operator whose unknowns are EDGE
 
-This uses special assembly.  Apply is done as if we had the full FACE+CELL
-system.  SymbolicAssembly() is done as if we had the CELL system, but with an
-additional step to get the layout due to the Schur'd system on FACE+CELL.
-Assemble, however, is done using a totally different approach.
-
----------------------------------------------------------------------
+NOTE that the only thing really implemented here is the visitor pattern Op
+acceptors.  Everything else should be done in the base class, with the
+exception of special assembly issues.
 
 1. Operator is a linear operator acting from linear space X to linear
 space Y. These spaces are described by CompositeVectors (CV). A few
@@ -58,39 +54,32 @@ Note. The operators can be initialized from other operators.
 namespace Amanzi {
 namespace Operators {
 
-class Operator_FaceCellScc : public Operator_Cell {
+class Operator_Edge : public Operator {
  public:
   // main constructor
-  // The input CVS is the domain and range of the operator
-  Operator_FaceCellScc(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-                       Teuchos::ParameterList& plist) :
-      Operator_Cell(cvs, plist, OPERATOR_SCHEMA_DOFS_CELL) {
-    set_schema_string("FACE+CELL Schur to CELL");
+  // The input CVS is the domain and range of the operator.
+  Operator_Edge(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
+                Teuchos::ParameterList& plist) :
+      Operator(cvs, plist, OPERATOR_SCHEMA_DOFS_EDGE) {
+    set_schema_string("EDGE");
   }
 
-  // Special Apply Inverse required to deal with schur complement
-  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
+  // rhs update which multiplies by cell
+  virtual void UpdateRHS(const CompositeVector& source, bool volume_included);
 
-  // Special AssembleMatrix required to deal with schur complement
-  virtual void AssembleMatrix(const SuperMap& map,
-          MatrixFE& matrix, int my_block_row, int my_block_col) const;
-  
-  // visit method for Apply -- this is identical to Operator_FaceCell's
-  // version.
-  virtual int ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
-      const CompositeVector& X, CompositeVector& Y) const;
+  // visit methods for Apply
+  virtual int ApplyMatrixFreeOp(const Op_Cell_Edge& op,
+          const CompositeVector& X, CompositeVector& Y) const;
 
-  // driver symbolic assemble creates the face-only supermap
-  virtual void SymbolicAssembleMatrix();
-
-  // visit method for sparsity structure of Schur complement
-  virtual void SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
+  // visit methods for symbolic assemble
+  virtual void SymbolicAssembleMatrixOp(const Op_Cell_Edge& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
-
- protected:
-  mutable std::vector<Teuchos::RCP<Op_Cell_Cell> > diag_ops_;
-  mutable std::vector<Teuchos::RCP<Op_Face_Cell> > schur_ops_;
+  
+  // visit methods for assemble
+  virtual void AssembleMatrixOp(const Op_Cell_Edge& op,
+          const SuperMap& map, MatrixFE& mat,
+          int my_block_row, int my_block_col) const;
 };
 
 }  // namespace Operators

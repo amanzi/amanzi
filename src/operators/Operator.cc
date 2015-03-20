@@ -29,6 +29,7 @@
 #include "Op_Cell_Face.hh"
 #include "Op_Cell_Cell.hh"
 #include "Op_Cell_Node.hh"
+#include "Op_Cell_Edge.hh"
 #include "Op_Face_Cell.hh"
 #include "Op_Node_Node.hh"
 
@@ -450,6 +451,18 @@ int Operator::ApplyMatrixFreeOp(const Op_Cell_Node& op,
 }
 
 
+int Operator::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
+                                const CompositeVector& X, CompositeVector& Y) const
+{
+  std::stringstream err;
+  err << "Invalid schema combination -- " << op.schema_string
+      << " cannot be used with a matrix on " << schema_string_;
+  Errors::Message message(err.str());
+  Exceptions::amanzi_throw(message);
+  return 1;
+}
+
+
 int Operator::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
                                 const CompositeVector& X, CompositeVector& Y) const
 {
@@ -600,6 +613,18 @@ void Operator::SymbolicAssembleMatrixOp(const Op_Cell_Node& op,
 }
 
 
+void Operator::SymbolicAssembleMatrixOp(const Op_Cell_Edge& op,
+                                        const SuperMap& map, GraphFE& graph,
+                                        int my_block_row, int my_block_col) const
+{
+  std::stringstream err;
+  err << "Invalid schema combination -- " << op.schema_string
+      << " cannot be used with a matrix on " << schema_string_;
+  Errors::Message message(err.str());
+  Exceptions::amanzi_throw(message);
+}
+
+
 void Operator::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
                                         const SuperMap& map, GraphFE& graph,
                                         int my_block_row, int my_block_col) const
@@ -670,6 +695,18 @@ void Operator::AssembleMatrixOp(const Op_Cell_Face& op,
 
 
 void Operator::AssembleMatrixOp(const Op_Cell_Node& op,
+                                const SuperMap& map, MatrixFE& mat,
+                                int my_block_row, int my_block_col) const
+{
+  std::stringstream err;
+  err << "Invalid schema combination -- " << op.schema_string
+      << " cannot be used with a matrix on " << schema_string_;
+  Errors::Message message(err.str());
+  Exceptions::amanzi_throw(message);
+}
+
+
+void Operator::AssembleMatrixOp(const Op_Cell_Edge& op,
                                 const SuperMap& map, MatrixFE& mat,
                                 int my_block_row, int my_block_col) const
 {

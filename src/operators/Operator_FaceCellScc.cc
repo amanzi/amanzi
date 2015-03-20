@@ -1,5 +1,5 @@
 /*
-  This is the Operator component of the Amanzi code.
+  This is the operators component of the Amanzi code.
 
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
@@ -28,53 +28,23 @@
 #include "Operator_FaceCellScc.hh"
 
 /* ******************************************************************
-   Operator whose unknowns are CELL + FACE, but which assembles the CELL only
-   system and Schur complements the face.
+Operator whose unknowns are CELL + FACE, but which assembles the CELL only
+system and Schur complements the face.
 
-   This uses special assembly.  Apply is done as if we had the full FACE+CELL
-   system.  SymbolicAssembly() is done as if we had the CELL system, but with an
-   additional step to get the layout due to the Schur'd system on FACE+CELL.
-   Assemble, however, is done using a totally different approach.
-
-   ---------------------------------------------------------------------
-
-   1. Operator is a linear operator acting from linear space X to linear
-   space Y. These spaces are described by CompositeVectors (CV). A few
-   maps X->Y is supported.
-
-   At the moment X = Y. Extension to TreeVectors should not be done in
-   this class.
-
-   2. Operator is an un-ordered additive collection of lower-rank (or
-   equal) simple operators. During its construction, an operator can
-   only grow by assimilating more operators.
-
-   At the moment, an operator cannot be split into two operators, but
-   there are no desing restriction for doing it in the future.
-
-   3. A simple operator (a set of 1 operators) is defined by triple:
-   scheme + elemental matrices + diagonal matrix. The schema specifies
-   structure of elemental matrices, e.g. cell-based matrices
-   representing interation between face-based unknowns.
-
-   4. Operator can be converted to Epetra_FECrsMatrix matrix to generate
-   a preconditioner. This operation cannot be applied to a subset of
-   defining operators.
-
-   Note. The operators can be initialized from other operators.
-   Since data are never copied by default, we have to track
-   down the ownership of data.
-   ****************************************************************** */
+This uses special assembly.  Apply is done as if we had the full FACE+CELL
+system.  SymbolicAssembly() is done as if we had the CELL system, but with an
+additional step to get the layout due to the Schur'd system on FACE+CELL.
+Assemble, however, is done using a totally different approach.
+****************************************************************** */
 
 namespace Amanzi {
 namespace Operators {
 
 // Special Apply Inverse required to deal with schur complement
-int
-Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
+int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
   int ierr(0);
-  Y.PutScalarGhosted(0.);
+  Y.PutScalarGhosted(0.0);
 
   // apply preconditioner inversion
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
@@ -130,12 +100,6 @@ Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector& Y)
   // Solve the Schur complement system Scc * Yc = Tc.
   {
     Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
-
-    // // dump the schur complement
-    // std::stringstream filename_s2;
-    // filename_s2 << "schur_PC_" << 0 << ".txt";
-    // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *A_);
-
     preconditioner_->ApplyInverse(Tc, Yc);
   }
 
@@ -172,10 +136,10 @@ Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector& Y)
   return ierr;
 }
 
+
 // Special AssembleMatrix required to deal with schur complement
-void
-Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
-        int my_block_row, int my_block_col) const
+void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
+                                          int my_block_row, int my_block_col) const
 {
   // first check preconditions -- Scc must have exactly one face-based schema (a FACE+CELL)
   int num_with_faces = 0;
@@ -339,11 +303,11 @@ Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
   } // for
 }
 
+
 // visit method for Apply -- this is identical to Operator_FaceCell's
 // version.
-int
-Operator_FaceCellScc::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
-        const CompositeVector& X, CompositeVector& Y) const
+int Operator_FaceCellScc::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
+                                            const CompositeVector& X, CompositeVector& Y) const
 {
   ASSERT(op.matrices.size() == ncells_owned);
 
@@ -383,8 +347,7 @@ Operator_FaceCellScc::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
 /* ******************************************************************
  * Create a global matrix.
  ****************************************************************** */
-void
-Operator_FaceCellScc::SymbolicAssembleMatrix()
+void Operator_FaceCellScc::SymbolicAssembleMatrix()
 {
   // SuperMap for Sff is face only
   CompositeVectorSpace smap_space;
@@ -410,10 +373,9 @@ Operator_FaceCellScc::SymbolicAssembleMatrix()
 
 
 // visit method for sparsity structure of Schur complement
-void
-Operator_FaceCellScc::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
-        const SuperMap& map, GraphFE& graph,
-        int my_block_row, int my_block_col) const
+void Operator_FaceCellScc::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
+                                                    const SuperMap& map, GraphFE& graph,
+                                                    int my_block_row, int my_block_col) const
 {
   std::string name = "Scc alt as FACE_CELL";
   Op_Face_Cell schur_op(name, mesh_);
@@ -423,7 +385,6 @@ Operator_FaceCellScc::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
   Op_Cell_Cell diag_op(name, mesh_);
   Operator_Cell::SymbolicAssembleMatrixOp(diag_op, map, graph, my_block_row, my_block_col);
 }
-
 
 }  // namespace Operators
 }  // namespace Amanzi
