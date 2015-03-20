@@ -349,12 +349,21 @@ class Mesh
   // are computed for all cells the first time one of these routines
   // is called and then cached
 
+  // Number of columns in mesh
+
+  int num_columns() const {
+    if (!columns_built) build_columns();
+    return column_cells.size(); // number of vector of vectors
+  }
+  
   // Given a column ID, get the cells of the column
 
   Entity_ID_List const & cells_of_column(const int columnID) const {
     if (!columns_built) build_columns();
     return column_cells[columnID];
   }
+
+  // Given a column ID, get the cells of the column
 
   Entity_ID_List const & faces_of_column(const int columnID) const {
     if (!columns_built) build_columns();
@@ -368,13 +377,6 @@ class Mesh
     return columnID[cellid];
   }
 
-  // Number of columns in mesh
-
-  int num_columns() const {
-    if (!columns_built) build_columns();
-    return column_cells.size(); // number of vector of vectors
-  }
-  
   Entity_ID cell_get_cell_above(const Entity_ID cellid) const {
     if (!columns_built) build_columns();
     return cell_cellabove[cellid];

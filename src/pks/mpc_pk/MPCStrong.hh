@@ -301,18 +301,18 @@ double MPCStrong<PK_Base>::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   double norm = 0.0;
 
   // loop over sub-PKs
-  for (unsigned int i=0; i!=sub_pks_.size(); ++i) {
+  for (unsigned int i = 0; i != sub_pks_.size(); ++i) {
     // pull out the u sub-vector
     Teuchos::RCP<const TreeVector> pk_u = u->SubVector(i);
     if (pk_u == Teuchos::null) {
-      Errors::Message message("MPC: vector structure does not match PK structure");
+      Errors::Message message("MPCStrong: vector structure does not match PK structure");
       Exceptions::amanzi_throw(message);
     }
 
     // pull out the du sub-vector
     Teuchos::RCP<const TreeVector> pk_du = du->SubVector(i);
     if (pk_du == Teuchos::null) {
-      Errors::Message message("MPC: vector structure does not match PK structure");
+      Errors::Message message("MPCStrong: vector structure does not match PK structure");
       Exceptions::amanzi_throw(message);
     }
 

@@ -58,7 +58,7 @@ TwoPhaseEnergyEvaluator::TwoPhaseEnergyEvaluator(const TwoPhaseEnergyEvaluator& 
 Teuchos::RCP<FieldEvaluator> TwoPhaseEnergyEvaluator::Clone() const
 {
   return Teuchos::rcp(new TwoPhaseEnergyEvaluator(*this));
-};
+}
 
 
 /* ******************************************************************
@@ -72,7 +72,6 @@ void TwoPhaseEnergyEvaluator::EvaluateField_(
   const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell",false);
   const Epetra_MultiVector& u_l = *S->GetFieldData("internal_energy_liquid")->ViewComponent("cell",false);
 
-  // const Epetra_MultiVector& s_g = *S->GetFieldData("saturation_gas")->ViewComponent("cell",false);
   const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell",false);
   const Epetra_MultiVector& u_g = *S->GetFieldData("internal_energy_gas")->ViewComponent("cell",false);
 
@@ -84,7 +83,7 @@ void TwoPhaseEnergyEvaluator::EvaluateField_(
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh();
 
   int ncells = result->size("cell", false);
-  for (int c=0; c!=ncells; ++c) {
+  for (int c = 0; c != ncells; ++c) {
     double s_g = 1.0 - s_l[0][c];
     result_v[0][c] = phi[0][c] * (
         s_l[0][c] * n_l[0][c] * u_l[0][c]
@@ -92,7 +91,7 @@ void TwoPhaseEnergyEvaluator::EvaluateField_(
         + (1.0 - phi[0][c]) * u_rock[0][c] * rho_rock[0][c];
     result_v[0][c] *= mesh->cell_volume(c);
   }
-};
+}
 
 
 /* ******************************************************************
@@ -169,7 +168,7 @@ void TwoPhaseEnergyEvaluator::EvaluateFieldPartialDerivative_(
   for (int c = 0; c != ncells; ++c) {
     result_v[0][c] *= mesh->cell_volume(c);
   }
-};
+}
 
 }  // namespace Energy
 }  // namespace Amanzi

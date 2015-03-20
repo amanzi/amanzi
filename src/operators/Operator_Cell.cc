@@ -203,6 +203,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
     }
 
     ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[f]);
+    ASSERT(!ierr);
   }
   ASSERT(!ierr);
 }

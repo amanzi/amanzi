@@ -523,7 +523,7 @@ void CycleDriver::ReadParameterList_() {
 /* ******************************************************************
 * Acquire the chosen timestep size
 ****************************************************************** */
-double CycleDriver::get_dt() {
+double CycleDriver::get_dt( bool after_failure) {
   // get the physical step size
   double dt = pk_->get_dt();
 
@@ -539,7 +539,7 @@ double CycleDriver::get_dt() {
   }
 
   // ask the step manager if this step is ok
-  dt = tsm_->TimeStep(S_->time(), dt);
+  dt = tsm_->TimeStep(S_->time(), dt, after_failure);
   return dt;
 }
 
@@ -782,7 +782,7 @@ void CycleDriver::Go() {
 	S_->set_position(TIME_PERIOD_INSIDE);
 
         fail = Advance(dt);
-        dt = get_dt();
+        dt = get_dt(fail);
       }  // while not finished
       while ((S_->time() < tp_end_[time_period_id_]) &&  ((tp_max_cycle_[time_period_id_] == -1) 
                                      || (S_->cycle() - start_cycle_num <= tp_max_cycle_[time_period_id_])));
@@ -790,7 +790,7 @@ void CycleDriver::Go() {
       time_period_id_++;
       if (time_period_id_ < num_time_periods_){
         ResetDriver(time_period_id_); 
-        dt = get_dt();
+        dt = get_dt(false);
       }      
 
     }

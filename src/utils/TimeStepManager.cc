@@ -21,11 +21,11 @@ void TimeStepManager::RegisterTimeEvent(double time, bool phys) {
   timeEvents_.push_back(TimeEvent(time, phys));
 }
 
-double TimeStepManager::TimeStep(double T, double dT) {
+  double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
   double next_T_all_events(1e99);
   bool physical = true;
-
-  if (dt_stable_storage > 0) {
+  
+  if ((dt_stable_storage > 0)&&(!after_failure)) {
     dT = dt_stable_storage;
     dt_stable_storage = -1.;
   }

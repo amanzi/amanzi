@@ -1386,8 +1386,10 @@ int Mesh::build_columns() const {
     Entity_ID cur_cell = fcells[0];
     Entity_ID bot_face = i;
     Entity_ID top_face = -1;
-    Entity_ID_List fcells2, cfaces;
+    Entity_ID_List fcells2, cfaces, colcells, colfaces;
     std::vector<int> cfdirs;
+
+    colfaces.push_back(i);     
 
     ncolumns++;
     bool done = false;
@@ -1521,50 +1523,21 @@ int Mesh::build_columns() const {
       }
 
 
+      columnID[cur_cell] = ncolumns;
+      colcells.push_back(cur_cell);
+      colfaces.push_back(top_face);
+
       // continue the process
 
       bot_face = top_face;
 
     } // while (!done)
 
+    column_cells.push_back(colcells);
+    column_faces.push_back(colfaces);
+    ncolumns++;
   }
 
-  // now build the columns
-  column_cells.resize(ncolumns);
-
-  int colid = 0;
-  for (int i = 0; i < nc; i++) {
-    if (cell_cellabove[i] == -1) {
-
-      // create column 
-
-      Entity_ID_List& col = column_cells[colid++];
-
-      // calculate the size
-
-      int ncells_in_col = 1;
-      int j = cell_cellbelow[i];
-      while (j >= 0) {
-        ncells_in_col++;
-        j = cell_cellbelow[j];
-      }
-
-      // populate the column
-
-      col.resize(ncells_in_col);
-      int index = 0;
-      col[index++] = i;
-      columnID[i] = colid;
-
-      j = cell_cellbelow[i];
-      while (j >= 0) {
-        col[index++] = j;
-        columnID[j] = colid;
-        j = cell_cellbelow[j];
-      }
-    }
-  }
-  
   columns_built = true;
   return status;
 }

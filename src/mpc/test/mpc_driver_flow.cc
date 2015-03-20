@@ -57,6 +57,8 @@ using namespace Amanzi::AmanziGeometry;
 
     Amanzi::CycleDriver cycle_driver(glist_rcp, S, &comm, obs_data);
     cycle_driver.Go();
+
+    CHECK( S->cycle()==18);
   }
 }
 

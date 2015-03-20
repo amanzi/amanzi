@@ -54,6 +54,8 @@ class MFD3D_Electromagnetics : public MFD3D {
   int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
 
   int MassMatrix(int c, const Tensor& T, DenseMatrix& M);
+  int MassMatrixOptimized(int c, const Tensor& T, DenseMatrix& W);
+
   int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) {
     return WHETSTONE_ELEMENTAL_MATRIX_OK; 
   } 

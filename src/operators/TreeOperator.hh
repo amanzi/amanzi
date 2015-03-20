@@ -53,8 +53,8 @@ class TreeOperator {
 
   void SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op);
     
-  int Apply(const TreeVector& X, TreeVector& Y) const;
-  int ApplyInverse(const TreeVector& X, TreeVector& Y) const;
+  virtual int Apply(const TreeVector& X, TreeVector& Y) const;
+  virtual int ApplyInverse(const TreeVector& X, TreeVector& Y) const;
 
   void SymbolicAssembleMatrix();
   void AssembleMatrix();
@@ -64,6 +64,7 @@ class TreeOperator {
 
   // preconditioners
   void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
+  void InitPreconditioner(Teuchos::ParameterList& plist);
 
   // access
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; } 
