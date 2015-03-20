@@ -107,10 +107,10 @@ public:
       return 0;
 
     case FACE:
-      return (ptype == OWNED) ? column_faces_.size() : 0; 
+      return (ptype == GHOST) ? 0 : column_faces_.size(); 
 
     case CELL:
-      return (ptype == OWNED) ? column_cells_.size() : 0;
+      return (ptype == GHOST) ? 0 : column_cells_.size();
     }
   }
     
