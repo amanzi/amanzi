@@ -387,13 +387,15 @@ TEST(DARCY_STIFFNESS_2D) {
   T(0, 0) = 1;
 
   DenseMatrix A(nnodes, nnodes);
-  for (int method = 0; method < 2; method++) {
+  for (int method = 0; method < 3; method++) {
     if (method == 0) {
       mfd.StiffnessMatrix(cell, T, A);
     } else if (method == 1) {
       mfd.StiffnessMatrixMMatrix(cell, T, A);
       std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << std::endl;
       std::cout << "Functional value=" << mfd.simplex_functional() << std::endl;
+    } else if (method == 2) {
+      mfd.StiffnessMatrixOptimized(cell, T, A);
     }
 
     printf("Stiffness matrix for cell %3d\n", cell);

@@ -44,10 +44,7 @@ class MFD3D_Electromagnetics : public MFD3D {
   // required implementation of two consistency conditions
   // the inner product in the spave of edge-based functions is weighted by inverse(T)
   int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
-
-  int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc) {
-    return WHETSTONE_ELEMENTAL_MATRIX_OK;
-  }
+  int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc);
 
   // consistency condition for stiffness matrix.
   // the inner product in the spave of edge-based functions is weighted by T.
@@ -56,11 +53,11 @@ class MFD3D_Electromagnetics : public MFD3D {
   int MassMatrix(int c, const Tensor& T, DenseMatrix& M);
   int MassMatrixOptimized(int c, const Tensor& T, DenseMatrix& W);
 
-  int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) {
-    return WHETSTONE_ELEMENTAL_MATRIX_OK; 
-  } 
+  int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W);
+  int MassMatrixInverseOptimized(int c, const Tensor& T, DenseMatrix& W);
 
   int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
+  int StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A);
 };
 
 }  // namespace WhetStone
