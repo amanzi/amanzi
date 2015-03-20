@@ -140,9 +140,9 @@ TEST(COLUMN_MESH_3D)
 
       CHECK_EQUAL(2,cfaces.size());
       CHECK_EQUAL(j,cfaces[0]);
-      CHECK_EQUAL(1,cfdirs[0]);
-      CHECK_EQUAL(j,cfaces[1]);
-      CHECK_EQUAL(0,cfdirs[1]);
+      CHECK_EQUAL(-1,cfdirs[0]);
+      CHECK_EQUAL(j+1,cfaces[1]);
+      CHECK_EQUAL(1,cfdirs[1]);
     }
 
     for (int j = 0; j < nfaces; j++) {
