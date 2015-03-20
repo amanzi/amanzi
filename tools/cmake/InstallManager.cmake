@@ -374,7 +374,7 @@ install(FILES ${AMANZI_SOURCE_DIR}/doc/input_spec/schema/amanzi.xsd DESTINATION 
 
 # If MSTK utilities were found (this processing is in FindMSTK.cmake), install them in bin
 if (MSTK_UTILITIES)
-   install(FILES ${MSTK_UTILITIES} DESTINATION bin)
+   install(PROGRAMS ${MSTK_UTILITIES} DESTINATION bin)
 endif()
 
 # Write the evaluator registration macro file
