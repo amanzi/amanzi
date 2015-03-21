@@ -25,21 +25,104 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Consistency condition for the mass matrix in electromagnetics.
-* Only the upper triangular part of Mc = R (R^T N)^{-1} R^T is 
-* calculated. Here R^T N = |c| T.
+* Efficient implementation is possible in 2D. Hence, we fork the code.
 ****************************************************************** */
 int MFD3D_Electromagnetics::L2consistency(int c, const Tensor& T,
                                           DenseMatrix& N, DenseMatrix& Mc)
 {
+  int ok, d = mesh_->space_dimension();
+  if (d == 2) {
+    ok = L2consistency2D_(c, T, N, Mc);
+  } else {
+    ok = L2consistency3D_(c, T, N, Mc);
+  }
+
+  return ok;
+}
+
+
+/* ******************************************************************
+* Consistency condition for the mass matrix in electromagnetics.
+* Only the upper triangular part of Mc = R (R^T N)^{-1} R^T is 
+* calculated. Here R^T N = |c| T.
+****************************************************************** */
+int MFD3D_Electromagnetics::L2consistency2D_(int c, const Tensor& T,
+                                             DenseMatrix& N, DenseMatrix& Mc)
+{
+  int n1, n2, d(2);
+  Entity_ID_List edges;
+  std::vector<int> edirs;
+
+  mesh_->cell_get_edges(c, &edges);
+  int nedges = edges.size();
+
+  AmanziGeometry::Point v1(d), v2(d), v3(d), tau(d), p1(d), p2(d);
+
+  // To calculate matrix R, we re-use matrix N
+  N.PutScalar(0.0);
+
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  double volume = mesh_->cell_volume(c);
+
+  for (int i = 0; i < nedges; ++i) {
+    int e = edges[i];
+    double len = mesh_->edge_length(e);
+
+    mesh_->edge_get_nodes(e, &n1, &n2);
+    mesh_->node_get_coordinates(n1, &p1);
+    mesh_->node_get_coordinates(n2, &p2);
+
+    v1 = ((p1 + p2) / 2) - xc;
+
+    for (int k = 0; k < d; ++k) {
+      len = -len;
+      N(i, k) = len * v1[1 - k];
+    }
+  }
+
+  // calculate Mc = R (R^T N)^{-1} R^T 
+  Tensor Tinv(T);
+  Tinv.Inverse();
+
+  for (int i = 0; i < nedges; i++) {
+    for (int k = 0; k < d; ++k) v1[k] = N(i, k);
+    v2 = Tinv * v1;
+
+    for (int j = i; j < nedges; j++) {
+      for (int k = 0; k < d; ++k) v3[k] = N(j, k);
+      Mc(i, j) = (v2 * v3) / volume;
+    }
+  }
+
+  // Rows of matrix N are oriented tangent vectors. Since N goes to 
+  // the Gramm-Schmidt orthogonalizetion procedure, we can skip scaling
+  // tensorial factor T.
+  for (int i = 0; i < nedges; i++) {
+    int e = edges[i];
+    const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
+    double len = mesh_->edge_length(e);
+    for (int k = 0; k < d; ++k) N(i, k) = tau[k] / len;
+  }
+
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Consistency condition for the mass matrix in electromagnetics.
+* Only the upper triangular part of Mc = R (R^T N)^{-1} R^T is 
+* calculated. Here R^T N = |c| T.
+****************************************************************** */
+int MFD3D_Electromagnetics::L2consistency3D_(int c, const Tensor& T,
+                                             DenseMatrix& N, DenseMatrix& Mc)
+{
+  int n1, n2, d(3);
   Entity_ID_List edges, faces;
   std::vector<int> fdirs, edirs, map;
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
   int nfaces = faces.size();
 
-  int n1, n2, d = mesh_->space_dimension();
-  ASSERT(d == 3);
   AmanziGeometry::Point v1(d), v2(d), v3(d), tau(d), p1(d), p2(d);
   AmanziGeometry::Point vv[3];
 

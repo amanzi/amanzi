@@ -90,7 +90,6 @@ class Op_Node_Node;
 
 class Operator {
  public:
-  // constuctors
   // main constructor
   //   The CVS is the domain and range of the operator
   Operator() {}
@@ -162,7 +161,6 @@ class Operator {
   void OpExtend(op_iterator begin, op_iterator end);
 
  public:
-
   // visit methods for Apply
   virtual int ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
       const CompositeVector& X, CompositeVector& Y) const;

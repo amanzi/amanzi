@@ -58,6 +58,10 @@ class MFD3D_Electromagnetics : public MFD3D {
 
   int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
   int StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A);
+
+ private:
+  int L2consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
+  int L2consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
 };
 
 }  // namespace WhetStone

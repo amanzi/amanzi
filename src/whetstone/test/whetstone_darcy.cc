@@ -26,12 +26,12 @@
 
 
 /* **************************************************************** */
-TEST(DARCY_MASS) {
+TEST(DARCY_MASS_3D) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "Test: Mass matrix for Darcy" << std::endl;
+  std::cout << "Test: Mass matrix for Darcy in 3D" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
