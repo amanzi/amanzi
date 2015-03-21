@@ -216,6 +216,95 @@ TEST(MASS_MATRIX_3D) {
 
 
 /* **************************************************************** */
+TEST(STIFFNESS_MATRIX_2D) {
+  using namespace Teuchos;
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: Stiffness matrix for edge elements in 2D" << std::endl;
+#ifdef HAVE_MPI
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm *comm = new Epetra_SerialComm();
+#endif
+
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(MSTK);
+
+  MeshFactory factory(comm);
+  factory.preference(pref);
+
+  bool request_faces(true), request_edges(true);
+  // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1, NULL, true, true); 
+  Teuchos::RCP<Mesh> mesh = factory("test/two_cell2.exo", NULL, request_faces, request_edges); 
+ 
+  MFD3D_Electromagnetics mfd(mesh);
+
+  int cell = 0;
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+  mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
+
+  int nfaces = faces.size();
+  int nrows = nfaces;
+
+  Tensor T(2, 1);
+  T(0, 0) = 1.0;
+
+  for (int method = 0; method < 2; method++) {
+    DenseMatrix A(nrows, nrows);
+
+    if (method == 0) {
+      mfd.StiffnessMatrix(cell, T, A);
+    } else if (method == 1) {
+      mfd.StiffnessMatrixOptimized(cell, T, A);
+    }
+
+    printf("Stiffness matrix for cell %3d\n", cell);
+    for (int i = 0; i < nrows; i++) {
+      for (int j = 0; j < nrows; j++ ) printf("%8.4f ", A(i, j)); 
+      printf("\n");
+    }
+
+    // verify SPD propery
+    for (int i = 0; i < nrows; i++) CHECK(A(i, i) > 0.0);
+
+    // verify exact integration property
+    double xi, xj, vxx(0.0);
+    AmanziGeometry::Point p1(2), p2(2);
+
+    const AmanziGeometry::Point& xc = mesh->cell_centroid(cell);
+    double volume = mesh->cell_volume(cell); 
+
+    for (int i = 0; i < nrows; i++) {
+      int f1 = faces[i];
+      const AmanziGeometry::Point& n1 = mesh->face_normal(f1);
+      const AmanziGeometry::Point& xf1 = mesh->face_centroid(f1);
+      double a1 = mesh->face_area(f1);
+
+      xi = ((xf1 - xc) * n1) * dirs[i] / a1;
+
+      for (int j = 0; j < nrows; j++) {
+        int f2 = faces[j];
+        const AmanziGeometry::Point& n2 = mesh->face_normal(f2);
+        const AmanziGeometry::Point& xf2 = mesh->face_centroid(f2);
+        double a2 = mesh->face_area(f2);
+
+        xj = ((xf2 - xc) * n2) * dirs[j] / a2;
+        vxx += A(i, j) * xi * xj;
+      }
+    }
+    CHECK_CLOSE(4 * volume, vxx, 1e-10);
+  }
+
+  delete comm;
+}
+
+
+/* **************************************************************** */
 TEST(STIFFNESS_MATRIX_3D) {
   using namespace Teuchos;
   using namespace Amanzi;
