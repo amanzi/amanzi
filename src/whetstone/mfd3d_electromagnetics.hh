@@ -62,6 +62,12 @@ class MFD3D_Electromagnetics : public MFD3D {
  private:
   int L2consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
   int L2consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
+
+  int L2consistencyInverse2D_(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc);
+  int L2consistencyInverse3D_(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc);
+
+  int H1consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
+  int H1consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
 };
 
 }  // namespace WhetStone

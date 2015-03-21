@@ -69,7 +69,7 @@ TEST(MASS_MATRIX_2D) {
   T(0, 1) = 1.0;
   T(1, 0) = 1.0;
 
-  for (int method = 0; method < 1; method++) {
+  for (int method = 0; method < 4; method++) {
     DenseMatrix M(nrows, nrows);
 
     if (method == 0) {
