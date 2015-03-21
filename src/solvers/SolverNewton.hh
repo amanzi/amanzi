@@ -55,6 +55,7 @@ class SolverNewton : public Solver<Vector,VectorSpace> {
   double residual() { return residual_; }
   int num_itrs() { return num_itrs_; }
   int pc_calls() { return pc_calls_; }
+  int pc_updates() { return pc_calls_; }
   int returned_code() { return returned_code_; }
 
  private:
@@ -138,8 +139,9 @@ template<class Vector, class VectorSpace>
 int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  // initialize the iteration counter
+  // initialize the iteration and pc counters
   num_itrs_ = 0;
+  pc_calls_ = 0;
 
   // create storage
   Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));

@@ -62,6 +62,9 @@ class SolverNKA_BT_ATS : public Solver<Vector, VectorSpace> {
   int pc_calls() {
     return pc_calls_;
   }
+  int pc_updates() {
+    return pc_updates_;
+  }
   int returned_code() {
     return returned_code_;
   }
@@ -84,7 +87,7 @@ class SolverNKA_BT_ATS : public Solver<Vector, VectorSpace> {
 
   int max_itrs_, num_itrs_, returned_code_;
   int fun_calls_, pc_calls_, solve_calls_;
-  int pc_lag_, update_pc_calls_;
+  int pc_lag_, pc_updates_;
   int nka_lag_iterations_;
 
   bool fail_on_failed_backtrack_;
@@ -136,7 +139,7 @@ void SolverNKA_BT_ATS<Vector, VectorSpace>::Init_()
 
   fun_calls_ = 0;
   pc_calls_ = 0;
-  update_pc_calls_ = 0;
+  pc_updates_ = 0;
   pc_lag_ = 0;
   solve_calls_ = 0;
 
@@ -187,8 +190,10 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
   // restart the nonlinear solver (flush its history)
   nka_->Restart();
 
-  // initialize the iteration counter
+  // initialize the iteration and pc counters
   num_itrs_ = 0;
+  pc_calls_ = 0;
+  pc_updates_ = 0;
 
   // create storage
   Teuchos::RCP<Vector> res = Teuchos::rcp(new Vector(*u));
@@ -244,7 +249,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << "Updating preconditioner." << std::endl;
     }
-    update_pc_calls_++;
+    pc_updates_++;
     fn_->UpdatePreconditioner(u);
 
     // Apply the preconditioner to the nonlinear residual.

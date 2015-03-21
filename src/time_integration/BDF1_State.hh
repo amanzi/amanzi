@@ -31,6 +31,9 @@ struct BDF1_State {
     failed_solve = 0;
     solve_itrs = 0;
 
+    pc_calls = 0;
+    pc_updates = 0;
+
     uhist_size = 2;
 
     hmax = std::numeric_limits<double>::min();
@@ -51,10 +54,12 @@ struct BDF1_State {
   double hlast;  // last step size
   double hpc;  // step size built into the current preconditioner
   int pc_lag;  // counter for how many iterations the preconditioner has been lagged
+  int pc_calls;  // counter for the number of preconditioner calls
 
   // performance counters
   int seq;  // number of steps taken
   int failed_solve;  // number of completely failed BCE steps
+  int pc_updates;  // counter for the number of preconditioner updates
   double hmin, hmax;  // minimum and maximum dt used on a successful step
 
   // performane of nonlinear solver
