@@ -85,6 +85,9 @@ int AdvanceToSteadyState(
     const CompositeVector& wc = *S->GetFieldData("water_content");
     CompositeVector& wc_prev = *S->GetFieldData("prev_water_content", "flow");
     wc_prev = wc;
+
+    // commit step
+    RPK.CommitStep(0.0, S.ptr());
   }
 
   ti_specs.num_itrs = itrs;
