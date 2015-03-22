@@ -307,7 +307,7 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [U] `"Preconditining Strategy`" [string]: Defines a method for calculating a preconditioner.
        The available options are: `"Diffusion Operator`" (with lagging of nonlinear coefficients) 
-       and `"Linearized Operator`". (default: `"Diffusion Operator`").
+       and `"Linearized Operator`" (default: `"Linearized Operator`").
 
      * [U] `"Use Picard`" [bool]: Use the Picard solver to find a good initial guess for the steady state solver.
        This option becomes obsolete. (default: `"false`").

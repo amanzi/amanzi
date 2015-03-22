@@ -30,15 +30,16 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
     if (exe_list.isParameter("Flow Model")) {
       std::string flow_model = exe_list.get<std::string>("Flow Model");
 
-      // get the expert parameters
+      // set up default values for some expert parameters
       std::string disc_method("MFD: Optimized for Sparsity");
-      std::string prec_method("Diffusion Operator");
+      std::string prec_method("Linearized Operator");
       std::string rel_perm("Upwind: Amanzi");
       std::string update_upwind("every timestep");
       double atm_pres(ATMOSPHERIC_PRESSURE);
       std::string nonlinear_solver("NKA");
       bool modify_correction(false);
 
+      // process expert parameters
       if (exe_list.isSublist("Numerical Control Parameters")) {
         Teuchos::ParameterList& ncp_list = exe_list.sublist("Numerical Control Parameters");
 
