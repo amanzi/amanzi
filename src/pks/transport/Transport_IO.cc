@@ -171,7 +171,7 @@ void Transport_PK::ProcessParameterList()
 
   internal_tests = tp_list_->get<std::string>("enable internal tests", "no") == "yes";
   tests_tolerance = tp_list_->get<double>("internal tests tolerance", TRANSPORT_CONCENTRATION_OVERSHOOT);
-  dT_debug = tp_list_->get<double>("maximum time step", TRANSPORT_LARGE_TIME_STEP);
+  dt_debug_ = tp_list_->get<double>("maximum time step", TRANSPORT_LARGE_TIME_STEP);
 
   // populate the list of boundary influx functions
   bcs.clear();

@@ -3,18 +3,20 @@
 #include <iostream>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "UnitTest++.h"
 
+// Amanzi
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
 #include "Point.hh"
-
 #include "State.hh"
+
+// Transport
 #include "Transport_PK.hh"
 
 
@@ -116,20 +118,22 @@ TEST(DISPERSION) {
   TPK.PrintStatistics();
 
   /* advance the state */
-  double dummy_dT, dT, dT0;
-  dT0 = TPK.CalculateTransportDt();
+  double dt0;
+  dt0 = TPK.CalculateTransportDt();
 
   int i, k, iter = 0;
-  double T = 0.0, T1 = 1.0;
-  while (T < T1) {
-    dT = std::min(TPK.CalculateTransportDt(), T1 - T);
-    dT = std::min(dT, dT0);
+  double t_old(0.0), t_new(0.0), dt, T1(1.0);
+  while (t_new < T1) {
+    dt = std::min(TPK.CalculateTransportDt(), T1 - t_old);
+    dt = std::min(dt, dt0);
+    t_new = t_old + dt;
     // for (int k = 0; k < nx; k++) printf("%10.8f\n", (*tcc)[0][k]); 
     // printf("\n");
 
-    TPK.Advance(dT, dummy_dT);
-    TPK.CommitState(dT, S.ptr());
-    T += dT;
+    TPK.AdvanceStep(t_old, t_new);
+    TPK.CommitStep(t_old, t_new);
+
+    t_old = t_new;
     iter++;
 
     TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
@@ -213,20 +217,22 @@ TEST(DIFFUSION) {
   TPK.PrintStatistics();
 
   /* advance the state */
-  double dummy_dT, dT, dT0;
-  dT0 = TPK.CalculateTransportDt();
+  double dt0;
+  dt0 = TPK.CalculateTransportDt();
 
   int i, k, iter = 0;
-  double T = 0.0, T1 = 1.0;
-  while (T < T1) {
-    dT = std::min(TPK.CalculateTransportDt(), T1 - T);
-    dT = std::min(dT, dT0);
+  double t_old(0.0), t_new(0.0), dt, T1(1.0);
+  while (t_new < T1) {
+    dt = std::min(TPK.CalculateTransportDt(), T1 - t_old);
+    dt = std::min(dt, dt0);
+    t_new = t_old + dt;
     // for (int k = 0; k < nx; k++) printf("%10.8f\n", (*tcc)[0][k]); 
     // printf("\n");
 
-    TPK.Advance(dT, dummy_dT);
-    TPK.CommitState(dT, S.ptr());
-    T += dT;
+    TPK.AdvanceStep(t_old, t_new);
+    TPK.CommitStep(t_old, t_new);
+
+    t_old = t_new;
     iter++;
 
     TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);

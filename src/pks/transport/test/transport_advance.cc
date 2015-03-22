@@ -9,15 +9,19 @@
 #include <cmath>
 #include <vector>
 
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "UnitTest++.h"
 
+// Amanzi
 #include "FrameworkTraits.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
+
+// Transport
 #include "Transport_PK.hh"
 
 
@@ -101,22 +105,26 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
     TPK.PrintStatistics();
 
     // advance the state
-    double dummy_dT, dT = TPK.CalculateTransportDt();
-    TPK.Advance(dT, dummy_dT);
+    double t_old(0.0), t_new, dt;
+    dt = TPK.CalculateTransportDt();
+    t_new = t_old + dt;
+    TPK.AdvanceStep(t_old, t_new);
 
     // printing cell concentration
-    double T = 0.0;
     Teuchos::RCP<Epetra_MultiVector> 
         tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell");
 
-    while(T < 1.2) {
-      dT = TPK.CalculateTransportDt();
-      TPK.Advance(dT, dummy_dT);
-      TPK.CommitState(dT, S.ptr());
-      T += dT;
+    while(t_new < 1.2) {
+      dt = TPK.CalculateTransportDt();
+      t_new = t_old + dt;
+
+      TPK.AdvanceStep(t_old, t_new);
+      TPK.CommitStep(t_old, t_new);
+
+      t_old = t_new;
  
-      if (T < 0.4) {
-        printf("T=%6.2f  C_0(x):", T);
+      if (t_new < 0.4) {
+        printf("T=%6.2f  C_0(x):", t_new);
         for (int k = 0; k < 9; k++) printf("%7.4f", (*tcc)[0][k]); std::cout << std::endl;
       }
     }

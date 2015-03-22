@@ -50,7 +50,7 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 # Transport registrations
 #
 register_evaluator_with_factory(
-  HEADERFILE Transport_PK_Wrapper_reg.hh
+  HEADERFILE Transport_PK_reg.hh
   LISTNAME   PKS_TRANSPORT_REGISTRATIONS
   )
 
@@ -78,7 +78,6 @@ set(transport_inc_files
 set(transport_src_files Transport_PK.cc Transport_TI.cc 
                         Transport_VandV.cc Transport_IO.cc 
                         Transport_Dispersion.cc 
-                        Transport_PK_Wrapper.cc
                         TransportBCFactory.cc TransportSourceFactory.cc
                         TransportBoundaryFunction_Tracer.cc TransportBoundaryFunction_Alquimia.cc
                         TransportDomainFunction.cc)

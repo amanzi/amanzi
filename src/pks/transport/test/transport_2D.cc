@@ -9,19 +9,21 @@
 #include <cmath>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "UnitTest++.h"
 
+// Amanzi
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
 #include "State.hh"
-#include "Transport_PK.hh"
 
+// Transport
+#include "Transport_PK.hh"
 
 /* **************************************************************** */
 TEST(ADVANCE_WITH_2D_MESH) {
@@ -92,20 +94,23 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 
   /* advance the transport state */
   int iter, k;
-  double dummy_dT, T = 0.0;
+  double t_old(0.0), t_new(0.0), dt;
   Teuchos::RCP<Epetra_MultiVector> 
       tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
 
   iter = 0;
-  while (T < 1.0) {
-    double dT = TPK.CalculateTransportDt();
-    TPK.Advance(dT, dummy_dT);
-    TPK.CommitState(dT, S.ptr());
-    T += dT;
+  while (t_new < 1.0) {
+    dt = TPK.CalculateTransportDt();
+    t_new = t_old + dt;
+
+    TPK.AdvanceStep(t_old, t_new);
+    TPK.CommitStep(t_old, t_new);
+
+    t_old = t_new;
     iter++;
 
     if (iter < 15) {
-      printf("T=%8.4f  C_0(x):", T);
+      printf("T=%8.4f  C_0(x):", t_new);
       for (int k = 0; k < 9; k++) {
         int k1 = 9 - k;  // reflects cell numbering in the exodus file
         printf("%7.4f", (*tcc)[0][k1]); 
@@ -113,7 +118,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
       printf("\n");
     }
 
-    if (T < 0.15) {
+    if (t_new < 0.15) {
       GMV::open_data_file(*mesh, (std::string)"transport.gmv");
       GMV::start_data();
       GMV::write_cell_data(*tcc, 0, "Component_0");
