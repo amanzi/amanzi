@@ -221,7 +221,7 @@ State
 
 List `"State`" allows the user to initialize various fields and field evaluators 
 using a variety of tools. 
-A field evaluator is a node in the Phalanx-like dependency tree.
+A field evaluator is a node in the Phalanx-like (acyclic) dependency tree. 
 The corresponding sublist of the State is named `"field evaluators`"
 The initialization sublist of the State is named `"initial conditions`"
 
@@ -240,11 +240,14 @@ The initialization sublist of the State is named `"initial conditions`"
 Field evaluators
 ----------------
 
+There are four types of field evaluators.
+
 Independent field evaluator
 ...........................
 
 An independent field evaluator has no dependencies and is specified by a function.
-It has the following fields.
+Typically, tt is evaluated once per simulation.
+The evaluator has the following fields.
 
 * `"field evaluator type`" [string] The value of this parameter is used by the factory
   of evaluators. The available option are `"independent variable`", `"primary variable`",
@@ -296,24 +299,61 @@ Primary field evaluator
 .......................
 
 The primary field evaluator has no dependencies solved for by a PK.
+Examples of independent field evaluators are primary variable of PDEs, such as
+pressure and temperature.
+Typically this avaluator is used to inform the dependency tree about new state
+of the primary variable.
+
+
+Secondary field evaluators
+..........................
+
+Secondary fields are derived either from primary fields or other secondary fields.
+There are two types of secondary fields evaluators.
+The first type is used to evaluate a single field.
+The second type is used to evaluate efficiently (in one call of an evaluator) multiple fields.
+The related XML syntax can provide various parameters needed for evaluation as explained in two
+examples below.
 
 .. code-block:: xml
 
-    <ParameterList name="PRESSURE">
-      <Parameter name="field evaluator type" type="string" value="primary variable"/>
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="extreme"/>
-      </ParameterList>
+  <ParameterList name="molar_density_liquid">
+    <Parameter name="field evaluator type" type="string" value="eos"/>
+    <Parameter name="EOS basis" type="string" value="both"/>
+    <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
+    <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
+    <ParameterList name="EOS parameters">
+      <Parameter name="EOS type" type="string" value="liquid water"/>
     </ParameterList>
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="extreme"/>
+    </ParameterList>
+  </ParameterList>
 
+In this example the molar density of liquid is evaluated using an EOS evaluator.
+The field name in the dependency tree is `"molar_density_liquid`". 
+The secondary field that is evaluated simultaneously is `"mass_density_liquid`".
+The EOS evaluator knows that these fields dependes on `"temperature`" and `"pressure`";
+hence, this information is not provided in the input list.
+The EOS requires one-parameter list to select the proper model for evaluation.
 
-Secondary field evaluator
-.........................
+.. code-block:: xml
 
+  <ParameterList name="internal_energy_rock">
+    <Parameter name="field evaluator type" type="string" value="iem"/>
+    <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
+    <ParameterList name="IEM parameters">
+      <Parameter name="IEM type" type="string" value="linear"/>
+      <Parameter name="heat capacity [J/kg-K]" type="double" value="620.0"/>
+    </ParameterList>
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="extreme"/>
+    </ParameterList>
+  </ParameterList>
 
-Custom field evaluator
-......................
-
+In this example, the internal energy of rock is evaluated using one of the 
+available iem models. 
+A particular model is dynamically instantiated using parameter `"IEM type"`".
 
 Initial conditions
 ------------------
