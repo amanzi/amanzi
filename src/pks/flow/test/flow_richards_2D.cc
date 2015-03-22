@@ -18,7 +18,6 @@
 // TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "UnitTest++.h"
 
@@ -118,8 +117,8 @@ TEST(FLOW_2D_RICHARDS) {
     ti_specs.T1 = 100.0;
     ti_specs.max_itrs = 400;
 
-    AdvanceToSteadyState(S, *RPK, ti_specs, S->GetFieldData("pressure", "flow"));
-    RPK->CommitStep(0.0, S.ptr());
+    AdvanceToSteadyState(S, *RPK, ti_specs, soln);
+    RPK->CommitStep(0.0, 1.0);  // dummy times
     itrs[loop] = ti_specs.num_itrs;
 
     if (MyPID == 0 && loop == 0) {

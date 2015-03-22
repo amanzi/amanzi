@@ -50,12 +50,12 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 # Flow registrations
 #
 register_evaluator_with_factory(
-  HEADERFILE Darcy_PK_Wrapper_reg.hh
+  HEADERFILE Darcy_PK_reg.hh
   LISTNAME   PKS_FLOW_REGISTRATIONS
   )
 
 register_evaluator_with_factory(
-  HEADERFILE Richards_PK_Wrapper_reg.hh
+  HEADERFILE Richards_PK_reg.hh
   LISTNAME   PKS_FLOW_REGISTRATIONS
   )
 
@@ -117,7 +117,6 @@ set(flow_src_files Flow_PK.cc
                    WRMPartition.cc WRMFactory.cc WRMEvaluator.cc 
                    VWContentEvaluator.cc VWContentEvaluator_ConstDensity.cc
                    DarcyVelocityEvaluator.cc
-                   Darcy_PK_Wrapper.cc Richards_PK_Wrapper.cc
                    )
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )

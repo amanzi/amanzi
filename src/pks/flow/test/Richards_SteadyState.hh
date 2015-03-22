@@ -30,7 +30,7 @@ class TI_Specs {
 
 int AdvanceToSteadyState(
     Teuchos::RCP<State> S, Richards_PK& RPK, 
-    TI_Specs& ti_specs, Teuchos::RCP<CompositeVector> solution)
+    TI_Specs& ti_specs, Teuchos::RCP<TreeVector> soln)
 {
   bool last_step = false;
 
@@ -40,22 +40,22 @@ int AdvanceToSteadyState(
   double dT0 = ti_specs.dT0;
 
   double T_physics = 0.0;
-  double dT = dT0, dTnext;
+  double dT(dT0), dTnext;
 
   int itrs = 0;
   while (itrs < max_itrs && T_physics < T1) {
     if (itrs == 0) {  // initialization of BDF1
-      Teuchos::RCP<CompositeVector> udot = Teuchos::rcp(new CompositeVector(*solution));
+      Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
       udot->PutScalar(0.0);
-      RPK.get_bdf1_dae()->SetInitialState(T0, solution, udot);
+      RPK.get_bdf1_dae()->SetInitialState(T0, soln, udot);
 
-      RPK.UpdatePreconditioner(T0, solution, dT0);
+      RPK.UpdatePreconditioner(T0, soln, dT0);
     }
 
-    while (RPK.get_bdf1_dae()->TimeStep(dT, dTnext, solution)) {
+    while (RPK.get_bdf1_dae()->TimeStep(dT, dTnext, soln)) {
       dT = dTnext;
     }
-    RPK.get_bdf1_dae()->CommitSolution(dT, solution);
+    RPK.get_bdf1_dae()->CommitSolution(dT, soln);
 
     T_physics = RPK.get_bdf1_dae()->time();
     dT = dTnext;
@@ -71,7 +71,7 @@ int AdvanceToSteadyState(
     // reset primary field
     Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval = 
        Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator("pressure"));
-    *S->GetFieldData("pressure", "flow") = *solution;
+    *S->GetFieldData("pressure", "flow") = *soln->Data();
     pressure_eval->SetFieldAsChanged(S.ptr());
  
     // update and swap saturations
@@ -87,7 +87,7 @@ int AdvanceToSteadyState(
     wc_prev = wc;
 
     // commit step
-    RPK.CommitStep(0.0, S.ptr());
+    RPK.CommitStep(T_physics - dT, T_physics);
   }
 
   ti_specs.num_itrs = itrs;
