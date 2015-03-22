@@ -15,31 +15,31 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
 
+// Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
 #include "LinearOperatorFactory.hh"
-
-#include "tensor.hh"
 #include "mfd3d_diffusion.hh"
+#include "tensor.hh"
 
+// Operators
+#include "Analytic01.hh"
+#include "Analytic02.hh"
 #include "BCs.hh"
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionMFD.hh"
 
-#include "Analytic01.hh"
-#include "Analytic02.hh"
-
 /* *****************************************************************
 * This test replaves tensor and boundary conditions by continuous
-* functions. It is most sensitive to error in location of problem
-* coefficients.
-* **************************************************************** */
+* functions. It analyzes accuracy of the MFD discretization with
+* respect to scaling the stability term.
+**************************************************************** */
 TEST(OPERATOR_MIXED_DIFFUSION) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -52,7 +52,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   if (MyPID == 0) std::cout << "Test: 2D steady-state elliptic solver, mixed discretization" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/operator_convergence.xml";
+  std::string xmlFileName = "test/operator_stability.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
 
@@ -197,8 +197,9 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
 
 /* *****************************************************************
 * This test replaces tensor and boundary conditions by continuous
-* functions. This is a prototype for future solvers.
-* **************************************************************** */
+* functions. It analyzed accuracy of the MFd discretization with
+* respect to scaling of the stability term.
+**************************************************************** */
 TEST(OPERATOR_NODAL_DIFFUSION) {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -208,11 +209,10 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-
   if (MyPID == 0) std::cout << "\nTest: 2D steady-state elliptic solver, nodal discretization" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/operator_convergence.xml";
+  std::string xmlFileName = "test/operator_stability.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 

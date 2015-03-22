@@ -180,13 +180,13 @@ if ( BUILD_TESTS )
 
     add_amanzi_test(operators_upwind_2pe operators_upwind NPROCS 2 KIND unit)
 
-    # convergence analysis
-    add_amanzi_test(operators_convergence operators_convergence
+    # stability analysis
+    add_amanzi_test(operators_stability operators_stability
                     KIND unit
-                    SOURCE test/Main.cc test/operator_convergence.cc
+                    SOURCE test/Main.cc test/operator_stability.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    add_amanzi_test(operators_convergence_2pe operators_convergence NPROCS 2 KIND unit)
+    add_amanzi_test(operators_stability_2pe operators_stability NPROCS 2 KIND unit)
 
     # correctness of tree operator
     add_amanzi_test(operators_tree operators_tree

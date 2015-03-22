@@ -15,6 +15,7 @@
 
 #include "DenseMatrix.hh"
 #include "Operator_Cell.hh"
+#include "OperatorDefs.hh"
 
 /* ******************************************************************
 Operator whose unknowns are CELL + FACE

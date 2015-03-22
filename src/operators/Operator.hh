@@ -232,6 +232,9 @@ class Operator {
           int my_block_row, int my_block_col) const;
 
  protected:
+  int SchemaMismatch_(const std::string& schema1, const std::string& schema2) const;
+
+ protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<const CompositeVectorSpace> cvs_;
   mutable bool data_validity_;
