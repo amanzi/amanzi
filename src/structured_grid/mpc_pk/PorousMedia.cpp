@@ -5072,6 +5072,7 @@ PorousMedia::init_rock_properties ()
 
   MultiFab kappatmp(grids,BL_SPACEDIM,nGrowHYP);
   bool ret = rock_manager->GetProperty(cur_time,level,kappatmp,"permeability",0,kappatmp.nGrow());
+
   if (!ret) BoxLib::Abort("Failed to build permeability");
   for (MFIter mfi(kappatmp); mfi.isValid(); ++mfi) {
     const Box& cbox = mfi.validbox();
@@ -5092,7 +5093,9 @@ PorousMedia::init_rock_properties ()
   }
   kappa->mult(1.0/BL_SPACEDIM);
 
-  rock_manager->Porosity(cur_time,level,*rock_phi,0,rock_phi->nGrow());
+  bool ret_phi = rock_manager->GetProperty(cur_time,level,*rock_phi,"porosity",0,rock_phi->nGrow());
+  if (!ret_phi) BoxLib::Abort("Failed to build porosity");
+  //rock_manager->Porosity(cur_time,level,*rock_phi,0,rock_phi->nGrow());
 
   if ( (model != PM_SINGLE_PHASE)
        && (model != PM_SINGLE_PHASE_SOLID)
@@ -7266,9 +7269,13 @@ PorousMedia::derive_Intrinsic_Permeability(Real      time,
                                            int       dir)
 {
   MultiFab kappatmp(grids,BL_SPACEDIM,0);
+
+  kappatmp.setVal(0);
+
   bool ret = rock_manager->GetProperty(state[State_Type].curTime(),level,kappatmp,
                                   "permeability",0,mf.nGrow());
   if (!ret) BoxLib::Abort("Failed to build permeability");
+
   MultiFab::Copy(mf,kappatmp,dir,dcomp,1,0);
   // Return values in mks
   mf.mult(1/BL_ONEATM,dcomp,1,0);
