@@ -931,6 +931,18 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
           fpkPL.set<double>("atmospheric pressure",get_double_constant(textContent,*def_list));
           XMLString::release(&textContent);
         }
+        if (flowElement->hasAttribute((XMLString::transcode("preconditioning_strategy")))) {
+          textContent = XMLString::transcode(flowElement->getAttribute(XMLString::transcode("preconditioning_strategy")));
+          std::string op;
+          if (strcmp(textContent,"diffusion_operator")==0) {
+            op.append("Diffusion Operator");
+          }
+          else if (strcmp(textContent,"linearized_operator")==0) {
+            op.append("Linearized Operator");
+          }
+          fpkPL.set<std::string>("Preconditioning Strategy",op.c_str());
+          XMLString::release(&textContent);
+        }
       }
       else {
         throw_error_illformed("process_kernels", "element", "flow");
@@ -3170,6 +3182,532 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
       } */
       bool haveName = false;
       
+      /////////
+      DOMElement* regElem;
+      // if region is under a region tag,
+      // get the name and set child element as region element
+      if  (strcmp(tagName,"region") == 0){
+        // get region name
+        attrMap = cur->getAttributes();
+        nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
+        if (nodeAttr) {
+          regName = XMLString::transcode(nodeAttr->getNodeValue());
+          haveName = true;
+        } else {
+          throw_error_missattr("Regions","attribute","name","region");
+        }
+        // loop over children to get region element
+        DOMNodeList* kids = cur->getChildNodes();
+        for (int j=0; j<kids->getLength(); j++) {
+          DOMNode* curKid = kids->item(j) ;
+          if (DOMNode::ELEMENT_NODE == curKid->getNodeType()) {
+            nodeName  = XMLString::transcode(curKid->getNodeName());
+            if (strcmp(nodeName,"comments") != 0)
+              regElem =static_cast<DOMElement*>(curKid);
+            XMLString::release(&nodeName);
+          }
+        }
+      }
+      // else set the current element as region element
+      else {
+        regElem =static_cast<DOMElement*>(cur);
+      }
+      
+      // get regElem type
+      nodeName  = XMLString::transcode(regElem->getNodeName());
+      
+      // get name if needed
+      if (!haveName){
+        if (regElem->hasAttribute(XMLString::transcode("name"))) {
+          regName = XMLString::transcode(regElem->getAttribute(XMLString::transcode("name")));
+        }
+        else {
+          throw_error_missattr("Regions","attribute","name",nodeName);
+        }
+      }
+      
+      // loop over attributes of region element
+      
+      if  (strcmp(nodeName,"box") == 0){
+        
+        // add region name to array of region names
+        if (reg_names.isParameter(regName)) {
+          // warn, region of this name already exists, overwriting
+        } else {
+          reg_names.set<std::string>(regName,"box");
+          regionNames_string_.append(regName);
+        }
+        
+        if (regElem->hasAttribute(XMLString::transcode("low_coordinates"))) {
+          textContent2 = XMLString::transcode(regElem->getAttribute(XMLString::transcode("low_coordinates")));
+        } else {
+          throw_error_missattr("Regions","attribute","low_coordinates","box");
+        }
+        Teuchos::Array<double> low = make_coordinates(textContent2, *def_list);
+        list.sublist(regName).sublist("Region: Box").set<Teuchos::Array<double> >("Low Coordinate",low);
+        XMLString::release(&textContent2);
+        
+        if (regElem->hasAttribute(XMLString::transcode("high_coordinates"))) {
+          textContent2 = XMLString::transcode(regElem->getAttribute(XMLString::transcode("high_coordinates")));
+        } else {
+          throw_error_missattr("Regions","attribute","high_coordinates","box");
+        }
+        Teuchos::Array<double> high = make_coordinates(textContent2,* def_list);
+        list.sublist(regName).sublist("Region: Box").set<Teuchos::Array<double> >("High Coordinate",high);
+        XMLString::release(&textContent2);
+      }
+      else if  (strcmp(nodeName,"plane") == 0){
+        
+        // add region name to array of region names
+        if (reg_names.isParameter(regName)) {
+          // warn, region of this name already exists, overwriting
+        } else {
+          reg_names.set<std::string>(regName,"plane");
+          regionNames_string_.append(regName);
+        }
+        
+        if (regElem->hasAttribute(XMLString::transcode("location"))) {
+          textContent2 = XMLString::transcode(regElem->getAttribute(XMLString::transcode("location")));
+        } else {
+          throw_error_missattr("Regions","attribute","location","plane");
+        }
+        Teuchos::Array<double> loc = make_coordinates(textContent2, *def_list);
+        list.sublist(regName).sublist("Region: Plane").set<Teuchos::Array<double> >("Location",loc);
+        
+        if (regElem->hasAttribute(XMLString::transcode("normal"))) {
+          textContent2 = XMLString::transcode(regElem->getAttribute(XMLString::transcode("normal")));
+        } else {
+          throw_error_missattr("Regions","attribute","normal","plane");
+        }
+        Teuchos::Array<double> dir = make_coordinates(textContent2, *def_list);
+        list.sublist(regName).sublist("Region: Plane").set<Teuchos::Array<double> >("Direction",dir);
+        XMLString::release(&textContent2);
+      }
+      else if  (strcmp(nodeName,"region_file") == 0){
+        //TODO: EIB - add file
+        Teuchos::ParameterList rfPL;
+        
+        // add region name to array of region names
+        if (reg_names.isParameter(regName)) {
+          // warn, region of this name already exists, overwriting
+        } else {
+          reg_names.set<std::string>(regName,"region_file");
+          regionNames_string_.append(regName);
+        }
+        
+        if (regElem->hasAttribute(XMLString::transcode("name"))) {
+          textContent2 = XMLString::transcode(regElem->getAttribute(XMLString::transcode("name")));
+        } else {
+          throw_error_missattr("Regions","attribute","name","region_file");
+        }
+        rfPL.set<std::string>("File",trim_string(textContent2));
+        XMLString::release(&textContent2);
+        
+        if (regElem->hasAttribute(XMLString::transcode("type"))) {
+          textContent2 = XMLString::transcode(regElem->getAttribute(XMLString::transcode("type")));
+        } else {
+          throw_error_missattr("Regions","attribute","type","region_file");
+        }
+        if  (strcmp(textContent2,"color") == 0){
+          char* value;
+          if (regElem->hasAttribute(XMLString::transcode("label"))) {
+            value = XMLString::transcode(regElem->getAttribute(XMLString::transcode("label")));
+          } else {
+            throw_error_missattr("Regions","attribute","label","color");
+          }
+          rfPL.set<int>("Value",atoi(value));
+          XMLString::release(&value);
+          list.sublist(regName).sublist("Region: Color Function") = rfPL;
+        }
+        else if  (strcmp(textContent2,"labeled set") == 0){
+          char* value ;
+          if (regElem->hasAttribute(XMLString::transcode("label"))) {
+            value = XMLString::transcode(regElem->getAttribute(XMLString::transcode("label")));
+          } else {
+            throw_error_missattr("Regions","attribute","label","labeled set");
+          }
+          rfPL.set<std::string>("Label",trim_string(value));
+          XMLString::release(&value);
+          
+          if (regElem->hasAttribute(XMLString::transcode("format"))) {
+            value = XMLString::transcode(regElem->getAttribute(XMLString::transcode("format")));
+          } else {
+            throw_error_missattr("Regions","attribute","format","labeled set");
+          }
+          if  (strcmp(value,"exodus ii") == 0){
+            rfPL.set<std::string>("Format","Exodus II");
+          }
+          XMLString::release(&value);
+          
+          if (regElem->hasAttribute(XMLString::transcode("entity"))) {
+            value = XMLString::transcode(regElem->getAttribute(XMLString::transcode("entity")));
+          } else {
+            throw_error_missattr("Regions","attribute","entity","labeled set");
+          }
+          rfPL.set<std::string>("Entity",trim_string(value));
+          XMLString::release(&value);
+          
+          list.sublist(regName).sublist("Region: Labeled Set") = rfPL;
+        }
+        XMLString::release(&textContent2);
+      }
+      else if  (strcmp(nodeName,"point") == 0){
+        
+        // add region name to array of region names
+        if (reg_names.isParameter(regName)) {
+          // warn, region of this name already exists, overwriting
+        } else {
+          reg_names.set<std::string>(regName,"point");
+          regionNames_string_.append(regName);
+        }
+        
+        if (regElem->hasAttribute(XMLString::transcode("coordinate"))) {
+          textContent2 = XMLString::transcode(regElem->getAttribute(XMLString::transcode("coordinate")));
+        } else {
+          throw_error_missattr("Regions","attribute","coordinate","point");
+        }
+        
+        Teuchos::Array<double> coord = make_coordinates(textContent2, *def_list);
+        list.sublist(regName).sublist("Region: Point").set<Teuchos::Array<double> >("Coordinate",coord);
+        XMLString::release(&textContent2);
+      }
+      else if  (strcmp(nodeName,"polygonal_surface") == 0){
+        if (!isUnstr_) {
+          throw_error_str_ustr("Regions", tagName, "Unstructured");
+        }
+        
+        // add region name to array of region names
+        if (reg_names.isParameter(regName)) {
+          // warn, region of this name already exists, overwriting
+        } else {
+          reg_names.set<std::string>(regName,"polygonal_surface");
+          regionNames_string_.append(regName);
+        }
+        
+         // if attribute 'num_points' exists, get it
+        int num_points(-1);
+        int pt_cnt(0);
+        nodeAttr = attrMap->getNamedItem(XMLString::transcode("num_points"));
+        if (regElem->hasAttribute(XMLString::transcode("num_points"))) {
+          textContent2 = XMLString::transcode(regElem->getAttribute(XMLString::transcode("num_points")));
+          std::string str(textContent2);
+          boost::algorithm::trim(str);
+          num_points = atoi(textContent2);
+          list.sublist(regName).sublist("Region: Polygonal Surface").set<int>("Number of points",num_points);
+          XMLString::release(&textContent2);
+        }
+        // get verticies (add count them)
+        Teuchos::Array<Teuchos::Array<double> > points;
+        DOMNodeList* gkids = regElem->getChildNodes();
+        for (int j=0; j<gkids->getLength(); j++) {
+          DOMNode* curGKid = gkids->item(j) ;
+          if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
+            nodeName  = XMLString::transcode(curGKid->getNodeName());
+            if  (strcmp(nodeName,"point") == 0){
+              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              Teuchos::Array<double> point = make_coordinates(textContent2, *def_list);
+              points.append(point);
+              pt_cnt++;
+              XMLString::release(&textContent2);
+            }
+          }
+        }
+        list.sublist(regName).sublist("Region: Polygonal Surface").set<Teuchos::Array<Teuchos::Array<double> > >("Points",points);
+        // check that 'num_points' with current count
+        if (!list.sublist(regName).sublist("Region: Polygonal Surface").isParameter("Number of points")) {
+          list.sublist(regName).sublist("Region: Polygonal Surface").set<int>("Number of points",pt_cnt);
+        }
+      }
+      else if  (strcmp(nodeName,"logical") == 0){
+        if (!isUnstr_) {
+          throw_error_str_ustr("Regions", tagName, "Unstructured");
+        }
+        
+        // add region name to array of region names
+        if (reg_names.isParameter(regName)) {
+          // warn, region of this name already exists, overwriting
+        } else {
+          reg_names.set<std::string>(regName,"logical");
+          regionNames_string_.append(regName);
+        }
+        
+        // get operation
+        if (regElem->hasAttribute(XMLString::transcode("operation"))) {
+          textContent2 = XMLString::transcode(regElem->getAttribute(XMLString::transcode("operation")));
+          if ( strcmp(textContent2,"union") == 0) {
+            list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Union");
+          }
+          else if (strcmp(textContent2,"intersection") == 0) {
+            list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Intersection");
+          }
+          else if (strcmp(textContent2,"subtraction") == 0) {
+            list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Subtraction");
+          }
+          else if (strcmp(textContent2,"complement") == 0) {
+            list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Complement");
+          }
+          XMLString::release(&textContent2);
+        } else {
+          throw_error_missattr("Regions","attribute","operation","logical");
+        }
+        
+        // get region list
+        if (regElem->hasAttribute(XMLString::transcode("region_list"))) {
+          textContent2 = XMLString::transcode(regElem->getAttribute(XMLString::transcode("region_list")));
+          Teuchos::Array<std::string> regs = make_regions_list(textContent2);
+          list.sublist(regName).sublist("Region: Logical").set<Teuchos::Array<std::string> >("Regions",regs);
+          XMLString::release(&textContent2);
+        } else {
+          throw_error_missattr("Regions","attribute","region_list","logical");
+        }
+        
+      }
+      else if  (strcmp(nodeName,"polygon") == 0){
+        if (isUnstr_) {
+          throw_error_str_ustr("Regions", tagName, "Structured");
+        }
+        if (dimension_ != 2) {
+          Errors::Message msg;
+          msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing Regions - " ;
+          msg << "Regions type 'polygon' is only available for 2D. \n" ;
+          msg << "  Please correct and try again \n" ;
+          Exceptions::amanzi_throw(msg);
+        }
+        // add region name to array of region names
+        if (reg_names.isParameter(regName)) {
+          // warn, region of this name already exists, overwriting
+        } else {
+          reg_names.set<std::string>(regName,"polygon");
+          regionNames_string_.append(regName);
+        }
+        
+        // num_points for error checking
+        char* numPoints;
+        if (regElem->hasAttribute(XMLString::transcode("num_points"))) {
+          numPoints = XMLString::transcode(regElem->getAttribute(XMLString::transcode("num_points")));
+        } else {
+          throw_error_missattr("Regions","attribute","num_points","polygon");
+        }
+        
+        // get verticies (add count them)
+        Teuchos::Array<double> pointsX;
+        Teuchos::Array<double> pointsY;
+        DOMNodeList* gkids = regElem->getChildNodes();
+        for (int j=0; j<gkids->getLength(); j++) {
+          DOMNode* curGKid = gkids->item(j) ;
+          if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
+            nodeName  = XMLString::transcode(curGKid->getNodeName());
+            if  (strcmp(nodeName,"point") == 0){
+              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              Teuchos::Array<double> point = make_coordinates(textContent2, *def_list);
+              pointsX.append(point[0]);
+              pointsY.append(point[1]);
+              XMLString::release(&textContent2);
+            }
+          }
+        }
+        list.sublist(regName).sublist("Region: Polygon").set<Teuchos::Array<double> >("VerticesV1",pointsX);
+        list.sublist(regName).sublist("Region: Polygon").set<Teuchos::Array<double> >("VerticesV2",pointsY);
+      }
+      else if  (strcmp(nodeName,"ellipse") == 0){
+        if (isUnstr_) {
+          throw_error_str_ustr("Regions", tagName, "Structured");
+        }
+        if (dimension_ != 2) {
+          Errors::Message msg;
+          msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing Regions - " ;
+          msg << "Regions type 'ellipse' is only available for 2D. \n" ;
+          msg << "  Please correct and try again \n" ;
+          Exceptions::amanzi_throw(msg);
+        }
+        
+        // add region name to array of region names
+        if (reg_names.isParameter(regName)) {
+          // warn, region of this name already exists, overwriting
+        } else {
+          reg_names.set<std::string>(regName,"ellipse");
+          regionNames_string_.append(regName);
+        }
+        
+        // get verticies (add count them)
+        Teuchos::Array<Teuchos::Array<double> > points;
+        DOMNodeList* gkids = regElem->getChildNodes();
+        for (int j=0; j<gkids->getLength(); j++) {
+          DOMNode* curGKid = gkids->item(j) ;
+          if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
+            nodeName  = XMLString::transcode(curGKid->getNodeName());
+            if (strcmp(nodeName,"center") == 0){
+              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              Teuchos::Array<double> center = make_coordinates(textContent2, *def_list);
+              list.sublist(regName).sublist("Region: Ellipse").set<Teuchos::Array<double> >("Center",center);
+              XMLString::release(&textContent2);
+            }
+            else if (strcmp(nodeName,"raduis") == 0){
+              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              Teuchos::Array<double> raduis = make_coordinates(textContent2, *def_list);
+              list.sublist(regName).sublist("Region: Ellipse").set<Teuchos::Array<double> >("Radius",raduis);
+              XMLString::release(&textContent2);
+            }
+          }
+        }
+      }
+      else if  (strcmp(nodeName,"rotated_polygon") == 0){
+        if (isUnstr_) {
+          throw_error_str_ustr("Regions", tagName, "Structured");
+        }
+        if (dimension_ != 3) {
+          Errors::Message msg;
+          msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing Regions - " ;
+          msg << "Regions type 'rotated_polygon' is only available for 3D. \n" ;
+          msg << "  Please correct and try again \n" ;
+          Exceptions::amanzi_throw(msg);
+        }
+        // add region name to array of region names
+        if (reg_names.isParameter(regName)) {
+          // warn, region of this name already exists, overwriting
+        } else {
+          reg_names.set<std::string>(regName,"rotated_polygon");
+          regionNames_string_.append(regName);
+        }
+        
+        // get verticies (add count them)
+        Teuchos::Array<double> pointsX;
+        Teuchos::Array<double> pointsY;
+        Teuchos::Array<double> pointsZ;
+        DOMNodeList* gkids = regElem->getChildNodes();
+        for (int j=0; j<gkids->getLength(); j++) {
+          DOMNode* curGKid = gkids->item(j) ;
+          if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
+            nodeName  = XMLString::transcode(curGKid->getNodeName());
+            if  (strcmp(nodeName,"point") == 0){
+              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              Teuchos::Array<double> point = make_coordinates(textContent2, *def_list);
+              pointsX.append(point[0]);
+              pointsY.append(point[1]);
+              pointsZ.append(point[2]);
+              XMLString::release(&textContent2);
+            }
+            else if  (strcmp(nodeName,"reference_point") == 0){
+              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              Teuchos::Array<double> point = make_coordinates(textContent2, *def_list);
+              list.sublist(regName).sublist("Region: Rotated Polygon").set<Teuchos::Array<double> >("Reference Point", point);
+              XMLString::release(&textContent2);
+            }
+            else if  (strcmp(nodeName,"plane") == 0){
+              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              if ( strcmp(textContent2,"xy") == 0 | strcmp(textContent2,"yx") == 0) {
+                list.sublist(regName).sublist("Region: Rotated Polygon").set<std::string>("Plane","XY");
+              }
+              else if (strcmp(textContent2,"yz") == 0 | strcmp(textContent2,"zy") == 0) {
+                list.sublist(regName).sublist("Region: Rotated Polygon").set<std::string>("Plane","YZ");
+              }
+              else if (strcmp(textContent2,"xz") == 0 | strcmp(textContent2,"zx") == 0) {
+                list.sublist(regName).sublist("Region: Rotated Polygon").set<std::string>("Plane","XZ");
+              }
+              else {
+                throw_error_illformed("Regions", "value", "plane", "xy, yx, xz");
+              }
+              XMLString::release(&textContent2);
+            }
+            else if  (strcmp(nodeName,"axis") == 0){
+              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              if ( strcmp(textContent2,"x") == 0) {
+                list.sublist(regName).sublist("Region: Rotated Polygon").set<std::string>("Plane","X");
+              }
+              else if (strcmp(textContent2,"y") == 0) {
+                list.sublist(regName).sublist("Region: Rotated Polygon").set<std::string>("Plane","Y");
+              }
+              else if (strcmp(textContent2,"z") == 0) {
+                list.sublist(regName).sublist("Region: Rotated Polygon").set<std::string>("Plane","Z");
+              }
+              else {
+                throw_error_illformed("Regions", "value", "axis", "x, y, z");
+              }
+              XMLString::release(&textContent2);
+            }
+          }
+        }
+        list.sublist(regName).sublist("Region: Rotated Polygon").set<Teuchos::Array<double> >("VerticesV1",pointsX);
+        list.sublist(regName).sublist("Region: Rotated Polygon").set<Teuchos::Array<double> >("VerticesV2",pointsY);
+        list.sublist(regName).sublist("Region: Rotated Polygon").set<Teuchos::Array<double> >("VerticesV3",pointsZ);
+      }
+      else if  (strcmp(nodeName,"swept_polygon") == 0){
+        if (isUnstr_) {
+          throw_error_str_ustr("Regions", tagName, "Structured");
+        }
+        if (dimension_ != 3) {
+          Errors::Message msg;
+          msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing Regions - " ;
+          msg << "Regions type 'swept_polygon' is only available for 3D. \n" ;
+          msg << "  Please correct and try again \n" ;
+          Exceptions::amanzi_throw(msg);
+        }
+        // add region name to array of region names
+        if (reg_names.isParameter(regName)) {
+          // warn, region of this name already exists, overwriting
+        } else {
+          reg_names.set<std::string>(regName,"swept_polygon");
+          regionNames_string_.append(regName);
+        }
+        // get verticies (add count them)
+        Teuchos::Array<double> pointsX;
+        Teuchos::Array<double> pointsY;
+        Teuchos::Array<double> pointsZ;
+        Teuchos::Array<double> extent;
+        extent.append(0.0);
+        extent.append(0.0);
+        DOMNodeList* gkids = regElem->getChildNodes();
+        for (int j=0; j<gkids->getLength(); j++) {
+          DOMNode* curGKid = gkids->item(j) ;
+          if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
+            nodeName  = XMLString::transcode(curGKid->getNodeName());
+            if  (strcmp(nodeName,"point") == 0){
+              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              Teuchos::Array<double> point = make_coordinates(textContent2, *def_list);
+              pointsX.append(point[0]);
+              pointsY.append(point[1]);
+              pointsZ.append(point[2]);
+              XMLString::release(&textContent2);
+            }
+            else if  (strcmp(nodeName,"extent_min") == 0){
+              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              extent[0] = atof(textContent2);
+              XMLString::release(&textContent2);
+            }
+            else if  (strcmp(nodeName,"extent_max") == 0){
+              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              extent[0] = atof(textContent2);
+              XMLString::release(&textContent2);
+            }
+            else if  (strcmp(nodeName,"plane") == 0){
+              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              if ( strcmp(textContent2,"xy") == 0 | strcmp(textContent2,"yx") == 0) {
+                list.sublist(regName).sublist("Region: Swept Polygon").set<std::string>("Plane","XY");
+              }
+              else if (strcmp(textContent2,"yz") == 0 | strcmp(textContent2,"zy") == 0) {
+                list.sublist(regName).sublist("Region: Swept Polygon").set<std::string>("Plane","YZ");
+              }
+              else if (strcmp(textContent2,"xz") == 0 | strcmp(textContent2,"zx") == 0) {
+                list.sublist(regName).sublist("Region: Swept Polygon").set<std::string>("Plane","XZ");
+              }
+              else {
+                throw_error_illformed("Regions", "value", "plane", "xy, yx, xz");
+              }
+              XMLString::release(&textContent2);
+            }
+          }
+        }
+        list.sublist(regName).sublist("Region: Swept Polygon").set<Teuchos::Array<double> >("VerticesV1",pointsX);
+        list.sublist(regName).sublist("Region: Swept Polygon").set<Teuchos::Array<double> >("VerticesV2",pointsY);
+        list.sublist(regName).sublist("Region: Swept Polygon").set<Teuchos::Array<double> >("VerticesV3",pointsZ);
+        list.sublist(regName).sublist("Region: Swept Polygon").set<Teuchos::Array<double> >("Extent",extent);
+      }
+      
+      XMLString::release(&nodeName);
+      // add region to new xml
+      
+      /////////
+      /*
       if  (strcmp(tagName,"region") == 0){
 	attrMap = cur->getAttributes();
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
@@ -3179,16 +3717,6 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
 	} else {
           throw_error_missattr("Regions","attribute","name","region");
 	}
-
-	// add region name to array of region names
-        /*
-	if (reg_names.isParameter(textContent)) {
-		// warn, region of this name already exists, overwriting
-	} else {
-	  reg_names.set<std::string>(textContent,"region");
-          regionNames_string_.append(textContent);
-	}
-         */
         
 	// deal with children: comments, box/file
         DOMNodeList* kids = cur->getChildNodes();
@@ -3196,11 +3724,7 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
           DOMNode* curKid = kids->item(j) ;
           if (DOMNode::ELEMENT_NODE == curKid->getNodeType()) {
             nodeName  = XMLString::transcode(curKid->getNodeName());
-	    //if (strcmp(tagName,"comments") == 0){
-            //  textContent = XMLString::transcode(curKid->getTextContent());
-            //  list.set<std::string>("comments",textContent);
-            //  XMLString::release(&textContent);
-            //}
+	    
             if  (strcmp(nodeName,"box") == 0){
               
               // add region name to array of region names
@@ -3892,7 +4416,8 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
         }
         XMLString::release(&textContent2);
       }
-
+      */
+      
       XMLString::release(&tagName);
       XMLString::release(&regName);
     }
