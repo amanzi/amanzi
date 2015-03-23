@@ -338,6 +338,8 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
     it = it + 1;
   }
 
+  Real scaled_mult = dkappa / kappaval[0];
+  Real one = 1.;
   for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
     const int  i     = mfi.index();
     const int* k_lo  = mf[mfi].loVect();
@@ -349,11 +351,11 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
 		    scratch_r[i].dataPtr(),&real_sz,real_idx, 
 		    scratch_i[i].dataPtr(),&int_sz,int_idx);
 
-    FORT_LGNORM(kdat,ARLIM(k_lo),ARLIM(k_hi),
-		&kappaval[0],&dkappa);
+    FORT_LGNORM(kdat,ARLIM(k_lo),ARLIM(k_hi),&one,&scaled_mult);
 
-  
+    mf[mfi].mult(kappaval[0]);
   }
+
   ParallelDescriptor::Barrier();
 
   FORT_SGSIM_DEALLOC();
@@ -369,7 +371,11 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
   MultiFab mf1(gba1,1,0);
   mf1.copy(mfg); // No-grow to no-grow parallel copy
 
+  int nComp = mfdata.nComp(); // For now, all components get same data
   for (MFIter mfi(mf1); mfi.isValid(); ++mfi) {
-    mfdata[mfi].copy(mf1[mfi]);
+    for (int n=0; n<nComp; ++n) {
+      const Box& bx = mf1[mfi].box();
+      mfdata[mfi].copy(mf1[mfi],bx,0,bx,n,1);
+    }
   }
 }
