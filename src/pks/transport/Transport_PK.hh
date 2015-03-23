@@ -7,32 +7,27 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-  Usage: 
-    Transport_PK TPK(Teuchos::ParameterList& list, Teuchos::RCP<Transport_State> TS);
-    double time_step = TPK.calculate_transport_dT();
-    TPK.advance(time_step);
 */
 
 #ifndef AMANZI_TRANSPORT_PK_HH_
 #define AMANZI_TRANSPORT_PK_HH_
 
+// TPLs
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
 #include "Epetra_Import.h"
 #include "Teuchos_RCP.hpp"
 
+// Amanzi
 #include "CompositeVector.hh"
 #include "DiffusionPhase.hh"
 #include "Explicit_TI_FnBase.hh"
 #include "MaterialProperties.hh"
 #include "PK.hh"
+#include "PK_Factory.hh"
 #include "ReconstructionCell.hh"
 #include "State.hh"
 #include "tensor.hh"
-#include "TransportBoundaryFunction.hh"
-#include "TransportDomainFunction.hh"
-#include "TransportDefs.hh"
-#include "TransportSourceFactory.hh"
 #include "VerboseObject.hh"
 
 #ifdef ALQUIMIA_ENABLED
@@ -40,16 +35,19 @@
 #include "ChemistryEngine.hh"
 #endif
 
-/*
-  This is Amanzi Transport Process Kernel (PK).
+// Transport
+#include "TransportBoundaryFunction.hh"
+#include "TransportDomainFunction.hh"
+#include "TransportDefs.hh"
+#include "TransportSourceFactory.hh"
 
-  The transport PK receives a reduced (optional) copy of 
-  a physical state at time n and returns a different state 
-  at time n+1. 
+/* ******************************************************************
+The transport PK receives a reduced (optional) copy of a physical 
+state at time n and returns a different state at time n+1. 
 
-  Unmodified physical quantaties in the returned state are
-  the smart pointers to the original variables.
-*/
+Unmodified physical quantaties in the returned state are the smart 
+pointers to the original variables.
+****************************************************************** */
 
 namespace Amanzi {
 namespace Transport {
@@ -57,7 +55,7 @@ namespace Transport {
 double bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
 typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
-class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
+class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
  public:
   Transport_PK();
 #ifdef ALQUIMIA_ENABLED
@@ -67,35 +65,41 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
                Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state = Teuchos::null,
                Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine = Teuchos::null);
 #endif
+  Transport_PK(Teuchos::ParameterList& pk_tree,
+               const Teuchos::RCP<Teuchos::ParameterList>& glist,
+               const Teuchos::RCP<State>& S,
+               const Teuchos::RCP<TreeVector>& soln);
+
   Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
                Teuchos::RCP<State> S,
                const std::string& pk_list_name,
                std::vector<std::string>& component_names);
+
   ~Transport_PK();
 
-  // main PK members
-  void Setup();
-  void Initialize();
-  int Advance(double dT, double& dT_actual); 
-  void CommitState(double dummy_dT, const Teuchos::Ptr<State>& S);
+  // members required by PK interface
+  virtual void Setup();
+  virtual void Initialize();
 
-  void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
-  double get_dt();
-  std::string name() { return "transport"; }
+  virtual double get_dt();
+  virtual void set_dt(double dt) {};
+
+  virtual bool AdvanceStep(double t_old, double t_new); 
+  virtual void CommitStep(double t_old, double t_new);
+  virtual void CalculateDiagnostics() {};
+
+  virtual std::string name() { return passwd_; }
 
   // main transport members
-  void InitializeFields();
+  // -- calculation of a stable time step needs saturations and darcy flux
   double CalculateTransportDt();
 
-  // access members  
+  // -- access members  
+  inline double cfl() { return cfl_; }
   Teuchos::RCP<const State> state() { return S_; }
   Teuchos::RCP<CompositeVector> total_component_concentration() { return tcc_tmp; }
 
-  double TimeStep() { return dT; }
-  void TimeStep(double dT_) { dT = dT_; }
-  inline double cfl() { return cfl_; }
-
-  // control members
+  // -- control members
   void CreateDefaultState(Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int ncomponents);
   void Policy(Teuchos::Ptr<State> S);
   void PrintStatistics() const;
@@ -110,21 +114,23 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
 
   void CalculateLpErrors(AnalyticFunction f, double t, Epetra_Vector* sol, double* L1, double* L2);
 
-  // sources and sinks for components from n0 to n1 including
-  void ComputeAddSourceTerms(double Tp, double dTp, 
+  // -- sources and sinks for components from n0 to n1 including
+  void ComputeAddSourceTerms(double tp, double dtp, 
                              std::vector<TransportDomainFunction*>& src_sink, 
                              Epetra_MultiVector& tcc, int n0, int n1);
 
   bool PopulateBoundaryData(std::vector<int>& bc_model,
                             std::vector<double>& bc_value, int component);
 
-  // limiters 
+  // -- limiters 
   void LimiterBarthJespersen(const int component,
                              Teuchos::RCP<const Epetra_Vector> scalar_field, 
                              Teuchos::RCP<CompositeVector>& gradient, 
                              Teuchos::RCP<Epetra_Vector>& limiter);
 
  private:
+  void InitializeFields_();
+
   // advection members
   void AdvanceDonorUpwind(double dT);
   void AdvanceSecondOrderUpwindGeneric(double dT);
@@ -164,6 +170,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   int FindComponentNumber(const std::string component_name);
 
  public:
+  Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> tp_list_;
   Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
   Teuchos::RCP<const Teuchos::ParameterList> linear_solver_list_;
@@ -176,15 +183,16 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   int internal_tests;
   double tests_tolerance;
 
- private:
-  VerboseObject* vo_;
-
+ protected:
+  Teuchos::RCP<TreeVector> soln_;
+ 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  int dim;
-
-  Teuchos::RCP<State> S_;  // state info
+  Teuchos::RCP<State> S_;
   std::string passwd_;
+
+  bool subcycling_;
+  int dim;
 
   Teuchos::RCP<CompositeVector> tcc_tmp;  // next tcc
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 
@@ -222,7 +230,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   std::string dispersion_preconditioner;
   std::string dispersion_solver;
 
-  double cfl_, dT, dT_debug, T_physics;  
+  double cfl_, dt_, dt_debug_, t_physics_;  
 
   std::vector<double> mass_solutes_exact_, mass_solutes_source_;  // mass for all solutes
   std::vector<std::string> runtime_solutes_;  // names of trached solutes
@@ -235,11 +243,15 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   std::vector<std::string> component_names_;  // details of components
   int num_aqueous, num_gaseous;
 
+  VerboseObject* vo_;
+
   // Forbidden.
   Transport_PK(const Transport_PK&);
   Transport_PK& operator=(const Transport_PK&);
 
-  friend class Transport_PK_Wrapper;
+ private:
+  // factory registration
+  static RegisteredPKFactory<Transport_PK> reg_;
 };
 
 }  // namespace Transport

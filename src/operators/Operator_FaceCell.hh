@@ -1,5 +1,5 @@
 /*
-  This is the Operator component of the Amanzi code.
+  This is the operators component of the Amanzi code.
 
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -15,6 +15,7 @@
 
 #include "DenseMatrix.hh"
 #include "Operator_Cell.hh"
+#include "OperatorDefs.hh"
 
 /* ******************************************************************
 Operator whose unknowns are CELL + FACE
@@ -56,9 +57,8 @@ namespace Operators {
 
 class Operator_FaceCell : public Operator_Cell {
  public:
-  // constuctors
   // main constructor
-  //   The CVS is the domain and range of the operator
+  // The input CVS is the domain and range of the operator.
   Operator_FaceCell(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
                     Teuchos::ParameterList& plist) :
       Operator_Cell(cvs, plist, OPERATOR_SCHEMA_DOFS_FACE | OPERATOR_SCHEMA_DOFS_CELL) {
@@ -79,7 +79,7 @@ class Operator_FaceCell : public Operator_Cell {
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
   
-  // visit methods for assemble
+  // visit methods for actual assemble
   virtual void AssembleMatrixOp(const Op_Cell_FaceCell& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;

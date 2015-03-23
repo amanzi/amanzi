@@ -29,6 +29,7 @@
 #include "Op_Cell_Face.hh"
 #include "Op_Cell_Cell.hh"
 #include "Op_Cell_Node.hh"
+#include "Op_Cell_Edge.hh"
 #include "Op_Face_Cell.hh"
 #include "Op_Node_Node.hh"
 
@@ -232,10 +233,10 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
   Epetra_Vector Ycopy(A_->RowMap());
   int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, 0);
 
-  // // dump the schur complement
-  std::stringstream filename_s2;
-  filename_s2 << "schur_PC_" << 0 << ".txt";
-  EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *A_);
+  // dump the schur complement
+  // std::stringstream filename_s2;
+  // filename_s2 << "schur_PC_" << 0 << ".txt";
+  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *A_);
 
   ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
   ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, 0);
@@ -412,53 +413,49 @@ void Operator::OpExtend(op_iterator begin, op_iterator end)
 
 
 /* ******************************************************************
-* Visit methods for Apply: Cell.
+* Generic error message.
 ****************************************************************** */
-int Operator::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
-                                const CompositeVector& X, CompositeVector& Y) const
+int Operator::SchemaMismatch_(const std::string& schema1, const std::string& schema2) const
 {
   std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string 
-      << " cannot be used with a matrix on " << schema_string_;
+  err << "Invalid schema combination -- " << schema1
+      << " cannot be used with a matrix on " << schema2;
   Errors::Message message(err.str());
   Exceptions::amanzi_throw(message);
   return 1;
+}
+
+
+/* ******************************************************************
+* Visit methods for Apply: Cell.
+****************************************************************** */
+int Operator::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
+                                const CompositeVector& X, CompositeVector& Y) const {
+  return SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 int Operator::ApplyMatrixFreeOp(const Op_Cell_Face& op,
-                                const CompositeVector& X, CompositeVector& Y) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
-  return 1;
+                                const CompositeVector& X, CompositeVector& Y) const {
+  return SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 int Operator::ApplyMatrixFreeOp(const Op_Cell_Node& op,
-                                const CompositeVector& X, CompositeVector& Y) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
-  return 1;
+                                const CompositeVector& X, CompositeVector& Y) const {
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+int Operator::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
+                                const CompositeVector& X, CompositeVector& Y) const {
+  return SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 int Operator::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
-                                const CompositeVector& X, CompositeVector& Y) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
-  return 1;
+                                const CompositeVector& X, CompositeVector& Y) const {
+  return SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
@@ -466,14 +463,8 @@ int Operator::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
 * Visit methods for Apply: Face
 ****************************************************************** */
 int Operator::ApplyMatrixFreeOp(const Op_Face_Cell& op,
-                                const CompositeVector& X, CompositeVector& Y) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
-  return 1;
+                                const CompositeVector& X, CompositeVector& Y) const {
+  return SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
@@ -481,83 +472,47 @@ int Operator::ApplyMatrixFreeOp(const Op_Face_Cell& op,
 * Visit methods for Apply: Node
 ****************************************************************** */
 int Operator::ApplyMatrixFreeOp(const Op_Node_Node& op,
-                                const CompositeVector& X, CompositeVector& Y) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
-  return 1;
+                                const CompositeVector& X, CompositeVector& Y) const {
+  return SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 /* ******************************************************************
 * Visit methods for RHS: Cell
 ****************************************************************** */
-void Operator::AssembleRHSOp(const Op_Cell_FaceCell& op, CompositeVector& rhs) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+void Operator::AssembleRHSOp(const Op_Cell_FaceCell& op, CompositeVector& rhs) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
-void Operator::AssembleRHSOp(const Op_Cell_Face& op, CompositeVector& rhs) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+void Operator::AssembleRHSOp(const Op_Cell_Face& op, CompositeVector& rhs) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
-void Operator::AssembleRHSOp(const Op_Cell_Node& op, CompositeVector& rhs) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+void Operator::AssembleRHSOp(const Op_Cell_Node& op, CompositeVector& rhs) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
-void Operator::AssembleRHSOp(const Op_Cell_Cell& op, CompositeVector& rhs) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+void Operator::AssembleRHSOp(const Op_Cell_Cell& op, CompositeVector& rhs) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 /* ******************************************************************
 * Visit methods for RHS: Face
 ****************************************************************** */
-void Operator::AssembleRHSOp(const Op_Face_Cell& op, CompositeVector& rhs) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+void Operator::AssembleRHSOp(const Op_Face_Cell& op, CompositeVector& rhs) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 /* ******************************************************************
 * Visit methods for RHS: Node
 ****************************************************************** */
-void Operator::AssembleRHSOp(const Op_Node_Node& op, CompositeVector& rhs) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+void Operator::AssembleRHSOp(const Op_Node_Node& op, CompositeVector& rhs) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
@@ -566,49 +521,36 @@ void Operator::AssembleRHSOp(const Op_Node_Node& op, CompositeVector& rhs) const
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+                                        int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 void Operator::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+                                        int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 void Operator::SymbolicAssembleMatrixOp(const Op_Cell_Node& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+                                        int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+void Operator::SymbolicAssembleMatrixOp(const Op_Cell_Edge& op,
+                                        const SuperMap& map, GraphFE& graph,
+                                        int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 void Operator::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+                                        int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
@@ -617,13 +559,8 @@ void Operator::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+                                        int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
@@ -632,13 +569,8 @@ void Operator::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrixOp(const Op_Node_Node& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+                                        int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
@@ -647,49 +579,36 @@ void Operator::SymbolicAssembleMatrixOp(const Op_Node_Node& op,
 ****************************************************************** */
 void Operator::AssembleMatrixOp(const Op_Cell_FaceCell& op,
                                 const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+                                int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 void Operator::AssembleMatrixOp(const Op_Cell_Face& op,
                                 const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+                                int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 void Operator::AssembleMatrixOp(const Op_Cell_Node& op,
                                 const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+                                int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+void Operator::AssembleMatrixOp(const Op_Cell_Edge& op,
+                                const SuperMap& map, MatrixFE& mat,
+                                int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 void Operator::AssembleMatrixOp(const Op_Cell_Cell& op,
                                 const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+                                int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
@@ -698,13 +617,8 @@ void Operator::AssembleMatrixOp(const Op_Cell_Cell& op,
 ****************************************************************** */
 void Operator::AssembleMatrixOp(const Op_Face_Cell& op,
                                 const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+                                int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
@@ -713,13 +627,8 @@ void Operator::AssembleMatrixOp(const Op_Face_Cell& op,
 ****************************************************************** */
 void Operator::AssembleMatrixOp(const Op_Node_Node& op,
                                 const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const
-{
-  std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+                                int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 }  // namespace Operators

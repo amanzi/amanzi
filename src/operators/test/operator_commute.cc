@@ -15,23 +15,25 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
 
+// Amanzi
 #include "MeshFactory.hh"
 #include "mfd3d_diffusion.hh"
+#include "LinearOperatorFactory.hh"
 #include "tensor.hh"
 
-#include "LinearOperatorFactory.hh"
+// Operators
+#include "Operator_FaceCell.hh"
+#include "OperatorAdvection.hh"
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionMFD.hh"
 #include "OperatorDiffusionFV.hh"
 #include "OperatorDiffusionFactory.hh"
-#include "OperatorAdvection.hh"
-#include "Operator_FaceCell.hh"
 
 /* *****************************************************************
 * This test verified that operators can be computed in arbitrary
@@ -164,6 +166,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
     for (int k = 0; k < n; ++k) CHECK_CLOSE(val2[k], val4[k], 1e-10);
   }
 }
+
 
 TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   using namespace Teuchos;

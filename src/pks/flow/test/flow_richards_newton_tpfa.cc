@@ -15,19 +15,21 @@
 #include <string>
 #include <vector>
 
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "UnitTest++.h"
 
+// Amanzi
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
-#include "Richards_PK.hh"
 #include "State.hh"
 
+// Flow
+#include "Richards_PK.hh"
 #include "Richards_SteadyState.hh"
-
 
 /* **************************************************************** */
 TEST(FLOW_3D_RICHARDS) {
@@ -39,16 +41,14 @@ TEST(FLOW_3D_RICHARDS) {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-
   if (MyPID == 0) std::cout << "Test: 3D Richards, 2-layer model" << std::endl;
 
-  /* read parameter list */
+  // read parameter list 
   std::string xmlFileName = "test/flow_richards_newton_tpfa.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
 
   FrameworkPreference pref;
@@ -60,16 +60,15 @@ TEST(FLOW_3D_RICHARDS) {
   meshfactory.preference(pref);
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, -2.0, 1.0, 1.0, 0.0, 18, 1, 18, gm);
 
-  /* create a simple state and populate it */
+  // create a simple state and populate it
   Amanzi::VerboseObject::hide_line_prefix = false;
 
-  Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("State");
+  Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("State");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
-  Richards_PK* RPK = new Richards_PK(global_list, "Flow", S, soln);
+  Richards_PK* RPK = new Richards_PK(plist, "Flow", S, soln);
 
   RPK->Setup();
   S->Setup();
@@ -121,8 +120,8 @@ TEST(FLOW_3D_RICHARDS) {
   ti_specs.T1 = 100.0;
   ti_specs.max_itrs = 400;
 
-  AdvanceToSteadyState(S, *RPK, ti_specs, S->GetFieldData("pressure", "flow"));
-  RPK->CommitStep(0.0, S.ptr());
+  AdvanceToSteadyState(S, *RPK, ti_specs, soln);
+  RPK->CommitStep(0.0, 1.0);  // dummy times
 
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");

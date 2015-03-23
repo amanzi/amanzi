@@ -1,5 +1,5 @@
 /*
-  This is the Operator component of the Amanzi code.
+  This is the operators component of the Amanzi code.
 
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
@@ -30,14 +30,12 @@ See Operator_FaceCell.hh for mode detail.
 namespace Amanzi {
 namespace Operators {
 
-// visit methods for Apply
-
 /* ******************************************************************
-* Apply the local matrices directly as schemas match.
+* Visit methods for Apply:
+* apply the local matrices directly as schemas match.
 ****************************************************************** */
-int
-Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
-        const CompositeVector& X, CompositeVector& Y) const
+int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
+                                         const CompositeVector& X, CompositeVector& Y) const
 {
   ASSERT(op.matrices.size() == ncells_owned);
 
@@ -50,12 +48,12 @@ Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
     Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
 
     AmanziMesh::Entity_ID_List faces;
-    for (int c=0; c!=ncells_owned; ++c) {
+    for (int c = 0; c != ncells_owned; ++c) {
       mesh_->cell_get_faces(c, &faces);
       int nfaces = faces.size();
 
       WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
-      for (int n=0; n!=nfaces; ++n) {
+      for (int n = 0; n != nfaces; ++n) {
         v(n) = Xf[0][faces[n]];
       }
       v(nfaces) = Xc[0][c];
@@ -63,20 +61,23 @@ Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
       const WhetStone::DenseMatrix& Acell = op.matrices[c];
       Acell.Multiply(v, av, false);
 
-      for (int n=0; n!=nfaces; ++n) {
+      for (int n = 0; n != nfaces; ++n) {
         Yf[0][faces[n]] += av(n);
       }
       Yc[0][c] += av(nfaces);
     } 
   }
+
   Y.GatherGhostedToMaster(Add);
   return 0;
 }
 
 
-int
-Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_Face& op,
-        const CompositeVector& X, CompositeVector& Y) const
+/* ******************************************************************
+* Apply the local matrices directly as schemas match.
+****************************************************************** */
+int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_Face& op,
+                                         const CompositeVector& X, CompositeVector& Y) const
 {
   ASSERT(op.matrices.size() == ncells_owned);
 
@@ -87,33 +88,35 @@ Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_Face& op,
     Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
 
     AmanziMesh::Entity_ID_List faces;
-    for (int c=0; c!=ncells_owned; ++c) {
+    for (int c = 0; c != ncells_owned; ++c) {
       mesh_->cell_get_faces(c, &faces);
       int nfaces = faces.size();
 
       WhetStone::DenseVector v(nfaces), av(nfaces);
-      for (int n=0; n!=nfaces; ++n) {
+      for (int n = 0; n != nfaces; ++n) {
         v(n) = Xf[0][faces[n]];
       }
 
       const WhetStone::DenseMatrix& Acell = op.matrices[c];
       Acell.Multiply(v, av, false);
 
-      for (int n=0; n!=nfaces; ++n) {
+      for (int n = 0; n != nfaces; ++n) {
         Yf[0][faces[n]] += av(n);
       }
     } 
   }
+
   Y.GatherGhostedToMaster(Add);
   return 0;
 }
 
 
-// visit methods for symbolic assemble
-void
-Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
-        const SuperMap& map, GraphFE& graph,
-        int my_block_row, int my_block_col) const
+/* ******************************************************************
+* Visit methods for symbolic assemble: FaceCell
+****************************************************************** */
+void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
+                                                 const SuperMap& map, GraphFE& graph,
+                                                 int my_block_row, int my_block_col) const
 {
   int lid_r[OPERATOR_MAX_FACES];
   int lid_c[OPERATOR_MAX_FACES];
@@ -126,11 +129,11 @@ Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
 
   int ierr(0);
   AmanziMesh::Entity_ID_List faces;
-  for (int c=0; c!=ncells_owned; ++c) {
+  for (int c = 0; c != ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
-    for (int n=0; n!=nfaces; ++n) {
+    for (int n = 0; n != nfaces; ++n) {
       lid_r[n] = face_row_inds[faces[n]];
       lid_c[n] = face_col_inds[faces[n]];
     }
@@ -141,25 +144,28 @@ Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
   ASSERT(!ierr);
 }
 
-void
-Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
-        const SuperMap& map, GraphFE& graph,
-        int my_block_row, int my_block_col) const
+
+/* ******************************************************************
+* Visit methods for symbolic assemble: Face
+****************************************************************** */
+void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
+                                                 const SuperMap& map, GraphFE& graph,
+                                                 int my_block_row, int my_block_col) const
 {
   int lid_r[OPERATOR_MAX_FACES];
   int lid_c[OPERATOR_MAX_FACES];
 
-  // ELEMENT: cell, DOFS: cell and face
+  // ELEMENT: cell, DOFS: face
   const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
   const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
 
   int ierr(0);
   AmanziMesh::Entity_ID_List faces;
-  for (int c=0; c!=ncells_owned; ++c) {
+  for (int c = 0; c != ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
-    for (int n=0; n!=nfaces; ++n) {
+    for (int n = 0; n != nfaces; ++n) {
       lid_r[n] = face_row_inds[faces[n]];
       lid_c[n] = face_col_inds[faces[n]];
     }
@@ -168,11 +174,13 @@ Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
   ASSERT(!ierr);
 }
 
-// visit methods for assemble
-void
-Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
-        const SuperMap& map, MatrixFE& mat,
-        int my_block_row, int my_block_col) const
+
+/* ******************************************************************
+* Visit methods for assemble: FaceCell
+****************************************************************** */
+void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
+                                         const SuperMap& map, MatrixFE& mat,
+                                         int my_block_row, int my_block_col) const
 {
   ASSERT(op.matrices.size() == ncells_owned);
 
@@ -187,11 +195,11 @@ Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
 
   int ierr(0);
   AmanziMesh::Entity_ID_List faces;
-  for (int c=0; c!=ncells_owned; ++c) {
+  for (int c = 0; c != ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
     
     int nfaces = faces.size();
-    for (int n=0; n!=nfaces; ++n) {
+    for (int n = 0; n != nfaces; ++n) {
       lid_r[n] = face_row_inds[faces[n]];
       lid_c[n] = face_col_inds[faces[n]];
     }
@@ -204,10 +212,12 @@ Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
 }
 
 
-void
-Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
-        const SuperMap& map, MatrixFE& mat,
-        int my_block_row, int my_block_col) const
+/* ******************************************************************
+* Visit methods for assemble: Face
+****************************************************************** */
+void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
+                                         const SuperMap& map, MatrixFE& mat,
+                                         int my_block_row, int my_block_col) const
 {
   ASSERT(op.matrices.size() == ncells_owned);
 
@@ -220,11 +230,11 @@ Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
 
   int ierr(0);
   AmanziMesh::Entity_ID_List faces;
-  for (int c=0; c!=ncells_owned; ++c) {
+  for (int c = 0; c != ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
     
     int nfaces = faces.size();
-    for (int n=0; n!=nfaces; ++n) {
+    for (int n = 0; n != nfaces; ++n) {
       lid_r[n] = face_row_inds[faces[n]];
       lid_c[n] = face_col_inds[faces[n]];
     }
@@ -233,7 +243,6 @@ Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
   }
   ASSERT(!ierr);
 }
-
 
 }  // namespace Operators
 }  // namespace Amanzi

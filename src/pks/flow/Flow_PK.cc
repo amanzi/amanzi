@@ -68,7 +68,7 @@ void Flow_PK::Setup()
 ****************************************************************** */
 void Flow_PK::Initialize()
 {
-  T_physics = dT = 0.0;
+  dt_ = 0.0;
 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);

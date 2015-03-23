@@ -55,6 +55,8 @@ class SolverContinuation : public Solver<Vector,VectorSpace> {
   double tolerance() { return tol_; }
   double residual() { return solver_->residual(); }
   int num_itrs() { return num_itrs_; }
+  int pc_calls() { return 0; }
+  int pc_updates() { return 0; }
   int returned_code() { return returned_code_; }
 
  private:

@@ -83,13 +83,13 @@ class Op_Cell_FaceCell;
 class Op_Cell_Face;
 class Op_Cell_Cell;
 class Op_Cell_Node;
+class Op_Cell_Edge;
 class Op_Face_Cell;
 class Op_Node_Node;
 
 
 class Operator {
  public:
-  // constuctors
   // main constructor
   //   The CVS is the domain and range of the operator
   Operator() {}
@@ -161,13 +161,14 @@ class Operator {
   void OpExtend(op_iterator begin, op_iterator end);
 
  public:
-
   // visit methods for Apply
   virtual int ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
       const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_Cell_Face& op,
       const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_Cell_Node& op,
+      const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Cell_Edge& op,
       const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_Cell_Cell& op,
       const CompositeVector& X, CompositeVector& Y) const;
@@ -194,6 +195,9 @@ class Operator {
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Node& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
+  virtual void SymbolicAssembleMatrixOp(const Op_Cell_Edge& op,
+          const SuperMap& map, GraphFE& graph,
+          int my_block_row, int my_block_col) const;
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
@@ -214,6 +218,9 @@ class Operator {
   virtual void AssembleMatrixOp(const Op_Cell_Node& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
+  virtual void AssembleMatrixOp(const Op_Cell_Edge& op,
+          const SuperMap& map, MatrixFE& mat,
+          int my_block_row, int my_block_col) const;
   virtual void AssembleMatrixOp(const Op_Cell_Cell& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
@@ -223,6 +230,9 @@ class Operator {
   virtual void AssembleMatrixOp(const Op_Node_Node& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
+
+ protected:
+  int SchemaMismatch_(const std::string& schema1, const std::string& schema2) const;
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

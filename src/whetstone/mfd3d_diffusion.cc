@@ -26,8 +26,9 @@ namespace WhetStone {
 
 /* ******************************************************************
 * Consistency condition for inner product in space of fluxes. 
-* Only upper triangular part of Mc is calculated.
-* Flux is scaled by face area.
+* Only upper triangular part of Mc = R (R^T N)^{-1} R^T is calculated.
+* Here R^T N = |c| K.
+* Fluxes are scaled by face areas.
 ****************************************************************** */
 int MFD3D_Diffusion::L2consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc)
@@ -71,8 +72,9 @@ int MFD3D_Diffusion::L2consistency(
 
 
 /* ******************************************************************
-* Consistency condition for inverse of mass matrix in space of
-* fluxes. Only the upper triangular part of Wc is calculated.
+* Consistency condition for inverse of the mass matrix in the space
+* of Darcy fluxes. Only the upper triangular part of matrix 
+* Wc = N (N^T R)^{-1} N^T is calculated. Here N^T R = |c| K.
 * Flux is scaled by face area!
 ****************************************************************** */
 int MFD3D_Diffusion::L2consistencyInverse(
@@ -90,6 +92,8 @@ int MFD3D_Diffusion::L2consistencyInverse(
   AmanziGeometry::Point v1(d);
   double volume = mesh_->cell_volume(c);
 
+  // Since N is scaled by K, N = N0 * K, we us tensor K in the
+  // inverse L2 consistency term.
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
@@ -221,7 +225,7 @@ int MFD3D_Diffusion::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 
 
 /* ******************************************************************
-* Inverse mass matrix in space of fluxes: the standard algorithm
+* Inverse mass matrix in the space of fluxes: the standard algorithm
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
 {
@@ -255,6 +259,25 @@ int MFD3D_Diffusion::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 
   StabilityScalar(c, N, Ac, A);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Stiffness matrix: the standard algorithm.
+****************************************************************** */
+int MFD3D_Diffusion::StiffnessMatrixOptimized(int c, const Tensor& K, DenseMatrix& A)
+{
+  int d = mesh_->space_dimension();
+  int nnodes = A.NumRows();
+
+  DenseMatrix N(nnodes, d + 1);
+  DenseMatrix Ac(nnodes, nnodes);
+
+  int ok = H1consistency(c, K, N, Ac);
+  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+
+  ok = StabilityOptimized(K, N, Ac, A);
+  return ok;
 }
 
 

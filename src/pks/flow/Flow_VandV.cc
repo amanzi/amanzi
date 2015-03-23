@@ -97,7 +97,7 @@ void Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
   const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
   const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
 
-  double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flux) * rho_ * dT;
+  double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flux) * rho_ * dt_;
 
   double mass_amanzi = 0.0;
   for (int c = 0; c < ncells_owned; c++) {
@@ -141,7 +141,7 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
   mesh_->get_comm()->SumAll(&tmp, &outflow, 1);
 
   outflow *= rho_;
-  seepage_mass_ += outflow * dT;
+  seepage_mass_ += outflow * dt_;
 
   if (MyPID == 0 && bc_seepage->global_size() > 0) {
     Teuchos::OSTab tab = vo_->getOSTab();

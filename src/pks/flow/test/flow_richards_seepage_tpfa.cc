@@ -15,16 +15,19 @@
 #include <string>
 #include <vector>
 
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "UnitTest++.h"
 
+// Amanzi
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
-#include "Richards_PK.hh"
 #include "State.hh"
 
+// Flow
+#include "Richards_PK.hh"
 #include "Richards_SteadyState.hh"
 
 /* **************************************************************** */
@@ -42,11 +45,10 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
 
   /* read parameter list */
   std::string xmlFileName = "test/flow_richards_seepage_tpfa.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
   FrameworkPreference pref;
@@ -61,13 +63,12 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   /* create a simple state and populate it */
   Amanzi::VerboseObject::hide_line_prefix = true;
 
-  Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("State");
+  Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("State");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
-  Richards_PK* RPK = new Richards_PK(global_list, "Flow", S, soln);
+  Richards_PK* RPK = new Richards_PK(plist, "Flow", S, soln);
 
   RPK->Setup();
   S->Setup();
@@ -110,8 +111,8 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   ti_specs.T1 = 1e+10;
   ti_specs.max_itrs = 100;
 
-  AdvanceToSteadyState(S, *RPK, ti_specs, S->GetFieldData("pressure", "flow"));
-  RPK->CommitStep(0.0, S.ptr());
+  AdvanceToSteadyState(S, *RPK, ti_specs, soln);
+  RPK->CommitStep(0.0, 1.0);  // dummy times for flow
 
   const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
   if (MyPID == 0) {

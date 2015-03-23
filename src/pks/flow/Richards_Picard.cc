@@ -36,7 +36,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
   Epetra_MultiVector& pnew_cell = *solution_new.ViewComponent("cell");
 
   // update steady state boundary conditions
-  double time = T_physics;
+  double time = S_->time();
   bc_pressure->Compute(time);
   bc_flux->Compute(time);
   if (shift_water_table_.getRawPtr() == NULL)
@@ -116,7 +116,6 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     solution_new.Update(1.0 - relaxation, solution_old, relaxation);
     solution_old = solution_new;
 
-    T_physics += dT;
     itrs++;
   }
 

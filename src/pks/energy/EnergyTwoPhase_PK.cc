@@ -57,7 +57,7 @@ void EnergyTwoPhase_PK::Setup()
   // Get data and evaluators needed by the PK
   // -- energy, the conserved quantity
   S_->RequireField(energy_key_)->SetMesh(mesh_)->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   Teuchos::ParameterList ee_list = glist_->sublist("PKs").sublist("Energy").sublist("energy evaluator");
   ee_list.set("energy key", energy_key_);
@@ -153,10 +153,11 @@ void EnergyTwoPhase_PK::Initialize()
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
   op_preconditioner_->Init();
   op_preconditioner_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, 1.0, 1.0);
-  op_preconditioner_->SymbolicAssembleMatrix();
 
   op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_preconditioner_));
   op_preconditioner_advection_ = Teuchos::rcp(new Operators::OperatorAdvection(oplist_adv, op_preconditioner_));
+
+  op_preconditioner_->SymbolicAssembleMatrix();
 
   // preconditioner and optional linear solver
   ASSERT(ti_list_->isParameter("preconditioner"));

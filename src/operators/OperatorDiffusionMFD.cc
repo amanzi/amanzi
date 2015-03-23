@@ -118,18 +118,35 @@ void OperatorDiffusionMFD::UpdateMatrices(
       UpdateMatricesTPFA_();
     }
   }
-}
 
-void OperatorDiffusionMFD::UpdateMatricesNewtonCorrection(
-    const Teuchos::Ptr<const CompositeVector>& flux,
-    const Teuchos::Ptr<const CompositeVector>& u)
-{
   // add Newton-type corrections
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
     if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
       AddNewtonCorrectionCell_(flux, u);
     } else {
       Errors::Message msg("OperatorDiffusion: Newton Correction may only be applied to schemas that include CELL dofs.");
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Add stable approximation of Jacobian. It is done typically for 
+* the preconditioner.
+****************************************************************** */
+void OperatorDiffusionMFD::UpdateMatricesNewtonCorrection(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u)
+{
+  ASSERT(false);  // LKN: Change to old UpdateMatrix logic due to Richards.
+
+  // add Newton-type corrections
+  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
+    if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
+      AddNewtonCorrectionCell_(flux, u);
+    } else {
+      Errors::Message msg("OperatorDiffusion: Newton correction may only be applied to schemas that include CELL dofs.");
       Exceptions::amanzi_throw(msg);
     }
   }
@@ -471,8 +488,8 @@ void OperatorDiffusionMFD::UpdateMatricesTPFA_()
 /* ******************************************************************
 * Apply boundary conditions to the local matrices
 ****************************************************************** */
-void
-OperatorDiffusionMFD::ApplyBCs(bool primary) {
+void OperatorDiffusionMFD::ApplyBCs(bool primary)
+{
   if (!exclude_primary_terms_) {
     if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
                              | OPERATOR_SCHEMA_DOFS_FACE
@@ -500,7 +517,6 @@ OperatorDiffusionMFD::ApplyBCs(bool primary) {
     }
   }
 
-    
   if (jac_op_ != Teuchos::null) {
     AmanziMesh::Entity_ID_List cells, nodes;
 
@@ -515,19 +531,18 @@ OperatorDiffusionMFD::ApplyBCs(bool primary) {
 
       if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         jac_op_->matrices_shadow[f] = Aface;
-        Aface *= 0.;
+        Aface *= 0.0;
       }
     }
   }
-      
 }
 
 
 /* ******************************************************************
 * Apply BCs on face values
 ****************************************************************** */
-void
-OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc, bool primary) {
+void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc, bool primary)
+{
   // apply diffusion type BCs to FACE-CELL system
   AmanziMesh::Entity_ID_List faces;
 
@@ -589,12 +604,11 @@ OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc, bool primary) {
 }
 
 
-
 /* ******************************************************************
 * Apply BCs on cell operators
 ****************************************************************** */
-void
-OperatorDiffusionMFD::ApplyBCs_Cell_(BCs& bc, bool primary) {
+void OperatorDiffusionMFD::ApplyBCs_Cell_(BCs& bc, bool primary)
+{
   // apply diffusion type BCs to CELL system
   AmanziMesh::Entity_ID_List cells;
 
@@ -637,10 +651,10 @@ OperatorDiffusionMFD::ApplyBCs_Cell_(BCs& bc, bool primary) {
 /* ******************************************************************
 * Apply BCs on cell operators
 ****************************************************************** */
-void
-OperatorDiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
-        const Teuchos::Ptr<BCs>& bc_v, bool primary) {
-
+void OperatorDiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
+                                           const Teuchos::Ptr<BCs>& bc_v,
+                                           bool primary)
+{
   AmanziMesh::Entity_ID_List faces, nodes, cells;
 
   global_op_->rhs()->PutScalarGhosted(0.);
@@ -730,8 +744,8 @@ OperatorDiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
   } 
 
   global_op_->rhs()->GatherGhostedToMaster("node", Add);
-  
 }
+
 
 /* ******************************************************************
 * Modify operator by addition approximation of Newton corection.
@@ -787,6 +801,7 @@ void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
   }
 }
 
+
 /* ******************************************************************
 * Special assemble of elemental face-based matrices. 
 ****************************************************************** */
@@ -830,7 +845,6 @@ void OperatorDiffusionMFD::ModifyMatrices(const CompositeVector& u)
 * **************************************************************** */
 void OperatorDiffusionMFD::UpdateFlux(const CompositeVector& u, CompositeVector& flux)
 {
-
   // Initialize intensity in ghost faces.
   flux.PutScalar(0.0);
   u.ScatterMasterToGhosted("face");
