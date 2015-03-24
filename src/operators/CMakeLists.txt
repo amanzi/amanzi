@@ -69,7 +69,7 @@ set(operators_inc_files
     Operator_FaceCellSff.hh
     Operator_Node.hh
     Operator_Edge.hh
-    FluxTPFABCFunc.hh
+    FluxTPFABCfunc.hh
     OperatorDiffusion.hh
     OperatorDiffusionFactory.hh
     OperatorDiffusionMFD.hh
