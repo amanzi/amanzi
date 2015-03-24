@@ -144,8 +144,8 @@ class Flow_PK : public FnTimeIntegratorPK {
 
   // Stationary physical quantatities
   std::vector<WhetStone::Tensor> K; 
-  AmanziGeometry::Point gravity_;
-  double g_, rho_, mu_, atm_pressure_;
+  AmanziGeometry::Point gravity_, molar_gravity_;
+  double g_, rho_, molar_rho_, mu_, atm_pressure_;
 
   Teuchos::RCP<Epetra_Vector> Kxy;
   std::string coordinate_system;

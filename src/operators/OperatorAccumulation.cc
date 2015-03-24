@@ -11,9 +11,10 @@
 */
 
 #include "Operator_Cell.hh"
-//#include "Operator_Node.hh"
+#include "Operator_Node.hh"
 #include "Op_Node_Node.hh"
 #include "Op_Cell_Cell.hh"
+#include "Op_SurfaceCell_SurfaceCell.hh"
 
 #include "OperatorAccumulation.hh"
 
@@ -172,7 +173,7 @@ OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
 }
 
 void
-OperatorAccumulation::InitAccumulation_(AmanziMesh::Entity_kind entity)
+OperatorAccumulation::InitAccumulation_(AmanziMesh::Entity_kind entity, bool surf)
 {
   if (global_op_ == Teuchos::null) {
     // constructor was given a mesh
@@ -186,22 +187,17 @@ OperatorAccumulation::InitAccumulation_(AmanziMesh::Entity_kind entity)
 
       local_op_schema_ = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL;
       std::string name("CELL_CELL");
-      local_op_ = Teuchos::rcp(new Op_Cell_Cell(name, mesh_));
-
-    // } else if (entity == AmanziMesh::FACE) {
-      // no local op FACE_FACE.  Could be made if this is needed, but I doubt it is --etc
-      
-    //   global_op_schema_ = OPERATOR_SCHEMA_DOFS_FACE;
-    //   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-    //   cvs->SetMesh(mesh_)->AddComponent("face", AmanziMesh::FACE, 1);
-    //   global_op_ = Teuchos::rcp(new Operator_Face(cvs, plist, global_op_schema_));
+      if (surf) {
+        local_op_ = Teuchos::rcp(new Op_SurfaceCell_SurfaceCell(name, mesh_));
+      } else {
+        local_op_ = Teuchos::rcp(new Op_Cell_Cell(name, mesh_));
+      }
 
     } else if (entity == AmanziMesh::NODE) {
-      ASSERT(0);
-      // global_op_schema_ = OPERATOR_SCHEMA_DOFS_NODE;
-      // Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-      // cvs->SetMesh(mesh_)->AddComponent("node", AmanziMesh::NODE, 1);
-      // global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist, global_op_schema_));
+      global_op_schema_ = OPERATOR_SCHEMA_DOFS_NODE;
+      Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
+      cvs->SetMesh(mesh_)->AddComponent("node", AmanziMesh::NODE, 1);
+      global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist));
 
       local_op_schema_ = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL;
       std::string name("NODE_NODE");
@@ -221,10 +217,11 @@ OperatorAccumulation::InitAccumulation_(AmanziMesh::Entity_kind entity)
     if (entity == AmanziMesh::CELL) {
       local_op_schema_ = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL;
       std::string name("CELL_CELL");
-      local_op_ = Teuchos::rcp(new Op_Cell_Cell(name, mesh_));
-
-    // } else if (entity == AmanziMesh::FACE) {
-      // no local op FACE_FACE.  Could be made if this is needed, but I doubt it is --etc
+      if (surf) {
+        local_op_ = Teuchos::rcp(new Op_SurfaceCell_SurfaceCell(name, mesh_));
+      } else {
+        local_op_ = Teuchos::rcp(new Op_Cell_Cell(name, mesh_));
+      }
 
     } else if (entity == AmanziMesh::NODE) {
       local_op_schema_ = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL;

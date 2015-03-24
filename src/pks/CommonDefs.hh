@@ -14,6 +14,9 @@
 #ifndef AMANZI_PK_COMMON_DEFS_HH_
 #define AMANZI_PK_COMMON_DEFS_HH_
 
+#include <string>
+#include <utility>
+
 namespace Amanzi {
 namespace CommonDefs {
 

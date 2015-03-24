@@ -17,6 +17,7 @@
 #include "OperatorDiffusionFV.hh"
 #include "FluxTPFABCfunc.hh"
 #include "Op.hh"
+#include "Op_SurfaceFace_SurfaceCell.hh"
 #include "Op_Face_Cell.hh"
 #include "Operator_Cell.hh"
 
@@ -53,9 +54,15 @@ OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
   }
 
   // create the local Op and register it with the global Operator
-  std::string name = "Diffusion: FACE_CELL";
-  local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
-  global_op_->OpPushBack(local_op_);
+  if (plist.get<bool>("surface operator", false)) {
+    std::string name = "Diffusion: FACE_CELL Surface";
+    local_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name, mesh_));
+    global_op_->OpPushBack(local_op_);
+  } else {
+    std::string name = "Diffusion: FACE_CELL";
+    local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+    global_op_->OpPushBack(local_op_);
+  }
   
   // // scaled constraint -- enables zero rel perm
   // scaled_constraint_ = plist.get<bool>("scaled constraint equation", false);
@@ -205,7 +212,7 @@ void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVecto
       WhetStone::DenseMatrix Aface(ncells, ncells);
       Aface = 0.;
 
-      if (bc_model[f] != OPERATOR_BC_NEUMANN){
+      //      if (bc_model[f] != OPERATOR_BC_NEUMANN){
         double tij = trans_face[0][f] * (k_face.get() ? (*k_face)[0][f] : 1.);
         for (int i = 0; i != ncells; ++i) {
           Aface(i, i) = tij;
@@ -214,7 +221,7 @@ void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVecto
             Aface(j, i) = -tij;
           }
         }
-      }
+        //      }
 
       local_op_->matrices[f] = Aface;
     }
@@ -273,6 +280,9 @@ void OperatorDiffusionFV::ApplyBCs(bool primary)
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         rhs_cell[0][c] += bc_value[f] * trans_face[0][f] * (k_face.get() ? (*k_face)[0][f] : 1.);
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+        local_op_->matrices_shadow[f] = local_op_->matrices[f];
+        local_op_->matrices[f](0,0) = 0.;
+            
         rhs_cell[0][c] -= bc_value[f] * mesh_->face_area(f);
         // trans_face[0][f] = 0.0;
         if (gravity_) (*gravity_face)[0][f] = 0.0;
@@ -289,16 +299,17 @@ void OperatorDiffusionFV::UpdateFlux(
     const CompositeVector& solution, CompositeVector& darcy_mass_flux)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
-  const Epetra_MultiVector& gravity_face = *gravity_term_->ViewComponent("face", true);
 
   const std::vector<int>& bc_model = bcs_[0]->bc_model();
   const std::vector<double>& bc_value = bcs_[0]->bc_value();
 
   solution.ScatterMasterToGhosted("cell");
 
-  const Epetra_MultiVector& Krel_face = *k_->ViewComponent("face", true);
+  const Teuchos::Ptr<const Epetra_MultiVector> Krel_face =
+      k_.get() ? k_->ViewComponent("face", false).ptr() : Teuchos::null;
+
   const Epetra_MultiVector& p = *solution.ViewComponent("cell", true);
-  Epetra_MultiVector& flux = *darcy_mass_flux.ViewComponent("face", true);
+  Epetra_MultiVector& flux = *darcy_mass_flux.ViewComponent("face", false);
 
   AmanziMesh::Entity_ID_List cells, faces;
   std::vector<int> dirs;
@@ -313,33 +324,43 @@ void OperatorDiffusionFV::UpdateFlux(
       int f = faces[n];
 
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-	double value = bc_value[f];
-	flux[0][f] = dirs[n] * trans_face[0][f] * (p[0][c] - value) + gravity_face[0][f];
-	flux[0][f] *= Krel_face[0][f];
+        double value = bc_value[f];
+        flux[0][f] = dirs[n] * trans_face[0][f] * (p[0][c] - value);
+        if (Krel_face.get())
+          flux[0][f] *= (*Krel_face)[0][f];
 
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-	double value = bc_value[f];
-	double area = mesh_->face_area(f);
-	flux[0][f] = value*area;
-
+        double value = bc_value[f];
+        double area = mesh_->face_area(f);
+        flux[0][f] = value*area;
+        
       } else {
-	if (f < nfaces_owned && !flag[f]) {
-	  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-	  if (cells.size() <= 1) {
-	    Errors::Message msg("Flow PK: These boundary conditions are not supported by FV.");
-	    Exceptions::amanzi_throw(msg);
-	  }
+        if (f < nfaces_owned && !flag[f]) {
+          mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+          if (cells.size() <= 1) {
+            Errors::Message msg("Flow PK: These boundary conditions are not supported by FV.");
+            Exceptions::amanzi_throw(msg);
+          }
           int c1 = cells[0];
           int c2 = cells[1];
           if (c == c1) {
-            flux[0][f] = dirs[n] * trans_face[0][f] * (p[0][c1] - p[0][c2]) + gravity_face[0][f];
+            flux[0][f] = dirs[n] * trans_face[0][f] * (p[0][c1] - p[0][c2]);
           } else {
-            flux[0][f] = dirs[n] * trans_face[0][f] * (p[0][c2] - p[0][c1]) + gravity_face[0][f];
+            flux[0][f] = dirs[n] * trans_face[0][f] * (p[0][c2] - p[0][c1]);
           }	    
-          flux[0][f] *= Krel_face[0][f];
+          if (Krel_face.get()) flux[0][f] *= (*Krel_face)[0][f];
           flag[f] = 1;
-	}
+        }
       }
+    }
+  }
+
+  // add in gravity terms
+  if (gravity_ && gravity_term_.get()) {
+    if (Krel_face.get()) {
+      flux.Multiply(1., *Krel_face, *gravity_term_->ViewComponent("face",false), 1.);
+    } else {
+      flux.Update(1., *gravity_term_->ViewComponent("face",false), 1.);
     }
   }
 }
@@ -420,7 +441,8 @@ void OperatorDiffusionFV::ComputeJacobianLocal_(
     WhetStone::DenseMatrix& Jpp)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
-  const Epetra_MultiVector& gravity_face = *gravity_term_->ViewComponent("face", true);
+  const Teuchos::Ptr<Epetra_MultiVector> gravity_face =
+      gravity_term_.get() ? gravity_term_->ViewComponent("face", true).ptr() : Teuchos::null;
 
   double dKrel_dp[2];
   double dpres;
@@ -428,7 +450,7 @@ void OperatorDiffusionFV::ComputeJacobianLocal_(
   if (mcells == 2) {
     dpres = pres[0] - pres[1];  // + grn;
     if (Krel_method == OPERATOR_UPWIND_CONSTANT_VECTOR) {  // Define K 
-      double cos_angle = face_dir * gravity_face[0][f] / (rho_ * mesh_->face_area(f));
+      double cos_angle = face_dir * (*gravity_face)[0][f] / (rho_ * mesh_->face_area(f));
       if (cos_angle > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
         dKrel_dp[0] = dkdp_cell[0];
         dKrel_dp[1] = 0.0;
@@ -441,7 +463,8 @@ void OperatorDiffusionFV::ComputeJacobianLocal_(
       }
     } else if (Krel_method == OPERATOR_UPWIND_FLUX) {
       double flux0to1;
-      flux0to1 = trans_face[0][f] * dpres + face_dir * gravity_face[0][f];
+      flux0to1 = trans_face[0][f] * dpres;
+      if (gravity_face.get()) flux0to1 += face_dir * (*gravity_face)[0][f];
       if (flux0to1  > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
         dKrel_dp[0] = dkdp_cell[0];
         dKrel_dp[1] = 0.0;
@@ -459,8 +482,13 @@ void OperatorDiffusionFV::ComputeJacobianLocal_(
       ASSERT(0);
     }
 
-    Jpp(0, 0) = (trans_face[0][f] * dpres + face_dir * gravity_face[0][f]) * dKrel_dp[0];
-    Jpp(0, 1) = (trans_face[0][f] * dpres + face_dir * gravity_face[0][f]) * dKrel_dp[1];
+    Jpp(0, 0) = trans_face[0][f] * dpres * dKrel_dp[0];
+    Jpp(0, 1) = trans_face[0][f] * dpres * dKrel_dp[1];
+
+    if (gravity_face.get()) {
+      Jpp(0,0) += face_dir * (*gravity_face)[0][f] * dKrel_dp[0];
+      Jpp(0,1) += face_dir * (*gravity_face)[0][f] * dKrel_dp[1];
+    }
     Jpp(1, 0) = -Jpp(0, 0);
     Jpp(1, 1) = -Jpp(0, 1);
 
@@ -468,7 +496,9 @@ void OperatorDiffusionFV::ComputeJacobianLocal_(
     if (bc_model_f == OPERATOR_BC_DIRICHLET) {                   
       pres[1] = bc_value_f;
       dpres = pres[0] - pres[1];  // + grn;
-      Jpp(0, 0) = (trans_face[0][f] * dpres + face_dir * gravity_face[0][f]) * dkdp_cell[0];
+      Jpp(0, 0) = trans_face[0][f] * dpres * dkdp_cell[0];
+      if (gravity_face.get())
+        Jpp(0,0) += face_dir * (*gravity_face)[0][f] * dkdp_cell[0];
       //Jpp(0, 0) = 0.0;
       //std::cout<<"Local J dkdp_cell[0] "<<f<<"  "<<dkdp_cell[0]<<" "<<bc_value_f<<" "<<pres[0]<<" "<<"\n";
     } else {
