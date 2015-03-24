@@ -37,7 +37,7 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
 #ifdef HAVE_HYPRE
   // check for old input spec and error
   if (plist_.isParameter("number of cycles")) {
-    Errors::Message msg("\"boomer amg\" ParameterList uses old style, \"number of cycles\".  Please update to the new style.");
+    Errors::Message msg("\"boomer amg\" ParameterList uses old style, \"number of cycles\".  Please update to the new style using \"cycle applications\" and \"smoother sweeps\"");
     Exceptions::amanzi_throw(msg);
   }
     
