@@ -7278,8 +7278,7 @@ PorousMedia::derive_Intrinsic_Permeability(Real      time,
   MultiFab::Copy(mf,kappatmp,dir,dcomp,1,0);
   // Return values in mks
 
-  std::cout << "Not SCALING K" << std::endl;
-  //mf.mult(1/BL_ONEATM,dcomp,1,0);
+  mf.mult(1/BL_ONEATM,dcomp,1,0);
 }
 
 void
