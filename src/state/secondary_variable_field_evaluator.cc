@@ -133,19 +133,21 @@ bool SecondaryVariableFieldEvaluator::HasFieldDerivativeChanged(const Teuchos::P
 
   // Check if we need to update ourselves, and potentially update our dependencies.
   bool update = false;
+  // -- must update if our our dependencies have changed, as these affect the partial derivatives
+  update |= HasFieldChanged(S, my_key_);
+
+  // -- must update if any of our dependencies derivatives have changed
   for (KeySet::const_iterator dep=dependencies_.begin();
        dep!=dependencies_.end(); ++dep) {
     update |= S->GetFieldEvaluator(*dep)->HasFieldDerivativeChanged(S, my_key_, wrt_key);
   }
 
+  // Do the update
   std::pair<Key,Key> deriv_request(request, wrt_key);
   if (update) {
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
       *vo_->os() << "Updating d" << my_key_ << "_d" << wrt_key << "... " << std::endl;
     }
-    // Update the values, which may be useful in calculating derivatives.
-    // NOTE: requester is blank, as the result of this request is not passed back up the chain.
-    HasFieldChanged(S, "");
 
     // If so, update ourselves, empty our list of filled requests, and return.
     UpdateFieldDerivative_(S, wrt_key);
@@ -153,7 +155,7 @@ bool SecondaryVariableFieldEvaluator::HasFieldDerivativeChanged(const Teuchos::P
     deriv_requests_.insert(deriv_request);
     return true;
   } else {
-    // Otherwise, see if we have filled this request already.
+    // Otherwise, simply service the request
     if (deriv_requests_.find(deriv_request) == deriv_requests_.end()) {
       deriv_requests_.insert(deriv_request);
       if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
