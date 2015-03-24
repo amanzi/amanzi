@@ -347,6 +347,7 @@ Operator_FaceCellScc::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
 {
   ASSERT(op.matrices.size() == ncells_owned);
 
+  Y.PutScalarGhosted(0.);
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell");

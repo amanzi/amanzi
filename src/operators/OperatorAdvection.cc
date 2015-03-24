@@ -14,6 +14,7 @@
 
 #include "Operator_Cell.hh"
 #include "Op_Face_Cell.hh"
+#include "Op_SurfaceFace_SurfaceCell.hh"
 #include "OperatorDefs.hh"
 #include "OperatorAdvection.hh"
 
@@ -34,7 +35,12 @@ void OperatorAdvection::InitAdvection_(Teuchos::ParameterList& plist)
 
     local_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
     std::string name("FACE_CELL");
-    local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+
+    if (plist.get<bool>("surface operator", false)) {
+      local_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name, mesh_));
+    } else {
+      local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+    }
 
   } else {
     // constructor was given an Operator
@@ -49,7 +55,12 @@ void OperatorAdvection::InitAdvection_(Teuchos::ParameterList& plist)
 
       local_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
       std::string name("FACE_CELL");
-      local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+
+      if (plist.get<bool>("surface operator", false)) {
+        local_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name, mesh_));
+      } else {
+        local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+      }
     }
   }
 
