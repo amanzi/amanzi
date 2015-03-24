@@ -252,15 +252,27 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
   if (cond_option > 0) {
     scratch_c.resize(c_sz,1.e20);
 
-    for (MFIter mfi(mfc); mfi.isValid(); ++mfi) {
-      const int* k_lo  = mfc[mfi].loVect();
-      const int* k_hi  = mfc[mfi].hiVect();
-      const Real* kdat = mfc[mfi].dataPtr();
-
-      FORT_INTERNAL_DATA(kdat,ARLIM(k_lo),ARLIM(k_hi),
+    if (cond_option == 1) {
+      const IntVect ivDum(D_DECL(0,0,0));
+      const Real* dDum = scratch_c.dataPtr();
+	
+      FORT_INTERNAL_DATA(dDum,ARLIM(ivDum),ARLIM(ivDum),
 			 scratch_c.dataPtr(),&c_sz,c_idx,
-			 &kappaval[0],&dkappa,dxc,
+			 &kappaval[0],&dkappa,dxc,problo.dataPtr(),
 			 domloc.dataPtr(),domhic.dataPtr());
+
+    } else {
+
+      for (MFIter mfi(mfc); mfi.isValid(); ++mfi) {
+	const int* k_lo  = mfc[mfi].loVect();
+	const int* k_hi  = mfc[mfi].hiVect();
+	const Real* kdat = mfc[mfi].dataPtr();
+
+	FORT_INTERNAL_DATA(kdat,ARLIM(k_lo),ARLIM(k_hi),
+			   scratch_c.dataPtr(),&c_sz,c_idx,
+			   &kappaval[0],&dkappa,dxc,problo.dataPtr(),
+			   domloc.dataPtr(),domhic.dataPtr());
+      }
     }
 
     const int IOProc   = ParallelDescriptor::IOProcessorNumber();
@@ -308,7 +320,7 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
 		     scratch_c.dataPtr(),&c_sz,c_idx,
 		     scratch_r[i].dataPtr(),&real_sz,real_idx,
 		     scratch_i[i].dataPtr(),&int_sz,int_idx,    
-		     lo,hi,dx,&rand_seed);
+		     lo,hi,dx,problo.dataPtr(),&rand_seed);
   }
   ParallelDescriptor::ReduceIntMax(max_fab_size);
 
@@ -338,8 +350,6 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
     it = it + 1;
   }
 
-  Real scaled_mult = dkappa / kappaval[0];
-  Real one = 1.;
   for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
     const int  i     = mfi.index();
     const int* k_lo  = mf[mfi].loVect();
@@ -351,9 +361,7 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
 		    scratch_r[i].dataPtr(),&real_sz,real_idx, 
 		    scratch_i[i].dataPtr(),&int_sz,int_idx);
 
-    FORT_LGNORM(kdat,ARLIM(k_lo),ARLIM(k_hi),&one,&scaled_mult);
-
-    mf[mfi].mult(kappaval[0]);
+    FORT_LGNORM(kdat,ARLIM(k_lo),ARLIM(k_hi),&kappaval[0],&dkappa);
   }
 
   ParallelDescriptor::Barrier();

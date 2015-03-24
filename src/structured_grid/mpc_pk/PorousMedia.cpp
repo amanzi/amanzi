@@ -5095,7 +5095,6 @@ PorousMedia::init_rock_properties ()
 
   bool ret_phi = rock_manager->GetProperty(cur_time,level,*rock_phi,"porosity",0,rock_phi->nGrow());
   if (!ret_phi) BoxLib::Abort("Failed to build porosity");
-  //rock_manager->Porosity(cur_time,level,*rock_phi,0,rock_phi->nGrow());
 
   if ( (model != PM_SINGLE_PHASE)
        && (model != PM_SINGLE_PHASE_SOLID)
@@ -7278,7 +7277,9 @@ PorousMedia::derive_Intrinsic_Permeability(Real      time,
 
   MultiFab::Copy(mf,kappatmp,dir,dcomp,1,0);
   // Return values in mks
-  mf.mult(1/BL_ONEATM,dcomp,1,0);
+
+  std::cout << "Not SCALING K" << std::endl;
+  //mf.mult(1/BL_ONEATM,dcomp,1,0);
 }
 
 void

@@ -67,7 +67,9 @@ main (int   argc,
   
     MultiFab phi(ba,1,nGrow);
     ParallelDescriptor::Barrier();
-    rockManager.Porosity(time,lev,phi,0,nGrow);
+
+    bool ret_phi = rockManager.GetProperty(time,lev,phi,"porosity",0,nGrow);
+    if (!ret_phi) BoxLib::Abort("Failed to build porosity");
   }
   BoxLib::Finalize();
   return 0;
