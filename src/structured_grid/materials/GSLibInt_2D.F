@@ -47,7 +47,7 @@ c :: ----------------------------------------------------------
 c :: Conditioned the data using internal values. One big fab.
 c :: ----------------------------------------------------------
       subroutine FORT_INTERNAL_DATA(dat,DIMS(dat),
-     &     scratch_c,c_sz,c_idx,condg,sig,dx,domlo,domhi)
+     &     scratch_c,c_sz,c_idx,condg,sig,dx,plo,domlo,domhi)
 
 #include "sgsim2.inc"
 
@@ -56,7 +56,7 @@ c :: ----------------------------------------------------------
       integer domlo(SDIM),domhi(SDIM)
       REAL_T  dat(DIMV(dat))
       REAL_T  scratch_c(c_sz)
-      REAL_T  dx(SDIM),condg,sig
+      REAL_T  dx(SDIM),plo(SDIM),condg,sig
 
       integer i,j,idx,nnx,nny,nnxy
 
@@ -74,8 +74,8 @@ c         nny = ARG_H2(dat)-ARG_L2(dat)+1
          do j = ARG_L2(dat),ARG_H2(dat)
             do i = ARG_L1(dat),ARG_H1(dat)
                idx = (j-domlo(2))*nnx + (i-domlo(1))
-               scratch_c(c_idx(1)+idx) = (dble(i)+0.5d0)*dx(1)
-               scratch_c(c_idx(2)+idx) = (dble(j)+0.5d0)*dx(2)
+               scratch_c(c_idx(1)+idx) = plo(1) + (dble(i)+0.5d0)*dx(1)
+               scratch_c(c_idx(2)+idx) = plo(2) + (dble(j)+0.5d0)*dx(2)
                scratch_c(c_idx(3)+idx) = zero
                scratch_c(c_idx(4)+idx) = log(dat(i,j)/condg)/sig
                scratch_c(c_idx(5)+idx) = 1
@@ -236,7 +236,7 @@ c :: ----------------------------------------------------------
      &     scratch_c,c_sz,c_idx,
      &     scratch_r,real_sz,real_idx,
      &     scratch_i,int_sz,int_idx,
-     &     lo,hi,dx,iseed)
+     &     lo,hi,dx,plo,iseed)
 
 #include "sgsim2.inc"
 
@@ -251,7 +251,7 @@ c :: ----------------------------------------------------------
       REAL_T  dat(DIMV(dat))
       REAL_T  scratch_r(real_sz)
       REAL_T  scratch_c(c_sz)
-      REAL_T  dx(SDIM)
+      REAL_T  dx(SDIM),plo(SDIM)
       REAL_T  random_val(nvalid)
 
       integer i,j,idx,idx2,imult,index
@@ -262,9 +262,9 @@ c :: ----------------------------------------------------------
       scratch_i(int_idx(2)) = ARG_H2(dat)-ARG_L2(dat)+1
       scratch_i(int_idx(3)) = 1
 
-      scratch_r(int_idx(1)) = (ARG_L1(dat)+0.5d0)*dx(1)
-      scratch_r(int_idx(2)) = (ARG_L2(dat)+0.5d0)*dx(2)
-      scratch_r(int_idx(3)) = 0.5d0*dx(1)
+      scratch_r(int_idx(1)) = plo(1) + (ARG_L1(dat)+0.5d0)*dx(1)
+      scratch_r(int_idx(2)) = plo(2) + (ARG_L2(dat)+0.5d0)*dx(2)
+      scratch_r(int_idx(3)) = 0.d0
       scratch_r(int_idx(4)) = dx(1)
       scratch_r(int_idx(5)) = dx(2)
       scratch_r(int_idx(6)) = dx(1)
@@ -391,7 +391,7 @@ c :: ----------------------------------------------------------
 
       do i=ARG_L1(dat),ARG_H1(dat)
          do j=ARG_L2(dat),ARG_H2(dat)
-            dat(i,j)=condg*exp(sig*dat(i,j))
+            dat(i,j) = 10**(dat(i,j)+log10(condg))
          end do
       end do
 

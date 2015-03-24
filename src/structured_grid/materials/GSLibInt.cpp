@@ -252,15 +252,27 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
   if (cond_option > 0) {
     scratch_c.resize(c_sz,1.e20);
 
-    for (MFIter mfi(mfc); mfi.isValid(); ++mfi) {
-      const int* k_lo  = mfc[mfi].loVect();
-      const int* k_hi  = mfc[mfi].hiVect();
-      const Real* kdat = mfc[mfi].dataPtr();
-
-      FORT_INTERNAL_DATA(kdat,ARLIM(k_lo),ARLIM(k_hi),
+    if (cond_option == 1) {
+      const IntVect ivDum(D_DECL(0,0,0));
+      const Real* dDum = scratch_c.dataPtr();
+	
+      FORT_INTERNAL_DATA(dDum,ARLIM(ivDum),ARLIM(ivDum),
 			 scratch_c.dataPtr(),&c_sz,c_idx,
-			 &kappaval[0],&dkappa,dxc,
+			 &kappaval[0],&dkappa,dxc,problo.dataPtr(),
 			 domloc.dataPtr(),domhic.dataPtr());
+
+    } else {
+
+      for (MFIter mfi(mfc); mfi.isValid(); ++mfi) {
+	const int* k_lo  = mfc[mfi].loVect();
+	const int* k_hi  = mfc[mfi].hiVect();
+	const Real* kdat = mfc[mfi].dataPtr();
+
+	FORT_INTERNAL_DATA(kdat,ARLIM(k_lo),ARLIM(k_hi),
+			   scratch_c.dataPtr(),&c_sz,c_idx,
+			   &kappaval[0],&dkappa,dxc,problo.dataPtr(),
+			   domloc.dataPtr(),domhic.dataPtr());
+      }
     }
 
     const int IOProc   = ParallelDescriptor::IOProcessorNumber();
@@ -308,7 +320,7 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
 		     scratch_c.dataPtr(),&c_sz,c_idx,
 		     scratch_r[i].dataPtr(),&real_sz,real_idx,
 		     scratch_i[i].dataPtr(),&int_sz,int_idx,    
-		     lo,hi,dx,&rand_seed);
+		     lo,hi,dx,problo.dataPtr(),&rand_seed);
   }
   ParallelDescriptor::ReduceIntMax(max_fab_size);
 
@@ -349,11 +361,9 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
 		    scratch_r[i].dataPtr(),&real_sz,real_idx, 
 		    scratch_i[i].dataPtr(),&int_sz,int_idx);
 
-    FORT_LGNORM(kdat,ARLIM(k_lo),ARLIM(k_hi),
-		&kappaval[0],&dkappa);
-
-  
+    FORT_LGNORM(kdat,ARLIM(k_lo),ARLIM(k_hi),&kappaval[0],&dkappa);
   }
+
   ParallelDescriptor::Barrier();
 
   FORT_SGSIM_DEALLOC();
@@ -369,7 +379,11 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
   MultiFab mf1(gba1,1,0);
   mf1.copy(mfg); // No-grow to no-grow parallel copy
 
+  int nComp = mfdata.nComp(); // For now, all components get same data
   for (MFIter mfi(mf1); mfi.isValid(); ++mfi) {
-    mfdata[mfi].copy(mf1[mfi]);
+    for (int n=0; n<nComp; ++n) {
+      const Box& bx = mf1[mfi].box();
+      mfdata[mfi].copy(mf1[mfi],bx,0,bx,n,1);
+    }
   }
 }
