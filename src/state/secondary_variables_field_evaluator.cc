@@ -140,7 +140,7 @@ bool SecondaryVariablesFieldEvaluator::HasFieldDerivativeChanged(
   // Check if we need to update ourselves, and potentially update our dependencies.
   bool update = false;
   // -- must update if our our dependencies have changed, as these affect the partial derivatives
-  update |= HasFieldChanged(S, my_key_);
+  update |= HasFieldChanged(S, my_keys_[0]);
 
   // -- must update if any of our dependencies derivatives have changed
   for (KeySet::const_iterator dep=dependencies_.begin();

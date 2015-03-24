@@ -36,7 +36,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
   Epetra_MultiVector& pnew_cell = *solution_new.ViewComponent("cell");
 
   // update steady state boundary conditions
-  double time = T_physics;
+  double time = S_->time();
   bc_pressure->Compute(time);
   bc_flux->Compute(time);
   if (shift_water_table_.getRawPtr() == NULL)
@@ -78,6 +78,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     // create algebraic problem (matrix = preconditioner)
     op_preconditioner_->Init();
     op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), Teuchos::null);
+    op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), Teuchos::null);
     op_preconditioner_diff_->ApplyBCs();
 
     Teuchos::RCP<CompositeVector> rhs = op_preconditioner_->rhs();  // export RHS from the matrix class
@@ -116,7 +117,6 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     solution_new.Update(1.0 - relaxation, solution_old, relaxation);
     solution_old = solution_new;
 
-    T_physics += dT;
     itrs++;
   }
 

@@ -9,6 +9,7 @@
 #include <iostream>
 #include <vector>
 
+// TPLs
 #include "Epetra_SerialComm.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
@@ -16,10 +17,13 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "UnitTest++.h"
 
+// Amanzi
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
 #include "Point.hh"
 #include "State.hh"
+
+// Transport
 #include "Transport_PK.hh"
 
 double f_cubic(const Amanzi::AmanziGeometry::Point& x, double t) {
@@ -118,18 +122,21 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
  
     /* advance the state */
     int iter = 0;
-    double dummy_dT, T = 0.0, T1 = 1.0;
-    while (T < T1) {
-      double dT = std::min(TPK.CalculateTransportDt(), T1 - T);
-      TPK.Advance(dT, dummy_dT);
-      TPK.CommitState(dT, S.ptr());
-      T += dT;
+    double t_old(0.0), t_new, dt, T1(1.0);
+    while (t_old < T1) {
+      dt = std::min(TPK.CalculateTransportDt(), T1 - t_old);
+      t_new = t_old + dt;
+
+      TPK.AdvanceStep(t_old, t_new);
+      TPK.CommitStep(t_old, t_new);
+
+      t_old = t_new;
       iter++;
     }
 
     /* calculate L1 and L2 errors */
     double L1, L2;
-    TPK.CalculateLpErrors(f_cubic, T, (*tcc)(0), &L1, &L2);
+    TPK.CalculateLpErrors(f_cubic, t_new, (*tcc)(0), &L1, &L2);
     printf("nx=%3d  L1 error=%7.5f  L2 error=%7.5f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
 
     h.push_back(5.0 / nx);
@@ -231,15 +238,16 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
  
     /* advance the state */
     int ncycles = 0, iter = 0;
-    double dummy_dT, T = 0.0, T1 = 1.0;
-    while (T < T1) {
-      double dT = std::min(TPK.CalculateTransportDt(), T1 - T);
-      dT = dT * 7.7;
+    double t_old(0.0), t_new, dt, T1(1.0);
+    while (t_old < T1) {
+      dt = std::min(TPK.CalculateTransportDt(), T1 - t_old);
+      dt = dt * 7.7;
+      t_new = t_old + dt;
 
-      TPK.Advance(dT, dummy_dT);
-      TPK.CommitState(dT, S.ptr());
-      T += dT;
+      TPK.AdvanceStep(t_old, t_new);
+      TPK.CommitStep(t_old ,t_new);
 
+      t_old = t_new;
       ncycles += TPK.nsubcycles;
       iter++;
     }
@@ -247,7 +255,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
     /* calculate L1 and L2 errors */
     double L1, L2;
     ncycles /= iter;
-    TPK.CalculateLpErrors(f_cubic, T, (*tcc)(0), &L1, &L2);
+    TPK.CalculateLpErrors(f_cubic, t_new, (*tcc)(0), &L1, &L2);
     printf("nx=%3d  L1 error=%7.5f  L2 error=%7.5f  dT=%7.4f  (average # subcycles %d)\n", 
            nx, L1, L2, T1 / iter, ncycles);
 
@@ -347,19 +355,22 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     if (nx == 20) TPK.PrintStatistics();
  
     /* advance the state */
-    double dummy_dT, dT, dT0;
-    if (nx == 20) dT0 = TPK.CalculateTransportDt();
-    else dT0 /= 2;
+    double dt0;
+    if (nx == 20) dt0 = TPK.CalculateTransportDt();
+    else dt0 /= 2;
 
     int iter = 0;
-    double T = 0.0, T1 = 2.0;
-    while (T < T1) {
-      dT = std::min(TPK.CalculateTransportDt(), T1 - T);
-      dT = std::min(dT, dT0);
+    double t_old(0.0), t_new(0.0), dt, T1(2.0);
+    while (t_new < T1) {
+      dt = std::min(TPK.CalculateTransportDt(), T1 - t_old);
+      dt = std::min(dt, dt0);
+      t_new = t_old + dt;
 
-      TPK.Advance(dT, dummy_dT);
-      TPK.CommitState(dT, S.ptr());
-      T += dT;
+      TPK.AdvanceStep(t_old, t_new);
+      TPK.CommitStep(t_old, t_new);
+
+      t_old = t_new;
+
       if (TPK.internal_tests) {
         TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
       }
@@ -368,7 +379,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     //for (int k=0; k<nx; k++) std::cout << (*tcc)[0][k] << std::endl;
 
     double L1, L2;  // L1 and L2 errors
-    TPK.CalculateLpErrors(f_cubic, T, (*tcc)(0), &L1, &L2);
+    TPK.CalculateLpErrors(f_cubic, t_new, (*tcc)(0), &L1, &L2);
     printf("nx=%3d  L1 error=%10.8f  L2 error=%10.8f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
 
     h.push_back(5.0 / nx);
@@ -477,18 +488,21 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
  
     /* advance the state */
     int iter = 0;
-    double dummy_dT, T = 0.0, T1 = 0.2;
-    while (T < T1) {
-      double dT = std::min(TPK.CalculateTransportDt(), T1 - T);
-      TPK.Advance(dT, dummy_dT);
-      TPK.CommitState(dT, S.ptr());
-      T += dT;
+    double t_old(0.0), t_new, dt, T1(0.2);
+    while (t_old < T1) {
+      dt = std::min(TPK.CalculateTransportDt(), T1 - t_old);
+      t_new = t_old + dt;
+
+      TPK.AdvanceStep(t_old, t_new);
+      TPK.CommitStep(t_old, t_new);
+
+      t_old = t_new;
       iter++;
     }
 
     /* calculate L1 and L2 errors */
     double L1, L2;
-    TPK.CalculateLpErrors(f_cubic_unit, T, (*tcc)(0), &L1, &L2);
+    TPK.CalculateLpErrors(f_cubic_unit, t_new, (*tcc)(0), &L1, &L2);
     int nx = 16 * (loop + 1);
     printf("nx=%3d  L1 error=%7.5f  L2 error=%7.5f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
 
@@ -599,18 +613,21 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
  
     /* advance the state */
     int iter = 0;
-    double dummy_dT, T = 0.0, T1 = 0.2;
-    while (T < T1) {
-      double dT = std::min(TPK.CalculateTransportDt(), T1 - T);
-      TPK.Advance(dT, dummy_dT);
-      TPK.CommitState(dT, S.ptr());
-      T += dT;
+    double t_old(0.0), t_new, dt, T1(0.2);
+    while (t_old < T1) {
+      dt = std::min(TPK.CalculateTransportDt(), T1 - t_old);
+      t_new = t_old + dt;
+
+      TPK.AdvanceStep(t_old, t_new);
+      TPK.CommitStep(t_old, t_new);
+
+      t_old = t_new;
       iter++;
     }
 
     /* calculate L1 and L2 errors */
     double L1, L2;
-    TPK.CalculateLpErrors(f_cubic_unit, T, (*tcc)(0), &L1, &L2);
+    TPK.CalculateLpErrors(f_cubic_unit, t_new, (*tcc)(0), &L1, &L2);
     int nx = 16 * (loop + 1);
     printf("nx=%3d  L1 error=%7.5f  L2 error=%7.5f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
 

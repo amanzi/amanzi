@@ -52,6 +52,7 @@ class SolverNKA : public Solver<Vector,VectorSpace> {
   double residual() { return residual_; }
   int num_itrs() { return num_itrs_; }
   int pc_calls() { return pc_calls_; }
+  int pc_updates() { return pc_updates_; }
   int returned_code() { return returned_code_; }
 
  private:
@@ -74,7 +75,7 @@ class SolverNKA : public Solver<Vector,VectorSpace> {
 
   int max_itrs_, num_itrs_, returned_code_;
   int fun_calls_, pc_calls_;
-  int pc_lag_, update_pc_calls_;
+  int pc_lag_, pc_updates_;
   int nka_lag_space_, nka_lag_iterations_;
   int max_error_growth_factor_, max_du_growth_factor_;
   int max_divergence_count_;
@@ -134,7 +135,7 @@ void SolverNKA<Vector, VectorSpace>::Init_()
 
   fun_calls_ = 0;
   pc_calls_ = 0;
-  update_pc_calls_ = 0;
+  pc_updates_ = 0;
   pc_lag_ = 0;
   nka_lag_space_ = 0;
 
@@ -155,8 +156,10 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
   // restart the nonlinear solver (flush its history)
   nka_->Restart();
 
-  // initialize the iteration counter
+  // initialize the iteration and pc counters
   num_itrs_ = 0;
+  pc_calls_ = 0;
+  pc_updates_ = 0;
 
   // create storage
   Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
@@ -180,7 +183,7 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
 
     // Update the preconditioner if necessary.
     if (num_itrs_ % (pc_lag_ + 1) == 0) {
-      update_pc_calls_++;
+      pc_updates_++;
       fn_->UpdatePreconditioner(u);
     }
 

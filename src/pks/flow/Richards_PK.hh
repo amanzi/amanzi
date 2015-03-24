@@ -25,6 +25,7 @@
 #include "BDF1_TI.hh"
 #include "OperatorDiffusion.hh"
 #include "OperatorAccumulation.hh"
+#include "PK_Factory.hh"
 #include "TreeVector.hh"
 #include "Upwind.hh"
 
@@ -39,37 +40,66 @@ namespace Flow {
 
 class Richards_PK : public Flow_PK {
  public:
+  Richards_PK(Teuchos::ParameterList& pk_tree,
+              const Teuchos::RCP<Teuchos::ParameterList>& glist,
+              const Teuchos::RCP<State>& S,
+              const Teuchos::RCP<TreeVector>& soln);
+
   Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
               const std::string& pk_list_name,
               Teuchos::RCP<State> S,
               const Teuchos::RCP<TreeVector>& soln);
+
   ~Richards_PK();
 
   // methods required for PK interface
-  void Setup();
-  void Initialize();
-  bool Advance(double dT_MPC, double& dT_actual); 
+  virtual void Setup();
+  virtual void Initialize();
 
-  double get_dt() { return dT; }
-  void set_dt(double dTnew) { dT = dTnew; dT_desirable_ = dTnew; }
+  virtual double get_dt() { return dt_; }
+  virtual void set_dt(double dt) { dt_ = dt; dt_desirable_ = dt_; }
 
-  void CommitStep(double dt, const Teuchos::Ptr<State>& S);
-  void CalculateDiagnostics(const Teuchos::Ptr<State>& S);
+  virtual bool AdvanceStep(double t_old, double t_new);
+  virtual void CommitStep(double t_old, double t_new);
+  virtual void CalculateDiagnostics();
+
+  virtual std::string name() { return passwd_; }
 
   // methods required for time integration interface
-  void Functional(const double T0, double T1, 
-                  Teuchos::RCP<CompositeVector> u_old, Teuchos::RCP<CompositeVector> u_new, 
-                  Teuchos::RCP<CompositeVector> f);
-  void ApplyPreconditioner(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> Hu);
-  void UpdatePreconditioner(double T, Teuchos::RCP<const CompositeVector> u, double dT);
-  double ErrorNorm(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<const CompositeVector> du);
-  bool IsAdmissible(Teuchos::RCP<const CompositeVector> up) { return true; }
-  bool ModifyPredictor(double dT, Teuchos::RCP<const CompositeVector> u0,
-                       Teuchos::RCP<CompositeVector> u);
+  // -- computes the non-linear functional f = f(t,u,udot) and related norm.
+  void Functional(const double t_old, double t_new, 
+                  Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
+                  Teuchos::RCP<TreeVector> f);
+  double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
+
+  // -- management of the preconditioner
+  void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu);
+  void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt);
+
+  // -- check the admissibility of a solution
+  //    override with the actual admissibility check
+  bool IsAdmissible(Teuchos::RCP<const TreeVector> up) { return true; }
+
+  // -- possibly modifies the predictor that is going to be used as a
+  //    starting value for the nonlinear solve in the time integrator,
+  //    the time integrator will pass the predictor that is computed
+  //    using extrapolation and the time step that is used to compute
+  //    this predictor this function returns true if the predictor was
+  //    modified, false if not
+  bool ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0,
+                       Teuchos::RCP<TreeVector> u);
+
+  // -- possibly modifies the correction, after the nonlinear solver (NKA)
+  //    has computed it, will return true if it did change the correction,
+  //    so that the nonlinear iteration can store the modified correction
+  //    and pass it to NKA so that the NKA space can be updated
   AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-      ModifyCorrection(double dT, Teuchos::RCP<const CompositeVector> res,
-                       Teuchos::RCP<const CompositeVector> u, 
-                       Teuchos::RCP<CompositeVector> du);
+      ModifyCorrection(double dt, Teuchos::RCP<const TreeVector> res,
+                       Teuchos::RCP<const TreeVector> u, 
+                       Teuchos::RCP<TreeVector> du);
+
+  // -- experimental approach -- calling this indicates that the time
+  //    integration scheme is changing the value of the solution in state.
   void ChangedSolution() {};
 
   // initization members
@@ -89,8 +119,7 @@ class Richards_PK : public Flow_PK {
   // access methods
   Teuchos::RCP<Operators::Operator> op_matrix() { return op_matrix_; }
   const Teuchos::RCP<CompositeVector> get_solution() { return solution; }
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval() { return pressure_eval_; }
-  Teuchos::RCP<BDF1_TI<CompositeVector, CompositeVectorSpace> > get_bdf1_dae() { return bdf1_dae; }
+  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > get_bdf1_dae() { return bdf1_dae; }
 
   // developement members
   template <class Model> 
@@ -136,9 +165,9 @@ class Richards_PK : public Flow_PK {
   bool vapor_diffusion_;
 
   // time integrators
-  Teuchos::RCP<BDF1_TI<CompositeVector, CompositeVectorSpace> > bdf1_dae;
+  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae;
   int error_control_, num_itrs_;
-  double dT_desirable_;
+  double dt_desirable_;
   std::vector<std::pair<double, double> > dT_history_;
   bool initialize_with_darcy_;  // global state of initialization.
 
@@ -161,7 +190,9 @@ class Richards_PK : public Flow_PK {
  private:
   void operator=(const Richards_PK& RPK);
 
-  friend class Richards_PK_Wrapper;
+ private:
+  // factory registration
+  static RegisteredPKFactory<Richards_PK> reg_;
 };
 
 

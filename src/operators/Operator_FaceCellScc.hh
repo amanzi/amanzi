@@ -1,5 +1,5 @@
 /*
-  This is the Operator component of the Amanzi code.
+  This is the operators component of the Amanzi code.
 
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -60,9 +60,8 @@ namespace Operators {
 
 class Operator_FaceCellScc : public Operator_Cell {
  public:
-  // constuctors
   // main constructor
-  //   The CVS is the domain and range of the operator
+  // The input CVS is the domain and range of the operator
   Operator_FaceCellScc(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
                        Teuchos::ParameterList& plist) :
       Operator_Cell(cvs, plist, OPERATOR_SCHEMA_DOFS_CELL) {
@@ -93,7 +92,6 @@ class Operator_FaceCellScc : public Operator_Cell {
   mutable std::vector<Teuchos::RCP<Op_Cell_Cell> > diag_ops_;
   mutable std::vector<Teuchos::RCP<Op_Face_Cell> > schur_ops_;
 };
-
 
 }  // namespace Operators
 }  // namespace Amanzi

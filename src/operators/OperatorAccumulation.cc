@@ -33,6 +33,7 @@ OperatorAccumulation::AddAccumulationTerm(const Epetra_MultiVector& du)
   }
 }
 
+
 // -- update method for just adding to PC
 void
 OperatorAccumulation::AddAccumulationTerm(const Epetra_MultiVector& du, double dT)
@@ -43,6 +44,7 @@ OperatorAccumulation::AddAccumulationTerm(const Epetra_MultiVector& du, double d
     diag[i] += du[0][i] / dT;
   }
 }
+
 
 // -- linearized update methods with storage terms
 void
@@ -97,6 +99,7 @@ OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
   }
 }
 
+
 void
 OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
         const CompositeVector& ss, double dT, const std::string& name)
@@ -108,7 +111,7 @@ OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
   if (name == "cell" && ss.HasComponent("cell")) {
     Epetra_MultiVector& volume = *entity_volume.ViewComponent(name); 
 
-    for (int c=0; c!=ncells_owned; ++c) {
+    for (int c = 0; c != ncells_owned; ++c) {
       volume[0][c] = mesh_->cell_volume(c); 
     }
   } else if (name == "face" && ss.HasComponent("face")) {
@@ -118,7 +121,7 @@ OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
     Epetra_MultiVector& volume = *entity_volume.ViewComponent(name, true); 
     volume.PutScalar(0.0);
 
-    for (int c=0; c!=ncells_owned; ++c) {
+    for (int c = 0; c != ncells_owned; ++c) {
       mesh_->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();
 
@@ -147,6 +150,7 @@ OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
     rhs[0][i] += factor * u0c[0][i];
   }
 }
+
 
 void
 OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,

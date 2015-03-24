@@ -27,13 +27,19 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
   storage_created = false;
   chem_step_succeeded = true;
 
-  tranport_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_Wrapper>(sub_pks_[1]);
+  tranport_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(sub_pks_[1]);
   ASSERT(tranport_pk_ != Teuchos::null);
+
   chemistry_pk_ = Teuchos::rcp_dynamic_cast<Amanzi::AmanziChemistry::Chemistry_PK_Wrapper>(sub_pks_[0]);
   ASSERT(chemistry_pk_ != Teuchos::null);
 
-  // master_ = 1; // Transport;
-  // slave_ = 0; // Chemistry;
+  // communicate chemistry engine to transport.
+#ifdef ALQUIMIA_ENABLED
+  tranport_pk_->SetupAlquimia(chemistry_pk_->chem_state(), chemistry_pk_->chem_engine());
+#endif
+
+  // master_ = 1;  // Transport;
+  // slave_ = 0;  // Chemistry;
 }
 
 
@@ -41,13 +47,13 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
 // 
 // -----------------------------------------------------------------------------
 void ReactiveTransport_PK::Initialize() {
-
   Amanzi::MPCWeak::Initialize();
 
   if (S_->HasField("total_component_concentration")) {
     total_component_concentration_stor = 
-       Teuchos::rcp(new Epetra_MultiVector(*S_->GetFieldData("total_component_concentration")->ViewComponent("cell", true)));
-      storage_created  = true;
+       Teuchos::rcp(new Epetra_MultiVector(*S_->GetFieldData("total_component_concentration")
+                                              ->ViewComponent("cell", true)));
+    storage_created = true;
   }
 }
 
@@ -57,8 +63,8 @@ void ReactiveTransport_PK::Initialize() {
 // -----------------------------------------------------------------------------
 double ReactiveTransport_PK::get_dt() {
 
-  dTtran_ = tranport_pk_ -> get_dt();
-  dTchem_ = chemistry_pk_ -> get_dt();
+  dTtran_ = tranport_pk_->get_dt();
+  dTchem_ = chemistry_pk_->get_dt();
 
   if (!chem_step_succeeded && (dTchem_/dTtran_ > 0.99)) {
      dTchem_ *= 0.5;
@@ -67,7 +73,7 @@ double ReactiveTransport_PK::get_dt() {
   if (dTtran_ > dTchem_) dTtran_= dTchem_; 
   
   return dTchem_;
-};
+}
 
 
 // -----------------------------------------------------------------------------

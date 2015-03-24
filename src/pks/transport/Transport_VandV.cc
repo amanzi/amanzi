@@ -24,32 +24,6 @@ namespace Amanzi {
 namespace Transport {
 
 /* ****************************************************************
-* Routine completes initialization of objects in the state.
-**************************************************************** */
-void Transport_PK::InitializeFields()
-{
-  // set popular default values when Flow is off
-  if (S_->HasField("saturation_liquid")) {
-    if (S_->GetField("saturation_liquid")->owner() == passwd_) {
-      if (!S_->GetField("saturation_liquid", passwd_)->initialized()) {
-        S_->GetFieldData("saturation_liquid", passwd_)->PutScalar(1.0);
-        S_->GetField("saturation_liquid", passwd_)->set_initialized();
-      }
-    }
-  }
-
-  if (S_->HasField("prev_saturation_liquid")) {
-    if (S_->GetField("prev_saturation_liquid")->owner() == passwd_) {
-      if (!S_->GetField("prev_saturation_liquid", passwd_)->initialized()) {
-        *S_->GetFieldData("prev_saturation_liquid", passwd_) = *S_->GetFieldData("saturation_liquid", passwd_);
-        S_->GetField("prev_saturation_liquid", passwd_)->set_initialized();
-      }
-    }
-  }
-}
-
-
-/* ****************************************************************
 * Construct default state for unit tests.
 **************************************************************** */
 void Transport_PK::CreateDefaultState(
@@ -261,7 +235,7 @@ void Transport_PK::VV_CheckGEDproperty(Epetra_MultiVector& tracer) const
       std::cout << "    Make an Amanzi ticket or turn off internal transport tests" << std::endl;
       std::cout << "    MyPID = " << MyPID << std::endl;
       std::cout << "    component = " << i << std::endl;
-      std::cout << "    time = " << T_physics << std::endl;
+      std::cout << "    time = " << t_physics_ << std::endl;
       std::cout << "    min/max values = " << tr_min[i] << " " << tr_max[i] << std::endl;
 
       Errors::Message msg;
@@ -290,7 +264,7 @@ void Transport_PK::VV_CheckTracerBounds(Epetra_MultiVector& tracer,
       std::cout << "    Make an Amanzi ticket or turn off internal transport tests" << std::endl;
       std::cout << "    MyPID = " << MyPID << std::endl;
       std::cout << "    component = " << component << std::endl;
-      std::cout << "    simulation time = " << T_physics << std::endl;
+      std::cout << "    simulation time = " << t_physics_ << std::endl;
       std::cout << "      cell = " << c << std::endl;
       std::cout << "      center = " << mesh_->cell_centroid(c) << std::endl;
       std::cout << "      value (old) = " << tcc_prev[component][c] << std::endl;

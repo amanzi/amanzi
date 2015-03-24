@@ -1,5 +1,5 @@
 /*
-  This is the Operator component of the Amanzi code.
+  This is the operators component of the Amanzi code.
 
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
@@ -30,14 +30,14 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* Apply a source which may or may not have cell volume included already. 
+* Apply a source which may or may not have node volume included already. 
 ****************************************************************** */
 void Operator_Node::UpdateRHS(const CompositeVector& source, bool volume_included)
 {
   if (volume_included) {
     Operator::UpdateRHS(source);
   } else {
-    rhs_->PutScalarGhosted(0.);
+    rhs_->PutScalarGhosted(0.0);
     Epetra_MultiVector& rhs_v = *rhs_->ViewComponent("node", true);
     const Epetra_MultiVector& source_v = *source.ViewComponent("node", true);
 
@@ -68,7 +68,7 @@ int Operator_Node::ApplyMatrixFreeOp(const Op_Cell_Node& op,
 
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xn = *X.ViewComponent("node", true);
-  Y.PutScalarGhosted(0.);
+  Y.PutScalarGhosted(0.0);
 
   {
     Epetra_MultiVector& Yn = *Y.ViewComponent("node", true);

@@ -18,7 +18,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "PK.hh"
-#include "Transport_PK_Wrapper.hh"
+#include "Transport_PK.hh"
 #include "Chemistry_PK_Wrapper.hh"
 #include "PK_Factory.hh"
 #include "MPCWeak.hh"
@@ -32,7 +32,6 @@ class ReactiveTransport_PK : public MPCWeak {
                const Teuchos::RCP<State>& S,
                const Teuchos::RCP<TreeVector>& soln);
 
-
   ~ReactiveTransport_PK() {};
 
   // PK methods
@@ -45,15 +44,15 @@ class ReactiveTransport_PK : public MPCWeak {
 
   virtual void Initialize();
 
-  std::string name() { return "reactive transport";} 
+  std::string name() { return "reactive transport"; } 
 
  private:
   // storage for the component concentration intermediate values
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration_stor;
 
-  Teuchos::RCP<Transport::Transport_PK_Wrapper> tranport_pk_;
+  Teuchos::RCP<Transport::Transport_PK> tranport_pk_;
   Teuchos::RCP<AmanziChemistry::Chemistry_PK_Wrapper> chemistry_pk_;
-  //int  master_, slave_;
+  // int master_, slave_;
 
   bool chem_step_succeeded;
   bool storage_created;

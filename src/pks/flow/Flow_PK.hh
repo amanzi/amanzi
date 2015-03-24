@@ -9,26 +9,30 @@
   Authors: Neil Carlson (version 1) 
            Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
-  This is a derived abstract class.
+  This is a virtual base class for two flow models: Darcy and Richards.
 */
 
 #ifndef AMANZI_FLOW_PK_HH_
 #define AMANZI_FLOW_PK_HH_
 
+// TPLs
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Teuchos_RCP.hpp"
 
+// Amanzi
 #include "BDFFnBase.hh"
 #include "checkpoint.hh"
 #include "CompositeVectorSpace.hh"
+#include "FnTimeIntegratorPK.hh"
 #include "independent_variable_field_evaluator_fromfunction.hh"
 #include "PK.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "tensor.hh"
 #include "VerboseObject.hh"
 
+// Flow
 #include "Flow_BC_Factory.hh"
 #include "Flow_SourceFactory.hh"
 #include "FlowBoundaryFunction.hh"
@@ -41,24 +45,20 @@ namespace Flow {
 
 double bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
 
-class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
+class Flow_PK : public FnTimeIntegratorPK {
  public:
   Flow_PK();
   virtual ~Flow_PK() {};
 
-  std::string name() { return "flow"; }
+  // members required by PK interface
+  virtual void Setup();
+  virtual void Initialize();
 
-  // required flow methods
-  virtual void Setup() = 0;
-  virtual void Initialize() = 0;
-  virtual void CommitStep(double dt, const Teuchos::Ptr<State>& S) = 0;
-  virtual double get_dt() = 0;
-  virtual void set_dt(double dt) { dT = dt; }
-  virtual bool Advance(double dT, double &dT_actual) = 0;
-
+  // other members of this PK.
+  // -- initialize simple fields common for both flow models.
   void UpdateLocalFields_();
 
-  // boundary and source teerms
+  // --- management of boundary and source terms
   void ProcessBCs();
   void ComputeBCs(const CompositeVector& pressure);
   bool SeepageFacePFloTran(const CompositeVector& u, int* nseepage, double* area_seepage);
@@ -66,24 +66,23 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
 
   void AddSourceTerms(CompositeVector& rhs);
 
-  // absolute permeability
+  // -- absolute permeability and derived quantities.
   void SetAbsolutePermeabilityTensor();
   void CalculatePermeabilityFactorInWell();
 
   void ProcessShiftWaterTableList(const Teuchos::ParameterList& list);
   void CalculateShiftWaterTable(const std::string region);
 
-  // miscallenous members
-  void ResetPKtimes(double T0, double dT0) { T_physics = T0; dT = dT0; }
+  // -- miscallenous members
   void DeriveFaceValuesFromCellValues(const Epetra_MultiVector& ucells, Epetra_MultiVector& ufaces);
   int FindPosition(int f, AmanziMesh::Entity_ID_List faces);
 
-  // io members
+  // -- io members
   void ProcessStringSourceDistribution(const std::string name, int* method);
-  void OutputTimeHistory(const Teuchos::ParameterList& plist, std::vector<dt_tuple>& dT_history);
+  void OutputTimeHistory(const Teuchos::ParameterList& plist, std::vector<dt_tuple>& dt_history);
   void WriteGMVfile(Teuchos::RCP<State> S) const;
 
-  // utilities
+  // -- utilities
   double WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
                                     const Epetra_MultiVector& darcy_flux) const;
 
@@ -95,13 +94,13 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
                              std::vector<double>& pressure, std::vector<double>& water_density);
   void WriteWalkabout(const Teuchos::Ptr<Checkpoint>& wlk);
 
-  // V&V
+  // -- V&V
   void VV_ValidateBCs() const;
   void VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const;
   void VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const;
   void VV_PrintHeadExtrema(const CompositeVector& pressure) const;
 
-  // extensions 
+  // -- extensions 
   int BoundaryFaceGetCell(int f) const;  // of AmanziMesh
   void VerticalNormals(int c, AmanziGeometry::Point& n1, AmanziGeometry::Point& n2);
   virtual double BoundaryFaceValue(int f, const CompositeVector& u);
@@ -110,7 +109,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
                         const std::vector<AmanziMesh::Entity_ID>& v2, 
                         std::vector<AmanziMesh::Entity_ID>* vv);
 
-  // support of unit tests
+  // -- support of unit tests
   double rho() { return rho_; }
   double mu() { return mu_; }
   const AmanziGeometry::Point& gravity() { return gravity_; }
@@ -125,7 +124,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
 
-  double T_physics, dT, dTnext;
+  double dt_, dt_next_;
 
   int MyPID;  // parallel information: will be moved to private
   int missed_bc_faces_, dirichlet_bc_faces_;
@@ -145,8 +144,8 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
 
   // Stationary physical quantatities
   std::vector<WhetStone::Tensor> K; 
-  AmanziGeometry::Point gravity_;
-  double g_, rho_, mu_, atm_pressure_;
+  AmanziGeometry::Point gravity_, molar_gravity_;
+  double g_, rho_, molar_rho_, mu_, atm_pressure_;
 
   Teuchos::RCP<Epetra_Vector> Kxy;
   std::string coordinate_system;

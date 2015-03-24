@@ -9,18 +9,20 @@
 #include <cmath>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "UnitTest++.h"
 
+// Amanzi
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
-
 #include "State.hh"
+
+// Transport
 #include "Transport_PK.hh"
 
 
@@ -90,20 +92,23 @@ TEST(ADVANCE_WITH_2D_MESH) {
   TPK.PrintStatistics();
 
   /* advance the transport state */
-  double dummy_dT, T = 0.0;
+  double t_old(0.0), t_new(0.0), dt;
   Teuchos::RCP<Epetra_MultiVector> 
       tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
 
   int iter = 0;
   bool flag = true;
-  while (T < 0.3) {
-    double dT = TPK.CalculateTransportDt();
-    TPK.Advance(dT, dummy_dT);
-    TPK.CommitState(dT, S.ptr());
-    T += dT;
+  while (t_new < 0.3) {
+    dt = TPK.CalculateTransportDt();
+    t_new = t_old + dt;
+
+    TPK.AdvanceStep(t_old, t_new);
+    TPK.CommitStep(t_old, t_new);
+
+    t_old = t_new;
     iter++;
 
-    if (T > 0.2 && flag) {
+    if (t_new > 0.2 && flag) {
       flag = false;
       if (TPK.MyPID == 0) {
         GMV::open_data_file(*mesh, (std::string)"transport.gmv");

@@ -83,8 +83,9 @@
 !
 ! Read Input Parameters:
 !
-      read(lin,*,err=98) do_cond
-      write(*,*) ' do_cond = ',do_cond
+!      read(lin,*,err=98) do_cond
+!      write(*,*) ' do_cond = ',do_cond
+      do_cond = 0
 
       read(lin,'(a512)',err=98) datafl
       call chknam(datafl,512)
@@ -968,7 +969,8 @@
 !
 ! Read Input Parameters:
 !
-      read(lin,*,err=98) do_cond
+!      read(lin,*,err=98) do_cond
+      do_cond = 0
       read(lin,'(a64)',err=98) datafl
       call chknam(datafl,64)
 
@@ -1063,7 +1065,7 @@
       end do
 
       if (idbg.gt.1) then
-         write(*,*) ' do_cond = ',do_cond
+!         write(*,*) ' do_cond = ',do_cond
          write(*,*) ' data file = ',datafl(1:40)
          write(*,*) ' input columns = ',ixl,iyl,izl,ivrl,iwt,isecvr
          write(*,*) ' trimming limits = ',tmin,tmax

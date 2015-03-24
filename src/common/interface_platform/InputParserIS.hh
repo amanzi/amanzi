@@ -119,6 +119,7 @@ class InputParserIS {
 
   Teuchos::Array<std::string> mineral_names_;
   Teuchos::Array<std::string> sorption_site_names_;
+  std::string chemistry_model_;
 
   double constant_density;
   int spatial_dimension_;  

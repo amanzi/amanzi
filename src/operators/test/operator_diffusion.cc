@@ -15,29 +15,30 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "EpetraExt_RowMatrixOut.h"
+#include "UnitTest++.h"
 
+// Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
 #include "LinearOperatorFactory.hh"
-
-#include "tensor.hh"
 #include "mfd3d_diffusion.hh"
+#include "tensor.hh"
+
+// Operators
+#include "Analytic01.hh"
+#include "Analytic02.hh"
+#include "Analytic03.hh"
 
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionMFD.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "UpwindSecondOrder.hh"
 #include "UpwindStandard.hh"
-
-#include "Analytic01.hh"
-#include "Analytic02.hh"
-#include "Analytic03.hh"
 
 namespace Amanzi{
 
@@ -133,6 +134,7 @@ class HeatConduction {
 };
 
 typedef double(HeatConduction::*ModelUpwindFn)(int c, double T) const; 
+
 }  // namespace Amanzi
 
 

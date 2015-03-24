@@ -53,6 +53,7 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DENABLE_METIS:BOOL=TRUE
                     -DMETIS_MAJOR_VER:STRING=5
                     -DHDF5_DIR:PATH=${TPL_INSTALL_PREFIX}
+                    -DHDF5_NO_SYSTEM_PATHS:BOOL=TRUE
                     -DNetCDF_DIR:PATH=${TPL_INSTALL_PREFIX} 
                     -DExodusII_DIR:PATH=${TPL_INSTALL_PREFIX} 
                     -DZOLTAN_DIR:PATH=${Zoltan_INSTALL_PREFIX}

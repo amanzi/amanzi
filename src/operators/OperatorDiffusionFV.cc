@@ -186,9 +186,8 @@ OperatorDiffusionFV::Setup(const Teuchos::RCP<const CompositeVector>& k,
 /* ******************************************************************
 * Populate face-based matrices.
 ****************************************************************** */
-void
-OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-        const Teuchos::Ptr<const CompositeVector>& u)
+void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
+                                         const Teuchos::Ptr<const CompositeVector>& u)
 {
   if (!exclude_primary_terms_) {
     const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);

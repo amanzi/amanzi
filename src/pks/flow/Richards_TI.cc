@@ -28,37 +28,39 @@ namespace Flow {
 /* ******************************************************************
 * Calculate f(u, du/dt) = a d(s(u))/dt + A*u - rhs.
 ****************************************************************** */
-void Richards_PK::Functional(double T0, double T1, 
-                             Teuchos::RCP<CompositeVector> u_old, Teuchos::RCP<CompositeVector> u_new, 
-                             Teuchos::RCP<CompositeVector> f)
+void Richards_PK::Functional(double t_old, double t_new, 
+                             Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
+                             Teuchos::RCP<TreeVector> f)
 { 
-  double dTp(T1 - T0);
+  double dtp(t_new - t_old);
 
   // update coefficients
   darcy_flux_copy->ScatterMasterToGhosted("face");
 
-  relperm_->Compute(u_new, krel_); 
+  relperm_->Compute(u_new->Data(), krel_); 
   RelPermUpwindFn func1 = &RelPerm::Compute;
-  upwind_->Compute(*darcy_flux_upwind, *u_new, bc_model, bc_value, *krel_, *krel_, func1);
+  upwind_->Compute(*darcy_flux_upwind, *u_new->Data(), bc_model, bc_value, *krel_, *krel_, func1);
 
-  relperm_->ComputeDerivative(u_new, dKdP_); 
+  relperm_->ComputeDerivative(u_new->Data(), dKdP_); 
   RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
-  upwind_->Compute(*darcy_flux_upwind, *u_new, bc_model, bc_value, *dKdP_, *dKdP_, func2);
+  upwind_->Compute(*darcy_flux_upwind, *u_new->Data(), bc_model, bc_value, *dKdP_, *dKdP_, func2);
 
-  UpdateSourceBoundaryData(T0, T1, *u_new);
+  UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
   
   // assemble residual for diffusion operator
   op_matrix_->Init();
   op_matrix_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
+  op_matrix_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr());
   op_matrix_diff_->ApplyBCs(true);
 
   Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
   if (src_sink != NULL) AddSourceTerms(*rhs);
 
-  op_matrix_->ComputeNegativeResidual(*u_new, *f);
+  op_matrix_->ComputeNegativeResidual(*u_new->Data(), *f->Data());
 
   // add accumulation term 
-  Epetra_MultiVector& f_cell = *f->ViewComponent("cell");
+  Epetra_MultiVector& f_cell = *f->Data()->ViewComponent("cell");
+  const Epetra_MultiVector& phi_c = *S_->GetFieldData("porosity")->ViewComponent("cell");
 
   functional_max_norm = 0.0;
   functional_max_cell = 0;
@@ -72,10 +74,10 @@ void Richards_PK::Functional(double T0, double T1,
     double wc1 = wc_c[0][c];
     double wc2 = wc_prev_c[0][c];
 
-    double factor = mesh_->cell_volume(c) / dTp;
+    double factor = mesh_->cell_volume(c) / dtp;
     f_cell[0][c] += (wc1 - wc2) * factor;
 
-    double tmp = fabs(f_cell[0][c]) / factor;  // calculate errors
+    double tmp = fabs(f_cell[0][c]) / (factor * molar_rho_ * phi_c[0][c]);  // calculate errors
     if (tmp > functional_max_norm) {
       functional_max_norm = tmp;
       functional_max_cell = c;        
@@ -84,7 +86,7 @@ void Richards_PK::Functional(double T0, double T1,
 
   // add vapor diffusion 
   if (vapor_diffusion_) {
-    Functional_AddVaporDiffusion_(f);
+    Functional_AddVaporDiffusion_(f->Data());
   }
 }
 
@@ -183,18 +185,18 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
 /* ******************************************************************
 * Apply preconditioner inv(B) * X.                                                 
 ****************************************************************** */
-void Richards_PK::ApplyPreconditioner(Teuchos::RCP<const CompositeVector> X, 
-                                      Teuchos::RCP<CompositeVector> Y)
+void Richards_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, 
+                                      Teuchos::RCP<TreeVector> Y)
 {
-  Y->PutScalar(0.);
-  op_pc_solver_->ApplyInverse(*X, *Y);
+  Y->PutScalar(0.0);
+  op_pc_solver_->ApplyInverse(*X->Data(), *Y->Data());
 }
 
 
 /* ******************************************************************
 * Update new preconditioner B(p, dT_prec).                                   
 ****************************************************************** */
-void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVector> u, double dTp)
+void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp)
 {
   // update coefficients
   if (update_upwind == FLOW_UPWIND_UPDATE_ITERATION) {
@@ -202,20 +204,21 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
   }
   darcy_flux_copy->ScatterMasterToGhosted("face");
 
-  relperm_->Compute(u, krel_);
+  relperm_->Compute(u->Data(), krel_);
   RelPermUpwindFn func1 = &RelPerm::Compute;
-  upwind_->Compute(*darcy_flux_upwind, *u, bc_model, bc_value, *krel_, *krel_, func1);
+  upwind_->Compute(*darcy_flux_upwind, *u->Data(), bc_model, bc_value, *krel_, *krel_, func1);
 
-  relperm_->ComputeDerivative(u, dKdP_);
+  relperm_->ComputeDerivative(u->Data(), dKdP_);
   RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
-  upwind_->Compute(*darcy_flux_upwind, *u, bc_model, bc_value, *dKdP_, *dKdP_, func2);
+  upwind_->Compute(*darcy_flux_upwind, *u->Data(), bc_model, bc_value, *dKdP_, *dKdP_, func2);
 
-  double T0 = Tp - dTp;
-  UpdateSourceBoundaryData(T0, Tp, *u);
+  double t_old = tp - dtp;
+  UpdateSourceBoundaryData(t_old, tp, *u->Data());
 
   // create diffusion operators
   op_preconditioner_->Init();
   op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
+  op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr());
   op_preconditioner_diff_->ApplyBCs(true);
 
   // add time derivative
@@ -228,10 +231,10 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
   CompositeVector& dSdP = *S_->GetFieldData("dsaturation_liquid_dpressure", "saturation_liquid");
 
   const CompositeVector& phi = *S_->GetFieldData("porosity");
-  dSdP.Multiply(rho_, phi, dSdP, 0.0);
+  dSdP.Multiply(molar_rho_, phi, dSdP, 0.0);
 
-  if (dTp > 0.0) {
-    op_acc_->AddAccumulationTerm(*u, dSdP, dTp, "cell");
+  if (dtp > 0.0) {
+    op_acc_->AddAccumulationTerm(*u->Data(), dSdP, dtp, "cell");
   }
 
   // finalize preconditioner
@@ -243,13 +246,13 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
 /* ******************************************************************
 * Modify preconditior as needed.
 ****************************************************************** */
-bool Richards_PK::ModifyPredictor(double dT, Teuchos::RCP<const CompositeVector> u0,
-                                  Teuchos::RCP<CompositeVector> u)
+bool Richards_PK::ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0,
+                                  Teuchos::RCP<TreeVector> u)
 {
-  Teuchos::RCP<CompositeVector> du = Teuchos::rcp(new CompositeVector(*u));
+  Teuchos::RCP<TreeVector> du = Teuchos::rcp(new TreeVector(*u));
   du->Update(-1.0, *u0, 1.0);
  
-  ModifyCorrection(dT, Teuchos::null, u0, du);
+  ModifyCorrection(dt, Teuchos::null, u0, du);
 
   *u = *u0;
   u->Update(1.0, *du, 1.0);
@@ -261,11 +264,11 @@ bool Richards_PK::ModifyPredictor(double dT, Teuchos::RCP<const CompositeVector>
 * Check difference du between the predicted and converged solutions.
 * This is a wrapper for various error control methods. 
 ****************************************************************** */
-double Richards_PK::ErrorNorm(Teuchos::RCP<const CompositeVector> u, 
-                              Teuchos::RCP<const CompositeVector> du)
+double Richards_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, 
+                              Teuchos::RCP<const TreeVector> du)
 {
   double error;
-  error = ErrorNormSTOMP(*u, *du);
+  error = ErrorNormSTOMP(*u->Data(), *du->Data());
 
   return error;
 }
@@ -340,12 +343,13 @@ double Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVect
 * of saturation.
 ****************************************************************** */
 AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-    Richards_PK::ModifyCorrection(double dT, Teuchos::RCP<const CompositeVector> f,
-                                  Teuchos::RCP<const CompositeVector> u,
-                                  Teuchos::RCP<CompositeVector> du)
+    Richards_PK::ModifyCorrection(double dt, Teuchos::RCP<const TreeVector> f,
+                                  Teuchos::RCP<const TreeVector> u,
+                                  Teuchos::RCP<TreeVector> du)
 {
-  const Epetra_MultiVector& uc = *u->ViewComponent("cell");
-  const Epetra_MultiVector& duc = *du->ViewComponent("cell");
+  const Epetra_MultiVector& uc = *u->Data()->ViewComponent("cell");
+  const Epetra_MultiVector& duc = *du->Data()->ViewComponent("cell");
+
   AmanziGeometry::Point face_centr, cell_cntr;
   double max_sat_pert = 0.25;
   double damping_factor = 0.5;

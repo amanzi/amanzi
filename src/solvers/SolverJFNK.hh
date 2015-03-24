@@ -25,7 +25,7 @@ namespace Amanzi {
 namespace AmanziSolvers {
 
 template<class Vector, class VectorSpace>
-class SolverJFNK : public Solver<Vector,VectorSpace> {
+class SolverJFNK : public Solver<Vector, VectorSpace> {
  public:
   SolverJFNK(Teuchos::ParameterList& plist) :
       plist_(plist) {}
@@ -45,30 +45,16 @@ class SolverJFNK : public Solver<Vector,VectorSpace> {
   }
 
   // mutators
-  void set_tolerance(double tol) {
-    solver_->set_tolerance(tol);
-  }
-
-  void set_pc_lag(double pc_lag) {
-    solver_->set_pc_lag(pc_lag);
-  }
+  void set_tolerance(double tol) { solver_->set_tolerance(tol); }
+  void set_pc_lag(double pc_lag) { solver_->set_pc_lag(pc_lag); }
 
   // access
-  double tolerance() { 
-    return solver_->tolerance(); 
-  }
-
-  double residual() {
-    return solver_->residual();
-  }
-
-  int num_itrs() {
-    return solver_->num_itrs();
-  }
-
-  int returned_code() {
-    return solver_->returned_code();
-  }
+  double tolerance() { return solver_->tolerance(); }
+  double residual() { return solver_->residual(); }
+  int num_itrs() { return solver_->num_itrs(); }
+  int returned_code() { return solver_->returned_code(); }
+  int pc_calls() { return solver_->pc_calls(); }
+  int pc_updates() { return solver_->pc_updates(); }
   
  protected:
   Teuchos::ParameterList plist_;
@@ -82,7 +68,7 @@ class SolverJFNK : public Solver<Vector,VectorSpace> {
 * Public Init method.
 ****************************************************************** */
 template<class Vector, class VectorSpace>
-void SolverJFNK<Vector,VectorSpace>::Init(
+void SolverJFNK<Vector, VectorSpace>::Init(
     const Teuchos::RCP<SolverFnBase<Vector> >& fn, const VectorSpace& map)
 {
   // create the nonlinear solver

@@ -14,25 +14,27 @@
 #include <string>
 #include <vector>
 
+// TPLs
 #include "Epetra_MpiComm.h"
 #include "Epetra_SerialComm.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "UnitTest++.h"
 
+// Amanzi
 #include "GMVMesh.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "Richards_PK.hh"
 
+// Flow
+#include "Richards_PK.hh"
 #include "Richards_SteadyState.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::Flow;
-
 
 /* ******************************************************************
 * Calculate L2 error in pressure.                                                    
@@ -114,15 +116,14 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
   if (MyPID == 0) std::cout <<"Convergence analysis on three random meshes" << std::endl;
 
   std::string xmlFileName = "test/flow_richards_random.xml";
-  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
-  Teuchos::ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // convergence estimate
-  int nmeshes = plist.get<int>("number of meshes", 1);
+  int nmeshes = plist->get<int>("number of meshes", 1);
   std::vector<double> h, p_error, v_error;
 
   for (int n = 0; n < nmeshes; n++) {  // Use "n < 3" for the full test
-    Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+    Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(2, region_list, comm);
     
     FrameworkPreference pref;
@@ -145,13 +146,12 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     /* create a simple state and populate it */
     Amanzi::VerboseObject::hide_line_prefix = false;
 
-    Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("State");
+    Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("State");
     Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
     S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-    Teuchos::RCP<Teuchos::ParameterList> global_list(&plist, Teuchos::RCP_WEAK_NO_DEALLOC);
-    Richards_PK* RPK = new Richards_PK(global_list, "Flow", S, soln);
+    Richards_PK* RPK = new Richards_PK(plist, "Flow", S, soln);
 
     RPK->Setup();
     S->Setup();
@@ -169,8 +169,8 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     ti_specs.T1 = 1.0e+4;
     ti_specs.max_itrs = 400;
 
-    AdvanceToSteadyState(S, *RPK, ti_specs, S->GetFieldData("pressure", "flow"));
-    RPK->CommitStep(0.0, S.ptr());
+    AdvanceToSteadyState(S, *RPK, ti_specs, soln);
+    RPK->CommitStep(0.0, 1.0);
 
     S->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
     const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");

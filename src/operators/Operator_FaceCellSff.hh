@@ -1,5 +1,5 @@
 /*
-  This is the Operator component of the Amanzi code.
+  This is the operators component of the Amanzi code.
 
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -94,14 +94,11 @@ class Operator_FaceCellSff : public Operator_FaceCell {
   // handled in Schur complement -- no cell dofs.
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const {}
+          int my_block_row, int my_block_col) const {};
 
-
-  
  protected:
   mutable std::vector<Teuchos::RCP<Op_Cell_Face> > schur_ops_;
 };
-
 
 }  // namespace Operators
 }  // namespace Amanzi

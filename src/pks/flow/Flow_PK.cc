@@ -68,7 +68,7 @@ void Flow_PK::Setup()
 ****************************************************************** */
 void Flow_PK::Initialize()
 {
-  T_physics = dT = 0.0;
+  dt_ = 0.0;
 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -80,16 +80,22 @@ void Flow_PK::Initialize()
   ti_phase_counter = 0;
 
   // Fundamental physical quantities
+  // -- temporarily these quantities are constant
   double* gravity_data;
   S_->GetConstantVectorData("gravity")->ExtractView(&gravity_data);
-  gravity_.set(dim,&(gravity_data[0])); // do it in complicated way because we
-                                        // are not sure if gravity_data is an
-                                        // array or vector
+  gravity_.set(dim, &(gravity_data[0]));  // do it in complicated way because we
+                                          // are not sure if gravity_data is an
+                                          // array or vector
   g_ = fabs(gravity_[dim - 1]);
 
-  // Other constant (temporarily) physical quantaties
   rho_ = *S_->GetScalarData("fluid_density");
   mu_ = *S_->GetScalarData("fluid_viscosity");
+
+  // -- molar rescaling of some quantatities.
+  // molar_rho_ = rho_ / CommonDefs::MOLAR_MASS_H2O;
+  // molar_gravity_.set(gravity_ * CommonDefs::MOLAR_MASS_H2O);
+  molar_rho_ = rho_;
+  molar_gravity_.set(gravity_);
 
   // parallel execution data
   MyPID = 0;
