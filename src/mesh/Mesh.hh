@@ -218,6 +218,16 @@ class Mesh
 
   void cell_get_edges (const Entity_ID cellid, Entity_ID_List *edgeids) const;
 
+  // Get edges and dirs of a 2D cell. This is to make the code cleaner
+  // for integrating over the cell in 2D where faces and edges are
+  // identical but integrating over the cells using face information
+  // is more cumbersome (one would have to take the face normals,
+  // rotate them and then get a consistent edge vector)
+
+  void cell_2D_get_edges_and_dirs (const Entity_ID cellid, 
+                                   Entity_ID_List *edgeids,
+                                   std::vector<int> *edge_dirs) const;
+
 
   // Get nodes of a cell
 
@@ -232,6 +242,13 @@ class Mesh
   // face, OWNED or GHOST. If ordered = true, the edges will be
   // returned in a ccw order around the face as it is naturally defined.
  
+  // IMPORTANT NOTE IN 2D CELLS: In meshes where the cells are two
+  // dimensional, faces and edges are identical. For such cells, this
+  // operator will return a single edge and a direction of 1. However,
+  // this direction cannot be relied upon to compute, say, a contour
+  // integral around the 2D cell. 
+
+
   void face_get_edges_and_dirs (const Entity_ID faceid,
 				Entity_ID_List *edgeids,
 				std::vector<int> *edge_dirs,
@@ -708,11 +725,19 @@ class Mesh
 					 const bool ordered=true) const = 0;
 
   // edges of a cell - this function is implemented in each mesh
-  // framework. The results are cached in the base class
+  // framework. The results are cached in the base class. 
 
   virtual
   void cell_get_edges_internal (const Entity_ID cellid,
-				Entity_ID_List *edgeids) const = 0;
+                                Entity_ID_List *edgeids) const = 0;
+
+  // edges and directions of a 2D cell - this function is implemented
+  // in each mesh framework. The results are cached in the base class.
+
+  virtual
+  void cell_2D_get_edges_and_dirs_internal (const Entity_ID cellid,
+                                            Entity_ID_List *edgeids,
+                                            std::vector<int> *edge_dirs) const = 0;
 
 
  private:
@@ -731,6 +756,7 @@ class Mesh
   mutable std::vector<Entity_ID_List > face_cell_ids;
   mutable std::vector< std::vector<Parallel_type> > face_cell_ptype;
   mutable std::vector<Entity_ID_List> cell_edge_ids;
+  mutable std::vector< std::vector<int> > cell_2D_edge_dirs;
   mutable std::vector<Entity_ID_List> face_edge_ids;
   mutable std::vector< std::vector<int> > face_edge_dirs;
   mutable Mesh_type mesh_type_;

@@ -169,6 +169,11 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
     const
   {}
 
+  void cell_2D_get_edges_and_dirs_internal (const Amanzi::AmanziMesh::Entity_ID cellid,
+                                            Amanzi::AmanziMesh::Entity_ID_List *edgeids,
+                                            std::vector<int> *edgedirs) const
+  {}
+
   void cell_get_nodes (const Amanzi::AmanziMesh::Entity_ID cellid, 
                        Amanzi::AmanziMesh::Entity_ID_List *nodeids) const
   {}

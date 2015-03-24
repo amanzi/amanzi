@@ -429,6 +429,16 @@ private:
     Exceptions::amanzi_throw(mesg);
   }
 
+  // Edges and directions of a 2D cell
+
+  void cell_2D_get_edges_and_dirs_internal (const Entity_ID cellid,
+                                            Entity_ID_List *edgeids,
+                                            std::vector<int> *edgedirs) const 
+  { 
+    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
+    Exceptions::amanzi_throw(mesg);
+  }
+
   // Edges and edge directions of a face
 
   void face_get_edges_and_dirs_internal (const Entity_ID cellid,

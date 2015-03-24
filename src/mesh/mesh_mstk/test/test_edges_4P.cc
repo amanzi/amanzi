@@ -59,14 +59,32 @@ TEST(MSTK_EDGES_2D)
 
   for (int c = 0; c < nc_owned; ++c) {
     Amanzi::AmanziMesh::Entity_ID_List cedges, cfaces, fedges;
-    std::vector<int> cfdirs, fedirs;    
+    std::vector<int> cfdirs, fedirs, cedirs;    
 
-    mesh->cell_get_edges(c,&cedges);
+    mesh->cell_2D_get_edges_and_dirs(c,&cedges,&cedirs);
     mesh->cell_get_faces_and_dirs(c,&cfaces,&cfdirs);
 
-    for (int e = 0; e < cedges.size(); ++e)
+    for (int e = 0; e < cedges.size(); ++e) {
       CHECK_EQUAL(mesh->GID(cedges[e],Amanzi::AmanziMesh::EDGE), 
 		  mesh->GID(cfaces[e],Amanzi::AmanziMesh::FACE));
+
+      // Also, see if the direction and vector we got for edges of 2D
+      // cell is consistent with the direction and normal vector we
+      // got for the faces of the cell
+      
+      CHECK_EQUAL(cedirs[e],cfdirs[e]);
+
+      Amanzi::AmanziGeometry::Point evec(2), fnormal(2), ftangent(2);
+
+      evec = mesh->edge_vector(cedges[e])*cedirs[e];
+
+      fnormal = mesh->face_normal(cfaces[e])*cfdirs[e];
+      ftangent.set(-fnormal[1],fnormal[0]);
+
+      CHECK_EQUAL(evec[0],ftangent[0]);
+      CHECK_EQUAL(evec[1],ftangent[1]);
+    }
+
 
     for (int f = 0; f < cfaces.size(); ++f) {
       mesh->face_get_edges_and_dirs(cfaces[f],&fedges,&fedirs);

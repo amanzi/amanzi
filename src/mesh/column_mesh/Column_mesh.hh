@@ -184,6 +184,17 @@ public:
   }
 
    
+  // Edges of a cell
+
+  void cell_2D_get_edges_and_dirs (const Entity_ID cellid,
+                                   Entity_ID_List *edgeids,
+                                   std::vector<int> *edgedirs) const 
+  { 
+    Errors::Message mesg("Not implemented");
+    Exceptions::amanzi_throw(mesg);
+  }
+
+   
     
   // Get nodes of cell 
   // On a distributed mesh, all nodes (OWNED or GHOST) of the cell 
@@ -647,6 +658,12 @@ private:
 
   void cell_get_edges_internal (const Entity_ID cellid,
 				Entity_ID_List *edgeids) const {
+    amanzi_throw(Errors::Message("Not implemented"));
+  }
+
+  void cell_2D_get_edges_and_dirs_internal (const Entity_ID cellid,
+                                            Entity_ID_List *edgeids,
+                                            std::vector<int> *edgedirs) const {
     amanzi_throw(Errors::Message("Not implemented"));
   }
 

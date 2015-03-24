@@ -109,11 +109,15 @@ void Mesh::cache_cell2edge_info() const {
   int ncells = num_entities(CELL,USED);
   cell_edge_ids.resize(ncells);
   
-  for (int c = 0; c < ncells; c++) {
-    Entity_ID_List cedgeids;
-    
-    cell_get_edges_internal(c, &(cell_edge_ids[c]));      
+  if (spacedim == 2) {
+    cell_2D_edge_dirs.resize(ncells);
+    for (int c = 0; c < ncells; c++)
+      cell_2D_get_edges_and_dirs_internal(c, &(cell_edge_ids[c]), 
+                                          &(cell_2D_edge_dirs[c]));
   }
+  else
+    for (int c = 0; c < ncells; c++) 
+      cell_get_edges_internal(c, &(cell_edge_ids[c]));
   
   cell2edge_info_cached = true;
 }
@@ -374,6 +378,35 @@ void Mesh::cell_get_edges (const Entity_ID cellid,
 #endif
 
 } // Mesh::cell_get_edges
+
+
+void Mesh::cell_2D_get_edges_and_dirs (const Entity_ID cellid, 
+                                       Entity_ID_List *edgeids,
+                                       std::vector<int> *edgedirs) const {
+
+
+#if CACHE_VARS != 0
+
+  //
+  // Cached version - turn off for profiling
+  //
+
+  if (!cell2edge_info_cached) cache_cell2edge_info();
+
+  *edgeids = cell_edge_ids[cellid]; // copy operation
+  *edgedirs = cell_2D_edge_dirs[cellid];
+
+#else
+
+  // 
+  // Non-cached version
+  //
+
+  cell_2D_get_edges_and_dirs_internal(cellid, edgeids, edgedirs);
+
+#endif
+
+} // Mesh::cell_get_edges_and_dirs
 
 
 
