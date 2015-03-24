@@ -81,30 +81,31 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
         ->SetComponent("face", AmanziMesh::FACE, 1);
   }
 
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
+  bc_values_.resize(nfaces, 0.0);
+  std::vector<double> mixed;
+  bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_markers_, bc_values_, mixed));
+
   // operator for the diffusion terms: must use ScaledConstraint version
   Teuchos::ParameterList mfd_plist = plist_->sublist("Diffusion");
-  mfd_plist.set("TPFA", true);
-  mfd_plist.set("scaled constraint equation", true);
-  matrix_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
-
-  matrix_->set_symmetric(false);
-  matrix_->SymbolicAssembleGlobalMatrices();
-  matrix_->CreateMFDmassMatrices(Teuchos::null);
-  matrix_->InitPreconditioner();
+  matrix_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(mfd_plist, mesh_));
+  matrix_ = matrix_diff_->global_operator();
+  matrix_diff_->SetBCs(bc_);
+  matrix_diff_->Setup(Teuchos::null);
 
   Teuchos::ParameterList mfd_pc_plist = plist_->sublist("Diffusion PC");
-  mfd_pc_plist.set("TPFA", true);
-  mfd_pc_plist.set("scaled constraint equation", true);
-  full_jacobian_ = mfd_pc_plist.get<bool>("TPFA use full Jacobian", false);
+  preconditioner_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(mfd_pc_plist, mesh_));
+  preconditioner_diff_->SetBCs(bc_);
+  preconditioner_diff_->Setup(Teuchos::null);
+  preconditioner_ = preconditioner_diff_->global_operator();
+  preconditioner_->SymbolicAssembleMatrix();
+  
+  // accumulation operator for the preconditioenr
+  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("Accumulation PC");
+  acc_pc_plist.set("entity kind", "cell");
+  preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, preconditioner_));
 
-  mfd_preconditioner_ = Operators::CreateMatrixMFD(mfd_pc_plist, mesh_);
-  mfd_preconditioner_->set_symmetric(false);
-  mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
-  mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);
-  mfd_preconditioner_->InitPreconditioner();
-
-  tpfa_preconditioner_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_TPFA>(mfd_preconditioner_);
-  ASSERT(tpfa_preconditioner_ != Teuchos::null);
 };
 
 
@@ -162,11 +163,13 @@ bool SnowDistribution::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
           S->GetFieldData("surface_snow_flux_direction", name_);
 
       // Create the stiffness matrix without a rel perm (just n/mu)
-      matrix_->CreateMFDstiffnessMatrices(Teuchos::null);
+      matrix_->Init();
+      matrix_diff_->Setup(Teuchos::null, Teuchos::null);
+      matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
       // Derive the flux
       Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("snow_skin_potential");
-      matrix_->DeriveFlux(*potential, flux_dir.ptr());
+      matrix_diff_->UpdateFlux(*potential, *flux_dir);
     }
 
     // get conductivity data
@@ -198,6 +201,25 @@ bool SnowDistribution::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   return update_perm;
 }
 
+void SnowDistribution::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "  Updating BCs." << std::endl;
+
+  // mark all remaining boundary conditions as zero flux conditions
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  for (int f = 0; f < nfaces_owned; f++) {
+    if (bc_markers_[f] == Operators::OPERATOR_BC_NONE) {
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int ncells = cells.size();
+
+      if (ncells == 1) {
+        bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_values_[f] = 0.0;
+      }
+    }
+  }
+}  
 
 } // namespace
 } // namespace

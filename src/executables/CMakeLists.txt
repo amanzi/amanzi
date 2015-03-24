@@ -60,18 +60,18 @@ set(ATS_LIBS
                       pk_energy_advection_diffusion
 		              pk_energy_two_phase
                       pk_energy_three_phase
-                      # pk_energy_surface_ice
+                      pk_energy_surface_ice
                       pk_energy_base
 		              pk_flow_permafrost
                       pk_flow_richards
                       # pk_flow_snow_distribution
                       # pk_flow_overland
-                      # pk_flow_overland_head
-                      # pk_flow_icy_overland
+                      pk_flow_overland_head
+                      pk_flow_icy_overland
 		              # pk_prescribed_deformation
 #                      pk_prescribed_volumetric_deformation
                       # pk_volumetric_deformation
-                      # pk_surface_balance_SEB
+                      pk_surface_balance_SEB
                       # pk_BGC
                       pk_bases
                       # deform_relations_porosity

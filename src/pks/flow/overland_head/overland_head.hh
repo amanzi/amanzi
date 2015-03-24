@@ -108,13 +108,14 @@ protected:
 
   virtual void FixBCsForOperator_(const Teuchos::Ptr<State>& S);
   virtual void FixBCsForPrecon_(const Teuchos::Ptr<State>& S);
-  virtual void FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S);
+  // virtual void FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S);
 
   virtual void ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
           const Teuchos::RCP<CompositeVector>& pres );
 
   // computational concerns in managing abs, rel perm
   // -- builds tensor K, along with faced-based Krel if needed by the rel-perm method
+  virtual bool UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<State>& S);
   virtual bool UpdatePermeabilityData_(const Teuchos::Ptr<State>& S);
 
   // physical methods
@@ -155,10 +156,12 @@ protected:
 
   // work data space
   Teuchos::RCP<Operators::Upwinding> upwinding_;
+  Teuchos::RCP<Operators::Upwinding> upwinding_dkdp_;
 
   // mathematical operators
   Teuchos::RCP<Operators::Operator> matrix_; // pc in PKPhysicalBDFBase
   Teuchos::RCP<Operators::OperatorDiffusion> matrix_diff_;
+  Teuchos::RCP<Operators::OperatorDiffusion> face_matrix_diff_;
   Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
   Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
 

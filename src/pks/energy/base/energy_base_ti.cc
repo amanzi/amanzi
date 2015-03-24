@@ -231,7 +231,6 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   // Collect additional data.
   Teuchos::RCP<const CompositeVector> res = du->Data();
   const Epetra_MultiVector& res_c = *res->ViewComponent("cell",false);
-  const Epetra_MultiVector& res_f = *res->ViewComponent("face",false);
   const Epetra_MultiVector& cv = *S_next_->GetFieldData(cell_vol_key_)
       ->ViewComponent("cell",false);
   const CompositeVector& temp = *u->Data();
@@ -250,54 +249,61 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     }
   }
 
-  // Face error is mismatch in flux??
+  bool is_face = res->HasComponent("face");
   double enorm_face(-1.);
-  int bad_face = -1;
-  unsigned int nfaces = res_f.MyLength();
-  for (unsigned int f=0; f!=nfaces; ++f) {
-    AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
-    //    double tmp = flux_tol_ * std::abs(res_f[0][f]) / (atol_+rtol_*273.15);
-    double tmp = flux_tol_ * std::abs(h*res_f[0][f])  / (atol_ * cv[0][cells[0]] + rtol_* std::abs(energy[0][cells[0]]));
-    if (tmp > enorm_face) {
-      enorm_face = tmp;
-      bad_face = f;
+  if (is_face) {
+    // Face error is mismatch in flux??
+    const Epetra_MultiVector& res_f = *res->ViewComponent("face",false);
+    int bad_face = -1;
+    unsigned int nfaces = res_f.MyLength();
+    for (unsigned int f=0; f!=nfaces; ++f) {
+      AmanziMesh::Entity_ID_List cells;
+      mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+      //    double tmp = flux_tol_ * std::abs(res_f[0][f]) / (atol_+rtol_*273.15);
+      double tmp = flux_tol_ * std::abs(h*res_f[0][f])  / (atol_ * cv[0][cells[0]] + rtol_* std::abs(energy[0][cells[0]]));
+      if (tmp > enorm_face) {
+        enorm_face = tmp;
+        bad_face = f;
+      }
     }
   }
 
   // Write out Inf norms too.
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-    double infnorm_c(0.), infnorm_f(0.);
+    double infnorm_c(0.);
     res_c.NormInf(&infnorm_c);
-    res_f.NormInf(&infnorm_f);
 
-    ENorm_t err_f, err_c;
-#ifdef HAVE_MPI
-    ENorm_t l_err_f, l_err_c;
-    l_err_f.value = enorm_face;
-    l_err_f.gid = res_f.Map().GID(bad_face);
+    ENorm_t err_c;
+    ENorm_t l_err_c;
     l_err_c.value = enorm_cell;
     l_err_c.gid = res_c.Map().GID(bad_cell);
 
     MPI_Allreduce(&l_err_c, &err_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
-    MPI_Allreduce(&l_err_f, &err_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
-#else
-    err_f.value = enorm_face;
-    err_f.gid = bad_face;
-    err_c.value = enorm_cell;
-    err_c.gid = bad_cell;
-#endif
-
     *vo_->os() << "ENorm (cells) = " << err_c.value << "[" << err_c.gid << "] (" << infnorm_c << ")" << std::endl;
-    *vo_->os() << "ENorm (faces) = " << err_f.value << "[" << err_f.gid << "] (" << infnorm_f << ")" << std::endl;
+
+    if (is_face) {
+      const Epetra_MultiVector& res_f = *res->ViewComponent("face",false);
+      double infnorm_f(0.);
+      res_f.NormInf(&infnorm_f);
+
+      ENorm_t err_f;
+      ENorm_t l_err_f;
+      l_err_f.value = enorm_face;
+      l_err_f.gid = res_f.Map().GID(bad_cell);
+
+      MPI_Allreduce(&l_err_f, &err_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+      *vo_->os() << "ENorm (faces) = " << err_f.value << "[" << err_f.gid << "] (" << infnorm_f << ")" << std::endl;
+    }
   }
 
   // Communicate and take the max.
-  double enorm_val(std::max<double>(enorm_face, enorm_cell));
-#ifdef HAVE_MPI
+  double enorm_val = enorm_cell;
+  if (is_face) {
+    enorm_val = std::max<double>(enorm_face, enorm_cell);
+  }
+
   double buf = enorm_val;
   MPI_Allreduce(&buf, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-#endif
   return enorm_val;
 };
 

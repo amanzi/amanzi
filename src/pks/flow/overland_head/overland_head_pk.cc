@@ -32,6 +32,8 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "height_evaluator.hh"
 #include "overland_source_from_subsurface_flux_evaluator.hh"
 
+#include "OperatorDiffusionFV.hh"
+
 #include "overland_head.hh"
 
 namespace Amanzi {
@@ -62,31 +64,22 @@ void OverlandHeadFlow::setup(const Teuchos::Ptr<State>& S) {
 
 void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   // Require fields and evaluators for those fields.
-  // -- primary variable: pressure on both cells and faces, ghosted, with 1 dof
-  std::vector<AmanziMesh::Entity_kind> locations2(2);
-  std::vector<std::string> names2(2);
-  std::vector<int> num_dofs2(2,1);
-  locations2[0] = AmanziMesh::CELL;
-  locations2[1] = AmanziMesh::FACE;
-  names2[0] = "cell";
-  names2[1] = "face";
-
   S->RequireField(key_, name_)->SetMesh(mesh_)->SetGhosted()
-    ->SetComponents(names2, locations2, num_dofs2);
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-#if DEBUG_RES_FLAG
-  // -- residuals of various iterations for debugging
-  for (int i=1; i!=23; ++i) {
-    std::stringstream namestream;
-    namestream << "flow_residual_" << i;
-    std::stringstream solnstream;
-    solnstream << "flow_solution_" << i;
-    S->RequireField(namestream.str(), name_)->SetMesh(mesh_)->SetGhosted()
-                    ->SetComponents(names2, locations2, num_dofs2);
-    S->RequireField(solnstream.str(), name_)->SetMesh(mesh_)->SetGhosted()
-                    ->SetComponents(names2, locations2, num_dofs2);
-  }
-#endif
+// #if DEBUG_RES_FLAG
+//   // -- residuals of various iterations for debugging
+//   for (int i=1; i!=23; ++i) {
+//     std::stringstream namestream;
+//     namestream << "flow_residual_" << i;
+//     std::stringstream solnstream;
+//     solnstream << "flow_solution_" << i;
+//     S->RequireField(namestream.str(), name_)->SetMesh(mesh_)->SetGhosted()
+//                     ->SetComponents(names2, locations2, num_dofs2);
+//     S->RequireField(solnstream.str(), name_)->SetMesh(mesh_)->SetGhosted()
+//                     ->SetComponents(names2, locations2, num_dofs2);
+//   }
+// #endif
 
   // -- cell volume and evaluator
   S->RequireFieldEvaluator("surface_cell_volume");
@@ -110,45 +103,28 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   // Create the upwinding method.
   S->RequireField("upwind_overland_conductivity", name_)->SetMesh(mesh_)
-    ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
+      ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
   S->GetField("upwind_overland_conductivity",name_)->set_io_vis(false);
 
-  std::string method_name = plist_->get<std::string>("upwind conductivity method",
-          "upwind with total flux");
-  if (method_name == "cell centered") {
-    upwind_method_ = Operators::UPWIND_METHOD_CENTERED;
-    upwinding_ = Teuchos::rcp(new Operators::UpwindCellCentered(name_,
-            "overland_conductivity", "upwind_overland_conductivity"));
-  } else if (method_name == "upwind with total flux") {
-    upwind_method_ = Operators::UPWIND_METHOD_TOTAL_FLUX;
-    upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
+  S->RequireField("dupwind_overland_conductivity_dponded_depth", name_)->SetMesh(mesh_)
+      ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
+  S->GetField("dupwind_overland_conductivity_dponded_depth",name_)->set_io_vis(false);
+
+  upwind_method_ = Operators::UPWIND_METHOD_TOTAL_FLUX;
+  upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
           "overland_conductivity", "upwind_overland_conductivity",
           "surface_flux_direction", 1.e-8));
-  } else if (method_name == "upwind by potential difference") {
-    upwind_method_ = Operators::UPWIND_METHOD_POTENTIAL_DIFFERENCE;
-    // get the overlap key from the evaluator, as it may be
-    // ponded_depth (OverlandHeadPK) and it may be
-    // unfrozen_effective_depth (IcyOverlandFlow)
-    std::string overlap_key = plist_->sublist("overland conductivity evaluator").get<std::string>("height key");
-    upwinding_ = Teuchos::rcp(new Operators::UpwindPotentialDifference(name_,
-            "overland_conductivity", "upwind_overland_conductivity",
-            "pres_elev", overlap_key));
-  } else {
-    std::stringstream messagestream;
-    messagestream << "Overland FLow PK has no upwinding method named: " << method_name;
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
-  }
+    
+  upwinding_dkdp_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
+          "doverland_conductivity_dponded_depth",
+          "dupwind_overland_conductivity_dponded_depth",
+          "surface_flux_direction", 1.e-8));
 
   // -- owned secondary variables, no evaluator used
-  if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX) {
-    S->RequireField("surface_flux_direction", name_)->SetMesh(mesh_)->SetGhosted()
-        ->SetComponent("face", AmanziMesh::FACE, 1);
-  }
-  S->RequireField("surface_flux", name_)->SetMesh(S->GetMesh("surface"))
-                ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
-  S->RequireField("surface_velocity", name_)->SetMesh(S->GetMesh("surface"))
-                ->SetComponent("cell", AmanziMesh::CELL, 3);
+  S->RequireField("surface_flux_direction", name_)->SetMesh(mesh_)->SetGhosted()
+      ->SetComponent("face", AmanziMesh::FACE, 1);
+  S->RequireField("surface_flux", name_)->SetMesh(mesh_)->SetGhosted()
+      ->SetComponent("face", AmanziMesh::FACE, 1);
 
   // Create the boundary condition data structures.
   Teuchos::ParameterList bc_plist = plist_->sublist("boundary conditions", true);
@@ -160,47 +136,47 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   bc_seepage_pressure_ = bc_factory.CreateWithFunction("seepage face pressure", "boundary pressure");
   ASSERT(!bc_plist.isParameter("seepage face")); // old style!
 
-  // operator for the diffusion terms: must use ScaledConstraint version
-  Teuchos::ParameterList mfd_plist = plist_->sublist("Diffusion");
-  mfd_plist.set("scaled constraint equation", true);
-  matrix_diff_ = Teuchos::rcp(new Operators::OperatorDiffusion(mfd_plist, mesh_));
-  matrix_diff_->Setup(Teuchos::null);
-  matrix_ = matrix_diff_->global_operator();
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
+  bc_values_.resize(nfaces, 0.0);
+  std::vector<double> mixed;
+  bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_markers_, bc_values_, mixed));
 
-  // operator for the preconditioner
-  Teuchos::ParameterList mfd_pc_plist = plist_->sublist("Diffusion PC");
-  mfd_pc_plist.set("scaled constraint equation", true);
-  preconditioner_diff_ = Teuchos::rcp(new Operators::OperatorDiffusion(mfd_pc_plist, mesh_));
+  // operator for the diffusion terms: must use ScaledConstraint version
+  Teuchos::ParameterList& mfd_plist = plist_->sublist("Diffusion");
+  matrix_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(mfd_plist, mesh_));
+  matrix_ = matrix_diff_->global_operator();
+  matrix_diff_->SetBCs(bc_);
+  matrix_diff_->Setup(Teuchos::null);
+
+  // operator for flux directions -- this should be removed eventually
+  Teuchos::ParameterList face_diff_list(mfd_plist);
+  face_diff_list.set("upwind method", "none");
+  face_matrix_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(face_diff_list, mesh_));
+  face_matrix_diff_->SetBCs(bc_);
+  face_matrix_diff_->Setup(Teuchos::null);
+  face_matrix_diff_->Setup(Teuchos::null, Teuchos::null);
+  face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  
+  // diffusion operator for the preconditioner
+  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("Diffusion PC");
+  preconditioner_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(mfd_pc_plist, mesh_));
+  preconditioner_diff_->SetBCs(bc_);
   preconditioner_diff_->Setup(Teuchos::null);
   preconditioner_ = preconditioner_diff_->global_operator();
-  preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, preconditioner_));
-  preconditioner_->SymbolicAssembleMatrix();
+
+  // accumulation operator for the preconditioenr
+  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("Accumulation PC");
+  acc_pc_plist.set("entity kind", "cell");
+  preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, preconditioner_));
 
   precon_used_ = mfd_pc_plist.isSublist("preconditioner");
-  if (precon_used_) preconditioner_->InitPreconditioner("preconditioner", mfd_pc_plist);
-
-  // prediction flow control
-  modify_predictor_with_consistent_faces_ = false;
-      //    plist_->get<bool>("modify predictor with consistent faces", false);
-
-  // how often to update the fluxes?
-  std::string updatestring = plist_->get<std::string>("update flux mode", "iteration");
-  if (updatestring == "iteration") {
-    update_flux_ = UPDATE_FLUX_ITERATION;
-  } else if (updatestring == "timestep") {
-    update_flux_ = UPDATE_FLUX_TIMESTEP;
-  } else if (updatestring == "vis") {
-    update_flux_ = UPDATE_FLUX_VIS;
-  } else if (updatestring == "never") {
-    update_flux_ = UPDATE_FLUX_NEVER;
-  } else {
-    Errors::Message message(std::string("Unknown frequence for updating the overland flux: ")+updatestring);
-    Exceptions::amanzi_throw(message);
+  if (precon_used_) {
+    preconditioner_->SymbolicAssembleMatrix();
   }
 
-  // upwinding by total flux requires a flux each iteration
-  if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX)
-    update_flux_ = UPDATE_FLUX_ITERATION;
+  // how often to update the fluxes?
+  update_flux_ = UPDATE_FLUX_ITERATION;
 };
 
 
@@ -209,23 +185,12 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 // retention, rel perm, etc, that are specific to Richards.
 // -------------------------------------------------------------
 void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
-  std::vector<AmanziMesh::Entity_kind> locations2(2), locations_bf(2);
-  std::vector<std::string> names2(2), names_bf(2);
-  std::vector<int> num_dofs2(2,1);
-  locations2[0] = AmanziMesh::CELL;
-  locations2[1] = AmanziMesh::FACE;
-  names2[0] = "cell";
-  names2[1] = "face";
-  locations_bf[0] = AmanziMesh::CELL;
-  locations_bf[1] = AmanziMesh::BOUNDARY_FACE;
-  names_bf[0] = "cell";
-  names_bf[1] = "boundary_face";
-
   // -- evaluator for surface geometry.
   S->RequireField("elevation")->SetMesh(S->GetMesh("surface"))->SetGhosted()
-      ->AddComponents(names2, locations2, num_dofs2);
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("face", AmanziMesh::FACE, 1);
   S->RequireField("slope_magnitude")->SetMesh(S->GetMesh("surface"))
-      ->AddComponents(names_bf, locations_bf, num_dofs2);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   Teuchos::RCP<FlowRelations::ElevationEvaluator> elev_evaluator;
   if (standalone_mode_) {
@@ -241,7 +206,7 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   // -- evaluator for potential field, h + z
   S->RequireField("pres_elev")->SetMesh(S->GetMesh("surface"))->SetGhosted()
-                ->AddComponents(names2, locations2, num_dofs2);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList pres_elev_plist = plist_->sublist("potential evaluator");
   Teuchos::RCP<FlowRelations::PresElevEvaluator> pres_elev_eval =
       Teuchos::rcp(new FlowRelations::PresElevEvaluator(pres_elev_plist));
@@ -281,7 +246,7 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   // -- ponded depth
   S->RequireField("ponded_depth")->SetMesh(mesh_)->SetGhosted()
-                ->AddComponents(names2, locations2, num_dofs2);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("ponded_depth");
 
   // -- ponded depth bar
@@ -299,7 +264,7 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   // -- conductivity evaluator
   S->RequireField("overland_conductivity")->SetMesh(mesh_)->SetGhosted()
-      ->AddComponents(names_bf, locations_bf, num_dofs2);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
   ASSERT(plist_->isSublist("overland conductivity evaluator"));
   Teuchos::ParameterList cond_plist = plist_->sublist("overland conductivity evaluator");
   Teuchos::RCP<FlowRelations::OverlandConductivityEvaluator> cond_evaluator =
@@ -372,21 +337,6 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
   std::vector<double> mixed;
   bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_markers_, bc_values_, mixed));
 
-  // // Initialize elevation, whose faces need to be updated so that h=0 is a
-  // // valid solution.
-  // S->GetFieldEvaluator("elevation")->HasFieldChanged(S.ptr(), name_);
-  // Teuchos::RCP<CompositeVector> cond =
-  //   S->GetFieldData("upwind_overland_conductivity", name_);
-  // cond->ViewComponent("cell",true)->PutScalar(1.0);
-  // cond->ViewComponent("face",true)->PutScalar(1.0);
-  // matrix_->CreateMFDstiffnessMatrices(cond.ptr());
-  // matrix_->CreateMFDrhsVectors();
-  // matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  // matrix_->AssembleGlobalMatrices();
-
-  // Teuchos::RCP<CompositeVector> elev = S->GetFieldData("elevation","elevation");
-  // matrix_->UpdateConsistentFaceConstraints(elev.ptr());
-
   // Initialize BC values
   bc_head_->Compute(S->time());
   bc_zero_gradient_->Compute(S->time());
@@ -397,12 +347,12 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
   // Set extra fields as initialized -- these don't currently have evaluators.
   S->GetFieldData("upwind_overland_conductivity",name_)->PutScalar(1.0);
   S->GetField("upwind_overland_conductivity",name_)->set_initialized();
+  S->GetFieldData("dupwind_overland_conductivity_dponded_depth",name_)->PutScalar(1.0);
+  S->GetField("dupwind_overland_conductivity_dponded_depth",name_)->set_initialized();
   S->GetField("surface_flux", name_)->set_initialized();
-  if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX) {
-    S->GetFieldData("surface_flux_direction", name_)->PutScalar(0.);
-    S->GetField("surface_flux_direction", name_)->set_initialized();
-  }
-  S->GetField("surface_velocity", name_)->set_initialized();
+  S->GetFieldData("surface_flux_direction", name_)->PutScalar(0.);
+  S->GetField("surface_flux_direction", name_)->set_initialized();
+  //  S->GetField("surface_velocity", name_)->set_initialized();
 };
 
 
@@ -433,66 +383,17 @@ void OverlandHeadFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
   bool update = UpdatePermeabilityData_(S.ptr());
   update |= S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S.ptr(), name_);
 
-  if (update_flux_ == UPDATE_FLUX_TIMESTEP ||
-      (update_flux_ == UPDATE_FLUX_ITERATION && update)) {
-    // update the stiffness matrix with the new rel perm
-    Teuchos::RCP<const CompositeVector> conductivity =
-        S->GetFieldData("upwind_overland_conductivity");
-    matrix_diff_->Setup(conductivity, Teuchos::null);
-    matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  // update the stiffness matrix with the new rel perm
+  Teuchos::RCP<const CompositeVector> conductivity =
+      S->GetFieldData("upwind_overland_conductivity");
+  matrix_->Init();
+  matrix_diff_->Setup(conductivity, Teuchos::null);
+  matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-    // derive the fluxes
-    Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
-    Teuchos::RCP<CompositeVector> flux = S->GetFieldData("surface_flux", name_);
-    matrix_diff_->UpdateFlux(*potential, *flux);
-  }
-
-  // As a diagnostic, calculate the mass balance error
-#if DEBUG_FLAG
-  if (S_next_ != Teuchos::null) {
-    const Epetra_MultiVector& wc1 =
-        *S_next_->GetFieldData("surface_water_content")
-            ->ViewComponent("cell",false);
-    const Epetra_MultiVector& wc0 =
-        *S_->GetFieldData("surface_water_content")
-            ->ViewComponent("cell",false);
-
-    Teuchos::RCP<const CompositeVector> flux =
-        S->GetFieldData("surface_flux", name_);
-    flux->ScatterMasterToGhosted("face");
-    const Epetra_MultiVector& flux_f = *flux->ViewComponent("face",true);
-
-    // create work space
-    Teuchos::RCP<CompositeVector> error = Teuchos::rcp(
-        new CompositeVector(*S_->GetFieldData("surface_water_content")));
-    error->PutScalar(0.);
-
-    // source terms
-    AddSourceTerms_(error.ptr());
-    error->Scale(dt);
-
-    Epetra_MultiVector& error_c = *error->ViewComponent("cell",false);
-    for (unsigned int c=0; c!=error->size("cell"); ++c) {
-      // accumulation
-      error_c[0][c] += wc1[0][c] - wc0[0][c];
-
-      // flux
-      AmanziMesh::Entity_ID_List faces;
-      std::vector<int> dirs;
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-      for (unsigned int n=0; n!=faces.size(); ++n) {
-        error_c[0][c] += flux_f[0][faces[n]] * dirs[n] * dt;
-      }
-    }
-
-    double einf(0.0);
-    error->NormInf(&einf);
-
-    // VerboseObject stuff.
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Final Mass Balance Error: " << einf << std::endl;
-  }
-#endif
+  // derive the fluxes
+  Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
+  Teuchos::RCP<CompositeVector> flux = S->GetFieldData("surface_flux", name_);
+  matrix_diff_->UpdateFlux(*potential, *flux);
 
 };
 
@@ -500,47 +401,7 @@ void OverlandHeadFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // -----------------------------------------------------------------------------
 // Update diagnostics -- used prior to vis.
 // -----------------------------------------------------------------------------
-void OverlandHeadFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
-  Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_EXTREME))
-    *vo_->os() << "Calculating diagnostic variables." << std::endl;
-
-  // update the cell velocities
-  if (update_flux_ == UPDATE_FLUX_VIS) {
-    Teuchos::RCP<CompositeVector> flux = S->GetFieldData("surface_flux",name_);
-    Teuchos::RCP<const CompositeVector> conductivity =
-        S->GetFieldData("upwind_overland_conductivity");
-    matrix_diff_->Setup(conductivity, Teuchos::null);
-    matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-
-    // derive the fluxes
-    S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S.ptr(), name_);
-    Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
-    matrix_diff_->UpdateFlux(*potential, *flux);
-  }
-
-  // if (update_flux_ != UPDATE_FLUX_NEVER) {
-  //   Teuchos::RCP<const CompositeVector> flux = S->GetFieldData("surface_flux");
-  //   Teuchos::RCP<CompositeVector> velocity = S->GetFieldData("surface_velocity", name_);
-  //   matrix_->DeriveCellVelocity(*flux, velocity.ptr());
-
-  //   S->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S.ptr(), name_);
-  //   const Epetra_MultiVector& depth_c = *S->GetFieldData("ponded_depth")
-  //       ->ViewComponent("cell",false);
-
-  //   S->GetFieldEvaluator("surface_molar_density_liquid")->HasFieldChanged(S.ptr(), name_);
-  //   const Epetra_MultiVector& nliq_c = *S->GetFieldData("surface_molar_density_liquid")
-  //       ->ViewComponent("cell",false);
-
-  //   Epetra_MultiVector& vel_c = *velocity->ViewComponent("cell",false);
-
-  //   unsigned int ncells = velocity->size("cell");
-  //   for (unsigned int c=0; c!=ncells; ++c) {
-  //     vel_c[0][c] /= (std::max( depth_c[0][c] , 1e-7) * nliq_c[0][c]);
-  //     vel_c[1][c] /= (std::max( depth_c[0][c] , 1e-7) * nliq_c[0][c]);
-  //   }
-  // }
-};
+void OverlandHeadFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {};
 
 
 // -----------------------------------------------------------------------------
@@ -567,47 +428,79 @@ bool OverlandHeadFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     Teuchos::RCP<CompositeVector> uw_cond =
         S->GetFieldData("upwind_overland_conductivity", name_);
 
-    // update the direction
-    if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX) {
-      // update the direction of the flux -- note this is NOT the flux
-      Teuchos::RCP<CompositeVector> flux_dir =
-          S->GetFieldData("surface_flux_direction", name_);
-
-      // Create the stiffness matrix without a rel perm
-      uw_cond->PutScalar(1.);
-      matrix_diff_->Setup(uw_cond, Teuchos::null);
-      matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-
-      // Derive the flux direction
-      Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData("pres_elev");
-      matrix_diff_->UpdateFlux(*pres_elev, *flux_dir);
-    }
+    // update the direction of the flux -- note this is NOT the flux
+    Teuchos::RCP<CompositeVector> flux_dir =
+        S->GetFieldData("surface_flux_direction", name_);
+    Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData("pres_elev");
+    face_matrix_diff_->UpdateFlux(*pres_elev, *flux_dir);
 
     // get conductivity data
     Teuchos::RCP<const CompositeVector> cond = S->GetFieldData("overland_conductivity");
-    const Epetra_MultiVector& cond_bf = *cond->ViewComponent("boundary_face",false);
     const Epetra_MultiVector& cond_c = *cond->ViewComponent("cell",false);
 
+    // place internal cell's value on faces -- this should be fixed to be the boundary data
     { // place boundary_faces on faces
       Epetra_MultiVector& uw_cond_f = *uw_cond->ViewComponent("face",false);
-      const Epetra_Import& vandelay = mesh_->exterior_face_importer();
-      const Epetra_Map& vandelay_map = mesh_->exterior_face_map();
-      uw_cond_f.Export(cond_bf, vandelay, Insert);
 
-      // Patch up zero-gradient case, which should not upwind.
       AmanziMesh::Entity_ID_List cells;
-      for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
-           bc!=bc_zero_gradient_->end(); ++bc) {
-        int f = bc->first;
+      int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+      for (int f=0; f!=nfaces_owned; ++f) {
         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-        ASSERT(cells.size() == 1);
-        int c = cells[0];
-        uw_cond_f[0][f] = cond_c[0][c];
+        if (cells.size() == 1) {
+          int c = cells[0];
+          uw_cond_f[0][f] = cond_c[0][c];
+        }
       }
     }
 
     // Then upwind.  This overwrites the boundary if upwinding says so.
     upwinding_->Update(S);
+  }
+
+  if (update_perm && vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << " TRUE." << std::endl;
+  return update_perm;
+}
+
+
+// -----------------------------------------------------------------------------
+// Derivatives of the overland conductivity, upwinded.
+// -----------------------------------------------------------------------------
+bool OverlandHeadFlow::UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<State>& S) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "  Updating permeability?";
+
+  // bool update_perm = S->GetFieldEvaluator("overland_conductivity")
+  //     ->HasFieldDerivativeChanged(S, name_, key_);
+  bool update_perm = S->GetFieldEvaluator("overland_conductivity")
+      ->HasFieldDerivativeChanged(S, name_, "ponded_depth");
+
+  if (update_perm) {
+    // get upwind conductivity data
+    Teuchos::RCP<CompositeVector> duw_cond =
+        S->GetFieldData("dupwind_overland_conductivity_dponded_depth", name_);
+
+    // get conductivity data
+    Teuchos::RCP<const CompositeVector> dcond = S->GetFieldData("doverland_conductivity_dponded_depth");
+    const Epetra_MultiVector& dcond_c = *dcond->ViewComponent("cell",false);
+
+    { // place boundary_faces on faces
+      Epetra_MultiVector& duw_cond_f = *duw_cond->ViewComponent("face",false);
+
+      AmanziMesh::Entity_ID_List cells;
+      int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+      for (int f=0; f!=nfaces_owned; ++f) {
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        if (cells.size() == 1) {
+          int c = cells[0];
+          duw_cond_f[0][f] = dcond_c[0][c];
+        }
+      }
+    }
+
+    // Then upwind.  This overwrites the boundary if upwinding says so.
+    upwinding_dkdp_->Update(S);
   }
 
   if (update_perm && vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -738,6 +631,22 @@ void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
     }
   }
 
+
+
+  // mark all remaining boundary conditions as zero flux conditions
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  for (int f = 0; f < nfaces_owned; f++) {
+    if (bc_markers_[f] == Operators::OPERATOR_BC_NONE) {
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int ncells = cells.size();
+
+      if (ncells == 1) {
+        bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_values_[f] = 0.0;
+      }
+    }
+  }
+  
 }
 
 
@@ -752,11 +661,11 @@ void OverlandHeadFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
   const Epetra_MultiVector& elevation_f = *elev->ViewComponent("face",false);
   const Epetra_MultiVector& elevation_c = *elev->ViewComponent("cell",false);
 
-  std::vector<WhetStone::DenseMatrix>& Aff_cells =
+  std::vector<WhetStone::DenseMatrix>& Aff =
       matrix_diff_->local_matrices()->matrices;
-  Epetra_MultiVector& rhs_f = *matrix_->rhs()->ViewComponent("face",false);
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
        bc!=bc_zero_gradient_->end(); ++bc) {
 
@@ -767,24 +676,12 @@ void OverlandHeadFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
     ASSERT(cells.size() == 1);
     AmanziMesh::Entity_ID c = cells[0];
 
-    if (c < ncells_owned) {
-      AmanziMesh::Entity_ID_List faces;
-      mesh_->cell_get_faces(c, &faces);
+    if (f < nfaces_owned) {
+      double dp = elevation_f[0][f] - elevation_c[0][c];
+      double bc_val = -dp * Aff[f](0,0);
 
-      std::vector<double> dp(faces.size());
-      for (unsigned int n=0; n!=faces.size(); ++n) {
-        dp[n] = elevation_f[0][faces[n]] - elevation_c[0][c];
-      }
-      unsigned int my_n = std::find(faces.begin(), faces.end(), f) - faces.begin();
-      ASSERT(my_n !=faces.size());
-
-      double bc_val = 0.;
-      for (unsigned int m=0; m!=faces.size(); ++m) {
-        bc_val -= Aff_cells[c](my_n,m) * dp[m];
-      }
-
-      // Apply the BC to the matrix
-      rhs_f[0][f] -= bc_val;
+      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+      bc_values_[f] = bc_val / mesh_->face_area(f);
     }
   }
 };
@@ -810,72 +707,72 @@ void OverlandHeadFlow::FixBCsForPrecon_(const Teuchos::Ptr<State>& S) {
   // }
 };
 
-void OverlandHeadFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
-  Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_EXTREME))
-    *vo_->os() << "    Tweaking BCs for calculation of consistent faces." << std::endl;
+// void OverlandHeadFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
+//   Teuchos::OSTab tab = vo_->getOSTab();
+//   if (vo_->os_OK(Teuchos::VERB_EXTREME))
+//     *vo_->os() << "    Tweaking BCs for calculation of consistent faces." << std::endl;
 
-  // // If the rel perm is 0, the face value drops out and is unconstrained.
-  // // Therefore we set it to Dirichlet to eliminate it from the system.
-  // double eps = 1.e-30;
-  // const Epetra_MultiVector& elevation = *S->GetFieldData("elevation")
-  //     ->ViewComponent("face",false);
-  // Teuchos::RCP<CompositeVector> relperm =
-  //     S->GetFieldData("upwind_overland_conductivity", name_);
+//   // // If the rel perm is 0, the face value drops out and is unconstrained.
+//   // // Therefore we set it to Dirichlet to eliminate it from the system.
+//   // double eps = 1.e-30;
+//   // const Epetra_MultiVector& elevation = *S->GetFieldData("elevation")
+//   //     ->ViewComponent("face",false);
+//   // Teuchos::RCP<CompositeVector> relperm =
+//   //     S->GetFieldData("upwind_overland_conductivity", name_);
 
-  // for (unsigned int f=0; f!=relperm->size("face"); ++f) {
-  //   if ((*relperm)("face",f) < eps) {
-  //     if (bc_markers_[f] == Operators::OPERATOR_BC_NEUMANN) {
-  //       bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
-  //       bc_values_[f] =  elevation[0][f];
-  //     } else if (bc_markers_[f] == Operators::OPERATOR_BC_NONE) {
-  //       bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
-  //       bc_values_[f] =  elevation[0][f];
-  //     }
-  //   }
-  // }
+//   // for (unsigned int f=0; f!=relperm->size("face"); ++f) {
+//   //   if ((*relperm)("face",f) < eps) {
+//   //     if (bc_markers_[f] == Operators::OPERATOR_BC_NEUMANN) {
+//   //       bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
+//   //       bc_values_[f] =  elevation[0][f];
+//   //     } else if (bc_markers_[f] == Operators::OPERATOR_BC_NONE) {
+//   //       bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
+//   //       bc_values_[f] =  elevation[0][f];
+//   //     }
+//   //   }
+//   // }
 
-  // Now we can safely calculate q = -k grad z for zero-gradient problems
-  Teuchos::RCP<const CompositeVector> elev = S->GetFieldData("elevation");
-  elev->ScatterMasterToGhosted();
-  const Epetra_MultiVector& elevation_f = *elev->ViewComponent("face",false);
-  const Epetra_MultiVector& elevation_c = *elev->ViewComponent("cell",false);
+//   // Now we can safely calculate q = -k grad z for zero-gradient problems
+//   Teuchos::RCP<const CompositeVector> elev = S->GetFieldData("elevation");
+//   elev->ScatterMasterToGhosted();
+//   const Epetra_MultiVector& elevation_f = *elev->ViewComponent("face",false);
+//   const Epetra_MultiVector& elevation_c = *elev->ViewComponent("cell",false);
 
-  std::vector<WhetStone::DenseMatrix>& Aff_cells =
-      matrix_diff_->local_matrices()->matrices;
-  Epetra_MultiVector& rhs_f = *matrix_->rhs()->ViewComponent("face",false);
+//   std::vector<WhetStone::DenseMatrix>& Aff_cells =
+//       matrix_diff_->local_matrices()->matrices;
+//   Epetra_MultiVector& rhs_f = *matrix_->rhs()->ViewComponent("face",false);
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
-       bc!=bc_zero_gradient_->end(); ++bc) {
-    int f = bc->first;
+//   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+//   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
+//        bc!=bc_zero_gradient_->end(); ++bc) {
+//     int f = bc->first;
 
-    AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    ASSERT(cells.size() == 1);
-    AmanziMesh::Entity_ID c = cells[0];
+//     AmanziMesh::Entity_ID_List cells;
+//     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+//     ASSERT(cells.size() == 1);
+//     AmanziMesh::Entity_ID c = cells[0];
 
-    if (c < ncells_owned) {
-      AmanziMesh::Entity_ID_List faces;
-      mesh_->cell_get_faces(c, &faces);
+//     if (c < ncells_owned) {
+//       AmanziMesh::Entity_ID_List faces;
+//       mesh_->cell_get_faces(c, &faces);
 
-      std::vector<double> dp(faces.size());
-      for (unsigned int n=0; n!=faces.size(); ++n) {
-        dp[n] = elevation_f[0][faces[n]] - elevation_c[0][c];
-      }
-      unsigned int my_n = std::find(faces.begin(), faces.end(), f) - faces.begin();
-      ASSERT(my_n !=faces.size());
+//       std::vector<double> dp(faces.size());
+//       for (unsigned int n=0; n!=faces.size(); ++n) {
+//         dp[n] = elevation_f[0][faces[n]] - elevation_c[0][c];
+//       }
+//       unsigned int my_n = std::find(faces.begin(), faces.end(), f) - faces.begin();
+//       ASSERT(my_n !=faces.size());
 
-      double bc_val = 0.;
-      for (unsigned int m=0; m!=faces.size(); ++m) {
-        bc_val -= Aff_cells[c](my_n,m) * dp[m];
-      }
+//       double bc_val = 0.;
+//       for (unsigned int m=0; m!=faces.size(); ++m) {
+//         bc_val -= Aff_cells[c](my_n,m) * dp[m];
+//       }
 
-      // Apply the BC to the matrix
-      rhs_f[0][f] -= bc_val;
-    }
-  }
-};
+//       // Apply the BC to the matrix
+//       rhs_f[0][f] -= bc_val;
+//     }
+//   }
+// };
 
 
 /* ******************************************************************

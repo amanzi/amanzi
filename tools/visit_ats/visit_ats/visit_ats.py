@@ -29,6 +29,7 @@ class Plot:
         self.annot.xScale = vrc.rcParams['legend.scale'][0]
         self.annot.yScale = vrc.rcParams['legend.scale'][1]
         self.annot.position = vrc.rcParams['legend.position']
+        self.annot.drawMinMax = vrc.rcParams['legend.minmax']
 
         if varname is not None:
             self.annot.drawTitle = 0

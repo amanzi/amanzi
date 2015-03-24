@@ -59,8 +59,12 @@ class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
           Teuchos::RCP<TreeVector> up);
 
   // updates the preconditioner
-  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
+    UpdatePreconditioner(t, up, h, true);
+  }
 
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h, bool assemble);
+  
   // preconditioner application
   virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
@@ -96,11 +100,14 @@ class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
   Teuchos::RCP<Operators::Operator> dWC_dT_block_;
 
   Teuchos::RCP<Operators::OperatorDiffusion> ddivKgT_dp_;
-  Teuchos::RCP<Operators::OperatorDiffusion> ddivhq_dp_;
+  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> ddivhq_dp_;
+  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> ddivhq_dT_;
   Teuchos::RCP<Operators::OperatorAccumulation> dE_dp_;
   Teuchos::RCP<Operators::Operator> dE_dp_block_;
 
   Teuchos::RCP<Operators::UpwindTotalFlux> upwinding_hkr_;
+  Teuchos::RCP<Operators::UpwindTotalFlux> upwinding_dhkr_dp_;
+  Teuchos::RCP<Operators::UpwindTotalFlux> upwinding_dhkr_dT_;
   
   // EWC delegate
   Teuchos::RCP<MPCDelegateEWCSubsurface> ewc_;
@@ -109,7 +116,7 @@ class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
   bool dump_;
   Teuchos::RCP<Debugger> db_;
   
- private:
+private:
   // factory registration
   static RegisteredPKFactory<MPCSubsurface> reg_;
 

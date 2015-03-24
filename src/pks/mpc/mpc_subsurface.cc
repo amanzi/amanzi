@@ -31,11 +31,16 @@ namespace Amanzi {
 
 // -- Initialize owned (dependent) variables.
 void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
+  // supress energy's vision of advective terms as we can do better
+  Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
+  plist_->sublist("PKs").sublist(pk_order[1]).set("supress advective terms in preconditioner", true);
+
+  // set up the sub-pks
   StrongMPC<PKPhysicalBDFBase>::setup(S);
   mesh_ = S->GetMesh("domain");
 
   // set up debugger
-  db_ = Teuchos::rcp(new Debugger(mesh_, name_, *plist_));
+  db_ = sub_pks_[0]->debugger();
 
   // Get the sub-blocks from the sub-PK's preconditioners.
   Teuchos::RCP<Operators::Operator> pcA = sub_pks_[0]->preconditioner();
@@ -71,8 +76,6 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
 
   // create offdiagonal blocks
   if (precon_type_ != PRECON_NONE && precon_type_ != PRECON_BLOCK_DIAGONAL) {
-    Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
-
     std::vector<AmanziMesh::Entity_kind> locations2(2);
     std::vector<std::string> names2(2);
     std::vector<int> num_dofs2(2,1);
@@ -112,23 +115,34 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
       Teuchos::ParameterList divq_plist(plist_->sublist("PKs").sublist(pk_order[1]).sublist("Diffusion PC"));
       divq_plist.set("newton correction", "approximate jacobian");
       divq_plist.set("exclude primary terms", true);
-      ddivKgT_dp_ = Teuchos::rcp(new Operators::OperatorDiffusionMFD(divq_plist,mesh_));
+      if (dE_dp_block_ == Teuchos::null) {
+        ddivKgT_dp_ = Teuchos::rcp(new Operators::OperatorDiffusionMFD(divq_plist,mesh_));
+        dE_dp_block_ = ddivKgT_dp_->global_operator();
+      } else {
+        ddivKgT_dp_ = Teuchos::rcp(new Operators::OperatorDiffusionMFD(divq_plist,dE_dp_block_));
+      }
       ddivKgT_dp_->SetBCs(sub_pks_[1]->BCs());
-      dE_dp_block_ = ddivKgT_dp_->global_operator();
+
     }
 
-    // -- derivatives of advection term with respect to pressure
+    // -- derivatives of advection term
     if (!plist_->get<bool>("supress Jacobian terms: div hq / dp", false)) {
-      Teuchos::ParameterList divq_plist(plist_->sublist("PKs").sublist(pk_order[0]).sublist("Diffusion PC"));
-      divq_plist.set("newton correction", "approximate jacobian");
+      // derivative with respect to pressure
+      Teuchos::ParameterList divhq_dp_plist(plist_->sublist("PKs").sublist(pk_order[0]).sublist("Diffusion PC"));
+      divhq_dp_plist.set("newton correction", "approximate jacobian");
 
       if (dE_dp_block_ == Teuchos::null) {
-        ddivhq_dp_ = Teuchos::rcp(new Operators::OperatorDiffusionMFD(divq_plist,mesh_));
+        ddivhq_dp_ = Teuchos::rcp(new Operators::OperatorDiffusionWithGravity(divhq_dp_plist,mesh_));
         dE_dp_block_ = ddivhq_dp_->global_operator();
       } else {
-        ddivhq_dp_ = Teuchos::rcp(new Operators::OperatorDiffusionMFD(divq_plist, dE_dp_block_));
+        ddivhq_dp_ = Teuchos::rcp(new Operators::OperatorDiffusionWithGravity(divhq_dp_plist, dE_dp_block_));
       }
-      ddivhq_dp_->SetBCs(sub_pks_[1]->BCs());
+
+      // derivative with respect to temperature
+      Teuchos::ParameterList divhq_dT_plist(plist_->sublist("PKs").sublist(pk_order[0]).sublist("Diffusion PC"));
+      divhq_dT_plist.set("exclude primary terms", true);
+      divhq_dT_plist.set("newton correction", "approximate jacobian");
+      ddivhq_dT_ = Teuchos::rcp(new Operators::OperatorDiffusionWithGravity(divhq_dT_plist, pcB));
 
       // need a field, evaluator, and upwinding for h * kr * rho/mu
       // -- first the evaluator
@@ -137,7 +151,8 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
       Teuchos::Array<std::string> deps(2);
       deps[0] = "enthalpy"; deps[1] = "relative_permeability";
       hkr_eval_list.set("evaluator dependencies", deps);
-      Teuchos::RCP<FieldEvaluator> hkr_eval = Teuchos::rcp(new Relations::MultiplicativeEvaluator(hkr_eval_list));
+      Teuchos::RCP<FieldEvaluator> hkr_eval =
+          Teuchos::rcp(new Relations::MultiplicativeEvaluator(hkr_eval_list));
 
       // -- now the field
       names2[1] = "boundary_face";
@@ -147,11 +162,20 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
       S->SetFieldEvaluator("enthalpy_times_relative_permeability", hkr_eval);
 
       // -- and the upwinded field
-      names2[1] = "face";
-      locations2[1] = AmanziMesh::FACE;
       S->RequireField("numerical_enthalpy_times_relative_permeability", name_)
           ->SetMesh(mesh_)->SetGhosted()
-          ->SetComponents(names2, locations2, num_dofs2);
+          ->SetComponent("face", AmanziMesh::FACE, 1);
+      S->GetField("numerical_enthalpy_times_relative_permeability",name_)->set_io_vis(false);
+      S->RequireField("dnumerical_enthalpy_times_relative_permeability_dpressure", name_)
+          ->SetMesh(mesh_)->SetGhosted()
+          ->SetComponent("face", AmanziMesh::FACE, 1);
+      S->GetField("dnumerical_enthalpy_times_relative_permeability_dpressure",name_)
+          ->set_io_vis(false);
+      S->RequireField("dnumerical_enthalpy_times_relative_permeability_dtemperature", name_)
+          ->SetMesh(mesh_)->SetGhosted()
+          ->SetComponent("face", AmanziMesh::FACE, 1);
+      S->GetField("dnumerical_enthalpy_times_relative_permeability_dtemperature",name_)
+          ->set_io_vis(false);
 
       // -- and the upwinding
       std::string method_name = plist_->sublist("PKs").sublist(pk_order[0])
@@ -162,8 +186,15 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
             << "\"upwind with Darcy flux\", but the method \"" << method_name << "\" was requested.";
         Exceptions::amanzi_throw(msg);
       }
-      upwinding_hkr_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_, "enthalpy_times_relative_permeability",
+      upwinding_hkr_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
+              "enthalpy_times_relative_permeability",
               "numerical_enthalpy_times_relative_permeability", "darcy_flux_direction", 1.e-8));
+      upwinding_dhkr_dp_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
+              "denthalpy_times_relative_permeability_dpressure",
+              "dnumerical_enthalpy_times_relative_permeability_dpressure", "darcy_flux_direction", 1.e-8));
+      upwinding_dhkr_dT_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
+              "denthalpy_times_relative_permeability_dtemperature",
+              "dnumerical_enthalpy_times_relative_permeability_dtemperature", "darcy_flux_direction", 1.e-8));
     }
 
     // -- derivatives of energy with respect to pressure
@@ -234,7 +265,21 @@ void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
   if (ddivhq_dp_ != Teuchos::null) {
     S->GetFieldData("numerical_enthalpy_times_relative_permeability", name_)->PutScalar(1.);
     S->GetField("numerical_enthalpy_times_relative_permeability", name_)->set_initialized();
+    S->GetFieldData("dnumerical_enthalpy_times_relative_permeability_dpressure", name_)->PutScalar(1.);
+    S->GetField("dnumerical_enthalpy_times_relative_permeability_dpressure", name_)->set_initialized();
+    S->GetFieldData("dnumerical_enthalpy_times_relative_permeability_dtemperature", name_)->PutScalar(1.);
+    S->GetField("dnumerical_enthalpy_times_relative_permeability_dtemperature", name_)->set_initialized();
+
+    Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
+    AmanziGeometry::Point g(3);
+    g[0] = (*gvec)[0]; g[1] = (*gvec)[1]; g[2] = (*gvec)[2];
+    ddivhq_dp_->SetGravity(g);    
+    ddivhq_dp_->SetBCs(sub_pks_[1]->BCs());
     ddivhq_dp_->Setup(richards_pk->K_);
+
+    ddivhq_dT_->SetGravity(g);    
+    ddivhq_dT_->SetBCs(sub_pks_[1]->BCs());
+    ddivhq_dT_->Setup(richards_pk->K_);
   }  
 }
 
@@ -267,7 +312,9 @@ bool MPCSubsurface::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> up0
 
 
 // updates the preconditioner
-void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
+void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h, bool assemble) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+
   if (precon_type_ == PRECON_NONE) {
     // nothing to do
   } else if (precon_type_ == PRECON_BLOCK_DIAGONAL) {
@@ -282,30 +329,21 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
     // dWC / dT block
     // -- dkr/dT
     if (ddivq_dT_ != Teuchos::null) {
+      // -- update and upwind d kr / dT
       S_next_->GetFieldEvaluator("relative_permeability")
           ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "temperature");
       Teuchos::RCP<CompositeVector> dkrdT_uw =
           S_next_->GetFieldData("dnumerical_rel_perm_dtemperature", name_);
       dkrdT_uw->PutScalar(0.);
       uw_dkrdT_->Update(S_next_.ptr());
+
+      // form the operator
       Teuchos::RCP<const CompositeVector> kr_uw = S_next_->GetFieldData("numerical_rel_perm");
       Teuchos::RCP<const CompositeVector> flux = S_next_->GetFieldData("darcy_flux");
       Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData("mass_density_liquid");
 
-      Teuchos::RCP<CompositeVector> kr_uw_modified =
-          Teuchos::rcp(new CompositeVector(*kr_uw));
-      *kr_uw_modified = *kr_uw;
-      
-      {
-        Epetra_MultiVector& kr_uw_mod_f = *kr_uw_modified->ViewComponent("face",false);
-        unsigned int nfaces = kr_uw_mod_f.MyLength();
-        for (unsigned int f=0; f!=nfaces; ++f) {
-          kr_uw_mod_f[0][f] = std::max(kr_uw_mod_f[0][f], 1.e-18);
-        }
-      }      
-
       ddivq_dT_->SetVectorDensity(rho);
-      ddivq_dT_->Setup(kr_uw_modified, dkrdT_uw);
+      ddivq_dT_->Setup(kr_uw, dkrdT_uw);
       ddivq_dT_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
       ddivq_dT_->ApplyBCs(false);
     }
@@ -328,26 +366,75 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       Teuchos::RCP<const CompositeVector> dKdp = S_next_->GetFieldData("dthermal_conductivity_dpressure");
       Teuchos::RCP<const CompositeVector> Kappa = S_next_->GetFieldData("numerical_thermal_conductivity");
       ddivKgT_dp_->Setup(Kappa, dKdp);
+      ASSERT(false); // this UpdateMatrices call does not work?
       ddivKgT_dp_->UpdateMatrices(Teuchos::null, up->SubVector(1)->Data().ptr());
       ddivKgT_dp_->ApplyBCs(false);
     }
 
     // -- d adv / dp   This one is a bit more complicated...
     if (ddivhq_dp_ != Teuchos::null) {
-      // update and upwind enthalpy * kr * rho/mu
-      S_next_->GetFieldEvaluator("enthalpy_times_relative_permeability")->HasFieldChanged(S_next_.ptr(), name_);
+      // Update and upwind enthalpy * kr * rho/mu
+      // -- update values
+      S_next_->GetFieldEvaluator("enthalpy_times_relative_permeability")
+          ->HasFieldChanged(S_next_.ptr(), name_);
       S_next_->GetFieldEvaluator("enthalpy_times_relative_permeability")
           ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "pressure");
-      upwinding_hkr_->Update(S_next_.ptr(), db_.ptr());
-
+      S_next_->GetFieldEvaluator("enthalpy_times_relative_permeability")
+          ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "temperature");
       Teuchos::RCP<const CompositeVector> enth_kr =
-          S_next_->GetFieldData("numerical_enthalpy_times_relative_permeability");
+          S_next_->GetFieldData("enthalpy_times_relative_permeability");
       Teuchos::RCP<const CompositeVector> denth_kr_dp =
-          S_next_->GetFieldData("dnumerical_enthalpy_times_relative_permeability_dpressure");
-      Teuchos::RCP<const CompositeVector> flux_dir = S_next_->GetFieldData("darcy_flux_direction");
-      ddivhq_dp_->Setup(enth_kr, denth_kr_dp);
-      ddivhq_dp_->UpdateMatrices(flux_dir.ptr(), up->SubVector(0)->Data().ptr());
+          S_next_->GetFieldData("denthalpy_times_relative_permeability_dpressure");
+      Teuchos::RCP<const CompositeVector> denth_kr_dT =
+          S_next_->GetFieldData("denthalpy_times_relative_permeability_dtemperature");
+
+      // -- zero target data (may be unnecessary?)
+      Teuchos::RCP<CompositeVector> enth_kr_uw =
+          S_next_->GetFieldData("numerical_enthalpy_times_relative_permeability", name_);
+      enth_kr_uw->PutScalar(0.);
+      Teuchos::RCP<CompositeVector> denth_kr_dp_uw =
+          S_next_->GetFieldData("dnumerical_enthalpy_times_relative_permeability_dpressure", name_);
+      denth_kr_dp_uw->PutScalar(0.);
+      Teuchos::RCP<CompositeVector> denth_kr_dT_uw =
+          S_next_->GetFieldData("dnumerical_enthalpy_times_relative_permeability_dtemperature", name_);
+      denth_kr_dT_uw->PutScalar(0.);
+
+      // -- copy boundary faces into upwinded vector
+      enth_kr_uw->ViewComponent("face",false)->Export(*enth_kr->ViewComponent("boundary_face",false),
+              mesh_->exterior_face_importer(), Insert);
+      denth_kr_dp_uw->ViewComponent("face",false)->Export(*denth_kr_dp->ViewComponent("boundary_face",false),
+              mesh_->exterior_face_importer(), Insert);
+      denth_kr_dT_uw->ViewComponent("face",false)->Export(*denth_kr_dT->ViewComponent("boundary_face",false),
+              mesh_->exterior_face_importer(), Insert);
+
+      // -- upwind      
+      upwinding_hkr_->Update(S_next_.ptr(), db_.ptr());
+      upwinding_dhkr_dp_->Update(S_next_.ptr(), db_.ptr());
+      upwinding_dhkr_dT_->Update(S_next_.ptr(), db_.ptr());
+
+      Teuchos::RCP<const CompositeVector> flux = S_next_->GetFieldData("darcy_flux");
+      Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData("mass_density_liquid");
+
+      // form the operator
+      ddivhq_dp_->SetVectorDensity(rho);
+      ddivhq_dp_->Setup(enth_kr_uw, denth_kr_dp_uw);
+      // -- update the local matrices, div h * kr grad
+      ddivhq_dp_->UpdateMatrices(Teuchos::null, Teuchos::null);
+      // -- determine the advective fluxes, q_a = h * kr grad p
+      CompositeVector adv_flux(*flux, INIT_MODE_ZERO);
+      Teuchos::Ptr<const CompositeVector> adv_flux_ptr(&adv_flux);
+      ddivhq_dp_->UpdateFlux(*up->SubVector(0)->Data(), adv_flux);
+      // -- add in components div (d h*kr / dp) grad q_a / (h*kr)
+      ddivhq_dp_->UpdateMatricesNewtonCorrection(adv_flux_ptr, up->SubVector(0)->Data().ptr());
       ddivhq_dp_->ApplyBCs(false);
+
+      // form the operator 
+      ddivhq_dT_->SetVectorDensity(rho);
+      ddivhq_dT_->Setup(enth_kr_uw, denth_kr_dT_uw);
+      // -- add in components div (d h*kr / dp) grad q_a / (h*kr)
+      ddivhq_dT_->UpdateMatricesNewtonCorrection(adv_flux_ptr, up->SubVector(0)->Data().ptr());
+      ddivhq_dT_->ApplyBCs(false);
+
     }
 
     // -- dWC/dT diagonal term
@@ -367,15 +454,16 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
     db_->WriteVectors(vnames, vecs, false);
 
     // finally assemble the full system, dump if requested, and form the inverse
-    preconditioner_->AssembleMatrix();
-    if (dump_) {
-      std::stringstream filename;
-      filename << "Subsurface_PC_" << S_next_->cycle() << ".txt";
-      EpetraExt::RowMatrixToMatlabFile(filename.str().c_str(), *preconditioner_->A());
+    if (assemble) {
+      preconditioner_->AssembleMatrix();
+      if (dump_) {
+        std::stringstream filename;
+        filename << "Subsurface_PC_" << S_next_->cycle() << ".txt";
+        EpetraExt::RowMatrixToMatlabFile(filename.str().c_str(), *preconditioner_->A());
+      }
+      Teuchos::ParameterList& pc_sublist = plist_->sublist("preconditioner");
+      preconditioner_->InitPreconditioner(pc_sublist);
     }
-    Teuchos::ParameterList& pc_sublist = plist_->sublist("preconditioner");
-    preconditioner_->InitPreconditioner(pc_sublist);
-
   }
   
   if (precon_type_ == PRECON_EWC) {

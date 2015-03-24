@@ -709,9 +709,9 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
         // for now ignore the effect on unfrozen fraction, and therefore on albedo and emissivity
         SEBPhysics::CalculateSurfaceBalance(seb2);
         SEBPhysics::CalculateSurfaceBalance(seb2_bare);
-        double eflux2 = theta * seb2.out.eb.fQc + (1-theta) * seb2_bare.out.eb.fQc;
+        double eflux2 = 1.e-6 * (theta * seb2.out.eb.fQc + (1-theta) * seb2_bare.out.eb.fQc);
         
-        (*dsurf_energy_flux_dT)[0][c] = 1.e-6 * (eflux2 - surf_energy_flux[0][c]) / T_eps; // MJ
+        (*dsurf_energy_flux_dT)[0][c] = (eflux2 - surf_energy_flux[0][c]) / T_eps; // MJ
       }
     }
   }  // END CELL LOOP ###############################

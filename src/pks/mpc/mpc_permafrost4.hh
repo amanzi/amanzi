@@ -1,21 +1,19 @@
-// Rewrite of permafrost PK to simplify
+// Rewrite of permafrost PK, new operators, based on mpc_subsurface
 //
 
-#ifndef PKS_MPC_COUPLED_WATER_HH_
-#define PKS_MPC_COUPLED_WATER_HH_
+#ifndef PKS_MPC_PERMAFROST_FOUR_HH_
+#define PKS_MPC_PERMAFROST_FOUR_HH_
 
-#include "Operator.hh"
+#include "mpc_delegate_ewc.hh"
 #include "mpc_delegate_water.hh"
-#include "pk_physical_bdf_base.hh"
-
-#include "strong_mpc.hh"
+#include "mpc_subsurface.hh"
 
 namespace Amanzi {
 
-class MPCCoupledWater : public StrongMPC<PKPhysicalBDFBase> {
+class MPCPermafrost4 : public MPCSubsurface {
  public:
 
-  MPCCoupledWater(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  MPCPermafrost4(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                  Teuchos::ParameterList& FElist,
                  const Teuchos::RCP<TreeVector>& soln);
 
@@ -31,8 +29,8 @@ class MPCCoupledWater : public StrongMPC<PKPhysicalBDFBase> {
   virtual void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
 
-  // -- Apply preconditioner to u and returns the result in Pu.
-  virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  // -- Apply preconditioner to r and returns the result in Pr.
+  virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> r, Teuchos::RCP<TreeVector> Pr);
 
   // -- Update the preconditioner.
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
@@ -43,40 +41,59 @@ class MPCCoupledWater : public StrongMPC<PKPhysicalBDFBase> {
 
   // -- Modify the correction.
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-      ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
-                       Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
+      ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
+                       Teuchos::RCP<const TreeVector> u, 
+                       Teuchos::RCP<TreeVector> du);
 
  protected:
   // void
-  // UpdateConsistentFaceCorrectionWater_(const Teuchos::RCP<const TreeVector>& u,
-  //         const Teuchos::RCP<TreeVector>& Pu);
+  // UpdateConsistentFaceCorrectionWater_(const Teuchos::Ptr<const TreeVector>& r,
+  //   			       const Teuchos::Ptr<const TreeVector>& u,
+  //   			       const Teuchos::Ptr<TreeVector>& du);
+
+
+  int
+  ModifyCorrection_FrozenSurface_(double h, Teuchos::RCP<const TreeVector> res,
+          Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
+  
+  // void
+  // IteratateFlow_(double h, const Teuchos::RCP<TreeVector>& u);
 
  protected:
+  enum PreconditionerType {
+    PRECON_NONE = 0,
+    PRECON_BLOCK_DIAGONAL = 1,
+    PRECON_PICARD = 2,
+    PRECON_EWC = 3
+  };
 
   // sub PKs
   Teuchos::RCP<PKPhysicalBDFBase> domain_flow_pk_;
+  Teuchos::RCP<PKPhysicalBDFBase> domain_energy_pk_;
   Teuchos::RCP<PKPhysicalBDFBase> surf_flow_pk_;
+  Teuchos::RCP<PKPhysicalBDFBase> surf_energy_pk_;
 
   // sub meshes
   Teuchos::RCP<const AmanziMesh::Mesh> domain_mesh_;
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_;
 
-  // coupled preconditioner
-  Teuchos::RCP<Operators::Operator> precon_;
-  Teuchos::RCP<Operators::Operator> precon_surf_;
-  Teuchos::RCP<Operators::Operator> lin_solver_;
+  // off-diagonal terms
+  Teuchos::RCP<Operators::OperatorAccumulation> dE_dp_surf_;
+
+  
+  // EWC delegate for the surface
+  //  Teuchos::RCP<MPCDelegateEWC> surf_ewc_;
 
   // Water delegate
   Teuchos::RCP<MPCDelegateWater> water_;
-  bool consistent_cells_;
-  
+
   // debugger for dumping vectors
   Teuchos::RCP<Debugger> domain_db_;
   Teuchos::RCP<Debugger> surf_db_;
 
  private:
   // factory registration
-  static RegisteredPKFactory<MPCCoupledWater> reg_;
+  static RegisteredPKFactory<MPCPermafrost4> reg_;
 
 };
 
