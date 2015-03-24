@@ -133,8 +133,10 @@ Richards_PK::~Richards_PK()
 
 
 /* ******************************************************************
-* Define structure of this PK. We requiest global fields and their
-* evaluators. 
+* Define structure of this PK. We request physical fields and their
+* evaluators. Selection of a few models is available and driven by
+* model factories, evaluator factories, and parameters of the list
+* "physics coupling".
 ****************************************************************** */
 void Richards_PK::Setup()
 {
@@ -144,7 +146,7 @@ void Richards_PK::Setup()
 
   Flow_PK::Setup();
 
-  // Require primary field for this PK.
+  // Require primary field for this PK, which is pressure
   std::vector<std::string> names;
   std::vector<AmanziMesh::Entity_kind> locations;
   std::vector<int> ndofs;
@@ -173,7 +175,32 @@ void Richards_PK::Setup()
     S_->SetFieldEvaluator("pressure", pressure_eval_);
   }
 
-  // Require additional fields for this PK.
+  // Require conserved quantity.
+  // -- water content
+  Teuchos::RCP<Teuchos::ParameterList> coupling = Teuchos::sublist(rp_list_, "physics coupling");
+  std::string vwc_model = coupling->get<std::string>("water content model", "constant density");
+
+  if (!S_->HasField("water_content")) {
+    S_->RequireField("water_content", "water_content")->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+    Teuchos::ParameterList elist, vwc_list;
+    elist.sublist("VerboseObject").set<std::string>("Verbosity Level", "extreme");
+
+    VWContentEvaluatorFactory fac;
+    Teuchos::RCP<VWContentEvaluator> eval = fac.Create(vwc_model, vwc_list);
+    S_->SetFieldEvaluator("water_content", eval);
+  }
+
+  // -- water content from the previous time step
+  if (!S_->HasField("prev_water_content")) {
+    S_->RequireField("prev_water_content", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->GetField("prev_water_content", passwd_)->set_io_vis(false);
+  }
+
+  // Require additional fields and evaluators for this PK.
+  // -- darcy flux
   if (!S_->HasField("darcy_flux")) {
     S_->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
@@ -184,42 +211,21 @@ void Richards_PK::Setup()
     S_->SetFieldEvaluator("darcy_flux", darcy_flux_eval_);
   }
 
-  // Require conserved quantities.
-  if (!S_->HasField("water_content")) {
-    S_->RequireField("water_content", "water_content")->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-
-    Teuchos::ParameterList elist, vwc_list;
-    elist.sublist("VerboseObject").set<std::string>("Verbosity Level", "extreme");
-
-    VWContentEvaluatorFactory fac;
-    Teuchos::RCP<Teuchos::ParameterList> coupling = Teuchos::sublist(rp_list_, "physics coupling");
-    std::string vwc_model = coupling->get<std::string>("water content model", "constant density");
-
-    Teuchos::RCP<VWContentEvaluator> eval = fac.Create(vwc_model, vwc_list);
-    S_->SetFieldEvaluator("water_content", eval);
-  }
-
-  if (!S_->HasField("prev_water_content")) {
-    S_->RequireField("prev_water_content", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->GetField("prev_water_content", passwd_)->set_io_vis(false);
-  }
-
-  // Require additional fields and evaluators for this PK.
+  // -- porosity
   if (!S_->HasField("porosity")) {
     S_->RequireField("porosity", "porosity")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->RequireFieldEvaluator("porosity");
   }
 
+  // -- model for liquid density is constant density unless specified otherwise
+  //    in high-level PKs.
   if (!S_->HasField("molar_density_liquid")) {
     S_->RequireField("molar_density_liquid", "molar_density_liquid")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     double rho = glist_->sublist("State").sublist("initial conditions")
                         .sublist("fluid_density").get<double>("value", 1000.0);
-
     double n_l = rho / CommonDefs::MOLAR_MASS_H2O;
 
     Teuchos::ParameterList& wc_eval = S_->FEList().sublist("molar_density_liquid");
@@ -233,7 +239,7 @@ void Richards_PK::Setup()
     S_->RequireFieldEvaluator("molar_density_liquid");
   }
   
-  // saturation
+  // -- saturation
   double patm = rp_list_->get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);
 
   Teuchos::RCP<Teuchos::ParameterList>
@@ -256,14 +262,14 @@ void Richards_PK::Setup()
     S_->GetField("prev_saturation_liquid", passwd_)->set_io_vis(false);
   }
 
-  // Require additional field evaluators for this PK.
   // Local fields and evaluators.
+  // -- hydraulic head
   if (!S_->HasField("hydraulic_head")) {
     S_->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  // Postpone initialization of local evaluatior.
+  // -- Darcy velocity vector
   S_->RequireField("darcy_velocity", "darcy_velocity")->SetMesh(mesh_)->SetGhosted(true)
     ->SetComponent("cell", AmanziMesh::CELL, dim);
 
@@ -388,9 +394,9 @@ void Richards_PK::Initialize()
   oplist_pc.set<std::string>("upwind method", upw_method);
 
   Operators::OperatorDiffusionFactory opfactory;
-  op_matrix_diff_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, gravity_, upw_id);
+  op_matrix_diff_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, molar_gravity_, upw_id);
   op_matrix_ = op_matrix_diff_->global_operator();
-  op_preconditioner_diff_ = opfactory.Create(mesh_, op_bc_, oplist_pc, gravity_, upw_id);
+  op_preconditioner_diff_ = opfactory.Create(mesh_, op_bc_, oplist_pc, molar_gravity_, upw_id);
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
   op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_preconditioner_));
 
@@ -467,17 +473,18 @@ void Richards_PK::Initialize()
   // repeat upwind initialization, mainly for old MPC
   InitializeUpwind_();
 
-  // initialize matrix and preconditioner operators
+  // initialize matrix and preconditioner operators.
+  // since we use the molar density, we will rescale gravity later.
   op_matrix_->Init();
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
   op_matrix_diff_->SetBCs(op_bc_);
-  op_matrix_diff_->Setup(Kptr, krel_, dKdP_, rho_, mu_);
+  op_matrix_diff_->Setup(Kptr, krel_, dKdP_, molar_rho_, mu_);
   op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
   op_matrix_diff_->ApplyBCs(true);
 
   op_preconditioner_->Init();
   op_preconditioner_->SetBCs(op_bc_);
-  op_preconditioner_diff_->Setup(Kptr, krel_, dKdP_, rho_, mu_);
+  op_preconditioner_diff_->Setup(Kptr, krel_, dKdP_, molar_rho_, mu_);
   op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
   op_preconditioner_diff_->ApplyBCs(true);
   op_preconditioner_->SymbolicAssembleMatrix();
@@ -568,7 +575,7 @@ void Richards_PK::Initialize()
     op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
 
     Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face", true);
-    for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
+    for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
   }
 
   // subspace entering: re-inititime lambdas.
@@ -585,7 +592,7 @@ void Richards_PK::Initialize()
 
     // normalize to Darcy flux, m/s
     Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face", true);
-    for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
+    for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
 
     InitializeUpwind_();
   }
@@ -684,7 +691,7 @@ void Richards_PK::InitializeUpwind_()
     darcy_flux_upwind = darcy_flux_copy;
   } else if (relperm_->method() == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
     darcy_flux_upwind = Teuchos::rcp(new CompositeVector(*darcy_flux_copy));
-    relperm_->ComputeGravityFlux(K, gravity_, darcy_flux_upwind);
+    relperm_->ComputeGravityFlux(K, molar_gravity_, darcy_flux_upwind);
   } else {
     darcy_flux_upwind = Teuchos::rcp(new CompositeVector(*darcy_flux_copy));
     darcy_flux_upwind->PutScalar(0.0);
@@ -781,7 +788,7 @@ void Richards_PK::CommitStep(double t_old, double t_new)
   op_matrix_diff_->UpdateFlux(*solution, darcy_flux);
 
   Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
-  for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
+  for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
   *darcy_flux_copy->ViewComponent("face", true) = flux;
 
   // update time derivative

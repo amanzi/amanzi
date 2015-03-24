@@ -1177,6 +1177,8 @@ components and their dispersion and diffusion.
 The main parameters control temporal stability, spatial 
 and temporal accuracy, and verbosity:
 
+* `"PK type`" [string] Defines name of PK. The only available option is `"transport pk`".
+
 * `"cfl`" [double] Time step limiter, a number less than 1. Default value is 1.
    
 * `"spatial discretization order`" [int] defines accuracy of spartial dscretization.
@@ -1202,6 +1204,7 @@ and temporal accuracy, and verbosity:
 .. code-block:: xml
 
    <ParameterList name="Transport">
+     <Parameter name="PK type" type="string" value="transport pk"/>
      <Parameter name="cfl" type="double" value="1.0"/>
      <Parameter name="spatial discretization order" type="int" value="1"/>
      <Parameter name="temporal discretization order" type="int" value="1"/>
@@ -1463,6 +1466,23 @@ The remaining parameters that can be used by a developes include
 
 Chemistry PK
 ------------
+
+The chemistry header includes three parameters:
+
+* `"PK type`" [string] defined name of this PK. The only available option is `"chemistry pk`".
+
+* `"chemistry model`" [string] defines chemical model. The available options are `"Alquimia`"
+  and `"Amanzi`" (default).
+
+* `"component names`" [Array(string)] provides the list of species names.
+
+.. code-block:: xml
+
+  <ParameterList name="Chemistry">
+    <Parameter name="PK type" type="string" value="chemistry pk"/>
+    <Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
+  </ParameterList>
+
 
 Geochemical engines
 ...................
