@@ -29,14 +29,15 @@ include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 add_library(mpc
   weak_mpc.cc
   mpc_coupled_cells.cc
-#  mpc_surface_subsurface_helpers.cc
+  mpc_surface_subsurface_helpers.cc
   mpc_delegate_ewc.cc
 #  mpc_delegate_ewc_surface.cc
   mpc_delegate_ewc_subsurface.cc
-#  mpc_delegate_water.cc
-#  mpc_coupled_water.cc
+  mpc_delegate_water.cc
+  mpc_coupled_water.cc
   mpc_subsurface.cc
 #  mpc_permafrost3.cc
+  mpc_permafrost4.cc
 )
 
 install(TARGETS mpc DESTINATION lib)
@@ -58,15 +59,15 @@ register_evaluator_with_factory(
   LISTNAME   MPC_PK_FAC
   )
 
-# register_evaluator_with_factory(
-#   HEADERFILE mpc_permafrost_reg.hh
-#   LISTNAME   MPC_PK_FAC
-#   )
+register_evaluator_with_factory(
+  HEADERFILE mpc_permafrost_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
 
-# register_evaluator_with_factory(
-#   HEADERFILE mpc_coupled_water_reg.hh
-#   LISTNAME   MPC_PK_FAC
-#   )
+register_evaluator_with_factory(
+  HEADERFILE mpc_coupled_water_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
 
 
 generate_evaluators_registration_header(

@@ -10,7 +10,8 @@ Author: Ethan Coon
 #include "energy_bc_factory.hh"
 #include "advection_factory.hh"
 
-#include "OperatorDiffusionMFD.hh"
+#include "OperatorDiffusionFactory.hh"
+#include "OperatorDiffusion.hh"
 #include "upwind_cell_centered.hh"
 #include "upwind_arithmetic_mean.hh"
 #include "upwind_total_flux.hh"
@@ -88,6 +89,13 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
   // Require fields and evaluators for those fields.
   // primary variable: temperature on both cells and faces, ghosted, with 1 dof
+  Teuchos::ParameterList& mfd_plist = plist_->sublist("Diffusion");
+  S->RequireField(key_, name_)->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  if (mfd_plist.get<std::string>("discretization primary") != "fv: default") {
+    S->RequireField(key_, name_)->AddComponent("face", AmanziMesh::FACE, 1);
+  }
+
   std::vector<AmanziMesh::Entity_kind> locations2(2);
   std::vector<std::string> names2(2);
   std::vector<int> num_dofs2(2,1); // = [1, 1]
@@ -96,21 +104,18 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   names2[0] = "cell";
   names2[1] = "face";
 
-  S->RequireField(key_, name_)->SetMesh(mesh_)
-    ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
-
-#if MORE_DEBUG_FLAG
-  for (int i=1; i!=23; ++i) {
-    std::stringstream namestream;
-    namestream << domain_prefix_ << "energy_residual_" << i;
-    std::stringstream solnstream;
-    solnstream << domain_prefix_ << "energy_solution_" << i;
-    S->RequireField(namestream.str(), name_)->SetMesh(mesh_)
-                    ->SetComponents(names2, locations2, num_dofs2);
-    S->RequireField(solnstream.str(), name_)->SetMesh(mesh_)
-                    ->SetComponents(names2, locations2, num_dofs2);
-  }
-#endif
+// #if MORE_DEBUG_FLAG
+//   for (int i=1; i!=23; ++i) {
+//     std::stringstream namestream;
+//     namestream << domain_prefix_ << "energy_residual_" << i;
+//     std::stringstream solnstream;
+//     solnstream << domain_prefix_ << "energy_solution_" << i;
+//     S->RequireField(namestream.str(), name_)->SetMesh(mesh_)
+//                     ->SetComponents(names2, locations2, num_dofs2);
+//     S->RequireField(solnstream.str(), name_)->SetMesh(mesh_)
+//                     ->SetComponents(names2, locations2, num_dofs2);
+//   }
+// #endif
 
   // Require a field and evaluator for cell volume.
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
@@ -203,9 +208,9 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
   // Operator:
   //  -- operator for the diffusion terms
-  Teuchos::ParameterList mfd_plist = plist_->sublist("Diffusion");
-  matrix_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionMFD(mfd_plist, mesh_));
-  matrix_diff_->SetBCs(bc_);
+  Operators::OperatorDiffusionFactory fac;
+  AmanziGeometry::Point g;
+  matrix_diff_ = fac.Create(mesh_, bc_, mfd_plist, g, 0);
   matrix_diff_->Setup(Teuchos::null);
 
   //  -- for advection terms
@@ -219,15 +224,17 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   // Preconditioner
   // -- for the diffusive terms
   Teuchos::ParameterList mfd_pc_plist = plist_->sublist("Diffusion PC");
-  preconditioner_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionMFD(mfd_pc_plist, mesh_));
-  preconditioner_diff_->SetBCs(bc_);
+  preconditioner_diff_ = fac.Create(mesh_, bc_, mfd_pc_plist, g, 0);
   preconditioner_diff_->Setup(Teuchos::null);
   preconditioner_ = preconditioner_diff_->global_operator();
 
   // -- for the accumulation terms
-  preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, preconditioner_));
+  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("Accumulation PC");
+  acc_pc_plist.set("entity kind", "cell");
+  preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, preconditioner_));
 
   if (implicit_advection_ && implicit_advection_in_pc_) {
+    Teuchos::ParameterList advect_plist = plist_->sublist("Advection PC");
     preconditioner_adv_ = Teuchos::rcp(new Operators::OperatorAdvection(advect_plist, preconditioner_));
   }
 
@@ -349,7 +356,7 @@ void EnergyBase::UpdateBoundaryConditions_() {
     bc_values_[f] = bc->second;
     bc_markers_adv_[f] = Operators::OPERATOR_BC_NEUMANN;
     bc_values_adv_[f] = 0.;
-    // push all onto diffusion
+    // push all onto diffusion, assuming that the incoming enthalpy is 0 (likely mass flux is 0)
   }
 
   // Dirichlet temperature boundary conditions from a coupled surface.
@@ -399,6 +406,25 @@ void EnergyBase::UpdateBoundaryConditions_() {
       bc_markers_adv_[f] = Operators::OPERATOR_BC_DIRICHLET;
     }
   }
+
+  // mark all remaining boundary conditions as zero flux conditions
+  AmanziMesh::Entity_ID_List cells;
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  for (int f = 0; f < nfaces_owned; f++) {
+    if (bc_markers_[f] == Operators::OPERATOR_BC_NONE) {
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int ncells = cells.size();
+
+      if (ncells == 1) {
+        bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_values_[f] = 0.0;
+        bc_markers_adv_[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_values_adv_[f] = 0.0;
+      }
+    }
+  }
+  
+
 };
 
 

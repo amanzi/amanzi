@@ -9,11 +9,14 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #ifndef PK_FLOW_SNOW_DISTRIBUTION_HH_
 #define PK_FLOW_SNOW_DISTRIBUTION_HH_
 
-#include "MatrixMFD.hh"
-#include "MatrixMFD_TPFA.hh"
 #include "upwinding.hh"
 
 #include "Function.hh"
+
+#include "Operator.hh"
+#include "OperatorDiffusion.hh"
+#include "OperatorAccumulation.hh"
+
 #include "pk_factory.hh"
 #include "pk_physical_bdf_base.hh"
 
@@ -78,6 +81,9 @@ protected:
   // -- builds tensor K, along with faced-based Krel if needed by the rel-perm method
   virtual bool UpdatePermeabilityData_(const Teuchos::Ptr<State>& S);
 
+  // boundary condition members
+  virtual void UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S);
+  
   // physical methods
   // -- diffusion term
   void ApplyDiffusion_(const Teuchos::Ptr<State>& S,const Teuchos::Ptr<CompositeVector>& g);
@@ -98,9 +104,10 @@ protected:
   Teuchos::RCP<Operators::Upwinding> upwinding_;
 
   // mathematical operators
-  Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD_TPFA> tpfa_preconditioner_;
-  // note PC is in PKPhysicalBDFBase
+  Teuchos::RCP<Operators::Operator> matrix_; // pc in PKPhysicalBDFBase
+  Teuchos::RCP<Operators::OperatorDiffusion> matrix_diff_;
+  Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
+  Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
 
   // factory registration
   static RegisteredPKFactory<SnowDistribution> reg_;

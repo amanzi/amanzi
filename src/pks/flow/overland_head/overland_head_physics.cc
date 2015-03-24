@@ -21,6 +21,7 @@ void OverlandHeadFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   UpdatePermeabilityData_(S_next_.ptr());
 
   // update the stiffness matrix
+  matrix_->Init();
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_overland_conductivity", name_);
   matrix_diff_->Setup(cond, Teuchos::null);
@@ -42,7 +43,7 @@ void OverlandHeadFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   FixBCsForOperator_(S_next_.ptr());
 
   // assemble the stiffness matrix
-  matrix_diff_->ApplyBCs(bc_);
+  matrix_diff_->ApplyBCs(true);
 
   // calculate the residual
   matrix_->ComputeNegativeResidual(*pres_elev, *g);

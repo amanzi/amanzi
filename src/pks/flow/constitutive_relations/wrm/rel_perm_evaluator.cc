@@ -285,9 +285,11 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
 
         int index = (*wrms_->first)[cells[0]];
         double pc = wrms_->second[index]->capillaryPressure(sat_bf[0][bf]);
-        double kr = wrms_->second[index]->k_relative(pc);
         double dpc_dsl = wrms_->second[index]->d_capillaryPressure(sat_bf[0][bf]);
-        res_bf[0][bf] = kr > min_val_ ? dpc_dsl * wrms_->second[index]->d_k_relative(pc) : 0.;
+        double kr = wrms_->second[index]->k_relative(pc);
+
+        res_bf[0][bf] = kr < 1. ? kr > min_val_ ? dpc_dsl * wrms_->second[index]->d_k_relative(pc) : 0. : 0.;
+        ASSERT(res_bf[0][bf] >= 0.);
       }
     }
 

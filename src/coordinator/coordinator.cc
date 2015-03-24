@@ -399,7 +399,7 @@ void Coordinator::read_parameter_list() {
 // -----------------------------------------------------------------------------
 // acquire the chosen timestep size
 // -----------------------------------------------------------------------------
-double Coordinator::get_dt() {
+double Coordinator::get_dt(bool after_fail) {
   // get the physical step size
   double dt = pk_->get_dt();
 
@@ -415,7 +415,7 @@ double Coordinator::get_dt() {
   }
 
   // ask the step manager if this step is ok
-  dt = tsm_->TimeStep(S_next_->time(), dt);
+  dt = tsm_->TimeStep(S_next_->time(), dt, after_fail);
   return dt;
 }
 
@@ -502,7 +502,7 @@ void Coordinator::cycle_driver() {
   }
 
   // get the intial timestep -- note, this would have to be fixed for a true restart
-  double dt = get_dt();
+  double dt = get_dt(false);
 
   // visualization at IC
   visualize();
@@ -533,7 +533,7 @@ void Coordinator::cycle_driver() {
       *S_inter_->GetScalarData("dt", "coordinator") = dt;
       *S_next_->GetScalarData("dt", "coordinator") = dt;
       fail = advance(dt);
-      dt = get_dt();
+      dt = get_dt(fail);
 
     } // while not finished
 

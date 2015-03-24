@@ -47,8 +47,8 @@ int EWCModelBase::InverseEvaluate(double energy, double wc,
         double& T, double& p, bool verbose) {
 
   // -- scaling for the norms
-  double wc_scale = 10.;
-  double e_scale = 10000.;
+  double wc_scale = 1.;
+  double e_scale = 1.;
   double T_corr_cap = 2.;
   double p_corr_cap = 200000.;
   double tol = 1.e-6;
@@ -214,7 +214,7 @@ int EWCModelBase::InverseEvaluateEnergy(double energy, double p,
         double& T) {
 
   // -- scaling for the norms
-  double e_scale = 10000.;
+  double e_scale = 1.;
   double T_corr_cap = 2.;
   double tol = 1.e-6;
   double max_steps = 100;

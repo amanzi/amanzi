@@ -21,17 +21,19 @@ void SnowDistribution::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   UpdatePermeabilityData_(S_next_.ptr());
 
   // update the stiffness matrix
+  matrix_->Init();
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_snow_conductivity", name_);
-  matrix_->CreateMFDstiffnessMatrices(cond.ptr());
-  matrix_->CreateMFDrhsVectors();
-
+  matrix_diff_->Setup(cond, Teuchos::null);
+  matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  matrix_diff_->ApplyBCs(true);
+  
   // update the potential
   S->GetFieldEvaluator("snow_skin_potential")->HasFieldChanged(S.ptr(), name_);
   Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("snow_skin_potential");
 
   // calculate the residual
-  matrix_->ComputeNegativeResidual(*potential, g.ptr());
+  matrix_->ComputeNegativeResidual(*potential, *g);
 };
 
 
