@@ -4,7 +4,6 @@
 
   Temporary wrapper converting the Chemistry_PK, which inherits from 
   BDFFnBase<CompositeVector>, to use TreeVectors.
-
 */
 
 #ifndef AMANZI_CHEMISTRY_PK_WRAPPER_HH_
@@ -12,10 +11,13 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "../pks/PK.hh"
-#include "chemistry_pk.hh"
-#include "../pks/PK_Factory.hh"
+#ifdef ALQUIMIA_ENABLED
+#include "alquimia_chemistry_pk.hh"
+#endif
+#include "chemistry_pk_base.hh"
 #include "Chemistry_State.hh"
+#include "PK.hh"
+#include "PK_Factory.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry{
@@ -27,7 +29,18 @@ class Chemistry_PK_Wrapper : public PK {
                        const Teuchos::RCP<State>& S,
                        const Teuchos::RCP<TreeVector>& soln);
   // Setup
-  virtual void Setup() { CS->Setup(); }
+  virtual void Setup() {
+    CS->Setup();
+
+#ifdef ALQUIMIA_ENABLED
+    // Set up auxiliary chemistry data using the ChemistryEngine.
+    if (chemistry_model_ == "Alquimia") {
+      std::vector<std::string> auxNames;
+      chem_engine_->GetAuxiliaryOutputNames(auxNames);
+      CS->SetAuxDataNames(auxNames); 
+    }
+#endif
+  }
 
   // Initialize owned (dependent) variables.
   virtual void Initialize() {  
@@ -57,7 +70,7 @@ class Chemistry_PK_Wrapper : public PK {
     Teuchos::RCP<Epetra_MultiVector> aux = pk_->get_extra_chemistry_output_data();
   }
 
-  virtual std::string name() { return pk_->name(); }
+  virtual std::string name() { return "chemistry"; }
 
   Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration() { return total_component_concentration; }
 
@@ -65,16 +78,29 @@ class Chemistry_PK_Wrapper : public PK {
     total_component_concentration = tcc;
   }
 
+  // access
+#ifdef ALQUIMIA_ENABLED
+  Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state() { return CS; }
+  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine() { return chem_engine_; }
+#endif
+
  protected:
-  // storage for the component concentration intermediate values
-  Teuchos::RCP<Epetra_MultiVector> total_component_concentration;
-  Teuchos::RCP<AmanziChemistry::Chemistry_State> CS;
-  std::vector<std::string> comp_names_;
   Teuchos::RCP<Teuchos::ParameterList> glist_;
-  Teuchos::RCP<Chemistry_PK> pk_;
+  Teuchos::RCP<Chemistry_PK_Base> pk_;
   Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<State> S_;
+
+  Teuchos::RCP<AmanziChemistry::Chemistry_State> CS;
+  std::vector<std::string> comp_names_;
+  std::string chemistry_model_;
+#ifdef ALQUIMIA_ENABLED
+  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
+#endif
+
   double dt_;
+
+  // storage for the component concentration intermediate values
+  Teuchos::RCP<Epetra_MultiVector> total_component_concentration;
 
  private:
   // factory registration

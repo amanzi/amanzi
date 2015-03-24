@@ -232,7 +232,8 @@ int Operator_FaceCellSff::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
-
+  Y.PutScalarGhosted(0.);
+  
   {
     Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
     Epetra_MultiVector& Yc = *Y.ViewComponent("cell");

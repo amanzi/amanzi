@@ -19,6 +19,7 @@ Teuchos::ParameterList InputParserIS::CreateChemistryList_(Teuchos::ParameterLis
   Teuchos::ParameterList chem_list;
   if (plist->isSublist("Chemistry")) {
     chem_list = plist->sublist("Chemistry");
+    chem_list.set<std::string>("chemistry model", chemistry_model_);
 
     Teuchos::ParameterList& chem_ic = chem_list.sublist("initial conditions");
 

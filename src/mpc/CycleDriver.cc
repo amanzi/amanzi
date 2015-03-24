@@ -21,26 +21,25 @@
 #include <sys/resource.h>
 #include "errors.hh"
 
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_TimeMonitor.hpp"
-
-
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 
-#include "TimeStepManager.hh"
-#include "visualization.hh"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+
 #include "checkpoint.hh"
+#include "CycleDriver.hh"
 #include "ObservationData.hh"
+#include "PK.hh"
+#include "PK_Factory.hh"
+#include "TimeStepManager.hh"
+#include "TimerManager.hh"
+#include "TreeVector.hh"
 #include "Unstructured_observations.hh"
 #include "State.hh"
-#include "PK.hh"
-#include "TreeVector.hh"
-#include "PK_Factory.hh"
-#include "TimerManager.hh"
-#include "CycleDriver.hh"
+#include "visualization.hh"
 
 #define DEBUG_MODE 1
 

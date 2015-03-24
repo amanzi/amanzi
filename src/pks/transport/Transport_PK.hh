@@ -57,14 +57,6 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
 class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
  public:
-  Transport_PK();
-#ifdef ALQUIMIA_ENABLED
-  Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-               Teuchos::RCP<State> S,
-               const std::string& pk_list_name,
-               Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state = Teuchos::null,
-               Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine = Teuchos::null);
-#endif
   Transport_PK(Teuchos::ParameterList& pk_tree,
                const Teuchos::RCP<Teuchos::ParameterList>& glist,
                const Teuchos::RCP<State>& S,
@@ -93,6 +85,12 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   // main transport members
   // -- calculation of a stable time step needs saturations and darcy flux
   double CalculateTransportDt();
+
+  // coupling with chemistry
+#ifdef ALQUIMIA_ENABLED
+  void SetupAlquimia(Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
+                     Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine);
+#endif
 
   // -- access members  
   inline double cfl() { return cfl_; }

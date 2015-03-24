@@ -13,6 +13,8 @@
 #include "DenseMatrix.hh"
 #include "Op_Cell_FaceCell.hh"
 #include "Op_Cell_Face.hh"
+#include "Op_SurfaceCell_SurfaceCell.hh"
+#include "Op_SurfaceFace_SurfaceCell.hh"
 
 #include "SuperMap.hh"
 #include "GraphFE.hh"
@@ -39,6 +41,7 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
 {
   ASSERT(op.matrices.size() == ncells_owned);
 
+  Y.PutScalarGhosted(0.);
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
@@ -81,6 +84,7 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_Face& op,
 {
   ASSERT(op.matrices.size() == ncells_owned);
 
+  Y.PutScalarGhosted(0.);
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
 
@@ -107,6 +111,59 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_Face& op,
   }
 
   Y.GatherGhostedToMaster(Add);
+  return 0;
+}
+
+// visit method for apply surface cells into subsurface faces
+int
+Operator_FaceCell::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
+        const CompositeVector& X, CompositeVector& Y) const
+{
+  int nsurf_cells = op.surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  ASSERT(op.vals.size() == nsurf_cells);
+
+  const Epetra_MultiVector& Xf = *X.ViewComponent("face", false);
+  Epetra_MultiVector& Yf = *Y.ViewComponent("face", false);
+  for (int sc=0; sc!=nsurf_cells; ++sc) {
+    int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL, sc);
+    Yf[0][f] += op.vals[sc] * Xf[0][f];
+  } 
+  return 0;
+}
+
+
+// visit method for apply surface cells into subsurface faces
+int
+Operator_FaceCell::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
+        const CompositeVector& X, CompositeVector& Y) const
+{
+  int nsurf_faces = op.surf_mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  ASSERT(op.matrices.size() == nsurf_faces);
+
+  X.ScatterMasterToGhosted();
+  const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
+
+  Y.PutScalarGhosted(0.);
+  Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
+  
+  AmanziMesh::Entity_ID_List cells;
+  for (int sf=0; sf!=nsurf_faces; ++sf) {
+    op.surf_mesh->face_get_cells(sf, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    WhetStone::DenseVector v(ncells), av(ncells);
+    for (int n=0; n!=ncells; ++n) {
+      v(n) = Xf[0][op.surf_mesh->entity_get_parent(AmanziMesh::CELL, cells[n])];
+    }
+
+    const WhetStone::DenseMatrix& Aface = op.matrices[sf];
+    Aface.Multiply(v, av, false);
+
+    for (int n=0; n!=ncells; ++n) {
+      Yf[0][op.surf_mesh->entity_get_parent(AmanziMesh::CELL, cells[n])] += av(n);
+    }
+  } 
+  Y.GatherGhostedToMaster("face");
   return 0;
 }
 
@@ -144,7 +201,6 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
   ASSERT(!ierr);
 }
 
-
 /* ******************************************************************
 * Visit methods for symbolic assemble: Face
 ****************************************************************** */
@@ -170,6 +226,57 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
       lid_c[n] = face_col_inds[faces[n]];
     }
     ierr |= graph.InsertMyIndices(nfaces, lid_r, nfaces, lid_c);
+  }
+  ASSERT(!ierr);
+}
+
+
+void
+Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
+        const SuperMap& map, GraphFE& graph,
+        int my_block_row, int my_block_col) const
+{
+  int nsurf_cells = op.surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  // ELEMENT: cell, DOFS: cell and face
+  const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
+  const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
+
+  int ierr = 0;
+  for (int sc=0; sc!=nsurf_cells; ++sc) {
+    int lid_r = face_row_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL,sc)];
+    int lid_c = face_col_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL,sc)];
+    ierr |= graph.InsertMyIndices(lid_r, 1, &lid_c);
+  }
+  ASSERT(!ierr);
+}
+
+
+void
+Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
+        const SuperMap& map, GraphFE& graph,
+        int my_block_row, int my_block_col) const
+{
+  int nsurf_faces = op.surf_mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int lid_r[2];
+  int lid_c[2];
+
+  // ELEMENT: cell, DOFS: cell and face
+  const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
+  const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
+
+  int ierr = 0;
+  AmanziMesh::Entity_ID_List cells;
+  for (int sf=0; sf!=nsurf_faces; ++sf) {
+    op.surf_mesh->face_get_cells(sf, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+    for (int n=0; n!=ncells; ++n) {
+      int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL,cells[n]);
+      lid_r[n] = face_row_inds[f];
+      lid_c[n] = face_col_inds[f];
+    }
+
+    ierr |= graph.InsertMyIndices(ncells, lid_r, ncells, lid_c);
   }
   ASSERT(!ierr);
 }
@@ -240,6 +347,58 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
     }
     
     ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[c]);
+  }
+  ASSERT(!ierr);
+}
+
+
+void
+Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
+        const SuperMap& map, MatrixFE& mat,
+        int my_block_row, int my_block_col) const
+{
+  int nsurf_cells = op.surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  // ELEMENT: cell, DOFS: cell and face
+  const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
+  const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
+
+  int ierr = 0;
+  for (int sc=0; sc!=nsurf_cells; ++sc) {
+    int lid_r = face_row_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL,sc)];
+    int lid_c = face_col_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL,sc)];
+    ierr |= mat.SumIntoMyValues(lid_r, 1, &op.vals[sc], &lid_c);
+    std::cout << "surf cell " << sc << " entry in face " << lid_r << " with val " << op.vals[sc] << std::endl;
+  }
+  ASSERT(!ierr);
+}
+
+
+void
+Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
+        const SuperMap& map, MatrixFE& mat,
+        int my_block_row, int my_block_col) const
+{
+  int nsurf_faces = op.surf_mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int lid_r[2];
+  int lid_c[2];
+
+  // ELEMENT: cell, DOFS: cell and face
+  const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
+  const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
+
+  int ierr = 0;
+  AmanziMesh::Entity_ID_List cells;
+  for (int sf=0; sf!=nsurf_faces; ++sf) {
+    op.surf_mesh->face_get_cells(sf, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+    for (int n=0; n!=ncells; ++n) {
+      int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL,cells[n]);
+      lid_r[n] = face_row_inds[f];
+      lid_c[n] = face_col_inds[f];
+    }
+
+    ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[sf]);
   }
   ASSERT(!ierr);
 }

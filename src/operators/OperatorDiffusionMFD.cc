@@ -25,6 +25,7 @@
 #include "Op_Cell_Node.hh"
 #include "Op_Cell_FaceCell.hh"
 #include "Op_Face_Cell.hh"
+#include "Op_SurfaceFace_SurfaceCell.hh"
 
 #include "OperatorDefs.hh"
 #include "Operator_FaceCell.hh"
@@ -119,15 +120,15 @@ void OperatorDiffusionMFD::UpdateMatrices(
     }
   }
 
-  // add Newton-type corrections
-  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
-    if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
-      AddNewtonCorrectionCell_(flux, u);
-    } else {
-      Errors::Message msg("OperatorDiffusion: Newton Correction may only be applied to schemas that include CELL dofs.");
-      Exceptions::amanzi_throw(msg);
-    }
-  }
+  // // add Newton-type corrections
+  // if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
+  //   if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
+  //     AddNewtonCorrectionCell_(flux, u);
+  //   } else {
+  //     Errors::Message msg("OperatorDiffusion: Newton Correction may only be applied to schemas that include CELL dofs.");
+  //     Exceptions::amanzi_throw(msg);
+  //   }
+  // }
 }
 
 
@@ -139,8 +140,6 @@ void OperatorDiffusionMFD::UpdateMatricesNewtonCorrection(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
-  ASSERT(false);  // LKN: Change to old UpdateMatrix logic due to Richards.
-
   // add Newton-type corrections
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
     if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
@@ -803,7 +802,7 @@ void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
 
 
 /* ******************************************************************
-* Special assemble of elemental face-based matrices. 
+* This method is entirely unclear why it exists and should be documented.
 ****************************************************************** */
 void OperatorDiffusionMFD::ModifyMatrices(const CompositeVector& u)
 {
@@ -1096,8 +1095,13 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
       local_op_ = Teuchos::rcp(new Op_Cell_FaceCell(name, mesh_));
     } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_FACE |
             OPERATOR_SCHEMA_DOFS_CELL)) {
-      std::string name = "Diffusion: FACE_CELL";
-      local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+      if (plist.get<bool>("surface operator", false)) {
+        std::string name = "Diffusion: FACE_CELL Surface";
+        local_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name, mesh_));
+      } else {
+        std::string name = "Diffusion: FACE_CELL";
+        local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+      }
     } else {
       ASSERT(0);
     }
