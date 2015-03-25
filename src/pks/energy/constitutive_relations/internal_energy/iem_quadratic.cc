@@ -8,7 +8,7 @@ Author: Ethan Coon
 
 u = u0 + a(T - T_ref) + b(T - T_ref)^2 
 
-UNITS: J/{mol,kg}
+UNITS: MJ/{mol,kg}
 ------------------------------------------------------------------------- */
 
 #include "iem_quadratic.hh"
@@ -34,15 +34,15 @@ double IEMQuadratic::DInternalEnergyDT(double temp) {
 
 void IEMQuadratic::InitializeFromPlist_() {
   if (plist_.isParameter("quadratic u_0 [J/kg]")) {
-    u0_ = plist_.get<double>("quadratic u_0 [J/kg]");
-    ka_ = plist_.get<double>("quadratic a [J/kg-K]");
-    kb_ = plist_.get<double>("quadratic b [J/kg-K^2]");
+    u0_ = 1.e-6 * plist_.get<double>("quadratic u_0 [J/kg]");
+    ka_ = 1.e-6 * plist_.get<double>("quadratic a [J/kg-K]");
+    kb_ = 1.e-6 * plist_.get<double>("quadratic b [J/kg-K^2]");
     molar_basis_ = false;
 
   } else {
-    u0_ = plist_.get<double>("quadratic u_0 [J/mol]");
-    ka_ = plist_.get<double>("quadratic a [J/mol-K]");
-    kb_ = plist_.get<double>("quadratic b [J/mol-K^2]");
+    u0_ = 1.e-6 * plist_.get<double>("quadratic u_0 [J/mol]");
+    ka_ = 1.e-6 * plist_.get<double>("quadratic a [J/mol-K]");
+    kb_ = 1.e-6 * plist_.get<double>("quadratic b [J/mol-K^2]");
     molar_basis_ = true;
   }
 

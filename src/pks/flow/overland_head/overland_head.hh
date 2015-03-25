@@ -10,9 +10,11 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #define PK_FLOW_OVERLAND_HEAD_HH_
 
 #include "boundary_function.hh"
-#include "MatrixMFD.hh"
-#include "MatrixMFD_TPFA.hh"
 #include "upwinding.hh"
+
+#include "Operator.hh"
+#include "OperatorDiffusion.hh"
+#include "OperatorAccumulation.hh"
 
 #include "pk_factory.hh"
 #include "pk_physical_bdf_base.hh"
@@ -106,13 +108,14 @@ protected:
 
   virtual void FixBCsForOperator_(const Teuchos::Ptr<State>& S);
   virtual void FixBCsForPrecon_(const Teuchos::Ptr<State>& S);
-  virtual void FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S);
+  // virtual void FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S);
 
   virtual void ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
           const Teuchos::RCP<CompositeVector>& pres );
 
   // computational concerns in managing abs, rel perm
   // -- builds tensor K, along with faced-based Krel if needed by the rel-perm method
+  virtual bool UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<State>& S);
   virtual bool UpdatePermeabilityData_(const Teuchos::Ptr<State>& S);
 
   // physical methods
@@ -153,16 +156,16 @@ protected:
 
   // work data space
   Teuchos::RCP<Operators::Upwinding> upwinding_;
+  Teuchos::RCP<Operators::Upwinding> upwinding_dkdp_;
 
   // mathematical operators
-  Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD_TPFA> tpfa_preconditioner_;
+  Teuchos::RCP<Operators::Operator> matrix_; // pc in PKPhysicalBDFBase
+  Teuchos::RCP<Operators::OperatorDiffusion> matrix_diff_;
+  Teuchos::RCP<Operators::OperatorDiffusion> face_matrix_diff_;
+  Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
+  Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
+
   bool precon_used_;
-  // note PC is in PKPhysicalBDFBase
-
-  bool tpfa_;
-
-  // accumulation smoothing
 
   // boundary condition data
   Teuchos::RCP<Functions::BoundaryFunction> bc_zero_gradient_;

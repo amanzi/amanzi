@@ -21,6 +21,7 @@
 
 #include "constitutive_relations_eos_registration.hh"
 #include "constitutive_relations_surface_subsurface_fluxes_registration.hh"
+#include "constitutive_relations_generic_evaluators_registration.hh"
 
 #include "flow_constitutive_relations_overland_conductivity_registration.hh"
 #include "flow_constitutive_relations_porosity_registration.hh"
@@ -28,15 +29,15 @@
 #include "flow_constitutive_relations_wrm_registration.hh"
 #include "flow_icy_overland_registration.hh"
 #include "flow_overland_head_registration.hh"
-#include "flow_overland_registration.hh"
+// #include "flow_overland_registration.hh"
 #include "flow_permafrost_registration.hh"
 #include "flow_richards_registration.hh"
 
-#include "deform_constitutive_relations_porosity_registration.hh"
-#include "deform_prescribed_deformation_registration.hh"
+//#include "deform_constitutive_relations_porosity_registration.hh"
+//#include "deform_prescribed_deformation_registration.hh"
 
 #include "energy_advection_diffusion_registration.hh"
-#include "energy_constant_temperature_registration.hh"
+// #include "energy_constant_temperature_registration.hh"
 #include "energy_constitutive_relations_internal_energy_registration.hh"
 #include "energy_constitutive_relations_source_terms_registration.hh"
 #include "energy_constitutive_relations_thermal_conductivity_registration.hh"
@@ -45,9 +46,9 @@
 #include "energy_three_phase_registration.hh"
 
 #include "surface_balance_SEB_registration.hh"
-#include "BGC_registration.hh"
+// #include "BGC_registration.hh"
 
-#include "test_pks_registration.hh"
+// #include "test_pks_registration.hh"
 
 // #include "transport_passive_tracer_registration.hh"
 
@@ -60,10 +61,10 @@
 #if (BOOST_VERSION / 100 % 1000 >= 46)
  #include "boost/config.hpp"
  #ifndef BOOST_NO_FENV_H
-  #ifdef _GNU_SOURCE
+//  #ifdef _GNU_SOURCE
    #define AMANZI_USE_FENV
    #include "boost/detail/fenv.hpp"
-  #endif
+//  #endif
  #endif
 #endif
 
@@ -74,7 +75,8 @@ int main(int argc, char *argv[])
 {
 
 #ifdef AMANZI_USE_FENV
-  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+  //  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+  feraiseexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
 
 

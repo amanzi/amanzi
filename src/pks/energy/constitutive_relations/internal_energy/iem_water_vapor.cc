@@ -11,7 +11,7 @@ Internal energy model for water vapor, relative to water @237.15K
 See ATS process model documentation's permafrost physical properties
 documentation for details.
 
-UNITS: J/mol
+UNITS: MJ/mol
 ------------------------------------------------------------------------- */
 
 #include "iem_water_vapor.hh"
@@ -41,8 +41,8 @@ double IEMWaterVapor::DInternalEnergyDomega(double temp, double mol_frac_gas) {
 
 void IEMWaterVapor::InitializeFromPlist_() {
   molar_basis_ = plist_.get<bool>("molar-basis (otherwise, mass-basis)", true);
-  Cv_air_ = plist_.get<double>("heat capacity of air [J/(mol-K)]", 13.0);
-  heat_vaporization_ = plist_.get<double>("heat of vaporization of water [J/mol]", 4.065e4);
+  Cv_air_ = 1.e-6 * plist_.get<double>("heat capacity of air [J/(mol-K)]", 13.0);
+  heat_vaporization_ = 1.e-6 * plist_.get<double>("heat of vaporization of water [J/mol]", 4.065e4);
 };
 
 } // namespace

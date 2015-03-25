@@ -12,10 +12,10 @@
 
 #include "wrm_partition.hh"
 #include "boundary_function.hh"
-#include "MatrixMFD.hh"
-#include "Matrix_TPFA.hh"
-#include "MatrixMFD_Defs.hh"
 #include "upwinding.hh"
+
+#include "OperatorDiffusionWithGravity.hh"
+#include "OperatorAccumulation.hh"
 
 #include "pk_factory.hh"
 #include "pk_physical_bdf_base.hh"
@@ -23,9 +23,7 @@
 namespace Amanzi {
 
 // forward declarations
-class MPCCoupledFlowEnergy;
-class MPCDiagonalFlowEnergy;
-class MPCSurfaceSubsurfaceDirichletCoupler;
+class MPCSubsurface;
 class PredictorDelegateBCFlux;
 namespace WhetStone { class Tensor; }
 
@@ -76,7 +74,7 @@ public:
   virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up);
 
   // evaluating consistent faces for given BCs and cell values
-  virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
+  // virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
 
 protected:
   // Create of physical evaluators.
@@ -90,17 +88,18 @@ protected:
   // -- builds tensor K, along with faced-based Krel if needed by the rel-perm method
   virtual void SetAbsolutePermeabilityTensor_(const Teuchos::Ptr<State>& S);
   virtual bool UpdatePermeabilityData_(const Teuchos::Ptr<State>& S);
+  virtual bool UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<State>& S);
 
   // physical methods
   // -- diffusion term
   virtual void ApplyDiffusion_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& g);
 
-  virtual void AddVaporDiffusionResidual_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& g);
-  virtual void ComputeVaporDiffusionCoef(const Teuchos::Ptr<State>& S, 
-                                         Teuchos::RCP<CompositeVector>& vapor_diff, 
-                                         std::string var_name);
+  // virtual void AddVaporDiffusionResidual_(const Teuchos::Ptr<State>& S,
+  //         const Teuchos::Ptr<CompositeVector>& g);
+  // virtual void ComputeVaporDiffusionCoef(const Teuchos::Ptr<State>& S, 
+  //                                        Teuchos::RCP<CompositeVector>& vapor_diff, 
+  //                                        std::string var_name);
  
 
 
@@ -113,29 +112,29 @@ protected:
   virtual void AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h);
   
   // -- gravity contributions to matrix or vector
-  virtual void AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
-          const Teuchos::Ptr<const CompositeVector>& rel_perm,
-          const Teuchos::Ptr<const CompositeVector>& rho,
-          const Teuchos::Ptr<Operators::MatrixMFD>& matrix);
+  // virtual void AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
+  //         const Teuchos::Ptr<const CompositeVector>& rel_perm,
+  //         const Teuchos::Ptr<const CompositeVector>& rho,
+  //         const Teuchos::Ptr<Operators::MatrixMFD>& matrix);
 
-  virtual void AddGravityFluxes_FV_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
-          const Teuchos::Ptr<const CompositeVector>& rel_perm,
-          const Teuchos::Ptr<const CompositeVector>& rho,
-          const Teuchos::Ptr<Operators::Matrix_TPFA>& matrix);
+  // virtual void AddGravityFluxes_FV_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
+  //         const Teuchos::Ptr<const CompositeVector>& rel_perm,
+  //         const Teuchos::Ptr<const CompositeVector>& rho,
+  //         const Teuchos::Ptr<Operators::Matrix_TPFA>& matrix);
 
-  virtual void AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
-          const Teuchos::Ptr<const CompositeVector>& rel_perm,
-          const Teuchos::Ptr<const CompositeVector>& rho,
-          const Teuchos::Ptr<CompositeVector>& darcy_flux);
+  // virtual void AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
+  //         const Teuchos::Ptr<const CompositeVector>& rel_perm,
+  //         const Teuchos::Ptr<const CompositeVector>& rho,
+  //         const Teuchos::Ptr<CompositeVector>& darcy_flux);
 
   // Nonlinear version of CalculateConsistentFaces()
-  virtual void CalculateConsistentFacesForInfiltration_(
-      const Teuchos::Ptr<CompositeVector>& u);
-  virtual bool ModifyPredictorConsistentFaces_(double h, Teuchos::RCP<TreeVector> u);
+  // virtual void CalculateConsistentFacesForInfiltration_(
+  //     const Teuchos::Ptr<CompositeVector>& u);
+  // virtual bool ModifyPredictorConsistentFaces_(double h, Teuchos::RCP<TreeVector> u);
   virtual bool ModifyPredictorWC_(double h, Teuchos::RCP<TreeVector> u);
   virtual bool ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u);
 
-  virtual void PreconWC_(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  // virtual void PreconWC_(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
   virtual double BoundaryValue(Teuchos::RCP<const Amanzi::CompositeVector> solution, int face_id);
 
@@ -160,7 +159,6 @@ protected:
   bool explicit_source_;
   bool precon_used_;
   bool clobber_surf_kr_;
-  bool tpfa_;
   
   // coupling terms
   bool coupled_to_surface_via_head_; // surface-subsurface Dirichlet coupler
@@ -174,14 +172,16 @@ protected:
   // permeability
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;  // absolute permeability
   Teuchos::RCP<Operators::Upwinding> upwinding_;
+  Teuchos::RCP<Operators::Upwinding> upwinding_deriv_;
   Teuchos::RCP<FlowRelations::WRMPartition> wrms_;
   bool upwind_from_prev_flux_;
 
   // mathematical operators
-  Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD> matrix_vapor_;
-  //Teuchos::RCP<Operators::MatrixMFD> matrix_vapor_en_;
-  Teuchos::RCP<Operators::MatrixMFD> face_matrix_;
+  Teuchos::RCP<Operators::Operator> matrix_; // pc in PKPhysicalBDFBase
+  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> matrix_diff_;
+  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> preconditioner_diff_;
+  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> face_matrix_diff_;
+  Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
 
   // residual vector for vapor diffusion
   Teuchos::RCP<CompositeVector> res_vapor;
@@ -208,9 +208,6 @@ protected:
   // is vapor turned on
   bool vapor_diffusion_;
 
-  // using constraint equations scaled by rel perm?
-  bool scaled_constraint_;
-
   // scale for perm
   double perm_scale_;
 
@@ -219,9 +216,7 @@ protected:
   static RegisteredPKFactory<Richards> reg_;
 
   // Richards has a friend in couplers...
-  friend class Amanzi::MPCCoupledFlowEnergy;
-  friend class Amanzi::MPCDiagonalFlowEnergy;
-  friend class Amanzi::MPCSurfaceSubsurfaceDirichletCoupler;
+  friend class Amanzi::MPCSubsurface;
 
 };
 

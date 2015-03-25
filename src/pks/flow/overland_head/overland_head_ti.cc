@@ -9,9 +9,9 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "Epetra_FECrsMatrix.h"
 #include "EpetraExt_RowMatrixOut.h"
 #include "boost/math/special_functions/fpclassify.hpp"
-#include "MatrixMFD_TPFA.hh"
 
 #include "overland_head.hh"
+#include "Op.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -146,7 +146,7 @@ void OverlandHeadFlow::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teu
 #endif
 
   // apply the preconditioner
-  mfd_preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
+  preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
 
 
 #if DEBUG_FLAG
@@ -190,12 +190,19 @@ void OverlandHeadFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   // -- update the rel perm according to the boundary info and upwinding
   // -- scheme of choice
   UpdatePermeabilityData_(S_next_.ptr());
+  UpdatePermeabilityDerivativeData_(S_next_.ptr());
+
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_overland_conductivity");
+  Teuchos::RCP<const CompositeVector> dcond =
+    S_next_->GetFieldData("dupwind_overland_conductivity_dponded_depth");
 
   // 1.b: Create all local matrices.
-  mfd_preconditioner_->CreateMFDstiffnessMatrices(cond.ptr());
-  mfd_preconditioner_->CreateMFDrhsVectors();
+  preconditioner_->Init();
+  preconditioner_diff_->Setup(cond, Teuchos::null);
+  Teuchos::RCP<const CompositeVector> pres_elev = S_next_->GetFieldData("pres_elev");
+  preconditioner_diff_->UpdateMatrices(Teuchos::null, pres_elev.ptr());
+
 
   // 2. Accumulation shift
   //    The desire is to keep this matrix invertible for pressures less than
@@ -224,7 +231,7 @@ void OverlandHeadFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   db_->WriteVector("    dh_dp", S_next_->GetFieldData("dponded_depth_bar_dsurface_pressure").ptr());
 
   // -- pull out other needed data
-  std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
+  std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
   unsigned int ncells = Acc_cells.size();
   for (unsigned int c=0; c!=ncells; ++c) {
     Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] / h;
@@ -233,58 +240,62 @@ void OverlandHeadFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   // 3. Assemble and precompute the Schur complement for inversion.
   // 3.a: Patch up BCs in the case of zero conductivity
   FixBCsForPrecon_(S_next_.ptr());
-  mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
-  // 3.c: Add in full Jacobian terms
-  if (tpfa_ && full_jacobian_) {
-    if (vo_->os_OK(Teuchos::VERB_EXTREME))
-      *vo_->os() << "    including full Jacobian terms" << std::endl;
+  // // 3.c: Add in full Jacobian terms
+  // if (tpfa_ && full_jacobian_) {
+  //   if (vo_->os_OK(Teuchos::VERB_EXTREME))
+  //     *vo_->os() << "    including full Jacobian terms" << std::endl;
 
-    Teuchos::RCP<const CompositeVector> depth =
-        S_next_->GetFieldData("ponded_depth");
-    Teuchos::RCP<const CompositeVector> pres_elev =
-        S_next_->GetFieldData("pres_elev");
+  //   Teuchos::RCP<const CompositeVector> depth =
+  //       S_next_->GetFieldData("ponded_depth");
+  //   Teuchos::RCP<const CompositeVector> pres_elev =
+  //       S_next_->GetFieldData("pres_elev");
 
-    // Update conductivity.  Note the change of variables from pressure to
-    // height.
-    // -- Krel_face gets conductivity
-    S_next_->GetFieldEvaluator("overland_conductivity")
-        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-    Teuchos::RCP<const CompositeVector> cond =
-        S_next_->GetFieldData("overland_conductivity");
-    Teuchos::RCP<const CompositeVector> dcond_dp =
-        S_next_->GetFieldData("doverland_conductivity_dsurface_pressure");
-    CompositeVector dcond_dh(*dcond_dp);
-    dcond_dh.ViewComponent("cell",false)->ReciprocalMultiply(1., dh_dp,
-            *dcond_dp->ViewComponent("cell",false), 0.);
+  //   // Update conductivity.  Note the change of variables from pressure to
+  //   // height.
+  //   // -- Krel_face gets conductivity
+  //   S_next_->GetFieldEvaluator("overland_conductivity")
+  //       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+  //   Teuchos::RCP<const CompositeVector> cond =
+  //       S_next_->GetFieldData("overland_conductivity");
+  //   Teuchos::RCP<const CompositeVector> dcond_dp =
+  //       S_next_->GetFieldData("doverland_conductivity_dponded_depth");
+  //   CompositeVector dcond_dh(*dcond_dp);
+  //   dcond_dh.ViewComponent("cell",false)->ReciprocalMultiply(1., dh_dp,
+  //           *dcond_dp->ViewComponent("cell",false), 0.);
 
-    // -- Add in the Jacobian
-    tpfa_preconditioner_->AnalyticJacobian(*upwinding_,
-                                           S_next_.ptr(), "pres_elev",
-                                           dcond_dh, bc_markers_,
-                                           bc_values_);
-  }
+  //   // -- Add in the Jacobian
+  //   tpfa_preconditioner_->AnalyticJacobian(*upwinding_,
+  //                                          S_next_.ptr(), "pres_elev",
+  //                                          dcond_dh, bc_markers_,
+  //                                          bc_values_);
+  // }
 
+  preconditioner_diff_->ApplyBCs(true);
+  
   // 3.d: Rescale to use as a pressure matrix if used in a coupler
   if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_flux_) {
-    ASSERT(tpfa_);
-    ASSERT(tpfa_preconditioner_ != Teuchos::null);
-    Teuchos::RCP<Epetra_FECrsMatrix> Spp = tpfa_preconditioner_->TPFA();
-
     // Scale Spp by dh/dp (h, NOT h_bar), clobbering rows with p < p_atm
     std::string pd_key = smoothed_ponded_accumulation_ ? "smoothed_ponded_depth" : "ponded_depth";
     std::string pd_deriv_key = "d"+pd_key+"_d"+key_;
     S_next_->GetFieldEvaluator(pd_key)
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-    const Epetra_MultiVector& dh0_dp = *S_next_->GetFieldData(pd_deriv_key)
-        ->ViewComponent("cell",false);
-    int ierr = Spp->RightScale(*dh0_dp(0));
+    Teuchos::RCP<const CompositeVector> dh0_dp = S_next_->GetFieldData(pd_deriv_key);
+    const Epetra_MultiVector& dh0_dp_c = *dh0_dp->ViewComponent("cell",false);
+    
+    preconditioner_->Rescale(*dh0_dp);
+    
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
       *vo_->os() << "  Right scaling TPFA" << std::endl;
-    db_->WriteVector("    dh_dp", S_next_->GetFieldData(pd_deriv_key).ptr());
-    ASSERT(!ierr);
+    db_->WriteVector("    dh_dp", dh0_dp.ptr());
   }
 
+
+  if (precon_used_) {
+    preconditioner_->AssembleMatrix();
+    preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
+  }      
+  
   /*
   // dump the schur complement
   Teuchos::RCP<Epetra_FECrsMatrix> sc = mfd_preconditioner_->Schur();
@@ -312,8 +323,6 @@ double OverlandHeadFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
   Teuchos::RCP<const CompositeVector> res = du->Data();
   const Epetra_MultiVector& res_c = *res->ViewComponent("cell",false);
-  const Epetra_MultiVector& res_f = *res->ViewComponent("face",false);
-  const Epetra_MultiVector& height_f = *u->Data()->ViewComponent("face",false);
   const Epetra_MultiVector& cv = *S_next_->GetFieldData("surface_cell_volume")
       ->ViewComponent("cell",false);
   double h = S_next_->time() - S_inter_->time();
@@ -331,41 +340,20 @@ double OverlandHeadFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     }
   }
 
-  // Face error given by mismatch of flux, so relative to flux.
-  double enorm_face(-1.);
-  int bad_face = -1;
-  unsigned int nfaces = res_f.MyLength();
-  for (unsigned int f=0; f!=nfaces; ++f) {
-    AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
-    double tmp = std::abs(h*res_f[0][f])  / (atol_ * .01 * cv[0][cells[0]] * 55000. + rtol_*std::abs(wc[0][cells[0]]));
-    if (tmp > enorm_face) {
-      enorm_face = tmp;
-      bad_face = f;
-    }
-  }
-
   // Write out Inf norms too.
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-    double infnorm_c(0.), infnorm_f(0.);
+    double infnorm_c(0.);
     res_c.NormInf(&infnorm_c);
-    res_f.NormInf(&infnorm_f);
-
-    ENorm_t err_f, err_c;
-    ENorm_t l_err_f, l_err_c;
-    l_err_f.value = enorm_face;
-    l_err_f.gid = res_f.Map().GID(bad_face);
+    ENorm_t err_c;
+    ENorm_t l_err_c;
     l_err_c.value = enorm_cell;
     l_err_c.gid = res_c.Map().GID(bad_cell);
 
     MPI_Allreduce(&l_err_c, &err_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
-    MPI_Allreduce(&l_err_f, &err_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
-
     *vo_->os() << "ENorm (cells) = " << err_c.value << "[" << err_c.gid << "] (" << infnorm_c << ")" << std::endl;
-    *vo_->os() << "ENorm (faces) = " << err_f.value << "[" << err_f.gid << "] (" << infnorm_f << ")" << std::endl;
   }
 
-  double enorm_val(std::max<double>(enorm_face, enorm_cell));
+  double enorm_val(enorm_cell);
   double buf = enorm_val;
   MPI_Allreduce(&buf, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
   return enorm_val;

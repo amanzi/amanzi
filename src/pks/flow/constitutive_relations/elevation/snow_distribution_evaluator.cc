@@ -72,7 +72,7 @@ void SnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(mesh_name_);
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    std::vector<Operators::MatrixBC> bc_markers(nfaces, Operators::MATRIX_BC_NULL);
+    std::vector<Operators::MatrixBC> bc_markers(nfaces, Operators::OPERATOR_BC_NONE);
     std::vector<double> bc_values(nfaces, 0.0);
     
     Teuchos::RCP<CompositeVector> hz = Teuchos::rcp(new CompositeVector(*result));

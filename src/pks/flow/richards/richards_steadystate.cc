@@ -41,19 +41,19 @@ void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const Tree
   // Create the preconditioner
   Teuchos::RCP<const CompositeVector> rel_perm =
       S_next_->GetFieldData("numerical_rel_perm");
-  mfd_preconditioner_->CreateMFDstiffnessMatrices(rel_perm.ptr());
-  mfd_preconditioner_->CreateMFDrhsVectors();
-
-  // update with gravity fluxes
-  Teuchos::RCP<const CompositeVector> rho =
-      S_next_->GetFieldData("mass_density_liquid");
-  Teuchos::RCP<const Epetra_Vector> gvec =
-      S_next_->GetConstantVectorData("gravity");
-  AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), mfd_preconditioner_.ptr());
+  preconditioner_->Init();
+  preconditioner_diff_->Setup(rel_perm, Teuchos::null);
+  preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // Assemble and precompute the Schur complement for inversion.
-  mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  preconditioner_diff_->ApplyBCs(true);
 
+  if (precon_used_) {
+    preconditioner_->AssembleMatrix();
+    preconditioner_->InitPreconditioner("preconditioner", plist_->sublist("Diffusion PC"));
+  }      
+  
+  
   // // TEST
   // if (S_next_->cycle() == 0 && niter_ == 0) {
   //   // Dump the Schur complement
@@ -147,7 +147,7 @@ void RichardsSteadyState::Functional(double t_old, double t_new, Teuchos::RCP<Tr
   solution_to_state(*u_new, S_next_);
   Teuchos::RCP<CompositeVector> u = u_new->Data();
 
-  if (dynamic_mesh_) matrix_->CreateMFDmassMatrices(K_.ptr());
+  if (dynamic_mesh_) matrix_diff_->Setup(K_);
 
 #if DEBUG_FLAG
   if (vo_->os_OK(Teuchos::VERB_HIGH))

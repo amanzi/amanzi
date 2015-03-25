@@ -80,9 +80,8 @@ void EnthalpyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
       int ncomp = result->size(*comp, false);
       for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] += pres_v[0][i]/nl_v[0][i];
-        if (vo_->os_OK(Teuchos::VERB_EXTREME))
-          *vo_->os() << "h(p="<< pres_v[0][i] << ", n=" << nl_v[0][i] << ", u=" << (*u_l)("cell",0,i) << ") = " << result_v[0][i] << std::endl;
+        // 1.e-6 converts to MJoules
+        result_v[0][i] += 1.e-6*pres_v[0][i]/nl_v[0][i];
       }
     }
   }
@@ -92,7 +91,44 @@ void EnthalpyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 void EnthalpyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
   // not implemented
-  result->PutScalar(0.);
+  if (wrt_key == ie_key_) {
+    result->PutScalar(1.);
+  } else if (wrt_key ==pres_key_) {
+    ASSERT(include_work_);
+    
+    Teuchos::RCP<const CompositeVector> n_l = S->GetFieldData(dens_key_);
+
+    for (CompositeVector::name_iterator comp=result->begin();
+         comp!=result->end(); ++comp) {
+      const Epetra_MultiVector& nl_v = *n_l->ViewComponent(*comp,false);
+      Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
+
+      int ncomp = result->size(*comp, false);
+      for (int i=0; i!=ncomp; ++i) {
+        // 1.e-6 converts to MJoules
+        result_v[0][i] = 1.e-6/nl_v[0][i];
+      }
+    }
+
+  } else if (wrt_key ==dens_key_) {
+    ASSERT(include_work_);
+    
+    Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
+    Teuchos::RCP<const CompositeVector> n_l = S->GetFieldData(dens_key_);
+
+    for (CompositeVector::name_iterator comp=result->begin();
+         comp!=result->end(); ++comp) {
+      const Epetra_MultiVector& nl_v = *n_l->ViewComponent(*comp,false);
+      const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp,false);
+      Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
+
+      int ncomp = result->size(*comp, false);
+      for (int i=0; i!=ncomp; ++i) {
+        // 1.e-6 converts to MJoules
+        result_v[0][i] = -1.e-6*pres_v[0][i]/std::pow(nl_v[0][i], 2);
+      }
+    }
+  }
 };
 
 

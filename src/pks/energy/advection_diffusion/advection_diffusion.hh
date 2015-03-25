@@ -16,7 +16,10 @@ us to the air-water system.
 
 #include "pk_factory.hh"
 #include "advection.hh"
-#include "MatrixMFD.hh"
+#include "Operator.hh"
+#include "OperatorDiffusion.hh"
+#include "OperatorAdvection.hh"
+#include "OperatorAccumulation.hh"
 #include "pk_physical_bdf_base.hh"
 
 namespace Amanzi {
@@ -43,7 +46,9 @@ public:
   virtual void initialize(const Teuchos::Ptr<State>& S);
 
   // -- Commit any secondary (dependent) variables.
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {}
+  virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {
+    PKPhysicalBDFBase::commit_state(dt, S);
+  }
 
   // -- Calculate any diagnostics prior to doing vis
   virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {}
@@ -73,16 +78,21 @@ private:
   void ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature);
 
   // misc setup information
-  Teuchos::ParameterList energy_plist_;
   double dt_;
+  bool implicit_advection_;
 
   // boundary conditions
   Teuchos::RCP<Functions::BoundaryFunction> bc_temperature_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
 
-  // operators
-  Teuchos::RCP<Operators::Advection> advection_;
-  Teuchos::RCP<Operators::MatrixMFD> matrix_;
+
+  // mathematical operators
+  Teuchos::RCP<Operators::OperatorDiffusion> matrix_diff_;
+  Teuchos::RCP<Operators::OperatorAdvection> matrix_adv_;
+
+  Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
+  Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
+  Teuchos::RCP<Operators::OperatorAdvection> preconditioner_adv_;
 
   // time integration
   double atol_;

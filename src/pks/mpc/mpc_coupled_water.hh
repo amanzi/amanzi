@@ -4,8 +4,7 @@
 #ifndef PKS_MPC_COUPLED_WATER_HH_
 #define PKS_MPC_COUPLED_WATER_HH_
 
-#include "MatrixMFD_Surf.hh"
-#include "MatrixMFD_TPFA.hh"
+#include "Operator.hh"
 #include "mpc_delegate_water.hh"
 #include "pk_physical_bdf_base.hh"
 
@@ -48,9 +47,9 @@ class MPCCoupledWater : public StrongMPC<PKPhysicalBDFBase> {
                        Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
 
  protected:
-  void
-  UpdateConsistentFaceCorrectionWater_(const Teuchos::RCP<const TreeVector>& u,
-          const Teuchos::RCP<TreeVector>& Pu);
+  // void
+  // UpdateConsistentFaceCorrectionWater_(const Teuchos::RCP<const TreeVector>& u,
+  //         const Teuchos::RCP<TreeVector>& Pu);
 
  protected:
 
@@ -63,9 +62,9 @@ class MPCCoupledWater : public StrongMPC<PKPhysicalBDFBase> {
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_;
 
   // coupled preconditioner
-  Teuchos::RCP<CompositeMatrix> lin_solver_;
-  Teuchos::RCP<Operators::MatrixMFD_Surf> precon_;
-  Teuchos::RCP<Operators::MatrixMFD_TPFA> precon_surf_;
+  Teuchos::RCP<Operators::Operator> precon_;
+  Teuchos::RCP<Operators::Operator> precon_surf_;
+  Teuchos::RCP<Operators::Operator> lin_solver_;
 
   // Water delegate
   Teuchos::RCP<MPCDelegateWater> water_;

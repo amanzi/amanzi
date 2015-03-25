@@ -19,14 +19,14 @@ add_library(pk_bases
 install(TARGETS pk_bases DESTINATION lib)
 
 add_subdirectory(bc_factory)
-add_subdirectory(mpc)
-add_subdirectory(test_pks)
+#add_subdirectory(test_pks)
 add_subdirectory(energy)
 add_subdirectory(flow)
 #add_subdirectory(transport)
-add_subdirectory(deform)
+#add_subdirectory(deform)
 add_subdirectory(surface_balance)
-add_subdirectory(biogeochemistry)
+#add_subdirectory(biogeochemistry)
+add_subdirectory(mpc)
 
 
 

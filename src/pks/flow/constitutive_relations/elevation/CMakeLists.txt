@@ -14,10 +14,10 @@ add_library(flow_relations_elevation
   elevation_evaluator.cc
   meshed_elevation_evaluator.cc
   standalone_elevation_evaluator.cc
-  snow_distribution_evaluator.cc
-  explicit_snow_distribution_evaluator.cc
-  implicit_snow_distribution_evaluator.cc
-  implicit_snow_distribution_uwflux_evaluator.cc
+#  snow_distribution_evaluator.cc
+#  explicit_snow_distribution_evaluator.cc
+#  implicit_snow_distribution_evaluator.cc
+#  implicit_snow_distribution_uwflux_evaluator.cc
   snow_skin_potential_evaluator.cc
   )
 

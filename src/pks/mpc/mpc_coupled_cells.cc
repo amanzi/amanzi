@@ -36,9 +36,8 @@
 
 #include "LinearOperatorFactory.hh"
 #include "FieldEvaluator.hh"
-#include "MatrixMFD_Factory.hh"
-#include "MatrixMFD.hh"
-#include "MatrixMFD_Coupled.hh"
+#include "Operator.hh"
+#include "TreeOperator.hh"
 
 #include "mpc_coupled_cells.hh"
 
@@ -62,27 +61,36 @@ void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
   // set up debugger
   db_ = Teuchos::rcp(new Debugger(mesh_, name_, *plist_));
 
-  // Create the precon
-  Teuchos::ParameterList& pc_sublist = plist_->sublist("Coupled PC");
-  mfd_preconditioner_ = Operators::CreateMatrixMFD_Coupled(pc_sublist, mesh_);
 
-  // Set the sub-blocks from the sub-PK's preconditioners.
-  Teuchos::RCP<Operators::MatrixMFD> pcA = sub_pks_[0]->preconditioner();
-  Teuchos::RCP<Operators::MatrixMFD> pcB = sub_pks_[1]->preconditioner();
-  mfd_preconditioner_->SetSubBlocks(pcA, pcB);
+  // Get the sub-blocks from the sub-PK's preconditioners.
+  Teuchos::RCP<Operators::Operator> pcA = sub_pks_[0]->preconditioner();
+  Teuchos::RCP<Operators::Operator> pcB = sub_pks_[1]->preconditioner();
 
+  // Create the combined operator
+  Teuchos::RCP<TreeVectorSpace> tvs = Teuchos::rcp(new TreeVectorSpace());
+  tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(pcA->DomainMap()))));
+  tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(pcB->DomainMap()))));
+
+  preconditioner_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+  preconditioner_->SetOperatorBlock(0, 0, pcA);
+  preconditioner_->SetOperatorBlock(1, 1, pcB);
+  
   // setup and initialize the preconditioner
-  mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
-  mfd_preconditioner_->InitPreconditioner();
+  preconditioner_->SymbolicAssembleMatrix();
+  Teuchos::ParameterList& pc_sublist = plist_->sublist("Coupled PC");
+  preconditioner_->InitPreconditioner("preconditioner", pc_sublist);
 
   // setup and initialize the linear solver for the preconditioner
   if (plist_->isSublist("Coupled Solver")) {
     Teuchos::ParameterList linsolve_sublist = plist_->sublist("Coupled Solver");
-    AmanziSolvers::LinearOperatorFactory<TreeMatrix,TreeVector,TreeVectorSpace> fac;
-    linsolve_preconditioner_ = fac.Create(linsolve_sublist, mfd_preconditioner_);
+    AmanziSolvers::LinearOperatorFactory<Operators::TreeOperator,TreeVector,TreeVectorSpace> fac;
+    linsolve_preconditioner_ = fac.Create(linsolve_sublist, preconditioner_);
   } else {
-    linsolve_preconditioner_ = mfd_preconditioner_;
+    linsolve_preconditioner_ = preconditioner_;
   }
+
+  // create coupling blocks and push them into the preconditioner...
+  // TODO --etc
 }
 
 
@@ -91,26 +99,27 @@ void MPCCoupledCells::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVect
         double h) {
   StrongMPC<PKPhysicalBDFBase>::UpdatePreconditioner(t,up,h);
 
-  // Update and get the off-diagonal terms.
-  if (!decoupled_) {
-    S_next_->GetFieldEvaluator(A_key_)
-        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, y2_key_);
-    S_next_->GetFieldEvaluator(B_key_)
-        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, y1_key_);
-    Teuchos::RCP<const CompositeVector> dA_dy2 = S_next_->GetFieldData(dA_dy2_key_);
-    Teuchos::RCP<const CompositeVector> dB_dy1 = S_next_->GetFieldData(dB_dy1_key_);
+  // // Update and get the off-diagonal terms.
+  // if (!decoupled_) {
+  //   S_next_->GetFieldEvaluator(A_key_)
+  //       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, y2_key_);
+  //   S_next_->GetFieldEvaluator(B_key_)
+  //       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, y1_key_);
+  //   Teuchos::RCP<const CompositeVector> dA_dy2 = S_next_->GetFieldData(dA_dy2_key_);
+  //   Teuchos::RCP<const CompositeVector> dB_dy1 = S_next_->GetFieldData(dB_dy1_key_);
 
-    // write for debugging
-    std::vector<std::string> vnames;
-    vnames.push_back("  dwc_dT"); vnames.push_back("  de_dp"); 
-    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-    vecs.push_back(dA_dy2.ptr()); vecs.push_back(dB_dy1.ptr());
-    db_->WriteVectors(vnames, vecs, false);
+  //   // write for debugging
+  //   std::vector<std::string> vnames;
+  //   vnames.push_back("  dwc_dT"); vnames.push_back("  de_dp"); 
+  //   std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+  //   vecs.push_back(dA_dy2.ptr()); vecs.push_back(dB_dy1.ptr());
+  //   db_->WriteVectors(vnames, vecs, false);
 
-    // scale by 1/h
-    mfd_preconditioner_->SetOffDiagonals(dA_dy2->ViewComponent("cell",false),
-            dB_dy1->ViewComponent("cell",false), 1./h);
-  }
+  //   // scale by 1/h
+  //   mfd_preconditioner_->SetOffDiagonals(dA_dy2->ViewComponent("cell",false),
+  //           dB_dy1->ViewComponent("cell",false), 1./h);
+  // }
+  // TODO --etc
 }
 
 

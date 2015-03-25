@@ -18,7 +18,7 @@ domains/meshes of PKPhysicalBase and BDF methods of PKBDFBase.
 #include "pk_bdf_base.hh"
 #include "pk_physical_base.hh"
 
-#include "MatrixMFD.hh"
+#include "Operator.hh"
 
 namespace Amanzi {
 
@@ -49,19 +49,21 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
   virtual void ChangedSolution();
 
   // PC operator access
-  Teuchos::RCP<Operators::MatrixMFD> preconditioner() { return mfd_preconditioner_; }
+  Teuchos::RCP<Operators::Operator> preconditioner() { return preconditioner_; }
 
   // BC access
-  std::vector<Operators::MatrixBC>& bc_markers() { return bc_markers_; }
+  std::vector<int>& bc_markers() { return bc_markers_; }
   std::vector<double>& bc_values() { return bc_values_; }
+  Teuchos::RCP<Operators::BCs> BCs() { return bc_; }
 
  protected:
   // PC
-  Teuchos::RCP<Operators::MatrixMFD> mfd_preconditioner_;
+  Teuchos::RCP<Operators::Operator> preconditioner_;
 
   // BCs
-  std::vector<Operators::MatrixBC> bc_markers_;
+  std::vector<int> bc_markers_;
   std::vector<double> bc_values_;
+  Teuchos::RCP<Operators::BCs> bc_;
 
   // error criteria
   double atol_, rtol_;

@@ -35,12 +35,11 @@ d_temperature and d_energy / d_pressure.
 #define MPC_COUPLED_CELLS_HH_
 
 #include "pk_physical_bdf_base.hh"
-#include "MatrixMFD_Coupled.hh"
 #include "strong_mpc.hh"
 
 namespace Amanzi {
 
-namespace Operators { class MatrixMFD_Coupled; }
+namespace Operators { class TreeOperator; }
 
 class MPCCoupledCells : public StrongMPC<PKPhysicalBDFBase> {
  public:
@@ -66,8 +65,8 @@ class MPCCoupledCells : public StrongMPC<PKPhysicalBDFBase> {
   Key y2_key_;
   Key B_key_;
   Key y1_key_;
-  Teuchos::RCP<Operators::MatrixMFD_Coupled> mfd_preconditioner_;
-  Teuchos::RCP<TreeMatrix> linsolve_preconditioner_;
+  Teuchos::RCP<Operators::TreeOperator> preconditioner_;
+  Teuchos::RCP<Operators::TreeOperator> linsolve_preconditioner_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   bool decoupled_;

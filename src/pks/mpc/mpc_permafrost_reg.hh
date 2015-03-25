@@ -20,10 +20,10 @@ subtree:
   permafrost  icy_overland    threephase    surface_ice
 
 ------------------------------------------------------------------------- */
-#include "mpc_permafrost3.hh"
+#include "mpc_permafrost4.hh"
 
 namespace Amanzi {
 
-RegisteredPKFactory<MPCPermafrost3> MPCPermafrost3::reg_("new permafrost model no SC");
+RegisteredPKFactory<MPCPermafrost4> MPCPermafrost4::reg_("permafrost model");
 
 } // namespace

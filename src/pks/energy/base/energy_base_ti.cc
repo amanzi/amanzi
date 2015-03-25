@@ -11,10 +11,10 @@ Author: Ethan Coon
 #include <boost/test/floating_point_comparison.hpp>
 
 #include "Debugger.hh"
-
 #include "boundary_function.hh"
 #include "FieldEvaluator.hh"
 #include "energy_base.hh"
+#include "Op.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -85,11 +85,11 @@ void EnergyBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector>
   db_->WriteVector("res (acc)", res.ptr());
 #endif
 
-  // advection term, implicit by default, options for explicit
-  if (explicit_advection_ && niter_ <= explicit_advection_iter_) {
-    AddAdvection_(S_inter_.ptr(), res.ptr(), true);
-  } else {
+  // advection term
+  if (implicit_advection_) {
     AddAdvection_(S_next_.ptr(), res.ptr(), true);
+  } else {
+    AddAdvection_(S_inter_.ptr(), res.ptr(), true);
   }
 #if DEBUG_FLAG
   db_->WriteVector("res (adv)", res.ptr());
@@ -129,7 +129,7 @@ void EnergyBase::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::
 #endif
 
   // apply the preconditioner
-  mfd_preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
+  preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
 
 #if DEBUG_FLAG
   db_->WriteVector("PC*T_res", Pu->Data().ptr(), true);
@@ -160,8 +160,9 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   Teuchos::RCP<const CompositeVector> conductivity =
       S_next_->GetFieldData(uw_conductivity_key_);
 
-  mfd_preconditioner_->CreateMFDstiffnessMatrices(conductivity.ptr());
-  mfd_preconditioner_->CreateMFDrhsVectors();
+  preconditioner_->Init();
+  preconditioner_diff_->Setup(conductivity, Teuchos::null);
+  preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // update with accumulation terms
   // -- update the accumulation derivatives, de/dT
@@ -175,7 +176,7 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 #endif
 
   // -- get the matrices/rhs that need updating
-  std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
+  std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
 
   // -- update the diagonal
   unsigned int ncells = de_dT.MyLength();
@@ -198,8 +199,24 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   // -- update preconditioner with source term derivatives if needed
   AddSourcesToPrecon_(S_next_.ptr(), h);
 
+  // update with advection terms
+  if (implicit_advection_ && implicit_advection_in_pc_) {
+    Teuchos::RCP<const CompositeVector> darcy_flux = S_next_->GetFieldData("darcy_flux");
+    S_next_->GetFieldEvaluator(enthalpy_key_)
+        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+    Teuchos::RCP<const CompositeVector> dhdT = S_next_->GetFieldData(denthalpy_key_);
+    preconditioner_adv_->Setup(*darcy_flux);
+    preconditioner_adv_->UpdateMatrices(*darcy_flux, *dhdT);
+    ApplyDirichletBCsToEnthalpy_(S_next_.ptr());
+    preconditioner_adv_->ApplyBCs(bc_adv_, true);
+  }
+
   // Apply boundary conditions.
-  mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  preconditioner_diff_->ApplyBCs(true);
+  if (precon_used_) {
+    preconditioner_->AssembleMatrix();
+    preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
+  }
 };
 
 
@@ -215,7 +232,6 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   // Collect additional data.
   Teuchos::RCP<const CompositeVector> res = du->Data();
   const Epetra_MultiVector& res_c = *res->ViewComponent("cell",false);
-  const Epetra_MultiVector& res_f = *res->ViewComponent("face",false);
   const Epetra_MultiVector& cv = *S_next_->GetFieldData(cell_vol_key_)
       ->ViewComponent("cell",false);
   const CompositeVector& temp = *u->Data();
@@ -227,50 +243,65 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   int bad_cell = -1;
   unsigned int ncells = res_c.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
-    double tmp = std::abs(h*res_c[0][c]) / (atol_ * cv[0][c]*2.e6 + rtol_* std::abs(energy[0][c]));
+    double tmp = std::abs(h*res_c[0][c]) / (atol_ * cv[0][c] + rtol_* std::abs(energy[0][c]));
     if (tmp > enorm_cell) {
       enorm_cell = tmp;
       bad_cell = c;
     }
   }
 
-  // Face error is mismatch in flux??
+  bool is_face = res->HasComponent("face");
   double enorm_face(-1.);
-  int bad_face = -1;
-  unsigned int nfaces = res_f.MyLength();
-  for (unsigned int f=0; f!=nfaces; ++f) {
-    AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
-    //    double tmp = flux_tol_ * std::abs(res_f[0][f]) / (atol_+rtol_*273.15);
-    double tmp = flux_tol_ * std::abs(h*res_f[0][f])  / (atol_ * cv[0][cells[0]]*2.e6 + rtol_* std::abs(energy[0][cells[0]]));
-    if (tmp > enorm_face) {
-      enorm_face = tmp;
-      bad_face = f;
+  if (is_face) {
+    // Face error is mismatch in flux??
+    const Epetra_MultiVector& res_f = *res->ViewComponent("face",false);
+    int bad_face = -1;
+    unsigned int nfaces = res_f.MyLength();
+    for (unsigned int f=0; f!=nfaces; ++f) {
+      AmanziMesh::Entity_ID_List cells;
+      mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+      //    double tmp = flux_tol_ * std::abs(res_f[0][f]) / (atol_+rtol_*273.15);
+      double tmp = flux_tol_ * std::abs(h*res_f[0][f])  / (atol_ * cv[0][cells[0]] + rtol_* std::abs(energy[0][cells[0]]));
+      if (tmp > enorm_face) {
+        enorm_face = tmp;
+        bad_face = f;
+      }
     }
   }
 
   // Write out Inf norms too.
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-    double infnorm_c(0.), infnorm_f(0.);
+    double infnorm_c(0.);
     res_c.NormInf(&infnorm_c);
-    res_f.NormInf(&infnorm_f);
 
-    ENorm_t err_f, err_c;
-    ENorm_t l_err_f, l_err_c;
-    l_err_f.value = enorm_face;
-    l_err_f.gid = res_f.Map().GID(bad_face);
+    ENorm_t err_c;
+    ENorm_t l_err_c;
     l_err_c.value = enorm_cell;
     l_err_c.gid = res_c.Map().GID(bad_cell);
 
     MPI_Allreduce(&l_err_c, &err_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
-    MPI_Allreduce(&l_err_f, &err_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
-
     *vo_->os() << "ENorm (cells) = " << err_c.value << "[" << err_c.gid << "] (" << infnorm_c << ")" << std::endl;
-    *vo_->os() << "ENorm (faces) = " << err_f.value << "[" << err_f.gid << "] (" << infnorm_f << ")" << std::endl;
+
+    if (is_face) {
+      const Epetra_MultiVector& res_f = *res->ViewComponent("face",false);
+      double infnorm_f(0.);
+      res_f.NormInf(&infnorm_f);
+
+      ENorm_t err_f;
+      ENorm_t l_err_f;
+      l_err_f.value = enorm_face;
+      l_err_f.gid = res_f.Map().GID(bad_cell);
+
+      MPI_Allreduce(&l_err_f, &err_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+      *vo_->os() << "ENorm (faces) = " << err_f.value << "[" << err_f.gid << "] (" << infnorm_f << ")" << std::endl;
+    }
   }
 
   // Communicate and take the max.
-  double enorm_val(std::max<double>(enorm_face, enorm_cell));
+  double enorm_val = enorm_cell;
+  if (is_face) {
+    enorm_val = std::max<double>(enorm_face, enorm_cell);
+  }
   double buf = enorm_val;
   MPI_Allreduce(&buf, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
   return enorm_val;

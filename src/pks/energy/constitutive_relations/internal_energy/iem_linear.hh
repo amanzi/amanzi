@@ -11,7 +11,7 @@ Linear internal energy model -- function of Cv and temperature
 See ATS process model documentation's permafrost physical properties
 documentation for details.
 
-UNITS: J/{mol/kg}
+UNITS: MJ/{mol/kg}
 ------------------------------------------------------------------------- */
 
 #ifndef AMANZI_ENERGY_RELATIONS_IEM_LINEAR_
@@ -41,7 +41,7 @@ private:
 
   Teuchos::ParameterList plist_;
 
-  double Cv_; // units: J/({mol/kg}-K)
+  double Cv_; // units: MJ/({mol/kg}-K)
   double T_ref_; // units: K
   bool molar_basis_;
 

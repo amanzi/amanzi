@@ -48,7 +48,7 @@ public:
   bool advance(double dt);
   void visualize(bool force=false);
   void checkpoint(double dt, bool force=false);
-  double get_dt();
+  double get_dt(bool after_fail=false);
   Teuchos::RCP<State> get_next_state() { return S_next_; }
 
   // one stop shopping

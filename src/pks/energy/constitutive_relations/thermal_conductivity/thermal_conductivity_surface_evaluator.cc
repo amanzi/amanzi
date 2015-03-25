@@ -73,6 +73,8 @@ void ThermalConductivitySurfaceEvaluator::EvaluateField_(
 
     }
   }
+
+  result->Scale(1.e-6); // convert to MJ
 }
 
 
@@ -80,6 +82,7 @@ void ThermalConductivitySurfaceEvaluator::EvaluateFieldPartialDerivative_(
       const Teuchos::Ptr<State>& S, Key wrt_key,
       const Teuchos::Ptr<CompositeVector>& result) {
   ASSERT(0); // not implemented, not yet needed
+  result->Scale(1.e-6); // convert to MJ
 }
 
 } //namespace
