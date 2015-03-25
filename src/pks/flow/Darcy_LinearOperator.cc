@@ -28,6 +28,7 @@ namespace Flow {
 void Darcy_PK::SolveFullySaturatedProblem(double Tp, CompositeVector& u)
 {
   // add diffusion operator
+
   op_->RestoreCheckPoint();
   op_diff_->ApplyBCs();
   op_->AssembleMatrix();
@@ -52,6 +53,7 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, CompositeVector& u)
                << "): ||r||=" << residual << " itr=" << num_itrs
                << " code=" << code << std::endl;
   }
+
   if (ierr != 0) {
     Errors::Message msg;
     msg << "\nLinear solver returned an unrecoverable error code.\n";
