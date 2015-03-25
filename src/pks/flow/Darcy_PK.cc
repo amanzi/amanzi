@@ -314,8 +314,6 @@ void Darcy_PK::Initialize()
   // preconditioner. There is no need to enhance it for Darcy
   ASSERT(ti_list_->isParameter("preconditioner"));
   preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
-
-
   ASSERT(preconditioner_list_->isSublist(preconditioner_name_));
   
   // initialize well modeling

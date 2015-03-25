@@ -867,8 +867,9 @@ Again, constant functions can be replaced by any of the available time-functions
   Default is `"none`".
 
 * `"submodel`" [string] refines definition of source. Available options are `"rate`"
-  and `"integrand`". The first option defines rate of change `q`, the second one 
-  defines integrand `Q` of a rate `Q = dq/dt`. Default is `"rate`".
+  and `"integrated source`". The first option defines the source in a natural way as the rate 
+  of change `q`. The second option defines the indefinite integral `Q` of the rate 
+  of change, i.e. the source term is calculated as `q = dQ/dt`. Default is `"rate`".
 
 .. code-block:: xml
 

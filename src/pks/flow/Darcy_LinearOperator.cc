@@ -28,7 +28,6 @@ namespace Flow {
 void Darcy_PK::SolveFullySaturatedProblem(double Tp, CompositeVector& u)
 {
   // add diffusion operator
-
   op_->RestoreCheckPoint();
   op_diff_->ApplyBCs();
   op_->AssembleMatrix();
