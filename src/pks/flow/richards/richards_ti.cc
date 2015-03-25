@@ -196,17 +196,12 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
     ASSERT(min_kr_lid >= 0);
 
     ENorm_t global_min_kr;
-#ifdef HAVE_MPI
     ENorm_t local_min_kr;
     local_min_kr.value = min_kr;
     local_min_kr.gid = kr.Map().GID(min_kr_lid);
     ASSERT(local_min_kr.gid >= 0);
 
     MPI_Allreduce(&local_min_kr, &global_min_kr, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
-#else
-    global_min_kr.value = min_kr;
-    global_min_kr.gid = min_kr_lid;
-#endif
 
     *vo_->os() << "Min Kr[face=" << global_min_kr.gid << "] = " << global_min_kr.value << std::endl;
   }
@@ -347,15 +342,10 @@ double Richards::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       if (res->HasComponent("face")) res_f.NormInf(&infnorm_f);
 
       ENorm_t err_f, err_c;
-#ifdef HAVE_MPI
       ENorm_t l_err_f, l_err_c;
       l_err_f.value = enorm_face;
       l_err_f.gid = res_f.Map().GID(bad_face);
       MPI_Allreduce(&l_err_f, &err_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
-#else
-      err_f.value = enorm_face;
-      err_f.gid = bad_face;
-#endif
 
       *vo_->os() << "ENorm (faces) = " << err_f.value << "[" << err_f.gid << "] (" << infnorm_f << ")" << std::endl;
     }
@@ -367,26 +357,19 @@ double Richards::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     res_c.NormInf(&infnorm_c);
     
     ENorm_t err_f, err_c;
-#ifdef HAVE_MPI
     ENorm_t l_err_f, l_err_c;
     l_err_c.value = enorm_cell;
     l_err_c.gid = res_c.Map().GID(bad_cell);
 
     MPI_Allreduce(&l_err_c, &err_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);    
-#else
-    err_c.value = enorm_cell;
-    err_c.gid = bad_cell;
-#endif
 
     *vo_->os() << "ENorm (cells) = " << err_c.value << "[" << err_c.gid << "] (" << infnorm_c << ")" << std::endl;
   }
 
   // Communicate and take the max.
   double enorm_val = std::max<double>(enorm_cell, enorm_face);
-#ifdef HAVE_MPI
   double buf = enorm_val;
   MPI_Allreduce(&buf, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-#endif
   return enorm_val;
 };
 

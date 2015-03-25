@@ -81,10 +81,8 @@ double PKPhysicalBDFBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   if (vo_->os_OK(Teuchos::VERB_MEDIUM))
     *vo_->os() << std::endl;
 
-#ifdef HAVE_MPI
   double buf = enorm_val;
   MPI_Allreduce(&buf, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-#endif
   return enorm_val;
 };
 
