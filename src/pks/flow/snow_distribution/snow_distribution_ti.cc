@@ -6,11 +6,9 @@ License: BSD
 Authors: Ethan Coon (ecoon@lanl.gov)
 ----------------------------------------------------------------------------- */
 
-#include "Epetra_FECrsMatrix.h"
-#include "EpetraExt_RowMatrixOut.h"
-#include "boost/math/special_functions/fpclassify.hpp"
-#include "MatrixMFD_TPFA.hh"
 
+#include "boost/math/special_functions/fpclassify.hpp"
+#include "Op.hh"
 #include "snow_distribution.hh"
 
 #define DEBUG_FLAG 1
@@ -102,7 +100,7 @@ void SnowDistribution::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teu
 #endif
 
   // apply the preconditioner
-  mfd_preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
+  preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
 
 #if DEBUG_FLAG
   db_->WriteVector("PC*h_res", Pu->Data().ptr(), true);
@@ -125,53 +123,43 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
 
   // update the rel perm according to the scheme of choice
   UpdatePermeabilityData_(S_next_.ptr());
-
+  
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_snow_conductivity");
   Teuchos::RCP<CompositeVector> cond_times_factor = Teuchos::rcp(new CompositeVector(*cond));
   *cond_times_factor = *cond;
   cond_times_factor->Scale(864000);
+
+  // ADD BACK in when upwinding of snow conductivity is added.
+  // S_next_->GetFieldEvaluator("snow_conductivity")
+  //     ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+  // Teuchos::RCP<const CompositeVector> dcond_dp =
+  //     S_next_->GetFieldData("dsnow_conductivity_dprecipitation_snow");
   
   // calculating the operator is done in 3 steps:
   // 1. Create all local matrices.
-  mfd_preconditioner_->CreateMFDstiffnessMatrices(cond_times_factor.ptr());
-  mfd_preconditioner_->CreateMFDrhsVectors();
-
+  preconditioner_->Init();
+  preconditioner_diff_->Setup(cond_times_factor, Teuchos::null);
+  //  preconditioner_diff_->Setup(cond_times_factor, dcond_times_factor);
+  preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  // preconditioner_diff_->UpdateMatrices(*up->Data(), *flux);
+  // preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
+  
   // 2.b Update local matrices diagonal with the accumulation terms.
   // -- update the accumulation derivatives
   const Epetra_MultiVector& cell_volume = *S_next_->GetFieldData("surface_cell_volume")
       ->ViewComponent("cell",false);
+  std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
 
-  std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
   int ncells = cell_volume.MyLength();
   for (int c=0; c!=ncells; ++c) {
     // accumulation term
     Acc_cells[c] += 10*cell_volume[0][c];
   }
 
-  // 3.c: Add in full Jacobian terms
-  if (full_jacobian_) {
-    if (vo_->os_OK(Teuchos::VERB_EXTREME))
-      *vo_->os() << "    including full Jacobian terms" << std::endl;
-
-    // Update conductivity.
-    // -- Krel_face gets conductivity
-    S_next_->GetFieldEvaluator("snow_conductivity")
-        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-    Teuchos::RCP<const CompositeVector> cond =
-        S_next_->GetFieldData("snow_conductivity");
-    Teuchos::RCP<const CompositeVector> dcond_dp =
-        S_next_->GetFieldData("dsnow_conductivity_dprecipitation_snow");
-
-    // -- Add in the Jacobian
-    int nfaces = mesh_->num_entities(AmanziMesh::FACE,AmanziMesh::USED);
-    std::vector<Operators::MatrixBC> markers(nfaces, Operators::OPERATOR_BC_NONE);
-    std::vector<double> values(nfaces,0.);
-
-    tpfa_preconditioner_->AnalyticJacobian(*upwinding_, S_next_.ptr(),
-            "snow_skin_potential", *dcond_dp, markers, values);
-  }
-
+  preconditioner_diff_->ApplyBCs(true);
+  preconditioner_->AssembleMatrix();
+  preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
 };
 
 double SnowDistribution::ErrorNorm(Teuchos::RCP<const TreeVector> u,

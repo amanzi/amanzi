@@ -283,7 +283,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   if (precon_used_) {
     preconditioner_->AssembleMatrix();
-    preconditioner_->InitPreconditioner(plist_->sublist("Diffusion PC").sublist("preconditioner"));
+    preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
   }      
 };
 

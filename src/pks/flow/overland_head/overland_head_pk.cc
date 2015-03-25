@@ -170,7 +170,7 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   acc_pc_plist.set("entity kind", "cell");
   preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, preconditioner_));
 
-  precon_used_ = mfd_pc_plist.isSublist("preconditioner");
+  precon_used_ = plist_->isSublist("preconditioner");
   if (precon_used_) {
     preconditioner_->SymbolicAssembleMatrix();
   }
@@ -551,9 +551,8 @@ void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
   if (bc_seepage_head_->size() > 0) {
     S->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S.ptr(), name_);
 
-    const Epetra_MultiVector& h_cells = *S->GetFieldData("ponded_depth")->ViewComponent("cell");
-    const Epetra_MultiVector& h_faces = *S->GetFieldData("ponded_depth")->ViewComponent("face");
-    const Epetra_MultiVector& elevation_cells = *S->GetFieldData("elevation")->ViewComponent("cell");
+    const Epetra_MultiVector& h_c = *S->GetFieldData("ponded_depth")->ViewComponent("cell");
+    const Epetra_MultiVector& elevation_c = *S->GetFieldData("elevation")->ViewComponent("cell");
 
     for (Functions::BoundaryFunction::Iterator bc = bc_seepage_head_->begin(); 
          bc != bc_seepage_head_->end(); ++bc) {
@@ -561,15 +560,15 @@ void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       int c = cells[0];
 
-      double h0 = bc->second;
-      double dz = elevation_cells[0][c] - elevation[0][f];
+      double hz_f = bc->second + elevation[0][f];
+      double hz_c = h_c[0][c] + elevation_c[0][f];
 
-      if (h_cells[0][c] + dz < h0) {
-        bc_markers_[f] = Operators::OPERATOR_BC_NONE;
+      if (hz_f >= hz_f) {
+        bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_values_[f] = 0.0;
       } else {
         bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
-        bc_values_[f] = h0 + elevation[0][f];
+        bc_values_[f] = hz_f;
       }
     }
   }

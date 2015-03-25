@@ -18,7 +18,7 @@ add_library(flow_relations_elevation
 #  explicit_snow_distribution_evaluator.cc
 #  implicit_snow_distribution_evaluator.cc
 #  implicit_snow_distribution_uwflux_evaluator.cc
-#  snow_skin_potential_evaluator.cc
+  snow_skin_potential_evaluator.cc
   )
 
 install(TARGETS flow_relations_elevation DESTINATION lib)
