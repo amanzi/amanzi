@@ -120,7 +120,7 @@ void OperatorDiffusionMFD::UpdateMatrices(
     }
   }
 
-  // // add Newton-type corrections
+  // add Newton-type corrections
   // if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
   //   if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
   //     AddNewtonCorrectionCell_(flux, u);
