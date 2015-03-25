@@ -191,6 +191,7 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
     }
   } else {
     for (unsigned int c=0; c!=ncells; ++c) {
+      ASSERT(de_dT[0][c] > 1.e-10);
       Acc_cells[c] += de_dT[0][c] / h;
     }
   }
@@ -301,7 +302,6 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   if (is_face) {
     enorm_val = std::max<double>(enorm_face, enorm_cell);
   }
-
   double buf = enorm_val;
   MPI_Allreduce(&buf, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
   return enorm_val;

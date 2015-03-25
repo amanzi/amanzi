@@ -217,6 +217,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   implicit_advection_ = !plist_->get<bool>("explicit advection", false);
   if (implicit_advection_)
     implicit_advection_in_pc_ = !plist_->get<bool>("supress advective terms in preconditioner", false);
+
   Operators::AdvectionFactory advection_factory;
   Teuchos::ParameterList advect_plist = plist_->sublist("Advection");
   matrix_adv_ = Teuchos::rcp(new Operators::OperatorAdvection(advect_plist, mesh_));

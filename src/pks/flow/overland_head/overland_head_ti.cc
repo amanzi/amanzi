@@ -345,25 +345,17 @@ double OverlandHeadFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     double infnorm_c(0.);
     res_c.NormInf(&infnorm_c);
     ENorm_t err_c;
-#ifdef HAVE_MPI
     ENorm_t l_err_c;
     l_err_c.value = enorm_cell;
     l_err_c.gid = res_c.Map().GID(bad_cell);
 
     MPI_Allreduce(&l_err_c, &err_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
-#else
-    err_c.value = enorm_cell;
-    err_c.gid = bad_cell;
-#endif
-
     *vo_->os() << "ENorm (cells) = " << err_c.value << "[" << err_c.gid << "] (" << infnorm_c << ")" << std::endl;
   }
 
   double enorm_val(enorm_cell);
-#ifdef HAVE_MPI
   double buf = enorm_val;
   MPI_Allreduce(&buf, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-#endif
   return enorm_val;
 };
 
