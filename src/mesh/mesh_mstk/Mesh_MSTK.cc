@@ -1776,6 +1776,7 @@ void Mesh_MSTK::cell_2D_get_edges_and_dirs_internal (const Entity_ID cellid,
     nfe = List_Num_Entries(fedges);
     
     edgeids->resize(nfe);
+    edgedirs->resize(nfe);
     
     Entity_ID_List::iterator ite = edgeids->begin();
     std::vector<int>::iterator itd = edgedirs->begin();
