@@ -495,19 +495,25 @@ void Richards_PK::Initialize()
     op_vapor_diff_->Setup(Teuchos::null, 1.0, 1.0);
   }
 
-  // preconditioner and optional linear solver
+  // generic linear solver for all cases except for a few
+  ASSERT(ti_list_->isParameter("linear solver"));
+  solver_name_ = ti_list_->get<std::string>("linear solver");
+
+  // preconditioner or encapsulated preconditioner
   ASSERT(ti_list_->isParameter("preconditioner"));
   preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
   ASSERT(preconditioner_list_->isSublist(preconditioner_name_));
   
-  ASSERT(ti_list_->isParameter("linear solver"));
-  solver_name_ = ti_list_->get<std::string>("linear solver");
+  op_pc_solver_ = op_preconditioner_;
 
-  if (solver_name_ != "none") {
-    AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
-    op_pc_solver_ = sfactory.Create(solver_name_, *linear_operator_list_, op_preconditioner_);
-  } else {
-    op_pc_solver_ = op_preconditioner_;
+  if (ti_list_->isParameter("preconditioner enhancement")) {
+    std::string tmp_solver = ti_list_->get<std::string>("preconditioner enhancement");
+    if (tmp_solver != "none") {
+      ASSERT(preconditioner_list_->isSublist(tmp_solver));
+
+      AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
+      op_pc_solver_ = sfactory.Create(tmp_solver, *linear_operator_list_, op_preconditioner_);
+    }
   }
   
   // initialize well modeling

@@ -916,7 +916,13 @@ The first part controls preliminary steps in the time integrator.
   The option `"pressure`" is always active during steady-state time integration.
   The option  `"saturation`" is always active during transient time integration.
 
-* `"preconditioner`" [string] specifies preconditioner for nonlinear solvers.
+* `"linear solver`" [string] refers to a generic linear solver from list `"Solvers`".
+  It is used in all cases except for `"initialization`" and `"enforce pressure-lambda constraints`".
+
+* `"preconditioner`" [string] specifies preconditioner for linear and nonlinear solvers.
+
+* `"preconditioner enhancement`" [string] speficies a linear solver that binds 
+  the above preconditioner to improve spectral properties. Default is `"none`".
 
 * `"initialization`" [list] defines parameters for calculating initial pressure guess.
   It can be used to obtain pressure field which is consistent with the boundary conditions.
@@ -951,9 +957,10 @@ The first part controls preliminary steps in the time integrator.
 
 .. code-block:: xml
 
-   <ParameterList name="steady state time integrator">
+   <ParameterList name="time integrator">
      <Parameter name="error control options" type="Array(string)" value="{pressure, saturation}"/>
      <Parameter name="linear solver" type="string" value="GMRES_with_AMG"/>
+     <Parameter name="linear solver as preconditioner" type="string" value="GMRES_with_AMG"/>
      <Parameter name="preconditioner" type="string" value="HYPRE_AMG"/>
 
      <ParameterList name="initialization">
@@ -1005,7 +1012,7 @@ The later is under development and is based on a posteriori error estimates.
 
 .. code-block:: xml
 
-   <ParameterList name="steady state time integrator">
+   <ParameterList name="time integrator">
      <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
      <Parameter name="extrapolate initial guess" type="bool" value="true"/>
      <Parameter name="restart tolerance relaxation factor" type="double" value="1000.0"/>
@@ -1085,7 +1092,7 @@ those needed for unit tests, and future code development.
 
 .. code-block:: xml
 
-   <ParameterList name="steady state time integrator">
+   <ParameterList name="time integrator">
      <ParameterList name="obsolete parameters">
        <Parameter name="start time" type="double" value="0.0"/>
        <Parameter name="end time" type="double" value="100.0"/>
