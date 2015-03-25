@@ -113,8 +113,8 @@ if ( BUILD_TESTS )
                                             flow_relations_wrm flow_relations_wrm_models flow_relations_porosity
                                             relations_eos relations_ewc bc_factory divgrad
                                             amanzi_solvers amanzi_time_integration amanzi_operators
-                                            amanzi_whetstone amanzi_mesh amanzi_geometry amanzi_mesh_functions amanzi_mesh_factory
-                                            amanzi_output amanzi_data_structures amanzi_state amanzi_atk
+                                            amanzi_state amanzi_whetstone amanzi_mesh amanzi_geometry amanzi_mesh_functions amanzi_mesh_factory
+                                            amanzi_output amanzi_data_structures amanzi_atk
                                             ${Amanzi_TPL_UnitTest_LIBRARIES})
 
 endif()

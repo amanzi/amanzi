@@ -288,9 +288,9 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   preconditioner_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionWithGravity(mfd_pc_plist, mesh_));
   preconditioner_ = preconditioner_diff_->global_operator();
   preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, preconditioner_));
-  precon_used_ = mfd_pc_plist.isSublist("preconditioner");
 
   // wc preconditioner
+  precon_used_ = plist_->isSublist("preconditioner");
   precon_wc_ = plist_->get<bool>("precondition using WC", false);
 
   // predictors for time integration
@@ -677,7 +677,6 @@ void Richards::UpdateBoundaryConditions_() {
     int f = bc->first;
     bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
     bc_values_[f] = bc->second;
-    std::cout << "DIRICHLET BC in Richards: f=" << f << ", at " << mesh_->face_centroid(f) << " value = " << bc_values_[f] << std::endl;
   }
 
   if (!infiltrate_only_if_unfrozen_) {

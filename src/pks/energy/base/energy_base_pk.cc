@@ -238,7 +238,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     preconditioner_adv_ = Teuchos::rcp(new Operators::OperatorAdvection(advect_plist, preconditioner_));
   }
 
-  precon_used_ = mfd_pc_plist.isSublist("preconditioner");
+  precon_used_ = plist_->isSublist("preconditioner");
   if (precon_used_) {
     preconditioner_->SymbolicAssembleMatrix();
   }

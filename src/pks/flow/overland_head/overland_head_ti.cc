@@ -293,7 +293,7 @@ void OverlandHeadFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
 
   if (precon_used_) {
     preconditioner_->AssembleMatrix();
-    preconditioner_->InitPreconditioner(plist_->sublist("Diffusion PC").sublist("preconditioner"));
+    preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
   }      
   
   /*

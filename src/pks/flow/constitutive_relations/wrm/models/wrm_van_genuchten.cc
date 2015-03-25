@@ -13,6 +13,8 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
+const double FLOW_WRM_TOLERANCE = 1e-10;
+
 /* ******************************************************************
  * Setup fundamental parameters for this model.
  ****************************************************************** */
@@ -49,11 +51,13 @@ double WRMVanGenuchten::k_relative(double pc) {
  * D Relative permeability / D capillary pressure pc.
  ****************************************************************** */
 double WRMVanGenuchten::d_k_relative(double pc) {
-  if (pc > 0.0) {
+  if (pc >= pc0_) {
     double se = pow(1.0 + pow(alpha_*pc, n_), -m_);
     double dsdp = d_saturation(pc);
 
     double x = pow(se, 1.0 / m_);
+    if (fabs(1.0 - x) < FLOW_WRM_TOLERANCE) return 0.0;
+
     double y = pow(1.0 - x, m_);
     double dkdse;
     if (function_ == FLOW_WRM_MUALEM)
@@ -63,8 +67,10 @@ double WRMVanGenuchten::d_k_relative(double pc) {
 
     return dkdse * dsdp / (1 - sr_);
 
-  } else {
+  } else if (pc <= 0.0) {
     return 0.0;
+  } else {
+    return 2*a_*pc + 3*b_*pc*pc; 
   }
 }
 

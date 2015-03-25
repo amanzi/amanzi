@@ -214,7 +214,7 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   preconditioner_diff_->ApplyBCs(true);
   if (precon_used_) {
     preconditioner_->AssembleMatrix();
-    preconditioner_->InitPreconditioner(plist_->sublist("Diffusion PC").sublist("preconditioner"));
+    preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
   }
 };
 

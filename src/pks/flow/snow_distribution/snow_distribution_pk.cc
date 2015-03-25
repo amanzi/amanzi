@@ -17,7 +17,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "composite_vector_function_factory.hh"
 #include "independent_variable_field_evaluator.hh"
 
-#include "MatrixMFD_Factory.hh"
+#include "OperatorDiffusionFV.hh"
 #include "upwind_potential_difference.hh"
 #include "upwind_total_flux.hh"
 
@@ -80,10 +80,13 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
     S->RequireField("surface_snow_flux_direction", name_)->SetMesh(mesh_)->SetGhosted()
         ->SetComponent("face", AmanziMesh::FACE, 1);
   }
+  S->RequireField("surface_snow_flux", name_)->SetMesh(mesh_)->SetGhosted()
+      ->SetComponent("face", AmanziMesh::FACE, 1);
 
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
   bc_values_.resize(nfaces, 0.0);
+  UpdateBoundaryConditions_(S); // never change
   std::vector<double> mixed;
   bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_markers_, bc_values_, mixed));
 
@@ -142,6 +145,8 @@ void SnowDistribution::initialize(const Teuchos::Ptr<State>& S) {
     S->GetFieldData("surface_snow_flux_direction", name_)->PutScalar(0.);
     S->GetField("surface_snow_flux_direction", name_)->set_initialized();
   }
+  S->GetFieldData("surface_snow_flux", name_)->PutScalar(0.);
+  S->GetField("surface_snow_flux", name_)->set_initialized();
 };
 
 
@@ -208,6 +213,7 @@ void SnowDistribution::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
 
   // mark all remaining boundary conditions as zero flux conditions
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  AmanziMesh::Entity_ID_List cells;
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_markers_[f] == Operators::OPERATOR_BC_NONE) {
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
