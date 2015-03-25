@@ -45,11 +45,8 @@ double PassiveTracer::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     enorm_val = std::max<double>(enorm_val, tmp);
   }
 
-#ifdef HAVE_MPI
   double buf = enorm_val;
   MPI_Allreduce(&buf, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-#endif
-
   return enorm_val;
 };
 

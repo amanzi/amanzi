@@ -109,11 +109,7 @@ int main(int argc, char *argv[])
   }
 
   MPI_Comm mpi_comm(MPI_COMM_WORLD);
-#ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(mpi_comm);
-#else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
-#endif
 
   // read the main parameter list
   Teuchos::ParameterList driver_parameter_list;

@@ -751,7 +751,14 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
     db_->WriteVectors(vnames, vecs, true);
   }
 
+  // mark our other primary variables as changed
+  pvfe_esource_->SetFieldAsChanged(S_next_.ptr());
+  pvfe_wsource_->SetFieldAsChanged(S_next_.ptr());
+  pvfe_w_v_source_->SetFieldAsChanged(S_next_.ptr());
+  pvfe_wtemp_->SetFieldAsChanged(S_next_.ptr());
+  
 }
+
 
 // applies preconditioner to u and returns the result in Pu
 void

@@ -216,7 +216,8 @@ void MatrixMFD_Coupled_Surf::AssembleSchur_() const {
   if (dump_schur_) {
     std::stringstream filename_s;
     filename_s << "schur_MatrixMFD_Coupled_Surf_" << 0 << ".txt";
-    EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *P2f2f_);
+    int ierr = EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *P2f2f_);
+    ASSERT(!ierr);
   }
 
   delete[] indicesA;

@@ -317,6 +317,13 @@ MPCPermafrost3::ApplyPreconditioner(Teuchos::RCP<const TreeVector> r,
     *vo_->os() << "Precon applying coupled subsurface operator." << std::endl;
   lin_solver_->ApplyInverse(*domain_u_tv, *domain_Pu_tv);
 
+  if (S_next_->cycle() == 339) {
+    Epetra_Vector vec(precon_->Schur()->Map());
+    precon_->Schur()->ExtractDiagonalCopy(vec);
+    vec.Print(std::cout);
+  }
+
+  
   // call EWC precon
   if (precon_type_ == PRECON_EWC) {
     // dump std correction to screen
