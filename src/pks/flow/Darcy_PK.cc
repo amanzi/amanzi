@@ -335,7 +335,6 @@ void Darcy_PK::Initialize()
     DeriveFaceValuesFromCellValues(p, lambda);
 
     SolveFullySaturatedProblem(t_old, *solution);
-    pressure_eval_->SetFieldAsChanged(S_.ptr());
   }
 
   // print initialization head for this time period
