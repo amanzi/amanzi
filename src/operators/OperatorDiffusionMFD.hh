@@ -1,13 +1,13 @@
 /*
   This is the Operator component of the Amanzi code.
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-          Ethan Coon (ecoon@lanl.gov)
+  Ethan Coon (ecoon@lanl.gov)
 */
 
 #ifndef AMANZI_OPERATOR_DIFFUSION_MFD_HH_
@@ -35,6 +35,7 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   OperatorDiffusionMFD(Teuchos::ParameterList& plist,
                        const Teuchos::RCP<Operator>& global_op) :
       OperatorDiffusion(global_op),
+      plist_(plist),
       factor_(1.0)
   {
     InitDiffusion_(plist);
@@ -43,19 +44,21 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   OperatorDiffusionMFD(Teuchos::ParameterList& plist,
                        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       OperatorDiffusion(mesh),
+      plist_(plist),
       factor_(1.0)
   {
     InitDiffusion_(plist);
   }
 
   OperatorDiffusionMFD(Teuchos::ParameterList& plist,
-                    const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+                       const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
       OperatorDiffusion(mesh),
+      plist_(plist),
       factor_(1.0)
   {
     InitDiffusion_(plist);
   }
-  
+
   // main virtual members
   virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
                      double rho, double mu);
@@ -69,15 +72,25 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
           const Teuchos::Ptr<const CompositeVector>& u);
   virtual void UpdateMatricesNewtonCorrection(
-          const Teuchos::Ptr<const CompositeVector>& flux,
-          const Teuchos::Ptr<const CompositeVector>& u);
+      const Teuchos::Ptr<const CompositeVector>& flux,
+      const Teuchos::Ptr<const CompositeVector>& u);
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
   virtual void ApplyBCs(bool primary = true);
   virtual void ModifyMatrices(const CompositeVector& u);
 
-  int nfailed_primary() { return nfailed_primary_; }
-  void set_factor(double factor) { factor_ = factor; }
+  // working with consistent faces -- EXPERIMENTAL
+  virtual void UpdateConsistentFaces(CompositeVector& u);
+  Teuchos::RCP<const Operator> consistent_face_operator() const { return consistent_face_op_; }
+  Teuchos::RCP<Operator> consistent_face_operator() { return consistent_face_op_; }
   
+  // developer checks
+  int nfailed_primary() {
+    return nfailed_primary_;
+  }
+  void set_factor(double factor) {
+    factor_ = factor;
+  }
+
  protected:
   void InitDiffusion_(Teuchos::ParameterList& plist);
   void CreateMassMatrices_();
@@ -88,15 +101,16 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   void UpdateMatricesMixedWithGrad_(const Teuchos::Ptr<const CompositeVector>& flux);
 
   void AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVector>& flux,
-                                const Teuchos::Ptr<const CompositeVector>& u);
+          const Teuchos::Ptr<const CompositeVector>& u);
 
 
   void ApplyBCs_Mixed_(BCs& bc, bool primary);
   void ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
                        const Teuchos::Ptr<BCs>& bc_n, bool primary);
   void ApplyBCs_Cell_(BCs& bc, bool primary);
-  
+
  protected:
+  Teuchos::ParameterList plist_;
   std::vector<WhetStone::DenseMatrix> Wff_cells_;
   int newton_correction_;
   bool exclude_primary_terms_;
@@ -106,6 +120,8 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   int mfd_primary_, mfd_secondary_, mfd_pc_primary_, mfd_pc_secondary_;
   int nfailed_primary_;
 
+  Teuchos::RCP<Operator> consistent_face_op_;
+  
 };
 
 }  // namespace Operators
@@ -113,5 +129,4 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
 
 
 #endif
-
 

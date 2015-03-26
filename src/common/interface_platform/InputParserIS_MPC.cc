@@ -237,6 +237,7 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::ParameterL
       Exceptions::amanzi_throw(Errors::Message("The parameter Flow Model must be specified."));
     }
 
+     chemistry_model_ = "Amanzi";
     if (exe_sublist.isParameter("Chemistry Model")) {
       if (exe_sublist.get<std::string>("Chemistry Model") == "Off") {
         chemistry_on = false;
@@ -244,9 +245,9 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::ParameterL
         chemistry_on = true;
         chemistry_pk = "chemistry";    
       } else if  (exe_sublist.get<std::string>("Chemistry Model") == "Alquimia") {
-        // chemistry_on = true;
-        // std::string chemistry_pk = "chemistry_pk";
-        Exceptions::amanzi_throw(Errors::Message("New MPC driver doesn't support Alquimia chemistry model."));
+        chemistry_on = true;
+        chemistry_pk = "chemistry";
+        chemistry_model_ = "Alquimia";
       }
     }
     else {

@@ -51,6 +51,54 @@ class OperatorAccumulation {
     InitAccumulation_(entity);
   }
 
+  OperatorAccumulation(Teuchos::ParameterList& plist,
+                       Teuchos::RCP<Operator> global_op) :
+      global_op_(global_op),
+      mesh_(Teuchos::null)
+  {
+    AmanziMesh::Entity_kind entity;
+    if (plist.get<std::string>("entity kind") == "cell") {
+      entity = AmanziMesh::CELL;
+    } else if (plist.get<std::string>("entity kind") == "node") {
+      entity = AmanziMesh::NODE;
+    } else if (plist.get<std::string>("entity kind") == "face") {
+      entity = AmanziMesh::FACE;
+    }
+    InitAccumulation_(entity, plist.get<bool>("surface operator", false));
+  }
+
+  OperatorAccumulation(Teuchos::ParameterList& plist,
+                       Teuchos::RCP<AmanziMesh::Mesh> mesh) :
+      global_op_(Teuchos::null),
+      mesh_(mesh)
+  {
+    AmanziMesh::Entity_kind entity;
+    if (plist.get<std::string>("entity kind") == "cell") {
+      entity = AmanziMesh::CELL;
+    } else if (plist.get<std::string>("entity kind") == "node") {
+      entity = AmanziMesh::NODE;
+    } else if (plist.get<std::string>("entity kind") == "face") {
+      entity = AmanziMesh::FACE;
+    }
+    InitAccumulation_(entity, plist.get<bool>("surface operator", false));
+  }
+
+  OperatorAccumulation(Teuchos::ParameterList& plist,
+                       Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+      global_op_(Teuchos::null),
+      mesh_(mesh)
+  {
+    AmanziMesh::Entity_kind entity;
+    if (plist.get<std::string>("entity kind") == "cell") {
+      entity = AmanziMesh::CELL;
+    } else if (plist.get<std::string>("entity kind") == "node") {
+      entity = AmanziMesh::NODE;
+    } else if (plist.get<std::string>("entity kind") == "face") {
+      entity = AmanziMesh::FACE;
+    }
+    InitAccumulation_(entity, plist.get<bool>("surface operator", false));
+  }
+  
   // update methods
   // -- update method for just adding to PC
   void AddAccumulationTerm(const Epetra_MultiVector& du);
@@ -74,7 +122,7 @@ class OperatorAccumulation {
   Teuchos::RCP<Op> local_matrices() { return local_op_; }
 
  protected:
-  void InitAccumulation_(AmanziMesh::Entity_kind entity);
+  void InitAccumulation_(AmanziMesh::Entity_kind entity, bool surface=false);
 
  protected:
   // operator

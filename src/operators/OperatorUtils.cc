@@ -24,17 +24,17 @@ namespace Operators {
 int
 CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector& cv,
         Epetra_Vector& sv, int dofnum) {
-  if (cv.HasComponent("face")) {
+  if (cv.HasComponent("face") && smap.HasComponent("face")) {
     const std::vector<int>& face_inds = smap.Indices("face", dofnum);
     const Epetra_MultiVector& data = *cv.ViewComponent("face");
     for (int f=0; f!=data.MyLength(); ++f) sv[face_inds[f]] = data[0][f];
   } 
-  if (cv.HasComponent("cell")) {
+  if (cv.HasComponent("cell") && smap.HasComponent("cell")) {
     const std::vector<int>& cell_inds = smap.Indices("cell", dofnum);
     const Epetra_MultiVector& data = *cv.ViewComponent("cell");
     for (int c=0; c!=data.MyLength(); ++c) sv[cell_inds[c]] = data[0][c];
   } 
-  if (cv.HasComponent("node")) {
+  if (cv.HasComponent("node") && smap.HasComponent("node")) {
     const std::vector<int>& node_inds = smap.Indices("node", dofnum);
     const Epetra_MultiVector& data = *cv.ViewComponent("node");
     for (int v=0; v!=data.MyLength(); ++v) sv[node_inds[v]] = data[0][v];
@@ -46,17 +46,17 @@ int
 CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& sv,
         CompositeVector& cv, int dofnum) {
 
-  if (cv.HasComponent("face")) {
+  if (cv.HasComponent("face") && smap.HasComponent("face")) {
     const std::vector<int>& face_inds = smap.Indices("face", dofnum);
     Epetra_MultiVector& data = *cv.ViewComponent("face");
     for (int f=0; f!=data.MyLength(); ++f) data[0][f] = sv[face_inds[f]];
   } 
-  if (cv.HasComponent("cell")) {
+  if (cv.HasComponent("cell") && smap.HasComponent("cell")) {
     const std::vector<int>& cell_inds = smap.Indices("cell", dofnum);
     Epetra_MultiVector& data = *cv.ViewComponent("cell");
     for (int c=0; c!=data.MyLength(); ++c) data[0][c] = sv[cell_inds[c]];
   } 
-  if (cv.HasComponent("node")) {
+  if (cv.HasComponent("node") && smap.HasComponent("node")) {
     const std::vector<int>& node_inds = smap.Indices("node", dofnum);
     Epetra_MultiVector& data = *cv.ViewComponent("node");
     for (int v=0; v!=data.MyLength(); ++v) data[0][v] = sv[node_inds[v]];
@@ -69,17 +69,17 @@ int
 AddSuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& sv,
         CompositeVector& cv, int dofnum) {
 
-  if (cv.HasComponent("face")) {
+  if (cv.HasComponent("face") && smap.HasComponent("face")) {
     const std::vector<int>& face_inds = smap.Indices("face", dofnum);
     Epetra_MultiVector& data = *cv.ViewComponent("face");
     for (int f=0; f!=data.MyLength(); ++f) data[0][f] += sv[face_inds[f]];
   } 
-  if (cv.HasComponent("cell")) {
+  if (cv.HasComponent("cell") && smap.HasComponent("cell")) {
     const std::vector<int>& cell_inds = smap.Indices("cell", dofnum);
     Epetra_MultiVector& data = *cv.ViewComponent("cell");
     for (int c=0; c!=data.MyLength(); ++c) data[0][c] += sv[cell_inds[c]];
   } 
-  if (cv.HasComponent("node")) {
+  if (cv.HasComponent("node") && smap.HasComponent("node")) {
     const std::vector<int>& node_inds = smap.Indices("node", dofnum);
     Epetra_MultiVector& data = *cv.ViewComponent("node");
     for (int v=0; v!=data.MyLength(); ++v) data[0][v] += sv[node_inds[v]];

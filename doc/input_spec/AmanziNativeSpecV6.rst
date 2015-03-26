@@ -867,8 +867,9 @@ Again, constant functions can be replaced by any of the available time-functions
   Default is `"none`".
 
 * `"submodel`" [string] refines definition of source. Available options are `"rate`"
-  and `"integrand`". The first option defines rate of change `q`, the second one 
-  defines integrand `Q` of a rate `Q = dq/dt`. Default is `"rate`".
+  and `"integrated source`". The first option defines the source in a natural way as the rate 
+  of change `q`. The second option defines the indefinite integral `Q` of the rate 
+  of change, i.e. the source term is calculated as `q = dQ/dt`. Default is `"rate`".
 
 .. code-block:: xml
 
@@ -916,7 +917,13 @@ The first part controls preliminary steps in the time integrator.
   The option `"pressure`" is always active during steady-state time integration.
   The option  `"saturation`" is always active during transient time integration.
 
-* `"preconditioner`" [string] specifies preconditioner for nonlinear solvers.
+* `"linear solver`" [string] refers to a generic linear solver from list `"Solvers`".
+  It is used in all cases except for `"initialization`" and `"enforce pressure-lambda constraints`".
+
+* `"preconditioner`" [string] specifies preconditioner for linear and nonlinear solvers.
+
+* `"preconditioner enhancement`" [string] speficies a linear solver that binds 
+  the above preconditioner to improve spectral properties. Default is `"none`".
 
 * `"initialization`" [list] defines parameters for calculating initial pressure guess.
   It can be used to obtain pressure field which is consistent with the boundary conditions.
@@ -951,9 +958,10 @@ The first part controls preliminary steps in the time integrator.
 
 .. code-block:: xml
 
-   <ParameterList name="steady state time integrator">
+   <ParameterList name="time integrator">
      <Parameter name="error control options" type="Array(string)" value="{pressure, saturation}"/>
      <Parameter name="linear solver" type="string" value="GMRES_with_AMG"/>
+     <Parameter name="linear solver as preconditioner" type="string" value="GMRES_with_AMG"/>
      <Parameter name="preconditioner" type="string" value="HYPRE_AMG"/>
 
      <ParameterList name="initialization">
@@ -1005,7 +1013,7 @@ The later is under development and is based on a posteriori error estimates.
 
 .. code-block:: xml
 
-   <ParameterList name="steady state time integrator">
+   <ParameterList name="time integrator">
      <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
      <Parameter name="extrapolate initial guess" type="bool" value="true"/>
      <Parameter name="restart tolerance relaxation factor" type="double" value="1000.0"/>
@@ -1085,7 +1093,7 @@ those needed for unit tests, and future code development.
 
 .. code-block:: xml
 
-   <ParameterList name="steady state time integrator">
+   <ParameterList name="time integrator">
      <ParameterList name="obsolete parameters">
        <Parameter name="start time" type="double" value="0.0"/>
        <Parameter name="end time" type="double" value="100.0"/>
@@ -1177,6 +1185,8 @@ components and their dispersion and diffusion.
 The main parameters control temporal stability, spatial 
 and temporal accuracy, and verbosity:
 
+* `"PK type`" [string] Defines name of PK. The only available option is `"transport pk`".
+
 * `"cfl`" [double] Time step limiter, a number less than 1. Default value is 1.
    
 * `"spatial discretization order`" [int] defines accuracy of spartial dscretization.
@@ -1202,6 +1212,7 @@ and temporal accuracy, and verbosity:
 .. code-block:: xml
 
    <ParameterList name="Transport">
+     <Parameter name="PK type" type="string" value="transport pk"/>
      <Parameter name="cfl" type="double" value="1.0"/>
      <Parameter name="spatial discretization order" type="int" value="1"/>
      <Parameter name="temporal discretization order" type="int" value="1"/>
@@ -1463,6 +1474,23 @@ The remaining parameters that can be used by a developes include
 
 Chemistry PK
 ------------
+
+The chemistry header includes three parameters:
+
+* `"PK type`" [string] defined name of this PK. The only available option is `"chemistry pk`".
+
+* `"chemistry model`" [string] defines chemical model. The available options are `"Alquimia`"
+  and `"Amanzi`" (default).
+
+* `"component names`" [Array(string)] provides the list of species names.
+
+.. code-block:: xml
+
+  <ParameterList name="Chemistry">
+    <Parameter name="PK type" type="string" value="chemistry pk"/>
+    <Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
+  </ParameterList>
+
 
 Geochemical engines
 ...................

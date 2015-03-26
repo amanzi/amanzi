@@ -19,7 +19,9 @@ SuperMap::SuperMap(const Epetra_MpiComm& comm,
                    const std::vector<std::string>& compnames,
                    const std::vector<int>& dofnums,
                    const std::vector<Teuchos::RCP<const Epetra_Map> >& maps,
-                   const std::vector<Teuchos::RCP<const Epetra_Map> >& ghosted_maps) {
+                   const std::vector<Teuchos::RCP<const Epetra_Map> >& ghosted_maps) :
+    compnames_(compnames)
+{
   ASSERT(compnames.size() == dofnums.size());
   ASSERT(compnames.size() == maps.size());
   ASSERT(compnames.size() == ghosted_maps.size());
@@ -80,6 +82,7 @@ SuperMap::SuperMap(const Epetra_MpiComm& comm,
 // Copy constructor specifically does not copy indices and ghosted_indices.
 // These will be lazily recreated if needed.
 SuperMap::SuperMap(const SuperMap& other) :
+    compnames_(other.compnames_),
     offsets_(other.offsets_),
     num_dofs_(other.num_dofs_),
     counts_(other.counts_),
@@ -87,6 +90,19 @@ SuperMap::SuperMap(const SuperMap& other) :
     ghosted_counts_(other.ghosted_counts_),
     map_(other.map_),
     ghosted_map_(other.ghosted_map_) {}
+
+
+bool
+SuperMap::HasComponent(const std::string& key) const {
+  std::map<std::string,int>::const_iterator lb = offsets_.lower_bound(key);
+  if (lb != offsets_.end() && !(offsets_.key_comp()(key, lb->first))) {
+    return true;
+  } else {
+    return false;
+  }
+}
+  
+
 
 const std::vector<int>&
 SuperMap::Indices(const std::string& compname, int dofnum) const {

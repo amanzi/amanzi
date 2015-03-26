@@ -103,32 +103,39 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 
 
 /* ******************************************************************
-* Constructor for Alquimia. 
+* Routine processes parameter list. It needs to be called only once
+* on each processor.                                                     
+****************************************************************** */
+Transport_PK::~Transport_PK()
+{ 
+  if (vo_ != NULL) {
+    delete vo_;
+  }
+  for (int i = 0; i < bcs.size(); i++) {
+    if (bcs[i] != NULL) delete bcs[i]; 
+  }
+  for (int i = 0; i < srcs.size(); i++) {
+    if (srcs[i] != NULL) delete srcs[i]; 
+  }
+}
+
+
+/* ******************************************************************
+* Setup for Alquimia.
 ****************************************************************** */
 #ifdef ALQUIMIA_ENABLED
-Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                           Teuchos::RCP<State> S,
-                           const std::string& pk_list_name,
-                           Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
-                           Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine) :
-    S_(S),
-    chem_state_(chem_state),
-    chem_engine_(chem_engine)
+void Transport_PK::SetupAlquimia(Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
+                                 Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
 {
-  // Create miscaleneous lists.
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  tp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
+  chem_state_ = chem_state;
+  chem_engine_ = chem_engine;
 
-  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners");
-  linear_solver_list_ = Teuchos::sublist(glist, "Solvers");
-  nonlinear_solver_list_ = Teuchos::sublist(glist, "Nonlinear solvers");
-
-  // Retrieve the component names from the chemistry engine.
-  std::vector<std::string> component_names;
-  chem_engine_->GetPrimarySpeciesNames(component_names);
-  component_names_ = component_names;
-
-  vo_ = NULL;
+  if (chem_engine_ != Teuchos::null) {
+    // Retrieve the component names from the chemistry engine.
+    std::vector<std::string> component_names;
+    chem_engine_->GetPrimarySpeciesNames(component_names);
+    component_names_ = component_names;
+  }
 }
 #endif
 
@@ -179,24 +186,6 @@ void Transport_PK::Setup()
     S_->RequireField("porosity", "porosity")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->RequireFieldEvaluator("porosity");
-  }
-}
-
-
-/* ******************************************************************
-* Routine processes parameter list. It needs to be called only once
-* on each processor.                                                     
-****************************************************************** */
-Transport_PK::~Transport_PK()
-{ 
-  if (vo_ != NULL) {
-    delete vo_;
-  }
-  for (int i = 0; i < bcs.size(); i++) {
-    if (bcs[i] != NULL) delete bcs[i]; 
-  }
-  for (int i = 0; i < srcs.size(); i++) {
-    if (srcs[i] != NULL) delete srcs[i]; 
   }
 }
 
@@ -1024,7 +1013,7 @@ void Transport_PK::ComputeAddSourceTerms(double tp, double dtp,
     if (distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       srcs[m]->ComputeDistributeMultiValue(t0, tp, Kxy->Values()); 
     } else {
-      srcs[m]->ComputeDistributeMultiValue(t0, tp, NULL);
+      srcs[m]->ComputeDistributeMultiValue(t0, tp);
     }
 
     TransportDomainFunction::Iterator it;

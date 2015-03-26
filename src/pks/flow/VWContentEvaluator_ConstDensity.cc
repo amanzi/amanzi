@@ -14,6 +14,7 @@
   Constant water density.
 */
 
+#include "CommonDefs.hh"
 #include "VWContentEvaluator_ConstDensity.hh"
 
 namespace Amanzi {
@@ -53,7 +54,9 @@ void VWContentEvaluator_ConstDensity::EvaluateField_(
   S->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S.ptr(), "flow");
   const Epetra_MultiVector& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
   const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell");
+
   double rho = *S->GetScalarData("fluid_density");
+  double n_l = rho; // / CommonDefs::MOLAR_MASS_H2O;
 
   Epetra_MultiVector& result_v = *result->ViewComponent("cell");
 
@@ -63,12 +66,12 @@ void VWContentEvaluator_ConstDensity::EvaluateField_(
     
     int ncells = result->size("cell", false);
     for (int c = 0; c != ncells; ++c) {
-      result_v[0][c] = phi[0][c] * (s_l[0][c] * rho + (1.0 - s_l[0][c]) * n_g[0][c] * mlf_g[0][c]);
+      result_v[0][c] = phi[0][c] * (s_l[0][c] * n_l + (1.0 - s_l[0][c]) * n_g[0][c] * mlf_g[0][c]);
     }
   } else {
     int ncells = result->size("cell", false);
     for (int c = 0; c != ncells; ++c) {
-      result_v[0][c] = phi[0][c] * s_l[0][c] * rho;
+      result_v[0][c] = phi[0][c] * s_l[0][c] * n_l;
     }
   }      
 }
@@ -83,7 +86,9 @@ void VWContentEvaluator_ConstDensity::EvaluateFieldPartialDerivative_(
 {
   const Epetra_MultiVector& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
   const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell");
+
   double rho = *S->GetScalarData("fluid_density");
+  double n_l = rho;  // / CommonDefs::MOLAR_MASS_H2O;
 
   Epetra_MultiVector& result_v = *result->ViewComponent("cell");
 
@@ -94,11 +99,11 @@ void VWContentEvaluator_ConstDensity::EvaluateFieldPartialDerivative_(
     int ncells = result->size("cell", false);
     if (wrt_key == "porosity") {
       for (int c = 0; c != ncells; ++c) {
-        result_v[0][c] = (s_l[0][c] * rho + (1.0 - s_l[0][c]) * n_g[0][c] * mlf_g[0][c]);
+        result_v[0][c] = (s_l[0][c] * n_l + (1.0 - s_l[0][c]) * n_g[0][c] * mlf_g[0][c]);
       }
     } else if (wrt_key == "saturation_liquid") {
       for (int c = 0; c != ncells; ++c) {
-        result_v[0][c] = phi[0][c] * rho;
+        result_v[0][c] = phi[0][c] * n_l;
       }
     } else if (wrt_key == "molar_density_gas") {
       for (int c = 0; c != ncells; ++c) {
@@ -116,11 +121,11 @@ void VWContentEvaluator_ConstDensity::EvaluateFieldPartialDerivative_(
     int ncells = result->size("cell", false);
     if (wrt_key == "porosity") {
       for (int c = 0; c != ncells; ++c) {
-        result_v[0][c] = s_l[0][c] * rho;
+        result_v[0][c] = s_l[0][c] * n_l;
       }
     } else if (wrt_key == "saturation_liquid") {
       for (int c = 0; c != ncells; ++c) {
-        result_v[0][c] = phi[0][c] * rho;
+        result_v[0][c] = phi[0][c] * n_l;
       }
     } else {
       ASSERT(0);

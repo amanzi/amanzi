@@ -307,21 +307,22 @@ void Darcy_PK::Initialize()
   op_->SymbolicAssembleMatrix();
   op_->CreateCheckPoint();
 
-  // preconditioner and optional linear solver
+  // generic linear solver
+  ASSERT(ti_list_->isParameter("linear solver"));
+  solver_name_ = ti_list_->get<std::string>("linear solver");
+
+  // preconditioner. There is no need to enhance it for Darcy
   ASSERT(ti_list_->isParameter("preconditioner"));
   preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
   ASSERT(preconditioner_list_->isSublist(preconditioner_name_));
   
-  ASSERT(ti_list_->isParameter("linear solver"));
-  solver_name_ = ti_list_->get<std::string>("linear solver");
-
   // initialize well modeling
   if (src_sink != NULL) {
     if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       CalculatePermeabilityFactorInWell();
       src_sink->ComputeDistribute(t_old, t_new, Kxy->Values()); 
     } else {
-      src_sink->ComputeDistribute(t_old, t_new, NULL);
+      src_sink->ComputeDistribute(t_old, t_new);
     }
   }
   
@@ -334,7 +335,6 @@ void Darcy_PK::Initialize()
     DeriveFaceValuesFromCellValues(p, lambda);
 
     SolveFullySaturatedProblem(t_old, *solution);
-    pressure_eval_->SetFieldAsChanged(S_.ptr());
   }
 
   // print initialization head for this time period
@@ -413,7 +413,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new)
     if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       src_sink->ComputeDistribute(t_old, t_new, Kxy->Values()); 
     } else {
-      src_sink->ComputeDistribute(t_old, t_new, NULL);
+      src_sink->ComputeDistribute(t_old, t_new);
     }
   }
 

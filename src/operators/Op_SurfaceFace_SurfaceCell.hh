@@ -9,13 +9,13 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_OP_FACE_CELL_HH_
-#define AMANZI_OP_FACE_CELL_HH_
+#ifndef AMANZI_OP_SURFACEFACE_SURFACECELL_HH_
+#define AMANZI_OP_SURFACEFACE_SURFACECELL_HH_
 
 #include <vector>
 #include "DenseMatrix.hh"
 #include "Operator.hh"
-#include "Op.hh"
+#include "Op_Face_Cell.hh"
 
 /*
   Op classes are small structs that play two roles:
@@ -23,24 +23,19 @@
   1. They provide a class name to the schema, enabling visitor patterns.
   2. They are a container for local matrices.
   
-  This Op class is for storing local matrices of length nfaces and with dofs
-  on cells, i.e. for Advection or for TPFA.
+  This Op class is a little odd, in that in maps from surface cells into subsurface faces.
 */
 
 namespace Amanzi {
 namespace Operators {
 
-class Op_Face_Cell : public Op {
+class Op_SurfaceFace_SurfaceCell : public Op_Face_Cell {
  public:
-  Op_Face_Cell(std::string& name,
-               const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      Op(OPERATOR_SCHEMA_BASE_FACE |
-         OPERATOR_SCHEMA_DOFS_CELL, name, mesh) {
-    WhetStone::DenseMatrix null_matrix;
-    nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-    matrices.resize(nfaces_owned, null_matrix);
-    matrices_shadow = matrices;
-  }
+  Op_SurfaceFace_SurfaceCell(std::string& name,
+               const Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_) :
+      Op_Face_Cell(name, surf_mesh_),
+      surf_mesh(surf_mesh_)
+  {}
 
   virtual void ApplyMatrixFreeOp(const Operator* assembler,
           const CompositeVector& X, CompositeVector& Y) const {
@@ -61,24 +56,9 @@ class Op_Face_Cell : public Op {
             my_block_row, my_block_col);
   }
   
-  virtual void Rescale(const CompositeVector& scaling) {
-    if (scaling.HasComponent("cell")) {
-      const Epetra_MultiVector& s_c = *scaling.ViewComponent("cell",true);
-      AmanziMesh::Entity_ID_List cells;
-      for (int f = 0; f != matrices.size(); ++f) {
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-        matrices[f](0,0) *= s_c[0][cells[0]];
-        if (cells.size() > 1) {
-          matrices[f](0,1) *= s_c[0][cells[1]];          
-          matrices[f](1,0) *= s_c[0][cells[0]];          
-          matrices[f](1,1) *= s_c[0][cells[1]];
-        }          
-      }
-    }
-  }
+ public:
+  Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh;
 
- protected:
-  int nfaces_owned;
 };
 
 }  // namespace Operators

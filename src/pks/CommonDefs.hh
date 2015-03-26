@@ -14,6 +14,9 @@
 #ifndef AMANZI_PK_COMMON_DEFS_HH_
 #define AMANZI_PK_COMMON_DEFS_HH_
 
+#include <string>
+#include <utility>
+
 namespace Amanzi {
 namespace CommonDefs {
 
@@ -28,7 +31,7 @@ const int DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME = 1;
 const int DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY = 2;
 
 const int DOMAIN_FUNCTION_SUBMODEL_RATE = 0;
-const int DOMAIN_FUNCTION_SUBMODEL_INTEGRAND = 1;
+const int DOMAIN_FUNCTION_SUBMODEL_INTEGRAL = 1;
 
 typedef std::pair<std::string, int> Action;
 

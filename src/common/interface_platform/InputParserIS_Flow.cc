@@ -156,6 +156,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           // linear solver
           sti_list.set<std::string>("linear solver", ST_SOLVER);
           sti_list.set<std::string>("preconditioner", ST_PRECOND);
+          sti_list.set<std::string>("preconditioner enhancement", "none");
 
           // pressure-lambda constraints
           Teuchos::ParameterList& sti_plamb = sti_list.sublist("pressure-lambda constraints");
@@ -354,6 +355,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
             tti_list.set<std::string>("linear solver", TR_SOLVER);
           }
           tti_list.set<std::string>("preconditioner", TR_PRECOND);
+          tti_list.set<std::string>("preconditioner enhancement", "none");
 
           // pressure-lambda constraints
           Teuchos::ParameterList& tti_plamb = tti_list.sublist("pressure-lambda constraints");
@@ -467,7 +469,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           if (nonlinear_solver == std::string("Newton")) {
             tti_bdf1.set<int>("max preconditioner lag iterations", 0);
 	    tti_bdf1.set<bool>("extrapolate initial guess", false);
-            tti_list.set<std::string>("linear solver", "GMRES for Newton");
+            tti_list.set<std::string>("preconditioner enhancement", "GMRES for Newton");
           }
 
           tti_list.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);

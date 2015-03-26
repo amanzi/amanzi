@@ -66,6 +66,7 @@ class CycleDriver {
   void CoordinatorInit_();
   void ReadParameterList_();
 
+ private:
   // PK container and factory
   Teuchos::RCP<PK> pk_;
 
@@ -80,7 +81,6 @@ class CycleDriver {
   Teuchos::RCP<Teuchos::ParameterList> parameter_list_;
   Teuchos::RCP<Teuchos::ParameterList> coordinator_list_;
 
-  double t0_, t1_;
   std::vector<double> t_, tp_start_, tp_end_, tp_dt_, tp_max_cycle_;  
   double max_dt_, min_dt_;
   int cycle0_, cycle1_;

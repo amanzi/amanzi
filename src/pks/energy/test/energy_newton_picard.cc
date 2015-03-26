@@ -9,7 +9,7 @@
 #include "Energy_PK.hh"
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
-#include "SolverNewton.hh"
+#include "SolverFactory.hh"
 #include "SolverFnBase.hh"
 #include "UpwindStandard.hh"
 
@@ -188,6 +188,7 @@ void HeatConduction::Init(
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
   op_diff_->Setup(Kptr, k, dkdT, rho, mu);
   op_diff_->UpdateMatrices(flux_.ptr(), solution_.ptr());
+  op_diff_->UpdateMatricesNewtonCorrection(flux_.ptr(), solution_.ptr());
   op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
 
   // form the global matrix
@@ -254,6 +255,7 @@ void HeatConduction::UpdatePreconditioner(const Teuchos::RCP<const CompositeVect
   UpdateValues(*up);
   op_->Init();
   op_diff_->UpdateMatrices(flux_.ptr(), up.ptr());
+  op_diff_->UpdateMatricesNewtonCorrection(flux_.ptr(), up.ptr());
   op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
   op_diff_->ApplyBCs();
 
@@ -346,19 +348,17 @@ TEST(NKA) {
     problem->Init(mesh, plist);
 
     // create the Solver
-    Teuchos::ParameterList& prec_list = plist.get<Teuchos::ParameterList>("Preconditioners");
-    Teuchos::ParameterList slist = plist.sublist(SOLVERS[i] + " parameters");
-
-    Teuchos::RCP<AmanziSolvers::SolverNewton<CompositeVector, CompositeVectorSpace> > 
-        newton_picard = Teuchos::rcp(new AmanziSolvers::SolverNewton<CompositeVector, CompositeVectorSpace>(slist));
-    newton_picard->Init(problem, problem->cvs());
+    AmanziSolvers::SolverFactory<CompositeVector, CompositeVectorSpace> factory;
+    Teuchos::RCP<AmanziSolvers::Solver<CompositeVector, CompositeVectorSpace> >
+        solver = factory.Create(SOLVERS[i], plist);
+    solver->Init(problem, problem->cvs());
 
     // initial guess
     problem->InitialGuess();
     Epetra_MultiVector p0(*problem->solution()->ViewComponent("cell"));
 
     // solve
-    newton_picard->Solve(problem->solution());
+    solver->Solve(problem->solution());
     Epetra_MultiVector& p1 = *problem->solution()->ViewComponent("cell");
 
     if (MyPID == 0) {

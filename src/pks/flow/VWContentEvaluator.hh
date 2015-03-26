@@ -9,7 +9,7 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 
   Field evaluator for total volumetric water content which is the 
-  conserved quantity density in Richards's equation.
+  conserved quantity in the Richards equation.
 
   Wrapping this conserved quantity as a field evaluator makes it
   easier to take derivatives, keep updated, and the like.

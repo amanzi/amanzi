@@ -50,6 +50,7 @@ void Richards_PK::Functional(double t_old, double t_new,
   // assemble residual for diffusion operator
   op_matrix_->Init();
   op_matrix_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
+  op_matrix_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr());
   op_matrix_diff_->ApplyBCs(true);
 
   Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
@@ -59,6 +60,7 @@ void Richards_PK::Functional(double t_old, double t_new,
 
   // add accumulation term 
   Epetra_MultiVector& f_cell = *f->Data()->ViewComponent("cell");
+  const Epetra_MultiVector& phi_c = *S_->GetFieldData("porosity")->ViewComponent("cell");
 
   functional_max_norm = 0.0;
   functional_max_cell = 0;
@@ -75,7 +77,7 @@ void Richards_PK::Functional(double t_old, double t_new,
     double factor = mesh_->cell_volume(c) / dtp;
     f_cell[0][c] += (wc1 - wc2) * factor;
 
-    double tmp = fabs(f_cell[0][c]) / factor;  // calculate errors
+    double tmp = fabs(f_cell[0][c]) / (factor * molar_rho_ * phi_c[0][c]);  // calculate errors
     if (tmp > functional_max_norm) {
       functional_max_norm = tmp;
       functional_max_cell = c;        
@@ -216,6 +218,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   // create diffusion operators
   op_preconditioner_->Init();
   op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
+  op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr());
   op_preconditioner_diff_->ApplyBCs(true);
 
   // add time derivative
@@ -228,7 +231,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   CompositeVector& dSdP = *S_->GetFieldData("dsaturation_liquid_dpressure", "saturation_liquid");
 
   const CompositeVector& phi = *S_->GetFieldData("porosity");
-  dSdP.Multiply(rho_, phi, dSdP, 0.0);
+  dSdP.Multiply(molar_rho_, phi, dSdP, 0.0);
 
   if (dtp > 0.0) {
     op_acc_->AddAccumulationTerm(*u->Data(), dSdP, dtp, "cell");

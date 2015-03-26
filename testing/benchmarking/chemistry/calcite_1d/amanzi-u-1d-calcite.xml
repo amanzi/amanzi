@@ -9,16 +9,20 @@
     <Parameter name="Chemistry Model" type="string" value="Amanzi"/>
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Initialize To Steady">
+<!--      <ParameterList name="Transient">  -->
         <Parameter name="Start" type="double" value="0.0"/>
         <Parameter name="End" type="double" value="1.5778463e9"/>
         <Parameter name="Switch" type="double" value="0.0"/>
-	      <Parameter name="Steady Initial Time Step" type="double" value="1.5768e+5"/>
+        <Parameter name="Steady Initial Time Step" type="double" value="1.5768e+5"/>
         <Parameter name="Transient Initial Time Step" type="double" value="1.5768e+5"/>
       </ParameterList>
     </ParameterList>
     <Parameter name="Verbosity" type="string" value="High"/>
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
+        <ParameterList name="Flow Process Kernel">
+          <Parameter name="Preconditioning Strategy" type="string" value="Diffusion Operator"/>
+        </ParameterList>
         <ParameterList name="Transport Process Kernel">
           <Parameter name="Transport Integration Algorithm" type="string" value="Explicit Second-Order"/>
         </ParameterList>

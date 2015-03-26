@@ -359,6 +359,7 @@ Teuchos::ParameterList InputParserIS::CreateTransportSrcList_(Teuchos::Parameter
                 }
                 else if (solute_src.isSublist("Source: Diffusion Dominated Release Model")) {
                   src_out.set<std::string>("spatial distribution method", dist_method);
+                  src_out.set<std::string>("submodel", "integrated source");
                   src_fn = solute_src.sublist("Source: Diffusion Dominated Release Model");
                 }
                 else {

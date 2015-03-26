@@ -21,16 +21,21 @@
 #include "MatrixFE.hh"
 #include "SuperMap.hh"
 
+#include "LinearOperator.hh"
+#include "LinearOperatorFactory.hh"
+
 #include "Op.hh"
 #include "Op_Cell_Node.hh"
 #include "Op_Cell_FaceCell.hh"
 #include "Op_Face_Cell.hh"
+#include "Op_SurfaceFace_SurfaceCell.hh"
 
 #include "OperatorDefs.hh"
 #include "Operator_FaceCell.hh"
 #include "Operator_FaceCellScc.hh"
 #include "Operator_FaceCellSff.hh"
 #include "Operator_Node.hh"
+#include "Operator_ConsistentFace.hh"
 
 #include "OperatorDiffusionMFD.hh"
 
@@ -120,14 +125,14 @@ void OperatorDiffusionMFD::UpdateMatrices(
   }
 
   // add Newton-type corrections
-  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
-    if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
-      AddNewtonCorrectionCell_(flux, u);
-    } else {
-      Errors::Message msg("OperatorDiffusion: Newton Correction may only be applied to schemas that include CELL dofs.");
-      Exceptions::amanzi_throw(msg);
-    }
-  }
+  // if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
+  //   if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
+  //     AddNewtonCorrectionCell_(flux, u);
+  //   } else {
+  //     Errors::Message msg("OperatorDiffusion: Newton Correction may only be applied to schemas that include CELL dofs.");
+  //     Exceptions::amanzi_throw(msg);
+  //   }
+  // }
 }
 
 
@@ -139,8 +144,6 @@ void OperatorDiffusionMFD::UpdateMatricesNewtonCorrection(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
-  ASSERT(false);  // LKN: Change to old UpdateMatrix logic due to Richards.
-
   // add Newton-type corrections
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
     if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
@@ -290,7 +293,7 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
           for (int m = 0; m < nfaces; m++) {
             double tmp = Wff(n, m) * kf[n];
             rowsum += tmp;
-            Acell(n, m) = tmp;
+            Acell(n, m) = tmp; ASSERT(std::abs(tmp) < 1.e20);
           }
 
           Acell(n, nfaces) = -rowsum;
@@ -803,7 +806,7 @@ void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
 
 
 /* ******************************************************************
-* Special assemble of elemental face-based matrices. 
+* This method is entirely unclear why it exists and should be documented.
 ****************************************************************** */
 void OperatorDiffusionMFD::ModifyMatrices(const CompositeVector& u)
 {
@@ -1096,8 +1099,13 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
       local_op_ = Teuchos::rcp(new Op_Cell_FaceCell(name, mesh_));
     } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_FACE |
             OPERATOR_SCHEMA_DOFS_CELL)) {
-      std::string name = "Diffusion: FACE_CELL";
-      local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+      if (plist.get<bool>("surface operator", false)) {
+        std::string name = "Diffusion: FACE_CELL Surface";
+        local_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name, mesh_));
+      } else {
+        std::string name = "Diffusion: FACE_CELL";
+        local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+      }
     } else {
       ASSERT(0);
     }
@@ -1148,5 +1156,68 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
   nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 }
 
+
+/* ******************************************************************
+* Given a set of cell values, update faces using the consistency equations,
+* x_f = Aff^-1 * (y_f - Afc * x_c)
+****************************************************************** */
+void
+OperatorDiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
+{
+  if (consistent_face_op_ == Teuchos::null) {
+    // create the op
+    Teuchos::RCP<CompositeVectorSpace> cface_cvs = Teuchos::rcp(new CompositeVectorSpace());
+    cface_cvs->SetMesh(mesh_)->SetGhosted()
+        ->AddComponent("face", AmanziMesh::FACE, 1);
+
+    consistent_face_op_ = Teuchos::rcp(new Operator_ConsistentFace(cface_cvs, plist_.sublist("consistent faces")));
+    consistent_face_op_->OpPushBack(local_op_);
+    consistent_face_op_->SymbolicAssembleMatrix();
+  }
+
+  // calculate the rhs, given by y_f - Afc * x_c
+  CompositeVector& y = *consistent_face_op_->rhs();
+  Epetra_MultiVector& y_f = *y.ViewComponent("face",true);
+  y_f = *global_op_->rhs()->ViewComponent("face",true);
+  consistent_face_op_->rhs()->PutScalarGhosted(0.);
+
+  // y_f - Afc * x_c
+  const Epetra_MultiVector& x_c = *u.ViewComponent("cell",false);
+  AmanziMesh::Entity_ID_List faces;
+  for (int c=0; c!=ncells_owned; ++c) {
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
+
+    for (int n=0; n!=nfaces; ++n) {
+      y_f[0][faces[n]] -= Acell(n,nfaces) * x_c[0][c];
+    }
+  }
+
+  y.GatherGhostedToMaster("face", Add);
+
+  // x_f = Aff^-1 * ...
+  consistent_face_op_->AssembleMatrix();
+  consistent_face_op_->InitPreconditioner(plist_.sublist("consistent faces").sublist("preconditioner"));
+
+  if (plist_.sublist("consistent faces").isSublist("linear solver")) {
+    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> fac;
+    Teuchos::RCP<Operator> lin_solver = fac.Create(
+        plist_.sublist("consistent faces").sublist("linear solver"), consistent_face_op_);
+
+    CompositeVector u_f_copy(y);
+    int ierr = lin_solver->ApplyInverse(y, u_f_copy);
+    *u.ViewComponent("face",false) = *u_f_copy.ViewComponent("face",false);
+    ASSERT(!ierr);
+  } else {
+    CompositeVector u_f_copy(y);
+    int ierr = consistent_face_op_->ApplyInverse(y, u);
+    ASSERT(!ierr);
+    *u.ViewComponent("face",false) = *u_f_copy.ViewComponent("face",false);
+  }
+}
+
+  
 }  // namespace Operators
 }  // namespace Amanzi

@@ -14,6 +14,7 @@
 #define AMANZI_OPERATOR_NODE_HH_
 
 #include "DenseMatrix.hh"
+#include "OperatorDefs.hh"
 #include "Operator.hh"
 
 /* ******************************************************************

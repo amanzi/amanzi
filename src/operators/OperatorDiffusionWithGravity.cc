@@ -28,7 +28,15 @@ void OperatorDiffusionWithGravity::UpdateMatrices(
 
   // add the diffusion matrices
   OperatorDiffusionMFD::UpdateMatrices(flux, u);
+  AddGravityToRHS_();
+}
 
+
+/* ******************************************************************
+* Add a gravity term to the RHS of the operator
+****************************************************************** */
+void OperatorDiffusionWithGravity::AddGravityToRHS_()
+{
   if (rho_cv_ == Teuchos::null) {
     // add the gravity terms
     AmanziGeometry::Point rho_g(g_);
@@ -158,7 +166,8 @@ void OperatorDiffusionWithGravity::UpdateMatrices(
       // collect density
       const Epetra_MultiVector& rho_c = *rho_cv_->ViewComponent("cell", false);
       
-      WhetStone::Tensor Kc(mesh_->space_dimension(),1); Kc(0,0) = 1.0;
+      WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
+      Kc(0, 0) = 1.0;
       AmanziMesh::Entity_ID_List faces;
       std::vector<int> dirs;
 
@@ -281,7 +290,8 @@ void OperatorDiffusionWithGravity::UpdateFlux(
     AmanziMesh::Entity_ID_List faces;
     std::vector<int> dirs;
     std::vector<int> flag(nfaces_wghost, 0);
-    WhetStone::Tensor Kc(mesh_->space_dimension(),1); Kc(0,0) = 1.0;
+    WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
+    Kc(0, 0) = 1.0;
 
     for (int c = 0; c < ncells_owned; c++) {
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);

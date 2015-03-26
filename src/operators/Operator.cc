@@ -32,6 +32,8 @@
 #include "Op_Cell_Edge.hh"
 #include "Op_Face_Cell.hh"
 #include "Op_Node_Node.hh"
+#include "Op_SurfaceCell_SurfaceCell.hh"
+#include "Op_SurfaceFace_SurfaceCell.hh"
 
 #include "OperatorDefs.hh"
 #include "OperatorUtils.hh"
@@ -297,32 +299,6 @@ Operator::Rescale(const CompositeVector& scaling) {
 }
 
 
-// /* ******************************************************************
-//  * Enforce the BCs on local matrices
-//  ****************************************************************** */
-// void
-// Operator::ApplyBCs(const Teuchos::RCP<BCs>& bc) {
-//   bc_ = bc;
-
-//   // Dispatch BCs to the Ops.  Note that since we allow multiple Ops, the BC
-//   // can be applied in one of several Ops, but all others must, for example,
-//   // zero their appropriate row.  The flag here allows Operators to only set
-//   // an identity row in one Op while zeroing all others.
-//   bool bc_sucessfully_applied = false;
-//   for (op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-//     bc_sucessfully_applied |=
-//         (*it)->ApplyBC(*bc, rhs_.ptr(), bc_sucessfully_applied);
-//   }
-//   // This check is currently broken by adv + diffusion when diffusion is MFD
-//   // -- need to reconsider whether this is useful or can be reformulated to be
-//   // useful.  
-//   // if (!bc_sucessfully_applied) {
-//   //   Errors::Message msg("Operators: ApplyBC not sucessful for this bc and operator schema combinations.");
-//   //   Exceptions::amanzi_throw(msg);
-//   // }    
-// }
-
-
 /* ******************************************************************
 * Check points allows us to revert boundary conditions, source terms,
 * and accumulation terms. They are useful for operators with constant
@@ -478,43 +454,22 @@ int Operator::ApplyMatrixFreeOp(const Op_Node_Node& op,
 
 
 /* ******************************************************************
-* Visit methods for RHS: Cell
+* Visit methods for Apply: SurfaceCell
 ****************************************************************** */
-void Operator::AssembleRHSOp(const Op_Cell_FaceCell& op, CompositeVector& rhs) const {
-  SchemaMismatch_(op.schema_string, schema_string_);
+int Operator::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
+                                const CompositeVector& X, CompositeVector& Y) const
+{
+  return SchemaMismatch_(op.schema_string, schema_string_);
 }
-
-
-void Operator::AssembleRHSOp(const Op_Cell_Face& op, CompositeVector& rhs) const {
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
-
-
-void Operator::AssembleRHSOp(const Op_Cell_Node& op, CompositeVector& rhs) const {
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
-
-
-void Operator::AssembleRHSOp(const Op_Cell_Cell& op, CompositeVector& rhs) const {
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
-
 
 /* ******************************************************************
-* Visit methods for RHS: Face
+* Visit methods for Apply: SurfaceFace
 ****************************************************************** */
-void Operator::AssembleRHSOp(const Op_Face_Cell& op, CompositeVector& rhs) const {
-  SchemaMismatch_(op.schema_string, schema_string_);
+int Operator::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
+                                const CompositeVector& X, CompositeVector& Y) const
+{
+  return SchemaMismatch_(op.schema_string, schema_string_);
 }
-
-
-/* ******************************************************************
-* Visit methods for RHS: Node
-****************************************************************** */
-void Operator::AssembleRHSOp(const Op_Node_Node& op, CompositeVector& rhs) const {
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
-
 
 /* ******************************************************************
 * Visit methods for symbolic assemble: Cell.
@@ -575,6 +530,36 @@ void Operator::SymbolicAssembleMatrixOp(const Op_Node_Node& op,
 
 
 /* ******************************************************************
+* Visit methods for symbolic assemble: SurfaceCell
+****************************************************************** */
+void Operator::SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
+                                        const SuperMap& map, GraphFE& graph,
+                                        int my_block_row, int my_block_col) const
+{
+  std::stringstream err;
+  err << "Invalid schema combination -- " << op.schema_string
+      << " cannot be used with a matrix on " << schema_string_;
+  Errors::Message message(err.str());
+  Exceptions::amanzi_throw(message);
+}
+
+
+/* ******************************************************************
+* Visit methods for symbolic assemble: SurfaceFace.
+****************************************************************** */
+void Operator::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
+                                        const SuperMap& map, GraphFE& graph,
+                                        int my_block_row, int my_block_col) const
+{
+  std::stringstream err;
+  err << "Invalid schema combination -- " << op.schema_string
+      << " cannot be used with a matrix on " << schema_string_;
+  Errors::Message message(err.str());
+  Exceptions::amanzi_throw(message);
+}
+
+
+/* ******************************************************************
 * Visit methods for assemble: Cell.
 ****************************************************************** */
 void Operator::AssembleMatrixOp(const Op_Cell_FaceCell& op,
@@ -629,6 +614,36 @@ void Operator::AssembleMatrixOp(const Op_Node_Node& op,
                                 const SuperMap& map, MatrixFE& mat,
                                 int my_block_row, int my_block_col) const {
   SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+/* ******************************************************************
+* Visit methods for assemble: Surface Cell
+****************************************************************** */
+void Operator::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
+                                const SuperMap& map, MatrixFE& mat,
+                                int my_block_row, int my_block_col) const
+{
+  std::stringstream err;
+  err << "Invalid schema combination -- " << op.schema_string
+      << " cannot be used with a matrix on " << schema_string_;
+  Errors::Message message(err.str());
+  Exceptions::amanzi_throw(message);
+}
+
+
+/* ******************************************************************
+* Visit methods for assemble: Surface Face
+****************************************************************** */
+void Operator::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
+                                const SuperMap& map, MatrixFE& mat,
+                                int my_block_row, int my_block_col) const
+{
+  std::stringstream err;
+  err << "Invalid schema combination -- " << op.schema_string
+      << " cannot be used with a matrix on " << schema_string_;
+  Errors::Message message(err.str());
+  Exceptions::amanzi_throw(message);
 }
 
 }  // namespace Operators
