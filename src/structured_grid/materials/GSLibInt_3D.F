@@ -46,7 +46,7 @@ c :: ----------------------------------------------------------
 c :: Conditioned the data using internal values. One big fab.  WRONG!!!
 c :: ----------------------------------------------------------
       subroutine FORT_INTERNAL_DATA(dat,DIMS(dat),
-     &     scratch_c,c_sz,c_idx,condg,sig,dx,domlo,domhi)
+     &     scratch_c,c_sz,c_idx,condg,sig,dx,plo,domlo,domhi)
 
 #include "sgsim2.inc"
 
@@ -55,7 +55,7 @@ c :: ----------------------------------------------------------
       integer domlo(SDIM),domhi(SDIM)
       REAL_T  dat(DIMV(dat))
       REAL_T  scratch_c(c_sz)
-      REAL_T  dx(SDIM),condg,sig
+      REAL_T  dx(SDIM),plo(SDIM),condg,sig
 
       integer i,j,k,idx,nnx,nny,nnz,nnxyz
 
@@ -72,9 +72,9 @@ c :: ----------------------------------------------------------
             do j = ARG_L2(dat),ARG_H2(dat)
                do i = ARG_L1(dat),ARG_H1(dat)
                   idx =  (k-domlo(3))*nnx*nny + (j-domlo(2))*nnx + (i-domlo(1))
-                  scratch_c(c_idx(1)+idx) = (dble(i)+0.5d0)*dx(1)
-                  scratch_c(c_idx(2)+idx) = (dble(j)+0.5d0)*dx(2)
-                  scratch_c(c_idx(3)+idx) = (dble(k)+0.5d0)*dx(3)
+                  scratch_c(c_idx(1)+idx) = plo(1) + (dble(i)+0.5d0)*dx(1)
+                  scratch_c(c_idx(2)+idx) = plo(2) + (dble(j)+0.5d0)*dx(2)
+                  scratch_c(c_idx(3)+idx) = plo(3) + (dble(k)+0.5d0)*dx(3)
                   scratch_c(c_idx(4)+idx) = log(dat(i,j,k)/condg)/sig
                   scratch_c(c_idx(5)+idx) = 1
                   scratch_c(c_idx(6)+idx) = log(dat(i,j,k)/condg)/sig
@@ -254,7 +254,7 @@ c :: ----------------------------------------------------------
      &     scratch_c,c_sz,c_idx,
      &     scratch_r,real_sz,real_idx,
      &     scratch_i,int_sz,int_idx,
-     &     lo,hi,dx,iseed)
+     &     lo,hi,dx,plo,iseed)
 
 #include "sgsim2.inc"
 
@@ -269,7 +269,7 @@ c :: ----------------------------------------------------------
       REAL_T  dat(DIMV(dat))
       REAL_T  scratch_r(real_sz)
       REAL_T  scratch_c(c_sz)
-      REAL_T  dx(SDIM)
+      REAL_T  dx(SDIM), plo(SDIM)
       REAL_T  random_val(nvalid)
 
       integer i,j,k,idx,idx2,imult,index
@@ -281,9 +281,9 @@ c :: ----------------------------------------------------------
       scratch_i(int_idx(2)) = ARG_H2(dat)-ARG_L2(dat)+1
       scratch_i(int_idx(3)) = ARG_H3(dat)-ARG_L3(dat)+1
 
-      scratch_r(int_idx(1)) = (ARG_L1(dat)+0.5d0)*dx(1)
-      scratch_r(int_idx(2)) = (ARG_L2(dat)+0.5d0)*dx(2)
-      scratch_r(int_idx(3)) = (ARG_L3(dat)+0.5d0)*dx(3)
+      scratch_r(int_idx(1)) = plo(1) + (ARG_L1(dat)+0.5d0)*dx(1)
+      scratch_r(int_idx(2)) = plo(2) + (ARG_L2(dat)+0.5d0)*dx(2)
+      scratch_r(int_idx(3)) = plo(3) + (ARG_L3(dat)+0.5d0)*dx(3)
       scratch_r(int_idx(4)) = dx(1)
       scratch_r(int_idx(5)) = dx(2)
       scratch_r(int_idx(6)) = dx(3)
@@ -421,7 +421,7 @@ c :: ----------------------------------------------------------
       do k = ARG_L3(dat),ARG_H3(dat)      
          do j=ARG_L2(dat),ARG_H2(dat)
             do i=ARG_L1(dat),ARG_H1(dat)
-               dat(i,j,k)=condg*exp(sig*dat(i,j,k))
+               dat(i,j,k) = 10**(dat(i,j,k)+log10(condg))
             end do
          end do
       end do

@@ -83,7 +83,7 @@ public:
 
   virtual ~GSLibProperty() {delete dataServices;}
   virtual Property* clone() const;
-  virtual int nComp() const {return values.size();}
+  virtual int nComp() const {return num_comps;}
 
   const AmrData* GetAmrData() const;
   Real Avg() const {return avg;}
@@ -97,21 +97,25 @@ public:
                      Property::CoarsenRule  crule,
                      const std::string&     varname);
 
+  const Array<std::string>& PlotfileVars() const {return varnames;}
+
 protected:
-  static void BuildGSLibFile(Real                   avg,
-                             Real                   std,
-                             const std::string&     gslib_param_file,
-                             const std::string&     gslib_data_file,
-                             const Array<Geometry>& geom_array,
-                             const Array<IntVect>&  ref_ratio,
-                             int                    num_grow,
-                             int                    max_grid_size_fine_gen,
-                             Property::CoarsenRule  crule,
-                             const std::string&     varname);
+  void BuildGSLibFile(Real                   avg,
+		      Real                   std,
+		      const std::string&     gslib_param_file,
+		      const std::string&     gslib_data_file,
+		      const Array<Geometry>& geom_array,
+		      const Array<IntVect>&  ref_ratio,
+		      int                    num_grow,
+		      int                    max_grid_size_fine_gen,
+		      Property::CoarsenRule  crule,
+		      const std::string&     varname);
 
   DataServices* dataServices;
   Real avg, std;
   std::string param_file, data_file;
+  int num_comps;
+  Array<std::string> varnames;
 };
 
 
