@@ -42,6 +42,7 @@ class SuperMap {
   SuperMap(const SuperMap& other);  
 
   // meta-data accessors
+  bool HasComponent(const std::string& compname) const;
   int Offset(const std::string& compname) const { return offsets_.at(compname); }
   int GhostedOffset(const std::string& compname) const { return ghosted_offsets_.at(compname); }
   int NumOwnedElements(const std::string& compname) const { return counts_.at(compname); }
@@ -86,6 +87,7 @@ class SuperMap {
   virtual const std::vector<int>& CreateIndices_(const std::string& compname, int dofnum, bool ghosted) const;
 
  protected:
+  std::vector<std::string> compnames_;
   std::map<std::string,int> offsets_;
   std::map<std::string,int> num_dofs_;
   std::map<std::string,int> counts_;
