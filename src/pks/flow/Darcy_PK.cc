@@ -322,7 +322,7 @@ void Darcy_PK::Initialize()
       CalculatePermeabilityFactorInWell();
       src_sink->ComputeDistribute(t_old, t_new, Kxy->Values()); 
     } else {
-      src_sink->ComputeDistribute(t_old, t_new, NULL);
+      src_sink->ComputeDistribute(t_old, t_new);
     }
   }
   
@@ -335,7 +335,6 @@ void Darcy_PK::Initialize()
     DeriveFaceValuesFromCellValues(p, lambda);
 
     SolveFullySaturatedProblem(t_old, *solution);
-    pressure_eval_->SetFieldAsChanged(S_.ptr());
   }
 
   // print initialization head for this time period
@@ -414,7 +413,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new)
     if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       src_sink->ComputeDistribute(t_old, t_new, Kxy->Values()); 
     } else {
-      src_sink->ComputeDistribute(t_old, t_new, NULL);
+      src_sink->ComputeDistribute(t_old, t_new);
     }
   }
 

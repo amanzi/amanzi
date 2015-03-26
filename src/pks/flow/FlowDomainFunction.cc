@@ -72,7 +72,7 @@ void FlowDomainFunction::Compute(double t0, double t1)
       value_[*id] = (*(*spec_and_ids)->first->second)(args)[0];
     }
    
-    if (submodel_[n] == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
+    if (submodel_[n] == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAL) {
       args[0] = t0;
       for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
@@ -125,7 +125,7 @@ void FlowDomainFunction::ComputeDistribute(double t0, double t1)
       value_[*id] = (*(*spec_and_ids)->first->second)(args)[0] / domain_volume;
     }
 
-    if (submodel_[n] == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
+    if (submodel_[n] == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAL) {
       args[0] = t0;
       for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
@@ -183,7 +183,7 @@ void FlowDomainFunction::ComputeDistribute(double t0, double t1, double* weight)
         value_[*id] = (*(*spec_and_ids)->first->second)(args)[0] / domain_volume;
       }      
 
-      if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
+      if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAL) {
         args[0] = t0;
         for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
@@ -207,7 +207,7 @@ void FlowDomainFunction::ComputeDistribute(double t0, double t1, double* weight)
         value_[*id] = (*(*spec_and_ids)->first->second)(args)[0] * weight[*id] / domain_volume;
       }      
 
-      if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
+      if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAL) {
         args[0] = t0;
         for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
@@ -225,7 +225,7 @@ void FlowDomainFunction::ComputeDistribute(double t0, double t1, double* weight)
         value_[*id] = (*(*spec_and_ids)->first->second)(args)[0];
       }      
 
-      if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
+      if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAL) {
         args[0] = t0;
         for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);

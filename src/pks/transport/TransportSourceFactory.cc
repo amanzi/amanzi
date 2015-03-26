@@ -110,7 +110,7 @@ void TransportSourceFactory::ProcessSourceSpec(
 
   std::string submodel_name = list.get<std::string>("submodel", "rate");
   int submodel(CommonDefs::DOMAIN_FUNCTION_SUBMODEL_RATE);
-  if (submodel_name == "integrand") submodel = CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND;
+  if (submodel_name == "integrated source") submodel = CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAL;
 
   src->Define(regions, f, method, submodel, name);
 }

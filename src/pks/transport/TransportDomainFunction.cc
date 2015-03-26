@@ -85,7 +85,7 @@ void TransportDomainFunction::Compute(double t0, double t1)
       value_[*c] = (*(*spec_ids)->first->second)(args)[0];
     }
 
-    if (submodel_[n] == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
+    if (submodel_[n] == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAL) {
       args[0] = t0;
       for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
@@ -142,7 +142,7 @@ void TransportDomainFunction::ComputeDistribute(double t0, double t1)
       value_[*c] = (*(*spec_ids)->first->second)(args)[0] / domain_volume;
     }
 
-    if (submodel_[n] == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
+    if (submodel_[n] == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAL) {
       args[0] = t0;
       for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
@@ -203,7 +203,7 @@ void TransportDomainFunction::ComputeDistribute(double t0, double t1, double* we
         value_[*c] = (*(*spec_ids)->first->second)(args)[0] / domain_volume;
       }      
 
-      if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
+      if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAL) {
         args[0] = t0;
         for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
@@ -227,7 +227,7 @@ void TransportDomainFunction::ComputeDistribute(double t0, double t1, double* we
         value_[*c] = (*(*spec_ids)->first->second)(args)[0] * weight[*c] / domain_volume;
       }      
 
-      if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
+      if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAL) {
         args[0] = t0;
         for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
@@ -245,7 +245,7 @@ void TransportDomainFunction::ComputeDistribute(double t0, double t1, double* we
         value_[*c] = (*(*spec_ids)->first->second)(args)[0];
       }      
 
-      if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
+      if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAL) {
         args[0] = t0;
         for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
@@ -304,7 +304,7 @@ void TransportDomainFunction::ComputeDistributeMultiValue(double t0, double t1)
       value_[*c] = (*(*spec_ids)->first->second)(args)[0] / domain_volume;
     }
 
-    if (submodel_[n] == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
+    if (submodel_[n] == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAL) {
       args[0] = t0;
       for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
@@ -366,7 +366,7 @@ void TransportDomainFunction::ComputeDistributeMultiValue(double t0, double t1, 
         value_[*c] = (*(*spec_ids)->first->second)(args)[0] / domain_volume;
       }      
 
-      if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
+      if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAL) {
         args[0] = t0;
         for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
@@ -391,7 +391,7 @@ void TransportDomainFunction::ComputeDistributeMultiValue(double t0, double t1, 
         value_[*c] = (*(*spec_ids)->first->second)(args)[0] * weight[*c] / domain_volume;
       }      
 
-      if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
+      if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAL) {
         args[0] = t0;
         for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
@@ -409,7 +409,7 @@ void TransportDomainFunction::ComputeDistributeMultiValue(double t0, double t1, 
         value_[*c] = (*(*spec_ids)->first->second)(args)[0];
       }        
 
-      if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
+      if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAL) {
         args[0] = t0;
         for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);

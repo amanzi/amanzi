@@ -603,6 +603,7 @@ void Chemistry_State::AllocateAdditionalChemistryStorage(
     S_->GetField("secondary_activity_coeff",name_)->SetData(sac);
     S_->GetField("secondary_activity_coeff",name_)->CreateData();
     S_->GetFieldData("secondary_activity_coeff",name_)->PutScalar(1.0);
+    S_->GetField("secondary_activity_coeff",name_)->set_initialized();
   }
 }
 
@@ -619,6 +620,7 @@ void Chemistry_State::AllocateAdditionalChemistryStorage(int num_aqueous_compone
     S_->GetField("secondary_activity_coeff",name_)->SetData(sac);
     S_->GetField("secondary_activity_coeff",name_)->CreateData();
     S_->GetFieldData("secondary_activity_coeff",name_)->PutScalar(1.0);
+    S_->GetField("secondary_activity_coeff",name_)->set_initialized();
   }
 }
 

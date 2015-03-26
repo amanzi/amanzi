@@ -1013,7 +1013,7 @@ void Transport_PK::ComputeAddSourceTerms(double tp, double dtp,
     if (distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       srcs[m]->ComputeDistributeMultiValue(t0, tp, Kxy->Values()); 
     } else {
-      srcs[m]->ComputeDistributeMultiValue(t0, tp, NULL);
+      srcs[m]->ComputeDistributeMultiValue(t0, tp);
     }
 
     TransportDomainFunction::Iterator it;

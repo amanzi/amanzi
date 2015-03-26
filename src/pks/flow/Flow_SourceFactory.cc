@@ -94,7 +94,7 @@ void FlowSourceFactory::ProcessSourceSpec(Teuchos::ParameterList& list, FlowDoma
 
   int submodel(CommonDefs::DOMAIN_FUNCTION_SUBMODEL_RATE);
   std::string submodel_name = list.get<std::string>("submodel", "rate");
-  if (submodel_name == "integrad") submodel = CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND;
+  if (submodel_name == "integrated source") submodel = CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAL;
 
   src->Define(regions, f, method, submodel);
 }

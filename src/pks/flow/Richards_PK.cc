@@ -814,7 +814,7 @@ void Richards_PK::UpdateSourceBoundaryData(double T0, double T1, const Composite
     if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       src_sink->ComputeDistribute(T0, T1, Kxy->Values());
     } else {
-      src_sink->ComputeDistribute(T0, T1, NULL);
+      src_sink->ComputeDistribute(T0, T1);
     }
   }
 
