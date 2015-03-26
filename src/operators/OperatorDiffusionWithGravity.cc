@@ -28,7 +28,15 @@ void OperatorDiffusionWithGravity::UpdateMatrices(
 
   // add the diffusion matrices
   OperatorDiffusionMFD::UpdateMatrices(flux, u);
+  AddGravityToRHS_();
+}
 
+
+/* ******************************************************************
+* Add a gravity term to the RHS of the operator
+****************************************************************** */
+void OperatorDiffusionWithGravity::AddGravityToRHS_()
+{
   if (rho_cv_ == Teuchos::null) {
     // add the gravity terms
     AmanziGeometry::Point rho_g(g_);

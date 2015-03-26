@@ -67,6 +67,7 @@ set(operators_inc_files
     Operator_FaceCell.hh
     Operator_FaceCellScc.hh
     Operator_FaceCellSff.hh
+    Operator_ConsistentFace.hh
     Operator_Node.hh
     Operator_Edge.hh
     FluxTPFABCfunc.hh
@@ -95,6 +96,7 @@ SOURCE OperatorUtils.cc
                    Operator_FaceCell.cc
                    Operator_FaceCellScc.cc
                    Operator_FaceCellSff.cc
+                   Operator_ConsistentFace.cc
                    Operator_Node.cc
                    Operator_Edge.cc
                    OperatorDiffusionMFD.cc
@@ -155,6 +157,13 @@ if ( BUILD_TESTS )
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_diffusion_3pe operators_diffusion NPROCS 3 KIND unit)
+
+    add_amanzi_test(operators_diffusion_consistent_face operators_diffusion_consistent_face
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_diffusion_consistent_face.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(operators_diffusion_consistent_face_3pe operators_diffusion_consistent_face NPROCS 3 KIND unit)
 
     add_amanzi_test(operators_commute operators_commute
                     KIND unit

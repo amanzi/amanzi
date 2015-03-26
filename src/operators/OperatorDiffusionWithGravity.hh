@@ -57,6 +57,8 @@ class OperatorDiffusionWithGravity : public OperatorDiffusionMFD {
   virtual void SetVectorDensity(const Teuchos::RCP<const CompositeVector>& rho) { rho_cv_ = rho; }
   
  protected:
+  virtual void AddGravityToRHS_();
+
   inline AmanziGeometry::Point GravitySpecialDirection_(int f) const;
   void Init_() { gravity_special_projection_ = (mfd_primary_ == WhetStone::DIFFUSION_TPFA); }
 
