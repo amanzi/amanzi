@@ -1,11 +1,17 @@
-:Description: 1-d fixed velocity flow w/ tracer advection
+!:Description: 1-d fixed velocity flow w/ tracer advection
 
-:=========================== chemistry ========================================
+!:=========================== chemistry ========================================
 CHEMISTRY
   PRIMARY_SPECIES
     Tracer
   /
-  DATABASE ./hanford.dat
+!:dummy reaction w/zero rate so that pflotran initializes geochem variables
+  GENERAL_REACTION
+    REACTION Tracer <-> 
+    FORWARD_RATE 0.0d0
+    BACKWARD_RATE 0.d0
+  /
+  DATABASE ./tracer.dat
   LOG_FORMULATION
   ACTIVITY_COEFFICIENTS TIMESTEP
   OUTPUT
@@ -14,57 +20,56 @@ CHEMISTRY
   /
 END
 
-:=========================== solver options ===================================
+!:=========================== solver options ===================================
 TIMESTEPPER
   TS_ACCELERATION 8
 /
 
-:=========================== discretization ===================================
+!:=========================== discretization ===================================
 GRID
   TYPE structured
   ORIGIN 0.d0 0.d0 0.d0
   NXYZ 100 1 1
   BOUNDS
-    0.d0 100.d0
-    0.d0 1.d0
-    0.d0 1.d0
+    0.d0 0.d0 0.d0
+    1.d0 1.d0 100.d0
   /
 END
 
-:=========================== flow =============================================
+!:=========================== flow =============================================
 UNIFORM_VELOCITY 7.9274479960d-9 0.d0 0.d0
 
-:=========================== fluid properties =================================
+!:=========================== fluid properties =================================
 FLUID_PROPERTY 
   DIFFUSION_COEFFICIENT 1.d-9
 /
 
-:=========================== material properties ==============================
+!:=========================== material properties ==============================
 MATERIAL_PROPERTY soil1
   ID 1
   POROSITY 0.25d0
 /
 
-:=========================== observation points ===============================
+!:=========================== observation points ===============================
 OBSERVATION
   REGION all
   AT_CELL_CENTER
 /
 
-:=========================== output options ===================================
+!:=========================== output options ===================================
 OUTPUT
   FORMAT HDF5
   PERIODIC TIME 1 y
 /
 
-:=========================== times ============================================
+!:=========================== times ============================================
 TIME
   FINAL_TIME 50.d0 y
   INITIAL_TIMESTEP_SIZE 1.d-6 y
   MAXIMUM_TIMESTEP_SIZE 1.d-1 y
 /
 
-:=========================== regions ==========================================
+!:=========================== regions ==========================================
 REGION all
   COORDINATES
     0.d0 0.d0 0.d0
@@ -88,7 +93,7 @@ REGION east
   /
 END
 
-:=========================== transport conditions =============================
+!:=========================== transport conditions =============================
 TRANSPORT_CONDITION initial
   TYPE dirichlet
   CONSTRAINT_LIST
@@ -110,7 +115,7 @@ TRANSPORT_CONDITION east
   /
 END
 
-:=========================== constraints ======================================
+!:=========================== constraints ======================================
 CONSTRAINT initial
   CONCENTRATIONS
     Tracer  1.0e-20    T
@@ -123,26 +128,26 @@ CONSTRAINT west
   /
 END
 
-:=========================== condition couplers ===============================
-: initial condition
+!:=========================== condition couplers ===============================
+!: initial condition
 INITIAL_CONDITION
   TRANSPORT_CONDITION initial
   REGION all
 END
 
-: west boundary condition
+!: west boundary condition
 BOUNDARY_CONDITION
   TRANSPORT_CONDITION west
   REGION west
 END
 
-: east boundary condition
+!: east boundary condition
 BOUNDARY_CONDITION
   TRANSPORT_CONDITION east
   REGION east
 END
 
-:=========================== stratigraphy couplers ============================
+!:=========================== stratigraphy couplers ============================
 STRATA
   REGION all
   MATERIAL soil1
