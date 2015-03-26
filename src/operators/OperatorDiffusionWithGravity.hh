@@ -14,9 +14,10 @@
 
 #include "tensor.hh"
 #include "WhetStoneDefs.hh"
+#include "DenseMatrix.hh"
 
-#include "Operator.hh"
-#include "OperatorDiffusion.hh"
+#include "OperatorDefs.hh"
+#include "OperatorDiffusionMFD.hh"
 
 
 namespace Amanzi {
@@ -24,30 +25,42 @@ namespace Operators {
 
 class BCs;
 
-class OperatorDiffusionWithGravity : public OperatorDiffusion {
+class OperatorDiffusionWithGravity : public OperatorDiffusionMFD {
  public:
-  OperatorDiffusionWithGravity() { Init(); }
-  OperatorDiffusionWithGravity(Teuchos::RCP<const CompositeVectorSpace> cvs, 
-                               Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc) 
-      : OperatorDiffusion(cvs, plist, bc) { Init(); }
-  OperatorDiffusionWithGravity(const Operator& op, 
-                               Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc) 
-      : OperatorDiffusion(op, plist, bc) { Init(); }
+  OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
+                    const Teuchos::RCP<Operator>& global_op) :
+      OperatorDiffusionMFD(plist, global_op)
+  {
+    Init_();
+  }
 
-  ~OperatorDiffusionWithGravity() {};
+  OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
+                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      OperatorDiffusionMFD(plist, mesh)
+  {
+    Init_();
+  }
 
-  // main members
-  void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u);
-  void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
-
-  inline void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
+  OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
+                    const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+      OperatorDiffusionMFD(plist, mesh)
+  {
+    Init_();
+  }
   
-  inline void Init() { gravity_special_projection_ = (mfd_primary_ == WhetStone::DIFFUSION_TPFA); }
+  // main members
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
+          const Teuchos::Ptr<const CompositeVector>& u);
+  virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
 
- private:
+  virtual void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
+  virtual void SetVectorDensity(const Teuchos::RCP<const CompositeVector>& rho) { rho_cv_ = rho; }
+  
+ protected:
   inline AmanziGeometry::Point GravitySpecialDirection_(int f) const;
+  void Init_() { gravity_special_projection_ = (mfd_primary_ == WhetStone::DIFFUSION_TPFA); }
 
- private:
+ protected:
   AmanziGeometry::Point g_;
   bool gravity_special_projection_;
 };

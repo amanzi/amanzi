@@ -1,6 +1,6 @@
 #include "XMLParameterListWriter.hh"
 
-using namespace Teuchos;
+namespace Teuchos {
 
 Amanzi_XMLParameterListWriter::Amanzi_XMLParameterListWriter() 
 {
@@ -107,3 +107,27 @@ XMLObject Amanzi_XMLParameterListWriter::toXML(const ParameterEntry& entry) cons
 
   return rtn;
 }
+
+
+void Amanzi_XMLParameterListWriter::unused(const ParameterList& p, std::ostream& os) const
+{
+  // print parameters first
+  for (ParameterList::ConstIterator i = p.begin(); i != p.end(); ++i) {
+    if (!(p.entry(i).isUsed())) {
+      os << "Parameter \"" << p.name(i) << "\": " << p.entry(i) << "\"" << std::endl;
+    }
+  }
+  
+  // print sublists second
+  for (ParameterList::ConstIterator i = p.begin(); i != p.end(); ++i) {
+    const ParameterEntry& entry_i = p.entry(i);
+    if (!entry_i.isList()) continue;
+
+    const std::string& docString = entry_i.docString();
+    const std::string& name_i = p.name(i);
+    os << name_i << " -> " << std::endl;
+    unused( getValue<ParameterList>(entry_i), os);
+  }
+}
+
+}  // namespace Teuchos

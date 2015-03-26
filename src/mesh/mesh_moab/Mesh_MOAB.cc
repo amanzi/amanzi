@@ -17,7 +17,9 @@ namespace AmanziMesh
 
   Mesh_MOAB::Mesh_MOAB (const char *filename, const Epetra_MpiComm *comm, 
 			const AmanziGeometry::GeometricModelPtr& gm,
-                        const VerboseObject *verbosity_obj) 
+                        const VerboseObject *verbosity_obj) :
+			const bool request_faces, const bool request_edges,
+    Mesh(verbosity_obj,request_faces,request_edges)
 {
   int result, rank;
   
@@ -177,17 +179,34 @@ Mesh_MOAB::Mesh_MOAB (const Mesh *inmesh,
                       const std::vector<std::string>& setnames, 
                       const Entity_kind setkind,
                       const bool flatten,
-                      const bool extrude)
+                      const bool extrude,
+		      const bool request_faces,
+		      const bool request_edges)
 {  
   Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the MOAB mesh framework\n");
   Exceptions::amanzi_throw(mesg);
 }
 
-Mesh_MOAB::Mesh_MOAB (const Mesh_MOAB& inmesh, 
+Mesh_MOAB::Mesh_MOAB (const Mesh& inmesh, 
                       const std::vector<std::string>& setnames, 
                       const Entity_kind setkind,
                       const bool flatten,
-                      const bool extrude)
+                      const bool extrude,
+		      const bool request_faces,
+		      const bool request_edges)
+{  
+  Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the MOAB mesh framework\n");
+  Exceptions::amanzi_throw(mesg);
+}
+
+
+Mesh_MOAB::Mesh_MOAB (const Mesh& inmesh, 
+                      const std::vector<int>& entity_id_list, 
+                      const Entity_kind entity_kind,
+                      const bool flatten,
+                      const bool extrude,
+		      const bool request_faces,
+		      const bool request_edges)
 {  
   Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the MOAB mesh framework\n");
   Exceptions::amanzi_throw(mesg);

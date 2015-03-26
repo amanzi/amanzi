@@ -1,15 +1,16 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-License: see $AMANZI_DIR/COPYRIGHT
-Author: Ethan Coon
+  Author: Ethan Coon
 
-Basic VerboseObject for use by Amanzi code.  Trilinos's VerboseObject is
-templated with the class (for no reason) and then requests that the
-VerboseObject be inserted as a base class to the using class.  This is serious
-code smell (composition over inheritance, especially for code reuse).
-
-------------------------------------------------------------------------- */
+  Basic VerboseObject for use by Amanzi code.  Trilinos's VerboseObject is
+  templated with the class (for no reason) and then requests that the
+  VerboseObject be inserted as a base class to the using class.  This is serious
+  code smell (composition over inheritance, especially for code reuse).
+*/
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Epetra_MpiComm.h"

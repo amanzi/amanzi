@@ -17,9 +17,12 @@
 #include "Epetra_FECrsMatrix.h"
 #include "Teuchos_RCP.hpp"
 
-#include "BDFFnBase.hh"
 #include "CompositeVector.hh"
-#include "OperatorDiffusionFactory.hh"
+#include "FnTimeIntegratorPK.hh"
+#include "Operator.hh"
+#include "OperatorAccumulation.hh"
+#include "OperatorAdvection.hh"
+#include "OperatorDiffusion.hh"
 #include "PK.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "tensor.hh"
@@ -31,42 +34,36 @@
 namespace Amanzi {
 namespace Energy {
 
-class Energy_PK : public PK, public Amanzi::BDFFnBase<TreeVector> {
+class Energy_PK : public FnTimeIntegratorPK {
  public:
-  Energy_PK(Teuchos::RCP<const Teuchos::ParameterList>& glist, Teuchos::RCP<State> S);
+  Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist, Teuchos::RCP<State> S);
   virtual ~Energy_PK() {};
 
   // main PK methods
-  virtual void Setup() = 0;
+  virtual void Setup();
   virtual void Initialize();
 
-  bool AdvanceStep(double t_old, double t_new) { return true; }
-  void CommitStep(double t_old, double t_new) {};
+  virtual bool AdvanceStep(double t_old, double t_new) { return true; }
+  virtual void CommitStep(double t_old, double t_new);
   void CalculateDiagnostics() {};
 
   double get_dt() { return 0.0; }
+  void set_dt(double dt) {}
   void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
-  std::string name() { return "energy"; }
+  virtual std::string name() { return "energy"; }
 
-  // main energy methods
-  void InitializeFields();
-
-  // methods required for time integration (EMPTY so far)
-  void Functional(const double Told, double Tnew,
-                  Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new,
-                  Teuchos::RCP<TreeVector> f);
-  void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Hu);
-  void UpdatePreconditioner(double T, Teuchos::RCP<const TreeVector> up, double dT);
-
-  double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
-  bool IsAdmissible(Teuchos::RCP<const TreeVector> up) {
-   return true;
+  // methods required for time integration
+  virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> hu) {
+    op_preconditioner_->ApplyInverse(*u->Data(), *hu->Data());
   }
-  bool ModifyPredictor(double dT, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) {
+  bool IsAdmissible(Teuchos::RCP<const TreeVector> up) {
+    return true;
+  }
+  bool ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) {
     return false;
   }
   AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-      ModifyCorrection(double dT, Teuchos::RCP<const TreeVector> res,
+      ModifyCorrection(double dt, Teuchos::RCP<const TreeVector> res,
                        Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<TreeVector> du) {};
   void ChangedSolution() {};
@@ -78,7 +75,10 @@ class Energy_PK : public PK, public Amanzi::BDFFnBase<TreeVector> {
 
   // access methods for unit tests
   std::vector<WhetStone::Tensor>& get_K() { return K; } 
-  Teuchos::RCP<PrimaryVariableFieldEvaluator>& get_temperature_eval() { return temperature_eval; }
+  Teuchos::RCP<PrimaryVariableFieldEvaluator>& temperature_eval() { return temperature_eval_; }
+
+ private:
+  void InitializeFields_();
 
  public:
   int ncells_owned, ncells_wghost;
@@ -87,10 +87,21 @@ class Energy_PK : public PK, public Amanzi::BDFFnBase<TreeVector> {
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> temperature_eval;
 
+  const Teuchos::RCP<Teuchos::ParameterList> glist_;
+  Teuchos::RCP<Teuchos::ParameterList> ep_list_;
+  Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
+  Teuchos::RCP<Teuchos::ParameterList> ti_list_;
+
+  // state and primary field
   Teuchos::RCP<State> S_;
   std::string passwd_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> temperature_eval_;
+
+  // keys
+  Key energy_key_, prev_energy_key_;
+  Key enthalpy_key_;
+  Key conductivity_key_;
 
   // conductivity tensor
   std::vector<WhetStone::Tensor> K; 
@@ -103,18 +114,16 @@ class Energy_PK : public PK, public Amanzi::BDFFnBase<TreeVector> {
   std::vector<double> bc_value_, bc_mixed_; 
   int dirichlet_bc_faces_;
 
-  // operators
-  Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_, op_preconditioner_;
+  // operators and solvers
+  Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_diff_, op_preconditioner_diff_;
+  Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
+  Teuchos::RCP<Operators::OperatorAdvection> op_matrix_advection_, op_preconditioner_advection_;
+  Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_, op_advection_;
   Teuchos::RCP<Operators::BCs> op_bc_;
+  std::string preconditioner_name_;
 
  protected:
-  Teuchos::RCP<const Teuchos::ParameterList> glist_;
   VerboseObject* vo_;
-
-  Key energy_key_;  // keys
-  Key enthalpy_key_;
-  Key conductivity_key_;
-  Key uw_conductivity_key_;
 };
 
 }  // namespace Energy

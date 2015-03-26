@@ -8,7 +8,7 @@
 
   <!--  REGIONS  -->
   <ParameterList name="Regions">
-    <ParameterList name="Computational domain">
+    <ParameterList name="All">
       <ParameterList name="Region: Box">
         <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
         <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
@@ -53,147 +53,150 @@
   </ParameterList>
 
   <!--  FLOW  -->
-  <ParameterList name="Flow">
-    <ParameterList name="Richards problem">
-      <Parameter name="relative permeability" type="string" value="other: harmonic average"/>
-      <Parameter name="atmospheric pressure" type="double" value="-1.e+10"/>
+  <ParameterList name="PKs">
+    <ParameterList name="Flow">
+      <ParameterList name="Richards problem">
+	<Parameter name="relative permeability" type="string" value="other: harmonic average"/>
+	<Parameter name="atmospheric pressure" type="double" value="-1.e+10"/>
 
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="high"/>
-      </ParameterList>
+	<ParameterList name="VerboseObject">
+	  <Parameter name="Verbosity Level" type="string" value="high"/>
+	</ParameterList>
 
-      <ParameterList name="operators">
-        <ParameterList name="diffusion operator">
-          <ParameterList name="matrix">
-            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-            <Parameter name="gravity" type="bool" value="true"/>
-          </ParameterList>
-          <ParameterList name="preconditioner">
-            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-            <Parameter name="gravity" type="bool" value="true"/>
-          </ParameterList>
+	<ParameterList name="operators">
+	  <ParameterList name="diffusion operator">
+	    <ParameterList name="matrix">
+	      <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+	      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+	      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+	      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+	      <Parameter name="gravity" type="bool" value="true"/>
+	    </ParameterList>
+	    <ParameterList name="preconditioner">
+	      <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+	      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+	      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+	      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+	      <Parameter name="gravity" type="bool" value="true"/>
+	    </ParameterList>
 
-          <ParameterList name="upwind">
-            <Parameter name="upwind method" type="string" value="standard"/>
-            <ParameterList name="upwind standard parameters">
-              <Parameter name="tolerance" type="double" value="1e-12"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
+	    <ParameterList name="upwind">
+	      <Parameter name="upwind method" type="string" value="standard"/>
+	      <ParameterList name="upwind standard parameters">
+		<Parameter name="tolerance" type="double" value="1e-12"/>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
+	</ParameterList>
 
-      <ParameterList name="steady state time integrator">
-        <Parameter name="linear solver" type="string" value="AztecOO"/>
-        <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+	<ParameterList name="time integrator">
+	  <Parameter name="linear solver" type="string" value="none"/>
+	  <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+	  <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 
-        <ParameterList name="pressure-lambda constraints">
-          <Parameter name="method" type="string" value="projection"/>
-          <Parameter name="linear solver" type="string" value="AztecOO"/>
-        </ParameterList>
+	  <ParameterList name="pressure-lambda constraints">
+	    <Parameter name="method" type="string" value="projection"/>
+	    <Parameter name="linear solver" type="string" value="AztecOO"/>
+	  </ParameterList>
 
-        <Parameter name="time integration method" type="string" value="BDF1"/>
-        <ParameterList name="BDF1">
-          <Parameter name="nonlinear tolerance" type="double" value="1e-4"/>
-          <Parameter name="max preconditioner lag iterations" type="int" value="1"/>
-          <Parameter name="time step increase factor" type="double" value="1.2"/>
+	  <Parameter name="time integration method" type="string" value="BDF1"/>
+	  <ParameterList name="BDF1">
+	    <Parameter name="nonlinear tolerance" type="double" value="1e-4"/>
+	    <Parameter name="max preconditioner lag iterations" type="int" value="1"/>
+	    <Parameter name="time step increase factor" type="double" value="1.2"/>
 
-          <Parameter name="timestep controller type" type="string" value="standard"/>
-          <ParameterList name="timestep controller standard parameters">
-            <Parameter name="min iterations" type="int" value="2"/>
-            <Parameter name="max iterations" type="int" value="5"/>
-            <Parameter name="time step increase factor" type="double" value="1.2"/>
-            <Parameter name="time step reduction factor" type="double" value="0.5"/>
-            <Parameter name="max time step" type="double" value="100.0"/>
-            <Parameter name="min time step" type="double" value="0.0"/>
-          </ParameterList>
+	    <Parameter name="timestep controller type" type="string" value="standard"/>
+	    <ParameterList name="timestep controller standard parameters">
+	      <Parameter name="min iterations" type="int" value="2"/>
+	      <Parameter name="max iterations" type="int" value="5"/>
+	      <Parameter name="time step increase factor" type="double" value="1.2"/>
+	      <Parameter name="time step reduction factor" type="double" value="0.5"/>
+	      <Parameter name="max time step" type="double" value="100.0"/>
+	      <Parameter name="min time step" type="double" value="0.0"/>
+	    </ParameterList>
 
-          <Parameter name="solver type" type="string" value="nka"/>
-          <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1e-4"/>
-            <Parameter name="diverged tolerance" type="double" value="1+10"/>
-            <Parameter name="limit iterations" type="int" value="12"/>
-            <Parameter name="max du growth factor" type="double" value="1e+5"/>
-            <Parameter name="max divergent iterations" type="int" value="3"/>
-            <Parameter name="max nka vectors" type="int" value="10"/>
-            <ParameterList name="VerboseObject">
-              <Parameter name="Verbosity Level" type="string" value="medium"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
+	    <Parameter name="solver type" type="string" value="nka"/>
+	    <ParameterList name="nka parameters">
+	      <Parameter name="nonlinear tolerance" type="double" value="1e-4"/>
+	      <Parameter name="diverged tolerance" type="double" value="1+10"/>
+	      <Parameter name="limit iterations" type="int" value="12"/>
+	      <Parameter name="max du growth factor" type="double" value="1e+5"/>
+	      <Parameter name="max divergent iterations" type="int" value="3"/>
+	      <Parameter name="max nka vectors" type="int" value="10"/>
+	      <ParameterList name="VerboseObject">
+		<Parameter name="Verbosity Level" type="string" value="medium"/>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
+	</ParameterList>
 
-      <ParameterList name="water retention models">
-        <ParameterList name="WRM for Computational domain">
-          <Parameter name="region" type="string" value="Computational domain"/>
-          <Parameter name="water retention model" type="string" value="van Genuchten"/>
-          <Parameter name="van Genuchten alpha" type="double" value="1.0"/>
-          <Parameter name="van Genuchten m" type="double" value="0.5"/>
-          <Parameter name="residual saturation" type="double" value="0.0"/>
-        </ParameterList>
-      </ParameterList>
+	<ParameterList name="water retention models">
+	  <ParameterList name="WRM for All">
+	    <Parameter name="region" type="string" value="All"/>
+	    <Parameter name="water retention model" type="string" value="van Genuchten"/>
+	    <Parameter name="van Genuchten alpha" type="double" value="1.0"/>
+	    <Parameter name="van Genuchten m" type="double" value="0.5"/>
+	    <Parameter name="residual saturation" type="double" value="0.0"/>
+	  </ParameterList>
+	</ParameterList>
 
-      <ParameterList name="boundary conditions">
-        <ParameterList name="mass flux">
-          <ParameterList name="BC 0">
-            <Parameter name="regions" type="Array(string)" value="{Top side}"/>
-            <ParameterList name="outward mass flux">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="BC 1">
-            <Parameter name="regions" type="Array(string)" value="{Left side}"/>
-            <ParameterList name="outward mass flux">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="-1.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="BC 2">
-            <Parameter name="regions" type="Array(string)" value="{Right side}"/>
-            <ParameterList name="outward mass flux">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="BC 3">
-            <Parameter name="regions" type="Array(string)" value="{Front side}"/>
-            <ParameterList name="outward mass flux">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="-1.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="BC 4">
-            <Parameter name="regions" type="Array(string)" value="{Back side}"/>
-            <ParameterList name="outward mass flux">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
+	<ParameterList name="boundary conditions">
+	  <ParameterList name="mass flux">
+	    <ParameterList name="BC 0">
+	      <Parameter name="regions" type="Array(string)" value="{Top side}"/>
+	      <ParameterList name="outward mass flux">
+		<ParameterList name="function-constant">
+		  <Parameter name="value" type="double" value="1.0"/>
+		</ParameterList>
+	      </ParameterList>
+	    </ParameterList>
+	    <ParameterList name="BC 1">
+	      <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+	      <ParameterList name="outward mass flux">
+		<ParameterList name="function-constant">
+		  <Parameter name="value" type="double" value="-1.0"/>
+		</ParameterList>
+	      </ParameterList>
+	    </ParameterList>
+	    <ParameterList name="BC 2">
+	      <Parameter name="regions" type="Array(string)" value="{Right side}"/>
+	      <ParameterList name="outward mass flux">
+		<ParameterList name="function-constant">
+		  <Parameter name="value" type="double" value="1.0"/>
+		</ParameterList>
+	      </ParameterList>
+	    </ParameterList>
+	    <ParameterList name="BC 3">
+	      <Parameter name="regions" type="Array(string)" value="{Front side}"/>
+	      <ParameterList name="outward mass flux">
+		<ParameterList name="function-constant">
+		  <Parameter name="value" type="double" value="-1.0"/>
+		</ParameterList>
+	      </ParameterList>
+	    </ParameterList>
+	    <ParameterList name="BC 4">
+	      <Parameter name="regions" type="Array(string)" value="{Back side}"/>
+	      <ParameterList name="outward mass flux">
+		<ParameterList name="function-constant">
+		  <Parameter name="value" type="double" value="1.0"/>
+		</ParameterList>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
 
-        <ParameterList name="pressure">
-          <ParameterList name="BC 5">
-            <Parameter name="regions" type="Array(string)" value="{Bottom side}"/>
-            <ParameterList name="boundary pressure">
-              <ParameterList name="function-linear">
-                <Parameter name="y0" type="double" value="0.0"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.0, -0.15, -0.15, -0.15}"/>
-                <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0}"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
+	  <ParameterList name="pressure">
+	    <ParameterList name="BC 5">
+	      <Parameter name="regions" type="Array(string)" value="{Bottom side}"/>
+	      <ParameterList name="boundary pressure">
+		<ParameterList name="function-linear">
+		  <Parameter name="y0" type="double" value="0.0"/>
+		  <Parameter name="gradient" type="Array(double)" value="{0.0, -0.15, -0.15, -0.15}"/>
+		  <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0}"/>
+		</ParameterList>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
+	</ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -248,6 +251,23 @@
   <!--  STATE: this super input desk will be used to cut-off smaller 
   input deks for other flow tests -->
   <ParameterList name="State">
+    <ParameterList name="field evaluators">
+      <ParameterList name="porosity">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.2"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
     <ParameterList name="initial conditions">
       <ParameterList name="fluid_density">
         <Parameter name="value" type="double" value="2.0"/>
@@ -261,25 +281,10 @@
         <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -1.e-9}"/>
       </ParameterList>
 
-
-      <ParameterList name="porosity">
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.2"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
       <ParameterList name="permeability">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <Parameter name="Function type" type="string" value="composite function"/>
@@ -310,7 +315,7 @@
       <ParameterList name="pressure">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="components" type="Array(string)" value="{cell,face}"/>
             <ParameterList name="function">
               <ParameterList name="function-linear"> <!-- time component -->
@@ -327,7 +332,7 @@
       <ParameterList name="specific_storage">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant"> 
@@ -341,7 +346,7 @@
       <ParameterList name="specific_yield">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant"> 
@@ -355,7 +360,7 @@
       <ParameterList name="darcy_flux">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="face"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -366,10 +371,10 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="water_saturation">
+      <ParameterList name="saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -380,10 +385,10 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="prev_water_saturation">
+      <ParameterList name="prev_saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -393,25 +398,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
-
-      <ParameterList name="darcy_flux">
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
-            <Parameter name="component" type="string" value="face"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-
-
-
     </ParameterList>
   </ParameterList>
 </ParameterList>

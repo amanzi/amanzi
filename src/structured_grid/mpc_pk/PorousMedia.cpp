@@ -20,6 +20,7 @@ static std::map<std::string,std::string>& AMR_to_Amanzi_label_map = Amanzi::Aman
 #include <Advection.H>
 #include <AmanziChemHelper_Structured.H>
 #include <ChemConstraintEval.H>
+#include <DiffDomRelSrc.H>
 
 #ifdef _OPENMP
 #include "omp.h"
@@ -2029,7 +2030,7 @@ PorousMedia::multilevel_advance (Real  time,
 
   if (dt_suggest_tc>0) {
     if (ParallelDescriptor::IOProcessor()) {
-      std::cout << "  TRANSPORT suggests next dt = " << dt_suggest_tc
+      std::cout << "  TRAN suggests next dt = " << dt_suggest_tc
                 << " (=" << dt_suggest_tc/(365.25*3600*24) << " y)" << std::endl;
     }
     dt_suggest = (dt_suggest > 0 ? std::min(dt_suggest,dt_suggest_tc) : dt_suggest_tc);
@@ -2387,7 +2388,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
                         "TRAN",tmax_subtr,t_eps); 
       }
       n_subtr++;
-      if (n_subtr > max_n_subcycle_transport) {
+      if (n_subtr > max_n_subcycle_transport + std::max(2.,.15*max_n_subcycle_transport)) {
 	if (ParallelDescriptor::IOProcessor()) {
 	  std::cout << "TRAN: Level: "
 		    << level
@@ -2417,7 +2418,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
       int nGrowF = 1;
       MultiFab Fext(grids,ncomps+ntracers,nGrowF);
       bool do_rho_scale = 0;
-      getForce(Fext,nGrowF,0,ncomps+ntracers,t_subtr,do_rho_scale);
+      getForce(Fext,nGrowF,0,ncomps+ntracers,t_subtr,dt_subtr,do_rho_scale);
 
       if (diffuse_tracers) {
         // FIXME: getTracerViscTerms should add to Fext here, but need to get handle cached saturations on coarser levels
@@ -3859,13 +3860,26 @@ PorousMedia::errorEst (TagBoxArray& tags,
               for (MFIter mfi(tags); mfi.isValid(); ++mfi)
               {
                   TagBox& tagbox = tags[mfi];
-                  const Box fine_box = Box(tagbox.box()).refine(cumRatio);
-                  
-                  mask.resize(fine_box,1); mask.setVal(0);                  
-                  for (int j=0; j<my_regions.size(); ++j) {
+
+                  if (pmfunc->regionOnly()) {
+                    // Catch cells in the region at the (new) fine level that
+                    // may not be in the coarse level
+                    const Box fine_box =  Box(tagbox.box()).refine(cumRatio);
+                    mask.resize(fine_box,1); mask.setVal(0);
+                    for (int j=0; j<my_regions.size(); ++j) {
                       my_regions[j]->setVal(mask,1,0,dx_fine,0);
-                  }                  
-                  coarsenMask(cmask,mask,cumRatio);
+                    }
+                    coarsenMask(cmask,mask,cumRatio);
+                  }
+                  else {
+                    // Otherwise, "in" region only if we can represent the
+                    // derive field at that resolution
+                    cmask.resize( (*mf)[mfi].box(), 1); cmask.setVal(0);
+                    const Real* dx_crse = geom.CellSize();
+                    for (int j=0; j<my_regions.size(); ++j) {
+                      my_regions[j]->setVal(cmask,1,0,dx_crse,0);
+                    }
+                  }
 
                   if (cmask.max()>0)
                   {
@@ -4479,7 +4493,7 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
   ParallelDescriptor::ReduceRealMin(dt_eig);
 
   if (ParallelDescriptor::IOProcessor() && verbose>0) {
-    std::cout << "  TRANSPORT: Level: " << level << " CFL dt limit = " << dt_eig << '\n';
+    std::cout << "  TRAN: Level: " << level << " CFL dt limit = " << dt_eig << '\n';
   }
 
   if (verbose > 3) {
@@ -5011,6 +5025,7 @@ PorousMedia::post_regrid (int lbase,
                           int new_finest)
 {
   BL_PROFILE("PorousMedia::post_regrid()");
+  init_rock_properties();
 
   if (level == lbase) {
 
@@ -5057,6 +5072,7 @@ PorousMedia::init_rock_properties ()
 
   MultiFab kappatmp(grids,BL_SPACEDIM,nGrowHYP);
   bool ret = rock_manager->GetProperty(cur_time,level,kappatmp,"permeability",0,kappatmp.nGrow());
+
   if (!ret) BoxLib::Abort("Failed to build permeability");
   for (MFIter mfi(kappatmp); mfi.isValid(); ++mfi) {
     const Box& cbox = mfi.validbox();
@@ -5077,7 +5093,8 @@ PorousMedia::init_rock_properties ()
   }
   kappa->mult(1.0/BL_SPACEDIM);
 
-  rock_manager->Porosity(cur_time,level,*rock_phi,0,rock_phi->nGrow());
+  bool ret_phi = rock_manager->GetProperty(cur_time,level,*rock_phi,"porosity",0,rock_phi->nGrow());
+  if (!ret_phi) BoxLib::Abort("Failed to build porosity");
 
   if ( (model != PM_SINGLE_PHASE)
        && (model != PM_SINGLE_PHASE_SOLID)
@@ -6022,6 +6039,7 @@ PorousMedia::getForce (MultiFab& force,
 		       int       strt_comp,
 		       int       num_comp,
 		       Real      time,
+		       Real      dt,
 		       bool      do_rho_scale)
 {
   BL_PROFILE("PorousMedia::getForce()");
@@ -6067,7 +6085,7 @@ PorousMedia::getForce (MultiFab& force,
       // Scale all values set by this source function so they sum to 
       // user specified value
       if (stype == "volume_weighted" || stype == "point") {
-        mask.mult(1/total_volume_this_level,0,1,0);
+        mask.mult(cellVol/total_volume_this_level,0,1,0);
       }
       else {
 	if (stype != "uniform") {
@@ -6084,6 +6102,18 @@ PorousMedia::getForce (MultiFab& force,
 	  if (tsource.Type()=="uniform" || tsource.Type()=="point") {
 	    for (MFIter mfi(force); mfi.isValid(); ++mfi) {
 	      tsource.apply(tmp[mfi],dx,it+snum_comp,1,time);
+	    }
+	  }
+	  else if (tsource.Type()=="diffusion_dominated_release_model") {
+
+            const DiffDomRelSrc* tp = dynamic_cast<const DiffDomRelSrc*>(&tsource);
+            if (tp == 0) {
+              BoxLib::Abort("Error in set up of diffusion dominated release model");
+            }
+            else {
+              for (MFIter mfi(force); mfi.isValid(); ++mfi) {
+                tp->apply(tmp[mfi],dx,it+snum_comp,1,time,time+dt);
+              }
 	    }
 	  }
 	  else {
@@ -7238,11 +7268,16 @@ PorousMedia::derive_Intrinsic_Permeability(Real      time,
                                            int       dir)
 {
   MultiFab kappatmp(grids,BL_SPACEDIM,0);
+
+  kappatmp.setVal(0);
+
   bool ret = rock_manager->GetProperty(state[State_Type].curTime(),level,kappatmp,
                                   "permeability",0,mf.nGrow());
   if (!ret) BoxLib::Abort("Failed to build permeability");
+
   MultiFab::Copy(mf,kappatmp,dir,dcomp,1,0);
   // Return values in mks
+
   mf.mult(1/BL_ONEATM,dcomp,1,0);
 }
 

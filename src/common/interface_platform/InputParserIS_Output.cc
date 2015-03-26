@@ -199,11 +199,9 @@ Teuchos::ParameterList InputParserIS::CreateObservationDataList_(Teuchos::Parame
   Teuchos::ParameterList obs_list;
   Teuchos::Array<double> observationPoints;
 
-  // Check if there is an "Output" XML node
   if (plist->isSublist("Output")) {
-    // If "Output" exists, check if there is an "Observation Data" subnode
     if (plist->sublist("Output").isSublist("Observation Data")) {
-      // If both exist, initialize a structure with the XML data
+      // Iinitialize a structure with the XML data
       Teuchos::ParameterList olist = plist->sublist("Output").sublist("Observation Data");
       // If the node has value refering to the name of the output file, grab it
       if (olist.isParameter("Observation Output Filename")) {

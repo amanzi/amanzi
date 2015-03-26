@@ -67,7 +67,8 @@ public:
 protected:
   void ReadCheckpoint_(std::string filename);
   void ReadCellsFromCheckpoint_(std::string filename); // for ICs
-  void ReadFromExodusII_(Teuchos::ParameterList& plist); 
+  void ReadAttributeFromExodusII_(Teuchos::ParameterList& plist); 
+  void ReadVariableFromExodusII_(Teuchos::ParameterList& plist); 
   void InitializeFromColumn_(Teuchos::ParameterList& plist);
   void DeriveFaceValuesFromCellValues_();
 

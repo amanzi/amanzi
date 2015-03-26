@@ -43,6 +43,8 @@ class Amanzi_XMLParameterListWriter {
   }
 
   void set_precision(int i) { precision_ = i; }
+
+  void unused(const ParameterList& p, std::ostream& os) const;
   
  private:
   XMLObject toXML(const ParameterEntry& p) const;

@@ -86,12 +86,6 @@ public:
                                const std::string& material_name,
                                const std::map<std::string,int>& aux_chem_variables_map);
 
-  void Porosity(Real      time,
-                int       level,
-                MultiFab& porosity,
-                int       dComp,
-                int       nGrow) const;
-
   // Capillary Pressure (given Saturation)
   void CapillaryPressure(const Real* saturation, int* matID, Real time, Real* capillaryPressure, int npts) const;
   void CapillaryPressure(const MultiFab&  saturation,

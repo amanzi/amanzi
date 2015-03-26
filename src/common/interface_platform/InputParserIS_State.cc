@@ -21,6 +21,7 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
 
   // first we write initial conditions for scalars and vectors, not region-specific
 
+  Teuchos::ParameterList& stt_ev = stt_list.sublist("field evaluators");
   Teuchos::ParameterList& stt_ic = stt_list.sublist("initial conditions");
   //
   // --- gravity
@@ -93,12 +94,13 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
       msg << "Porosity must be specified as Intrinsic Porosity: Uniform, for every region.";
       Exceptions::amanzi_throw(msg);
     }
-    Teuchos::ParameterList &porosity_ic = stt_ic.sublist("porosity");
-    porosity_ic.sublist("function").sublist(reg_str)
+    Teuchos::ParameterList& porosity_ev = stt_ev.sublist("porosity");
+    porosity_ev.sublist("function").sublist(reg_str)
         .set<Teuchos::Array<std::string> >("regions",regions)
         .set<std::string>("component","cell")
         .sublist("function").sublist("function-constant")
         .set<double>("value", porosity);
+    porosity_ev.set<std::string>("field evaluator type", "independent variable");
 
     // permeability...
     double perm_x, perm_y, perm_z;
@@ -178,7 +180,7 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
 
     Teuchos::ParameterList &permeability_ic = stt_ic.sublist("permeability");
     if (perm_init_from_file) {
-      if (perm_format == std::string("exodus")) {
+      if (perm_format == std::string("Exodus II")) {
         // first make sure the file actually exists
 
         boost::filesystem::path p;
@@ -341,7 +343,7 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
 
       // saturation...
       if (ic_for_region->isSublist("IC: Uniform Saturation") || ic_for_region->isSublist("IC: Linear Saturation")) {
-        Teuchos::ParameterList& saturation_ic = stt_ic.sublist("water_saturation");
+        Teuchos::ParameterList& saturation_ic = stt_ic.sublist("saturation_liquid");
 
         if (ic_for_region->isSublist("IC: Uniform Saturation")) {
           double s = ic_for_region->sublist("IC: Uniform Saturation").get<double>("Value");

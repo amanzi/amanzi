@@ -9,7 +9,8 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Function applied to a mesh component with at most one function 
-  application per entity.
+  application per entity.  So far, this class delegates work to 
+  the base class.
 */
 
 #ifndef AMANZI_ENERGY_BOUNDARY_FUNCTION_HH_
@@ -24,6 +25,7 @@
 #include "CommonDefs.hh"
 #include "Mesh.hh"
 #include "MultiFunction.hh"
+#include "PK_BoundaryFunction.hh"
 #include "unique_mesh_function.hh"
 
 namespace Amanzi {
@@ -31,41 +33,11 @@ namespace Energy {
 
 typedef std::pair<std::string, int> Action;
 
-class EnergyBoundaryFunction : public Functions::UniqueMeshFunction {
+class EnergyBoundaryFunction : public PK_BoundaryFunction {
  public:
   EnergyBoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      UniqueMeshFunction(mesh),
-      finalized_(false), 
-      global_size_(0) {};
-  
-  void Define(const std::vector<std::string>& regions,
-              const Teuchos::RCP<const MultiFunction>& f, 
-              int method);
-  void Define(std::string& region,
-              const Teuchos::RCP<const MultiFunction>& f,
-              int method);
-
-  void Compute(double time);
-  void Finalize();
-
-  // access / set
-  const std::vector<Action>& actions() { return actions_; } 
-  int global_size() { return global_size_; }
-
-  // iterator methods
-  typedef std::map<int,double>::const_iterator Iterator;
-  Iterator begin() const { return value_.begin(); }
-  Iterator end() const  { return value_.end(); }
-  Iterator find(const int j) const { return value_.find(j); }
-  std::map<int,double>::size_type size() { return value_.size(); }
-
- protected:
-  std::map<int,double> value_;
-  bool finalized_;
-
- private:
-  std::vector<Action> actions_;
-  int global_size_;  // number of data stored on all processors
+      PK_BoundaryFunction(mesh) {};
+  ~EnergyBoundaryFunction() {};
 };
 
 }  // namespace Energy

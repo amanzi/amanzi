@@ -163,7 +163,7 @@ function( CREATE_TPL_EXPORT_FILE )
 
   # Add package to the file
   macro( _add_package _package )
-	
+
     file(APPEND ${BUILD_TPL_OUTFILE} "\n#\n")
     file(APPEND ${BUILD_TPL_OUTFILE} "# TPL: ${_package}\n")
     file(APPEND ${BUILD_TPL_OUTFILE} "#\n")
@@ -211,7 +211,6 @@ function( CREATE_TPL_EXPORT_FILE )
 
   # Begin MAIN
 
-  
   if (NOT EXISTS ${BUILD_TPL_OUTFILE})
     _write_header(${BUILD_TPL_OUTFILE})
   endif()  
@@ -247,7 +246,7 @@ function(makefile_include_dirs)
       set(i_path "-I${dir} ")
       list(APPEND tmp_inc_list ${i_path})
     endforeach() 
- 
+
     set(tmp_make_list)
     string(REGEX REPLACE ";" "" tmp_make_list ${tmp_inc_list})
     set(${PARSE_ARGS_MAKE_INCLUDE_LIST} "${tmp_make_list}" PARENT_SCOPE)
@@ -277,7 +276,7 @@ function(makefile_library_dirs)
       set(l_path "-L${dir} ")
       list(APPEND tmp_lib_list ${l_path})
     endforeach() 
- 
+
     set(tmp_make_list)
     string(REGEX REPLACE ";" "" tmp_make_list ${tmp_lib_list})
     set(${PARSE_ARGS_MAKE_LIB_LIST} "${tmp_make_list}" PARENT_SCOPE)
@@ -370,13 +369,18 @@ install(EXPORT AmanziTargets
 	NAMESPACE amanzi_
 	FILE AmanziTargets.cmake)
 
+# XML schema 
 install(FILES ${AMANZI_SOURCE_DIR}/doc/input_spec/schema/amanzi.xsd DESTINATION bin)
+
+# If MSTK utilities were found (this processing is in FindMSTK.cmake), install them in bin
+if (MSTK_UTILITIES)
+   install(PROGRAMS ${MSTK_UTILITIES} DESTINATION bin)
+endif()
 
 # Write the evaluator registration macro file
 message(STATUS "Writing evaluator registration macro file")
 install(FILES tools/cmake/RegisterEvaluators.cmake
         DESTINATION lib)
-
 
 endfunction()
 

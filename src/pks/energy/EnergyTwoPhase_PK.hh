@@ -16,7 +16,7 @@
 #define AMANZI_ENERGY_TWOPHASE_PK_HH_
 
 #include "eos.hh"
-#include "iem.hh"
+#include "IEM.hh"
 #include "PK_Factory.hh"
 #include "Energy_PK.hh"
 
@@ -26,24 +26,45 @@ namespace Energy {
 class EnergyTwoPhase_PK : public Energy_PK {
 
 public:
-  EnergyTwoPhase_PK(Teuchos::RCP<const Teuchos::ParameterList>& glist, Teuchos::RCP<State>& S);
+  EnergyTwoPhase_PK(Teuchos::ParameterList& pk_tree,
+                    const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                    const Teuchos::RCP<State>& S,
+                    const Teuchos::RCP<TreeVector>& soln);
   virtual ~EnergyTwoPhase_PK() {};
 
-  // Initialize owned (dependent) variables.
+  // Required PK members.
   virtual void Setup();
   virtual void Initialize();
+  virtual std::string name() { return "two-phase energy"; }
+  virtual void CommitStep(double t_old, double t_new);
+
+  virtual void Functional(const double t_old, double t_new,
+                          Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new,
+                          Teuchos::RCP<TreeVector> g);
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt);
+
+  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
+
+ private:
+  void InitializeFields_();
 
  protected:
   // models for evaluating enthalpy
   Teuchos::RCP<Relations::EOS> eos_liquid_;
   Teuchos::RCP<IEM> iem_liquid_;
 
-private:
+ private:
+  Teuchos::RCP<Teuchos::ParameterList> ep_list_;
+
+  // primary field
+  const Teuchos::RCP<TreeVector> soln_;
+  Teuchos::RCP<CompositeVector> solution;
+
   // factory registration
-  // static RegisteredPKFactory<TwoPhase> reg_;
+  static RegisteredPKFactory<EnergyTwoPhase_PK> reg_;
 };
 
-} // namespace Energy
-} // namespace Amanzi
+}  // namespace Energy
+}  // namespace Amanzi
 
 #endif

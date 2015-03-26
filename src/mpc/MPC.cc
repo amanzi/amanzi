@@ -54,11 +54,11 @@ double rss_usage() { // return ru_maxrss in MBytes
 
 
 /* *******************************************************************/
-MPC::MPC(Teuchos::ParameterList parameter_list_,
+MPC::MPC(const Teuchos::RCP<Teuchos::ParameterList>& glist_,
          Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_,
          Epetra_MpiComm* comm_,
          Amanzi::ObservationData& output_observations_):
-    parameter_list(parameter_list_),
+    glist(glist_),
     mesh_maps(mesh_maps_),
     chemistry_enabled(false),
     comm(comm_),
@@ -71,7 +71,7 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
 
 /* *******************************************************************/
 void MPC::mpc_init() {
-  mpc_parameter_list = parameter_list.sublist("MPC");
+  mpc_parameter_list = glist->sublist("MPC");
 
   vo_ = Teuchos::rcp(new VerboseObject("MPC", mpc_parameter_list));
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -100,7 +100,7 @@ void MPC::mpc_init() {
   }
 
   if (transport_enabled || flow_enabled || chemistry_enabled) {
-    Teuchos::ParameterList state_parameter_list = parameter_list.sublist("State");
+    Teuchos::ParameterList state_parameter_list = glist->sublist("State");
     S = Teuchos::rcp(new State(state_parameter_list));
     S->RegisterMesh("domain",mesh_maps);
   }
@@ -120,9 +120,33 @@ void MPC::mpc_init() {
     }
   }
 
+  // flow...
+  if (flow_enabled) {
+    flow_model = mpc_parameter_list.get<std::string>("Flow model", "Darcy");
+    if (flow_model == "Darcy") {
+      FPK = Teuchos::rcp(new Flow::Darcy_PK(glist, "Flow", S));
+    } else if (flow_model == "Steady State Saturated") {
+      FPK = Teuchos::rcp(new Flow::Darcy_PK(glist,"Flow", S));
+    } else if (flow_model == "Richards") {
+      FPK = Teuchos::rcp(new Flow::Richards_PK(glist, "Flow", S));
+    } else if (flow_model == "Steady State Richards") {
+      FPK = Teuchos::rcp(new Flow::Richards_PK(glist, "Flow", S));
+    } else {
+      std::cout << "MPC: unknown flow model: " << flow_model << std::endl;
+      throw std::exception();
+    }
+    FPK->Setup();
+  }
+
+  if (flow_model == "Steady State Richards") {
+    if (vo_->os_OK(Teuchos::VERB_LOW)) {
+      *vo_->os() << "Flow will be off during the transient phase" << std::endl;
+    }
+  }
+
   // chemistry...
   if (chemistry_enabled) {
-    Teuchos::ParameterList chemistry_parameter_list = parameter_list.sublist("Chemistry");
+    Teuchos::ParameterList chemistry_parameter_list = glist->sublist("PKs").sublist("Chemistry");
 
 #ifdef ALQUIMIA_ENABLED
     if (chemistry_model == "Alquimia") {
@@ -151,6 +175,7 @@ void MPC::mpc_init() {
 #endif
     // Initialize the chemistry state.
     CS = Teuchos::rcp(new AmanziChemistry::Chemistry_State(chemistry_parameter_list, component_names, S));
+    CS->Setup();
 
 #ifdef ALQUIMIA_ENABLED
     // Set up auxiliary chemistry data using the ChemistryEngine.
@@ -162,40 +187,20 @@ void MPC::mpc_init() {
 #endif
   }
 
-  // flow...
-  if (flow_enabled) {
-    flow_model = mpc_parameter_list.get<std::string>("Flow model", "Darcy");
-    if (flow_model == "Darcy") {
-      FPK = Teuchos::rcp(new Flow::Darcy_PK(parameter_list, S));
-    } else if (flow_model == "Steady State Saturated") {
-      FPK = Teuchos::rcp(new Flow::Darcy_PK(parameter_list, S));
-    } else if (flow_model == "Richards") {
-      FPK = Teuchos::rcp(new Flow::Richards_PK(parameter_list, S));
-    } else if (flow_model == "Steady State Richards") {
-      FPK = Teuchos::rcp(new Flow::Richards_PK(parameter_list, S));
-    } else {
-      std::cout << "MPC: unknown flow model: " << flow_model << std::endl;
-      throw std::exception();
-    }
-  }
-
-  if (flow_model == "Steady State Richards") {
-    if (vo_->os_OK(Teuchos::VERB_LOW)) {
-      *vo_->os() << "Flow will be off during the transient phase" << std::endl;
-    }
-  }
-
+  // chemistry...
   if (transport_enabled) {
 #ifdef ALQUIMIA_ENABLED
     if (chemistry_model == "Alquimia") {
       // When Alquimia is used, the Transport PK must interact with the 
       // chemistry engine to obtain boundary values for the components.
       // The component names are fetched from the chemistry engine.
-      TPK = Teuchos::rcp(new Transport::Transport_PK(parameter_list, S, CS, chem_engine));
+      TPK = Teuchos::rcp(new Transport::Transport_PK(glist, S, "Transport", CS, chem_engine));
+      TPK->Setup();
     }
     else {
 #endif
-      TPK = Teuchos::rcp(new Transport::Transport_PK(parameter_list, S, component_names));
+      TPK = Teuchos::rcp(new Transport::Transport_PK(glist, S, "Transport", component_names));
+      TPK->Setup();
 #ifdef ALQUIMIA_ENABLED
     }
 #endif
@@ -206,39 +211,35 @@ void MPC::mpc_init() {
   S->InitializeEvaluators();
   S->GetMeshPartition("materials");
 
-  if (chemistry_enabled) {
-    CS->Initialize();
-  }
-  if (flow_enabled) {
-    FPK->InitializeFields();
-  }
-  if (transport_enabled) {
-    TPK->InitializeFields();
-  }
+  if (chemistry_enabled) CS->Initialize();
+  if (flow_enabled) FPK->InitializeFields();
+  if (transport_enabled) TPK->InitializeFields();
 
   S->CheckAllFieldsInitialized();
 
+  // We are done with initialization of all fields.
+  // It is time for remaining initialization of PKs. 
   if (flow_enabled) {
-    FPK->Initialize(S.ptr());
+    FPK->Initialize();
   }
 
   if (transport_enabled) {
-    bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling", false);
+    bool subcycling = glist->sublist("MPC").get<bool>("transport subcycling", false);
     transport_subcycling = (subcycling) ? 1 : 0;
-    TPK->Initialize(S.ptr());
+    TPK->Initialize();
   }
 
   if (chemistry_enabled) {
     try {
       if (chemistry_model == "Alquimia") {
 #ifdef ALQUIMIA_ENABLED
-        CPK = Teuchos::rcp(new AmanziChemistry::Alquimia_Chemistry_PK(parameter_list, CS, chem_engine));
+        CPK = Teuchos::rcp(new AmanziChemistry::Alquimia_Chemistry_PK(*glist, CS, chem_engine));
 #else
         std::cout << "MPC: Alquimia chemistry model is not enabled for this build.\n";
         throw std::exception();
 #endif
       } else if (chemistry_model == "Amanzi") {
-        Teuchos::ParameterList chemistry_parameter_list = parameter_list.sublist("Chemistry");
+        Teuchos::ParameterList chemistry_parameter_list = glist->sublist("PKs").sublist("Chemistry");
         CPK = Teuchos::rcp(new AmanziChemistry::Chemistry_PK(chemistry_parameter_list, CS));
       } else {
         std::cout << "MPC: unknown chemistry model: " << chemistry_model << std::endl;
@@ -257,8 +258,8 @@ void MPC::mpc_init() {
   // done creating auxilary state objects and  process models
 
   // create the observations
-  if (parameter_list.isSublist("Observation Data")) {
-    Teuchos::ParameterList observation_plist = parameter_list.sublist("Observation Data");
+  if (glist->isSublist("Observation Data")) {
+    Teuchos::ParameterList observation_plist = glist->sublist("Observation Data");
     observations = Teuchos::rcp(new Amanzi::Unstructured_observations(observation_plist, output_observations, comm));
 
     if (mpc_parameter_list.isParameter("component names")) {
@@ -271,8 +272,8 @@ void MPC::mpc_init() {
   }
 
   // create the visualization object
-  if (parameter_list.isSublist("Visualization Data"))  {
-    Teuchos::ParameterList vis_parameter_list = parameter_list.sublist("Visualization Data");
+  if (glist->isSublist("Visualization Data"))  {
+    Teuchos::ParameterList vis_parameter_list = glist->sublist("Visualization Data");
     visualization = Teuchos::ptr(new Amanzi::Visualization(vis_parameter_list, comm));
     visualization->set_mesh(mesh_maps);
     visualization->CreateFiles();
@@ -282,12 +283,13 @@ void MPC::mpc_init() {
 
 
   // create the restart object
-  if (parameter_list.isSublist("Checkpoint Data")) {
-    Teuchos::ParameterList checkpoint_parameter_list = parameter_list.sublist("Checkpoint Data");
+  if (glist->isSublist("Checkpoint Data")) {
+    Teuchos::ParameterList checkpoint_parameter_list = glist->sublist("Checkpoint Data");
     restart = Teuchos::ptr(new Amanzi::Checkpoint(checkpoint_parameter_list, comm));
   } else {
     restart = Teuchos::ptr(new Amanzi::Checkpoint());
   }
+
 
   // are we restarting from a file?
   // first assume we're not
@@ -295,8 +297,8 @@ void MPC::mpc_init() {
 
 
   if (flow_enabled) {
-    if (parameter_list.isSublist("Walkabout Data")) {
-      Teuchos::ParameterList walkabout_parameter_list = parameter_list.sublist("Walkabout Data");
+    if (glist->isSublist("Walkabout Data")) {
+      Teuchos::ParameterList walkabout_parameter_list = glist->sublist("Walkabout Data");
       walkabout = Teuchos::ptr(new Amanzi::Checkpoint(walkabout_parameter_list, comm));
     } else {
       walkabout = Teuchos::ptr(new Amanzi::Checkpoint());
@@ -442,6 +444,7 @@ void MPC::cycle_driver() {
   if (ti_mode == INIT_TO_STEADY) TSM->RegisterTimeEvent(Tswitch);
   // register the final time
   TSM->RegisterTimeEvent(T1);
+
 
   enum time_step_limiter_type {FLOW_LIMITS, TRANSPORT_LIMITS, CHEMISTRY_LIMITS, MPC_LIMITS};
   time_step_limiter_type tslimiter;
@@ -779,6 +782,9 @@ void MPC::cycle_driver() {
           break;
       }
 
+      //WriteCheckpoint(restart,S.ptr(),dTtransient);
+      //exit(0);
+
       // then advance transport and chemistry
       if ( (ti_mode == TRANSIENT) || 
            (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) || 
@@ -836,10 +842,10 @@ void MPC::cycle_driver() {
               Amanzi::timer_manager.stop("Chemistry PK");
 
               chem_step_succeeded = true;
-              *S->GetFieldData("total_component_concentration","state")->ViewComponent("cell", true)
+              *S->GetFieldData("total_component_concentration", "state")->ViewComponent("cell", true)
                 = * CPK->get_total_component_concentration();
             } else if (transport_enabled) {
-              *S->GetFieldData("total_component_concentration","state")->ViewComponent("cell", true)
+              *S->GetFieldData("total_component_concentration", "state")->ViewComponent("cell", true)
                   = *total_component_concentration_star;
             }
 

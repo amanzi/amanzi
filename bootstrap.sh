@@ -106,6 +106,7 @@ alquimia=${FALSE}
 pflotran=${FALSE}
 shared=${FALSE}
 spacedim=2
+native=${FALSE}
 
 
 # ---------------------------------------------------------------------------- #
@@ -287,7 +288,8 @@ Value in brackets indicates default setting.
 
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
   reg_tests               build regression tests into Amanzi Test Suite ['"${reg_tests}"']
-  shared                  build Amanzi and tpls using shared libraries ['"${test_suite}"']
+  shared                  build Amanzi and tpls using shared libraries ['"${shared}"']
+  native                  build Amanzi with native xml output for debugging enabled ['"${native}"']
 
 Tool definitions:
 
@@ -378,6 +380,7 @@ Build Features:
     petsc               ='"${petsc}"'
     alquimia            ='"${alquimia}"'
     pflotran            ='"${pflotran}"'
+    native              ='"${native}"'
 
 Directories:
     prefix                 ='"${prefix}"'
@@ -421,10 +424,12 @@ function parse_argv()
       
       --opt)
                  build_type=Release
+		 enable_native=${FALSE}
                  ;;
 
       --debug)
                  build_type=Debug
+		 enable_native=${TRUE}
                  ;;
 
       --disable-*)
@@ -1185,6 +1190,7 @@ ${cmake_binary} \
               -DBUILD_SHARED_LIBS:BOOL=${shared} \
               -DCCSE_BL_SPACEDIM:INT=${spacedim} \
 	      -DENABLE_Regression_Tests:BOOL=${reg_tests} \
+	      -DENABLE_NATIVE_XML_OUTPUT:BOOL=${native} \
               ${amanzi_source_dir}
 
 

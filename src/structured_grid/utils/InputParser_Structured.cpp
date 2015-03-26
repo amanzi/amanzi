@@ -1005,10 +1005,10 @@ namespace Amanzi {
       }
                     
       Array<int> n_cell = amr_out_list.get<Array<int> >("n_cell");
-      for (int i=0;i<blocking_factor.size();i++) {
-                
+
+      if (blocking_factor.size() > 0) {
         for (int n=0;n<ndim;n++) {
-          if (n_cell[n]%blocking_factor[i] > 0) {
+          if (n_cell[n]%blocking_factor[0] > 0) {
             std::stringstream buf;
             for (int j=0;j<blocking_factor.size();j++) {
               buf << blocking_factor[j] << " ";
@@ -1592,11 +1592,42 @@ namespace Amanzi {
       }
     }
 
+    void convert_PermeabilityGSLib(const ParameterList& fPLin,
+				   ParameterList&       fPLout)
+    {
+      fPLout.set<std::string>("distribution_type","gslib");
+      Array<std::string> nullList, reqP;
+      const std::string param_file_name="GSLib Parameter File";
+      const std::string data_file_name="GSLib Data File"; reqP.push_back(data_file_name);
+      const std::string value_name="Value"; reqP.push_back(value_name);
+      const std::string std_name="Std";
+      PLoptions opt(fPLin,nullList,reqP,false,false);
+
+      fPLout.set<std::string>("gslib_data_file",fPLin.get<std::string>(data_file_name));
+
+      fPLout.set<double>("val",fPLin.get<double>(value_name) * 1.01325e15); // convert from m^2 to mDa
+      const Array<std::string>& optP = opt.OptParms();
+      for (int i=0; i<optP.size(); ++i) {
+	if (optP[i] == param_file_name) {
+	  fPLout.set<std::string>("gslib_param_file",fPLin.get<std::string>(param_file_name));
+	}
+	else if (optP[i] == std_name) {
+	  fPLout.set<double>("std",fPLin.get<double>(std_name) * 1.01325e15); // convert from m^2 to mDa
+	}
+	else {
+          std::string str = "Unrecognized \"Permeability: GSLib\" option";
+          std::cerr << fPLin << std::endl;
+          BoxLib::Abort(str.c_str());
+	}
+      }
+    }
+
     void convert_PermeabilityAnisotropic(const ParameterList& fPLin,
                                          ParameterList&       fPLout,
                                          double               scale)
     {
       /* Handle isotropic and anisotropic permeabilities here */
+      fPLout.set<std::string>("distribution_type","uniform");
       Array<std::string> nullList, reqP;
       const std::string vertical_str = (BL_SPACEDIM==3 ? "z" : "y");
       const std::string horizontal_str = "x";
@@ -1859,6 +1890,7 @@ namespace Amanzi {
       const std::string perm_file_str = "Intrinsic Permeability: Input File";
       const std::string perm_uniform_str = "Intrinsic Permeability: Uniform";
       const std::string perm_anisotropic_uniform_str = "Intrinsic Permeability: Anisotropic Uniform";
+      const std::string perm_gslib_str = "Intrinsic Permeability: GSLib";
       const std::string tortuosity_str = "Tortuosity: Uniform";
       const std::string dispersivity_str = "Dispersion Tensor: Uniform Isotropic";
       const std::string specific_storage_uniform_str = "Specific Storage: Uniform";
@@ -1919,18 +1951,24 @@ namespace Amanzi {
                 rsublist.set("porosity",psublist);
                 mtest["Porosity"] = true;
               }
-              else if (rlabel==perm_uniform_str || rlabel==perm_anisotropic_uniform_str) {
+              else if (rlabel==perm_uniform_str
+		       || rlabel==perm_anisotropic_uniform_str
+		       || rlabel==perm_gslib_str) {
                 if (mtest["Intrinsic_Permeability"]) {
                   std::string str = "More than one of: (\""+perm_uniform_str
                     +"\", \""+perm_anisotropic_uniform_str
+                    +"\", \""+perm_gslib_str
                     +"\", \""+hydraulic_conductivity_uniform_str
                     +"\") specified for material \""+label+"\"";
                   BoxLib::Abort(str.c_str());
                 }
                 ParameterList psublist;
-                convert_PermeabilityAnisotropic(rsslist,psublist,1.0);
-                rsublist.set("permeability",psublist);
-                rsublist.set("permeability_dist","uniform");
+		if (rlabel == perm_gslib_str) {
+                  convert_PermeabilityGSLib(rsslist,psublist);
+		} else {
+		  convert_PermeabilityAnisotropic(rsslist,psublist,1.0);
+		}
+		rsublist.set("permeability",psublist);
                 mtest["Intrinsic_Permeability"] = true;
               }
               else if (rlabel==hydraulic_conductivity_uniform_str) {
@@ -3546,21 +3584,28 @@ namespace Amanzi {
     {
       const std::string Source_Uniform_str = "Source: Uniform Concentration";
       const std::string Source_Flow_Weighted_str = "Source: Flow Weighted Concentration";
+      const std::string Source_DiffDomRel_str = "Source: Diffusion Dominated Release Model";
+      const std::string Total_Inventory_str = "Total Inventory";
+      const std::string Mixing_Length_str = "Mixing Length";
+      const std::string Eff_Diff_Coeff_str = "Effective Diffusion Coefficient";
       const std::string Source_Point_str = "Source: Point";
+      const std::string Values_str="Values";
+      const std::string Times_str="Times";
+      const std::string Forms_str="Time Functions";
 
       Array<std::string> nullList, reqP;
       if (Amanzi_type == Source_Uniform_str 
 	  || Amanzi_type == Source_Flow_Weighted_str
 	  || Amanzi_type == Source_Point_str) {
-        const std::string val_name="Values"; reqP.push_back(val_name);
-        const std::string time_name="Times"; reqP.push_back(time_name);
-        const std::string form_name="Time Functions"; reqP.push_back(form_name);
+        reqP.push_back(Values_str);
+        reqP.push_back(Times_str);
+        reqP.push_back(Forms_str);
         PLoptions opt(fPLin,nullList,reqP,true,false);
-        Array<double> vals = fPLin.get<Array<double> >(val_name);
+        Array<double> vals = fPLin.get<Array<double> >(Values_str);
         fPLout.set<Array<double> >("vals",vals);
         if (vals.size()>1) {
-          fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(time_name));
-          fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
+          fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(Times_str));
+          fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(Forms_str));
         }
 	if (Amanzi_type == Source_Uniform_str) {
 	  fPLout.set<std::string>("type","uniform");
@@ -3569,9 +3614,24 @@ namespace Amanzi {
         } else if (Amanzi_type == Source_Point_str) {
 	  fPLout.set<std::string>("type","point");
 	}
-        else {
-          MyAbort("Unrecognized solute source function: "+Amanzi_type);
-        }
+      }
+      else if (Amanzi_type == Source_DiffDomRel_str) {
+        reqP.push_back(Total_Inventory_str);
+        reqP.push_back(Mixing_Length_str);
+        reqP.push_back(Eff_Diff_Coeff_str);
+        reqP.push_back(Times_str);
+        PLoptions opt(fPLin,nullList,reqP,true,true);
+        fPLout.set<std::string>("type","diffusion_dominated_release_model");
+        fPLout.set<double>("total_inventory",fPLin.get<double>(Total_Inventory_str));
+        fPLout.set<double>("mixing_length",fPLin.get<double>(Mixing_Length_str));
+        fPLout.set<double>("effective_diffusion_coef",fPLin.get<double>(Eff_Diff_Coeff_str));
+        fPLout.set<double>("time_scale",100);
+        const Array<double>& times = fPLin.get<Array<double> >(Times_str);
+        fPLout.set<double>("start_time",times[0]);
+        fPLout.set<double>("end_time",times[1]);
+      }
+      else {
+        MyAbort("Unrecognized solute source function: "+Amanzi_type);
       }
     }
 

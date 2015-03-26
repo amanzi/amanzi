@@ -86,7 +86,7 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
   int max_itrs_, criteria_, krylov_dim_;
   double tol_, overflow_tol_;
   mutable int num_itrs_, num_itrs_total_, returned_code_;
-  mutable double residual_;
+  mutable double residual_, fnorm_;
   mutable bool initialized_;
 };
 
@@ -120,7 +120,8 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRESRestart_(
   if (ierr == LIN_SOLVER_MAX_ITERATIONS) {
     Teuchos::OSTab tab = vo_->getOSTab();
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-      *vo_->os() << "Not converged (max iterations), ||r||=" << residual_ << std::endl;
+      *vo_->os() << "Not converged (max iterations), ||r||=" << residual_ 
+                 << " ||f||=" << fnorm_ << std::endl;
   }
 
   num_itrs_ = num_itrs_total_;
@@ -155,6 +156,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
   // h_->ApplyInverse(f, r);
   // r.Dot(fnorm, f);  This is the preconditioned norm of the residual.
   f.Norm2(&fnorm);
+  fnorm_ = fnorm;
 
   m_->Apply(x, p);  // p = f - M * x
   p.Update(1.0, f, -1.0);

@@ -1,5 +1,11 @@
 /*
-  The transport component of the Amanzi code, serial unit tests.
+  This is the Transport component of Amanzi. 
+
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   License: BSD
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
@@ -9,19 +15,21 @@
 #include <cmath>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "UnitTest++.h"
 
-#include "MeshFactory.hh"
-#include "MeshAudit.hh"
+// Amanzi
 #include "GMVMesh.hh"
-
+#include "MeshAudit.hh"
+#include "MeshFactory.hh"
 #include "State.hh"
-#include "Transport_PK.hh"
 
+// Transport
+#include "Transport_PK.hh"
 
 /* **************************************************************** */
 TEST(ADVANCE_WITH_3D_MESH) {
@@ -40,11 +48,10 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_3D_long.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* create a mesh framework */
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
   FrameworkPreference pref;
   pref.clear();
@@ -64,13 +71,17 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");
 
-  RCP<State> S = rcp(new State());
+  Teuchos::ParameterList state_list = plist->sublist("State");
+  RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
   S->set_time(0.0);
   S->set_intermediate_time(0.0);
 
-  Transport_PK TPK(plist, S, component_names);
+  Transport_PK TPK(plist, S, "Transport", component_names);
+  TPK.Setup();
   TPK.CreateDefaultState(mesh, 1);
+  S->InitializeFields();
+  S->InitializeEvaluators();
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
@@ -85,25 +96,29 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
   }
 
   /* initialize a transport process kernel */
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
   TPK.PrintStatistics();
 
   /* advance the transport state */
   int iter, k;
-  double dummy_dT, T = 0.0;
+  double t_old(0.0), t_new(0.0), dt;
+
   Teuchos::RCP<Epetra_MultiVector> 
       tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
 
   iter = 0;
   bool flag = true;
-  while (T < 0.3) {
-    double dT = TPK.CalculateTransportDt();
-    TPK.Advance(dT, dummy_dT);
-    TPK.CommitState(dT, S.ptr());
-    T += dT;
+  while (t_new < 0.3) {
+    dt = TPK.CalculateTransportDt();
+    t_new = t_old + dt;
+
+    TPK.AdvanceStep(t_old, t_new);
+    TPK.CommitStep(t_old, t_new);
+
+    t_old = t_new;
     iter++;
 
-    if (T > 0.1 && flag) {
+    if (t_new > 0.1 && flag) {
       flag = false;
       if (TPK.MyPID == 0) {
         GMV::open_data_file(*mesh, (std::string)"transport.gmv");

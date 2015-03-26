@@ -16,14 +16,18 @@
 #ifndef AMANZI_FAKE_MODEL_HH_
 #define AMANZI_FAKE_MODEL_HH_
 
-#include "WaterRetentionModel.hh"
+#include "Teuchos_ParameterList.hpp"
+
+#include "factory.hh"
+
+#include "WRM.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-class WRM_fake : public WaterRetentionModel {
+class WRM_fake : public WRM {
  public:
-  explicit WRM_fake(std::string region);
+  explicit WRM_fake(Teuchos::ParameterList& plist);
   ~WRM_fake() {};
   
   // required methods from the base class
@@ -35,6 +39,8 @@ class WRM_fake : public WaterRetentionModel {
 
  private:
   double m, n, alpha;
+
+  static Utils::RegisteredFactory<WRM, WRM_fake> factory_;
 };
 
 }  // namespace Flow

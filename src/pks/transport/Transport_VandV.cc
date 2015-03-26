@@ -24,28 +24,6 @@ namespace Amanzi {
 namespace Transport {
 
 /* ****************************************************************
-* Routine completes initialization of objects in the state.
-**************************************************************** */
-void Transport_PK::InitializeFields()
-{
-  // set popular default values when Flow is off
-  if (S_->HasField("water_saturation")) {
-    if (!S_->GetField("water_saturation", passwd_)->initialized()) {
-      S_->GetFieldData("water_saturation", passwd_)->PutScalar(1.0);
-      S_->GetField("water_saturation", passwd_)->set_initialized();
-    }
-  }
-
-  if (S_->HasField("prev_water_saturation")) {
-    if (!S_->GetField("prev_water_saturation", passwd_)->initialized()) {
-      *S_->GetFieldData("prev_water_saturation", passwd_) = *S_->GetFieldData("water_saturation", passwd_);
-      S_->GetField("prev_water_saturation", passwd_)->set_initialized();
-    }
-  }
-}
-
-
-/* ****************************************************************
 * Construct default state for unit tests.
 **************************************************************** */
 void Transport_PK::CreateDefaultState(
@@ -54,18 +32,13 @@ void Transport_PK::CreateDefaultState(
   std::string name("state"); 
   S_->RequireScalar("fluid_density", name);
 
-  if (!S_->HasField("porosity")) {
-    S_->RequireField("porosity", name)->SetMesh(mesh)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
- 
-  if (!S_->HasField("water_saturation")) {
-    S_->RequireField("water_saturation", name)->SetMesh(mesh)->SetGhosted(true)
+  if (!S_->HasField("saturation_liquid")) {
+    S_->RequireField("saturation_liquid", name)->SetMesh(mesh)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
   
-  if (!S_->HasField("prev_water_saturation")) {
-    S_->RequireField("prev_water_saturation", name)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S_->HasField("prev_saturation_liquid")) {
+    S_->RequireField("prev_saturation_liquid", name)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
@@ -85,19 +58,16 @@ void Transport_PK::CreateDefaultState(
 
   // initialize fields
   S_->Setup();
-
+ 
   // set popular default values
-  S_->GetFieldData("porosity", name)->PutScalar(0.2);
-  S_->GetField("porosity", name)->set_initialized();
-
   *(S_->GetScalarData("fluid_density", name)) = 1000.0;
   S_->GetField("fluid_density", name)->set_initialized();
 
-  S_->GetFieldData("water_saturation", name)->PutScalar(1.0);
-  S_->GetField("water_saturation", name)->set_initialized();
+  S_->GetFieldData("saturation_liquid", name)->PutScalar(1.0);
+  S_->GetField("saturation_liquid", name)->set_initialized();
 
-  S_->GetFieldData("prev_water_saturation", name)->PutScalar(1.0);
-  S_->GetField("prev_water_saturation", name)->set_initialized();
+  S_->GetFieldData("prev_saturation_liquid", name)->PutScalar(1.0);
+  S_->GetField("prev_saturation_liquid", name)->set_initialized();
 
   S_->GetFieldData("total_component_concentration", name)->PutScalar(0.0);
   S_->GetField("total_component_concentration", name)->set_initialized();
@@ -172,25 +142,23 @@ void Transport_PK::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, dou
     mesh_->get_comm()->SumAll(&tmp, &solute_flux, 1);
 
     *vo_->os() << runtime_solutes_[n] << ": min/max=" << tccmin << " " << tccmax;
-    if (flag) *vo_->os() << ", flux=" << solute_flux << " [m^3/s]";
-    *vo_->os() << std::endl;
+    if (flag) *vo_->os() << ", flux=" << solute_flux << " [mol/s]";
+
+    // old capability
+    mass_solutes_exact_[i] += VV_SoluteVolumeChangePerSecond(i) * dT_MPC;
+    double mass_solute(0.0);
+    for (int c = 0; c < ncells_owned; c++) {
+      double vol = mesh_->cell_volume(c);
+      mass_solute += (*ws)[0][c] * (*phi)[0][c] * tcc_next[i][c] * vol;
+    }
+
+    double tmp1 = mass_solute, tmp2 = mass_solutes_exact_[i], mass_exact;
+    mesh_->get_comm()->SumAll(&tmp1, &mass_solute, 1);
+    mesh_->get_comm()->SumAll(&tmp2, &mass_exact, 1);
+
+    double mass_loss = mass_exact - mass_solute;
+    *vo_->os() << ", mass: kept/left=" << mass_solute << " " << mass_loss << " [mol]" << std::endl;
   }
-
-  // old capability
-  mass_tracer_exact += VV_TracerVolumeChangePerSecond(0) * dT_MPC;
-  double mass_tracer = 0.0;
-  for (int c = 0; c < ncells_owned; c++) {
-    double vol = mesh_->cell_volume(c);
-    mass_tracer += (*ws)[0][c] * (*phi)[0][c] * tcc_next[0][c] * vol;
-  }
-
-  double mass_tracer_tmp = mass_tracer, mass_exact_tmp = mass_tracer_exact, mass_exact;
-  mesh_->get_comm()->SumAll(&mass_tracer_tmp, &mass_tracer, 1);
-  mesh_->get_comm()->SumAll(&mass_exact_tmp, &mass_exact, 1);
-
-  double mass_loss = mass_exact - mass_tracer;
-  *vo_->os() << "(obsolete) solute #0: reservoir mass=" << mass_tracer 
-             << " [kg], mass left=" << mass_loss << " [kg]" << std::endl;
 }
 
 
@@ -267,7 +235,7 @@ void Transport_PK::VV_CheckGEDproperty(Epetra_MultiVector& tracer) const
       std::cout << "    Make an Amanzi ticket or turn off internal transport tests" << std::endl;
       std::cout << "    MyPID = " << MyPID << std::endl;
       std::cout << "    component = " << i << std::endl;
-      std::cout << "    time = " << T_physics << std::endl;
+      std::cout << "    time = " << t_physics_ << std::endl;
       std::cout << "    min/max values = " << tr_min[i] << " " << tr_max[i] << std::endl;
 
       Errors::Message msg;
@@ -296,10 +264,9 @@ void Transport_PK::VV_CheckTracerBounds(Epetra_MultiVector& tracer,
       std::cout << "    Make an Amanzi ticket or turn off internal transport tests" << std::endl;
       std::cout << "    MyPID = " << MyPID << std::endl;
       std::cout << "    component = " << component << std::endl;
-      std::cout << "    simulation time = " << T_physics << std::endl;
+      std::cout << "    simulation time = " << t_physics_ << std::endl;
       std::cout << "      cell = " << c << std::endl;
       std::cout << "      center = " << mesh_->cell_centroid(c) << std::endl;
-      // std::cout << "      limiter = " << (*limiter_)[c] << std::endl;
       std::cout << "      value (old) = " << tcc_prev[component][c] << std::endl;
       std::cout << "      value (new) = " << value << std::endl;
 
@@ -315,7 +282,7 @@ void Transport_PK::VV_CheckTracerBounds(Epetra_MultiVector& tracer,
 * Calculate change of tracer volume per second due to boundary flux.
 * This is the simplified version (lipnikov@lanl.gov).
 ****************************************************************** */
-double Transport_PK::VV_TracerVolumeChangePerSecond(int idx_tracer)
+double Transport_PK::VV_SoluteVolumeChangePerSecond(int idx_tracer)
 {
   double volume = 0.0;
 

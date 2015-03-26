@@ -16,6 +16,7 @@ project(PKS)
 
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
+include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
@@ -33,6 +34,7 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 # Library: pks
 #
 set(pks_src_files PK_Factory.cc
+                  PK_BoundaryFunction.cc
    )
 
 add_amanzi_library(pks
@@ -45,6 +47,7 @@ add_amanzi_library(pks
 set(pks_inc_files 
   CommonDefs.hh
   PK.hh
+  PK_BoundaryFunction.hh
   PK_Factory.hh)  
 
 add_install_include_file(${pks_inc_files})
@@ -55,10 +58,12 @@ endif()
 add_subdirectory(eos)
 
 add_subdirectory(flow)
+add_subdirectory(chemistry)
 add_subdirectory(transport)
 add_subdirectory(energy)
+add_subdirectory(dummy)
+add_subdirectory(mpc_pk)
 
-add_subdirectory(mpc)
 
 
 

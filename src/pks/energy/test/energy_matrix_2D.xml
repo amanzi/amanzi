@@ -37,58 +37,61 @@
   </ParameterList>
 
   <!-- ENERGY -->
-  <ParameterList name="Energy">
-    <ParameterList name="VerboseObject">
-      <Parameter name="Verbosity Level" type="string" value="high"/>
-    </ParameterList>
-
-    <ParameterList name="energy evaluator">
+  <ParameterList name="PKs">
+    <ParameterList name="Energy">
       <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        <Parameter name="Verbosity Level" type="string" value="high"/>
       </ParameterList>
-    </ParameterList>
 
-    <ParameterList name="enthalpy evaluator">
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="extreme"/>
-      </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="thermal conductivity evaluator">
-      <ParameterList name="thermal conductivity parameters">
-        <Parameter name="thermal conductivity type" type="string" value="two-phase Peters-Lidard"/>
-        <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
-        <Parameter name="thermal conductivity of liquid" type="double" value="0.1"/>
-        <Parameter name="thermal conductivity of gas" type="double" value="0.02"/>
-
-        <Parameter name="unsaturated alpha" type="double" value="1.0"/>
-        <Parameter name="epsilon" type="double" value="1.e-10"/>
-      </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="operators">
-      <ParameterList name="diffusion operator">
-        <ParameterList name="matrix">
-          <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-          <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-          <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-          <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-          <Parameter name="gravity" type="bool" value="true"/>
+      <ParameterList name="energy evaluator">
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="extreme"/>
         </ParameterList>
-        <ParameterList name="preconditioner">
-          <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-          <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-          <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-          <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-          <Parameter name="gravity" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="enthalpy evaluator">
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="thermal conductivity evaluator">
+        <ParameterList name="thermal conductivity parameters">
+          <Parameter name="thermal conductivity type" type="string" value="two-phase Peters-Lidard"/>
+          <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
+          <Parameter name="thermal conductivity of liquid" type="double" value="0.1"/>
+          <Parameter name="thermal conductivity of gas" type="double" value="0.02"/>
+
+          <Parameter name="unsaturated alpha" type="double" value="1.0"/>
+          <Parameter name="epsilon" type="double" value="1.e-10"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="operators">
+        <ParameterList name="diffusion operator">
+          <ParameterList name="matrix">
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="gravity" type="bool" value="true"/>
+          </ParameterList>
+          <ParameterList name="preconditioner">
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="gravity" type="bool" value="true"/>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="advection operator">
+          <Parameter name="discretization primary" type="string" value="upwind"/>
+          <Parameter name="reconstruction order" type="int" value="0"/>
         </ParameterList>
       </ParameterList>
 
       <ParameterList name="boundary conditions">
-        <ParameterList name="mass flux">
+        <ParameterList name="energy flux">
           <ParameterList name="BC 0">
-            <Parameter name="regions" type="Array(string)" value="{Left side, Right side Top}"/>
-            <ParameterList name="outward mass flux">
+            <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+            <ParameterList name="outward energy flux">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.0"/>
               </ParameterList>
@@ -98,23 +101,23 @@
         <ParameterList name="temperature">
           <ParameterList name="BC 1">
             <Parameter name="regions" type="Array(string)" value="{Top side}"/>
-            <ParameterList name="boundary pressure">
+            <ParameterList name="boundary temperature">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="BC 2">
-            <Parameter name="regions" type="Array(string)" value="{Bottom side, Right side Bottom}"/>
-            <ParameterList name="boundary pressure">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0"/>
+                <Parameter name="value" type="double" value="273.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="time integrator">
+        <Parameter name="error control options" type="Array(string)" value="{temperature}"/>
+        <Parameter name="linear solver" type="string" value="none"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      </ParameterList>
+
     </ParameterList>
+
   </ParameterList>
 
   <!-- STATE -->
@@ -164,7 +167,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="8000.0"/>
+                <Parameter name="value" type="double" value="50000.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -252,9 +255,9 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="mol_frac_gas">
+      <ParameterList name="molar_fraction_gas">
         <Parameter name="field evaluator type" type="string" value="molar fraction gas"/>
-        <Parameter name="molar fraction key" type="string" value="mol_frac_gas"/>
+        <Parameter name="molar fraction key" type="string" value="molar_fraction_gas"/>
         <ParameterList name="vapor pressure model parameters">
           <Parameter name="vapor pressure model type" type="string" value="water vapor over water/ice"/>
         </ParameterList>
@@ -284,6 +287,33 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1000.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="darcy_flux">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="face"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="temperature">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="300.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

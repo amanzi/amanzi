@@ -15,23 +15,24 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
 
+// Amanzi
+#include "GMVMesh.hh"
+#include "LinearOperatorFactory.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
-#include "GMVMesh.hh"
-
-#include "tensor.hh"
 #include "mfd3d_diffusion.hh"
+#include "tensor.hh"
 
-#include "LinearOperatorFactory.hh"
+// Amanzi::Operators
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionSurface.hh"
-#include "OperatorSource.hh"
+#include "OperatorDiffusionMFD.hh"
+#include "Verification.hh"
 
 
 TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
@@ -71,7 +72,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
 
   /* modify diffusion coefficient */
-  std::vector<WhetStone::Tensor> K;
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
@@ -79,7 +80,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
     WhetStone::Tensor Kc(2, 1);
     const Point& xc = mesh->cell_centroid(c);
     Kc(0, 0) = 1.0 + xc[0] * xc[0];
-    K.push_back(Kc);
+    K->push_back(Kc);
   }
   double rho(1.0), mu(1.0);
 
@@ -99,84 +100,40 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
-  Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(surfmesh);
-  cvs->SetGhosted(true);
-  cvs->SetComponent("cell", AmanziMesh::CELL, 1);
-  cvs->SetOwned(false);
-  cvs->AddComponent("face", AmanziMesh::FACE, 1);
-
-  CompositeVector solution(*cvs);
-  solution.PutScalarMasterAndGhosted(0.0);
-
-  // populate the diffusion operator
-  int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
-  int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
-  int schema_prec_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE;
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator Sff");
+  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(olist, surfmesh));
+  op->SetBCs(bc);
+  const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
-  Teuchos::RCP<OperatorDiffusionSurface> op = Teuchos::rcp(new OperatorDiffusionSurface(cvs, olist, bc));
-  op->Init();
   op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  // get and assmeble the global operator
+  Teuchos::RCP<Operator> global_op = op->global_operator();
   op->ApplyBCs();
-  op->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
-  op->AssembleMatrix(schema_prec_dofs);
+  global_op->SymbolicAssembleMatrix();
+  global_op->AssembleMatrix();
 
   // create preconditoner
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-  op->InitPreconditioner("Hypre AMG", slist);
+  global_op->InitPreconditioner("Hypre AMG", slist);
 
-  // Test SPD properties of the matrix.
-  CompositeVector a(*cvs), ha(*cvs), b(*cvs), hb(*cvs);
-  a.Random();
-  b.Random();
-  op->Apply(a, ha);
-  op->Apply(b, hb);
-
-  double ahb, bha, aha, bhb;
-  a.Dot(hb, &ahb);
-  b.Dot(ha, &bha);
-  a.Dot(ha, &aha);
-  b.Dot(hb, &bhb);
-
-  if (MyPID == 0) {
-    std::cout << "Matrix:\n" 
-              << "  Symmetry test: " << ahb << " = " << bha << std::endl;
-    std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
-  } 
-  CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
-  CHECK(aha > 0.0);
-  CHECK(bhb > 0.0);
-
-  // Test SPD properties of the preconditioner.
-  a.Random();
-  b.Random();
-  op->ApplyInverse(a, ha);
-  op->ApplyInverse(b, hb);
-
-  a.Dot(hb, &ahb);
-  b.Dot(ha, &bha);
-  a.Dot(ha, &aha);
-  b.Dot(hb, &bhb);
-
-  if (MyPID == 0) {
-    std::cout << "Preconditioner: size=" << op->A_->NumGlobalRows() << "\n" 
-              << "  Symmetry test: " << ahb << " = " << bha << std::endl;
-    std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
-  } 
-  CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
-  CHECK(aha > 0.0);
-  CHECK(bhb > 0.0);
+  // Test SPD properties of the matrix and preconditioner.
+  Verification ver(global_op);
+  ver.CheckMatrixSPD();
+  ver.CheckPreconditionerSPD();
 
   // solve the problem
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
-  AmanziSolvers::LinearOperatorFactory<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, op);
+  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
+     solver = factory.Create("AztecOO CG", lop_list, global_op);
 
-  CompositeVector rhs = *op->rhs();
+  CompositeVector rhs = *global_op->rhs();
+  CompositeVector solution(rhs);
+  solution.PutScalar(0.0);
+
   int ierr = solver->ApplyInverse(rhs, solution);
 
   int num_itrs = solver->num_itrs();
@@ -234,7 +191,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
 
   /* modify diffusion coefficient */
-  std::vector<WhetStone::Tensor> K;
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
@@ -242,7 +199,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
     WhetStone::Tensor Kc(2, 1);
     const Point& xc = mesh->cell_centroid(c);
     Kc(0, 0) = 1.0 + xc[0] * xc[0];
-    K.push_back(Kc);
+    K->push_back(Kc);
   }
   double rho(1.0), mu(1.0);
 
@@ -262,85 +219,40 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
-  Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(surfmesh);
-  cvs->SetGhosted(true);
-  cvs->SetComponent("cell", AmanziMesh::CELL, 1);
-  cvs->SetOwned(false);
-  cvs->AddComponent("face", AmanziMesh::FACE, 1);
-
-  CompositeVector solution(*cvs);
-  solution.PutScalarMasterAndGhosted(0.0);
-
-  // populate the diffusion operator
-  int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
-  int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
-  int schema_prec_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE;
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator Scc");
+  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(olist, surfmesh));
+  op->SetBCs(bc);
+  const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
-  Teuchos::RCP<OperatorDiffusionSurface> op = Teuchos::rcp(new OperatorDiffusionSurface(cvs, olist, bc));
-  op->Init();
   op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  // get and assmeble the global operator
+  Teuchos::RCP<Operator> global_op = op->global_operator();
   op->ApplyBCs();
-  int nonstandard = 1;
-  op->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_CELL, nonstandard);
-  op->AssembleMatrix(schema_prec_dofs);
+  global_op->SymbolicAssembleMatrix();
+  global_op->AssembleMatrix();
 
   // create preconditoner
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-  op->InitPreconditioner("Hypre AMG", slist);
+  global_op->InitPreconditioner("Hypre AMG", slist);
 
-  // Test SPD properties of the matrix.
-  CompositeVector a(*cvs), ha(*cvs), b(*cvs), hb(*cvs);
-  a.Random();
-  b.Random();
-  op->Apply(a, ha);
-  op->Apply(b, hb);
-
-  double ahb, bha, aha, bhb;
-  a.Dot(hb, &ahb);
-  b.Dot(ha, &bha);
-  a.Dot(ha, &aha);
-  b.Dot(hb, &bhb);
-
-  if (MyPID == 0) {
-    std::cout << "Matrix:\n" 
-              << "  Symmetry test: " << ahb << " = " << bha << std::endl;
-    std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
-  } 
-  CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
-  CHECK(aha > 0.0);
-  CHECK(bhb > 0.0);
-
-  // Test SPD properties of the preconditioner.
-  a.Random();
-  b.Random();
-  op->ApplyInverse(a, ha);
-  op->ApplyInverse(b, hb);
-
-  a.Dot(hb, &ahb);
-  b.Dot(ha, &bha);
-  a.Dot(ha, &aha);
-  b.Dot(hb, &bhb);
-
-  if (MyPID == 0) {
-    std::cout << "Preconditioner: size=" << op->A_->NumGlobalRows() << "\n" 
-              << "  Symmetry test: " << ahb << " = " << bha << std::endl;
-    std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
-  } 
-  CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
-  CHECK(aha > 0.0);
-  CHECK(bhb > 0.0);
+  // Test SPD properties of the matrix and preconditioner.
+  Verification ver(global_op);
+  ver.CheckMatrixSPD();
+  ver.CheckPreconditionerSPD();
 
   // solve the problem
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
-  AmanziSolvers::LinearOperatorFactory<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, op);
+  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
+     solver = factory.Create("AztecOO CG", lop_list, global_op);
 
-  CompositeVector rhs = *op->rhs();
+  CompositeVector rhs = *global_op->rhs();
+  CompositeVector solution(rhs);
+  solution.PutScalar(0.0);
+
   int ierr = solver->ApplyInverse(rhs, solution);
 
   int num_itrs = solver->num_itrs();
@@ -360,6 +272,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   }
 }
 
+
 TEST(LAPLACE_BELTRAMI_FLAT) {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -370,7 +283,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Laplace Beltrami solver: preconditioner A" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: Laplace Beltrami solver: preconditioner full" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_laplace_beltrami.xml";
@@ -397,7 +310,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
 
   /* modify diffusion coefficient */
-  std::vector<WhetStone::Tensor> K;
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
@@ -405,7 +318,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
     WhetStone::Tensor Kc(2, 1);
     const Point& xc = mesh->cell_centroid(c);
     Kc(0, 0) = 1.0 + xc[0] * xc[0];
-    K.push_back(Kc);
+    K->push_back(Kc);
   }
   double rho(1.0), mu(1.0);
 
@@ -425,64 +338,40 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
-  Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(surfmesh);
-  cvs->SetGhosted(true);
-  cvs->SetComponent("cell", AmanziMesh::CELL, 1);
-  cvs->SetOwned(false);
-  cvs->AddComponent("face", AmanziMesh::FACE, 1);
-
-  CompositeVector solution(*cvs);
-  solution.PutScalarMasterAndGhosted(0.0);
-
-  // populate the diffusion operator
-  int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
-  int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
-  int schema_prec_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator");
+  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(olist, surfmesh));
+  op->SetBCs(bc);
+  const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
-  Teuchos::RCP<OperatorDiffusionSurface> op = Teuchos::rcp(new OperatorDiffusionSurface(cvs, olist, bc));
-  op->Init();
   op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  // get and assmeble the global operator
+  Teuchos::RCP<Operator> global_op = op->global_operator();
   op->ApplyBCs();
-  op->SymbolicAssembleMatrix(schema_prec_dofs);
-  op->AssembleMatrix(schema_prec_dofs);
+  global_op->SymbolicAssembleMatrix();
+  global_op->AssembleMatrix();
 
   // create preconditoner
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-  op->InitPreconditioner("Hypre AMG", slist);
+  global_op->InitPreconditioner("Hypre AMG", slist);
 
-  // Test SPD properties of the preconditioner.
-  CompositeVector a(*cvs), ha(*cvs), b(*cvs), hb(*cvs);
-  a.Random();
-  b.Random();
-  op->ApplyInverse(a, ha);
-  op->ApplyInverse(b, hb);
-
-  double ahb, bha, aha, bhb;
-  a.Dot(hb, &ahb);
-  b.Dot(ha, &bha);
-  a.Dot(ha, &aha);
-  b.Dot(hb, &bhb);
-
-  if (MyPID == 0) {
-    std::cout << "Preconditioner: size=" << op->A_->NumGlobalRows() << "\n" 
-              << "  Symmetry test: " << ahb << " = " << bha << std::endl;
-    std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
-  } 
-  CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
-  CHECK(aha > 0.0);
-  CHECK(bhb > 0.0);
+  // Test SPD properties of the matrix and preconditioner.
+  Verification ver(global_op);
+  ver.CheckMatrixSPD();
+  ver.CheckPreconditionerSPD();
 
   // solve the problem
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
-  AmanziSolvers::LinearOperatorFactory<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, op);
+  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
+     solver = factory.Create("AztecOO CG", lop_list, global_op);
 
-  CompositeVector rhs = *op->rhs();
+  CompositeVector rhs = *global_op->rhs();
+  CompositeVector solution(rhs);
+  solution.PutScalar(0.0);
+
   int ierr = solver->ApplyInverse(rhs, solution);
 
   int num_itrs = solver->num_itrs();
@@ -492,6 +381,14 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
     std::cout << "pressure solver (" << solver->name() 
               << "): ||r||=" << solver->residual() << " itr=" << num_itrs
               << " code=" << solver->returned_code() << std::endl;
+
+    // visualization
+    const Epetra_MultiVector& p = *solution.ViewComponent("cell");
+    GMV::open_data_file(*surfmesh, (std::string)"operators.gmv");
+    GMV::start_data();
+    GMV::write_cell_data(p, 0, "solution");
+    GMV::close_data_file();
   }
 }
+
 

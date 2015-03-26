@@ -1,6 +1,11 @@
 /*
-  The transport component of the Amanzi code, serial unit tests.
-  License: BSD
+  This is the Transport component of Amanzi. 
+
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
@@ -9,18 +14,19 @@
 #include <cmath>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "UnitTest++.h"
 
+// Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-
 #include "State.hh"
-#include "Transport_PK.hh"
 
+// Transport
+#include "Transport_PK.hh"
 
 /* **************************************************************** */
 TEST(ADVANCE_WITH_SUBCYCLING) {
@@ -39,11 +45,10 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_subcycling.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* create a mesh framework */
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, (Epetra_MpiComm *)comm);
 
   FrameworkPreference pref;
@@ -60,13 +65,17 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
   component_names.push_back("Component 0");
   component_names.push_back("Component 1");
 
-  RCP<State> S = rcp(new State());
+  Teuchos::ParameterList state_list = plist->sublist("State");
+  RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
   S->set_time(0.0);
   S->set_intermediate_time(0.0);
 
-  Transport_PK TPK(plist, S, component_names);
+  Transport_PK TPK(plist, S, "Transport", component_names);
+  TPK.Setup();
   TPK.CreateDefaultState(mesh, 2);
+  S->InitializeFields();
+  S->InitializeEvaluators();
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
@@ -81,27 +90,29 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
   }
 
   /* initialize a transport process kernel */
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
   TPK.PrintStatistics();
 
   /* advance the state */
   Teuchos::RCP<Epetra_MultiVector>
       tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
 
-  double T = 0.0;
+  double t_old(0.0), t_new(0.0), dt;
   int iter = 0;
-  while (T < 1.0) {
+  while (t_new < 1.0) {
     // imitation of a small time step relative to flow time step
-    double dummy_dT, dT = TPK.CalculateTransportDt();  
-    double dT_MPC = dT * 7.7;
+    dt = TPK.CalculateTransportDt();  
+    double dt_MPC = dt * 7.7;
+    t_new = t_old + dt_MPC;
 
-    TPK.Advance(dT_MPC, dummy_dT);
-    TPK.CommitState(dT_MPC, S.ptr());
-    T += dT_MPC;
+    TPK.AdvanceStep(t_old, t_new);
+    TPK.CommitStep(t_old, t_new);
+
+    t_old = t_new;
     iter++;
 
     if (iter < 5) {
-      printf("T=%8.4f  C_0(x):", T);
+      printf("T=%8.4f  C_0(x):", t_new);
       for (int k = 0; k < 9; k++) {
         int k1 = 9 - k;  // reflects cell numbering in the exodus file
         printf("%7.4f", (*tcc)[0][k1]); 

@@ -41,7 +41,7 @@ class FieldEvaluator {
 
   // ---------------------------------------------------------------------------
   // Answers the question, has this Field changed since it was last requested
-  // for Field Key reqest.  Updates the field if needed.
+  // for Field Key request.  Updates the field if needed.
   // ---------------------------------------------------------------------------
   virtual bool HasFieldChanged(const Teuchos::Ptr<State>& S, Key request) = 0;
 

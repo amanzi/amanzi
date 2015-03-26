@@ -144,7 +144,7 @@ ChemConstraintEval::Initialize(int i, Real t) const
     int Nmobile = mChemHelper->NumMobile();
     FArrayBox primTMP(boxTMP,Nmobile); primTMP.setVal(0);
     int Naux = auxChemVariablesMap.size();
-    FArrayBox auxTMP(boxTMP,Naux);
+    FArrayBox auxTMP(boxTMP,Naux); auxTMP.setVal(0);
 
     const std::map<std::string,int>& aux_chem_variables_map = mChemHelper->AuxChemVariablesMap();
     const std::string& material_name = mRockMgr->GetMaterial(i).Name();

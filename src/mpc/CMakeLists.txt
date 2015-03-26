@@ -30,9 +30,11 @@ include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${CHEM_SOURCE_DIR})
 include_directories(${CHEMPK_SOURCE_DIR})
+include_directories(${EOS_SOURCE_DIR})
 include_directories(${TRANSPORT_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
+include_directories(${ENERGY_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
@@ -41,6 +43,8 @@ include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${PKS_SOURCE_DIR})
+include_directories(${MULTIPHASE_SOURCE_DIR})
+include_directories(${MPC_TREE_SOURCE_DIR})
 
 
 # Chemistry includes directory
@@ -64,24 +68,20 @@ list(REMOVE_DUPLICATES mpc_tpl_libs) # Concerned about command line length! --lp
 list(REVERSE mpc_tpl_libs)
 
 set(mpc_inc_files
-  MPC.hh
+  CycleDriver.hh
   Unstructured_observations.hh
 )
 
 add_amanzi_library(mpc 
-                   SOURCE MPC.cc Unstructured_observations.cc CycleDriver.cc
+                   SOURCE CycleDriver.cc Unstructured_observations.cc
                    HEADERS ${mpc_inc_files}
                    LINK_LIBS time_integration solvers output state mesh dbg ${mpc_tpl_libs})
 
 if (BUILD_TESTS)
-#if (0)
-
-  include_directories(${MESH_FACTORY_SOURCE_DIR})
-
+    include_directories(${MESH_FACTORY_SOURCE_DIR})
     
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
-
     # Add MPC include directory. Need to remove this required path. -- lpritch
     include_directories(${MPC_SOURCE_DIR})
 
@@ -91,14 +91,53 @@ if (BUILD_TESTS)
           copy_directory ${MPC_SOURCE_DIR}/test ${MPC_BINARY_DIR}/test) 
     endif()
 
-    set(amanzi_libs mpc flow transport chemistry_pk state operators mesh_factory 
+    set(amanzi_libs mpc pks flow transport chemistry_pk energy pks eos 
+                    state operators mesh_factory 
                     geometry whetstone mesh_functions functions)
     
-    # Test: mpc-mstk
-    add_amanzi_test(mpc-mstk test_mpc_mstk
+    # Test: mpc driver for flow
+    add_amanzi_test(mpc_driver_flow mpc_driver_flow
                     KIND      int
-                    SOURCE    test/Main.cc test/test_driver.cc
+                    SOURCE    test/Main.cc test/mpc_driver_flow.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: mpc driver for transport
+    add_amanzi_test(mpc_driver_transport mpc_driver_transport
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_driver_transport.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: mpc driver for reactive transport
+    add_amanzi_test(mpc_driver_reactive_transport mpc_driver_reactive_transport
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_driver_reactive_transport.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: mpc driver for thermal richards
+    add_amanzi_test(mpc_driver_thermal_richards mpc_driver_thermal_richards
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_driver_thermal_richards.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: mpc-new driver richards reactive transport
+    add_amanzi_test(mpc_driver_flow_reactive_transport mpc_driver_flow_reactive_transport
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_driver_frt.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+if(0)
+    # Test: mpc-new driver dummy
+    add_amanzi_test(mpc_driver_dummy mpc_driver_dummy
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_driver_dummy_pk.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: mpc-new driver pressure saturation
+    add_amanzi_test(mpc_driver_impes mpc_driver_impes
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_driver_impes.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+endif()
 
 #    add_executable(test_vis test/Main.cc test/test_vis.cpp)
 #    target_link_libraries(test_vis state mpc stk_mesh ${UnitTest_LIBRARIES})

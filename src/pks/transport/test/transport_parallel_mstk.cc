@@ -9,14 +9,17 @@
 #include <cmath>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "UnitTest++.h"
 
+// Amanzi
 #include "MeshFactory.hh"
 #include "State.hh"
+
+// Transport
 #include "Transport_PK.hh"
 
 
@@ -42,11 +45,10 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_parallel_mstk.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* create an MSTK mesh framework */
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
 
   FrameworkPreference pref;
@@ -62,13 +64,17 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   component_names.push_back("Component 0");
   component_names.push_back("Component 1");
 
-  RCP<State> S = rcp(new State());
+  Teuchos::ParameterList state_list = plist->sublist("State");
+  RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
   S->set_time(0.0);
   S->set_intermediate_time(0.0);
 
-  Transport_PK TPK(plist, S, component_names);
+  Transport_PK TPK(plist, S, "Transport", component_names);
+  TPK.Setup();
   TPK.CreateDefaultState(mesh, 2);
+  S->InitializeFields();
+  S->InitializeEvaluators();
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
@@ -92,25 +98,29 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   }
 
   /* initialize a transport process kernel */
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
   TPK.PrintStatistics();
 
   /* advance the state */
-  double dummy_dT, dT = TPK.CalculateTransportDt();
-  TPK.Advance(dT, dummy_dT);
+  double t_old(0.0), t_new, dt;
+  dt = TPK.CalculateTransportDt();
+  t_new = t_old + dt;
+  TPK.AdvanceStep(t_old, t_new);
 
   /* print cell concentrations */
-  double T = 0.0;
   int iter = 0;
-  while(T < 1.0) {
-    dT = TPK.CalculateTransportDt();
-    TPK.Advance(dT, dummy_dT);
-    TPK.CommitState(dT, S.ptr());
-    T += dT;
+  while(t_new < 1.0) {
+    dt = TPK.CalculateTransportDt();
+    t_new = t_old + dt;
+
+    TPK.AdvanceStep(t_old, t_new);
+    TPK.CommitStep(t_old, t_new);
+
+    t_old = t_new;
     iter++;
 
     if (iter < 10 && TPK.MyPID == 3) {
-      printf("T=%7.2f  C_0(x):", T);
+      printf("T=%7.2f  C_0(x):", t_new);
       for (int k = 0; k < 2; k++) printf("%7.4f", (*tcc)[0][k]); std::cout << std::endl;
     }
   }

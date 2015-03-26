@@ -1,0 +1,61 @@
+<ParameterList name="Main">
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+  <Parameter name="grid_option" type="string" value="Unstructured"/>
+
+  <!--  REGIONS  -->
+  <ParameterList name="Regions">
+    <ParameterList name="Left side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{-1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Right side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array(double)" value="{1.0,0.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Top surface">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array(double)" value="{0.0,1.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{0.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!--  OPERATORS  -->
+  <ParameterList name="PK operator">
+    <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+
+    <ParameterList name="diffusion operator mfd">
+      <Parameter name="discretization primary" type="string" value="mfd: monotone for hex"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{cell,face}"/>
+    </ParameterList>
+
+    <ParameterList name="diffusion operator fv">
+      <Parameter name="discretization primary" type="string" value="mfd: two-point flux approximation"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
+      <Parameter name="schema" type="Array(string)" value="{cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- SOLVERS -->
+  <ParameterList name="Solvers">
+    <ParameterList name="AztecOO CG">
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="error tolerance" type="double" value="1e-16"/>
+        <Parameter name="maximum number of iterations" type="int" value="200"/>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="high"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
+

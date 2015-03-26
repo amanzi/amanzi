@@ -15,17 +15,19 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "UnitTest++.h"
 
+// Amanzi
+#include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
-#include "GMVMesh.hh"
-
 #include "State.hh"
+
+// Flow
 #include "Darcy_PK.hh"
 
 
@@ -44,11 +46,10 @@ TEST(FLOW_2D_DARCY_WELL) {
 
   /* read parameter list */
   std::string xmlFileName = "test/flow_darcy_well.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* create an MSTK mesh framework */
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
   FrameworkPreference pref;
@@ -63,15 +64,17 @@ TEST(FLOW_2D_DARCY_WELL) {
   /* create a simple state and populate it */
   Amanzi::VerboseObject::hide_line_prefix = true;
 
-  RCP<State> S = rcp(new State());
+  Teuchos::ParameterList state_list = plist->sublist("State");
+  RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Darcy_PK* DPK = new Darcy_PK(plist, S);
+  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "Flow", S));
+  DPK->Setup();
   S->Setup();
   S->InitializeFields();
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state"); 
+  std::string passwd("flow"); 
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
   
   for (int c = 0; c < K.MyLength(); c++) {
@@ -81,21 +84,22 @@ TEST(FLOW_2D_DARCY_WELL) {
 
   *S->GetScalarData("fluid_density", passwd) = 1.0;
   *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
-  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", passwd);
+  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
   gravity[1] = -1.0;
-  S->GetFieldData("porosity", passwd)->PutScalar(0.2);
   S->GetFieldData("specific_storage", passwd)->PutScalar(0.1);
 
   /* initialize the Darcy process kernel */
-  DPK->Initialize(S.ptr());
-  DPK->InitTransient(0.0, 1e-8);
+  DPK->Initialize();
 
-  /* transient solution */
-  double dT = 0.5;
+  // transient solution
+  double t_old(0.0), t_new, dt(0.5);
   for (int n = 0; n < 10; n++) {
-    double dT_actual(dT);
-    DPK->Advance(dT, dT_actual);
-    DPK->CommitState(dT, S.ptr());
+    t_new = t_old + dt;
+
+    DPK->AdvanceStep(t_old, t_new);
+    DPK->CommitStep(t_old, t_new);
+
+    t_old = t_new;
 
     if (MyPID == 0) {
       const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
@@ -105,6 +109,4 @@ TEST(FLOW_2D_DARCY_WELL) {
       GMV::close_data_file();
     }
   }
-
-  delete DPK;
 }

@@ -45,36 +45,64 @@ add_definitions("-DMSTK_HAVE_MPI")
 #
 # Library: operator audit
 #
-add_amanzi_library(operator_audit SOURCE OperatorAudit.cc LINK_LIBS ${flow_tpl_libs})
+#add_amanzi_library(operator_audit SOURCE OperatorAudit.cc LINK_LIBS ${flow_tpl_libs})
 
 #
 # Library: operators
 #
-set(operators_inc_files 
-    Operator.hh
+set(operators_inc_files
+    BCs.hh
     OperatorDefs.hh
-    OperatorTypeDefs.hh
-    OperatorAdvection.hh
-    OperatorDiffusionFactory.hh
+    OperatorUtils.hh
+    Op.hh
+    Op_Cell_Cell.hh
+    Op_Cell_Face.hh
+    Op_Cell_FaceCell.hh
+    Op_Cell_Node.hh
+    Op_Cell_Edge.hh
+    Op_Face_Cell.hh
+    Op_Node_Node.hh
+    Operator.hh
+    Operator_Cell.hh
+    Operator_FaceCell.hh
+    Operator_FaceCellScc.hh
+    Operator_FaceCellSff.hh
+    Operator_Node.hh
+    Operator_Edge.hh
     OperatorDiffusion.hh
-    OperatorDiffusionSurface.hh
+    OperatorDiffusionFactory.hh
+    OperatorDiffusionMFD.hh
     OperatorDiffusionWithGravity.hh
-    OperatorDiffusionTPFA.hh
-    OperatorSource.hh
+    OperatorDiffusionFV.hh
+    OperatorAccumulation.hh
+    OperatorAdvection.hh
+    TreeOperator.hh
     Reconstruction.hh
     ReconstructionCell.hh
     Upwind.hh
     UpwindFactory.hh
     UpwindStandard.hh
     UpwindDivK.hh
-    UpwindSecondOrder.hh)
+    UpwindSecondOrder.hh
+)
 
 add_amanzi_library(operators
-                   SOURCE Operator.cc 
-                   OperatorDiffusion.cc OperatorDiffusionSurface.cc 
-                   OperatorDiffusionWithGravity.cc OperatorDiffusionFactory.cc
-                   OperatorDiffusionTPFA.cc OperatorSource.cc 
-                   OperatorAdvection.cc 
+
+SOURCE OperatorUtils.cc
+                   Operator.cc
+                   Operator_Cell.cc
+                   Operator_FaceCell.cc
+                   Operator_FaceCellScc.cc
+                   Operator_FaceCellSff.cc
+                   Operator_Node.cc
+                   Operator_Edge.cc
+                   OperatorDiffusionMFD.cc
+                   OperatorDiffusionWithGravity.cc
+                   OperatorDiffusionFV.cc
+                   OperatorDiffusionFactory.cc                   
+                   OperatorAccumulation.cc
+                   OperatorAdvection.cc  
+                   TreeOperator.cc
                    ReconstructionCell.cc ReconstructionCell_Limiters.cc
                    HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})
@@ -91,7 +119,7 @@ if ( BUILD_TESTS )
           copy_directory ${OPERATORS_SOURCE_DIR}/test ${OPERATORS_BINARY_DIR}/test) 
     endif()
 
-    set(amanzi_libs geometry atk mesh mesh_factory data_structures operators whetstone output)
+    set(amanzi_libs geometry atk mesh mesh_factory data_structures operators whetstone output atk)
 
     # Test: matrices for diffusion
     if ( ENABLE_INDIVIDUAL_TESTS_OPERATORS OR ENABLE_INDIVIDUAL_TESTS )
@@ -125,6 +153,19 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/operator_diffusion.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+    add_amanzi_test(operators_diffusion_3pe operators_diffusion NPROCS 3 KIND unit)
+
+    add_amanzi_test(operators_commute operators_commute
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_commute.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # # Test: tpfa
+    # add_amanzi_test(operators_diffusion_tpfa operators_diffusion_tpfa
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_diffusion_tpfa.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    
     # Test: matrices for surface
     add_amanzi_test(operators_advdiff_surface operators_advdiff_surface
                     KIND unit
@@ -137,19 +178,32 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/operator_upwind.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    # convergence analysis
-    add_amanzi_test(operators_convergence operators_convergence
+    add_amanzi_test(operators_upwind_2pe operators_upwind NPROCS 2 KIND unit)
+
+    # stability analysis
+    add_amanzi_test(operators_stability operators_stability
                     KIND unit
-                    SOURCE test/Main.cc test/operator_convergence.cc
+                    SOURCE test/Main.cc test/operator_stability.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    add_amanzi_test(operators_convergence_2pe operators_convergence NPROCS 2 KIND unit)
+    add_amanzi_test(operators_stability_2pe operators_stability NPROCS 2 KIND unit)
+
+    # correctness of tree operator
+    add_amanzi_test(operators_tree operators_tree
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_tree.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(operators_tree_2pe operators_tree NPROCS 2 KIND unit)
 
     # reconstruction tests
     add_amanzi_test(operators_reconstruction operators_reconstruction
                     KIND unit
                     SOURCE test/Main.cc test/operator_reconstruction.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(operators_reconstruction_2pe operators_reconstruction NPROCS 2 KIND unit)
+
 endif()
 
 

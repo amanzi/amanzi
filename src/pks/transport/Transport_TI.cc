@@ -27,8 +27,7 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
   // transport routines need an RCP pointer
   Teuchos::RCP<const Epetra_Vector> component_rcp(&component, false);
 
-  Teuchos::ParameterList plist;
-  plist.set<std::string>("limiter", parameter_list.get<std::string>("advection limiter"));
+  Teuchos::ParameterList plist = tp_list_->sublist("reconstruction");
   lifting_->Init(component_rcp, plist);
   lifting_->Compute();
   Teuchos::RCP<CompositeVector> gradient = lifting_->gradient();
@@ -58,17 +57,6 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
 
   lifting_->InitLimiter(darcy_flux);
   lifting_->ApplyLimiter(bc_model, bc_value);
-
-  /*
-  if (advection_limiter == TRANSPORT_LIMITER_BARTH_JESPERSEN) {
-    LimiterBarthJespersen(current_component_, component_rcp, gradient, limiter_);
-    lifting_->ApplyLimiter(limiter_);
-  } else if (advection_limiter == TRANSPORT_LIMITER_TENSORIAL) {
-    LimiterTensorial(current_component_, component_rcp, gradient);
-  } else if (advection_limiter == TRANSPORT_LIMITER_KUZMIN) {
-    LimiterKuzmin(current_component_, component_rcp, gradient);
-  }
-  */
 
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors.

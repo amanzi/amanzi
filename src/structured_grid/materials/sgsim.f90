@@ -83,8 +83,9 @@
 !
 ! Read Input Parameters:
 !
-      read(lin,*,err=98) do_cond
-      write(*,*) ' do_cond = ',do_cond
+!      read(lin,*,err=98) do_cond
+!      write(*,*) ' do_cond = ',do_cond
+      do_cond = 1
 
       read(lin,'(a512)',err=98) datafl
       call chknam(datafl,512)
@@ -968,7 +969,8 @@
 !
 ! Read Input Parameters:
 !
-      read(lin,*,err=98) do_cond
+!      read(lin,*,err=98) do_cond
+      do_cond = 1
       read(lin,'(a64)',err=98) datafl
       call chknam(datafl,64)
 
@@ -1063,7 +1065,7 @@
       end do
 
       if (idbg.gt.1) then
-         write(*,*) ' do_cond = ',do_cond
+!         write(*,*) ' do_cond = ',do_cond
          write(*,*) ' data file = ',datafl(1:40)
          write(*,*) ' input columns = ',ixl,iyl,izl,ivrl,iwt,isecvr
          write(*,*) ' trimming limits = ',tmin,tmax
@@ -1247,6 +1249,7 @@
       character tmpfl*64
       
       real*8, target ::  scratch_c(c_sz)
+      integer :: ndt
       
       x     => scratch_c(c_idx(1):c_idx(2)-1)
       y     => scratch_c(c_idx(2):c_idx(3)-1)
@@ -1260,7 +1263,8 @@
 
       if (do_cond .eq. 1) then      
 !        Read the data if the file exists
-         call read_datafl(x,y,z,vr,wt,sec,nd)
+         ndt = nd
+         call read_datafl(x,y,z,vr,wt,sec,ndt)
 !
 ! Build transformation table and perform normal score transform
 !
@@ -1339,7 +1343,7 @@
          close(lin)
       end if
       if(ntmp.gt.ndat) ndat = ntmp
-
+      return
  98   stop 'ERROR in parameter file!'
  99   stop 'ERROR in data file!'
       
@@ -1416,7 +1420,6 @@
             else
                sec(nd) = var(isecvr)
             endif
-            
             twt = twt + wt(nd)
             av  = av  + var(ivrl)*wt(nd)
             ss  = ss  + var(ivrl)*var(ivrl)*wt(nd)
@@ -1436,7 +1439,7 @@
             '                 Weighted Variance          = ',f12.4,/)
 
       close(lin)
-
+      return
  99   stop 'ERROR in data file!'
 
       end
@@ -1548,7 +1551,7 @@
          vrgtr(j) = vrg
       end do
       close(lout)
-
+      return
  98   stop 'ERROR in parameter file!'
  99   stop 'ERROR in data file!'
       
@@ -1746,7 +1749,7 @@
       end if
       
       deallocate(var)
-
+      return
  97   stop 'ERROR in secondary data file!'
 
       end
@@ -2236,7 +2239,6 @@
 
       nxy  = nx*ny
       nxyz = nx*ny*nz
-
 ! 
 ! Set up the rotation/anisotropy matrices that are needed for the
 ! variogram and search.
@@ -2276,6 +2278,7 @@
          call getindx(nx,xmn,xsiz,x(id),ix,testind)
          call getindx(ny,ymn,ysiz,y(id),iy,testind)
          call getindx(nz,zmn,zsiz,z(id),iz,testind)
+
          ind = ix + (iy-1)*nx + (iz-1)*nxy
          xx  = xmn + dble(ix-1)*xsiz
          yy  = ymn + dble(iy-1)*ysiz
@@ -2312,9 +2315,10 @@
 ! Now, enter data values into the simulated grid:
 !
       do ind=1,nxyz
-!         id = int(sim(ind)+0.5)
-!         if(id.gt.0) sim(ind) = vr(id)
-         if(sim(ind).ne.UNEST) sim(ind) = vr(id)
+         if(sim(ind).ne.UNEST) then
+            id = int(sim(ind)+0.5)
+            if(id.gt.0) sim(ind) = vr(id)
+         endif
       end do
       end
 

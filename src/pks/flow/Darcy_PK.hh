@@ -13,89 +13,122 @@
 #ifndef AMANZI_DARCY_PK_HH_
 #define AMANZI_DARCY_PK_HH_
 
+// TPLs
 #include "Epetra_Vector.h"
 #include "Teuchos_RCP.hpp"
 
+// Amanzi
 #include "BCs.hh"
 #include "FnBaseDefs.hh"
+#include "Operator.hh"
 #include "OperatorDiffusion.hh"
+#include "OperatorAccumulation.hh"
+#include "PK_Factory.hh"
+#include "TreeVector.hh"
 
+// Flow
 #include "Flow_PK.hh"
-#include "TI_Specs.hh"
 
 namespace Amanzi {
 namespace Flow {
 
 class Darcy_PK : public Flow_PK {
  public:
-  Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S);
+  Darcy_PK(Teuchos::ParameterList& pk_tree,
+           const Teuchos::RCP<Teuchos::ParameterList>& glist,
+           const Teuchos::RCP<State>& S,
+           const Teuchos::RCP<TreeVector>& soln);
+
+  Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+           const std::string& pk_list_name,
+           Teuchos::RCP<State> S);
+
   ~Darcy_PK();
 
-  // main PK methods
-  void Initialize(const Teuchos::Ptr<State>& S);
-  int Advance(double dT, double &dT_actual); 
-  double get_dt() { return dT_desirable_; }
-  void CommitState(double dt, const Teuchos::Ptr<State>& S);
-  void CalculateDiagnostics(const Teuchos::Ptr<State>& S) {}
+  // methods required for PK interface
+  virtual void Setup();
+  virtual void Initialize();
 
-  // main flow methods
-  void InitSteadyState(double T0, double dT0);
-  void InitTransient(double T0, double dT0);
-  void InitPicard(double T0) {};  // not used yet.
-  void InitNextTI(double T0, double dT0, TI_Specs& ti_specs);
+  virtual void set_dt(double dt) { dt_ = dt; dt_desirable_ = dt; }
+  virtual double get_dt() { return dt_desirable_; }
 
-  int AdvanceToSteadyState(double T0, double dT0);
-  void InitializeAuxiliaryData();
-  void InitializeSteadySaturated();
+  virtual bool AdvanceStep(double t_old, double t_new); 
+  virtual void CommitStep(double t_old, double t_new);
+  virtual void CalculateDiagnostics();
 
-  // methods required for time integration
-  void Functional(const double Told, double Tnew, 
-                  Teuchos::RCP<CompositeVector> u, Teuchos::RCP<CompositeVector> udot, 
-                  Teuchos::RCP<CompositeVector> rhs) {};
-  void ApplyPreconditioner(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> Hu) {};
-  double ErrorNorm(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<const CompositeVector> du) { 
-    return 0.0; 
-  }
-  void UpdatePreconditioner(double T, Teuchos::RCP<const CompositeVector> up, double h) {};
+  virtual std::string name() { return passwd_; }
+
+  // methods required for time integration interface: dummy routines for Darcy flow.
+  // -- computes the non-linear functional f = f(t,u,udot) and related norm.
+  void Functional(const double t_old, double t_new, 
+                  Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
+                  Teuchos::RCP<TreeVector> f) {};
+  double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) { return 0.0; }
   void update_norm(double rtol, double atol) {};
-  bool IsAdmissible(Teuchos::RCP<const CompositeVector> up) { 
-   return false; 
-  }
-  bool ModifyPredictor(double dT, Teuchos::RCP<const CompositeVector> u0, Teuchos::RCP<CompositeVector> u) {
+
+  // -- preconditioner management
+  void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) {};
+  void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt) {};
+ 
+  // -- check the admissibility of a solution
+  //    override with the actual admissibility check
+  bool IsAdmissible(Teuchos::RCP<const TreeVector> u) { return false; }
+
+  // -- possibly modifies the predictor that is going to be used as a
+  //    starting value for the nonlinear solve in the time integrator,
+  bool ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) {
     return false;
   }
-  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-      ModifyCorrection(double dT, Teuchos::RCP<const CompositeVector> res,
-                       Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du) {
+
+  // -- possibly modifies the correction, after the nonlinear solver (i.e., NKA)
+  //    has computed it, will return true if it did change the correction,
+  //    so that the nonlinear iteration can store the modified correction
+  //    and pass it to NKA so that the NKA space can be updated
+   AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+      ModifyCorrection(double dt, Teuchos::RCP<const TreeVector> res,
+                       Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
     return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }
+
+  // -- experimental approach -- calling this indicates that the time
+  //    integration scheme is changing the value of the solution in state.
   void ChangedSolution() {};
 
-  // linear solvers
-  void SolveFullySaturatedProblem(double T, CompositeVector& u);
-  int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) { Y = X; return 1; }
-
-  // methods for unit tests
-  void ResetParameterList(const Teuchos::ParameterList& dp_list_new) { dp_list_ = dp_list_new; }
-  Teuchos::RCP<CompositeVector> get_solution() { return solution; }
+  // other members of the PK linear solvers
+  void SolveFullySaturatedProblem(double t, CompositeVector& u);
 
  private:
+  void InitializeFields_();
   void UpdateSpecificYield_();
   double ErrorEstimate_(double* dTfactor);
 
+ protected:
+  Teuchos::RCP<TreeVector> soln_;
+  
  private:
-  Teuchos::ParameterList dp_list_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op_;
+  Teuchos::RCP<Teuchos::ParameterList> dp_list_;
+  Teuchos::RCP<Operators::Operator> op_;
+  Teuchos::RCP<Operators::OperatorDiffusion> op_diff_;
+  Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
   Teuchos::RCP<Operators::BCs> op_bc_;
 
   int error_control_;
-  double dT_desirable_;
+  double dt_desirable_, dt_max_, dt_factor_;
+  std::vector<std::pair<double, double> > dt_history_;  // statistics
+
+  std::string preconditioner_name_, solver_name_;
+  bool initialize_with_darcy_;
+  int num_itrs_;
 
   Teuchos::RCP<CompositeVector> solution;  // next pressure state
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;
 
   Teuchos::RCP<CompositeVector> specific_yield_copy_;
+
+ private:
+  // factory registration
+  static RegisteredPKFactory<Darcy_PK> reg_;
 };
 
 }  // namespace Flow

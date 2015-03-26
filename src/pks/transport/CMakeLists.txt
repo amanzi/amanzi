@@ -47,16 +47,18 @@ include_directories(${HDF5_INCLUDE_DIRS})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
 #
-# Flow registrations
+# Transport registrations
 #
-register_evaluator_with_factory( HEADERFILE Transport_PK_Wrapper_reg.hh
-  LISTNAME   PKS_TRANSPORT_REGISTRATIONS )
+register_evaluator_with_factory(
+  HEADERFILE Transport_PK_reg.hh
+  LISTNAME   PKS_TRANSPORT_REGISTRATIONS
+  )
 
 generate_evaluators_registration_header( 
   HEADERFILE pks_transport_registration.hh   
   LISTNAME   PKS_TRANSPORT_REGISTRATIONS
-  INSTALL    True )
-
+  INSTALL    True
+  )
 
 #
 # Library: transport
@@ -76,7 +78,6 @@ set(transport_inc_files
 set(transport_src_files Transport_PK.cc Transport_TI.cc 
                         Transport_VandV.cc Transport_IO.cc 
                         Transport_Dispersion.cc 
-                        Transport_PK_Wrapper.cc
                         TransportBCFactory.cc TransportSourceFactory.cc
                         TransportBoundaryFunction_Tracer.cc TransportBoundaryFunction_Alquimia.cc
                         TransportDomainFunction.cc)
@@ -87,7 +88,7 @@ endif()
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}
                    LINK_LIBS geometry mesh error_handling state data_structures 
-                             ${geochem_lib} chemistry_pk time_integration ${Epetra_LIBRARIES})
+                             ${geochem_lib} chemistry_pk mpc_tree time_integration ${Epetra_LIBRARIES})
 
 if ( BUILD_TESTS )
     # Add UnitTest includes

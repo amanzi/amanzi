@@ -18,31 +18,31 @@ namespace Flow {
 * Estimate dT increase factor by comparing the 1st and 2nd order
 * time approximations.
 ****************************************************************** */
-double Darcy_PK::ErrorEstimate_(double* dTfactor)
+double Darcy_PK::ErrorEstimate_(double* dt_factor)
 {
   Epetra_MultiVector& p_cell = *solution->ViewComponent("cell");
 
-  double tol, error, error_max = 0.0;
-  double dTfactor_cell;
+  double tol, atol(1.0), rtol(1e-5), error, error_max(0.0);
+  double dt_factor_cell;
 
-  *dTfactor = 100.0;
+  *dt_factor = 100.0;
   for (int c = 0; c < ncells_owned; c++) {
-    error = fabs((*pdot_cells)[c] - (*pdot_cells_prev)[c]) * dT / 2;
-    tol = ti_specs->rtol * fabs(p_cell[0][c]) + ti_specs->atol;
+    error = fabs((*pdot_cells)[c] - (*pdot_cells_prev)[c]) * dt_ / 2;
+    tol = rtol * fabs(p_cell[0][c]) + atol;
 
-    dTfactor_cell = sqrt(tol / std::max(error, FLOW_DT_ADAPTIVE_ERROR_TOLERANCE));
-    *dTfactor = std::min(*dTfactor, dTfactor_cell);
+    dt_factor_cell = sqrt(tol / std::max(error, FLOW_DT_ADAPTIVE_ERROR_TOLERANCE));
+    *dt_factor = std::min(*dt_factor, dt_factor_cell);
 
     error_max = std::max(error_max, error - tol);
   }
 
-  *dTfactor *= FLOW_DT_ADAPTIVE_SAFETY_FACTOR;
-  *dTfactor = std::min(*dTfactor, FLOW_DT_ADAPTIVE_INCREASE);
-  *dTfactor = std::max(*dTfactor, FLOW_DT_ADAPTIVE_REDUCTION);
+  *dt_factor *= FLOW_DT_ADAPTIVE_SAFETY_FACTOR;
+  *dt_factor = std::min(*dt_factor, FLOW_DT_ADAPTIVE_INCREASE);
+  *dt_factor = std::max(*dt_factor, FLOW_DT_ADAPTIVE_REDUCTION);
 
 #ifdef HAVE_MPI
-    double dT_tmp = *dTfactor;
-    solution->Comm().MinAll(&dT_tmp, dTfactor, 1);  // find the global minimum
+    double dt_tmp = *dt_factor;
+    solution->Comm().MinAll(&dt_tmp, dt_factor, 1);  // find the global minimum
  
     double error_tmp = error_max;
     solution->Comm().MaxAll(&error_tmp, &error_max, 1);  // find the global maximum

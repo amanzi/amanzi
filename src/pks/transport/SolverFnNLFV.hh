@@ -29,7 +29,7 @@ class SolverFnNLFV : public AmanziSolvers::SolverFnBase<Vector> {
       mesh_(mesh), TPK_(TPK), b_(b) 
   {
     Teuchos::RCP<const State> S = TPK_->state();
-    ws = S->GetFieldData("water_saturation")->ViewComponent("cell", false);
+    ws = S->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
     phi = S->GetFieldData("porosity")->ViewComponent("cell", false);
   }
 

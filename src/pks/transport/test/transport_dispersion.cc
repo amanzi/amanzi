@@ -3,18 +3,20 @@
 #include <iostream>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "UnitTest++.h"
 
+// Amanzi
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
 #include "Point.hh"
-
 #include "State.hh"
+
+// Transport
 #include "Transport_PK.hh"
 
 
@@ -52,11 +54,10 @@ TEST(DISPERSION) {
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_dispersion.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* create an MSTK mesh framework */
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
 
   FrameworkPreference pref;
@@ -74,15 +75,19 @@ TEST(DISPERSION) {
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");
 
-  RCP<State> S = rcp(new State());
+  Teuchos::ParameterList state_list = plist->sublist("State");
+  RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
   S->set_time(0.0);
   S->set_intermediate_time(0.0);
   S->set_initial_time(0.0);
   S->set_final_time(0.0);
 
-  Transport_PK TPK(plist, S, component_names);
+  Transport_PK TPK(plist, S, "Transport", component_names);
+  TPK.Setup();
   TPK.CreateDefaultState(mesh, 1);
+  S->InitializeFields();
+  S->InitializeEvaluators();
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
@@ -105,29 +110,30 @@ TEST(DISPERSION) {
     (*tcc)[0][c] = f_step(xc, 0.0);
   }
 
-  S->GetFieldData("porosity", passwd)->PutScalar(1.0);
   *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::hide_line_prefix = true;
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
   TPK.PrintStatistics();
 
   /* advance the state */
-  double dummy_dT, dT, dT0;
-  dT0 = TPK.CalculateTransportDt();
+  double dt0;
+  dt0 = TPK.CalculateTransportDt();
 
   int i, k, iter = 0;
-  double T = 0.0, T1 = 1.0;
-  while (T < T1) {
-    dT = std::min(TPK.CalculateTransportDt(), T1 - T);
-    dT = std::min(dT, dT0);
+  double t_old(0.0), t_new(0.0), dt, T1(1.0);
+  while (t_new < T1) {
+    dt = std::min(TPK.CalculateTransportDt(), T1 - t_old);
+    dt = std::min(dt, dt0);
+    t_new = t_old + dt;
     // for (int k = 0; k < nx; k++) printf("%10.8f\n", (*tcc)[0][k]); 
     // printf("\n");
 
-    TPK.Advance(dT, dummy_dT);
-    TPK.CommitState(dT, S.ptr());
-    T += dT;
+    TPK.AdvanceStep(t_old, t_new);
+    TPK.CommitStep(t_old, t_new);
+
+    t_old = t_new;
     iter++;
 
     TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
@@ -154,11 +160,10 @@ TEST(DIFFUSION) {
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_diffusion.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* create an MSTK mesh framework */
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, comm);
 
   FrameworkPreference pref;
@@ -175,15 +180,19 @@ TEST(DIFFUSION) {
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");
 
-  RCP<State> S = rcp(new State());
+  Teuchos::ParameterList state_list = plist->sublist("State");
+  RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
   S->set_time(0.0);
   S->set_intermediate_time(0.0);
   S->set_initial_time(0.0);
   S->set_final_time(0.0);
 
-  Transport_PK TPK(plist, S, component_names);
+  Transport_PK TPK(plist, S, "Transport", component_names);
+  TPK.Setup();
   TPK.CreateDefaultState(mesh, 1);
+  S->InitializeFields();
+  S->InitializeEvaluators();
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
@@ -200,29 +209,30 @@ TEST(DIFFUSION) {
   Teuchos::RCP<Epetra_MultiVector> 
       tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
 
-  S->GetFieldData("porosity", passwd)->PutScalar(1.0);
   *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::hide_line_prefix = true;
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
   TPK.PrintStatistics();
 
   /* advance the state */
-  double dummy_dT, dT, dT0;
-  dT0 = TPK.CalculateTransportDt();
+  double dt0;
+  dt0 = TPK.CalculateTransportDt();
 
   int i, k, iter = 0;
-  double T = 0.0, T1 = 1.0;
-  while (T < T1) {
-    dT = std::min(TPK.CalculateTransportDt(), T1 - T);
-    dT = std::min(dT, dT0);
+  double t_old(0.0), t_new(0.0), dt, T1(1.0);
+  while (t_new < T1) {
+    dt = std::min(TPK.CalculateTransportDt(), T1 - t_old);
+    dt = std::min(dt, dt0);
+    t_new = t_old + dt;
     // for (int k = 0; k < nx; k++) printf("%10.8f\n", (*tcc)[0][k]); 
     // printf("\n");
 
-    TPK.Advance(dT, dummy_dT);
-    TPK.CommitState(dT, S.ptr());
-    T += dT;
+    TPK.AdvanceStep(t_old, t_new);
+    TPK.CommitStep(t_old, t_new);
+
+    t_old = t_new;
     iter++;
 
     TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);

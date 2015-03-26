@@ -7,6 +7,7 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+          Ethan Coon (ecoon@lanl.gov)
 */
 
 #ifndef AMANZI_OPERATOR_DIFFUSION_HH_
@@ -19,119 +20,135 @@
 #include "tensor.hh"
 #include "Point.hh"
 #include "CompositeVector.hh"
+#include "DenseMatrix.hh"
 
+#include "BCs.hh"
 #include "Operator.hh"
-#include "OperatorTypeDefs.hh"
 #include "OperatorDefs.hh"
+
+
+/*
+  Pure interface for Diffusion operators  
+*/ 
 
 namespace Amanzi {
 namespace Operators {
 
-class OperatorDiffusion : public Operator {
+class OperatorDiffusion {
  public:
-  OperatorDiffusion() {};
-  OperatorDiffusion(Teuchos::RCP<const CompositeVectorSpace> cvs, 
-                    Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc) 
-      : Operator(cvs, 0) { InitDiffusion_(bc, plist); }
-  OperatorDiffusion(const Operator& op, Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc)
-      : Operator(op) { InitDiffusion_(bc, plist); }
-  ~OperatorDiffusion() {};
+  OperatorDiffusion(const Teuchos::RCP<Operator>& global_op) :
+      global_op_(global_op) {};
 
-  // main members
-  virtual void Setup(std::vector<WhetStone::Tensor>& K,
-                     Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
-                     double rho, double mu);
-  virtual void Setup(std::vector<WhetStone::Tensor>& K,
-                     Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
-                     Teuchos::RCP<const CompositeVector> rho, Teuchos::RCP<const CompositeVector> mu);
+  OperatorDiffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      mesh_(mesh) {};
 
-  virtual void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u);
-  virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
+  OperatorDiffusion(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+      mesh_(mesh) {};
+  
+  // main virtual members
+  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
+                     double rho, double mu) = 0;
+  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
+                     const Teuchos::RCP<const CompositeVector>& rho,
+                     const Teuchos::RCP<const CompositeVector>& mu) = 0;
+  virtual void Setup(const Teuchos::RCP<const CompositeVector>& k,
+                     const Teuchos::RCP<const CompositeVector>& dkdp) = 0;
 
-  template <class Model> 
-  double DeriveBoundaryFaceValue(int f, const CompositeVector& u, const Model& model);
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
+          const Teuchos::Ptr<const CompositeVector>& u) = 0;
+  virtual void UpdateMatricesNewtonCorrection(
+          const Teuchos::Ptr<const CompositeVector>& flux,
+          const Teuchos::Ptr<const CompositeVector>& u) {}
+  virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux) = 0;
+  virtual void ApplyBCs(bool primary = true) = 0;
+  virtual void ModifyMatrices(const CompositeVector& u) = 0;
 
-  // re-implementation of virtual members of base class
-  void AssembleMatrix(int schema);
-  int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
+  // default implementation  
+  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) {
+    Setup(K, 1.0, 1.0);
+  }
+  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
+                     const Teuchos::RCP<const CompositeVector>& k,
+                     const Teuchos::RCP<const CompositeVector>& dkdp,
+                     double rho, double mu) {
+    Setup(K, rho, mu);
+    Setup(k, dkdp);
+  }
+  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
+                     const Teuchos::RCP<const CompositeVector>& k,
+                     const Teuchos::RCP<const CompositeVector>& dkdp,
+                     const Teuchos::RCP<const CompositeVector>& rho,
+                     const Teuchos::RCP<const CompositeVector>& mu) {
+    Setup(K, rho, mu);
+    Setup(k, dkdp);
+  }
 
-  void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
+  // boundary conditions
+  virtual void SetBCs(const Teuchos::RCP<BCs>& bc) {
+    if (bcs_.size() == 0) {
+      bcs_.resize(1);
+    }
+    bcs_[0] = bc;
+    global_op_->SetBCs(bc);
+  }
 
-  // access (for developers only)
-  void set_factor(double factor) { factor_ = factor; }
-  int schema_dofs() { return schema_dofs_; }
-  int schema_prec_dofs() { return schema_prec_dofs_; }
+  virtual void AddBCs(const Teuchos::RCP<BCs>& bc) {
+    bcs_.push_back(bc);
+  }
 
-  // special members
-  void ModifyMatrices(const CompositeVector& u);
-  void AddNewtonCorrection(Teuchos::RCP<const CompositeVector> flux);
-
+  // gravity terms -- may not be implemented
+  virtual void SetGravity(const AmanziGeometry::Point& g) {
+    Errors::Message msg("OperatorDiffusion: This diffusion implementation does not support gravity.");
+    Exceptions::amanzi_throw(msg);
+  }
+  virtual void SetGravityDensity(const Teuchos::RCP<const CompositeVector>& rho) {
+    Errors::Message msg("OperatorDiffusion: This diffusion implementation does not support gravity.");
+    Exceptions::amanzi_throw(msg);
+  }
+  
   // access
-  int nfailed_primary() { return nfailed_primary_; }
+  Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
+  Teuchos::RCP<Operator> global_operator() { return global_op_; }
+  int schema_prec_dofs() { return global_op_schema_; }
 
+  Teuchos::RCP<const Op> local_matrices() const { return local_op_; }
+  Teuchos::RCP<Op> local_matrices() { return local_op_; }
+  int schema_dofs() { return local_op_schema_; }
+
+  Teuchos::RCP<const Op> jacobian_matrices() const { return jac_op_; }
+  Teuchos::RCP<Op> jacobian_matrices() { return jac_op_; }
+  int schema_jacobian() { return jac_op_schema_; }
+  
+  int upwind() { return upwind_; }
+  
  protected:
-  void CreateMassMatrices_();
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
 
-  void InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterList& plist);
-  void UpdateMatricesNodal_();
-  void UpdateMatricesTPFA_();
-  void UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector> flux);
-  void UpdateMatricesMixedWithGrad_(Teuchos::RCP<const CompositeVector> flux);
-  int ApplyInverseSpecialSff_(const CompositeVector& X, CompositeVector& Y) const;
-  int ApplyInverseSpecialScc_(const CompositeVector& X, CompositeVector& Y) const;
-  void InitPreconditionerSpecialSff_(const std::string& prec_name, const Teuchos::ParameterList& plist);
-  void InitPreconditionerSpecialScc_(const std::string& prec_name, const Teuchos::ParameterList& plist);
-
- public:
-  std::vector<WhetStone::DenseMatrix> Wff_cells_;
-  std::vector<WhetStone::Tensor>* K_;
+  // physics
+  bool scalar_rho_mu_;
   double rho_, mu_;
   Teuchos::RCP<const CompositeVector> rho_cv_, mu_cv_;
 
   Teuchos::RCP<const CompositeVector> k_, dkdp_;
+
   int upwind_;
 
-  int schema_base_, schema_dofs_, schema_;
-  int schema_prec_dofs_;
-  mutable int special_assembling_;
+  // operator
+  Teuchos::RCP<Operator> global_op_;
+  Teuchos::RCP<Op> local_op_;
+  Teuchos::RCP<Op> jac_op_;
+  int global_op_schema_, local_op_schema_, jac_op_schema_;
+  std::vector<Teuchos::RCP<BCs> > bcs_;
 
-  double factor_;
-
-  int mfd_primary_, mfd_secondary_;
-  int nfailed_primary_;
-  bool scalar_rho_mu_;
+  // mesh info
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  int ncells_owned, ncells_wghost;
+  int nfaces_owned, nfaces_wghost;
+  int nnodes_owned, nnodes_wghost;
 };
-
-
-/* ******************************************************************
-* Calculates solution value on the boundary.
-****************************************************************** */
-template <class Model> 
-double OperatorDiffusion::DeriveBoundaryFaceValue(
-    int f, const CompositeVector& u, const Model& model) 
-{
-  if (u.HasComponent("face")) {
-    const Epetra_MultiVector& u_face = *u.ViewComponent("face");
-    return u_face[f][0];
-  } else {
-    const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
-    const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
-
-    if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-      return bc_value[f];
-    } else {
-      const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
-      AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      int c = cells[0];
-      return u_cell[0][c];
-    }
-  }
-}
 
 }  // namespace Operators
 }  // namespace Amanzi
-
 
 #endif
 

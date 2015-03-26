@@ -4,32 +4,31 @@
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
-
-#include "AmanziUnstructuredGridSimulationDriver.hh"
-
 #include "Teuchos_ParameterList.hpp"
-// #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "XMLParameterListWriter.hh"
 
-#include "MeshFactory.hh"
-#include "State.hh"
-#include "MPC.hh"
+#include "AmanziUnstructuredGridSimulationDriver.hh"
+#include "CycleDriver.hh"
 #include "Domain.hh"
 #include "GeometricModel.hh"
+#include "InputParserIS.hh"
+#include "InputAnalysis.hh"
 #include "MeshAudit.hh"
+#include "MeshFactory.hh"
+#include "PK_Factory.hh"
+#include "PK.hh"
+#include "State.hh"
+#include "TimerManager.hh"
 
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
-
-#include "InputParserIS.hh"
-#include "InputAnalysis.hh"
-
-#include "TimerManager.hh"
-
-// includes for PK registration
+#include "mpc_pks_registration.hh"
+#include "pks_chemistry_registration.hh"
 #include "pks_flow_registration.hh"
 #include "pks_transport_registration.hh"
+#include "wrm_flow_registration.hh"
+
 
 Amanzi::Simulator::ReturnType
 AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
@@ -80,12 +79,13 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     new_list = input_parameter_list;
   }
   
+#ifdef ENABLE_NATIVE_XML_OUTPUT
   // A hack: print floating-point numbers with a given precision.
   int precision = input_parameter_list.get<int>("output precision", 0);
 
   if (!native && includesVerbLevel(verbLevel, Teuchos::VERB_LOW, true)) { 
     std::string xmlFileName = new_list.get<std::string>("input file name");
-    std::string new_extension("_native_v5.xml");
+    std::string new_extension("_native_v6.xml");
     size_t pos = xmlFileName.find(".xml");
     xmlFileName.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)14);
     if (comm->MyPID() == 0) {
@@ -100,6 +100,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       xmlfile << XMLobj;
     }
   }
+#endif
 
 
   //------------ DOMAIN, GEOMETRIC MODEL, ETC ----------------------------
@@ -153,10 +154,10 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   // Create a Verbose object to pass to the mesh_factory and mesh
 
   Amanzi::VerboseObject *meshverbobj = 
-    new Amanzi::VerboseObject("Mesh",new_list);
+    new Amanzi::VerboseObject("Mesh", new_list);
 
   // Create a mesh factory for this geometric model
-  Amanzi::AmanziMesh::MeshFactory factory(comm,meshverbobj) ;
+  Amanzi::AmanziMesh::MeshFactory factory(comm, meshverbobj) ;
 
   // Prepare to read/create the mesh specification
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
@@ -350,18 +351,17 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   analysis.Init(new_list);
   analysis.RegionAnalysis();
   analysis.OutputBCs();
+
+  Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(new_list));
+  if (new_list.isSublist("State")) {
+    Teuchos::ParameterList state_plist = new_list.sublist("State");
+    Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
+    S->RegisterMesh("domain", mesh);      
+
+    Amanzi::CycleDriver cycle_driver(glist, S, comm, output_observations);
+    cycle_driver.Go();
+  }
   
-  // -------------- MULTI-PROCESS COORDINATOR----------------------------
-
-  Amanzi::MPC mpc(new_list, mesh, comm, output_observations);
-
-  //--------------- DO THE SIMULATION -----------------------------------
-
-  mpc.cycle_driver();
-
-  //---------------------------------------------------------------------
-  
-
   // Clean up
   mesh.reset();
   delete simdomain_ptr;

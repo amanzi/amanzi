@@ -152,11 +152,11 @@ void Flow_PK::CalculatePoreVelocity(
     std::vector<double>& pressure, std::vector<double>& isotherm_kd)
 {
   S_->GetFieldData("porosity")->ScatterMasterToGhosted();
-  S_->GetFieldData("water_saturation")->ScatterMasterToGhosted();
+  S_->GetFieldData("saturation_liquid")->ScatterMasterToGhosted();
 
   const Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
   const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell", true);
-  const Epetra_MultiVector& ws = *S_->GetFieldData("water_saturation")->ViewComponent("cell", true);
+  const Epetra_MultiVector& s_l = *S_->GetFieldData("saturation_liquid", "saturation_liquid")->ViewComponent("cell", true);
   const Epetra_MultiVector& p = *S_->GetFieldData("pressure")->ViewComponent("cell", true);
 
   // process non-flow state variables
@@ -197,13 +197,13 @@ void Flow_PK::CalculatePoreVelocity(
 
   for (int c = 0; c < ncells_owned; c++) {
     porosity.push_back(phi[0][c]);
-    saturation.push_back(ws[0][c]);
+    saturation.push_back(s_l[0][c]);
     pressure.push_back(p[0][c]);
     if (flag) isotherm_kd.push_back((*kd)[0][c]);
   }
     
   // STEP 2: recover porosity and saturation at boundary nodes
-  double local_phi, local_ws, local_p, local_kd;
+  double local_phi, local_sl, local_p, local_kd;
 
   for (int v = 0; v < nnodes_owned; v++) {
     if (node_marker[v] > 0) {
@@ -211,21 +211,21 @@ void Flow_PK::CalculatePoreVelocity(
       int ncells = cells.size();
 
       local_phi = 0.0;
-      local_ws = 0.0;
+      local_sl = 0.0;
       local_p = 0.0;
       local_kd = 0.0;
       for (int n = 0; n < ncells; n++) {
         int c = cells[n];
         local_phi += phi[0][c];
-        local_ws += ws[0][c];
+        local_sl += s_l[0][c];
         local_p += p[0][c];
         if (flag) local_kd += (*kd)[0][c];
       }
       local_phi /= ncells;
       porosity.push_back(local_phi);
 
-      local_ws /= ncells;
-      saturation.push_back(local_ws);
+      local_sl /= ncells;
+      saturation.push_back(local_sl);
 
       local_p /= ncells;
       pressure.push_back(local_p);

@@ -240,6 +240,8 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
 
   // update performance statistics
   state_->solve_itrs += solver_->num_itrs();
+  state_->pc_updates += solver_->pc_updates();
+  state_->pc_calls += solver_->pc_calls();
 
   if (ierr != 0) {
     state_->failed_solve++;
@@ -274,6 +276,7 @@ void BDF1_TI<Vector,VectorSpace>::ReportStatistics_()
     oss << "TS:" << std::right << state_->seq;
     oss << " FS:" << state_->failed_solve;
     oss << " NS:" << state_->solve_itrs;
+    oss << " PC:" << state_->pc_updates << " " << state_->pc_calls;
 
     oss << " dt:";
     oss.precision(4);

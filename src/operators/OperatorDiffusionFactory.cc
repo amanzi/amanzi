@@ -1,8 +1,13 @@
 /*
   This is the operators component of the Amanzi code.
 
-  License: BSD
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+           Ethan Coon (ecoon@lanl.gov)
 
   Base factory for diffusion operators.
 */
@@ -12,9 +17,8 @@
 #include "BCs.hh"
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionFactory.hh"
-#include "OperatorDiffusion.hh"
-#include "OperatorDiffusionSurface.hh"
-#include "OperatorDiffusionTPFA.hh"
+#include "OperatorDiffusionMFD.hh"
+#include "OperatorDiffusionFV.hh"
 #include "OperatorDiffusionWithGravity.hh"
 
 namespace Amanzi {
@@ -30,50 +34,25 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
     const AmanziGeometry::Point& g,
     int upwind_method)
 {
-  std::vector<std::string> names;
-  names = oplist.get<Teuchos::Array<std::string> > ("schema").toVector();
-  int nnames = names.size();
-
-  Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(mesh);
-  cvs->SetGhosted(true);
-
-  std::vector<AmanziMesh::Entity_kind> locations(nnames);
-  std::vector<int> num_dofs(nnames, 1);
- 
-  for (int i = 0; i < nnames; i++) {
-    if (names[i] == "cell") {
-      locations[i] = AmanziMesh::CELL;
-    } else if (names[i] == "node") {
-      locations[i] = AmanziMesh::NODE;
-    } else if (names[i] == "face") {
-      locations[i] = AmanziMesh::FACE;
-    }
-  }
-
-  cvs->SetComponents(names, locations, num_dofs);
-  cvs->SetOwned(false);
-
   // Let us try to identify a FV scheme.
   std::string name = oplist.get<std::string>("discretization primary");
   if (name == "fv: default") {
-    Teuchos::RCP<OperatorDiffusionTPFA> op = Teuchos::rcp(new OperatorDiffusionTPFA(cvs, oplist, bc));
-    op->Init();
-    op->SetUpwind(upwind_method);
-    op->SetGravity(g);
+    Teuchos::RCP<OperatorDiffusionFV> op = Teuchos::rcp(new OperatorDiffusionFV(oplist, mesh));
+    if (oplist.get<bool>("gravity", false)) op->SetGravity(g);
+    op->SetBCs(bc);
     return op;
   }
 
   // Let us see if we have gravity.
   bool flag = oplist.get<bool>("gravity", false);
-  if (! flag) {
-    Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusion(cvs, oplist, bc));
-    op->Init();
+  if (!flag) {
+    Teuchos::RCP<OperatorDiffusionMFD> op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, mesh));
+    op->SetBCs(bc);
     return op;
   } else {
-    Teuchos::RCP<OperatorDiffusionWithGravity> op = Teuchos::rcp(new OperatorDiffusionWithGravity(cvs, oplist, bc));
-    op->Init();
+    Teuchos::RCP<OperatorDiffusionWithGravity> op = Teuchos::rcp(new OperatorDiffusionWithGravity(oplist, mesh));
     op->SetGravity(g);
+    op->SetBCs(bc);
     return op;
   }
 }

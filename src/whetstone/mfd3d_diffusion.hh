@@ -43,10 +43,12 @@ class MFD3D_Diffusion : public MFD3D {
   ~MFD3D_Diffusion() {};
 
   // basic mimetic discretization methods use permeability tensor K
+  // the inner product in the spave of face-based functions is weighted by
+  // inverse of K. 
   int L2consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc);
   int L2consistencyInverse(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc);
 
-  int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc);
+  int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac);
 
   int MassMatrix(int c, const Tensor& K, DenseMatrix& M);
   int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W);
@@ -55,6 +57,7 @@ class MFD3D_Diffusion : public MFD3D {
   int MassMatrixInverseMMatrix(int c, const Tensor& K, DenseMatrix& W);
 
   int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A);
+  int StiffnessMatrixOptimized(int c, const Tensor& K, DenseMatrix& A);
   int StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix& A);
 
   // natural scaling of fluxes which was found to be the right way.

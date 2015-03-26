@@ -6,8 +6,8 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Neil Carlson (version 1) 
-           Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+  Authors: Neil Carlson
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <vector>
@@ -26,130 +26,63 @@
 #include "FlowDefs.hh"
 #include "Flow_SourceFactory.hh"
 
-#include "darcy_velocity_evaluator.hh"
+#include "DarcyVelocityEvaluator.hh"
 #include "primary_variable_field_evaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
 
 /* ******************************************************************
-* Simplest possible constructor: extracts lists and requires fields.
+* New constructor: extracts lists and requires fields.
 ****************************************************************** */
-Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S) : Flow_PK()
+Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
+                   const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                   const Teuchos::RCP<State>& S,
+                   const Teuchos::RCP<TreeVector>& soln) :
+    Flow_PK(),
+    soln_(soln)
 {
   S_ = S;
-  mesh_ = S->GetMesh();
-  dim = mesh_->space_dimension();
+
+  std::string pk_name = pk_tree.name();
+  const char* result = pk_name.data();
+
+  while ((result = std::strstr(result, "->")) != NULL) {
+    result += 2;
+    pk_name = result;
+  }
 
   // We need the flow list
-  Teuchos::ParameterList flow_list;
-  if (glist.isSublist("Flow")) {
-    flow_list = glist.sublist("Flow");
-  } else {
-    Errors::Message msg("Flow PK: input parameter list does not have <Flow> sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  if (flow_list.isSublist("Darcy problem")) {
-    dp_list_ = flow_list.sublist("Darcy problem");
-  } else {
-    Errors::Message msg("Flow PK: input parameter list does not have \"Darcy problem\" sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
+  Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_name, true);
+  dp_list_ = Teuchos::sublist(flow_list, "Darcy problem", true);
 
   // We also need iscaleneous sublists
-  if (glist.isSublist("Preconditioners")) {
-    preconditioner_list_ = glist.sublist("Preconditioners");
-  } else {
-    Errors::Message msg("Flow PK: input XML does not have <Preconditioners> sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  if (glist.isSublist("Solvers")) {
-    linear_operator_list_ = glist.sublist("Solvers");
-  } else {
-    Errors::Message msg("Flow PK: input XML does not have <Solvers> sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  // for creating fields
-  std::vector<std::string> names(2);
-  names[0] = "cell"; 
-  names[1] = "face";
-
-  std::vector<AmanziMesh::Entity_kind> locations(2);
-  locations[0] = AmanziMesh::CELL; 
-  locations[1] = AmanziMesh::FACE;
-
-  std::vector<int> ndofs(2, 1);
-
-  // require state variables for the Darcy PK
-  if (!S->HasField("fluid_density")) {
-    S->RequireScalar("fluid_density", passwd_);
-  }
-  if (!S->HasField("fluid_viscosity")) {
-    S->RequireScalar("fluid_viscosity", passwd_);
-  }
-  if (!S->HasField("gravity")) {
-    S->RequireConstantVector("gravity", passwd_, dim);
-  }
-
-  if (!S->HasField("pressure")) {
-    S->RequireField("pressure", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponents(names, locations, ndofs);
-  }
-
-  if (!S->HasField("permeability")) {
-    S->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, dim);
-  }
-
-  if (!S->HasField("porosity")) {
-    S->RequireField("porosity", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-
-  if (!S->HasField("specific_storage")) {
-    S->RequireField("specific_storage", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-  if (!S->HasField("specific_yield")) {
-    S->RequireField("specific_yield", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-  if (!S->HasField("water_saturation")) {
-    S->RequireField("water_saturation", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-  if (!S->HasField("prev_water_saturation")) {
-    S->RequireField("prev_water_saturation", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-  if (!S->HasField("darcy_flux")) {
-    S->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, 1);
-
-    Teuchos::ParameterList elist;
-    elist.set<std::string>("evaluator name", "darcy_flux");
-    darcy_flux_eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator("darcy_flux", darcy_flux_eval);
-  }
-
-  // secondary fields and evaluators
-  if (!S->HasField("darcy_velocity")) {
-    S->RequireField("darcy_velocity", "darcy_velocity")->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, dim);
-
-    Teuchos::ParameterList elist;
-    Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
-    S->SetFieldEvaluator("darcy_velocity", eval);
-  }
+  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners", true);
+  linear_operator_list_ = Teuchos::sublist(glist, "Solvers", true);
+  ti_list_ = Teuchos::sublist(dp_list_, "time integrator", true);
+}
 
 
-  if (!S->HasField("hydraulic_head")) {
-    S->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
+/* ******************************************************************
+* Old constructor for unit tests.
+****************************************************************** */
+Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                   const std::string& pk_list_name,
+                   Teuchos::RCP<State> S) :
+    Flow_PK()
+{
+  S_ = S;
+
+  // We need the flow list
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
+  Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_list_name, true);
+  dp_list_ = Teuchos::sublist(flow_list, "Darcy problem", true);
+
+  // We also need iscaleneous sublists
+  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners", true);
+  linear_operator_list_ = Teuchos::sublist(glist, "Solvers", true);
+  ti_list_ = Teuchos::sublist(dp_list_, "time integrator", true);
 }
 
 
@@ -163,246 +96,298 @@ Darcy_PK::~Darcy_PK()
   if (bc_flux != NULL) delete bc_flux;
   if (bc_seepage != NULL) delete bc_seepage;
 
-  if (ti_specs != NULL) {
-    OutputTimeHistory(dp_list_, ti_specs->dT_history);
-  }
-
   if (src_sink != NULL) delete src_sink;
   if (vo_ != NULL) delete vo_;
 }
 
 
 /* ******************************************************************
+* Define structure of this PK.
+****************************************************************** */
+void Darcy_PK::Setup()
+{
+  dt_ = -1.0;
+  mesh_ = S_->GetMesh();
+  dim = mesh_->space_dimension();
+
+  Flow_PK::Setup();
+
+  // Require primary field for this PK.
+  std::vector<std::string> names;
+  std::vector<AmanziMesh::Entity_kind> locations;
+  std::vector<int> ndofs;
+
+  Teuchos::RCP<Teuchos::ParameterList> list1 = Teuchos::sublist(dp_list_, "operators", true);
+  Teuchos::RCP<Teuchos::ParameterList> list2 = Teuchos::sublist(list1, "diffusion operator", true);
+  Teuchos::RCP<Teuchos::ParameterList> list3 = Teuchos::sublist(list2, "matrix", true);
+  std::string name = list3->get<std::string>("discretization primary");
+
+  names.push_back("cell");
+  locations.push_back(AmanziMesh::CELL);
+  ndofs.push_back(1);
+  if (name != "fv: default") {
+    names.push_back("face");
+    locations.push_back(AmanziMesh::FACE);
+    ndofs.push_back(1);
+  }
+
+  if (!S_->HasField("pressure")) {
+    S_->RequireField("pressure", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponents(names, locations, ndofs);
+  }
+
+  // require additional fields for this PK
+  if (!S_->HasField("specific_storage")) {
+    S_->RequireField("specific_storage", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+  if (!S_->HasField("specific_yield")) {
+    S_->RequireField("specific_yield", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  if (!S_->HasField("saturation_liquid")) {
+    S_->RequireField("saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+  if (!S_->HasField("prev_saturation_liquid")) {
+    S_->RequireField("prev_saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  if (!S_->HasField("darcy_flux")) {
+    S_->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("face", AmanziMesh::FACE, 1);
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("evaluator name", "darcy_flux");
+    darcy_flux_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    S_->SetFieldEvaluator("darcy_flux", darcy_flux_eval_);
+  }
+
+  // Require additional field evaluators for this PK.
+  // porosity
+  if (!S_->HasField("porosity")) {
+    S_->RequireField("porosity", "porosity")->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireFieldEvaluator("porosity");
+  }
+
+  // Local fields and evaluators.
+  if (!S_->HasField("hydraulic_head")) {
+    S_->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  // full velocity vector
+  if (!S_->HasField("darcy_velocity")) {
+    S_->RequireField("darcy_velocity", "darcy_velocity")->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, dim);
+
+    Teuchos::ParameterList elist;
+    Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
+    S_->SetFieldEvaluator("darcy_velocity", eval);
+  }
+}
+
+
+/* ******************************************************************
 * Extract information from Diffusion problem parameter list.
 ****************************************************************** */
-void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
+void Darcy_PK::Initialize()
 {
-  // Initialize defaults
-  bc_pressure = NULL; 
-  bc_head = NULL;
-  bc_flux = NULL;
-  bc_seepage = NULL; 
-  src_sink = NULL;
+  // times
+  double t_old = ti_list_->get<double>("start interval time", 0.0);
+  dt_ = ti_list_->get<double>("initial time step", 1.0);
+  double t_new = t_old + dt_;
 
-  ti_specs = NULL;
+  dt_next_ = dt_;
+  dt_desirable_ = dt_;  // The minimum desirable time step from now on.
+  dt_history_.clear();
+
+  // Initialize defaults
+  bc_seepage = NULL; 
   src_sink = NULL;
   src_sink_distribution = 0;
 
-  // Initilize various common data depending on mesh and state.
-  Flow_PK::Init();
-
-  // Time control specific to this PK.
-  ResetPKtimes(0.0, FLOW_INITIAL_DT);
-  dT_desirable_ = dT;
-
-  // Allocate memory for boundary data. 
-  bc_model.resize(nfaces_wghost, 0);
-  bc_submodel.resize(nfaces_wghost, 0);
-  bc_value.resize(nfaces_wghost, 0.0);
-  bc_mixed.resize(nfaces_wghost, 0.0);
-  op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
-
-  rainfall_factor.resize(nfaces_wghost, 1.0);
+  initialize_with_darcy_ = true;
+  num_itrs_ = 0;
 
   // create verbosity object
-  vo_ = new VerboseObject("FlowPK::Darcy", dp_list_); 
+  Teuchos::ParameterList vlist;
+  vlist.sublist("VerboseObject") = dp_list_->sublist("VerboseObject");
+  vo_ = new VerboseObject("FlowPK::Darcy", vlist); 
 
-  // Process Native XML.
-  ProcessParameterList(dp_list_);
+  // Initilize various common data depending on mesh and state.
+  Flow_PK::Initialize();
+
+  // Create local evaluators. Initialize local fields.
+  InitializeFields_();
+  UpdateLocalFields_();
+
+  // Initialize BCs and source terms.
+  InitializeBCsSources_(*dp_list_);
+  op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // Create solution and auxiliary data for time history.
-  solution = Teuchos::rcp(new CompositeVector(*(S->GetFieldData("pressure"))));
-  solution->PutScalar(0.0);
+  // solution = Teuchos::rcp(new CompositeVector(*(S_->GetFieldData("pressure"))));
+  solution = S_->GetFieldData("pressure", passwd_);
 
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
   pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap));
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap));
   
-  // Initialize times.
-  double time = S->time();
-  if (time >= 0.0) T_physics = time;
-
   // Initialize boundary condtions. 
-  ProcessShiftWaterTableList(dp_list_);
+  ProcessShiftWaterTableList(*dp_list_);
 
-  time = T_physics;
-  bc_pressure->Compute(time);
-  bc_flux->Compute(time);
-  bc_seepage->Compute(time);
+  bc_pressure->Compute(t_new);
+  bc_flux->Compute(t_new);
+  bc_seepage->Compute(t_new);
   if (shift_water_table_.getRawPtr() == NULL) {
-    bc_head->Compute(time);
+    bc_head->Compute(t_new);
   } else {
-    bc_head->ComputeShift(time, shift_water_table_->Values());
+    bc_head->ComputeShift(t_new, shift_water_table_->Values());
   }
 
-  const CompositeVector& pressure = *S->GetFieldData("pressure");
+  CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
   ComputeBCs(pressure);
 
   // Allocate memory for other fundamental structures
   K.resize(ncells_owned);
 
   if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
+    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
   }
-}
 
-
-/* ******************************************************************
-* Initialization of auxiliary variables (lambda and two saturations).
-* WARNING: Flow_PK may use complex initialization of the remaining 
-* state variables.
-****************************************************************** */
-void Darcy_PK::InitializeAuxiliaryData()
-{
   // pressures (lambda is not important when solver is very accurate)
-  CompositeVector& cv = *S_->GetFieldData("pressure", passwd_);
-  const Epetra_MultiVector& pressure = *(cv.ViewComponent("cell"));
-  Epetra_MultiVector& lambda = *(cv.ViewComponent("face"));
+  DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
+                                 *pressure.ViewComponent("face"));
 
-  DeriveFaceValuesFromCellValues(pressure, lambda);
+  std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
+  ASSERT(ti_method_name == "BDF1");
+  Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
 
-  // saturations
-  if (!S_->GetField("water_saturation", passwd_)->initialized()) {
-    S_->GetFieldData("water_saturation", passwd_)->PutScalar(1.0);
-    S_->GetField("water_saturation", passwd_)->set_initialized();
+  std::string dt_method_name = bdf1_list.get<std::string>("timestep controller type");
+  Teuchos::ParameterList dtlist;
+  if (dt_method_name == "standard") {
+    dtlist = bdf1_list.sublist("timestep controller standard parameters");
+    dt_factor_ = dtlist.get<double>("time step increase factor");
+  } else if (dt_method_name == "fixed") {
+    dtlist = bdf1_list.sublist("timestep controller fixed parameters");
+    dt_factor_ = dtlist.get<double>("time step increase factor");
+  } else if (dt_method_name == "adaptive") {
+    dtlist = bdf1_list.sublist("timestep controller adaptive parameters");
   }
-  if (!S_->GetField("prev_water_saturation", passwd_)->initialized()) {
-    S_->GetFieldData("prev_water_saturation", passwd_)->PutScalar(1.0);
-    S_->GetField("prev_water_saturation", passwd_)->set_initialized();
-  }
-}
+  dt_max_ = dtlist.get<double>("max time step", Flow::FLOW_MAXIMUM_DT);
 
-
-/* ******************************************************************
-* Wrapper for a steady-state solver
-****************************************************************** */
-void Darcy_PK::InitializeSteadySaturated()
-{ 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "initializing with a saturated steady state..." << std::endl;
-  }
-  double T = S_->time();
-  SolveFullySaturatedProblem(T, *solution);
-}
-
-
-/* ******************************************************************
-* Specific initialization of a steady state time integration phase.
-* WARNING: now it is equivalent to transient phase.
-****************************************************************** */
-void Darcy_PK::InitSteadyState(double T0, double dT0)
-{
-  specific_yield_copy_ = Teuchos::null;
-
-  if (ti_specs != NULL) OutputTimeHistory(dp_list_, ti_specs->dT_history);
-  ti_specs = &ti_specs_sss_;
-
-  InitNextTI(T0, dT0, ti_specs_sss_);
-
+  // initialize error control
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;  // usually 1e-4;
-}
 
-
-/* ******************************************************************
-* Specific initialization of a transient time integration phase.  
-****************************************************************** */
-void Darcy_PK::InitTransient(double T0, double dT0)
-{
+  // initialize specific yield
+  specific_yield_copy_ = Teuchos::null;
   UpdateSpecificYield_();
-
-  if (ti_specs != NULL) OutputTimeHistory(dp_list_, ti_specs->dT_history);
-  ti_specs = &ti_specs_trs_;
-
-  InitNextTI(T0, dT0, ti_specs_trs_);
-
-  error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;  // usually 1e-4
-}
-
-
-/* ******************************************************************
-* Generic initialization of a next time integration phase.
-****************************************************************** */
-void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
-{
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << std::endl
-        << "****************************************" << std::endl
-        << vo_->color("green") << "New TI phase: " << ti_specs.ti_method_name.c_str() << vo_->reset() << std::endl
-        << "****************************************" << std::endl
-        << "  start T=" << T0 / FLOW_YEAR << " [y], dT=" << dT0 << " [sec]" << std::endl
-        << "  time stepping id=" << ti_specs.dT_method << std::endl
-        << "  sources distribution id=" << src_sink_distribution << std::endl
-        << "  linear solver name: " << ti_specs.solver_name.c_str() << std::endl
-        << "  preconditioner: " << ti_specs.preconditioner_name.c_str() << std::endl;
-    if (ti_specs.initialize_with_darcy) {
-      *vo_->os() << "  initial pressure guess: \"saturated solution\"" << std::endl;
-    } else {
-      *vo_->os() << "  initial pressure guess: \"from state\"" << std::endl;
-    }
-  }
-
-  // set up initial guess for solution
-  Epetra_MultiVector& pressure = *S_->GetFieldData("pressure", passwd_)->ViewComponent("cell");
-  Epetra_MultiVector& p = *solution->ViewComponent("cell");
-  Epetra_MultiVector& lambda = *solution->ViewComponent("face", true);
-  p = pressure;
-
-  ResetPKtimes(T0, dT0);
-  dT_desirable_ = dT0;  // The minimum desirable time step from now on.
-  ti_specs.num_itrs = 0;
 
   // initialize diffusion operator
   SetAbsolutePermeabilityTensor();
 
-  Teuchos::ParameterList& oplist = dp_list_.sublist("operators").sublist("diffusion operator").sublist("matrix");
+  Teuchos::ParameterList& oplist = dp_list_->sublist("operators")
+                                            .sublist("diffusion operator")
+                                            .sublist("matrix");
   Operators::OperatorDiffusionFactory opfactory;
-  op_ = opfactory.Create(mesh_, op_bc_, oplist, gravity_, 0);  // The last 0 means no upwind
-  op_->Setup(K, Teuchos::null, Teuchos::null, rho_, mu_);
-  op_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_diff_ = opfactory.Create(mesh_, op_bc_, oplist, gravity_, 0);  // The last 0 means no upwind
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
+  op_diff_->SetBCs(op_bc_);
+  op_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, rho_, mu_);
+  op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_ = op_diff_->global_operator();
 
-  int schema_prec_dofs = op_->schema_prec_dofs();
-  op_->SymbolicAssembleMatrix(schema_prec_dofs);
+  // initialize accumulation operator
+  op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_));
+
+  op_->SymbolicAssembleMatrix();
   op_->CreateCheckPoint();
 
-  // Well modeling: initialization
+  // preconditioner and optional linear solver
+  ASSERT(ti_list_->isParameter("preconditioner"));
+  preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
+  ASSERT(preconditioner_list_->isSublist(preconditioner_name_));
+  
+  ASSERT(ti_list_->isParameter("linear solver"));
+  solver_name_ = ti_list_->get<std::string>("linear solver");
+
+  // initialize well modeling
   if (src_sink != NULL) {
-    double T1 = T0 + dT0;
     if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       CalculatePermeabilityFactorInWell();
-      src_sink->ComputeDistribute(T0, T1, Kxy->Values()); 
+      src_sink->ComputeDistribute(t_old, t_new, Kxy->Values()); 
     } else {
-      src_sink->ComputeDistribute(T0, T1, NULL);
+      src_sink->ComputeDistribute(t_old, t_new, NULL);
     }
   }
   
-  // make initial guess consistent with boundary conditions
-  if (ti_specs.initialize_with_darcy) {
+  // Optional step: calculate hydrostatic solution consistent with BCs.
+  // We have to do it only once per time period.
+  if (ti_list_->isSublist("initialization") && initialize_with_darcy_) {
+    initialize_with_darcy_ = false;
+    Epetra_MultiVector& p = *solution->ViewComponent("cell");
+    Epetra_MultiVector& lambda = *solution->ViewComponent("face");
     DeriveFaceValuesFromCellValues(p, lambda);
 
-    SolveFullySaturatedProblem(T0, *solution);
-    pressure = p;
+    SolveFullySaturatedProblem(t_old, *solution);
+    pressure_eval_->SetFieldAsChanged(S_.ptr());
+  }
 
-    // Call this initialization procedure only once. Use case: multiple
-    // restart of a single phase transient time integrator.
-    ti_specs.initialize_with_darcy = false;
+  // print initialization head for this time period
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << std::endl 
+        << vo_->color("green") << "Initalization of TI period is complete." << vo_->reset() << std::endl;
+    *vo_->os() << "TI:\"" << ti_method_name.c_str() << "\""
+               << " dt:" << dt_method_name << " Src:" << src_sink_distribution
+               << " LS:\"" << solver_name_.c_str() << "\""
+               << " PC:\"" << preconditioner_name_.c_str() << "\"" << std::endl;
 
-    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-      VV_PrintHeadExtrema(*solution);
+    if (initialize_with_darcy_) {
+      *vo_->os() << "initial pressure guess: \"saturated solution\"\n" << std::endl;
+    } else {
+      *vo_->os() << "initial pressure guess: \"from State\"\n" << std::endl;
     }
+
+    VV_PrintHeadExtrema(*solution);
   }
 }
 
 
-/* ******************************************************************
-* Wrapper for a steady-state solver
-****************************************************************** */
-int Darcy_PK::AdvanceToSteadyState(double T0, double dT0)
-{ 
-  ti_specs = &ti_specs_sss_;
-  SolveFullySaturatedProblem(T0, *solution);
-  return 0;
+/* ****************************************************************
+* This completes initialization of common fields that were not 
+* initialized by the state.
+**************************************************************** */
+void Darcy_PK::InitializeFields_()
+{
+  Teuchos::OSTab tab = vo_->getOSTab();
+
+  // set popular default values for missed fields.
+  if (S_->GetField("saturation_liquid")->owner() == passwd_) {
+    if (S_->HasField("saturation_liquid")) {
+      if (!S_->GetField("saturation_liquid", passwd_)->initialized()) {
+        S_->GetFieldData("saturation_liquid", passwd_)->PutScalar(1.0);
+        S_->GetField("saturation_liquid", passwd_)->set_initialized();
+
+        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+            *vo_->os() << "initilized saturation_liquid to default value 1.0" << std::endl;  
+      }
+    }
+  }
+
+  if (S_->HasField("prev_saturation_liquid")) {
+    if (!S_->GetField("prev_saturation_liquid", passwd_)->initialized()) {
+      S_->GetFieldData("prev_saturation_liquid", passwd_)->PutScalar(1.0);
+      S_->GetField("prev_saturation_liquid", passwd_)->set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initilized prev_saturation_liquid to default value 1.0" << std::endl;  
+    }
+  }
 }
 
 
@@ -410,28 +395,25 @@ int Darcy_PK::AdvanceToSteadyState(double T0, double dT0)
 * Performs one time step of size dT. The boundary conditions are 
 * calculated only once, during the initialization step.  
 ******************************************************************* */
-int Darcy_PK::Advance(double dT_MPC, double& dT_actual) 
+bool Darcy_PK::AdvanceStep(double t_old, double t_new) 
 {
-  dT = dT_MPC;
-  double T1 = S_->time();
-  if (T1 >= 0.0) T_physics = T1;
+  dt_ = t_new - t_old;
+  double dt_MPC(dt_);
 
   // update boundary conditions and source terms
-  T1 = T_physics;
-  bc_pressure->Compute(T1);
-  bc_flux->Compute(T1);
-  bc_seepage->Compute(T1);
+  bc_pressure->Compute(t_new);
+  bc_flux->Compute(t_new);
+  bc_seepage->Compute(t_new);
   if (shift_water_table_.getRawPtr() == NULL)
-    bc_head->Compute(T1);
+    bc_head->Compute(t_new);
   else
-    bc_head->ComputeShift(T1, shift_water_table_->Values());
+    bc_head->ComputeShift(t_new, shift_water_table_->Values());
 
   if (src_sink != NULL) {
-    double T0 = T1 - dT_MPC; 
     if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      src_sink->ComputeDistribute(T0, T1, Kxy->Values()); 
+      src_sink->ComputeDistribute(t_old, t_new, Kxy->Values()); 
     } else {
-      src_sink->ComputeDistribute(T0, T1, NULL);
+      src_sink->ComputeDistribute(t_old, t_new, NULL);
     }
   }
 
@@ -443,31 +425,31 @@ int Darcy_PK::Advance(double dT_MPC, double& dT_actual)
   CompositeVector ss_g(ss); 
   ss_g.Update(0.0, ss, factor);
 
-  factor = 1.0 / (g_ * dT);
+  factor = 1.0 / (g_ * dt_);
   CompositeVector sy_g(*specific_yield_copy_); 
   sy_g.Scale(factor);
 
   op_->RestoreCheckPoint();
-  op_->AddAccumulationTerm(*solution, ss_g, dT, "cell");
-  op_->AddAccumulationTerm(*solution, sy_g, "cell");
-  op_->ApplyBCs();
+  op_acc_->AddAccumulationTerm(*solution, ss_g, dt_, "cell");
+  op_acc_->AddAccumulationTerm(*solution, sy_g, "cell");
 
-  int schema_prec_dofs = op_->schema_prec_dofs();
-  op_->AssembleMatrix(schema_prec_dofs);
-  op_->InitPreconditioner(ti_specs->preconditioner_name, preconditioner_list_);
+  op_diff_->ApplyBCs(true);
+  op_->AssembleMatrix();
+  op_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 
   CompositeVector& rhs = *op_->rhs();
   if (src_sink != NULL) AddSourceTerms(rhs);
 
   // create linear solver
-  AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create(ti_specs->solver_name, linear_operator_list_, op_);
+  AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
+     solver = factory.Create(solver_name_, *linear_operator_list_, op_);
 
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
   solver->ApplyInverse(rhs, *solution);
 
-  ti_specs->num_itrs++;
+  // make one time step
+  num_itrs_++;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     double pnorm;
@@ -480,33 +462,33 @@ int Darcy_PK::Advance(double dT_MPC, double& dT_actual)
   }
 
   // calculate time derivative and 2nd-order solution approximation
-  if (ti_specs->dT_method == FLOW_DT_ADAPTIVE) {
+  std::string dt_method_name = ti_list_->sublist("BDF1").get<std::string>("timestep controller type");
+
+  if (dt_method_name == "adaptive") {
     const Epetra_MultiVector& p = *S_->GetFieldData("pressure")->ViewComponent("cell");  // pressure at t^n
     Epetra_MultiVector& p_cell = *solution->ViewComponent("cell");  // pressure at t^{n+1}
 
     for (int c = 0; c < ncells_owned; c++) {
-      (*pdot_cells)[c] = (p_cell[0][c] - p[0][c]) / dT; 
-      p_cell[0][c] = p[0][c] + ((*pdot_cells_prev)[c] + (*pdot_cells)[c]) * dT / 2;
+      (*pdot_cells)[c] = (p_cell[0][c] - p[0][c]) / dt_; 
+      p_cell[0][c] = p[0][c] + ((*pdot_cells_prev)[c] + (*pdot_cells)[c]) * dt_ / 2;
     }
   }
 
   // estimate time multiplier
-  if (ti_specs->dT_method == FLOW_DT_ADAPTIVE) {
-    double err, dTfactor;
-    err = ErrorEstimate_(&dTfactor);
+  if (dt_method_name == "adaptive") {
+    double err, dt_factor;
+    err = ErrorEstimate_(&dt_factor);
     if (err > 0.0) throw 1000;  // fix (lipnikov@lan.gov)
-    dT_desirable_ = std::min(dT_MPC * dTfactor, ti_specs->dTmax);
+    dt_desirable_ = std::min(dt_MPC * dt_factor_, dt_max_);
   } else {
-    dT_desirable_ = std::min(dT_desirable_ * ti_specs->dTfactor, ti_specs->dTmax);
+    dt_desirable_ = std::min(dt_desirable_ * dt_factor_, dt_max_);
   }
 
-  // Darcy_PK always takes suggested time step
-  dT_actual = dT_MPC;
+  // Darcy_PK always takes suggested time step and cannot fail
+  dt_tuple times(t_new, dt_MPC);
+  dt_history_.push_back(times);
 
-  dt_tuple times(T1, dT_MPC);
-  ti_specs->dT_history.push_back(times);
-
-  return 0;
+  return false;
 }
 
 
@@ -514,14 +496,14 @@ int Darcy_PK::Advance(double dT_MPC, double& dT_actual)
 * Transfer data from the external flow state FS_MPC. MPC may request
 * to populate the original state FS. 
 ****************************************************************** */
-void Darcy_PK::CommitState(double dt, const Teuchos::Ptr<State>& S)
+void Darcy_PK::CommitStep(double t_old, double t_new)
 {
-  CompositeVector& p = *S->GetFieldData("pressure", passwd_);
+  CompositeVector& p = *S_->GetFieldData("pressure", passwd_);
   p = *solution;
 
   // calculate darcy mass flux
-  CompositeVector& darcy_flux = *S->GetFieldData("darcy_flux", passwd_);
-  op_->UpdateFlux(*solution, darcy_flux);
+  CompositeVector& darcy_flux = *S_->GetFieldData("darcy_flux", passwd_);
+  op_diff_->UpdateFlux(*solution, darcy_flux);
 
   Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
   for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
@@ -581,6 +563,14 @@ void Darcy_PK::UpdateSpecificYield_()
     msg << "Flow PK: configuration of the yield region leads to negative yield interfaces.";
     Exceptions::amanzi_throw(msg);
   }
+}
+
+
+/* ******************************************************************
+* This is strange.
+****************************************************************** */
+void Darcy_PK::CalculateDiagnostics() {
+  UpdateLocalFields_();
 }
 
 }  // namespace Flow

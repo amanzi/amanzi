@@ -13,19 +13,22 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
+#include "Epetra_SerialComm.h"
+#include "Epetra_MpiComm.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-#include "Epetra_SerialComm.h"
-#include "Epetra_MpiComm.h"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "UnitTest++.h"
 
+// Amanzi
+#include "exceptions.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "Darcy_PK.hh"
 
-#include "exceptions.hh"
+// Flow
+#include "Darcy_PK.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -34,11 +37,11 @@ using namespace Amanzi::Flow;
 
 class DarcyProblem {
  public:
+  Teuchos::RCP<Teuchos::ParameterList> plist;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh;
 
   Teuchos::RCP<State> S;
   Flow::Darcy_PK* DPK;
-  Teuchos::ParameterList dp_list;
   std::string passwd;
 
   Epetra_MpiComm* comm;
@@ -48,7 +51,7 @@ class DarcyProblem {
   std::vector<std::string> framework_name;
 
   DarcyProblem() {
-    passwd = "state"; 
+    passwd = "flow"; 
     comm = new Epetra_MpiComm(MPI_COMM_WORLD);
     MyPID = comm->MyPID();    
 
@@ -66,11 +69,9 @@ class DarcyProblem {
   int Init(const std::string xmlFileName, const char* meshExodus, const Framework& framework) {
     if (framework == STKMESH && comm->NumProc() > 1) return 1;    
 
-    Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
-    Teuchos::ParameterList plist = xmlreader.getParameters();
-
-    /* create a MSTK mesh framework */
-    Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+    // create a MSTK mesh framework
+    plist = Teuchos::getParametersFromXmlFile(xmlFileName);
+    Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
 
     FrameworkPreference pref;
@@ -86,20 +87,17 @@ class DarcyProblem {
     mesh = meshfactory(meshExodus, gm);
 
     /* create Darcy process kernel */
-    Teuchos::ParameterList state_list = plist.sublist("State");
+    Teuchos::ParameterList state_list = plist->sublist("State");
     S = Teuchos::rcp(new State(state_list));
     S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
     S->set_time(0.0);
 
-    DPK = new Darcy_PK(plist, S);
+    DPK = new Darcy_PK(plist, "Flow", S);
+    DPK->Setup();
     S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
-    DPK->InitializeFields();
-    S->CheckAllFieldsInitialized();
 
-    Teuchos::ParameterList& flow_list = plist.get<Teuchos::ParameterList>("Flow");
-    dp_list = flow_list.get<Teuchos::ParameterList>("Darcy problem");
     return 0;
   }
 
@@ -113,6 +111,9 @@ class DarcyProblem {
     } else if (!strcmp(type, "mass flux")) {
       func_list_name = "outward mass flux";
     }
+    Teuchos::ParameterList& flow_list = plist->sublist("PKs").get<Teuchos::ParameterList>("Flow");
+    Teuchos::ParameterList& dp_list = flow_list.get<Teuchos::ParameterList>("Darcy problem");
+
     Teuchos::ParameterList& bc_list = dp_list.get<Teuchos::ParameterList>("boundary conditions");
     Teuchos::ParameterList& type_list = bc_list.get<Teuchos::ParameterList>(type);
 
@@ -210,12 +211,13 @@ TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
 
     regions[0] = std::string("Bottom side");
     createBClist("pressure", "BC 2", regions, 1.0);
+    // DPK->ResetParameterList(dp_list);
+ 
+    DPK->Initialize();
+    S->CheckAllFieldsInitialized();
 
-    DPK->ResetParameterList(dp_list);
-    DPK->Initialize(S.ptr());  // setup the problem
-    DPK->InitSteadyState(0.0, 1.0);
-    DPK->AdvanceToSteadyState(0.0, 1.0);
-    DPK->CommitState(0.0, S.ptr());
+    DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
+    DPK->CommitStep(0.0, 1.0);
 
     // calculate errors
     double p0 = 1.0;
@@ -248,12 +250,12 @@ TEST_FIXTURE(DarcyProblem, DirichletNeumann) {
 
     regions[0] = std::string("Bottom side");
     createBClist("pressure", "BC 2", regions, 1.0);
-    DPK->ResetParameterList(dp_list);
 
-    DPK->Initialize(S.ptr());  // setup the problem
-    DPK->InitSteadyState(0.0, 1.0);
-    DPK->AdvanceToSteadyState(0.0, 1.0);
-    DPK->CommitState(0.0, S.ptr());
+    DPK->Initialize();
+    S->CheckAllFieldsInitialized();
+
+    DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
+    DPK->CommitStep(0.0, 1.0);
 
     // calculate errors
     double p0 = 1.0;
@@ -286,13 +288,13 @@ TEST_FIXTURE(DarcyProblem, StaticHeadDirichlet) {
 
     regions[0] = std::string("Bottom side");
     createBClist("static head", "BC 2", regions, 0.25);
+    // DPK->ResetParameterList(dp_list);
 
-    DPK->ResetParameterList(dp_list);
+    DPK->Initialize();
+    S->CheckAllFieldsInitialized();
 
-    DPK->Initialize(S.ptr());  // setup the problem
-    DPK->InitSteadyState(0.0, 1.0);
-    DPK->AdvanceToSteadyState(0.0, 1.0);
-    DPK->CommitState(0.0, S.ptr());
+    DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
+    DPK->CommitStep(0.0, 1.0);
 
     // calculate errors
     double p0 = 2.0;
@@ -327,12 +329,13 @@ TEST_FIXTURE(DarcyProblem, DDprisms) {
 
     regions[0] = std::string("Bottom side");
     createBClist("pressure", "BC 2", regions, 1.0);
-    DPK->ResetParameterList(dp_list);
+    // DPK->ResetParameterList(dp_list);
 
-    DPK->Initialize(S.ptr());  // setup the problem
-    DPK->InitSteadyState(0.0, 1.0);
-    DPK->AdvanceToSteadyState(0.0, 1.0);
-    DPK->CommitState(0.0, S.ptr());
+    DPK->Initialize();
+    S->CheckAllFieldsInitialized();
+
+    DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
+    DPK->CommitStep(0.0, 1.0);
 
     // calculate errors
     double p0 = 1.0;
@@ -368,12 +371,13 @@ TEST_FIXTURE(DarcyProblem, DNtetrahedra) {
 
     regions[0] = std::string("Bottom side");
     createBClist("pressure", "BC 2", regions, 1.0);
-    DPK->ResetParameterList(dp_list);
+    // DPK->ResetParameterList(dp_list);
 
-    DPK->Initialize(S.ptr());  // setup the problem
-    DPK->InitSteadyState(0.0, 1.0);
-    DPK->AdvanceToSteadyState(0.0, 1.0);
-    DPK->CommitState(0.0, S.ptr());
+    DPK->Initialize();
+    S->CheckAllFieldsInitialized();
+
+    DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
+    DPK->CommitStep(0.0, 1.0);
 
     // calculate errors
     double p0 = 1.0;
@@ -409,12 +413,13 @@ TEST_FIXTURE(DarcyProblem, DDmixed) {
 
     regions[0] = std::string("Bottom side");
     createBClist("pressure", "BC 2", regions, 1.0);
-    DPK->ResetParameterList(dp_list);
+    // DPK->ResetParameterList(dp_list);
 
-    DPK->Initialize(S.ptr());  // setup the problem
-    DPK->InitSteadyState(0.0, 1.0);
-    DPK->AdvanceToSteadyState(0.0, 1.0);
-    DPK->CommitState(0.0, S.ptr());
+    DPK->Initialize();
+    S->CheckAllFieldsInitialized();
+
+    DPK->SolveFullySaturatedProblem(0.0, *S->GetFieldData("pressure", passwd));
+    DPK->CommitStep(0.0, 1.0);
 
     // calculate errors
     double p0 = 1.0;
