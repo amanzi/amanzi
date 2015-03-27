@@ -80,17 +80,20 @@ void TimeStepManager::RegisterTimeEvent(double time, bool phys) {
   double time_remaining(next_T_all_events - T);
   if (dT >= time_remaining) {
     if (!physical) dt_stable_storage = dT;
-
-    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-      Teuchos::OSTab tab = vo_->getOSTab();
-    	*vo_->os() <<"PK proposed dT: "<<dT<<" is limited to "<<time_remaining<< std::endl;
+    if (vo_ != Teuchos::null){
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+	Teuchos::OSTab tab = vo_->getOSTab();
+    	*vo_->os() <<"PK proposed dT: "<<dT<<". CycleDriver limits to "<<time_remaining<< std::endl;
+      }
     }
     return time_remaining;
   } else if ( dT > 0.75*time_remaining) {
     if (!physical) dt_stable_storage = dT;
-    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() <<"PK proposed dT: "<<dT<<" is limited to "<<0.5*time_remaining<< std::endl;
+    if (vo_!=Teuchos::null){
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+	Teuchos::OSTab tab = vo_->getOSTab();
+	*vo_->os() <<"PK proposed dT "<<dT<<". CycleDriver limits to "<<0.5*time_remaining<< std::endl;
+      }
     }
     return 0.5*time_remaining;
   } else {
