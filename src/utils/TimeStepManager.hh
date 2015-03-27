@@ -38,7 +38,6 @@ class TimeStepManager {
     bool physical_; // physical means that this event effects time step due to change in physics
   };
 
-
  public:
   TimeStepManager();// {dt_stable_storage=-1.; vo_ = Teuchos::NULL;}
   TimeStepManager(Teuchos::RCP<VerboseObject> verb_object);
@@ -51,10 +50,11 @@ class TimeStepManager {
  private:
   std::list<TimeEvent> timeEvents_;
   double dt_stable_storage;
+
  protected:
   Teuchos::RCP<VerboseObject> vo_;
-
 };
-}
+
+}  // namespace Amanzi
 
 #endif // TIME_STEP_MANAGER__
