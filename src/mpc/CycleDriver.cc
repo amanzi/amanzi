@@ -152,7 +152,7 @@ void CycleDriver::Setup() {
   }
 
   // create the time step manager
-  tsm_ = Teuchos::ptr(new TimeStepManager());
+  tsm_ = Teuchos::ptr(new TimeStepManager(vo_));
 
   pk_->Setup();
 

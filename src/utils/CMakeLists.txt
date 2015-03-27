@@ -49,7 +49,7 @@ if (BUILD_TESTS)
     ADD_AMANZI_TEST(utils test_utils
                     KIND unit
                     SOURCE test/Main.cc test/test_time_step_manager.cc
-                    LINK_LIBS atk ${UnitTest_LIBRARIES} )
+                    LINK_LIBS atk ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
 
     ADD_AMANZI_TEST(test_verbosity test_verbosity
                     KIND unit

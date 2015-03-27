@@ -1,10 +1,22 @@
 #include "TimeStepManager.hh"
+
 #include <iostream>
 #include <algorithm>
+//#include "VerboseObject.hh"
 
 namespace Amanzi {
 
-  void TimeStepManager::RegisterTimeEvent(double start, double period, double stop,  bool phys) {
+TimeStepManager::TimeStepManager(){
+  dt_stable_storage = -1.;
+  vo_ = Teuchos::null;
+}
+
+TimeStepManager::TimeStepManager(Teuchos::RCP<VerboseObject> verb_object){
+  dt_stable_storage = -1.;
+  vo_ = verb_object;
+}
+
+void TimeStepManager::RegisterTimeEvent(double start, double period, double stop,  bool phys) {
     timeEvents_.push_back(TimeEvent(start, period, stop, phys));
 }
 
@@ -24,6 +36,8 @@ void TimeStepManager::RegisterTimeEvent(double time, bool phys) {
   double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
   double next_T_all_events(1e99);
   bool physical = true;
+
+  if (after_failure) dt_stable_storage = -1.;
   
   if ((dt_stable_storage > 0)&&(!after_failure)) {
     dT = dt_stable_storage;
@@ -66,9 +80,18 @@ void TimeStepManager::RegisterTimeEvent(double time, bool phys) {
   double time_remaining(next_T_all_events - T);
   if (dT >= time_remaining) {
     if (!physical) dt_stable_storage = dT;
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+    	*vo_->os() <<"PK proposed dT: "<<dT<<" is limited to "<<time_remaining<< std::endl;
+    }
     return time_remaining;
   } else if ( dT > 0.75*time_remaining) {
     if (!physical) dt_stable_storage = dT;
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() <<"PK proposed dT: "<<dT<<" is limited to "<<0.5*time_remaining<< std::endl;
+    }
     return 0.5*time_remaining;
   } else {
     return dT;
