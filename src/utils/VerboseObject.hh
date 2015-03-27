@@ -75,8 +75,8 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   inline void Write(Teuchos::EVerbosityLevel verbosity, const std::stringstream& data) const;
   inline void Write(Teuchos::EVerbosityLevel verbosity, const std::string& data) const;
 
-  inline void WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::stringstream& data) const;
-  inline void WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::string& data) const;
+  void WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::stringstream& data) const;
+  void WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::string& data) const;
 
  public:
   // The default global verbosity level.
@@ -124,21 +124,6 @@ void VerboseObject::Write(Teuchos::EVerbosityLevel verbosity, const std::string&
   if (getVerbLevel() >= verbosity) {
     Teuchos::OSTab tab = getOSTab();
     *os() << data;
-  }
-}
-
-void VerboseObject::WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::stringstream& data) const {
-  if (getVerbLevel() >= verbosity) {
-    Teuchos::OSTab tab = getOSTab();
-    *os() << color("yellow") << data.str() << reset();
-  }
-}
-
-
-void VerboseObject::WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::string& data) const {
-  if (getVerbLevel() >= verbosity) {
-    Teuchos::OSTab tab = getOSTab();
-    *os() << color("yellow") << data << reset();
   }
 }
 

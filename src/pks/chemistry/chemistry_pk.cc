@@ -155,7 +155,6 @@ void Chemistry_PK::InitializeChemistry(void) {
 
   // now loop through all the cells and initialize
   chem_out->Write(Teuchos::VERB_HIGH, "Initializing chemistry in all cells...\n");
-  // int num_cells = chemistry_state_->porosity()->MyLength();
   int num_cells = chemistry_state_->mesh_maps()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ierr = 0;
   for (cell = 0; cell < num_cells; ++cell) {
@@ -668,7 +667,6 @@ void Chemistry_PK::Advance(
 
   // TODO(bandre): use size of the porosity vector as indicator of size for
   // now... should get data from the mesh...?
-  // int num_cells = chemistry_state_->porosity()->MyLength();
   int num_cells = chemistry_state_->mesh_maps()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   int max_iterations = 0;
@@ -783,7 +781,6 @@ void Chemistry_PK::CommitState(Teuchos::RCP<Chemistry_State> chem_state,
 
 Teuchos::RCP<Epetra_MultiVector> Chemistry_PK::get_extra_chemistry_output_data() {
   if (aux_data_ != Teuchos::null) {
-    // int num_cells = chemistry_state_->porosity()->MyLength();
     int num_cells = chemistry_state_->mesh_maps()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
     for (int cell = 0; cell < num_cells; cell++) {

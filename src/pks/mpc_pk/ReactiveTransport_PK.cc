@@ -102,7 +102,7 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new) {
   if (ok == 0) {
     *total_component_concentration_stor = *tranport_pk_->total_component_concentration()->ViewComponent("cell", true);
   } else {
-    Errors::Message message("MPC: error... Transport_PK.advance returned an error status");
+    Errors::Message message("MPC: Transport PK returned an unexpected error.");
     Exceptions::amanzi_throw(message);
   }
   chemistry_pk_->set_total_component_concentration(total_component_concentration_stor);

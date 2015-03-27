@@ -45,33 +45,6 @@ VerboseObject::VerboseObject(std::string name, Teuchos::ParameterList& plist) :
 }
 
 
-void VerboseObject::set_name(std::string name)
-{
-  std::string header(name);
-  if (header.size() > line_prefix_size) {
-    header.erase(line_prefix_size);
-  } else if (header.size() < line_prefix_size) {
-    header.append(line_prefix_size - header.size(), ' ');
-  }
-  setLinePrefix(header);
-}
-
-std::string VerboseObject::color(std::string name) const
-{ 
-  std::string output("");
-#ifdef __linux
-  if (name == "red") {
-    output = std::string("\033[1;31m");
-  } else if (name == "green") {
-    output = std::string("\033[1;32m");
-  } else if (name == "yellow") {
-    output = std::string("\033[1;33m");
-  }
-#endif
-  return output;
-}
-
-
 VerboseObject::VerboseObject(const Epetra_MpiComm* const comm, std::string name,
                              Teuchos::ParameterList& plist) :
     comm_(comm)
@@ -131,6 +104,35 @@ VerboseObject::VerboseObject(const Epetra_MpiComm* const comm, std::string name,
   }
 }
 
+
+void VerboseObject::set_name(std::string name)
+{
+  std::string header(name);
+  if (header.size() > line_prefix_size) {
+    header.erase(line_prefix_size);
+  } else if (header.size() < line_prefix_size) {
+    header.append(line_prefix_size - header.size(), ' ');
+  }
+  setLinePrefix(header);
+}
+
+
+std::string VerboseObject::color(std::string name) const
+{ 
+  std::string output("");
+#ifdef __linux
+  if (name == "red") {
+    output = std::string("\033[1;31m");
+  } else if (name == "green") {
+    output = std::string("\033[1;32m");
+  } else if (name == "yellow") {
+    output = std::string("\033[1;33m");
+  }
+#endif
+  return output;
+}
+
+
 std::string VerboseObject::reset() const
 { 
   std::string output("");
@@ -140,4 +142,26 @@ std::string VerboseObject::reset() const
   return output;
 }
 
-} // namespace Amanzi
+
+void VerboseObject::WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::stringstream& data) const
+{
+  if (getVerbLevel() >= verbosity) {
+    Teuchos::OSTab tab = getOSTab();
+
+    std::string str(data.str());
+    size_t pos = str.length() - 1;
+    if (str[pos] == '\n') str.erase(pos, 1);
+    *os() << color("yellow") << str.erase(pos, 1) << reset() << std::endl;
+  }
+}
+
+
+void VerboseObject::WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::string& data) const
+{
+  if (getVerbLevel() >= verbosity) {
+    Teuchos::OSTab tab = getOSTab();
+    *os() << color("yellow") << data << reset();
+  }
+}
+
+}  // namespace Amanzi
