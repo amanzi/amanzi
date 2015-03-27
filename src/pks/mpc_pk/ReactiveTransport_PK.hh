@@ -21,11 +21,11 @@
 #include "Transport_PK.hh"
 #include "Chemistry_PK_Wrapper.hh"
 #include "PK_Factory.hh"
-#include "MPCWeak.hh"
+#include "MPC_add_PK.hh"
 
 namespace Amanzi {
 
-class ReactiveTransport_PK : public MPCWeak {
+class ReactiveTransport_PK : public MPC_add_PK<PK> {
  public:
   ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
                const Teuchos::RCP<Teuchos::ParameterList>& global_list,
@@ -43,6 +43,8 @@ class ReactiveTransport_PK : public MPCWeak {
   virtual bool AdvanceStep(double t_old, double t_new);
 
   virtual void Initialize();
+
+  virtual void CommitStep(double t_old, double t_new);
 
   std::string name() { return "reactive transport"; } 
 
