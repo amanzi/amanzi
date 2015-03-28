@@ -24,15 +24,14 @@ if(ENABLE_NATIVE_XML_OUTPUT)
 endif()
 
 # External (TPL) include directories
-include_directories(${ASCEMIO_INCLUDE_DIR})
+include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${Teuchos_INCLUDE_DIRS})
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
-include_directories(${DBG_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
@@ -41,10 +40,6 @@ include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
-
-include_directories(${Epetra_INCLUDE_DIRS})
-include_directories(${HDF5_C_INCLUDE_DIR})
-include_directories(${Teuchos_INCLUDE_DIRS})
 
 #
 # Flow registrations
@@ -118,7 +113,7 @@ set(flow_src_files Flow_PK.cc
                    VWContentEvaluator.cc VWContentEvaluator_ConstDensity.cc
                    DarcyVelocityEvaluator.cc
                    )
-set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
+set(flow_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )
   list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES})
 endif()

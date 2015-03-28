@@ -84,12 +84,8 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   Teuchos::RCP<Operator> consistent_face_operator() { return consistent_face_op_; }
   
   // developer checks
-  int nfailed_primary() {
-    return nfailed_primary_;
-  }
-  void set_factor(double factor) {
-    factor_ = factor;
-  }
+  int nfailed_primary() { return nfailed_primary_; }
+  void set_factor(double factor) { factor_ = factor; }
 
  protected:
   void InitDiffusion_(Teuchos::ParameterList& plist);
@@ -113,15 +109,14 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   Teuchos::ParameterList plist_;
   std::vector<WhetStone::DenseMatrix> Wff_cells_;
   int newton_correction_;
-  bool exclude_primary_terms_;
   double factor_;
+  bool exclude_primary_terms_;
   bool scaled_constraint_;
 
   int mfd_primary_, mfd_secondary_, mfd_pc_primary_, mfd_pc_secondary_;
   int nfailed_primary_;
 
   Teuchos::RCP<Operator> consistent_face_op_;
-  
 };
 
 }  // namespace Operators

@@ -437,18 +437,19 @@ void Unstructured_observations::FlushObservations()
 {
   if (obs_list_.isParameter("Observation Output Filename")) {
     std::string obs_file = obs_list_.get<std::string>("Observation Output Filename");
+    int precision = obs_list_.get<int>("precision", 16);
 
     if (rank_ == 0) {
       std::ofstream out;
       out.open(obs_file.c_str(),std::ios::out);
-
-      out.precision(16);
+      
+      out.precision(precision);
       out.setf(std::ios::scientific);
 
       out << "Observation Name, Region, Functional, Variable, Time, Value\n";
       out << "===========================================================\n";
 
-      for (Teuchos::ParameterList::ConstIterator i=obs_list_.begin(); i!=obs_list_.end(); ++i) {
+      for (Teuchos::ParameterList::ConstIterator i = obs_list_.begin(); i != obs_list_.end(); ++i) {
         std::string label = obs_list_.name(i);
         const Teuchos::ParameterEntry& entry = obs_list_.getEntry(label);
         if (entry.isList()) {

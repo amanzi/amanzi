@@ -129,7 +129,7 @@ void OperatorDiffusionMFD::UpdateMatrices(
   //   if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
   //     AddNewtonCorrectionCell_(flux, u);
   //   } else {
-  //     Errors::Message msg("OperatorDiffusion: Newton Correction may only be applied to schemas that include CELL dofs.");
+  //     Errors::Message msg("OperatorDiffusion: Newton correction may only be applied to schemas that include CELL dofs.");
   //     Exceptions::amanzi_throw(msg);
   //   }
   // }
@@ -183,7 +183,8 @@ void OperatorDiffusionMFD::UpdateMatricesMixedWithGrad_(
   AmanziMesh::Entity_ID_List faces, cells;
   std::vector<int> dirs;
 
-  WhetStone::Tensor Kc(mesh_->space_dimension(), 1); Kc(0,0) = 1.0;
+  WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
+  Kc(0, 0) = 1.0;
   
   for (int c = 0; c < ncells_owned; c++) {
     // mean value and gradient of nonlinear factor
@@ -495,18 +496,18 @@ void OperatorDiffusionMFD::ApplyBCs(bool primary)
 {
   if (!exclude_primary_terms_) {
     if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
-                             | OPERATOR_SCHEMA_DOFS_FACE
-                             | OPERATOR_SCHEMA_DOFS_CELL)) {
+                           | OPERATOR_SCHEMA_DOFS_FACE
+                           | OPERATOR_SCHEMA_DOFS_CELL)) {
       ASSERT(bcs_.size() == 1);
       ApplyBCs_Mixed_(*bcs_[0], primary);
     
     } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_FACE
-            | OPERATOR_SCHEMA_DOFS_CELL)) {
+                                  | OPERATOR_SCHEMA_DOFS_CELL)) {
       ASSERT(bcs_.size() == 1);
       ApplyBCs_Cell_(*bcs_[0], primary);
     
     } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
-            | OPERATOR_SCHEMA_DOFS_NODE)) {
+                                  | OPERATOR_SCHEMA_DOFS_NODE)) {
       Teuchos::RCP<BCs> bc_f, bc_n;
       for (std::vector<Teuchos::RCP<BCs> >::iterator bc = bcs_.begin();
            bc != bcs_.end(); ++bc) {
@@ -780,7 +781,7 @@ void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
     Aface.PutScalar(0.0);
 
     double v = flux_f[0][f];
-    double vmod = kf[0][f] > 0. ? fabs(v) * dkdp_f[0][f] / kf[0][f] : 0.;
+    double vmod = kf[0][f] > 0.0 ? fabs(v) * dkdp_f[0][f] / kf[0][f] : 0.0;
     if (scalar_rho_mu_) {
       vmod *= rho_;
     } else {
@@ -901,7 +902,7 @@ void OperatorDiffusionMFD::CreateMassMatrices_()
   Wff_cells_.resize(ncells_owned);
 
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
-  Kc(0,0) = 1.0;
+  Kc(0, 0) = 1.0;
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);

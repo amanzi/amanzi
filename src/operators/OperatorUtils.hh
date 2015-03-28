@@ -26,44 +26,34 @@ namespace Operators {
 class SuperMap;
 
 // Nonmember CompositeVector to/from Super-vector
-int
-CopyCompositeVectorToSuperVector(const SuperMap& map, const CompositeVector& cv,
-        Epetra_Vector& sv, int dofnum=0);
+int CopyCompositeVectorToSuperVector(const SuperMap& map, const CompositeVector& cv,
+                                     Epetra_Vector& sv, int dofnum = 0);
 
-int
-CopySuperVectorToCompositeVector(const SuperMap& map,const Epetra_Vector& sv,
-        CompositeVector& cv, int dofnum=0);
+int CopySuperVectorToCompositeVector(const SuperMap& map, const Epetra_Vector& sv,
+                                     CompositeVector& cv, int dofnum = 0);
 
-int
-AddSuperVectorToCompositeVector(const SuperMap& map,const Epetra_Vector& sv,
-        CompositeVector& cv, int dofnum=0);
+int AddSuperVectorToCompositeVector(const SuperMap& map, const Epetra_Vector& sv,
+                                    CompositeVector& cv, int dofnum = 0);
 
 // Nonmember TreeVector to/from Super-vector
-int
-CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& cv,
-        Epetra_Vector& sv);
+int CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& cv,
+                                Epetra_Vector& sv);
 
-int
-CopySuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
-        TreeVector& cv);
+int CopySuperVectorToTreeVector(const SuperMap& map, const Epetra_Vector& sv,
+                                TreeVector& cv);
 
-int
-AddSuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
-                           TreeVector& cv);
+int AddSuperVectorToTreeVector(const SuperMap& map, const Epetra_Vector& sv,
+                               TreeVector& cv);
 
 // supermap factory from CV and schema
-Teuchos::RCP<SuperMap>
-createSuperMap(const CompositeVectorSpace& cv, int schema, int n_dofs);
+Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cv, int schema, int n_dofs);
 
-// Estimate the max number of unknowns per row.  Note this can be an
+// Estimate the max number of unknowns per row. Note this can be an
 // overestimate, but shouldn't be an underestimate.
-unsigned int
-MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n_dofs=1);
+unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n_dofs = 1);
 
-
-
-} // namespace Operators
-} // namespace Amanzi
+}  // namespace Operators
+}  // namespace Amanzi
 
 
 #endif

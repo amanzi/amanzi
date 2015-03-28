@@ -2912,6 +2912,8 @@ for its evaluation.  The observations are evaluated during the simulation and re
   * `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
     The file name can contain relative or absolute path to an *existing* directory only. 
 
+  * `"precision`" [int] defined the number of significant digits. Default is 16.
+
   * OBSERVATION [list] user-defined label, can accept values for `"variables`", `"functional`", `"region`", `"times`", and TSPS (see below).
 
     * `"variables`" [Array(string)] a list of field quantities taken from the list of 
@@ -2960,6 +2962,7 @@ The following Observation Data functionals are currently supported.  All of them
 
   <ParameterList name="Observation Data">
     <Parameter name="Observation Output Filename" type="string" value="obs_output.out"/>
+    <Parameter name="precision" type="int" value="10"/>
     <ParameterList name="some observation name">
       <Parameter name="Region" type="string" value="some point region name"/>
       <Parameter name="Functional" type="string" value="Observation Data: Point"/>

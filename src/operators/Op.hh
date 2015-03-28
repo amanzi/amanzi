@@ -16,6 +16,7 @@
 
 #include "DenseMatrix.hh"
 #include "BCs.hh"
+#include "Mesh.hh"
 #include "OperatorDefs.hh"
 
 namespace Amanzi {

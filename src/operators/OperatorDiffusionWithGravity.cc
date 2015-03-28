@@ -66,7 +66,8 @@ void OperatorDiffusionWithGravity::AddGravityToRHS_()
       Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
       for (int f = nfaces_owned; f < nfaces_wghost; f++) rhs_face[0][f] = 0.0;
 
-      WhetStone::Tensor Kc(mesh_->space_dimension(),1); Kc(0,0) = 1.0;
+      WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
+      Kc(0, 0) = 1.0;
 
       for (int c = 0; c < ncells_owned; c++) {
         mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -144,7 +145,6 @@ void OperatorDiffusionWithGravity::AddGravityToRHS_()
     }
     
   } else {
-
     // not scalar density, rho/mu in k, dkdp
     if (global_op_->rhs()->HasComponent("face")) {
       int dim = mesh_->space_dimension();

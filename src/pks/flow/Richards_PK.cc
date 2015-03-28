@@ -8,12 +8,6 @@
 
   Authors: Neil Carlson (nnc@lanl.gov), 
            Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Usage: Richards_PK FPK(parameter_list, state);
-         FPK->InitPK();
-         FPK->Initialize();  // optional
-         FPK->InitSteadyState(T, dT);
-         FPK->InitTransient(T, dT);
 */
 
 #include <vector>
@@ -348,6 +342,8 @@ void Richards_PK::Initialize()
   vapor_diffusion_ = coupling->get<bool>("vapor diffusion", false);
 
   // Initialize actions on boundary condtions. 
+  flux_units_ = molar_rho_ / rho_;
+
   ProcessShiftWaterTableList(*rp_list_);
 
   bc_pressure->Compute(t_new);

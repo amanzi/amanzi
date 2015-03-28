@@ -353,7 +353,7 @@ void Operator_FaceCellScc::SymbolicAssembleMatrix()
   // SuperMap for Sff is face only
   CompositeVectorSpace smap_space;
   smap_space.SetMesh(cvs_->Mesh())->SetComponent("cell", AmanziMesh::CELL, 1);
-  smap_ = createSuperMap(smap_space, schema(), 1);
+  smap_ = CreateSuperMap(smap_space, schema(), 1);
 
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema(), 1);

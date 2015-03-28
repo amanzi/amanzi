@@ -12,25 +12,29 @@
 #ifndef AMANZI_OPERATOR_AUDIT_HH_
 #define AMANZI_OPERATOR_AUDIT_HH_
 
-#include "Operator.hh"
+#include "Epetra_CrsMatrix.h"
+
+#include "Op.hh"
 
 
 namespace Amanzi {
 namespace Operators {
 
-class OperatorAudit : public Operator {
+class OperatorAudit {
  public:
-  OperatorAudit() {};
-  OperatorAudit(const Operator& op) : Operator(op) {};
+  OperatorAudit(Teuchos::RCP<const Op> op) : op_(op) {};
   ~OperatorAudit() {};
 
   // main members
   int CheckSpectralBounds(int schema);
-  int CheckMatrixSymmetry();
-  int CheckMatrixCoercivity();
+  friend int CheckMatrixSymmetry(Teuchos::RCP<Epetra_CrsMatrix> A);
+  friend int CheckMatrixCoercivity(Teuchos::RCP<Epetra_CrsMatrix> A);
 
  private:
-  void OrderByIncrease(int n, double* mem);
+  void OrderByIncrease_(int n, double* mem);
+
+ private:
+  Teuchos::RCP<const Op> op_;
 };
 
 }  // namespace Operators
