@@ -1690,7 +1690,7 @@ PorousMedia::init ()
   MultiFab& S_new = get_new_data(State_Type);
   MultiFab& P_new = get_new_data(Press_Type);
   MultiFab& U_cor = get_new_data(  Vcr_Type);
-   
+
   const Array<Real>& dt_amr = parent->dtLevel();
   Array<Real>        dt_new(level+1);
 
@@ -1718,13 +1718,36 @@ PorousMedia::init ()
   FillCoarsePatch(S_new,0,cur_time,State_Type,0,S_new.nComp());
   FillCoarsePatch(P_new,0,cur_time,Press_Type,0,1);
 
+  if (chemistry_helper) {
+    const std::map<std::string,int>& aux_chem_variables_map = chemistry_helper->AuxChemVariablesMap();
+    if (aux_chem_variables_map.size() > 0) {
+      MultiFab& A_new = get_new_data(Aux_Chem_Type);
+      FillCoarsePatch(A_new,0,cur_time,Aux_Chem_Type,0,aux_chem_variables_map.size());
+    }
+  }
+
+
   U_cor.setVal(0.);
 
-  if ((model == PM_STEADY_SATURATED)
-      || (model == PM_SATURATED)) {
+  if (model != PM_RICHARDS
+      && model != PM_STEADY_SATURATED
+      && model != PM_SATURATED) {
     set_vel_from_bcs(cur_time,u_mac_curr);
-  }  
-
+  }
+  else {
+    BL_ASSERT(level > 0);
+    PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
+    GetCrseUmac(u_macG_crse,cur_time);
+    create_umac_grown(0,u_macG_crse,u_macG_trac);
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+      u_mac_curr[d].copy(u_macG_trac[d]);
+    }
+    create_umac_grown(u_mac_curr,u_macG_crse,u_macG_trac);
+  }
+  for (int d=0; d<BL_SPACEDIM; ++d) {
+    MultiFab::Copy(u_mac_prev[d],u_mac_curr[d],0,0,1,0);
+    MultiFab::Copy(u_macG_curr[d],u_macG_trac[d],0,0,1,0);
+  }
 
   if (do_tracer_chemistry>0) {
     FillCoarsePatch(get_new_data(FuncCount_Type),0,cur_time,FuncCount_Type,0,1);
@@ -7551,7 +7574,7 @@ PorousMedia::create_umac_grown (MultiFab* u_mac,
   BL_ASSERT(level>0);
 
   const BoxArray& fgrids = grids;
-  BoxList         bl     = BoxLib::GetBndryCells(fgrids,1);
+  BoxList         bl     = (u_mac == 0 ? BoxList(fgrids) : BoxList(BoxLib::GetBndryCells(fgrids,1)));
 
   BoxArray f_bnd_ba(bl);
 
@@ -7559,120 +7582,119 @@ PorousMedia::create_umac_grown (MultiFab* u_mac,
 
   BoxArray c_bnd_ba = BoxArray(f_bnd_ba.size());
 
-  for (int i = 0; i < f_bnd_ba.size(); ++i)
+  for (int i = 0; i < f_bnd_ba.size(); ++i) {
+    c_bnd_ba.set(i,Box(f_bnd_ba[i]).coarsen(crse_ratio));
+    f_bnd_ba.set(i,Box(c_bnd_ba[i]).refine(crse_ratio));
+  }
+
+  for (int n = 0; n < BL_SPACEDIM; ++n) {
+    //
+    // crse_src & fine_src must have same parallel distribution.
+    // We'll use the KnapSack distribution for the fine_src_ba.
+    // Since fine_src_ba should contain more points, this'll lead
+    // to a better distribution.
+    //
+    BoxArray crse_src_ba(c_bnd_ba);
+    BoxArray fine_src_ba(f_bnd_ba);
+
+    crse_src_ba.surroundingNodes(n);
+    fine_src_ba.surroundingNodes(n);
+
+    std::vector<long> wgts(fine_src_ba.size());
+
+    for (unsigned int i = 0; i < wgts.size(); i++)
     {
-      c_bnd_ba.set(i,Box(f_bnd_ba[i]).coarsen(crse_ratio));
-      f_bnd_ba.set(i,Box(c_bnd_ba[i]).refine(crse_ratio));
+      wgts[i] = fine_src_ba[i].numPts();
     }
+    DistributionMapping dm;
+    //
+    // This call doesn't invoke the MinimizeCommCosts() stuff.
+    // There's very little to gain with these types of coverings
+    // of trying to use SFC or anything else.
+    // This also guarantees that these DMs won't be put into the
+    // cache, as it's not representative of that used for more
+    // usual MultiFabs.
+    //
+    dm.KnapSackProcessorMap(wgts,ParallelDescriptor::NProcs());
 
-  for (int n = 0; n < BL_SPACEDIM; ++n)
-    {
-      //
-      // crse_src & fine_src must have same parallel distribution.
-      // We'll use the KnapSack distribution for the fine_src_ba.
-      // Since fine_src_ba should contain more points, this'll lead
-      // to a better distribution.
-      //
-      BoxArray crse_src_ba(c_bnd_ba);
-      BoxArray fine_src_ba(f_bnd_ba);
+    MultiFab crse_src,  fine_src; 
 
-      crse_src_ba.surroundingNodes(n);
-      fine_src_ba.surroundingNodes(n);
-
-      std::vector<long> wgts(fine_src_ba.size());
-
-      for (unsigned int i = 0; i < wgts.size(); i++)
-	{
-	  wgts[i] = fine_src_ba[i].numPts();
-	}
-      DistributionMapping dm;
-      //
-      // This call doesn't invoke the MinimizeCommCosts() stuff.
-      // There's very little to gain with these types of coverings
-      // of trying to use SFC or anything else.
-      // This also guarantees that these DMs won't be put into the
-      // cache, as it's not representative of that used for more
-      // usual MultiFabs.
-      //
-      dm.KnapSackProcessorMap(wgts,ParallelDescriptor::NProcs());
-
-      MultiFab crse_src,  fine_src; 
-
-      crse_src.define(crse_src_ba, 1, 0, dm, Fab_allocate);
-      fine_src.define(fine_src_ba, 1, 0, dm, Fab_allocate);
+    crse_src.define(crse_src_ba, 1, 0, dm, Fab_allocate);
+    fine_src.define(fine_src_ba, 1, 0, dm, Fab_allocate);
 	    
-      crse_src.setVal(1.e200);
-      fine_src.setVal(1.e200);
+    crse_src.setVal(1.e200);
+    fine_src.setVal(1.e200);
 	
-      //
-      // We want to fill crse_src from lower level u_mac including u_mac's grow cells.
-      // Gotta do it in steps since parallel copy only does valid region.
-      //
-      const MultiFab& u_macLL = u_mac_crse[n];
+    //
+    // We want to fill crse_src from lower level u_mac including u_mac's grow cells.
+    // Gotta do it in steps since parallel copy only does valid region.
+    //
+    const MultiFab& u_macLL = u_mac_crse[n];
 	  
-      BoxArray edge_grids = u_macLL.boxArray();
-      edge_grids.grow(1);
+    BoxArray edge_grids = u_macLL.boxArray();
+    edge_grids.grow(1);
       
-      MultiFab u_macC(edge_grids,1,0);
+    MultiFab u_macC(edge_grids,1,0);
       
-      for (MFIter mfi(u_macLL); mfi.isValid(); ++mfi)
-	u_macC[mfi].copy(u_macLL[mfi]);
-
-      crse_src.copy(u_macC);
-      
-      for (MFIter mfi(crse_src); mfi.isValid(); ++mfi)
-	{
-	  const int  nComp = 1;
-	  const Box& box   = crse_src[mfi].box();
-	  const int* rat   = crse_ratio.getVect();
-	  FORT_PC_EDGE_INTERP(box.loVect(), box.hiVect(), &nComp, rat, &n,
-			      crse_src[mfi].dataPtr(),
-			      ARLIM(crse_src[mfi].loVect()),
-			      ARLIM(crse_src[mfi].hiVect()),
-			      fine_src[mfi].dataPtr(),
-			      ARLIM(fine_src[mfi].loVect()),
-			      ARLIM(fine_src[mfi].hiVect()));
-	}
-      crse_src.clear();
-      //
-      // Replace pc-interpd fine data with preferred u_mac data at
-      // this level u_mac valid only on surrounding faces of valid
-      // region - this op will not fill grow region.
-      //
-      if (u_mac) {
-        fine_src.copy(u_mac[n]);
-      }
-
-      for (MFIter mfi(fine_src); mfi.isValid(); ++mfi)
-	{
-	  //
-	  // Interpolate unfilled grow cells using best data from
-	  // surrounding faces of valid region, and pc-interpd data
-	  // on fine edges overlaying coarse edges.
-	  //
-	  const int  nComp = 1;
-	  const Box& fbox  = fine_src[mfi.index()].box(); 
-	  const int* rat   = crse_ratio.getVect();
-	  FORT_EDGE_INTERP(fbox.loVect(), fbox.hiVect(), &nComp, rat, &n,
-			   fine_src[mfi].dataPtr(),
-			   ARLIM(fine_src[mfi].loVect()),
-			   ARLIM(fine_src[mfi].hiVect()));
-	  
-	}
-
-      // This complicated copy handles the periodic boundary condition properly.
-      if (u_mac) {
-        MultiFab u_ghost(u_mac[n].boxArray(),1,1);
-        u_ghost.setVal(1.e40);
-        u_ghost.copy(u_mac[n]);
-        u_ghost.FillBoundary();
-        geom.FillPeriodicBoundary(u_ghost);
-        for (MFIter mfi(u_macG[n]); mfi.isValid(); ++mfi) {
-	  u_macG[n][mfi].copy(u_ghost[mfi]);
-	}
-      }
-      u_macG[n].copy(fine_src);
+    for (MFIter mfi(u_macLL); mfi.isValid(); ++mfi) {
+      u_macC[mfi].copy(u_macLL[mfi]);
     }
+
+    crse_src.copy(u_macC);
+      
+    for (MFIter mfi(crse_src); mfi.isValid(); ++mfi) {
+      const int  nComp = 1;
+      const Box& box   = crse_src[mfi].box();
+      const int* rat   = crse_ratio.getVect();
+      FORT_PC_EDGE_INTERP(box.loVect(), box.hiVect(), &nComp, rat, &n,
+			  crse_src[mfi].dataPtr(),
+			  ARLIM(crse_src[mfi].loVect()),
+			  ARLIM(crse_src[mfi].hiVect()),
+			  fine_src[mfi].dataPtr(),
+			  ARLIM(fine_src[mfi].loVect()),
+			  ARLIM(fine_src[mfi].hiVect()));
+    }
+    crse_src.clear();
+
+    //
+    // Replace pc-interpd fine data with preferred u_mac data at
+    // this level u_mac valid only on surrounding faces of valid
+    // region - this op will not fill grow region.
+    //
+    if (u_mac) {
+      fine_src.copy(u_mac[n]);
+    }
+
+    for (MFIter mfi(fine_src); mfi.isValid(); ++mfi) {
+      //
+      // Interpolate unfilled grow cells using best data from
+      // surrounding faces of valid region, and pc-interpd data
+      // on fine edges overlaying coarse edges.
+      //
+      const int  nComp = 1;
+      const Box& fbox  = fine_src[mfi.index()].box(); 
+      const int* rat   = crse_ratio.getVect();
+      FORT_EDGE_INTERP(fbox.loVect(), fbox.hiVect(), &nComp, rat, &n,
+		       fine_src[mfi].dataPtr(),
+		       ARLIM(fine_src[mfi].loVect()),
+		       ARLIM(fine_src[mfi].hiVect()));
+	
+    }
+
+    // This complicated copy handles the periodic boundary condition properly.
+    if (u_mac) {
+      MultiFab u_ghost(u_mac[n].boxArray(),1,1);
+      u_ghost.setVal(1.e40);
+      u_ghost.copy(u_mac[n]);
+      u_ghost.FillBoundary();
+      geom.FillPeriodicBoundary(u_ghost);
+      for (MFIter mfi(u_macG[n]); mfi.isValid(); ++mfi) {
+	u_macG[n][mfi].copy(u_ghost[mfi]);
+      }
+    }
+
+    u_macG[n].copy(fine_src);
+  }
 }
 
 void
