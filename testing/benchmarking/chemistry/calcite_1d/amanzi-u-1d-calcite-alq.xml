@@ -21,7 +21,7 @@
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
         <ParameterList name="Transport Process Kernel">
-          <Parameter name="Transport Integration Algorithm" type="string" value="Explicit First-Order"/>
+          <Parameter name="Transport Integration Algorithm" type="string" value="Explicit Second-Order"/>
         </ParameterList>
         <ParameterList name="Steady-State Implicit Time Integration">
           <Parameter name="steady max iterations" type="int" value="15"/>

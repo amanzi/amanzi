@@ -241,7 +241,15 @@ AlquimiaHelper_Structured::BL_to_Alquimia(const FArrayBox& aqueous_saturation,  
     int ndigits_ints = std::log(NauxInts + 1) + 1;
     for (int i=0; i<NauxInts; ++i) {
       const std::string label=BoxLib::Concatenate("Auxiliary_Integers_",i,ndigits_ints); 
-      aux_input.aux_ints.data[i] = (int) aux_data(iv,aux_chem_variables[label]);
+      // safer way to cast integers, in case something is wrong with initialization (e.g. val=NaN)
+      double val =  aux_data(iv,aux_chem_variables[label]);
+      if (val == val) {
+          aux_input.aux_ints.data[i] = (int) val;
+      } 
+      else {
+          aux_input.aux_ints.data[i] = 0;
+      }
+      // aux_input.aux_ints.data[i] = (int) aux_data(iv,aux_chem_variables[label]);
     }
   }
   if (NauxDoubles > 0) {

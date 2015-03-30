@@ -30,9 +30,11 @@ def run_amanzi_chem(xml_input_file, run_path=None, chemfiles=None, directory=Non
            new_chemfile="{0}/{1}".format(run_directory, chemfile)
            shutil.copyfile(chemfile, new_chemfile)
 
-    
     # change into run directory
-    os.chdir(run_directory)
+    if run_path[0:7] == 'struct_':
+       pass
+    else:  
+       os.chdir(run_directory)
     
     # ensure that Amanzi's executable exists
     try:

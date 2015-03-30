@@ -1,0 +1,15 @@
+
+&Aqueous
+  name          = 'tritium_decay'
+  type          = 'general'
+  stoichiometry = -1.0 'Tritium' 1.0 'Daughter'
+  keq           = 50.0
+/
+
+&AqueousKinetics
+  name          = 'tritium_decay'
+  label         = 'default'
+  type          = 'tst'
+  rate25C       =  0.05626194647
+  dependence    = 'Tritium' 1.0
+/

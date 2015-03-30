@@ -24,7 +24,7 @@
           <Parameter name="Preconditioning Strategy" type="string" value="Diffusion Operator"/>
         </ParameterList>
         <ParameterList name="Transport Process Kernel">
-          <Parameter name="Transport Integration Algorithm" type="string" value="Explicit First-Order"/>
+          <Parameter name="Transport Integration Algorithm" type="string" value="Explicit Second-Order"/>
         </ParameterList>
         <ParameterList name="Steady-State Implicit Time Integration">
           <Parameter name="steady max iterations" type="int" value="15"/>
@@ -100,7 +100,7 @@
       <ParameterList name="Mineralogy">
 	<ParameterList name="Calcite">
 	  <Parameter name="Volume Fraction" type="double" value="1.0e-5"/>
-	  <Parameter name="Specific Surface Area" type="double" value="100.0"/>	  
+	  <Parameter name="Specific Surface Area" type="double" value="110.0"/>	  
 	</ParameterList>
       </ParameterList>
     </ParameterList>

@@ -34,9 +34,6 @@
 !
 ! Parameters:
 !
-      implicit integer (i-n)
-      implicit double precision (a-h,o-z)
-
       integer,parameter :: MAXNST = 4
       integer,parameter :: MAXROT = MAXNST + 1
       real*8,parameter  :: UNEST=-1.0d20
@@ -77,6 +74,7 @@
       common /pgenerl1/ nsim,nxy,nxyz,do_cond,ismooth
       common /pgenerl2/ nd,itrans,ntr,idbg,ldbg,icollvm
       common /pgenerl3/ nvaril,ktype,colocorr,test,ltail,utail
+      common /pgenerl4/ tmin,tmax
       common /pgenerr/  ltpar,utpar,zmin,zmax,varred
 
       common /psearch1/ radius,radsqd,sang1,sang2,sang3,sanis1,sanis2
@@ -97,3 +95,12 @@
       common /pidxcol2/ isvr,iswt
 
       common /pflname/ lvmfl, datafl, smthfl, transfl
+
+      save /piaco/,/pgenerl1/,/pgenerl2/,/pgenerl3/,/pgenerl4/,/pgenerr/ 
+      save /psearch1/,/psearch2/,/psearch3/
+      save /pcova3d1/,/pcova3d2/
+      save /pclooku/ 
+      save /pkrigev/ 
+      save /pMAXMAX1/,/pMAXMAX2/
+      save /pidxcol1/,/pidxcol2/
+      save /pflname/

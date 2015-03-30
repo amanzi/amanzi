@@ -60,6 +60,7 @@ else(ALQUIMIA_LIBRARIES AND ALQUIMIA_INCLUDE_DIRS)
     set( ALQUIMIA_C_TARGET alquimia_c )
     set( ALQUIMIA_CUTILS_TARGET alquimia_cutils )
     set( ALQUIMIA_FORTRAN_TARGET alquimia_fortran )
+    set( ALQUIMIA_CRUNCH_TARGET "libcrunchchem.a" )
 
     find_library(_ALQUIMIA_C_LIBRARY
                  NAMES alquimia_c
@@ -73,6 +74,9 @@ else(ALQUIMIA_LIBRARIES AND ALQUIMIA_INCLUDE_DIRS)
                  NAMES alquimia_fortran
                  PATHS ${ALQUIMIA_LIBRARY_DIR})
 
+    find_library(_ALQUIMIA_CRUNCH_LIBRARY
+                 NAMES "libcrunchchem.a"
+                 PATHS $ENV{CRUNCH_DIR})
 
     if ( _ALQUIMIA_C_LIBRARY )
       add_imported_library(${ALQUIMIA_C_TARGET} 
@@ -93,6 +97,13 @@ else(ALQUIMIA_LIBRARIES AND ALQUIMIA_INCLUDE_DIRS)
 	                     LOCATION ${_ALQUIMIA_FORTRAN_LIBRARY}
                              LINK_LANGUAGES "Fortran")
       set(ALQUIMIA_FORTRAN_LIBRARY ${ALQUIMIA_FORTRAN_TARGET})
+    endif()
+
+    if ( _ALQUIMIA_CRUNCH_LIBRARY )
+        add_imported_library(${ALQUIMIA_CRUNCH_TARGET}
+	                     LOCATION ${_ALQUIMIA_CRUNCH_LIBRARY}
+                             LINK_LANGUAGES "Fortran")
+      set(ALQUIMIA_CRUNCH_LIBRARY ${ALQUIMIA_CRUNCH_TARGET})
     endif()    
     
     # Define the LIBRARIES and INCLUDE_DIRS
@@ -100,7 +111,8 @@ else(ALQUIMIA_LIBRARIES AND ALQUIMIA_INCLUDE_DIRS)
     set(ALQUIMIA_LIBRARIES    
       ${ALQUIMIA_C_LIBRARY} 
       ${ALQUIMIA_CUTILS_LIBRARY} 
-      ${ALQUIMIA_FORTRAN_LIBRARY} )
+      ${ALQUIMIA_FORTRAN_LIBRARY}
+      ${ALQUIMIA_CRUNCH_LIBRARY} )
 
 endif(ALQUIMIA_LIBRARIES AND ALQUIMIA_INCLUDE_DIRS )    
 

@@ -31,17 +31,20 @@ def run_amanzi_chem(xml_input_file, run_path=None, chemfiles=None, directory=Non
            shutil.copyfile(chemfile, new_chemfile)
 
     # change into run directory
-    os.chdir(run_directory)
+    if run_path[0:7] == 'struct_':
+       pass
+    else:  
+       os.chdir(run_directory)
     
     # ensure that Amanzi's executable exists
     try:
         path = os.path.join(os.environ['AMANZI_INSTALL_DIR'],'bin')
     except KeyError:
-        raise RunTimeError("Missing Amanzi installation, please set the AMANZI_INSTALL_DIR environmental variable.")
+        raise RuntimeError("Missing Amanzi installation, please set the AMANZI_INSTALL_DIR environmental variable.")
     executable = os.path.join(path, "amanzi")
 
     if not os.path.isfile(executable):
-        raise RunTimeError("Missing Amanzi installation, please build and install Amanzi.")
+        raise RuntimeError("Missing Amanzi installation, please build and install Amanzi.")
 
     try:
         stdout_file = open("stdout.out", "w")

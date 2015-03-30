@@ -1592,11 +1592,42 @@ namespace Amanzi {
       }
     }
 
+    void convert_PermeabilityGSLib(const ParameterList& fPLin,
+				   ParameterList&       fPLout)
+    {
+      fPLout.set<std::string>("distribution_type","gslib");
+      Array<std::string> nullList, reqP;
+      const std::string param_file_name="GSLib Parameter File";
+      const std::string data_file_name="GSLib Data File"; reqP.push_back(data_file_name);
+      const std::string value_name="Value"; reqP.push_back(value_name);
+      const std::string std_name="Std";
+      PLoptions opt(fPLin,nullList,reqP,false,false);
+
+      fPLout.set<std::string>("gslib_data_file",fPLin.get<std::string>(data_file_name));
+
+      fPLout.set<double>("val",fPLin.get<double>(value_name) * 1.01325e15); // convert from m^2 to mDa
+      const Array<std::string>& optP = opt.OptParms();
+      for (int i=0; i<optP.size(); ++i) {
+	if (optP[i] == param_file_name) {
+	  fPLout.set<std::string>("gslib_param_file",fPLin.get<std::string>(param_file_name));
+	}
+	else if (optP[i] == std_name) {
+	  fPLout.set<double>("std",fPLin.get<double>(std_name) * 1.01325e15); // convert from m^2 to mDa
+	}
+	else {
+          std::string str = "Unrecognized \"Permeability: GSLib\" option";
+          std::cerr << fPLin << std::endl;
+          BoxLib::Abort(str.c_str());
+	}
+      }
+    }
+
     void convert_PermeabilityAnisotropic(const ParameterList& fPLin,
                                          ParameterList&       fPLout,
                                          double               scale)
     {
       /* Handle isotropic and anisotropic permeabilities here */
+      fPLout.set<std::string>("distribution_type","uniform");
       Array<std::string> nullList, reqP;
       const std::string vertical_str = (BL_SPACEDIM==3 ? "z" : "y");
       const std::string horizontal_str = "x";
@@ -1859,6 +1890,7 @@ namespace Amanzi {
       const std::string perm_file_str = "Intrinsic Permeability: Input File";
       const std::string perm_uniform_str = "Intrinsic Permeability: Uniform";
       const std::string perm_anisotropic_uniform_str = "Intrinsic Permeability: Anisotropic Uniform";
+      const std::string perm_gslib_str = "Intrinsic Permeability: GSLib";
       const std::string tortuosity_str = "Tortuosity: Uniform";
       const std::string dispersivity_str = "Dispersion Tensor: Uniform Isotropic";
       const std::string specific_storage_uniform_str = "Specific Storage: Uniform";
@@ -1919,18 +1951,24 @@ namespace Amanzi {
                 rsublist.set("porosity",psublist);
                 mtest["Porosity"] = true;
               }
-              else if (rlabel==perm_uniform_str || rlabel==perm_anisotropic_uniform_str) {
+              else if (rlabel==perm_uniform_str
+		       || rlabel==perm_anisotropic_uniform_str
+		       || rlabel==perm_gslib_str) {
                 if (mtest["Intrinsic_Permeability"]) {
                   std::string str = "More than one of: (\""+perm_uniform_str
                     +"\", \""+perm_anisotropic_uniform_str
+                    +"\", \""+perm_gslib_str
                     +"\", \""+hydraulic_conductivity_uniform_str
                     +"\") specified for material \""+label+"\"";
                   BoxLib::Abort(str.c_str());
                 }
                 ParameterList psublist;
-                convert_PermeabilityAnisotropic(rsslist,psublist,1.0);
-                rsublist.set("permeability",psublist);
-                rsublist.set("permeability_dist","uniform");
+		if (rlabel == perm_gslib_str) {
+                  convert_PermeabilityGSLib(rsslist,psublist);
+		} else {
+		  convert_PermeabilityAnisotropic(rsslist,psublist,1.0);
+		}
+		rsublist.set("permeability",psublist);
                 mtest["Intrinsic_Permeability"] = true;
               }
               else if (rlabel==hydraulic_conductivity_uniform_str) {

@@ -35,6 +35,25 @@ def GetXY_Amanzi(path,root,time,comp):
     
     return (x_amanzi_alquimia, c_amanzi_alquimia)
 
+def GetXY_AmanziS(path,root,time,comp):
+    try:
+        import fsnapshot
+        fsnok = True
+    except:
+        fsnok = False
+
+    plotfile = os.path.join(path,root)
+    if os.path.isdir(plotfile) & fsnok:
+        (nx, ny, nz) = fsnapshot.fplotfile_get_size(plotfile)
+        x = np.zeros( (nx), dtype=np.float64)
+        y = np.zeros( (nx), dtype=np.float64)
+        (y, x, npts, err) = fsnapshot.fplotfile_get_data_1d(plotfile, comp, y, x)
+    else:
+        x = np.zeros( (0), dtype=np.float64)
+        y = np.zeros( (0), dtype=np.float64)
+    
+    return (x, y)
+
 # ----------- PFLOTRAN STANDALONE ------------------------------------------------------------
 
 def GetXY_PFloTran(path,root,time,comp):
@@ -96,11 +115,10 @@ if __name__ == "__main__":
     comp = 'Total_'+root.title()+' [M]'
 
     x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,comp)    
-
     
     # CrunchFlow: hardwired for calcite_1d_CF.in: time and comp
     times_CF = 'totcon5.out'
-    comp = 3
+    comp = 0
     ignore = 4
 
     # crunchflow GIMRT
@@ -113,9 +131,9 @@ if __name__ == "__main__":
     
     CWD = os.getcwd()
     local_path = "" 
-        
+
+# run+read Amanzi native chemistry simulation
     try:
-        # hardwired for 1d-tracer: Tracer conc, last time = '71'
         time = '71'
         comp = 'total_component_concentration.cell.Tracer' # conc'
 
@@ -123,36 +141,111 @@ if __name__ == "__main__":
         input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "amanzi-output"
         run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi)
+
         x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+        native = len(x_amanzi_native)
 
-        # Amanzi-Alquimia
-        # input_filename = os.path.join("amanzi-u-1d-"+root+"-alq.xml")
-        # path_to_amanzi = "amanzi-alquimia-output"
-        # run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+".in",root+".dat"])
-        # x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+    except:
+        native = len(x_amanzi_native)
 
-        # subplots
-        fig, ax = plt.subplots()
+# run+read Amanzi-Alquimia-PFloTran simulation
+    try:
+        comp = 'total_component_concentration.cell.Tracer conc'
+        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-pflo.xml")
+        path_to_amanzi = "amanzi-alquimia-output"
+        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+".in",root+".dat"])
+        x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+        alq = len(x_amanzi_alquimia)
 
-        # lines on axes
-        ax.plot(x_amanzi_native, c_amanzi_native,'r-',label='Amanzi',linewidth=2)
-        ax.plot(x_pflotran, c_pflotran,'b-',label='PFloTran',linewidth=2)
-        ax.plot(x_crunchflow, c_crunchflow,'g-',label='CrunchFlow GIMRT',linewidth=2)
-        ax.plot(x_crunchOS3D, c_crunchOS3D,'g--',label='CrunchFlow OS3D',linewidth=2) 
+    except:
+        alq = 0
 
-        # axes
-        ax.set_xlabel("Distance (m)",fontsize=20)
-        ax.set_ylabel("Total "+root.title()+" concentration [mol/L]",fontsize=20)
+# run+read Amanzi-Alquimia-CrunchFlow simulation
+    try:
+        comp = 'total_component_concentration.cell.Tracer conc'
+        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
+        path_to_amanzi = "amanzi-alquimia-crunch-output"
+        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+"-crunch.in",root+".dbs"])
+        x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+        alq_crunch = len(x_amanzi_alquimia_crunch)
 
-        # plot adjustments
-        plt.subplots_adjust(left=0.20,bottom=0.15,right=0.95,top=0.90)
-        plt.legend(loc='upper right',fontsize=13)
-        plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
-        plt.tick_params(axis='both', which='major', labelsize=20)
+    except:
+        alq_crunch = 0
 
-        #pyplot.show()
-        # plt.savefig(root+"_1d.png",format="png")
-        #plt.close()
 
-    finally:
-        pass 
+    # amanziS data
+    
+    # +pflotran
+    try:
+        input_filename = os.path.join("amanzi-s-1d-tracer-alq-pflo.xml")
+        path_to_amanziS = "struct_amanzi-output-pflo"
+        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
+        root_amanziS = "plt00501"
+        compS = "Tracer_Aqueous_Concentration"
+        x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        struct = len(x_amanziS)
+    except:
+        struct = 0
+
+    # +crunchflow
+    try:
+        # import pdb; pdb.set_trace()
+        input_filename = os.path.join("amanzi-s-1d-tracer-alq-crunch.xml")
+        path_to_amanziS = "struct_amanzi-output-crunch"
+        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
+        root_amanziS = "plt00501"
+        compS = "Tracer_Aqueous_Concentration"
+        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        struct_c = len(x_amanziS_crunch)
+    except:
+        struct_c = 0
+
+# plotting --------------------------------------------------------
+
+# subplots
+    fig, ax = plt.subplots()
+
+# pflotran
+    ax.plot(x_pflotran, c_pflotran,'m-',label='PFloTran',linewidth=2)
+
+# crunchflow
+    ax.plot(x_crunchflow, c_crunchflow,'m--',label='CrunchFlow GIMRT',linewidth=2)
+    ax.plot(x_crunchOS3D, c_crunchOS3D,'m*',label='CrunchFlow OS3D',linewidth=2) 
+
+# unstruct amanzi native chem
+    if native>0:
+        ax.plot(x_amanzi_native, c_amanzi_native,'rx',label='Amanzi',linewidth=2)
+
+# unstruct amanzi alquimia + pflotran
+    if alq>0:
+        ax.plot(x_amanzi_alquimia, c_amanzi_alquimia,'r-',label='Amanzi-Alq(PFT)',linewidth=2)
+
+# unstruct amanzi alquimia + pflotran
+    if alq_crunch>0:
+        ax.plot(x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch,'r*',label='Amanzi-Alq(CF)',linewidth=2)
+
+# struct amanzi alquimia + pflotran
+    if (struct>0):
+        sam = ax.plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alq(PFT)',linewidth=2)     
+
+# struct amanzi alquimia + crunchflow
+    if (struct_c>0):
+        samc = ax.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alq(CF)',linewidth=2)     
+
+# figure look
+    # axes
+    ax.set_xlabel("Distance (m)",fontsize=20)
+    ax.set_ylabel("Total "+root.title()+" concentration [mol/L]",fontsize=20)
+
+    # plot adjustments
+    plt.subplots_adjust(left=0.20,bottom=0.15,right=0.95,top=0.90)
+    plt.legend(loc='upper right',fontsize=13)
+    plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
+    plt.tick_params(axis='both', which='major', labelsize=20)
+
+    #pyplot.show()
+    plt.savefig(root+"_1d.png",format="png")
+    plt.close()
+
+#    finally:
+#        pass 

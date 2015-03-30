@@ -1111,7 +1111,8 @@ PorousMedia::initData ()
           FArrayBox& aux = get_new_data(Aux_Chem_Type)[mfi];
 
           AmanziChemHelper_Structured* achp = dynamic_cast<AmanziChemHelper_Structured*>(chemistry_helper);
-          achp->Initialize(sat,0,press,0,phi,0,vol,0,sat,ncomps,fct,0,aux,density[0],298,box);
+          //achp->Initialize(sat,0,press,0,phi,0,vol,0,sat,ncomps,fct,0,aux,density[0],298,box);
+          achp->Initialize(sat,0,press,0,phi,0,vol,0,sat,ncomps,fct,0,aux,density[0],25,box);
           sat.mult(density[0],0,1);
         }
       }
@@ -3637,8 +3638,10 @@ PorousMedia::advance_chemistry (Real time,
       FArrayBox& fct_fab = fcnCntTemp[mfi];
       FArrayBox& aux_fab = auxTemp[mfi];
 
+      //chemistry_helper->Advance(sat_fab,0,press_fab,0,phi_fab,0,vol_fab,0,sat_fab,ncomps,
+      //                          fct_fab,0,aux_fab,density[0],298,box,dt_sub_chem);
       chemistry_helper->Advance(sat_fab,0,press_fab,0,phi_fab,0,vol_fab,0,sat_fab,ncomps,
-                                fct_fab,0,aux_fab,density[0],298,box,dt_sub_chem);
+                                fct_fab,0,aux_fab,density[0],25,box,dt_sub_chem);
 
       sat_fab.mult(density[0],0,1);
     }
@@ -5069,6 +5072,7 @@ PorousMedia::init_rock_properties ()
 
   MultiFab kappatmp(grids,BL_SPACEDIM,nGrowHYP);
   bool ret = rock_manager->GetProperty(cur_time,level,kappatmp,"permeability",0,kappatmp.nGrow());
+
   if (!ret) BoxLib::Abort("Failed to build permeability");
   for (MFIter mfi(kappatmp); mfi.isValid(); ++mfi) {
     const Box& cbox = mfi.validbox();
@@ -5089,7 +5093,8 @@ PorousMedia::init_rock_properties ()
   }
   kappa->mult(1.0/BL_SPACEDIM);
 
-  rock_manager->Porosity(cur_time,level,*rock_phi,0,rock_phi->nGrow());
+  bool ret_phi = rock_manager->GetProperty(cur_time,level,*rock_phi,"porosity",0,rock_phi->nGrow());
+  if (!ret_phi) BoxLib::Abort("Failed to build porosity");
 
   if ( (model != PM_SINGLE_PHASE)
        && (model != PM_SINGLE_PHASE_SOLID)
@@ -7263,11 +7268,16 @@ PorousMedia::derive_Intrinsic_Permeability(Real      time,
                                            int       dir)
 {
   MultiFab kappatmp(grids,BL_SPACEDIM,0);
+
+  kappatmp.setVal(0);
+
   bool ret = rock_manager->GetProperty(state[State_Type].curTime(),level,kappatmp,
                                   "permeability",0,mf.nGrow());
   if (!ret) BoxLib::Abort("Failed to build permeability");
+
   MultiFab::Copy(mf,kappatmp,dir,dcomp,1,0);
   // Return values in mks
+
   mf.mult(1/BL_ONEATM,dcomp,1,0);
 }
 
