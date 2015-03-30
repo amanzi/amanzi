@@ -33,9 +33,17 @@ void TimeStepManager::RegisterTimeEvent(double time, bool phys) {
   timeEvents_.push_back(TimeEvent(time, phys));
 }
 
-  double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
+double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
   double next_T_all_events(1e99);
   bool physical = true;
+
+
+  // if (vo_ != Teuchos::null){
+  //   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+  //     Teuchos::OSTab tab = vo_->getOSTab();
+  //     *vo_->os() <<"PK proposed dT: "<<dT<<std::endl;
+  //   }
+  // }
 
   if (after_failure) dt_stable_storage = -1.;
   

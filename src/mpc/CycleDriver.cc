@@ -532,6 +532,11 @@ double CycleDriver::get_dt( bool after_failure) {
     Exceptions::amanzi_throw(message);
   }
 
+  if (dt/S_->time() < 1e-14){
+    Errors::Message message("CycleDriver: error, timestep too small with respect to current time");
+    Exceptions::amanzi_throw(message);
+  }
+
   // cap the max step size
   if (dt > max_dt_) {
     dt = max_dt_;
@@ -755,7 +760,7 @@ void CycleDriver::Go() {
 
   // visualization at IC
   //Amanzi::timer_manager.start("I/O");
-  pk_->CalculateDiagnostics();
+  //pk_->CalculateDiagnostics();
   Visualize();
   WriteCheckpoint(dt);
   //Amanzi::timer_manager.stop("I/O");
@@ -876,6 +881,9 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   pk_->set_dt(tp_dt_[time_pr_id]);
 
   S_old_ = Teuchos::null;
+
+  WriteCheckpoint(tp_dt_[time_pr_id], true);
+  Visualize(true);
 
   // WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), tp_dt_[time_pr_id]);
   // exit(0);

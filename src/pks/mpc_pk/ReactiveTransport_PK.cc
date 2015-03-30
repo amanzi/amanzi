@@ -107,6 +107,7 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new) {
     Errors::Message message("MPC: Transport PK returned an unexpected error.");
     Exceptions::amanzi_throw(message);
   }
+  //std::cout<<*total_component_concentration_stor;
 
 // Second, we do a chemistry step.
   try {
@@ -118,6 +119,7 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new) {
     *S_->GetFieldData("total_component_concentration", "state")->ViewComponent("cell", true)
                 = *chemistry_pk_->get_total_component_concentration();
     
+    //std::cout<<*S_->GetFieldData("total_component_concentration", "state")->ViewComponent("cell", true);
   }
   catch (const Errors::Message& chem_error) {
     // If the chemistry step failed, we have to try again.
