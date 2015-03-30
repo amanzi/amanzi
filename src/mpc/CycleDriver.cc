@@ -532,9 +532,11 @@ double CycleDriver::get_dt( bool after_failure) {
     Exceptions::amanzi_throw(message);
   }
 
-  if (dt/S_->time() < 1e-14){
-    Errors::Message message("CycleDriver: error, timestep too small with respect to current time");
-    Exceptions::amanzi_throw(message);
+  if (S_->time() > 0){
+    if (dt/S_->time() < 1e-14){
+      Errors::Message message("CycleDriver: error, timestep too small with respect to current time");
+      Exceptions::amanzi_throw(message);
+    }
   }
 
   // cap the max step size
