@@ -8,7 +8,7 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 
-  FieldEvaluator for internal energy.
+  FieldEvaluator for the internal energy.
 
   Wrapping this conserved quantity as a field evaluator makes it easier to take
   derivatives, keep updated, and the like.  The equation for this is simply:
@@ -31,18 +31,20 @@ namespace Energy {
 
 class TwoPhaseEnergyEvaluator : public SecondaryVariableFieldEvaluator {
  public:
-  explicit TwoPhaseEnergyEvaluator(Teuchos::ParameterList& energy_plist);
+  explicit TwoPhaseEnergyEvaluator(Teuchos::ParameterList& ee_plist);
   TwoPhaseEnergyEvaluator(const TwoPhaseEnergyEvaluator& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
   // Required methods from SecondaryVariableFieldEvaluator
-  virtual void EvaluateField_(
-      const Teuchos::Ptr<State>& S,
-      const Teuchos::Ptr<CompositeVector>& result);
-  virtual void EvaluateFieldPartialDerivative_(
-      const Teuchos::Ptr<State>& S,
-      Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
+  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
+                              const Teuchos::Ptr<CompositeVector>& result);
+  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+                                               Key wrt_key,
+                                               const Teuchos::Ptr<CompositeVector>& result);
+
+ private:
+  bool vapor_diffusion_;
 };
 
 }  // namespace Energy

@@ -238,6 +238,7 @@ void Darcy_PK::Initialize()
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap));
   
   // Initialize boundary condtions. 
+  flux_units_ = 1.0;
   ProcessShiftWaterTableList(*dp_list_);
 
   bc_pressure->Compute(t_new);

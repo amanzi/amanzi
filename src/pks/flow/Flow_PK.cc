@@ -92,10 +92,11 @@ void Flow_PK::Initialize()
   mu_ = *S_->GetScalarData("fluid_viscosity");
 
   // -- molar rescaling of some quantatities.
-  // molar_rho_ = rho_ / CommonDefs::MOLAR_MASS_H2O;
-  // molar_gravity_.set(gravity_ * CommonDefs::MOLAR_MASS_H2O);
-  molar_rho_ = rho_;
-  molar_gravity_.set(gravity_);
+  molar_rho_ = rho_ / CommonDefs::MOLAR_MASS_H2O;
+  molar_gravity_.set(gravity_ * CommonDefs::MOLAR_MASS_H2O);
+  // molar_rho_ = rho_;
+  // molar_gravity_.set(gravity_);
+  flux_units_ = 0.0;  // scaling from kg to moles
 
   // parallel execution data
   MyPID = 0;
@@ -328,7 +329,7 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
   for (bc = bc_flux->begin(); bc != bc_flux->end(); ++bc) {
     int f = bc->first;
     bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-    bc_value[f] = bc->second * rainfall_factor[f];
+    bc_value[f] = bc->second * rainfall_factor[f] * flux_units_;
   }
 
   // Seepage face BC is implemented for p-lambda discretization only.

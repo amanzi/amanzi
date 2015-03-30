@@ -154,20 +154,6 @@ void Energy_PK::InitializeFields_()
 
 
 /* ******************************************************************
-* Transfer part of the internal data needed by energy PK in the next
-* time step.
-****************************************************************** */
-void Energy_PK::CommitStep(double t_old, double t_new)
-{
-  // energy -> prev_prev_energy
-  S_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  const Epetra_MultiVector& e = *S_->GetFieldData(energy_key_)->ViewComponent("cell");
-  Epetra_MultiVector& e_prev = *S_->GetFieldData(prev_energy_key_, passwd_)->ViewComponent("cell");
-  e_prev = e;
-}
-
-
-/* ******************************************************************
 * TBW.
 ****************************************************************** */
 bool Energy_PK::UpdateConductivityData(const Teuchos::Ptr<State>& S)

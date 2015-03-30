@@ -128,7 +128,7 @@ TreeOperator::SymbolicAssembleMatrix() {
   }
 
   // create the supermap and graph
-  smap_ = createSuperMap(an_op->DomainMap(), schema, n_blocks);
+  smap_ = CreateSuperMap(an_op->DomainMap(), schema, n_blocks);
   int row_size = MaxRowSize(*an_op->DomainMap().Mesh(), schema, n_blocks);
   Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
           smap_->GhostedMap(), smap_->GhostedMap(), row_size));

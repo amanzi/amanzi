@@ -770,8 +770,6 @@ TEST(OPERATOR_DIFFUSION_SECOND_ORDER) {
 }
 
 
-
-
 /* *****************************************************************
 * Exactness test for mixed diffusion solver.
 ***************************************************************** */
@@ -803,7 +801,7 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  //RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 1, gm);
+  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 1, gm);
   RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
   /* modify diffusion coefficient */

@@ -18,29 +18,25 @@ include(TestManager)
 # through these variables.
 project(ENERGY)
 
-# Amanzi include directories
-include_directories(${DBC_SOURCE_DIR})
-include_directories(${ATK_SOURCE_DIR})
-include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
-include_directories(${GEOMETRY_SOURCE_DIR})
-include_directories(${DATA_STRUCTURES_SOURCE_DIR})
-include_directories(${STATE_SOURCE_DIR})
-include_directories(${WHETSTONE_SOURCE_DIR})
-include_directories(${SOLVERS_SOURCE_DIR})
-include_directories(${TIME_INTEGRATION_SOURCE_DIR})
-include_directories(${FUNCS_SOURCE_DIR})
-include_directories(${MFUNCS_SOURCE_DIR})
-include_directories(${OUTPUT_SOURCE_DIR})
-include_directories(${DBG_SOURCE_DIR})
-include_directories(${OPERATORS_SOURCE_DIR})
-include_directories(${EOS_SOURCE_DIR})
-include_directories(${PKS_SOURCE_DIR})
-
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
-include_directories(${ASCEMIO_INCLUDE_DIR})
+# Amanzi include directories
+include_directories(${ATK_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
+include_directories(${DBC_SOURCE_DIR})
+include_directories(${EOS_SOURCE_DIR})
+include_directories(${FUNCS_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
+include_directories(${MFUNCS_SOURCE_DIR})
+include_directories(${OPERATORS_SOURCE_DIR})
+include_directories(${OUTPUT_SOURCE_DIR})
+include_directories(${PKS_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR})
+include_directories(${SOLVERS_SOURCE_DIR})
+include_directories(${TIME_INTEGRATION_SOURCE_DIR})
+include_directories(${WHETSTONE_SOURCE_DIR})
 
 #
 # Energy registrations
@@ -174,6 +170,12 @@ if (BUILD_TESTS)
     add_amanzi_test(energy_newton_picard energy_newton_picard
                     KIND int
                     SOURCE test/Main.cc test/energy_newton_picard.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: 3
+    add_amanzi_test(energy_comvergence energy_convergence
+                    KIND int
+                    SOURCE test/Main.cc test/energy_convergence.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

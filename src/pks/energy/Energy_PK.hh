@@ -13,10 +13,12 @@
 #ifndef AMANZI_ENERGY_PK_HH_
 #define AMANZI_ENERGY_PK_HH_
 
+// TPLs
 #include "Epetra_Vector.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Teuchos_RCP.hpp"
 
+// Amanzi
 #include "CompositeVector.hh"
 #include "FnTimeIntegratorPK.hh"
 #include "Operator.hh"
@@ -29,6 +31,7 @@
 #include "TreeVector.hh"
 #include "VerboseObject.hh"
 
+// Energy
 #include "EnergyBoundaryFunction.hh"
 
 namespace Amanzi {
@@ -39,33 +42,44 @@ class Energy_PK : public FnTimeIntegratorPK {
   Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist, Teuchos::RCP<State> S);
   virtual ~Energy_PK() {};
 
-  // main PK methods
+  // methods required by PK interface
   virtual void Setup();
   virtual void Initialize();
-
-  virtual bool AdvanceStep(double t_old, double t_new) { return true; }
-  virtual void CommitStep(double t_old, double t_new);
-  void CalculateDiagnostics() {};
-
-  double get_dt() { return 0.0; }
-  void set_dt(double dt) {}
-  void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
-  virtual std::string name() { return "energy"; }
+  virtual std::string name() { return passwd_; }
 
   // methods required for time integration
+  // -- management of the preconditioner
   virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> hu) {
     op_preconditioner_->ApplyInverse(*u->Data(), *hu->Data());
   }
+
+  // -- check the admissibility of a solution
+  //    override with the actual admissibility check
   bool IsAdmissible(Teuchos::RCP<const TreeVector> up) {
     return true;
   }
+
+  // -- possibly modifies the predictor that is going to be used as a
+  //    starting value for the nonlinear solve in the time integrator,
+  //    the time integrator will pass the predictor that is computed
+  //    using extrapolation and the time step that is used to compute
+  //    this predictor this function returns true if the predictor was
+  //    modified, false if not
   bool ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) {
     return false;
   }
+
+  // -- possibly modifies the correction, after the nonlinear solver (NKA)
+  //    has computed it, will return true if it did change the correction,
+  //    so that the nonlinear iteration can store the modified correction
+  //    and pass it to NKA so that the NKA space can be updated
   AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
       ModifyCorrection(double dt, Teuchos::RCP<const TreeVector> res,
                        Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<TreeVector> du) {};
+
+  // -- experimental approach -- calling this indicates that the time
+  //    integration scheme is changing the value of the solution in state.
   void ChangedSolution() {};
 
   // other methods
@@ -73,7 +87,7 @@ class Energy_PK : public FnTimeIntegratorPK {
   void UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u);
   void ComputeBCs(const CompositeVector& u);
 
-  // access methods for unit tests
+  // access for unit tests
   std::vector<WhetStone::Tensor>& get_K() { return K; } 
   Teuchos::RCP<PrimaryVariableFieldEvaluator>& temperature_eval() { return temperature_eval_; }
 

@@ -8,14 +8,15 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 
-  FieldEvaluator for water content.
+  FieldEvaluator for the total internal energy.
 
   Wrapping this conserved quantity as a field evaluator makes it easier to take
   derivatives, keep updated, and the like.  The equation for this is simply:
 
-    WC = phi * (s_liquid * n_liquid + omega_gas * s_gas * n_gas)
+    IE = phi * (s_liquid * n_liquid * u_liquid + s_gas * n_gas * u_gas)
+       + (1 - phi) * rho_rock * u_rock
 
-  This is simply the conserved quantity in Richards equation.
+  This is simply the conserved quantity in the energy equation.
 */
 
 #include "TwoPhaseEnergyEvaluator.hh"
@@ -29,6 +30,7 @@ namespace Energy {
 TwoPhaseEnergyEvaluator::TwoPhaseEnergyEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   my_key_ = plist_.get<std::string>("energy key", "energy");
+  vapor_diffusion_ = plist_.get<bool>("vapor diffusion", true);
 
   dependencies_.insert(std::string("porosity"));
 
@@ -36,9 +38,11 @@ TwoPhaseEnergyEvaluator::TwoPhaseEnergyEvaluator(Teuchos::ParameterList& plist) 
   dependencies_.insert(std::string("molar_density_liquid"));
   dependencies_.insert(std::string("internal_energy_liquid"));
 
-  // dependencies_.insert(std::string("saturation_gas"));
-  dependencies_.insert(std::string("molar_density_gas"));
-  dependencies_.insert(std::string("internal_energy_gas"));
+  if (vapor_diffusion_) {
+    // dependencies_.insert(std::string("saturation_gas"));
+    dependencies_.insert(std::string("molar_density_gas"));
+    dependencies_.insert(std::string("internal_energy_gas"));
+  }
 
   dependencies_.insert(std::string("internal_energy_rock"));
   dependencies_.insert(std::string("density_rock"));
@@ -68,27 +72,33 @@ void TwoPhaseEnergyEvaluator::EvaluateField_(
     const Teuchos::Ptr<State>& S,
     const Teuchos::Ptr<CompositeVector>& result) 
 {
-  const Epetra_MultiVector& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell",false);
-  const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell",false);
-  const Epetra_MultiVector& u_l = *S->GetFieldData("internal_energy_liquid")->ViewComponent("cell",false);
+  const Epetra_MultiVector& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
+  const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell", false);
+  const Epetra_MultiVector& u_l = *S->GetFieldData("internal_energy_liquid")->ViewComponent("cell", false);
 
-  const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell",false);
-  const Epetra_MultiVector& u_g = *S->GetFieldData("internal_energy_gas")->ViewComponent("cell",false);
+  Teuchos::RCP<const Epetra_MultiVector> n_g;
+  Teuchos::RCP<const Epetra_MultiVector> u_g;
+  if (vapor_diffusion_) {
+    n_g = S->GetFieldData("molar_density_gas")->ViewComponent("cell", false);
+    u_g = S->GetFieldData("internal_energy_gas")->ViewComponent("cell", false);
+  } 
 
-  const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell",false);
-  const Epetra_MultiVector& u_rock = *S->GetFieldData("internal_energy_rock")->ViewComponent("cell",false);
-  const Epetra_MultiVector& rho_rock = *S->GetFieldData("density_rock")->ViewComponent("cell",false);
-  Epetra_MultiVector& result_v = *result->ViewComponent("cell",false);
+  const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell", false);
+  const Epetra_MultiVector& u_rock = *S->GetFieldData("internal_energy_rock")->ViewComponent("cell", false);
+  const Epetra_MultiVector& rho_rock = *S->GetFieldData("density_rock")->ViewComponent("cell", false);
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh();
 
+  Epetra_MultiVector& result_v = *result->ViewComponent("cell", false);
   int ncells = result->size("cell", false);
+
   for (int c = 0; c != ncells; ++c) {
-    double s_g = 1.0 - s_l[0][c];
-    result_v[0][c] = phi[0][c] * (
-        s_l[0][c] * n_l[0][c] * u_l[0][c]
-        + s_g * n_g[0][c] * u_g[0][c])
-        + (1.0 - phi[0][c]) * u_rock[0][c] * rho_rock[0][c];
+    result_v[0][c] = phi[0][c] * s_l[0][c] * n_l[0][c] * u_l[0][c]
+                   + (1.0 - phi[0][c]) * u_rock[0][c] * rho_rock[0][c];
+    if (vapor_diffusion_) {
+      double s_g = 1.0 - s_l[0][c];
+      result_v[0][c] += phi[0][c] * s_g * (*n_g)[0][c] * (*u_g)[0][c];
+    }
     result_v[0][c] *= mesh->cell_volume(c);
   }
 }
@@ -101,28 +111,35 @@ void TwoPhaseEnergyEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
-  const Epetra_MultiVector& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell",false);
-  const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell",false);
-  const Epetra_MultiVector& u_l = *S->GetFieldData("internal_energy_liquid")->ViewComponent("cell",false);
+  const Epetra_MultiVector& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
+  const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell", false);
+  const Epetra_MultiVector& u_l = *S->GetFieldData("internal_energy_liquid")->ViewComponent("cell", false);
 
-  const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell",false);
-  const Epetra_MultiVector& u_g = *S->GetFieldData("internal_energy_gas")->ViewComponent("cell",false);
+  Teuchos::RCP<const Epetra_MultiVector> n_g;
+  Teuchos::RCP<const Epetra_MultiVector> u_g;
+  if (vapor_diffusion_) {
+    n_g = S->GetFieldData("molar_density_gas")->ViewComponent("cell", false);
+    u_g = S->GetFieldData("internal_energy_gas")->ViewComponent("cell", false);
+  }
 
-  const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell",false);
-  const Epetra_MultiVector& u_rock = *S->GetFieldData("internal_energy_rock")->ViewComponent("cell",false);
-  const Epetra_MultiVector& rho_rock = *S->GetFieldData("density_rock")->ViewComponent("cell",false);
+  const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell", false);
+  const Epetra_MultiVector& u_rock = *S->GetFieldData("internal_energy_rock")->ViewComponent("cell", false);
+  const Epetra_MultiVector& rho_rock = *S->GetFieldData("density_rock")->ViewComponent("cell", false);
 
-  Epetra_MultiVector& result_v = *result->ViewComponent("cell",false);
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh();
 
+  Epetra_MultiVector& result_v = *result->ViewComponent("cell", false);
   int ncells = result->size("cell", false);
+
   if (wrt_key == "porosity") {
     for (int c = 0; c != ncells; ++c) {
-      double s_g = 1.0 - s_l[0][c];
       result_v[0][c] = s_l[0][c] * n_l[0][c] * u_l[0][c]
-                     + s_g       * n_g[0][c] * u_g[0][c]
                      - rho_rock[0][c] * u_rock[0][c];
+      if (vapor_diffusion_) {
+        double s_g = 1.0 - s_l[0][c];
+        result_v[0][c] += s_g * (*n_g)[0][c] * (*u_g)[0][c];
+      }
     }
-
   } else if (wrt_key == "saturation_liquid") {
     for (int c = 0; c != ncells; ++c) {
       result_v[0][c] = phi[0][c] * n_l[0][c] * u_l[0][c];
@@ -138,17 +155,17 @@ void TwoPhaseEnergyEvaluator::EvaluateFieldPartialDerivative_(
 
   } else if (wrt_key == "saturation_gas") {
     for (int c = 0; c != ncells; ++c) {
-      result_v[0][c] = phi[0][c] * n_g[0][c] * u_g[0][c];
+      result_v[0][c] = phi[0][c] * (*n_g)[0][c] * (*u_g)[0][c];
     }
   } else if (wrt_key == "molar_density_gas") {
     for (int c = 0; c != ncells; ++c) {
       double s_g = 1.0 - s_l[0][c];
-      result_v[0][c] = phi[0][c] * s_g * u_g[0][c];
+      result_v[0][c] = phi[0][c] * s_g * (*u_g)[0][c];
     }
   } else if (wrt_key == "internal_energy_gas") {
     for (int c = 0; c != ncells; ++c) {
       double s_g = 1.0 - s_l[0][c];
-      result_v[0][c] = phi[0][c] * s_g * n_g[0][c];
+      result_v[0][c] = phi[0][c] * s_g * (*n_g)[0][c];
     }
 
   } else if (wrt_key == "internal_energy_rock") {
@@ -163,8 +180,7 @@ void TwoPhaseEnergyEvaluator::EvaluateFieldPartialDerivative_(
     ASSERT(0);
   }
 
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh();
-
+  // add volume factor to the derivative
   for (int c = 0; c != ncells; ++c) {
     result_v[0][c] *= mesh->cell_volume(c);
   }

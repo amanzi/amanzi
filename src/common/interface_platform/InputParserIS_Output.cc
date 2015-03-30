@@ -209,6 +209,7 @@ Teuchos::ParameterList InputParserIS::CreateObservationDataList_(Teuchos::Parame
       } else {
         Exceptions::amanzi_throw(Errors::Message("The required parameter Observation Output Filename was not specified."));
       }
+      obs_list.set<int>("precision", olist.get<int>("precision", 16));
       // Iterate through the array
       for (Teuchos::ParameterList::ConstIterator i = olist.begin(); i != olist.end(); i++) {
         // If the current iteration node is a "tree"
