@@ -52,7 +52,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   if (MyPID == 0) std::cout << "Test: 2D steady-state elliptic solver, mixed discretization" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/operator_convergence.xml";
+  std::string xmlFileName = "test/operator_stability.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
 

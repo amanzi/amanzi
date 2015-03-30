@@ -1,17 +1,27 @@
-#include "TimeStepManager.hh"
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-#include <iostream>
+  Authors: Markus Berndt
+           Daniil Svyatskiy 
+*/
+
 #include <algorithm>
+#include <iostream>
+
+#include "TimeStepManager.hh"
 //#include "VerboseObject.hh"
 
 namespace Amanzi {
 
-TimeStepManager::TimeStepManager(){
+TimeStepManager::TimeStepManager() {
   dt_stable_storage = -1.;
   vo_ = Teuchos::null;
 }
 
-TimeStepManager::TimeStepManager(Teuchos::RCP<VerboseObject> verb_object){
+TimeStepManager::TimeStepManager(Teuchos::RCP<VerboseObject> verb_object) {
   dt_stable_storage = -1.;
   vo_ = verb_object;
 }
@@ -78,7 +88,7 @@ double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
       }
     }
     //next_T_all_events = std::min(next_T_all_events, next_T_this_event);
-    if (next_T_this_event < next_T_all_events){
+    if (next_T_this_event < next_T_all_events) {
       physical = i->isPhysical();
       next_T_all_events = next_T_this_event;
     }
@@ -88,19 +98,21 @@ double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
   double time_remaining(next_T_all_events - T);
   if (dT >= time_remaining) {
     if (!physical) dt_stable_storage = dT;
-    if (vo_ != Teuchos::null){
+    if (vo_ != Teuchos::null) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
 	Teuchos::OSTab tab = vo_->getOSTab();
-    	*vo_->os() <<"PK proposed dT: "<<dT<<". CycleDriver limits to "<<time_remaining<< std::endl;
+    	*vo_->os() << "PK proposed dT=" << dT 
+                   << " [sec]. CD limits it to " << time_remaining << std::endl;
       }
     }
     return time_remaining;
-  } else if ( dT > 0.75*time_remaining) {
+  } else if (dT > 0.75*time_remaining) {
     if (!physical) dt_stable_storage = dT;
-    if (vo_!=Teuchos::null){
+    if (vo_!=Teuchos::null) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
 	Teuchos::OSTab tab = vo_->getOSTab();
-	*vo_->os() <<"PK proposed dT "<<dT<<". CycleDriver limits to "<<0.5*time_remaining<< std::endl;
+	*vo_->os() << "PK proposed dT=" << dT
+                   << " [sec]. CD limits it to " << 0.5*time_remaining << std::endl;
       }
     }
     return 0.5*time_remaining;
@@ -136,4 +148,5 @@ void TimeStepManager::print(std::ostream& os, double start, double end) const {
     os << *i << " ";
   }
 }
-} // namespace Amanzi
+
+}  // namespace Amanzi

@@ -294,7 +294,7 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
           for (int m = 0; m < nfaces; m++) {
             double tmp = Wff(n, m) * kf[n];
             rowsum += tmp;
-            Acell(n, m) = tmp; ASSERT(std::abs(tmp) < 1.e20);
+            Acell(n, m) = tmp;
           }
 
           Acell(n, nfaces) = -rowsum;
