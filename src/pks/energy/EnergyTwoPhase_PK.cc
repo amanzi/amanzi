@@ -12,14 +12,16 @@
   Process kernel for thermal Richards' flow.
 */
 
+// Amanzi
+#include "eos_evaluator.hh"
 #include "OperatorDiffusionFactory.hh"
 
+// Energy
 #include "EnergyTwoPhase_PK.hh"
-#include "eos_evaluator.hh"
 #include "EnthalpyEvaluator.hh"
 #include "IEMEvaluator.hh"
-#include "TwoPhaseEnergyEvaluator.hh"
 #include "TCMEvaluator_TwoPhase.hh"
+#include "TwoPhaseEnergyEvaluator.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -64,7 +66,7 @@ void EnergyTwoPhase_PK::Setup()
   Teuchos::RCP<TwoPhaseEnergyEvaluator> ee = Teuchos::rcp(new TwoPhaseEnergyEvaluator(ee_list));
   S_->SetFieldEvaluator(energy_key_, ee);
 
-  // advection of enthalpy
+  // -- advection of enthalpy
   S_->RequireField(enthalpy_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
 
@@ -73,7 +75,7 @@ void EnergyTwoPhase_PK::Setup()
   Teuchos::RCP<EnthalpyEvaluator> enth = Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
   S_->SetFieldEvaluator(enthalpy_key_, enth);
 
-  // thermal conductivity
+  // -- thermal conductivity
   S_->RequireField(conductivity_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList tcm_plist = glist_->sublist("PKs")
@@ -163,7 +165,18 @@ void EnergyTwoPhase_PK::Initialize()
   ASSERT(ti_list_->isParameter("preconditioner"));
   preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
 
-  // output of initializa header
+  // initialize time integrator
+  std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
+  if (ti_method_name == "BDF1") {
+    Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
+
+    if (! bdf1_list.isSublist("VerboseObject"))
+        bdf1_list.sublist("VerboseObject") = ep_list_->sublist("VerboseObject");
+
+    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
+  }
+
+  // output of initialization header
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << std::endl << vo_->color("green")
@@ -197,11 +210,71 @@ void EnergyTwoPhase_PK::InitializeFields_()
 }
 
 
+/* ******************************************************************* 
+* Performs one time step of size dt_ either for steady-state or 
+* transient sumulation.
+******************************************************************* */
+bool EnergyTwoPhase_PK::AdvanceStep(double t_old, double t_new)
+{
+  dt_ = t_new - t_old;
+
+  // save a copy of pressure
+  CompositeVector temperature_copy(*S_->GetFieldData("temperature", passwd_));
+
+  // swap conserved field (i.e., energy) and save
+  S_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  const CompositeVector& e = *S_->GetFieldData(energy_key_);
+  CompositeVector& e_prev = *S_->GetFieldData(prev_energy_key_, passwd_);
+
+  CompositeVector e_prev_copy(e_prev);
+  e_prev = e;
+
+  // initialization
+  if (num_itrs_ == 0) {
+    Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln_));
+    udot->PutScalar(0.0);
+    bdf1_dae_->SetInitialState(t_old, soln_, udot);
+
+    UpdatePreconditioner(t_old, soln_, dt_);
+    num_itrs_++;
+  }
+
+  // trying to make a step
+  bool failed(false);
+  failed = bdf1_dae_->TimeStep(dt_, dt_next_, soln_);
+  if (failed) {
+    dt_ = dt_next_;
+
+    // restore the original primary solution, temperature
+    *S_->GetFieldData("temperature", passwd_) = temperature_copy;
+    temperature_eval_->SetFieldAsChanged(S_.ptr());
+
+    // restore the original fields
+    *S_->GetFieldData(prev_energy_key_, passwd_) = e_prev_copy;
+
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Step failed. Restored temperature, prev_energy." << std::endl;
+
+    return failed;
+  }
+
+  // commit solution (should we do it here ?)
+  bdf1_dae_->CommitSolution(dt_, soln_);
+  temperature_eval_->SetFieldAsChanged(S_.ptr());
+
+  num_itrs_++;
+  dt_ = dt_next_;
+  
+  return failed;
+}
+
+
 /* ******************************************************************
 * TBW 
 ****************************************************************** */
 void EnergyTwoPhase_PK::CommitStep(double t_old, double t_new)
 {
+  dt_ = dt_next_;
 }
 
 }  // namespace Energy

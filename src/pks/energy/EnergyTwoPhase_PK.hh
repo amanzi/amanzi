@@ -9,15 +9,19 @@
   Authors: Ethan Coon
            Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Process kernel for thermal Richards' flow.
+  Process kernel for the thermal Richards flow.
 */
 
 #ifndef AMANZI_ENERGY_TWOPHASE_PK_HH_
 #define AMANZI_ENERGY_TWOPHASE_PK_HH_
 
+// Amanzi
+#include "BDF1_TI.hh"
 #include "eos.hh"
 #include "IEM.hh"
 #include "PK_Factory.hh"
+
+// Energy
 #include "Energy_PK.hh"
 
 namespace Amanzi {
@@ -32,18 +36,31 @@ public:
                     const Teuchos::RCP<TreeVector>& soln);
   virtual ~EnergyTwoPhase_PK() {};
 
-  // Required PK members.
+  // methods required for PK intrefcae
   virtual void Setup();
   virtual void Initialize();
-  virtual std::string name() { return "two-phase energy"; }
-  virtual void CommitStep(double t_old, double t_new);
 
+  virtual bool AdvanceStep(double t_old, double t_new);
+  virtual void CommitStep(double t_old, double t_new);
+  virtual void CalculateDiagnostics() {};
+
+  double get_dt() { return dt_; }
+  void set_dt(double dt) { dt_ = dt; }
+
+  virtual std::string name() { return "two-phase energy"; }
+
+  // methods required for time integration interface
+  // -- computes the non-linear functional f = f(t,u,udot) and related norm.
   virtual void Functional(const double t_old, double t_new,
                           Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new,
                           Teuchos::RCP<TreeVector> g);
+  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
+
+  // -- management of the preconditioner
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt);
 
-  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
+  // access method for unit tests
+  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae() { return bdf1_dae_; }
 
  private:
   void InitializeFields_();
@@ -59,6 +76,11 @@ public:
   // primary field
   const Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<CompositeVector> solution;
+
+  // time stepping
+  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae_;
+  int num_itrs_;
+  double dt_, dt_next_;
 
   // factory registration
   static RegisteredPKFactory<EnergyTwoPhase_PK> reg_;

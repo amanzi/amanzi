@@ -171,5 +171,11 @@ if (BUILD_TESTS)
                     KIND int
                     SOURCE test/Main.cc test/energy_newton_picard.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: 3
+    add_amanzi_test(energy_comvergence energy_convergence
+                    KIND int
+                    SOURCE test/Main.cc test/energy_convergence.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

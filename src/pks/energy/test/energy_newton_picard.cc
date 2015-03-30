@@ -1,3 +1,14 @@
+/*
+  This is the energy component of the Amanzi code. 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
 #include <iostream>
 #include "UnitTest++.h"
 
@@ -310,7 +321,7 @@ void HeatConduction::UpdateValues(const CompositeVector& u)
 
 
 /* ******************************************************************
-* Test 1.
+* Comparison of various nonlinear solvers.
 ****************************************************************** */
 TEST(NKA) {
   using namespace Amanzi;
@@ -353,14 +364,16 @@ TEST(NKA) {
         solver = factory.Create(SOLVERS[i], plist);
     solver->Init(problem, problem->cvs());
 
-    // initial guess
-    problem->InitialGuess();
-    Epetra_MultiVector p0(*problem->solution()->ViewComponent("cell"));
-
     // solve
+    problem->InitialGuess();
     solver->Solve(problem->solution());
-    Epetra_MultiVector& p1 = *problem->solution()->ViewComponent("cell");
 
+    // checks
+    CHECK(solver->num_itrs() < 9);
+    if (i == 1) CHECK(solver->residual() < 1e-11);
+
+    Epetra_MultiVector p0(*problem->solution()->ViewComponent("cell"));
+    Epetra_MultiVector& p1 = *problem->solution()->ViewComponent("cell");
     if (MyPID == 0) {
       GMV::open_data_file(*mesh, (std::string)"energy.gmv");
       GMV::start_data();

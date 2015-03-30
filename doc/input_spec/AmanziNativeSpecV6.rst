@@ -614,6 +614,48 @@ driver entries of this sublist must match PKNAMEs in Cycle Driver sublist.
 Flow PK
 -------
 
+The conceptual PDE model for the fully saturated flow is
+
+.. math::
+  \phi (s_s + s_y) \frac{\partial p_l}{\partial t} 
+  =
+  \boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_l) + Q,
+  \quad
+  \boldsymbol{q}_l 
+  = -\frac{\boldsymbol{K}}{\mu} 
+  (\boldsymbol{\nabla} p - \rho_l \boldsymbol{g}),
+
+where 
+:math:`\phi` is porosity,
+:math:`s_s` and :math:`s_y` are specific strorage and specific yeild, respectively,
+:math:`\rho_l` is fluid density,
+:math:`Q` is source or sink term,
+:math:`\boldsymbol{q}_l` is the Darcy velocity,
+and :math:`\boldsymbol{g}` is gravity.
+
+The conceptual PDE model for the partially saturated flow is
+
+.. math::
+  \frac{\partial \theta}{\partial t} 
+  =
+  \boldsymbol{\nabla} \cdot (\eta_l \boldsymbol{q}_l) + Q,
+  \quad
+  \boldsymbol{q}_l 
+  = -\frac{\boldsymbol{K} k_r}{\mu} 
+  (\boldsymbol{\nabla} p - \rho_l \boldsymbol{g})
+
+where 
+:math:`\theta` is total water content,
+:math:`\eta_l` is molar density of liquid,
+:math:`\rho_l` is fluid density,
+:math:`Q` is source or sink term,
+:math:`\boldsymbol{q}_l` is the Darcy velocity,
+:math:`k_r` is relative permeability,
+and :math:`\boldsymbol{g}` is gravity.
+We define :math:`\theta = \phi \eta_l s_l` where
+:math:`s_l` is liquid saturation,
+and :math:`\phi` is porosity.
+
 Flow sublist includes exactly one sublist, either `"Darcy problem`" or `"Richards problem`".
 Structure of both sublists is quite similar. We make necessary comments on their differences.
 
@@ -1104,16 +1146,16 @@ those needed for unit tests, and future code development.
    </ParameterList>
 
 
-Physics couplig
-...............
+Physics coupling
+................
 
 To couple with other PKs, we have to specify additional parameters.
 
-  * `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
-    e.g. by EnergyFlow PK. The default value is `"false`".
+* `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
+  e.g. by EnergyFlow PK. The default value is `"false`".
 
-  * `"water content evaluator`" [string] changes the evaluator for water
-    content. Available options are `"generic`" and `"constant density`" (default).
+* `"water content evaluator`" [string] changes the evaluator for water
+  content. Available options are `"generic`" and `"constant density`" (default).
 
 .. code-block:: xml
 
@@ -1655,6 +1697,68 @@ Alquimia chemistry kernel reads initial conditions from the `"State`" list.
 
 Energy PK
 ---------
+
+The conceptual PDE model for the energy equation is 
+
+.. math::
+  \frac{\partial \varepsilon}{\partial t} 
+  =
+  \boldsymbol{\nabla} \cdot (\kappa \nabla T) -
+  \boldsymbol{\nabla} \cdot (\eta_l H_l \boldsymbol{q}_l) + Q
+
+where 
+:math:`\varepsilon` is the internal energy,
+:math:`\eta_l` is molar density of liquid,
+:math:`Q` is source or sink term,
+:math:`\boldsymbol{q}_l` is the Darcy velocity,
+:math:`\kappa` is thermal conductivity,
+and :math:`H_l` is molar enthalphy of liquid.
+We define 
+
+.. math::
+   \varepsilon = \phi (\eta_l s_l U_l + \eta_g s_g U_g) + 
+   (1 - \phi) \rho_r c_r T
+
+where
+:math:`s_l` is liquid saturation,
+:math:`s_g` is gas saturation (water vapor),
+:math:`\eta_l` is molar density of liquid,
+:math:`\eta_g` is molar density of gas,
+:math:`U_l` is molar internal energy of liquid,
+:math:`U_g` is molar internal energy of gas (water vapor),
+:math:`\phi` is porosity,
+:math:`\rho_r` is rock density,
+:math:`c_r` is specific heat of rock,
+and :math:`T` is temperature.
+
+
+Internal energy
+...............
+
+Internal energy list has a few parameters that allows us to run this PK
+in a variety of regimes, e.g. with or without gas phase.
+
+* `"energy key`" [string] specifies name for the internal energy field.
+  The default value is `"energy`".
+
+* `"evaluator type`" [string] changes the evaluator for internal energy.
+  Available options are `"generic`" and `"constant liquid density`" (default).
+
+* `"vapor diffusion`" [bool] specifies presense of a gas phase.
+  The default value is `"true`".
+
+* `"VerboseObject`" [sublist] is the standard verbosity object.
+
+.. code-block:: xml
+
+   <ParameterList name="energy evaluator">
+     <Parameter name="energy key" type="string" value="energy"/>
+     <Parameter name="evaluator type" type="string" value="constant liquid density"/>
+     <Parameter name="vapor diffusion" type="bool" value="true"/>
+     <ParameterList name="VerboseObject">
+       <Parameter name="Verbosity Level" type="string" value="high"/>
+     </ParameterList>
+   </ParameterList>
 
 Diffusion operator
 ..................
