@@ -51,6 +51,12 @@ protected:
                       AlquimiaAuxiliaryData&       aux_input,
                       AlquimiaAuxiliaryOutputData& aux_output);
 
+  void DumpAlquimiaStructures(std::ostream&                os,
+			      AlquimiaMaterialProperties&  mat_props,
+			      AlquimiaState&               chem_state,
+			      AlquimiaAuxiliaryData&       aux_input,
+			      AlquimiaAuxiliaryOutputData& aux_output);
+
   Amanzi::AmanziChemistry::ChemistryEngine* engine;
   int nthreads;
 

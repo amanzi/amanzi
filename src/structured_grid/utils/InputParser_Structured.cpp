@@ -1002,6 +1002,9 @@ namespace Amanzi {
             }
           }
         }
+	else {
+	  MyAbort("\""+optL[i]+"\" unrecognized parameter/list of ParameterList: \""+ec_str+"\"");
+	}
       }
                     
       Array<int> n_cell = amr_out_list.get<Array<int> >("n_cell");
