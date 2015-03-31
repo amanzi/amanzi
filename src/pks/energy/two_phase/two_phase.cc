@@ -104,8 +104,12 @@ void TwoPhase::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S) {
   // put the boundary fluxes in faces for Dirichlet BCs.
   // NOTE this boundary flux is in enthalpy, and
   // h = n(T,p) * u_l(T) + p_l
-  const Epetra_MultiVector& pres = *S->GetFieldData("pressure")
-      ->ViewComponent("face",false);
+  Teuchos::RCP<const Epetra_MultiVector> pres;
+  if (S->GetFieldData("pressure")->HasComponent("face")) {
+    pres = S->GetFieldData("pressure")->ViewComponent("face",false);
+  }
+  const Epetra_MultiVector& pres_c = *S->GetFieldData("pressure")
+      ->ViewComponent("cell",false);
   const Epetra_MultiVector& temp = *S->GetFieldData(key_)
       ->ViewComponent("face",false);
   const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)
@@ -114,7 +118,7 @@ void TwoPhase::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S) {
   bool include_work = plist_->sublist("enthalpy evaluator").get<bool>("include work term", true);
   
   AmanziMesh::Entity_ID_List cells;
-  int nfaces = pres.MyLength();
+  int nfaces = temp.MyLength();
   for (int f=0; f!=nfaces; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     if (bc_markers_adv_[f] == Operators::OPERATOR_BC_DIRICHLET) {
@@ -122,11 +126,12 @@ void TwoPhase::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S) {
       // Neumann, that means we were given by the diffusive fluxes and the
       // advected mass flux and temperature.
       double T = bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET ? bc_values_[f] : temp[0][f];
-      double p = pres[0][f];
-      double dens = eos_liquid_->MolarDensity(T,p);
-      double int_energy = iem_liquid_->InternalEnergy(T);
-      double enthalpy = include_work ? int_energy + p/dens : int_energy;
-
+      double enthalpy = iem_liquid_->InternalEnergy(T);
+      if (include_work) {
+        double p = pres == Teuchos::null ? pres_c[0][cells[0]] : (*pres)[0][f];
+        double dens = eos_liquid_->MolarDensity(T,p);
+        enthalpy += p/dens;
+      }
       bc_values_adv_[f] = enthalpy;
     }
   }

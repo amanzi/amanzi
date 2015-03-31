@@ -18,7 +18,7 @@ Usage:
 
   <ParameterList name="Thermal Conductivity Model">
     <Parameter name="Thermal Conductivity Type" type="string" value="two-phase Peters-Lidard"/>
-    <Parameter name="thermal conductivity of rock" type="double" value=""/>
+    <Parameter name="thermal conductivity of soil" type="double" value=""/>
     <Parameter name="thermal conductivity of liquid" type="double" value=""/>
     <Parameter name="thermal conductivity of gas" type="double" value=""/>
 
@@ -55,7 +55,7 @@ private:
 
   double eps_;
   double alpha_;
-  double k_rock_;
+  double k_soil_;
   double k_liquid_;
   double k_gas_;
   double d_;
