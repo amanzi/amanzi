@@ -44,6 +44,7 @@ private:
   double Cv_; // units: MJ/({mol/kg}-K)
   double T_ref_; // units: K
   bool molar_basis_;
+  double L_;
 
 private:
   // iem factor registration

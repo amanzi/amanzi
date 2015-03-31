@@ -34,11 +34,11 @@ private:
 
   double eps_;
   double alpha_;
-  double k_rock_;
+  double k_soil_;
   double k_liquid_;
   double k_gas_;
   double d_;
-  double rho_rock_;
+  double rho_soil_;
 };
 
 }

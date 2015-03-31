@@ -23,8 +23,8 @@ ThermalConductivityTwoPhasePetersLidard::ThermalConductivityTwoPhasePetersLidard
 
 double ThermalConductivityTwoPhasePetersLidard::ThermalConductivity(double poro,
         double sat_liq) {
-  double k_dry = (d_*(1-poro)*k_rock_ + k_gas_*poro)/(d_*(1-poro) + poro);
-  double k_sat = pow(k_rock_,(1-poro)) * pow(k_liquid_,poro);
+  double k_dry = (d_*(1-poro)*k_soil_ + k_gas_*poro)/(d_*(1-poro) + poro);
+  double k_sat = pow(k_soil_,(1-poro)) * pow(k_liquid_,poro);
   double kersten = pow(sat_liq + eps_, alpha_);
   return k_dry + (k_sat - k_dry)*kersten;
 };
@@ -32,11 +32,11 @@ double ThermalConductivityTwoPhasePetersLidard::ThermalConductivity(double poro,
 void ThermalConductivityTwoPhasePetersLidard::InitializeFromPlist_() {
   d_ = 0.053; // unitless empericial parameter
 
-  eps_ = plist_.get<double>("epsilon", 1.e-10);
-  alpha_ = plist_.get<double>("unsaturated alpha");
-  k_rock_ = plist_.get<double>("thermal conductivity of rock");
-  k_liquid_ = plist_.get<double>("thermal conductivity of liquid");
-  k_gas_ = plist_.get<double>("thermal conductivity of gas");
+  eps_ = plist_.get<double>("epsilon [-]", 1.e-10);
+  alpha_ = plist_.get<double>("unsaturated alpha [-]");
+  k_soil_ = plist_.get<double>("thermal conductivity of soil [W/(m-K)]");
+  k_liquid_ = plist_.get<double>("thermal conductivity of liquid [W/(m-K)]");
+  k_gas_ = plist_.get<double>("thermal conductivity of gas [W/(m-K)]");
 };
 
 } // namespace Relations
