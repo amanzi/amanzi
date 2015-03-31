@@ -243,8 +243,8 @@ void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
   if (ewc_ != Teuchos::null) ewc_->initialize(S);
 
   // initialize offdiagonal operators
-  Teuchos::RCP<Flow::Richards> richards_pk = Teuchos::rcp_dynamic_cast<Flow::Richards>(sub_pks_[0]);
-  ASSERT(richards_pk != Teuchos::null);
+  richards_pk_ = Teuchos::rcp_dynamic_cast<Flow::Richards>(sub_pks_[0]);
+  ASSERT(richards_pk_ != Teuchos::null);
 
   if (ddivq_dT_ != Teuchos::null) {
     S->GetFieldData("dnumerical_rel_perm_dtemperature",name_)->PutScalar(1.0);
@@ -255,7 +255,7 @@ void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
     g[0] = (*gvec)[0]; g[1] = (*gvec)[1]; g[2] = (*gvec)[2];
     ddivq_dT_->SetGravity(g);    
     ddivq_dT_->SetBCs(sub_pks_[0]->BCs());
-    ddivq_dT_->Setup(richards_pk->K_);
+    ddivq_dT_->Setup(richards_pk_->K_);
   }
 
   if (ddivKgT_dp_ != Teuchos::null) {
@@ -275,11 +275,11 @@ void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
     g[0] = (*gvec)[0]; g[1] = (*gvec)[1]; g[2] = (*gvec)[2];
     ddivhq_dp_->SetGravity(g);    
     ddivhq_dp_->SetBCs(sub_pks_[1]->BCs());
-    ddivhq_dp_->Setup(richards_pk->K_);
+    ddivhq_dp_->Setup(richards_pk_->K_);
 
     ddivhq_dT_->SetGravity(g);    
     ddivhq_dT_->SetBCs(sub_pks_[1]->BCs());
-    ddivhq_dT_->Setup(richards_pk->K_);
+    ddivhq_dT_->Setup(richards_pk_->K_);
   }  
 }
 
@@ -416,10 +416,23 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       upwinding_dhkr_dp_->Update(S_next_.ptr(), db_.ptr());
       upwinding_dhkr_dT_->Update(S_next_.ptr(), db_.ptr());
 
+      // -- clobber
+      if (richards_pk_->clobber_surf_kr_) {
+        // -- stick zeros in the boundary faces
+        Epetra_MultiVector enth_kr_bf(*enth_kr->ViewComponent("boundary_face",false));
+        enth_kr_bf.PutScalar(0.0);
+        enth_kr_uw->ViewComponent("face",false)->Export(enth_kr_bf,
+                mesh_->exterior_face_importer(), Insert);
+        denth_kr_dp_uw->ViewComponent("face",false)->Export(enth_kr_bf,
+                mesh_->exterior_face_importer(), Insert);
+        enth_kr_uw->ViewComponent("face",false)->Export(enth_kr_bf,
+                mesh_->exterior_face_importer(), Insert);
+      }
+      
       Teuchos::RCP<const CompositeVector> flux = S_next_->GetFieldData("darcy_flux");
       Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData("mass_density_liquid");
 
-      // form the operator
+      // form the operator: pressure component
       ddivhq_dp_->SetVectorDensity(rho);
       ddivhq_dp_->Setup(enth_kr_uw, denth_kr_dp_uw);
       // -- update the local matrices, div h * kr grad
@@ -432,7 +445,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       ddivhq_dp_->UpdateMatricesNewtonCorrection(adv_flux_ptr, up->SubVector(0)->Data().ptr());
       ddivhq_dp_->ApplyBCs(false);
 
-      // form the operator 
+      // form the operator: temperature component
       ddivhq_dT_->SetVectorDensity(rho);
       ddivhq_dT_->Setup(enth_kr_uw, denth_kr_dT_uw);
       // -- add in components div (d h*kr / dp) grad q_a / (h*kr)

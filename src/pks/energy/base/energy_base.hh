@@ -18,6 +18,7 @@ This provides the base of an advection-diffusion equation for energy.
 #include "pk_factory.hh"
 
 #include "OperatorDiffusion.hh"
+#include "OperatorDiffusionMFD.hh"
 #include "OperatorAccumulation.hh"
 #include "OperatorAdvection.hh"
 
@@ -89,7 +90,7 @@ public:
           Teuchos::RCP<TreeVector> u);
     
   // evaluating consistent faces for given BCs and cell values
-  //  virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
+  virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
 
 protected:
   // These must be provided by the deriving PK.
@@ -153,6 +154,7 @@ protected:
 
   // mathematical operators
   Teuchos::RCP<Operators::OperatorDiffusion> matrix_diff_;
+  Teuchos::RCP<Operators::OperatorDiffusionMFD> matrix_diff_mfd_;
   Teuchos::RCP<Operators::OperatorAdvection> matrix_adv_;
 
   Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;

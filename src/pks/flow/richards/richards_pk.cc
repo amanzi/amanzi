@@ -294,8 +294,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   precon_wc_ = plist_->get<bool>("precondition using WC", false);
 
   // predictors for time integration
-  modify_predictor_with_consistent_faces_ = false;
-      //    plist_->get<bool>("modify predictor with consistent faces", false);
+  modify_predictor_with_consistent_faces_ =
+    plist_->get<bool>("modify predictor with consistent faces", false);
   modify_predictor_bc_flux_ =
     plist_->get<bool>("modify predictor for flux BCs", false);
   modify_predictor_first_bc_flux_ =
@@ -641,12 +641,12 @@ bool Richards::UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<State>& S) {
     // Upwind, only overwriting boundary faces if the wind says to do so.
     upwinding_deriv_->Update(S);
 
-    if (clobber_surf_kr_) {
-      Epetra_MultiVector& duw_rel_perm_f = *duw_rel_perm->ViewComponent("face",false);
-      duw_rel_perm_f.PutScalar(0.);
+    // if (clobber_surf_kr_) {
+    //   Epetra_MultiVector& duw_rel_perm_f = *duw_rel_perm->ViewComponent("face",false);
+    //   duw_rel_perm_f.PutScalar(0.);
 
-      //duw_rel_perm_f.Export(drel_perm_bf, vandelay, Insert);
-    }
+    //   //duw_rel_perm_f.Export(drel_perm_bf, vandelay, Insert);
+    // }
   }
 
   // debugging
@@ -813,7 +813,7 @@ bool Richards::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   }
 
   if (modify_predictor_with_consistent_faces_) {
-    //    changed |= ModifyPredictorConsistentFaces_(h,u);
+    changed |= ModifyPredictorConsistentFaces_(h,u);
   }
   return changed;
 }
@@ -851,15 +851,15 @@ bool Richards::ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u) {
   return true;
 }
 
-// bool Richards::ModifyPredictorConsistentFaces_(double h, Teuchos::RCP<TreeVector> u) {
-//   Teuchos::OSTab tab = vo_->getOSTab();
-//   if (vo_->os_OK(Teuchos::VERB_EXTREME))
-//     *vo_->os() << "  modifications for consistent face pressures." << std::endl;
+bool Richards::ModifyPredictorConsistentFaces_(double h, Teuchos::RCP<TreeVector> u) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "  modifications for consistent face pressures." << std::endl;
   
-//   CalculateConsistentFaces(u->Data().ptr());
+  CalculateConsistentFaces(u->Data().ptr());
 
-//   return true;
-// }
+  return true;
+}
 
 bool Richards::ModifyPredictorWC_(double h, Teuchos::RCP<TreeVector> u) {
   ASSERT(0);
@@ -895,49 +895,39 @@ bool Richards::ModifyPredictorWC_(double h, Teuchos::RCP<TreeVector> u) {
 //   flux_predictor_->ModifyPredictor(u);
 // }
 
-// void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) {
-//   // VerboseObject stuff.
-//   Teuchos::OSTab tab = vo_->getOSTab();
+void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) {
+  // VerboseObject stuff.
+  Teuchos::OSTab tab = vo_->getOSTab();
 
-//   // update the rel perm according to the scheme of choice
-//   ChangedSolution();
-//   UpdatePermeabilityData_(S_next_.ptr());
+  // update the rel perm according to the scheme of choice
+  ChangedSolution();
+  UpdatePermeabilityData_(S_next_.ptr());
 
-//   // update boundary conditions
-//   bc_pressure_->Compute(S_next_->time());
-//   bc_flux_->Compute(S_next_->time());
-//   UpdateBoundaryConditions_();
+  // update boundary conditions
+  bc_pressure_->Compute(S_next_->time());
+  bc_flux_->Compute(S_next_->time());
+  UpdateBoundaryConditions_();
 
-//   Teuchos::RCP<const CompositeVector> rel_perm = 
-//     S_next_->GetFieldData("numerical_rel_perm");
+  Teuchos::RCP<const CompositeVector> rel_perm = 
+    S_next_->GetFieldData("numerical_rel_perm");
 
-//   const Epetra_MultiVector& rel_perm_f =
-//     *rel_perm->ViewComponent("face",false);
+  S_next_->GetFieldEvaluator("mass_density_liquid")
+      ->HasFieldChanged(S_next_.ptr(), name_);
+  Teuchos::RCP<const CompositeVector> rho =
+      S_next_->GetFieldData("mass_density_liquid");
+  Teuchos::RCP<const Epetra_Vector> gvec =
+      S_next_->GetConstantVectorData("gravity");
 
-//   Teuchos::RCP<const CompositeVector> rho =
-//       S_next_->GetFieldData("mass_density_liquid");
-//   Teuchos::RCP<const Epetra_Vector> gvec =
-//       S_next_->GetConstantVectorData("gravity");
+  // Update the preconditioner with darcy and gravity fluxes
+  matrix_->Init();
+  matrix_diff_->SetVectorDensity(rho);
+  matrix_diff_->Setup(rel_perm, Teuchos::null);
+  matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  matrix_diff_->ApplyBCs(true);
 
-//   // Update the preconditioner with darcy and gravity fluxes
-//   matrix_->CreateMFDstiffnessMatrices(Teuchos::null);
-//   matrix_->CreateMFDrhsVectors();
-//   AddGravityFluxes_(gvec.ptr(), Teuchos::null, rho.ptr(), matrix_.ptr());
-
-//   // skip accumulation terms, they're not needed
-
-//   // Assemble
-//   for (int f=0; f!=bc_markers_.size(); ++f) {
-//     if (bc_markers_[f] == Operators::OPERATOR_BC_NEUMANN &&
-//         std::abs(rel_perm_f[0][f]) > 0.) {
-//       bc_values_[f] /= rel_perm_f[0][f];
-//     }
-//   }
-//   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-
-//   // derive the consistent faces, involves a solve
-//   matrix_->UpdateConsistentFaceConstraints(u.ptr());
-// }
+  // derive the consistent faces, involves a solve
+  matrix_diff_->UpdateConsistentFaces(*u);
+}
 
 // -----------------------------------------------------------------------------
 // Check admissibility of the solution guess.

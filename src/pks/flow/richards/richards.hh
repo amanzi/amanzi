@@ -74,7 +74,7 @@ public:
   virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up);
 
   // evaluating consistent faces for given BCs and cell values
-  // virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
+  virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
 
 protected:
   // Create of physical evaluators.
@@ -130,7 +130,7 @@ protected:
   // Nonlinear version of CalculateConsistentFaces()
   // virtual void CalculateConsistentFacesForInfiltration_(
   //     const Teuchos::Ptr<CompositeVector>& u);
-  // virtual bool ModifyPredictorConsistentFaces_(double h, Teuchos::RCP<TreeVector> u);
+  virtual bool ModifyPredictorConsistentFaces_(double h, Teuchos::RCP<TreeVector> u);
   virtual bool ModifyPredictorWC_(double h, Teuchos::RCP<TreeVector> u);
   virtual bool ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u);
 
