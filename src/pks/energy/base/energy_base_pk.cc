@@ -211,6 +211,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   Operators::OperatorDiffusionFactory fac;
   AmanziGeometry::Point g;
   matrix_diff_ = fac.Create(mesh_, bc_, mfd_plist, g, 0);
+  matrix_diff_mfd_ = Teuchos::rcp_dynamic_cast<Operators::OperatorDiffusionMFD>(matrix_diff_);
   matrix_diff_->Setup(Teuchos::null);
 
   //  -- for advection terms
@@ -248,8 +249,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   dT_max_ = plist_->get<double>("maximum temperature change", 10.);
 
   // ewc and other predictors can result in odd face values
-  modify_predictor_with_consistent_faces_ = false;
-  //    plist_->get<bool>("modify predictor with consistent faces", false);
+  modify_predictor_with_consistent_faces_ =
+      plist_->get<bool>("modify predictor with consistent faces", false);
 };
 
 
@@ -549,10 +550,10 @@ bool EnergyBase::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Modifying predictor:" << std::endl;
 
-  if (modify_predictor_with_consistent_faces_) {
+  if (modify_predictor_with_consistent_faces_ && (matrix_diff_mfd_ != Teuchos::null)) {
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
       *vo_->os() << "  modifications for consistent face temperatures." << std::endl;
-    //    CalculateConsistentFaces(u->Data().ptr());
+    CalculateConsistentFaces(u->Data().ptr());
     return true;
   }
 
@@ -560,33 +561,33 @@ bool EnergyBase::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
 }
 
 
-// // -----------------------------------------------------------------------------
-// // Given an arbitrary set of cell values, calculate consitent face constraints.
-// //
-// //  This is useful for prediction steps, hacky preconditioners, etc.
-// // -----------------------------------------------------------------------------
-// void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) {
-//   // update boundary conditions
-//   bc_temperature_->Compute(S_next_->time());
-//   bc_flux_->Compute(S_next_->time());
-//   UpdateBoundaryConditions_();
+// -----------------------------------------------------------------------------
+// Given an arbitrary set of cell values, calculate consitent face constraints.
+//
+//  This is useful for prediction steps, hacky preconditioners, etc.
+// -----------------------------------------------------------------------------
+void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) {
 
-//   // div K_e grad u
-//   ChangedSolution();
-//   bool update = UpdateConductivityData_(S_next_.ptr());
-//   Teuchos::RCP<const CompositeVector> conductivity =
-//       S_next_->GetFieldData(uw_conductivity_key_);
+  // update boundary conditions
+  bc_temperature_->Compute(S_next_->time());
+  bc_flux_->Compute(S_next_->time());
+  UpdateBoundaryConditions_();
 
-//   matrix_->CreateMFDstiffnessMatrices(conductivity.ptr());
-//   matrix_->CreateMFDrhsVectors();
+  // div K_e grad u
+  ChangedSolution();
+  bool update = UpdateConductivityData_(S_next_.ptr());
+  Teuchos::RCP<const CompositeVector> conductivity =
+      S_next_->GetFieldData(uw_conductivity_key_);
 
-//   // skip accumulation terms, they're not needed
-//   // Assemble and precompute the Schur complement for inversion.
-//   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  // Update the preconditioner with darcy and gravity fluxes
+  matrix_diff_mfd_->global_operator()->Init();
+  matrix_diff_mfd_->Setup(conductivity, Teuchos::null);
+  matrix_diff_mfd_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  matrix_diff_mfd_->ApplyBCs(true);
 
-//   // derive the consistent faces, involves a solve
-//   matrix_->UpdateConsistentFaceConstraints(u.ptr());
-// }
+  // derive the consistent faces, involves a solve
+  matrix_diff_mfd_->UpdateConsistentFaces(*u);
+}
 
 } // namespace Energy
 } // namespace Amanzi

@@ -60,13 +60,6 @@ class MPCPermafrost4 : public MPCSubsurface {
   // IteratateFlow_(double h, const Teuchos::RCP<TreeVector>& u);
 
  protected:
-  enum PreconditionerType {
-    PRECON_NONE = 0,
-    PRECON_BLOCK_DIAGONAL = 1,
-    PRECON_PICARD = 2,
-    PRECON_EWC = 3
-  };
-
   // sub PKs
   Teuchos::RCP<PKPhysicalBDFBase> domain_flow_pk_;
   Teuchos::RCP<PKPhysicalBDFBase> domain_energy_pk_;

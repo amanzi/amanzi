@@ -31,6 +31,9 @@ class UpwindTotalFlux;
 class Upwinding;
 }
 
+namespace Flow {
+class Richards;
+}
 
 class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
 
@@ -108,6 +111,9 @@ class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
   Teuchos::RCP<Operators::UpwindTotalFlux> upwinding_hkr_;
   Teuchos::RCP<Operators::UpwindTotalFlux> upwinding_dhkr_dp_;
   Teuchos::RCP<Operators::UpwindTotalFlux> upwinding_dhkr_dT_;
+
+  // friend sub-pk Richards (need K_, some flags from private data)
+  Teuchos::RCP<Flow::Richards> richards_pk_;
   
   // EWC delegate
   Teuchos::RCP<MPCDelegateEWCSubsurface> ewc_;
