@@ -69,13 +69,12 @@ class GSLibProperty
 public:
   GSLibProperty(const std::string&    _name,
                 Real                  _avg,
-                Real                  _std,
                 const std::string&    _param_file,
                 const std::string&    _data_file,
                 const Array<Real>&    _shift,
                 Property::CoarsenRule _coarsen_rule = Property::Arithmetic,
                 Property::RefineRule  _refine_rule = Property::PiecewiseConstant)
-    : ConstantProperty(_name,_avg,_coarsen_rule,_refine_rule), avg(_avg), std(_std),
+    : ConstantProperty(_name,_avg,_coarsen_rule,_refine_rule), avg(_avg),
       param_file(_param_file), data_file(_data_file), dataServices(0) {}
 
   virtual bool isTimeDependent() const {return false;}
@@ -87,7 +86,6 @@ public:
 
   const AmrData* GetAmrData() const;
   Real Avg() const {return avg;}
-  Real Std() const {return std;}
   const DataServices* GetDataServices() const {return dataServices;}
 
   void BuildDataFile(const Array<Geometry>& geom_array,
@@ -101,7 +99,6 @@ public:
 
 protected:
   void BuildGSLibFile(Real                   avg,
-		      Real                   std,
 		      const std::string&     gslib_param_file,
 		      const std::string&     gslib_data_file,
 		      const Array<Geometry>& geom_array,
@@ -112,7 +109,7 @@ protected:
 		      const std::string&     varname);
 
   DataServices* dataServices;
-  Real avg, std;
+  Real avg;
   std::string param_file, data_file;
   int num_comps;
   Array<std::string> varnames;
