@@ -121,10 +121,22 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(cell_vol_key_);
+  S->RequireScalar("atmospheric_pressure");
 
   // Require a field for the mass flux for advection.
-  S->RequireField(flux_key_)->SetMesh(mesh_)->SetGhosted()
-      ->AddComponent("face", AmanziMesh::FACE, 1);
+  flux_exists_ = S->HasField(flux_key_);
+  if (flux_exists_) {
+    S->RequireField(flux_key_)->SetMesh(mesh_)->SetGhosted()
+        ->AddComponent("face", AmanziMesh::FACE, 1);
+  } else {
+    // no flow pk to make/initialize flux field, so we need a darcy flux.
+    //S->RequireFieldEvaluator(flux_key_);
+    // cannot do this currently because of dot_with_normal not supported in
+    // independent variable evaluator.  TERRIBLE!  Fix me --etc
+
+    S->RequireField(flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
+        ->AddComponent("face", AmanziMesh::FACE, 1);
+  }
 
   // Require a field for the (conducted) energy flux.
   std::string updatestring = plist_->get<std::string>("update flux mode", "vis");
@@ -281,9 +293,15 @@ void EnergyBase::initialize(const Teuchos::Ptr<State>& S) {
   S->GetFieldData(uw_conductivity_key_,name_)->PutScalar(1.0);
   S->GetField(uw_conductivity_key_,name_)->set_initialized();
 
-  // initialize flux
+  // initialize energy flux
   S->GetFieldData(energy_flux_key_, name_)->PutScalar(0.0);
   S->GetField(energy_flux_key_, name_)->set_initialized();
+
+  // potentially initialize mass flux
+  if (!flux_exists_) {
+    S->GetField(flux_key_, name_)->Initialize(plist_->sublist(flux_key_));
+  }
+
 };
 
 
@@ -550,14 +568,27 @@ bool EnergyBase::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Modifying predictor:" << std::endl;
 
+  bool modified = false;
+  
+  if (modify_predictor_for_freezing_) {
+    const Epetra_MultiVector& u0_c = *u0->Data()->ViewComponent("cell",false);
+    Epetra_MultiVector& u_c = *u->Data()->ViewComponent("cell",false);
+
+    for (int c=0; c!=u0_c.MyLength(); ++c) {
+      if (u0_c[0][c] > 273.15 && u_c[0][c] < 273.15) {
+        u_c[0][c] = 273.15 - .001;
+        modified = true;
+      }
+    }
+  }
+
   if (modify_predictor_with_consistent_faces_ && (matrix_diff_mfd_ != Teuchos::null)) {
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
       *vo_->os() << "  modifications for consistent face temperatures." << std::endl;
     CalculateConsistentFaces(u->Data().ptr());
-    return true;
+    modified = true;
   }
-
-  return false;
+  return modified;
 }
 
 

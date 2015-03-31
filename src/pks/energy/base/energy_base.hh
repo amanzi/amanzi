@@ -42,11 +42,13 @@ public:
       PKDefaultBase(plist, FElist, solution),
       PKPhysicalBDFBase(plist, FElist, solution),
       modify_predictor_with_consistent_faces_(false),
+      modify_predictor_for_freezing_(false),
       coupled_to_subsurface_via_temp_(false),
       coupled_to_subsurface_via_flux_(false),
       coupled_to_surface_via_temp_(false),
       coupled_to_surface_via_flux_(false),
       niter_(0),
+      flux_exists_(true),
       implicit_advection_(true) {}
 
   // Virtual destructor
@@ -166,11 +168,13 @@ protected:
   double dT_max_;
   FluxUpdateMode update_flux_;
   bool modify_predictor_with_consistent_faces_;
+  bool modify_predictor_for_freezing_;
   bool is_source_term_;
   bool is_mass_source_term_;
   bool implicit_advection_;
   bool implicit_advection_in_pc_;
   bool precon_used_;
+  bool flux_exists_;
 
   bool coupled_to_subsurface_via_temp_;
   bool coupled_to_subsurface_via_flux_;
