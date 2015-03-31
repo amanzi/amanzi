@@ -22,7 +22,7 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
 					   const Teuchos::RCP<Teuchos::ParameterList>& global_list,
 					   const Teuchos::RCP<State>& S,
 					   const Teuchos::RCP<TreeVector>& soln) :
-  Amanzi::MPC_add_PK<PK>(pk_tree, global_list, S, soln) { 
+  Amanzi::MPCAdditive<PK>(pk_tree, global_list, S, soln) { 
 
   storage_created = false;
   chem_step_succeeded = true;
@@ -47,7 +47,7 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
 // 
 // -----------------------------------------------------------------------------
 void ReactiveTransport_PK::Initialize() {
-  Amanzi::MPC_add_PK<PK>::Initialize();
+  Amanzi::MPCAdditive<PK>::Initialize();
 
   if (S_->HasField("total_component_concentration")) {
     total_component_concentration_stor = 

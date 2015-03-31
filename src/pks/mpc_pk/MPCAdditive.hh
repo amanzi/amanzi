@@ -40,14 +40,14 @@
 namespace Amanzi {
 
 template <class PK_Base>
-class MPC_add_PK : virtual public PK {
+class MPCAdditive : virtual public PK {
  public:
-  MPC_add_PK(Teuchos::ParameterList& pk_tree,
+  MPCAdditive(Teuchos::ParameterList& pk_tree,
          const Teuchos::RCP<Teuchos::ParameterList>& global_list,
          const Teuchos::RCP<State>& S,
          const Teuchos::RCP<TreeVector>& soln);
 
-  ~MPC_add_PK() {};
+  ~MPCAdditive() {};
 
   // PK methods
   // -- sets up sub-PKs
@@ -91,7 +91,7 @@ class MPC_add_PK : virtual public PK {
 // Setup of PK hierarchy from PList
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-MPC_add_PK<PK_Base>::MPC_add_PK(Teuchos::ParameterList& pk_tree,
+MPCAdditive<PK_Base>::MPCAdditive(Teuchos::ParameterList& pk_tree,
                         const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                         const Teuchos::RCP<State>& S,
                         const Teuchos::RCP<TreeVector>& soln) :
@@ -152,7 +152,7 @@ MPC_add_PK<PK_Base>::MPC_add_PK(Teuchos::ParameterList& pk_tree,
 // Setup of PK hierarchy from PList
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void MPC_add_PK<PK_Base>::Setup() {
+void MPCAdditive<PK_Base>::Setup() {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     (*pk)->Setup();
   }
@@ -163,7 +163,7 @@ void MPC_add_PK<PK_Base>::Setup() {
 // Loop over sub-PKs, calling their initialization methods
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void MPC_add_PK<PK_Base>::Initialize() {
+void MPCAdditive<PK_Base>::Initialize() {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     (*pk)->Initialize();
   }
@@ -174,7 +174,7 @@ void MPC_add_PK<PK_Base>::Initialize() {
 // loop over sub-PKs, calling their commit state method
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void MPC_add_PK<PK_Base>::CommitStep(double t_old, double t_new) {
+void MPCAdditive<PK_Base>::CommitStep(double t_old, double t_new) {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     (*pk)->CommitStep(t_old, t_new);
   }
@@ -185,7 +185,7 @@ void MPC_add_PK<PK_Base>::CommitStep(double t_old, double t_new) {
 // loop over sub-PKs, calling their CalculateDiagnostics method
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void MPC_add_PK<PK_Base>::CalculateDiagnostics() {
+void MPCAdditive<PK_Base>::CalculateDiagnostics() {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     (*pk)->CalculateDiagnostics();
   }
@@ -196,9 +196,9 @@ void MPC_add_PK<PK_Base>::CalculateDiagnostics() {
 // Calculate the min of sub PKs timestep sizes.
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-double MPC_add_PK<PK_Base>::get_dt() {
+double MPCAdditive<PK_Base>::get_dt() {
   double dt = 1.0e99;
-  for (MPC_add_PK<PK>::SubPKList::iterator pk = sub_pks_.begin();
+  for (MPCAdditive<PK>::SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
     dt = std::min<double>(dt, (*pk)->get_dt());
   }
@@ -209,9 +209,9 @@ double MPC_add_PK<PK_Base>::get_dt() {
 // Set sub PKs timestep sizes.
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void MPC_add_PK<PK_Base>::set_dt(double dt_) {
+void MPCAdditive<PK_Base>::set_dt(double dt_) {
   double dt = 1.0e99;
-  for (MPC_add_PK<PK>::SubPKList::iterator pk = sub_pks_.begin();
+  for (MPCAdditive<PK>::SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
     (*pk)->set_dt(dt_);
   }
@@ -222,10 +222,10 @@ void MPC_add_PK<PK_Base>::set_dt(double dt_) {
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-bool MPC_add_PK<PK_Base>::AdvanceStep(double t_old, double t_new) {
+bool MPCAdditive<PK_Base>::AdvanceStep(double t_old, double t_new) {
 
   bool fail = false;
-  for (MPC_add_PK<PK>::SubPKList::iterator pk = sub_pks_.begin();
+  for (MPCAdditive<PK>::SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
     fail = (*pk)->AdvanceStep(t_old, t_new);
     if (fail) {

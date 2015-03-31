@@ -18,7 +18,7 @@
   See additional documentation in the base class src/pks/mpc_pk/MPC_PK.hh
 */
 
-#include "MPC_add_PK.hh"
+#include "MPCAdditive.hh"
 
 namespace Amanzi {
 

@@ -21,11 +21,11 @@
 #include "Transport_PK.hh"
 #include "Chemistry_PK_Wrapper.hh"
 #include "PK_Factory.hh"
-#include "MPC_add_PK.hh"
+#include "MPCAdditive.hh"
 
 namespace Amanzi {
 
-class ReactiveTransport_PK : public MPC_add_PK<PK> {
+class ReactiveTransport_PK : public MPCAdditive<PK> {
  public:
   ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
                const Teuchos::RCP<Teuchos::ParameterList>& global_list,
