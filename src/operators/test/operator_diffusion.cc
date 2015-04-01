@@ -180,7 +180,8 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 30, 30, gm);
   // RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the diffusion tensor.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
@@ -238,7 +239,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   source.GatherGhostedToMaster();
 
   // populate the diffusion operator
-  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // update the source term
@@ -338,7 +339,8 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_2D) {
   std::string file = op_list.get<std::string>("file name", "test/random20.exo");
   Teuchos::RCP<const Mesh> mesh = meshfactory(file, NULL);
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the diffusion tensor
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -407,7 +409,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_2D) {
   }
 
   // populate the diffusion operator
-  op->Setup(K, knc->values(), knc->derivatives(), rho, mu);
+  op->Setup(K, knc->values(), knc->derivatives());
   op->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // get and assmeble the global operator
@@ -489,7 +491,8 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, NULL);
   // Teuchos::RCP<const Mesh> mesh = meshfactory("test/mesh.exo", NULL);
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the nonlinear coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -560,7 +563,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   }
 
   // populate the diffusion operator
-  op->Setup(K, knc->values(), knc->derivatives(), rho, mu);
+  op->Setup(K, knc->values(), knc->derivatives());
   op->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // get and assmeble the global operator
@@ -647,7 +650,8 @@ TEST(OPERATOR_DIFFUSION_SECOND_ORDER) {
   std::string file = op_list.get<std::string>("file name", "test/random20.exo");
   Teuchos::RCP<const Mesh> mesh = meshfactory(file, NULL);
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the nonlinear coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -719,7 +723,7 @@ TEST(OPERATOR_DIFFUSION_SECOND_ORDER) {
   knc->UpdateValuesPostUpwind();
 
   // set up the diffusion operator
-  op->Setup(K, knc->values(), knc->derivatives(), rho, mu);
+  op->Setup(K, knc->values(), knc->derivatives());
   op->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // get and assmeble the global operator
@@ -804,7 +808,8 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 1, gm);
   RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the nonlinear coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -854,7 +859,7 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // set up the diffusion operator
-  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // get and assmeble the global operator
@@ -967,7 +972,8 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, gm);
   RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -1029,7 +1035,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   // populate the diffusion operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->Init();
-  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
   op->ApplyBCs();
 
@@ -1110,7 +1116,8 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   meshfactory.preference(pref);
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 5, 8, gm);
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -1163,7 +1170,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // set up the diffusion operator
-  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // get and assmeble the global operator

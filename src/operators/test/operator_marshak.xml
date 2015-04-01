@@ -27,7 +27,7 @@
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{cell,face}"/>
-      <Parameter name="upwind method" type="string" value="divk"/>
+      <Parameter name="nonlinear coefficient" type="string" value="divk: cell-face"/>
     </ParameterList>
 
     <ParameterList name="diffusion operator Sff">
@@ -35,7 +35,7 @@
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-      <Parameter name="upwind method" type="string" value="divk"/>
+      <Parameter name="nonlinear coefficient" type="string" value="divk: cell-face"/>
     </ParameterList>
     
     <ParameterList name="upwind">

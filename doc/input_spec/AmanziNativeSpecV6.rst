@@ -1808,6 +1808,13 @@ Diffusion operator
   * `"discretization secondary`" [string] specifies the most robust discretization method
     that is used when the primary selection fails to satisfy all a priori conditions.
 
+  * `"nonlinear coefficient`" [string] specifies a method for treating nonlinear diffusion
+    coefficient, if any. Available options are `"upwind: face`", `"divk: cell-face`" (default),
+    `"standard: cell`", `"divk: cell-face-twin`", `"divk: cell-grad-face-twin`",
+    `"artificial diffusion: cell-face`" (highly experimental).
+    Symmetry preserving methods are the divk-family of methods and the classical cell-centred
+    method (`"standard: cell`").
+
   * `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
     geometric objects.
 
@@ -1820,10 +1827,6 @@ Diffusion operator
   * `"nonstandard symbolic assembling`" [int] specifies a nonstandard treatment of schemas.
     It is used for experiments with preconditioners.
     Default is 0.
-
-  * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
-    Available options are `"standard`" (default), `"divk`", `"artificial diffusion`",
-    `"second-order`", and `"none`".
 
   * `"newton correction`" [string] specifies a model for non-physical terms 
     that must be added to the matrix. These terms represent Jacobian and are needed 

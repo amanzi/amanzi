@@ -68,7 +68,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   meshfactory.preference(pref);
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient.
+  // -- since rho=mu=1.0, we do not need additional special steps.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -125,7 +126,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
                                       .get<Teuchos::ParameterList>("diffusion operator mfd");
   Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusionMFD(olist, global_op));
   op2->SetBCs(bc);
-  op2->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+  op2->Setup(K, Teuchos::null, Teuchos::null);
   op2->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // create a preconditioner
@@ -142,7 +143,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
                                       .get<Teuchos::ParameterList>("diffusion operator mfd");
   Teuchos::RCP<OperatorDiffusion> op3 = Teuchos::rcp(new OperatorDiffusionMFD(olist2, global_op2));
   op3->SetBCs(bc);
-  op3->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+  op3->Setup(K, Teuchos::null, Teuchos::null);
   op3->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   Teuchos::ParameterList alist2;
@@ -197,7 +198,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   meshfactory.preference(pref);
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
+  // -- since rho=mu=1.0, we do need additional special steps.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -254,7 +256,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
                                       .get<Teuchos::ParameterList>("diffusion operator fv");
   Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusionFV(olist, global_op));
   op2->SetBCs(bc);
-  op2->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+  op2->Setup(K, Teuchos::null, Teuchos::null);
   op2->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // create a preconditioner
@@ -271,7 +273,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
                                       .get<Teuchos::ParameterList>("diffusion operator fv");
   Teuchos::RCP<OperatorDiffusion> op3 = Teuchos::rcp(new OperatorDiffusionFV(olist2, global_op2));
   op3->SetBCs(bc);
-  op3->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+  op3->Setup(K, Teuchos::null, Teuchos::null);
   op3->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   Teuchos::ParameterList alist2;

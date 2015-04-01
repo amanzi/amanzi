@@ -72,6 +72,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
   // create diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
@@ -130,7 +131,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   op->SetBCs(bc);
 
   op->set_factor(factor);  // for developers only
-  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // get and assmeble the global operator
