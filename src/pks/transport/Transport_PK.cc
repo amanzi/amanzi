@@ -593,7 +593,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new)
 
       if (flag_op1) {
         Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D);
-        op1->Setup(Dptr, Teuchos::null, Teuchos::null, 1.0, 1.0);
+        op1->Setup(Dptr, Teuchos::null, Teuchos::null);
         op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
         // add accumulation term
@@ -656,7 +656,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new)
       }
 
       Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D);
-      op1->Setup(Dptr, Teuchos::null, Teuchos::null, 1.0, 1.0);
+      op1->Setup(Dptr, Teuchos::null, Teuchos::null);
       op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
       // add boundary conditions and sources for gaseous components

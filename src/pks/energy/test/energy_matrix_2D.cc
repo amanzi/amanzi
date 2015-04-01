@@ -127,9 +127,8 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   op1->SetBCs(bc);
 
   // populate the diffusion operator
-  double rho(1.0), mu(1.0);
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(EPK->get_K());
-  op1->Setup(Kptr, Teuchos::null, Teuchos::null, rho, mu);
+  op1->Setup(Kptr, Teuchos::null, Teuchos::null);
   op1->UpdateMatrices(Teuchos::null, Teuchos::null);
   Teuchos::RCP<Operator> op = op1->global_operator();
 

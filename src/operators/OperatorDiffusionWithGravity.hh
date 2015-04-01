@@ -58,7 +58,14 @@ class OperatorDiffusionWithGravity : public OperatorDiffusionMFD {
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
 
   virtual void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
-  virtual void SetVectorDensity(const Teuchos::RCP<const CompositeVector>& rho) { rho_cv_ = rho; }
+  virtual void SetDensity(double rho) {
+    scalar_rho_ = true;
+    rho_ = rho;
+  }
+  virtual void SetDensity(const Teuchos::RCP<const CompositeVector>& rho) {
+    scalar_rho_ = false;
+    rho_cv_ = rho;
+  }
   
  protected:
   virtual void AddGravityToRHS_();

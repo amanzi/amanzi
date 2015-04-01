@@ -31,7 +31,7 @@ void Richards_PK::SolveFullySaturatedProblem(
     double T0, CompositeVector& u, const std::string& solver_name)
 {
   UpdateSourceBoundaryData(T0, T0, u);
-  krel_->PutScalar(1.0);
+  krel_->PutScalar(molar_rho_ / mu_);
   dKdP_->PutScalar(0.0);
 
   // create diffusion operator
@@ -88,16 +88,18 @@ void Richards_PK::EnforceConstraints(double Tp, Teuchos::RCP<CompositeVector> u)
   Epetra_MultiVector& u_face = *u->ViewComponent("face");
   Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
 
-  // update relative permeability coefficients
+  // update relative permeability coefficients and upwind it
   darcy_flux_copy->ScatterMasterToGhosted("face");
 
   relperm_->Compute(u, krel_);
   RelPermUpwindFn func1 = &RelPerm::Compute;
   upwind_->Compute(*darcy_flux_upwind, *u, bc_model, bc_value, *krel_, *krel_, func1);
+  krel_->Scale(molar_rho_ / mu_);
 
   relperm_->ComputeDerivative(u, dKdP_);
   RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
   upwind_->Compute(*darcy_flux_upwind, *u, bc_model, bc_value, *dKdP_, *dKdP_, func2);
+  dKdP_->Scale(molar_rho_ / mu_);
 
   // modify relative permeability coefficient for influx faces
   bool inflow_krel_correction(true);
@@ -116,9 +118,10 @@ void Richards_PK::EnforceConstraints(double Tp, Teuchos::RCP<CompositeVector> u)
         double Knn = ((K[c] * normal) * normal) / (area * area);
         // double save = 3.0;
         // k_face[0][f] = std::min(1.0, -save * bc_value[f] * mu_ / (Knn * rho_ * rho_ * g_));
+        double value = bc_value[f] / flux_units_;
         double kr1 = relperm_->Compute(c, u_cell[0][c]);
-        double kr2 = std::min(1.0, -bc_value[f] * mu_ / (Knn * rho_ * rho_ * g_));
-        k_face[0][f] = (kr1 + kr2) / 2;
+        double kr2 = std::min(1.0, -value * mu_ / (Knn * rho_ * rho_ * g_));
+        k_face[0][f] = (molar_rho_ / mu_) * (kr1 + kr2) / 2;
       } 
     }
 

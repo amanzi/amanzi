@@ -289,6 +289,7 @@ void Darcy_PK::Initialize()
   UpdateSpecificYield_();
 
   // initialize diffusion operator
+  // -- instead of scaling K, we scale the elemental mass matrices 
   SetAbsolutePermeabilityTensor();
 
   Teuchos::ParameterList& oplist = dp_list_->sublist("operators")
@@ -298,7 +299,8 @@ void Darcy_PK::Initialize()
   op_diff_ = opfactory.Create(mesh_, op_bc_, oplist, gravity_, 0);  // The last 0 means no upwind
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
   op_diff_->SetBCs(op_bc_);
-  op_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, rho_, mu_);
+  op_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, rho_ * rho_ / mu_);
+  op_diff_->ScaleMassMatrices(rho_ / mu_);
   op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op_ = op_diff_->global_operator();
 

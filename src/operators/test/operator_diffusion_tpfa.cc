@@ -190,7 +190,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   op1->UpdateMatrices(source);
 
   // modify diffusion coefficient
-  // -- tensor part
+  // -- since rho=mu=1.0, we do not need to scale the tensor coefficient.
   std::vector<WhetStone::Tensor> K;
 
   for (int c = 0; c != ncells; ++c) {
@@ -201,7 +201,6 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
 
   // -- scalar part
   Teuchos::RCP<CompositeVector> coef = Teuchos::rcp(new CompositeVector(*face_space));
-
   {
     Epetra_MultiVector& coef_faces = *coef->ViewComponent("face",false);
 
@@ -224,7 +223,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   for (int f=0; f!=left.size(); ++f) {
     bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
     mesh->face_centroid(f, &xv);
-    bc_value[f] = ana.pressure_exact(xv, 0.);
+    bc_value[f] = ana.pressure_exact(xv, 0.0);
   }
 
   AmanziMesh::Entity_ID_List right;
@@ -232,14 +231,16 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   for (int f=0; f!=right.size(); ++f) {
     bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
     mesh->face_centroid(f, &xv);
-    bc_value[f] = ana.pressure_exact(xv, 0.);
+    bc_value[f] = ana.pressure_exact(xv, 0.0);
   }
   
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator");
-  Point g(2); g[0] = 0.; g[1] = 0.;
+  Point g(2);
+  g[0] = 0.0;
+  g[1] = 0.0;
 
   Teuchos::RCP<OperatorDiffusionTPFA> op2 = Teuchos::rcp(new OperatorDiffusionTPFA(*op1, op_list, bc));
   op2->SetUpwind(0);
@@ -248,7 +249,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   const CompositeVectorSpace& cvs = op2->DomainMap();
   
   // populate the diffusion operator
-  op2->Setup(K, coef, Teuchos::null, rho, mu);
+  op2->Setup(K, coef, Teuchos::null);
   op2->UpdateMatrices(Teuchos::null, Teuchos::null);
   op2->ApplyBCs();
   op2->SymbolicAssembleMatrix(op2->schema_prec_dofs());
@@ -268,18 +269,19 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   CompositeVector residual(*cell_space);
   //  int ierr = op1->ComputeNegativeResidual(solution, residual);
   solution.Print(std::cout);
+
   op2->rhs()->Print(std::cout);
   int ierr = op2->Apply(solution, residual);
+
   residual.Print(std::cout);
-  residual.Update(1., *op2->rhs(), -1.);
+  residual.Update(1.0, *op2->rhs(), -1.0);
   residual.Print(std::cout);
   CHECK(!ierr);
 
-  
-  double res_norm(0.);
+  double res_norm(0.0);
   ierr |= residual.Norm2(&res_norm);
   CHECK(!ierr);
-  CHECK_CLOSE(0., res_norm, 1.e-8);
+  CHECK_CLOSE(0.0, res_norm, 1.0e-8);
 }
 
 

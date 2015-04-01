@@ -172,7 +172,6 @@ void HeatConduction::Init(
     Kc(0, 0) = 1.0;
     K.push_back(Kc);
   }
-  double rho(1.0), mu(1.0);
 
   // create temperature-dependent data
   k = Teuchos::rcp(new CompositeVector(*cvs_));
@@ -197,7 +196,7 @@ void HeatConduction::Init(
 
   // set up the local matrices
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
-  op_diff_->Setup(Kptr, k, dkdT, rho, mu);
+  op_diff_->Setup(Kptr, k, dkdT);
   op_diff_->UpdateMatrices(flux_.ptr(), solution_.ptr());
   op_diff_->UpdateMatricesNewtonCorrection(flux_.ptr(), solution_.ptr());
   op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
