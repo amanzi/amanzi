@@ -3062,6 +3062,8 @@ The following Observation Data functionals are currently supported.  All of them
 
 * `"Observation Data: Integral`" returns the integral of the field quantity over the region specified
 
+* `"Observation Data: Minimum`" and `"Observation Data: Maximum`" returns the minimum (respectively maximum) of the field quantity over the region specified
+
 .. code-block:: xml
 
   <ParameterList name="Observation Data">

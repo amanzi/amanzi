@@ -25,6 +25,10 @@ namespace Amanzi {
 
 class State;
 
+double ObservableSum(double a, double b);
+double ObservableMin(double a, double b);
+double ObservableMax(double a, double b);
+
 class Observable : public IOEvent {
 
  public:
@@ -61,6 +65,8 @@ class Observable : public IOEvent {
   std::string functional_;
   std::string location_;
   std::string delimiter_;
+
+  double (*function_)(double a, double b, double vol);
 };
 
 

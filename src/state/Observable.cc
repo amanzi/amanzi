@@ -25,6 +25,11 @@ Observable data object
 
 namespace Amanzi {
 
+double ObservableSum(double a, double b, double vol) { return a + b*vol; }
+double ObservableMin(double a, double b, double vol) { return std::min(a,b); }
+double ObservableMax(double a, double b, double vol) { return std::max(a,b); }
+
+
 Observable::Observable(Teuchos::ParameterList& plist, Epetra_MpiComm *comm) :
     IOEvent(plist, comm),
     count_(0) {
@@ -32,9 +37,23 @@ Observable::Observable(Teuchos::ParameterList& plist, Epetra_MpiComm *comm) :
   name_ = plist.name();
   variable_ = plist.get<std::string>("variable");
   region_ = plist.get<std::string>("region");
-  functional_ = plist.get<std::string>("functional");
   delimiter_ = plist.get<std::string>("delimiter", ",");
 
+  functional_ = plist.get<std::string>("functional");
+  if (functional_ == "Observation Data: Point" ||
+      functional_ == "Observation Data: Integral") {
+    function_ = &ObservableSum;
+  } else if (functional_ == "Observation Data: Minimum") {
+    function_ = &ObservableMin;
+  } else if (functional_ == "Observation Data: Maximum") {
+    function_ = &ObservableMax;
+  } else {
+    Errors::Message msg;
+    msg << "Observable: unrecognized functional " << functional_;
+    Exceptions::amanzi_throw(msg);
+  }
+    
+  
   // entity of region
   location_ = plist.get<std::string>("location name", "cell");
 
@@ -118,6 +137,12 @@ void Observable::Update_(const State& S,
     vec->Mesh()->get_set_entities(region_, entity, AmanziMesh::OWNED, &ids);
 
     double value(0.);
+    if (functional_ == "Observation Data: Minimum") {
+      value = 1.e20;
+    } else if (functional_ == "Observation Data: Maximum") {
+      value = -1.e20;
+    }
+
     double volume(0.);
     const Epetra_MultiVector& subvec = *vec->ViewComponent(location_, false);
 
@@ -125,7 +150,7 @@ void Observable::Update_(const State& S,
       for (AmanziMesh::Entity_ID_List::const_iterator id=ids.begin();
            id!=ids.end(); ++id) {
         double vol = vec->Mesh()->cell_volume(*id);
-        value += subvec[0][*id] * vol;
+        value = (*function_)(value, subvec[0][*id], vol);
         volume += vol;
       }
     } else if (entity == AmanziMesh::FACE) {
@@ -145,38 +170,47 @@ void Observable::Update_(const State& S,
           vol *= dirs[i];
         }
 
-        value += subvec[0][*id] * vol;
+        value = (*function_)(value, subvec[0][*id], vol);
         volume += std::abs(vol);
       }
     } else if (entity == AmanziMesh::NODE) {
       for (AmanziMesh::Entity_ID_List::const_iterator id=ids.begin();
            id!=ids.end(); ++id) {
         double vol = 1.0;
-        value += subvec[0][*id] * vol;
+        value = (*function_)(value, subvec[0][*id], vol);
         volume += vol;
       }
     }
 
     // syncronize the result across processors
-    double tmp = value;
-    S.GetMesh()->get_comm()->SumAll(&tmp, &value, 1);
-      
-    tmp = volume;
-    S.GetMesh()->get_comm()->SumAll(&tmp, &volume, 1);
+    if (functional_ == "Observation Data: Point" ||
+        functional_ == "Observation Data: Integral") {
+      double local[2], global[2];
+      local[0] = value; local[1] = volume;
+      S.GetMesh()->get_comm()->SumAll(local, global, 2);
 
-    if (volume > 0) {
-      if (functional_ == "Observation Data: Point") {
-        data.value = value / volume;
-        data.is_valid = true;
-      } else if (functional_ == "Observation Data: Integral") {
-        data.value = value;
-        data.is_valid = true;
+      if (volume > 0) {
+        if (functional_ == "Observation Data: Point") {
+          data.value = global[0] / global[1];
+          data.is_valid = true;
+        } else if (functional_ == "Observation Data: Integral") {
+          data.value = global[0];
+          data.is_valid = true;
+        }
       } else {
-        std::stringstream message;
-        message << "Observable: unrecognized functional " << functional_;
-        Errors::Message m(message.str());
-        Exceptions::amanzi_throw(m);
+        data.value = 0.;
+        data.is_valid = false;
       }
+    } else if (functional_ == "Observation Data: Minimum") {
+      double global;
+      S.GetMesh()->get_comm()->MinAll(&value, &global, 1);
+      data.value = global;
+      data.is_valid = true;
+    } else if (functional_ == "Observation Data: Maximum") {
+      double global;
+      S.GetMesh()->get_comm()->MaxAll(&value, &global, 1);
+      data.value = global;
+      data.is_valid = true;
     } else {
       data.value = 0.;
       data.is_valid = false;
