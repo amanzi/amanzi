@@ -127,8 +127,8 @@ if __name__ == "__main__":
     amanzi_totc_crunch = [amanzi_totc_templ.format(x) for x in compcrunch] #range(len(components))]
 
     amanzi_sorb_templ = "total_sorbed.cell.{0}"
-    amanzi_sorb = [amanzi_sorb_templ.format(x) for x in range(len(components))]
-    amanzi_sorb_crunch = [amanzi_sorb_templ.format(x) for x in range(len(compcrunch))]
+    amanzi_sorb = [amanzi_sorb_templ.format(x+1) for x in range(len(components))]
+    amanzi_sorb_crunch = [amanzi_sorb_templ.format(x+1) for x in range(len(compcrunch))]
 
 # amanzi output (structured - alquimia)
     amanzi_totc_templ = "{0}_Aqueous_Concentration"
