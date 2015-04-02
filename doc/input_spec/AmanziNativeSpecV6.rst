@@ -1817,10 +1817,6 @@ Diffusion operator
 
   * `"gravity`" [bool] specifies if flow is driven also by the gravity.
 
-  * `"nonstandard symbolic assembling`" [int] specifies a nonstandard treatment of schemas.
-    It is used for experiments with preconditioners.
-    Default is 0.
-
   * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
     Available options are `"standard`" (default), `"divk`", `"artificial diffusion`",
     `"second-order`", and `"none`".
@@ -1831,6 +1827,15 @@ Diffusion operator
 
   * `"linear operator`" [sublist] add parameters for a linear solver that defines a preconditioner
     for the diffusion operator (see section LinearSolvers_).
+
+  * `"consistent faces`" [sublist] may contain a `"preconditioner`" and
+    `"linear operator`" list (see sections Preconditioners_ and LinearSolvers_
+    respectively).  If these lists are provided, and the `"discretization
+    primary`" is of type `"mfd: *`", then the OperatorDiffusionMFD method
+    UpdateConsistentFaces() can be used.  This method, given a set of cell
+    values, determines the faces constraints that satisfy the constraint
+    equation in MFD by assembling and inverting the face-only system.  This is
+    not currently used by any Amanzi PKs.
 
 .. code-block:: xml
 
@@ -1844,6 +1849,14 @@ Diffusion operator
       <Parameter name="newton correction" type="string" value="true jacobian"/>
       <ParameterList name="linear solver">
         ...
+      </ParameterList>
+      <ParameterList name="consistent faces">
+        <ParameterList name="linear solver">
+          ...
+        </ParameterList>
+        <ParameterList name="preconditioner">
+          ...
+        </ParameterList>
       </ParameterList>
     </ParameterList>
 
