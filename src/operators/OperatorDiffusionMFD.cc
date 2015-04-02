@@ -780,8 +780,8 @@ void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
 
-    double v = flux_f[0][f];
-    double vmod = kf[0][f] > 0.0 ? fabs(v) * dkdp_f[0][f] / kf[0][f] : 0.0;
+    double v = std::abs(kf[0][f]) > 0. ? flux_f[0][f] / kf[0][f] : 0.;
+    double vmod = v * dkdp_f[0][f];
     if (scalar_rho_mu_) {
       vmod *= rho_;
     } else {
@@ -1162,7 +1162,7 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
 * Given a set of cell values, update faces using the consistency equations,
 * x_f = Aff^-1 * (y_f - Afc * x_c)
 ****************************************************************** */
-void
+int
 OperatorDiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 {
   if (consistent_face_op_ == Teuchos::null) {
@@ -1202,21 +1202,21 @@ OperatorDiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
   consistent_face_op_->AssembleMatrix();
   consistent_face_op_->InitPreconditioner(plist_.sublist("consistent faces").sublist("preconditioner"));
 
+  int ierr = 0;
   if (plist_.sublist("consistent faces").isSublist("linear solver")) {
     AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> fac;
     Teuchos::RCP<Operator> lin_solver = fac.Create(
         plist_.sublist("consistent faces").sublist("linear solver"), consistent_face_op_);
 
     CompositeVector u_f_copy(y);
-    int ierr = lin_solver->ApplyInverse(y, u_f_copy);
+    ierr = lin_solver->ApplyInverse(y, u_f_copy);
     *u.ViewComponent("face",false) = *u_f_copy.ViewComponent("face",false);
-    ASSERT(!ierr);
   } else {
     CompositeVector u_f_copy(y);
-    int ierr = consistent_face_op_->ApplyInverse(y, u);
-    ASSERT(!ierr);
+    ierr = consistent_face_op_->ApplyInverse(y, u);
     *u.ViewComponent("face",false) = *u_f_copy.ViewComponent("face",false);
   }
+  return ierr;
 }
 
   

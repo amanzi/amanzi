@@ -79,7 +79,7 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   virtual void ModifyMatrices(const CompositeVector& u);
 
   // working with consistent faces -- EXPERIMENTAL
-  virtual void UpdateConsistentFaces(CompositeVector& u);
+  virtual int UpdateConsistentFaces(CompositeVector& u);
   Teuchos::RCP<const Operator> consistent_face_operator() const { return consistent_face_op_; }
   Teuchos::RCP<Operator> consistent_face_operator() { return consistent_face_op_; }
   
