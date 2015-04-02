@@ -67,6 +67,10 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     energy_flux_key_ = plist_->get<std::string>("energy flux key",
             domain_prefix_+std::string("energy_flux"));
   }
+  if (adv_energy_flux_key_ == std::string()) {
+    adv_energy_flux_key_ = plist_->get<std::string>("advected energy flux key",
+            domain_prefix_+std::string("advected_energy_flux"));
+  }
   if (conductivity_key_ == std::string()) {
     conductivity_key_ = plist_->get<std::string>("conductivity key",
             domain_prefix_+std::string("thermal_conductivity"));
@@ -153,6 +157,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     Exceptions::amanzi_throw(message);
   }
   S->RequireField(energy_flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
+      ->SetComponent("face", AmanziMesh::FACE, 1);
+  S->RequireField(adv_energy_flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("face", AmanziMesh::FACE, 1);
 
   // Require an upwinding strategy
@@ -260,6 +266,9 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   // constraint on max delta T, which kicks us out of bad iterates faster?
   dT_max_ = plist_->get<double>("maximum temperature change", 10.);
 
+  // simply limit to close to 0
+  modify_predictor_for_freezing_ =
+      plist_->get<bool>("modify predictor for freezing", false);
   // ewc and other predictors can result in odd face values
   modify_predictor_with_consistent_faces_ =
       plist_->get<bool>("modify predictor with consistent faces", false);
@@ -296,6 +305,8 @@ void EnergyBase::initialize(const Teuchos::Ptr<State>& S) {
   // initialize energy flux
   S->GetFieldData(energy_flux_key_, name_)->PutScalar(0.0);
   S->GetField(energy_flux_key_, name_)->set_initialized();
+  S->GetFieldData(adv_energy_flux_key_, name_)->PutScalar(0.0);
+  S->GetField(adv_energy_flux_key_, name_)->set_initialized();
 
   // potentially initialize mass flux
   if (!flux_exists_) {
@@ -334,6 +345,20 @@ void EnergyBase::commit_state(double dt, const Teuchos::RCP<State>& S) {
     matrix_diff_->UpdateFlux(*temp, *flux);
   }
 };
+
+
+// -- Calculate any diagnostics prior to doing vis
+void EnergyBase::calculate_diagnostics(const Teuchos::RCP<State>& S) {
+  // calculate the advected energy as a diagnostic
+  Teuchos::RCP<const CompositeVector> flux = S->GetFieldData(flux_key_);
+  matrix_adv_->Setup(*flux);
+  S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S.ptr(), name_);
+  Teuchos::RCP<const CompositeVector> enth = S->GetFieldData(enthalpy_key_);;
+  ApplyDirichletBCsToEnthalpy_(S.ptr());
+
+  CompositeVector& adv_energy = *S->GetFieldData(adv_energy_flux_key_, name_);  
+  matrix_adv_->UpdateFlux(*enth, *flux, bc_adv_, adv_energy);  
+}
 
 
 bool EnergyBase::UpdateConductivityData_(const Teuchos::Ptr<State>& S) {
@@ -576,7 +601,7 @@ bool EnergyBase::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
 
     for (int c=0; c!=u0_c.MyLength(); ++c) {
       if (u0_c[0][c] > 273.15 && u_c[0][c] < 273.15) {
-        u_c[0][c] = 273.15 - .001;
+        u_c[0][c] = 273.15 - .00001;
         modified = true;
       }
     }
@@ -618,6 +643,15 @@ void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u
 
   // derive the consistent faces, involves a solve
   matrix_diff_mfd_->UpdateConsistentFaces(*u);
+}
+
+
+
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+EnergyBase::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+                             Teuchos::RCP<const TreeVector> u,
+                             Teuchos::RCP<TreeVector> du) {
+  return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
 }
 
 } // namespace Energy

@@ -33,6 +33,8 @@ public:
   // Virtual destructor
   virtual ~ThreePhase() {}
 
+  virtual void initialize(const Teuchos::Ptr<State>& S);
+  
 protected:
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
 

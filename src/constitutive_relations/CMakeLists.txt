@@ -22,6 +22,11 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
+  HEADERFILE eos/eos_linear_reg.hh
+  LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
+  )
+
+register_evaluator_with_factory(
   HEADERFILE eos/eos_evaluator_reg.hh
   LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
   )

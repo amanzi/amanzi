@@ -51,6 +51,11 @@ void EnergyBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector>
   std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
   vecs.push_back(S_inter_->GetFieldData(key_).ptr()); vecs.push_back(u.ptr());
   db_->WriteVectors(vnames, vecs, true);
+
+  vnames[0] = "sl"; vnames[1] = "si";
+  vecs[0] = S_next_->GetFieldData("saturation_liquid").ptr();
+  vecs[1] = S_next_->GetFieldData("saturation_ice").ptr();
+  db_->WriteVectors(vnames, vecs, false);
 #endif
 
   // update boundary conditions

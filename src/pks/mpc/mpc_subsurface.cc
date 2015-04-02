@@ -232,9 +232,6 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
     Teuchos::RCP<PermafrostModel> model = Teuchos::rcp(new PermafrostModel());
     ewc_->set_model(model);
     ewc_->setup(S);
-  } else if (plist_->isParameter("predictor type")) {
-    Errors::Message message("Old-style subsurface ParameterList, please use sublist for EWC delegate.");
-    Exceptions::amanzi_throw(message);
   }    
 }
 

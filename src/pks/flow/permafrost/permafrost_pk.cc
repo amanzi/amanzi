@@ -21,6 +21,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "wrm_permafrost_evaluator.hh"
 #include "rel_perm_evaluator.hh"
 #include "permafrost_water_content.hh"
+#include "interfrost_water_content.hh"
 
 #include "permafrost.hh"
 
@@ -42,9 +43,15 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField("water_content")->SetMesh(S->GetMesh())->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList wc_plist = plist_->sublist("water content evaluator");
-  Teuchos::RCP<PermafrostWaterContent> wc =
-      Teuchos::rcp(new PermafrostWaterContent(wc_plist));
-  S->SetFieldEvaluator("water_content", wc);
+  if (wc_plist.get<bool>("interfrost water content", false)) {
+    Teuchos::RCP<InterfrostWaterContent> wc =
+        Teuchos::rcp(new InterfrostWaterContent(wc_plist));
+    S->SetFieldEvaluator("water_content", wc);
+  } else {    
+    Teuchos::RCP<PermafrostWaterContent> wc =
+        Teuchos::rcp(new PermafrostWaterContent(wc_plist));
+    S->SetFieldEvaluator("water_content", wc);
+  }
 
   // -- Water retention evaluators, for saturation and rel perm.
   std::vector<AmanziMesh::Entity_kind> locations2(2);

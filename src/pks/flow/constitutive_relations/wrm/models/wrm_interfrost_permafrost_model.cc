@@ -1,14 +1,14 @@
 /*
 Author: Ethan Coon
 
-Sutra model for saturated
+Interfrost model for saturated
 
  */
 
 #include "dbc.hh"
 
 #include "wrm.hh"
-#include "wrm_sutra_permafrost_model.hh"
+#include "wrm_interfrost_permafrost_model.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -17,27 +17,22 @@ namespace FlowRelations {
 // required methods from the base class
 // sats[0] = sg, sats[1] = sl, sats[2] = si
 void
-WRMSutraPermafrostModel::saturations(double pc_liq, double temperature,
+WRMInterfrostPermafrostModel::saturations(double pc_liq, double temperature,
         double (&sats)[3]) {
   // pc_ice is temperature
-  double dT = T0_ - temperature;
-  if (dT <= 0.) {
+  if (temperature >= 273.15) {
     sats[0] = 0.;
     sats[1] = 1.;
     sats[2] = 0.;
-  } else if (dT > dT_) {
-    sats[0] = 0.;
-    sats[1] = sr_;
-    sats[2] = 1.-sr_;
   } else {
     sats[0] = 0.;
-    sats[1] = 1.0 - (1.0-sr_) * (dT / dT_);
+    sats[1] = sr_ + (1-sr_) * std::exp(-std::pow((temperature - 273.15) / W_, 2));
     sats[2] = 1.0 - sats[1];
   }
 }
 
 void
-WRMSutraPermafrostModel::dsaturations_dpc_liq(double pc_liq, double pc_ice,
+WRMInterfrostPermafrostModel::dsaturations_dpc_liq(double pc_liq, double pc_ice,
         double (&dsats)[3]) {
   dsats[0] = 0.;
   dsats[1] = 0.;
@@ -46,21 +41,16 @@ WRMSutraPermafrostModel::dsaturations_dpc_liq(double pc_liq, double pc_ice,
 
 
 void
-WRMSutraPermafrostModel::dsaturations_dpc_ice(double pc_liq, double temperature,
+WRMInterfrostPermafrostModel::dsaturations_dpc_ice(double pc_liq, double temperature,
         double (&dsats)[3]) {
-  double dT = T0_ - temperature;
-  if (dT <= 0.) {
-    dsats[0] = 0.;
-    dsats[0] = 0.;
-    dsats[1] = 0.;
-  } else if (dT > dT_) {
+  if (temperature >= 273.15) {
     dsats[0] = 0.;
     dsats[1] = 0.;
     dsats[2] = 0.;
   } else {
     dsats[0] = 0.;
-    dsats[1] = (1.0 - sr_) / dT_;
-    dsats[2] = -dsats[1];
+    dsats[1] = (1-sr_) * std::exp(-std::pow((temperature - 273.15) / W_, 2)) * (-2 * (temperature - 273.15) / W_) / W_;
+    dsats[2] = - dsats[1];
   }
 }
 
