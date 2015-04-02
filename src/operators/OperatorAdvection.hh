@@ -51,6 +51,10 @@ class OperatorAdvection {
   void UpdateMatrices(const CompositeVector& u, const CompositeVector& dhdT);
   void ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary=true);
 
+  // results -- determine advected flux of u
+  void UpdateFlux(const CompositeVector& h , const CompositeVector& u,
+                  const Teuchos::RCP<BCs>& bc, CompositeVector& flux);
+  
   // access
   Teuchos::RCP<Operator> global_operator() { return global_op_; }
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }

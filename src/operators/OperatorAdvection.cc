@@ -234,6 +234,36 @@ void OperatorAdvection::ApplyBCs(const Teuchos::RCP<BCs>& bc,
 
 
 /* *******************************************************************
+* Identify the advected flux of u
+******************************************************************* */
+void
+OperatorAdvection::UpdateFlux(const CompositeVector& h, const CompositeVector& u,
+        const Teuchos::RCP<BCs>& bc, CompositeVector& flux) {
+  // might need to think more carefully about BCs
+  const std::vector<int>& bc_model = bc->bc_model();
+  const std::vector<double>& bc_value = bc->bc_value();
+  flux.PutScalar(0.);
+  
+  // apply preconditioner inversion
+  AmanziMesh::Entity_ID_List cells;
+  h.ScatterMasterToGhosted("cell");
+  const Epetra_MultiVector& h_c = *h.ViewComponent("cell", true);
+  const Epetra_MultiVector& u_f = *u.ViewComponent("face", false);
+  Epetra_MultiVector& flux_f = *flux.ViewComponent("face", false);
+
+  for (int f = 0; f < nfaces_owned; ++f) {  // loop over master and slave faces
+    int c1 = (*upwind_cell_)[f];
+    if (c1 < 0) {
+      // boundary enthalpy
+      flux_f[0][f] = u_f[0][f] * bc_value[f];
+    } else {
+      // upwind cell enthalpy
+      flux_f[0][f] = u_f[0][f] * h_c[0][c1];
+    }
+  }  
+}
+
+/* *******************************************************************
 * Identify flux direction based on orientation of the face normal 
 * and sign of the  Darcy velocity.                               
 ******************************************************************* */
