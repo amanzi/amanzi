@@ -158,7 +158,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     S->InitializeFields();
     S->InitializeEvaluators();
 
-    /* create Richards process kernel */
+    // create Richards process kernel
     RPK->Initialize();
     S->CheckAllFieldsInitialized();
 

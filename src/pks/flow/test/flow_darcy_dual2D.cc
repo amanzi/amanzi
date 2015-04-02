@@ -70,31 +70,41 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   S->Setup();
   S->InitializeFields();
 
-  /* modify the default state for the problem at hand */
+  // modify the default state for the problem at hand 
+  // -- permeability
   std::string passwd("flow"); 
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
   for (int c = 0; c < K.MyLength(); c++) {
     K[0][c] = 0.1;
     K[1][c] = 2.0;
   }
+  S->GetField("permeability", "flow")->set_initialized();
 
+  // -- fluid density and viscosity
   *S->GetScalarData("fluid_density", passwd) = 1.0;
+  S->GetField("fluid_density", "flow")->set_initialized();
+
   *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
+  S->GetField("fluid_viscosity", "flow")->set_initialized();
+
+  // -- gravity
   Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
   gravity[1] = -1.0;
+  S->GetField("gravity", "state")->set_initialized();
 
-  /* create the initial pressure function */
+  // create the initial pressure function
   Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);
 
   for (int c = 0; c < p.MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
     p[0][c] = xc[1] * (xc[1] + 2.0);
   }
+  S->GetField("pressure", "flow")->set_initialized();
 
-  // Initialize Darcy process kernel.
+  // initialize Darcy process kernel.
   DPK->Initialize();
 
-  /* transient solution */
+  // transient solution
   double t_old(0.0), t_new, dt(0.1);
   for (int n = 0; n < 2; n++) {
     t_new = t_old + dt;

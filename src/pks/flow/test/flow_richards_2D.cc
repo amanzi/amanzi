@@ -42,11 +42,11 @@ TEST(FLOW_2D_RICHARDS) {
   int MyPID = comm.MyPID();
   if (MyPID == 0) std::cout << "Test: 2D Richards, 2-layer model" << std::endl;
 
-  /* read parameter list */
+  // read parameter list
   std::string xmlFileName = "test/flow_richards_2D.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
-  /* create a mesh framework */
+  // create a mesh framework
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
@@ -92,11 +92,18 @@ TEST(FLOW_2D_RICHARDS) {
       K[0][c] = 0.5;
       K[1][c] = 0.5;
     }
+    S->GetField("permeability", "flow")->set_initialized();
 
-    *S->GetScalarData("fluid_density", passwd) = 1.0;
+    // -- fluid density and vicosity
+    *S->GetScalarData("fluid_density", passwd) = 10.0;
+    S->GetField("fluid_density", "flow")->set_initialized();
+
     *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
+    S->GetField("fluid_viscosity", "flow")->set_initialized();
+
     Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
-    gravity[1] = -1.0;
+    gravity[1] = -9.8;
+    S->GetField("gravity", "state")->set_initialized();
 
     // create the initial pressure function
     Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell");
@@ -130,7 +137,7 @@ TEST(FLOW_2D_RICHARDS) {
 
     // check the pressure
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    for (int c = 0; c < ncells; c++) CHECK(p[0][c] > 0.0 && p[0][c] < 2.1);
+    for (int c = 0; c < ncells; c++) CHECK(p[0][c] > -4.0 && p[0][c] < 0.01);
 
     // modify the preconditioner
     plist->sublist("PKs").sublist("Flow").sublist("Richards problem")
