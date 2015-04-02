@@ -12,13 +12,13 @@ The expected plist is of the form:
 <ParameterList name="constuctor plist">
   <Parameter name="Number of DoFs">
 
-  <ParameterList name="Function 1">
+  <ParameterList name="DoF 1 Function">
     <ParameterList name="function-constant">
       ...
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Function 2">
+  <ParameterList name="DoF 2 Function">
     <ParameterList name="function-linear">
       ...
     </ParameterList>
