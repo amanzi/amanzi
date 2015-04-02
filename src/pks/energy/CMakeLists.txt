@@ -128,6 +128,11 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/thermal_conductivity/thermal_conductivity_threephase_sutra_hacked_reg.hh
+  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
+  )
+
+register_evaluator_with_factory(
   HEADERFILE constitutive_relations/thermal_conductivity/thermal_conductivity_twophase_peterslidard_reg.hh
   LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
   )

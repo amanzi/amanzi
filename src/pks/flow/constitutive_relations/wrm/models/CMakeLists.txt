@@ -20,6 +20,7 @@ add_library(flow_relations_wrm_models
   wrm_fpd_permafrost_model.cc
   wrm_fpd_smoothed_permafrost_model.cc
   wrm_sutra_permafrost_model.cc
+  wrm_interfrost_permafrost_model.cc
   )
 
 install(TARGETS flow_relations_wrm_models DESTINATION lib)

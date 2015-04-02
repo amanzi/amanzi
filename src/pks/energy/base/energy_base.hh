@@ -65,7 +65,7 @@ public:
   virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
 
   // -- Calculate any diagnostics prior to doing vis
-  virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {}
+  virtual void calculate_diagnostics(const Teuchos::RCP<State>& S);
 
 
   // EnergyBase is a BDFFnBase
@@ -92,7 +92,12 @@ public:
   // evaluating consistent faces for given BCs and cell values
   virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
 
-protected:
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+  ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+                   Teuchos::RCP<const TreeVector> u,
+                   Teuchos::RCP<TreeVector> du);
+
+ protected:
   // These must be provided by the deriving PK.
   // -- setup the evaluators
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) = 0;
@@ -169,6 +174,7 @@ protected:
   FluxUpdateMode update_flux_;
   bool modify_predictor_with_consistent_faces_;
   bool modify_predictor_for_freezing_;
+  bool modify_correction_for_freezing_;
   bool is_source_term_;
   bool is_mass_source_term_;
   bool implicit_advection_;
@@ -188,6 +194,7 @@ protected:
   Key denthalpy_key_;
   Key flux_key_;
   Key energy_flux_key_;
+  Key adv_energy_flux_key_;
   Key conductivity_key_;
   Key uw_conductivity_key_;
   Key de_dT_key_;

@@ -18,6 +18,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/porosi
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm/models)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/richards)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/permafrost)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/overland)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/overland_head)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/internal_energy)
