@@ -1076,13 +1076,17 @@ Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(
         .set<std::string>("newton correction", "approximate jacobian");
   }
 
-  // "standard" is the most robust upwind method for variety of infiltration
+  // "standard" is the most robust upwind method for variety of subsurface
   // scenarios. Note that "Upwind: Amanzi" requires "upwind method"="divk" 
-  // to reproduce the same steady-state solution as PFloTran and other codes
-  // even on orthogonal meshes. 
+  // to reproduce the same behavior on orthogonal meshes. 
   Teuchos::ParameterList& upw_list = op_list.sublist("diffusion operator").sublist("upwind");
-  upw_list.set<std::string>("upwind method", "standard");
-  upw_list.sublist("upwind standard parameters").set<double>("tolerance", 1e-12);
+  if (rel_perm == "Upwind: Amanzi") {
+    upw_list.set<std::string>("upwind method", "divk");
+    upw_list.sublist("upwind divk parameters").set<double>("tolerance", 1e-12);
+  } else {
+    upw_list.set<std::string>("upwind method", "standard");
+    upw_list.sublist("upwind standard parameters").set<double>("tolerance", 1e-12);
+  }
 
   return op_list;
 }
