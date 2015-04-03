@@ -419,6 +419,7 @@ void Richards_PK::Initialize()
   UpdateSourceBoundaryData(t_old, t_new, pressure);
 
   // Initialize two fields for upwind operators.
+  darcy_flux_copy = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("darcy_flux", passwd_)));
   InitializeUpwind_();
 
   // Other quantatities: injected water mass
@@ -687,8 +688,6 @@ void Richards_PK::InitializeFields_()
 ****************************************************************** */
 void Richards_PK::InitializeUpwind_()
 {
-  darcy_flux_copy = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("darcy_flux", passwd_)));
-
   // Create RCP pointer to upwind flux.
   if (relperm_->method() == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
       relperm_->method() == FLOW_RELATIVE_PERM_AMANZI_ARTIFICIAL_DIFFUSION ||

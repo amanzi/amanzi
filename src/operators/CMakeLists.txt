@@ -205,6 +205,12 @@ if ( BUILD_TESTS )
 
     add_amanzi_test(operators_tree_2pe operators_tree NPROCS 2 KIND unit)
 
+    # Test: diffusion with gravity
+    add_amanzi_test(operators_gravity operators_gravity
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_gravity.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
     # reconstruction tests
     add_amanzi_test(operators_reconstruction operators_reconstruction
                     KIND unit

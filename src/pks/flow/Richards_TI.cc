@@ -52,7 +52,6 @@ void Richards_PK::Functional(double t_old, double t_new,
   // assemble residual for diffusion operator
   op_matrix_->Init();
   op_matrix_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
-  op_matrix_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr());
   op_matrix_diff_->ApplyBCs(true);
 
   Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
