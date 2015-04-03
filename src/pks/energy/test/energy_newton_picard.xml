@@ -27,7 +27,7 @@
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-      <Parameter name="upwind method" type="string" value="standard"/>
+      <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
       <Parameter name="newton correction" type="string" value="none"/>
     </ParameterList>
 
@@ -36,7 +36,7 @@
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-      <Parameter name="upwind method" type="string" value="standard"/>
+      <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
       <Parameter name="newton correction" type="string" value="approximate jacobian"/>
     </ParameterList>
 
@@ -45,7 +45,7 @@
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-      <Parameter name="upwind method" type="string" value="standard"/>
+      <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
       <Parameter name="newton correction" type="string" value="none"/>
     </ParameterList>
 
@@ -166,7 +166,7 @@
         <Parameter name="relaxation type down" type="int" value="3"/>
         <Parameter name="relaxation type up" type="int" value="4"/>
         <Parameter name="coarsen type" type="int" value="0"/>
-        <Parameter name="tolerance" type="double" value="0.0"/>
+        <Parameter name="tolerance" type="double" value="0"/>
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>

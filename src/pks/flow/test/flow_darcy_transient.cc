@@ -39,14 +39,13 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-
   if (MyPID == 0) std::cout << "Test: 2D transient Darcy, 2-layer model" << std::endl;
 
-  /* read parameter list */
+  // read parameter list
   std::string xmlFileName = "test/flow_darcy_transient_2D.xml";
   Teuchos::RCP<ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
-  /* create an SIMPLE mesh framework */
+  // create SIMPLE mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
@@ -59,7 +58,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   meshfactory.preference(pref);
   RCP<const Mesh> mesh = meshfactory(0.0, -2.0, 1.0, 0.0, 18, 18, gm);
 
-  /* create a simple state and populate it */
+  // create a simple state and populate it
   Amanzi::VerboseObject::hide_line_prefix = true;
   Amanzi::VerboseObject::global_default_level = Teuchos::VERB_EXTREME;
 
@@ -76,7 +75,8 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   S->InitializeFields();
   S->InitializeEvaluators();
 
-  /* modify the default state for the problem at hand */
+  // modify the default state for the problem at hand
+  // -- permeability
   std::string passwd("flow"); 
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
 
@@ -93,28 +93,39 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
     int c = block[i];
     K[0][c] = 0.5;
     K[1][c] = 0.5;
-  }
+  } 
+  S->GetField("permeability", "flow")->set_initialized();
 
+  // -- fluid density and viscosity
   *S->GetScalarData("fluid_density", passwd) = 1.0;
+  S->GetField("fluid_density", "flow")->set_initialized();
+
   *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
+  S->GetField("fluid_viscosity", "flow")->set_initialized();
+
+  // -- gravity
   Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
   gravity[1] = -1.0;
+  S->GetField("gravity", "state")->set_initialized();
 
+  // -- storativity
   S->GetFieldData("specific_storage", passwd)->PutScalar(2.0);
+  S->GetField("specific_storage", "flow")->set_initialized();
 
-  /* create the initial pressure function */
+  // create the initial pressure function
   Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);
 
   for (int c = 0; c < p.MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
     p[0][c] = xc[1] * (xc[1] + 2.0);
   }
+  S->GetField("pressure", "flow")->set_initialized();
 
-  /* initialize the Darcy process kernel */
+  // initialize the Darcy process kernel
   DPK->Initialize();
   S->CheckAllFieldsInitialized();
 
-  /* transient solution */
+  // transient solution
   double t_old(0.0), t_new, dt(0.1);
   for (int n = 0; n < 10; n++) {
     t_new = t_old + dt;

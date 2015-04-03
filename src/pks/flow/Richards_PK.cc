@@ -12,11 +12,13 @@
 
 #include <vector>
 
+// TPLs
 #include "boost/math/tools/roots.hpp"
 #include "Epetra_IntVector.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
+// Amanzi
 #include "dbc.hh"
 #include "exceptions.hh"
 #include "independent_variable_field_evaluator_fromfunction.hh"
@@ -28,6 +30,7 @@
 #include "UpwindFactory.hh"
 #include "XMLParameterListWriter.hh"
 
+// Flow
 #include "DarcyVelocityEvaluator.hh"
 #include "Flow_BC_Factory.hh"
 #include "RelPermEvaluator.hh"
@@ -323,7 +326,7 @@ void Richards_PK::Initialize()
   dKdP_ = Teuchos::rcp(new CompositeVector(cvs));
 
   krel_upwind_method_ = FLOW_RELATIVE_PERM_NONE;
-  krel_->PutScalarMasterAndGhosted(1.0);
+  krel_->PutScalarMasterAndGhosted(molar_rho_ / mu_);
   dKdP_->PutScalarMasterAndGhosted(0.0);
 
   // parameter which defines when update direction of update
@@ -371,23 +374,22 @@ void Richards_PK::Initialize()
 
   std::string name = rp_list_->get<std::string>("relative permeability");
   int upw_id(Operators::OPERATOR_UPWIND_FLUX);
-  std::string upw_method("none");
+  std::string upw_method("standard: cell");
   if (name == "upwind: darcy velocity") {
-    upw_method = "standard";
+    upw_method = "upwind: face";
   } else if (name == "upwind: gravity") {
-    upw_method = "standard";
+    upw_method = "upwind: face";
     upw_id = Operators::OPERATOR_UPWIND_CONSTANT_VECTOR;
   } else if (name == "upwind: artificial diffusion") {
-    upw_method = "amanzi: artificial diffusion";
-    oplist_pc.set<std::string>("upwind method", "artificial diffusion");
+    upw_method = "artificial diffusion: cell-face";
   } else if (name == "upwind: amanzi") {
-    upw_method = "divk";
+    upw_method = "divk: cell-face";
   } else if (name == "other: arithmetic average") {
-    upw_method = "standard";
+    upw_method = "upwind: face";
     upw_id = Operators::OPERATOR_UPWIND_ARITHMETIC_AVERAGE;
   }
-  oplist_matrix.set<std::string>("upwind method", upw_method);
-  oplist_pc.set<std::string>("upwind method", upw_method);
+  oplist_matrix.set<std::string>("nonlinear coefficient", upw_method);
+  oplist_pc.set<std::string>("nonlinear coefficient", upw_method);
 
   Operators::OperatorDiffusionFactory opfactory;
   op_matrix_diff_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, molar_gravity_, upw_id);
@@ -474,13 +476,13 @@ void Richards_PK::Initialize()
   op_matrix_->Init();
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
   op_matrix_diff_->SetBCs(op_bc_);
-  op_matrix_diff_->Setup(Kptr, krel_, dKdP_, molar_rho_, mu_);
+  op_matrix_diff_->Setup(Kptr, krel_, dKdP_, molar_rho_);
   op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
   op_matrix_diff_->ApplyBCs(true);
 
   op_preconditioner_->Init();
   op_preconditioner_->SetBCs(op_bc_);
-  op_preconditioner_diff_->Setup(Kptr, krel_, dKdP_, molar_rho_, mu_);
+  op_preconditioner_diff_->Setup(Kptr, krel_, dKdP_, molar_rho_);
   op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
   op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr());
   op_preconditioner_diff_->ApplyBCs(true);
@@ -488,7 +490,7 @@ void Richards_PK::Initialize()
 
   if (vapor_diffusion_) {
     op_vapor_diff_->SetBCs(op_bc_);
-    op_vapor_diff_->Setup(Teuchos::null, 1.0, 1.0);
+    op_vapor_diff_->Setup(Teuchos::null);
   }
 
   // generic linear solver for all cases except for a few
@@ -505,7 +507,7 @@ void Richards_PK::Initialize()
   if (ti_list_->isParameter("preconditioner enhancement")) {
     std::string tmp_solver = ti_list_->get<std::string>("preconditioner enhancement");
     if (tmp_solver != "none") {
-      ASSERT(preconditioner_list_->isSublist(tmp_solver));
+      ASSERT(linear_operator_list_->isSublist(tmp_solver));
 
       AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
       op_pc_solver_ = sfactory.Create(tmp_solver, *linear_operator_list_, op_preconditioner_);
@@ -607,7 +609,7 @@ void Richards_PK::Initialize()
     *vo_->os() << std::endl 
         << vo_->color("green") << "Initalization of TI period is complete." << vo_->reset() << std::endl;
     *vo_->os()<< "EC:" << error_control_ << " Src:" << src_sink_distribution
-              << " Upwind:" << relperm_->method() << op_matrix_diff_->upwind()
+              << " Upwind:" << relperm_->method() << op_matrix_diff_->little_k()
               << " PC:\"" << preconditioner_name_.c_str() << "\"" 
               << " TI:\"" << ti_method_name.c_str() << "\"" << std::endl;
 
@@ -831,16 +833,12 @@ void Richards_PK::UpdateSourceBoundaryData(double T0, double T1, const Composite
 ****************************************************************** */
 double Richards_PK::BoundaryFaceValue(int f, const CompositeVector& u)
 {
-  const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
   double face_value;
 
   if (u.HasComponent("face")) {
     const Epetra_MultiVector& u_face = *u.ViewComponent("face");
     face_value = u_face[0][f];
   } else {
-    Epetra_MultiVector& k_face = *krel_->ViewComponent("face");
-    Epetra_MultiVector& dk_face = *dKdP_->ViewComponent("face");
-
     int c = BoundaryFaceGetCell(f);
     face_value = DeriveBoundaryFaceValue(f, u, wrm_->second[(*wrm_->first)[c]]);
   }

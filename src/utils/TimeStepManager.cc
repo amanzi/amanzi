@@ -105,19 +105,25 @@ double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
                    << " [sec]. CD limits it to " << time_remaining << std::endl;
       }
     }
+
     return time_remaining;
+
   } else if (dT > 0.75*time_remaining) {
-    if (!physical) dt_stable_storage = dT;
+    if (!physical) dt_stable_storage = dT + (dT - 0.5*time_remaining);
     if (vo_!=Teuchos::null) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
 	Teuchos::OSTab tab = vo_->getOSTab();
-	*vo_->os() << "PK proposed dT=" << dT
+	*vo_->os() << "PK proposed dT=" << dT 
                    << " [sec]. CD limits it to " << 0.5*time_remaining << std::endl;
       }
     }
+
     return 0.5*time_remaining;
+
   } else {
+
     return dT;
+
   } 
 }
 

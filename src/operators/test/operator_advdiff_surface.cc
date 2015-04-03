@@ -107,12 +107,13 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   // create diffusion operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator");
-  Teuchos::RCP<OperatorDiffusion> op_diff = Teuchos::rcp(new OperatorDiffusionMFD(olist, (Teuchos::RCP<const AmanziMesh::Mesh>) surfmesh));
+  Teuchos::RCP<OperatorDiffusion> op_diff =
+      Teuchos::rcp(new OperatorDiffusionMFD(olist, (Teuchos::RCP<const AmanziMesh::Mesh>) surfmesh));
   op_diff->SetBCs(bc);
   const CompositeVectorSpace& cvs = op_diff->global_operator()->DomainMap();
 
   // set up the diffusion operator
-  op_diff->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+  op_diff->Setup(K, Teuchos::null, Teuchos::null);
   op_diff->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // get the global operator
@@ -120,8 +121,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
 
   // create an advection operator  
   Teuchos::ParameterList alist;
-  Teuchos::RCP<OperatorAdvection> op_adv =
-      Teuchos::rcp(new OperatorAdvection(alist, global_op));
+  Teuchos::RCP<OperatorAdvection> op_adv = Teuchos::rcp(new OperatorAdvection(alist, global_op));
 
   // get a flux field
   CompositeVector u(cvs);

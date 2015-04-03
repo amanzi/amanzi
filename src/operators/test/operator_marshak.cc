@@ -123,7 +123,8 @@ void RunTest(std::string op_list_name) {
   // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 3.0, 1.0, 200, 10, gm);
   RCP<const Mesh> mesh = meshfactory("test/marshak.exo", gm);
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -190,7 +191,7 @@ void RunTest(std::string op_list_name) {
 
   // MAIN LOOP
   int step(0);
-  double snorm(0.);
+  double snorm(0.0);
   
   double T(0.0), dT(1e-4);
   while (T < 1.0) {
@@ -215,7 +216,7 @@ void RunTest(std::string op_list_name) {
     int schema_dofs = op.schema_dofs();
     int schema_prec_dofs = op.schema_prec_dofs();
 
-    op.Setup(K, knc->values(), knc->derivatives(), rho, mu);
+    op.Setup(K, knc->values(), knc->derivatives());
     op.UpdateMatrices(flux.ptr(), Teuchos::null);
 
     // get the global operator
@@ -295,8 +296,8 @@ void RunTest(std::string op_list_name) {
 * functions. This is a prototype forheat conduction solvers.
 * **************************************************************** */
 // TEST(MARSHAK_NONLINEAR_WAVE) {
-//  RunTest("diffusion operator");
-//}
+//   RunTest("diffusion operator");
+// }
 
 TEST(MARSHAK_NONLINEAR_WAVE_SFF) {
   RunTest("diffusion operator Sff");

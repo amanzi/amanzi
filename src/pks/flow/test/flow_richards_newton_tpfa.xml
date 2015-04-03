@@ -95,8 +95,9 @@
 
 	<ParameterList name="time integrator">
 	  <Parameter name="linear solver" type="string" value="linear operator"/>
-	  <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
 	  <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
+	  <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+	  <Parameter name="preconditioner enhancement" type="string" value="linear operator"/>
 
 	  <ParameterList name="initialization">
 	    <Parameter name="method" type="string" value="saturated solver"/>
@@ -237,7 +238,7 @@
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="1e-7"/>
         <Parameter name="maximum number of iterations" type="int" value="50"/>
-        <Parameter name="convergence criteria" type="Array(string)" value="{relative rhs, relative residual}"/>
+        <Parameter name="convergence criteria" type="Array(string)" value="{relative rhs, relative residual, absolute residual}"/>
         <ParameterList name="VerboseObject">
           <Parameter name="Verbosity Level" type="string" value="high"/>
         </ParameterList>

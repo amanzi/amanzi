@@ -41,14 +41,13 @@ TEST(FLOW_2D_DARCY_WELL) {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-
   if (MyPID == 0) std::cout << "Test: 2D specific storage Darcy, homogeneous medium" << std::endl;
 
-  /* read parameter list */
+  // read parameter list
   std::string xmlFileName = "test/flow_darcy_well.xml";
   Teuchos::RCP<ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
-  /* create an MSTK mesh framework */
+  // create an MSTK mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
@@ -61,7 +60,7 @@ TEST(FLOW_2D_DARCY_WELL) {
   meshfactory.preference(pref);
   RCP<const Mesh> mesh = meshfactory(-10.0, -5.0, 10.0, 0.0, 200, 50, gm);
 
-  /* create a simple state and populate it */
+  // create a simple state and populate it
   Amanzi::VerboseObject::hide_line_prefix = true;
 
   Teuchos::ParameterList state_list = plist->sublist("State");
@@ -73,7 +72,8 @@ TEST(FLOW_2D_DARCY_WELL) {
   S->Setup();
   S->InitializeFields();
 
-  /* modify the default state for the problem at hand */
+  // modify the default state for the problem at hand
+  // -- permeability
   std::string passwd("flow"); 
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
   
@@ -81,14 +81,25 @@ TEST(FLOW_2D_DARCY_WELL) {
     K[0][c] = 0.1;
     K[1][c] = 2.0;
   }
+  S->GetField("permeability", "flow")->set_initialized();
 
+  // -- fluid density and viscosity
   *S->GetScalarData("fluid_density", passwd) = 1.0;
+  S->GetField("fluid_density", "flow")->set_initialized();
+
   *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
+  S->GetField("fluid_viscosity", "flow")->set_initialized();
+
+  // -- gravity
   Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
   gravity[1] = -1.0;
-  S->GetFieldData("specific_storage", passwd)->PutScalar(0.1);
+  S->GetField("gravity", "state")->set_initialized();
 
-  /* initialize the Darcy process kernel */
+  // -- storativity
+  S->GetFieldData("specific_storage", passwd)->PutScalar(0.1);
+  S->GetField("specific_storage", "flow")->set_initialized();
+
+  // initialize the Darcy process kernel
   DPK->Initialize();
 
   // transient solution
