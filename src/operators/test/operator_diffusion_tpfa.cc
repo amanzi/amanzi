@@ -15,116 +15,28 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
 
+// Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
 #include "LinearOperatorFactory.hh"
-
-#include "tensor.hh"
 #include "mfd3d_diffusion.hh"
+#include "tensor.hh"
+
+// Operators
+#include "Analytic04.hh"
+#include "HeatConduction.hh"
 
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionTPFA.hh"
 #include "OperatorSource.hh"
 #include "UpwindSecondOrder.hh"
 #include "UpwindStandard.hh"
-
-#include "Analytic04.hh"
-
-namespace Amanzi{
-
-// This class wraps scalar diffusion coefficient.
-class HeatConduction {
- public:
-  HeatConduction(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh), ana_(mesh) { 
-    int dim = mesh_->space_dimension();
-    cvs_.SetMesh(mesh_);
-    cvs_.SetGhosted(true);
-    cvs_.SetComponent("cell", AmanziMesh::CELL, 1);
-    cvs_.SetOwned(false);
-
-    values_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs_, true));
-    derivatives_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs_, true));
-  }
-  ~HeatConduction() {};
-
-  // main members
-  void UpdateValues(const CompositeVector& u) { 
-    Epetra_MultiVector& vcell = *values_->ViewComponent("cell", true); 
-    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-
-    for (int c = 0; c < ncells; c++) {
-      const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-      const WhetStone::Tensor& Kc = ana_.Tensor(xc, 0.0);
-      vcell[0][c] = Kc(0, 0);
-    }
-  }
-
-  void UpdateValuesPostUpwind() { 
-    if (!values_->HasComponent("twin")) {
-      cvs_.AddComponent("twin", AmanziMesh::FACE, 1);
-      Teuchos::RCP<CompositeVector> tmp = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs_, true));
-
-      *tmp->ViewComponent("cell") = *values_->ViewComponent("cell"); 
-      *tmp->ViewComponent("face") = *values_->ViewComponent("face"); 
-      *tmp->ViewComponent("grad") = *values_->ViewComponent("grad"); 
-      values_ = tmp;
-    }
-
-    AmanziMesh::Entity_ID_List cells;
-    Epetra_MultiVector& vcell = *values_->ViewComponent("cell", true); 
-    Epetra_MultiVector& vface = *values_->ViewComponent("face", true); 
-    Epetra_MultiVector& vtwin = *values_->ViewComponent("twin", true); 
-
-    vtwin = vface;
-    int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-
-    for (int f = 0; f < nfaces; f++) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      int ncells = cells.size();
-      
-      if (ncells == 2) {
-        double v1 = vcell[0][cells[0]];
-        double v2 = vcell[0][cells[1]];
-        if (fabs(v1 - v2) > 2 * std::min(fabs(v1), fabs(v2))) {
-          vface[0][f] = v1;
-          vtwin[0][f] = v2;
-        }  
-      } 
-    }
-  }
-
-  double Conduction(int c, double T) const {
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    const WhetStone::Tensor& Kc = ana_.Tensor(xc, 0.0);
-    return Kc(0, 0);
-  }
-
-  Teuchos::RCP<CompositeVector> values() { return values_; }
-  Teuchos::RCP<CompositeVector> derivatives() { return derivatives_; }
-   
- private:
-  CompositeVectorSpace cvs_;
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<CompositeVector> values_, derivatives_;
-  mutable Analytic04 ana_;
-};
-
-typedef double(HeatConduction::*ModelUpwindFn)(int c, double T) const; 
-}  // namespace Amanzi
-
-
-int BoundaryFaceGetCell(const Amanzi::AmanziMesh::Mesh& mesh, int f)
-{
-  Amanzi::AmanziMesh::Entity_ID_List cells;
-  mesh.face_get_cells(f, Amanzi::AmanziMesh::USED, &cells);
-  return cells[0];
-}
 
 
 /* *****************************************************************
@@ -139,7 +51,6 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-
   if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, nodal discretization" << std::endl;
 
   // read parameter list

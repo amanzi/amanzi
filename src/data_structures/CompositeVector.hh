@@ -325,6 +325,7 @@ public:
 
   // this <- scalar*this
   int Scale(double scalar);
+  int ScaleMasterAndGhosted(double scalar);
 
   // this(name,:,:) <- scalar*this(name,:,:)
   int Scale(std::string name, double scalar);
@@ -463,6 +464,12 @@ inline int
 CompositeVector::Scale(double scalar) {
   ChangedValue();
   return mastervec_->Scale(scalar);
+}
+
+inline int
+CompositeVector::ScaleMasterAndGhosted(double scalar) {
+  ChangedValue();
+  return ghostvec_->Scale(scalar);
 }
 
 inline int

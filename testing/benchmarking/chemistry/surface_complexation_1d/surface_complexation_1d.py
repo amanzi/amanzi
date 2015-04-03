@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
 # times
     timespflo = ['Time:  5.00000E+01 y']          # ['Time:  0.00000E+00 y', 'Time:  5.00000E+01 y',]
-    times = ['71'] #  ['0','71']
+    times = ['72'] #  ['1','72']
     times_CF = ['totcon5.out']
     times_CF_surf = ['totsurface5.out']
     times_CF_pH = ['pH5.out']
@@ -127,8 +127,8 @@ if __name__ == "__main__":
     amanzi_totc_crunch = [amanzi_totc_templ.format(x) for x in compcrunch] #range(len(components))]
 
     amanzi_sorb_templ = "total_sorbed.cell.{0}"
-    amanzi_sorb = [amanzi_sorb_templ.format(x) for x in range(len(components))]
-    amanzi_sorb_crunch = [amanzi_sorb_templ.format(x) for x in range(len(compcrunch))]
+    amanzi_sorb = [amanzi_sorb_templ.format(x+1) for x in range(len(components))]
+    amanzi_sorb_crunch = [amanzi_sorb_templ.format(x+1) for x in range(len(compcrunch))]
 
 # amanzi output (structured - alquimia)
     amanzi_totc_templ = "{0}_Aqueous_Concentration"
@@ -296,16 +296,18 @@ if __name__ == "__main__":
               
         struct = len(x_amanziS)
 
+#        import pdb; pdb.set_trace()
+
         v_amanziS = [[[] for x in range(len(amanzi_sorbS))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_sorbS):
-              x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,comp)
+              x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,comp)
               v_amanziS[i][j] = c_amanziS
 
         pH_amanziS = [ [] for x in range(len(times)) ]
         comp = 'H+_Free_Ion_Guess'
         for i, time in enumerate(times):
-              x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,comp)
+              x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,comp)
               pH_amanziS[i] = -np.log10(c_amanziS)
 
     except:
@@ -315,7 +317,7 @@ if __name__ == "__main__":
     try:
         input_filename = os.path.join("amanzi-s-1d-surface-complexation-alq-crunch.xml")
         path_to_amanziS = "struct_amanzi-output-crunch"
-        import pdb; pdb.set_trace()
+#        import pdb; pdb.set_trace()
         run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
         root_amanziS = "plt00501"
 
@@ -330,13 +332,13 @@ if __name__ == "__main__":
         v_amanziS_crunch = [[[] for x in range(len(amanzi_sorbS))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_sorbS):
-              x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,comp)
+              x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,comp)
               v_amanziS_crunch[i][j] = c_amanziS_crunch
 
         pH_amanziS_crunch = [ [] for x in range(len(times)) ]
         comp = 'H+_Free_Ion_Guess'
         for i, time in enumerate(times):
-              x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,comp)
+              x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,comp)
               pH_amanziS_crunch[i] = -np.log10(c_amanziS_crunch)
 
     except:
@@ -377,9 +379,10 @@ if __name__ == "__main__":
     i = 0 # only one time point at 50 years
 
 # pflotran 
+#    if True:
     for j, comp in enumerate(components):
 
-           ax[j].plot(x_pflotran, u_pflotran[i][j],color='m',linestyle='-',linewidth=2,label='PFloTran')
+           ax[j].plot(x_pflotran, u_pflotran[i][j],color='m',linestyle='-',linewidth=6,label='PFloTran')
            bx[j].plot(x_pflotran, v_pflotran[i][j],color='m',linestyle='-',linewidth=2)
            ax[j].text(x_pflotran[10],u_pflotran[i][j][10],comp,fontsize=15,bbox=dict(facecolor='white', alpha=1.0))
            bx[j].text(x_pflotran[10],v_pflotran[i][j][10],comp,fontsize=15,bbox=dict(facecolor='white', alpha=1.0))
@@ -387,6 +390,7 @@ if __name__ == "__main__":
     px.plot(x_pflotran, pH_pflotran[i],color='m',linestyle='-',linewidth=2,label='PFloTran')
 
 # crunchflow 
+#    if True:
     for j, comp in enumerate(components):
 
            ax[j].plot(x_crunchflow, u_crunchflow[i][j],'m*',linestyle='None',label='CrunchFlow')
@@ -427,13 +431,14 @@ if __name__ == "__main__":
 
         for j, comp in enumerate(components):
 
+#            import pdb; pdb.set_trace()
             ax[j].plot(x_amanziS, u_amanziS[i][j],color='g',linestyle='-',linewidth=2)
             bx[j].plot(x_amanziS, v_amanziS[i][j],color='g',linestyle='-',linewidth=2,label='AmanziS+Alquimia(PFloTran)')
 
-        px.plot(x_amanziS, pH_amanziS[i],color='r',linestyle='-',linewidth=2,label='AmanziS+Alquimia(PFloTran)')
+        px.plot(x_amanziS, pH_amanziS[i],color='g',linestyle='-',linewidth=2,label='AmanziS+Alquimia(PFloTran)')
 
 # amanzi-structured-alquimia-crunchflow
-    if alq_crunch:
+    if struct_c:
 
         for j, comp in enumerate(components):
 

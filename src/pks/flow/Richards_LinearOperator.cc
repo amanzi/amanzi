@@ -94,12 +94,12 @@ void Richards_PK::EnforceConstraints(double Tp, Teuchos::RCP<CompositeVector> u)
   relperm_->Compute(u, krel_);
   RelPermUpwindFn func1 = &RelPerm::Compute;
   upwind_->Compute(*darcy_flux_upwind, *u, bc_model, bc_value, *krel_, *krel_, func1);
-  krel_->Scale(molar_rho_ / mu_);
+  krel_->ScaleMasterAndGhosted(molar_rho_ / mu_);
 
   relperm_->ComputeDerivative(u, dKdP_);
   RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
   upwind_->Compute(*darcy_flux_upwind, *u, bc_model, bc_value, *dKdP_, *dKdP_, func2);
-  dKdP_->Scale(molar_rho_ / mu_);
+  dKdP_->ScaleMasterAndGhosted(molar_rho_ / mu_);
 
   // modify relative permeability coefficient for influx faces
   bool inflow_krel_correction(true);

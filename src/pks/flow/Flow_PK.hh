@@ -113,6 +113,7 @@ class Flow_PK : public FnTimeIntegratorPK {
   double rho() { return rho_; }
   double mu() { return mu_; }
   const AmanziGeometry::Point& gravity() { return gravity_; }
+  double seepage_mass() { return seepage_mass_; }
 
  private:
   void InitializeFields_();

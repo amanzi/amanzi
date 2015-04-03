@@ -9,6 +9,9 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
+#ifndef AMANZI_OPERATOR_ANALYTIC_02_HH_
+#define AMANZI_OPERATOR_ANALYTIC_02_HH_
+
 #include "AnalyticBase.hh"
 
 class Analytic02 : public AnalyticBase {
@@ -49,4 +52,6 @@ class Analytic02 : public AnalyticBase {
     return 0.0;
   }
 };
+
+#endif
 

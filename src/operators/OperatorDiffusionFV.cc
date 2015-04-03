@@ -73,10 +73,13 @@ OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
     little_k_ = OPERATOR_LITTLE_K_UPWIND;
   } else if (uwname == "artificial diffusion: cell-face") {  
     little_k_ = OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION;
+    ASSERT(false);
   } else if (uwname == "divk: cell-face") {  
     little_k_ = OPERATOR_LITTLE_K_DIVK;
+    ASSERT(false);
   } else if (uwname == "divk: cell-grad-face-twin") {  
     little_k_ = OPERATOR_LITTLE_K_DIVK_TWIN_GRAD;
+    ASSERT(false);
   } else if (uwname == "standard: cell") {
     little_k_ = OPERATOR_LITTLE_K_STANDARD;  // cell-centered scheme.
   } else {
@@ -342,7 +345,6 @@ void OperatorDiffusionFV::UpdateFlux(
     }
   }
 }
-
 
 
 /* ******************************************************************

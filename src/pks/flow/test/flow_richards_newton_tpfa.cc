@@ -75,7 +75,8 @@ TEST(FLOW_3D_RICHARDS) {
   S->InitializeFields();
   S->InitializeEvaluators();
 
-  /* modify the default state for the problem at hand */
+  // modify the default state for the problem at hand
+  // -- permeability
   std::string passwd("flow"); 
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell");
   
@@ -95,13 +96,21 @@ TEST(FLOW_3D_RICHARDS) {
     K[1][c] = 0.5;
     K[2][c] = 0.5;
   }
+  S->GetField("permeability", passwd)->set_initialized();
 
+  // -- fluid density and viscosity
   *S->GetScalarData("fluid_density", passwd) = 1.0;
+  S->GetField("fluid_density", passwd)->set_initialized();
+
   *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
+  S->GetField("fluid_viscosity", passwd)->set_initialized();
+
+  // -- gravity
   Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
   gravity[2] = -1.0;
+  S->GetField("gravity", "state")->set_initialized();
 
-  /* create the initial pressure function */
+  // create the initial pressure function
   Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);
 
   for (int c = 0; c < p.MyLength(); c++) {
@@ -109,7 +118,7 @@ TEST(FLOW_3D_RICHARDS) {
     p[0][c] = xc[2] * (xc[2] + 2.0);
   }
 
-  /* initialize the Richards process kernel */
+  // initialize the Richards process kernel
   RPK->Initialize();
   S->CheckAllFieldsInitialized();
 
