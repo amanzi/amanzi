@@ -162,8 +162,8 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(2,sharex=True,figsize=(8,8))
     
     
-    # hardwired for 1d-exchange:  last time = '71'
-    times = ['0','71']
+    # hardwired for 1d-exchange:  last time = '72'
+    times = ['1','72']
     amanzi_components = ['total_component_concentration.cell.Na+ conc', \
                          'total_component_concentration.cell.Ca++ conc', \
                          'total_component_concentration.cell.Mg++ conc', \
