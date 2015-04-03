@@ -1588,17 +1588,19 @@ void  PorousMedia::read_comp()
 
                   bool is_consistent = true;
                   if (is_hi) {
+
                       is_consistent = ( (rinflow_bc_hi[dir] == is_inflow)
                                         && (phys_bc.hi()[dir] == component_bc)
                                         && (pres_bc.hi()[dir] == pressure_bc) );
                   }
                   else {
+
                       is_consistent = ( (rinflow_bc_lo[dir] == is_inflow)
                                         && (phys_bc.lo()[dir] == component_bc)
                                         && (pres_bc.lo()[dir] == pressure_bc) );
                   }
 
-                  if (is_consistent) {
+                  if (!is_consistent) {
                       BoxLib::Abort("Inconconsistent type for boundary ");
                   }
               }
@@ -1748,10 +1750,8 @@ void  PorousMedia::read_tracer()
           }
         }
 
-        int verbose_chemistry = 2;
         chemistry_helper = new AmanziChemHelper_Structured(tNames,sorbedPrimarySpecies,minerals,sorption_sites,hasCationExchangeCapacity,
-                                                           isothermNames,tNames,amanzi_thermo_file,amanzi_thermo_fmt,activity_model,
-                                                           verbose_chemistry);
+                                                           isothermNames,tNames,amanzi_thermo_file,amanzi_thermo_fmt,activity_model);
 #if ALQUIMIA_ENABLED
       } else {
         BL_ASSERT(chemistry_model_name == "Alquimia");

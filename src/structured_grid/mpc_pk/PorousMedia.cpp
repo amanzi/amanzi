@@ -1111,7 +1111,6 @@ PorousMedia::initData ()
           FArrayBox& aux = get_new_data(Aux_Chem_Type)[mfi];
 
           AmanziChemHelper_Structured* achp = dynamic_cast<AmanziChemHelper_Structured*>(chemistry_helper);
-          //achp->Initialize(sat,0,press,0,phi,0,vol,0,sat,ncomps,fct,0,aux,density[0],298,box);
           achp->Initialize(sat,0,press,0,phi,0,vol,0,sat,ncomps,fct,0,aux,density[0],25,box);
           sat.mult(density[0],0,1);
         }
@@ -3636,6 +3635,7 @@ PorousMedia::advance_chemistry (Real time,
     }
   }
 
+  int chem_verbose = 0;
   for (int i=0; i<nsub_chem; ++i) {
     if (nsub_chem > 1 && ParallelDescriptor::IOProcessor()) {
       for (int lev=0; lev<=level; ++lev) {
@@ -3661,10 +3661,8 @@ PorousMedia::advance_chemistry (Real time,
       FArrayBox& fct_fab = fcnCntTemp[mfi];
       FArrayBox& aux_fab = auxTemp[mfi];
 
-      //chemistry_helper->Advance(sat_fab,0,press_fab,0,phi_fab,0,vol_fab,0,sat_fab,ncomps,
-      //                          fct_fab,0,aux_fab,density[0],298,box,dt_sub_chem);
       chemistry_helper->Advance(sat_fab,0,press_fab,0,phi_fab,0,vol_fab,0,sat_fab,ncomps,
-                                fct_fab,0,aux_fab,density[0],25,box,dt_sub_chem);
+                                fct_fab,0,aux_fab,density[0],25,box,dt_sub_chem,chem_verbose);
 
       sat_fab.mult(density[0],0,1);
     }

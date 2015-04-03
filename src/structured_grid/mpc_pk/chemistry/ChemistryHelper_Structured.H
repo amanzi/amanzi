@@ -21,11 +21,11 @@ public:
                        FArrayBox&       primary_species_mobile,   int sPrimMob,
                        FArrayBox&       fcnCnt,                   int sFunc,
                        FArrayBox&       aux_data, Real water_density, Real temperature,
-                       const Box& box, Real dt) = 0;
+                       const Box& box, Real dt, int chem_verbose) = 0;
 
   virtual void EnforceCondition(FArrayBox& primary_species_mobile,   int sPrimMob,
                                 FArrayBox& auxiliary_data, Real water_density, Real temperature,
-                                const Box& box, const std::string& condition_name, Real time) = 0;
+                                const Box& box, const std::string& condition_name, Real time,int chem_verbose) = 0;
 
   const std::map<std::string,int>& AuxChemVariablesMap() const {return aux_chem_variables;}
   const std::map<std::string,Real>& AuxChemDefaultsMap() const {return aux_chem_defaults;}
