@@ -12,6 +12,7 @@
 #ifndef AMANZI_OPERATOR_ANALYTIC_BASE_HH_
 #define AMANZI_OPERATOR_ANALYTIC_BASE_HH_
 
+#include "mfd3d_diffusion.hh"
 #include "Mesh.hh"
 
 class AnalyticBase {

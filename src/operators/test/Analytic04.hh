@@ -7,6 +7,9 @@
   Linear case with zero coefficient.
 */
 
+#ifndef AMANZI_OPERATOR_ANALYTIC_04_HH_
+#define AMANZI_OPERATOR_ANALYTIC_04_HH_
+
 #include <math.h>
 #include "AnalyticBase.hh"
 
@@ -82,4 +85,6 @@ class Analytic04 : public AnalyticBase {
     return q;
   }
 };
+
+#endif
 
