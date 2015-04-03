@@ -116,8 +116,8 @@ if __name__ == "__main__":
 
     # times
     timespfl = ['Time:  0.00000E+00 y', 'Time:  5.00000E+01 y',]
-    timesama  = ['0','71']
-    timesama2 = ['0','71']
+    timesama  = ['1','72']
+    timesama2 = ['1','72']
 
     # pflotran output
     pflotran_totc_templ = "Total_{0} [M]"
@@ -316,7 +316,7 @@ if __name__ == "__main__":
     #   ax[3] ---> Sorbed concentrations
 
     # for i, time in enumerate(times):
-    i = 1 # hardwired 50 years
+    i = 1 # hardwired 50 years -- because the second entry in the list was taken at cycle 72 = 50 years.
 
 #  pflotran
     ax[0].plot(x_pflotran, u_pflotran[i][0],color='m',linestyle='-',linewidth=2,label='PFloTran')    
