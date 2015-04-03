@@ -96,7 +96,10 @@ double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
 
   if (next_T_all_events == 1e99) return dT;
   double time_remaining(next_T_all_events - T);
-  if (dT >= time_remaining) {
+
+  if (dT == time_remaining) return dT;
+
+  if (dT > time_remaining) {
     if (!physical) dt_stable_storage = dT;
     if (vo_ != Teuchos::null) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
