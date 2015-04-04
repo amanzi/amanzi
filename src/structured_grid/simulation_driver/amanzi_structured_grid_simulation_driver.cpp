@@ -93,6 +93,15 @@ InputVersionOK(const std::string& version)
   return std::pair<bool,std::string>(returnVal,returnStr);
 }
 
+static
+bool ConfirmFileExists(const std::string& name) {
+  std::ifstream ifs;  
+  ifs.open(name.c_str(), std::ios::in);
+  bool ok = ifs.good();
+  ifs.close();
+  return ok;
+}
+
 Amanzi::Simulator::ReturnType
 AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_comm,
                                            Teuchos::ParameterList&       input_parameter_list,
@@ -110,9 +119,21 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     std::string petsc_options_file;
     if (input_parameter_list.isParameter(petsc_file_str))
     {
-	petsc_options_file = Teuchos::getParameter<std::string>(input_parameter_list, petsc_file_str);
+      petsc_options_file = Teuchos::getParameter<std::string>(input_parameter_list, petsc_file_str);
+      if (ConfirmFileExists(petsc_options_file)) {
+	std::cout << "Initializing PETSc with parameter file: \""
+		  << petsc_options_file << "\"" << std::endl;
+	PetscInitialize(&argc,&argv,petsc_options_file.c_str(),petsc_help.c_str());
+      }
+      else {
+	std::cout << "\nWARNING: Couldn't open PETSc parameter file: \""
+		  << petsc_options_file << "\" ... continuing anyway\n" << std::endl;
+	PetscInitializeNoArguments();
+      }
     }
-    PetscInitialize(&argc,&argv,petsc_options_file.c_str(),petsc_help.c_str());
+    else {
+      PetscInitializeNoArguments();
+    }
 #endif
 
     BoxLib::Initialize(argc,argv,false,mpi_comm);
