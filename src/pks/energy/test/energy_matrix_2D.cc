@@ -117,7 +117,8 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
   
   // create diffusion operator 
-  const Teuchos::ParameterList& elist = plist->sublist("PKs").sublist("Energy");
+  const Teuchos::ParameterList& elist = plist->sublist("PKs").sublist("Energy")
+                                              .sublist("Two-phase problem");
   Teuchos::ParameterList oplist = elist.sublist("operators")
                                        .sublist("diffusion operator")
                                        .sublist("preconditioner");

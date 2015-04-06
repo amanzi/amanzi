@@ -122,6 +122,7 @@ void RunTest(std::string op_list_name) {
   meshfactory.preference(pref);
   // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 3.0, 1.0, 200, 10, gm);
   RCP<const Mesh> mesh = meshfactory("test/marshak.exo", gm);
+  // RCP<const Mesh> mesh = meshfactory("test/marshak_poly.exo", gm);
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.

@@ -133,7 +133,7 @@ Richards_PK::~Richards_PK()
 * Define structure of this PK. We request physical fields and their
 * evaluators. Selection of a few models is available and driven by
 * model factories, evaluator factories, and parameters of the list
-* "physics coupling".
+* "physical models and assumptions".
 ****************************************************************** */
 void Richards_PK::Setup()
 {
@@ -174,8 +174,9 @@ void Richards_PK::Setup()
 
   // Require conserved quantity.
   // -- water content
-  Teuchos::RCP<Teuchos::ParameterList> coupling = Teuchos::sublist(rp_list_, "physics coupling");
-  std::string vwc_model = coupling->get<std::string>("water content model", "constant density");
+  Teuchos::RCP<Teuchos::ParameterList> physical_models =
+      Teuchos::sublist(rp_list_, "physical models and assumptions");
+  std::string vwc_model = physical_models->get<std::string>("water content model", "constant density");
 
   if (!S_->HasField("water_content")) {
     S_->RequireField("water_content", "water_content")->SetMesh(mesh_)->SetGhosted(true)
@@ -341,8 +342,9 @@ void Richards_PK::Initialize()
   else update_upwind = FLOW_UPWIND_UPDATE_TIMESTEP;  
 
   // coupling with other physical PKs
-  Teuchos::RCP<Teuchos::ParameterList> coupling = Teuchos::sublist(rp_list_, "physics coupling");
-  vapor_diffusion_ = coupling->get<bool>("vapor diffusion", false);
+  Teuchos::RCP<Teuchos::ParameterList> physical_models = 
+      Teuchos::sublist(rp_list_, "physical models and assumptions");
+  vapor_diffusion_ = physical_models->get<bool>("vapor diffusion", false);
 
   // Initialize actions on boundary condtions. 
   flux_units_ = molar_rho_ / rho_;

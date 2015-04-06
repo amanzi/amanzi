@@ -103,8 +103,10 @@ void Energy_PK::Setup()
 ****************************************************************** */
 void Energy_PK::Initialize()
 {
+  // Energy list has only one sublist
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist_, "PKs", true);
-  Teuchos::RCP<Teuchos::ParameterList> ep_list = Teuchos::sublist(pk_list, "Energy", true);
+  Teuchos::RCP<Teuchos::ParameterList> tmp = Teuchos::sublist(pk_list, "Energy", true);
+  Teuchos::RCP<Teuchos::ParameterList> ep_list = Teuchos::sublist(tmp, tmp->begin()->first, true);
 
   // Create BCs objects.
   bc_model_.resize(nfaces_wghost, 0);
@@ -154,7 +156,7 @@ void Energy_PK::InitializeFields_()
 
 
 /* ******************************************************************
-* TBW.
+* Converts scalar conductivity to a tensorial field.
 ****************************************************************** */
 bool Energy_PK::UpdateConductivityData(const Teuchos::Ptr<State>& S)
 {

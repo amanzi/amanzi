@@ -121,10 +121,17 @@ void FlowEnergy_PK::Setup()
   }
 
   // inform other PKs about strong coupling
-  Teuchos::ParameterList& tmp = glist_->sublist("PKs").sublist("Flow")
-                                       .sublist("Richards problem").sublist("physics coupling");
-  tmp.set("vapor diffusion", true);
-  tmp.set<std::string>("water content model", "generic");
+  // -- flow
+  Teuchos::ParameterList& flow = glist_->sublist("PKs").sublist("Flow")
+                                        .sublist("Richards problem")
+                                        .sublist("physical models and assumptions");
+  flow.set("vapor diffusion", true);
+  flow.set<std::string>("water content model", "generic");
+
+  // -- energy
+  Teuchos::ParameterList& energy = glist_->sublist("PKs").sublist("Energy")
+                                          .sublist("physical models and assumptions");
+  energy.set("vapor diffusion", true);
 
   // process other PKs.
   MPCStrong<FnTimeIntegratorPK>::Setup();

@@ -32,6 +32,7 @@ void EnergyTwoPhase_PK::Functional(
   double h = t_new - t_old;  // get timestep
 
   // update BCs and conductivity
+  temperature_eval_->SetFieldAsChanged(S_.ptr());
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
   UpdateConductivityData(S_.ptr());
 

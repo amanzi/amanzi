@@ -13,7 +13,7 @@
 */
 
 // Amanzi
-#include "eos_evaluator.hh"
+#include "EOSEvaluator.hh"
 #include "OperatorDiffusionFactory.hh"
 
 // Energy
@@ -21,7 +21,7 @@
 #include "EnthalpyEvaluator.hh"
 #include "IEMEvaluator.hh"
 #include "TCMEvaluator_TwoPhase.hh"
-#include "TwoPhaseEnergyEvaluator.hh"
+#include "TotalEnergyEvaluator.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -36,10 +36,9 @@ EnergyTwoPhase_PK::EnergyTwoPhase_PK(
                    const Teuchos::RCP<TreeVector>& soln) :
     Energy_PK(glist, S),
     soln_(soln)
-    
 {
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  ep_list_ = Teuchos::sublist(pk_list, "Energy", true);
+  ep_list_ = Teuchos::sublist(Teuchos::sublist(pk_list, "Energy", true), "Two-phase problem", true);
 
   // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners", true);
@@ -61,16 +60,16 @@ void EnergyTwoPhase_PK::Setup()
   S_->RequireField(energy_key_)->SetMesh(mesh_)->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  Teuchos::ParameterList ee_list = glist_->sublist("PKs").sublist("Energy").sublist("energy evaluator");
+  Teuchos::ParameterList ee_list = ep_list_->sublist("energy evaluator");
   ee_list.set("energy key", energy_key_);
-  Teuchos::RCP<TwoPhaseEnergyEvaluator> ee = Teuchos::rcp(new TwoPhaseEnergyEvaluator(ee_list));
+  Teuchos::RCP<TotalEnergyEvaluator> ee = Teuchos::rcp(new TotalEnergyEvaluator(ee_list));
   S_->SetFieldEvaluator(energy_key_, ee);
 
   // -- advection of enthalpy
   S_->RequireField(enthalpy_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  Teuchos::ParameterList enth_plist = glist_->sublist("PKs").sublist("Energy").sublist("enthalpy evaluator");
+  Teuchos::ParameterList enth_plist = ep_list_->sublist("enthalpy evaluator");
   enth_plist.set("enthalpy key", enthalpy_key_);
   Teuchos::RCP<EnthalpyEvaluator> enth = Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
   S_->SetFieldEvaluator(enthalpy_key_, enth);
@@ -78,9 +77,7 @@ void EnergyTwoPhase_PK::Setup()
   // -- thermal conductivity
   S_->RequireField(conductivity_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList tcm_plist = glist_->sublist("PKs")
-                                            .sublist("Energy")
-                                            .sublist("thermal conductivity evaluator");
+  Teuchos::ParameterList tcm_plist = ep_list_->sublist("thermal conductivity evaluator");
   Teuchos::RCP<TCMEvaluator_TwoPhase> tcm = Teuchos::rcp(new TCMEvaluator_TwoPhase(tcm_plist));
   S_->SetFieldEvaluator(conductivity_key_, tcm);
 }

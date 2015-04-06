@@ -175,8 +175,8 @@ void OperatorAdvection::UpdateMatrices(const CompositeVector& u,
 /* *******************************************************************
 * Apply boundary condition to the local matrices
 ******************************************************************* */
-void OperatorAdvection::ApplyBCs(const Teuchos::RCP<BCs>& bc,
-        bool primary) {
+void OperatorAdvection::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
+{
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
@@ -205,12 +205,15 @@ void OperatorAdvection::ApplyBCs(const Teuchos::RCP<BCs>& bc,
       //   - FV:
       //     * outward -- let diffusion take care of it
       //     * inward -- let diffusion take care of it
-      //   - MFD: MFD is special because we can't just force advective fluxes on diffusion operator, as it should break 2nd order
-      //     * outward -- advective flux is independent of boundary soln, but diffusive Neumann bc must subtract off advective flux
-      //     * inward -- advective flux is dependent on boundary soln, and diffusion Neumann bc must subtract off advective flux
+      //   - MFD: MFD is special because we can't just force advective fluxes on
+      //     diffusion operator, as it should break 2nd order
+      //     * outward -- advective flux is independent of boundary soln, but diffusive
+      //       Neumann bc must subtract off advective flux
+      //     * inward -- advective flux is dependent on boundary soln, and diffusion
+      //        Neumann bc must subtract off advective flux
       //
-      // For now, treat 1, and for 2, zero out advective flux, forcing diffusion op to deal with both diffusive and advective flux
-      //
+      // For now, treat 1, and for 2, zero out advective flux, forcing diffusion op to 
+      // deal with both diffusive and advective flux
       int c1 = (*upwind_cell_)[f];
       int c2 = (*downwind_cell_)[f];
 
@@ -218,14 +221,14 @@ void OperatorAdvection::ApplyBCs(const Teuchos::RCP<BCs>& bc,
         if (c2 < 0) {
           // pass
         } else if (c1 < 0) {
-          matrix[f](0,0) = 0.;
+          matrix[f](0, 0) = 0.0;
           rhs_cell[0][c2] += bc_value[f] * mesh_->face_area(f);
         }
       } else {
         if (c2 < 0) {
           // pass
         } else {
-          matrix[f](0,0) = 0.;
+          matrix[f](0, 0) = 0.0;
         }
       }
     }

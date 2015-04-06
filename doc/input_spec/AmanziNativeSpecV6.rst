@@ -16,7 +16,8 @@ Parameters labeled by [O] (Obsolete) are old capabilities and will be removed so
 Changes V5 -> V6
 ================
 
-* Switched to a more flexible MPC driver.
+* Switched to a more flexible MPC driver, called Cycle Driver.
+* Added more parameters to Energy PK.
 
 
 ParameterList XML
@@ -659,6 +660,28 @@ and :math:`\phi` is porosity.
 Flow sublist includes exactly one sublist, either `"Darcy problem`" or `"Richards problem`".
 Structure of both sublists is quite similar. We make necessary comments on their differences.
 
+
+Physical models and assumptions
+...............................
+
+This list is used to summarize physical models and assumptions, such as
+coupling with other PKs.
+This list is often generated on a fly by a high-level MPC PK.
+
+* `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
+  e.g. by EnergyFlow PK. The default value is `"false`".
+
+* `"water content evaluator`" [string] changes the evaluator for water
+  content. Available options are `"generic`" and `"constant density`" (default).
+
+.. code-block:: xml
+
+   <ParameterList name="physical models and assumptions">
+     <Parameter name="vapor diffusion" type="bool" value="false"/>
+     <Parameter name="water content evaluator" type="string" value="constant density"/>
+   </ParameterList>
+
+
 Water retention models
 ......................
 
@@ -1143,25 +1166,6 @@ those needed for unit tests, and future code development.
        <Parameter name="error abs tol" type="double" value="1"/>
        <Parameter name="error rel tol" type="double" value="0"/>
      </ParameterList>
-   </ParameterList>
-
-
-Physics coupling
-................
-
-To couple with other PKs, we have to specify additional parameters.
-
-* `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
-  e.g. by EnergyFlow PK. The default value is `"false`".
-
-* `"water content evaluator`" [string] changes the evaluator for water
-  content. Available options are `"generic`" and `"constant density`" (default).
-
-.. code-block:: xml
-
-   <ParameterList name="physics coupling">
-     <Parameter name="vapor diffusion" type="bool" value="false"/>
-     <Parameter name="water content evaluator" type="string" value="constant density"/>
    </ParameterList>
 
 
@@ -1731,6 +1735,32 @@ where
 :math:`c_r` is specific heat of rock,
 and :math:`T` is temperature.
 
+Energy sublist includes exactly one sublist, either `"Single-phase problem`" or `"Two-phase problem`".
+Structure of both sublists is quite similar. We make necessary comments on their differences.
+
+
+Physical models and assumptions
+...............................
+
+This list is used to summarize physical models and assumptions, such as
+coupling with other PKs.
+This list is often generated on a fly by a high-level MPC PK.
+
+* `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
+  e.g. by EnergyFlow PK. The default value is `"false`".
+
+* `"water content evaluator`" [string] changes the evaluator for water
+  content. Available options are `"generic`" and `"constant density`" (default).
+
+* 
+
+.. code-block:: xml
+
+   <ParameterList name="physical models and assumptions">
+     <Parameter name="vapor diffusion" type="bool" value="false"/>
+     <Parameter name="water content evaluator" type="string" value="constant density"/>
+   </ParameterList>
+
 
 Internal energy
 ...............
@@ -1757,6 +1787,84 @@ in a variety of regimes, e.g. with or without gas phase.
      <Parameter name="vapor diffusion" type="bool" value="true"/>
      <ParameterList name="VerboseObject">
        <Parameter name="Verbosity Level" type="string" value="high"/>
+     </ParameterList>
+   </ParameterList>
+
+
+Molar enthalpy
+..............
+
+.. code-block:: xml
+
+   <ParameterList name="enthalpy evaluator">
+     <Parameter name="enthalpy key" type="string" value="enthalpy_liquid"/>
+     <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
+
+     <Parameter name="include work term" type="bool" value="true"/>
+     <Parameter name="pressure key" type="string" value="pressure"/>
+     <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
+   </ParameterList>
+
+
+Thermal conductivity
+....................
+
+Evaluator for thermal conductivity allows us to select a proper model. 
+The variety of available models allows to run the energy PK by itself or in
+coupling with flow PK. 
+The structure of the thermal conductivity list resembles that of a field
+evaluator list in state. 
+The two-phase model accepts the following parameters.
+
+* `"thermal conductivity parameters`" [sublist] defines a model and its parameters.
+
+* `"thermal conductivity type`" [string] is the name of a conductivity model in the
+  list of registered models. Available two-phase models are `"two-phase Peters-Lidard`",
+  and `"two-phase wet/dry`". Available one-phase model is `"one-phase polynomial`".
+
+* `"thermal conductivity of rock`" [double] defines constant conductivity of rock.
+
+* `"thermal conductivity of gas`" [double] defines constant conductivity of gas.
+
+* `"thermal conductivity of liquid`" [double] defines constant conductivity of fluid.
+  Default value is 0.6065 [W/m/K].
+
+* `"unsaturated alpha`" [double] is used to define the Kersten number to interpolate
+  between saturated and dry conductivities.
+
+* `"epsilon`" [double] is needed for the case of zero saturation. Default is `"1.0e-10`".
+
+.. code-block:: xml
+
+   <ParameterList name="thermal conductivity evaluator">
+     <ParameterList name="thermal conductivity parameters">
+       <Parameter name="thermal conductivity type" type="string" value="two-phase Peters-Lidard"/>
+       <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
+       <Parameter name="thermal conductivity of gas" type="double" value="0.02"/>
+       <Parameter name="thermal conductivity of liquid" type="double" value="0.6065"/>
+
+       <Parameter name="unsaturated alpha" type="double" value="1.0"/>
+       <Parameter name="epsilon" type="double" value="1.e-10"/>
+     </ParameterList>
+   </ParameterList>
+
+The single-phase model accepts some of the parameters defined above (see the example) 
+and a few additional parameters.
+
+* `"reference temperature`" [double] defines temperature at which reference conductivity
+  of liquid is calculated. Default value is 298.15 [K].
+
+* `"polynomial expansion`" [Array(double)] collect coefficients in the quadratic representation of the 
+  thermal conductivity of liquid with respect to the dimensionless parameter T/Tref.
+
+.. code-block:: xml
+
+   <ParameterList name="thermal conductivity evaluator">
+     <ParameterList name="thermal conductivity parameters">
+       <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
+       <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
+       <Parameter name="reference temperature" type="double" value="298.15"/>
+       <Parameter name="polinomial expansion" type="Array(double)" value="{-1.48445, 4.12292, -1.63866}"/>
      </ParameterList>
    </ParameterList>
 
@@ -2190,7 +2298,7 @@ This function requires two sublists `"function1`" and `"function2`".
     </ParameterList>
   </ParameterList>
 
-In two dimensions, this example defines function `srqt((t-3) + 2(x-2) + 3(y-1))`.
+In two dimensions, this example defines function `srqt(1 + (t-3) + 2(x-2) + (y-1))`.
 In three dimension, we have to add one additional argument to the `gradient` and `x0`.
 
 

@@ -26,15 +26,58 @@
 #include "GMVMesh.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "secondary_variable_field_evaluator.hh"
+#include "State.hh"
 
-// Flow
-#include "EnergyTwoPhase_PK.hh"
+// Energy
 #include "Analytic01.hh"
+#include "EnergyOnePhase_PK.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::Energy;
+
+namespace Amanzi {
+
+class TestEnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
+ public:
+  explicit TestEnthalpyEvaluator(Teuchos::ParameterList& plist) :
+      SecondaryVariableFieldEvaluator(plist) {
+    my_key_ = "enthalpy";
+    temperature_key_ = "temperature";
+    dependencies_.insert(temperature_key_);
+  };
+  TestEnthalpyEvaluator(const TestEnthalpyEvaluator& other) :
+     SecondaryVariableFieldEvaluator(other) {};
+
+  virtual Teuchos::RCP<FieldEvaluator> Clone() const {
+    return Teuchos::rcp(new TestEnthalpyEvaluator(*this));
+  }
+
+  // Required methods from SecondaryVariableFieldEvaluator
+  virtual void EvaluateField_(
+          const Teuchos::Ptr<State>& S,
+          const Teuchos::Ptr<CompositeVector>& result) {
+    const Epetra_MultiVector& temp_c = *S->GetFieldData("temperature")->ViewComponent("cell");
+    Epetra_MultiVector& result_c = *result->ViewComponent("cell");
+
+    int ncomp = result->size("cell", false);
+    for (int i = 0; i != ncomp; ++i) {
+      result_c[0][i] = std::pow(temp_c[0][i], 3.0);
+    }
+  }
+  virtual void EvaluateFieldPartialDerivative_(
+          const Teuchos::Ptr<State>& S,
+          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
+    ASSERT(false);
+  }
+
+ protected:
+  Key temperature_key_;
+};
+
+}  // namespace Amanzi
 
 
 TEST(ENERGY_CONVERGENCE) {
@@ -62,13 +105,13 @@ TEST(ENERGY_CONVERGENCE) {
     meshfactory.preference(pref);
     Teuchos::RCP<const Mesh> mesh;
     if (n == 0) {
-      mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
+      mesh = meshfactory(1.0, 0.0, 2.0, 1.0, 10, 10, gm);
       // mesh = meshfactory("test/random_mesh1.exo", gm);
     } else if (n == 1) {
-      mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 20, 20, gm);
+      mesh = meshfactory(1.0, 0.0, 2.0, 1.0, 20, 20, gm);
       // mesh = meshfactory("test/random_mesh2.exo", gm);
     } else if (n == 2) {
-      mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
+      mesh = meshfactory(1.0, 0.0, 2.0, 1.0, 40, 40, gm);
       // mesh = meshfactory("test/random_mesh3.exo", gm);
     }
 
@@ -79,7 +122,12 @@ TEST(ENERGY_CONVERGENCE) {
 
     Teuchos::ParameterList pk_tree;
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-    Teuchos::RCP<EnergyTwoPhase_PK> EPK = Teuchos::rcp(new EnergyTwoPhase_PK(pk_tree, plist, S, soln));
+    Teuchos::RCP<EnergyOnePhase_PK> EPK = Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
+
+    // overwrite enthalpy with a different model
+    Teuchos::ParameterList plist;
+    Teuchos::RCP<TestEnthalpyEvaluator> enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(plist));
+    S->SetFieldEvaluator("enthalpy", enthalpy);
 
     EPK->Setup();
     S->Setup();
@@ -91,7 +139,7 @@ TEST(ENERGY_CONVERGENCE) {
 
     // constant time stepping 
     int itrs(0);
-    double t(0.0), t1(1.0), dt(0.1), dt_next;
+    double t(0.0), t1(0.5), dt(0.025), dt_next;
     while (t < t1) {
       if (itrs == 0) {
         Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
@@ -103,6 +151,7 @@ TEST(ENERGY_CONVERGENCE) {
       EPK->bdf1_dae()->TimeStep(dt, dt_next, soln);
       CHECK(dt_next >= dt);
       EPK->bdf1_dae()->CommitSolution(dt, soln);
+      EPK->temperature_eval()->SetFieldAsChanged(S.ptr());
 
       t += dt;
       itrs++;
@@ -117,8 +166,8 @@ TEST(ENERGY_CONVERGENCE) {
     double l2_norm, l2_err, inf_err;  // error checks
     ana.ComputeCellError(*temp->ViewComponent("cell"), t1, l2_norm, l2_err, inf_err);
 
-    printf("mesh=%d bdf1_steps=%d  L2_temperature_err=%7.3e\n", n, itrs, l2_err);
-    CHECK(l2_err < 2e-1);
+    printf("mesh=%d bdf1_steps=%d  L2_temp_err=%7.3e L2_temp=%7.3e\n", n, itrs, l2_err, l2_norm);
+    CHECK(l2_err < 8e-1);
 
     GMV::open_data_file(*mesh, (std::string)"energy.gmv");
     GMV::start_data();

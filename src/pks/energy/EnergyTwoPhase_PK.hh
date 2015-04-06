@@ -17,7 +17,7 @@
 
 // Amanzi
 #include "BDF1_TI.hh"
-#include "eos.hh"
+#include "EOS.hh"
 #include "IEM.hh"
 #include "PK_Factory.hh"
 
@@ -66,8 +66,8 @@ public:
   void InitializeFields_();
 
  protected:
-  // models for evaluating enthalpy
-  Teuchos::RCP<Relations::EOS> eos_liquid_;
+  // models for evaluating total energy
+  Teuchos::RCP<EOS::EOS> eos_liquid_;
   Teuchos::RCP<IEM> iem_liquid_;
 
  private:
