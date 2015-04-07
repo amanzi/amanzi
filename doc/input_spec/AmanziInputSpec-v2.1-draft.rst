@@ -913,7 +913,9 @@ Permeability
 
   <permeability x="exponential" y="exponential" z="exponential" />
   or
-  <permeability filename="file name" type="file" attribute="attribute name"/>
+  <permeability type="file" filename="file name" attribute="attribute name"/>
+  or
+  <permeability type="gslib" parameter_file="file name" value="exponential" data_file="file name"/>
 
 Hydraulic_conductivity
 ----------------------
