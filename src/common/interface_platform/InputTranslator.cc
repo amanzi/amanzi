@@ -4522,17 +4522,52 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
                 if  (strcmp("porosity",propName)==0){
                   DOMElement* propElem = static_cast<DOMElement*>(curkiddy);
                   Teuchos::ParameterList propertyPL;
-                  
-                  if (propElem->hasAttribute(XMLString::transcode("type"))) {
-                    propertyPL = get_file_info(propertyPL, propElem, "porosity", "mechanical_properties");
-                    
-                    matlist.sublist("Porosity: Uniform") = propertyPL;
-                    std::cout << "Amanzi::InputTranslator: Warning - " << std::endl;
-                    std::cout << "    Please note - the XML Schema allows for specifing Porosity with a file read." << std::endl;
-                    std::cout << "    However, file read for this property has not been propagated through the input process."  << std::endl;
-                    std::cout << "    Please specify a value."  << std::endl;
-                  }
-                  else {
+
+		  const std::string type_str_DEF("nonfile");
+		  const std::string type_str_gslib("gslib");
+		  const std::string type_str_file("file");
+
+		  std::string type_str(type_str_DEF);
+
+		  if (propElem->hasAttribute(XMLString::transcode("type"))) {
+		    type_str = std::string(XMLString::transcode(propElem->getAttribute(XMLString::transcode("type"))));
+		  }
+
+		  if (type_str != type_str_DEF) {
+
+		    std::string porName;
+		    if (type_str == type_str_gslib) {
+
+		      const std::string dfile_DEF("porosity_data");
+		      get_gslib_info(propertyPL, def_list, propElem, "porosity", "mechanical_properties", dfile_DEF);
+		      porName = "Porosity: GSLib";
+
+		    } else if (type_str == type_str_file) {
+
+		      propertyPL = get_file_info(propertyPL, propElem, "porosity", "mechanical_properties");
+		      porName = "Porosity: File";
+
+		      matlist.sublist("Porosity: Uniform") = propertyPL;
+		      std::cout << "Amanzi::InputTranslator: Warning - " << std::endl;
+		      std::cout << "    Please note - the XML Schema allows for specifing Porosity with a file read." << std::endl;
+		      std::cout << "    However, file read for this property has not been propagated through the input process."  << std::endl;
+		      std::cout << "    Please specify a value."  << std::endl;
+
+		    } else {
+
+		      Errors::Message msg;
+		      msg << "Amanzi::InputTranslator: ERROR - porosity 'type' can only be either";
+		      msg << " 'gslib' or 'file' per material. Material - " << matName << "\n";
+		      msg << "  Please correct and try again \n" ;
+		      Exceptions::amanzi_throw(msg);
+
+		    }
+		    
+		    matlist.sublist(porName) = propertyPL;
+
+		  }
+		  else {
+
                     if (propElem->hasAttribute(XMLString::transcode("value"))) {
                       textContent2 = XMLString::transcode(propElem->getAttribute(XMLString::transcode("value")));
                       matlist.sublist("Porosity: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
@@ -4741,7 +4776,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
               }
             }
 	  }
-          else if  (strcmp("permeability",tagName)==0){
+          else if  (strcmp("permeability",tagName)==0) {
             DOMElement* permElem = static_cast<DOMElement*>(curkid);
             Teuchos::ParameterList perm;
             Teuchos::ParameterList permTmp;
@@ -4755,85 +4790,39 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
             }
             hasPerm = true;
 
-	    bool is_file = false;
-	    bool is_gslib = false;
-	    attrMap = curkid->getAttributes();
-	    if (permElem->hasAttribute(XMLString::transcode("type"))) {
-	      for (int k=0; k<attrMap->getLength(); k++) {
-		DOMNode* attrNode = attrMap->item(k) ;
-		if (DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
-		  char* attrName = XMLString::transcode(attrNode->getNodeName());
-		  if (strcmp("type",attrName)==0){
-                    char *t = XMLString::transcode(attrNode->getNodeValue());
-		    if (strcmp("gslib",t)==0){
-		      is_gslib = true;
-		    }
-		    else if (strcmp("file",t)==0){
-		      is_file = true;
-		    }
-		    else {
-		      Errors::Message msg;
-		      msg << "Amanzi::InputTranslator: ERROR - permeability 'type' can only be either";
-		      msg << " 'gslib' or 'file' per material. Material - " << matName << "\n";
-		      msg << "  Please correct and try again \n" ;
-		      Exceptions::amanzi_throw(msg);
-		    }
-                    XMLString::release(&t);
-		  }
-		}
-	      }
-	    }
-	    
-            if (is_gslib) {
-	      std::string pfile, dfile("permeability_data");
-	      double value;
-	      bool have_pfile=false, have_value=false, input_err=false;
-	      Errors::Message msg;
-	      std::stringstream msg1;
-	      msg << "Amanzi::InputTranslator: ERROR - if permeability 'type' is 'gslib'";
-	      msg << " must specify 'parameter_file', 'value', and (optionally) 'data_file' ";
-	      msg << " (defaults to 'permeability_data'). Material - " << matName << "\n";
-	      
-	      for (int k=0; k<attrMap->getLength(); k++) {
-		DOMNode* attrNode = attrMap->item(k) ;
-		if (DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
-		  char* attrName = XMLString::transcode(attrNode->getNodeName());
-		  char *f = XMLString::transcode(attrNode->getNodeValue());
-		  if (strcmp("parameter_file",attrName)==0){
-		    pfile = std::string(f);
-		    have_pfile = true;
-		  }
-		  else if (strcmp("data_file",attrName)==0){
-		    dfile = std::string(f);
-		  }
-		  else if (strcmp("value",attrName)==0){
-                    value = get_double_constant(f,def_list);
-		    have_value = true;
-		  }
-		  else if ( !(strcmp("type",attrName)==0) ){
-		    input_err = true;
-		    msg1 << " attribute: '" << attrName << "' not recognized"; 
-		  }
-		  XMLString::release(&f);
-		}
-	      }
+	    const std::string type_str_DEF("nonfile");
+	    const std::string type_str_gslib("gslib");
+	    const std::string type_str_file("file");
 
-	      if (!input_err && have_pfile && have_value) {
+	    std::string type_str(type_str_DEF);
+
+	    if (permElem->hasAttribute(XMLString::transcode("type"))) {
+	      type_str = std::string(XMLString::transcode(permElem->getAttribute(XMLString::transcode("type"))));
+	    }
+
+	    if (type_str != type_str_DEF) {
+
+	      if (type_str == type_str_gslib) {
+
+		const std::string dfile_DEF("permeability_data");
+		get_gslib_info(perm, def_list, permElem, "permeability", "materials", dfile_DEF);
 		permName = "Intrinsic Permeability: GSLib";
-		perm.set<std::string>("GSLib Parameter File",pfile);
-		perm.set<std::string>("GSLib Data File",dfile);
-		perm.set<double>("Value",value);
-	      }
-	      else {
-		msg << msg1.str();
+
+	      } else if (type_str == type_str_file) {
+
+		perm = get_file_info(perm, permElem, "permeability", "materials");
+		permName = "Intrinsic Permeability: File";
+
+	      } else {
+
+		Errors::Message msg;
+		msg << "Amanzi::InputTranslator: ERROR - permeability 'type' can only be either";
+		msg << " 'gslib' or 'file' per material. Material - " << matName << "\n";
 		msg << "  Please correct and try again \n" ;
 		Exceptions::amanzi_throw(msg);
+
 	      }
 	    }
-            else if (is_file) {
-              perm = get_file_info(perm, permElem, "permeability", "materials");
-              permName = "Intrinsic Permeability: File";
-            }
             else {
               // loop over attributes to get x,y,z
               char *x,*y,*z;
@@ -4881,62 +4870,98 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
             }
             matlist.sublist(permName) = perm;
 	  }
-          else if  (strcmp("hydraulic_conductivity",tagName)==0){
-            // loop over attributes to get x,y,z
-            char *x,*y,*z;
+          else if  (strcmp("hydraulic_conductivity",tagName)==0) {
+            DOMElement* hydcondElem = static_cast<DOMElement*>(curkid);
+            Teuchos::ParameterList hydcond;
+            Teuchos::ParameterList hydcondTmp;
+            std::string hydcondName("Hydraulic Conductivity: Anisotropic Uniform");
             if (hasHC || hasPerm) {
               Errors::Message msg;
               msg << "Amanzi::InputTranslator: ERROR - can only specify one of ";
-              msg << "'permeability' or 'hydraulic_conductivity' per material. Material - " << matName;
+              msg << "'permeability' or 'hydraulic_conductivity' per material. Material - " << matName << "\n";
               msg << "  Please correct and try again \n" ;
               Exceptions::amanzi_throw(msg);
             }
             hasHC = true;
-            attrMap = curkid->getAttributes();
-            Teuchos::ParameterList hydcond;
-            Teuchos::ParameterList hydcondTmp;
-            for (int k=0; k<attrMap->getLength(); k++) {
-              DOMNode* attrNode = attrMap->item(k) ;
-              if (DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
-                char* attrName = XMLString::transcode(attrNode->getNodeName());
-                if (strcmp("x",attrName)==0){
-                  x = XMLString::transcode(attrNode->getNodeValue());
-                  hydcondTmp.set<double>("x",get_double_constant(x,def_list));
-                  XMLString::release(&x);
-                }
-                else if (strcmp("y",attrName)==0){
-                  y = XMLString::transcode(attrNode->getNodeValue());
-                  hydcondTmp.set<double>("y",get_double_constant(y,def_list));
-                  XMLString::release(&y);
-                }
-                else if (strcmp("z",attrName)==0){
-                  z = XMLString::transcode(attrNode->getNodeValue());
-                  hydcondTmp.set<double>("z",get_double_constant(z,def_list));
-                  XMLString::release(&z);
+
+	    const std::string type_str_DEF("nonfile");
+	    const std::string type_str_gslib("gslib");
+	    const std::string type_str_file("file");
+
+	    std::string type_str(type_str_DEF);
+
+	    if (hydcondElem->hasAttribute(XMLString::transcode("type"))) {
+	      type_str = std::string(XMLString::transcode(hydcondElem->getAttribute(XMLString::transcode("type"))));
+	    }
+
+	    if (type_str != type_str_DEF) {
+
+	      if (type_str == type_str_gslib) {
+
+		const std::string dfile_DEF("hydraulic_conductivity_data");
+		get_gslib_info(hydcond, def_list, hydcondElem, "hydraulic_conductivity", "materials", dfile_DEF);
+		hydcondName = "Hydraulic Conductivity: GSLib";
+
+	      } else if (type_str == type_str_file) {
+
+		hydcond = get_file_info(hydcond, hydcondElem, "hydraulic_conductivity", "materials");
+		hydcondName = "Hydraulic Conductivity: File";
+
+	      } else {
+
+		Errors::Message msg;
+		msg << "Amanzi::InputTranslator: ERROR - hydraulic_conductivity 'type' can only be either";
+		msg << " 'gslib' or 'file' per material. Material - " << matName << "\n";
+		msg << "  Please correct and try again \n" ;
+		Exceptions::amanzi_throw(msg);
+
+	      }
+	    }
+            else {
+              // loop over attributes to get x,y,z
+              char *x,*y,*z;
+              attrMap = curkid->getAttributes();
+              for (int k=0; k<attrMap->getLength(); k++) {
+                DOMNode* attrNode = attrMap->item(k) ;
+                if (DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
+                  char* attrName = XMLString::transcode(attrNode->getNodeName());
+                  if (strcmp("x",attrName)==0){
+                    x = XMLString::transcode(attrNode->getNodeValue());
+                    hydcondTmp.set<double>("x",get_double_constant(x,def_list));
+                    XMLString::release(&x);
+                  } else if (strcmp("y",attrName)==0){
+                    y = XMLString::transcode(attrNode->getNodeValue());
+                    hydcondTmp.set<double>("y",get_double_constant(y,def_list));
+                    XMLString::release(&y);
+                  } else if (strcmp("z",attrName)==0){
+                    z = XMLString::transcode(attrNode->getNodeValue());
+                    hydcondTmp.set<double>("z",get_double_constant(z,def_list));
+                    XMLString::release(&z);
+                  }
                 }
               }
-            }
-            bool checkY = true , checkZ = true;
-            if (hydcondTmp.isParameter("y")) {
-              if (hydcondTmp.get<double>("x") != hydcondTmp.get<double>("y")) checkY = false;
-            }
-            if (hydcondTmp.isParameter("z")) {
-              if (hydcondTmp.get<double>("x") != hydcondTmp.get<double>("z")) checkZ = false;
-            }
-            if (checkY && checkZ) {
-              hydcond.set<double>("Value",hydcondTmp.get<double>("x"));
-              matlist.sublist("Hydraulic Conductivity: Uniform") = hydcond;
-            }
-            else {
-              hydcond.set<double>("x",hydcondTmp.get<double>("x"));
+              bool checkY = true , checkZ = true;
               if (hydcondTmp.isParameter("y")) {
-                hydcond.set<double>("y",hydcondTmp.get<double>("y")) ;
+                if (hydcondTmp.get<double>("x") != hydcondTmp.get<double>("y")) checkY = false;
               }
               if (hydcondTmp.isParameter("z")) {
-                hydcond.set<double>("z",hydcondTmp.get<double>("z")) ;
+                if (hydcondTmp.get<double>("x") != hydcondTmp.get<double>("z")) checkZ = false;
               }
-              matlist.sublist("Hydraulic Conductivity: Anisotropic Uniform") = hydcond;
+              if (checkY && checkZ) {
+                hydcond.set<double>("Value",hydcondTmp.get<double>("x"));
+                hydcondName = "Hydraulic Conductivity: Uniform";
+              }
+              else {
+                hydcond.set<double>("x",hydcondTmp.get<double>("x"));
+                if (hydcondTmp.isParameter("y")) {
+                  hydcond.set<double>("y",hydcondTmp.get<double>("y")) ;
+                }
+                if (hydcondTmp.isParameter("z")) {
+                  hydcond.set<double>("z",hydcondTmp.get<double>("z")) ;
+                }
+              }
             }
+            matlist.sublist(hydcondName) = hydcond;
 	  }
           else if  (strcmp("cap_pressure",tagName)==0){
             attrMap = curkid->getAttributes();
@@ -6949,6 +6974,49 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
   return list;
   
 }
+
+/*
+ ******************************************************************
+ * Empty
+ ******************************************************************
+ */
+
+  //MSD - get gslib information.
+  void get_gslib_info(Teuchos::ParameterList& propertyList,const Teuchos::ParameterList& defList, const xercesc::DOMElement* propElement, const std::string& propName, const std::string& sectionName, const std::string& dfile_DEF)
+  {
+    const std::string pfile_label("parameter_file");
+    const std::string dfile_label("data_file");
+    const std::string value_label("value");
+    const std::string gslib_pfile_label("GSLib Parameter File");
+    const std::string gslib_dfile_label("GSLib Data File");
+    const std::string gslib_value_label("Value");
+
+    std::string pfile, dfile = dfile_DEF;;
+    double value;
+
+    if (propElement->hasAttribute(XMLString::transcode(pfile_label.c_str()))) {
+      pfile = std::string(XMLString::transcode(propElement->getAttribute(XMLString::transcode(pfile_label.c_str()))));
+    }
+    else {
+      throw_error_missattr(sectionName, "attribute", pfile_label, propName);
+    }
+
+    if (propElement->hasAttribute(XMLString::transcode(value_label.c_str()))) {
+      std::string vstr = std::string(XMLString::transcode(propElement->getAttribute(XMLString::transcode(value_label.c_str()))));
+      value = get_double_constant(vstr,defList);
+    }
+    else {
+      throw_error_missattr(sectionName, "attribute", value_label, propName);
+    }
+
+    if (propElement->hasAttribute(XMLString::transcode(dfile_label.c_str()))) {
+      dfile = std::string(XMLString::transcode(propElement->getAttribute(XMLString::transcode(dfile_label.c_str()))));
+    }
+
+    propertyList.set<std::string>(gslib_pfile_label,pfile);
+    propertyList.set<std::string>(gslib_dfile_label,dfile);
+    propertyList.set<double>(gslib_value_label,value);
+  }
 
 /*
  ******************************************************************
