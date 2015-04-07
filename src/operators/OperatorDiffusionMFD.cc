@@ -50,8 +50,11 @@ void OperatorDiffusionMFD::Setup(const Teuchos::RCP<std::vector<WhetStone::Tenso
   K_ = K;
 
   if (local_op_schema_ == OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
-    if (K_.get()) ASSERT(K_->size() == ncells_owned);
-    CreateMassMatrices_();
+    if (K_ != Teuchos::null && K_.get()) ASSERT(K_->size() == ncells_owned);
+
+    if (!mass_matrices_initialized_) {
+      CreateMassMatrices_();
+    }
   }
 }
 
@@ -83,6 +86,11 @@ void OperatorDiffusionMFD::Setup(const Teuchos::RCP<const CompositeVector>& k,
     if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN_GRAD) {
       ASSERT(k->HasComponent("grad"));
     }
+  }
+
+  // verify that mass matrices were initialized.
+  if (!mass_matrices_initialized_) {
+    CreateMassMatrices_();
   }
 }
 
@@ -248,14 +256,15 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
     // Update terms due to nonlinear coefficient
     double kc(1.0);
     std::vector<double> kf(nfaces, 1.0); 
+   
+    if (k_cell != Teuchos::null && k_cell.get()) kc = (*k_cell)[0][c];
+
     // -- chefs recommendation: SPD discretization with upwind
-    if (little_k_ == OPERATOR_LITTLE_K_DIVK) {
-      kc = k_cell.get() ? (*k_cell)[0][c] : 1.0;
+    if (little_k_ == OPERATOR_LITTLE_K_DIVK && k_face != Teuchos::null) {
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
 
     // -- same as above but remains second-order for dicontinuous coefficients
-    } else if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN && k_twin != Teuchos::null) {
-      kc = k_cell.get() ? (*k_cell)[0][c] : 1.0;
+    } else if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -266,13 +275,11 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
     } else if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
 
-    } else if (little_k_ == OPERATOR_LITTLE_K_STANDARD && k_cell != Teuchos::null) {
-      kc = (*k_cell)[0][c];
+    } else if (little_k_ == OPERATOR_LITTLE_K_STANDARD) {
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
 
     // -- highly experimental (for developers only)
     } else if (little_k_ == OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION) {
-      kc = k_cell.get() ? (*k_cell)[0][c] : 1.0;
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
     }
       
@@ -343,6 +350,7 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
         Acell(nfaces, n) = -rowsum;
         matsum += rowsum;
       }
+
       Acell(nfaces, nfaces) = matsum;
     }
     
@@ -946,6 +954,8 @@ void OperatorDiffusionMFD::CreateMassMatrices_()
       Exceptions::amanzi_throw(msg);
     }
   }
+
+  mass_matrices_initialized_ = true;
 }
 
 
@@ -1164,6 +1174,7 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
   // default parameters for Newton correction
   scalar_rho_ = true;
   rho_ = 1.0;
+  mass_matrices_initialized_ = false;
 }
 
 

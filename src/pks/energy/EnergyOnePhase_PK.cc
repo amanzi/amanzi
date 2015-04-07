@@ -95,13 +95,6 @@ void EnergyOnePhase_PK::Initialize()
   vlist.sublist("VerboseObject") = ep_list_->sublist("VerboseObject");
   vo_ = new VerboseObject("EnergyPK::2Phase", vlist); 
 
-  // Create a scalar tensor so far
-  K.resize(ncells_owned);
-  for (int c = 0; c < ncells_owned; c++) {
-    K[c].Init(dim, 1);
-    K[c](0, 0) = 1.0;
-  }
-
   // Call the base class initialize.
   Energy_PK::Initialize();
 
@@ -124,8 +117,7 @@ void EnergyOnePhase_PK::Initialize()
   op_matrix_diff_->SetBCs(op_bc_);
   op_matrix_ = op_matrix_diff_->global_operator();
   op_matrix_->Init();
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
-  op_matrix_diff_->Setup(Kptr, Teuchos::null, Teuchos::null);
+  op_matrix_diff_->Setup(S_->GetFieldData(conductivity_key_), Teuchos::null);
 
   Teuchos::ParameterList oplist_adv = ep_list_->sublist("operators").sublist("advection operator");
   op_matrix_advection_ = Teuchos::rcp(new Operators::OperatorAdvection(oplist_adv, mesh_));
@@ -139,7 +131,7 @@ void EnergyOnePhase_PK::Initialize()
   op_preconditioner_diff_->SetBCs(op_bc_);
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
   op_preconditioner_->Init();
-  op_preconditioner_diff_->Setup(Kptr, Teuchos::null, Teuchos::null);
+  op_preconditioner_diff_->Setup(S_->GetFieldData(conductivity_key_), Teuchos::null);
 
   op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_preconditioner_));
   op_preconditioner_advection_ = Teuchos::rcp(new Operators::OperatorAdvection(oplist_adv, op_preconditioner_));

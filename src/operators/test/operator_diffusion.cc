@@ -403,9 +403,12 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
 
   Analytic03 ana(mesh);
 
-  const WhetStone::Tensor Kc(3, 1);
-  Kc(0, 0) = 1.0;
-  for (int c = 0; c < ncells; c++) K->push_back(Kc);
+/*
+  CompositeVectorSpace cvs1;
+  cvs1.SetMesh(mesh_).SetComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::RCP<CompositeVector> k = Teuchos::rcp(new CompositeVector(cvs1));
+  kc.PutScalar(1.0);
+*/
 
   double rho(1.0), mu(1.0);
   AmanziGeometry::Point g(0.0, 0.0, -1.0);
@@ -466,7 +469,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   }
 
   // populate the diffusion operator
-  op->Setup(K, knc->values(), knc->derivatives());
+  op->Setup(knc->values(), knc->derivatives());
   op->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // get and assmeble the global operator

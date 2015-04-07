@@ -117,6 +117,8 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
  protected:
   Teuchos::ParameterList plist_;
   std::vector<WhetStone::DenseMatrix> Wff_cells_;
+  bool mass_matrices_initialized_;
+
   int newton_correction_;
   double factor_;
   bool exclude_primary_terms_;

@@ -30,7 +30,7 @@ void EnergyOnePhase_PK::Functional(
   // update BCs and conductivity
   temperature_eval_->SetFieldAsChanged(S_.ptr());
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
-  UpdateConductivityData(S_.ptr());
+  S_->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S_.ptr(), passwd_);
 
   // assemble residual for diffusion operator
   op_matrix_->Init();
@@ -86,7 +86,7 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
 
   // update BCs and conductivity
   UpdateSourceBoundaryData(t, t + dt, *up->Data());
-  UpdateConductivityData(S_.ptr());
+  S_->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S_.ptr(), passwd_);
 
   // assemble residual for diffusion operator
   op_preconditioner_->Init();
