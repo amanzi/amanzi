@@ -4754,7 +4754,83 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
               Exceptions::amanzi_throw(msg);
             }
             hasPerm = true;
-            if (permElem->hasAttribute(XMLString::transcode("type"))) {
+
+	    bool is_file = false;
+	    bool is_gslib = false;
+	    attrMap = curkid->getAttributes();
+	    if (permElem->hasAttribute(XMLString::transcode("type"))) {
+	      for (int k=0; k<attrMap->getLength(); k++) {
+		DOMNode* attrNode = attrMap->item(k) ;
+		if (DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
+		  char* attrName = XMLString::transcode(attrNode->getNodeName());
+		  if (strcmp("type",attrName)==0){
+                    char *t = XMLString::transcode(attrNode->getNodeValue());
+		    if (strcmp("gslib",t)==0){
+		      is_gslib = true;
+		    }
+		    else if (strcmp("file",t)==0){
+		      is_file = true;
+		    }
+		    else {
+		      Errors::Message msg;
+		      msg << "Amanzi::InputTranslator: ERROR - permeability 'type' can only be either";
+		      msg << " 'gslib' or 'file' per material. Material - " << matName << "\n";
+		      msg << "  Please correct and try again \n" ;
+		      Exceptions::amanzi_throw(msg);
+		    }
+                    XMLString::release(&t);
+		  }
+		}
+	      }
+	    }
+	    
+            if (is_gslib) {
+	      std::string pfile, dfile("permeability_data");
+	      double value;
+	      bool have_pfile=false, have_value=false, input_err=false;
+	      Errors::Message msg;
+	      std::stringstream msg1;
+	      msg << "Amanzi::InputTranslator: ERROR - if permeability 'type' is 'gslib'";
+	      msg << " must specify 'parameter_file', 'value', and (optionally) 'data_file' ";
+	      msg << " (defaults to 'permeability_data'). Material - " << matName << "\n";
+	      
+	      for (int k=0; k<attrMap->getLength(); k++) {
+		DOMNode* attrNode = attrMap->item(k) ;
+		if (DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
+		  char* attrName = XMLString::transcode(attrNode->getNodeName());
+		  char *f = XMLString::transcode(attrNode->getNodeValue());
+		  if (strcmp("parameter_file",attrName)==0){
+		    pfile = std::string(f);
+		    have_pfile = true;
+		  }
+		  else if (strcmp("data_file",attrName)==0){
+		    dfile = std::string(f);
+		  }
+		  else if (strcmp("value",attrName)==0){
+                    value = get_double_constant(f,def_list);
+		    have_value = true;
+		  }
+		  else if ( !(strcmp("type",attrName)==0) ){
+		    input_err = true;
+		    msg1 << " attribute: '" << attrName << "' not recognized"; 
+		  }
+		  XMLString::release(&f);
+		}
+	      }
+
+	      if (!input_err && have_pfile && have_value) {
+		permName = "Intrinsic Permeability: GSLib";
+		perm.set<std::string>("GSLib Parameter File",pfile);
+		perm.set<std::string>("GSLib Data File",dfile);
+		perm.set<double>("Value",value);
+	      }
+	      else {
+		msg << msg1.str();
+		msg << "  Please correct and try again \n" ;
+		Exceptions::amanzi_throw(msg);
+	      }
+	    }
+            else if (is_file) {
               perm = get_file_info(perm, permElem, "permeability", "materials");
               permName = "Intrinsic Permeability: File";
             }
