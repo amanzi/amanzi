@@ -139,8 +139,13 @@ TEST(ENERGY_CONVERGENCE) {
 
     // constant time stepping 
     int itrs(0);
-    double t(0.0), t1(0.5), dt(0.025), dt_next;
+    double t(0.0), t1(0.5), dt(0.01), dt_next;
     while (t < t1) {
+      // swap conserved quntity (no backup, we chack dt_next instead)
+      const CompositeVector& e = *S->GetFieldData("energy");
+      CompositeVector& e_prev = *S->GetFieldData("prev_energy", "thermal");
+      e_prev = e;
+
       if (itrs == 0) {
         Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
         udot->PutScalar(0.0);

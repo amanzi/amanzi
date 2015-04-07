@@ -90,18 +90,17 @@ void OperatorAdvection::Setup(const CompositeVector& u)
 /* ******************************************************************
 * A simple first-order transport method.
 * Advection operator is of the form: div (u C), where u is the given
-* velocity field and C is the * advected field.
+* velocity field and C is the advected field.
 ****************************************************************** */
 void OperatorAdvection::UpdateMatrices(const CompositeVector& u)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
-  // apply preconditioner inversion
   AmanziMesh::Entity_ID_List cells;
   const Epetra_MultiVector& uf = *u.ViewComponent("face");
 
-  for (int f = 0; f < nfaces_owned; ++f) {  // loop over master and slave faces
+  for (int f = 0; f < nfaces_owned; ++f) {
     int c1 = (*upwind_cell_)[f];
     int c2 = (*downwind_cell_)[f];
 
@@ -140,14 +139,13 @@ void OperatorAdvection::UpdateMatrices(const CompositeVector& u,
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
-  // apply preconditioner inversion
   AmanziMesh::Entity_ID_List cells;
   const Epetra_MultiVector& uf = *u.ViewComponent("face");
 
   dhdT.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& dh = *dhdT.ViewComponent("cell", true);
 
-  for (int f = 0; f < nfaces_owned; ++f) {  // loop over master and slave faces
+  for (int f = 0; f < nfaces_owned; ++f) {
     int c1 = (*upwind_cell_)[f];
     int c2 = (*downwind_cell_)[f];
 
@@ -193,8 +191,8 @@ void OperatorAdvection::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
         // pass, the upwind cell is internal to the domain, so all is good
       } else if (c1 < 0) {
         // downwind cell is internal to the domain
-        rhs_cell[0][c2] += matrix[f](0,0) * bc_value[f];
-        matrix[f](0,0) = 0.;
+        rhs_cell[0][c2] += matrix[f](0, 0) * bc_value[f];
+        matrix[f](0, 0) = 0.0;
       }
     } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
       // ETC: Several cases here.

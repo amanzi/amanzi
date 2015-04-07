@@ -134,7 +134,7 @@ void EnergyOnePhase_PK::Initialize()
   op_matrix_advection_->Setup(flux);
   op_advection_ = op_matrix_advection_->global_operator();
 
-  // initialize copuled operators: diffusion + advection + accumulation
+  // initialize coupled operators: diffusion + advection + accumulation
   op_preconditioner_diff_ = opfactory.Create(mesh_, op_bc_, oplist_pc, g, 0);
   op_preconditioner_diff_->SetBCs(op_bc_);
   op_preconditioner_ = op_preconditioner_diff_->global_operator();

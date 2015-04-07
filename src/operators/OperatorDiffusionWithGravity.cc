@@ -25,6 +25,8 @@ void OperatorDiffusionWithGravity::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& u)
 {
   OperatorDiffusionMFD::UpdateMatrices(flux, u);
+
+  ASSERT(little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN_GRAD);
   AddGravityToRHS_();
 }
 
@@ -71,20 +73,30 @@ void OperatorDiffusionWithGravity::AddGravityToRHS_()
       // Update terms due to nonlinear coefficient
       double kc(1.0);
       std::vector<double> kf(nfaces, 1.0);
-      if (little_k_ == OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION) {
-        kc = (*k_cell)[0][c];
-        for (int n = 0; n < nfaces; n++) kf[n] = kc;
-      } else if (little_k_ == OPERATOR_LITTLE_K_DIVK) {
+      // -- chefs recommendation: SPD discretization with upwind
+      if (little_k_ == OPERATOR_LITTLE_K_DIVK ||
+          little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
         kc = (*k_cell)[0][c];
         for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+
+      // -- the second most popular choice: classical upwind
+      } else if(little_k_ == OPERATOR_LITTLE_K_UPWIND) {
+        for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+
       } else if (little_k_ == OPERATOR_LITTLE_K_STANDARD && k_cell != Teuchos::null) {
         kc = (*k_cell)[0][c];
         for (int n = 0; n < nfaces; n++) kf[n] = kc;
-      } else if(little_k_ == OPERATOR_LITTLE_K_UPWIND) {
-        for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+
+      // -- highly experimental (for developers only)
+      } else if (little_k_ == OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION) {
+        kc = (*k_cell)[0][c];
+        for (int n = 0; n < nfaces; n++) kf[n] = kc;
       }
 
-      if (little_k_ != OPERATOR_LITTLE_K_DIVK) {
+      // add gravity term to the right-hand side vector.
+      // -- all methods expect for DIVK-family of methods.
+      if (little_k_ != OPERATOR_LITTLE_K_DIVK && 
+          little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN) {
         if (K_.get()) Kc = (*K_)[c];
         AmanziGeometry::Point Kcg(Kc * g_);
 
@@ -116,7 +128,10 @@ void OperatorDiffusionWithGravity::AddGravityToRHS_()
         }
       }
 
-      if (little_k_ == OPERATOR_LITTLE_K_DIVK) {
+      // Amanzi's first upwind: the family of DIVK methods uses hydraulic
+      // head as the primary variable and linear transformation for pressure.
+      if (little_k_ == OPERATOR_LITTLE_K_DIVK ||
+          little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
         WhetStone::DenseVector v(nfaces), av(nfaces);
         for (int n = 0; n < nfaces; n++) {
           int f = faces[n];
@@ -135,6 +150,7 @@ void OperatorDiffusionWithGravity::AddGravityToRHS_()
         }
       }
     }
+
     global_op_->rhs()->GatherGhostedToMaster("face", Epetra_CombineMode(Add));
   }
 }

@@ -142,8 +142,9 @@ void OperatorDiffusionMFD::UpdateMatricesNewtonCorrection(
 
 
 /* ******************************************************************
-* Second-order reconstruction of little k inside cells.
-* Mass matrices must be recalculated.
+* Second-order reconstruction of little k inside mesh cells.
+* This member of DIVK-pamily of methods required to recalcualte all
+* mass matrices.
 ****************************************************************** */
 void OperatorDiffusionMFD::UpdateMatricesMixedWithGrad_(
     const Teuchos::Ptr<const CompositeVector>& flux)
@@ -247,30 +248,41 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
     // Update terms due to nonlinear coefficient
     double kc(1.0);
     std::vector<double> kf(nfaces, 1.0); 
-    if (little_k_ == OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION) {
-      kc = k_cell.get() ? (*k_cell)[0][c] : 1.0;
-      for (int n = 0; n < nfaces; n++) kf[n] = kc;
-    } else if (little_k_ == OPERATOR_LITTLE_K_DIVK && k_twin == Teuchos::null) {
+    // -- chefs recommendation: SPD discretization with upwind
+    if (little_k_ == OPERATOR_LITTLE_K_DIVK) {
       kc = k_cell.get() ? (*k_cell)[0][c] : 1.0;
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
-    } else if (little_k_ == OPERATOR_LITTLE_K_DIVK && k_twin != Teuchos::null) {
+
+    // -- same as above but remains second-order for dicontinuous coefficients
+    } else if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN && k_twin != Teuchos::null) {
       kc = k_cell.get() ? (*k_cell)[0][c] : 1.0;
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
         kf[n] = (c == cells[0]) ? (*k_face)[0][f] : (*k_twin)[0][f];
       }
+
+    // -- the second most popular choice: classical upwind
+    } else if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
+      for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+
     } else if (little_k_ == OPERATOR_LITTLE_K_STANDARD && k_cell != Teuchos::null) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
-    } else if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
-      for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+
+    // -- highly experimental (for developers only)
+    } else if (little_k_ == OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION) {
+      kc = k_cell.get() ? (*k_cell)[0][c] : 1.0;
+      for (int n = 0; n < nfaces; n++) kf[n] = kc;
     }
       
-    if (little_k_ != OPERATOR_LITTLE_K_DIVK) {
+    // create stiffness matrix by ellimination of the mass matrix
+    // -- all methods expect for DIVK-family of methods.
+    if (little_k_ != OPERATOR_LITTLE_K_DIVK &&
+        little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN) {
+      // -- not scaled constraint: kr > 0
       if (!scaled_constraint_) {
-        // not scaled constraint: kr > 0
-        double matsum = 0.0;  // elimination of mass matrix
+        double matsum = 0.0; 
         for (int n = 0; n < nfaces; n++) {
           double rowsum = 0.0;
           for (int m = 0; m < nfaces; m++) {
@@ -290,9 +302,9 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
           Acell(nfaces, n) = -colsum;
         }
 
+      // -- scaled constraint: kr >= 0
       } else {
-        // scaled constraint: kr >= 0
-        double matsum = 0.0;  // elimination of mass matrix
+        double matsum = 0.0;
         for (int n = 0; n < nfaces; n++) {
           double rowsum = 0.0;
           for (int m = 0; m < nfaces; m++) {
@@ -314,24 +326,9 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
       }
     }
 
-    // Amanzi's first upwind: add additional flux 
-    if (little_k_ == OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION) {
-      ASSERT(!scaled_constraint_);
-      for (int n = 0; n < nfaces; n++) {
-        int f = faces[n];
-        double alpha = (*k_face)[0][f] - kc;
-        if (alpha > 0) {
-          alpha *= Wff(n, n);
-          Acell(n, n) += alpha;
-          Acell(n, nfaces) -= alpha;
-          Acell(nfaces, n) -= alpha;
-          Acell(nfaces, nfaces) += alpha;
-        }
-      }
-    }
-
-    // Amanzi's second upwind: replace the matrix
-    if (little_k_ == OPERATOR_LITTLE_K_DIVK) {
+    // Amanzi's first upwind: the family of DIVK fmethods
+    if (little_k_ == OPERATOR_LITTLE_K_DIVK ||
+        little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
       ASSERT(!scaled_constraint_);
       double matsum = 0.0; 
       for (int n = 0; n < nfaces; n++) {
@@ -349,6 +346,22 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
       Acell(nfaces, nfaces) = matsum;
     }
     
+    // Amanzi's second highly experimental upwind: add additional flux.
+    if (little_k_ == OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION) {
+      ASSERT(!scaled_constraint_);
+      for (int n = 0; n < nfaces; n++) {
+        int f = faces[n];
+        double alpha = (*k_face)[0][f] - kc;
+        if (alpha > 0) {
+          alpha *= Wff(n, n);
+          Acell(n, n) += alpha;
+          Acell(n, nfaces) -= alpha;
+          Acell(nfaces, n) -= alpha;
+          Acell(nfaces, nfaces) += alpha;
+        }
+      }
+    }
+
     local_op_->matrices[c] = Acell;
   }
 }

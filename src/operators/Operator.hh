@@ -118,15 +118,15 @@ class Operator {
           MatrixFE& matrix, int my_block_row, int my_block_col) const;
 
   virtual void SetBCs(const Teuchos::RCP<BCs>& bc) { bc_ = bc; }
-  virtual void UpdateRHS(const CompositeVector& source, bool volume_included=true);
+  virtual void UpdateRHS(const CompositeVector& source, bool volume_included = true);
   virtual void Rescale(const CompositeVector& scaling);
 
   // -- default functionality
   const CompositeVectorSpace& DomainMap() const { return *cvs_; }
   const CompositeVectorSpace& RangeMap() const { return *cvs_; }
 
-  int ComputeResidual(const CompositeVector& u, CompositeVector& r, bool zero=true);
-  int ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r, bool zero=true);
+  int ComputeResidual(const CompositeVector& u, CompositeVector& r, bool zero = true);
+  int ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r, bool zero = true);
 
   void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
   void InitPreconditioner(Teuchos::ParameterList& plist);

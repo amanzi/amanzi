@@ -187,8 +187,7 @@ int Operator::ComputeNegativeResidual(const CompositeVector& u, CompositeVector&
 /* ******************************************************************
 * Parallel matvec product Y = A * X.
 ******************************************************************* */
-int
-Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const
+int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const
 {
   X.ScatterMasterToGhosted();
 
@@ -289,9 +288,9 @@ void Operator::UpdateRHS(const CompositeVector& source, bool volume_included) {
 /* ******************************************************************
 * Rescale the local matrices.
 ****************************************************************** */
-void
-Operator::Rescale(const CompositeVector& scaling) {
-  // Dispatch Rescaling to the Ops.
+void Operator::Rescale(const CompositeVector& scaling)
+{
+  // Dispatch rescaling to the Ops.
   scaling.ScatterMasterToGhosted();
   for (op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     (*it)->Rescale(scaling);

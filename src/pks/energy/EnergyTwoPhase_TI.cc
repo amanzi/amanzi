@@ -67,10 +67,10 @@ void EnergyTwoPhase_PK::Functional(
   op_matrix_advection_->Setup(flux);
   op_matrix_advection_->UpdateMatrices(flux);
 
-  CompositeVector g_adv(g->Data()->Map());
   CompositeVector tmp(enthalpy);
   tmp.Multiply(1.0, tmp, n_l, 0.0);
 
+  CompositeVector g_adv(g->Data()->Map());
   op_advection_->Apply(tmp, g_adv);
   g->Data()->Update(1.0, g_adv, 1.0);
 }
