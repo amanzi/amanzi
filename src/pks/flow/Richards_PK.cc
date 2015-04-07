@@ -401,9 +401,8 @@ void Richards_PK::Initialize()
   op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_preconditioner_));
 
   if (vapor_diffusion_) {
-    Teuchos::ParameterList oplist_vapor(oplist_matrix);
-    oplist_vapor.remove("gravity");
-    op_vapor_diff_ = opfactory.Create(mesh_, op_bc_, oplist_vapor, gravity_, upw_id);
+    Teuchos::ParameterList oplist_vapor = tmp_list.sublist("vapor matrix");
+    op_vapor_diff_ = opfactory.Create(mesh_, op_bc_, oplist_vapor, gravity_, 0);
     op_vapor_ = op_vapor_diff_->global_operator();
   }
 
@@ -492,8 +491,8 @@ void Richards_PK::Initialize()
   op_preconditioner_->SymbolicAssembleMatrix();
 
   if (vapor_diffusion_) {
-    op_vapor_diff_->SetBCs(op_bc_);
-    op_vapor_diff_->Setup(Teuchos::null);
+    // op_vapor_diff_->SetBCs(op_bc_);
+    op_vapor_diff_->Setup(Teuchos::null, Teuchos::null);
   }
 
   // generic linear solver for all cases except for a few

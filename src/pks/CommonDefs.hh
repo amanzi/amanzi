@@ -20,7 +20,7 @@
 namespace Amanzi {
 namespace CommonDefs {
 
-const double IDEAL_GAS_CONSTANT_R = 8.3144621;
+const double IDEAL_GAS_CONSTANT_R = 8.314462175;
 const double MOLAR_MASS_H2O = 0.0180153333333;  // [kg/mol]
 
 const int BOUNDARY_FUNCTION_ACTION_NONE = 0;

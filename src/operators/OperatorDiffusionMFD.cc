@@ -1175,6 +1175,9 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
   scalar_rho_ = true;
   rho_ = 1.0;
   mass_matrices_initialized_ = false;
+  K_ = Teuchos::null;
+  k_ = Teuchos::null;
+  dkdp_ = Teuchos::null;
 }
 
 

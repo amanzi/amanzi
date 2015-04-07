@@ -156,7 +156,7 @@ void Energy_PK::InitializeFields_()
 
 
 /* ******************************************************************
-* Converts scalar conductivity to a tensorial field.
+* Converts scalar conductivity to a tensorial field: not used yet.
 ****************************************************************** */
 bool Energy_PK::UpdateConductivityData(const Teuchos::Ptr<State>& S)
 {

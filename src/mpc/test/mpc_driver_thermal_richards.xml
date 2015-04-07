@@ -94,7 +94,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.0"/>
-        <Parameter name="end period time" type="double" value="5.0e+6"/>
+        <Parameter name="end period time" type="double" value="9.0e+4"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
         <Parameter name="initial time step" type="double" value="500.0"/>
       </ParameterList>
@@ -384,7 +384,7 @@
             </ParameterList>
           </ParameterList>
           <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
-          <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+          <Parameter name="extrapolate initial guess" type="bool" value="false"/>
           <Parameter name="nonlinear iteration damping factor" type="double" value="1.00000e+00"/>
           <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
           <Parameter name="restart tolerance relaxation factor" type="double" value="1.00000e+00"/>
@@ -455,7 +455,7 @@
               <Parameter name="regions" type="Array(string)" value="{Bottom Surface}"/>
               <ParameterList name="boundary temperature">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="305.0"/>
+                  <Parameter name="value" type="double" value="298.0"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -568,6 +568,16 @@
               <ParameterList name="upwind divk parameters">
                 <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
               </ParameterList>
+            </ParameterList>
+            <ParameterList name="vapor matrix">
+              <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+              <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+              <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+              <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+              <Parameter name="exclude primary terms" type="bool" value="false"/>
+              <Parameter name="scaled constraint equation" type="bool" value="false"/>
+              <Parameter name="gravity" type="bool" value="false"/>
+              <Parameter name="newton correction" type="string" value="none"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
