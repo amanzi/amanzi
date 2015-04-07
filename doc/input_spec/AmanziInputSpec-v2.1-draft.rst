@@ -871,7 +871,7 @@ Mechanical_properties
 
 * `"mechanical_properties`" has six elements that can be either values or specified as files.  It has the following requirements.
 
-    * `"porosity`" is defined in-line using attributes.  Either it is specified as a value between 0 and 1 using `"value`" or it specified through a file using `"filename`" and `"type`". NOTE - FILE OPTION NOT IMPLEMENTED YET.
+    * `"porosity`" is defined in-line using attributes.  It is specified in oneof three ways: as a value between 0 and 1 using value="<value>", through a file using type="file" and filename="<filename>", or as a gslib file using type="gslib", parameter_file="<filename>", value="<value>" and (optionally) data_file="<filename>" (defaults to `"porosity_data`".  NOTE - FILE OPTION NOT IMPLEMENTED YET.
 
     * `"particle_density`" is defined in-line using attributes.  Either it is specified as a value greater than 0 using `"value`" or it specified through a file using `"filename`" and `"type`".  NOTE - FILE OPTION NOT IMPLEMENTED YET.
 
@@ -904,10 +904,10 @@ Assigned_regions
 
     <assigned_regions>Region1, Region_2, Region 3</assigned_regions>
 
-* `"permeability`" is the permeability and has the attributes `"x`", `"y`", and `"z`". Permeability or hydraulic_conductivity must be specified but not both.  Reading permeability from the attributes of an Exodus II file is also available.
-
 Permeability
 ------------
+
+Permeability or hydraulic_conductivity must be specified but not both. If specified as constant values, permeability has the attributes `"x`", `"y`", and `"z`".  Permeability may also be extracted from the attributes of an Exodus II file, or generated as a gslib file.
 
 .. code-block:: xml
 
@@ -925,6 +925,8 @@ Hydraulic_conductivity
 .. code-block:: xml
 
   <hydraulic_conductivity x="exponential" y="exponential" z="exponential" />
+  or
+  <hydraulic_conductivity type="gslib" parameter_file="file name" value="exponential" data_file="file name"/>
 
 Cap_pressure
 ------------

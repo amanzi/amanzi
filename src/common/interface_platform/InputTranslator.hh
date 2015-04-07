@@ -13,8 +13,8 @@ namespace AmanziNewInput {
 #define AMANZI_INPUT_VERSION_MICRO 0
 
 // validate sets
-  const Teuchos::Array<std::string> verbosityStrings = Teuchos::tuple<std::string>("None", "Low", "Medium", "High", "Extreme");
-  const Teuchos::Array<std::string> meshfileStrings = Teuchos::tuple<std::string>("exodus ii", "exodus II", "Exodus II", "Exodus ii", "H5M", "h5m");
+const Teuchos::Array<std::string> verbosityStrings = Teuchos::tuple<std::string>("None", "Low", "Medium", "High", "Extreme");
+const Teuchos::Array<std::string> meshfileStrings = Teuchos::tuple<std::string>("exodus ii", "exodus II", "Exodus II", "Exodus ii", "H5M", "h5m");
   
 //Teuchos::ParameterList translate (const std::string& xmlfilename, const std::string& xmlSchemafile);
 Teuchos::ParameterList translate (const std::string& xmlfilename);
@@ -35,7 +35,8 @@ Teuchos::ParameterList get_sources(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
 Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);
 
 Teuchos::ParameterList get_file_info(Teuchos::ParameterList propertyList, xercesc::DOMElement* propElement, std::string propName, std::string sectionName);
-  
+void get_gslib_info(Teuchos::ParameterList& propertyList,const Teuchos::ParameterList& defList, const xercesc::DOMElement* propElement, const std::string& propName, const std::string& sectionName, const std::string& dfile_DEF);
+
 double get_time_value(std::string time_value, Teuchos::ParameterList def_list);
 double convert_time_value(char* time_value);
 double get_double_constant(std::string pos_name, Teuchos::ParameterList def_list);
