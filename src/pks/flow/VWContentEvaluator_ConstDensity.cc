@@ -64,9 +64,19 @@ void VWContentEvaluator_ConstDensity::EvaluateField_(
     const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell");
     const Epetra_MultiVector& mlf_g = *S->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
     
+    const Epetra_MultiVector& temp = *S->GetFieldData("temperature")->ViewComponent("cell");
+    const Epetra_MultiVector& pres = *S->GetFieldData("pressure")->ViewComponent("cell");
+    double patm = *S->GetScalarData("atmospheric_pressure");
+
+    double R = CommonDefs::IDEAL_GAS_CONSTANT_R;
+
     int ncells = result->size("cell", false);
     for (int c = 0; c != ncells; ++c) {
-      result_v[0][c] = phi[0][c] * (s_l[0][c] * n_l + (1.0 - s_l[0][c]) * n_g[0][c] * mlf_g[0][c]);
+      double nRT = n_l * temp[0][c] * R;
+      double pc = patm - pres[0][c];
+
+      result_v[0][c] = phi[0][c] * (s_l[0][c] * n_l 
+                                 + (1.0 - s_l[0][c]) * n_g[0][c] * mlf_g[0][c] * exp(-pc / nRT));
     }
   } else {
     int ncells = result->size("cell", false);
