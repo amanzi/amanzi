@@ -29,6 +29,10 @@
           <Parameter name="transient initialize with darcy" type="bool" value="true"/>
          </ParameterList>
 
+        <ParameterList name="Flow Process Kernel">
+          <Parameter name="Preconditioning Strategy" type="string" value="Diffusion Operator"/>
+        </ParameterList>
+
         <ParameterList name="Transport Process Kernel">
           <Parameter name="transport subcycling" type="bool" value="true"/>
           <Parameter name="Transport Integration Algorithm" type="string" value="Explicit Second-Order"/>

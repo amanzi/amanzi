@@ -20,6 +20,9 @@
     <Parameter name="Verbosity" type="string" value="High"/>
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
+        <ParameterList name="Flow Process Kernel">
+          <Parameter name="Preconditioning Strategy" type="string" value="Diffusion Operator"/>
+        </ParameterList>
         <ParameterList name="Transport Process Kernel">
           <Parameter name="Transport Integration Algorithm" type="string" value="Explicit Second-Order"/>
         </ParameterList>
