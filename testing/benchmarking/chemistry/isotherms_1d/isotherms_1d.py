@@ -116,8 +116,8 @@ if __name__ == "__main__":
 
     # times
     timespfl = ['Time:  0.00000E+00 y', 'Time:  5.00000E+01 y',]
-    timesama  = ['1','72']
-    timesama2 = ['1','72']
+    timesama  = ['1','71']
+    timesama2 = ['1','71']
 
     # pflotran output
     pflotran_totc_templ = "Total_{0} [M]"
@@ -185,8 +185,12 @@ if __name__ == "__main__":
               x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
               v_amanzi_native[i][j] = c_amanzi_native
 
+        native = len(x_amanzi_native)  
+
     except:
         
+        native = 0 
+
         pass
 
 
@@ -334,14 +338,15 @@ if __name__ == "__main__":
          # crunchflow does not output sorbed concentrations
  
 # native 1.2
-    ax[0].plot(x_amanzi_native, u_amanzi_native[i][0],color='b',linestyle='None',marker='x')
-    ax[1].plot(x_amanzi_native, v_amanzi_native[i][0],color='b',linestyle='None',marker='x',label='AmanziU (2nd-Ord.) Native(v1.2)')
+    if native:
+       ax[0].plot(x_amanzi_native, u_amanzi_native[i][0],color='b',linestyle='None',marker='x')
+       ax[1].plot(x_amanzi_native, v_amanzi_native[i][0],color='b',linestyle='None',marker='x',label='AmanziU (2nd-Ord.) Native(v1.2)')
 
-    ax[2].plot(x_amanzi_native, u_amanzi_native[i][1],color='k',linestyle='None',marker='x')
-    ax[3].plot(x_amanzi_native, v_amanzi_native[i][1],color='k',linestyle='None',marker='x',label='Langmuir AmanziU (2nd-Ord.) Native(v1.2)')
+       ax[2].plot(x_amanzi_native, u_amanzi_native[i][1],color='k',linestyle='None',marker='x')
+       ax[3].plot(x_amanzi_native, v_amanzi_native[i][1],color='k',linestyle='None',marker='x',label='Langmuir AmanziU (2nd-Ord.) Native(v1.2)')
 
-    ax[2].plot(x_amanzi_native, u_amanzi_native[i][2],color='c',linestyle='None',marker='x')
-    ax[3].plot(x_amanzi_native, v_amanzi_native[i][2],color='c',linestyle='None',marker='x',label='Freundlich AmanziU (2nd-Ord.) Native(v1.2)')
+       ax[2].plot(x_amanzi_native, u_amanzi_native[i][2],color='c',linestyle='None',marker='x')
+       ax[3].plot(x_amanzi_native, v_amanzi_native[i][2],color='c',linestyle='None',marker='x',label='Freundlich AmanziU (2nd-Ord.) Native(v1.2)')
 
 # native 2.0
     if isv2:

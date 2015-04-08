@@ -235,7 +235,7 @@ if __name__ == "__main__":
     try:
         # hardwired for 1d-calcite: Ca = component 2, last time = '72'
 #        times = ['31','41','51','61','71']
-        times = ['72']
+        times = ['71']
 
         # Amanzi native chemistry
         input_filename = os.path.join("amanzi-u-1d-calcite.xml")

@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
 # times
     timespflo = ['Time:  5.00000E+01 y']          # ['Time:  0.00000E+00 y', 'Time:  5.00000E+01 y',]
-    times = ['72'] #  ['1','72']
+    times = ['71'] #  ['1','72']
     times_CF = ['totcon5.out']
     times_CF_surf = ['totsurface5.out']
     times_CF_pH = ['pH5.out']
