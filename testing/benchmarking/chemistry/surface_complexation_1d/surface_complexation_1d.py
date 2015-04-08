@@ -431,7 +431,6 @@ if __name__ == "__main__":
 
         for j, comp in enumerate(components):
 
-#            import pdb; pdb.set_trace()
             ax[j].plot(x_amanziS, u_amanziS[i][j],color='g',linestyle='-',linewidth=2)
             bx[j].plot(x_amanziS, v_amanziS[i][j],color='g',linestyle='-',linewidth=2,label='AmanziS+Alquimia(PFloTran)')
 
