@@ -119,7 +119,7 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
   op_vapor_->Init();
   op_vapor_diff_->Setup(kvapor_pres, Teuchos::null);
   op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  // op_vapor_diff_->ApplyBCs(false);
+  op_vapor_diff_->ApplyBCs(false);
 
   // -- Calculate residual due to pressure
   CompositeVector g(*f);
@@ -181,8 +181,13 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
     double D_g = Dref * (Pref / atm_pressure_) * pow(temp[0][c] / Tref, 1.8);
     double tmp = tau_phi_sat_g * n_g[0][c] * D_g;
 
-    kp_cell[0][c] = tmp * mlf_g[0][c] / (n_l[0][c] * temp[0][c] * R) / 1e+6;
-    kt_cell[0][c] = tmp * dmlf_g_dt[0][c] / 1e+3;
+    double nRT = n_l[0][c] * temp[0][c] * R;
+    double pc = atm_pressure_ - pres[0][c];
+    tmp *= exp(-pc / nRT);
+
+    kp_cell[0][c] = tmp * mlf_g[0][c] / nRT * 0;  // upwind?
+    kt_cell[0][c] = tmp * (dmlf_g_dt[0][c] / atm_pressure_ 
+                        +  mlf_g[0][c] * pc / (nRT * temp[0][c]));
   }
 }
 

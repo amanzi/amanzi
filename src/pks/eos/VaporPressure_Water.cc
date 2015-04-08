@@ -8,7 +8,8 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 
-  Saturated Vapor Pressure for vapor over water or ice, Sonntag (1990)
+  Saturated vapor pressure for vapor over water or ice, Sonntag (1990)
+  Note that in his formula, the saturated vapor pressure is defined in hPa.
 */
 
 #include <cmath>
@@ -32,18 +33,18 @@ double VaporPressure_Water::SaturatedVaporPressure(double T) {
     std::cout << "Invalid temperature, T = " << T << std::endl;
     Exceptions::amanzi_throw(Errors::CutTimeStep());
   }
-  return 100.0*exp(ka0_ + ka_/T + (kb_ + kc_*T)*T + kd_*log(T));
-};
+  return 100.0 * exp(ka0_ + ka_/T + (kb_ + kc_*T) * T + kd_*log(T));
+}
 
 
 double VaporPressure_Water::DSaturatedVaporPressureDT(double T) {
-  if (T < 100. || T > 373.0) {
+  if (T < 100.0 || T > 373.0) {
     std::cout << "Invalid temperature, T = " << T << std::endl;
-    Errors::Message m("Cut time step");
-    Exceptions::amanzi_throw(m);
+    Errors::Message msg("Cut time step");
+    Exceptions::amanzi_throw(msg);
   }
   return SaturatedVaporPressure(T) * (-ka_/(T*T) + kb_ + 2.0*kc_*T + kd_/T);
-};
+}
 
 }  // namespace EOS
 }  // namespace Amanzi
