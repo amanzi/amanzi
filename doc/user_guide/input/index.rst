@@ -19,3 +19,4 @@ file for specifying a region of the domain - see
    units.rst
    input_schema.rst
    mesh.rst
+   chemistry.rst
