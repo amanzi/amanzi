@@ -3217,12 +3217,13 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
       nodeName  = XMLString::transcode(regElem->getNodeName());
       
       // get name if needed
-      if (!haveName){
+      if (!haveName) {
         if (regElem->hasAttribute(XMLString::transcode("name"))) {
           regName = XMLString::transcode(regElem->getAttribute(XMLString::transcode("name")));
         }
         else {
-          throw_error_missattr("Regions","attribute","name",nodeName);
+          if (strcmp(nodeName,"comments") != 0)
+            throw_error_missattr("Regions","attribute","name",nodeName);
         }
       }
       
@@ -3404,7 +3405,7 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
           if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
             nodeName  = XMLString::transcode(curGKid->getNodeName());
             if  (strcmp(nodeName,"point") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               Teuchos::Array<double> point = make_coordinates(textContent2, *def_list);
               points.append(point);
               pt_cnt++;
@@ -3430,37 +3431,55 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
           reg_names.set<std::string>(regName,"logical");
           regionNames_string_.append(regName);
         }
-        
-        // get operation
-        if (regElem->hasAttribute(XMLString::transcode("operation"))) {
-          textContent2 = XMLString::transcode(regElem->getAttribute(XMLString::transcode("operation")));
-          if ( strcmp(textContent2,"union") == 0) {
-            list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Union");
+       
+        // Loop over childern
+	bool haveOp = false;
+	bool haveRL = false;
+	Teuchos::Array<Teuchos::Array<double> > points;
+        DOMNodeList* gkids = regElem->getChildNodes();
+        for (int j=0; j<gkids->getLength(); j++) {
+          DOMNode* curGKid = gkids->item(j) ;
+          if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
+            nodeName  = XMLString::transcode(curGKid->getNodeName());
+	    // deal with operation
+            if  (strcmp(nodeName,"operation") == 0){
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
+              if ( strcmp(textContent2,"union") == 0) {
+                list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Union");
+              }
+              else if (strcmp(textContent2,"intersection") == 0) {
+                list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Intersection");
+              }
+              else if (strcmp(textContent2,"subtraction") == 0) {
+                list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Subtraction");
+              }
+              else if (strcmp(textContent2,"complement") == 0) {
+                list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Complement");
+              }
+	      else {
+		// error about missing or unsupported operation
+		throw_error_illformed("Regions","element","operation","union, intersection, subtraction, or complement");
+	      }
+	      haveOp = true;
+              XMLString::release(&textContent2);
+            }
+	    // deal with region list
+	    else if  (strcmp(nodeName,"region_list") == 0){
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
+	      Teuchos::Array<std::string> regs = make_regions_list(textContent2);
+              list.sublist(regName).sublist("Region: Logical").set<Teuchos::Array<std::string> >("Regions",regs);
+	      haveRL = true;
+              XMLString::release(&textContent2);
+	    }
           }
-          else if (strcmp(textContent2,"intersection") == 0) {
-            list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Intersection");
-          }
-          else if (strcmp(textContent2,"subtraction") == 0) {
-            list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Subtraction");
-          }
-          else if (strcmp(textContent2,"complement") == 0) {
-            list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Complement");
-          }
-          XMLString::release(&textContent2);
-        } else {
-          throw_error_missattr("Regions","attribute","operation","logical");
         }
-        
-        // get region list
-        if (regElem->hasAttribute(XMLString::transcode("region_list"))) {
-          textContent2 = XMLString::transcode(regElem->getAttribute(XMLString::transcode("region_list")));
-          Teuchos::Array<std::string> regs = make_regions_list(textContent2);
-          list.sublist(regName).sublist("Region: Logical").set<Teuchos::Array<std::string> >("Regions",regs);
-          XMLString::release(&textContent2);
-        } else {
-          throw_error_missattr("Regions","attribute","region_list","logical");
-        }
-        
+	if (!haveOp) {
+	  throw_error_missattr("Regions","element","operation","logical");
+	}
+	if (!haveRL) {
+	  throw_error_missattr("Regions","element","region_list","logical");
+	}
+
       }
       else if  (strcmp(nodeName,"polygon") == 0){
         if (isUnstr_) {
@@ -3498,7 +3517,7 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
           if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
             nodeName  = XMLString::transcode(curGKid->getNodeName());
             if  (strcmp(nodeName,"point") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               Teuchos::Array<double> point = make_coordinates(textContent2, *def_list);
               pointsX.append(point[0]);
               pointsY.append(point[1]);
@@ -3537,13 +3556,13 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
           if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
             nodeName  = XMLString::transcode(curGKid->getNodeName());
             if (strcmp(nodeName,"center") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               Teuchos::Array<double> center = make_coordinates(textContent2, *def_list);
               list.sublist(regName).sublist("Region: Ellipse").set<Teuchos::Array<double> >("Center",center);
               XMLString::release(&textContent2);
             }
             else if (strcmp(nodeName,"raduis") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               Teuchos::Array<double> raduis = make_coordinates(textContent2, *def_list);
               list.sublist(regName).sublist("Region: Ellipse").set<Teuchos::Array<double> >("Radius",raduis);
               XMLString::release(&textContent2);
@@ -3580,7 +3599,7 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
           if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
             nodeName  = XMLString::transcode(curGKid->getNodeName());
             if  (strcmp(nodeName,"point") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               Teuchos::Array<double> point = make_coordinates(textContent2, *def_list);
               pointsX.append(point[0]);
               pointsY.append(point[1]);
@@ -3588,13 +3607,13 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
               XMLString::release(&textContent2);
             }
             else if  (strcmp(nodeName,"reference_point") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               Teuchos::Array<double> point = make_coordinates(textContent2, *def_list);
               list.sublist(regName).sublist("Region: Rotated Polygon").set<Teuchos::Array<double> >("Reference Point", point);
               XMLString::release(&textContent2);
             }
             else if  (strcmp(nodeName,"plane") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               if ( strcmp(textContent2,"xy") == 0 | strcmp(textContent2,"yx") == 0) {
                 list.sublist(regName).sublist("Region: Rotated Polygon").set<std::string>("Plane","XY");
               }
@@ -3610,7 +3629,7 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
               XMLString::release(&textContent2);
             }
             else if  (strcmp(nodeName,"axis") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               if ( strcmp(textContent2,"x") == 0) {
                 list.sublist(regName).sublist("Region: Rotated Polygon").set<std::string>("Plane","X");
               }
@@ -3662,7 +3681,7 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
           if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
             nodeName  = XMLString::transcode(curGKid->getNodeName());
             if  (strcmp(nodeName,"point") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               Teuchos::Array<double> point = make_coordinates(textContent2, *def_list);
               pointsX.append(point[0]);
               pointsY.append(point[1]);
@@ -3670,17 +3689,17 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
               XMLString::release(&textContent2);
             }
             else if  (strcmp(nodeName,"extent_min") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               extent[0] = atof(textContent2);
               XMLString::release(&textContent2);
             }
             else if  (strcmp(nodeName,"extent_max") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               extent[0] = atof(textContent2);
               XMLString::release(&textContent2);
             }
             else if  (strcmp(nodeName,"plane") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               if ( strcmp(textContent2,"xy") == 0 | strcmp(textContent2,"yx") == 0) {
                 list.sublist(regName).sublist("Region: Swept Polygon").set<std::string>("Plane","XY");
               }
@@ -4419,7 +4438,7 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
       */
       
       XMLString::release(&tagName);
-      XMLString::release(&regName);
+      if (haveName) XMLString::release(&regName);
     }
   }
   // add array of region names to def_list, use these names to check assigned_regions list against later
