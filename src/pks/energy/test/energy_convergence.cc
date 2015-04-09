@@ -24,6 +24,7 @@
 
 // Amanzi
 #include "GMVMesh.hh"
+#include "LeastSquare.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "secondary_variable_field_evaluator.hh"
@@ -90,9 +91,11 @@ TEST(ENERGY_CONVERGENCE) {
 
   // convergence estimate: Use n=3 for the full test.
   int nmeshes = plist->get<int>("number of meshes", 1);
-  std::vector<double> h, p_error, v_error;
+  std::vector<double> h, error;
 
-  for (int n = 0; n < nmeshes; n++) {
+  int nx(20);
+  double dt(0.02);
+  for (int n = 0; n < nmeshes; n++, nx *= 2) {
     Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(2, region_list, comm);
     
@@ -105,13 +108,13 @@ TEST(ENERGY_CONVERGENCE) {
     meshfactory.preference(pref);
     Teuchos::RCP<const Mesh> mesh;
     if (n == 0) {
-      mesh = meshfactory(1.0, 0.0, 2.0, 1.0, 10, 10, gm);
+      mesh = meshfactory(1.0, 0.0, 2.0, 1.0, 20, 10, gm);
       // mesh = meshfactory("test/random_mesh1.exo", gm);
     } else if (n == 1) {
-      mesh = meshfactory(1.0, 0.0, 2.0, 1.0, 20, 20, gm);
+      mesh = meshfactory(1.0, 0.0, 2.0, 1.0, 40, 10, gm);
       // mesh = meshfactory("test/random_mesh2.exo", gm);
     } else if (n == 2) {
-      mesh = meshfactory(1.0, 0.0, 2.0, 1.0, 40, 40, gm);
+      mesh = meshfactory(1.0, 0.0, 2.0, 1.0, 80, 10, gm);
       // mesh = meshfactory("test/random_mesh3.exo", gm);
     }
 
@@ -139,7 +142,7 @@ TEST(ENERGY_CONVERGENCE) {
 
     // constant time stepping 
     int itrs(0);
-    double t(0.0), t1(0.5), dt(0.01), dt_next;
+    double t(0.0), t1(0.5), dt_next;
     while (t < t1) {
       // swap conserved quntity (no backup, we chack dt_next instead)
       const CompositeVector& e = *S->GetFieldData("energy");
@@ -171,14 +174,23 @@ TEST(ENERGY_CONVERGENCE) {
     double l2_norm, l2_err, inf_err;  // error checks
     ana.ComputeCellError(*temp->ViewComponent("cell"), t1, l2_norm, l2_err, inf_err);
 
+    h.push_back(1.0 / nx);
+    error.push_back(l2_err);
+
     printf("mesh=%d bdf1_steps=%d  L2_temp_err=%7.3e L2_temp=%7.3e\n", n, itrs, l2_err, l2_norm);
     CHECK(l2_err < 8e-1);
 
+    // save solution
     GMV::open_data_file(*mesh, (std::string)"energy.gmv");
     GMV::start_data();
     GMV::write_cell_data(*temp->ViewComponent("cell"), 0, "temperature");
     GMV::close_data_file();
   }
+
+  // check convergence rate
+  double l2_rate = Amanzi::Utils::bestLSfit(h, error);
+  printf("convergence rate: %10.2f\n", l2_rate);
+  CHECK(l2_rate > 0.84);
 
   delete comm;
 }

@@ -1,7 +1,7 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
   <Parameter name="grid_option" type="string" value="Unstructured"/>
-  <Parameter name="number of meshes" type="int" value="2"/>
+  <Parameter name="number of meshes" type="int" value="3"/>
 
   <ParameterList name="Domain">
     <Parameter name="Spatial Dimension" type="int" value="2"/>
@@ -58,7 +58,7 @@
     <ParameterList name="Energy">
       <ParameterList name="One-phase problem">
         <ParameterList name="VerboseObject">
-         <Parameter name="Verbosity Level" type="string" value="high"/>
+         <Parameter name="Verbosity Level" type="string" value="none"/>
         </ParameterList>
 
         <ParameterList name="energy evaluator">

@@ -43,8 +43,6 @@
 namespace Amanzi {
 namespace Flow {
 
-double bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
-
 class Flow_PK : public FnTimeIntegratorPK {
  public:
   Flow_PK();
