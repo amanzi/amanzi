@@ -123,7 +123,12 @@ void Energy_PK::Initialize()
 
   op_bc_ = Teuchos::rcp(new Operators:: BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_, bc_value_, bc_mixed_));
 
+  // initilized fields
   InitializeFields_();
+
+  // other parameters
+  prec_include_enthalpy_ = ep_list->sublist("operators")
+                                   .get<bool>("include enthalpy in preconditioner", true);
 }
 
 

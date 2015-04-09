@@ -68,10 +68,17 @@ class TestEnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
       result_c[0][i] = std::pow(temp_c[0][i], 3.0);
     }
   }
+
   virtual void EvaluateFieldPartialDerivative_(
           const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-    ASSERT(false);
+    const Epetra_MultiVector& temp_c = *S->GetFieldData("temperature")->ViewComponent("cell");
+    Epetra_MultiVector& result_c = *result->ViewComponent("cell");
+
+    int ncomp = result->size("cell", false);
+    for (int i = 0; i != ncomp; ++i) {
+      result_c[0][i] = 3.0 * std::pow(temp_c[0][i], 2.0);
+    }
   }
 
  protected:
@@ -128,8 +135,8 @@ TEST(ENERGY_CONVERGENCE) {
     Teuchos::RCP<EnergyOnePhase_PK> EPK = Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
 
     // overwrite enthalpy with a different model
-    Teuchos::ParameterList plist;
-    Teuchos::RCP<TestEnthalpyEvaluator> enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(plist));
+    Teuchos::ParameterList ev_list;
+    Teuchos::RCP<TestEnthalpyEvaluator> enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
     S->SetFieldEvaluator("enthalpy", enthalpy);
 
     EPK->Setup();
@@ -144,7 +151,7 @@ TEST(ENERGY_CONVERGENCE) {
     int itrs(0);
     double t(0.0), t1(0.5), dt_next;
     while (t < t1) {
-      // swap conserved quntity (no backup, we chack dt_next instead)
+      // swap conserved quntity (no backup, we check dt_next instead)
       const CompositeVector& e = *S->GetFieldData("energy");
       CompositeVector& e_prev = *S->GetFieldData("prev_energy", "thermal");
       e_prev = e;
@@ -191,6 +198,90 @@ TEST(ENERGY_CONVERGENCE) {
   double l2_rate = Amanzi::Utils::bestLSfit(h, error);
   printf("convergence rate: %10.2f\n", l2_rate);
   CHECK(l2_rate > 0.84);
+
+  delete comm;
+}
+
+
+TEST(ENERGY_PRECONDITIONER) {
+  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  int MyPID = comm->MyPID();
+  if (MyPID == 0) std::cout << "\nImpact of advection term in the preconditioner" << std::endl;
+
+  std::string xmlFileName = "test/energy_convergence.xml";
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
+
+  // preconditioner with (loop=0) and without (loop=1) enthalpy term.
+  int num_itrs[2];
+  for (int loop = 0; loop < 2; loop++) {
+    Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
+    GeometricModelPtr gm = new GeometricModel(2, region_list, comm);
+    
+    FrameworkPreference pref;
+    pref.clear();
+    pref.push_back(MSTK);
+    pref.push_back(STKMESH);
+
+    MeshFactory meshfactory(comm);
+    meshfactory.preference(pref);
+    Teuchos::RCP<const Mesh> mesh;
+    mesh = meshfactory(1.0, 0.0, 2.0, 1.0, 30, 30, gm);
+    // mesh = meshfactory("test/random_mesh1.exo", gm);
+
+    // create a simple state and populate it
+    Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("State");
+    Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
+    S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
+
+    Teuchos::ParameterList pk_tree;
+    Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
+    Teuchos::RCP<EnergyOnePhase_PK> EPK = Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
+
+    // overwrite enthalpy with a different model
+    Teuchos::ParameterList ev_list;
+    Teuchos::RCP<TestEnthalpyEvaluator> enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
+    S->SetFieldEvaluator("enthalpy", enthalpy);
+
+    EPK->Setup();
+    S->Setup();
+    S->InitializeFields();
+    S->InitializeEvaluators();
+
+    EPK->Initialize();
+    S->CheckAllFieldsInitialized();
+
+    // constant time stepping 
+    int itrs(0);
+    double t(0.0), t1(0.5), dt(0.02), dt_next;
+    while (t < t1) {
+      // swap conserved quntity (no backup, we check dt_next instead)
+      const CompositeVector& e = *S->GetFieldData("energy");
+      CompositeVector& e_prev = *S->GetFieldData("prev_energy", "thermal");
+      e_prev = e;
+
+      if (itrs == 0) {
+        Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
+        udot->PutScalar(0.0);
+        EPK->bdf1_dae()->SetInitialState(t, soln, udot);
+        EPK->UpdatePreconditioner(t, soln, dt);
+      }
+
+      EPK->bdf1_dae()->TimeStep(dt, dt_next, soln);
+      CHECK(dt_next >= dt);
+      EPK->bdf1_dae()->CommitSolution(dt, soln);
+      EPK->temperature_eval()->SetFieldAsChanged(S.ptr());
+
+      t += dt;
+      itrs++;
+    }
+
+    EPK->CommitStep(0.0, 1.0);
+    num_itrs[loop] = EPK->bdf1_dae()->number_nonlinear_steps();
+    printf("number of nonlinear steps: %d\n", num_itrs[loop]);
+    plist->sublist("PKs").sublist("Energy").sublist("One-phase problem")
+          .sublist("operators").set<bool>("include enthalpy in preconditioner", false);
+  }
+  CHECK(num_itrs[1] > num_itrs[0]);
 
   delete comm;
 }

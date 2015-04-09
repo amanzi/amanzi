@@ -43,6 +43,7 @@ class BDF1_TI {
   double time();
 
   // Report statistics
+  int number_nonlinear_steps() { return state_->solve_itrs; }
   void ReportStatistics_();
 
  protected:

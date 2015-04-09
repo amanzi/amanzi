@@ -106,13 +106,15 @@ void EnergyTwoPhase_PK::UpdatePreconditioner(
   }
 
   // add advection term dHdT
-  const CompositeVector& darcy_flux = *S_->GetFieldData("darcy_flux");
+  if (prec_include_enthalpy_) {
+    const CompositeVector& darcy_flux = *S_->GetFieldData("darcy_flux");
 
-  S_->GetFieldEvaluator(enthalpy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, "temperature");
-  const CompositeVector& dHdT = *S_->GetFieldData("denthalpy_dtemperature");
+    S_->GetFieldEvaluator(enthalpy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, "temperature");
+    const CompositeVector& dHdT = *S_->GetFieldData("denthalpy_dtemperature");
 
-  op_preconditioner_advection_->Setup(darcy_flux);
-  op_preconditioner_advection_->UpdateMatrices(darcy_flux, dHdT);
+    op_preconditioner_advection_->Setup(darcy_flux);
+    op_preconditioner_advection_->UpdateMatrices(darcy_flux, dHdT);
+  }
 
   // finalize preconditioner
   op_preconditioner_->AssembleMatrix();

@@ -135,7 +135,6 @@ void EnergyOnePhase_PK::Initialize()
 
   op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_preconditioner_));
   op_preconditioner_advection_ = Teuchos::rcp(new Operators::OperatorAdvection(oplist_adv, op_preconditioner_));
-
   op_preconditioner_->SymbolicAssembleMatrix();
 
   // preconditioner and optional linear solver

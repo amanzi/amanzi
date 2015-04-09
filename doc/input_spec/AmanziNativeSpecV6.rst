@@ -1868,16 +1868,166 @@ and a few additional parameters.
      </ParameterList>
    </ParameterList>
 
+
+Operators
+.........
+
+This section contains sublist for diffsuion and advection opeartors.
+It also has one global parameters.
+
+* `"operators`" [sublist] 
+  
+  * `"include enthalpy in preconditioner`" [bool] allows us to study impact (usually positive) 
+    of including enthalpy term in the preconditioner. Default value is *true*.
+
+
 Diffusion operator
 ..................
 
-This section to be written.
+Operators sublist describes the PDE structure of the flow, specifies a discretization
+scheme, and selects assembling schemas for matrices and preconditioners.
+
+* `"diffusion operator`" [sublist] defines parameters for generating and assembling diffusion matrix.
+
+  * `"matrix`" [sublist] defines parameters for generating and assembling diffusion matrix. See section
+    describing operators. 
+    When `"Richards problem`" is selected, Flow PK sets up proper value for parameter `"upwind method`" of 
+    this sublist.
+
+  * `"preconditioner`" [sublist] defines parameters for generating and assembling diffusion 
+    matrix that is used to create preconditioner. 
+    This sublist is ignored inside sublist `"Darcy problem`".
+    Since update of preconditioner can be lagged, we need two objects called `"matrix`" and `"preconditioner`".
+    When `"Richards problem`" is selected, Flow PK sets up proper value for parameter `"upwind method`" of 
+    this sublist.
+
+.. code-block:: xml
+
+   <ParameterList name="operators">
+     <Parameter name="include enthalpy in preconditioner" type="boll" value="true"/>
+     <ParameterList name="diffusion operator">
+       <ParameterList name="matrix">
+         <Parameter name="discretization primary" type="string" value="monotone mfd"/>
+         <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+         <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+         <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+         <Parameter name="gravity" type="bool" value="false"/>
+         <Parameter name="upwind method" type="string" value="standard: cell"/> 
+       </ParameterList>
+       <ParameterList name="preconditioner">
+         <Parameter name="discretization primary" type="string" value="monotone mfd"/>
+         <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+         <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+         <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+         <Parameter name="gravity" type="bool" value="true"/>
+         <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+         <Parameter name="upwind method" type="string" value="standard: cell"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
+This example uses cell-centered discretization for 
 
 
 Advection operator
 ..................
 
 This section to be written.
+
+.. code-block:: xml
+
+   <ParameterList name="operators">
+     <ParameterList name="advection operator">
+       <Parameter name="discretization primary" type="string" value="upwind"/>
+     <Parameter name="reconstruction order" type="int" value="0"/>
+   </ParameterList>
+
+
+Coupled process kernels
+=======================
+
+Coupling of process kernels requires additional parameters for PK 
+described above.
+
+
+Flow and Energy PK
+------------------
+
+The conceptual PDE model of the coupled flow and energy equations is
+
+.. math::
+  \begin{array}{l}
+  \frac{\partial \theta}{\partial t} 
+  =
+  - \boldsymbol{\nabla} \cdot (\eta_l \boldsymbol{q}_l)
+  - \boldsymbol{\nabla} \cdot (\phi s_g \tau_g D_g \boldsymbol{\nabla} X_g) + Q_1,
+  \quad
+  \boldsymbol{q}_l 
+  = -\frac{\boldsymbol{K} k_r}{\mu} 
+  (\boldsymbol{\nabla} p - \rho_l \boldsymbol{g}) \\
+  %
+  \frac{\partial \varepsilon}{\partial t} 
+  =
+  \boldsymbol{\nabla} \cdot (\kappa \nabla T) -
+  \boldsymbol{\nabla} \cdot (\eta_l H_l \boldsymbol{q}_l) + Q_2
+  \end{array}
+
+In the first equation,
+:math:`\theta` is total water content,
+:math:`\eta_l` is molar density of liquid,
+:math:`\rho_l` is fluid density,
+:math:`Q_1` is source or sink term,
+:math:`\boldsymbol{q}_l` is the Darcy velocity,
+:math:`k_r` is relative permeability,
+:math:`\boldsymbol{g}` is gravity,
+:math:`\phi` is porosity,
+:math:`s_g` is gas saturation (water vapor),
+:math:`\tau_g` is tortuosity of gas,
+:math:`D_g` is diffusion coefficient,
+and :math:`X_g` is molar fraction of water in the gas phase.
+We define 
+
+.. math::
+   \theta = \phi (s_g \eta_g X_g + s_l \eta_l)
+
+where
+:math:`s_l` is liquid saturation,
+and :math:`\eta_g` is molar density of gas.
+
+In the second equation,
+:math:`\varepsilon` is the internal energy,
+:math:`Q_2` is source or sink term,
+:math:`\kappa` is thermal conductivity,
+:math:`H_l` is molar enthalphy of liquid,
+and :math:`T` is temperature.
+We define 
+
+.. math::
+   \varepsilon = \phi (\eta_l s_l U_l + \eta_g s_g U_g) + 
+   (1 - \phi) \rho_r c_r T
+
+where
+:math:`U_l` is molar internal energy of liquid,
+:math:`U_g` is molar internal energy of gas (water vapor),
+:math:`\rho_r` is rock density,
+and :math:`c_r` is specific heat of rock.
+
+
+Diffusion operator
+..................
+
+.. code-block:: xml
+
+   <ParameterList name="vapor matrix">
+     <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+     <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+     <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+     <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+     <Parameter name="exclude primary terms" type="bool" value="false"/>
+     <Parameter name="scaled constraint equation" type="bool" value="false"/>
+     <Parameter name="gravity" type="bool" value="false"/>
+     <Parameter name="newton correction" type="string" value="none"/>
+   </ParameterList>
 
 
 Generic capabilities
@@ -1951,7 +2101,7 @@ Diffusion operator
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
       <Parameter name="gravity" type="bool" value="true"/>
-      <Parameter name="upwind method" type="string" value="standard"/>
+      <Parameter name="upwind method" type="string" value="standard: cell"/>
       <Parameter name="newton correction" type="string" value="true jacobian"/>
       <ParameterList name="linear solver">
         ...

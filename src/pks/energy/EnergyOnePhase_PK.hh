@@ -65,11 +65,6 @@ public:
  private:
   void InitializeFields_();
 
- protected:
-  // models for evaluating enthalpy
-  Teuchos::RCP<EOS::EOS> eos_liquid_;
-  Teuchos::RCP<IEM> iem_liquid_;
-
  private:
   Teuchos::RCP<Teuchos::ParameterList> ep_list_;
 
