@@ -141,21 +141,28 @@ if (BUILD_TESTS)
           copy_directory ${STATE_SOURCE_DIR}/test ${STATE_BINARY_DIR}/test) 
     endif()
     
-    #set(amanzi_libs geometry mesh state)
+    # set(amanzi_libs geometry mesh state)
     
     add_amanzi_test(state_restart state_restart
                     KIND int
                     SOURCE
 	  	          test/Main.cc
-	 		  test/test_restart.cc
-	 		  test/test_vis.cc
+	 		  test/state_restart.cc
+	 		  test/state_vis.cc
                     LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
 
     add_amanzi_test(state_copy state_copy
                     KIND int
                     SOURCE
 	  	          test/Main.cc
-	 		  test/test_copy.cc
+	 		  test/state_copy.cc
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(state_dag state_dag
+                    KIND int
+                    SOURCE
+	  	          test/Main.cc
+	 		  test/state_dag.cc
                     LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
 endif()
 

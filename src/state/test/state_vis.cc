@@ -1,3 +1,15 @@
+/*
+  This is the state component of the Amanzi code. 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Markus Berndt
+           Ethan Coon (ecoon@lanl.gov)
+*/
+
 #include "UnitTest++.h"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -12,11 +24,10 @@
 SUITE(VISUALIZATION) {
 
   TEST(VIZ_DUMP_REQUIRED) {
-    
     Teuchos::ParameterList plist;
 
-    plist.set<std::string>("file name base","visdump");
-    plist.set<int>("file name digits",5);
+    plist.set<std::string>("file name base", "visdump");
+    plist.set<int>("file name digits", 5);
 
     Teuchos::Array<int> csps(3);
     csps[0] = 0;
@@ -33,23 +44,20 @@ SUITE(VISUALIZATION) {
     Teuchos::Array<double> times(2);
     times[0] = 1.0;
     times[1] = 3.0;
-    plist.set<Teuchos::Array<double> >("times",times);
+    plist.set<Teuchos::Array<double> >("times", times);
 
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     Amanzi::Visualization V(plist, &comm);
-    
 
     // test the cycle stuff, the expected result is in cycles_ and 
     // we store the computed result in cycles
-    
-    int cycles_[31] = { 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0,
-                        0, 0, 0, 0,
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  };
-    int cycles [31];
-    for (int ic = 0; ic<=30; ic++)
-      {
-	cycles[ic] = V.DumpRequested(ic);
-      }
+    int cycles_[31] = {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0,
+                       0, 0, 0, 0,
+                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int cycles[31];
+    for (int ic = 0; ic <= 30; ic++) {
+      cycles[ic] = V.DumpRequested(ic);
+    }
     CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
 
     // test the time sps stuff
@@ -64,21 +72,17 @@ SUITE(VISUALIZATION) {
     CHECK_EQUAL(false, V.DumpRequested(3.2));
     CHECK_EQUAL(false, V.DumpRequested(3.99));
     CHECK_EQUAL(false, V.DumpRequested(10.0));    
-
   }
 
 
-
-  TEST(DUMP_MESH_AND_DATA) 
-  {
+  TEST(DUMP_MESH_AND_DATA) {
     // here we just check that the code does not crash when 
     // the mesh and data files are written
-
     Teuchos::ParameterList plist;
 
     Epetra_MpiComm comm(MPI_COMM_WORLD);
 
-    std::string xmlFileName = "test/test_vis.xml";
+    std::string xmlFileName = "test/state_vis.xml";
     Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
     plist = xmlreader.getParameters();
 
@@ -91,12 +95,11 @@ SUITE(VISUALIZATION) {
     
     Amanzi::AmanziMesh::MeshFactory meshfactory(&comm);
     meshfactory.preference(pref);
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh
-      = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, gm);
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, gm);
 
-    Teuchos::ParameterList state_list =  plist.get<Teuchos::ParameterList>("state");
+    Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("state");
     
-    Teuchos::Ptr<Amanzi::State> S0 = Teuchos::ptr(new Amanzi::State(state_list) );
+    Teuchos::Ptr<Amanzi::State> S0 = Teuchos::ptr(new Amanzi::State(state_list));
 
     S0->RegisterMesh("domain",Mesh);
 
@@ -115,6 +118,5 @@ SUITE(VISUALIZATION) {
     WriteVis(V, S0);
   }
 
-
-
 }
+

@@ -1,12 +1,22 @@
-#include "UnitTest++.h"
+/*
+  This is the state component of the Amanzi code. 
 
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_RCP.hpp"
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Markus Berndt
+           Ethan Coon (ecoon@lanl.gov)
+*/
 
 #include "Epetra_MpiComm.h"
 #include "Epetra_MultiVector.h"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "MeshFactory.hh"
+#include "UnitTest++.h"
 
 #include "Field.hh"
 #include "Field_CompositeVector.hh"
@@ -39,7 +49,7 @@ struct test_field {
     data_sp->SetMesh(mesh)->SetGhosted(false)->SetComponents(names,locations,num_dofs);
     Teuchos::RCP<CompositeVector> data =
         Teuchos::rcp(new CompositeVector(*data_sp));
-    field = Teuchos::rcp(new Field_CompositeVector("test_fieldname", "test_owner", data));
+    field = Teuchos::rcp(new Field_CompositeVector("fieldname", "owner", data));
   }
   ~test_field() { delete comm; }
 };
@@ -56,7 +66,7 @@ double get_value(Teuchos::RCP<Field_CompositeVector>& field) {
 };
 
 double get_value(const State& state) {
-  Teuchos::RCP<const CompositeVector> data = state.GetFieldData("test_fieldname");
+  Teuchos::RCP<const CompositeVector> data = state.GetFieldData("fieldname");
   return (*(*data->ViewComponent("cell", true))(0))[0];
 };
 
@@ -83,23 +93,22 @@ struct test_state {
 
     std::vector<int> num_dofs(2,1);
 
-    Teuchos::RCP<CompositeVectorSpace> vec_factory =
-      state->RequireField("test_fieldname", "test_owner");
+    Teuchos::RCP<CompositeVectorSpace> vec_factory = state->RequireField("fieldname", "owner");
     vec_factory->SetMesh(state->GetMesh());
     vec_factory->SetComponents(names, locations, num_dofs);
     state->Setup();
-    state->GetField("test_fieldname", "test_owner")->set_initialized();
+    state->GetField("fieldname", "owner")->set_initialized();
     state->Initialize();
   }
   ~test_state() { delete comm; }
 };
 
+
 SUITE(COPY) {
   // test the field copy constructor
   TEST_FIXTURE(test_field, FieldCopy) {
     field->GetFieldData()->PutScalar(2.0);
-    Teuchos::RCP<Field_CompositeVector> newfield =
-      Teuchos::rcp(new Field_CompositeVector(*field));
+    Teuchos::RCP<Field_CompositeVector> newfield = Teuchos::rcp(new Field_CompositeVector(*field));
     newfield->GetFieldData()->PutScalar(3.0);
     CHECK_CLOSE(3.0, get_value(newfield), 0.00001);
     CHECK_CLOSE(2.0, get_value(field), 0.00001);
@@ -116,23 +125,23 @@ SUITE(COPY) {
 
   // test the state copy constructor
   TEST_FIXTURE(test_state, StateCopy) {
-    state->GetFieldData("test_fieldname", "test_owner")->PutScalar(2.0);
+    state->GetFieldData("fieldname", "owner")->PutScalar(2.0);
     State newstate(*state);
 
-    newstate.GetFieldData("test_fieldname", "test_owner")->PutScalar(3.0);
+    newstate.GetFieldData("fieldname", "owner")->PutScalar(3.0);
     CHECK_CLOSE(3.0, get_value(newstate), 0.00001);
     CHECK_CLOSE(2.0, get_value(*state), 0.00001);
   }
 
   // test the state assignment operator
   TEST_FIXTURE(test_state, StateAssignment) {
-    state->GetFieldData("test_fieldname", "test_owner")->PutScalar(2.0);
+    state->GetFieldData("fieldname", "owner")->PutScalar(2.0);
 
     // copy construct the new state to get the same structure
     Teuchos::RCP<State> newstate = Teuchos::rcp(new State(*state));
 
     // reset the value to test the operator=
-    newstate->GetFieldData("test_fieldname", "test_owner")->PutScalar(0.0);
+    newstate->GetFieldData("fieldname", "owner")->PutScalar(0.0);
     CHECK_CLOSE(2.0, get_value(*state), 0.00001);
     CHECK_CLOSE(0.0, get_value(*newstate), 0.00001);
 
@@ -142,7 +151,7 @@ SUITE(COPY) {
     CHECK_CLOSE(2.0,  get_value(*newstate), 0.00001);
 
     // test copies are deep
-    newstate->GetFieldData("test_fieldname", "test_owner")->PutScalar(3.0);
+    newstate->GetFieldData("fieldname", "owner")->PutScalar(3.0);
     CHECK_CLOSE(3.0, get_value(*newstate), 0.00001);
     CHECK_CLOSE(2.0, get_value(*state), 0.00001);
   }

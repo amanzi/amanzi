@@ -1,20 +1,31 @@
-#include "UnitTest++.h"
+/*
+  This is the state component of the Amanzi code. 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Markus Berndt
+           Ethan Coon (ecoon@lanl.gov)
+*/
+
+#include "Epetra_MpiComm.h"
+#include "Epetra_MultiVector.h"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
-#include "Epetra_MpiComm.h"
-#include "Epetra_Vector.h"
-#include "State.hh"
-#include "MeshFactory.hh"
-#include "checkpoint.hh"
+#include "UnitTest++.h"
 
+#include "checkpoint.hh"
+#include "MeshFactory.hh"
+#include "State.hh"
 
 
 SUITE(RESTART) {
 
   TEST(RESTART_DUMP_REQUIRED_INTERVAL) {
-
     Teuchos::ParameterList plist;
 
     plist.set<std::string>("file name base","restartdump");
@@ -31,28 +42,21 @@ SUITE(RESTART) {
     
     // test the cycle stuff, the expected result is in cycles_ and 
     // we store the computed result in cycles
-    
-    int cycles_[31] = { 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
-                        0, 0, 0, 0, 
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  };
-    int cycles [31];
-    for (int ic = 0; ic<=30; ic++)
-      {
-
-
-  	cycles[ic] = R.DumpRequested(ic);
-      }
+    int cycles_[31] = {1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
+                       0, 0, 0, 0, 
+                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int cycles[31];
+    for (int ic = 0; ic <= 30; ic++) {
+      cycles[ic] = R.DumpRequested(ic);
+    }
     CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
-
   }
 
   TEST(RESTART_DUMP_REQUIRED_INTERVAL_OPENENDED1) {
-    
     Teuchos::ParameterList plist;
 
-    plist.set<std::string>("file name base","restartdump");
+    plist.set<std::string>("file name base", "restartdump");
     plist.set<int>("file name digits", 5);    
-    
 
     Teuchos::Array<int> csps(3);
     csps[0] = 0;
@@ -63,24 +67,19 @@ SUITE(RESTART) {
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     Amanzi::Checkpoint R(plist, &comm);
 
-   
     // test the cycle stuff, the expected result is in cycles_ and 
     // we store the computed result in cycles
-    
-    int cycles_[31] = { 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 
-                        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1  };
-    int cycles [31];
-    for (int ic = 0; ic<=30; ic++)
-      {
-  	cycles[ic] = R.DumpRequested(ic);
-      }
+    int cycles_[31] = {1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 
+                       1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1};
+    int cycles[31];
+    for (int ic = 0; ic <= 30; ic++) {
+      cycles[ic] = R.DumpRequested(ic);
+    }
     CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
-
   }
 
 
   TEST(RESTART_DUMP_REQUIRED_INTERVAL_OPENENDED2) {
-    
     Teuchos::ParameterList plist;
 
     plist.set<std::string>("file name base","restartdump");
@@ -95,17 +94,14 @@ SUITE(RESTART) {
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     Amanzi::Checkpoint R(plist, &comm);
 
-    
     // test the cycle stuff, the expected result is in cycles_ and 
     // we store the computed result in cycles
-    
-    int cycles_[31] = { 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 
-                        0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0  };
-    int cycles [31];
-    for (int ic = 0; ic<=30; ic++)
-      {
-  	cycles[ic] = R.DumpRequested(ic);
-      }
+    int cycles_[31] = {0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 
+                       0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0};
+    int cycles[31];
+    for (int ic = 0; ic <= 30; ic++) {
+      cycles[ic] = R.DumpRequested(ic);
+    }
     CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
   }
 
@@ -113,7 +109,7 @@ SUITE(RESTART) {
   TEST(RESTART_DUMP_REQUIRED_CYCLES) {
     Teuchos::ParameterList plist;
 
-    plist.set<std::string>("file name base","restartdump");
+    plist.set<std::string>("file name base", "restartdump");
     plist.set<int>("file name digits", 5);    
 
     Teuchos::Array<int> csps(3);
@@ -133,15 +129,13 @@ SUITE(RESTART) {
 
     // test the cycle stuff, the expected result is in cycles_ and 
     // we store the computed result in cycles
-    
-    int cycles_[31] = { 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0,
-                        0, 0, 0, 0, 
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  };
-    int cycles [31];
-    for (int ic = 0; ic<=30; ic++)
-      {
-  	cycles[ic] = R.DumpRequested(ic);
-      }
+    int cycles_[31] = {1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0,
+                       0, 0, 0, 0, 
+                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int cycles[31];
+    for (int ic = 0; ic <= 30; ic++) {
+      cycles[ic] = R.DumpRequested(ic);
+    }
     CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
   }
 
@@ -169,11 +163,10 @@ SUITE(RESTART) {
 
     // test the cycle stuff, the expected result is in cycles_ and 
     // we store the computed result in cycles
-    
     int times_[31] = { 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0,
                         0, 0, 0, 0, 
                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  };
-    int times [31];
+    int times[31];
     for (int ic = 0; ic<=30; ic+=1) {
       times[ic] = R.DumpRequested((double)ic);
     }
@@ -193,7 +186,7 @@ SUITE(RESTART) {
 
     Epetra_MpiComm comm(MPI_COMM_WORLD);
 
-    std::string xmlFileName = "test/test_restart.xml";
+    std::string xmlFileName = "test/state_restart.xml";
     Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
     plist = xmlreader.getParameters();
 
@@ -208,17 +201,15 @@ SUITE(RESTART) {
 
     Amanzi::AmanziMesh::MeshFactory meshfactory(&comm);
     meshfactory.preference(pref);
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh
-      = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, gm);
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, gm);
 
-    Teuchos::ParameterList state_list =  plist.get<Teuchos::ParameterList>("state");
+    Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("state");
     // now populate the parameter list...
-
     Teuchos::Ptr<Amanzi::State> S0 = Teuchos::ptr(new Amanzi::State(state_list) );
 
     S0->RegisterDomainMesh(Mesh);
 
-    S0->RequireField("celldata")->SetMesh(Mesh)->SetGhosted(false)->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);;
+    S0->RequireField("celldata")->SetMesh(Mesh)->SetGhosted(false)->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
 
     S0->Setup();
     S0->InitializeFields();
@@ -231,26 +222,26 @@ SUITE(RESTART) {
     WriteCheckpoint(R, S0, 0.0);
 
     Teuchos::Ptr<Amanzi::State> S1 = Teuchos::ptr(new Amanzi::State(state_list) );
-    S1->RequireField("celldata")->SetMesh(Mesh)->SetGhosted(false)->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);;
+    S1->RequireField("celldata")->SetMesh(Mesh)->SetGhosted(false)->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
 
     S1->Setup();
     S1->InitializeFields();    
 
     // fill with random data before reading checkpoint
-    Teuchos::RCP<Epetra_Vector> s1p =  Teuchos::rcpFromRef(*(*S1->GetFieldData("celldata", "state")->ViewComponent("cell", false))(0)); 
-    s1p->Random();
+    Epetra_MultiVector& s1p = *S1->GetFieldData("celldata", "state")->ViewComponent("cell", false); 
+    s1p.Random();
 
     ReadCheckpoint(&comm, S1, "restartdump00000.h5");
 
-    Teuchos::RCP<Epetra_Vector> s0p =  Teuchos::rcpFromRef(*(*S0->GetFieldData("celldata", "state")->ViewComponent("cell", false))(0));     
+    Epetra_MultiVector& s0p = *S0->GetFieldData("celldata", "state")->ViewComponent("cell", false);     
+
     // and compare with the original
-    
     CHECK_EQUAL(S0->time(), S1->time());
 
-    CHECK_EQUAL(s0p->MyLength(), s1p->MyLength()); 
+    CHECK_EQUAL(s0p.MyLength(), s1p.MyLength()); 
 
-    for (int i=0; i<s1p->MyLength(); ++i) {
-      CHECK_EQUAL((*s1p)[i],(*s0p)[i]);
+    for (int i = 0; i < s1p.MyLength(); ++i) {
+      CHECK_EQUAL(s1p[0][i], s0p[0][i]);
     }
   }
 }
