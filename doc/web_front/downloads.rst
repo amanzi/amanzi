@@ -3,7 +3,7 @@
 Downloads
 =========
 
-0.80.0 - Latest Basic Phase (R&D Branch) version
+|version| - Latest Basic Phase (R&D Branch) version
 
- * `<amanzi-0.80.0.tar.gz>`_
+ * `<amanzi-0.83.0.tar.gz>`_
 
