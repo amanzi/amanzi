@@ -112,7 +112,7 @@ if __name__ == "__main__":
     components = ['Na+','NO3-','Zn++'] ## ['H+','Na+','NO3-','Zn++']
     pflotran_totc_templ = "Total_{0} [M]"
     comppflo = [pflotran_totc_templ.format(x) for x in components]
-    compcrunch = [2, 3, 4] 
+    compcrunch = [1,2,3] 
 
 # times
     timespflo = ['Time:  5.00000E+01 y']          # ['Time:  0.00000E+00 y', 'Time:  5.00000E+01 y',]

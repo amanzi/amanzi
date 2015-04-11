@@ -33,7 +33,7 @@
   <ParameterList name="Mesh">
     <ParameterList name="Structured">
       <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0,0}"/>
-      <Parameter name="Domain High Coordinate" type="Array(double)" value="{100,2}"/>
+      <Parameter name="Domain High Coordinate" type="Array(double)" value="{100,1}"/>
       <Parameter name="Number of Cells" type="Array(int)" value="{100,2}"/>
     </ParameterList>
   </ParameterList>
@@ -48,7 +48,7 @@
     </ParameterList>
     <ParameterList name="Almost Entire Domain">
       <ParameterList name="Region: Polygon">
-        <Parameter name="VerticesV1" type="Array(double)" value="{ 25.0, 100.0, 100.0, 0.0 }"/>
+        <Parameter name="VerticesV1" type="Array(double)" value="{ 25.0, 100.0, 100.0, 25.0 }"/>
         <Parameter name="VerticesV2" type="Array(double)" value="{ 0.0, 0.0, 1.0, 1.0 }"/>
       </ParameterList>
     </ParameterList>
@@ -68,11 +68,11 @@
       <ParameterList name="Sorption Isotherms">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-	    <ParameterList name="A">
-	      <Parameter name="Kd" type="double" value="10.0"/>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
+    	    <ParameterList name="A">
+    	      <Parameter name="Kd" type="double" value="10.0"/>
+    	    </ParameterList>
+    	  </ParameterList>
+    	</ParameterList>
       </ParameterList>
     </ParameterList>
 
@@ -87,11 +87,11 @@
       <ParameterList name="Sorption Isotherms">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-	    <ParameterList name="A">
-	      <Parameter name="Kd" type="double" value="0.0"/>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
+    	    <ParameterList name="A">
+    	      <Parameter name="Kd" type="double" value="0.0"/>
+    	    </ParameterList>
+    	  </ParameterList>
+    	</ParameterList>
       </ParameterList>
     </ParameterList>
 

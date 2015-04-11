@@ -34,7 +34,7 @@
           <Parameter name="steady max preconditioner lag iterations" type="int" value="4"/>
           <Parameter name="steady time step reduction factor" type="double" value="0.8"/>
           <Parameter name="steady time step increase factor" type="double" value="1.25"/>
-          <Parameter name="steady preconditioner" type="string" value="Hyper AMG"/>
+          <Parameter name="steady preconditioner" type="string" value="Hypre AMG"/>
         </ParameterList>
         <ParameterList name="Transient Implicit Time Integration">
           <Parameter name="transient max iterations" type="int" value="15"/>
