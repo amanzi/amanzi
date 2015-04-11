@@ -113,12 +113,26 @@ class Operator {
   virtual void SymbolicAssembleMatrix(const SuperMap& map,
           GraphFE& graph, int my_block_row, int my_block_col) const;
   
+  // actual assembly:
+  // -- wrapper
   virtual void AssembleMatrix();
+  // -- first dispatch
   virtual void AssembleMatrix(const SuperMap& map,
           MatrixFE& matrix, int my_block_row, int my_block_col) const;
 
-  virtual void SetBCs(const Teuchos::RCP<BCs>& bc) { bc_ = bc; }
+  // boundary conditions (BC) require information on test and
+  // trial spaces. For a single PDE, these BCs could be the same.
+  virtual void SetBCs(const Teuchos::RCP<BCs>& bc_trial, const Teuchos::RCP<BCs>& bc_test) {
+    bc_trial_ = bc_trial;
+    bc_test_ = bc_test;
+  }
+  virtual void SetTrialBCs(const Teuchos::RCP<BCs>& bc) { bc_trial_ = bc; }
+  virtual void SetTestBCs(const Teuchos::RCP<BCs>& bc) { bc_test_ = bc; }
+
+  // modifiers
+  // -- add a vector to operator's rhs vector  
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included = true);
+  // -- rescale elemental matrices
   virtual void Rescale(const CompositeVector& scaling);
 
   // -- default functionality
@@ -251,7 +265,7 @@ class Operator {
 
   mutable std::vector<Teuchos::RCP<Op> > ops_;
   Teuchos::RCP<CompositeVector> rhs_, rhs_checkpoint_;
-  Teuchos::RCP<BCs> bc_;
+  Teuchos::RCP<BCs> bc_trial_, bc_test_;
 
   int ncells_owned, nfaces_owned, nnodes_owned;
   int ncells_wghost, nfaces_wghost, nnodes_wghost;
@@ -272,7 +286,6 @@ class Operator {
  private:
   Operator(const Operator& op);
   Operator& operator=(const Operator& op);
-  
 };
 
 }  // namespace Operators

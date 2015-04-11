@@ -109,10 +109,10 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   void AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVector>& flux,
                                 const Teuchos::Ptr<const CompositeVector>& u);
 
-  void ApplyBCs_Mixed_(BCs& bc, bool primary);
+  void ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test, bool primary);
   void ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
                        const Teuchos::Ptr<BCs>& bc_n, bool primary);
-  void ApplyBCs_Cell_(BCs& bc, bool primary);
+  void ApplyBCs_Cell_(BCs& bc_trial, BCs& bc_test, bool primary);
 
  protected:
   Teuchos::ParameterList plist_;

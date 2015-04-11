@@ -128,7 +128,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
       .get<Teuchos::ParameterList>("mixed diffusion");
   Teuchos::RCP<OperatorDiffusionMFD> op = Teuchos::rcp(new OperatorDiffusionMFD(olist, mesh));
-  op->SetBCs(bc);
+  op->SetBCs(bc, bc);
 
   op->set_factor(factor);  // for developers only
   op->Setup(K, Teuchos::null, Teuchos::null);

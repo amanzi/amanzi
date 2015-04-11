@@ -118,7 +118,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator nodal");
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
-  op->SetBCs(bc);
+  op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create source and add it to the operator
@@ -274,7 +274,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_2D) {
 
   // create diffusion operator 
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
-  op->SetBCs(bc);
+  op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create and initialize state variables.
@@ -431,7 +431,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   // create diffusion operator 
   Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator divk");
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
-  op->SetBCs(bc);
+  op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create and initialize state variables.
@@ -589,7 +589,7 @@ TEST(OPERATOR_DIFFUSION_SECOND_ORDER) {
 
   // create diffusion operator 
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
-  op->SetBCs(bc);
+  op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create source 
@@ -761,7 +761,7 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator mixed");
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
-  op->SetBCs(bc);
+  op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // set up the diffusion operator
@@ -936,7 +936,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator nodal");
   OperatorDiffusionFactory opfactory;
   Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc_v, op_list, g, 0);
-  op->AddBCs(bc_f);
+  op->AddBCs(bc_f, bc_f);
   
   // populate the diffusion operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
@@ -1072,7 +1072,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator cell");
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
-  op->SetBCs(bc_f);
+  op->SetBCs(bc_f, bc_f);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // set up the diffusion operator

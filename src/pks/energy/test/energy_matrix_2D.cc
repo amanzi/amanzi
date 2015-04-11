@@ -125,7 +125,7 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   OperatorDiffusionFactory opfactory;
   AmanziGeometry::Point g(2);
   Teuchos::RCP<OperatorDiffusion> op1 = opfactory.Create(mesh, bc, oplist, g, 0);
-  op1->SetBCs(bc);
+  op1->SetBCs(bc, bc);
 
   // populate the diffusion operator
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(EPK->get_K());

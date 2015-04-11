@@ -498,6 +498,8 @@ void OperatorDiffusionMFD::UpdateMatricesTPFA_()
 
 /* ******************************************************************
 * Apply boundary conditions to the local matrices
+* NONE 1. Nodal scheme handles only the case trialBC = testBC.
+* NONE 2. Jacobian term handles only trial BCs.
 ****************************************************************** */
 void OperatorDiffusionMFD::ApplyBCs(bool primary)
 {
@@ -505,19 +507,21 @@ void OperatorDiffusionMFD::ApplyBCs(bool primary)
     if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
                            | OPERATOR_SCHEMA_DOFS_FACE
                            | OPERATOR_SCHEMA_DOFS_CELL)) {
-      ASSERT(bcs_.size() == 1);
-      ApplyBCs_Mixed_(*bcs_[0], primary);
+      ASSERT(bcs_trial_.size() == 1);
+      ASSERT(bcs_test_.size() == 1);
+      ApplyBCs_Mixed_(*bcs_trial_[0], *bcs_test_[0], primary);
     
     } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_FACE
                                   | OPERATOR_SCHEMA_DOFS_CELL)) {
-      ASSERT(bcs_.size() == 1);
-      ApplyBCs_Cell_(*bcs_[0], primary);
+      ASSERT(bcs_trial_.size() == 1);
+      ASSERT(bcs_test_.size() == 1);
+      ApplyBCs_Cell_(*bcs_trial_[0], *bcs_test_[0], primary);
     
     } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
                                   | OPERATOR_SCHEMA_DOFS_NODE)) {
       Teuchos::RCP<BCs> bc_f, bc_n;
-      for (std::vector<Teuchos::RCP<BCs> >::iterator bc = bcs_.begin();
-           bc != bcs_.end(); ++bc) {
+      for (std::vector<Teuchos::RCP<BCs> >::iterator bc = bcs_trial_.begin();
+           bc != bcs_trial_.end(); ++bc) {
         if ((*bc)->type() == OPERATOR_BC_TYPE_FACE) {
           bc_f = *bc;
         } else if ((*bc)->type() == OPERATOR_BC_TYPE_NODE) {
@@ -529,13 +533,8 @@ void OperatorDiffusionMFD::ApplyBCs(bool primary)
   }
 
   if (jac_op_ != Teuchos::null) {
-    AmanziMesh::Entity_ID_List cells, nodes;
-
-    const std::vector<int>& bc_model = bcs_[0]->bc_model();
-    const std::vector<double>& bc_value = bcs_[0]->bc_value();
-    const std::vector<double>& bc_mixed = bcs_[0]->bc_mixed();
+    const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
     ASSERT(bc_model.size() == nfaces_wghost);
-    ASSERT(bc_value.size() == nfaces_wghost);
 
     for (int f = 0; f != nfaces_owned; ++f) {
       WhetStone::DenseMatrix& Aface = jac_op_->matrices[f];
@@ -550,20 +549,23 @@ void OperatorDiffusionMFD::ApplyBCs(bool primary)
 
 
 /* ******************************************************************
-* Apply BCs on face values
+* Apply BCs on face values.
 ****************************************************************** */
-void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc, bool primary)
+void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test, bool primary)
 {
   // apply diffusion type BCs to FACE-CELL system
   AmanziMesh::Entity_ID_List faces;
 
-  const std::vector<int>& bc_model = bc.bc_model();
-  const std::vector<double>& bc_value = bc.bc_value();
-  const std::vector<double>& bc_mixed = bc.bc_mixed();
-  ASSERT(bc_model.size() == nfaces_wghost);
+  const std::vector<int>& bc_model_trial = bc_trial.bc_model();
+  const std::vector<int>& bc_model_test = bc_trial.bc_model();
+
+  const std::vector<double>& bc_value = bc_trial.bc_value();
+  const std::vector<double>& bc_mixed = bc_trial.bc_mixed();
+
+  ASSERT(bc_model_trial.size() == nfaces_wghost);
   ASSERT(bc_value.size() == nfaces_wghost);
 
-  global_op_->rhs()->PutScalarGhosted(0.);
+  global_op_->rhs()->PutScalarGhosted(0.0);
   Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
 
@@ -573,33 +575,47 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc, bool primary)
     
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
         
+    // essential conditions for test functions
     bool flag(true);
-    for (int n=0; n!=nfaces; ++n) {
+    for (int n = 0; n != nfaces; ++n) {
+      int f = faces[n];
+      if (bc_model_test[f] == OPERATOR_BC_DIRICHLET) {
+        if (flag) {  // make a copy of elemental matrix
+          local_op_->matrices_shadow[c] = Acell;
+          flag = false;
+        }
+        for (int m = 0; m < nfaces; m++) Acell(n, m) = 0.0;
+        Acell(n, nfaces) = 0.0;
+      }
+    }
+
+    // conditions for trial functions
+    for (int n = 0; n != nfaces; ++n) {
       int f = faces[n];
       double value = bc_value[f];
 
-      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+      if (bc_model_trial[f] == OPERATOR_BC_DIRICHLET) {
         if (flag) {  // make a copy of elemental matrix
           local_op_->matrices_shadow[c] = Acell;
           flag = false;
         }
         for (int m = 0; m < nfaces; m++) {
-          if (bc_model[faces[m]] != OPERATOR_BC_DIRICHLET)
+          if (bc_model_trial[faces[m]] != OPERATOR_BC_DIRICHLET)
             rhs_face[0][faces[m]] -= Acell(m, n) * value;
-          Acell(n, m) = Acell(m, n) = 0.0;
+          Acell(m, n) = 0.0;
         }
 
         if (primary) {
           rhs_face[0][f] = value;
           Acell(n,n) = 1.0;
         }
-
         rhs_cell[0][c] -= Acell(nfaces, n) * value;
         Acell(nfaces, n) = 0.0;
-        Acell(n, nfaces) = 0.0;
-      } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+
+      } else if (bc_model_trial[f] == OPERATOR_BC_NEUMANN) {
         rhs_face[0][f] -= value * mesh_->face_area(f);
-      } else if (bc_model[f] == OPERATOR_BC_MIXED) {
+
+      } else if (bc_model_trial[f] == OPERATOR_BC_MIXED) {
         if (flag) {  // make a copy of elemental matrix
           local_op_->matrices_shadow[c] = Acell;
           flag = false;
@@ -618,14 +634,15 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc, bool primary)
 /* ******************************************************************
 * Apply BCs on cell operators
 ****************************************************************** */
-void OperatorDiffusionMFD::ApplyBCs_Cell_(BCs& bc, bool primary)
+void OperatorDiffusionMFD::ApplyBCs_Cell_(BCs& bc_trial, BCs& bc_test, bool primary)
 {
   // apply diffusion type BCs to CELL system
   AmanziMesh::Entity_ID_List cells;
 
-  const std::vector<int>& bc_model = bc.bc_model();
-  const std::vector<double>& bc_value = bc.bc_value();
-  const std::vector<double>& bc_mixed = bc.bc_mixed();
+  const std::vector<int>& bc_model = bc_trial.bc_model();
+  const std::vector<double>& bc_value = bc_trial.bc_value();
+  const std::vector<double>& bc_mixed = bc_trial.bc_mixed();
+
   ASSERT(bc_model.size() == nfaces_wghost);
   ASSERT(bc_value.size() == nfaces_wghost);
 
@@ -638,6 +655,7 @@ void OperatorDiffusionMFD::ApplyBCs_Cell_(BCs& bc, bool primary)
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       rhs_cell[0][cells[0]] += bc_value[f] * Aface(0, 0);
     }
+    // neumann condition contributes to the RHS
     else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
       local_op_->matrices_shadow[f] = Aface;
       

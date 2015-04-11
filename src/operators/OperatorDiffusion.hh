@@ -28,7 +28,7 @@
 
 
 /*
-  Pure interface for Diffusion operators  
+  Pure interface for diffusion operators.
 */ 
 
 namespace Amanzi {
@@ -90,17 +90,38 @@ class OperatorDiffusion {
     SetDensity(rho);
   }
 
-  // boundary conditions
-  virtual void SetBCs(const Teuchos::RCP<BCs>& bc) {
-    if (bcs_.size() == 0) {
-      bcs_.resize(1);
+  // boundary conditions (BC) require information on test and
+  // trial spaces. For a single PDE, these BCs could be the same.
+  virtual void SetBCs(const Teuchos::RCP<BCs>& bc_trial,
+                      const Teuchos::RCP<BCs>& bc_test) {
+    SetTrialBCs(bc_trial);  
+    SetTestBCs(bc_test);  
+  }
+  virtual void SetTrialBCs(const Teuchos::RCP<BCs>& bc) {
+    if (bcs_trial_.size() == 0) {
+      bcs_trial_.resize(1);
     }
-    bcs_[0] = bc;
-    global_op_->SetBCs(bc);
+    bcs_trial_[0] = bc;
+    global_op_->SetTrialBCs(bc);
+  }
+  virtual void SetTestBCs(const Teuchos::RCP<BCs>& bc) {
+    if (bcs_test_.size() == 0) {
+      bcs_test_.resize(1);
+    }
+    bcs_test_[0] = bc;
+    global_op_->SetTestBCs(bc);
   }
 
-  virtual void AddBCs(const Teuchos::RCP<BCs>& bc) {
-    bcs_.push_back(bc);
+  virtual void AddBCs(const Teuchos::RCP<BCs>& bc_trial,
+                      const Teuchos::RCP<BCs>& bc_test) {
+    bcs_trial_.push_back(bc_trial);
+    bcs_test_.push_back(bc_test);
+  }
+  virtual void AddTrialBCs(const Teuchos::RCP<BCs>& bc) {
+    bcs_trial_.push_back(bc);
+  }
+  virtual void AddTestBCs(const Teuchos::RCP<BCs>& bc) {
+    bcs_test_.push_back(bc);
   }
 
   // gravity terms -- may not be implemented
@@ -149,7 +170,7 @@ class OperatorDiffusion {
   Teuchos::RCP<Op> local_op_;
   Teuchos::RCP<Op> jac_op_;
   int global_op_schema_, local_op_schema_, jac_op_schema_;
-  std::vector<Teuchos::RCP<BCs> > bcs_;
+  std::vector<Teuchos::RCP<BCs> > bcs_trial_, bcs_test_;
 
   // mesh info
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

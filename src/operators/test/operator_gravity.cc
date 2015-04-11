@@ -87,7 +87,7 @@ TEST(OPERATOR_DIFFUSION_GRAVITY_2D) {
   // -- set gravity and boundary conditions
   Teuchos::RCP<OperatorDiffusion> op1 = Teuchos::rcp(new OperatorDiffusionWithGravity(op_list, mesh));
   op1->SetGravity(g);
-  op1->SetBCs(bc);
+  op1->SetBCs(bc, bc);
 
   // -- we need flux and dummy solution to populate nonlinear coefficient
   const CompositeVectorSpace& cvs = op1->global_operator()->DomainMap();
@@ -125,7 +125,7 @@ TEST(OPERATOR_DIFFUSION_GRAVITY_2D) {
   // create and populate the second operator using vector rho
   Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusionWithGravity(op_list, mesh));
   op2->SetGravity(g);
-  op2->SetBCs(bc);
+  op2->SetBCs(bc, bc);
   op2->Setup(K, knc->values(), knc->derivatives(), rho_cv);
   op2->UpdateMatrices(flux.ptr(), Teuchos::null);
 

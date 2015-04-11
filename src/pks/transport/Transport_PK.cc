@@ -546,7 +546,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new)
 
     Operators::OperatorDiffusionFactory opfactory;
     Teuchos::RCP<Operators::OperatorDiffusion> op1 = opfactory.Create(mesh_, bc_dummy, op_list, g, 0);
-    op1->SetBCs(bc_dummy);
+    op1->SetBCs(bc_dummy, bc_dummy);
     Teuchos::RCP<Operators::Operator> op = op1->global_operator();
     Teuchos::RCP<Operators::OperatorAccumulation> op2 =
         Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op));

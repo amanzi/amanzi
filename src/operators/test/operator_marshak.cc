@@ -212,7 +212,7 @@ void RunTest(std::string op_list_name) {
     // add diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
     OperatorDiffusionMFD op(olist, mesh);
-    op.SetBCs(bc);
+    op.SetBCs(bc, bc);
 
     int schema_dofs = op.schema_dofs();
     int schema_prec_dofs = op.schema_prec_dofs();

@@ -185,7 +185,7 @@ void RunTest(std::string op_list_name) {
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                         .get<Teuchos::ParameterList>(op_list_name);
     OperatorDiffusionMFD op(olist, surfmesh);
-    op.SetBCs(bc);
+    op.SetBCs(bc, bc);
 
     // get the global operator
     Teuchos::RCP<Operator> global_op = op.global_operator();

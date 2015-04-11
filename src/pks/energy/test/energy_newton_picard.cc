@@ -189,7 +189,7 @@ void HeatConduction::Init(
   // create the operators
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_name_);
   op_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionMFD(olist, mesh_));
-  op_diff_->SetBCs(bc_);
+  op_diff_->SetBCs(bc_, bc_);
   op_ = op_diff_->global_operator();
   op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_));
   op_->Init();

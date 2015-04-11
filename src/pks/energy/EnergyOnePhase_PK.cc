@@ -114,7 +114,7 @@ void EnergyOnePhase_PK::Initialize()
 
   Operators::OperatorDiffusionFactory opfactory;
   op_matrix_diff_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, g, 0);
-  op_matrix_diff_->SetBCs(op_bc_);
+  op_matrix_diff_->SetBCs(op_bc_, op_bc_);
   op_matrix_ = op_matrix_diff_->global_operator();
   op_matrix_->Init();
   op_matrix_diff_->Setup(S_->GetFieldData(conductivity_key_), Teuchos::null);
@@ -128,7 +128,7 @@ void EnergyOnePhase_PK::Initialize()
 
   // initialize coupled operators: diffusion + advection + accumulation
   op_preconditioner_diff_ = opfactory.Create(mesh_, op_bc_, oplist_pc, g, 0);
-  op_preconditioner_diff_->SetBCs(op_bc_);
+  op_preconditioner_diff_->SetBCs(op_bc_, op_bc_);
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
   op_preconditioner_->Init();
   op_preconditioner_diff_->Setup(S_->GetFieldData(conductivity_key_), Teuchos::null);

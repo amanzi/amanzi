@@ -104,7 +104,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator Sff");
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(olist, surfmesh));
-  op->SetBCs(bc);
+  op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   op->Setup(K, Teuchos::null, Teuchos::null);
@@ -224,7 +224,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator Scc");
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(olist, surfmesh));
-  op->SetBCs(bc);
+  op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   op->Setup(K, Teuchos::null, Teuchos::null);
@@ -344,7 +344,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator");
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(olist, surfmesh));
-  op->SetBCs(bc);
+  op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   op->Setup(K, Teuchos::null, Teuchos::null);

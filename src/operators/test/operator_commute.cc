@@ -125,7 +125,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator mfd");
   Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusionMFD(olist, global_op));
-  op2->SetBCs(bc);
+  op2->SetBCs(bc, bc);
   op2->Setup(K, Teuchos::null, Teuchos::null);
   op2->UpdateMatrices(Teuchos::null, Teuchos::null);
 
@@ -142,7 +142,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   Teuchos::ParameterList olist2 = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator mfd");
   Teuchos::RCP<OperatorDiffusion> op3 = Teuchos::rcp(new OperatorDiffusionMFD(olist2, global_op2));
-  op3->SetBCs(bc);
+  op3->SetBCs(bc, bc);
   op3->Setup(K, Teuchos::null, Teuchos::null);
   op3->UpdateMatrices(Teuchos::null, Teuchos::null);
 
@@ -255,7 +255,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator fv");
   Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusionFV(olist, global_op));
-  op2->SetBCs(bc);
+  op2->SetBCs(bc, bc);
   op2->Setup(K, Teuchos::null, Teuchos::null);
   op2->UpdateMatrices(Teuchos::null, Teuchos::null);
 
@@ -272,7 +272,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   Teuchos::ParameterList olist2 = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator fv");
   Teuchos::RCP<OperatorDiffusion> op3 = Teuchos::rcp(new OperatorDiffusionFV(olist2, global_op2));
-  op3->SetBCs(bc);
+  op3->SetBCs(bc, bc);
   op3->Setup(K, Teuchos::null, Teuchos::null);
   op3->UpdateMatrices(Teuchos::null, Teuchos::null);
 

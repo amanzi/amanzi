@@ -313,8 +313,19 @@ Secondary fields are derived either from primary fields or other secondary field
 There are two types of secondary fields evaluators.
 The first type is used to evaluate a single field.
 The second type is used to evaluate efficiently (in one call of an evaluator) multiple fields.
+
 The related XML syntax can provide various parameters needed for evaluation as explained in two
 examples below.
+One can also create a secondary field evaluator using the following parameters
+
+* `"evaluator dependencies`" [Array(string)] provides a list of fields on which this evaluator
+  depends.
+
+* `"check derivatives`" [bool] allows the develop to check derivatives with finite differences.
+  Default is *false*.
+
+* `"finite difference epsilon`" [double] defines the finite difference epsilon.
+  Default is 1e-10.
 
 .. code-block:: xml
 
@@ -355,6 +366,7 @@ The EOS requires one-parameter list to select the proper model for evaluation.
 In this example, the internal energy of rock is evaluated using one of the 
 available iem models. 
 A particular model is dynamically instantiated using parameter `"IEM type"`".
+
 
 Initial conditions
 ------------------
@@ -2780,7 +2792,7 @@ We describe parameters of the second sublist only.
 * `"finite difference epsilon`" [double] defines the base finite difference epsilon.
   Default is 1e-8.
 
-* `"method for epsilon`" [string] defines a method for calculating finite difefrence epsilon.
+* `"method for epsilon`" [string] defines a method for calculating finite difference epsilon.
   Available option is `"Knoll-Keyes`".
 
 .. code-block:: xml

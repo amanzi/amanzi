@@ -172,7 +172,7 @@ void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVecto
 {
   if (!exclude_primary_terms_) {
     const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
-    const std::vector<int>& bc_model = bcs_[0]->bc_model();
+    const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
     WhetStone::DenseMatrix null_matrix;
 
     // preparing upwind data
@@ -242,8 +242,8 @@ void OperatorDiffusionFV::ApplyBCs(bool primary)
   if (gravity_) 
       gravity_face = &*gravity_term_->ViewComponent("face", true);
 
-  const std::vector<int>& bc_model = bcs_[0]->bc_model();
-  const std::vector<double>& bc_value = bcs_[0]->bc_value();
+  const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
+  const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
   if (k_ != Teuchos::null) {
@@ -281,8 +281,8 @@ void OperatorDiffusionFV::UpdateFlux(
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
 
-  const std::vector<int>& bc_model = bcs_[0]->bc_model();
-  const std::vector<double>& bc_value = bcs_[0]->bc_value();
+  const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
+  const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
   solution.ScatterMasterToGhosted("cell");
 
@@ -354,8 +354,8 @@ void OperatorDiffusionFV::UpdateFlux(
 ****************************************************************** */
 void OperatorDiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 {
-  const std::vector<int>& bc_model = bcs_[0]->bc_model();
-  const std::vector<double>& bc_value = bcs_[0]->bc_value();
+  const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
+  const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
   u.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);

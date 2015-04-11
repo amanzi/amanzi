@@ -126,7 +126,7 @@ void RunTest(std::string op_list_name) {
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>(op_list_name);
   OperatorDiffusionMFD op(olist, surfmesh);
-  op.SetBCs(bc);
+  op.SetBCs(bc, bc);
   op.Setup(K, Teuchos::null, Teuchos::null);
   op.UpdateMatrices(Teuchos::null, Teuchos::null);
 

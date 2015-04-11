@@ -131,7 +131,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
                                         .get<Teuchos::ParameterList>("mixed diffusion");
     OperatorDiffusionMFD op2(olist, mesh);
-    op2.SetBCs(bc);
+    op2.SetBCs(bc, bc);
 
     int schema_dofs = op2.schema_dofs();
     int schema_prec_dofs = op2.schema_prec_dofs();
@@ -291,7 +291,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
                                         .get<Teuchos::ParameterList>("nodal diffusion");
     OperatorDiffusionMFD op2(olist, mesh);
-    op2.SetBCs(bc);
+    op2.SetBCs(bc, bc);
 
     int schema_dofs = op2.schema_dofs();
     CHECK(schema_dofs == (Operators::OPERATOR_SCHEMA_BASE_CELL
