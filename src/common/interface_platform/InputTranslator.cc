@@ -4811,7 +4811,8 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
 
 	    const std::string type_str_DEF("nonfile");
 	    const std::string type_str_gslib("gslib");
-	    const std::string type_str_file("file");
+            const std::string type_str_file("file");
+            const std::string type_str_exo("exodus ii");
 
 	    std::string type_str(type_str_DEF);
 
@@ -4827,18 +4828,16 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
 		get_gslib_info(perm, def_list, permElem, "permeability", "materials", dfile_DEF);
 		permName = "Intrinsic Permeability: GSLib";
 
-	      } else if (type_str == type_str_file) {
+	      } else if (type_str == type_str_file || type_str == type_str_exo) {
 
 		perm = get_file_info(perm, permElem, "permeability", "materials");
 		permName = "Intrinsic Permeability: File";
 
 	      } else {
-
-		Errors::Message msg;
-		msg << "Amanzi::InputTranslator: ERROR - permeability 'type' can only be either";
-		msg << " 'gslib' or 'file' per material. Material - " << matName << "\n";
-		msg << "  Please correct and try again \n" ;
-		Exceptions::amanzi_throw(msg);
+                
+                std::string section;
+                section = "Material (" + matName + ") - permeability";
+                throw_error_illformed(section, "attribute", "type", "gslib or file");
 
 	      }
 	    }
@@ -7054,7 +7053,7 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
     if (propElement->hasAttribute(XMLString::transcode("type"))) {
       text = std::string(XMLString::transcode(propElement->getAttribute(XMLString::transcode("type"))));
       // TODO: move all to lower case
-      if (text == "exodus ii") {
+      if (text == "file" || text == "exodus ii") {
         propertyList.set<std::string>("Format","Exodus II");
         isExodus = true;
       }
@@ -7062,7 +7061,7 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
         propertyList.set<std::string>("Format","Color Function");
       }
       else {
-        throw_error_illformed(sectionName, "attribute", "type", "exodus ii or color");
+        throw_error_illformed(sectionName, "attribute", "type", "'file', 'exodus ii' or 'color'");
       }
     }
     else {
@@ -7427,7 +7426,7 @@ void write_BDG_file(Teuchos::ParameterList sorption_list, Teuchos::ParameterList
     
     Errors::Message msg;
     msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing " << section << "- " ;
-    msg << "  Missing or Ill-formed '" << element_type << "' for " << ill_formed << ". \n" ;
+    msg << "  Missing or Ill-formed '" << element_type << "' for '" << ill_formed << "'. \n" ;
     msg << "  Please correct and try again \n" ;
     Exceptions::amanzi_throw(msg);
   }
@@ -7441,7 +7440,7 @@ void write_BDG_file(Teuchos::ParameterList sorption_list, Teuchos::ParameterList
     
     Errors::Message msg;
     msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing " << section << " - " ;
-    msg << "  Missing or Ill-formed '" << element_type << "' for " << ill_formed << ". Valid options are: " << options << "\n" ;
+    msg << "  Missing or Ill-formed '" << element_type << "' for '" << ill_formed << "'. Valid options are: " << options << "\n" ;
     msg << "  Please correct and try again \n" ;
     Exceptions::amanzi_throw(msg);
   }
