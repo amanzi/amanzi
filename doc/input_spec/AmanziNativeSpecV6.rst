@@ -17,7 +17,8 @@ Changes V5 -> V6
 ================
 
 * Switched to a more flexible MPC driver, called Cycle Driver.
-* Added more parameters to Energy PK.
+* Added Energy PK and FlowEnergy PK.
+* Described the conceptual model.
 
 
 ParameterList XML
@@ -665,11 +666,16 @@ where
 :math:`\boldsymbol{q}_l` is the Darcy velocity,
 :math:`k_r` is relative permeability,
 and :math:`\boldsymbol{g}` is gravity.
-We define :math:`\theta = \phi \eta_l s_l` where
-:math:`s_l` is liquid saturation,
+We define 
+
+.. math::
+  \theta = \phi \eta_l s_l
+
+where :math:`s_l` is liquid saturation,
 and :math:`\phi` is porosity.
 
-Flow sublist includes exactly one sublist, either `"Darcy problem`" or `"Richards problem`".
+Based on these two models, the flow sublist includes exactly one sublist, either 
+`"Darcy problem`" or `"Richards problem`".
 Structure of both sublists is quite similar. We make necessary comments on their differences.
 
 
@@ -698,8 +704,7 @@ Water retention models
 ......................
 
 User defines water retention models in sublist `"water retention models`". 
-It contains as many sublists, 
-e.g. `"SOIL_1`", `"SOIL_2`", etc, as there are different soils. 
+It contains as many sublists, e.g. `"SOIL_1`", `"SOIL_2`", etc, as there are different soils. 
 This list is required for `"Richards problem`" only.
  
 The water retention models are associated with non-overlapping regions. Each of the sublists (e.g. `"Soil 1`") 
@@ -1238,6 +1243,45 @@ The remaining `"Flow`" parameters are
 Transport PK
 ------------
 
+The conceptual PDE model for the fully saturated flow is
+
+.. math::
+  \frac{\partial (\phi s_l C_l)}{\partial t} 
+  =
+  - \boldsymbol{\nabla} \cdot (\boldsymbol{q}_l C_l) 
+  + \boldsymbol{\nabla} \cdot (\phi s_l \boldsymbol{D}_l \boldsymbol{\nabla} C_l) + Q,
+
+where 
+:math:`\phi` is porosity,
+:math:`s_l` is liquid saturation, 
+:math:`Q` is source or sink term,
+:math:`\boldsymbol{q}_l` is the Darcy velocity,
+and :math:`\boldsymbol{D}_l` is dispersion tensor.
+For an isotropic medium with no preferred axis of symmetry the dispersion 
+tensor has the folowing form:
+
+.. math::
+  \boldsymbol{D}_l 
+  = \alpha_T \|\boldsymbol{v}\| \boldsymbol{I} 
+  + \left(\alpha_L-\alpha_T \right) 
+    \frac{\boldsymbol{v} \boldsymbol{v}}{\|\boldsymbol{v}\|},
+
+where
+:math:`\alpha_L` is longitudinal dispersivity,
+:math:`\alpha_T` is  transverse dispersivity,
+and :math:`\boldsymbol{v}` is average pore velocity.
+
+
+Physical models and assumptions
+...............................
+
+To be written.
+
+
+Global parameters
+.................
+
+This list is used to summarize physical models and assumptions, such as
 The transport component of Amanzi performs advection of aqueous and gaseous
 components and their dispersion and diffusion. 
 The main parameters control temporal stability, spatial 
@@ -1389,17 +1433,17 @@ allows us to define spatially variable boundary conditions.
 
 * `"boundary conditions`" [list]
 
- * `"concentration`" [list] This is a reserved keyword.
+  * `"concentration`" [list] This is a reserved keyword.
    
-  * "COMP" [list] Contains a few sublists (e.g. BC_1, BC_2) for boundary conditions.
+    * "COMP" [list] Contains a few sublists (e.g. BC_1, BC_2) for boundary conditions.
  
-    * "BC_1" [list] Defines boundary conditions using arrays of boundary regions and attached
-      functions.
+      * "BC_1" [list] Defines boundary conditions using arrays of boundary regions and attached
+        functions.
    
-     * `"regions`" [Array(string)] Defines a list of boundary regions where a boundary condition
-       must be applied.
-     * `"boundary concentration`" [list] Define a function for calculating boundary conditions.
-       The function specification is described in subsection Functions.
+      * `"regions`" [Array(string)] Defines a list of boundary regions where a boundary condition
+        must be applied.
+      * `"boundary concentration`" [list] Define a function for calculating boundary conditions.
+        The function specification is described in subsection Functions.
 
 The example below sets constant boundary condtion 1e-5 for the duration of transient simulation.
 
@@ -2102,8 +2146,10 @@ Diffusion operator
     that must be added to the matrix. These terms represent Jacobian and are needed 
     for the preconditoner. Available options are `"true jacobian`" and `"approximate jacobian`".
 
-  * `"linear operator`" [sublist] add parameters for a linear solver that defines a preconditioner
-    for the diffusion operator (see section LinearSolvers_).
+  * `"consistent faces`" [sublist] to be described by E.Coon
+
+    * `"linear operator`" [sublist] add parameters for a linear solver that defines a preconditioner
+      for the diffusion operator (see section LinearSolvers_).
 
 .. code-block:: xml
 
@@ -2115,9 +2161,6 @@ Diffusion operator
       <Parameter name="gravity" type="bool" value="true"/>
       <Parameter name="upwind method" type="string" value="standard: cell"/>
       <Parameter name="newton correction" type="string" value="true jacobian"/>
-      <ParameterList name="linear solver">
-        ...
-      </ParameterList>
     </ParameterList>
 
 This example creates a p-lambda system, i.e. the pressure is

@@ -62,7 +62,7 @@ class OperatorDiffusion {
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux) = 0;
 
   // -- matrix modification
-  virtual void ApplyBCs(bool primary = true) = 0;
+  virtual void ApplyBCs(bool primary, bool eliminate) = 0;
   virtual void ModifyMatrices(const CompositeVector& u) = 0;
   virtual void ScaleMassMatrices(double s) = 0;
 

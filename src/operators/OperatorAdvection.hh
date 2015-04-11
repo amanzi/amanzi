@@ -49,7 +49,7 @@ class OperatorAdvection {
   void Setup(const CompositeVector& u);
   void UpdateMatrices(const CompositeVector& u);
   void UpdateMatrices(const CompositeVector& u, const CompositeVector& dhdT);
-  void ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary=true);
+  void ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary);
 
   // access
   Teuchos::RCP<Operator> global_operator() { return global_op_; }

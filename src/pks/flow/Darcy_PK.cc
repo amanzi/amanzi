@@ -436,7 +436,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new)
   op_acc_->AddAccumulationTerm(*solution, ss_g, dt_, "cell");
   op_acc_->AddAccumulationTerm(*solution, sy_g, "cell");
 
-  op_diff_->ApplyBCs(true);
+  op_diff_->ApplyBCs(true, true);
   op_->AssembleMatrix();
   op_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 

@@ -235,7 +235,7 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs();
+  op->ApplyBCs(true, true);
 
   // put in a random set of cell values
   CompositeVector x(cvs);

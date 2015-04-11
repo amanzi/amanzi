@@ -497,11 +497,15 @@ void OperatorDiffusionMFD::UpdateMatricesTPFA_()
 
 
 /* ******************************************************************
-* Apply boundary conditions to the local matrices
+* Apply boundary conditions to the local matrices. We always zero-out
+* matrix rows for essential test BCs. As to trial BCs, there are
+* options: (a) eliminate or not, (b) if eliminate, then put 1 on
+* the diagonal or not.
+*
 * NONE 1. Nodal scheme handles only the case trialBC = testBC.
 * NONE 2. Jacobian term handles only trial BCs.
 ****************************************************************** */
-void OperatorDiffusionMFD::ApplyBCs(bool primary)
+void OperatorDiffusionMFD::ApplyBCs(bool primary, bool eliminate)
 {
   if (!exclude_primary_terms_) {
     if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
@@ -509,13 +513,13 @@ void OperatorDiffusionMFD::ApplyBCs(bool primary)
                            | OPERATOR_SCHEMA_DOFS_CELL)) {
       ASSERT(bcs_trial_.size() == 1);
       ASSERT(bcs_test_.size() == 1);
-      ApplyBCs_Mixed_(*bcs_trial_[0], *bcs_test_[0], primary);
+      ApplyBCs_Mixed_(*bcs_trial_[0], *bcs_test_[0], primary, eliminate);
     
     } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_FACE
                                   | OPERATOR_SCHEMA_DOFS_CELL)) {
       ASSERT(bcs_trial_.size() == 1);
       ASSERT(bcs_test_.size() == 1);
-      ApplyBCs_Cell_(*bcs_trial_[0], *bcs_test_[0], primary);
+      ApplyBCs_Cell_(*bcs_trial_[0], *bcs_test_[0], primary, eliminate);
     
     } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
                                   | OPERATOR_SCHEMA_DOFS_NODE)) {
@@ -528,7 +532,7 @@ void OperatorDiffusionMFD::ApplyBCs(bool primary)
           bc_n = *bc;
         }
       }
-      ApplyBCs_Nodal_(bc_f.ptr(), bc_n.ptr(), primary);
+      ApplyBCs_Nodal_(bc_f.ptr(), bc_n.ptr(), primary, eliminate);
     }
   }
 
@@ -551,7 +555,8 @@ void OperatorDiffusionMFD::ApplyBCs(bool primary)
 /* ******************************************************************
 * Apply BCs on face values.
 ****************************************************************** */
-void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test, bool primary)
+void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
+                                           bool primary, bool eliminate)
 {
   // apply diffusion type BCs to FACE-CELL system
   AmanziMesh::Entity_ID_List faces;
@@ -573,10 +578,10 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test, bool pri
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
     
+    bool flag(true);
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
         
     // essential conditions for test functions
-    bool flag(true);
     for (int n = 0; n != nfaces; ++n) {
       int f = faces[n];
       if (bc_model_test[f] == OPERATOR_BC_DIRICHLET) {
@@ -595,22 +600,26 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test, bool pri
       double value = bc_value[f];
 
       if (bc_model_trial[f] == OPERATOR_BC_DIRICHLET) {
-        if (flag) {  // make a copy of elemental matrix
+        // make a copy of elemental matrix for post-processing
+        if (flag) {
           local_op_->matrices_shadow[c] = Acell;
           flag = false;
         }
-        for (int m = 0; m < nfaces; m++) {
-          if (bc_model_trial[faces[m]] != OPERATOR_BC_DIRICHLET)
+
+        if (eliminate) { 
+          for (int m = 0; m < nfaces; m++) {
             rhs_face[0][faces[m]] -= Acell(m, n) * value;
-          Acell(m, n) = 0.0;
+            Acell(m, n) = 0.0;
+          }
+
+          rhs_cell[0][c] -= Acell(nfaces, n) * value;
+          Acell(nfaces, n) = 0.0;
         }
 
         if (primary) {
           rhs_face[0][f] = value;
           Acell(n,n) = 1.0;
         }
-        rhs_cell[0][c] -= Acell(nfaces, n) * value;
-        Acell(nfaces, n) = 0.0;
 
       } else if (bc_model_trial[f] == OPERATOR_BC_NEUMANN) {
         rhs_face[0][f] -= value * mesh_->face_area(f);
@@ -634,7 +643,8 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test, bool pri
 /* ******************************************************************
 * Apply BCs on cell operators
 ****************************************************************** */
-void OperatorDiffusionMFD::ApplyBCs_Cell_(BCs& bc_trial, BCs& bc_test, bool primary)
+void OperatorDiffusionMFD::ApplyBCs_Cell_(BCs& bc_trial, BCs& bc_test,
+                                          bool primary, bool eliminate)
 {
   // apply diffusion type BCs to CELL system
   AmanziMesh::Entity_ID_List cells;
@@ -682,7 +692,7 @@ void OperatorDiffusionMFD::ApplyBCs_Cell_(BCs& bc_trial, BCs& bc_test, bool prim
 ****************************************************************** */
 void OperatorDiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
                                            const Teuchos::Ptr<BCs>& bc_v,
-                                           bool primary)
+                                           bool primary, bool eliminate)
 {
   AmanziMesh::Entity_ID_List faces, nodes, cells;
 
@@ -690,10 +700,11 @@ void OperatorDiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
   Epetra_MultiVector& rhs_node = *global_op_->rhs()->ViewComponent("node", true);
 
   int nn(0), nm(0);
-  for (int c=0; c!=ncells_owned; ++c) {
+  for (int c = 0; c != ncells_owned; ++c) {
     bool flag(true);
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
 
+    // process boundary integrals
     if (bc_f != Teuchos::null) {
       const std::vector<int>& bc_model = bc_f->bc_model();
       const std::vector<double>& bc_value = bc_f->bc_value();
@@ -702,7 +713,7 @@ void OperatorDiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
       mesh_->cell_get_faces(c, &faces);
       int nfaces = faces.size();
 
-      for (int n=0; n!=nfaces; ++n) {
+      for (int n = 0; n != nfaces; ++n) {
         int f = faces[n];
 
         if (bc_model[f] == OPERATOR_BC_NEUMANN) {
@@ -738,7 +749,7 @@ void OperatorDiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
           }
         }
       }
-    }
+    } 
 
     if (bc_v != Teuchos::null) {
       const std::vector<int>& bc_model = bc_v->bc_model();
@@ -747,7 +758,19 @@ void OperatorDiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
       mesh_->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();
 
-      for (int n=0; n!=nnodes; ++n) {
+      // essential conditions for test functions
+      for (int n = 0; n != nnodes; ++n) {
+        int v = nodes[n];
+        if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
+          if (flag) {  // make a copy of elemental matrix
+            local_op_->matrices_shadow[c] = Acell;
+            flag = false;
+          }
+          for (int m = 0; m < nnodes; m++) Acell(n, m) = 0.0;
+        }
+      }
+
+      for (int n = 0; n != nnodes; ++n) {
         int v = nodes[n];
         double value = bc_value[v];
 
@@ -756,16 +779,18 @@ void OperatorDiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
             local_op_->matrices_shadow[c] = Acell;
             flag = false;
           }
-          for (int m = 0; m < nnodes; m++) {
-            if (bc_model[nodes[m]] != OPERATOR_BC_DIRICHLET)
+     
+          if (eliminate) {
+            for (int m = 0; m < nnodes; m++) {
               rhs_node[0][nodes[m]] -= Acell(m, n) * value;
-            Acell(n, m) = Acell(m, n) = 0.0;
+              Acell(m, n) = 0.0;
+            }
           }
 
           if (primary) {
             mesh_->node_get_cells(v, AmanziMesh::USED, &cells);
             rhs_node[0][v] += value / cells.size();
-            Acell(n,n) = 1.0 / cells.size();
+            Acell(n, n) = 1.0 / cells.size();
           }
         }
       }

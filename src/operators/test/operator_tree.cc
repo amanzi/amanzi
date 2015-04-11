@@ -137,7 +137,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
-  op->ApplyBCs();
+  op->ApplyBCs(true, true);
 
   // create the TreeOperator, which combines two copies of op1 in a block-diagonal operator.
   Teuchos::RCP<TreeVectorSpace> tvs = Teuchos::rcp(new TreeVectorSpace());

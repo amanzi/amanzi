@@ -77,11 +77,16 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
                                               const Teuchos::Ptr<const CompositeVector>& u);
 
   // modify the operator
-  // -- by incorporating boundary conditions or by
-  virtual void ApplyBCs(bool primary = true);
-  // -- breaking p-lambda coupling.
+  // -- by incorporating boundary conditions. Variable 'primary' indicates
+  //    that we put 1 on the matrix diagonal. Variable 'eliminate' says
+  //    that we eliminate essential BCs for the trial function, i.e. zeros
+  //    go in the corresponding matrix columns.
+  virtual void ApplyBCs(bool primary, bool eliminate);
+
+  // -- by breaking p-lambda coupling.
   virtual void ModifyMatrices(const CompositeVector& u);
-  // -- rescaling mass matrices.
+
+  // -- by rescaling mass matrices.
   virtual void ScaleMassMatrices(double s);
 
   // main virtual members after solving the problem
@@ -109,10 +114,12 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   void AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVector>& flux,
                                 const Teuchos::Ptr<const CompositeVector>& u);
 
-  void ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test, bool primary);
-  void ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
-                       const Teuchos::Ptr<BCs>& bc_n, bool primary);
-  void ApplyBCs_Cell_(BCs& bc_trial, BCs& bc_test, bool primary);
+  void ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
+                       bool primary, bool eliminate);
+  void ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f, const Teuchos::Ptr<BCs>& bc_n,
+                       bool primary, bool eliminate);
+  void ApplyBCs_Cell_(BCs& bc_trial, BCs& bc_test,
+                      bool primary, bool eliminate);
 
  protected:
   Teuchos::ParameterList plist_;

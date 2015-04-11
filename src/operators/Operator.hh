@@ -64,8 +64,7 @@ Assembly (resp Apply, BCs, and SymbolicAssembly) are implemented by the (base
 class) Operator calling a dispatch to the (base virtual class) Op, which then
 dispatches back to the (derived class) Operator so that type information of
 both the Operator (i.e. global matrix info) and the Op (i.e. local matrix
-info) are kown.
-
+info) are known.
 ****************************************************************** */ 
 
 namespace Amanzi {
@@ -93,7 +92,7 @@ class Op_SurfaceFace_SurfaceCell;
 class Operator {
  public:
   // main constructor
-  //   The CVS is the domain and range of the operator
+  // At themoment CVS is the domain and range of the operator
   Operator() {}
   Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
            Teuchos::ParameterList& plist,

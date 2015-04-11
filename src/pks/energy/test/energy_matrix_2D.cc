@@ -176,8 +176,8 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   op3->UpdateMatrices(flux);
 
   // build the matrix
-  op1->ApplyBCs(true);
-  op3->ApplyBCs(bc);
+  op1->ApplyBCs(true, true);
+  op3->ApplyBCs(bc, true);
   op->SymbolicAssembleMatrix();
   op->AssembleMatrix();
 

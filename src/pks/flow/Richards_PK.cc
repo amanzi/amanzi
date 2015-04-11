@@ -480,14 +480,14 @@ void Richards_PK::Initialize()
   op_matrix_diff_->SetBCs(op_bc_, op_bc_);
   op_matrix_diff_->Setup(Kptr, krel_, dKdP_, molar_rho_);
   op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
-  op_matrix_diff_->ApplyBCs(true);
+  op_matrix_diff_->ApplyBCs(true, true);
 
   op_preconditioner_->Init();
   op_preconditioner_->SetBCs(op_bc_, op_bc_);
   op_preconditioner_diff_->Setup(Kptr, krel_, dKdP_, molar_rho_);
   op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
   op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr());
-  op_preconditioner_diff_->ApplyBCs(true);
+  op_preconditioner_diff_->ApplyBCs(true, true);
   op_preconditioner_->SymbolicAssembleMatrix();
 
   if (vapor_diffusion_) {

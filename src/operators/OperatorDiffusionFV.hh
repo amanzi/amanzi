@@ -83,7 +83,7 @@ class OperatorDiffusionFV : public OperatorDiffusion {
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
 
   // -- modify an operator
-  virtual void ApplyBCs(bool primary = true);
+  virtual void ApplyBCs(bool primary, bool eliminate);
   virtual void ModifyMatrices(const CompositeVector& u) {};
   virtual void ScaleMassMatrices(double s) {};
 

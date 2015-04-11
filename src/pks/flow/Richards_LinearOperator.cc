@@ -37,12 +37,12 @@ void Richards_PK::SolveFullySaturatedProblem(
   // create diffusion operator
   op_matrix_->Init();
   op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
-  op_matrix_diff_->ApplyBCs(true);
+  op_matrix_diff_->ApplyBCs(true, true);
 
   // create diffusion preconditioner
   op_preconditioner_->Init();
   op_preconditioner_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
-  op_preconditioner_diff_->ApplyBCs(true);
+  op_preconditioner_diff_->ApplyBCs(true, true);
   op_preconditioner_->AssembleMatrix();
   op_preconditioner_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 
@@ -131,13 +131,13 @@ void Richards_PK::EnforceConstraints(double Tp, Teuchos::RCP<CompositeVector> u)
   // calculate diffusion operator
   op_matrix_->Init();
   op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
-  op_matrix_diff_->ApplyBCs(true);
+  op_matrix_diff_->ApplyBCs(true, true);
   op_matrix_diff_->ModifyMatrices(*u);
 
   // calculate diffusion preconditioner
   op_preconditioner_->Init();
   op_preconditioner_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
-  op_preconditioner_diff_->ApplyBCs(true);
+  op_preconditioner_diff_->ApplyBCs(true, true);
   op_preconditioner_diff_->ModifyMatrices(*u);
   op_preconditioner_->AssembleMatrix();
   op_preconditioner_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);

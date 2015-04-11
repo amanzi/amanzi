@@ -29,8 +29,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialization
 ****************************************************************** */
-void
-OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
+void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
 {
   // Define stencil for the FV diffusion method.
   local_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
@@ -235,7 +234,7 @@ void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVecto
 /* ******************************************************************
 * Special implementation of boundary conditions.
 **********************************;******************************** */
-void OperatorDiffusionFV::ApplyBCs(bool primary)
+void OperatorDiffusionFV::ApplyBCs(bool primary, bool eliminate)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
   Epetra_MultiVector* gravity_face;

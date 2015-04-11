@@ -149,8 +149,8 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
 
-  // apply BCs and assemble
-  op->ApplyBCs();
+  // apply BCs (primary=true, eliminate=true) and assemble
+  op->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -318,7 +318,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_2D) {
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
-  op->ApplyBCs();
+  op->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -475,7 +475,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
-  op->ApplyBCs();
+  op->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -635,7 +635,7 @@ TEST(OPERATOR_DIFFUSION_SECOND_ORDER) {
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
-  op->ApplyBCs();
+  op->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
   
@@ -770,7 +770,7 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs();
+  op->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -943,7 +943,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   global_op->Init();
   op->Setup(K, Teuchos::null, Teuchos::null);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op->ApplyBCs();
+  op->ApplyBCs(true, true);
 
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
@@ -1081,7 +1081,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs();
+  op->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
   
