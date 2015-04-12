@@ -6,27 +6,24 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Linear solution plus constant tensorial coefficient.
+  Linear solution plus constact coefficient.
 */
 
-#ifndef AMANZI_OPERATOR_ANALYTIC_02_HH_
-#define AMANZI_OPERATOR_ANALYTIC_02_HH_
+#ifndef AMANZI_OPERATOR_ANALYTIC_00_HH_
+#define AMANZI_OPERATOR_ANALYTIC_00_HH_
 
 #include "AnalyticBase.hh"
 
-class Analytic02 : public AnalyticBase {
+class Analytic00 : public AnalyticBase {
  public:
-  Analytic02(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : AnalyticBase(mesh) {};
-  ~Analytic02() {};
+  Analytic00(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : AnalyticBase(mesh) {};
+  ~Analytic00() {};
 
   Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
-    Amanzi::WhetStone::Tensor K(2, 2);
-    K(0, 0) = 3.0;
-    K(1, 1) = 1.0;
-    K(0, 1) = 1.0;
-    K(1, 0) = 1.0;
+    Amanzi::WhetStone::Tensor K(2, 1);
+    K(0, 0) = 1.0;
     return K;
   }
 
@@ -38,8 +35,8 @@ class Analytic02 : public AnalyticBase {
 
   Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     Amanzi::AmanziGeometry::Point v(2);
-    v[0] = -5.0;
-    v[1] = -3.0;
+    v[0] = -1.0;
+    v[1] = -2.0;
     return v;
   }
  

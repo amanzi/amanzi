@@ -6,7 +6,9 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Complex solution plus full non-constant tensor.
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_01_HH_

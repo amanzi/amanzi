@@ -11,15 +11,18 @@
 
 #include <vector>
 
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "VerboseObject.hh"
-#include "SuperMap.hh"
-#include "MatrixFE.hh"
+// Amanzi
 #include "GraphFE.hh"
+#include "MatrixFE.hh"
 #include "PreconditionerFactory.hh"
+#include "SuperMap.hh"
+#include "VerboseObject.hh"
 
+// Operators
 #include "Operator.hh"
 #include "OperatorUtils.hh"
 #include "TreeOperator.hh"
@@ -32,7 +35,6 @@ i*m where i is an integer (every block's space is the same).
 
 Future work will relax this constraint, but currently this can be used for
 things like multi-phased flow, thermal+flow, etc.
-
 ****************************************************************** */ 
 
 namespace Amanzi {
