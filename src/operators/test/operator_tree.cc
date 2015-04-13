@@ -294,10 +294,10 @@ TEST(OPERATORS_COUPLED) {
   // update right-hand side (ZERO) and apply boundary conditions
   op00->ApplyBCs(true, true);
   op11->ApplyBCs(true, true);
-  op01->ApplyBCs(false, true);
+  op01->ApplyBCs(false, false);
   op10->ApplyBCs(false, true);
 
-  // create the TreeOperator, which combines four operators in a block-diagonal operator.
+  // create the TreeOperator, which combines four operators in a 2x2 block operator.
   Teuchos::RCP<TreeVectorSpace> tvs = Teuchos::rcp(new TreeVectorSpace());
   Teuchos::RCP<TreeVectorSpace> cvs_as_tv = Teuchos::rcp(new TreeVectorSpace(cvs));
   tvs->PushBack(cvs_as_tv);
@@ -325,23 +325,22 @@ TEST(OPERATORS_COUPLED) {
       solver = factory.Create("AztecOO CG", lop_list, tree_op);
 
   // -- create a rhs vector
+  TreeVector rhs;
   Teuchos::RCP<CompositeVector> rhs_cv0, rhs_cv1;
-  Teuchos::RCP<TreeVector> rhs_cv2tv = Teuchos::rcp(new TreeVector());
+  Teuchos::RCP<TreeVector> rhs_tv0 = Teuchos::rcp(new TreeVector());
+  Teuchos::RCP<TreeVector> rhs_tv1 = Teuchos::rcp(new TreeVector());
 
   rhs_cv0 = op00->global_operator()->rhs();
   rhs_cv1 = op01->global_operator()->rhs();
   rhs_cv0->Update(1.0, *rhs_cv1, 1.0);
-
-  TreeVector rhs;
-  rhs_cv2tv->SetData(rhs_cv0);
-  rhs.PushBack(rhs_cv2tv);
+  rhs_tv0->SetData(rhs_cv0);
+  rhs.PushBack(rhs_tv0);
 
   rhs_cv0 = op10->global_operator()->rhs();
   rhs_cv1 = op11->global_operator()->rhs();
   rhs_cv1->Update(1.0, *rhs_cv0, 1.0);
-
-  rhs_cv2tv->SetData(rhs_cv1);
-  rhs.PushBack(rhs_cv2tv);
+  rhs_tv1->SetData(rhs_cv1);
+  rhs.PushBack(rhs_tv1);
 
   // -- run iterative solver
   TreeVector solution(rhs);

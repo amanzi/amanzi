@@ -294,8 +294,8 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
 {
   ASSERT(op.matrices.size() == ncells_owned);
 
-  int lid_r[OPERATOR_MAX_FACES+1];
-  int lid_c[OPERATOR_MAX_FACES+1];
+  int lid_r[OPERATOR_MAX_FACES + 1];
+  int lid_c[OPERATOR_MAX_FACES + 1];
 
   // ELEMENT: cell, DOFS: face and cell
   const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);

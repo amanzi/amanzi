@@ -40,9 +40,12 @@ things like multi-phased flow, thermal+flow, etc.
 namespace Amanzi {
 namespace Operators {
 
+/* ******************************************************************
+* Constructor from a tree vector.
+****************************************************************** */
 TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs) :
-    tvs_(tvs) {
-
+    tvs_(tvs)
+{
   // make sure we have the right kind of TreeVectorSpace -- it should be
   // one parent node with all leaf node children.
   ASSERT(tvs_->Data() == Teuchos::null);
@@ -58,15 +61,19 @@ TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs) :
 }
 
 
-void
-TreeOperator::SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op) {
+/* ******************************************************************
+* Populate block matrix with pointers to operators.
+****************************************************************** */
+void TreeOperator::SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op) {
   blocks_[i][j] = op;
 }
 
 
-int
-TreeOperator::Apply(const TreeVector& X, TreeVector& Y) const {
-  // apply is done matrix-free
+/* ******************************************************************
+* Calculate Y = A * X using matrix-free matvec on blocks of operators.
+****************************************************************** */
+int TreeOperator::Apply(const TreeVector& X, TreeVector& Y) const
+{
   Y.PutScalar(0.0);
 
   int ierr(0);
@@ -82,15 +89,15 @@ TreeOperator::Apply(const TreeVector& X, TreeVector& Y) const {
 }
 
 
-int
-TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const {
+/* ******************************************************************
+* Calculate Y = inv(A) * X using global matrix.
+****************************************************************** */
+int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
+{
   Epetra_Vector Xcopy(A_->RowMap());
   Epetra_Vector Ycopy(A_->RowMap());
   int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
 
-  // std::cout << "r - staggered" << std::endl;
-  // Xcopy.Print(std::cout);
-  
   ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
   ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, Y);
   ASSERT(!ierr);
@@ -98,8 +105,13 @@ TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const {
 }
 
     
-void
-TreeOperator::SymbolicAssembleMatrix() {
+/* ******************************************************************
+* Sumbolic assemble global matrix from elemental matrices of block 
+* operators. The algorithm is limited to the case the all blocks are
+* square matrices.
+****************************************************************** */
+void TreeOperator::SymbolicAssembleMatrix()
+{
   int n_blocks = blocks_.size();
 
   // Currently we assume all diagonal schema are the same and well defined.
@@ -155,8 +167,10 @@ TreeOperator::SymbolicAssembleMatrix() {
 }
 
 
-void
-TreeOperator::AssembleMatrix() {
+/* ******************************************************************
+* Assemble global matrix from elemental matrices of block operators.
+****************************************************************** */
+void TreeOperator::AssembleMatrix() {
   int n_blocks = blocks_.size();
   Amat_->Zero();
 
@@ -175,18 +189,23 @@ TreeOperator::AssembleMatrix() {
 }
 
 
-// preconditioners
-void
-TreeOperator::InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist) {
+/* ******************************************************************
+* Create preconditioner using name and a factory.
+****************************************************************** */
+void TreeOperator::InitPreconditioner(
+    const std::string& prec_name, const Teuchos::ParameterList& plist)
+{
   AmanziPreconditioners::PreconditionerFactory factory;
   preconditioner_ = factory.Create(prec_name, plist);
   preconditioner_->Update(A_);
 }
 
 
-// preconditioners
-void
-TreeOperator::InitPreconditioner(Teuchos::ParameterList& plist) {
+/* ******************************************************************
+* Create preconditioner using a factory.
+****************************************************************** */
+void TreeOperator::InitPreconditioner(Teuchos::ParameterList& plist)
+{
   AmanziPreconditioners::PreconditionerFactory factory;
   preconditioner_ = factory.Create(plist);
   preconditioner_->Update(A_);

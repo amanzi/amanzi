@@ -461,6 +461,7 @@ int Operator::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
   return SchemaMismatch_(op.schema_string, schema_string_);
 }
 
+
 /* ******************************************************************
 * Visit methods for Apply: SurfaceFace
 ****************************************************************** */
@@ -469,6 +470,7 @@ int Operator::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
 {
   return SchemaMismatch_(op.schema_string, schema_string_);
 }
+
 
 /* ******************************************************************
 * Visit methods for symbolic assemble: Cell.

@@ -3,7 +3,6 @@
 
   Takes non-contiguous data structure spaces (CompositeVector, TreeVector) and
   converts them into a single map.
-
 */
 
 
@@ -75,7 +74,6 @@ SuperMap::SuperMap(const Epetra_MpiComm& comm,
   // create the maps
   map_ = Teuchos::rcp(new Epetra_Map(n_global, n_local, &gids[0], 0, comm));
   ghosted_map_ = Teuchos::rcp(new Epetra_Map(n_global_ghosted, n_local_ghosted, &gids[0], 0, comm));
-
 }
 
 
