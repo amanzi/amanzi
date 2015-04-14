@@ -140,7 +140,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   Teuchos::RCP<Operator> global_op2 = Teuchos::rcp(new Operator_FaceCell(cvs, plist2));
   
   Teuchos::ParameterList olist2 = plist.get<Teuchos::ParameterList>("PK operator")
-                                      .get<Teuchos::ParameterList>("diffusion operator mfd");
+                                       .get<Teuchos::ParameterList>("diffusion operator mfd");
   Teuchos::RCP<OperatorDiffusion> op3 = Teuchos::rcp(new OperatorDiffusionMFD(olist2, global_op2));
   op3->SetBCs(bc, bc);
   op3->Setup(K, Teuchos::null, Teuchos::null);
