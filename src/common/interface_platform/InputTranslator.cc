@@ -3217,12 +3217,13 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
       nodeName  = XMLString::transcode(regElem->getNodeName());
       
       // get name if needed
-      if (!haveName){
+      if (!haveName) {
         if (regElem->hasAttribute(XMLString::transcode("name"))) {
           regName = XMLString::transcode(regElem->getAttribute(XMLString::transcode("name")));
         }
         else {
-          throw_error_missattr("Regions","attribute","name",nodeName);
+          if (strcmp(nodeName,"comments") != 0)
+            throw_error_missattr("Regions","attribute","name",nodeName);
         }
       }
       
@@ -3404,7 +3405,7 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
           if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
             nodeName  = XMLString::transcode(curGKid->getNodeName());
             if  (strcmp(nodeName,"point") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               Teuchos::Array<double> point = make_coordinates(textContent2, *def_list);
               points.append(point);
               pt_cnt++;
@@ -3430,37 +3431,55 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
           reg_names.set<std::string>(regName,"logical");
           regionNames_string_.append(regName);
         }
-        
-        // get operation
-        if (regElem->hasAttribute(XMLString::transcode("operation"))) {
-          textContent2 = XMLString::transcode(regElem->getAttribute(XMLString::transcode("operation")));
-          if ( strcmp(textContent2,"union") == 0) {
-            list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Union");
+       
+        // Loop over childern
+	bool haveOp = false;
+	bool haveRL = false;
+	Teuchos::Array<Teuchos::Array<double> > points;
+        DOMNodeList* gkids = regElem->getChildNodes();
+        for (int j=0; j<gkids->getLength(); j++) {
+          DOMNode* curGKid = gkids->item(j) ;
+          if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
+            nodeName  = XMLString::transcode(curGKid->getNodeName());
+	    // deal with operation
+            if  (strcmp(nodeName,"operation") == 0){
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
+              if ( strcmp(textContent2,"union") == 0) {
+                list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Union");
+              }
+              else if (strcmp(textContent2,"intersection") == 0) {
+                list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Intersection");
+              }
+              else if (strcmp(textContent2,"subtraction") == 0) {
+                list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Subtraction");
+              }
+              else if (strcmp(textContent2,"complement") == 0) {
+                list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Complement");
+              }
+	      else {
+		// error about missing or unsupported operation
+		throw_error_illformed("Regions","element","operation","union, intersection, subtraction, or complement");
+	      }
+	      haveOp = true;
+              XMLString::release(&textContent2);
+            }
+	    // deal with region list
+	    else if  (strcmp(nodeName,"region_list") == 0){
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
+	      Teuchos::Array<std::string> regs = make_regions_list(textContent2);
+              list.sublist(regName).sublist("Region: Logical").set<Teuchos::Array<std::string> >("Regions",regs);
+	      haveRL = true;
+              XMLString::release(&textContent2);
+	    }
           }
-          else if (strcmp(textContent2,"intersection") == 0) {
-            list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Intersection");
-          }
-          else if (strcmp(textContent2,"subtraction") == 0) {
-            list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Subtraction");
-          }
-          else if (strcmp(textContent2,"complement") == 0) {
-            list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Complement");
-          }
-          XMLString::release(&textContent2);
-        } else {
-          throw_error_missattr("Regions","attribute","operation","logical");
         }
-        
-        // get region list
-        if (regElem->hasAttribute(XMLString::transcode("region_list"))) {
-          textContent2 = XMLString::transcode(regElem->getAttribute(XMLString::transcode("region_list")));
-          Teuchos::Array<std::string> regs = make_regions_list(textContent2);
-          list.sublist(regName).sublist("Region: Logical").set<Teuchos::Array<std::string> >("Regions",regs);
-          XMLString::release(&textContent2);
-        } else {
-          throw_error_missattr("Regions","attribute","region_list","logical");
-        }
-        
+	if (!haveOp) {
+	  throw_error_missattr("Regions","element","operation","logical");
+	}
+	if (!haveRL) {
+	  throw_error_missattr("Regions","element","region_list","logical");
+	}
+
       }
       else if  (strcmp(nodeName,"polygon") == 0){
         if (isUnstr_) {
@@ -3498,7 +3517,7 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
           if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
             nodeName  = XMLString::transcode(curGKid->getNodeName());
             if  (strcmp(nodeName,"point") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               Teuchos::Array<double> point = make_coordinates(textContent2, *def_list);
               pointsX.append(point[0]);
               pointsY.append(point[1]);
@@ -3537,13 +3556,13 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
           if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
             nodeName  = XMLString::transcode(curGKid->getNodeName());
             if (strcmp(nodeName,"center") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               Teuchos::Array<double> center = make_coordinates(textContent2, *def_list);
               list.sublist(regName).sublist("Region: Ellipse").set<Teuchos::Array<double> >("Center",center);
               XMLString::release(&textContent2);
             }
             else if (strcmp(nodeName,"raduis") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               Teuchos::Array<double> raduis = make_coordinates(textContent2, *def_list);
               list.sublist(regName).sublist("Region: Ellipse").set<Teuchos::Array<double> >("Radius",raduis);
               XMLString::release(&textContent2);
@@ -3580,7 +3599,7 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
           if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
             nodeName  = XMLString::transcode(curGKid->getNodeName());
             if  (strcmp(nodeName,"point") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               Teuchos::Array<double> point = make_coordinates(textContent2, *def_list);
               pointsX.append(point[0]);
               pointsY.append(point[1]);
@@ -3588,13 +3607,13 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
               XMLString::release(&textContent2);
             }
             else if  (strcmp(nodeName,"reference_point") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               Teuchos::Array<double> point = make_coordinates(textContent2, *def_list);
               list.sublist(regName).sublist("Region: Rotated Polygon").set<Teuchos::Array<double> >("Reference Point", point);
               XMLString::release(&textContent2);
             }
             else if  (strcmp(nodeName,"plane") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               if ( strcmp(textContent2,"xy") == 0 | strcmp(textContent2,"yx") == 0) {
                 list.sublist(regName).sublist("Region: Rotated Polygon").set<std::string>("Plane","XY");
               }
@@ -3610,7 +3629,7 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
               XMLString::release(&textContent2);
             }
             else if  (strcmp(nodeName,"axis") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               if ( strcmp(textContent2,"x") == 0) {
                 list.sublist(regName).sublist("Region: Rotated Polygon").set<std::string>("Plane","X");
               }
@@ -3662,7 +3681,7 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
           if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
             nodeName  = XMLString::transcode(curGKid->getNodeName());
             if  (strcmp(nodeName,"point") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               Teuchos::Array<double> point = make_coordinates(textContent2, *def_list);
               pointsX.append(point[0]);
               pointsY.append(point[1]);
@@ -3670,17 +3689,17 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
               XMLString::release(&textContent2);
             }
             else if  (strcmp(nodeName,"extent_min") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               extent[0] = atof(textContent2);
               XMLString::release(&textContent2);
             }
             else if  (strcmp(nodeName,"extent_max") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               extent[0] = atof(textContent2);
               XMLString::release(&textContent2);
             }
             else if  (strcmp(nodeName,"plane") == 0){
-              textContent2 = XMLString::transcode(curGKid->getNodeValue());
+              textContent2 = XMLString::transcode(curGKid->getTextContent());
               if ( strcmp(textContent2,"xy") == 0 | strcmp(textContent2,"yx") == 0) {
                 list.sublist(regName).sublist("Region: Swept Polygon").set<std::string>("Plane","XY");
               }
@@ -4419,7 +4438,7 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
       */
       
       XMLString::release(&tagName);
-      XMLString::release(&regName);
+      if (haveName) XMLString::release(&regName);
     }
   }
   // add array of region names to def_list, use these names to check assigned_regions list against later
@@ -4522,17 +4541,52 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
                 if  (strcmp("porosity",propName)==0){
                   DOMElement* propElem = static_cast<DOMElement*>(curkiddy);
                   Teuchos::ParameterList propertyPL;
-                  
-                  if (propElem->hasAttribute(XMLString::transcode("type"))) {
-                    propertyPL = get_file_info(propertyPL, propElem, "porosity", "mechanical_properties");
-                    
-                    matlist.sublist("Porosity: Uniform") = propertyPL;
-                    std::cout << "Amanzi::InputTranslator: Warning - " << std::endl;
-                    std::cout << "    Please note - the XML Schema allows for specifing Porosity with a file read." << std::endl;
-                    std::cout << "    However, file read for this property has not been propagated through the input process."  << std::endl;
-                    std::cout << "    Please specify a value."  << std::endl;
-                  }
-                  else {
+
+		  const std::string type_str_DEF("nonfile");
+		  const std::string type_str_gslib("gslib");
+		  const std::string type_str_file("file");
+
+		  std::string type_str(type_str_DEF);
+
+		  if (propElem->hasAttribute(XMLString::transcode("type"))) {
+		    type_str = std::string(XMLString::transcode(propElem->getAttribute(XMLString::transcode("type"))));
+		  }
+
+		  if (type_str != type_str_DEF) {
+
+		    std::string porName;
+		    if (type_str == type_str_gslib) {
+
+		      const std::string dfile_DEF("porosity_data");
+		      get_gslib_info(propertyPL, def_list, propElem, "porosity", "mechanical_properties", dfile_DEF);
+		      porName = "Porosity: GSLib";
+
+		    } else if (type_str == type_str_file) {
+
+		      propertyPL = get_file_info(propertyPL, propElem, "porosity", "mechanical_properties");
+		      porName = "Porosity: File";
+
+		      matlist.sublist("Porosity: Uniform") = propertyPL;
+		      std::cout << "Amanzi::InputTranslator: Warning - " << std::endl;
+		      std::cout << "    Please note - the XML Schema allows for specifing Porosity with a file read." << std::endl;
+		      std::cout << "    However, file read for this property has not been propagated through the input process."  << std::endl;
+		      std::cout << "    Please specify a value."  << std::endl;
+
+		    } else {
+
+		      Errors::Message msg;
+		      msg << "Amanzi::InputTranslator: ERROR - porosity 'type' can only be either";
+		      msg << " 'gslib' or 'file' per material. Material - " << matName << "\n";
+		      msg << "  Please correct and try again \n" ;
+		      Exceptions::amanzi_throw(msg);
+
+		    }
+		    
+		    matlist.sublist(porName) = propertyPL;
+
+		  }
+		  else {
+
                     if (propElem->hasAttribute(XMLString::transcode("value"))) {
                       textContent2 = XMLString::transcode(propElem->getAttribute(XMLString::transcode("value")));
                       matlist.sublist("Porosity: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
@@ -4741,7 +4795,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
               }
             }
 	  }
-          else if  (strcmp("permeability",tagName)==0){
+          else if  (strcmp("permeability",tagName)==0) {
             DOMElement* permElem = static_cast<DOMElement*>(curkid);
             Teuchos::ParameterList perm;
             Teuchos::ParameterList permTmp;
@@ -4754,10 +4808,39 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
               Exceptions::amanzi_throw(msg);
             }
             hasPerm = true;
-            if (permElem->hasAttribute(XMLString::transcode("type"))) {
-              perm = get_file_info(perm, permElem, "permeability", "materials");
-              permName = "Intrinsic Permeability: File";
-            }
+
+	    const std::string type_str_DEF("nonfile");
+	    const std::string type_str_gslib("gslib");
+            const std::string type_str_file("file");
+            const std::string type_str_exo("exodus ii");
+
+	    std::string type_str(type_str_DEF);
+
+	    if (permElem->hasAttribute(XMLString::transcode("type"))) {
+	      type_str = std::string(XMLString::transcode(permElem->getAttribute(XMLString::transcode("type"))));
+	    }
+
+	    if (type_str != type_str_DEF) {
+
+	      if (type_str == type_str_gslib) {
+
+		const std::string dfile_DEF("permeability_data");
+		get_gslib_info(perm, def_list, permElem, "permeability", "materials", dfile_DEF);
+		permName = "Intrinsic Permeability: GSLib";
+
+	      } else if (type_str == type_str_file || type_str == type_str_exo) {
+
+		perm = get_file_info(perm, permElem, "permeability", "materials");
+		permName = "Intrinsic Permeability: File";
+
+	      } else {
+                
+                std::string section;
+                section = "Material (" + matName + ") - permeability";
+                throw_error_illformed(section, "attribute", "type", "gslib or file");
+
+	      }
+	    }
             else {
               // loop over attributes to get x,y,z
               char *x,*y,*z;
@@ -4805,62 +4888,98 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
             }
             matlist.sublist(permName) = perm;
 	  }
-          else if  (strcmp("hydraulic_conductivity",tagName)==0){
-            // loop over attributes to get x,y,z
-            char *x,*y,*z;
+          else if  (strcmp("hydraulic_conductivity",tagName)==0) {
+            DOMElement* hydcondElem = static_cast<DOMElement*>(curkid);
+            Teuchos::ParameterList hydcond;
+            Teuchos::ParameterList hydcondTmp;
+            std::string hydcondName("Hydraulic Conductivity: Anisotropic Uniform");
             if (hasHC || hasPerm) {
               Errors::Message msg;
               msg << "Amanzi::InputTranslator: ERROR - can only specify one of ";
-              msg << "'permeability' or 'hydraulic_conductivity' per material. Material - " << matName;
+              msg << "'permeability' or 'hydraulic_conductivity' per material. Material - " << matName << "\n";
               msg << "  Please correct and try again \n" ;
               Exceptions::amanzi_throw(msg);
             }
             hasHC = true;
-            attrMap = curkid->getAttributes();
-            Teuchos::ParameterList hydcond;
-            Teuchos::ParameterList hydcondTmp;
-            for (int k=0; k<attrMap->getLength(); k++) {
-              DOMNode* attrNode = attrMap->item(k) ;
-              if (DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
-                char* attrName = XMLString::transcode(attrNode->getNodeName());
-                if (strcmp("x",attrName)==0){
-                  x = XMLString::transcode(attrNode->getNodeValue());
-                  hydcondTmp.set<double>("x",get_double_constant(x,def_list));
-                  XMLString::release(&x);
-                }
-                else if (strcmp("y",attrName)==0){
-                  y = XMLString::transcode(attrNode->getNodeValue());
-                  hydcondTmp.set<double>("y",get_double_constant(y,def_list));
-                  XMLString::release(&y);
-                }
-                else if (strcmp("z",attrName)==0){
-                  z = XMLString::transcode(attrNode->getNodeValue());
-                  hydcondTmp.set<double>("z",get_double_constant(z,def_list));
-                  XMLString::release(&z);
+
+	    const std::string type_str_DEF("nonfile");
+	    const std::string type_str_gslib("gslib");
+	    const std::string type_str_file("file");
+
+	    std::string type_str(type_str_DEF);
+
+	    if (hydcondElem->hasAttribute(XMLString::transcode("type"))) {
+	      type_str = std::string(XMLString::transcode(hydcondElem->getAttribute(XMLString::transcode("type"))));
+	    }
+
+	    if (type_str != type_str_DEF) {
+
+	      if (type_str == type_str_gslib) {
+
+		const std::string dfile_DEF("hydraulic_conductivity_data");
+		get_gslib_info(hydcond, def_list, hydcondElem, "hydraulic_conductivity", "materials", dfile_DEF);
+		hydcondName = "Hydraulic Conductivity: GSLib";
+
+	      } else if (type_str == type_str_file) {
+
+		hydcond = get_file_info(hydcond, hydcondElem, "hydraulic_conductivity", "materials");
+		hydcondName = "Hydraulic Conductivity: File";
+
+	      } else {
+
+		Errors::Message msg;
+		msg << "Amanzi::InputTranslator: ERROR - hydraulic_conductivity 'type' can only be either";
+		msg << " 'gslib' or 'file' per material. Material - " << matName << "\n";
+		msg << "  Please correct and try again \n" ;
+		Exceptions::amanzi_throw(msg);
+
+	      }
+	    }
+            else {
+              // loop over attributes to get x,y,z
+              char *x,*y,*z;
+              attrMap = curkid->getAttributes();
+              for (int k=0; k<attrMap->getLength(); k++) {
+                DOMNode* attrNode = attrMap->item(k) ;
+                if (DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
+                  char* attrName = XMLString::transcode(attrNode->getNodeName());
+                  if (strcmp("x",attrName)==0){
+                    x = XMLString::transcode(attrNode->getNodeValue());
+                    hydcondTmp.set<double>("x",get_double_constant(x,def_list));
+                    XMLString::release(&x);
+                  } else if (strcmp("y",attrName)==0){
+                    y = XMLString::transcode(attrNode->getNodeValue());
+                    hydcondTmp.set<double>("y",get_double_constant(y,def_list));
+                    XMLString::release(&y);
+                  } else if (strcmp("z",attrName)==0){
+                    z = XMLString::transcode(attrNode->getNodeValue());
+                    hydcondTmp.set<double>("z",get_double_constant(z,def_list));
+                    XMLString::release(&z);
+                  }
                 }
               }
-            }
-            bool checkY = true , checkZ = true;
-            if (hydcondTmp.isParameter("y")) {
-              if (hydcondTmp.get<double>("x") != hydcondTmp.get<double>("y")) checkY = false;
-            }
-            if (hydcondTmp.isParameter("z")) {
-              if (hydcondTmp.get<double>("x") != hydcondTmp.get<double>("z")) checkZ = false;
-            }
-            if (checkY && checkZ) {
-              hydcond.set<double>("Value",hydcondTmp.get<double>("x"));
-              matlist.sublist("Hydraulic Conductivity: Uniform") = hydcond;
-            }
-            else {
-              hydcond.set<double>("x",hydcondTmp.get<double>("x"));
+              bool checkY = true , checkZ = true;
               if (hydcondTmp.isParameter("y")) {
-                hydcond.set<double>("y",hydcondTmp.get<double>("y")) ;
+                if (hydcondTmp.get<double>("x") != hydcondTmp.get<double>("y")) checkY = false;
               }
               if (hydcondTmp.isParameter("z")) {
-                hydcond.set<double>("z",hydcondTmp.get<double>("z")) ;
+                if (hydcondTmp.get<double>("x") != hydcondTmp.get<double>("z")) checkZ = false;
               }
-              matlist.sublist("Hydraulic Conductivity: Anisotropic Uniform") = hydcond;
+              if (checkY && checkZ) {
+                hydcond.set<double>("Value",hydcondTmp.get<double>("x"));
+                hydcondName = "Hydraulic Conductivity: Uniform";
+              }
+              else {
+                hydcond.set<double>("x",hydcondTmp.get<double>("x"));
+                if (hydcondTmp.isParameter("y")) {
+                  hydcond.set<double>("y",hydcondTmp.get<double>("y")) ;
+                }
+                if (hydcondTmp.isParameter("z")) {
+                  hydcond.set<double>("z",hydcondTmp.get<double>("z")) ;
+                }
+              }
             }
+            matlist.sublist(hydcondName) = hydcond;
 	  }
           else if  (strcmp("cap_pressure",tagName)==0){
             attrMap = curkid->getAttributes();
@@ -6879,6 +6998,49 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
  * Empty
  ******************************************************************
  */
+
+  //MSD - get gslib information.
+  void get_gslib_info(Teuchos::ParameterList& propertyList,const Teuchos::ParameterList& defList, const xercesc::DOMElement* propElement, const std::string& propName, const std::string& sectionName, const std::string& dfile_DEF)
+  {
+    const std::string pfile_label("parameter_file");
+    const std::string dfile_label("data_file");
+    const std::string value_label("value");
+    const std::string gslib_pfile_label("GSLib Parameter File");
+    const std::string gslib_dfile_label("GSLib Data File");
+    const std::string gslib_value_label("Value");
+
+    std::string pfile, dfile = dfile_DEF;;
+    double value;
+
+    if (propElement->hasAttribute(XMLString::transcode(pfile_label.c_str()))) {
+      pfile = std::string(XMLString::transcode(propElement->getAttribute(XMLString::transcode(pfile_label.c_str()))));
+    }
+    else {
+      throw_error_missattr(sectionName, "attribute", pfile_label, propName);
+    }
+
+    if (propElement->hasAttribute(XMLString::transcode(value_label.c_str()))) {
+      std::string vstr = std::string(XMLString::transcode(propElement->getAttribute(XMLString::transcode(value_label.c_str()))));
+      value = get_double_constant(vstr,defList);
+    }
+    else {
+      throw_error_missattr(sectionName, "attribute", value_label, propName);
+    }
+
+    if (propElement->hasAttribute(XMLString::transcode(dfile_label.c_str()))) {
+      dfile = std::string(XMLString::transcode(propElement->getAttribute(XMLString::transcode(dfile_label.c_str()))));
+    }
+
+    propertyList.set<std::string>(gslib_pfile_label,pfile);
+    propertyList.set<std::string>(gslib_dfile_label,dfile);
+    propertyList.set<double>(gslib_value_label,value);
+  }
+
+/*
+ ******************************************************************
+ * Empty
+ ******************************************************************
+ */
   
   //TODO: EIB - get file information.
   
@@ -6891,7 +7053,7 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
     if (propElement->hasAttribute(XMLString::transcode("type"))) {
       text = std::string(XMLString::transcode(propElement->getAttribute(XMLString::transcode("type"))));
       // TODO: move all to lower case
-      if (text == "exodus ii") {
+      if (text == "file" || text == "exodus ii") {
         propertyList.set<std::string>("Format","Exodus II");
         isExodus = true;
       }
@@ -6899,7 +7061,7 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
         propertyList.set<std::string>("Format","Color Function");
       }
       else {
-        throw_error_illformed(sectionName, "attribute", "type", "exodus ii or color");
+        throw_error_illformed(sectionName, "attribute", "type", "'file', 'exodus ii' or 'color'");
       }
     }
     else {
@@ -7264,7 +7426,7 @@ void write_BDG_file(Teuchos::ParameterList sorption_list, Teuchos::ParameterList
     
     Errors::Message msg;
     msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing " << section << "- " ;
-    msg << "  Missing or Ill-formed '" << element_type << "' for " << ill_formed << ". \n" ;
+    msg << "  Missing or Ill-formed '" << element_type << "' for '" << ill_formed << "'. \n" ;
     msg << "  Please correct and try again \n" ;
     Exceptions::amanzi_throw(msg);
   }
@@ -7278,7 +7440,7 @@ void write_BDG_file(Teuchos::ParameterList sorption_list, Teuchos::ParameterList
     
     Errors::Message msg;
     msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing " << section << " - " ;
-    msg << "  Missing or Ill-formed '" << element_type << "' for " << ill_formed << ". Valid options are: " << options << "\n" ;
+    msg << "  Missing or Ill-formed '" << element_type << "' for '" << ill_formed << "'. Valid options are: " << options << "\n" ;
     msg << "  Please correct and try again \n" ;
     Exceptions::amanzi_throw(msg);
   }

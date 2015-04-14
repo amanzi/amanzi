@@ -103,8 +103,10 @@ void Energy_PK::Setup()
 ****************************************************************** */
 void Energy_PK::Initialize()
 {
+  // Energy list has only one sublist
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist_, "PKs", true);
-  Teuchos::RCP<Teuchos::ParameterList> ep_list = Teuchos::sublist(pk_list, "Energy", true);
+  Teuchos::RCP<Teuchos::ParameterList> tmp = Teuchos::sublist(pk_list, "Energy", true);
+  Teuchos::RCP<Teuchos::ParameterList> ep_list = Teuchos::sublist(tmp, tmp->begin()->first, true);
 
   // Create BCs objects.
   bc_model_.resize(nfaces_wghost, 0);
@@ -121,7 +123,12 @@ void Energy_PK::Initialize()
 
   op_bc_ = Teuchos::rcp(new Operators:: BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_, bc_value_, bc_mixed_));
 
+  // initilized fields
   InitializeFields_();
+
+  // other parameters
+  prec_include_enthalpy_ = ep_list->sublist("operators")
+                                   .get<bool>("include enthalpy in preconditioner", true);
 }
 
 
@@ -154,21 +161,7 @@ void Energy_PK::InitializeFields_()
 
 
 /* ******************************************************************
-* Transfer part of the internal data needed by energy PK in the next
-* time step.
-****************************************************************** */
-void Energy_PK::CommitStep(double t_old, double t_new)
-{
-  // energy -> prev_prev_energy
-  S_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  const Epetra_MultiVector& e = *S_->GetFieldData(energy_key_)->ViewComponent("cell");
-  Epetra_MultiVector& e_prev = *S_->GetFieldData(prev_energy_key_, passwd_)->ViewComponent("cell");
-  e_prev = e;
-}
-
-
-/* ******************************************************************
-* TBW.
+* Converts scalar conductivity to a tensorial field: not used yet.
 ****************************************************************** */
 bool Energy_PK::UpdateConductivityData(const Teuchos::Ptr<State>& S)
 {

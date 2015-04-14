@@ -64,8 +64,7 @@ Assembly (resp Apply, BCs, and SymbolicAssembly) are implemented by the (base
 class) Operator calling a dispatch to the (base virtual class) Op, which then
 dispatches back to the (derived class) Operator so that type information of
 both the Operator (i.e. global matrix info) and the Op (i.e. local matrix
-info) are kown.
-
+info) are known.
 ****************************************************************** */ 
 
 namespace Amanzi {
@@ -93,7 +92,7 @@ class Op_SurfaceFace_SurfaceCell;
 class Operator {
  public:
   // main constructor
-  //   The CVS is the domain and range of the operator
+  // At themoment CVS is the domain and range of the operator
   Operator() {}
   Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
            Teuchos::ParameterList& plist,
@@ -113,20 +112,34 @@ class Operator {
   virtual void SymbolicAssembleMatrix(const SuperMap& map,
           GraphFE& graph, int my_block_row, int my_block_col) const;
   
+  // actual assembly:
+  // -- wrapper
   virtual void AssembleMatrix();
+  // -- first dispatch
   virtual void AssembleMatrix(const SuperMap& map,
           MatrixFE& matrix, int my_block_row, int my_block_col) const;
 
-  virtual void SetBCs(const Teuchos::RCP<BCs>& bc) { bc_ = bc; }
-  virtual void UpdateRHS(const CompositeVector& source, bool volume_included=true);
+  // boundary conditions (BC) require information on test and
+  // trial spaces. For a single PDE, these BCs could be the same.
+  virtual void SetBCs(const Teuchos::RCP<BCs>& bc_trial, const Teuchos::RCP<BCs>& bc_test) {
+    bc_trial_ = bc_trial;
+    bc_test_ = bc_test;
+  }
+  virtual void SetTrialBCs(const Teuchos::RCP<BCs>& bc) { bc_trial_ = bc; }
+  virtual void SetTestBCs(const Teuchos::RCP<BCs>& bc) { bc_test_ = bc; }
+
+  // modifiers
+  // -- add a vector to operator's rhs vector  
+  virtual void UpdateRHS(const CompositeVector& source, bool volume_included = true);
+  // -- rescale elemental matrices
   virtual void Rescale(const CompositeVector& scaling);
 
   // -- default functionality
   const CompositeVectorSpace& DomainMap() const { return *cvs_; }
   const CompositeVectorSpace& RangeMap() const { return *cvs_; }
 
-  int ComputeResidual(const CompositeVector& u, CompositeVector& r, bool zero=true);
-  int ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r, bool zero=true);
+  int ComputeResidual(const CompositeVector& u, CompositeVector& r, bool zero = true);
+  int ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r, bool zero = true);
 
   void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
   void InitPreconditioner(Teuchos::ParameterList& plist);
@@ -251,7 +264,7 @@ class Operator {
 
   mutable std::vector<Teuchos::RCP<Op> > ops_;
   Teuchos::RCP<CompositeVector> rhs_, rhs_checkpoint_;
-  Teuchos::RCP<BCs> bc_;
+  Teuchos::RCP<BCs> bc_trial_, bc_test_;
 
   int ncells_owned, nfaces_owned, nnodes_owned;
   int ncells_wghost, nfaces_wghost, nnodes_wghost;
@@ -272,7 +285,6 @@ class Operator {
  private:
   Operator(const Operator& op);
   Operator& operator=(const Operator& op);
-  
 };
 
 }  // namespace Operators

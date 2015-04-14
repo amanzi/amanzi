@@ -238,12 +238,12 @@ Layout::DestroyPetscStructures()
 void
 Layout::Clear()
 {
-    nodes.clear();
-    crseNodes.clear();
-    nodeIds.clear();
-    crseIds.clear();
-    DestroyPetscStructures();
-    initialized = false;
+  nodes.clear();
+  crseNodes.clear();
+  nodeIds.clear();
+  crseIds.clear();
+  DestroyPetscStructures();
+  initialized = false;
 }
 
 #include <VisMF.H>
@@ -337,7 +337,7 @@ Layout::Build()
     nGrow = 1;
 
     if (parent!=0) {
-      if (nLevs <= 0) nLevs = parent->finestLevel()+1;
+      nLevs = parent->finestLevel()+1;
       SetGridsFromParent();
     }
 

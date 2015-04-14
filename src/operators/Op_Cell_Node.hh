@@ -24,7 +24,7 @@
   2. They are a container for local matrices.
   
   This Op class is for storing local matrices of length ncells and with dofs
-  on nodes, i.e. Lagrange elements.
+  on nodes, e.g. Lagrange elements.
 */
 
 namespace Amanzi {
@@ -49,15 +49,13 @@ class Op_Cell_Node : public Op {
   virtual void SymbolicAssembleMatrixOp(const Operator* assembler,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const {
-    assembler->SymbolicAssembleMatrixOp(*this,
-            map, graph, my_block_row, my_block_col);
+    assembler->SymbolicAssembleMatrixOp(*this, map, graph, my_block_row, my_block_col);
   }
 
   virtual void AssembleMatrixOp(const Operator* assembler,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const {
-    assembler->AssembleMatrixOp(*this, map, mat,
-            my_block_row, my_block_col);
+    assembler->AssembleMatrixOp(*this, map, mat, my_block_row, my_block_col);
   }
   
   virtual bool ApplyBC(BCs& bc,
@@ -67,21 +65,24 @@ class Op_Cell_Node : public Op {
     return false;
   }
 
+  // rescaling columns of local matrices
   virtual void Rescale(const CompositeVector& scaling) {
     if (scaling.HasComponent("node")) {
-      const Epetra_MultiVector& s_n = *scaling.ViewComponent("node",true);
+      const Epetra_MultiVector& s_n = *scaling.ViewComponent("node", true);
       AmanziMesh::Entity_ID_List nodes;
+
       for (int c = 0; c != matrices.size(); ++c) {
+        WhetStone::DenseMatrix& Acell = matrices[c];
         mesh_->cell_get_nodes(c, &nodes);
+
         for (int n = 0; n != nodes.size(); ++n) {
           for (int m = 0; m != nodes.size(); ++m) {
-            matrices[c](n,m) *= s_n[0][nodes[n]];
+            Acell(n, m) *= s_n[0][nodes[n]];
           }
         }
       }
     }
   }
-
 };
 
 }  // namespace Operators

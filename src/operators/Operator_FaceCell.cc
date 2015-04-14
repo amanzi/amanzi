@@ -114,17 +114,19 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_Face& op,
   return 0;
 }
 
-// visit method for apply surface cells into subsurface faces
-int
-Operator_FaceCell::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
-        const CompositeVector& X, CompositeVector& Y) const
+
+/* ******************************************************************
+* visit method for apply surface cells into subsurface faces
+****************************************************************** */
+int Operator_FaceCell::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
+                                         const CompositeVector& X, CompositeVector& Y) const
 {
   int nsurf_cells = op.surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ASSERT(op.vals.size() == nsurf_cells);
 
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", false);
   Epetra_MultiVector& Yf = *Y.ViewComponent("face", false);
-  for (int sc=0; sc!=nsurf_cells; ++sc) {
+  for (int sc = 0; sc != nsurf_cells; ++sc) {
     int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL, sc);
     Yf[0][f] += op.vals[sc] * Xf[0][f];
   } 
@@ -132,10 +134,11 @@ Operator_FaceCell::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
 }
 
 
-// visit method for apply surface cells into subsurface faces
-int
-Operator_FaceCell::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
-        const CompositeVector& X, CompositeVector& Y) const
+/* ******************************************************************
+* visit method for apply surface cells into subsurface faces
+****************************************************************** */
+int Operator_FaceCell::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
+                                         const CompositeVector& X, CompositeVector& Y) const
 {
   int nsurf_faces = op.surf_mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   ASSERT(op.matrices.size() == nsurf_faces);
@@ -147,19 +150,19 @@ Operator_FaceCell::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
   Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
   
   AmanziMesh::Entity_ID_List cells;
-  for (int sf=0; sf!=nsurf_faces; ++sf) {
+  for (int sf = 0; sf != nsurf_faces; ++sf) {
     op.surf_mesh->face_get_cells(sf, AmanziMesh::USED, &cells);
     int ncells = cells.size();
 
     WhetStone::DenseVector v(ncells), av(ncells);
-    for (int n=0; n!=ncells; ++n) {
+    for (int n = 0; n != ncells; ++n) {
       v(n) = Xf[0][op.surf_mesh->entity_get_parent(AmanziMesh::CELL, cells[n])];
     }
 
     const WhetStone::DenseMatrix& Aface = op.matrices[sf];
     Aface.Multiply(v, av, false);
 
-    for (int n=0; n!=ncells; ++n) {
+    for (int n = 0; n != ncells; ++n) {
       Yf[0][op.surf_mesh->entity_get_parent(AmanziMesh::CELL, cells[n])] += av(n);
     }
   } 
@@ -291,8 +294,8 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
 {
   ASSERT(op.matrices.size() == ncells_owned);
 
-  int lid_r[OPERATOR_MAX_FACES+1];
-  int lid_c[OPERATOR_MAX_FACES+1];
+  int lid_r[OPERATOR_MAX_FACES + 1];
+  int lid_c[OPERATOR_MAX_FACES + 1];
 
   // ELEMENT: cell, DOFS: face and cell
   const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);

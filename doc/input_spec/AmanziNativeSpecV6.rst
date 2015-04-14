@@ -16,7 +16,9 @@ Parameters labeled by [O] (Obsolete) are old capabilities and will be removed so
 Changes V5 -> V6
 ================
 
-* Switched to a more flexible MPC driver.
+* Switched to a more flexible MPC driver, called Cycle Driver.
+* Added Energy PK and FlowEnergy PK.
+* Described the conceptual model.
 
 
 ParameterList XML
@@ -312,8 +314,19 @@ Secondary fields are derived either from primary fields or other secondary field
 There are two types of secondary fields evaluators.
 The first type is used to evaluate a single field.
 The second type is used to evaluate efficiently (in one call of an evaluator) multiple fields.
+
 The related XML syntax can provide various parameters needed for evaluation as explained in two
 examples below.
+One can also create a secondary field evaluator using the following parameters
+
+* `"evaluator dependencies`" [Array(string)] provides a list of fields on which this evaluator
+  depends.
+
+* `"check derivatives`" [bool] allows the develop to check derivatives with finite differences.
+  Default is *false*.
+
+* `"finite difference epsilon`" [double] defines the finite difference epsilon.
+  Default is 1e-10.
 
 .. code-block:: xml
 
@@ -354,6 +367,7 @@ The EOS requires one-parameter list to select the proper model for evaluation.
 In this example, the internal energy of rock is evaluated using one of the 
 available iem models. 
 A particular model is dynamically instantiated using parameter `"IEM type"`".
+
 
 Initial conditions
 ------------------
@@ -614,15 +628,83 @@ driver entries of this sublist must match PKNAMEs in Cycle Driver sublist.
 Flow PK
 -------
 
-Flow sublist includes exactly one sublist, either `"Darcy problem`" or `"Richards problem`".
+The conceptual PDE model for the fully saturated flow is
+
+.. math::
+  \phi (s_s + s_y) \frac{\partial p_l}{\partial t} 
+  =
+  \boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_l) + Q,
+  \quad
+  \boldsymbol{q}_l 
+  = -\frac{\boldsymbol{K}}{\mu} 
+  (\boldsymbol{\nabla} p - \rho_l \boldsymbol{g}),
+
+where 
+:math:`\phi` is porosity,
+:math:`s_s` and :math:`s_y` are specific strorage and specific yeild, respectively,
+:math:`\rho_l` is fluid density,
+:math:`Q` is source or sink term,
+:math:`\boldsymbol{q}_l` is the Darcy velocity,
+and :math:`\boldsymbol{g}` is gravity.
+
+The conceptual PDE model for the partially saturated flow is
+
+.. math::
+  \frac{\partial \theta}{\partial t} 
+  =
+  \boldsymbol{\nabla} \cdot (\eta_l \boldsymbol{q}_l) + Q,
+  \quad
+  \boldsymbol{q}_l 
+  = -\frac{\boldsymbol{K} k_r}{\mu} 
+  (\boldsymbol{\nabla} p - \rho_l \boldsymbol{g})
+
+where 
+:math:`\theta` is total water content,
+:math:`\eta_l` is molar density of liquid,
+:math:`\rho_l` is fluid density,
+:math:`Q` is source or sink term,
+:math:`\boldsymbol{q}_l` is the Darcy velocity,
+:math:`k_r` is relative permeability,
+and :math:`\boldsymbol{g}` is gravity.
+We define 
+
+.. math::
+  \theta = \phi \eta_l s_l
+
+where :math:`s_l` is liquid saturation,
+and :math:`\phi` is porosity.
+
+Based on these two models, the flow sublist includes exactly one sublist, either 
+`"Darcy problem`" or `"Richards problem`".
 Structure of both sublists is quite similar. We make necessary comments on their differences.
+
+
+Physical models and assumptions
+...............................
+
+This list is used to summarize physical models and assumptions, such as
+coupling with other PKs.
+This list is often generated on a fly by a high-level MPC PK.
+
+* `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
+  e.g. by EnergyFlow PK. The default value is `"false`".
+
+* `"water content evaluator`" [string] changes the evaluator for water
+  content. Available options are `"generic`" and `"constant density`" (default).
+
+.. code-block:: xml
+
+   <ParameterList name="physical models and assumptions">
+     <Parameter name="vapor diffusion" type="bool" value="false"/>
+     <Parameter name="water content evaluator" type="string" value="constant density"/>
+   </ParameterList>
+
 
 Water retention models
 ......................
 
 User defines water retention models in sublist `"water retention models`". 
-It contains as many sublists, 
-e.g. `"SOIL_1`", `"SOIL_2`", etc, as there are different soils. 
+It contains as many sublists, e.g. `"SOIL_1`", `"SOIL_2`", etc, as there are different soils. 
 This list is required for `"Richards problem`" only.
  
 The water retention models are associated with non-overlapping regions. Each of the sublists (e.g. `"Soil 1`") 
@@ -1104,25 +1186,6 @@ those needed for unit tests, and future code development.
    </ParameterList>
 
 
-Physics couplig
-...............
-
-To couple with other PKs, we have to specify additional parameters.
-
-  * `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
-    e.g. by EnergyFlow PK. The default value is `"false`".
-
-  * `"water content evaluator`" [string] changes the evaluator for water
-    content. Available options are `"generic`" and `"constant density`" (default).
-
-.. code-block:: xml
-
-   <ParameterList name="physics coupling">
-     <Parameter name="vapor diffusion" type="bool" value="false"/>
-     <Parameter name="water content evaluator" type="string" value="constant density"/>
-   </ParameterList>
-
-
 Other parameters
 ................
 
@@ -1180,6 +1243,45 @@ The remaining `"Flow`" parameters are
 Transport PK
 ------------
 
+The conceptual PDE model for the fully saturated flow is
+
+.. math::
+  \frac{\partial (\phi s_l C_l)}{\partial t} 
+  =
+  - \boldsymbol{\nabla} \cdot (\boldsymbol{q}_l C_l) 
+  + \boldsymbol{\nabla} \cdot (\phi s_l \boldsymbol{D}_l \boldsymbol{\nabla} C_l) + Q,
+
+where 
+:math:`\phi` is porosity,
+:math:`s_l` is liquid saturation, 
+:math:`Q` is source or sink term,
+:math:`\boldsymbol{q}_l` is the Darcy velocity,
+and :math:`\boldsymbol{D}_l` is dispersion tensor.
+For an isotropic medium with no preferred axis of symmetry the dispersion 
+tensor has the folowing form:
+
+.. math::
+  \boldsymbol{D}_l 
+  = \alpha_T \|\boldsymbol{v}\| \boldsymbol{I} 
+  + \left(\alpha_L-\alpha_T \right) 
+    \frac{\boldsymbol{v} \boldsymbol{v}}{\|\boldsymbol{v}\|},
+
+where
+:math:`\alpha_L` is longitudinal dispersivity,
+:math:`\alpha_T` is  transverse dispersivity,
+and :math:`\boldsymbol{v}` is average pore velocity.
+
+
+Physical models and assumptions
+...............................
+
+To be written.
+
+
+Global parameters
+.................
+
+This list is used to summarize physical models and assumptions, such as
 The transport component of Amanzi performs advection of aqueous and gaseous
 components and their dispersion and diffusion. 
 The main parameters control temporal stability, spatial 
@@ -1331,17 +1433,17 @@ allows us to define spatially variable boundary conditions.
 
 * `"boundary conditions`" [list]
 
- * `"concentration`" [list] This is a reserved keyword.
+  * `"concentration`" [list] This is a reserved keyword.
    
-  * "COMP" [list] Contains a few sublists (e.g. BC_1, BC_2) for boundary conditions.
+    * "COMP" [list] Contains a few sublists (e.g. BC_1, BC_2) for boundary conditions.
  
-    * "BC_1" [list] Defines boundary conditions using arrays of boundary regions and attached
-      functions.
+      * "BC_1" [list] Defines boundary conditions using arrays of boundary regions and attached
+        functions.
    
-     * `"regions`" [Array(string)] Defines a list of boundary regions where a boundary condition
-       must be applied.
-     * `"boundary concentration`" [list] Define a function for calculating boundary conditions.
-       The function specification is described in subsection Functions.
+      * `"regions`" [Array(string)] Defines a list of boundary regions where a boundary condition
+        must be applied.
+      * `"boundary concentration`" [list] Define a function for calculating boundary conditions.
+        The function specification is described in subsection Functions.
 
 The example below sets constant boundary condtion 1e-5 for the duration of transient simulation.
 
@@ -1656,16 +1758,332 @@ Alquimia chemistry kernel reads initial conditions from the `"State`" list.
 Energy PK
 ---------
 
+The conceptual PDE model for the energy equation is 
+
+.. math::
+  \frac{\partial \varepsilon}{\partial t} 
+  =
+  \boldsymbol{\nabla} \cdot (\kappa \nabla T) -
+  \boldsymbol{\nabla} \cdot (\eta_l H_l \boldsymbol{q}_l) + Q
+
+where 
+:math:`\varepsilon` is the internal energy,
+:math:`\eta_l` is molar density of liquid,
+:math:`Q` is source or sink term,
+:math:`\boldsymbol{q}_l` is the Darcy velocity,
+:math:`\kappa` is thermal conductivity,
+and :math:`H_l` is molar enthalphy of liquid.
+We define 
+
+.. math::
+   \varepsilon = \phi (\eta_l s_l U_l + \eta_g s_g U_g) + 
+   (1 - \phi) \rho_r c_r T
+
+where
+:math:`s_l` is liquid saturation,
+:math:`s_g` is gas saturation (water vapor),
+:math:`\eta_l` is molar density of liquid,
+:math:`\eta_g` is molar density of gas,
+:math:`U_l` is molar internal energy of liquid,
+:math:`U_g` is molar internal energy of gas (water vapor),
+:math:`\phi` is porosity,
+:math:`\rho_r` is rock density,
+:math:`c_r` is specific heat of rock,
+and :math:`T` is temperature.
+
+Energy sublist includes exactly one sublist, either `"Single-phase problem`" or `"Two-phase problem`".
+Structure of both sublists is quite similar. We make necessary comments on their differences.
+
+
+Physical models and assumptions
+...............................
+
+This list is used to summarize physical models and assumptions, such as
+coupling with other PKs.
+This list is often generated on a fly by a high-level MPC PK.
+
+* `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
+  e.g. by EnergyFlow PK. The default value is `"false`".
+
+* `"water content evaluator`" [string] changes the evaluator for water
+  content. Available options are `"generic`" and `"constant density`" (default).
+
+* 
+
+.. code-block:: xml
+
+   <ParameterList name="physical models and assumptions">
+     <Parameter name="vapor diffusion" type="bool" value="false"/>
+     <Parameter name="water content evaluator" type="string" value="constant density"/>
+   </ParameterList>
+
+
+Internal energy
+...............
+
+Internal energy list has a few parameters that allows us to run this PK
+in a variety of regimes, e.g. with or without gas phase.
+
+* `"energy key`" [string] specifies name for the internal energy field.
+  The default value is `"energy`".
+
+* `"evaluator type`" [string] changes the evaluator for internal energy.
+  Available options are `"generic`" and `"constant liquid density`" (default).
+
+* `"vapor diffusion`" [bool] specifies presense of a gas phase.
+  The default value is `"true`".
+
+* `"VerboseObject`" [sublist] is the standard verbosity object.
+
+.. code-block:: xml
+
+   <ParameterList name="energy evaluator">
+     <Parameter name="energy key" type="string" value="energy"/>
+     <Parameter name="evaluator type" type="string" value="constant liquid density"/>
+     <Parameter name="vapor diffusion" type="bool" value="true"/>
+     <ParameterList name="VerboseObject">
+       <Parameter name="Verbosity Level" type="string" value="high"/>
+     </ParameterList>
+   </ParameterList>
+
+
+Molar enthalpy
+..............
+
+.. code-block:: xml
+
+   <ParameterList name="enthalpy evaluator">
+     <Parameter name="enthalpy key" type="string" value="enthalpy_liquid"/>
+     <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
+
+     <Parameter name="include work term" type="bool" value="true"/>
+     <Parameter name="pressure key" type="string" value="pressure"/>
+     <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
+   </ParameterList>
+
+
+Thermal conductivity
+....................
+
+Evaluator for thermal conductivity allows us to select a proper model. 
+The variety of available models allows to run the energy PK by itself or in
+coupling with flow PK. 
+The structure of the thermal conductivity list resembles that of a field
+evaluator list in state. 
+The two-phase model accepts the following parameters.
+
+* `"thermal conductivity parameters`" [sublist] defines a model and its parameters.
+
+* `"thermal conductivity type`" [string] is the name of a conductivity model in the
+  list of registered models. Available two-phase models are `"two-phase Peters-Lidard`",
+  and `"two-phase wet/dry`". Available one-phase model is `"one-phase polynomial`".
+
+* `"thermal conductivity of rock`" [double] defines constant conductivity of rock.
+
+* `"thermal conductivity of gas`" [double] defines constant conductivity of gas.
+
+* `"thermal conductivity of liquid`" [double] defines constant conductivity of fluid.
+  Default value is 0.6065 [W/m/K].
+
+* `"unsaturated alpha`" [double] is used to define the Kersten number to interpolate
+  between saturated and dry conductivities.
+
+* `"epsilon`" [double] is needed for the case of zero saturation. Default is `"1.0e-10`".
+
+.. code-block:: xml
+
+   <ParameterList name="thermal conductivity evaluator">
+     <ParameterList name="thermal conductivity parameters">
+       <Parameter name="thermal conductivity type" type="string" value="two-phase Peters-Lidard"/>
+       <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
+       <Parameter name="thermal conductivity of gas" type="double" value="0.02"/>
+       <Parameter name="thermal conductivity of liquid" type="double" value="0.6065"/>
+
+       <Parameter name="unsaturated alpha" type="double" value="1.0"/>
+       <Parameter name="epsilon" type="double" value="1.e-10"/>
+     </ParameterList>
+   </ParameterList>
+
+The single-phase model accepts some of the parameters defined above (see the example) 
+and a few additional parameters.
+
+* `"reference temperature`" [double] defines temperature at which reference conductivity
+  of liquid is calculated. Default value is 298.15 [K].
+
+* `"polynomial expansion`" [Array(double)] collect coefficients in the quadratic representation of the 
+  thermal conductivity of liquid with respect to the dimensionless parameter T/Tref.
+
+.. code-block:: xml
+
+   <ParameterList name="thermal conductivity evaluator">
+     <ParameterList name="thermal conductivity parameters">
+       <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
+       <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
+       <Parameter name="reference temperature" type="double" value="298.15"/>
+       <Parameter name="polinomial expansion" type="Array(double)" value="{-1.48445, 4.12292, -1.63866}"/>
+     </ParameterList>
+   </ParameterList>
+
+
+Operators
+.........
+
+This section contains sublist for diffsuion and advection opeartors.
+It also has one global parameters.
+
+* `"operators`" [sublist] 
+  
+  * `"include enthalpy in preconditioner`" [bool] allows us to study impact (usually positive) 
+    of including enthalpy term in the preconditioner. Default value is *true*.
+
+
 Diffusion operator
 ..................
 
-This section to be written.
+Operators sublist describes the PDE structure of the flow, specifies a discretization
+scheme, and selects assembling schemas for matrices and preconditioners.
+
+* `"diffusion operator`" [sublist] defines parameters for generating and assembling diffusion matrix.
+
+  * `"matrix`" [sublist] defines parameters for generating and assembling diffusion matrix. See section
+    describing operators. 
+    When `"Richards problem`" is selected, Flow PK sets up proper value for parameter `"upwind method`" of 
+    this sublist.
+
+  * `"preconditioner`" [sublist] defines parameters for generating and assembling diffusion 
+    matrix that is used to create preconditioner. 
+    This sublist is ignored inside sublist `"Darcy problem`".
+    Since update of preconditioner can be lagged, we need two objects called `"matrix`" and `"preconditioner`".
+    When `"Richards problem`" is selected, Flow PK sets up proper value for parameter `"upwind method`" of 
+    this sublist.
+
+.. code-block:: xml
+
+   <ParameterList name="operators">
+     <Parameter name="include enthalpy in preconditioner" type="boll" value="true"/>
+     <ParameterList name="diffusion operator">
+       <ParameterList name="matrix">
+         <Parameter name="discretization primary" type="string" value="monotone mfd"/>
+         <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+         <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+         <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+         <Parameter name="gravity" type="bool" value="false"/>
+         <Parameter name="upwind method" type="string" value="standard: cell"/> 
+       </ParameterList>
+       <ParameterList name="preconditioner">
+         <Parameter name="discretization primary" type="string" value="monotone mfd"/>
+         <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+         <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+         <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+         <Parameter name="gravity" type="bool" value="true"/>
+         <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+         <Parameter name="upwind method" type="string" value="standard: cell"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
+This example uses cell-centered discretization for 
 
 
 Advection operator
 ..................
 
 This section to be written.
+
+.. code-block:: xml
+
+   <ParameterList name="operators">
+     <ParameterList name="advection operator">
+       <Parameter name="discretization primary" type="string" value="upwind"/>
+     <Parameter name="reconstruction order" type="int" value="0"/>
+   </ParameterList>
+
+
+Coupled process kernels
+=======================
+
+Coupling of process kernels requires additional parameters for PK 
+described above.
+
+
+Flow and Energy PK
+------------------
+
+The conceptual PDE model of the coupled flow and energy equations is
+
+.. math::
+  \begin{array}{l}
+  \frac{\partial \theta}{\partial t} 
+  =
+  - \boldsymbol{\nabla} \cdot (\eta_l \boldsymbol{q}_l)
+  - \boldsymbol{\nabla} \cdot (\phi s_g \tau_g D_g \boldsymbol{\nabla} X_g) + Q_1,
+  \quad
+  \boldsymbol{q}_l 
+  = -\frac{\boldsymbol{K} k_r}{\mu} 
+  (\boldsymbol{\nabla} p - \rho_l \boldsymbol{g}) \\
+  %
+  \frac{\partial \varepsilon}{\partial t} 
+  =
+  \boldsymbol{\nabla} \cdot (\kappa \nabla T) -
+  \boldsymbol{\nabla} \cdot (\eta_l H_l \boldsymbol{q}_l) + Q_2
+  \end{array}
+
+In the first equation,
+:math:`\theta` is total water content,
+:math:`\eta_l` is molar density of liquid,
+:math:`\rho_l` is fluid density,
+:math:`Q_1` is source or sink term,
+:math:`\boldsymbol{q}_l` is the Darcy velocity,
+:math:`k_r` is relative permeability,
+:math:`\boldsymbol{g}` is gravity,
+:math:`\phi` is porosity,
+:math:`s_g` is gas saturation (water vapor),
+:math:`\tau_g` is tortuosity of gas,
+:math:`D_g` is diffusion coefficient,
+and :math:`X_g` is molar fraction of water in the gas phase.
+We define 
+
+.. math::
+   \theta = \phi (s_g \eta_g X_g + s_l \eta_l)
+
+where
+:math:`s_l` is liquid saturation,
+and :math:`\eta_g` is molar density of gas.
+
+In the second equation,
+:math:`\varepsilon` is the internal energy,
+:math:`Q_2` is source or sink term,
+:math:`\kappa` is thermal conductivity,
+:math:`H_l` is molar enthalphy of liquid,
+and :math:`T` is temperature.
+We define 
+
+.. math::
+   \varepsilon = \phi (\eta_l s_l U_l + \eta_g s_g U_g) + 
+   (1 - \phi) \rho_r c_r T
+
+where
+:math:`U_l` is molar internal energy of liquid,
+:math:`U_g` is molar internal energy of gas (water vapor),
+:math:`\rho_r` is rock density,
+and :math:`c_r` is specific heat of rock.
+
+
+Diffusion operator
+..................
+
+.. code-block:: xml
+
+   <ParameterList name="vapor matrix">
+     <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+     <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+     <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+     <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+     <Parameter name="exclude primary terms" type="bool" value="false"/>
+     <Parameter name="scaled constraint equation" type="bool" value="false"/>
+     <Parameter name="gravity" type="bool" value="false"/>
+     <Parameter name="newton correction" type="string" value="none"/>
+   </ParameterList>
 
 
 Generic capabilities
@@ -1704,6 +2122,13 @@ Diffusion operator
   * `"discretization secondary`" [string] specifies the most robust discretization method
     that is used when the primary selection fails to satisfy all a priori conditions.
 
+  * `"nonlinear coefficient`" [string] specifies a method for treating nonlinear diffusion
+    coefficient, if any. Available options are `"upwind: face`", `"divk: cell-face`" (default),
+    `"standard: cell`", `"divk: cell-face-twin`", `"divk: cell-grad-face-twin`",
+    `"artificial diffusion: cell-face`" (highly experimental).
+    Symmetry preserving methods are the divk-family of methods and the classical cell-centred
+    method (`"standard: cell`").
+
   * `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
     geometric objects.
 
@@ -1717,16 +2142,14 @@ Diffusion operator
     It is used for experiments with preconditioners.
     Default is 0.
 
-  * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
-    Available options are `"standard`" (default), `"divk`", `"artificial diffusion`",
-    `"second-order`", and `"none`".
-
   * `"newton correction`" [string] specifies a model for non-physical terms 
     that must be added to the matrix. These terms represent Jacobian and are needed 
     for the preconditoner. Available options are `"true jacobian`" and `"approximate jacobian`".
 
-  * `"linear operator`" [sublist] add parameters for a linear solver that defines a preconditioner
-    for the diffusion operator (see section LinearSolvers_).
+  * `"consistent faces`" [sublist] to be described by E.Coon
+
+    * `"linear operator`" [sublist] add parameters for a linear solver that defines a preconditioner
+      for the diffusion operator (see section LinearSolvers_).
 
 .. code-block:: xml
 
@@ -1736,11 +2159,8 @@ Diffusion operator
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
       <Parameter name="gravity" type="bool" value="true"/>
-      <Parameter name="upwind method" type="string" value="standard"/>
+      <Parameter name="upwind method" type="string" value="standard: cell"/>
       <Parameter name="newton correction" type="string" value="true jacobian"/>
-      <ParameterList name="linear solver">
-        ...
-      </ParameterList>
     </ParameterList>
 
 This example creates a p-lambda system, i.e. the pressure is
@@ -2083,7 +2503,7 @@ This function requires two sublists `"function1`" and `"function2`".
     </ParameterList>
   </ParameterList>
 
-In two dimensions, this example defines function `srqt((t-3) + 2(x-2) + 3(y-1))`.
+In two dimensions, this example defines function `srqt(1 + (t-3) + 2(x-2) + (y-1))`.
 In three dimension, we have to add one additional argument to the `gradient` and `x0`.
 
 
@@ -2415,7 +2835,7 @@ We describe parameters of the second sublist only.
 * `"finite difference epsilon`" [double] defines the base finite difference epsilon.
   Default is 1e-8.
 
-* `"method for epsilon`" [string] defines a method for calculating finite difefrence epsilon.
+* `"method for epsilon`" [string] defines a method for calculating finite difference epsilon.
   Available option is `"Knoll-Keyes`".
 
 .. code-block:: xml
@@ -2912,6 +3332,8 @@ for its evaluation.  The observations are evaluated during the simulation and re
   * `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
     The file name can contain relative or absolute path to an *existing* directory only. 
 
+  * `"precision`" [int] defined the number of significant digits. Default is 16.
+
   * OBSERVATION [list] user-defined label, can accept values for `"variables`", `"functional`", `"region`", `"times`", and TSPS (see below).
 
     * `"variables`" [Array(string)] a list of field quantities taken from the list of 
@@ -2960,6 +3382,7 @@ The following Observation Data functionals are currently supported.  All of them
 
   <ParameterList name="Observation Data">
     <Parameter name="Observation Output Filename" type="string" value="obs_output.out"/>
+    <Parameter name="precision" type="int" value="10"/>
     <ParameterList name="some observation name">
       <Parameter name="Region" type="string" value="some point region name"/>
       <Parameter name="Functional" type="string" value="Observation Data: Point"/>

@@ -134,7 +134,6 @@ void CycleDriver::Setup() {
   if (parameter_list_->isSublist("Observation Data")) {
     Teuchos::ParameterList observation_plist = parameter_list_->sublist("Observation Data");
     observations_ = Teuchos::rcp(new Amanzi::Unstructured_observations(observation_plist, output_observations_, comm_));
-    //std::cout<<*coordinator_list_<<"\n";
     if (coordinator_list_->isParameter("component names")) {
       Teuchos::Array<std::string> comp_names =
           coordinator_list_->get<Teuchos::Array<std::string> >("component names");
@@ -152,12 +151,10 @@ void CycleDriver::Setup() {
   }
 
   // create the time step manager
-  tsm_ = Teuchos::ptr(new TimeStepManager());
+  tsm_ = Teuchos::ptr(new TimeStepManager(vo_));
 
   pk_->Setup();
-
   S_->RequireScalar("dt", "coordinator");
-
   S_->Setup();
 
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
@@ -170,7 +167,6 @@ void CycleDriver::Setup() {
 * Initialize State followed by initialization of PK.
 ****************************************************************** */
 void CycleDriver::Initialize() {
-  // register observation times with the time step manager
  
   *S_->GetScalarData("dt", "coordinator") = tp_dt_[0];
   S_->GetField("dt", "coordinator")->set_initialized();
@@ -532,6 +528,13 @@ double CycleDriver::get_dt( bool after_failure) {
     Exceptions::amanzi_throw(message);
   }
 
+  if (S_->time() > 0){
+    if (dt/S_->time() < 1e-14){
+      Errors::Message message("CycleDriver: error, timestep too small with respect to current time");
+      Exceptions::amanzi_throw(message);
+    }
+  }
+
   // cap the max step size
   if (dt > max_dt_) {
     dt = max_dt_;
@@ -572,15 +575,26 @@ void CycleDriver::set_dt(double dt) {
 * This is used by CLM
 ****************************************************************** */
 bool CycleDriver::Advance(double dt) {
+
+
+  bool no_advance = false;
+  bool fail = false;
+
+  if (tp_end_[time_period_id_] == tp_start_[time_period_id_]) 
+    no_advance = true;
+
   Teuchos::OSTab tab = vo_->getOSTab();
-  //bool fail = pk_->AdvanceStep(S_->last_time(), S_->time());
-  bool fail = pk_->AdvanceStep(S_->time(), S_->time()+dt);
+  
+  if (!no_advance)
+    fail = pk_->AdvanceStep(S_->time(), S_->time()+dt);
 
   if (!fail) {
     pk_->CommitStep(S_->last_time(), S_->time());
     // advance the iteration count and timestep size
-    S_->advance_cycle();
-    S_->advance_time(dt);
+    if (!no_advance){
+      S_->advance_cycle();
+      S_->advance_time(dt);
+    }
 
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       *vo_->os() << "New time(y) = "<< S_->time() / (60*60*24*365.25);
@@ -605,16 +619,14 @@ bool CycleDriver::Advance(double dt) {
     // make observations, vis, and checkpoints
 
     //Amanzi::timer_manager.start("I/O");
-
-    Observations(force_obser);
-    Visualize(force_vis);
-    WriteCheckpoint(dt, force_check);
+    if (!no_advance){
+      pk_->CalculateDiagnostics();
+      Visualize(force_vis);
+      WriteCheckpoint(dt, force_check);
+      Observations(force_obser);
+    }
     //Amanzi::timer_manager.start("I/O");
 
-    // we're done with this time step, advance the state
-    // NOT YET IMPLEMENTED, requires PKs to deal with this in CommitStep().
-    // This breaks coupling in general, but fixing it requires changes to both
-    // the PKs and the State. --ETC
 
   } else {
     // Failed the timestep.  
@@ -639,7 +651,8 @@ bool CycleDriver::Advance(double dt) {
 void CycleDriver::Observations(bool force) {
   if (observations_ != Teuchos::null) {
     if (observations_->DumpRequested(S_->cycle(), S_->time()) || force) {
-      pk_->CalculateDiagnostics();
+      //pk_->CalculateDiagnostics();
+      *vo_->os() << "Cycle " << S_->cycle() << ": writing to observation " << std::endl;
       observations_->MakeObservations(*S_);
     }
   }
@@ -660,15 +673,12 @@ void CycleDriver::Visualize(bool force) {
     }
   }
 
-  if (dump || force) {
-    pk_->CalculateDiagnostics();
-  }
-
+  if (dump || force) //pk_->CalculateDiagnostics();
+  
   for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
        vis!=visualization_.end(); ++vis) {
     if (force || (*vis)->DumpRequested(S_->cycle(), S_->time())) {
       WriteVis((*vis).ptr(), S_.ptr());
-
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "Cycle " << S_->cycle() << ": writing visualization file" << std::endl;
     }
@@ -682,8 +692,8 @@ void CycleDriver::Visualize(bool force) {
 void CycleDriver::WriteCheckpoint(double dt, bool force) {
   if (force || checkpoint_->DumpRequested(S_->cycle(), S_->time())) {
     Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt);
-    pk_->CalculateDiagnostics();
-
+    
+    //if (force) pk_->CalculateDiagnostics();
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Cycle " << S_->cycle() << ": writing checkpoint file" << std::endl;
   }
@@ -758,6 +768,7 @@ void CycleDriver::Go() {
   pk_->CalculateDiagnostics();
   Visualize();
   WriteCheckpoint(dt);
+  Observations();
   //Amanzi::timer_manager.stop("I/O");
  
   // iterate process kernels
@@ -877,6 +888,8 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   S_old_ = Teuchos::null;
 
+  // WriteCheckpoint(tp_dt_[time_pr_id], true);
+  // Visualize(true);
   // WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), tp_dt_[time_pr_id]);
   // exit(0);
 }

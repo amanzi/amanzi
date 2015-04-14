@@ -90,7 +90,7 @@ void Operator::SymbolicAssembleMatrix()
 {
   // Create the supermap given a space (set of possible schemas) and a
   // specific schema (assumed/checked to be consistent with the sapce).
-  smap_ = createSuperMap(*cvs_, schema(), 1);
+  smap_ = CreateSuperMap(*cvs_, schema(), 1);
 
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema(), 1);
@@ -187,8 +187,7 @@ int Operator::ComputeNegativeResidual(const CompositeVector& u, CompositeVector&
 /* ******************************************************************
 * Parallel matvec product Y = A * X.
 ******************************************************************* */
-int
-Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const
+int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const
 {
   X.ScatterMasterToGhosted();
 
@@ -289,9 +288,9 @@ void Operator::UpdateRHS(const CompositeVector& source, bool volume_included) {
 /* ******************************************************************
 * Rescale the local matrices.
 ****************************************************************** */
-void
-Operator::Rescale(const CompositeVector& scaling) {
-  // Dispatch Rescaling to the Ops.
+void Operator::Rescale(const CompositeVector& scaling)
+{
+  // Dispatch rescaling to the Ops.
   scaling.ScatterMasterToGhosted();
   for (op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     (*it)->Rescale(scaling);
@@ -462,6 +461,7 @@ int Operator::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
   return SchemaMismatch_(op.schema_string, schema_string_);
 }
 
+
 /* ******************************************************************
 * Visit methods for Apply: SurfaceFace
 ****************************************************************** */
@@ -470,6 +470,7 @@ int Operator::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
 {
   return SchemaMismatch_(op.schema_string, schema_string_);
 }
+
 
 /* ******************************************************************
 * Visit methods for symbolic assemble: Cell.

@@ -320,6 +320,9 @@ PMAmr::pm_timeStep (int  level,
             amr_level.clear(0);
             amr_level.set(0,a);
 
+	    layout.SetParent(this);
+	    layout.Build(); // Internally destroys itself on rebuild
+
             amr_level[0].post_regrid(0,0);
 
             if (ParallelDescriptor::IOProcessor())
@@ -354,6 +357,8 @@ PMAmr::pm_timeStep (int  level,
             {
               if (i==0) {
                 regrid(i,time);
+		layout.SetParent(this);
+		layout.Build(); // Internally destroys itself on rebuild
               }
                 //
                 // Compute new dt after regrid if at level 0 and compute_new_dt_on_regrid.

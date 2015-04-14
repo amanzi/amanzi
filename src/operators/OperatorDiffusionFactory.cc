@@ -39,7 +39,7 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
   if (name == "fv: default") {
     Teuchos::RCP<OperatorDiffusionFV> op = Teuchos::rcp(new OperatorDiffusionFV(oplist, mesh));
     if (oplist.get<bool>("gravity", false)) op->SetGravity(g);
-    op->SetBCs(bc);
+    op->SetBCs(bc, bc);
     return op;
   }
 
@@ -47,12 +47,12 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
   bool flag = oplist.get<bool>("gravity", false);
   if (!flag) {
     Teuchos::RCP<OperatorDiffusionMFD> op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, mesh));
-    op->SetBCs(bc);
+    op->SetBCs(bc, bc);
     return op;
   } else {
     Teuchos::RCP<OperatorDiffusionWithGravity> op = Teuchos::rcp(new OperatorDiffusionWithGravity(oplist, mesh));
     op->SetGravity(g);
-    op->SetBCs(bc);
+    op->SetBCs(bc, bc);
     return op;
   }
 }

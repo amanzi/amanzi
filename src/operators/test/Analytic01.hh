@@ -1,11 +1,18 @@
 /*
   This is the operators component of the Amanzi code.
 
-  License: BSD
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-  Discrete source operator.
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Complex solution plus full non-constant tensor.
 */
+
+#ifndef AMANZI_OPERATOR_ANALYTIC_01_HH_
+#define AMANZI_OPERATOR_ANALYTIC_01_HH_
 
 #include "AnalyticBase.hh"
 
@@ -135,3 +142,4 @@ class Analytic01 : public AnalyticBase {
   }
 };
 
+#endif

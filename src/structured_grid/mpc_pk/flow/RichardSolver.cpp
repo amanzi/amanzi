@@ -842,7 +842,7 @@ RichardSolver::Solve(Real prev_time, Real cur_time, int timestep, NLScontrol& nl
   ierr = VecCopy(SolnTypInvV,SolnTypV); // Copy(x,y): y <- x
   ierr = VecReciprocal(SolnTypV); // Create vec to unscale as needed
 
-  SetTime(cur_time);
+  SetTime(std::max(0.0,cur_time));
   SetDt(delta_t);
 
 #if PETSC_VERSION_LT(3,4,3)
@@ -870,7 +870,7 @@ RichardSolver::Solve(Real prev_time, Real cur_time, int timestep, NLScontrol& nl
   // set dependent data
   rs_data.FillStateBndry(GetPressureN(),prev_time);
   if (!rs_data.IsSaturated()) {
-    rs_data.calcInvPressure(GetRhoSatN(),GetPressureN(),cur_time,0,0,1);
+    rs_data.calcInvPressure(GetRhoSatN(),GetPressureN(),GetTime(),0,0,1);
   }
 
   // Evaluate the function

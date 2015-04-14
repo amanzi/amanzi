@@ -21,12 +21,12 @@ public:
                        FArrayBox&       primary_species_mobile,   int sPrimMob,
                        FArrayBox&       fcnCnt,                   int sFunc,
                        FArrayBox&       aux_data, Real water_density, Real temperature,
-                       const Box& box, Real dt);
+                       const Box& box, Real dt, int chem_verbose);
 
   virtual void EnforceCondition(FArrayBox& primary_species_mobile,   int sPrimMob,
                                 FArrayBox& auxiliary_data, Real water_density, Real temperature,
-                                const Box& box, const std::string& condition_name, Real time);
-
+                                const Box& box, const std::string& condition_name, Real time,
+				int chem_verbose);
 
 protected:
   void BL_to_Alquimia(const FArrayBox& aqueous_saturation,       int sSat,
@@ -50,6 +50,12 @@ protected:
                       AlquimiaState&               chem_state,
                       AlquimiaAuxiliaryData&       aux_input,
                       AlquimiaAuxiliaryOutputData& aux_output);
+
+  void DumpAlquimiaStructures(std::ostream&                os,
+			      AlquimiaMaterialProperties&  mat_props,
+			      AlquimiaState&               chem_state,
+			      AlquimiaAuxiliaryData&       aux_input,
+			      AlquimiaAuxiliaryOutputData& aux_output);
 
   Amanzi::AmanziChemistry::ChemistryEngine* engine;
   int nthreads;

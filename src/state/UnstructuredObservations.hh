@@ -1,15 +1,16 @@
- /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-Amanzi
+/*
+  This is the state component of the Amanzi code. 
 
-License:
-Author: Markus Berndt
-        Ethan Coon (ecoon@lanl.gov)
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Collection of Observations on an unstructured mesh.
+  Authors: Markus Berndt
+           Ethan Coon (ecoon@lanl.gov)
 
-------------------------------------------------------------------------- */
-
+  Collection of Observations on an unstructured mesh.
+*/
 
 #ifndef AMANZI_UNSTRUCTURED_OBSERVATIONS_HH_
 #define AMANZI_UNSTRUCTURED_OBSERVATIONS_HH_

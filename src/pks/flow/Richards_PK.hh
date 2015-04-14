@@ -98,11 +98,14 @@ class Richards_PK : public Flow_PK {
                        Teuchos::RCP<const TreeVector> u, 
                        Teuchos::RCP<TreeVector> du);
 
-  // -- experimental approach -- calling this indicates that the time
-  //    integration scheme is changing the value of the solution in state.
-  void ChangedSolution() {};
+  // -- calling this indicates that the time integration
+  //    scheme is changing the value of the solution in state.
+  void ChangedSolution() {
+    pressure_eval_->SetFieldAsChanged(S_.ptr());
+  }
 
-  // initization members
+  // other flow methods
+  // -- initization members
   void SolveFullySaturatedProblem(double T0, CompositeVector& u, const std::string& solver_name);
   void EnforceConstraints(double T1, Teuchos::RCP<CompositeVector> u);
 
@@ -112,7 +115,7 @@ class Richards_PK : public Flow_PK {
   int AdvanceToSteadyState_Picard(Teuchos::ParameterList& picard_list);
   double CalculateRelaxationFactor(const Epetra_MultiVector& uold, const Epetra_MultiVector& unew);
 
-  // other flow methods
+  // -- miscaleneous methods
   void UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u);
   double ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du);
  

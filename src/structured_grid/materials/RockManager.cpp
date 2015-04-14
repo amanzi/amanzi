@@ -59,6 +59,8 @@ static int Rock_Mgr_ID_ctr=0;
 static std::vector<RockManager*> Rock_Mgr_Ptrs;
 static std::vector<std::pair<bool,Real> > Kr_smoothing_min_seff; // Bool says whether value needs to be updated
 
+static int max_grid_size_fine_gen_DEF = 32; // Blocking size for generating GSLib datafiles
+
 RockManager::RockManager(const RegionManager*     _region_manager,
                          const Array<std::string>* solute_names)
   : region_manager(_region_manager), finalized(false)
@@ -336,7 +338,7 @@ RockManager::FillBoundary(Real      time,
               ladjCellLo.grow(dd,nGrow);
             }
             Box lintCellLo = Box(ladjCellLo).shift(d,i+1);
-            fab.copy(fab,lintCellLo,dComp,ladjCellLo,dComp,1);
+            fab.copy(fab,lintCellLo,dComp,ladjCellLo,dComp,nComp);
           }
 
           Box adjCellHi = BoxLib::adjCellHi(vbox,d,1);
@@ -347,7 +349,7 @@ RockManager::FillBoundary(Real      time,
               ladjCellHi.grow(dd,nGrow);
             }
             Box lintCellHi = Box(ladjCellHi).shift(d,-i-1);
-            fab.copy(fab,lintCellHi,dComp,ladjCellHi,dComp,1);
+            fab.copy(fab,lintCellHi,dComp,ladjCellHi,dComp,nComp);
           }
         }
       }
@@ -357,47 +359,6 @@ RockManager::FillBoundary(Real      time,
     mf.FillBoundary(dComp,nComp,false,!corner);
     materialFiller->Geom(level).FillPeriodicBoundary(mf,dComp,nComp,corner,local);
   }
-}
-
-void
-RockManager::Porosity(Real      time,
-                      int       level,
-                      MultiFab& porosity,
-                      int       dComp,
-                      int       nGrow) const
-{
-  BL_PROFILE("RockManager::Porosity()");
-  if (!finalized) {
-    BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
-  }
-  bool ignore_mixed = true;
-  materialFiller->SetProperty(time,level,porosity,PorosityName,dComp,nGrow,0,ignore_mixed);
-  int nComp = NComp(PorosityName);
-  Array<Real> dummy(nComp);
-  for (int i=0; i<rock.size(); ++i) {
-    const Property* prop = rock[i].Prop(PorosityName);
-    const GSLibProperty* gslib_prop = dynamic_cast<const GSLibProperty*>(prop);
-    if (gslib_prop != 0) {
-      const AmrData* this_const_amrData = gslib_prop->GetAmrData();
-      AmrData* this_amrData = const_cast<AmrData*>(this_const_amrData);
-
-      iMultiFab id(porosity.boxArray(),1,0);
-      materialFiller->SetMaterialID(level,id,0,ignore_mixed);
-      MultiFab vals(porosity.boxArray(),nComp,0);
-      this_amrData->FillVar(vals,level,PorosityName,dComp);
-      for (MFIter mfi(porosity); mfi.isValid(); ++mfi) {
-        Box bx = Box(mfi.validbox()).grow(nGrow);
-        const FArrayBox& vfab = vals[mfi];
-        const IArrayBox& idfab = id[mfi];
-        FArrayBox& mfab = porosity[mfi];
-        FORT_FILLPMAT (mfab.dataPtr(), ARLIM(mfab.loVect()),  ARLIM(mfab.hiVect()),
-                       idfab.dataPtr(), ARLIM(idfab.loVect()), ARLIM(idfab.hiVect()),
-                       vfab.dataPtr(),  ARLIM(vfab.loVect()),  ARLIM(idfab.hiVect()),
-                       &i, bx.loVect(), bx.hiVect(), &nComp);        
-      }
-    }
-  }
-  FillBoundary(time,level,porosity,dComp,1,nGrow);
 }
 
 void
@@ -413,7 +374,7 @@ RockManager::FinalizeBuild(const Array<Geometry>& geomArray,
       const Property* p = rock[i].Prop(propNames[j]);
       GSLibProperty* t = dynamic_cast<GSLibProperty*>(const_cast<Property*>(p));
       if (t!=0) {
-        int max_grid_size_fine_gen = 32;
+        int max_grid_size_fine_gen = max_grid_size_fine_gen_DEF;
         t->BuildDataFile(geomArray,refRatio,nGrow,max_grid_size_fine_gen,p->coarsenRule(),propNames[j]);
       }
     }
@@ -496,6 +457,7 @@ RockManager::Initialize(const Array<std::string>* solute_names)
     ParmParse ppr(prefix.c_str());
 
     bool generate_porosity_gslib_file = false;
+    bool generate_perm_gslib_file = false;
         
     static Property::CoarsenRule arith_crsn = Property::Arithmetic;
     static Property::CoarsenRule harm_crsn = Property::ComponentHarmonic;
@@ -592,121 +554,161 @@ RockManager::Initialize(const Array<std::string>* solute_names)
       pprp.queryarr(PorosityGSFileShiftName.c_str(),gslib_file_shift,0,BL_SPACEDIM);
 
       Real avg; pprp.get(PorosityValName.c_str(),avg);
-      Real std; pprp.get(PorosityStdName.c_str(),std);
 
-      phi_func = new GSLibProperty(PorosityName,avg,std,gslib_param_file,gslib_data_file,gslib_file_shift,arith_crsn,pc_refine);
+      phi_func = new GSLibProperty(PorosityName,avg,gslib_param_file,gslib_data_file,gslib_file_shift,arith_crsn,pc_refine);
     }
 
     Property* kappa_func = 0;
-    Array<Real> rvpvals(1), rhpvals(1), rh1pvals(1), rvptimes(1), rhptimes(1), rh1ptimes(1);
-    Array<std::string> rvpforms, rhpforms, rh1pforms;
+    std::string PermeabilityValName = "val";
+    std::string PermeabilityStdName = "std";
+    std::string PermeabilityDistName = "distribution_type";
+    std::string PermeabilityGSParamFileName = "gslib_param_file";
+    std::string PermeabilityGSDataFileName = "gslib_data_file";
+    std::string PermeabilityGSFileShiftName = "gslib_file_shift";
 
-    Array<Real> rperm_in(BL_SPACEDIM);
-    if (ppr.countval(PermeabilityName.c_str())) {
-      ppr.getarr(PermeabilityName.c_str(),rperm_in,0,BL_SPACEDIM);
-      rhpvals[0] = rperm_in[0];
-      rvpvals[0] = rperm_in[BL_SPACEDIM-1];
+    const std::string perm_prefix(prefix+"."+PermeabilityName);
+    ParmParse pprk(perm_prefix.c_str());
+
+    std::string perm_dist = "uniform"; pprk.query(PermeabilityDistName.c_str(),perm_dist);
+
+    if (perm_dist != "uniform" && perm_dist!="gslib") {
+      BoxLib::Abort(std::string("Unrecognized distribution_type for rock: \""+rname).c_str());
+    }
+    if (perm_dist == "uniform") {
+
+      Array<Real> rvpvals(1), rhpvals(1), rh1pvals(1), rvptimes(1), rhptimes(1), rh1ptimes(1);
+      Array<std::string> rvpforms, rhpforms, rh1pforms;
+
+      Array<Real> rperm_in(BL_SPACEDIM);
+      if (ppr.countval(PermeabilityName.c_str())) {
+	ppr.getarr(PermeabilityName.c_str(),rperm_in,0,BL_SPACEDIM);
+	rhpvals[0] = rperm_in[0];
+	rvpvals[0] = rperm_in[BL_SPACEDIM-1];
 #if BL_SPACEDIM==3
-      rh1pvals[0] = rperm_in[0];
+	rh1pvals[0] = rperm_in[0];
 #endif
+      }
+      else {
+
+	std::string PermeabilityVertValName = PermeabilityName+".vertical.vals";
+	std::string PermeabilityVertTimesName = PermeabilityName+".vertical.times";
+	std::string PermeabilityVertFormsName = PermeabilityName+".vertical.forms";
+
+	int nrvpvals = ppr.countval(PermeabilityVertValName.c_str());
+	if (nrvpvals>0) {
+	  ppr.getarr(PermeabilityVertValName.c_str(),rvpvals,0,nrvpvals);
+	  if (nrvpvals>1) {
+	    ppr.getarr(PermeabilityVertTimesName.c_str(),rvptimes,0,nrvpvals);
+	    ppr.getarr(PermeabilityVertFormsName.c_str(),rvpforms,0,nrvpvals-1);
+	  }
+	} else {
+	  BoxLib::Abort(std::string("No vertical permeability function specified for rock: \""+rname).c_str());
+	}
+
+	std::string PermeabilityHoriValName = PermeabilityName+".horizontal.vals";
+	std::string PermeabilityHoriTimesName = PermeabilityName+".horizontal.times";
+	std::string PermeabilityHoriFormsName = PermeabilityName+".horizontal.forms";
+	int nrhpvals = ppr.countval(PermeabilityHoriValName.c_str());
+	if (nrhpvals>0) {
+	  ppr.getarr(PermeabilityHoriValName.c_str(),rhpvals,0,nrhpvals);
+	  if (nrhpvals>1) {
+	    ppr.getarr(PermeabilityHoriTimesName.c_str(),rhptimes,0,nrhpvals);
+	    ppr.getarr(PermeabilityHoriFormsName.c_str(),rhpforms,0,nrhpvals-1);
+	  }
+
+	} else {
+	  BoxLib::Abort(std::string("No horizontal permeability function specified for rock: \""+rname).c_str());
+	}
+
+#if BL_SPACEDIM==3
+	std::string PermeabilityHori1ValName = PermeabilityName+".horizontal1.vals";
+	std::string PermeabilityHori1TimesName = PermeabilityName+".horizontal1.times";
+	std::string PermeabilityHori1FormsName = PermeabilityName+".horizontal1.forms";
+	int nrh1pvals = ppr.countval(PermeabilityHori1ValName.c_str());
+	if (nrh1pvals>0) {
+	  ppr.getarr(PermeabilityHori1ValName.c_str(),rh1pvals,0,nrh1pvals);
+	  if (nrh1pvals>1) {
+	    ppr.getarr(PermeabilityHori1TimesName.c_str(),rh1ptimes,0,nrh1pvals);
+	    ppr.getarr(PermeabilityHori1FormsName.c_str(),rh1pforms,0,nrh1pvals-1);
+	  }
+
+	} else {
+	  BoxLib::Abort(std::string("No horizontal1 permeability function specified for rock: \""+rname).c_str());
+	}
+#endif
+      }
+
+      // The permeability is specified in mDa.  
+      // This needs to be multiplied with 1e-10 to be consistent 
+      // with the other units in the code.  What this means is that
+      // we will be evaluating the darcy velocity as:
+      //
+      //  u_Darcy [m/s] = ( kappa [X . mD] / mu [Pa.s] ).Grad(p) [atm/m]
+      //
+      // where X is the factor necessary to have this formula be dimensionally
+      // consistent.  X here is 1.e-10, and can be combined with kappa for the 
+      // the moment because no other derived quantities depend directly on the 
+      // value of kappa  (NOTE: We will have to know that this is done however
+      // if kappa is used as a diagnostic or in some way for a derived quantity).
+      //
+      for (int j=0; j<rvpvals.size(); ++j) {
+	rvpvals[j] *= 1.e-10;
+      }
+      for (int j=0; j<rhpvals.size(); ++j) {
+	rhpvals[j] *= 1.e-10;
+      }
+#if BL_SPACEDIM==3
+      for (int j=0; j<rh1pvals.size(); ++j) {
+	rh1pvals[j] *= 1.e-10;
+      }
+#endif
+
+      if (rvpvals.size()>1 || rhpvals.size()>1) {
+	Array<TabularFunction> pft(BL_SPACEDIM);
+	pft[0] = TabularFunction(rhptimes,rhpvals,rhpforms);
+	pft[BL_SPACEDIM-1] = TabularFunction(rvptimes,rvpvals,rvpforms);
+#if BL_SPACEDIM==3
+	pft[1] = TabularFunction(rh1ptimes,rh1pvals,rh1pforms);
+#endif
+	kappa_func = new TabularInTimeProperty(PermeabilityName,pft,harm_crsn,pc_refine);
+      }
+      else {
+	Array<Real> vals(BL_SPACEDIM);
+	vals[0] = rhpvals[0]; vals[BL_SPACEDIM-1] = rvpvals[0];
+#if BL_SPACEDIM==3
+	vals[1] = rh1pvals[0];
+#endif
+	kappa_func = new ConstantProperty(PermeabilityName,vals,harm_crsn,pc_refine);
+      }
+
+      // Set old-style values
+      Array<Real> rpermeability(BL_SPACEDIM,rvpvals[0]);
+      for (int j=0;j<BL_SPACEDIM-1;j++) rpermeability[j] = rhpvals[0];
+
     }
     else {
-
-      std::string PermeabilityVertValName = PermeabilityName+".vertical.vals";
-      std::string PermeabilityVertTimesName = PermeabilityName+".vertical.times";
-      std::string PermeabilityVertFormsName = PermeabilityName+".vertical.forms";
-
-      int nrvpvals = ppr.countval(PermeabilityVertValName.c_str());
-      if (nrvpvals>0) {
-        ppr.getarr(PermeabilityVertValName.c_str(),rvpvals,0,nrvpvals);
-        if (nrvpvals>1) {
-          ppr.getarr(PermeabilityVertTimesName.c_str(),rvptimes,0,nrvpvals);
-          ppr.getarr(PermeabilityVertFormsName.c_str(),rvpforms,0,nrvpvals-1);
-        }
-      } else {
-        BoxLib::Abort(std::string("No vertical permeability function specified for rock: \""+rname).c_str());
+      // perm_dist == gslib
+      std::string gslib_param_file, gslib_data_file;
+      generate_perm_gslib_file = (pprk.countval(PermeabilityGSParamFileName.c_str()) != 0);
+      if (pprk.countval(PermeabilityGSDataFileName.c_str()) == 0) {
+        pprk.get(PermeabilityGSParamFileName.c_str(),gslib_param_file);
+        gslib_data_file="permeability.gslib";
+      }
+      else {
+        pprk.query(PermeabilityGSParamFileName.c_str(),gslib_param_file);
+        pprk.get(PermeabilityGSDataFileName.c_str(),gslib_data_file);
       }
 
-      std::string PermeabilityHoriValName = PermeabilityName+".horizontal.vals";
-      std::string PermeabilityHoriTimesName = PermeabilityName+".horizontal.times";
-      std::string PermeabilityHoriFormsName = PermeabilityName+".horizontal.forms";
-      int nrhpvals = ppr.countval(PermeabilityHoriValName.c_str());
-      if (nrhpvals>0) {
-        ppr.getarr(PermeabilityHoriValName.c_str(),rhpvals,0,nrhpvals);
-        if (nrhpvals>1) {
-          ppr.getarr(PermeabilityHoriTimesName.c_str(),rhptimes,0,nrhpvals);
-          ppr.getarr(PermeabilityHoriFormsName.c_str(),rhpforms,0,nrhpvals-1);
-        }
+      Array<Real> gslib_file_shift(BL_SPACEDIM,0);
+      pprk.queryarr(PermeabilityGSFileShiftName.c_str(),gslib_file_shift,0,BL_SPACEDIM);
 
-      } else {
-        BoxLib::Abort(std::string("No horizontal permeability function specified for rock: \""+rname).c_str());
-      }
+      Real avg; pprk.get(PermeabilityValName.c_str(),avg);
 
-#if BL_SPACEDIM==3
-      std::string PermeabilityHori1ValName = PermeabilityName+".horizontal1.vals";
-      std::string PermeabilityHori1TimesName = PermeabilityName+".horizontal1.times";
-      std::string PermeabilityHori1FormsName = PermeabilityName+".horizontal1.forms";
-      int nrh1pvals = ppr.countval(PermeabilityHori1ValName.c_str());
-      if (nrh1pvals>0) {
-        ppr.getarr(PermeabilityHori1ValName.c_str(),rh1pvals,0,nrh1pvals);
-        if (nrh1pvals>1) {
-          ppr.getarr(PermeabilityHori1TimesName.c_str(),rh1ptimes,0,nrh1pvals);
-          ppr.getarr(PermeabilityHori1FormsName.c_str(),rh1pforms,0,nrh1pvals-1);
-        }
+      // Scale (as above)
+      avg *= 1.e-10;
 
-      } else {
-        BoxLib::Abort(std::string("No horizontal1 permeability function specified for rock: \""+rname).c_str());
-      }
-#endif
+      kappa_func = new GSLibProperty(PermeabilityName,avg,gslib_param_file,gslib_data_file,gslib_file_shift,harm_crsn,pc_refine);
     }
-
-    // The permeability is specified in mDa.  
-    // This needs to be multiplied with 1e-10 to be consistent 
-    // with the other units in the code.  What this means is that
-    // we will be evaluating the darcy velocity as:
-    //
-    //  u_Darcy [m/s] = ( kappa [X . mD] / mu [Pa.s] ).Grad(p) [atm/m]
-    //
-    // where X is the factor necessary to have this formula be dimensionally
-    // consistent.  X here is 1.e-10, and can be combined with kappa for the 
-    // the moment because no other derived quantities depend directly on the 
-    // value of kappa  (NOTE: We will have to know that this is done however
-    // if kappa is used as a diagnostic or in some way for a derived quantity).
-    //
-    for (int j=0; j<rvpvals.size(); ++j) {
-      rvpvals[j] *= 1.e-10;
-    }
-    for (int j=0; j<rhpvals.size(); ++j) {
-      rhpvals[j] *= 1.e-10;
-    }
-#if BL_SPACEDIM==3
-    for (int j=0; j<rh1pvals.size(); ++j) {
-      rh1pvals[j] *= 1.e-10;
-    }
-#endif
-
-    if (rvpvals.size()>1 || rhpvals.size()>1) {
-      Array<TabularFunction> pft(BL_SPACEDIM);
-      pft[0] = TabularFunction(rhptimes,rhpvals,rhpforms);
-      pft[BL_SPACEDIM-1] = TabularFunction(rvptimes,rvpvals,rvpforms);
-#if BL_SPACEDIM==3
-      pft[1] = TabularFunction(rh1ptimes,rh1pvals,rh1pforms);
-#endif
-      kappa_func = new TabularInTimeProperty(PermeabilityName,pft,harm_crsn,pc_refine);
-    }
-    else {
-      Array<Real> vals(BL_SPACEDIM);
-      vals[0] = rhpvals[0]; vals[BL_SPACEDIM-1] = rvpvals[0];
-#if BL_SPACEDIM==3
-      vals[1] = rh1pvals[0];
-#endif
-      kappa_func = new ConstantProperty(PermeabilityName,vals,harm_crsn,pc_refine);
-    }
-
-    // Set old-style values
-    Array<Real> rpermeability(BL_SPACEDIM,rvpvals[0]);
-    for (int j=0;j<BL_SPACEDIM-1;j++) rpermeability[j] = rhpvals[0];
-
 
     // capillary pressure: include cpl_coef, residual_saturation, sigma
     const std::string cpl_prefix(prefix+".cpl");
@@ -919,7 +921,7 @@ RockManager::Initialize(const Array<std::string>* solute_names)
     }
 
     // Make a final pass to be sure that if any isotherm paramters are set for a material, they are defaulted for all remaining materials
-    if (using_sorption) {
+    if (nsorption_isotherms > 0) {
       for (int k=0; k<known_solutes.size(); ++k) {
 	for (ICParmPair::const_iterator it=sorption_isotherm_options.begin();
 	     it!=sorption_isotherm_options.end(); ++it) {
@@ -1074,7 +1076,55 @@ RockManager::GetProperty(Real               time,
 {
   BL_PROFILE("RockManager::GetProperty()");
 
-  return materialFiller->SetProperty(time,level,mf,pname,dComp,nGrow,ctx,ignore_mixed);
+  if (!finalized) {
+    BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
+  }
+
+  if (materialFiller->NComp(pname) <= 0) {
+    return false;
+  }
+
+  bool ret = materialFiller->SetProperty(time,level,mf,pname,dComp,nGrow,0,ignore_mixed);
+
+  // Fill any GSLib-bsaed quantities
+  int nComp = NComp(pname);
+  Array<Real> dummy(nComp);
+  bool do_touchup = false;
+  for (int i=0; i<rock.size(); ++i) {
+    const Property* prop = rock[i].Prop(pname);
+    const GSLibProperty* gslib_prop = dynamic_cast<const GSLibProperty*>(prop);
+    if (gslib_prop != 0) {
+      const AmrData* this_const_amrData = gslib_prop->GetAmrData();
+      AmrData* this_amrData = const_cast<AmrData*>(this_const_amrData);
+
+      Array<int> destFillComps(nComp);
+      for (int n=0; n<nComp; ++n) {
+	destFillComps[n] = n;
+      }
+
+      iMultiFab id(mf.boxArray(),1,0);
+      materialFiller->SetMaterialID(level,id,0,ignore_mixed);
+      MultiFab vals(mf.boxArray(),nComp,0);
+      this_amrData->FillVar(vals,level,gslib_prop->PlotfileVars(),destFillComps);
+
+      for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
+        Box bx = Box(mfi.validbox()).grow(nGrow);
+        const FArrayBox& vfab = vals[mfi];
+        const IArrayBox& idfab = id[mfi];
+        FArrayBox& mfab = mf[mfi];
+        FORT_FILLPMAT (mfab.dataPtr(dComp), ARLIM(mfab.loVect()),  ARLIM(mfab.hiVect()),
+                       idfab.dataPtr(), ARLIM(idfab.loVect()), ARLIM(idfab.hiVect()),
+                       vfab.dataPtr(),  ARLIM(vfab.loVect()),  ARLIM(idfab.hiVect()),
+                       &i, bx.loVect(), bx.hiVect(), &nComp);
+	ret = true;
+	do_touchup = true;
+      }
+    }
+  }
+  if (do_touchup) {
+    FillBoundary(time,level,mf,dComp,nComp,nGrow);
+  }
+  return ret;
 }
 
 void

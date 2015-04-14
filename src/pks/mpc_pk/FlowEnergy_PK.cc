@@ -16,22 +16,24 @@
 
 namespace Amanzi {
 
-// -----------------------------------------------------------------------------
-// Constructor
-// -----------------------------------------------------------------------------
+/* ******************************************************************* 
+* Constructor
+******************************************************************* */
 FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
                              const Teuchos::RCP<Teuchos::ParameterList>& glist,
                              const Teuchos::RCP<State>& S,
                              const Teuchos::RCP<TreeVector>& soln) :
     glist_(glist),
     Amanzi::MPCStrong<FnTimeIntegratorPK>(pk_tree, glist, S, soln)
-{ 
-};
+{
+  Teuchos::ParameterList vlist;
+  vo_ = new VerboseObject("FlowEnergy_PK", vlist); 
+}
 
 
-// -----------------------------------------------------------------------------
-// Physics-based setup of PK.
-// -----------------------------------------------------------------------------
+/* ******************************************************************* 
+* Physics-based setup of PK.
+******************************************************************* */
 void FlowEnergy_PK::Setup()
 {
   mesh_ = S_->GetMesh();
@@ -121,13 +123,68 @@ void FlowEnergy_PK::Setup()
   }
 
   // inform other PKs about strong coupling
-  Teuchos::ParameterList& tmp = glist_->sublist("PKs").sublist("Flow")
-                                       .sublist("Richards problem").sublist("physics coupling");
-  tmp.set("vapor diffusion", true);
-  tmp.set<std::string>("water content model", "generic");
+  // -- flow
+  Teuchos::ParameterList& flow = glist_->sublist("PKs").sublist("Flow")
+                                        .sublist("Richards problem")
+                                        .sublist("physical models and assumptions");
+  flow.set("vapor diffusion", true);
+  flow.set<std::string>("water content model", "generic");
+
+  // -- energy
+  Teuchos::ParameterList& energy = glist_->sublist("PKs").sublist("Energy")
+                                          .sublist("physical models and assumptions");
+  energy.set("vapor diffusion", true);
 
   // process other PKs.
   MPCStrong<FnTimeIntegratorPK>::Setup();
+}
+
+
+/* ******************************************************************* 
+* Performs one time step.
+******************************************************************* */
+bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new)
+{
+  // flow
+  // -- swap saturations
+  S_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_.ptr(), "flow");
+  const CompositeVector& sat = *S_->GetFieldData("saturation_liquid");
+  CompositeVector& sat_prev = *S_->GetFieldData("prev_saturation_liquid", "flow");
+
+  CompositeVector sat_prev_copy(sat_prev);
+  sat_prev = sat;
+
+  // -- swap water_contents
+  S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
+  CompositeVector& wc = *S_->GetFieldData("water_content", "water_content");
+  CompositeVector& wc_prev = *S_->GetFieldData("prev_water_content", "flow");
+
+  CompositeVector wc_prev_copy(wc_prev);
+  wc_prev = wc;
+
+  // energy
+  // -- swap conserved energys
+  S_->GetFieldEvaluator("energy")->HasFieldChanged(S_.ptr(), "thermal");
+  const CompositeVector& e = *S_->GetFieldData("energy");
+  CompositeVector& e_prev = *S_->GetFieldData("prev_energy", "thermal");
+
+  CompositeVector e_prev_copy(e_prev);
+  e_prev = e;
+ 
+  // try a step
+  bool fail = MPCStrong<FnTimeIntegratorPK>::AdvanceStep(t_old, t_new);
+
+  if (fail) {
+    // revover the original conserved quantaties
+    *S_->GetFieldData("prev_saturation_liquid", "flow") = sat_prev_copy;
+    *S_->GetFieldData("prev_water_content", "flow") = wc_prev_copy;
+    *S_->GetFieldData("prev_energy", "thermal") = e_prev_copy;
+
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Step failed. Restored prev_saturation_liquid, prev_water_content, prev_energy" << std::endl;
+  }
+
+  return fail;
 }
 
 }  // namespace Amanzi

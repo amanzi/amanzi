@@ -72,6 +72,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
   // create diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
@@ -130,7 +131,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
                                         .get<Teuchos::ParameterList>("mixed diffusion");
     OperatorDiffusionMFD op2(olist, mesh);
-    op2.SetBCs(bc);
+    op2.SetBCs(bc, bc);
 
     int schema_dofs = op2.schema_dofs();
     int schema_prec_dofs = op2.schema_prec_dofs();
@@ -141,13 +142,13 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
                              + Operators::OPERATOR_SCHEMA_DOFS_CELL));
             
     op2.set_factor(factor);  // for developers only
-    op2.Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+    op2.Setup(K, Teuchos::null, Teuchos::null);
     op2.UpdateMatrices(Teuchos::null, Teuchos::null);
 
     // get and assemeble the global operator
     Teuchos::RCP<Operator> global_op = op2.global_operator();
     global_op->UpdateRHS(source, false);
-    op2.ApplyBCs();
+    op2.ApplyBCs(true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
     
@@ -231,6 +232,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
   // RCP<const Mesh> mesh = meshfactory("test/median255x256.exo", gm);
 
   // create diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nnodes_owned = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
@@ -289,20 +291,20 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
                                         .get<Teuchos::ParameterList>("nodal diffusion");
     OperatorDiffusionMFD op2(olist, mesh);
-    op2.SetBCs(bc);
+    op2.SetBCs(bc, bc);
 
     int schema_dofs = op2.schema_dofs();
     CHECK(schema_dofs == (Operators::OPERATOR_SCHEMA_BASE_CELL
-                          | Operators::OPERATOR_SCHEMA_DOFS_NODE));
+                        | Operators::OPERATOR_SCHEMA_DOFS_NODE));
 
     op2.set_factor(factor);  // for developers only
-    op2.Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+    op2.Setup(K, Teuchos::null, Teuchos::null);
     op2.UpdateMatrices(Teuchos::null, Teuchos::null);
 
     // get and assemeble the global operator
     Teuchos::RCP<Operator> global_op = op2.global_operator();
     global_op->UpdateRHS(source, false);
-    op2.ApplyBCs();
+    op2.ApplyBCs(true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
     

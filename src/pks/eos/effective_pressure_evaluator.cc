@@ -15,7 +15,7 @@
 #include "effective_pressure_evaluator.hh"
 
 namespace Amanzi {
-namespace Relations {
+namespace EOS {
 
 EffectivePressureEvaluator::EffectivePressureEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
@@ -97,7 +97,7 @@ void EffectivePressureEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::
   }
 };
 
-}  // namespace Relations
+}  // namespace EOS
 }  // namespace Amanzi
 
 

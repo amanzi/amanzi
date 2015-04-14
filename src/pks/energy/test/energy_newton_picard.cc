@@ -1,3 +1,14 @@
+/*
+  This is the energy component of the Amanzi code. 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
 #include <iostream>
 #include "UnitTest++.h"
 
@@ -161,7 +172,6 @@ void HeatConduction::Init(
     Kc(0, 0) = 1.0;
     K.push_back(Kc);
   }
-  double rho(1.0), mu(1.0);
 
   // create temperature-dependent data
   k = Teuchos::rcp(new CompositeVector(*cvs_));
@@ -179,20 +189,20 @@ void HeatConduction::Init(
   // create the operators
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_name_);
   op_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionMFD(olist, mesh_));
-  op_diff_->SetBCs(bc_);
+  op_diff_->SetBCs(bc_, bc_);
   op_ = op_diff_->global_operator();
   op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_));
   op_->Init();
 
   // set up the local matrices
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
-  op_diff_->Setup(Kptr, k, dkdT, rho, mu);
+  op_diff_->Setup(Kptr, k, dkdT);
   op_diff_->UpdateMatrices(flux_.ptr(), solution_.ptr());
   op_diff_->UpdateMatricesNewtonCorrection(flux_.ptr(), solution_.ptr());
   op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
 
   // form the global matrix
-  op_diff_->ApplyBCs();
+  op_diff_->ApplyBCs(true, true);
   op_->SymbolicAssembleMatrix();
   op_->AssembleMatrix();
 
@@ -239,7 +249,7 @@ void HeatConduction::Residual(const Teuchos::RCP<CompositeVector>& u,
   UpdateValues(*u);
   op_diff_->UpdateMatrices(Teuchos::null, u.ptr());
   op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
-  op_diff_->ApplyBCs();
+  op_diff_->ApplyBCs(true, true);
   op_->ComputeNegativeResidual(*u, *f);
 }
 
@@ -257,7 +267,7 @@ void HeatConduction::UpdatePreconditioner(const Teuchos::RCP<const CompositeVect
   op_diff_->UpdateMatrices(flux_.ptr(), up.ptr());
   op_diff_->UpdateMatricesNewtonCorrection(flux_.ptr(), up.ptr());
   op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
-  op_diff_->ApplyBCs();
+  op_diff_->ApplyBCs(true, true);
 
   // Assemble matrix and calculate preconditioner.
   op_->AssembleMatrix();
@@ -310,7 +320,7 @@ void HeatConduction::UpdateValues(const CompositeVector& u)
 
 
 /* ******************************************************************
-* Test 1.
+* Comparison of various nonlinear solvers.
 ****************************************************************** */
 TEST(NKA) {
   using namespace Amanzi;
@@ -353,14 +363,16 @@ TEST(NKA) {
         solver = factory.Create(SOLVERS[i], plist);
     solver->Init(problem, problem->cvs());
 
-    // initial guess
-    problem->InitialGuess();
-    Epetra_MultiVector p0(*problem->solution()->ViewComponent("cell"));
-
     // solve
+    problem->InitialGuess();
     solver->Solve(problem->solution());
-    Epetra_MultiVector& p1 = *problem->solution()->ViewComponent("cell");
 
+    // checks
+    CHECK(solver->num_itrs() < 9);
+    if (i == 1) CHECK(solver->residual() < 1e-11);
+
+    Epetra_MultiVector p0(*problem->solution()->ViewComponent("cell"));
+    Epetra_MultiVector& p1 = *problem->solution()->ViewComponent("cell");
     if (MyPID == 0) {
       GMV::open_data_file(*mesh, (std::string)"energy.gmv");
       GMV::start_data();

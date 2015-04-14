@@ -9,6 +9,9 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
+#include "Epetra_Vector.h"
+
+#include "DenseMatrix.hh"
 #include "lapack.hh"
 
 #include "OperatorAudit.hh"
@@ -23,22 +26,11 @@ namespace Operators {
 int OperatorAudit::CheckSpectralBounds(int schema)
 { 
   // find location of face-based matrices
-  int m(0), nblocks = blocks_.size();
-
-  for (int n = 0; n < nblocks; n++) {
-    int schema = blocks_schema_[n];
-    if (blocks_schema_[n] == schema) {
-      m = n;
-      break;
-    }
-  }
-  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
-
   double emin = 1e+99, emax = -1e+99;
   double cndmin = 1e+99, cndmax = 1.0, cndavg = 0.0;
 
-  for (int i = 0; i < matrix.size(); i++) {
-    WhetStone::DenseMatrix Acell(matrix[i]);
+  for (int i = 0; i < op_->matrices.size(); i++) {
+    WhetStone::DenseMatrix Acell(op_->matrices[i]);
     int n = Acell.NumRows();
 
     int info, ldv(1), lwork = 4 * n;
@@ -47,7 +39,7 @@ int OperatorAudit::CheckSpectralBounds(int schema)
     WhetStone::DGEEV_F77("N", "N", &n, Acell.Values(), &n, dmem1, dmem2, 
                          &VL, &ldv, &VR, &ldv, dwork, &lwork, &info);
 
-    OrderByIncrease(n, dmem1);
+    OrderByIncrease_(n, dmem1);
 
     double e, a = dmem1[1], b = dmem1[1];  // skipping the first eigenvalue
     for (int k = 2; k < n; k++) {
@@ -64,7 +56,7 @@ int OperatorAudit::CheckSpectralBounds(int schema)
     cndmax = std::max(cndmax, cnd);
     cndavg += cnd;
   }
-  cndavg /= matrix.size();
+  cndavg /= op_->matrices.size();
 
   int MyPID = 0; 
   if (MyPID == 0) {
@@ -79,25 +71,28 @@ int OperatorAudit::CheckSpectralBounds(int schema)
 /* ******************************************************************
 * Verify symmetry of the matrix.                                      
 ****************************************************************** */
-int OperatorAudit::CheckMatrixSymmetry()
+int CheckMatrixSymmetry(Teuchos::RCP<Epetra_CrsMatrix> A)
 {
-  /*
+  int nrows = A->NumMyRows();
+  Epetra_Vector x(A->DomainMap());
+  Epetra_Vector y(x), z(x);
+
   for (int n = 0; n < 10; n++) {
-    for (int f = 0; f < nfaces_owned; f++) {
+    for (int f = 0; f < nrows; f++) {
       x[f] = double(random()) / RAND_MAX;
       y[f] = double(random()) / RAND_MAX;
     }
-    matrix_->Aff()->Multiply(false, x, z);
+    double axy, ayx;
+    A->Multiply(false, x, z);
     z.Dot(y, &axy);
 
-    matrix_->Aff()->Multiply(false, y, z);
+    A->Multiply(false, y, z);
     z.Dot(x, &ayx);
     double err = fabs(axy - ayx) / (fabs(axy) + fabs(ayx) + 1e-10);
-    if (MyPID == 0 && err > 1e-10) {	
+    if (A->Comm().MyPID() == 0 && err > 1e-10) {	
       printf("   Summetry violation: (Ax,y)=%12.7g (Ay,x)=%12.7g\n", axy, ayx);
     }
   }
-  */
   return 0;
 }
 
@@ -105,22 +100,25 @@ int OperatorAudit::CheckMatrixSymmetry()
 /* ******************************************************************
 * Verify coercivity of the matrix.                                      
 ****************************************************************** */
-int OperatorAudit::CheckMatrixCoercivity()
+int CheckMatrixCoercivity(Teuchos::RCP<Epetra_CrsMatrix> A)
 {
-  /*
+  int nrows = A->NumMyRows();
+  Epetra_Vector x(A->DomainMap());
+  Epetra_Vector y(x), z(x);
+
   for (int n = 0; n < 10; n++) {
-    for (int f = 0; f < nfaces_owned; f++) {
+    for (int f = 0; f < nrows; f++) {
       x[f] = double(random()) / RAND_MAX;
       y[f] = double(random()) / RAND_MAX;
     }
-    matrix_->Aff()->Multiply(false, x, y);
+    double axx;
+    A->Multiply(false, x, y);
     y.Dot(x, &axx);
 
-    if (MyPID == 0 && axx <= 1e-12) {	
+    if (A->Comm().MyPID() == 0 && axx <= 1e-12) {	
       printf("   Coercivity violation: (Ax,x)=%12.7g\n", axx);
     }
   }
-  */
   return 0;
 }
 
@@ -128,7 +126,7 @@ int OperatorAudit::CheckMatrixCoercivity()
 /* ******************************************************************
 * Bubble algorithm.                                            
 ****************************************************************** */
-void OperatorAudit::OrderByIncrease(int n, double* mem)
+void OperatorAudit::OrderByIncrease_(int n, double* mem)
 {
   for (int i = 0; i < n; i++) {
     for (int j = 1; j < n-i; j++) {

@@ -18,6 +18,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "LeastSquare.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
 #include "Point.hh"
@@ -146,8 +147,8 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     delete gm;
   }
 
-  double L1rate = Amanzi::Transport::bestLSfit(h, L1error);
-  double L2rate = Amanzi::Transport::bestLSfit(h, L2error);
+  double L1rate = Amanzi::Utils::bestLSfit(h, L1error);
+  double L2rate = Amanzi::Utils::bestLSfit(h, L2error);
   printf("convergence rates: %8.2f %20.2f\n", L1rate, L2rate);
 
   CHECK_CLOSE(L1rate, 1.0, 0.1);
@@ -266,8 +267,8 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
     delete gm;
   }
 
-  double L1rate = Amanzi::Transport::bestLSfit(h, L1error);
-  double L2rate = Amanzi::Transport::bestLSfit(h, L2error);
+  double L1rate = Amanzi::Utils::bestLSfit(h, L1error);
+  double L2rate = Amanzi::Utils::bestLSfit(h, L2error);
   printf("convergence rates: %8.2f %20.2f\n", L1rate, L2rate);
 
   CHECK_CLOSE(L1rate, 1.0, 0.1);
@@ -387,8 +388,8 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     L2error.push_back(L2);
   }
 
-  double L1rate = Amanzi::Transport::bestLSfit(h, L1error);
-  double L2rate = Amanzi::Transport::bestLSfit(h, L2error);
+  double L1rate = Amanzi::Utils::bestLSfit(h, L1error);
+  double L2rate = Amanzi::Utils::bestLSfit(h, L2error);
   printf("convergence rates: %8.2f %20.2f\n", L1rate, L2rate);
 
   CHECK_CLOSE(2.0, L1rate, 0.4);
@@ -513,8 +514,8 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
     delete gm;
   }
 
-  double L1rate = Amanzi::Transport::bestLSfit(h, L1error);
-  double L2rate = Amanzi::Transport::bestLSfit(h, L2error);
+  double L1rate = Amanzi::Utils::bestLSfit(h, L1error);
+  double L2rate = Amanzi::Utils::bestLSfit(h, L2error);
   printf("convergence rates: %5.2f %17.2f\n", L1rate, L2rate);
 
   CHECK_CLOSE(L1rate, 1.0, 0.1);
@@ -638,8 +639,8 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
     delete gm;
   }
 
-  double L1rate = Amanzi::Transport::bestLSfit(h, L1error);
-  double L2rate = Amanzi::Transport::bestLSfit(h, L2error);
+  double L1rate = Amanzi::Utils::bestLSfit(h, L1error);
+  double L2rate = Amanzi::Utils::bestLSfit(h, L2error);
   printf("convergence rates: %5.2f %17.2f\n", L1rate, L2rate);
 
   CHECK_CLOSE(2.0, L1rate, 0.4);

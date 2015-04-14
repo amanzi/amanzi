@@ -216,6 +216,7 @@ bool MPCStrong<PK_Base>::AdvanceStep(double t_old, double t_new)
 
     // recover the original solution
     *solution_ = solution_copy;
+    ChangedSolution();
   }
 
   return fail;

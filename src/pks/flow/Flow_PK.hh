@@ -43,8 +43,6 @@
 namespace Amanzi {
 namespace Flow {
 
-double bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
-
 class Flow_PK : public FnTimeIntegratorPK {
  public:
   Flow_PK();
@@ -113,6 +111,7 @@ class Flow_PK : public FnTimeIntegratorPK {
   double rho() { return rho_; }
   double mu() { return mu_; }
   const AmanziGeometry::Point& gravity() { return gravity_; }
+  double seepage_mass() { return seepage_mass_; }
 
  private:
   void InitializeFields_();
@@ -146,6 +145,7 @@ class Flow_PK : public FnTimeIntegratorPK {
   std::vector<WhetStone::Tensor> K; 
   AmanziGeometry::Point gravity_, molar_gravity_;
   double g_, rho_, molar_rho_, mu_, atm_pressure_;
+  double flux_units_;  // scaling for flux units from kg to moles.
 
   Teuchos::RCP<Epetra_Vector> Kxy;
   std::string coordinate_system;

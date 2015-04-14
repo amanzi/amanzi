@@ -14,12 +14,12 @@
 #include "effective_pressure_evaluator.hh"
 
 namespace Amanzi {
-namespace Relations {
+namespace EOS {
 
 // registry of method
 Utils::RegisteredFactory<FieldEvaluator,EffectivePressureEvaluator> EffectivePressureEvaluator::factory_("effective_pressure");
 
-}  // namespace Relations
+}  // namespace EOS
 }  // namespace Amanzi
 
 

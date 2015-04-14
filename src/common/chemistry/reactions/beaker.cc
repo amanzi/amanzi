@@ -1620,8 +1620,8 @@ void Beaker::CheckChargeBalance(const std::vector<double>& aqueous_totals) const
   }
   if (std::fabs(charge_balance) > tolerance()) {
     std::stringstream message;
-    message << "WARNING: Beaker::CheckChargeBalance() : "
-            << "         charge balance = " << std::scientific
+    message << "WARNING: Beaker::CheckChargeBalance() : " 
+            << " charge balance = " << std::scientific
             << charge_balance << std::fixed << std::endl;
     chem_out->WriteWarning(Teuchos::VERB_LOW, message);
   }

@@ -117,19 +117,19 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
   
   // create diffusion operator 
-  const Teuchos::ParameterList& elist = plist->sublist("PKs").sublist("Energy");
+  const Teuchos::ParameterList& elist = plist->sublist("PKs").sublist("Energy")
+                                              .sublist("Two-phase problem");
   Teuchos::ParameterList oplist = elist.sublist("operators")
                                        .sublist("diffusion operator")
                                        .sublist("preconditioner");
   OperatorDiffusionFactory opfactory;
   AmanziGeometry::Point g(2);
   Teuchos::RCP<OperatorDiffusion> op1 = opfactory.Create(mesh, bc, oplist, g, 0);
-  op1->SetBCs(bc);
+  op1->SetBCs(bc, bc);
 
   // populate the diffusion operator
-  double rho(1.0), mu(1.0);
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(EPK->get_K());
-  op1->Setup(Kptr, Teuchos::null, Teuchos::null, rho, mu);
+  op1->Setup(Kptr, Teuchos::null, Teuchos::null);
   op1->UpdateMatrices(Teuchos::null, Teuchos::null);
   Teuchos::RCP<Operator> op = op1->global_operator();
 
@@ -176,8 +176,8 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   op3->UpdateMatrices(flux);
 
   // build the matrix
-  op1->ApplyBCs(true);
-  op3->ApplyBCs(bc);
+  op1->ApplyBCs(true, true);
+  op3->ApplyBCs(bc, true);
   op->SymbolicAssembleMatrix();
   op->AssembleMatrix();
 

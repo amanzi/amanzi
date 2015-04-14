@@ -89,7 +89,7 @@ if __name__ == "__main__":
 
     # hardwired time / add or remove here
     timespflo = ['Time:  5.00000E+01 y']
-    timesama  = ['71']
+    timesama  = ['72']
     
     # hardwired selected components / add or remove here
     search = ['Ca++','Mg++','K+','Cl-'] # ['UO2++'] # ['Ca++','Mg++','K+','Cl-'] # ['Ca++', 'Mg++','SiO2(aq)']

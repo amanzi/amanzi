@@ -238,6 +238,7 @@ void Darcy_PK::Initialize()
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap));
   
   // Initialize boundary condtions. 
+  flux_units_ = 1.0;
   ProcessShiftWaterTableList(*dp_list_);
 
   bc_pressure->Compute(t_new);
@@ -288,6 +289,7 @@ void Darcy_PK::Initialize()
   UpdateSpecificYield_();
 
   // initialize diffusion operator
+  // -- instead of scaling K, we scale the elemental mass matrices 
   SetAbsolutePermeabilityTensor();
 
   Teuchos::ParameterList& oplist = dp_list_->sublist("operators")
@@ -296,8 +298,9 @@ void Darcy_PK::Initialize()
   Operators::OperatorDiffusionFactory opfactory;
   op_diff_ = opfactory.Create(mesh_, op_bc_, oplist, gravity_, 0);  // The last 0 means no upwind
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
-  op_diff_->SetBCs(op_bc_);
-  op_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, rho_, mu_);
+  op_diff_->SetBCs(op_bc_, op_bc_);
+  op_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, rho_ * rho_ / mu_);
+  op_diff_->ScaleMassMatrices(rho_ / mu_);
   op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op_ = op_diff_->global_operator();
 
@@ -433,7 +436,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new)
   op_acc_->AddAccumulationTerm(*solution, ss_g, dt_, "cell");
   op_acc_->AddAccumulationTerm(*solution, sy_g, "cell");
 
-  op_diff_->ApplyBCs(true);
+  op_diff_->ApplyBCs(true, true);
   op_->AssembleMatrix();
   op_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 

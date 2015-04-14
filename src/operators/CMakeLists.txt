@@ -19,9 +19,13 @@ include(LibraryManager)
 # through these variables.
 project(OPERATORS)
 
+# External (TPL) include directories
+include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${MSTK_INCLUDE_DIRS})
 # Amanzi include directories
-include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
+include_directories(${DBC_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MSTK_SOURCE_DIR})
 include_directories(${MESH_FACTORY_SOURCE_DIR})
@@ -33,11 +37,6 @@ include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 
-# External (TPL) include directories
-include_directories(${Teuchos_INCLUDE_DIRS})
-include_directories(${Epetra_INCLUDE_DIRS})
-include_directories(${MSTK_INCLUDE_DIRS})
-
 # Need this define. Errors from MSTK include files 
 # about MPI_COMM_WORLD. --lpritch
 add_definitions("-DMSTK_HAVE_MPI")
@@ -45,7 +44,7 @@ add_definitions("-DMSTK_HAVE_MPI")
 #
 # Library: operator audit
 #
-#add_amanzi_library(operator_audit SOURCE OperatorAudit.cc LINK_LIBS ${flow_tpl_libs})
+add_amanzi_library(operators_audit SOURCE OperatorAudit.cc LINK_LIBS ${flow_tpl_libs})
 
 #
 # Library: operators
@@ -205,6 +204,12 @@ if ( BUILD_TESTS )
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_tree_2pe operators_tree NPROCS 2 KIND unit)
+
+    # Test: diffusion with gravity
+    add_amanzi_test(operators_gravity operators_gravity
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_gravity.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # reconstruction tests
     add_amanzi_test(operators_reconstruction operators_reconstruction

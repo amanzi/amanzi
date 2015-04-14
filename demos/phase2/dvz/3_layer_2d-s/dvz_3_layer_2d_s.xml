@@ -1,7 +1,7 @@
 <ParameterList name="Main">
   <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
   <Parameter name="Dump ParmParse Table" type="string" value="run_data/ppfile"/>
-  <Parameter name="Petsc Options File" type="string" value="DOTpetsc_hypre"/>
+  <Parameter name="Petsc Options File" type="string" value=".petsc"/>
 
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="TBD"/>
@@ -221,7 +221,6 @@
     <ParameterList name="All">
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
       <ParameterList name="IC: Linear Pressure">
-        <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Reference Value" type="double" value="101325"/>
         <Parameter name="Reference Point" type="Array(double)" value="{0,0}"/>
         <Parameter name="Gradient Value" type="Array(double)" value="{0,-9793.5192 }"/>

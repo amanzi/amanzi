@@ -356,8 +356,7 @@ int
 MatFiller::NComp(const std::string& property_name) const
 {
   std::map<std::string,int>::const_iterator it=property_nComps.find(property_name);
-  BL_ASSERT(it!=property_nComps.end());
-  return it->second;
+  return (it==property_nComps.end() ? 0 : it->second);
 }
 
 bool 
@@ -387,6 +386,7 @@ MatFiller::SetProperty(Real               t,
     return false;
   }
   int nComp = it->second;
+
   BL_ASSERT(mf.nComp() >= dComp + nComp);
   MultiFab tmf(unfilled,nComp,0);
 

@@ -1,15 +1,18 @@
 /*
   This is the operators component of the Amanzi code.
 
-  License: BSD
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-  Discrete source operator.
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_BASE_HH_
 #define AMANZI_OPERATOR_ANALYTIC_BASE_HH_
 
+#include "mfd3d_diffusion.hh"
 #include "Mesh.hh"
 
 class AnalyticBase {

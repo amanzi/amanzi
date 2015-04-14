@@ -1,7 +1,11 @@
 /*
-  This is the operators component of the Amanzi code.
+  This is the Operator component of the Amanzi code.
 
-  License: BSD
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Discrete gravity operator blended with the diffusion operator.
@@ -28,21 +32,21 @@ class BCs;
 class OperatorDiffusionWithGravity : public OperatorDiffusionMFD {
  public:
   OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
-                    const Teuchos::RCP<Operator>& global_op) :
+                               const Teuchos::RCP<Operator>& global_op) :
       OperatorDiffusionMFD(plist, global_op)
   {
     Init_();
   }
 
   OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
-                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+                               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       OperatorDiffusionMFD(plist, mesh)
   {
     Init_();
   }
 
   OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
-                    const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+                               const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
       OperatorDiffusionMFD(plist, mesh)
   {
     Init_();
@@ -54,7 +58,14 @@ class OperatorDiffusionWithGravity : public OperatorDiffusionMFD {
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
 
   virtual void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
-  virtual void SetVectorDensity(const Teuchos::RCP<const CompositeVector>& rho) { rho_cv_ = rho; }
+  virtual void SetDensity(double rho) {
+    scalar_rho_ = true;
+    rho_ = rho;
+  }
+  virtual void SetDensity(const Teuchos::RCP<const CompositeVector>& rho) {
+    scalar_rho_ = false;
+    rho_cv_ = rho;
+  }
   
  protected:
   virtual void AddGravityToRHS_();

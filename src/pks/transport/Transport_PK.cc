@@ -546,7 +546,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new)
 
     Operators::OperatorDiffusionFactory opfactory;
     Teuchos::RCP<Operators::OperatorDiffusion> op1 = opfactory.Create(mesh_, bc_dummy, op_list, g, 0);
-    op1->SetBCs(bc_dummy);
+    op1->SetBCs(bc_dummy, bc_dummy);
     Teuchos::RCP<Operators::Operator> op = op1->global_operator();
     Teuchos::RCP<Operators::OperatorAccumulation> op2 =
         Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op));
@@ -593,7 +593,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new)
 
       if (flag_op1) {
         Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D);
-        op1->Setup(Dptr, Teuchos::null, Teuchos::null, 1.0, 1.0);
+        op1->Setup(Dptr, Teuchos::null, Teuchos::null);
         op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
         // add accumulation term
@@ -603,7 +603,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new)
         }
         op2->AddAccumulationTerm(sol, factor, dt_MPC, "cell");
  
-        op1->ApplyBCs(true);
+        op1->ApplyBCs(true, true);
         op->SymbolicAssembleMatrix();
         op->AssembleMatrix();
         op->InitPreconditioner(dispersion_preconditioner, *preconditioner_list_);
@@ -656,7 +656,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new)
       }
 
       Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D);
-      op1->Setup(Dptr, Teuchos::null, Teuchos::null, 1.0, 1.0);
+      op1->Setup(Dptr, Teuchos::null, Teuchos::null);
       op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
       // add boundary conditions and sources for gaseous components
@@ -665,7 +665,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new)
       Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
       double time = t_physics_ + dt_MPC;
       ComputeAddSourceTerms(time, 1.0, srcs, rhs_cell, i, i);
-      op1->ApplyBCs();
+      op1->ApplyBCs(true, true);
 
       // add accumulation term
       Epetra_MultiVector& fac1 = *factor.ViewComponent("cell");

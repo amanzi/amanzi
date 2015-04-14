@@ -81,8 +81,8 @@
 
     void FORT_INTERNAL_DATA(const Real* dat, ARLIM_P(dlo), ARLIM_P(dhi),
 			    const Real* scratch_c, int* c_sz, int* c_idx,
-			    const Real* condg, const Real* sig, const Real* dx,
-			    const int* domlo, const int* domhi);
+			    const Real* condg, const Real* dx,
+			    const Real* plo, const int* domlo, const int* domhi);
 
     void FORT_SEC_DATA(const Real* dat, ARLIM_P(dlo), ARLIM_P(dhi),
 		       const Real* scratch_r, int* real_sz, int* real_idx,
@@ -101,7 +101,7 @@
 			  const Real* scratch_r, int* real_sz, int* real_idx,
 			  const int*  scratch_i, int* int_sz, int* int_idx,
 			  const int*  lo, const int* hi,
-			  Real* dx, int* iseed);
+			  const Real* dx, const Real* plo, int* iseed);
     void FORT_SGSIM_ITER(const Real* dat, ARLIM_P(dlo), ARLIM_P(dhi),
 			 const Real* scratch_c, int* c_sz, int* c_idx,
 			 const Real* scratch_r, int* real_sz, int* real_idx,
@@ -113,7 +113,7 @@
 			 const int*  scratch_i, int* int_sz, int* int_idx);
 
     void FORT_LGNORM(const Real* dat, ARLIM_P(dlo), ARLIM_P(dhi),
-		     const Real* condg, const Real* sig);
+		     const Real* condg);
 
     void FORT_SGSIM_DEALLOC();
 

@@ -1,10 +1,32 @@
-#include "TimeStepManager.hh"
-#include <iostream>
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Markus Berndt
+           Daniil Svyatskiy 
+*/
+
 #include <algorithm>
+#include <iostream>
+
+#include "TimeStepManager.hh"
+//#include "VerboseObject.hh"
 
 namespace Amanzi {
 
-  void TimeStepManager::RegisterTimeEvent(double start, double period, double stop,  bool phys) {
+TimeStepManager::TimeStepManager() {
+  dt_stable_storage = -1.;
+  vo_ = Teuchos::null;
+}
+
+TimeStepManager::TimeStepManager(Teuchos::RCP<VerboseObject> verb_object) {
+  dt_stable_storage = -1.;
+  vo_ = verb_object;
+}
+
+void TimeStepManager::RegisterTimeEvent(double start, double period, double stop,  bool phys) {
     timeEvents_.push_back(TimeEvent(start, period, stop, phys));
 }
 
@@ -21,9 +43,19 @@ void TimeStepManager::RegisterTimeEvent(double time, bool phys) {
   timeEvents_.push_back(TimeEvent(time, phys));
 }
 
-  double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
+double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
   double next_T_all_events(1e99);
   bool physical = true;
+
+
+  // if (vo_ != Teuchos::null){
+  //   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+  //     Teuchos::OSTab tab = vo_->getOSTab();
+  //     *vo_->os() <<"PK proposed dT: "<<dT<<std::endl;
+  //   }
+  // }
+
+  if (after_failure) dt_stable_storage = -1.;
   
   if ((dt_stable_storage > 0)&&(!after_failure)) {
     dT = dt_stable_storage;
@@ -56,7 +88,7 @@ void TimeStepManager::RegisterTimeEvent(double time, bool phys) {
       }
     }
     //next_T_all_events = std::min(next_T_all_events, next_T_this_event);
-    if (next_T_this_event < next_T_all_events){
+    if (next_T_this_event < next_T_all_events) {
       physical = i->isPhysical();
       next_T_all_events = next_T_this_event;
     }
@@ -64,14 +96,37 @@ void TimeStepManager::RegisterTimeEvent(double time, bool phys) {
 
   if (next_T_all_events == 1e99) return dT;
   double time_remaining(next_T_all_events - T);
-  if (dT >= time_remaining) {
+
+  if (dT == time_remaining) return dT;
+
+  if (dT > time_remaining) {
     if (!physical) dt_stable_storage = dT;
+    if (vo_ != Teuchos::null) {
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+	Teuchos::OSTab tab = vo_->getOSTab();
+    	*vo_->os() << "PK proposed dT=" << dT 
+                   << " [sec]. CD limits it to " << time_remaining << std::endl;
+      }
+    }
+
     return time_remaining;
-  } else if ( dT > 0.75*time_remaining) {
-    if (!physical) dt_stable_storage = dT;
+
+  } else if (dT > 0.75*time_remaining) {
+    if (!physical) dt_stable_storage = dT + (dT - 0.5*time_remaining);
+    if (vo_!=Teuchos::null) {
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+	Teuchos::OSTab tab = vo_->getOSTab();
+	*vo_->os() << "PK proposed dT=" << dT 
+                   << " [sec]. CD limits it to " << 0.5*time_remaining << std::endl;
+      }
+    }
+
     return 0.5*time_remaining;
+
   } else {
+
     return dT;
+
   } 
 }
 
@@ -102,4 +157,5 @@ void TimeStepManager::print(std::ostream& os, double start, double end) const {
     os << *i << " ";
   }
 }
-} // namespace Amanzi
+
+}  // namespace Amanzi

@@ -5,7 +5,9 @@
     <Parameter name="Model ID" type="string" value="1D Flow and Transport"/>
     <Parameter name="Author" type="string" value="various"/>
   </ParameterList>
+
   <ParameterList name="Execution Control">
+
     <Parameter name="Flow Model" type="string" value="Single Phase"/>
     <Parameter name="Transport Model" type="string" value="On"/>
     <Parameter name="Chemistry Model" type="string" value="Off"/>
@@ -18,6 +20,7 @@
       </ParameterList>
     </ParameterList>
     <Parameter name="Verbosity" type="string" value="High"/>
+
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Structured Algorithm">
         <ParameterList name="Expert Settings">
@@ -25,16 +28,50 @@
           <Parameter name="max_n_subcycle_transport" type="int" value="1"/>
         </ParameterList>
       </ParameterList>
+
+<!-- AMR starts here -->
+      <ParameterList name="Adaptive Mesh Refinement Control">
+        <Parameter name="Number Of AMR Levels" type="int" value="2"/>
+        <Parameter name="Refinement Ratio" type="Array(int)" value="{2, 2}"/>
+        <Parameter name="Regrid Interval" type="Array(int)" value="{2}"/>
+        <Parameter name="Blocking Factor" type="Array(int)" value="{2, 2}"/>
+        <Parameter name="Maximum Grid Size" type="Array(int)" value="{32, 32}"/>
+        <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{1, 1}"/>
+	<Parameter name="Refinement Indicators" type="Array(string)" value="{tracer ref, tracer 2 ref}"/>
+
+        <ParameterList name="tracer ref">
+          <Parameter name="Regions" type="Array(string)" value="{All}"/>
+          <Parameter name="Maximum Refinement Level" type="int" value="2"/>
+          <Parameter name="Field Name" type="string" value="Tracer Aqueous Concentration"/>
+          <Parameter name="Adjacent Difference Greater" type="double" value="1.e-4"/>
+        </ParameterList>
+
+        <ParameterList name="tracer 2 ref">
+          <Parameter name="Regions" type="Array(string)" value="{All}"/>
+          <Parameter name="Maximum Refinement Level" type="int" value="2"/>
+          <Parameter name="Field Name" type="string" value="Tracer2 Aqueous Concentration"/>
+          <Parameter name="Adjacent Difference Greater" type="double" value="5.e-5"/>
+        </ParameterList>
+
+
+        <ParameterList name="Expert Settings">
+          <Parameter name="v" type="int" value="3"/>
+        </ParameterList>
+      </ParameterList>
+<!-- end here -->
+
     </ParameterList>
+
   </ParameterList>
+
   <ParameterList name="Domain">
     <Parameter name="Spatial Dimension" type="int" value="2"/>
   </ParameterList>
   <ParameterList name="Mesh">
     <ParameterList name="Structured">
       <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0,0}"/>
-      <Parameter name="Domain High Coordinate" type="Array(double)" value="{100,2}"/>
-      <Parameter name="Number of Cells" type="Array(int)" value="{100,2}"/>
+      <Parameter name="Domain High Coordinate" type="Array(double)" value="{100,50}"/>
+      <Parameter name="Number of Cells" type="Array(int)" value="{100,50}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Regions">
@@ -62,7 +99,7 @@
       </ParameterList>
       <ParameterList name="Phase Components">
         <ParameterList name="Water">
-          <Parameter name="Component Solutes" type="Array(string)" value="{Tracer}"/>
+          <Parameter name="Component Solutes" type="Array(string)" value="{Tracer,Tracer2}"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -71,7 +108,6 @@
     <ParameterList name="Initial Condition">
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
       <ParameterList name="IC: Uniform Pressure">
-        <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Value" type="double" value="101325.0"/>
       </ParameterList>
       <ParameterList name="Solute IC">
@@ -80,6 +116,11 @@
             <ParameterList name="Tracer">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
+              </ParameterList>
+            </ParameterList>
+            <ParameterList name="Tracer2">
+              <ParameterList name="IC: Uniform Concentration">
+                <Parameter name="Value" type="double" value="5.e-4"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -98,9 +139,20 @@
           <ParameterList name="Water">
             <ParameterList name="Tracer">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Values" type="Array(double)" value="{1.e-3}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 0.78892315e9, 1.5778463e9}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{1.e-3,1.e-20}"/>
               </ParameterList>
             </ParameterList>
+
+            <ParameterList name="Tracer2">
+              <ParameterList name="BC: Uniform Concentration">
+                <Parameter name="Times" type="Array(double)" value="{0.0, 0.78892315e9, 1.2e9,1.5778463e9}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant,Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{1.e-20,5.e-4,1.e-20}"/>
+              </ParameterList>
+            </ParameterList>
+
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -114,6 +166,10 @@
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="Tracer">
+              <ParameterList name="BC: Zero Gradient">
+              </ParameterList>
+            </ParameterList>
+            <ParameterList name="Tracer2">
               <ParameterList name="BC: Zero Gradient">
               </ParameterList>
             </ParameterList>

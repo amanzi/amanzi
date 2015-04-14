@@ -1,10 +1,22 @@
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Markus Berndt
+           Daniil Svyatskiy 
+*/
+
 #ifndef TIME_STEP_MANAGER__
 #define TIME_STEP_MANAGER__
 
-#include <vector>
+#include <cmath>
 #include <list>
 #include <ostream>
-#include <cmath>
+#include <vector>
+
+#include "VerboseObject.hh"
 
 namespace Amanzi {
 
@@ -37,9 +49,9 @@ class TimeStepManager {
     bool physical_; // physical means that this event effects time step due to change in physics
   };
 
-
  public:
-  TimeStepManager() {dt_stable_storage=-1.;}
+  TimeStepManager();// {dt_stable_storage=-1.; vo_ = Teuchos::NULL;}
+  TimeStepManager(Teuchos::RCP<VerboseObject> verb_object);
   void RegisterTimeEvent(double start, double period, double stop, bool phys=true);
   void RegisterTimeEvent(std::vector<double> times, bool phys=true);
   void RegisterTimeEvent(double time, bool phys=true);
@@ -50,7 +62,10 @@ class TimeStepManager {
   std::list<TimeEvent> timeEvents_;
   double dt_stable_storage;
 
+ protected:
+  Teuchos::RCP<VerboseObject> vo_;
 };
-}
+
+}  // namespace Amanzi
 
 #endif // TIME_STEP_MANAGER__

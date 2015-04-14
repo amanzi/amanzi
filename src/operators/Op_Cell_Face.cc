@@ -118,11 +118,7 @@ Op_Cell_Face::ApplyBC(BCs& bc,
 
   rhs->GatherGhostedToMaster("face", Add);
   return !bc_previously_applied;
-
 }
-
-
-
 
 }  // namespace Operators
 }  // namespace Amanzi

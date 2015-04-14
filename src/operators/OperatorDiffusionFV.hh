@@ -58,27 +58,35 @@ class OperatorDiffusionFV : public OperatorDiffusion {
   }
 
   // main virtual members
-  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-                     double rho, double mu);
-  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-                     const Teuchos::RCP<const CompositeVector>& rho,
-                     const Teuchos::RCP<const CompositeVector>& mu);
+  // -- setup
+  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
   virtual void Setup(const Teuchos::RCP<const CompositeVector>& k,
                      const Teuchos::RCP<const CompositeVector>& dkdp);
   using OperatorDiffusion::Setup;
-
-  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-          const Teuchos::Ptr<const CompositeVector>& u);
-  virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
-  virtual void ApplyBCs(bool primary=true);
-  virtual void ModifyMatrices(const CompositeVector& u) {}
 
   virtual void SetGravity(const AmanziGeometry::Point& g) {
     g_ = g;
     gravity_ = true;
   }
-  virtual void SetVectorDensity(const Teuchos::RCP<const CompositeVector>& rho) { rho_cv_ = rho; }
-  
+  virtual void SetDensity(double rho) {
+    scalar_rho_ = true;
+    rho_ = rho;
+  }
+  virtual void SetDensity(const Teuchos::RCP<const CompositeVector>& rho) {
+    scalar_rho_ = false;
+    rho_cv_ = rho;
+  }
+
+  // -- create an operator
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
+          const Teuchos::Ptr<const CompositeVector>& u);
+  virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
+
+  // -- modify an operator
+  virtual void ApplyBCs(bool primary, bool eliminate);
+  virtual void ModifyMatrices(const CompositeVector& u) {};
+  virtual void ScaleMassMatrices(double s) {};
+
   template <class Model> 
   double DeriveBoundaryFaceValue(int f, const CompositeVector& u, const Model& model);
 
@@ -98,7 +106,6 @@ class OperatorDiffusionFV : public OperatorDiffusion {
       WhetStone::DenseMatrix& Jpp);
 
   void InitDiffusion_(Teuchos::ParameterList& plist);
-
   
  protected:
   AmanziGeometry::Point g_;
@@ -106,6 +113,7 @@ class OperatorDiffusionFV : public OperatorDiffusion {
 
   Teuchos::RCP<CompositeVector> transmissibility_;
   Teuchos::RCP<CompositeVector> gravity_term_;
+  bool transmissibility_initialized_;
 
   int newton_correction_;
   bool exclude_primary_terms_;

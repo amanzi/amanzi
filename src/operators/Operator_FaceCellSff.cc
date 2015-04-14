@@ -38,7 +38,9 @@ Assemble, however, is done using a totally different approach.
 namespace Amanzi {
 namespace Operators {
 
-// Special Apply Inverse required to deal with schur complement
+/* ******************************************************************
+* Special inverse algorithm is required to deal with Schur complement.
+****************************************************************** */
 int Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
   // Check preconditions -- Sff must have exactly one CELL+FACE schema,
@@ -134,7 +136,9 @@ int Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector
 }
 
 
-// Special AssembleMatrix required to deal with schur complement
+/* ******************************************************************
+* Special assemble algorithm is required to deal with Schur complement.
+****************************************************************** */
 void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
                                           int my_block_row, int my_block_col) const
 {
@@ -169,7 +173,6 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
       ASSERT((*it)->matrices.size() == ncells_owned);
 
       // create or get extra ops, and keep them for future use
-      const std::vector<int>& bc_model = bc_->bc_model();
       Teuchos::RCP<Op_Cell_Face> schur_op;
 
       if (schur_ops_.size() > i_schur) {
@@ -197,7 +200,6 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
         WhetStone::DenseMatrix& Acell = (*it)->matrices[c];
 
         double tmp = Acell(nfaces, nfaces) + D_c[0][c];
-        //        if (tmp == 0.0 && (*K_)[c].isZero()) continue;  // We skip zero matrices
 
         for (int n = 0; n < nfaces; n++) {
           for (int m = 0; m < nfaces; m++) {
@@ -205,14 +207,29 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
           }
         }
 
-        for (int n = 0; n < nfaces; n++) {  // Symbolic boundary conditions
-          int f = faces[n];
-          if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-            for (int m = 0; m < nfaces; m++) Scell(n, m) = Scell(m, n) = 0.0;
-            Scell(n, n) = 1.0;
+        // Symbolic boundary conditions
+        // -- from test functions
+        if (bc_test_ != Teuchos::null) {
+          const std::vector<int>& bc_model = bc_test_->bc_model();
+          for (int n = 0; n < nfaces; n++) {
+            int f = faces[n];
+            if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+              for (int m = 0; m < nfaces; m++) Scell(n, m) = 0.0;
+            }
           }
         }
-        ASSERT(true);
+
+        // -- from trial functions
+        if (bc_trial_ != Teuchos::null) {
+          const std::vector<int>& bc_model = bc_trial_->bc_model();
+          for (int n = 0; n < nfaces; n++) {
+            int f = faces[n];
+            if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+              for (int m = 0; m < nfaces; m++) Scell(m, n) = 0.0;
+              Scell(n, n) = 1.0;
+            }
+          }
+        }
       }
 
       // Assemble this Schur Op into matrix
@@ -222,8 +239,10 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
 }
 
 
-// visit method for Apply -- this is identical to Operator_FaceCell's
-// version.
+/* ******************************************************************
+* Visit method for Apply -- this is identical to Operator_FaceCell's
+* version.
+****************************************************************** */
 int Operator_FaceCellSff::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
                                             const CompositeVector& X, CompositeVector& Y) const
 {
@@ -272,7 +291,7 @@ void Operator_FaceCellSff::SymbolicAssembleMatrix()
   // SuperMap for Sff is face only
   CompositeVectorSpace smap_space;
   smap_space.SetMesh(cvs_->Mesh())->SetComponent("face", AmanziMesh::FACE, 1);
-  smap_ = createSuperMap(smap_space, schema(), 1);
+  smap_ = CreateSuperMap(smap_space, schema(), 1);
 
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema(), 1);
@@ -291,7 +310,9 @@ void Operator_FaceCellSff::SymbolicAssembleMatrix()
 }
 
 
-// visit method for sparsity structure of Schur complement
+/* ******************************************************************
+* visit method for sparsity structure of Schur complement
+****************************************************************** */
 void Operator_FaceCellSff::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
                                                     const SuperMap& map, GraphFE& graph,
                                                     int my_block_row, int my_block_col) const

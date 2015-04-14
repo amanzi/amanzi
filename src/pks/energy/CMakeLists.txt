@@ -18,29 +18,25 @@ include(TestManager)
 # through these variables.
 project(ENERGY)
 
-# Amanzi include directories
-include_directories(${DBC_SOURCE_DIR})
-include_directories(${ATK_SOURCE_DIR})
-include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
-include_directories(${GEOMETRY_SOURCE_DIR})
-include_directories(${DATA_STRUCTURES_SOURCE_DIR})
-include_directories(${STATE_SOURCE_DIR})
-include_directories(${WHETSTONE_SOURCE_DIR})
-include_directories(${SOLVERS_SOURCE_DIR})
-include_directories(${TIME_INTEGRATION_SOURCE_DIR})
-include_directories(${FUNCS_SOURCE_DIR})
-include_directories(${MFUNCS_SOURCE_DIR})
-include_directories(${OUTPUT_SOURCE_DIR})
-include_directories(${DBG_SOURCE_DIR})
-include_directories(${OPERATORS_SOURCE_DIR})
-include_directories(${EOS_SOURCE_DIR})
-include_directories(${PKS_SOURCE_DIR})
-
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
-include_directories(${ASCEMIO_INCLUDE_DIR})
+# Amanzi include directories
+include_directories(${ATK_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
+include_directories(${DBC_SOURCE_DIR})
+include_directories(${EOS_SOURCE_DIR})
+include_directories(${FUNCS_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
+include_directories(${MFUNCS_SOURCE_DIR})
+include_directories(${OPERATORS_SOURCE_DIR})
+include_directories(${OUTPUT_SOURCE_DIR})
+include_directories(${PKS_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR})
+include_directories(${SOLVERS_SOURCE_DIR})
+include_directories(${TIME_INTEGRATION_SOURCE_DIR})
+include_directories(${WHETSTONE_SOURCE_DIR})
 
 #
 # Energy registrations
@@ -86,11 +82,15 @@ generate_evaluators_registration_header(
   )
 
 register_evaluator_with_factory(
+  HEADERFILE EnergyOnePhase_PK_reg.hh
+  LISTNAME   ENERGY_TWO_PHASE_REG
+  )
+register_evaluator_with_factory(
   HEADERFILE EnergyTwoPhase_PK_reg.hh
   LISTNAME   ENERGY_TWO_PHASE_REG
   )
 generate_evaluators_registration_header(
-  HEADERFILE energy_twophase_registration.hh
+  HEADERFILE energy_registration.hh
   LISTNAME   ENERGY_TWO_PHASE_REG
   INSTALL    True
   )
@@ -99,6 +99,7 @@ generate_evaluators_registration_header(
 # Library: energy
 #
 set(energy_src_files Energy_PK.cc
+                     EnergyOnePhase_PK.cc EnergyOnePhase_TI.cc
                      EnergyTwoPhase_PK.cc EnergyTwoPhase_TI.cc
                      Energy_BC_Factory.cc
                      Energy_VandV.cc
@@ -109,9 +110,10 @@ set(energy_src_files Energy_PK.cc
                      EnthalpyEvaluator.cc
                      TCM_WetDry_TwoPhase.cc
                      TCM_PetersLidard_TwoPhase.cc
+                     TCMEvaluator_OnePhase.cc
                      TCMEvaluator_TwoPhase.cc
                      TCMFactory_TwoPhase.cc
-                     TwoPhaseEnergyEvaluator.cc)
+                     TotalEnergyEvaluator.cc)
 
 set(energy_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )
@@ -127,9 +129,10 @@ set(flow_inc_files
   Energy_PK.hh
   EnergyBoundaryFunction.hh
   EnergyDefs.hh
+  EnergyOnePhase_PK.hh
   EnergyTwoPhase_PK.hh
   Energy_BC_Factory.hh
-  energy_twophase_registration.hh
+  energy_registration.hh
   IEM.hh
   IEM_Linear.hh
   IEM_WaterVapor.hh
@@ -137,10 +140,10 @@ set(flow_inc_files
   IEMFactory.hh
   IEMEvaluator.hh
   energy_iem_registration.hh
-  TwoPhaseEnergyEvaluator.hh
+  TotalEnergyEvaluator.hh
   TCM_PetersLidard_TwoPhase.hh
   TCM_TwoPhase.hh
-  TCM_TwoPhase_registration.hh
+  TCMEvaluator_OnePhase.hh
   TCMEvaluator_TwoPhase.hh
   TCMFactory_TwoPhase.hh
   EnthalpyEvaluator.hh)
@@ -174,6 +177,12 @@ if (BUILD_TESTS)
     add_amanzi_test(energy_newton_picard energy_newton_picard
                     KIND int
                     SOURCE test/Main.cc test/energy_newton_picard.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: 3
+    add_amanzi_test(energy_convergence energy_convergence
+                    KIND int
+                    SOURCE test/Main.cc test/energy_convergence.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

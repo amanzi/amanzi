@@ -8,7 +8,7 @@
 
   Author: Ethan Coon
 
-  Linear internal energy model is function of Cv and temperature.
+  Linear internal energy model is function of cv and temperature.
   UNITS: J/{mol/kg}
 */
 
@@ -30,15 +30,15 @@ class IEM_Linear : public IEM {
   bool IsMolarBasis() { return molar_basis_; }
 
   double InternalEnergy(double temp);
-  double DInternalEnergyDT(double temp) { return Cv_; }
+  double DInternalEnergyDT(double temp) { return cv_; }
 
  private:
   virtual void InitializeFromPlist_();
 
   Teuchos::ParameterList plist_;
 
-  double Cv_; // units: J/({mol/kg}-K)
-  double T_ref_; // units: K
+  double cv_;  // units: J/({mol/kg}-K)
+  double Tref_;  // units: K
   bool molar_basis_;
 
  private:

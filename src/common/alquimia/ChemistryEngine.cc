@@ -67,7 +67,7 @@ ChemistryEngine::ChemistryEngine(const std::string& engineName,
 {
   Errors::Message msg;
 
-  if (chem_engine_name_ != "PFloTran")
+  if (chem_engine_name_ != "PFloTran" && chem_engine_name_ != "CrunchFlow")
   {
     msg << "ChemistryEngine: Unsupported chemistry engine: '" << chem_engine_name_ << "'\n";
     msg << "  Options are 'PFlotran'.\n";

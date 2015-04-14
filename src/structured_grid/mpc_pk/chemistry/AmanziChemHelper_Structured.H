@@ -18,8 +18,7 @@ public:
                               const std::vector<std::string>& _freeIonSpeciesNames,
                               const std::string&              _thermo_database_filename,
                               const std::string&              _thermo_database_format,
-                              const std::string&              _activity_model,
-                              int                             _verbose);
+                              const std::string&              _activity_model);
 
   AmanziChemHelper_Structured(const std::vector<std::string>& primarySpeciesNames,
                               const std::vector<std::string>& mineralNames);
@@ -33,11 +32,12 @@ public:
                        FArrayBox&       primary_species_mobile,   int sPrimMob,
                        FArrayBox&       fcnCnt,                   int sFunc,
                        FArrayBox&       aux_data, Real water_density, Real temperature,
-                       const Box& box, Real dt);
+                       const Box& box, Real dt, int chem_verbose);
 
   virtual void EnforceCondition(FArrayBox& primary_species_mobile,   int sPrimMob,
                                 FArrayBox& auxiliary_data, Real water_density, Real temperature,
-                                const Box& box, const std::string& condition_name, Real time);
+                                const Box& box, const std::string& condition_name, Real time,
+				int chem_verbose);
 
   void Initialize(const FArrayBox& aqueous_saturation,       int sSat,
                   const FArrayBox& aqueous_pressure,         int sPress,
@@ -49,7 +49,11 @@ public:
                   const Box& box);
 
 protected:
-  
+  void DumpChemStructures(std::ostream&                                      os,
+			  Amanzi::AmanziChemistry::SimpleThermoDatabase&     TheChemSolve,
+			  Amanzi::AmanziChemistry::Beaker::BeakerComponents& TheComponent,
+			  Amanzi::AmanziChemistry::Beaker::BeakerParameters& TheParameter);
+
   int nthreads;
   PArray<Amanzi::AmanziChemistry::SimpleThermoDatabase> chemSolve;
   Array<Amanzi::AmanziChemistry::Beaker::BeakerComponents> components;

@@ -37,13 +37,15 @@ GSLibProperty::clone() const
   const GSLibProperty* t = dynamic_cast<const GSLibProperty*>(this);
   BL_ASSERT(t!=0);
   Array<Real> shift(BL_SPACEDIM,0);
-  GSLibProperty* ret = new GSLibProperty(t->Name(), t->avg, t->std, t->param_file, t->data_file, shift, t->coarsen_rule, t->refine_rule);
+  GSLibProperty* ret = new GSLibProperty(t->Name(), t->avg, t->param_file, t->data_file, shift, t->coarsen_rule, t->refine_rule);
   if (t->dataServices == 0) {
     ret->dataServices = 0;
   }
   else {
     ret->dataServices = new DataServices(t->dataServices->GetFileName(), t->dataServices->GetFileType());
   }
+  ret->num_comps = t->num_comps;
+  ret->varnames = t->PlotfileVars();
   return ret;
 }
 
@@ -69,7 +71,6 @@ EnsureFolderExists(const std::string& full_path)
 
 void
 GSLibProperty::BuildGSLibFile(Real                   avg,
-                              Real                   std,
                               const std::string&     gslib_param_file,
                               const std::string&     gslib_data_file,
                               const Array<Geometry>& geom_array,
@@ -107,12 +108,13 @@ GSLibProperty::BuildGSLibFile(Real                   avg,
   BoxArray stat_ba(stat_box);
   stat_ba.maxSize(max_grid_size_fine_gen);
   int ng_cum = num_grow * twoexp;
-  stat.set(finest_level, new MultiFab(stat_ba,1,ng_cum));
+  num_comps = (crule == ComponentHarmonic  ?  BL_SPACEDIM : 1);
+  stat.set(finest_level, new MultiFab(stat_ba,num_comps,ng_cum));
 
   const Array<Real> prob_lo(geom0.ProbLo(),BL_SPACEDIM);
   const Array<Real> prob_hi(geom0.ProbHi(),BL_SPACEDIM);
   
-  GSLibInt::rdpGaussianSim(avgVals,std,n_cell,prob_lo,prob_hi,twoexp,stat[finest_level],
+  GSLibInt::rdpGaussianSim(avgVals,n_cell,prob_lo,prob_hi,twoexp,stat[finest_level],
                            crse_init_factor,max_grid_size_fine_gen,ng_cum,gslib_param_file);
 
   for (int lev=finest_level-1; lev>=0; --lev) {
@@ -124,7 +126,7 @@ GSLibProperty::BuildGSLibFile(Real                   avg,
     const Box& domain = geom_array[lev].Domain();
     BoxArray ba(domain);
     ba.maxSize(max_grid_size_fine_gen / ref_ratio[lev][0]); // FIXME: Assumes uniform refinement
-    stat.set(lev, new MultiFab(ba,1,num_grow*ltwoexp));
+    stat.set(lev, new MultiFab(ba,num_comps,num_grow*ltwoexp));
 
     BoxArray baf = BoxArray(ba).refine(ref_ratio[lev]);
     MultiFab fine(baf,1,stat[lev].nGrow()*ref_ratio[lev][0]);// FIXME: Assumes uniform refinement
@@ -132,7 +134,10 @@ GSLibProperty::BuildGSLibFile(Real                   avg,
     MultiFab fineg(bafg,1,0);
     fineg.copy(stat[lev+1]); // parallel copy
     for (MFIter mfi(fine); mfi.isValid(); ++mfi) {
-      fine[mfi].copy(fineg[mfi]);
+      for (int n=0; n<num_comps; ++n) {
+	const Box& bx = fineg[mfi].box();
+	fine[mfi].copy(fineg[mfi],bx,0,bx,n,1);
+      }
     }
     fineg.clear();
 
@@ -168,7 +173,10 @@ GSLibProperty::BuildGSLibFile(Real                   avg,
   bool verbose=false;
   Array<Real> vfeps(BL_SPACEDIM,0);
   Array<int> level_steps(nLev,0);
-  Array<std::string> varnames(1,varname);
+  varnames.resize(num_comps);
+  for (int n=0; n<num_comps; ++n) {
+    varnames[n] = BoxLib::Concatenate(varname+"_",n,1);
+  }
   bool is_cart_grid = false;
   WritePlotfile(MaterialPlotFileVersion,data,time,geom0.ProbLo(),geom0.ProbHi(),int_ref,prob_domain,
                 dx_level,geom0.Coord(),gslib_data_file,varnames,verbose,is_cart_grid,vfeps.dataPtr(),
@@ -184,7 +192,7 @@ GSLibProperty::BuildDataFile(const Array<Geometry>& geom_array,
                              Property::CoarsenRule  crule,
                              const std::string&     varname)
 {
-  BuildGSLibFile(avg, std, param_file, data_file,
+  BuildGSLibFile(avg, param_file, data_file,
                  geom_array, ref_ratio, num_grow,
                  max_grid_fine_gen, crule, varname);
 
@@ -192,8 +200,9 @@ GSLibProperty::BuildDataFile(const Array<Geometry>& geom_array,
   Amrvis::FileType fileType(Amrvis::NEWPLT);
   delete dataServices;
   dataServices = new DataServices(data_file, fileType);
-  if (!dataServices->AmrDataOk())
-    DataServices::Dispatch(DataServices::ExitRequest, NULL);    
+  if (!dataServices->AmrDataOk()) {
+    DataServices::Dispatch(DataServices::ExitRequest, NULL);
+  }
 }
 
 const AmrData*
@@ -209,10 +218,9 @@ GSLibProperty::GetAmrData() const
 bool
 GSLibProperty::Evaluate(Real t, Array<Real>& result) const
 {
-  int N = values.size();
-  result.resize(N);
-  for (int i=0; i<N; ++i) {
-    result[i] = values[i];
+  result.resize(num_comps);
+  for (int i=0; i<num_comps; ++i) {
+    result[i] = values[0];
   }
   return false;
 }

@@ -71,7 +71,6 @@
     <ParameterList name="Initial Condition">
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
       <ParameterList name="IC: Uniform Pressure">
-        <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Value" type="double" value="201325.0"/>
       </ParameterList>
       <ParameterList name="Solute IC">
@@ -99,8 +98,8 @@
             <ParameterList name="Tritium">
               <ParameterList name="BC: Uniform Concentration">
                 <Parameter name="Times" type="Array(double)" value="{0.0, 7.889e8, 1.5778463e9}"/>
-                <Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
-                <Parameter name="Geochemical Conditions" type="Array(string)" value="{west, westhi, westhi}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+                <Parameter name="Geochemical Conditions" type="Array(string)" value="{west, west}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -139,10 +138,12 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Visualization Data">
-        <Parameter name="File Name Base" type="string" value="plt"/>
-        <Parameter name="Cycle Macros" type="Array(string)" value="{}"/>
+      <Parameter name="File Name Base" type="string" value="struct_amanzi-output-pflo/plt"/>
+      <Parameter name="File Name Digits" type="int" value="5"/>
+      <Parameter name="Time Macros" type="Array(string)" value="{Every_year}"/>
     </ParameterList>
     <ParameterList name="Checkpoint Data">
+      <Parameter name="File Name Base" type="string" value="struct_amanzi-output-pflo/chk"/>
     </ParameterList>
   </ParameterList>
 

@@ -72,7 +72,10 @@ class Chemistry_PK_Wrapper : public PK {
 
   virtual std::string name() { return "chemistry"; }
 
-  Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration() { return total_component_concentration; }
+  Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration() { 
+    *total_component_concentration = *pk_->get_total_component_concentration();
+    return total_component_concentration; 
+  }
 
   void set_total_component_concentration(Teuchos::RCP<Epetra_MultiVector> tcc) {
     total_component_concentration = tcc;

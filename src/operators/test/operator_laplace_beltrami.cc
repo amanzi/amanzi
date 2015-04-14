@@ -29,7 +29,7 @@
 #include "mfd3d_diffusion.hh"
 #include "tensor.hh"
 
-// Amanzi::Operators
+// Operators
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionMFD.hh"
 #include "Verification.hh"
@@ -71,7 +71,8 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
 
   RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -103,15 +104,15 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator Sff");
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(olist, surfmesh));
-  op->SetBCs(bc);
+  op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
-  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs();
+  op->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -190,7 +191,8 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
 
   RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -222,15 +224,15 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator Scc");
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(olist, surfmesh));
-  op->SetBCs(bc);
+  op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
-  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs();
+  op->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -309,7 +311,8 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
 
   RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
+  // -- since mu = 1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -341,15 +344,15 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator");
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(olist, surfmesh));
-  op->SetBCs(bc);
+  op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
-  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs();
+  op->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 

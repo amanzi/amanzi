@@ -8,7 +8,7 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 
-  Field evaluator for enthalpy, H = U - p / rho. 
+  Field evaluator for specific molar enthalpy, h = u + p / rho. 
 */
 
 #ifndef AMANZI_ENTHALPY_EVALUATOR_HH_

@@ -56,6 +56,7 @@
 #   0.92.12      - update PETSc to 3.5.2, Alquimia to 0.2, and PFlotran to commit 611092f80ddb.
 #   0.92.13      - update MSTK to v2.22, includes installation of mesh utilities
 #   0.92.14      - update Hypre to v2.10.0b (and added patch for to ensure tol>0)
+#   0.92.15      - updated Alquimia to v0.2 (backward compatible)
 
 include(CMakeParseArguments)
 
@@ -105,7 +106,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 92)
-set (AMANZI_TPLS_VERSION_PATCH 14)
+set (AMANZI_TPLS_VERSION_PATCH 15)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -375,3 +376,6 @@ set(ALQUIMIA_VERSION_PATCH 0)
 set(ALQUIMIA_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(ALQUIMIA_ARCHIVE_FILE   alquimia-0.2.tar.gz)
 set(ALQUIMIA_MD5_SUM        ee7dee337eb0c856723bd57bd0f4edc7)
+#set(ALQUIMIA_URL_STRING     "file:///home/smolins/alquimia-crunch")
+#set(ALQUIMIA_ARCHIVE_FILE   alquimia.tar.gz)
+#set(ALQUIMIA_MD5_SUM        e5fdab7ca26bfaaaab59d0b0d01ba322)

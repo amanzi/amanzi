@@ -29,8 +29,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialization
 ****************************************************************** */
-void
-OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
+void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
 {
   // Define stencil for the FV diffusion method.
   local_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
@@ -68,17 +67,20 @@ OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
   // scaled_constraint_ = plist.get<bool>("scaled constraint equation", false);
 
   // upwind options
-  std::string uwname = plist.get<std::string>("upwind method", "none");
-  if (uwname == "standard") {
-    upwind_ = OPERATOR_UPWIND_FLUX;
-  } else if (uwname == "artificial diffusion") {  
-    upwind_ = OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION;
-  } else if (uwname == "divk") {  
-    upwind_ = OPERATOR_UPWIND_AMANZI_DIVK;
-  } else if (uwname == "second-order") {  
-    upwind_ = OPERATOR_UPWIND_AMANZI_SECOND_ORDER;
-  } else if (uwname == "none") {
-    upwind_ = OPERATOR_UPWIND_NONE;  // cell-centered scheme.
+  std::string uwname = plist.get<std::string>("nonlinear coefficient", "standard: cell");
+  if (uwname == "upwind: face") {
+    little_k_ = OPERATOR_LITTLE_K_UPWIND;
+  } else if (uwname == "artificial diffusion: cell-face") {  
+    little_k_ = OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION;
+    ASSERT(false);
+  } else if (uwname == "divk: cell-face") {  
+    little_k_ = OPERATOR_LITTLE_K_DIVK;
+    ASSERT(false);
+  } else if (uwname == "divk: cell-grad-face-twin") {  
+    little_k_ = OPERATOR_LITTLE_K_DIVK_TWIN_GRAD;
+    ASSERT(false);
+  } else if (uwname == "standard: cell") {
+    little_k_ = OPERATOR_LITTLE_K_STANDARD;  // cell-centered scheme.
   } else {
     ASSERT(false);
   }
@@ -117,69 +119,55 @@ OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
   transmissibility_ = Teuchos::rcp(new CompositeVector(cvs, true));
 
   g_.set(mesh_->space_dimension(), 0.0);
+
+  // default parameters for Newton correction
+  scalar_rho_ = true;
+  rho_ = 1.0;
+  transmissibility_initialized_ = false;
 }
 
 
 /* ******************************************************************
 * Setup methods: scalar coefficients
 ****************************************************************** */
-void
-OperatorDiffusionFV::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-                           double rho, double mu)
+void OperatorDiffusionFV::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
 {
   K_ = K;
-  rho_ = rho;
-  mu_ = mu;
-  scalar_rho_mu_ = true;
 
   if (gravity_ && !gravity_term_.get())
       gravity_term_ = Teuchos::rcp(new CompositeVector(*transmissibility_));
   
-  ComputeTransmissibility_();
-}
-
-
-/* ******************************************************************
-* Setup methods: vector coefficients
-****************************************************************** */
-void
-OperatorDiffusionFV::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-                           const Teuchos::RCP<const CompositeVector>& rho,
-                           const Teuchos::RCP<const CompositeVector>& mu)
-{
-  K_ = K;
-  rho_cv_ = rho;
-  mu_cv_ = mu;
-  scalar_rho_mu_ = false;
-
-  if (gravity_ && !gravity_term_.get())
-      gravity_term_ = Teuchos::rcp(new CompositeVector(*transmissibility_));
-
-  ComputeTransmissibility_();
+  if (!transmissibility_initialized_) {
+    ComputeTransmissibility_();
+  }
 }
 
 
 /* ******************************************************************
 * Setup methods: krel and deriv -- must be called after calling a
-* setup with K abs
+* setup with K absolute
 ****************************************************************** */
-void
-OperatorDiffusionFV::Setup(const Teuchos::RCP<const CompositeVector>& k,
-                           const Teuchos::RCP<const CompositeVector>& dkdp)
+void OperatorDiffusionFV::Setup(const Teuchos::RCP<const CompositeVector>& k,
+                                const Teuchos::RCP<const CompositeVector>& dkdp)
 {
   k_ = k;
   dkdp_ = dkdp;
+
   if (k_ != Teuchos::null) {
     ASSERT(k_->HasComponent("face"));
     // NOTE: it seems that Amanzi passes in a cell based kr which is then
     // ignored, and assumed = 1.  This seems dangerous to me. --etc
-    //    ASSERT(!k_->HasComponent("cell"));
+    // ASSERT(!k_->HasComponent("cell"));
   }
   if (dkdp_ != Teuchos::null) {
     ASSERT(dkdp_->HasComponent("cell"));
     ASSERT(dkdp_->HasComponent("face"));
   }
 
+  // verify that mass matrices were initialized.
+  if (!transmissibility_initialized_) {
+    ComputeTransmissibility_();
+  }
 }
 
 
@@ -191,7 +179,7 @@ void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVecto
 {
   if (!exclude_primary_terms_) {
     const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
-    const std::vector<int>& bc_model = bcs_[0]->bc_model();
+    const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
     WhetStone::DenseMatrix null_matrix;
 
     // preparing upwind data
@@ -210,18 +198,18 @@ void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVecto
       int ncells = cells.size();
 
       WhetStone::DenseMatrix Aface(ncells, ncells);
-      Aface = 0.;
+      Aface = 0.0;
 
-      //      if (bc_model[f] != OPERATOR_BC_NEUMANN){
-        double tij = trans_face[0][f] * (k_face.get() ? (*k_face)[0][f] : 1.);
-        for (int i = 0; i != ncells; ++i) {
-          Aface(i, i) = tij;
-          for (int j = i + 1; j != ncells; ++j) {
-            Aface(i, j) = -tij;
-            Aface(j, i) = -tij;
-          }
+      // if (bc_model[f] != OPERATOR_BC_NEUMANN){
+      double tij = trans_face[0][f] * (k_face.get() ? (*k_face)[0][f] : 1.0);
+      for (int i = 0; i != ncells; ++i) {
+        Aface(i, i) = tij;
+        for (int j = i + 1; j != ncells; ++j) {
+          Aface(i, j) = -tij;
+          Aface(j, i) = -tij;
         }
-        //      }
+      }
+      // }
 
       local_op_->matrices[f] = Aface;
     }
@@ -254,15 +242,15 @@ void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVecto
 /* ******************************************************************
 * Special implementation of boundary conditions.
 **********************************;******************************** */
-void OperatorDiffusionFV::ApplyBCs(bool primary)
+void OperatorDiffusionFV::ApplyBCs(bool primary, bool eliminate)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
   Epetra_MultiVector* gravity_face;
   if (gravity_) 
       gravity_face = &*gravity_term_->ViewComponent("face", true);
 
-  const std::vector<int>& bc_model = bcs_[0]->bc_model();
-  const std::vector<double>& bc_value = bcs_[0]->bc_value();
+  const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
+  const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
   if (k_ != Teuchos::null) {
@@ -278,10 +266,10 @@ void OperatorDiffusionFV::ApplyBCs(bool primary)
       int c = cells[0];
 
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-        rhs_cell[0][c] += bc_value[f] * trans_face[0][f] * (k_face.get() ? (*k_face)[0][f] : 1.);
+        rhs_cell[0][c] += bc_value[f] * trans_face[0][f] * (k_face.get() ? (*k_face)[0][f] : 1.0);
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         local_op_->matrices_shadow[f] = local_op_->matrices[f];
-        local_op_->matrices[f](0,0) = 0.;
+        local_op_->matrices[f](0,0) = 0.0;
             
         rhs_cell[0][c] -= bc_value[f] * mesh_->face_area(f);
         // trans_face[0][f] = 0.0;
@@ -300,8 +288,8 @@ void OperatorDiffusionFV::UpdateFlux(
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
 
-  const std::vector<int>& bc_model = bcs_[0]->bc_model();
-  const std::vector<double>& bc_value = bcs_[0]->bc_value();
+  const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
+  const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
   solution.ScatterMasterToGhosted("cell");
 
@@ -358,13 +346,12 @@ void OperatorDiffusionFV::UpdateFlux(
   // add in gravity terms
   if (gravity_ && gravity_term_.get()) {
     if (Krel_face.get()) {
-      flux.Multiply(1., *Krel_face, *gravity_term_->ViewComponent("face",false), 1.);
+      flux.Multiply(1.0, *Krel_face, *gravity_term_->ViewComponent("face", false), 1.0);
     } else {
-      flux.Update(1., *gravity_term_->ViewComponent("face",false), 1.);
+      flux.Update(1.0, *gravity_term_->ViewComponent("face", false), 1.0);
     }
   }
 }
-
 
 
 /* ******************************************************************
@@ -374,8 +361,8 @@ void OperatorDiffusionFV::UpdateFlux(
 ****************************************************************** */
 void OperatorDiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 {
-  const std::vector<int>& bc_model = bcs_[0]->bc_model();
-  const std::vector<double>& bc_value = bcs_[0]->bc_value();
+  const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
+  const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
   u.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
@@ -419,7 +406,7 @@ void OperatorDiffusionFV::AnalyticJacobian_(const CompositeVector& u)
         }
 
         // const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0], &dir);
-        ComputeJacobianLocal_(mcells, f, face_dir, upwind_,
+        ComputeJacobianLocal_(mcells, f, face_dir, little_k_,
                 bc_model[f], bc_value[f], pres, dkdp, Aface);
 
         jac_op_->matrices[f] = Aface;
@@ -461,7 +448,7 @@ void OperatorDiffusionFV::ComputeJacobianLocal_(
         dKrel_dp[0] = 0.5 * dkdp_cell[0];
         dKrel_dp[1] = 0.5 * dkdp_cell[1];
       }
-    } else if (Krel_method == OPERATOR_UPWIND_FLUX) {
+    } else if (Krel_method == OPERATOR_LITTLE_K_UPWIND) {
       double flux0to1;
       flux0to1 = trans_face[0][f] * dpres;
       if (gravity_face.get()) flux0to1 += face_dir * (*gravity_face)[0][f];
@@ -532,7 +519,8 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
 
   AmanziMesh::Entity_ID_List cells;
   AmanziGeometry::Point a_dist, a;
-  WhetStone::Tensor Kc(mesh_->space_dimension(),1); Kc(0,0) = 1.0;
+  WhetStone::Tensor Kc(mesh_->space_dimension(), 1); 
+  Kc(0,0) = 1.0;
 
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -551,7 +539,7 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
         a = xf - mesh_->cell_centroid(c);
         double h_tmp = norm(a);
         double s = area / h_tmp;
-        double perm = (rho_ / mu_) * ((Kc * a) * normal) * s;
+        double perm = ((Kc * a) * normal) * s;
         double dxn = a * normal;
 
         h_face[k][f] = h_tmp;
@@ -613,6 +601,8 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
     gravity_term_->ScatterMasterToGhosted("face", true);
   }
 #endif
+
+  transmissibility_initialized_ = true;
 }
 
 }  // namespace Operators

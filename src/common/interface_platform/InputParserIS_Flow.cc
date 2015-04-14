@@ -1076,6 +1076,9 @@ Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(
         .set<std::string>("newton correction", "approximate jacobian");
   }
 
+  // "standard" is the most robust upwind method for variety of subsurface
+  // scenarios. Note that "Upwind: Amanzi" requires "upwind method"="divk" 
+  // to reproduce the same behavior on orthogonal meshes. 
   Teuchos::ParameterList& upw_list = op_list.sublist("diffusion operator").sublist("upwind");
   if (rel_perm == "Upwind: Amanzi") {
     upw_list.set<std::string>("upwind method", "divk");

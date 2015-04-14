@@ -35,12 +35,15 @@ def GetXY_Amanzi(path,root,time,comp):
     
     return (x_amanzi_alquimia, c_amanzi_alquimia)
 
+
 def GetXY_AmanziS(path,root,time,comp):
     try:
         import fsnapshot
         fsnok = True
     except:
         fsnok = False
+
+    #import pdb; pdb.set_trace()
 
     plotfile = os.path.join(path,root)
     if os.path.isdir(plotfile) & fsnok:
@@ -73,6 +76,33 @@ def GetXY_PFloTran(path,root,time,comp):
 
     return (x_pflotran, c_pflotran)
 
+
+# ------------- CRUNCHFLOW ------------------------------------------------------------------
+def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
+
+    # read CrunchFlow data
+    filename = os.path.join(path,cf_file)
+    f = open(filename,'r')
+    lines = f.readlines()
+    f.close()
+
+    # ignore couple of lines
+    for i in range(ignore):
+      lines.pop(0)
+
+    # extract data x0, x1, ..., xN-1 per line, keep only two columns
+    xv=[]
+    yv=[] 
+    for line in lines:
+      xv = xv + [float(line.split()[0])]
+      yv = yv + [float(line.split()[comp+1])]
+    
+    xv = np.array(xv)
+    yv = np.array(yv)
+
+    return (xv, yv)
+
+
 if __name__ == "__main__":
 
     import os
@@ -85,20 +115,31 @@ if __name__ == "__main__":
     # pflotran
     path_to_pflotran = "pflotran"
 
-     # hardwired for 1d-calcite: time and comp
+     # hardwired for 1d-tritium: time and comp
     time = 'Time:  5.00000E+01 y'
     comp = 'Total_'+root.title()+' [M]'
 
     x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,comp)    
     
+    # crunchflow GIMRT
+    path_to_crunchflow = "crunchflow"
+
+     # hardwired for 1d-tritium-crunch.in: time and comp
+    times_CF = 'totcon5.out'
+    comp = 0
+    ignore = 4
+
+    x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,times_CF,comp,ignore)
+
     CWD = os.getcwd()
     local_path = ""
 
     # amanziS data
     try:
-        path_to_amanziS = "run_data"
-        root_amanziS = "plt00102"
-        root_amanziS = "plt00901"
+        path_to_amanziS = "run_data_pflo"
+        #root_amanziS = "plt00102"
+        #root_amanziS = "plt00901"
+        root_amanziS = 'plt00100'
         compS = "Tritium_Aqueous_Concentration"
         x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
         struct = len(x_amanziS)
@@ -109,13 +150,13 @@ if __name__ == "__main__":
     fig, ax = plt.subplots() 
         
     try:
-        # hardwired for 1d-calcite: Tritium = component 0, last time = '71'
+        # hardwired for 1d-calcite: Tritium = component 0, last time = '72'
         time = '71'
         comp = 'total_component_concentration.cell.Tritium conc'
 
         # Amanzi native chemistry
-        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-FO.xml")
-        path_to_amanzi = "amanzi-alquimia-FO-output"
+        input_filename = os.path.join("amanzi-u-1d-"+root+".xml") #+"-alq-FO.xml")
+        path_to_amanzi = "amanzi-native-output"
         run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=[root+".bgd"])
         x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
      
@@ -137,25 +178,82 @@ if __name__ == "__main__":
 
         alquim = False
 
-        # subplots
-        # fig, ax = plt.subplots()
+    try:
+
+        # Amanzi-Alquimia-Crunch
+        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
+        path_to_amanzi = "amanzi-alquimia-crunch-output"
+        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+"-crunch.in",root+".dbs",root+".dbsx"])
+        x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+
+        alquim_crunch = True
+
+    except:
+
+        alquim_crunch = False
+
+
+    # amanziS data
+    try:
+        # import pdb; pdb.set_trace()
+        input_filename = os.path.join("amanzi-s-1d-tritium-alq.xml")
+        path_to_amanziS = "struct_amanzi-output-pflo"
+        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
+        root_amanziS = "plt00100"
+        compS = "Tritium_Aqueous_Concentration"
+        x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        #import pdb; pdb.set_trace()
+        struct = len(x_amanziS)
+    except:
+        struct = 0
+
+    try:
+        # import pdb; pdb.set_trace()
+        input_filename = os.path.join("amanzi-s-1d-tritium-alq-crunch.xml")
+        path_to_amanziS = "struct_amanzi-output-crunch"
+        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
+        root_amanziS = "plt00100"
+        compS = "Tritium_Aqueous_Concentration"
+        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        struct_c = len(x_amanziS_crunch)
+    except:
+        struct_c = 0
+
+
 
     # Do plot
     if alquim:
-        alq = ax.plot(x_amanzi_alquimia, c_amanzi_alquimia,'m-',label='AmanziU+Alquimia(PFloTran) - 2nd Order',linewidth=2)
+        alq = ax.plot(x_amanzi_alquimia, c_amanzi_alquimia,'rx',label='AmanziU(2nd-Order)+Alquimia(PFloTran)',linewidth=2)
+    if alquim_crunch:
+        alq = ax.plot(x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch,'r|',label='AmanziU(2nd-Order)+Alquimia(CrunchFlow)',linewidth=2)
+#    if (struct>0):
+#        alq = ax.plot(x_amanzi_alquimia, c_amanzi_alquimia,'m-',label='AmanziU+Alquimia(PFloTran) - 2nd Order',linewidth=2)
 #    ama = ax.plot(x_amanzi_native, c_amanzi_native,'ro',label='AmanziU+Alquimia(PFloTran) - 1st Order')
-    if (struct>0):
+    #import pdb; pdb.set_trace()
+    if (struct > 0):
         sam = ax.plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alquimia(PFloTran)',linewidth=2) 
-    pfl = ax.plot(x_pflotran, c_pflotran,'b-',label='PFloTran',linewidth=2)
+        #sam = ax.plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alquimia(PFloTran)',linewidth=2) 
+        #sam_crunch = ax.plot(x_amanziS, c_amanziS,'g*',label='AmanziS+Alquimia(CrunchFlow)',linewidth=2) 
+##    ama = ax.plot(x_amanzi_native, c_amanzi_native,'r_',label='Amanzi Native Chemistry')
+
+    if (struct_c > 0):
+        samc = ax.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alquimia(Crunch)',linewidth=2) 
+
+    pfl = ax.plot(x_pflotran, c_pflotran,'b--',label='PFloTran',linewidth=2)
+    crunch = ax.plot(x_crunchflow, c_crunchflow,'b.',label='CrunchFlow(OS3D)',linewidth=2)
 
 
     # axes
     ax.set_xlabel("Distance (m)",fontsize=20)
     ax.set_ylabel("Total "+root.title()+" concentration [mol/L]",fontsize=20)
 
+    #ax.set_xlim(43,57)
+    #ax.set_ylim(0,.0001)
+
+
     # plot adjustments
     plt.subplots_adjust(left=0.20,bottom=0.15,right=0.99,top=0.90)
-    plt.legend(loc='upper right',fontsize=13)
+    plt.legend(loc='upper right',fontsize=10)
     plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
     plt.tick_params(axis='both', which='major', labelsize=20)
 
@@ -164,16 +262,23 @@ if __name__ == "__main__":
     a.set_xlim(43,57)
     a.set_ylim(0,.0001)
     if alquim:
-        alqs = a.plot(x_amanzi_alquimia, c_amanzi_alquimia,'m-',label='Amanzi+Alquimia(PFloTran) - 2nd Order',linewidth=2)
+        alqs = a.plot(x_amanzi_alquimia, c_amanzi_alquimia,'rx',label='Amanzi+Alquimia(PFloTran) - 1st Order',linewidth=2)
 #    amas = a.plot(x_amanzi_native, c_amanzi_native,'ro',label='AmanziU+Alquimia(PFloTran) - 1st-Order')
+    if alquim_crunch:
+        alqcs = a.plot(x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch,'r|',label='Amanzi+Alquimia(CrunchFlow)',linewidth=2)
     if (struct>0):
         sams = a.plot(x_amanziS, c_amanziS,'g-',label='AmanziS',linewidth=2) 
-    pfls = a.plot(x_pflotran, c_pflotran,'b-',label='PFloTran',linewidth=2)
+
+    if (struct_c > 0):
+        samsc = a.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',linewidth=2) 
+
+    pfls = a.plot(x_pflotran, c_pflotran,'b--',label='PFloTran',linewidth=2)
+    cfs = a.plot(x_crunchflow, c_crunchflow,'b.',label='CrunchFlow',linewidth=2)
     plt.title('Zoom near interface')
     
-    plt.show()
-    #plt.savefig(root+"_1d.png",format="png")
-    #plt.close()
+    #plt.show()
+    plt.savefig(root+"_1d.png",format="png")
+    plt.close()
 
     # finally:
     #    pass 

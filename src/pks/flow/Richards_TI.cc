@@ -40,18 +40,19 @@ void Richards_PK::Functional(double t_old, double t_new,
   relperm_->Compute(u_new->Data(), krel_); 
   RelPermUpwindFn func1 = &RelPerm::Compute;
   upwind_->Compute(*darcy_flux_upwind, *u_new->Data(), bc_model, bc_value, *krel_, *krel_, func1);
+  krel_->ScaleMasterAndGhosted(molar_rho_ / mu_);
 
   relperm_->ComputeDerivative(u_new->Data(), dKdP_); 
   RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
   upwind_->Compute(*darcy_flux_upwind, *u_new->Data(), bc_model, bc_value, *dKdP_, *dKdP_, func2);
+  dKdP_->ScaleMasterAndGhosted(molar_rho_ / mu_);
 
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
   
   // assemble residual for diffusion operator
   op_matrix_->Init();
   op_matrix_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
-  op_matrix_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr());
-  op_matrix_diff_->ApplyBCs(true);
+  op_matrix_diff_->ApplyBCs(true, true);
 
   Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
   if (src_sink != NULL) AddSourceTerms(*rhs);
@@ -118,7 +119,7 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
   op_vapor_->Init();
   op_vapor_diff_->Setup(kvapor_pres, Teuchos::null);
   op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op_vapor_diff_->ApplyBCs(false);
+  op_vapor_diff_->ApplyBCs(false, false);
 
   // -- Calculate residual due to pressure
   CompositeVector g(*f);
@@ -129,9 +130,9 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
   op_vapor_->Init();
   op_vapor_diff_->Setup(kvapor_temp, Teuchos::null);
   op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op_vapor_diff_->ApplyBCs(false);
+  op_vapor_diff_->ApplyBCs(false, false);
 
-  // -- Calculate residual due to pressure
+  // -- Calculate residual due to temperature
   op_vapor_->ComputeNegativeResidual(temp, g);
   f->Update(1.0, g, 1.0);
 }
@@ -155,10 +156,14 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
   S_->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S_.ptr(), passwd_);
   const Epetra_MultiVector& n_l = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell");
 
+  S_->GetFieldEvaluator("molar_fraction_gas")->HasFieldChanged(S_.ptr(), passwd_);
+  const Epetra_MultiVector& mlf_g = *S_->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
+
   S_->GetFieldEvaluator("molar_fraction_gas")->HasFieldDerivativeChanged(S_.ptr(), passwd_, "temperature");
   const Epetra_MultiVector& dmlf_g_dt = *S_->GetFieldData("dmolar_fraction_gas_dtemperature")->ViewComponent("cell");
 
   const Epetra_MultiVector& temp = *S_->GetFieldData("temperature")->ViewComponent("cell");
+  const Epetra_MultiVector& pres = *S_->GetFieldData("pressure")->ViewComponent("cell");
 
   Epetra_MultiVector& kp_cell = *kvapor_pres->ViewComponent("cell");
   Epetra_MultiVector& kt_cell = *kvapor_temp->ViewComponent("cell");
@@ -176,8 +181,14 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
     double D_g = Dref * (Pref / atm_pressure_) * pow(temp[0][c] / Tref, 1.8);
     double tmp = tau_phi_sat_g * n_g[0][c] * D_g;
 
-    kp_cell[0][c] = tmp / (n_l[0][c] * temp[0][c] * R);
-    kt_cell[0][c] = tmp * dmlf_g_dt[0][c];
+    double nRT = n_l[0][c] * temp[0][c] * R;
+    double pc = atm_pressure_ - pres[0][c];
+    tmp *= exp(-pc / nRT);
+
+    kp_cell[0][c] = tmp * mlf_g[0][c] / nRT;
+    kt_cell[0][c] = tmp * (dmlf_g_dt[0][c] / atm_pressure_ 
+                        +  mlf_g[0][c] * pc / (nRT * temp[0][c]));
+    if (S_->time() < 1e+9) kp_cell[0][c] = 0.0;  // FIXME
   }
 }
 
@@ -207,10 +218,12 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   relperm_->Compute(u->Data(), krel_);
   RelPermUpwindFn func1 = &RelPerm::Compute;
   upwind_->Compute(*darcy_flux_upwind, *u->Data(), bc_model, bc_value, *krel_, *krel_, func1);
+  krel_->ScaleMasterAndGhosted(molar_rho_ / mu_);
 
   relperm_->ComputeDerivative(u->Data(), dKdP_);
   RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
   upwind_->Compute(*darcy_flux_upwind, *u->Data(), bc_model, bc_value, *dKdP_, *dKdP_, func2);
+  dKdP_->ScaleMasterAndGhosted(molar_rho_ / mu_);
 
   double t_old = tp - dtp;
   UpdateSourceBoundaryData(t_old, tp, *u->Data());
@@ -219,7 +232,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   op_preconditioner_->Init();
   op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
   op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr());
-  op_preconditioner_diff_->ApplyBCs(true);
+  op_preconditioner_diff_->ApplyBCs(true, true);
 
   // add time derivative
   CompositeVectorSpace cvs;
