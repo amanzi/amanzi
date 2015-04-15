@@ -113,6 +113,7 @@ class OperatorDiffusionFV : public OperatorDiffusion {
 
   Teuchos::RCP<CompositeVector> transmissibility_;
   Teuchos::RCP<CompositeVector> gravity_term_;
+  bool transmissibility_initialized_;
 
   int newton_correction_;
   bool exclude_primary_terms_;

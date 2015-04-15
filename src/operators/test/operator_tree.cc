@@ -32,6 +32,7 @@
 #include "Analytic01.hh"
 #include "BCs.hh"
 #include "OperatorDefs.hh"
+#include "OperatorDiffusionFactory.hh"
 #include "OperatorDiffusionMFD.hh"
 #include "TreeOperator.hh"
 
@@ -118,7 +119,7 @@ TEST(OPERATOR_UNCOUPLED) {
 
   // populate the diffusion operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
-                                      .get<Teuchos::ParameterList>("mixed diffusion");
+                                      .get<Teuchos::ParameterList>("mixed diffusion p-lambda");
   Teuchos::RCP<OperatorDiffusionMFD> op = Teuchos::rcp(new OperatorDiffusionMFD(olist, mesh));
   op->SetBCs(bc, bc);
 
@@ -204,7 +205,7 @@ TEST(OPERATOR_UNCOUPLED) {
 * coupled diffusion problems. Each block of the super matrix is
 * a diffusion operator.
 ****************************************************************** */
-TEST(OPERATORS_COUPLED) {
+void RunTest(std::string op_list_name) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -212,7 +213,7 @@ TEST(OPERATORS_COUPLED) {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-  if (MyPID == 0) std::cout << "Test: 2D block coupled system of elliptic opeartors" << std::endl;
+  if (MyPID == 0) std::cout << "Test: 2D block coupled system of elliptic operators" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_tree.xml";
@@ -268,25 +269,27 @@ TEST(OPERATORS_COUPLED) {
   k2->PutScalar(0.5);
   
   // populate the diagonal Laplace operators
+  AmanziGeometry::Point g(2);
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
-                                      .get<Teuchos::ParameterList>("mixed diffusion");
-  Teuchos::RCP<OperatorDiffusionMFD> op00 = Teuchos::rcp(new OperatorDiffusionMFD(olist, mesh));
+                                      .get<Teuchos::ParameterList>(op_list_name);
+  Operators::OperatorDiffusionFactory opfactory;
+  Teuchos::RCP<OperatorDiffusion> op00 = opfactory.Create(mesh, bc, olist, g, 0);
   op00->SetBCs(bc, bc);
   op00->Setup(k1, Teuchos::null);
   op00->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  Teuchos::RCP<OperatorDiffusionMFD> op11 = Teuchos::rcp(new OperatorDiffusionMFD(olist, mesh));
+  Teuchos::RCP<OperatorDiffusion> op11 = opfactory.Create(mesh, bc, olist, g, 0);
   op11->SetBCs(bc, bc);
   op11->Setup(k1, Teuchos::null);
   op11->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // populate the off-diagonal Laplace operators
-  Teuchos::RCP<OperatorDiffusionMFD> op01 = Teuchos::rcp(new OperatorDiffusionMFD(olist, mesh));
+  Teuchos::RCP<OperatorDiffusion> op01 = opfactory.Create(mesh, bc, olist, g, 0);
   op01->SetBCs(bc, bc);
   op01->Setup(k2, Teuchos::null);
   op01->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  Teuchos::RCP<OperatorDiffusionMFD> op10 = Teuchos::rcp(new OperatorDiffusionMFD(olist, mesh));
+  Teuchos::RCP<OperatorDiffusion> op10 = opfactory.Create(mesh, bc, olist, g, 0);
   op10->SetBCs(bc, bc);
   op10->Setup(k2, Teuchos::null);
   op10->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -298,8 +301,9 @@ TEST(OPERATORS_COUPLED) {
   op10->ApplyBCs(false, true);
 
   // create the TreeOperator, which combines four operators in a 2x2 block operator.
+  Teuchos::RCP<const CompositeVectorSpace> cvs2 = Teuchos::rcpFromRef(op00->global_operator()->DomainMap());
   Teuchos::RCP<TreeVectorSpace> tvs = Teuchos::rcp(new TreeVectorSpace());
-  Teuchos::RCP<TreeVectorSpace> cvs_as_tv = Teuchos::rcp(new TreeVectorSpace(cvs));
+  Teuchos::RCP<TreeVectorSpace> cvs_as_tv = Teuchos::rcp(new TreeVectorSpace(cvs2));
   tvs->PushBack(cvs_as_tv);
   tvs->PushBack(cvs_as_tv);
   Teuchos::RCP<TreeOperator> tree_op = Teuchos::rcp(new TreeOperator(tvs));
@@ -378,3 +382,19 @@ TEST(OPERATORS_COUPLED) {
     CHECK(ul2_err < 1e-8);
   }
 }
+
+
+/* *****************************************************************
+* p-lambda discretization
+****************************************************************** */
+TEST(COUPLED_SYSTEM_PLAMDA) {
+  RunTest("mixed diffusion p-lambda");
+}
+
+
+/* *****************************************************************
+* cell-centered discretization
+****************************************************************** */
+// TEST(COUPLED_SYSTEM_CELL_CENTERED) {
+//  RunTest("mixed diffusion cell-centered");
+// }

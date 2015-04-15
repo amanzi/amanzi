@@ -119,7 +119,7 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
   op_vapor_->Init();
   op_vapor_diff_->Setup(kvapor_pres, Teuchos::null);
   op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op_vapor_diff_->ApplyBCs(false, true);
+  op_vapor_diff_->ApplyBCs(false, false);
 
   // -- Calculate residual due to pressure
   CompositeVector g(*f);
@@ -130,7 +130,7 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
   op_vapor_->Init();
   op_vapor_diff_->Setup(kvapor_temp, Teuchos::null);
   op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  // op_vapor_diff_->ApplyBCs(false);
+  op_vapor_diff_->ApplyBCs(false, false);
 
   // -- Calculate residual due to temperature
   op_vapor_->ComputeNegativeResidual(temp, g);

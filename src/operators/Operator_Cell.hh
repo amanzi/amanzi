@@ -62,7 +62,9 @@ class Operator_Cell : public Operator {
   Operator_Cell(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
                     Teuchos::ParameterList& plist,
                     int schema) :
-      Operator(cvs, plist, schema) {};
+      Operator(cvs, plist, schema) {
+    set_schema_string("CELL");
+  }
 
   // rhs update which multiplies by cell
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included);

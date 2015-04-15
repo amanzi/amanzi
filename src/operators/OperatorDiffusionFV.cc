@@ -123,6 +123,7 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
   // default parameters for Newton correction
   scalar_rho_ = true;
   rho_ = 1.0;
+  transmissibility_initialized_ = false;
 }
 
 
@@ -136,7 +137,9 @@ void OperatorDiffusionFV::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor
   if (gravity_ && !gravity_term_.get())
       gravity_term_ = Teuchos::rcp(new CompositeVector(*transmissibility_));
   
-  ComputeTransmissibility_();
+  if (!transmissibility_initialized_) {
+    ComputeTransmissibility_();
+  }
 }
 
 
@@ -159,6 +162,11 @@ void OperatorDiffusionFV::Setup(const Teuchos::RCP<const CompositeVector>& k,
   if (dkdp_ != Teuchos::null) {
     ASSERT(dkdp_->HasComponent("cell"));
     ASSERT(dkdp_->HasComponent("face"));
+  }
+
+  // verify that mass matrices were initialized.
+  if (!transmissibility_initialized_) {
+    ComputeTransmissibility_();
   }
 }
 
@@ -511,7 +519,8 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
 
   AmanziMesh::Entity_ID_List cells;
   AmanziGeometry::Point a_dist, a;
-  WhetStone::Tensor Kc(mesh_->space_dimension(),1); Kc(0,0) = 1.0;
+  WhetStone::Tensor Kc(mesh_->space_dimension(), 1); 
+  Kc(0,0) = 1.0;
 
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -592,6 +601,8 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
     gravity_term_->ScatterMasterToGhosted("face", true);
   }
 #endif
+
+  transmissibility_initialized_ = true;
 }
 
 }  // namespace Operators
