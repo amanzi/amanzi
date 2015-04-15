@@ -70,6 +70,7 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/test_verboseobject.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
 
+
 endif()
 
 

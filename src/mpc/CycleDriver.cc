@@ -49,6 +49,8 @@ bool reset_info_compfunc(std::pair<double,double> x, std::pair<double,double> y)
   return (x.first < y.first);
 }
 
+
+
 double rss_usage() { // return ru_maxrss in MBytes
 #if (defined(__unix__) || defined(__unix) || defined(unix) || defined(__APPLE__) || defined(__MACH__))
   struct rusage usage;
@@ -150,17 +152,21 @@ void CycleDriver::Setup() {
     checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint());
   }
 
-  // create the time step manager
-  tsm_ = Teuchos::ptr(new TimeStepManager(vo_));
 
   pk_->Setup();
   S_->RequireScalar("dt", "coordinator");
   S_->Setup();
 
+  // create the time step manager
+  tsm_ = Teuchos::ptr(new TimeStepManager(parameter_list_->sublist("Cycle Driver")));
+  //tsm_ = Teuchos::ptr(new TimeStepManager(vo_));
+
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Setup is complete." << std::endl;
   }
+
+
 }
 
 /* ******************************************************************
@@ -279,6 +285,7 @@ void CycleDriver::Initialize() {
   // register reset_times
   for(std::vector<std::pair<double,double> >::const_iterator it = reset_info_.begin();
       it != reset_info_.end(); ++it) tsm_->RegisterTimeEvent(it->first);
+
 
   for (int i=0;i<num_time_periods_; i++) {
     tsm_->RegisterTimeEvent(tp_end_[i]);
@@ -512,6 +519,45 @@ void CycleDriver::ReadParameterList_() {
     //   }
     // }
   }
+
+  if (coordinator_list_->isSublist("Time Period Control")) {
+    Teuchos::ParameterList& tpc_list =  coordinator_list_->sublist("Time Period Control");
+    Teuchos::Array<double> reset_times    = tpc_list.get<Teuchos::Array<double> >("Start Times");
+    Teuchos::Array<double> reset_times_dt = tpc_list.get<Teuchos::Array<double> >("Initial Time Step");   
+    if (reset_times.size() != reset_times_dt.size()) {
+      Errors::Message message("You must specify the same number of Reset Times and Initial Time Steps under Time Period Control");
+      Exceptions::amanzi_throw(message);
+    }
+    Teuchos::Array<double>::const_iterator it_tim;
+    Teuchos::Array<double>::const_iterator it_dt;
+    for (it_tim = reset_times.begin(), it_dt = reset_times_dt.begin();
+         it_tim != reset_times.end();
+         ++it_tim, ++it_dt) {
+      reset_info_.push_back(std::make_pair(*it_tim, *it_dt));
+    }  
+
+    if (tpc_list.isParameter("Maximal Time Step")){
+      Teuchos::Array<double> reset_max_dt = tpc_list.get<Teuchos::Array<double> >("Maximal Time Step");
+      if (reset_times.size() != reset_max_dt.size()) {
+	Errors::Message message("You must specify the same number of Reset Times and Maximal Time Steps under Time Period Control");
+	Exceptions::amanzi_throw(message);
+      }
+      Teuchos::Array<double>::const_iterator it_tim;
+      Teuchos::Array<double>::const_iterator it_max;
+      for (it_tim = reset_times.begin(), it_max = reset_max_dt.begin();
+	   it_tim != reset_times.end();
+	   ++it_tim, ++it_max) {
+	reset_max_.push_back(std::make_pair(*it_tim, *it_max));
+      }  
+    }
+
+
+
+    // now we sort in ascending order by time
+    std::sort(reset_info_.begin(), reset_info_.end(), reset_info_compfunc);
+    std::sort(reset_max_.begin(),  reset_max_.end(),  reset_info_compfunc);
+  }
+
 }
 
 
@@ -520,7 +566,23 @@ void CycleDriver::ReadParameterList_() {
 ****************************************************************** */
 double CycleDriver::get_dt( bool after_failure) {
   // get the physical step size
-  double dt = pk_->get_dt();
+  double dt;
+
+  dt  = pk_->get_dt();
+
+  std::vector<std::pair<double,double> >::const_iterator it;
+  std::vector<std::pair<double,double> >::const_iterator it_max;
+
+  for (it = reset_info_.begin(), it_max = reset_max_.begin(); it != reset_info_.end(); ++it, ++it_max) {
+    if (S_->time() == it->first){
+      if (reset_max_.size() > 0) max_dt_ = it_max->second;
+      dt = it->second;
+      pk_->set_dt(dt);
+      after_failure = true;
+      break;
+    }
+  }
+
 
   // check if the step size has gotten too small
   if (dt < min_dt_) {
@@ -535,13 +597,16 @@ double CycleDriver::get_dt( bool after_failure) {
     }
   }
 
-  // cap the max step size
-  if (dt > max_dt_) {
-    dt = max_dt_;
-  }
-
   // ask the step manager if this step is ok
   dt = tsm_->TimeStep(S_->time(), dt, after_failure);
+
+  // cap the max step size
+  if (dt > max_dt_) {
+    dt = max_dt_;   
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Time step is larger than maximum allowed "<<dt<<"\n";
+  }
+
   return dt;
 }
 
@@ -577,21 +642,21 @@ void CycleDriver::set_dt(double dt) {
 bool CycleDriver::Advance(double dt) {
 
 
-  bool no_advance = false;
+  bool advance = true;
   bool fail = false;
 
   if (tp_end_[time_period_id_] == tp_start_[time_period_id_]) 
-    no_advance = true;
+    advance = false;
 
   Teuchos::OSTab tab = vo_->getOSTab();
   
-  if (!no_advance)
+  if (advance)
     fail = pk_->AdvanceStep(S_->time(), S_->time()+dt);
 
   if (!fail) {
     pk_->CommitStep(S_->last_time(), S_->time());
     // advance the iteration count and timestep size
-    if (!no_advance){
+    if (advance){
       S_->advance_cycle();
       S_->advance_time(dt);
     }
@@ -619,7 +684,7 @@ bool CycleDriver::Advance(double dt) {
     // make observations, vis, and checkpoints
 
     //Amanzi::timer_manager.start("I/O");
-    if (!no_advance){
+    if (advance){
       pk_->CalculateDiagnostics();
       Visualize(force_vis);
       WriteCheckpoint(dt, force_check);
