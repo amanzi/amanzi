@@ -260,8 +260,8 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
                     num_list.get<double>("steady time step reduction factor", ST_TS_RED_FACTOR));
                 sti_bdf1_std.set<double>("time step increase factor",
                     num_list.get<double>("steady time step increase factor", ST_TS_INC_FACTOR));
-                sti_bdf1_std.set<double>("max time step",
-                    num_list.get<double>("steady max time step", ST_MAX_TS));
+                // sti_bdf1_std.set<double>("max time step",
+		//     num_list.get<double>("steady max time step", ST_MAX_TS));
                 sti_bdf1.set<int>("max preconditioner lag iterations",
                     num_list.get<int>("steady max preconditioner lag iterations", ST_MAX_PREC_LAG));
                 sti_bdf1_solver->set<int>("max divergent iterations",
@@ -428,7 +428,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
                     num_list.get<double>("transient time step reduction factor", TR_TS_RED_FACTOR));
                 tti_bdf1_std.set<double>("time step increase factor",
                     num_list.get<double>("transient time step increase factor", TR_TS_INC_FACTOR));
-                tti_bdf1_std.set<double>("max time step", num_list.get<double>("transient max time step", TR_MAX_TS));
+                // tti_bdf1_std.set<double>("max time step", num_list.get<double>("transient max time step", TR_MAX_TS));
                 tti_bdf1.set<int>("max preconditioner lag iterations",
                     num_list.get<int>("transient max preconditioner lag iterations", TR_MAX_PREC_LAG));
                 tti_bdf1_solver->set<int>("max divergent iterations",

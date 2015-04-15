@@ -125,6 +125,7 @@
 
 #define BCHYDRST_COORD                  "Absolute"
 
+#define MAXIMUM_TIME_STEP               1e+10
 #define RESTART_TIME_STEP               1.0
 #define TI_RESCUE_REDUCTION_FACTOR      0.5
 
