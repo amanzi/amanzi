@@ -329,7 +329,7 @@ bool BGCSimple::advance(double dt) {
     }
 
     for (int lcv_pft=0; lcv_pft!=pfts_.size(); ++lcv_pft) {
-      biomass[0][lcv_pft] = pfts_[col][lcv_pft]->totalBiomass;
+      biomass[lcv_pft][col] = pfts_[col][lcv_pft]->totalBiomass;
     }
 
   } // end loop over columns
