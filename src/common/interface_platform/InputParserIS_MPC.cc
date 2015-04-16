@@ -219,9 +219,6 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::Para
   tpc_list.set<Teuchos::Array<double> >("Initial Time Step", initial_time_step);
   tpc_list.set<Teuchos::Array<double> >("Maximum Time Step", maximum_time_step);
 
-  std::cout<<tpc_list;
-  exit(0);
-
   return tpc_list;
 }
 
