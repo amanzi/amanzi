@@ -34,7 +34,7 @@ using namespace Amanzi::AmanziMesh;
     D -> G
     F -> G
 
-  Primary are B=2 and G=3. The equations are
+  Primary fields are B=2 and G=3. The equations are
     A = 2*B + C*E*H = 6484
     C = 2*D + G     = 15
     E = D*F         = 36
@@ -44,7 +44,11 @@ using namespace Amanzi::AmanziMesh;
   
   Derivatives are 
     dA/dB = 2
-    dA/dG = 
+    dA/dG = 8640
+
+  WARNING: derivative of secondary field wrt to secondary field is
+  not well defined. The code may throw an exception since
+  intermediate derivatives are not saved.
 */
 
 /* ******************************************************************
@@ -416,13 +420,38 @@ SUITE(DAG) {
     const Epetra_MultiVector& dfa_dfg = *S->GetFieldData("dfa_dfg")->ViewComponent("cell");
     CHECK_CLOSE(8640.0, dfa_dfg[0][0], 1e-12);
 
-    // calculate dE/dD
-    // comment out th enext line and it will fail
+    // calculate dE/dD is not well defined.
+    // We keep the code which actually work correctly.
+    /*
     fg_eval->SetFieldAsChanged(S.ptr());
     std::cout << "Calculate derivative of field E wrt field D:" << std::endl;
     fe_eval->HasFieldDerivativeChanged(S.ptr(), "fe", "fd");
     const Epetra_MultiVector& dfe_dfd = *S->GetFieldData("dfe_dfd")->ViewComponent("cell");
     CHECK_CLOSE(6.0, dfe_dfd[0][0], 1e-12);
+    */
+
+    // calculate dE/dB: This is really strange
+    /*
+    std::cout << "Calculate derivative of field E wrt field B:" << std::endl;
+    fe_eval->HasFieldDerivativeChanged(S.ptr(), "fe", "fb");
+    const Epetra_MultiVector& dfe_dfb = *S->GetFieldData("dfe_dfb")->ViewComponent("cell");
+    CHECK_CLOSE(0.0, dfe_dfb[0][0], 1e-12);
+    */
+
+    // calculate dE/dG:
+    std::cout << "Calculate derivative of field E wrt field G:" << std::endl;
+    fe_eval->HasFieldDerivativeChanged(S.ptr(), "fe", "fg");
+    const Epetra_MultiVector& dfe_dfg = *S->GetFieldData("dfe_dfg")->ViewComponent("cell");
+    CHECK_CLOSE(24.0, dfe_dfg[0][0], 1e-12);
+
+    // Now we repeat some calculations. Since no primary fields changed,
+    // the result should be the same
+    // calculate dA/dG
+    std::cout << "Calculate derivative of field A wrt field G:" << std::endl;
+    fb_eval->SetFieldAsChanged(S.ptr());
+    fa_eval->HasFieldDerivativeChanged(S.ptr(), "fa", "fg");
+    const Epetra_MultiVector& dfa_dfg2 = *S->GetFieldData("dfa_dfg")->ViewComponent("cell");
+    CHECK_CLOSE(8640.0, dfa_dfg2[0][0], 1e-12);
   }
 }
 

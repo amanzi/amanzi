@@ -243,6 +243,9 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   S_->GetFieldEvaluator("saturation_liquid")->HasFieldDerivativeChanged(S_.ptr(), passwd_, "pressure");
   CompositeVector& dSdP = *S_->GetFieldData("dsaturation_liquid_dpressure", "saturation_liquid");
 
+// S_->GetFieldEvaluator("water_content")->HasFieldDerivativeChanged(S_.ptr(), passwd_, "pressure");
+// CompositeVector& dwc_dp = *S_->GetFieldData("dwater_content_dpressure", "water_content");
+
   const CompositeVector& phi = *S_->GetFieldData("porosity");
   dSdP.Multiply(molar_rho_, phi, dSdP, 0.0);
 
