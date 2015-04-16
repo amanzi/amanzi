@@ -175,7 +175,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           sti_bdf1_std.set<int>("min iterations", ST_MIN_ITER);
           sti_bdf1_std.set<double>("time step increase factor", ST_TS_INC_FACTOR);
           sti_bdf1_std.set<double>("time step reduction factor", ST_TS_RED_FACTOR);
-          sti_bdf1_std.set<double>("max time step", ST_MAX_TS);
+          sti_bdf1_std.set<double>("max time step", MAXIMUM_TIME_STEP);
           sti_bdf1_std.set<double>("min time step", ST_MIN_TS);
 
 	  Teuchos::ParameterList* sti_bdf1_solver;
@@ -374,7 +374,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           tti_bdf1_std.set<int>("min iterations", TR_MIN_ITER);
           tti_bdf1_std.set<double>("time step increase factor", TR_TS_INC_FACTOR);
           tti_bdf1_std.set<double>("time step reduction factor", TR_TS_RED_FACTOR);
-          tti_bdf1_std.set<double>("max time step", TR_MAX_TS);
+          tti_bdf1_std.set<double>("max time step", MAXIMUM_TIME_STEP);
           tti_bdf1_std.set<double>("min time step", TR_MIN_TS);
 
 	  Teuchos::ParameterList* tti_bdf1_solver;

@@ -71,7 +71,7 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::Para
                 // skip the first one, there is no jump
                 if (times_it != times.begin()) {
                   time_map[*times_it] = default_initial_time_step;
-		  max_dt_map[*times_it] = default_max_time_step;
+                  max_dt_map[*times_it] = -1;
                 }
               }
             }
@@ -103,7 +103,7 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::Para
                 // skip the first one, there is no jump
                 if (times_it != times.begin()) {
                   time_map[*times_it] = default_initial_time_step;
-		  max_dt_map[*times_it] = default_max_time_step;
+                  max_dt_map[*times_it] = -1;
                 }
               }
             }
@@ -118,14 +118,14 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::Para
       start_times = exe_sublist.sublist("Time Period Control").get<Teuchos::Array<double> >("Start Times");
       initial_time_step = exe_sublist.sublist("Time Period Control").get<Teuchos::Array<double> >("Initial Time Step");
       if (exe_sublist.sublist("Time Period Control").isParameter("Maximum Time Step")){
-	maximum_time_step = exe_sublist.sublist("Time Period Control").get<Teuchos::Array<double> >("Maximum Time Step");
+        maximum_time_step = exe_sublist.sublist("Time Period Control").get<Teuchos::Array<double> >("Maximum Time Step");
       }
 
       if (maximum_time_step.size() != initial_time_step.size()){
-	maximum_time_step.resize(initial_time_step.size());
-	for (int i=0; i < maximum_time_step.size(); ++i){
-	  maximum_time_step[i] = default_max_time_step;
-	}
+        maximum_time_step.resize(initial_time_step.size());
+        for (int i=0; i < maximum_time_step.size(); ++i){
+          maximum_time_step[i] = default_max_time_step;
+        }
       }
 
       Teuchos::Array<double>::const_iterator initial_time_step_it = initial_time_step.begin();
@@ -135,13 +135,9 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::Para
         time_map[*start_times_it] = *initial_time_step_it;
         ++initial_time_step_it;
 
-	max_dt_map[*start_times_it] = *max_time_step_it;
-	++max_time_step_it;
+        max_dt_map[*start_times_it] = *max_time_step_it;
+        ++max_time_step_it;
       }
-    }
-
-    for (std::map<double,double>::const_iterator map_it = time_map.begin();
-	 map_it != time_map.end(); ++map_it) {
     }
 
     // delete the start, switch, and end times, since the user must specify initial time steps for those seperately
@@ -187,6 +183,9 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::Para
     }
   }
 
+
+
+
   ASSERT(start_times.size() == initial_time_step.size());
   ASSERT(start_times.size() == maximum_time_step.size());
 
@@ -200,7 +199,16 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::Para
        map_it != time_map.end(); ++map_it, ++max_it) {
     start_times.push_back(map_it->first);
     initial_time_step.push_back(map_it->second);
-    maximum_time_step.push_back(max_it->second);
+    if (max_it->second < 0){
+      if (max_it == time_map.begin()) maximum_time_step.push_back(default_max_time_step);
+      else {
+        int sz = maximum_time_step.size();
+        maximum_time_step.push_back(maximum_time_step[sz-1]);
+      }
+    }
+    else {
+      maximum_time_step.push_back(max_it->second);
+    }
   }
 
 
@@ -210,6 +218,9 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::Para
   tpc_list.set<Teuchos::Array<double> >("Start Times", start_times);
   tpc_list.set<Teuchos::Array<double> >("Initial Time Step", initial_time_step);
   tpc_list.set<Teuchos::Array<double> >("Maximum Time Step", maximum_time_step);
+
+  std::cout<<tpc_list;
+  exit(0);
 
   return tpc_list;
 }
