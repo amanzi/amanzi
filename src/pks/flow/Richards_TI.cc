@@ -235,19 +235,11 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   op_preconditioner_diff_->ApplyBCs(true, true);
 
   // add time derivative
-  CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh_);
-  cvs.SetGhosted(false);
-  cvs.SetComponent("cell", AmanziMesh::CELL, 1);
-
-  S_->GetFieldEvaluator("saturation_liquid")->HasFieldDerivativeChanged(S_.ptr(), passwd_, "pressure");
-  CompositeVector& dSdP = *S_->GetFieldData("dsaturation_liquid_dpressure", "saturation_liquid");
-
-  const CompositeVector& phi = *S_->GetFieldData("porosity");
-  dSdP.Multiply(molar_rho_, phi, dSdP, 0.0);
+  S_->GetFieldEvaluator("water_content")->HasFieldDerivativeChanged(S_.ptr(), passwd_, "pressure");
+  CompositeVector& dwc_dp = *S_->GetFieldData("dwater_content_dpressure", "water_content");
 
   if (dtp > 0.0) {
-    op_acc_->AddAccumulationTerm(*u->Data(), dSdP, dtp, "cell");
+    op_acc_->AddAccumulationTerm(*u->Data(), dwc_dp, dtp, "cell");
   }
 
   // finalize preconditioner
