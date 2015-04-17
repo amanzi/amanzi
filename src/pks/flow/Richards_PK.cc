@@ -404,6 +404,7 @@ void Richards_PK::Initialize()
     Teuchos::ParameterList oplist_vapor = tmp_list.sublist("vapor matrix");
     op_vapor_diff_ = opfactory.Create(mesh_, op_bc_, oplist_vapor, gravity_, 0);
     op_vapor_ = op_vapor_diff_->global_operator();
+    op_preconditioner_->OpPushBack(op_vapor_diff_->local_matrices());
   }
 
   // Create pointers to the primary flow field pressure.

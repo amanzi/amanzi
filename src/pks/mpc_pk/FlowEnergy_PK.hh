@@ -44,7 +44,7 @@ class FlowEnergy_PK : public MPCStrong<FnTimeIntegratorPK> {
 
   std::string name() { return "flow energy"; } 
 
-  virtual void CalculateDiagnostics() {};
+  // virtual void CalculateDiagnostics() {};
 
  private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;

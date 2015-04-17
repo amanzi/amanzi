@@ -783,6 +783,9 @@ void CycleDriver::Go() {
 
   Init_PK(time_period_id_);
 
+  S_->set_time(tp_start_[time_period_id_]);
+  S_->set_cycle(cycle0_);
+
   // start at time t = t0 and initialize the state.
   S_->set_time(tp_start_[time_period_id_]);
   S_->set_cycle(cycle0_);
