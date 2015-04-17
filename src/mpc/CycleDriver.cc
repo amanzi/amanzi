@@ -551,8 +551,6 @@ void CycleDriver::ReadParameterList_() {
       }  
     }
 
-
-
     // now we sort in ascending order by time
     std::sort(reset_info_.begin(), reset_info_.end(), reset_info_compfunc);
     std::sort(reset_max_.begin(),  reset_max_.end(),  reset_info_compfunc);
@@ -563,7 +561,7 @@ void CycleDriver::ReadParameterList_() {
 
 /* ******************************************************************
 * Acquire the chosen timestep size
-****************************************************************** */
+*******************************************************************/
 double CycleDriver::get_dt( bool after_failure) {
   // get the physical step size
   double dt;
@@ -786,11 +784,13 @@ void CycleDriver::Go() {
   Init_PK(time_period_id_);
 
   // start at time t = t0 and initialize the state.
+  S_->set_time(tp_start_[time_period_id_]);
+  S_->set_cycle(cycle0_);
+
   Setup();
   Initialize();
 
-  S_->set_time(tp_start_[time_period_id_]);
-  S_->set_cycle(cycle0_);
+
   S_->set_position(TIME_PERIOD_START);
 
   double dt;
@@ -899,12 +899,15 @@ void CycleDriver::Go() {
 * TBW.
 ****************************************************************** */
 void CycleDriver::ResetDriver(int time_pr_id) {
+
   Teuchos::RCP<AmanziMesh::Mesh> mesh = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(S_->GetMesh("domain"));
   S_old_ = S_;
 
   Teuchos::ParameterList state_plist = parameter_list_->sublist("State");
   S_ = Teuchos::rcp(new Amanzi::State(state_plist));
   S_->RegisterMesh("domain", mesh);
+  S_->set_cycle(S_old_->cycle());
+  S_->set_time(tp_start_[time_pr_id]); 
 
   //delete the old global solution vector
   // soln_ = Teuchos::null;
@@ -947,8 +950,6 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   S_->GetMeshPartition("materials");
 
-  S_->set_cycle(S_old_->cycle());
-  S_->set_time(tp_start_[time_pr_id]); 
   pk_->set_dt(tp_dt_[time_pr_id]);
 
   S_old_ = Teuchos::null;
