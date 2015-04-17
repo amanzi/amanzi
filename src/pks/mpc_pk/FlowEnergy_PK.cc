@@ -143,7 +143,7 @@ void FlowEnergy_PK::Setup()
 /* ******************************************************************* 
 * Performs one time step.
 ******************************************************************* */
-bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new)
+bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   // flow
   // -- swap saturations
@@ -172,7 +172,7 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new)
   e_prev = e;
  
   // try a step
-  bool fail = MPCStrong<FnTimeIntegratorPK>::AdvanceStep(t_old, t_new);
+  bool fail = MPCStrong<FnTimeIntegratorPK>::AdvanceStep(t_old, t_new, reinit);
 
   if (fail) {
     // revover the original conserved quantaties

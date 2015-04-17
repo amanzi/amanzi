@@ -709,7 +709,7 @@ void Richards_PK::InitializeUpwind_()
 * Performs one time step of size dt_ either for steady-state or 
 * transient sumulation.
 ******************************************************************* */
-bool Richards_PK::AdvanceStep(double t_old, double t_new)
+bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   dt_ = t_new - t_old;
 

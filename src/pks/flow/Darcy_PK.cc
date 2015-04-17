@@ -398,7 +398,7 @@ void Darcy_PK::InitializeFields_()
 * Performs one time step of size dT. The boundary conditions are 
 * calculated only once, during the initialization step.  
 ******************************************************************* */
-bool Darcy_PK::AdvanceStep(double t_old, double t_new) 
+bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
 {
   dt_ = t_new - t_old;
   double dt_MPC(dt_);

@@ -52,7 +52,7 @@ class MPCStrong : public MPC_PK<PK_Base>, public FnTimeIntegratorPK
   virtual void set_dt(double dt) { dt_ = dt; }
 
   // -- advance each sub pk dt.
-  virtual bool AdvanceStep(double t_old, double t_new);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
 
   // MPCStrong is an ImplicitFn
   // -- computes the non-linear functional g = g(t,u,udot)
@@ -184,7 +184,7 @@ std::cout << S_->time() << std::endl;
 // Make one time step 
 // -----------------------------------------------------------------------------
 template<class PK_Base>
-bool MPCStrong<PK_Base>::AdvanceStep(double t_old, double t_new)
+bool MPCStrong<PK_Base>::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   // save a copy of solution, i.e. primary variables
   TreeVector solution_copy(*solution_);

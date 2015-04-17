@@ -47,7 +47,7 @@ class PK {
   virtual void set_dt(double dt) = 0;
 
   // Advance PK by step size dt.
-  virtual bool AdvanceStep(double t_old, double t_new) = 0;
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit) = 0;
 
   // Update any needed secondary variables at time t_new from a sucessful step
   // from t_old.  This is called after every successful AdvanceStep() call,

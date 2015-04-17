@@ -39,7 +39,7 @@ class FlowEnergy_PK : public MPCStrong<FnTimeIntegratorPK> {
   // virtual void set_dt(double dt);
 
   // -- advance each sub pk dt.
-  virtual bool AdvanceStep(double t_old, double t_new);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
   // virtual void CommitStep(double t_old, double t_new);
 
   std::string name() { return "flow energy"; } 

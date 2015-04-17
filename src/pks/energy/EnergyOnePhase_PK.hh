@@ -40,7 +40,7 @@ public:
   virtual void Setup();
   virtual void Initialize();
 
-  virtual bool AdvanceStep(double t_old, double t_new);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
   virtual void CommitStep(double t_old, double t_new);
   virtual void CalculateDiagnostics() {};
 

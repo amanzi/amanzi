@@ -59,7 +59,7 @@ class Richards_PK : public Flow_PK {
   virtual double get_dt() { return dt_; }
   virtual void set_dt(double dt) { dt_ = dt; dt_desirable_ = dt_; }
 
-  virtual bool AdvanceStep(double t_old, double t_new);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
   virtual void CommitStep(double t_old, double t_new);
   virtual void CalculateDiagnostics();
 

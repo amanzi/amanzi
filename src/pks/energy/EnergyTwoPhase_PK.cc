@@ -203,7 +203,7 @@ void EnergyTwoPhase_PK::InitializeFields_()
 * Performs one time step of size dt_ either for steady-state or 
 * transient sumulation.
 ******************************************************************* */
-bool EnergyTwoPhase_PK::AdvanceStep(double t_old, double t_new)
+bool EnergyTwoPhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   dt_ = t_new - t_old;
 

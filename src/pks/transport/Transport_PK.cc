@@ -412,7 +412,7 @@ double Transport_PK::get_dt()
 * Efficient subcycling requires to calculate an intermediate state of
 * saturation only once, which leads to a leap-frog-type algorithm.
 ******************************************************************* */
-bool Transport_PK::AdvanceStep(double t_old, double t_new)
+bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 { 
   bool failed = false;
   double dt_MPC = t_new - t_old;

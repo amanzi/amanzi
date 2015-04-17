@@ -539,15 +539,15 @@ void CycleDriver::ReadParameterList_() {
     if (tpc_list.isParameter("Maximal Time Step")){
       Teuchos::Array<double> reset_max_dt = tpc_list.get<Teuchos::Array<double> >("Maximal Time Step");
       if (reset_times.size() != reset_max_dt.size()) {
-	Errors::Message message("You must specify the same number of Reset Times and Maximal Time Steps under Time Period Control");
-	Exceptions::amanzi_throw(message);
+        Errors::Message message("You must specify the same number of Reset Times and Maximal Time Steps under Time Period Control");
+        Exceptions::amanzi_throw(message);
       }
       Teuchos::Array<double>::const_iterator it_tim;
       Teuchos::Array<double>::const_iterator it_max;
       for (it_tim = reset_times.begin(), it_max = reset_max_dt.begin();
-	   it_tim != reset_times.end();
-	   ++it_tim, ++it_max) {
-	reset_max_.push_back(std::make_pair(*it_tim, *it_max));
+           it_tim != reset_times.end();
+           ++it_tim, ++it_max) {
+        reset_max_.push_back(std::make_pair(*it_tim, *it_max));
       }  
     }
 
@@ -642,14 +642,29 @@ bool CycleDriver::Advance(double dt) {
 
   bool advance = true;
   bool fail = false;
+  bool reinit = false;
 
   if (tp_end_[time_period_id_] == tp_start_[time_period_id_]) 
     advance = false;
 
   Teuchos::OSTab tab = vo_->getOSTab();
   
-  if (advance)
-    fail = pk_->AdvanceStep(S_->time(), S_->time()+dt);
+  if (advance){
+    std::vector<std::pair<double,double> >::const_iterator it;
+    for (it = reset_info_.begin(); it != reset_info_.end(); ++it) {
+      if (it->first == S_->time()) break;
+    }
+
+    if (it != reset_info_.end()){
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+	*vo_->os() << vo_->color("blue") <<"Reinitialize PK"<<vo_->reset() << std::endl;
+      }
+      reinit = true;
+    }      
+
+    fail = pk_->AdvanceStep(S_->time(), S_->time()+dt, reinit);
+
+  }
 
   if (!fail) {
     pk_->CommitStep(S_->last_time(), S_->time());
@@ -771,15 +786,15 @@ void CycleDriver::Go() {
   time_period_id_ = 0;
   int position = 0;
 
-   if (restart_requested_) {
-     double restart_time = ReadCheckpointInitialTime(comm_, restart_filename_);
-     position = ReadCheckpointPosition(comm_, restart_filename_);
+  if (restart_requested_) {
+    double restart_time = ReadCheckpointInitialTime(comm_, restart_filename_);
+    position = ReadCheckpointPosition(comm_, restart_filename_);
 
-     for (int i=0;i<num_time_periods_;i++){
-       if (restart_time - tp_end_[i] > 1e-10) time_period_id_++;
-     }
-     if (position == TIME_PERIOD_END) time_period_id_--;    
-   }
+    for (int i=0;i<num_time_periods_;i++){
+      if (restart_time - tp_end_[i] > 1e-10) time_period_id_++;
+    }
+    if (position == TIME_PERIOD_END) time_period_id_--;    
+  }
 
   Init_PK(time_period_id_);
 
@@ -855,9 +870,9 @@ void CycleDriver::Go() {
                      << ", dt(y) = " << dt / (60*60*24*365.25) << std::endl;
         }
         *S_->GetScalarData("dt", "coordinator") = dt;
-	S_->set_initial_time(S_->time());
-	S_->set_final_time(S_->time() + dt);
-	S_->set_position(TIME_PERIOD_INSIDE);
+        S_->set_initial_time(S_->time());
+        S_->set_final_time(S_->time() + dt);
+        S_->set_position(TIME_PERIOD_INSIDE);
 
         fail = Advance(dt);
         dt = get_dt(fail);

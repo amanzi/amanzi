@@ -52,7 +52,7 @@ class Darcy_PK : public Flow_PK {
   virtual void set_dt(double dt) { dt_ = dt; dt_desirable_ = dt; }
   virtual double get_dt() { return dt_desirable_; }
 
-  virtual bool AdvanceStep(double t_old, double t_new); 
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false); 
   virtual void CommitStep(double t_old, double t_new);
   virtual void CalculateDiagnostics();
 

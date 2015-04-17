@@ -40,7 +40,7 @@ class ReactiveTransport_PK : public MPCAdditive<PK> {
   virtual void set_dt(double dt);
 
   // -- advance each sub pk dt.
-  virtual bool AdvanceStep(double t_old, double t_new);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
 
   virtual void Initialize();
 

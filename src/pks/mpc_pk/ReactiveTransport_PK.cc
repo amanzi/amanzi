@@ -93,12 +93,12 @@ void ReactiveTransport_PK::set_dt(double dt) {
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
-bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new) {
+bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
   bool fail = false;
   chem_step_succeeded = false;
 
  // First we do a transport step.
-  bool pk_fail = tranport_pk_->AdvanceStep(t_old, t_new);
+  bool pk_fail = tranport_pk_->AdvanceStep(t_old, t_new, reinit);
 
   //Right now transport step is always succeeded.
   if (!pk_fail) {
@@ -113,7 +113,7 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new) {
   try {
     chemistry_pk_->set_total_component_concentration(total_component_concentration_stor);
 
-    pk_fail = chemistry_pk_->AdvanceStep(t_old, t_new);
+    pk_fail = chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
     chem_step_succeeded = true;
 
     *S_->GetFieldData("total_component_concentration", "state")->ViewComponent("cell", true)

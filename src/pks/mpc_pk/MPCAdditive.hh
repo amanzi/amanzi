@@ -61,7 +61,7 @@ class MPCAdditive : virtual public PK {
   virtual void CalculateDiagnostics();
   virtual double get_dt();
   virtual void set_dt(double dt);
-  virtual bool AdvanceStep(double t_old, double t_new);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
 
   // -- identifier accessor
   std::string name() const { return name_; }
@@ -222,12 +222,12 @@ void MPCAdditive<PK_Base>::set_dt(double dt_) {
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-bool MPCAdditive<PK_Base>::AdvanceStep(double t_old, double t_new) {
+bool MPCAdditive<PK_Base>::AdvanceStep(double t_old, double t_new, bool reinit) {
 
   bool fail = false;
   for (MPCAdditive<PK>::SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
-    fail = (*pk)->AdvanceStep(t_old, t_new);
+    fail = (*pk)->AdvanceStep(t_old, t_new, reinit);
     if (fail) {
       return fail;
     }

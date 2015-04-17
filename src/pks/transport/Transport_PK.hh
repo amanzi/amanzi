@@ -75,7 +75,7 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   virtual double get_dt();
   virtual void set_dt(double dt) {};
 
-  virtual bool AdvanceStep(double t_old, double t_new); 
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false); 
   virtual void CommitStep(double t_old, double t_new);
   virtual void CalculateDiagnostics() {};
 
