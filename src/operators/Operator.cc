@@ -51,7 +51,6 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
                    int schema) :
     cvs_(cvs),
     schema_(schema),
-    data_validity_(true),
     symbolic_assembled_(false),
     assembled_(false)
 {
@@ -72,13 +71,15 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
 
 
 /* ******************************************************************
-* Zeros everything out
+* Init owned local operators.
 ****************************************************************** */
 void Operator::Init()
 {
   rhs_->PutScalarMasterAndGhosted(0.0);
-  for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    (*it)->Init();
+  int nops = ops_.size();
+  for (int i = 0; i < nops; ++i) {
+    if (! (ops_properties_[i] & OPERATOR_PROPERTY_DATA_READ_ONLY))
+       ops_[i]->Init();
   }
 }
 
@@ -206,7 +207,7 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
   // Apply via assembled matrix or via local matrices (assuming the assembled
   // matrix is available).
 
-  // if (assembled_) {
+  // if (use_assembled && assembled_) {
   //   Epetra_Vector Xcopy(A_->RowMap());
   //   Epetra_Vector Ycopy(A_->RowMap());
   //   int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, 0);
@@ -286,15 +287,25 @@ void Operator::UpdateRHS(const CompositeVector& source, bool volume_included) {
 
 
 /* ******************************************************************
-* Rescale the local matrices.
+* Rescale the local matrices via dispatch.
 ****************************************************************** */
 void Operator::Rescale(const CompositeVector& scaling)
 {
-  // Dispatch rescaling to the Ops.
   scaling.ScatterMasterToGhosted();
   for (op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     (*it)->Rescale(scaling);
   }
+}
+
+
+/* ******************************************************************
+* Rescale the local matrices for particular operator.
+****************************************************************** */
+void Operator::Rescale(const CompositeVector& scaling, int iops)
+{
+  ASSERT(iops < ops_.size());
+  scaling.ScatterMasterToGhosted();
+  ops_[iops]->Rescale(scaling);
 }
 
 
@@ -323,6 +334,17 @@ void Operator::RestoreCheckPoint()
     (*it)->RestoreCheckPoint();
   }
 }
+
+
+/* ******************************************************************
+* New implementation of check-point algorithm.
+****************************************************************** */
+int Operator::CopyShadowToMaster(int iops) 
+{
+  int nops = ops_.size();
+  ASSERT(iops < nops);
+  ops_[iops]->CopyShadowToMaster();
+} 
 
 
 /* ******************************************************************
@@ -372,18 +394,24 @@ Operator::FindMatrixOp(int schema_dofs, int matching_rule, bool action)
 /* ******************************************************************
 * Push back.
 ****************************************************************** */
-void Operator::OpPushBack(const Teuchos::RCP<Op>& block) {
+void Operator::OpPushBack(const Teuchos::RCP<Op>& block, int properties) {
   ops_.push_back(block);
+  ops_properties_.push_back(properties);
 }
 
 
 /* ******************************************************************
-* Extension.
+* Add more operators to the existing list. The added operators have
+* no special properties. 
 ****************************************************************** */
 void Operator::OpExtend(op_iterator begin, op_iterator end)
 {
-  ops_.reserve(ops_.size() + std::distance(begin, end));
+  int nops = ops_.size();
+  int nnew = nops + std::distance(begin, end);
+
+  ops_.reserve(nnew);
   ops_.insert(ops_.end(), begin, end);
+  ops_properties_.resize(nnew, 0);  
 }
 
 

@@ -192,7 +192,6 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
     kp_cell[0][c] = tmp * mlf_g[0][c] / nRT;
     kt_cell[0][c] = tmp * (dmlf_g_dt[0][c] / atm_pressure_ 
                         +  mlf_g[0][c] * pc / (nRT * temp[0][c]));
-    if (S_->time() < 1e+9) kp_cell[0][c] = 0.0;  // FIXME
   }
 }
 

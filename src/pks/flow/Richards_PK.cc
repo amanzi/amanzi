@@ -24,6 +24,7 @@
 #include "independent_variable_field_evaluator_fromfunction.hh"
 #include "Mesh.hh"
 #include "mfd3d_diffusion.hh"
+#include "OperatorDefs.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "Point.hh"
 #include "primary_variable_field_evaluator.hh"
@@ -404,7 +405,8 @@ void Richards_PK::Initialize()
     Teuchos::ParameterList oplist_vapor = tmp_list.sublist("vapor matrix");
     op_vapor_diff_ = opfactory.Create(mesh_, op_bc_, oplist_vapor, gravity_, 0);
     op_vapor_ = op_vapor_diff_->global_operator();
-    op_preconditioner_->OpPushBack(op_vapor_diff_->local_matrices());
+    op_preconditioner_->OpPushBack(op_vapor_diff_->local_matrices(),
+                                   Operators::OPERATOR_PROPERTY_DATA_READ_ONLY);
   }
 
   // Create pointers to the primary flow field pressure.
