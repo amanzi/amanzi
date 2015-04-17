@@ -200,10 +200,11 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::Para
     start_times.push_back(map_it->first);
     initial_time_step.push_back(map_it->second);
     if (max_it->second < 0){
-      if (max_it == time_map.begin()) maximum_time_step.push_back(default_max_time_step);
+      if (max_it == max_dt_map.begin()) 
+	maximum_time_step.push_back(default_max_time_step);
       else {
         int sz = maximum_time_step.size();
-        maximum_time_step.push_back(maximum_time_step[sz-1]);
+        if (sz > 0) maximum_time_step.push_back(maximum_time_step[sz-1]);
       }
     }
     else {
