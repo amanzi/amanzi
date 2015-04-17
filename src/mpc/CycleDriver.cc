@@ -785,12 +785,13 @@ void CycleDriver::Go() {
 
   Init_PK(time_period_id_);
 
+  S_->set_time(tp_start_[time_period_id_]);
+  S_->set_cycle(cycle0_);
+
   // start at time t = t0 and initialize the state.
   Setup();
   Initialize();
 
-  S_->set_time(tp_start_[time_period_id_]);
-  S_->set_cycle(cycle0_);
   S_->set_position(TIME_PERIOD_START);
 
   double dt;
@@ -905,6 +906,8 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   Teuchos::ParameterList state_plist = parameter_list_->sublist("State");
   S_ = Teuchos::rcp(new Amanzi::State(state_plist));
   S_->RegisterMesh("domain", mesh);
+  S_->set_cycle(S_old_->cycle());
+  S_->set_time(tp_start_[time_pr_id]); 
 
   //delete the old global solution vector
   // soln_ = Teuchos::null;
@@ -947,8 +950,6 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   S_->GetMeshPartition("materials");
 
-  S_->set_cycle(S_old_->cycle());
-  S_->set_time(tp_start_[time_pr_id]); 
   pk_->set_dt(tp_dt_[time_pr_id]);
 
   S_old_ = Teuchos::null;

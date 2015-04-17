@@ -63,9 +63,6 @@ void Richards_PK::Functional(double t_old, double t_new,
   Epetra_MultiVector& f_cell = *f->Data()->ViewComponent("cell");
   const Epetra_MultiVector& phi_c = *S_->GetFieldData("porosity")->ViewComponent("cell");
 
-  functional_max_norm = 0.0;
-  functional_max_cell = 0;
-  
   pressure_eval_->SetFieldAsChanged(S_.ptr());
   S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
   const Epetra_MultiVector& wc_c = *S_->GetFieldData("water_content")->ViewComponent("cell");
@@ -77,18 +74,25 @@ void Richards_PK::Functional(double t_old, double t_new,
 
     double factor = mesh_->cell_volume(c) / dtp;
     f_cell[0][c] += (wc1 - wc2) * factor;
-
-    double tmp = fabs(f_cell[0][c]) / (factor * molar_rho_ * phi_c[0][c]);  // calculate errors
-    if (tmp > functional_max_norm) {
-      functional_max_norm = tmp;
-      functional_max_cell = c;        
-    }
   }
 
   // add vapor diffusion 
   if (vapor_diffusion_) {
     Functional_AddVaporDiffusion_(f->Data());
   }
+
+  // calculate normalized residual
+  functional_max_norm = 0.0;
+  functional_max_cell = 0;
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    double factor = mesh_->cell_volume(c) * molar_rho_ * phi_c[0][c] / dtp;
+    double tmp = fabs(f_cell[0][c]) / (factor * molar_rho_ * phi_c[0][c]);
+    if (tmp > functional_max_norm) {
+      functional_max_norm = tmp;
+      functional_max_cell = c;        
+    }
+  } 
 }
 
 
@@ -114,26 +118,26 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
   Teuchos::RCP<CompositeVector> kvapor_temp = Teuchos::rcp(new CompositeVector(f->Map()));
   CalculateVaporDiffusionTensor_(kvapor_pres, kvapor_temp);
 
-  // Populate vapor matrix for pressure
-  // We assume the same matrix structure for pressure and temperature.
-  op_vapor_->Init();
-  op_vapor_diff_->Setup(kvapor_pres, Teuchos::null);
-  op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op_vapor_diff_->ApplyBCs(false, false);
-
-  // -- Calculate residual due to pressure
-  CompositeVector g(*f);
-  op_vapor_->ComputeNegativeResidual(pres, g);
-  f->Update(1.0, g, 1.0);
-
   // Populate vapor matrix for temperature
+  // We assume the same matrix structure for pressure and temperature.
   op_vapor_->Init();
   op_vapor_diff_->Setup(kvapor_temp, Teuchos::null);
   op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op_vapor_diff_->ApplyBCs(false, false);
 
   // -- Calculate residual due to temperature
+  CompositeVector g(*f);
   op_vapor_->ComputeNegativeResidual(temp, g);
+  f->Update(1.0, g, 1.0);
+
+  // Populate vapor matrix for pressure
+  op_vapor_->Init();
+  op_vapor_diff_->Setup(kvapor_pres, Teuchos::null);
+  op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_vapor_diff_->ApplyBCs(false, false);
+
+  // -- Calculate residual due to pressure
+  op_vapor_->ComputeNegativeResidual(pres, g);
   f->Update(1.0, g, 1.0);
 }
 

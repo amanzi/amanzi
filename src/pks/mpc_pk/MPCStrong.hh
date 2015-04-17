@@ -166,6 +166,7 @@ void MPCStrong<PK_Base>::Initialize()
     // -- instantiate time stepper
     Teuchos::ParameterList& ts_plist = my_list_->sublist("time integrator").sublist("BDF1");
     ts_plist.set("initial time", S_->time());
+std::cout << S_->time() << std::endl;
     time_stepper_ = Teuchos::rcp(new Amanzi::BDF1_TI<TreeVector,
         TreeVectorSpace>(*this, ts_plist, solution_));
 
