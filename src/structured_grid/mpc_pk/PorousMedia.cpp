@@ -6816,23 +6816,26 @@ PorousMedia::AdjustBCevalTime(int  state_idx,
     Real prev_time = state[state_idx].prevTime();
 
     const Array<Real>& tpc_start_times = PMParent()->TPCStartTimes();
-    for (int i=0; i<tpc_start_times.size(); ++i) {
+    Array<Real> all_start_times = tpc_start_times; 
+    all_start_times.push_back(switch_time);  // Treat switch time just like any other tpc start time
+
+    for (int i=0; i<all_start_times.size(); ++i) {
         Real curr_time = state[state_idx].curTime();
         Real teps = (curr_time - prev_time)*1.e-6;
         
-        if (std::abs(curr_time - tpc_start_times[i]) < teps) {
-            t_eval = std::min(t_eval, std::max(prev_time, tpc_start_times[i] - teps));
+        if (std::abs(curr_time - all_start_times[i]) < teps) {
+            t_eval = std::min(t_eval, std::max(prev_time, all_start_times[i] - teps));
         }
         
-        if (std::abs(prev_time - tpc_start_times[i]) < teps) {
-            t_eval = std::max(t_eval, std::min(curr_time, tpc_start_times[i] + teps));
+        if (std::abs(prev_time - all_start_times[i]) < teps) {
+            t_eval = std::max(t_eval, std::min(curr_time, all_start_times[i] + teps));
         }
 
         if (tadj_verbose && ParallelDescriptor::IOProcessor() && t_eval != time) {
             const int old_prec = std::cout.precision(18);
             std::cout << "NOTE: Adjusting eval time for saturation to avoid straddling tpc" << std::endl;
-            std::cout << "    prev_time, curr_time, tpc_start_time: " 
-                      << prev_time << ", " << curr_time << ", " << tpc_start_times[i] << std::endl;
+            std::cout << "    prev_time, curr_time, all_start_time: " 
+                      << prev_time << ", " << curr_time << ", " << all_start_times[i] << std::endl;
             std::cout << "    cum_time, strt_time, time, t_eval: " << parent->cumTime() << ", " 
                       << parent->startTime() << ", " << time << ", " << t_eval << std::endl;
             std::cout.precision(old_prec);
