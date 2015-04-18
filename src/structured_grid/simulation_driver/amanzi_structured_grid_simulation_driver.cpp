@@ -203,14 +203,17 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
 
     BoxLib::Initialize_ParmParse(converted_parameter_list);
 
-    if (input_parameter_list.isParameter("Dump ParmParse Table") ) {
-      if (ParallelDescriptor::IOProcessor()) {
-        const std::string& pp_file = Teuchos::getParameter<std::string>(input_parameter_list, "Dump ParmParse Table");
-        EnsureFolderExists(pp_file);
-        std::ofstream ofs; ofs.open(pp_file.c_str());
-        bool prettyPrint = false;
-        ParmParse::dumpTable(ofs,prettyPrint);
-        ofs.close();
+    const Teuchos::ParameterList& echo_list = input_parameter_list.sublist("Echo Translated Input");
+    if (echo_list.isParameter("Format")) {
+      if (echo_list.get<std::string>("Format") == "native") {
+	if (ParallelDescriptor::IOProcessor()) {
+	  const std::string& pp_file = echo_list.get<std::string>("File Name");
+	  EnsureFolderExists(pp_file);
+	  std::ofstream ofs; ofs.open(pp_file.c_str());
+	  bool prettyPrint = false;
+	  ParmParse::dumpTable(ofs,prettyPrint);
+	  ofs.close();
+	}
       }
       ParallelDescriptor::Barrier();
     }
