@@ -395,15 +395,15 @@ void Darcy_PK::InitializeFields_()
 
 
 /* ******************************************************************* 
-* Performs one time step of size dT. The boundary conditions are 
-* calculated only once, during the initialization step.  
+* Performs one time step from t_old to t_new. The boundary conditions
+* are calculated only once, during the initialization step.  
 ******************************************************************* */
 bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
 {
   dt_ = t_new - t_old;
   double dt_MPC(dt_);
 
-  // update boundary conditions and source terms
+  // update boundary conditions and source terms at new time.
   bc_pressure->Compute(t_new);
   bc_flux->Compute(t_new);
   bc_seepage->Compute(t_new);

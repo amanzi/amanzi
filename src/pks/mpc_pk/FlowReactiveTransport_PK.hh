@@ -37,8 +37,8 @@ class FlowReactiveTransport_PK : public MPCSubcycled {
   virtual double get_dt();
   virtual void set_dt(double dt);
 
-  // -- advance each sub pk dt.
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
+  // -- advance each sub pk from t_old to t_new.
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
 
   virtual void CommitStep(double t_old, double t_new);
 

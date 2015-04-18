@@ -263,6 +263,9 @@ class Operator {
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
 
+  // diagnostics
+  std::string PrintDiagnostics() const;
+
  protected:
   int SchemaMismatch_(const std::string& schema1, const std::string& schema2) const;
 

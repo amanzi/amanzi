@@ -35,7 +35,7 @@ class MPCSubcycled : public MPC_PK<PK> {
   virtual void set_dt(double dt){};
 
   // -- advance each sub pk dt.
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
 
  protected:
   int master_;

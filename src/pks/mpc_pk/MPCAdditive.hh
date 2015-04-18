@@ -61,7 +61,7 @@ class MPCAdditive : virtual public PK {
   virtual void CalculateDiagnostics();
   virtual double get_dt();
   virtual void set_dt(double dt);
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
 
   // -- identifier accessor
   std::string name() const { return name_; }

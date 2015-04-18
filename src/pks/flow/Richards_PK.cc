@@ -616,7 +616,9 @@ void Richards_PK::Initialize()
     *vo_->os()<< "EC:" << error_control_ << " Src:" << src_sink_distribution
               << " Upwind:" << relperm_->method() << op_matrix_diff_->little_k()
               << " PC:\"" << preconditioner_name_.c_str() << "\"" 
-              << " TI:\"" << ti_method_name.c_str() << "\"" << std::endl;
+              << " TI:\"" << ti_method_name.c_str() << "\"" << std::endl
+              << "matrix: " << op_matrix_->PrintDiagnostics() << std::endl
+              << "precon: " << op_preconditioner_->PrintDiagnostics() << std::endl;
 
     int missed_tmp = missed_bc_faces_;
     int dirichlet_tmp = dirichlet_bc_faces_;
@@ -708,8 +710,9 @@ void Richards_PK::InitializeUpwind_()
 
 
 /* ******************************************************************* 
-* Performs one time step of size dt_ either for steady-state or 
-* transient sumulation.
+* Performs one time step from time t_old to time t_new either for
+* steady-state or transient sumulation. If reinit=true, enforce 
+* p-lambda constraints.
 ******************************************************************* */
 bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {

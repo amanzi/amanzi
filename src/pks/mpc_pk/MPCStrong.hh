@@ -52,7 +52,7 @@ class MPCStrong : public MPC_PK<PK_Base>, public FnTimeIntegratorPK
   virtual void set_dt(double dt) { dt_ = dt; }
 
   // -- advance each sub pk dt.
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
 
   // MPCStrong is an ImplicitFn
   // -- computes the non-linear functional g = g(t,u,udot)
@@ -166,7 +166,6 @@ void MPCStrong<PK_Base>::Initialize()
     // -- instantiate time stepper
     Teuchos::ParameterList& ts_plist = my_list_->sublist("time integrator").sublist("BDF1");
     ts_plist.set("initial time", S_->time());
-std::cout << S_->time() << std::endl;
     time_stepper_ = Teuchos::rcp(new Amanzi::BDF1_TI<TreeVector,
         TreeVectorSpace>(*this, ts_plist, solution_));
 
@@ -186,6 +185,8 @@ std::cout << S_->time() << std::endl;
 template<class PK_Base>
 bool MPCStrong<PK_Base>::AdvanceStep(double t_old, double t_new, bool reinit)
 {
+  dt_ = t_new - t_old;
+
   // save a copy of solution, i.e. primary variables
   TreeVector solution_copy(*solution_);
 
@@ -201,7 +202,6 @@ bool MPCStrong<PK_Base>::AdvanceStep(double t_old, double t_new, bool reinit)
   if (!fail) {
     // commit the step as successful
     time_stepper_->CommitSolution(dt_, solution_);
-    // commit_state(dt_, S_);
 
     // update the timestep size
     if (dt_solver < dt_ && dt_solver >= dt_) {

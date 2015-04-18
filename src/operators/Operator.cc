@@ -10,35 +10,36 @@
   Ethan Coon (ecoon@lanl.gov)
 */
 
-#include "EpetraExt_RowMatrixOut.h"
+#include <sstream>
 
+// TPLs
+#include "EpetraExt_RowMatrixOut.h"
+#include "Epetra_CrsGraph.h"
+#include "Epetra_Export.h"
+#include "Epetra_FECrsGraph.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
-#include "Epetra_Export.h"
-#include "Epetra_CrsGraph.h"
-#include "Epetra_FECrsGraph.h"
 
+// Amanzi
 #include "DenseVector.hh"
-#include "PreconditionerFactory.hh"
-
-#include "SuperMap.hh"
 #include "MatrixFE.hh"
+#include "PreconditionerFactory.hh"
+#include "SuperMap.hh"
 
+// Operators
 #include "Op.hh"
+#include "Op_Cell_Cell.hh"
+#include "Op_Cell_Edge.hh"
 #include "Op_Cell_FaceCell.hh"
 #include "Op_Cell_Face.hh"
-#include "Op_Cell_Cell.hh"
 #include "Op_Cell_Node.hh"
-#include "Op_Cell_Edge.hh"
 #include "Op_Face_Cell.hh"
 #include "Op_Node_Node.hh"
 #include "Op_SurfaceCell_SurfaceCell.hh"
 #include "Op_SurfaceFace_SurfaceCell.hh"
-
+#include "Operator.hh"
 #include "OperatorDefs.hh"
 #include "OperatorUtils.hh"
-
-#include "Operator.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -426,6 +427,19 @@ int Operator::SchemaMismatch_(const std::string& schema1, const std::string& sch
   Errors::Message message(err.str());
   Exceptions::amanzi_throw(message);
   return 1;
+}
+
+
+/* ******************************************************************
+* Populates matrix entries.
+****************************************************************** */
+std::string Operator::PrintDiagnostics() const
+{
+  std::stringstream msg;
+  for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
+    msg << "<" << (*it)->schema_string << "> ";
+  }
+  return msg.str();
 }
 
 

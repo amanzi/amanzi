@@ -444,7 +444,7 @@ void CycleDriver::ReadParameterList_() {
   tp_max_cycle_.resize(num_time_periods_);
 
   int i = 0;
-  for (item = time_periods_list.begin(); item !=time_periods_list.end(); ++item){
+  for (item = time_periods_list.begin(); item !=time_periods_list.end(); ++item) {
     const std::string & tp_name = time_periods_list.name(item);
     tp_start_[i] = time_periods_list.sublist(tp_name).get<double>("start period time");
     tp_end_[i] = time_periods_list.sublist(tp_name).get<double>("end period time");
@@ -536,7 +536,7 @@ void CycleDriver::ReadParameterList_() {
       reset_info_.push_back(std::make_pair(*it_tim, *it_dt));
     }  
 
-    if (tpc_list.isParameter("Maximal Time Step")){
+    if (tpc_list.isParameter("Maximal Time Step")) {
       Teuchos::Array<double> reset_max_dt = tpc_list.get<Teuchos::Array<double> >("Maximal Time Step");
       if (reset_times.size() != reset_max_dt.size()) {
         Errors::Message message("You must specify the same number of Reset Times and Maximal Time Steps under Time Period Control");
@@ -572,7 +572,7 @@ double CycleDriver::get_dt( bool after_failure) {
   std::vector<std::pair<double,double> >::const_iterator it_max;
 
   for (it = reset_info_.begin(), it_max = reset_max_.begin(); it != reset_info_.end(); ++it, ++it_max) {
-    if (S_->time() == it->first){
+    if (S_->time() == it->first) {
       if (reset_max_.size() > 0) max_dt_ = it_max->second;
       dt = it->second;
       pk_->set_dt(dt);
@@ -588,8 +588,8 @@ double CycleDriver::get_dt( bool after_failure) {
     Exceptions::amanzi_throw(message);
   }
 
-  if (S_->time() > 0){
-    if (dt/S_->time() < 1e-14){
+  if (S_->time() > 0) {
+    if (dt/S_->time() < 1e-14) {
       Errors::Message message("CycleDriver: error, timestep too small with respect to current time");
       Exceptions::amanzi_throw(message);
     }
@@ -639,7 +639,6 @@ void CycleDriver::set_dt(double dt) {
 ****************************************************************** */
 bool CycleDriver::Advance(double dt) {
 
-
   bool advance = true;
   bool fail = false;
   bool reinit = false;
@@ -649,15 +648,16 @@ bool CycleDriver::Advance(double dt) {
 
   Teuchos::OSTab tab = vo_->getOSTab();
   
-  if (advance){
+  if (advance) {
     std::vector<std::pair<double,double> >::const_iterator it;
     for (it = reset_info_.begin(); it != reset_info_.end(); ++it) {
       if (it->first == S_->time()) break;
     }
 
-    if (it != reset_info_.end()){
+    if (it != reset_info_.end()) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-	*vo_->os() << vo_->color("blue") <<"Reinitialize PK"<<vo_->reset() << std::endl;
+	*vo_->os() << vo_->color("blue") << " Reinitializing PKs due to BCs or sources/sinks" 
+                   << vo_->reset() << std::endl;
       }
       reinit = true;
     }      
@@ -669,7 +669,7 @@ bool CycleDriver::Advance(double dt) {
   if (!fail) {
     pk_->CommitStep(S_->last_time(), S_->time());
     // advance the iteration count and timestep size
-    if (advance){
+    if (advance) {
       S_->advance_cycle();
       S_->advance_time(dt);
     }
@@ -683,7 +683,7 @@ bool CycleDriver::Advance(double dt) {
     bool force_check(false);
     bool force_obser(false);
 
-    if (abs(S_->time() - tp_end_[time_period_id_]) < 1e-10){
+    if (abs(S_->time() - tp_end_[time_period_id_]) < 1e-10) {
       force_vis = true;
       force_check = true;                       
       force_obser = true;
@@ -697,14 +697,13 @@ bool CycleDriver::Advance(double dt) {
     // make observations, vis, and checkpoints
 
     //Amanzi::timer_manager.start("I/O");
-    if (advance){
+    if (advance) {
       pk_->CalculateDiagnostics();
       Visualize(force_vis);
       WriteCheckpoint(dt, force_check);
       Observations(force_obser);
     }
     //Amanzi::timer_manager.start("I/O");
-
 
   } else {
     // Failed the timestep.  
@@ -790,7 +789,7 @@ void CycleDriver::Go() {
     double restart_time = ReadCheckpointInitialTime(comm_, restart_filename_);
     position = ReadCheckpointPosition(comm_, restart_filename_);
 
-    for (int i=0;i<num_time_periods_;i++){
+    for (int i=0;i<num_time_periods_;i++) {
       if (restart_time - tp_end_[i] > 1e-10) time_period_id_++;
     }
     if (position == TIME_PERIOD_END) time_period_id_--;    
@@ -823,7 +822,7 @@ void CycleDriver::Go() {
       if (it == reset_info_.end() ) break;
     }
 
-    if (position == TIME_PERIOD_END){
+    if (position == TIME_PERIOD_END) {
       time_period_id_++;
       ResetDriver(time_period_id_); 
       restart_dT =  tp_dt_[time_period_id_];
@@ -860,7 +859,7 @@ void CycleDriver::Go() {
   try {
 #endif
     bool fail = false;
-    while (time_period_id_ < num_time_periods_){
+    while (time_period_id_ < num_time_periods_) {
       int start_cycle_num = S_->cycle();
       do {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
@@ -881,7 +880,7 @@ void CycleDriver::Go() {
                                      || (S_->cycle() - start_cycle_num <= tp_max_cycle_[time_period_id_])));
 
       time_period_id_++;
-      if (time_period_id_ < num_time_periods_){
+      if (time_period_id_ < num_time_periods_) {
         ResetDriver(time_period_id_); 
         dt = get_dt(false);
       }      

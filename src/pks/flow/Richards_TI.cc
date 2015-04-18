@@ -118,8 +118,9 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
   Teuchos::RCP<CompositeVector> kvapor_temp = Teuchos::rcp(new CompositeVector(f->Map()));
   CalculateVaporDiffusionTensor_(kvapor_pres, kvapor_temp);
 
-  // Populate vapor matrix for temperature
-  // We assume the same matrix structure for pressure and temperature.
+  // Calculate vapor contribution due to temperature.
+  // We assume the same DOFs for pressure and temperature. 
+  // We assume that field temperature has already essential BCs.
   op_vapor_->Init();
   op_vapor_diff_->Setup(kvapor_temp, Teuchos::null);
   op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -130,11 +131,12 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
   op_vapor_->ComputeNegativeResidual(temp, g);
   f->Update(1.0, g, 1.0);
 
-  // Populate vapor matrix for pressure
+  // Calculate vapor contribution due to capillary pressure.
+  // We elliminate essential BCs to re-use the local Op for PC.
   op_vapor_->Init();
   op_vapor_diff_->Setup(kvapor_pres, Teuchos::null);
   op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op_vapor_diff_->ApplyBCs(false, false);
+  op_vapor_diff_->ApplyBCs(false, true);
 
   // -- Calculate residual due to pressure
   op_vapor_->ComputeNegativeResidual(pres, g);
@@ -238,13 +240,16 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   op_preconditioner_diff_->ApplyBCs(true, true);
 
   // add time derivative
-  S_->GetFieldEvaluator("water_content")->HasFieldDerivativeChanged(S_.ptr(), passwd_, "pressure");
-  CompositeVector& dwc_dp = *S_->GetFieldData("dwater_content_dpressure", "water_content");
-
   if (dtp > 0.0) {
+    S_->GetFieldEvaluator("water_content")->HasFieldDerivativeChanged(S_.ptr(), passwd_, "pressure");
+    CompositeVector& dwc_dp = *S_->GetFieldData("dwater_content_dpressure", "water_content");
+
     op_acc_->AddAccumulationTerm(*u->Data(), dwc_dp, dtp, "cell");
   }
 
+  // Add vapor diffusion. We assume that the corresponding local operator
+  // has been already populated during functional evaluation.
+ 
   // finalize preconditioner
   op_preconditioner_->AssembleMatrix();
   op_preconditioner_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
