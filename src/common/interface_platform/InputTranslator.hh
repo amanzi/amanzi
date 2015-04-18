@@ -33,6 +33,7 @@ Teuchos::ParameterList get_initial_conditions(xercesc::DOMDocument* xmlDoc, Teuc
 Teuchos::ParameterList get_boundary_conditions(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);
 Teuchos::ParameterList get_sources(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);
 Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);
+Teuchos::ParameterList get_echo_translated(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);
 
 Teuchos::ParameterList get_file_info(Teuchos::ParameterList propertyList, xercesc::DOMElement* propElement, std::string propName, std::string sectionName);
 void get_gslib_info(Teuchos::ParameterList& propertyList,const Teuchos::ParameterList& defList, const xercesc::DOMElement* propElement, const std::string& propName, const std::string& sectionName, const std::string& dfile_DEF);
