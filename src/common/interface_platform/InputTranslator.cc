@@ -120,6 +120,7 @@ Teuchos::ParameterList translate(const std::string& xmlfilename) {
   def_list.sublist("constants") = get_constants(doc, def_list);
 
   new_list.sublist("General Description") = get_model_description(doc, def_list);
+  new_list.sublist("Echo Translated Input") = get_echo_translated(doc, def_list);
   new_list.sublist("Mesh") = get_Mesh(doc, def_list);
   new_list.sublist("Domain").set<int>("Spatial Dimension",dimension_);
   new_list.sublist("Execution Control") = get_execution_controls(doc, &def_list);
@@ -520,6 +521,68 @@ Teuchos::ParameterList get_model_description(DOMDocument* xmlDoc, Teuchos::Param
 
   return list;
   
+}
+
+/* 
+ ******************************************************************
+ * Empty
+ ****************************************************************** 
+ */
+Teuchos::ParameterList get_echo_translated(DOMDocument* xmlDoc, Teuchos::ParameterList def_list) {
+
+  if (voI_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    *voI_->os() << "Getting Echo" << std::endl;
+  }
+  
+  XMLCh* TAG_echo = XMLString::transcode("echo_translated_input");
+  XMLCh* ATTR_filename = XMLString::transcode("file_name");
+  XMLCh* ATTR_format = XMLString::transcode("format");
+
+  // Defaults
+  std::string translated_filename = "translated_input.xml"; // NOTE: default changes for v1.  See below
+  std::string translated_format = "v1";
+  bool echo_translated = false;
+
+  DOMNodeList* nodeList = xmlDoc->getElementsByTagName(TAG_echo);
+
+  if (nodeList->getLength() > 0 ) {
+
+    echo_translated = true;
+
+    DOMElement* tmpElement = static_cast<DOMElement*>(nodeList->item(0));
+    if (tmpElement->hasAttribute(ATTR_format)) {
+      char* textContent = XMLString::transcode(tmpElement->getAttribute(ATTR_format));
+      translated_format = trim_string(textContent);
+      XMLString::release(&textContent);
+    }
+
+    // For v1, set default filename, which can be overridden
+    if (translated_format == "v1") {
+      translated_filename = def_list.get<std::string>("xmlfilename");
+      std::string new_extension("_oldspec.xml");
+      size_t pos = translated_filename.find(".xml");
+      translated_filename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)12);
+    }
+
+    if (tmpElement->hasAttribute(ATTR_filename)) {
+      char* textContent = XMLString::transcode(tmpElement->getAttribute(ATTR_filename));
+      translated_filename = trim_string(textContent);
+      XMLString::release(&textContent);
+    }
+  }
+
+  XMLString::release( &TAG_echo );
+  XMLString::release( &ATTR_filename );
+  XMLString::release( &ATTR_format );
+
+  Teuchos::ParameterList list;
+
+  if (echo_translated) {
+    list.set<std::string>("File Name",translated_filename);
+    list.set<std::string>("Format",translated_format);
+  }
+
+  return list;
 }
 
 /* 
