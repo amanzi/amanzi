@@ -41,7 +41,8 @@ void FlowEnergy_PK::Setup()
 
   Teuchos::ParameterList& elist = S_->FEList();
 
-  // solid
+  // Fields for solids
+  // -- rock
   if (!S_->HasField("density_rock")) {
     S_->RequireField("density_rock", "density_rock")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -57,13 +58,15 @@ void FlowEnergy_PK::Setup()
          .set<double>("heat capacity [J/mol-K]", 620.0);
   }
 
-  // gas
+  // Fields for gas
+  // -- internal energy
   if (!S_->HasField("internal_energy_gas")) {
     elist.sublist("internal_energy_gas")
          .set<std::string>("field evaluator type", "iem water vapor")
          .set<std::string>("internal energy key", "internal_energy_gas");
   }
 
+  // -- molar density
   if (!S_->HasField("molar_density_gas")) {
     elist.sublist("molar_density_gas")
          .set<std::string>("field evaluator type", "eos")
@@ -76,6 +79,7 @@ void FlowEnergy_PK::Setup()
          .set<std::string>("EOS type", "ideal gas");
   }
 
+  // -- molar fraction
   if (!S_->HasField("molar_fraction_gas")) {
     elist.sublist("molar_fraction_gas")
          .set<std::string>("field evaluator type", "molar fraction gas")
@@ -85,7 +89,8 @@ void FlowEnergy_PK::Setup()
          .set<std::string>("vapor pressure model type", "water vapor over water/ice");
   }
 
-  // liquid
+  // Fields for liquid
+  // -- internal energy
   if (!S_->HasField("internal_energy_liquid")) {
     elist.sublist("internal_energy_liquid")
          .set<std::string>("field evaluator type", "iem")
@@ -96,6 +101,7 @@ void FlowEnergy_PK::Setup()
          .set<double>("heat capacity [J/mol-K]", 76.0);
   }
 
+  // -- molar and mass density
   if (!S_->HasField("molar_density_liquid")) {
     elist.sublist("molar_density_liquid")
          .set<std::string>("field evaluator type", "eos")
@@ -112,14 +118,25 @@ void FlowEnergy_PK::Setup()
     S_->RequireFieldEvaluator("mass_density_liquid");
   }
 
-  // other
+  // -- viscosity model
+  if (!S_->HasField("viscosity_liquid")) {
+    elist.sublist("viscosity_liquid")
+         .set<std::string>("field evaluator type", "viscosity")
+         .set<std::string>("viscosity key", "viscosity_liquid")
+         .sublist("viscosity model parameters")
+         .set<std::string>("viscosity relation type", "liquid water");
+    elist.sublist("viscosity_liquid")
+         .sublist("VerboseObject").set<std::string>("Verbosity Level", "high");
+
+    S_->RequireField("viscosity_liquid", "viscosity_liquid")->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireFieldEvaluator("viscosity_liquid");
+  }
+
+  // Other fields
   if (!S_->HasField("effective_pressure")) {
     elist.sublist("effective_pressure")
          .set<std::string>("field evaluator type", "effective_pressure");
-  }
-
-  if (!S_->HasField("mass_density_liquid")) {
-    S_->RequireFieldEvaluator("mass_density_liquid");
   }
 
   // inform other PKs about strong coupling

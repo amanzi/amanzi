@@ -9,6 +9,7 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
+#include "FieldMaps.hh"
 #include "LinearOperatorFactory.hh"
 #include "OperatorDefs.hh"
 #include "OperatorDiffusion.hh"
@@ -30,9 +31,12 @@ namespace Flow {
 void Richards_PK::SolveFullySaturatedProblem(
     double T0, CompositeVector& u, const std::string& solver_name)
 {
+  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
+
   UpdateSourceBoundaryData(T0, T0, u);
-  krel_->PutScalar(molar_rho_ / mu_);
-  dKdP_->PutScalar(0.0);
+  krel_->PutScalarMasterAndGhosted(molar_rho_);
+  Operators::CellToFace_ScaleInverse(mu, krel_);
+  dKdP_->PutScalarMasterAndGhosted(0.0);
 
   // create diffusion operator
   op_matrix_->Init();
@@ -81,6 +85,8 @@ void Richards_PK::SolveFullySaturatedProblem(
 ****************************************************************** */
 void Richards_PK::EnforceConstraints(double Tp, Teuchos::RCP<CompositeVector> u)
 {
+  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
+
   UpdateSourceBoundaryData(Tp, Tp, *u);
 
   CompositeVector utmp(*u);
@@ -94,16 +100,19 @@ void Richards_PK::EnforceConstraints(double Tp, Teuchos::RCP<CompositeVector> u)
   relperm_->Compute(u, krel_);
   RelPermUpwindFn func1 = &RelPerm::Compute;
   upwind_->Compute(*darcy_flux_upwind, *u, bc_model, bc_value, *krel_, *krel_, func1);
-  krel_->ScaleMasterAndGhosted(molar_rho_ / mu_);
+  Operators::CellToFace_ScaleInverse(mu, krel_);
+  krel_->ScaleMasterAndGhosted(molar_rho_);
 
   relperm_->ComputeDerivative(u, dKdP_);
   RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
   upwind_->Compute(*darcy_flux_upwind, *u, bc_model, bc_value, *dKdP_, *dKdP_, func2);
-  dKdP_->ScaleMasterAndGhosted(molar_rho_ / mu_);
+  Operators::CellToFace_ScaleInverse(mu, dKdP_);
+  dKdP_->ScaleMasterAndGhosted(molar_rho_);
 
   // modify relative permeability coefficient for influx faces
   bool inflow_krel_correction(true);
   if (inflow_krel_correction) {
+    const Epetra_MultiVector& mu_cell = *mu->ViewComponent("cell");
     Epetra_MultiVector& k_face = *krel_->ViewComponent("face", true);
     AmanziMesh::Entity_ID_List cells;
 
@@ -117,11 +126,11 @@ void Richards_PK::EnforceConstraints(double Tp, Teuchos::RCP<CompositeVector> u)
         double area = mesh_->face_area(f);
         double Knn = ((K[c] * normal) * normal) / (area * area);
         // double save = 3.0;
-        // k_face[0][f] = std::min(1.0, -save * bc_value[f] * mu_ / (Knn * rho_ * rho_ * g_));
+        // k_face[0][f] = std::min(1.0, -save * bc_value[f] * mu_cell[0][c] / (Knn * rho_ * rho_ * g_));
         double value = bc_value[f] / flux_units_;
         double kr1 = relperm_->Compute(c, u_cell[0][c]);
-        double kr2 = std::min(1.0, -value * mu_ / (Knn * rho_ * rho_ * g_));
-        k_face[0][f] = (molar_rho_ / mu_) * (kr1 + kr2) / 2;
+        double kr2 = std::min(1.0, -value * mu_cell[0][c] / (Knn * rho_ * rho_ * g_));
+        k_face[0][f] = (molar_rho_ / mu_cell[0][c]) * (kr1 + kr2) / 2;
       } 
     }
 

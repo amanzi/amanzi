@@ -43,6 +43,7 @@ class DarcyProblem {
   Teuchos::RCP<State> S;
   Flow::Darcy_PK* DPK;
   std::string passwd;
+  double mu;
 
   Epetra_MpiComm* comm;
   int MyPID;
@@ -97,6 +98,9 @@ class DarcyProblem {
     S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
+
+    // create other parameters
+    mu = *S->GetScalarData("fluid_viscosity", passwd);
 
     return 0;
   }
@@ -223,7 +227,7 @@ TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
     double p0 = 1.0;
     AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
     AmanziGeometry::Point velocity(3);
-    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / DPK->mu();
+    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / mu;
 
     double errorP = calculatePressureCellError(p0, pressure_gradient);
     CHECK(errorP < 1.0e-8);
@@ -261,7 +265,7 @@ TEST_FIXTURE(DarcyProblem, DirichletNeumann) {
     double p0 = 1.0;
     AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
     AmanziGeometry::Point velocity(3);
-    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / DPK->mu();
+    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / mu;
     double u0 = DPK->rho() * velocity * AmanziGeometry::Point(0.0, 0.0, 1.0);
 
     double errorP = calculatePressureCellError(p0, pressure_gradient);
@@ -300,7 +304,7 @@ TEST_FIXTURE(DarcyProblem, StaticHeadDirichlet) {
     double p0 = 2.0;
     AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
     AmanziGeometry::Point velocity(3);
-    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / DPK->mu();
+    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / mu;
 
     double errorP = calculatePressureCellError(p0, pressure_gradient);
     CHECK(errorP < 1.0e-8);
@@ -341,7 +345,7 @@ TEST_FIXTURE(DarcyProblem, DDprisms) {
     double p0 = 1.0;
     AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
     AmanziGeometry::Point velocity(3);
-    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / DPK->mu();
+    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / mu;
 
     double errorP = calculatePressureCellError(p0, pressure_gradient);
     CHECK(errorP < 1.0e-8);
@@ -383,7 +387,7 @@ TEST_FIXTURE(DarcyProblem, DNtetrahedra) {
     double p0 = 1.0;
     AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
     AmanziGeometry::Point velocity(3);
-    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / DPK->mu();
+    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / mu;
     double u0 = DPK->rho() * velocity * AmanziGeometry::Point(0.0, 0.0, 1.0);
 
     double errorP = calculatePressureCellError(p0, pressure_gradient);
@@ -425,7 +429,7 @@ TEST_FIXTURE(DarcyProblem, DDmixed) {
     double p0 = 1.0;
     AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
     AmanziGeometry::Point velocity(3);
-    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / DPK->mu();
+    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / mu;
 
     double errorP = calculatePressureCellError(p0, pressure_gradient);
     CHECK(errorP < 1.0e-8);

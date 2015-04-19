@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "FieldMaps.hh"
 #include "LinearOperatorFactory.hh"
 #include "Richards_PK.hh"
 
@@ -53,6 +54,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     }
   }
 
+  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
+
   int max_itrs_nonlinear = plist.get<int>("maximum number of iterations", 400);
   double residual_tol_nonlinear = plist.get<double>("convergence tolerance", 1e-8);
 
@@ -70,12 +73,14 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     relperm_->Compute(solution, krel_);
     RelPermUpwindFn func1 = &RelPerm::Compute;
     upwind_->Compute(*darcy_flux_upwind, *solution, bc_model, bc_value, *krel_, *krel_, func1);
-    krel_->ScaleMasterAndGhosted(molar_rho_ / mu_);
+    Operators::CellToFace_ScaleInverse(mu, krel_);
+    krel_->ScaleMasterAndGhosted(molar_rho_);
 
     relperm_->ComputeDerivative(solution, dKdP_);
     RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
     upwind_->Compute(*darcy_flux_upwind, *solution, bc_model, bc_value, *dKdP_, *dKdP_, func2);
-    dKdP_->ScaleMasterAndGhosted(molar_rho_ / mu_);
+    Operators::CellToFace_ScaleInverse(mu, dKdP_);
+    dKdP_->ScaleMasterAndGhosted(molar_rho_);
 
     // create algebraic problem (matrix = preconditioner)
     op_preconditioner_->Init();

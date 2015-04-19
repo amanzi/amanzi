@@ -90,13 +90,15 @@ Each part of the spec is illustrated by an example followed by optional comments
 
 .. code-block:: xml
 
-    <ParameterList name="SOIL">
-      <Parameter name="region" type="string" value="TOP_DOMAIN"/>
-      <ParameterList name="Brooks-Corey">
-        <Parameter name="lambda" type="double" value="0.7"/>
-        <Parameter name="alpha" type="double" value="1e-3"/>
-      </ParameterList>   
-    </ParameterList>   
+   <ParameterList name="water retention models">
+     <ParameterList name="SOIL">
+       <Parameter name="region" type="string" value="TOP_DOMAIN"/>
+       <ParameterList name="Brooks-Corey">
+         <Parameter name="lambda" type="double" value="0.7"/>
+         <Parameter name="alpha" type="double" value="1e-3"/>
+       </ParameterList>   
+     </ParameterList>   
+   </ParameterList>   
  
 This defines soil properties in region TOP_DOMAIN usign the
 Brocks-Corey model with parameters `"lambda=0.7`" and `"alpha=1e-3`".
@@ -109,7 +111,13 @@ Additional conventions:
 * User-defined labels are indicated with ALL_CAPS.
   These names are usually defined to serve best the organization of the user input data.
 
-* Sublist with too many parameters will be described using multiple paragraphs and multiple examples.
+* For developers: we are gradually migrating to low-case naming convention for parameters.
+  However, parameters of XML sublists that were simply copies from the mid-level spec 
+  may violate this convention. This will go away together with the mid-level spec.
+
+* Sublist with too many parameters will be described using multiple sections and multiple examples.
+
+* For most examples we show name of the parent sublist.
 
 
 Cycle driver
@@ -146,39 +154,42 @@ parameter `"new mpc driver`" has to be set to true.
       * `"end period time`" [double] end time of the time period
 
       * `"maximum cycle number`" [int] maximal number of cycles in time
-        period( value -1 mean unlimited number of cycles)
+        period (value -1 means unlimited number of cycles)
 
       * `"initial time step`" initial time step for the time period
 
-Example of a sublist for a simulation with one time period:
+Example of a sublist for a simulation with one time period is below.
+Note that the parent sublist is the global unnamed list.
 
 .. code-block:: xml
 
-  <Parameter name="new mpc driver" type="bool" value="true"/>
-  <ParameterList name="Cycle Driver">
-    <Parameter name="component names" type="Array(string)" value="{H+, Na+, NO3-, Zn++}"/>
-    <ParameterList name="TP 0">
-      <ParameterList name="PK Tree">
-        <ParameterList name="Flow and Reactive Transport">
-          <Parameter name="PK type" type="string" value="flow reactive transport"/>
-          <ParameterList name="Reactive Transport">
-            <Parameter name="PK type" type="string" value="reactive transport"/>
-            <ParameterList name="Transport">
-               <Parameter name="PK type" type="string" value="transport"/>
+  <ParameterList>  <!-- parent list -->
+    <Parameter name="new mpc driver" type="bool" value="true"/>
+    <ParameterList name="Cycle Driver">
+      <Parameter name="component names" type="Array(string)" value="{H+, Na+, NO3-, Zn++}"/>
+      <ParameterList name="TP 0">
+        <ParameterList name="PK Tree">
+          <ParameterList name="Flow and Reactive Transport">
+            <Parameter name="PK type" type="string" value="flow reactive transport"/>
+            <ParameterList name="Reactive Transport">
+              <Parameter name="PK type" type="string" value="reactive transport"/>
+              <ParameterList name="Transport">
+                 <Parameter name="PK type" type="string" value="transport"/>
+              </ParameterList>
+              <ParameterList name="Chemistry">
+                <Parameter name="PK type" type="string" value="chemistry"/>
+              </ParameterList>
             </ParameterList>
-            <ParameterList name="Chemistry">
-               <Parameter name="PK type" type="string" value="chemistry"/>
+            <ParameterList name="Flow">
+              <Parameter name="PK type" type="string" value="darcy"/>
             </ParameterList>
-          </ParameterList>
-          <ParameterList name="Flow">
-            <Parameter name="PK type" type="string" value="darcy"/>
           </ParameterList>
         </ParameterList>
+        <Parameter name="start period time" type="double" value="0.0"/>
+        <Parameter name="end period time" type="double" value="1.5778463e+09"/>
+        <Parameter name="maximum cycle number" type="int" value="-1"/>
+        <Parameter name="initial time step" type="double" value="1.57680e+05"/>
       </ParameterList>
-      <Parameter name="start period time" type="double" value="0.0"/>
-      <Parameter name="end period time" type="double" value="1.5778463e+09"/>
-      <Parameter name="maximum cycle number" type="int" value="-10"/>
-      <Parameter name="initial time step" type="double" value="1.57680e+05"/>
     </ParameterList>
   </ParameterList>
 
@@ -202,12 +213,10 @@ terminated because its allocation of time ran out.
 
 .. code-block:: xml
   
-  <ParameterList name="Cycle Driver">
-    ...
+  <ParameterList name="Cycle Driver">  <!-- parent list -->
     <ParameterList name="Restart">
       <Parameter name="Checkpoint Data File Name" type="string" value="CHECK00123.h5"/>
     </ParameterList>
-    ...
   </ParameterList>
 
 
@@ -221,7 +230,7 @@ is read from the checkpoint file.
 State
 =====
 
-List `"State`" allows the user to initialize various fields and field evaluators 
+Sublist `"State`" allows the user to initialize various fields and field evaluators 
 using a variety of tools. 
 A field evaluator is a node in the Phalanx-like (acyclic) dependency tree. 
 The corresponding sublist of the State is named `"field evaluators`"
@@ -229,12 +238,14 @@ The initialization sublist of the State is named `"initial conditions`"
 
 .. code-block:: xml
 
-  <ParameterList name="State">
-    <ParameterList name="field evaluators">
-       ... list of field evaluators
-    </ParameterList>
-    <ParameterList name="initial conditions">
-       ... initialization of fields
+  <ParameterList>  <!-- parent list -->
+    <ParameterList name="State">
+      <ParameterList name="field evaluators">
+         ... list of field evaluators
+      </ParameterList>
+      <ParameterList name="initial conditions">
+         ... initialization of fields
+      </ParameterList>
     </ParameterList>
   </ParameterList>
 
@@ -275,7 +286,8 @@ The evaluator has the following fields.
 
 .. code-block:: xml
 
-    <ParameterList name="SATURATION">
+  <ParameterList name="field_evaluators">  <!-- parent list -->
+    <ParameterList name="SATURATION_LIQUID">
       <Parameter name="field evaluator type" type="string" value="independent variable"/>
       <ParameterList name="function">
         <ParameterList name="DOMAIN">
@@ -292,9 +304,11 @@ The evaluator has the following fields.
         <Parameter name="Verbosity Level" type="string" value="extreme"/>
       </ParameterList>
     </ParameterList>
+  </ParameterList>
 
-The indpendet variable *SATURATION* is defined as a cell-based variable with
-constant value 0.8.
+The independet variable *SATURATION_LIQUID* is defined as a cell-based variable with
+constant value 0.8. 
+Note that the user-defined name for this field cannot have spaces.
 
 
 Primary field evaluator
@@ -330,16 +344,18 @@ One can also create a secondary field evaluator using the following parameters
 
 .. code-block:: xml
 
-  <ParameterList name="molar_density_liquid">
-    <Parameter name="field evaluator type" type="string" value="eos"/>
-    <Parameter name="EOS basis" type="string" value="both"/>
-    <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
-    <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
-    <ParameterList name="EOS parameters">
-      <Parameter name="EOS type" type="string" value="liquid water"/>
-    </ParameterList>
-    <ParameterList name="VerboseObject">
-      <Parameter name="Verbosity Level" type="string" value="extreme"/>
+  <ParameterList name="field_evaluators">  <!-- parent list -->
+    <ParameterList name="molar_density_liquid">
+      <Parameter name="field evaluator type" type="string" value="eos"/>
+      <Parameter name="EOS basis" type="string" value="both"/>
+      <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
+      <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
+      <ParameterList name="EOS parameters">
+        <Parameter name="EOS type" type="string" value="liquid water"/>
+      </ParameterList>
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="extreme"/>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
 
@@ -352,15 +368,17 @@ The EOS requires one-parameter list to select the proper model for evaluation.
 
 .. code-block:: xml
 
-  <ParameterList name="internal_energy_rock">
-    <Parameter name="field evaluator type" type="string" value="iem"/>
-    <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
-    <ParameterList name="IEM parameters">
-      <Parameter name="IEM type" type="string" value="linear"/>
-      <Parameter name="heat capacity [J/kg-K]" type="double" value="620.0"/>
-    </ParameterList>
-    <ParameterList name="VerboseObject">
-      <Parameter name="Verbosity Level" type="string" value="extreme"/>
+  <ParameterList name="field_evaluators">  <!-- parent list -->
+    <ParameterList name="internal_energy_rock">
+      <Parameter name="field evaluator type" type="string" value="iem"/>
+      <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
+      <ParameterList name="IEM parameters">
+        <Parameter name="IEM type" type="string" value="linear"/>
+        <Parameter name="heat capacity [J/kg-K]" type="double" value="620.0"/>
+      </ParameterList>
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="extreme"/>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
 
@@ -383,9 +401,11 @@ parameter `"value`".
 
 .. code-block:: xml
 
-  <ParameterList name="fluid_density">
-    <Parameter name="value" type="double" value="998.0"/>
-  </ParameterList>
+   <ParameterList name="initial conditions">  <!-- parent list -->
+     <ParameterList name="fluid_density">
+       <Parameter name="value" type="double" value="998.0"/>
+     </ParameterList>
+   </ParameterList>
 
 
 Constant vector field
@@ -398,9 +418,11 @@ parameter `"Array(double)`". In two dimensions, is looks like
 
 .. code-block:: xml
 
-  <ParameterList name="gravity">
-    <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
-  </ParameterList>
+   <ParameterList name="initial conditions">  <!-- parent list -->
+     <ParameterList name="gravity">
+       <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
+     </ParameterList>
+   </ParameterList>
 
 
 A scalar field
@@ -419,26 +441,28 @@ and the function itself.
 
 .. code-block:: xml
 
-  <ParameterList name="porosity"> 
-    <ParameterList name="function">
-      <ParameterList name="MESH BLOCK 1">
-        <Parameter name="regions" type="Array(string)" value="DOMAIN 1"/>
-        <Parameter name="component" type="string" value="cell"/>
-        <ParameterList name="function">
-          <ParameterList name="function-constant">
-            <Parameter name="value" type="double" value="0.2"/>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="MESH BLOCK 2">
-        ... 
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
+   <ParameterList name="initial conditions">  <!-- parent list -->
+     <ParameterList name="pressure"> 
+       <ParameterList name="function">
+         <ParameterList name="MESH BLOCK 1">
+           <Parameter name="regions" type="Array(string)" value="DOMAIN 1"/>
+           <Parameter name="component" type="string" value="cell"/>
+           <ParameterList name="function">
+             <ParameterList name="function-constant">
+               <Parameter name="value" type="double" value="90000.0"/>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+         <ParameterList name="MESH BLOCK 2">
+           ... 
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
 
-In this example, the discrete field `"porosity`" has constant value 0.2 in 
-each mesh cell of region `"DOMAIN ``". The second mesh block will define
-porosity in other mesh regions.
+In this example, the discrete field `"pressure`" has constant value 90000 [Pa] in 
+each mesh cell of region `"DOMAIN 1``". The second mesh block will define
+ppressure in the second mesh regions and so on.
 
 
 A vector or tensor field
@@ -454,31 +478,33 @@ The required parameters are `"Number of DoFs`" and `"Function type`".
 
 .. code-block:: xml
 
-  <ParameterList name="darcy_flux">
-    <Parameter name="dot with normal" type="bool" value="true"/>
-    <ParameterList name="function">
-      <ParameterList name="MESH BLOCK 1">
-        <Parameter name="regions" type="Array(string)" value="{ALL DOMAIN}"/>
-        <Parameter name="component" type="string" value="face"/>
-        <ParameterList name="function">
-          <Parameter name="Number of DoFs" type="int" value="2"/>
-          <Parameter name="Function type" type="string" value="composite function"/>
-          <ParameterList name="DoF 1 Function">
-            <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="0.002"/>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="DoF 2 Function">
-            <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="0.001"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
+   <ParameterList name="initial conditions">  <!-- parent list -->
+     <ParameterList name="darcy_flux">
+       <Parameter name="dot with normal" type="bool" value="true"/>
+       <ParameterList name="function">
+         <ParameterList name="MESH BLOCK 1">
+           <Parameter name="regions" type="Array(string)" value="{ALL DOMAIN}"/>
+           <Parameter name="component" type="string" value="face"/>
+           <ParameterList name="function">
+             <Parameter name="Number of DoFs" type="int" value="2"/>
+             <Parameter name="Function type" type="string" value="composite function"/>
+             <ParameterList name="DoF 1 Function">
+               <ParameterList name="function-constant">
+                 <Parameter name="value" type="double" value="0.002"/>
+               </ParameterList>
+             </ParameterList>
+             <ParameterList name="DoF 2 Function">
+               <ParameterList name="function-constant">
+                 <Parameter name="value" type="double" value="0.001"/>
+               </ParameterList>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
 
-In this example the constant vector (0.002, 0.001) is dotted with the face 
+In this example the constant Darcy velocity (0.002, 0.001) [m/s] is dotted with the face 
 normal producing one number per mesh face.
 changing value of `"dot with normal`" to false will produce a vector 
 
@@ -493,11 +519,13 @@ regions that define unique partition of the mesh.
 
 .. code-block:: xml
 
-    <ParameterList name="mesh partitions">
-      <ParameterList name="MATERIALS">
-        <Parameter name="region list" type="Array(string)" value="{region1, region2, region3}"/>
-      </ParameterList>
-    </ParameterList>
+   <ParameterList name="State">  <!-- parent list -->
+     <ParameterList name="mesh partitions">
+       <ParameterList name="MATERIALS">
+         <Parameter name="region list" type="Array(string)" value="{region1, region2, region3}"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
 
 In this example, we verify that three mesh regions cover the mesh without overlaps.
 If so, all material fields, e.g. porosity, will be initialized properly.
@@ -513,12 +541,14 @@ For a parallel run, it must be `".par`".
 
 .. code-block:: xml
 
-  <ParameterList name="permeability">
-    <ParameterList name="exodus file initialization">
-      <Parameter name="file" type="string" value="mesh_with_data.exo"/>
-      <Parameter name="attribute" type="string" value="perm"/>
-    </ParameterList>
-  </ParameterList>
+   <ParameterList name="initial conditions">  <!-- parent list -->
+     <ParameterList name="permeability">
+       <ParameterList name="exodus file initialization">
+         <Parameter name="file" type="string" value="mesh_with_data.exo"/>
+         <Parameter name="attribute" type="string" value="perm"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
 
 
 Example
@@ -530,27 +560,39 @@ The complete example of a state initialization is below. Note that
 .. code-block:: xml
 
   <ParameterList name="state">
+    <ParameterList name="field evaluators">
+      <ParameterList name="porosity">
+        <ParameterList name="function">
+          <ParameterList name="ALL">
+            <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.408"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
     <ParameterList name="initial conditions">
       <ParameterList name="fluid_density">
         <Parameter name="value" type="double" value="998.0"/>
-      </ParameterList>
-
-      <ParameterList name="fluid_viscosity">
-        <Parameter name="value" type="double" value="0.001"/>
       </ParameterList>
 
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
       </ParameterList>
 
-      <ParameterList name="porosity"> <!-- pressure is done similarly -->
+      <ParameterList name="pressure">
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="regions" type="Array(string)" value="Computational domain"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.2"/>
+                <Parameter name="value" type="double" value="90000.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -604,23 +646,24 @@ The complete example of a state initialization is below. Note that
 Process kernels (PKs)
 =====================
 
-Sublist of PKs used in a simulation. Using old mpc driver possible
-entries of this sublist are Flow, Transport, Chemistry. Using new mpc
-driver entries of this sublist must match PKNAMEs in Cycle Driver sublist.
+This is a complete sublist of PKs used in a simulation.
+The name of PKs in this sublist must match PKNAMEs in Cycle Driver sublist.
 
 .. code-block:: xml
 
-  <ParameterList name="PKs">
-    <ParameterList name="Flow and Transport">
-      <Parameter name="PK type" type="string" value="flow transport pk"/>      
-      <Parameter name="PKs order" type="Array(string)" value="{Flow, Transport}"/> 
-      <Parameter name="master PK index" type="int" value="0"/>
-    </ParameterList>
-    <ParameterList name="Flow">
-      ...
-    </ParameterList>
-    <ParameterList name="Transport">
-      ...
+  <ParameterList>  <!-- parent list -->
+    <ParameterList name="PKs">
+      <ParameterList name="Flow and Transport">
+        <Parameter name="PK type" type="string" value="flow transport pk"/>      
+        <Parameter name="PKs order" type="Array(string)" value="{Flow, Transport}"/> 
+        <Parameter name="master PK index" type="int" value="0"/>
+      </ParameterList>
+      <ParameterList name="Flow">
+        ...
+      </ParameterList>
+      <ParameterList name="Transport">
+        ...
+      </ParameterList>
     </ParameterList>
   </ParameterList>
 
@@ -678,6 +721,14 @@ Based on these two models, the flow sublist includes exactly one sublist, either
 `"Darcy problem`" or `"Richards problem`".
 Structure of both sublists is quite similar. We make necessary comments on their differences.
 
+.. code-block:: xml
+
+   <ParameterList name="Flow">  <!-- parent list -->
+     <ParameterList name="Richards problem">
+       ...
+     </ParameterList>
+   </ParameterList>
+
 
 Physical models and assumptions
 ...............................
@@ -689,14 +740,20 @@ This list is often generated on a fly by a high-level MPC PK.
 * `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
   e.g. by EnergyFlow PK. The default value is `"false`".
 
-* `"water content evaluator`" [string] changes the evaluator for water
+* `"water content model`" [string] changes the evaluator for water
   content. Available options are `"generic`" and `"constant density`" (default).
+
+* `"viscosity model`" [string] changes the evaluator for liquid viscosity.
+  Available options are `"generic`" and `"constant viscosity`" (default).
 
 .. code-block:: xml
 
-   <ParameterList name="physical models and assumptions">
-     <Parameter name="vapor diffusion" type="bool" value="false"/>
-     <Parameter name="water content evaluator" type="string" value="constant density"/>
+   <ParameterList name="Richards problem">  <!-- parent list -->
+     <ParameterList name="physical models and assumptions">
+       <Parameter name="vapor diffusion" type="bool" value="false"/>
+       <Parameter name="water content model" type="string" value="constant density"/>
+       <Parameter name="viscosity model" type="string" value="constant viscosity"/>
+     </ParameterList>
    </ParameterList>
 
 
@@ -709,9 +766,25 @@ This list is required for `"Richards problem`" only.
  
 The water retention models are associated with non-overlapping regions. Each of the sublists (e.g. `"Soil 1`") 
 includes a few mandatory parameters: region name, model name, and parameters for the selected model.
-The available models are `"van Genuchten`", `"Brooks Corey`", and `"fake`". 
 The later is used only to set up a simple analytic solution for convergence study. 
-The available models for the relative permeability are `"Mualem`" (default) and `"Burdine`".
+
+* `"water retention model`" [string] specifies a model for the soil.
+  The available models are `"van Genuchten`", `"Brooks Corey`", and `"fake`". 
+
+  * The model `"van Genuchten`" requires `"van Genuchten alpha`" [double],
+    `"van Genuchten m`" [double], `"van Genuchten l`" [double], `"residual saturation`" [double],
+    and `"relative permeability model`" [string].
+
+  * The model `"Brooks-Corey`" requires `"Brooks Corey lambda`" [double], `"Brooks Corey alpha`" [double],
+    `"Brooks Corey l`" [double], `"residual saturation`" [double],
+    and `"relative permeability model`" [string].
+
+* `"relative permeability model`" [string] The available options are `"Mualem`" (default) 
+  and `"Burdine`".
+
+* `"regularization interval`" [double] removes the kink in the water retention curve at the
+  saturation point using a cubic spline. The parameter specifies the regularization region [Pa].
+  Default value is 0.
 
 Amanzi performs rudimentary checks of validity of the provided parameters. 
 The relative permeability curves can be calculated and saved in an ASCI file 
@@ -725,34 +798,38 @@ if the list `"output`" is provided. This list has two mandatory parameters:
   capillary pressure. The data points are equidistributed between the residual saturation
   and 1.
 
+
 .. code-block:: xml
 
-  <ParameterList name="water retention models">
-    <ParameterList name="SOIL_1">
-      <Parameter name="region" type="string" value="TOP HALF"/>
-      <Parameter name="water retention model" type="string" value="van Genuchten"/>
-      <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>
-      <Parameter name="van Genuchten m" type="double" value="0.28571"/>
-      <Parameter name="van Genuchten l" type="double" value="0.5"/>
-      <Parameter name="residual saturation" type="double" value="0.103"/>
-      <Parameter name="relative permeability model" type="string" value="Mualem"/>
-      <ParameterList name="output">
-        <Parameter name="file" type="string" value="soil1.txt"/>
-        <Parameter name="number of points" type="int" value="1000"/>
-      </ParameterList>
-    </ParameterList>
+   <ParameterList name="Richards problem">  <!-- parent list -->
+     <ParameterList name="water retention models">
+       <ParameterList name="SOIL_1">
+         <Parameter name="region" type="string" value="TOP HALF"/>
+         <Parameter name="water retention model" type="string" value="van Genuchten"/>
+         <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>
+         <Parameter name="van Genuchten m" type="double" value="0.28571"/>
+         <Parameter name="van Genuchten l" type="double" value="0.5"/>
+         <Parameter name="residual saturation" type="double" value="0.103"/>
+         <Parameter name="regularization interval" type="double" value="100.0"/>
+         <Parameter name="relative permeability model" type="string" value="Mualem"/>
+         <ParameterList name="output">
+           <Parameter name="file" type="string" value="soil1.txt"/>
+           <Parameter name="number of points" type="int" value="1000"/>
+         </ParameterList>
+       </ParameterList>
 
-    <ParameterList name="SOIL_2">
-      <Parameter name="region" type="string" value="BOTTOM HALF"/>
-      <Parameter name="water retention model" type="string" value="Brooks Corey"/>
-      <Parameter name="Brooks Corey lambda" type="double" value="0.0014"/>
-      <Parameter name="Brooks Corey alpha" type="double" value="0.000194"/>
-      <Parameter name="Brooks Corey l" type="double" value="0.51"/>
-      <Parameter name="residual saturation" type="double" value="0.103"/>
-      <Parameter name="regularization interval" type="double" value="0.0"/>
-      <Parameter name="relative permeability model" type="string" value="Burdine"/>
-    </ParameterList>
-  </ParameterList>
+       <ParameterList name="SOIL_2">
+         <Parameter name="region" type="string" value="BOTTOM HALF"/>
+         <Parameter name="water retention model" type="string" value="Brooks Corey"/>
+         <Parameter name="Brooks Corey lambda" type="double" value="0.0014"/>
+         <Parameter name="Brooks Corey alpha" type="double" value="0.000194"/>
+         <Parameter name="Brooks Corey l" type="double" value="0.51"/>
+         <Parameter name="residual saturation" type="double" value="0.103"/>
+         <Parameter name="regularization interval" type="double" value="0.0"/>
+         <Parameter name="relative permeability model" type="string" value="Burdine"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
 
 In this example, we define two different water retention models in two soils.
 
@@ -1805,7 +1882,7 @@ This list is often generated on a fly by a high-level MPC PK.
 * `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
   e.g. by EnergyFlow PK. The default value is `"false`".
 
-* `"water content evaluator`" [string] changes the evaluator for water
+* `"water content model`" [string] changes the evaluator for water
   content. Available options are `"generic`" and `"constant density`" (default).
 
 * 
@@ -1814,7 +1891,7 @@ This list is often generated on a fly by a high-level MPC PK.
 
    <ParameterList name="physical models and assumptions">
      <Parameter name="vapor diffusion" type="bool" value="false"/>
-     <Parameter name="water content evaluator" type="string" value="constant density"/>
+     <Parameter name="water content model" type="string" value="constant density"/>
    </ParameterList>
 
 

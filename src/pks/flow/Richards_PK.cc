@@ -144,6 +144,11 @@ void Richards_PK::Setup()
 
   Flow_PK::Setup();
 
+  // Our decision can be affected by the list of models
+  Teuchos::RCP<Teuchos::ParameterList> physical_models =
+      Teuchos::sublist(rp_list_, "physical models and assumptions");
+  std::string vwc_model = physical_models->get<std::string>("water content model", "constant density");
+
   // Require primary field for this PK, which is pressure
   std::vector<std::string> names;
   std::vector<AmanziMesh::Entity_kind> locations;
@@ -175,10 +180,6 @@ void Richards_PK::Setup()
 
   // Require conserved quantity.
   // -- water content
-  Teuchos::RCP<Teuchos::ParameterList> physical_models =
-      Teuchos::sublist(rp_list_, "physical models and assumptions");
-  std::string vwc_model = physical_models->get<std::string>("water content model", "constant density");
-
   if (!S_->HasField("water_content")) {
     S_->RequireField("water_content", "water_content")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -215,6 +216,16 @@ void Richards_PK::Setup()
     S_->RequireField("porosity", "porosity")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->RequireFieldEvaluator("porosity");
+  }
+
+  // -- viscosity: if not requested by any PK, we request its constant value.
+  if (!S_->HasField("viscosity_liquid")) {
+    if (!S_->HasField("fluid_viscosity")) {
+      S_->RequireScalar("fluid_viscosity", passwd_);
+    }
+    S_->RequireField("viscosity_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->GetField("viscosity_liquid", passwd_)->set_io_vis(false);
   }
 
   // -- model for liquid density is constant density unless specified otherwise
@@ -328,7 +339,7 @@ void Richards_PK::Initialize()
   dKdP_ = Teuchos::rcp(new CompositeVector(cvs));
 
   krel_upwind_method_ = FLOW_RELATIVE_PERM_NONE;
-  krel_->PutScalarMasterAndGhosted(molar_rho_ / mu_);
+  krel_->PutScalarMasterAndGhosted(1.0);
   dKdP_->PutScalarMasterAndGhosted(0.0);
 
   // parameter which defines when update direction of update
@@ -644,6 +655,19 @@ void Richards_PK::InitializeFields_()
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // set popular default values for missed fields.
+  // -- viscosity: if not initialized, we constant value from state.
+  if (S_->GetField("viscosity_liquid")->owner() == passwd_) {
+    double mu = *S_->GetScalarData("fluid_viscosity");
+
+    if (!S_->GetField("viscosity_liquid", passwd_)->initialized()) {
+      S_->GetFieldData("viscosity_liquid", passwd_)->PutScalar(mu);
+      S_->GetField("viscosity_liquid", passwd_)->set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initilized viscosity_liquid to value " << mu << std::endl;  
+    }
+  }
+
   if (S_->GetField("saturation_liquid")->owner() == passwd_) {
     if (S_->HasField("saturation_liquid")) {
       if (!S_->GetField("saturation_liquid", passwd_)->initialized()) {

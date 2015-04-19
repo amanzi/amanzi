@@ -89,8 +89,8 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
   double rho = *S->GetScalarData("fluid_density", passwd) = 998.0;
   S->GetField("fluid_density", passwd)->set_initialized();
 
-  *S->GetScalarData("fluid_viscosity", passwd) = 0.00089;
-  S->GetField("fluid_viscosity", passwd)->set_initialized();
+  S->GetFieldData("viscosity_liquid", passwd)->PutScalar(0.00089);
+  S->GetField("viscosity_liquid", passwd)->set_initialized();
 
   // -- gravity
   Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
