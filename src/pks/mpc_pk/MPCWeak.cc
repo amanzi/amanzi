@@ -37,11 +37,11 @@ double MPCWeak::get_dt() {
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
-bool MPCWeak::AdvanceStep(double t_old, double t_new) {
+bool MPCWeak::AdvanceStep(double t_old, double t_new, bool reinit) {
   bool fail = false;
   for (MPC_PK<PK>::SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
-    fail = (*pk)->AdvanceStep(t_old, t_new);
+    fail = (*pk)->AdvanceStep(t_old, t_new, reinit);
     if (fail) {
       return fail;
     }

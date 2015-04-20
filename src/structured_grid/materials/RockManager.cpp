@@ -59,6 +59,8 @@ static int Rock_Mgr_ID_ctr=0;
 static std::vector<RockManager*> Rock_Mgr_Ptrs;
 static std::vector<std::pair<bool,Real> > Kr_smoothing_min_seff; // Bool says whether value needs to be updated
 
+static int max_grid_size_fine_gen_DEF = 32; // Blocking size for generating GSLib datafiles
+
 RockManager::RockManager(const RegionManager*     _region_manager,
                          const Array<std::string>* solute_names)
   : region_manager(_region_manager), finalized(false)
@@ -372,7 +374,7 @@ RockManager::FinalizeBuild(const Array<Geometry>& geomArray,
       const Property* p = rock[i].Prop(propNames[j]);
       GSLibProperty* t = dynamic_cast<GSLibProperty*>(const_cast<Property*>(p));
       if (t!=0) {
-        int max_grid_size_fine_gen = 32;
+        int max_grid_size_fine_gen = max_grid_size_fine_gen_DEF;
         t->BuildDataFile(geomArray,refRatio,nGrow,max_grid_size_fine_gen,p->coarsenRule(),propNames[j]);
       }
     }
@@ -552,9 +554,8 @@ RockManager::Initialize(const Array<std::string>* solute_names)
       pprp.queryarr(PorosityGSFileShiftName.c_str(),gslib_file_shift,0,BL_SPACEDIM);
 
       Real avg; pprp.get(PorosityValName.c_str(),avg);
-      Real std; pprp.get(PorosityStdName.c_str(),std);
 
-      phi_func = new GSLibProperty(PorosityName,avg,std,gslib_param_file,gslib_data_file,gslib_file_shift,arith_crsn,pc_refine);
+      phi_func = new GSLibProperty(PorosityName,avg,gslib_param_file,gslib_data_file,gslib_file_shift,arith_crsn,pc_refine);
     }
 
     Property* kappa_func = 0;
@@ -702,13 +703,11 @@ RockManager::Initialize(const Array<std::string>* solute_names)
       pprk.queryarr(PermeabilityGSFileShiftName.c_str(),gslib_file_shift,0,BL_SPACEDIM);
 
       Real avg; pprk.get(PermeabilityValName.c_str(),avg);
-      Real std; pprk.get(PermeabilityStdName.c_str(),std);
 
-      // Scale these (as above)
+      // Scale (as above)
       avg *= 1.e-10;
-      std *= 1.e-10;
 
-      kappa_func = new GSLibProperty(PermeabilityName,avg,std,gslib_param_file,gslib_data_file,gslib_file_shift,harm_crsn,pc_refine);
+      kappa_func = new GSLibProperty(PermeabilityName,avg,gslib_param_file,gslib_data_file,gslib_file_shift,harm_crsn,pc_refine);
     }
 
     // capillary pressure: include cpl_coef, residual_saturation, sigma
@@ -922,7 +921,7 @@ RockManager::Initialize(const Array<std::string>* solute_names)
     }
 
     // Make a final pass to be sure that if any isotherm paramters are set for a material, they are defaulted for all remaining materials
-    if (using_sorption) {
+    if (nsorption_isotherms > 0) {
       for (int k=0; k<known_solutes.size(); ++k) {
 	for (ICParmPair::const_iterator it=sorption_isotherm_options.begin();
 	     it!=sorption_isotherm_options.end(); ++it) {

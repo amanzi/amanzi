@@ -21,9 +21,12 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::Para
 
   Teuchos::Array<double> start_times;
   Teuchos::Array<double> initial_time_step;
+  Teuchos::Array<double> maximum_time_step;
 
   std::map<double, double> time_map;
+  std::map<double, double> max_dt_map;
   double default_initial_time_step(RESTART_TIME_STEP);
+  double default_max_time_step(MAXIMUM_TIME_STEP);
   
   /* EIB: proposed v1.2.2 update - Add Maximum Cycle Number for Transient modes */
   double max_cycle_number;
@@ -34,6 +37,7 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::Para
     // get the default initial time step
     if (exe_sublist.isSublist("Time Period Control")) {
       default_initial_time_step = exe_sublist.sublist("Time Period Control").get<double>("Default Initial Time Step",RESTART_TIME_STEP);
+      default_max_time_step = exe_sublist.sublist("Time Period Control").get<double>("Default Maximum Time Step", MAXIMUM_TIME_STEP);
     }
 
     if (exe_sublist.isParameter("Flow Model")) {
@@ -67,6 +71,7 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::Para
                 // skip the first one, there is no jump
                 if (times_it != times.begin()) {
                   time_map[*times_it] = default_initial_time_step;
+                  max_dt_map[*times_it] = -1;
                 }
               }
             }
@@ -98,6 +103,7 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::Para
                 // skip the first one, there is no jump
                 if (times_it != times.begin()) {
                   time_map[*times_it] = default_initial_time_step;
+                  max_dt_map[*times_it] = -1;
                 }
               }
             }
@@ -106,21 +112,33 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::Para
       }
     }
 
+
     // add the these last so that the default initial time steps get overwritten
     if (exe_sublist.isSublist("Time Period Control")) {
       start_times = exe_sublist.sublist("Time Period Control").get<Teuchos::Array<double> >("Start Times");
       initial_time_step = exe_sublist.sublist("Time Period Control").get<Teuchos::Array<double> >("Initial Time Step");
+      if (exe_sublist.sublist("Time Period Control").isParameter("Maximum Time Step")){
+        maximum_time_step = exe_sublist.sublist("Time Period Control").get<Teuchos::Array<double> >("Maximum Time Step");
+      }
+
+      if (maximum_time_step.size() != initial_time_step.size()){
+        maximum_time_step.resize(initial_time_step.size());
+        for (int i=0; i < maximum_time_step.size(); ++i){
+          maximum_time_step[i] = default_max_time_step;
+        }
+      }
 
       Teuchos::Array<double>::const_iterator initial_time_step_it = initial_time_step.begin();
+      Teuchos::Array<double>::const_iterator max_time_step_it = maximum_time_step.begin();
       for (Teuchos::Array<double>::const_iterator start_times_it = start_times.begin();
            start_times_it != start_times.end(); ++start_times_it) {
         time_map[*start_times_it] = *initial_time_step_it;
         ++initial_time_step_it;
+
+        max_dt_map[*start_times_it] = *max_time_step_it;
+        ++max_time_step_it;
       }
     }
-  for (std::map<double,double>::const_iterator map_it = time_map.begin();
-       map_it != time_map.end(); ++map_it) {
-  }
 
     // delete the start, switch, and end times, since the user must specify initial time steps for those seperately
     if (exe_sublist.isSublist("Time Integration Mode")) {
@@ -129,23 +147,23 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::Para
         double switch_time = exe_sublist.sublist("Time Integration Mode").sublist("Initialize To Steady").get<double>("Switch");
         double end_time = exe_sublist.sublist("Time Integration Mode").sublist("Initialize To Steady").get<double>("End");
 
-        time_map.erase(start_time);
-        time_map.erase(switch_time);
-        time_map.erase(end_time);
+        time_map.erase(start_time);  max_dt_map.erase(start_time);
+        time_map.erase(switch_time); max_dt_map.erase(switch_time);
+        time_map.erase(end_time);    max_dt_map.erase(end_time);
       }
       if (exe_sublist.sublist("Time Integration Mode").isSublist("Steady")) {
         double start_time = exe_sublist.sublist("Time Integration Mode").sublist("Steady").get<double>("Start");
         double end_time = exe_sublist.sublist("Time Integration Mode").sublist("Steady").get<double>("End");
 
-        time_map.erase(start_time);
-        time_map.erase(end_time);
+        time_map.erase(start_time);  max_dt_map.erase(start_time);
+        time_map.erase(end_time);    max_dt_map.erase(end_time);
       }
       if (exe_sublist.sublist("Time Integration Mode").isSublist("Transient")) {
         double start_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient").get<double>("Start");
         double end_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient").get<double>("End");
 
-        time_map.erase(start_time);
-        time_map.erase(end_time);
+        time_map.erase(start_time);  max_dt_map.erase(start_time);
+        time_map.erase(end_time);    max_dt_map.erase(end_time);
         
         /* EIB: proposed v1.2.2 update - Add Maximum Cycle Number for Transient modes */
         if (exe_sublist.sublist("Time Integration Mode").sublist("Transient").isParameter("Maximum Cycle Number"))
@@ -155,8 +173,8 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::Para
         double start_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("Start");
         double end_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("End");
 
-        time_map.erase(start_time);
-        time_map.erase(end_time);
+        time_map.erase(start_time);  max_dt_map.erase(start_time);
+        time_map.erase(end_time);    max_dt_map.erase(end_time);
         
         /* EIB: proposed v1.2.2 update - Add Maximum Cycle Number for Transient modes */
         if (exe_sublist.sublist("Time Integration Mode").sublist("Transient").isParameter("Maximum Cycle Number"))
@@ -165,21 +183,42 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::Para
     }
   }
 
+
+
+
+  ASSERT(start_times.size() == initial_time_step.size());
+  ASSERT(start_times.size() == maximum_time_step.size());
+
   /* TODO: need to do something with the new Maximum Cycle Number parameter in unstructured */
   
   start_times.clear();
   initial_time_step.clear();
+  maximum_time_step.clear();
 
-  for (std::map<double,double>::const_iterator map_it = time_map.begin();
-       map_it != time_map.end(); ++map_it) {
+  for (std::map<double,double>::const_iterator map_it = time_map.begin(), max_it = max_dt_map.begin();
+       map_it != time_map.end(); ++map_it, ++max_it) {
     start_times.push_back(map_it->first);
     initial_time_step.push_back(map_it->second);
+    if (max_it->second < 0){
+      if (max_it == max_dt_map.begin()) 
+	maximum_time_step.push_back(default_max_time_step);
+      else {
+        int sz = maximum_time_step.size();
+        if (sz > 0) maximum_time_step.push_back(maximum_time_step[sz-1]);
+      }
+    }
+    else {
+      maximum_time_step.push_back(max_it->second);
+    }
   }
 
-  ASSERT(start_times.size() == initial_time_step.size());
+
+
+
 
   tpc_list.set<Teuchos::Array<double> >("Start Times", start_times);
   tpc_list.set<Teuchos::Array<double> >("Initial Time Step", initial_time_step);
+  tpc_list.set<Teuchos::Array<double> >("Maximum Time Step", maximum_time_step);
 
   return tpc_list;
 }

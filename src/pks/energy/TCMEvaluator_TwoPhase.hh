@@ -39,8 +39,8 @@ class TCMEvaluator_TwoPhase : public SecondaryVariableFieldEvaluator {
   Teuchos::RCP<TCM_TwoPhase> tc_;
 
   // Keys for fields dependencies
-  Key poro_key_;
-  Key sat_key_;
+  Key porosity_key_;
+  Key saturation_key_;
 };
 
 }  // namespace Energy

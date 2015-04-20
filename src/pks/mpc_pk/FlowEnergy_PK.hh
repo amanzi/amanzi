@@ -38,13 +38,13 @@ class FlowEnergy_PK : public MPCStrong<FnTimeIntegratorPK> {
   // virtual double get_dt();
   // virtual void set_dt(double dt);
 
-  // -- advance each sub pk dt.
-  // virtual bool AdvanceStep(double t_old, double t_new);
+  // -- advance each sub pk from t_old to t_new.
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
   // virtual void CommitStep(double t_old, double t_new);
 
   std::string name() { return "flow energy"; } 
 
-  virtual void CalculateDiagnostics() {};
+  // virtual void CalculateDiagnostics() {};
 
  private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
@@ -53,6 +53,8 @@ class FlowEnergy_PK : public MPCStrong<FnTimeIntegratorPK> {
   Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> density_rock_eval;
   Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> porosity_eval;
   Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> saturation_liquid_eval;
+
+  VerboseObject* vo_;
 
   // factory registration
   static RegisteredPKFactory<FlowEnergy_PK> reg_;

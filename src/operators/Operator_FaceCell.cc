@@ -294,8 +294,8 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
 {
   ASSERT(op.matrices.size() == ncells_owned);
 
-  int lid_r[OPERATOR_MAX_FACES+1];
-  int lid_c[OPERATOR_MAX_FACES+1];
+  int lid_r[OPERATOR_MAX_FACES + 1];
+  int lid_c[OPERATOR_MAX_FACES + 1];
 
   // ELEMENT: cell, DOFS: face and cell
   const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
@@ -371,7 +371,6 @@ Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
     int lid_r = face_row_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL,sc)];
     int lid_c = face_col_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL,sc)];
     ierr |= mat.SumIntoMyValues(lid_r, 1, &op.vals[sc], &lid_c);
-    std::cout << "surf cell " << sc << " entry in face " << lid_r << " with val " << op.vals[sc] << std::endl;
   }
   ASSERT(!ierr);
 }

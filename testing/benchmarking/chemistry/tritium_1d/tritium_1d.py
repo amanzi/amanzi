@@ -150,7 +150,7 @@ if __name__ == "__main__":
     fig, ax = plt.subplots() 
         
     try:
-        # hardwired for 1d-calcite: Tritium = component 0, last time = '71'
+        # hardwired for 1d-calcite: Tritium = component 0, last time = '72'
         time = '71'
         comp = 'total_component_concentration.cell.Tritium conc'
 

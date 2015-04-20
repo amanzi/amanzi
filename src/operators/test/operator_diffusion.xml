@@ -81,8 +81,16 @@
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-      <Parameter name="upwind method" type="string" value="divk"/>
+      <Parameter name="nonlinear coefficient" type="string" value="divk: cell-face"/>
       <!--Parameter name="file name" type="string" value="test/struct.exo"/-->
+    </ParameterList>
+
+    <ParameterList name="diffusion operator gravity">
+      <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+      <Parameter name="gravity" type="bool" value="true"/>
     </ParameterList>
 
     <ParameterList name="upwind">
@@ -97,7 +105,7 @@
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-      <Parameter name="upwind method" type="string" value="second-order"/>
+      <Parameter name="nonlinear coefficient" type="string" value="divk: cell-grad-face-twin"/>
     </ParameterList>
 
     <ParameterList name="upwind second-order">

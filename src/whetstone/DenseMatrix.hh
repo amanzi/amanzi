@@ -95,7 +95,7 @@ class DenseMatrix {
   const double* Value(int i, int j) const { return data_ + j * m_ + i; } 
 
   // output 
-  friend std::ostream& operator << (std::ostream& os, DenseMatrix& A) {
+  friend std::ostream& operator << (std::ostream& os, const DenseMatrix& A) {
     for (int i = 0; i < A.NumRows(); i++) {
       for (int j = 0; j < A.NumCols(); j++) {
         os << std::setw(12) << std::setprecision(12) << A(i, j) << " ";

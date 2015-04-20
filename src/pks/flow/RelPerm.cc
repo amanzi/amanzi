@@ -8,7 +8,7 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 
-  Rel perm( pc ( sat ) ).
+  Relative permeability is a function of saturation: f(pc(sat)).
 */
 
 #include "FlowDefs.hh"

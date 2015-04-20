@@ -512,6 +512,20 @@
 
   <ParameterList name="State">
     <ParameterList name="field evaluators">
+      <ParameterList name="viscosity_liquid">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.00200000000000007e-03"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="porosity">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
@@ -539,9 +553,6 @@
     <ParameterList name="initial conditions">
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.00000e+00, 0.00000e+00, -9.80664999999999942e+00}"/>
-      </ParameterList>
-      <ParameterList name="fluid_viscosity">
-        <Parameter name="value" type="double" value="1.00200000000000007e-03"/>
       </ParameterList>
       <ParameterList name="fluid_density">
         <Parameter name="value" type="double" value="9.98200000000000045e+02"/>

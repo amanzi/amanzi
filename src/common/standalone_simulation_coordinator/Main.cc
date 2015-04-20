@@ -267,19 +267,20 @@ int main(int argc, char *argv[]) {
 	driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName);
 	
 	//driver_parameter_list.print(std::cout,true,false);
-	std::string new_filename(xmlInFileName);
-        std::string new_extension("_oldspec.xml");
-        size_t pos = new_filename.find(".xml");
-        new_filename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)12);
-        if (rank == 0) {
-          printf("Amanzi: writing the translated parameter list to file %s...\n", new_filename.c_str());
-	  Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
-          Teuchos::XMLObject XMLobj = XMLWriter.toXML(driver_parameter_list);
-          std::ofstream xmlfile;
-          xmlfile.open(new_filename.c_str());
-          xmlfile << XMLobj;
+	const Teuchos::ParameterList& echo_list = driver_parameter_list.sublist("Echo Translated Input");
+	if (echo_list.isParameter("Format")) {
+	  if (echo_list.get<std::string>("Format") == "v1") {
+	    std::string new_filename = echo_list.get<std::string>("File Name");
+	    if (rank == 0) {
+	      printf("Amanzi: writing the translated parameter list to file %s...\n", new_filename.c_str());
+	      Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
+	      Teuchos::XMLObject XMLobj = XMLWriter.toXML(driver_parameter_list);
+	      std::ofstream xmlfile;
+	      xmlfile.open(new_filename.c_str());
+	      xmlfile << XMLobj;
+	    }
+	  }
 	}
-
       } else if(strcmp(temp2, "ParameterList") == 0) {
 	// Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
         // driver_parameter_list = xmlreader.getParameters();

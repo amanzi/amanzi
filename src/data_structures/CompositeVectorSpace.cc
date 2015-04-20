@@ -157,14 +157,14 @@ CompositeVectorSpace::SetComponents(const std::vector<std::string>& names,
         const std::vector<int>& num_dofs) {
   // These components will be provided by an owning PK.
   if (owned_) {
-      Errors::Message message("SetComponent() cannot be called by a non-owning PK, and this factory is already owned.");
-      Exceptions::amanzi_throw(message);
+    Errors::Message message("SetComponent() cannot be called by a non-owning PK, and this factory is already owned.");
+    Exceptions::amanzi_throw(message);
   }
 
   // Make sure everything we've been asked for can be covered by this spec.
   if (!CheckContained_(names, names_)) {
-      Errors::Message message("CompositeVector's components do not supply a previous request.");
-      Exceptions::amanzi_throw(message);
+    Errors::Message message("CompositeVector's components do not supply a previous request.");
+    Exceptions::amanzi_throw(message);
   }
 
   // Make sure the specs are consistent.

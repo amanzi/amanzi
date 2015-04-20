@@ -59,7 +59,7 @@ class Richards_PK : public Flow_PK {
   virtual double get_dt() { return dt_; }
   virtual void set_dt(double dt) { dt_ = dt; dt_desirable_ = dt_; }
 
-  virtual bool AdvanceStep(double t_old, double t_new);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
   virtual void CommitStep(double t_old, double t_new);
   virtual void CalculateDiagnostics();
 
@@ -98,9 +98,11 @@ class Richards_PK : public Flow_PK {
                        Teuchos::RCP<const TreeVector> u, 
                        Teuchos::RCP<TreeVector> du);
 
-  // -- experimental approach -- calling this indicates that the time
-  //    integration scheme is changing the value of the solution in state.
-  void ChangedSolution() {};
+  // -- calling this indicates that the time integration
+  //    scheme is changing the value of the solution in state.
+  void ChangedSolution() {
+    pressure_eval_->SetFieldAsChanged(S_.ptr());
+  }
 
   // other flow methods
   // -- initization members

@@ -26,116 +26,19 @@
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
 #include "LinearOperatorFactory.hh"
-#include "mfd3d_diffusion.hh"
 #include "tensor.hh"
 
 // Operators
 #include "Analytic01.hh"
 #include "Analytic02.hh"
 #include "Analytic03.hh"
+#include "HeatConduction.hh"
 
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionMFD.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "UpwindSecondOrder.hh"
 #include "UpwindStandard.hh"
-
-namespace Amanzi{
-
-// This class wraps scalar diffusion coefficient Analytic03.
-class HeatConduction {
- public:
-  HeatConduction(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh), ana_(mesh) { 
-    int dim = mesh_->space_dimension();
-    cvs_.SetMesh(mesh_);
-    cvs_.SetGhosted(true);
-    cvs_.SetComponent("cell", AmanziMesh::CELL, 1);
-    cvs_.SetOwned(false);
-    cvs_.AddComponent("face", AmanziMesh::FACE, 1);
-    cvs_.AddComponent("grad", AmanziMesh::CELL, dim);
-
-    values_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs_, true));
-    derivatives_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs_, true));
-  }
-  ~HeatConduction() {};
-
-  // main members
-  void UpdateValues(const CompositeVector& u) { 
-    Epetra_MultiVector& vcell = *values_->ViewComponent("cell", true); 
-    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-
-    for (int c = 0; c < ncells; c++) {
-      const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-      const WhetStone::Tensor& Kc = ana_.Tensor(xc, 0.0);
-      vcell[0][c] = Kc(0, 0);
-    }
-
-    // add gradient component
-    int dim = mesh_->space_dimension();
-    Epetra_MultiVector& vgrad = *values_->ViewComponent("grad", true); 
-
-    for (int c = 0; c < ncells; c++) {
-      const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-      AmanziGeometry::Point grad = ana_.ScalarTensorGradient(xc, 0.0);
-      for (int i = 0; i < dim; i++) vgrad[i][c] = grad[i];
-    }
-
-    derivatives_->PutScalar(1.0);
-  }
-
-  void UpdateValuesPostUpwind() { 
-    if (!values_->HasComponent("twin")) {
-      cvs_.AddComponent("twin", AmanziMesh::FACE, 1);
-      Teuchos::RCP<CompositeVector> tmp = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs_, true));
-
-      *tmp->ViewComponent("cell") = *values_->ViewComponent("cell"); 
-      *tmp->ViewComponent("face") = *values_->ViewComponent("face"); 
-      *tmp->ViewComponent("grad") = *values_->ViewComponent("grad"); 
-      values_ = tmp;
-    }
-
-    AmanziMesh::Entity_ID_List cells;
-    Epetra_MultiVector& vcell = *values_->ViewComponent("cell", true); 
-    Epetra_MultiVector& vface = *values_->ViewComponent("face", true); 
-    Epetra_MultiVector& vtwin = *values_->ViewComponent("twin", true); 
-
-    vtwin = vface;
-    int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-
-    for (int f = 0; f < nfaces; f++) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      int ncells = cells.size();
-      
-      if (ncells == 2) {
-        double v1 = vcell[0][cells[0]];
-        double v2 = vcell[0][cells[1]];
-        if (fabs(v1 - v2) > 2 * std::min(fabs(v1), fabs(v2))) {
-          vface[0][f] = v1;
-          vtwin[0][f] = v2;
-        }  
-      } 
-    }
-  }
-
-  double Conduction(int c, double T) const {
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    const WhetStone::Tensor& Kc = ana_.Tensor(xc, 0.0);
-    return Kc(0, 0);
-  }
-
-  Teuchos::RCP<CompositeVector> values() { return values_; }
-  Teuchos::RCP<CompositeVector> derivatives() { return derivatives_; }
-   
- private:
-  CompositeVectorSpace cvs_;
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<CompositeVector> values_, derivatives_;
-  mutable Analytic03 ana_;
-};
-
-typedef double(HeatConduction::*ModelUpwindFn)(int c, double T) const; 
-
-}  // namespace Amanzi
 
 
 int BoundaryFaceGetCell(const Amanzi::AmanziMesh::Mesh& mesh, int f)
@@ -180,7 +83,8 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 30, 30, gm);
   // RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the diffusion tensor.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
@@ -214,7 +118,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator nodal");
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
-  op->SetBCs(bc);
+  op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create source and add it to the operator
@@ -238,15 +142,15 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   source.GatherGhostedToMaster();
 
   // populate the diffusion operator
-  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // update the source term
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
 
-  // apply BCs and assemble
-  op->ApplyBCs();
+  // apply BCs (primary=true, eliminate=true) and assemble
+  op->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -338,7 +242,8 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_2D) {
   std::string file = op_list.get<std::string>("file name", "test/random20.exo");
   Teuchos::RCP<const Mesh> mesh = meshfactory(file, NULL);
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the diffusion tensor
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -369,7 +274,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_2D) {
 
   // create diffusion operator 
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
-  op->SetBCs(bc);
+  op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create and initialize state variables.
@@ -407,13 +312,13 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_2D) {
   }
 
   // populate the diffusion operator
-  op->Setup(K, knc->values(), knc->derivatives(), rho, mu);
+  op->Setup(K, knc->values(), knc->derivatives());
   op->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
-  op->ApplyBCs();
+  op->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -489,7 +394,8 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, NULL);
   // Teuchos::RCP<const Mesh> mesh = meshfactory("test/mesh.exo", NULL);
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the nonlinear coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -497,9 +403,12 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
 
   Analytic03 ana(mesh);
 
-  const WhetStone::Tensor Kc(3, 1);
-  Kc(0, 0) = 1.0;
-  for (int c = 0; c < ncells; c++) K->push_back(Kc);
+/*
+  CompositeVectorSpace cvs1;
+  cvs1.SetMesh(mesh_).SetComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::RCP<CompositeVector> k = Teuchos::rcp(new CompositeVector(cvs1));
+  kc.PutScalar(1.0);
+*/
 
   double rho(1.0), mu(1.0);
   AmanziGeometry::Point g(0.0, 0.0, -1.0);
@@ -522,7 +431,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   // create diffusion operator 
   Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator divk");
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
-  op->SetBCs(bc);
+  op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create and initialize state variables.
@@ -560,13 +469,13 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   }
 
   // populate the diffusion operator
-  op->Setup(K, knc->values(), knc->derivatives(), rho, mu);
+  op->Setup(knc->values(), knc->derivatives());
   op->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
-  op->ApplyBCs();
+  op->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -647,7 +556,8 @@ TEST(OPERATOR_DIFFUSION_SECOND_ORDER) {
   std::string file = op_list.get<std::string>("file name", "test/random20.exo");
   Teuchos::RCP<const Mesh> mesh = meshfactory(file, NULL);
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the nonlinear coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -679,7 +589,7 @@ TEST(OPERATOR_DIFFUSION_SECOND_ORDER) {
 
   // create diffusion operator 
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
-  op->SetBCs(bc);
+  op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create source 
@@ -719,13 +629,13 @@ TEST(OPERATOR_DIFFUSION_SECOND_ORDER) {
   knc->UpdateValuesPostUpwind();
 
   // set up the diffusion operator
-  op->Setup(K, knc->values(), knc->derivatives(), rho, mu);
+  op->Setup(K, knc->values(), knc->derivatives());
   op->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
-  op->ApplyBCs();
+  op->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
   
@@ -804,7 +714,8 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 1, gm);
   RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the nonlinear coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -850,16 +761,16 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator mixed");
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
-  op->SetBCs(bc);
+  op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // set up the diffusion operator
-  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs();
+  op->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -967,7 +878,8 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, gm);
   RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -1024,14 +936,14 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator nodal");
   OperatorDiffusionFactory opfactory;
   Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc_v, op_list, g, 0);
-  op->AddBCs(bc_f);
+  op->AddBCs(bc_f, bc_f);
   
   // populate the diffusion operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->Init();
-  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op->ApplyBCs();
+  op->ApplyBCs(true, true);
 
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
@@ -1110,7 +1022,8 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   meshfactory.preference(pref);
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 5, 8, gm);
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -1159,16 +1072,16 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator cell");
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
-  op->SetBCs(bc_f);
+  op->SetBCs(bc_f, bc_f);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // set up the diffusion operator
-  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs();
+  op->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
   

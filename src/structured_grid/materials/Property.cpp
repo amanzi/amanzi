@@ -37,7 +37,7 @@ GSLibProperty::clone() const
   const GSLibProperty* t = dynamic_cast<const GSLibProperty*>(this);
   BL_ASSERT(t!=0);
   Array<Real> shift(BL_SPACEDIM,0);
-  GSLibProperty* ret = new GSLibProperty(t->Name(), t->avg, t->std, t->param_file, t->data_file, shift, t->coarsen_rule, t->refine_rule);
+  GSLibProperty* ret = new GSLibProperty(t->Name(), t->avg, t->param_file, t->data_file, shift, t->coarsen_rule, t->refine_rule);
   if (t->dataServices == 0) {
     ret->dataServices = 0;
   }
@@ -71,7 +71,6 @@ EnsureFolderExists(const std::string& full_path)
 
 void
 GSLibProperty::BuildGSLibFile(Real                   avg,
-                              Real                   std,
                               const std::string&     gslib_param_file,
                               const std::string&     gslib_data_file,
                               const Array<Geometry>& geom_array,
@@ -115,7 +114,7 @@ GSLibProperty::BuildGSLibFile(Real                   avg,
   const Array<Real> prob_lo(geom0.ProbLo(),BL_SPACEDIM);
   const Array<Real> prob_hi(geom0.ProbHi(),BL_SPACEDIM);
   
-  GSLibInt::rdpGaussianSim(avgVals,std,n_cell,prob_lo,prob_hi,twoexp,stat[finest_level],
+  GSLibInt::rdpGaussianSim(avgVals,n_cell,prob_lo,prob_hi,twoexp,stat[finest_level],
                            crse_init_factor,max_grid_size_fine_gen,ng_cum,gslib_param_file);
 
   for (int lev=finest_level-1; lev>=0; --lev) {
@@ -193,7 +192,7 @@ GSLibProperty::BuildDataFile(const Array<Geometry>& geom_array,
                              Property::CoarsenRule  crule,
                              const std::string&     varname)
 {
-  BuildGSLibFile(avg, std, param_file, data_file,
+  BuildGSLibFile(avg, param_file, data_file,
                  geom_array, ref_ratio, num_grow,
                  max_grid_fine_gen, crule, varname);
 

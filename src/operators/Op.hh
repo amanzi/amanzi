@@ -38,25 +38,37 @@ class Op {
       schema(schema_),
       schema_string(schema_string_),
       mesh_(mesh)
-  {}
+  {};
 
+  // Clean the operator without destroying memory
   void Init() {
     if (vals.size() > 0) {
       for (int i = 0; i != vals.size(); ++i) {
-        vals[i] = 0.;
-        vals_shadow[i] = 0.;
+        vals[i] = 0.0;
+        vals_shadow[i] = 0.0;
       }
     }
 
     WhetStone::DenseMatrix null_mat;
     if (matrices.size() > 0) {
       for (int i = 0; i != matrices.size(); ++i) {
-        matrices[i] = 0.;
+        matrices[i] = 0.0;
         matrices_shadow[i] = null_mat;
       }
     }
   }
     
+  // Restore pristine value of the matrices, i.e. before BCs.
+  virtual int CopyShadowToMaster() {
+    for (int i = 0; i != matrices.size(); ++i) {
+      if (matrices_shadow[i].NumRows() != 0) {
+        matrices[i] = matrices_shadow[i];
+      }
+    }
+    vals = vals_shadow;
+  }
+
+  // For backward compatibility... must go away
   virtual void RestoreCheckPoint() {
     for (int i = 0; i != matrices.size(); ++i) {
       if (matrices_shadow[i].NumRows() != 0) {
@@ -66,7 +78,7 @@ class Op {
     vals = vals_shadow;
   }
 
-
+  // Matching rules for schemas.
   virtual bool Matches(int match_schema, int matching_rule) {
     if (matching_rule == OPERATOR_SCHEMA_RULE_EXACT) {
       if ((match_schema & schema) == schema) return true;
@@ -76,6 +88,7 @@ class Op {
     return false;
   }
 
+  // linear operator functionality.
   virtual void ApplyMatrixFreeOp(const Operator* assembler,
           const CompositeVector& X, CompositeVector& Y) const = 0;
 
@@ -87,8 +100,8 @@ class Op {
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const = 0;
 
+  // Mutators of local matrices.
   virtual void Rescale(const CompositeVector& scaling) = 0;
-  
 
  public:
   int schema;

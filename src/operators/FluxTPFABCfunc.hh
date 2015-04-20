@@ -84,8 +84,8 @@ double OperatorDiffusionFV::DeriveBoundaryFaceValue(
     const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
     const Epetra_MultiVector& gravity_face = *gravity_term_->ViewComponent("face", true);
 
-    const std::vector<int>& bc_model = bcs_[0]->bc_model();
-    const std::vector<double>& bc_value = bcs_[0]->bc_value();
+    const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
+    const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
     if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
       return bc_value[f];

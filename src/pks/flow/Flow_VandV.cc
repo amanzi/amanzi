@@ -152,7 +152,7 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
 
 
 /* *******************************************************************
-* Calculates best least square fit for data (h[i], error[i]).                       
+* Calculates extrema for hydraulic head.
 ******************************************************************* */
 void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
 {
@@ -231,28 +231,6 @@ void Flow_PK::OutputTimeHistory(
     ofile.close();
   }
 }
-
-
-/* *******************************************************************
-* Calculates best least square fit for data (h[i], error[i]).                       
-******************************************************************* */
-double bestLSfit(const std::vector<double>& h, const std::vector<double>& error)
-{
-  double a = 0.0, b = 0.0, c = 0.0, d = 0.0, tmp1, tmp2;
-
-  int n = h.size();
-  for (int i = 0; i < n; i++) {
-    tmp1 = log(h[i]);
-    tmp2 = log(error[i]);
-    a += tmp1;
-    b += tmp2;
-    c += tmp1 * tmp1;
-    d += tmp1 * tmp2;
-  }
-
-  return (a * b - n * d) / (a * a - n * c);
-}
-
 
 }  // namespace Flow
 }  // namespace Amanzi

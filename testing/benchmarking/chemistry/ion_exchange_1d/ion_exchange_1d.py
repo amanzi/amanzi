@@ -114,56 +114,69 @@ if __name__ == "__main__":
     path_to_pflotran = "pflotran"
 
      # hardwired for 1d-calcite: time and comp
-    times = ['Time:  0.00000E+00 y', 'Time:  5.00000E+01 y',]
+    times = ['Time:  5.00000E+01 y',]
     components = ['Na+','Ca++','Mg++','Cl-']
 
     # comp = 'Total_'+root.title()+' [M]'
+
+    try:     
+      u_pflotran = [[[] for x in range(len(components))] for x in range(len(times))]
+      for i, time in enumerate(times):
+         for j, comp in enumerate(components):          
+            x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,'Total_'+comp+' [M]')
+            u_pflotran[i][j] = c_pflotran
     
-    u_pflotran = [[[] for x in range(len(components))] for x in range(len(times))]
-    for i, time in enumerate(times):
-       for j, comp in enumerate(components):          
-          x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,'Total_'+comp+' [M]')
-          u_pflotran[i][j] = c_pflotran
-    
-    v_pflotran = [[[] for x in range(len(components))] for x in range(len(times))]
-    for i, time in enumerate(times):
-       for j, comp in enumerate(components):          
-          x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,'Total_Sorbed_'+comp+' [mol_m^3]')
-          v_pflotran[i][j] = c_pflotran
+      v_pflotran = [[[] for x in range(len(components))] for x in range(len(times))]
+      for i, time in enumerate(times):
+         for j, comp in enumerate(components):          
+            x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,'Total_Sorbed_'+comp+' [mol_m^3]')
+            v_pflotran[i][j] = c_pflotran
+
+      pflotran = True
+   
+    except:
+      pflotran = False
 
     # crunchflow
     path_to_crunchflow = "crunchflow"
 
      # hardwired for 1d-tritium-crunch.in: time and comp
-    times_CF = ['totcon1.out','totcon5.out']
+    times_CF = ['totcon5.out']
     components = [0,1,2,3]
     ignore = 4
 
-    u_crunchflow = [[[] for x in range(len(components))] for x in range(len(times_CF))]
-    for i, time in enumerate(times_CF):
-       for j, comp in enumerate(components):          
-          x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
-          u_crunchflow[i][j] = c_crunchflow
+    try:
 
-    times_CF = ['totexchange1.out','totexchange5.out']
+      u_crunchflow = [[[] for x in range(len(components))] for x in range(len(times_CF))]
+      for i, time in enumerate(times_CF):
+         for j, comp in enumerate(components):          
+            x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
+            u_crunchflow[i][j] = c_crunchflow
+
+      crunch = True
+
+    except:
+      crunch = False
+ 
+    times_CF = ['totexchange5.out']
     components = [0,1,2,3]
     ignore = 4
-    
-    v_crunchflow = [[[] for x in range(len(components))] for x in range(len(times_CF))]
-    for i, time in enumerate(times_CF):
-       for j, comp in enumerate(components):
-          x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
-          v_crunchflow[i][j] = c_crunchflow
 
-    CWD = os.getcwd()
-    local_path = "" 
+    try:
     
-    # subplots
-    fig, ax = plt.subplots(2,sharex=True,figsize=(8,8))
-    
-    
+      v_crunchflow = [[[] for x in range(len(components))] for x in range(len(times_CF))]
+      for i, time in enumerate(times_CF):
+         for j, comp in enumerate(components):
+            x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
+            v_crunchflow[i][j] = c_crunchflow
+
+      crunch = True
+
+    except:
+      crunch = False
+
     # hardwired for 1d-exchange:  last time = '71'
-    times = ['0','71']
+    times = ['71']
     amanzi_components = ['total_component_concentration.cell.Na+ conc', \
                          'total_component_concentration.cell.Ca++ conc', \
                          'total_component_concentration.cell.Mg++ conc', \
@@ -200,9 +213,10 @@ if __name__ == "__main__":
               x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
               v_amanzi_native[i][j] = c_amanzi_native
 
-    except:     
+        native = True
 
-        pass
+    except:  
+        native = False
 
     try:
 
@@ -226,7 +240,6 @@ if __name__ == "__main__":
         alq = True
 
     except: 
-
         alq = False
   
     try:
@@ -251,11 +264,8 @@ if __name__ == "__main__":
         alq_crunch = True
 
     except: 
-
         alq_crunch = False
 
-        # subplots
-        #fig, ax = plt.subplots(2,sharex=True,figsize=(15,8))
 
     # amanziS data
     
@@ -283,6 +293,7 @@ if __name__ == "__main__":
            v_amanziS[j] = c_amanziS
 
         struct = len(x_amanziS)
+
     except:
         struct = 0
 
@@ -310,81 +321,102 @@ if __name__ == "__main__":
            v_amanziS_c[j] = c_amanziS
 
         struct_c = len(x_amanziS_c)
+
     except:
         struct_c = 0
 
 
     components = ['Na+','Ca++','Mg++','Cl-']
-    colors= ['r','b','m','g'] # components
-    styles = ['-','*','+','x'] # codes
-#    codes = ['Amanzi+Alquimia(PFloTran)','Amanzi+Alquimia(CrunchFlow)','Amanzi Native Chemistry','PFloTran'] + [None,]*12
-    codes = ['Amanzi(2nd-Ord)+Alquimia(PFloTran)','Amanzi(2nd-Ord)+Alquimia(CrunchFlow)','CrunchFlow(OS3D)','PFloTran'] + [None,]*12
 
-    # lines on axes
-    # for i, time in enumerate(times):
-    i = 1
-    for j, comp in enumerate(components):
-        if alq:
-               ax[0].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2)
-        if alq_crunch:
-               ax[0].plot(x_amanzi_alquimia_crunch, u_amanzi_alquimia_crunch[i][j],color=colors[j],linestyle='None',marker=styles[1],linewidth=2)
-        # ax[0].plot(x_amanzi_native, u_amanzi_native[i][j],color=colors[j],marker=styles[2],linestyle='None',linewidth=2,label=comp)
-        ax[0].plot(x_crunchflow, u_crunchflow[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2,label=comp)
-        ax[0].plot(x_pflotran, u_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[3],linewidth=2)
+# define subplots as a subgrid
+    fig = plt.figure(figsize=(15,12))
 
-    # for i, time in enumerate(times):
-    i = 1
-    for j, comp in enumerate(components):
-        if alq:
-               ax[1].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2,label=codes[j*len(styles)])
-        if alq_crunch:
-               ax[1].plot(x_amanzi_alquimia_crunch, v_amanzi_alquimia_crunch[i][j],color=colors[j],linestyle='None',marker=styles[1],linewidth=2,label=codes[j*len(styles)+1])
-      #  ax[1].plot(x_amanzi_native, v_amanzi_native[i][j],color=colors[j],marker=styles[2],linestyle='None',linewidth=2,label=codes[j*len(styles)+2])
-      #  import pdb; pdb.set_trace()
-        ax[1].plot(x_crunchflow, v_crunchflow[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2,label=codes[j*len(styles)+2])
-        ax[1].plot(x_pflotran, v_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[3],linewidth=2,label=codes[j*len(styles)+3])
+    ax = [] # total concentrations
+    bx = [] # sorbed concentrations
+
+    nrows = len(components)
+    ncols = 2
+
+    for comp in range(len(components)):
+
+        ax += [plt.subplot(nrows,ncols,2*comp+1)]
+        bx += [plt.subplot(nrows,ncols,2*comp+2)]
+
+    if alq:
+      i = 0  # hardwired for time '71'
+
+      for j, comp in enumerate(components):
+
+           ax[j].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],'r-',label='AmanziU+Alq(PFT)')
+           bx[j].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],'r-')
+
+    if alq_crunch:
+      i = 0  # hardwired for time '71'
+
+      for j, comp in enumerate(components):
+
+           ax[j].plot(x_amanzi_alquimia_crunch, u_amanzi_alquimia_crunch[i][j],'r*',label='AmanziU+Alq(CF)')
+           bx[j].plot(x_amanzi_alquimia_crunch, v_amanzi_alquimia_crunch[i][j],'r*')
+
+    if native:
+      i = 0  # hardwired for time '71'
+
+      for j, comp in enumerate(components):
+           ax[j].plot(x_amanzi_native, u_amanzi_native[i][j],'rx')
+           bx[j].plot(x_amanzi_native, v_amanzi_native[i][j],'rx',label='AmanziU Native Chem')
+
+    if crunch:
+      i = 0  # hardwired for time 50 years
+
+      for j, comp in enumerate(components):
+           ax[j].plot(x_crunchflow, u_crunchflow[i][j],'m*',label='CrunchFlow')
+           bx[j].plot(x_crunchflow, v_crunchflow[i][j],'m*')
+    
+    if pflotran:
+      i = 0  # hardwired for time 50 years
+
+      for j, comp in enumerate(components):
+           ax[j].plot(x_pflotran, u_pflotran[i][j],'m-',label='PFloTran')
+           bx[j].plot(x_pflotran, v_pflotran[i][j],'m-')
+           ax[j].text(x_pflotran[10],u_pflotran[i][j][10],comp,fontsize=15,bbox=dict(facecolor='white', alpha=1.0))
+           bx[j].text(x_pflotran[10],v_pflotran[i][j][10],comp,fontsize=15,bbox=dict(facecolor='white', alpha=1.0))
 
     if (struct>0):
-        
-        for j in range(len(amanzi_compS)):
-            ax[0].plot(x_amanziS, u_amanziS[j],color=colors[j],linestyle='--',linewidth=2)      
-        
-        for j in range(len(amanzi_sorbS)-1):
-            ax[1].plot(x_amanziS, v_amanziS[j],color=colors[j],linestyle='--',linewidth=2) 
 
-        ax[1].plot(x_amanziS, v_amanziS[len(amanzi_sorbS)-1],color=colors[len(amanzi_sorbS)-1],linestyle='--',label='AmanziS+Alquimia(PFloTran)',linewidth=2)
+        for j in range(len(amanzi_compS)):
+            ax[j].plot(x_amanziS, u_amanziS[j],'g-')
+            bx[j].plot(x_amanziS, v_amanziS[j],'g-',label='AmanziS+Alq(PFT)')
 
     if (struct_c > 0):
         
         for j in range(len(amanzi_compS)):
-            ax[0].plot(x_amanziS_c, u_amanziS_c[j],color=colors[j],linestyle='None',marker='o',markerfacecolor='None',linewidth=2)      
-        
-        for j in range(len(amanzi_sorbS)-1):
-            ax[1].plot(x_amanziS_c, v_amanziS_c[j],color=colors[j],linestyle='None',marker='o',markerfacecolor='None',linewidth=2) 
-
-        ax[1].plot(x_amanziS_c, v_amanziS_c[len(amanzi_sorbS)-1],color=colors[len(amanzi_sorbS)-1],linestyle='None',marker='o',label='AmanziS+Alquimia(Crunch)',linewidth=2,markerfacecolor='None')
+            ax[j].plot(x_amanziS_c, u_amanziS_c[j],'g*')      
+            bx[j].plot(x_amanziS_c, v_amanziS_c[j],'g*',label='AmanziS+Alq(CF)')
 
     # axes
-    ax[1].set_xlabel("Distance (m)",fontsize=15)
-    ax[0].set_ylabel("Total Concentration [mol/L]",fontsize=15)
-    ax[1].set_ylabel("Total Sorbed Concent. [mol/m3]",fontsize=15)
+    ax[len(components)-1].set_xlabel("Distance (m)",fontsize=15)
+    bx[len(components)-1].set_xlabel("Distance (m)",fontsize=15)
 
-    # ax[0].set_xlim(47,70)
-    # ax[0].set_ylim(0.06,0.10)
-
-    # ax[1].set_xlim(47,70)
-    # ax[1].set_ylim(80,170)
+##    for i,comp in enumerate(components):
+    for i,comp in enumerate(components):
+      ax[i].set_ylabel("Total Concen. [mol/L]",fontsize=15)
+      bx[i].set_ylabel("Total Sorb. [mol/m3]",fontsize=15)
 
     # plot adjustments
-    plt.subplots_adjust(left=0.15,bottom=0.15,right=0.99,top=0.90)
-    ax[0].legend(loc='upper left',fontsize=15)
-    ax[1].legend(loc='lower right',fontsize=15)
-    plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
+    ax[0].legend(fontsize=12,loc='lower right')
+    bx[0].legend(fontsize=12,loc='lower right')
+
+    plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",fontsize=20) #,x=0.57,fontsize=20)
+
     plt.tick_params(axis='both', which='major', labelsize=15)
+  
+    plt.tight_layout() #(pad=0.4, w_pad=0.5, h_pad=1.0)
+
+    plt.subplots_adjust(left=0.10,bottom=0.15,right=0.90,top=0.95)
 
     #pyplot.show()
     plt.savefig(root+"_1d.png",format="png")
     #plt.close()
 
-    # finally:
+    #finally:
     #    pass 

@@ -175,7 +175,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           sti_bdf1_std.set<int>("min iterations", ST_MIN_ITER);
           sti_bdf1_std.set<double>("time step increase factor", ST_TS_INC_FACTOR);
           sti_bdf1_std.set<double>("time step reduction factor", ST_TS_RED_FACTOR);
-          sti_bdf1_std.set<double>("max time step", ST_MAX_TS);
+          sti_bdf1_std.set<double>("max time step", MAXIMUM_TIME_STEP);
           sti_bdf1_std.set<double>("min time step", ST_MIN_TS);
 
 	  Teuchos::ParameterList* sti_bdf1_solver;
@@ -260,8 +260,8 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
                     num_list.get<double>("steady time step reduction factor", ST_TS_RED_FACTOR));
                 sti_bdf1_std.set<double>("time step increase factor",
                     num_list.get<double>("steady time step increase factor", ST_TS_INC_FACTOR));
-                sti_bdf1_std.set<double>("max time step",
-                    num_list.get<double>("steady max time step", ST_MAX_TS));
+                // sti_bdf1_std.set<double>("max time step",
+		//     num_list.get<double>("steady max time step", ST_MAX_TS));
                 sti_bdf1.set<int>("max preconditioner lag iterations",
                     num_list.get<int>("steady max preconditioner lag iterations", ST_MAX_PREC_LAG));
                 sti_bdf1_solver->set<int>("max divergent iterations",
@@ -374,7 +374,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           tti_bdf1_std.set<int>("min iterations", TR_MIN_ITER);
           tti_bdf1_std.set<double>("time step increase factor", TR_TS_INC_FACTOR);
           tti_bdf1_std.set<double>("time step reduction factor", TR_TS_RED_FACTOR);
-          tti_bdf1_std.set<double>("max time step", TR_MAX_TS);
+          tti_bdf1_std.set<double>("max time step", MAXIMUM_TIME_STEP);
           tti_bdf1_std.set<double>("min time step", TR_MIN_TS);
 
 	  Teuchos::ParameterList* tti_bdf1_solver;
@@ -428,7 +428,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
                     num_list.get<double>("transient time step reduction factor", TR_TS_RED_FACTOR));
                 tti_bdf1_std.set<double>("time step increase factor",
                     num_list.get<double>("transient time step increase factor", TR_TS_INC_FACTOR));
-                tti_bdf1_std.set<double>("max time step", num_list.get<double>("transient max time step", TR_MAX_TS));
+                // tti_bdf1_std.set<double>("max time step", num_list.get<double>("transient max time step", TR_MAX_TS));
                 tti_bdf1.set<int>("max preconditioner lag iterations",
                     num_list.get<int>("transient max preconditioner lag iterations", TR_MAX_PREC_LAG));
                 tti_bdf1_solver->set<int>("max divergent iterations",
@@ -1076,6 +1076,9 @@ Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(
         .set<std::string>("newton correction", "approximate jacobian");
   }
 
+  // "standard" is the most robust upwind method for variety of subsurface
+  // scenarios. Note that "Upwind: Amanzi" requires "upwind method"="divk" 
+  // to reproduce the same behavior on orthogonal meshes. 
   Teuchos::ParameterList& upw_list = op_list.sublist("diffusion operator").sublist("upwind");
   if (rel_perm == "Upwind: Amanzi") {
     upw_list.set<std::string>("upwind method", "divk");

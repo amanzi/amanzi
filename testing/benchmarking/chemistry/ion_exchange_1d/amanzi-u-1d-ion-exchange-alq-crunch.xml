@@ -19,6 +19,9 @@
     <Parameter name="Verbosity" type="string" value="High"/>
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
+       <ParameterList name="Flow Process Kernel">
+          <Parameter name="Preconditioning Strategy" type="string" value="Diffusion Operator"/>
+        </ParameterList>
         <ParameterList name="Transport Process Kernel">
           <Parameter name="Transport Integration Algorithm" type="string" value="Explicit Second-Order"/>
         </ParameterList>
@@ -31,7 +34,7 @@
           <Parameter name="steady max preconditioner lag iterations" type="int" value="4"/>
           <Parameter name="steady time step reduction factor" type="double" value="0.8"/>
           <Parameter name="steady time step increase factor" type="double" value="1.25"/>
-          <Parameter name="steady preconditioner" type="string" value="Trilinos ML"/>
+          <Parameter name="steady preconditioner" type="string" value="Hypre AMG"/>
         </ParameterList>
         <ParameterList name="Transient Implicit Time Integration">
           <Parameter name="transient max iterations" type="int" value="15"/>
@@ -42,7 +45,7 @@
           <Parameter name="transient max preconditioner lag iterations" type="int" value="4"/>
           <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
           <Parameter name="transient time step increase factor" type="double" value="1.25"/>
-          <Parameter name="transient preconditioner" type="string" value="Trilinos ML"/>
+          <Parameter name="transient preconditioner" type="string" value="Hypre AMG"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

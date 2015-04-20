@@ -127,7 +127,8 @@ void RunTest(std::string op_list_name) {
 
   RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the nonlinear coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -184,14 +185,14 @@ void RunTest(std::string op_list_name) {
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                         .get<Teuchos::ParameterList>(op_list_name);
     OperatorDiffusionMFD op(olist, surfmesh);
-    op.SetBCs(bc);
+    op.SetBCs(bc, bc);
 
     // get the global operator
     Teuchos::RCP<Operator> global_op = op.global_operator();
     global_op->Init();
 
     // populate diffusion operator
-    op.Setup(K, knc->values(), knc->derivatives(), rho, mu);
+    op.Setup(K, knc->values(), knc->derivatives());
     op.UpdateMatrices(flux.ptr(), Teuchos::null);
 
     // add accumulation terms
@@ -200,7 +201,7 @@ void RunTest(std::string op_list_name) {
 
     // apply BCs and assemble
     global_op->UpdateRHS(source, false);
-    op.ApplyBCs();
+    op.ApplyBCs(true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
     
@@ -253,7 +254,7 @@ void RunTest(std::string op_list_name) {
   }
 }
 
-} // end anonymous namespace
+}  // end anonymous namespace
 
 
 TEST(NONLINEAR_HEAT_CONDUCTION) {

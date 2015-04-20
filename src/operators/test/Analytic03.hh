@@ -6,8 +6,14 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Complex solution plus disconditinous coefficient. This solution
+  has discontinuous tangential flux.
 */
+
+#ifndef AMANZI_OPERATOR_ANALYTIC_03_HH_
+#define AMANZI_OPERATOR_ANALYTIC_03_HH_
 
 #include "AnalyticBase.hh"
 
@@ -113,4 +119,6 @@ class Analytic03 : public AnalyticBase {
   double k1, k2;
   double a1, a2, b2;
 };
+
+#endif
 

@@ -33,7 +33,7 @@ Dummy_PK::Dummy_PK(Teuchos::ParameterList& pk_tree,
   //pk_ = Teuchos::rcp(new Flow::Multiphase_PK(*glist_, S_));
 }
 
-bool Dummy_PK::AdvanceStep(double t_old, double t_new) {
+bool Dummy_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
 
   bool failed = false;
   

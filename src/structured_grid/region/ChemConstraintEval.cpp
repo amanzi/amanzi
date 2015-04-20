@@ -150,7 +150,9 @@ ChemConstraintEval::Initialize(int i, Real t) const
     const std::string& material_name = mRockMgr->GetMaterial(i).Name();
 
     mRockMgr->RockChemistryProperties(auxTMP,material_name,aux_chem_variables_map);
-    mChemHelper->EnforceCondition(primTMP,0,auxTMP,mWaterDensity,mTemperature,boxTMP,mConstraintNames[j],cur_time);
+
+    int chem_verbose = 0;
+    mChemHelper->EnforceCondition(primTMP,0,auxTMP,mWaterDensity,mTemperature,boxTMP,mConstraintNames[j],cur_time,chem_verbose);
 
     mVals[j][i].resize(NComp());
     for (int L=0; L<Naux; ++L) {

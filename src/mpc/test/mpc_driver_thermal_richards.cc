@@ -18,7 +18,7 @@
 #include "mpc_pks_registration.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "energy_twophase_registration.hh"
+#include "energy_registration.hh"
 #include "pks_flow_registration.hh"
 #include "pks_transport_registration.hh"
 #include "State.hh"

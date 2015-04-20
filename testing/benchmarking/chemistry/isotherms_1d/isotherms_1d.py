@@ -116,8 +116,8 @@ if __name__ == "__main__":
 
     # times
     timespfl = ['Time:  0.00000E+00 y', 'Time:  5.00000E+01 y',]
-    timesama  = ['0','71']
-    timesama2 = ['0','71']
+    timesama  = ['71']
+    timesama2 = ['71']
 
     # pflotran output
     pflotran_totc_templ = "Total_{0} [M]"
@@ -176,6 +176,7 @@ if __name__ == "__main__":
         u_amanzi_native = [[[] for x in range(len(amanzi_totc))] for x in range(len(timesama))]
         for i, time in enumerate(timesama):
            for j, comp in enumerate(amanzi_totc):
+#              import pdb; pdb.set_trace()
               x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
               u_amanzi_native[i][j] = c_amanzi_native
 
@@ -185,8 +186,12 @@ if __name__ == "__main__":
               x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
               v_amanzi_native[i][j] = c_amanzi_native
 
+        native = len(x_amanzi_native)  
+
     except:
         
+        native = 0 
+
         pass
 
 
@@ -316,7 +321,7 @@ if __name__ == "__main__":
     #   ax[3] ---> Sorbed concentrations
 
     # for i, time in enumerate(times):
-    i = 1 # hardwired 50 years
+    i = 0 # hardwired 50 years -- because the second entry in the list was taken at cycle 71 = 50 years.
 
 #  pflotran
     ax[0].plot(x_pflotran, u_pflotran[i][0],color='m',linestyle='-',linewidth=2,label='PFloTran')    
@@ -334,14 +339,15 @@ if __name__ == "__main__":
          # crunchflow does not output sorbed concentrations
  
 # native 1.2
-    ax[0].plot(x_amanzi_native, u_amanzi_native[i][0],color='b',linestyle='None',marker='x')
-    ax[1].plot(x_amanzi_native, v_amanzi_native[i][0],color='b',linestyle='None',marker='x',label='AmanziU (2nd-Ord.) Native(v1.2)')
+    if native:
+       ax[0].plot(x_amanzi_native, u_amanzi_native[i][0],color='b',linestyle='None',marker='x')
+       ax[1].plot(x_amanzi_native, v_amanzi_native[i][0],color='b',linestyle='None',marker='x',label='AmanziU (2nd-Ord.) Native(v1.2)')
 
-    ax[2].plot(x_amanzi_native, u_amanzi_native[i][1],color='k',linestyle='None',marker='x')
-    ax[3].plot(x_amanzi_native, v_amanzi_native[i][1],color='k',linestyle='None',marker='x',label='Langmuir AmanziU (2nd-Ord.) Native(v1.2)')
+       ax[2].plot(x_amanzi_native, u_amanzi_native[i][1],color='k',linestyle='None',marker='x')
+       ax[3].plot(x_amanzi_native, v_amanzi_native[i][1],color='k',linestyle='None',marker='x',label='Langmuir AmanziU (2nd-Ord.) Native(v1.2)')
 
-    ax[2].plot(x_amanzi_native, u_amanzi_native[i][2],color='c',linestyle='None',marker='x')
-    ax[3].plot(x_amanzi_native, v_amanzi_native[i][2],color='c',linestyle='None',marker='x',label='Freundlich AmanziU (2nd-Ord.) Native(v1.2)')
+       ax[2].plot(x_amanzi_native, u_amanzi_native[i][2],color='c',linestyle='None',marker='x')
+       ax[3].plot(x_amanzi_native, v_amanzi_native[i][2],color='c',linestyle='None',marker='x',label='Freundlich AmanziU (2nd-Ord.) Native(v1.2)')
 
 # native 2.0
     if isv2:

@@ -41,7 +41,6 @@ GSLibInt::parRand(Array <Real> kappaval,
 
 void
 GSLibInt::seqGaussianSim(const Array <Real>& kappaval, 
-                         Real                dkappa, 
                          const Array<int>&   n_cell, 
                          const Array<Real>&  problo,
                          const Array<Real>&  probhi,
@@ -101,7 +100,6 @@ GSLibInt::seqGaussianSim(const Array <Real>& kappaval,
 
 void
 GSLibInt::rdpGaussianSim(const Array<Real>& kappaval, 
-                         Real               dkappa,  
                          const Array<int>&  n_cell, 
                          const Array<Real>& problo,
                          const Array<Real>& probhi,
@@ -117,13 +115,12 @@ GSLibInt::rdpGaussianSim(const Array<Real>& kappaval,
 
   std::string kcfile;
 
-  cndGaussianSim(kappaval,dkappa,n_cell, problo, probhi, twoexp, mfdata,
+  cndGaussianSim(kappaval,n_cell, problo, probhi, twoexp, mfdata,
 		 crse_init_factor,max_grid_size_fine_gen,ngrow_fine_gen,kcfile,gsfile);
 }
 
 void
 GSLibInt::cndGaussianSim(const Array<Real>& kappaval, 
-                         Real               dkappa,  
                          const Array<int>&  n_cell, 
                          const Array<Real>& problo,
                          const Array<Real>& probhi,
@@ -181,75 +178,8 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
   }
 
   Array<int> domloc(BL_SPACEDIM),domhic(BL_SPACEDIM);
-  if (cond_option >= 2) {
-    if (kcfile.empty()) {
-      // create a coarse box
-      Box bxc(IntVect(D_DECL(               0,               0,               0)),
-              IntVect(D_DECL(n_cell[0]/cfac-1,n_cell[1]/cfac-1,n_cell[2]/cfac-1)));
-
-      for (int i=0;i<BL_SPACEDIM; i++)  {  
-	dxc[i] = (probhi[i]-problo[i])/bxc.length(i);
-      }
-
-      // coarse values initialized randomly
-      BoxArray bac(bxc);
-      mfc.define(bac,1,0,Fab_allocate);
-      int nkpval = kappaval.size();
-      int domlo[BL_SPACEDIM];
-      int domhi[BL_SPACEDIM];
-
-      for (int dir = 0; dir < BL_SPACEDIM; dir++) { 
-	domlo[dir] = 0;
-	domhi[dir] = n_cell[dir]/cfac;
-      }
-
-      for (MFIter mfi(mfc); mfi.isValid(); ++mfi) {
-	const int  i     = mfi.index();
-	const int*  kp_lo  = mfc[mfi].loVect();
-	const int*  kp_hi  = mfc[mfi].hiVect();
-	const Real* kp_dat = mfc[mfi].dataPtr();
-
-	FORT_PHIRAND(kp_dat,ARLIM(kp_lo),ARLIM(kp_hi),
-		     kappaval.dataPtr(),&nkpval,&dkappa, 
-		     domlo,domhi,&rand_seed);
-      
-      }
-    }
-    else { 
-      VisMF::Read(mfc,kcfile);
-      if (mfc.size() > 1)  BoxLib::Abort("kcfile's size is > 1.");
-      for (int i=0;i<BL_SPACEDIM; i++) {  
-	dxc[i] = (probhi[i]-problo[i])/n_cell[i]*8;
-      }  
-    }
-
-    // We assume the multifab containing the conditioning data has
-    // no ghost cells.  Also that coarse data is in one fab of the
-    // multifab.  This hackery just gets the domain info to all procs 
-    for (MFIter mfi(mfc); mfi.isValid(); ++mfi) {
-      const int* k_lo  = mfc[mfi].loVect();
-      const int* k_hi  = mfc[mfi].hiVect();
-
-      c_sz = 1;
-      for (int i=0;i<BL_SPACEDIM; i++) {
-	c_sz *= k_hi[i]-k_lo[i] + 1;
-	domloc[i] = k_lo[i];
-	domhic[i] = k_hi[i];
-      }
-    }
-    ParallelDescriptor::ReduceIntSum(c_sz);
-    ParallelDescriptor::ReduceIntMin(domloc.dataPtr(),BL_SPACEDIM);
-    ParallelDescriptor::ReduceIntMax(domhic.dataPtr(),BL_SPACEDIM);
-
-    c_idx[0] = 1;
-    for (int i=1;i<10;i++) {
-      c_idx[i] = c_idx[i-1] + c_sz;
-    }
-    c_sz *= 10;
-  }
-  
   Array <Real> scratch_c(1);
-  if (cond_option > 0) {
+  if (cond_option > 0) { // originally supported other values of cond_option
     scratch_c.resize(c_sz,1.e20);
 
     if (cond_option == 1) {
@@ -258,21 +188,9 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
 	
       FORT_INTERNAL_DATA(dDum,ARLIM(ivDum),ARLIM(ivDum),
 			 scratch_c.dataPtr(),&c_sz,c_idx,
-			 &kappaval[0],&dkappa,dxc,problo.dataPtr(),
+			 &kappaval[0],dxc,problo.dataPtr(),
 			 domloc.dataPtr(),domhic.dataPtr());
 
-    } else {
-
-      for (MFIter mfi(mfc); mfi.isValid(); ++mfi) {
-	const int* k_lo  = mfc[mfi].loVect();
-	const int* k_hi  = mfc[mfi].hiVect();
-	const Real* kdat = mfc[mfi].dataPtr();
-
-	FORT_INTERNAL_DATA(kdat,ARLIM(k_lo),ARLIM(k_hi),
-			   scratch_c.dataPtr(),&c_sz,c_idx,
-			   &kappaval[0],&dkappa,dxc,problo.dataPtr(),
-			   domloc.dataPtr(),domhic.dataPtr());
-      }
     }
 
     const int IOProc   = ParallelDescriptor::IOProcessorNumber();
@@ -282,7 +200,7 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
 
   bx.refine(twoexp);
   BoxArray ba(bx); 
-  //ba.maxSize(max_grid_size_fine_gen);
+  ba.maxSize(max_grid_size_fine_gen);
   MultiFab mf(ba,1,ngrow_fine_gen);
   mf.setVal(0.);
   
@@ -361,7 +279,7 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
 		    scratch_r[i].dataPtr(),&real_sz,real_idx, 
 		    scratch_i[i].dataPtr(),&int_sz,int_idx);
 
-    FORT_LGNORM(kdat,ARLIM(k_lo),ARLIM(k_hi),&kappaval[0],&dkappa);
+    FORT_LGNORM(kdat,ARLIM(k_lo),ARLIM(k_hi),&kappaval[0]);
   }
 
   ParallelDescriptor::Barrier();

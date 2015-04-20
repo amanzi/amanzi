@@ -112,6 +112,16 @@ void Darcy_PK::Setup()
 
   Flow_PK::Setup();
 
+  // Our decision can be affected by the list of models
+  Teuchos::RCP<Teuchos::ParameterList> physical_models =
+      Teuchos::sublist(dp_list_, "physical models and assumptions");
+  std::string mu_model = physical_models->get<std::string>("viscosity model", "constant viscosity");
+  if (mu_model != "constant viscosity") {
+    Errors::Message msg;
+    msg << "Darcy PK supports only constant viscosity model.";
+    Exceptions::amanzi_throw(msg);
+  }
+
   // Require primary field for this PK.
   std::vector<std::string> names;
   std::vector<AmanziMesh::Entity_kind> locations;
@@ -166,11 +176,16 @@ void Darcy_PK::Setup()
   }
 
   // Require additional field evaluators for this PK.
-  // porosity
+  // -- porosity
   if (!S_->HasField("porosity")) {
     S_->RequireField("porosity", "porosity")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->RequireFieldEvaluator("porosity");
+  }
+
+  // -- viscosity
+  if (!S_->HasField("fluid_viscosity")) {
+    S_->RequireScalar("fluid_viscosity", passwd_);
   }
 
   // Local fields and evaluators.
@@ -289,6 +304,8 @@ void Darcy_PK::Initialize()
   UpdateSpecificYield_();
 
   // initialize diffusion operator
+  // -- instead of scaling K, we scale the elemental mass matrices 
+  double mu = *S_->GetScalarData("fluid_viscosity");
   SetAbsolutePermeabilityTensor();
 
   Teuchos::ParameterList& oplist = dp_list_->sublist("operators")
@@ -297,8 +314,9 @@ void Darcy_PK::Initialize()
   Operators::OperatorDiffusionFactory opfactory;
   op_diff_ = opfactory.Create(mesh_, op_bc_, oplist, gravity_, 0);  // The last 0 means no upwind
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
-  op_diff_->SetBCs(op_bc_);
-  op_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, rho_, mu_);
+  op_diff_->SetBCs(op_bc_, op_bc_);
+  op_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, rho_ * rho_ / mu);
+  op_diff_->ScaleMassMatrices(rho_ / mu);
   op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op_ = op_diff_->global_operator();
 
@@ -347,6 +365,7 @@ void Darcy_PK::Initialize()
                << " dt:" << dt_method_name << " Src:" << src_sink_distribution
                << " LS:\"" << solver_name_.c_str() << "\""
                << " PC:\"" << preconditioner_name_.c_str() << "\"" << std::endl;
+    *vo_->os() << "constant viscosity model, mu=" << mu << std::endl;
 
     if (initialize_with_darcy_) {
       *vo_->os() << "initial pressure guess: \"saturated solution\"\n" << std::endl;
@@ -393,15 +412,15 @@ void Darcy_PK::InitializeFields_()
 
 
 /* ******************************************************************* 
-* Performs one time step of size dT. The boundary conditions are 
-* calculated only once, during the initialization step.  
+* Performs one time step from t_old to t_new. The boundary conditions
+* are calculated only once, during the initialization step.  
 ******************************************************************* */
-bool Darcy_PK::AdvanceStep(double t_old, double t_new) 
+bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
 {
   dt_ = t_new - t_old;
   double dt_MPC(dt_);
 
-  // update boundary conditions and source terms
+  // update boundary conditions and source terms at new time.
   bc_pressure->Compute(t_new);
   bc_flux->Compute(t_new);
   bc_seepage->Compute(t_new);
@@ -434,7 +453,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new)
   op_acc_->AddAccumulationTerm(*solution, ss_g, dt_, "cell");
   op_acc_->AddAccumulationTerm(*solution, sy_g, "cell");
 
-  op_diff_->ApplyBCs(true);
+  op_diff_->ApplyBCs(true, true);
   op_->AssembleMatrix();
   op_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 

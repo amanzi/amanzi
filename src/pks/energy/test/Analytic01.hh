@@ -15,6 +15,11 @@
 
 #include <cmath>
 
+#include "Teuchos_RCP.hpp"
+
+#include "CompositeVector.hh"
+#include "tensor.hh"
+
 #include "AnalyticBase.hh"
 
 const double vel = 1.0;
@@ -51,7 +56,7 @@ class Analytic01 : public AnalyticBase {
   double temperature_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     double x = p[0];
 
-    return (vel / tan(std::pow(vel, 0.5)) * (x - vel * t) / 2);
+    return (vel / tan(std::pow(vel, 0.5) * (x - vel * t) / 2));
   }
 
   Amanzi::AmanziGeometry::Point flux_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 

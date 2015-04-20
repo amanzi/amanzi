@@ -54,7 +54,7 @@ class Chemistry_PK_Wrapper : public PK {
   virtual void set_dt(double dt) { dt_ = dt; }
 
   // Advance from state S0 to state S1 at time S0.time + dt.
-  virtual bool AdvanceStep(double t_old, double t_new){
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false){
     pk_->Advance(t_new - t_old, total_component_concentration);
     return true;
   }

@@ -78,9 +78,11 @@ class Energy_PK : public FnTimeIntegratorPK {
                        Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<TreeVector> du) {};
 
-  // -- experimental approach -- calling this indicates that the time
-  //    integration scheme is changing the value of the solution in state.
-  void ChangedSolution() {};
+  // -- calling this indicates that the time integration
+  //    scheme is changing the value of the solution in state.
+  void ChangedSolution() {
+    temperature_eval_->SetFieldAsChanged(S_.ptr());
+  }
 
   // other methods
   bool UpdateConductivityData(const Teuchos::Ptr<State>& S);
@@ -134,7 +136,9 @@ class Energy_PK : public FnTimeIntegratorPK {
   Teuchos::RCP<Operators::OperatorAdvection> op_matrix_advection_, op_preconditioner_advection_;
   Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_, op_advection_;
   Teuchos::RCP<Operators::BCs> op_bc_;
+
   std::string preconditioner_name_;
+  bool prec_include_enthalpy_;
 
  protected:
   VerboseObject* vo_;

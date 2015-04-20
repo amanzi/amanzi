@@ -81,7 +81,7 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
 
   /* calculate the constant Darcy mass velocity */
   double rho = *S->GetScalarData("fluid_density");
-  double mu = *S->GetScalarData("fluid_viscosity");
+  double mu = (*S->GetFieldData("viscosity_liquid")->ViewComponent("cell"))[0][0];
   const AmanziGeometry::Point& g = RPK->gravity();
 
   std::string passwd("flow");

@@ -18,8 +18,9 @@
 #include <vector>
 
 #include "CommonDefs.hh"
-
+#include "FieldMaps.hh"
 #include "LinearOperatorFactory.hh"
+
 #include "Richards_PK.hh"
 
 namespace Amanzi {
@@ -34,24 +35,32 @@ void Richards_PK::Functional(double t_old, double t_new,
 { 
   double dtp(t_new - t_old);
 
+  if (S_->HasFieldEvaluator("viscosity_liquid")) {
+    S_->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S_.ptr(), "flow");
+  }
+  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
+
   // update coefficients
   darcy_flux_copy->ScatterMasterToGhosted("face");
 
   relperm_->Compute(u_new->Data(), krel_); 
   RelPermUpwindFn func1 = &RelPerm::Compute;
   upwind_->Compute(*darcy_flux_upwind, *u_new->Data(), bc_model, bc_value, *krel_, *krel_, func1);
+  Operators::CellToFace_ScaleInverse(mu, krel_);
+  krel_->ScaleMasterAndGhosted(molar_rho_);
 
   relperm_->ComputeDerivative(u_new->Data(), dKdP_); 
   RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
   upwind_->Compute(*darcy_flux_upwind, *u_new->Data(), bc_model, bc_value, *dKdP_, *dKdP_, func2);
+  Operators::CellToFace_ScaleInverse(mu, dKdP_);
+  dKdP_->ScaleMasterAndGhosted(molar_rho_);
 
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
   
   // assemble residual for diffusion operator
   op_matrix_->Init();
   op_matrix_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
-  op_matrix_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr());
-  op_matrix_diff_->ApplyBCs(true);
+  op_matrix_diff_->ApplyBCs(true, true);
 
   Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
   if (src_sink != NULL) AddSourceTerms(*rhs);
@@ -62,9 +71,6 @@ void Richards_PK::Functional(double t_old, double t_new,
   Epetra_MultiVector& f_cell = *f->Data()->ViewComponent("cell");
   const Epetra_MultiVector& phi_c = *S_->GetFieldData("porosity")->ViewComponent("cell");
 
-  functional_max_norm = 0.0;
-  functional_max_cell = 0;
-  
   pressure_eval_->SetFieldAsChanged(S_.ptr());
   S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
   const Epetra_MultiVector& wc_c = *S_->GetFieldData("water_content")->ViewComponent("cell");
@@ -76,18 +82,25 @@ void Richards_PK::Functional(double t_old, double t_new,
 
     double factor = mesh_->cell_volume(c) / dtp;
     f_cell[0][c] += (wc1 - wc2) * factor;
-
-    double tmp = fabs(f_cell[0][c]) / (factor * molar_rho_ * phi_c[0][c]);  // calculate errors
-    if (tmp > functional_max_norm) {
-      functional_max_norm = tmp;
-      functional_max_cell = c;        
-    }
   }
 
   // add vapor diffusion 
   if (vapor_diffusion_) {
     Functional_AddVaporDiffusion_(f->Data());
   }
+
+  // calculate normalized residual
+  functional_max_norm = 0.0;
+  functional_max_cell = 0;
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    double factor = mesh_->cell_volume(c) * molar_rho_ * phi_c[0][c] / dtp;
+    double tmp = fabs(f_cell[0][c]) / (factor * molar_rho_ * phi_c[0][c]);
+    if (tmp > functional_max_norm) {
+      functional_max_norm = tmp;
+      functional_max_cell = c;        
+    }
+  } 
 }
 
 
@@ -113,26 +126,28 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
   Teuchos::RCP<CompositeVector> kvapor_temp = Teuchos::rcp(new CompositeVector(f->Map()));
   CalculateVaporDiffusionTensor_(kvapor_pres, kvapor_temp);
 
-  // Populate vapor matrix for pressure
-  // We assume the same matrix structure for pressure and temperature.
-  op_vapor_->Init();
-  op_vapor_diff_->Setup(kvapor_pres, Teuchos::null);
-  op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op_vapor_diff_->ApplyBCs(false);
-
-  // -- Calculate residual due to pressure
-  CompositeVector g(*f);
-  op_vapor_->ComputeNegativeResidual(pres, g);
-  f->Update(1.0, g, 1.0);
-
-  // Populate vapor matrix for temperature
+  // Calculate vapor contribution due to temperature.
+  // We assume the same DOFs for pressure and temperature. 
+  // We assume that field temperature has already essential BCs.
   op_vapor_->Init();
   op_vapor_diff_->Setup(kvapor_temp, Teuchos::null);
   op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op_vapor_diff_->ApplyBCs(false);
+  op_vapor_diff_->ApplyBCs(false, false);
+
+  // -- Calculate residual due to temperature
+  CompositeVector g(*f);
+  op_vapor_->ComputeNegativeResidual(temp, g);
+  f->Update(1.0, g, 1.0);
+
+  // Calculate vapor contribution due to capillary pressure.
+  // We elliminate essential BCs to re-use the local Op for PC.
+  op_vapor_->Init();
+  op_vapor_diff_->Setup(kvapor_pres, Teuchos::null);
+  op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_vapor_diff_->ApplyBCs(false, true);
 
   // -- Calculate residual due to pressure
-  op_vapor_->ComputeNegativeResidual(temp, g);
+  op_vapor_->ComputeNegativeResidual(pres, g);
   f->Update(1.0, g, 1.0);
 }
 
@@ -155,10 +170,14 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
   S_->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S_.ptr(), passwd_);
   const Epetra_MultiVector& n_l = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell");
 
+  S_->GetFieldEvaluator("molar_fraction_gas")->HasFieldChanged(S_.ptr(), passwd_);
+  const Epetra_MultiVector& mlf_g = *S_->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
+
   S_->GetFieldEvaluator("molar_fraction_gas")->HasFieldDerivativeChanged(S_.ptr(), passwd_, "temperature");
   const Epetra_MultiVector& dmlf_g_dt = *S_->GetFieldData("dmolar_fraction_gas_dtemperature")->ViewComponent("cell");
 
   const Epetra_MultiVector& temp = *S_->GetFieldData("temperature")->ViewComponent("cell");
+  const Epetra_MultiVector& pres = *S_->GetFieldData("pressure")->ViewComponent("cell");
 
   Epetra_MultiVector& kp_cell = *kvapor_pres->ViewComponent("cell");
   Epetra_MultiVector& kt_cell = *kvapor_temp->ViewComponent("cell");
@@ -176,8 +195,13 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
     double D_g = Dref * (Pref / atm_pressure_) * pow(temp[0][c] / Tref, 1.8);
     double tmp = tau_phi_sat_g * n_g[0][c] * D_g;
 
-    kp_cell[0][c] = tmp / (n_l[0][c] * temp[0][c] * R);
-    kt_cell[0][c] = tmp * dmlf_g_dt[0][c];
+    double nRT = n_l[0][c] * temp[0][c] * R;
+    double pc = atm_pressure_ - pres[0][c];
+    tmp *= exp(-pc / nRT);
+
+    kp_cell[0][c] = tmp * mlf_g[0][c] / nRT;
+    kt_cell[0][c] = tmp * (dmlf_g_dt[0][c] / atm_pressure_ 
+                        +  mlf_g[0][c] * pc / (nRT * temp[0][c]));
   }
 }
 
@@ -198,6 +222,8 @@ void Richards_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
 ****************************************************************** */
 void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp)
 {
+  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
+
   // update coefficients
   if (update_upwind == FLOW_UPWIND_UPDATE_ITERATION) {
     op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
@@ -207,10 +233,14 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   relperm_->Compute(u->Data(), krel_);
   RelPermUpwindFn func1 = &RelPerm::Compute;
   upwind_->Compute(*darcy_flux_upwind, *u->Data(), bc_model, bc_value, *krel_, *krel_, func1);
+  Operators::CellToFace_ScaleInverse(mu, krel_);
+  krel_->ScaleMasterAndGhosted(molar_rho_);
 
   relperm_->ComputeDerivative(u->Data(), dKdP_);
   RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
   upwind_->Compute(*darcy_flux_upwind, *u->Data(), bc_model, bc_value, *dKdP_, *dKdP_, func2);
+  Operators::CellToFace_ScaleInverse(mu, dKdP_);
+  dKdP_->ScaleMasterAndGhosted(molar_rho_);
 
   double t_old = tp - dtp;
   UpdateSourceBoundaryData(t_old, tp, *u->Data());
@@ -219,24 +249,19 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   op_preconditioner_->Init();
   op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
   op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr());
-  op_preconditioner_diff_->ApplyBCs(true);
+  op_preconditioner_diff_->ApplyBCs(true, true);
 
   // add time derivative
-  CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh_);
-  cvs.SetGhosted(false);
-  cvs.SetComponent("cell", AmanziMesh::CELL, 1);
-
-  S_->GetFieldEvaluator("saturation_liquid")->HasFieldDerivativeChanged(S_.ptr(), passwd_, "pressure");
-  CompositeVector& dSdP = *S_->GetFieldData("dsaturation_liquid_dpressure", "saturation_liquid");
-
-  const CompositeVector& phi = *S_->GetFieldData("porosity");
-  dSdP.Multiply(molar_rho_, phi, dSdP, 0.0);
-
   if (dtp > 0.0) {
-    op_acc_->AddAccumulationTerm(*u->Data(), dSdP, dtp, "cell");
+    S_->GetFieldEvaluator("water_content")->HasFieldDerivativeChanged(S_.ptr(), passwd_, "pressure");
+    CompositeVector& dwc_dp = *S_->GetFieldData("dwater_content_dpressure", "water_content");
+
+    op_acc_->AddAccumulationTerm(*u->Data(), dwc_dp, dtp, "cell");
   }
 
+  // Add vapor diffusion. We assume that the corresponding local operator
+  // has been already populated during functional evaluation.
+ 
   // finalize preconditioner
   op_preconditioner_->AssembleMatrix();
   op_preconditioner_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);

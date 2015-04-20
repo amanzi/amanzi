@@ -12,7 +12,7 @@
 #include <iostream>
 
 #include "TimeStepManager.hh"
-//#include "VerboseObject.hh"
+#include "VerboseObject.hh"
 
 namespace Amanzi {
 
@@ -21,9 +21,14 @@ TimeStepManager::TimeStepManager() {
   vo_ = Teuchos::null;
 }
 
-TimeStepManager::TimeStepManager(Teuchos::RCP<VerboseObject> verb_object) {
+TimeStepManager::TimeStepManager(Teuchos::ParameterList& verb_list) {
   dt_stable_storage = -1.;
-  vo_ = verb_object;
+  vo_ = Teuchos::rcp(new VerboseObject("TimeStepManager", verb_list));
+}
+
+TimeStepManager::TimeStepManager(Teuchos::RCP<VerboseObject> vo_cd) {
+  dt_stable_storage = -1.;
+  vo_ = vo_cd;
 }
 
 void TimeStepManager::RegisterTimeEvent(double start, double period, double stop,  bool phys) {
@@ -55,9 +60,16 @@ double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
   //   }
   // }
 
+
   if (after_failure) dt_stable_storage = -1.;
   
   if ((dt_stable_storage > 0)&&(!after_failure)) {
+    if (vo_ != Teuchos::null){
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {\
+	Teuchos::OSTab tab = vo_->getOSTab();
+	*vo_->os() <<"PK proposed dT: "<<dT<<"[sec] changed to "<< dt_stable_storage<<"[sec]."<<std::endl;
+      }
+    }
     dT = dt_stable_storage;
     dt_stable_storage = -1.;
   }
@@ -96,28 +108,37 @@ double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
 
   if (next_T_all_events == 1e99) return dT;
   double time_remaining(next_T_all_events - T);
-  if (dT >= time_remaining) {
+
+  if (dT == time_remaining) return dT;
+
+  if (dT > time_remaining) {
     if (!physical) dt_stable_storage = dT;
     if (vo_ != Teuchos::null) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
 	Teuchos::OSTab tab = vo_->getOSTab();
-    	*vo_->os() << "PK proposed dT=" << dT 
+    	*vo_->os() << "Proposed dT=" << dT 
                    << " [sec]. CD limits it to " << time_remaining << std::endl;
       }
     }
+
     return time_remaining;
-  } else if (dT > 0.75*time_remaining) {
-    if (!physical) dt_stable_storage = dT;
+
+  } else if (dT > 0.75*time_remaining) {    
+    if (!physical) dt_stable_storage = dT + (dT - 0.5*time_remaining);
     if (vo_!=Teuchos::null) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
 	Teuchos::OSTab tab = vo_->getOSTab();
-	*vo_->os() << "PK proposed dT=" << dT
+	*vo_->os() << "Proposed dT=" << dT 
                    << " [sec]. CD limits it to " << 0.5*time_remaining << std::endl;
       }
     }
+
     return 0.5*time_remaining;
+
   } else {
+
     return dT;
+
   } 
 }
 

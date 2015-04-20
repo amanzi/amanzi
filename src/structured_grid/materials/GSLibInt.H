@@ -13,7 +13,6 @@ namespace GSLibInt
 	       MultiFab&     mfdata);
 
   void rdpGaussianSim(const Array<Real>& kappaval, 
-                      Real               dkappa,  
                       const Array<int>&  n_cell, 
                       const Array<Real>& problo,
                       const Array<Real>& probhi,
@@ -25,7 +24,6 @@ namespace GSLibInt
                       const std::string& gsfile);
 
   void seqGaussianSim(const Array <Real>& kappaval, 
-		      Real                dkappa, 
 		      const Array<int>&   n_cell, 
 		      const Array<Real>&  problo,
 		      const Array<Real>&  probhi,
@@ -34,7 +32,6 @@ namespace GSLibInt
 		      const std::string&  gsfile);
 
   void cndGaussianSim(const Array<Real>& kappaval, 
-                      Real               dkappa,  
                       const Array<int>&  n_cell, 
                       const Array<Real>& problo,
                       const Array<Real>& probhi,
