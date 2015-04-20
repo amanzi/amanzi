@@ -110,12 +110,12 @@ void FlowEnergy_PK::Setup()
          .set<std::string>("mass density key", "mass_density_liquid");
     elist.sublist("molar_density_liquid").sublist("EOS parameters")
          .set<std::string>("EOS type", "liquid water");
-  }
+    elist.sublist("molar_density_liquid")
+         .sublist("VerboseObject").set<std::string>("Verbosity Level", "medium");
 
-  if (!S_->HasField("mass_density_liquid")) {
-    S_->RequireField("mass_density_liquid", "mass_density_liquid")->SetMesh(mesh_)->SetGhosted(true)
+    S_->RequireField("molar_density_liquid", "molar_density_liquid")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireFieldEvaluator("mass_density_liquid");
+    S_->RequireFieldEvaluator("molar_density_liquid");
   }
 
   // -- viscosity model
@@ -137,6 +137,11 @@ void FlowEnergy_PK::Setup()
   if (!S_->HasField("effective_pressure")) {
     elist.sublist("effective_pressure")
          .set<std::string>("field evaluator type", "effective_pressure");
+
+    S_->RequireField("effective_pressure", "effective_pressure")->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireFieldEvaluator("effective_pressure");
+    S_->GetField("effective_pressure", "effective_pressure")->set_io_vis(false);
   }
 
   // inform other PKs about strong coupling

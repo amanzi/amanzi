@@ -133,9 +133,9 @@ void EOSEvaluator::EvaluateField_(
       Epetra_MultiVector& dens_v = *(molar_dens->ViewComponent(*comp,false));
 
       int count = dens_v.MyLength();
-      for (int id=0; id!=count; ++id) {
+      for (int id = 0; id != count; ++id) {
         dens_v[0][id] = eos_->MolarDensity(temp_v[0][id], pres_v[0][id]);
-        ASSERT(dens_v[0][id] > 0.);
+        ASSERT(dens_v[0][id] > 0.0);
       }
     }
   }
@@ -157,7 +157,7 @@ void EOSEvaluator::EvaluateField_(
         Epetra_MultiVector& dens_v = *(mass_dens->ViewComponent(*comp,false));
 
         int count = dens_v.MyLength();
-        for (int id=0; id!=count; ++id) {
+        for (int id = 0; id != count; ++id) {
           dens_v[0][id] = eos_->MassDensity(temp_v[0][id], pres_v[0][id]);
           ASSERT(dens_v[0][id] > 0.);
         }
@@ -198,7 +198,7 @@ void EOSEvaluator::EvaluateFieldPartialDerivative_(
         Epetra_MultiVector& dens_v = *(molar_dens->ViewComponent(*comp,false));
 
         int count = dens_v.MyLength();
-        for (int id=0; id!=count; ++id) {
+        for (int id = 0; id != count; ++id) {
           dens_v[0][id] = eos_->DMolarDensityDp(temp_v[0][id], pres_v[0][id]);
         }
       }
@@ -221,7 +221,7 @@ void EOSEvaluator::EvaluateFieldPartialDerivative_(
           Epetra_MultiVector& dens_v = *(mass_dens->ViewComponent(*comp,false));
 
           int count = dens_v.MyLength();
-          for (int id=0; id!=count; ++id) {
+          for (int id = 0; id != count; ++id) {
             dens_v[0][id] = eos_->DMassDensityDp(temp_v[0][id], pres_v[0][id]);
           }
         }
@@ -239,7 +239,7 @@ void EOSEvaluator::EvaluateFieldPartialDerivative_(
         Epetra_MultiVector& dens_v = *(molar_dens->ViewComponent(*comp,false));
 
         int count = dens_v.MyLength();
-        for (int id=0; id!=count; ++id) {
+        for (int id = 0; id != count; ++id) {
           dens_v[0][id] = eos_->DMolarDensityDT(temp_v[0][id], pres_v[0][id]);
         }
       }
@@ -262,7 +262,7 @@ void EOSEvaluator::EvaluateFieldPartialDerivative_(
           Epetra_MultiVector& dens_v = *(mass_dens->ViewComponent(*comp,false));
 
           int count = dens_v.MyLength();
-          for (int id=0; id!=count; ++id) {
+          for (int id = 0; id != count; ++id) {
             dens_v[0][id] = eos_->DMassDensityDT(temp_v[0][id], pres_v[0][id]);
           }
         }

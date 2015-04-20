@@ -8,7 +8,8 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 
-  EffectivePressureEvaluator evaluates p_eff = max(p_atm, p_liquid), which is used for EOS.
+  EffectivePressureEvaluator evaluates p_eff = max(p_atm, p_liquid),
+  which is used for EOS.
 */
 
 #ifndef AMANZI_EOS_EFFECTIVE_PRESSURE_EVALUATOR_HH_
@@ -41,7 +42,7 @@ class EffectivePressureEvaluator : public SecondaryVariableFieldEvaluator {
   Key pres_key_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,EffectivePressureEvaluator> factory_;
+  static Utils::RegisteredFactory<FieldEvaluator, EffectivePressureEvaluator> factory_;
 };
 
 }  // namespace EOS

@@ -25,7 +25,7 @@ register_evaluator_with_factory(
   LISTNAME   EOS_EVALUATORS
   )
 register_evaluator_with_factory(
-  HEADERFILE effective_pressure_evaluator_reg.hh
+  HEADERFILE EffectivePressureEvaluator_reg.hh
   LISTNAME   EOS_EVALUATORS
   )
 register_evaluator_with_factory(
@@ -78,7 +78,7 @@ generate_evaluators_registration_header(
 # Library: eos
 #
 set(eos_src_files 
-    effective_pressure_evaluator.cc
+    EffectivePressureEvaluator.cc
     EOSEvaluator.cc
     EOSFactory.cc 
     EOS_Constant.cc
@@ -104,7 +104,7 @@ add_amanzi_library(eos
 # Install Targets
 #
 set(eos_inc_files 
-    effective_pressure_evaluator.cc
+    EffectivePressureEvaluator.cc
     EOS.hh
     EOSEvaluator.hh
     EOSFactory.hh

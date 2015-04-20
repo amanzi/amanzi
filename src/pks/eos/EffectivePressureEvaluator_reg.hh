@@ -11,7 +11,7 @@
   EffectivePressureEvaluator evaluates p_eff = max(p_atm, p_liquid), which is used for EOS.
 */
 
-#include "effective_pressure_evaluator.hh"
+#include "EffectivePressureEvaluator.hh"
 
 namespace Amanzi {
 namespace EOS {

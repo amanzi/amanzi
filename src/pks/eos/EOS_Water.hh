@@ -8,7 +8,7 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 
-  EOS for liquid water.
+  EOS for liquid water. Need a reference.
 */
 
 #ifndef AMANZI_EOS_LIQUID_WATER_HH_

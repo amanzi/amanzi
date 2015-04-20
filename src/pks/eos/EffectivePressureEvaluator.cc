@@ -12,11 +12,14 @@
 */
 
 #include "factory.hh"
-#include "effective_pressure_evaluator.hh"
+#include "EffectivePressureEvaluator.hh"
 
 namespace Amanzi {
 namespace EOS {
 
+/* *******************************************************************
+* Constructor.
+******************************************************************* */
 EffectivePressureEvaluator::EffectivePressureEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   if (my_key_ == std::string("")) {
@@ -47,10 +50,13 @@ EffectivePressureEvaluator::EffectivePressureEvaluator(Teuchos::ParameterList& p
 }
 
 
+/* *******************************************************************
+* Copy constructor.
+******************************************************************* */
 EffectivePressureEvaluator::EffectivePressureEvaluator(
         const EffectivePressureEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
-    pres_key_(other.pres_key_) {}
+    pres_key_(other.pres_key_) {};
 
 
 Teuchos::RCP<FieldEvaluator> EffectivePressureEvaluator::Clone() const {
@@ -58,8 +64,12 @@ Teuchos::RCP<FieldEvaluator> EffectivePressureEvaluator::Clone() const {
 }
 
 
-void EffectivePressureEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
-                         const Teuchos::Ptr<CompositeVector>& result) {
+/* *******************************************************************
+* Main evaluator.
+******************************************************************* */
+void EffectivePressureEvaluator::EvaluateField_(
+    const Teuchos::Ptr<State>& S, const Teuchos::Ptr<CompositeVector>& result)
+{
   // Pull dependencies out of state.
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
   const double& p_atm = *(S->GetScalarData("atmospheric_pressure"));
@@ -77,8 +87,14 @@ void EffectivePressureEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   }
 }
 
-void EffectivePressureEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-        Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
+
+/* *******************************************************************
+* Main evaluator of derivatives.
+******************************************************************* */
+void EffectivePressureEvaluator::EvaluateFieldPartialDerivative_(
+    const Teuchos::Ptr<State>& S,
+    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+{
   // Pull dependencies out of state.
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
   const double& p_atm = *(S->GetScalarData("atmospheric_pressure"));
@@ -95,7 +111,7 @@ void EffectivePressureEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::
       result_v[0][id] = pres_v[0][id] > p_atm ? 1.0 : 0.0;
     }
   }
-};
+}
 
 }  // namespace EOS
 }  // namespace Amanzi

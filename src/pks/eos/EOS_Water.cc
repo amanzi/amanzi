@@ -8,7 +8,8 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 
-  EOSs for liquid water. 
+  EOSs for liquid water: rho = q3(T-Tref) * q1(p - pref) where
+  q3 and q1 are cubic and linear polynomials, respectively.
 */
 
 #include "EOS_Water.hh"
@@ -42,7 +43,6 @@ double EOS_Water::DMassDensityDT(double T, double p) {
   double dT = T - kT0_;
   double rho1bar = kb_ + (2.0*kc_ + 3.0*kd_*dT)*dT;
   return rho1bar * (1.0 + kalpha_*(p - kp0_));
-
 };
 
 
