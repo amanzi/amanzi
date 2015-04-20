@@ -25,7 +25,8 @@ Observable data object
 
 namespace Amanzi {
 
-double ObservableSum(double a, double b, double vol) { return a + b*vol; }
+double ObservableExtensiveSum(double a, double b, double vol) { return a + b; }
+double ObservableIntensiveSum(double a, double b, double vol) { return a + b*vol; }
 double ObservableMin(double a, double b, double vol) { return std::min(a,b); }
 double ObservableMax(double a, double b, double vol) { return std::max(a,b); }
 
@@ -42,7 +43,9 @@ Observable::Observable(Teuchos::ParameterList& plist, Epetra_MpiComm *comm) :
   functional_ = plist.get<std::string>("functional");
   if (functional_ == "Observation Data: Point" ||
       functional_ == "Observation Data: Integral") {
-    function_ = &ObservableSum;
+    function_ = &ObservableIntensiveSum;
+  } else if (functional_ == "Observation Data: Extensive Integral") {
+    function_ = &ObservableExtensiveSum;
   } else if (functional_ == "Observation Data: Minimum") {
     function_ = &ObservableMin;
   } else if (functional_ == "Observation Data: Maximum") {
@@ -159,6 +162,7 @@ void Observable::Update_(const State& S,
         double vol = vec->Mesh()->face_area(*id);
 
         // hack to orient flux to outward-normal along a boundary only
+        int sign = 1;
         if (flux_normalize_) {
           AmanziMesh::Entity_ID_List cells;
           vec->Mesh()->face_get_cells(*id, AmanziMesh::USED, &cells);
@@ -167,11 +171,11 @@ void Observable::Update_(const State& S,
           std::vector<int> dirs;
           vec->Mesh()->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
           int i = std::find(faces.begin(), faces.end(), *id) - faces.begin();
-          vol *= dirs[i];
+          sign = dirs[i];
         }
 
-        value = (*function_)(value, subvec[0][*id], vol);
-        volume += std::abs(vol);
+        value = (*function_)(value, sign*subvec[0][*id], vol);
+        volume += vol;
       }
     } else if (entity == AmanziMesh::NODE) {
       for (AmanziMesh::Entity_ID_List::const_iterator id=ids.begin();
@@ -184,7 +188,8 @@ void Observable::Update_(const State& S,
 
     // syncronize the result across processors
     if (functional_ == "Observation Data: Point" ||
-        functional_ == "Observation Data: Integral") {
+        functional_ == "Observation Data: Integral" ||
+        functional_ == "Observation Data: Extensive Integral") {
       double local[2], global[2];
       local[0] = value; local[1] = volume;
       S.GetMesh()->get_comm()->SumAll(local, global, 2);
@@ -193,7 +198,8 @@ void Observable::Update_(const State& S,
         if (functional_ == "Observation Data: Point") {
           data.value = global[0] / global[1];
           data.is_valid = true;
-        } else if (functional_ == "Observation Data: Integral") {
+        } else if (functional_ == "Observation Data: Integral" ||
+                   functional_ == "Observation Data: Extensive Integral") {
           data.value = global[0];
           data.is_valid = true;
         }

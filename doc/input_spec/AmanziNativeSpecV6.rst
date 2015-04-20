@@ -3075,6 +3075,8 @@ The following Observation Data functionals are currently supported.  All of them
 
 * `"Observation Data: Integral`" returns the integral of the field quantity over the region specified
 
+* `"Observation Data: Extensive Integral`" returns the integral of an extensive variable over the region specified.  Note that this should be used over the above Integal when the variable to be integrated is an extensive quantity, i.e. water content or flux.
+
 * `"Observation Data: Minimum`" and `"Observation Data: Maximum`" returns the minimum (respectively maximum) of the field quantity over the region specified
 
 .. code-block:: xml
