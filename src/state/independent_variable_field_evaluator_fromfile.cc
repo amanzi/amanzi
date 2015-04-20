@@ -71,13 +71,13 @@ void IndependentVariableFieldEvaluatorFromFile::EnsureCompatibility(const Teucho
 
   if (locname_ == "cell") {
     S->RequireField(my_key_,my_key_)->SetMesh(S->GetMesh(meshname_))
-        ->SetComponent(compname_, AmanziMesh::CELL, ndofs_);
+        ->AddComponent(compname_, AmanziMesh::CELL, ndofs_);
   } else if (locname_ == "face") {
     S->RequireField(my_key_,my_key_)->SetMesh(S->GetMesh(meshname_))
-        ->SetComponent(compname_, AmanziMesh::FACE, ndofs_);
+        ->AddComponent(compname_, AmanziMesh::FACE, ndofs_);
   } else if (locname_ == "boundary_face") {
     S->RequireField(my_key_,my_key_)->SetMesh(S->GetMesh(meshname_))
-        ->SetComponent(compname_, AmanziMesh::BOUNDARY_FACE, ndofs_);
+        ->AddComponent(compname_, AmanziMesh::BOUNDARY_FACE, ndofs_);
   } else {
     Errors::Message m;
     m << "IndependentVariable from file: invalid location name: " << locname_;
