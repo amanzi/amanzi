@@ -1044,7 +1044,7 @@ Some general discussion of the `"Phases`" section goes here.
 .. code-block:: xml
 
   <Phases>
-      Required Elements: liquid_phase
+      Required Elements: liquid_phase 
       Optional Elements: solid_phase
   </Phases>
 
@@ -1436,8 +1436,24 @@ Example:
      <cycle_macro>Every_100_steps</cycle_macro>
   </walkabout>
 
+Misc
+====
+
+This section includes a collection of miscellaneous global options, specified as root tags.  Each of these options has a default behavior that will occur if the parameter is omitted.  If the parameter appears with no attributes specified, the default values for the attributes will be assumed.
+
+.. code-block:: xml
+
+  <echo_translated_input format="some tag" file_name="some name"/>
+
+* Write the input data after internal translation.  There are two specifyable attributes, `"format`" and `"file_name`".  If this parameter is omitted, no translated files are written.
+
+  * `"format`" is a specific format tag, and can be `"v1`" (DEFAULT) or `"native`".  The actual format created for the `"native`" tag will depend on the value of the `"type`" specified under `"amanzi_input`" (see above).
+
+  * `"file_name`" is the name of the translated output file.  If `"format`" = `"v1`", then `"file_name`" defaults to `"XXX_oldspec.xml`", where `"XXX.xml`" is the name of the original Amanzi input file.  If `"format`" = `"native`", then `"file_name`" defaults to `"translated_inpus.xml`".
+
+
 Full Example
-------------
+============
 
 .. code-block:: xml
 
@@ -1453,6 +1469,7 @@ Full Example
         <conc_unit>molar</conc_unit>
       </units>
     </model_description>
+    <echo_translated_input format="v1" file_name="my_translated_input.xml">
     <definitions>
       <macros>
         <time_macro name="time macro">
