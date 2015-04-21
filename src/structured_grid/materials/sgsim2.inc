@@ -65,6 +65,7 @@
       integer   MAXSBX,MAXSBY,MAXSBZ,MAXKR1
       integer   ixl,iyl,izl,ivrl,isecvr,iwt,icolvr,icolwt,isvr,iswt
       character datafl*64, lvmfl*64, smthfl*64, transfl*64
+	  logical   is_ang2_changed
 
 !
 ! Common Blocks:

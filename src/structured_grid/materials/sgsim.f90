@@ -959,6 +959,7 @@
       lout = 2
       ldbg = 3
       llvm = 4
+      is_ang2_changed = .false.
 
       open(lin,file=paramfl,status='OLD')
 !
