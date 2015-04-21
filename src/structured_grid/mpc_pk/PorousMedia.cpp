@@ -176,28 +176,46 @@ PorousMedia::RegisterPhysicsBasedEvents()
   BL_PROFILE("PorousMedia::RegisterPhysicsBasedEvents()");
 
   // Finalize the rock_manager setup, now that the Amr has the required info
-  if (ParallelDescriptor::IOProcessor()) {
-    std::cout << "Finalizing the RockManager" << std::endl;
-  }
   PMAmr& pmamr = *(PMParent());
   int nlevels = pmamr.maxLevel() + 1;
   Array<Geometry> geom_array(nlevels);
   Array<IntVect> ref_array(nlevels-1);
+  IntVect cumRef(D_DECL(1,1,1));
   for (int i=0; i<nlevels; ++i) {
     geom_array[i] = pmamr.Geom(i);
     if (i<nlevels-1) {
       ref_array[i] = pmamr.refRatio(i);
+      cumRef *= ref_array[i];
     }
+  }
+  if (ParallelDescriptor::IOProcessor()) {
+    std::cout << "Finalizing the RockManager on domain: " << geom_array[0].Domain();
+    if (ref_array.size()>0) {
+      std::cout << " with refinement ratios: ( ";
+      for (int i = 0; i<ref_array.size(); ++i) {
+	std::cout << ref_array[i][0];
+	if (i+1 < ref_array.size()) {
+	  std::cout << ", ";
+	}
+      }
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+	cumRef[d] *= geom_array[0].Domain().length(d);
+      }
+      std::cout << " ) for effective resolution: " << cumRef;
+    }
+    std::cout << "" << std::endl;
   }
   rock_manager->FinalizeBuild(geom_array,ref_array,PorousMedia::NGrowHYP());
 
   if (execution_mode==INIT_TO_STEADY) {
     std::string event_name = "Switch_Time";
+    std::cout << "Registering event: " << event_name << " to occur at t = " << switch_time << std::endl;
     PMParent()->RegisterEvent(event_name,new EventCoord::TimeEvent(Array<Real>(1,switch_time)));
   }
 
   for (int i=0; i<bc_array.size(); ++i) {
     const std::string& event_name = bc_array[i].Label();
+    std::cout << "Registering event: " << event_name << " " << bc_array[i].time() << std::endl;
     PMParent()->RegisterEvent(event_name,new EventCoord::TimeEvent(bc_array[i].time()));
   }
 
@@ -207,6 +225,7 @@ PorousMedia::RegisterPhysicsBasedEvents()
       BL_ASSERT(tbc_array.size()>n);
       BL_ASSERT(tbc_array[n].size()>i);
       const std::string& event_name = tbc_array[n][i].Label() + "_" + soluteNames()[n];
+      std::cout << "Registering event: " << event_name << " " << tbc_array[n][i].Time() << std::endl;
       pmamr.RegisterEvent(event_name,new EventCoord::TimeEvent(tbc_array[n][i].Time()));
     }
   }
@@ -6808,41 +6827,63 @@ PorousMedia::AdjustBCevalTime(int  state_idx,
                               bool tadj_verbose)
 {
   BL_PROFILE("PorousMedia::AdjustBCevalTime()");
-    // HACK
-    // If exec_mode is INIT_TO_STEADY, then build an adjusted eval time such that
-    // if t^n+1 = switch_time, we are approaching switch_time, eval bcs just prior
-    // if t^n = switch time, we are leaving switch_time, eval exactly at that time
-    Real t_eval = time;
-    Real prev_time = state[state_idx].prevTime();
+  // HACK
+  // Build an adjusted eval time such that
+  // if t^n+1 = special_time, we are approaching special_time, eval bcs just prior
+  // if t^n = special_time, we are leaving special_time, eval exactly at that time
+  // Here special_time can be switch_time, tpc_start_times and BC control points
 
-    const Array<Real>& tpc_start_times = PMParent()->TPCStartTimes();
-    Array<Real> all_start_times = tpc_start_times; 
-    all_start_times.push_back(switch_time);  // Treat switch time just like any other tpc start time
+  Real t_eval = time;
+  Real prev_time = state[state_idx].prevTime();
 
-    for (int i=0; i<all_start_times.size(); ++i) {
-        Real curr_time = state[state_idx].curTime();
-        Real teps = (curr_time - prev_time)*1.e-6;
+  const Array<Real>& tpc_start_times = PMParent()->TPCStartTimes();
+  Array<Real> all_start_times = tpc_start_times; 
+
+  if (execution_mode==INIT_TO_STEADY) {
+    all_start_times.push_back(switch_time);
+  }
+  for (int i=0; i<bc_array.size(); ++i) {
+    const Array<Real>& times = bc_array[i].time();
+    for (int j=0; j<times.size(); ++j) {
+      all_start_times.push_back(times[j]);
+    }
+  }
+
+  for (int n=0; n<tbc_array.size(); ++n) {
+    for (int i=0; i<tbc_array[n].size(); ++i) {
+      const Array<Real>& times = tbc_array[n][i].Time();
+      for (int j=0; j<times.size(); ++j) {
+	all_start_times.push_back(times[j]);
+      }
+    }
+  }
+
+  for (int i=0; i<all_start_times.size(); ++i) {
+    Real curr_time = state[state_idx].curTime();
+    Real teps = (curr_time - prev_time)*1.e-6;
         
-        if (std::abs(curr_time - all_start_times[i]) < teps) {
-            t_eval = std::min(t_eval, std::max(prev_time, all_start_times[i] - teps));
-        }
+    if (std::abs(curr_time - all_start_times[i]) < teps
+	&& std::abs(time - curr_time) < teps) {
+      t_eval = all_start_times[i] - teps;
+    }
         
-        if (std::abs(prev_time - all_start_times[i]) < teps) {
-            t_eval = std::max(t_eval, std::min(curr_time, all_start_times[i] + teps));
-        }
-
-        if (tadj_verbose && ParallelDescriptor::IOProcessor() && t_eval != time) {
-            const int old_prec = std::cout.precision(18);
-            std::cout << "NOTE: Adjusting eval time for saturation to avoid straddling tpc" << std::endl;
-            std::cout << "    prev_time, curr_time, all_start_time: " 
-                      << prev_time << ", " << curr_time << ", " << all_start_times[i] << std::endl;
-            std::cout << "    cum_time, strt_time, time, t_eval: " << parent->cumTime() << ", " 
-                      << parent->startTime() << ", " << time << ", " << t_eval << std::endl;
-            std::cout.precision(old_prec);
-        }
+    if (std::abs(prev_time - all_start_times[i]) < teps
+	&& std::abs(time - prev_time) < teps) {
+      t_eval = all_start_times[i];
     }
 
-    return t_eval;
+    if (tadj_verbose && ParallelDescriptor::IOProcessor() && t_eval != time) {
+      const int old_prec = std::cout.precision(18);
+      std::cout << "NOTE: Adjusting eval time for boundary condition to avoid straddling control point" << std::endl;
+      std::cout << "    prev_time, curr_time, time period control point: " 
+		<< prev_time << ", " << curr_time << ", " << all_start_times[i] << std::endl;
+      std::cout << "    cum_time, strt_time, time, adjusted evaluation time: " << parent->cumTime() << ", " 
+		<< parent->startTime() << ", " << time << ", " << t_eval << std::endl;
+      std::cout.precision(old_prec);
+    }
+  }
+
+  return t_eval;
 }
 
 void
