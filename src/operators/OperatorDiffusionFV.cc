@@ -520,7 +520,7 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
   AmanziMesh::Entity_ID_List cells;
   AmanziGeometry::Point a_dist, a;
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1); 
-  Kc(0,0) = 1.0;
+  Kc(0, 0) = 1.0;
 
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -533,9 +533,9 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
     int k(0);
     for (int i = 0; i < ncells; i++) {
       int c = cells[i];
-      if (K_.get()) Kc = (*K_)[c];
 
       if (c < ncells_owned) {
+        if (K_.get()) Kc = (*K_)[c];
         a = xf - mesh_->cell_centroid(c);
         double h_tmp = norm(a);
         double s = area / h_tmp;
