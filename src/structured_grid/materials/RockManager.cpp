@@ -59,7 +59,8 @@ static int Rock_Mgr_ID_ctr=0;
 static std::vector<RockManager*> Rock_Mgr_Ptrs;
 static std::vector<std::pair<bool,Real> > Kr_smoothing_min_seff; // Bool says whether value needs to be updated
 
-static int max_grid_size_fine_gen_DEF = 32; // Blocking size for generating GSLib datafiles
+static int max_grid_size_fine_gen_DEF = 96; // Blocking size for generating GSLib datafiles
+static int ngrow_fine_gen_DEF = 9; // nGrow for generating GSLib datafiles, note really a fn of correl search radii
 
 RockManager::RockManager(const RegionManager*     _region_manager,
                          const Array<std::string>* solute_names)
@@ -374,8 +375,11 @@ RockManager::FinalizeBuild(const Array<Geometry>& geomArray,
       const Property* p = rock[i].Prop(propNames[j]);
       GSLibProperty* t = dynamic_cast<GSLibProperty*>(const_cast<Property*>(p));
       if (t!=0) {
-        int max_grid_size_fine_gen = max_grid_size_fine_gen_DEF;
-        t->BuildDataFile(geomArray,refRatio,nGrow,max_grid_size_fine_gen,p->coarsenRule(),propNames[j]);
+	if (ParallelDescriptor::IOProcessor()) {
+	  std::cout << "WARNING: Building GSLib file with ngrow_fine_gen: " << ngrow_fine_gen << std::endl;
+	  std::cout << "   It is up to you to ensure that this is consistent with the search radii!" << std::endl;
+	}
+        t->BuildDataFile(geomArray,refRatio,ngrow_fine_gen,max_grid_size_fine_gen,p->coarsenRule(),propNames[j]);
       }
     }
   }
@@ -417,6 +421,11 @@ RockManager::Initialize(const Array<std::string>* solute_names)
     BoxLib::Abort("At least one rock type must be defined.");
   }
   Array<std::string> r_names;  pp.getarr("rock",r_names,0,nrock);
+
+  max_grid_size_fine_gen = max_grid_size_fine_gen_DEF;
+  pp.query("max_grid_size_fine_gen",max_grid_size_fine_gen);
+  ngrow_fine_gen = ngrow_fine_gen_DEF;
+  pp.query("ngrow_fine_gen",ngrow_fine_gen);
 
   rock.clear();
   rock.resize(nrock,PArrayManage);
