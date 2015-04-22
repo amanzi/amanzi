@@ -256,11 +256,11 @@ void OperatorDiffusionFV::ApplyBCs(bool primary, bool eliminate)
   if (k_ != Teuchos::null) {
     k_face = k_->ViewComponent("face", true);
   }
-  Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
+  Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell", true);
 
   AmanziMesh::Entity_ID_List cells;
 
-  for (int f = 0; f < nfaces_wghost; f++) {
+  for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model[f] != OPERATOR_BC_NONE) {
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       int c = cells[0];
