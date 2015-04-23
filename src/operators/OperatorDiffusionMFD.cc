@@ -696,7 +696,7 @@ void OperatorDiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
 {
   AmanziMesh::Entity_ID_List faces, nodes, cells;
 
-  global_op_->rhs()->PutScalarGhosted(0.);
+  global_op_->rhs()->PutScalarGhosted(0.0);
   Epetra_MultiVector& rhs_node = *global_op_->rhs()->ViewComponent("node", true);
 
   int nn(0), nm(0);

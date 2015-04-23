@@ -327,6 +327,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
             sti_bdf1.set<int>("max preconditioner lag iterations", 0);
 	    sti_bdf1.set<bool>("extrapolate initial guess", false);	    
             sti_list.set<std::string>("linear solver", "GMRES for Newton");
+            sti_list.set<std::string>("preconditioner enhancement", "GMRES for Newton");
           }
 
 	  if (time_regime == STEADY_REGIME) {
@@ -350,7 +351,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           if (flow_single_phase) {
             tti_list.set<std::string>("linear solver", TR_SOLVER_DARCY);
           } else if (nonlinear_solver == std::string("Newton")) {
-            tti_list.set<std::string>("linear solver", "GMRESforNewton");
+            tti_list.set<std::string>("linear solver", "GMRES for Newton");
           } else {
             tti_list.set<std::string>("linear solver", TR_SOLVER);
           }

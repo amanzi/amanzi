@@ -77,17 +77,17 @@ class OperatorDiffusion {
                      const Teuchos::RCP<const CompositeVector>& k,
                      const Teuchos::RCP<const CompositeVector>& dkdp,
                      double rho) {
+    SetDensity(rho);
     Setup(K);
     Setup(k, dkdp);
-    SetDensity(rho);
   }
   virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
                      const Teuchos::RCP<const CompositeVector>& k,
                      const Teuchos::RCP<const CompositeVector>& dkdp,
                      const Teuchos::RCP<const CompositeVector>& rho) {
+    SetDensity(rho);
     Setup(K);
     Setup(k, dkdp);
-    SetDensity(rho);
   }
 
   // boundary conditions (BC) require information on test and
