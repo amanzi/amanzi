@@ -1366,7 +1366,7 @@
 
       inquire(file=datafl,exist=testfl)
       if(.not.testfl)then
-         write(*,*) "datafl is wrong"
+         write(*,*) "datafl is wrong: ",datafl
          stop
       end if
       write(*,*) 'Reading input data'

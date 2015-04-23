@@ -1100,7 +1100,9 @@ PorousMedia::initData ()
                 if (cc!=0 && A_new!=0) {
                   FArrayBox& aux = (*A_new)[mfi];
                   const Box vbox = sdat.box() & aux.box();
-                  cc->apply(sdat,aux,mdat,dx,ncomps+iTracer,0,vbox,0);
+		  FArrayBox water_density(vbox,1); water_density.setVal(PorousMedia::Density()[0]);  // FIXME: density[0] is density of aqueous phase
+		  FArrayBox water_temperature(vbox,1); water_temperature.setVal(PorousMedia::Temperature());
+		  cc->apply(sdat,ncomps+iTracer,aux,0,mdat,dx,vbox,water_density,0,water_temperature,0,cur_time);
                 }
                 else {
                   tic.apply(sdat,mdat,dx,ncomps+iTracer,0);
@@ -2659,6 +2661,9 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
   std::set<int> types_advanced;
   types_advanced.insert(State_Type);
   types_advanced.insert(Press_Type);
+  if (chemistry_helper != 0) {
+    types_advanced.insert(Aux_Chem_Type);
+  }
 
   int finest_level = parent->finestLevel();
   int nlevs = finest_level + 1;
@@ -6727,13 +6732,14 @@ PorousMedia::setPhysBoundaryValues (FArrayBox& dest,
 }
 
 void
-PorousMedia::PMsetPhysBoundaryValues (FArrayBox& dest,
+PorousMedia::PMsetPhysBoundaryValues (FArrayBox&       dest,
                                       const IArrayBox& matID,
-                                      int        state_indx,
-                                      Real       time,
-                                      int        dest_comp,
-                                      int        src_comp,
-                                      int        num_comp)
+                                      const FArrayBox& aux,
+                                      int              state_indx,
+                                      Real             time,
+                                      int              dest_comp,
+                                      int              src_comp,
+                                      int              num_comp)
 {
   BL_PROFILE("PorousMedia::setPhysBoundaryValues()");
   if (state_indx==State_Type) {
@@ -6752,14 +6758,14 @@ PorousMedia::PMsetPhysBoundaryValues (FArrayBox& dest,
     }
 
     if (n_c > 0) {
-      dirichletStateBC(dest,matID,time,src_comp,dest_comp,n_c);
+      dirichletStateBC(dest,matID,aux,time,src_comp,dest_comp,n_c);
     }
     if (n_t > 0) {
-      dirichletTracerBC(dest,matID,time,s_t,dest_comp+n_c,n_t);
+      dirichletTracerBC(dest,matID,aux,time,s_t,dest_comp+n_c,n_t);
     }
   }
   else if (state_indx==Press_Type) {
-    dirichletPressBC(dest,matID,time);
+    dirichletPressBC(dest,matID,aux,time);
   }
 }
 
@@ -6887,7 +6893,7 @@ PorousMedia::AdjustBCevalTime(int  state_idx,
 }
 
 void
-PorousMedia::dirichletStateBC (FArrayBox& fab, const IArrayBox& matID, Real time,int sComp, int dComp, int nComp)
+PorousMedia::dirichletStateBC (FArrayBox& fab, const IArrayBox& matID, const FArrayBox& aux, Real time,int sComp, int dComp, int nComp)
 {
   if (geom.Domain().contains(fab.box()) ) {
     return;
@@ -6904,7 +6910,7 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, const IArrayBox& matID, Real time
 }  
 
 void
-PorousMedia::dirichletTracerBC (FArrayBox& fab, const IArrayBox& matID, Real time, int sComp, int dComp, int nComp)
+PorousMedia::dirichletTracerBC (FArrayBox& fab, const IArrayBox& matID, const FArrayBox& aux, Real time, int sComp, int dComp, int nComp)
 {
   BL_PROFILE("PorousMedia::dirichletTracerBC()");
 
@@ -6938,9 +6944,11 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, const IArrayBox& matID, Real tim
 
             const ChemConstraint* cc = dynamic_cast<const ChemConstraint*>(&face_tbc);
             if (cc!=0) {
-              auxFab.resize(bndBox,cc->Evaluator().NComp());
-              cc->apply(bndFab,auxFab,matID,dx,0,0,bndBox,t_eval);
-            }
+	      FArrayBox auxTMP(bndBox,aux.nComp()); auxTMP.copy(aux); // Make input for apply below, but throw away output in this case
+	      FArrayBox water_density(bndBox,1); water_density.setVal(PorousMedia::Density()[0]);          // FIXME: (constant) density of aqueous phase
+	      FArrayBox water_temperature(bndBox,1); water_temperature.setVal(PorousMedia::Temperature()); // FIXME: (constant) temperature of aqueous phase
+	      cc->apply(bndFab,0,auxTMP,0,matID,dx,bndBox,water_density,0,water_temperature,0,t_eval);
+	    }
             else {
               face_tbc.apply(bndFab,matID,dx,0,t_eval);
             }
@@ -6953,7 +6961,7 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, const IArrayBox& matID, Real tim
 }
 
 void
-PorousMedia::dirichletPressBC (FArrayBox& fab, const IArrayBox& matID, Real time)
+PorousMedia::dirichletPressBC (FArrayBox& fab, const IArrayBox& matID, const FArrayBox& aux, Real time)
 {
   if (geom.Domain().contains(fab.box()) ) {
     return;
@@ -8332,6 +8340,18 @@ PMFillPatchIterator::Initialize (int             boxGrow,
       bool ignore_mixed = true;
       PorousMedia::GetRockManager()->GetMaterialID(amrlevel.Level(),m_matID,boxGrow,ignore_mixed);
     }
+
+    if (PorousMedia::GetChemistryHelper() != 0) {
+      int Naux = AmrLevel::get_desc_lst()[Aux_Chem_Type].nComp();
+      m_aux.define(grids,Naux,boxGrow,Fab_allocate);
+      for (PMFillPatchIterator fpi(m_pmlevel,m_aux,boxGrow,m_time,Aux_Chem_Type,0,Naux);
+	   fpi.isValid();
+	   ++fpi)
+      {
+	m_aux[fpi].copy(fpi());
+      }
+    }
+    
   }
 }
 
@@ -8339,8 +8359,10 @@ FArrayBox&
 PMFillPatchIterator::operator() ()
 {
   FArrayBox& this_fab = FillPatchIterator::operator()();
+  FArrayBox junk;
   if (m_stateIndex == State_Type || m_stateIndex == Press_Type) {
-    m_pmlevel.PMsetPhysBoundaryValues(this_fab,m_matID[FillPatchIterator::index()],m_stateIndex,m_time,0,m_scomp,m_ncomp);
+    const FArrayBox& aux = ( PorousMedia::GetChemistryHelper() != 0 ? Aux() : junk);
+    m_pmlevel.PMsetPhysBoundaryValues(this_fab,MatID(),aux,m_stateIndex,m_time,0,m_scomp,m_ncomp);
   }
   return this_fab;
 }
