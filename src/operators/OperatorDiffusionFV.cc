@@ -185,8 +185,7 @@ void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVecto
     // preparing upwind data
     Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
     if (k_ != Teuchos::null) {
-      if (k_->HasComponent("face"))
-        k_face = k_->ViewComponent("face", true);
+      if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
     }
 
     // updating matrix blocks
