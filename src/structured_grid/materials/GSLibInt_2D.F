@@ -204,12 +204,8 @@ c :: ----------------------------------------------------------
       scratch_r(int_idx(3)) = plo(2) + (ARG_L2(dat)+0.5d0)*dx(2)
       scratch_r(int_idx(2)) = 0.d0
       scratch_r(int_idx(4)) = dx(1)
-      scratch_r(int_idx(5)) = dx(2)
-      scratch_r(int_idx(6)) = dx(1)
-
-      do i = 1,nst(1)
-         ang2(i) = -abs(ang2(i))
-      end do
+      scratch_r(int_idx(5)) = 0.d0
+      scratch_r(int_idx(6)) = dx(2)
 
       if (ixv(1) .eq. 0) ixv(1) = iseed
       nxyz = (ARG_H1(dat)-ARG_L1(dat)+1)*(ARG_H2(dat)-ARG_L2(dat)+1)
