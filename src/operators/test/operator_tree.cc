@@ -230,8 +230,12 @@ void RunTest(std::string op_list_name) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
-  Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  Teuchos::RCP<Mesh> mesh;
+  if (op_list_name == "mixed diffusion p-lambda") {
+    mesh = meshfactory("test/median32x33.exo", gm);
+  } else {
+    mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 7, 5, gm);
+  }
 
   // create boundary data
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -242,7 +246,7 @@ void RunTest(std::string op_list_name) {
   std::vector<double> bc_value(nfaces_wghost);
   std::vector<double> bc_mixed;
 
-  Analytic00 ana(mesh);
+  Analytic00 ana(mesh, 1.0, 2.0);
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -395,6 +399,6 @@ TEST(COUPLED_SYSTEM_PLAMDA) {
 /* *****************************************************************
 * cell-centered discretization
 ****************************************************************** */
-// TEST(COUPLED_SYSTEM_CELL_CENTERED) {
-//  RunTest("mixed diffusion cell-centered");
-// }
+TEST(COUPLED_SYSTEM_CELL_CENTERED) {
+  RunTest("mixed diffusion cell-centered");
+}
