@@ -409,10 +409,12 @@ AlquimiaHelper_Structured::Alquimia_to_BL(FArrayBox& primary_species_mobile,   i
     }
   }
 
+#if 0
   for (int i=0; i<primarySpeciesNames.size(); ++i) {
     const std::string label=primarySpeciesNames[i] + "_Activity_Coefficient"; 
     aux_data(iv,aux_chem_variables[label]) = aux_output.primary_activity_coeff.data[i];
   }
+#endif
   
   if (NfreeIonSpecies > 0) {
     for (int i=0; i<primarySpeciesNames.size(); ++i) {
@@ -451,6 +453,7 @@ AlquimiaHelper_Structured::Alquimia_to_BL(FArrayBox& primary_species_mobile,   i
     }
   }
 
+#if 0
   if (using_isotherms) {
     for (int i=0; i<Nisotherms; ++i) {
       const std::string label=primarySpeciesNames[i] + "_Isotherm_Kd";
@@ -465,6 +468,7 @@ AlquimiaHelper_Structured::Alquimia_to_BL(FArrayBox& primary_species_mobile,   i
       aux_data(iv,aux_chem_variables[label]) = mat_props.langmuir_b.data[i];
     }
   }
+#endif
 
   for (int i=0; i<NauxInts; ++i) {
     int ndigits_ints = std::log(NauxInts + 1) + 1;

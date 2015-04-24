@@ -1,6 +1,6 @@
 <ParameterList name="Main">
   <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
-<!--  <Parameter name="Dump ParmParse Table" type="string" value="run_data/ppfile"/> -->
+  <!-- <Parameter name="Structured Native Input File" type="string" value="ppfile"/> -->
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="kd, heterogeneous"/>
     <Parameter name="Author" type="string" value="Sergi Molins"/>

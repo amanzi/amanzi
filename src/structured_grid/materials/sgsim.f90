@@ -2316,7 +2316,7 @@
 ! Now, enter data values into the simulated grid:
 !
       do ind=1,nxyz
-         if(sim(ind).ne.UNEST) then
+         if(sim(ind).gt.0) then
             id = int(sim(ind)+0.5)
             if(id.gt.0) sim(ind) = vr(id)
          endif
