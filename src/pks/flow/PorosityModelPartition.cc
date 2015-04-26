@@ -7,6 +7,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 
   A collection of porosity models along with a mesh partition.
 */
@@ -23,7 +24,7 @@ namespace Flow {
 /* ******************************************************************
 * Non-member factory.
 ****************************************************************** */
-Teuchos::RCP<PorosityModelPartition> CreatePorosityMoldePartition(
+Teuchos::RCP<PorosityModelPartition> CreatePorosityModelPartition(
     Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     Teuchos::RCP<Teuchos::ParameterList> plist)
 {
@@ -41,6 +42,8 @@ Teuchos::RCP<PorosityModelPartition> CreatePorosityMoldePartition(
         pom_list.push_back(Teuchos::rcp(new PorosityModel_Constant(sublist)));
       } else if (model == "compressible") {
         pom_list.push_back(Teuchos::rcp(new PorosityModel_Compressible(sublist)));
+      } else {
+        ASSERT(0);
       }
     } else {
       ASSERT(0);
