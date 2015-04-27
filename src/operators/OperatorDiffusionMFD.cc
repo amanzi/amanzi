@@ -151,7 +151,7 @@ void OperatorDiffusionMFD::UpdateMatricesNewtonCorrection(
 
 /* ******************************************************************
 * Second-order reconstruction of little k inside mesh cells.
-* This member of DIVK-pamily of methods required to recalcualte all
+* This member of DIVK-pamily of methods requires to recalcualte all
 * mass matrices.
 ****************************************************************** */
 void OperatorDiffusionMFD::UpdateMatricesMixedWithGrad_(
@@ -1185,7 +1185,6 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
     little_k_ = OPERATOR_LITTLE_K_DIVK_TWIN_GRAD;
   } else if (name == "divk: cell-face-twin") {  
     little_k_ = OPERATOR_LITTLE_K_DIVK_TWIN;  // for resolved simulation
-    ASSERT(false);
   } else {
     ASSERT(false);
   }
