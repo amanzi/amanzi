@@ -64,7 +64,10 @@ class HeatConduction {
     derivatives_->PutScalar(1.0);
   }
 
+  // adds twin-component and over-writes face-components on discontinuity
   void UpdateValuesPostUpwind() { 
+    int dim = mesh_->space_dimension();
+
     if (!values_->HasComponent("twin")) {
       cvs_.AddComponent("twin", AmanziMesh::FACE, 1);
       Teuchos::RCP<CompositeVector> tmp = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs_, true));
@@ -79,6 +82,7 @@ class HeatConduction {
     Epetra_MultiVector& vcell = *values_->ViewComponent("cell", true); 
     Epetra_MultiVector& vface = *values_->ViewComponent("face", true); 
     Epetra_MultiVector& vtwin = *values_->ViewComponent("twin", true); 
+    Epetra_MultiVector& vgrad = *values_->ViewComponent("grad", true); 
 
     vtwin = vface;
     int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -88,12 +92,65 @@ class HeatConduction {
       int ncells = cells.size();
       
       if (ncells == 2) {
-        double v1 = vcell[0][cells[0]];
-        double v2 = vcell[0][cells[1]];
+        int c1 = cells[0], c2 = cells[1];
+        double v1 = vcell[0][c1];
+        double v2 = vcell[0][c2];
         if (fabs(v1 - v2) > 2 * std::min(fabs(v1), fabs(v2))) {
           vface[0][f] = v1;
           vtwin[0][f] = v2;
+
+          const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+          const AmanziGeometry::Point& xc1 = mesh_->cell_centroid(c1);
+          const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
+
+          for (int i = 0; i < dim; ++i) {
+            vface[0][f] += vgrad[i][c1] * (xf[i] - xc1[i]);
+            vtwin[0][f] += vgrad[i][c2] * (xf[i] - xc2[i]);
+          }
         }  
+      } 
+    }
+  }
+
+  // adds twin-component and over-writes face-components
+  void UpdateValuesFaceTwin() { 
+    int dim = mesh_->space_dimension();
+
+    if (!values_->HasComponent("twin")) {
+      cvs_.AddComponent("twin", AmanziMesh::FACE, 1);
+      Teuchos::RCP<CompositeVector> tmp = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs_, true));
+
+      *tmp->ViewComponent("cell") = *values_->ViewComponent("cell"); 
+      *tmp->ViewComponent("face") = *values_->ViewComponent("face"); 
+      *tmp->ViewComponent("grad") = *values_->ViewComponent("grad"); 
+      values_ = tmp;
+    }
+
+    AmanziMesh::Entity_ID_List cells;
+    Epetra_MultiVector& vcell = *values_->ViewComponent("cell", true); 
+    Epetra_MultiVector& vface = *values_->ViewComponent("face", true); 
+    Epetra_MultiVector& vgrad = *values_->ViewComponent("grad", true); 
+    Epetra_MultiVector& vtwin = *values_->ViewComponent("twin", true); 
+
+    int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    AmanziGeometry::Point grad(dim), xc(dim);
+
+    for (int f = 0; f < nfaces; f++) {
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int ncells = cells.size();
+      
+      int c = cells[0];
+      for (int i = 0; i < dim; ++i) grad[i] = vgrad[i][c];
+      xc = mesh_->cell_centroid(c);
+      vface[0][f] = vcell[0][c] + grad * (xf - xc);
+
+      if (ncells == 2) {
+        c = cells[1];
+        for (int i = 0; i < dim; ++i) grad[i] = vgrad[i][c];
+        xc = mesh_->cell_centroid(c);
+        vtwin[0][f] = vcell[0][c] + grad * (xf - xc);
       } 
     }
   }

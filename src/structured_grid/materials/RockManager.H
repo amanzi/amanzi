@@ -208,6 +208,7 @@ protected:
   PArray<MonotCubicInterpolator> CP_s_interps;
   PArray<MonotCubicInterpolator> Kr_s_interps;
   Array<std::pair<int,std::string> > WRM_plot_file;
+  int max_grid_size_fine_gen, ngrow_fine_gen;
   bool finalized;
 
   int rock_mgr_ID;

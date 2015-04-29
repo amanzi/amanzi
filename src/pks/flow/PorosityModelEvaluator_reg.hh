@@ -6,25 +6,18 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_POROSITY_MODEL_HH_
-#define AMANZI_POROSITY_MODEL_HH_
-
-#include <string>
+#include "PorosityModelEvaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-class PorosityModel {
- public:
-  virtual double Porosity(double p) = 0;
-  virtual double dPorositydPressure(double p) = 0;  // derivative wrt to pressure
-};
+// registry of method
+Utils::RegisteredFactory<FieldEvaluator, PorosityModelEvaluator> PorosityModelEvaluator::factory_("PoM");
 
 }  // namespace Flow
 }  // namespace Amanzi
-  
-#endif
-  
+

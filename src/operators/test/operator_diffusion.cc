@@ -36,6 +36,7 @@
 
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionMFD.hh"
+#include "OperatorDiffusionFV.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "UpwindSecondOrder.hh"
 #include "UpwindStandard.hh"
@@ -990,7 +991,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
 
 /* *****************************************************************
 * Exactness test for cell-based diffusion solver.
-* **************************************************************** */
+***************************************************************** */
 TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -1020,7 +1021,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 5, 8, gm);
+  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 15, 8, gm);
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
@@ -1055,6 +1056,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
     if (fabs(xf[0]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_value[f] = 3.0;
+    /*
     } else if(fabs(xf[1]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_MIXED;
       bc_value[f] = 2.0;
@@ -1062,7 +1064,8 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
       double tmp = ana.pressure_exact(xf, 0.0);
       bc_mixed[f] = 1.0;
       bc_value[f] -= bc_mixed[f] * tmp;
-    } else if(fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+    */
+    } else if(fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
@@ -1071,7 +1074,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
 
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator cell");
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
+  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionFV(op_list, mesh));
   op->SetBCs(bc_f, bc_f);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
