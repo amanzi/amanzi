@@ -32,20 +32,36 @@ sys.path.append(os.path.abspath('.'))
 # 
 #  Extensions 
 #
-extensions = ['sphinx.ext.todo', 
+# 
+#  Extensions 
+#
+ext_sphinx = ['sphinx.ext.todo', 
               'sphinx.ext.mathjax', 
               'sphinx.ext.ifconfig',
               'sphinx.ext.autodoc',
               'sphinx.ext.doctest',
-              'matplotlib.sphinxext.only_directives',
-              'matplotlib.sphinxext.plot_directive',
-              'matplotlib.sphinxext.ipython_directive',
-              'matplotlib.sphinxext.ipython_console_highlighting',
-              'sphinxcontrib.tikz',
-              'extensions.hello',
-              'extensions.amanzi_xml',
-              ]
+              'sphinxcontrib.tikz', 
+]
 
+ext_matplotlib = ['matplotlib.sphinxext.only_directives',
+                  'matplotlib.sphinxext.plot_directive'
+]
+
+ext_ipython = ['IPython.sphinxext.ipython_directive',
+               'IPython.sphinxext.ipython_console_highlighting'
+]
+# These moved, need to check version of ipython.
+#              'matplotlib.sphinxext.ipython_directive',
+#              'matplotlib.sphinxext.ipython_console_highlighting',
+
+ext_amanzi = ['extensions.hello',
+              'extensions.amanzi_xml',
+]
+
+#
+# Collect extensions
+#
+extensions = ext_sphinx+ext_matplotlib+ext_ipython+ext_amanzi
 
 if ( os.environ.get('MATHJAX_SSL') == "1" ):
     mathjax_path='https://software.lanl.gov/ascem/tpls/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'

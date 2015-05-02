@@ -20,7 +20,7 @@ For convenience, the user is kindly referred to the examples available in the Am
 for additional examples of input files for the different geochemical engines.
 
 About Alquimia:
-+++++++++
++++++++++++++++
 
 Alquimia is a biogeochemistry API and wrapper library that provides a 
 unified interface to the biogeochemistry routines from high quality 
