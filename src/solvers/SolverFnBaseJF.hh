@@ -43,7 +43,7 @@ class SolverFnBaseJF : public SolverFnBase<Vector> {
   // computes the non-linear functional r = F(u)
   virtual void Residual(const Teuchos::RCP<Vector>& u,
 			const Teuchos::RCP<Vector>& r) {
-    fn_->Residual(u,r);
+    fn_->Residual(u, r);
   }
 
   // preconditioner application
@@ -56,7 +56,7 @@ class SolverFnBaseJF : public SolverFnBase<Vector> {
   // error norm
   virtual double ErrorNorm(const Teuchos::RCP<const Vector>& u,
 			   const Teuchos::RCP<const Vector>& du) {
-    return fn_->ErrorNorm(u,du);
+    return fn_->ErrorNorm(u, du);
   }
 
   // Check the admissibility of an inner iterate (ensures preconditions for
