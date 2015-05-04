@@ -959,6 +959,7 @@
       lout = 2
       ldbg = 3
       llvm = 4
+      is_ang2_changed = .false.
 
       open(lin,file=paramfl,status='OLD')
 !
@@ -1365,7 +1366,7 @@
 
       inquire(file=datafl,exist=testfl)
       if(.not.testfl)then
-         write(*,*) "datafl is wrong"
+         write(*,*) "datafl is wrong: ",datafl
          stop
       end if
       write(*,*) 'Reading input data'
@@ -2315,7 +2316,7 @@
 ! Now, enter data values into the simulated grid:
 !
       do ind=1,nxyz
-         if(sim(ind).ne.UNEST) then
+         if(sim(ind).gt.0) then
             id = int(sim(ind)+0.5)
             if(id.gt.0) sim(ind) = vr(id)
          endif

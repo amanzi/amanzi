@@ -1100,7 +1100,9 @@ PorousMedia::initData ()
                 if (cc!=0 && A_new!=0) {
                   FArrayBox& aux = (*A_new)[mfi];
                   const Box vbox = sdat.box() & aux.box();
-                  cc->apply(sdat,aux,mdat,dx,ncomps+iTracer,0,vbox,0);
+		  FArrayBox water_density(vbox,1); water_density.setVal(PorousMedia::Density()[0]);  // FIXME: density[0] is density of aqueous phase
+		  FArrayBox water_temperature(vbox,1); water_temperature.setVal(PorousMedia::Temperature());
+		  cc->apply(sdat,ncomps+iTracer,aux,0,mdat,dx,vbox,water_density,0,water_temperature,0,cur_time);
                 }
                 else {
                   tic.apply(sdat,mdat,dx,ncomps+iTracer,0);
@@ -2032,7 +2034,6 @@ PorousMedia::multilevel_advance (Real  time,
 
     dt_new = dt;
     step_ok = true;
-
     if (model == PM_STEADY_SATURATED) {
       advance_flow_nochange(time,dt);
     }
@@ -2400,6 +2401,17 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
     bool summary_transport_out = false;
     bool full_transport_out = true;
 
+    // Remember "old" state, in order to replace after subcycles
+    MultiFab oldstate(grids,ntracers,0);
+    MultiFab::Copy(oldstate,get_new_data(State_Type),ncomps,0,ntracers,0);
+
+    int Naux = (chemistry_helper != 0 ?  get_new_data(Aux_Chem_Type).nComp() : 0);
+    MultiFab oldaux;
+    if (chemistry_helper != 0) {
+      oldaux.define(grids,Naux,0,Fab_allocate);
+      MultiFab::Copy(oldaux,get_new_data(Aux_Chem_Type),0,0,Naux,0);
+    }
+
     while (continue_subtr) {
 
       // Adjust dt_sub to spread out dt changes and avoid small final step
@@ -2447,10 +2459,16 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 	BoxLib::Abort();
       }
 
-      // Set time interval for this advection step
+      // Set time interval for this advection step, for State_Type
       state[State_Type].setNewTimeLevel(t_subtr+dt_subtr);
       state[State_Type].allocOldData();
       state[State_Type].setOldTimeLevel(t_subtr);
+
+      if (chemistry_helper != 0) { // Need to ensure Aux_Chem_Type data exists over t range
+	state[Aux_Chem_Type].setNewTimeLevel(t_subtr+dt_subtr);
+	state[Aux_Chem_Type].allocOldData();
+	state[Aux_Chem_Type].setOldTimeLevel(t_subtr);
+      }
 
       // Set up "old" tracers from previous "new" tracers
       int first_tracer = ncomps;
@@ -2483,6 +2501,22 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 	// Diffuse (Sources incorporated in diffusion advance)
 	MultiFab::Subtract(Fext,*aofs,first_tracer,ncomps,ntracers,0);// S_diffusion = Fext - Div(AdvectionFlux), ng=0
 	bool reflux_on_this_call = true;
+
+      // Set time interval for this advection step, for State_Type and Aux_Chem_Type
+      state[State_Type].setNewTimeLevel(t_subtr+dt_subtr);
+      state[State_Type].allocOldData();
+      state[State_Type].setOldTimeLevel(t_subtr);
+
+      // Set up "old" tracers from previous "new" tracers
+      int first_tracer = ncomps;
+      MultiFab::Copy(state[State_Type].oldData(),state[State_Type].newData(),first_tracer,first_tracer,ntracers,0);
+
+      if (chemistry_helper != 0) { // Need to ensure Aux_Chem_Type data exists over t range
+	state[Aux_Chem_Type].setNewTimeLevel(t_subtr+dt_subtr);
+	state[Aux_Chem_Type].allocOldData();
+	state[Aux_Chem_Type].setOldTimeLevel(t_subtr);
+      }
+
         tracer_diffusion (reflux_on_this_call,use_cached_sat,Fext);
       }
       else {
@@ -2597,6 +2631,12 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
       } // end of recover
     }
 
+    // Replace old state
+    MultiFab::Copy(get_old_data(State_Type),oldstate,0,ncomps,ntracers,0);
+    if (chemistry_helper != 0) {
+      MultiFab::Copy(get_old_data(Aux_Chem_Type),oldaux,0,0,Naux,0);
+    }
+
     if (summary_transport_out && ParallelDescriptor::IOProcessor() ) {
 
       std::string units_str = do_output_transport_time_in_years ? "Y" : "s";
@@ -2624,6 +2664,9 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 
     // Bring state up to current time, and reinstate original dt info
     state[State_Type].setTimeLevel(t+dt,dt,dt);
+    if (chemistry_helper != 0) {
+      state[Aux_Chem_Type].setTimeLevel(t+dt,dt,dt);
+    }
     dt_new = (do_subcycle ? max_n_subcycle_transport : 1) * dt_cfl;
   }
 
@@ -2659,6 +2702,9 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
   std::set<int> types_advanced;
   types_advanced.insert(State_Type);
   types_advanced.insert(Press_Type);
+  if (chemistry_helper != 0) {
+    types_advanced.insert(Aux_Chem_Type);
+  }
 
   int finest_level = parent->finestLevel();
   int nlevs = finest_level + 1;
@@ -2673,12 +2719,12 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
     for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); 
          it!=End; ++it) {      
       StateData& SD = pm.state[*it];
-      SD.setNewTimeLevel(t_flow);
+      SD.setNewTimeLevel(t_flow + dt_flow);
       SD.allocOldData();
-      SD.swapTimeLevels(dt_flow);
+      SD.setOldTimeLevel(t_flow);
 
-      // Provide guess for solver
-      MultiFab::Copy(SD.newData(),SD.oldData(),0,0,SD.newData().nComp(),SD.newData().nGrow());
+      int nComp = *it==State_Type ? ncomps : SD.newData().nComp(); // Only modify saturations in State_Type
+      MultiFab::Copy(SD.oldData(),SD.newData(),0,0,nComp,SD.newData().nGrow());
     }
   }
     
@@ -3340,7 +3386,6 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
   }
 
   get_new_data(State_Type).FillBoundary(first_tracer,ntracers);
-
   //
   // Write out the min and max of each component of the new state.
   //
@@ -3534,21 +3579,20 @@ PorousMedia::advance_chemistry (Real time,
 
   bool chem_ok = true;
 
-  //
-  // Mark the states to be affected, prepare the data structures
-  //
-  std::set<int> types_advanced;
-  types_advanced.insert(State_Type);
-  types_advanced.insert(Press_Type);
-  types_advanced.insert(FuncCount_Type);
-  types_advanced.insert(Aux_Chem_Type);
-  for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); 
-       it!=End; ++it) {      
-    state[*it].setNewTimeLevel(time);
-    state[*it].allocOldData();
-    state[*it].swapTimeLevels(dt); // Set old_time=new_time, swap state data ptrs
-  }
+  // Set time interval for this step
+  state[State_Type].setNewTimeLevel(time+dt);
+  state[State_Type].allocOldData();
+  state[State_Type].setOldTimeLevel(time);
 
+  state[FuncCount_Type].setNewTimeLevel(time+dt);
+  state[FuncCount_Type].allocOldData();
+  state[FuncCount_Type].setOldTimeLevel(time);
+
+  state[Aux_Chem_Type].setNewTimeLevel(time+dt);
+  state[Aux_Chem_Type].allocOldData();
+  state[Aux_Chem_Type].setOldTimeLevel(time);
+
+  int first_tracer = ncomps;
   //
   // Get some refs, initialize result with old state
   //
@@ -3562,11 +3606,10 @@ PorousMedia::advance_chemistry (Real time,
   MultiFab& Aux_new = get_new_data(Aux_Chem_Type);
   MultiFab& Fcnt_new = get_new_data(FuncCount_Type);
 
-  MultiFab::Copy(S_new,S_old,0,0,ncomps,S_new.nGrow());
-  MultiFab::Copy(P_new,P_old,0,0,ncomps,P_new.nGrow());
-  MultiFab::Copy(Aux_new,Aux_old,0,0,Aux_new.nComp(),Aux_new.nGrow());
+  MultiFab::Copy(S_old,S_new,ncomps,ncomps,ntracers,S_new.nGrow());
+  MultiFab::Copy(Aux_old,Aux_new,0,0,Aux_new.nComp(),Aux_new.nGrow());
+  MultiFab::Copy(Fcnt_old,Fcnt_new,0,0,Fcnt_new.nComp(),Fcnt_new.nGrow());
   BL_ASSERT(S_old.nComp() >= ncomps+ntracers);
-
 
   //
   // Copy state into redistributed multifab for better load balance
@@ -3721,11 +3764,6 @@ PorousMedia::advance_chemistry (Real time,
       Fcnt_new[mfi].copy(grownFcnt[mfi]);
   }
   
-  // Bring all states up to current time, and reinstate original dt info
-  for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); it!=End; ++it) {
-    state[*it].setTimeLevel(time+dt,dt,dt);
-  }
-
   if (show_selected_runtimes && ParallelDescriptor::IOProcessor()) {
     const int IOProc   = ParallelDescriptor::IOProcessorNumber();
     Real      run_time = ParallelDescriptor::second() - strt_time;
@@ -6727,13 +6765,14 @@ PorousMedia::setPhysBoundaryValues (FArrayBox& dest,
 }
 
 void
-PorousMedia::PMsetPhysBoundaryValues (FArrayBox& dest,
+PorousMedia::PMsetPhysBoundaryValues (FArrayBox&       dest,
                                       const IArrayBox& matID,
-                                      int        state_indx,
-                                      Real       time,
-                                      int        dest_comp,
-                                      int        src_comp,
-                                      int        num_comp)
+                                      const FArrayBox& aux,
+                                      int              state_indx,
+                                      Real             time,
+                                      int              dest_comp,
+                                      int              src_comp,
+                                      int              num_comp)
 {
   BL_PROFILE("PorousMedia::setPhysBoundaryValues()");
   if (state_indx==State_Type) {
@@ -6752,14 +6791,14 @@ PorousMedia::PMsetPhysBoundaryValues (FArrayBox& dest,
     }
 
     if (n_c > 0) {
-      dirichletStateBC(dest,matID,time,src_comp,dest_comp,n_c);
+      dirichletStateBC(dest,matID,aux,time,src_comp,dest_comp,n_c);
     }
     if (n_t > 0) {
-      dirichletTracerBC(dest,matID,time,s_t,dest_comp+n_c,n_t);
+      dirichletTracerBC(dest,matID,aux,time,s_t,dest_comp+n_c,n_t);
     }
   }
   else if (state_indx==Press_Type) {
-    dirichletPressBC(dest,matID,time);
+    dirichletPressBC(dest,matID,aux,time);
   }
 }
 
@@ -6887,7 +6926,7 @@ PorousMedia::AdjustBCevalTime(int  state_idx,
 }
 
 void
-PorousMedia::dirichletStateBC (FArrayBox& fab, const IArrayBox& matID, Real time,int sComp, int dComp, int nComp)
+PorousMedia::dirichletStateBC (FArrayBox& fab, const IArrayBox& matID, const FArrayBox& aux, Real time,int sComp, int dComp, int nComp)
 {
   if (geom.Domain().contains(fab.box()) ) {
     return;
@@ -6904,7 +6943,7 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, const IArrayBox& matID, Real time
 }  
 
 void
-PorousMedia::dirichletTracerBC (FArrayBox& fab, const IArrayBox& matID, Real time, int sComp, int dComp, int nComp)
+PorousMedia::dirichletTracerBC (FArrayBox& fab, const IArrayBox& matID, const FArrayBox& aux, Real time, int sComp, int dComp, int nComp)
 {
   BL_PROFILE("PorousMedia::dirichletTracerBC()");
 
@@ -6938,9 +6977,11 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, const IArrayBox& matID, Real tim
 
             const ChemConstraint* cc = dynamic_cast<const ChemConstraint*>(&face_tbc);
             if (cc!=0) {
-              auxFab.resize(bndBox,cc->Evaluator().NComp());
-              cc->apply(bndFab,auxFab,matID,dx,0,0,bndBox,t_eval);
-            }
+	      FArrayBox auxTMP(bndBox,aux.nComp()); auxTMP.copy(aux); // Make input for apply below, but throw away output in this case
+	      FArrayBox water_density(bndBox,1); water_density.setVal(PorousMedia::Density()[0]);          // FIXME: (constant) density of aqueous phase
+	      FArrayBox water_temperature(bndBox,1); water_temperature.setVal(PorousMedia::Temperature()); // FIXME: (constant) temperature of aqueous phase
+	      cc->apply(bndFab,0,auxTMP,0,matID,dx,bndBox,water_density,0,water_temperature,0,t_eval);
+	    }
             else {
               face_tbc.apply(bndFab,matID,dx,0,t_eval);
             }
@@ -6953,7 +6994,7 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, const IArrayBox& matID, Real tim
 }
 
 void
-PorousMedia::dirichletPressBC (FArrayBox& fab, const IArrayBox& matID, Real time)
+PorousMedia::dirichletPressBC (FArrayBox& fab, const IArrayBox& matID, const FArrayBox& aux, Real time)
 {
   if (geom.Domain().contains(fab.box()) ) {
     return;
@@ -8332,6 +8373,18 @@ PMFillPatchIterator::Initialize (int             boxGrow,
       bool ignore_mixed = true;
       PorousMedia::GetRockManager()->GetMaterialID(amrlevel.Level(),m_matID,boxGrow,ignore_mixed);
     }
+
+    if (PorousMedia::GetChemistryHelper() != 0) {
+      int Naux = AmrLevel::get_desc_lst()[Aux_Chem_Type].nComp();
+      m_aux.define(grids,Naux,boxGrow,Fab_allocate);
+      for (PMFillPatchIterator fpi(m_pmlevel,m_aux,boxGrow,m_time,Aux_Chem_Type,0,Naux);
+	   fpi.isValid();
+	   ++fpi)
+      {
+	m_aux[fpi].copy(fpi());
+      }
+    }
+    
   }
 }
 
@@ -8339,8 +8392,10 @@ FArrayBox&
 PMFillPatchIterator::operator() ()
 {
   FArrayBox& this_fab = FillPatchIterator::operator()();
+  FArrayBox junk;
   if (m_stateIndex == State_Type || m_stateIndex == Press_Type) {
-    m_pmlevel.PMsetPhysBoundaryValues(this_fab,m_matID[FillPatchIterator::index()],m_stateIndex,m_time,0,m_scomp,m_ncomp);
+    const FArrayBox& aux = ( PorousMedia::GetChemistryHelper() != 0 ? Aux() : junk);
+    m_pmlevel.PMsetPhysBoundaryValues(this_fab,MatID(),aux,m_stateIndex,m_time,0,m_scomp,m_ncomp);
   }
   return this_fab;
 }

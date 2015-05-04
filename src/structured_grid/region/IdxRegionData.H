@@ -37,7 +37,7 @@ public:
     virtual IdxRDEval * clone () const;
 
     Array<Real> Time() const;
-    virtual const std::vector<Real>& operator()(int i, Real t) const;
+    virtual std::vector<Real> operator()(int i, Real t) const;
     virtual int NComp() const {return 1;}
 
   protected:

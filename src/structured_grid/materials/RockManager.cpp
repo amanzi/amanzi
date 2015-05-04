@@ -929,7 +929,7 @@ RockManager::Initialize(const Array<std::string>* solute_names)
       }
     }
 
-    // Make a final pass to be sure that if any isotherm paramters are set for a material, they are defaulted for all remaining materials
+    // Make a final pass to be sure that if any isotherm parameters are set for a material, they are defaulted for all remaining materials
     if (nsorption_isotherms > 0) {
       for (int k=0; k<known_solutes.size(); ++k) {
 	for (ICParmPair::const_iterator it=sorption_isotherm_options.begin();

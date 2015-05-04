@@ -655,15 +655,16 @@ public:
                               int        src_comp,
                               int        num_comp);
   void PMsetPhysBoundaryValues (FArrayBox&       dest,
-                                const IArrayBox& matID,
-                                int              state_indx,
-                                Real             time,
-                                int              dest_comp,
-                                int              src_comp,
-                                int              num_comp);
-  void dirichletStateBC (FArrayBox& fab, const IArrayBox& matID, Real time, int sComp, int dComp, int nComp);
-  void dirichletTracerBC(FArrayBox& fab, const IArrayBox& matID, Real time, int sComp, int dComp, int nComp);
-  void dirichletPressBC (FArrayBox& fab, const IArrayBox& matID, Real time);
+				const IArrayBox& matID,
+				const FArrayBox& aux,
+				int              state_indx,
+				Real             time,
+				int              dest_comp,
+				int              src_comp,
+				int              num_comp);
+  void dirichletStateBC (FArrayBox& fab, const IArrayBox& matID, const FArrayBox& aux, Real time, int sComp, int dComp, int nComp);
+  void dirichletTracerBC(FArrayBox& fab, const IArrayBox& matID, const FArrayBox& aux, Real time, int sComp, int dComp, int nComp);
+  void dirichletPressBC (FArrayBox& fab, const IArrayBox& matID, const FArrayBox& aux, Real time);
   void dirichletDefaultBC (FArrayBox& fab, const IArrayBox& matID, Real time);
   bool get_inflow_velocity(const Orientation& face,
                            FArrayBox&         ccBndFab,
@@ -1287,39 +1288,13 @@ public:
   ~PMFillPatchIterator ();
 
   const IArrayBox& MatID() const { return m_matID[FillPatchIterator::index()]; }
+  const FArrayBox& Aux() const { return m_aux[FillPatchIterator::index()]; }
 
   void Initialize (int             boxGrow,
                    const BoxArray& grids,
                    AmrLevel&       amrlevel);
 
   FArrayBox& operator() ();
-#if 0
-  
-  const Box& UngrownBox () const { return MFIter::validbox(); }
-
-  // From MFIter
-  //
-  // Returns the valid Box that current tile resides.
-  //
-  const Box& validbox () const { return m_fpi.validbox(); }
-  //
-  // Returns the Box of the FAB at which we currently point.
-  //
-  const Box fabbox () const { return m_fpi.fabbox(); }
-  //
-  // Increments iterator to the next tile we own.
-  //
-  void operator++ () { ++m_fpi;}
-  //
-  // Is the iterator valid i.e. is it associated with a FAB?
-  //
-  //bool isValid () { return m_fpi.isValid(); }
-  bool isValid ();
-  //
-  // The index into the underlying BoxArray of the current FAB.
-  //
-  int index () const { return m_fpi.index(); }
-#endif
 
 private:
   //
@@ -1334,6 +1309,7 @@ private:
   //FillPatchIterator m_fpi;
   PorousMedia& m_pmlevel;
   iMultiFab m_matID;
+  MultiFab m_aux;
 
   Real m_time;
   int m_stateIndex,m_scomp,m_ncomp;
