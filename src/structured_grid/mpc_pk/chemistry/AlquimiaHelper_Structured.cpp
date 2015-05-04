@@ -364,6 +364,7 @@ AlquimiaHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       in
                      alquimia_aux_out[threadid]);
 
       if (ParallelDescriptor::IOProcessor() && chem_verbose>0) {
+	std::cout << "************* GOING INTO engine->Advance: " << std::endl;
 	std::cout << "iv: " << iv << std::endl;
 	std::cout << "dt: " << dt << std::endl;
 	DumpAlquimiaStructures(std::cout,alquimia_material_properties[threadid],
@@ -375,7 +376,17 @@ AlquimiaHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       in
       int newton_iters;
       engine->Advance(dt,alquimia_material_properties[threadid],alquimia_state[threadid],
                       alquimia_aux_in[threadid],alquimia_aux_out[threadid],newton_iters);
-        
+
+      if (ParallelDescriptor::IOProcessor() && chem_verbose>0) {
+	std::cout << "************* COMING OUT OF engine->Advance: " << std::endl;
+	std::cout << "iv: " << iv << std::endl;
+	std::cout << "dt: " << dt << std::endl;
+	DumpAlquimiaStructures(std::cout,alquimia_material_properties[threadid],
+			       alquimia_state[threadid],
+			       alquimia_aux_in[threadid],
+			       alquimia_aux_out[threadid]);
+      }
+
       Alquimia_to_BL(primary_species_mobile,   sPrimMob,
                      aux_data, iv,
                      alquimia_material_properties[threadid],
