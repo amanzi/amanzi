@@ -146,14 +146,14 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   Teuchos::ParameterList& mfd_plist = plist_->sublist("Diffusion");
   matrix_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(mfd_plist, mesh_));
   matrix_ = matrix_diff_->global_operator();
-  matrix_diff_->SetBCs(bc_);
+  matrix_diff_->SetBCs(bc_, bc_);
   matrix_diff_->Setup(Teuchos::null);
 
   // operator for flux directions -- this should be removed eventually
   Teuchos::ParameterList face_diff_list(mfd_plist);
   face_diff_list.set("upwind method", "none");
   face_matrix_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(face_diff_list, mesh_));
-  face_matrix_diff_->SetBCs(bc_);
+  face_matrix_diff_->SetBCs(bc_, bc_);
   face_matrix_diff_->Setup(Teuchos::null);
   face_matrix_diff_->Setup(Teuchos::null, Teuchos::null);
   face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -161,7 +161,7 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   // diffusion operator for the preconditioner
   Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("Diffusion PC");
   preconditioner_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(mfd_pc_plist, mesh_));
-  preconditioner_diff_->SetBCs(bc_);
+  preconditioner_diff_->SetBCs(bc_, bc_);
   preconditioner_diff_->Setup(Teuchos::null);
   preconditioner_ = preconditioner_diff_->global_operator();
 

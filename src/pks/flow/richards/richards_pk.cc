@@ -419,11 +419,11 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   g[0] = (*gvec)[0]; g[1] = (*gvec)[1]; g[2] = (*gvec)[2];
 
   matrix_diff_->SetGravity(g);
-  matrix_diff_->SetBCs(bc_);
+  matrix_diff_->SetBCs(bc_, bc_);
   matrix_diff_->Setup(K_);
 
   preconditioner_diff_->SetGravity(g);
-  preconditioner_diff_->SetBCs(bc_);
+  preconditioner_diff_->SetBCs(bc_, bc_);
   preconditioner_diff_->Setup(K_);
   preconditioner_->SymbolicAssembleMatrix();
 
@@ -471,7 +471,7 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
       S->GetFieldData("numerical_rel_perm");
     Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
     matrix_->Init();
-    matrix_diff_->SetVectorDensity(rho);
+    matrix_diff_->SetDensity(rho);
     matrix_diff_->Setup(rel_perm, Teuchos::null);
     matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
@@ -526,7 +526,7 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
     Teuchos::RCP<const CompositeVector> rho =
         S->GetFieldData("mass_density_liquid");
     // update the stiffness matrix
-    matrix_diff_->SetVectorDensity(rho);
+    matrix_diff_->SetDensity(rho);
     matrix_diff_->Setup(rel_perm, Teuchos::null);
     matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
@@ -580,7 +580,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     if (update_dir) {
       // update the direction of the flux -- note this is NOT the flux
       Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
-      face_matrix_diff_->SetVectorDensity(rho);
+      face_matrix_diff_->SetDensity(rho);
 
       Teuchos::RCP<CompositeVector> flux_dir =
           S->GetFieldData("darcy_flux_direction", name_);
@@ -840,9 +840,9 @@ bool Richards::ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u) {
   matrix_->Init();
   matrix_diff_->Setup(rel_perm, Teuchos::null);
   Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData("mass_density_liquid");
-  matrix_diff_->SetVectorDensity(rho);
+  matrix_diff_->SetDensity(rho);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  matrix_diff_->ApplyBCs(true);
+  matrix_diff_->ApplyBCs(true, true);
 
   flux_predictor_->ModifyPredictor(h, u);
   ChangedSolution(); // mark the solution as changed, as modifying with
@@ -920,10 +920,10 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
 
   // Update the preconditioner with darcy and gravity fluxes
   matrix_->Init();
-  matrix_diff_->SetVectorDensity(rho);
+  matrix_diff_->SetDensity(rho);
   matrix_diff_->Setup(rel_perm, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  matrix_diff_->ApplyBCs(true);
+  matrix_diff_->ApplyBCs(true, true);
 
   // derive the consistent faces, involves a solve
   matrix_diff_->UpdateConsistentFaces(*u);

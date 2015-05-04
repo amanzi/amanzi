@@ -639,7 +639,7 @@ void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u
   matrix_diff_mfd_->global_operator()->Init();
   matrix_diff_mfd_->Setup(conductivity, Teuchos::null);
   matrix_diff_mfd_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  matrix_diff_mfd_->ApplyBCs(true);
+  matrix_diff_mfd_->ApplyBCs(true, true);
 
   // derive the consistent faces, involves a solve
   matrix_diff_mfd_->UpdateConsistentFaces(*u);

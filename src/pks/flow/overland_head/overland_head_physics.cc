@@ -43,7 +43,7 @@ void OverlandHeadFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   FixBCsForOperator_(S_next_.ptr());
 
   // assemble the stiffness matrix
-  matrix_diff_->ApplyBCs(true);
+  matrix_diff_->ApplyBCs(true, true);
 
   // calculate the residual
   matrix_->ComputeNegativeResidual(*pres_elev, *g);

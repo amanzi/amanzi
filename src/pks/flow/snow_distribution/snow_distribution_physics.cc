@@ -26,7 +26,7 @@ void SnowDistribution::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
     S_next_->GetFieldData("upwind_snow_conductivity", name_);
   matrix_diff_->Setup(cond, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  matrix_diff_->ApplyBCs(true);
+  matrix_diff_->ApplyBCs(true, true);
   
   // update the potential
   S->GetFieldEvaluator("snow_skin_potential")->HasFieldChanged(S.ptr(), name_);

@@ -223,7 +223,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   S_next_->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S_next_.ptr(), name_);
   Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData("mass_density_liquid");
-  preconditioner_diff_->SetVectorDensity(rho);
+  preconditioner_diff_->SetDensity(rho);
   
   Teuchos::RCP<const CompositeVector> dkrdp = S_next_->GetFieldData("dnumerical_rel_perm_dpressure");
   preconditioner_diff_->Setup(rel_perm_modified, dkrdp);
@@ -274,7 +274,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   AddSourcesToPrecon_(S_next_.ptr(), h);
   
   // -- apply BCs
-  preconditioner_diff_->ApplyBCs(true);
+  preconditioner_diff_->ApplyBCs(true, true);
 
   if (precon_used_) {
     preconditioner_->AssembleMatrix();

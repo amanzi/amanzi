@@ -96,7 +96,7 @@ void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   }
 
   // finish assembly of the stiffness matrix
-  matrix_diff_->ApplyBCs(true);
+  matrix_diff_->ApplyBCs(true, true);
 
   // calculate the residual
   matrix_diff_->global_operator()->ComputeNegativeResidual(*temp, *g);
