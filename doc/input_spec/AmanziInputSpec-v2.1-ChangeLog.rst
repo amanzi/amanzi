@@ -62,5 +62,7 @@ Numerical Controls
 .. Sources
 .. -------
 
-.. Output
-.. ------
+Output
+------
+
+* For the obeservation output options, the element `"time_macro`" has been updated to `"time_macros`" to allow users to provide a list of time macros to be utilized.

@@ -1304,7 +1304,7 @@ ____________
 
 The ``observations`` element defines the file for writing observations to and specifies individual observations to be made.  At this time, all observations are written to a single file defined in the ``filename`` element.  See the about NOTE about specifying a file location other than the current working directory. Also, observations are only available for the liquid phases.  Therefore individual observations are defined in subelements under the ``liquid_phase`` tag.  The ``liquid_phase`` tag takes an attribute ``name`` to identify which phase the observations are associated with.
 
-The element name of individual observations indicate the quantity being observed.  Below is a list of currently available observations.  Individual observations require the subelements ``assigned_regions``, ``functional``, and ``time_macro``.  ``aqueous_conc`` observations also take an attribute ``name`` which indicates the name of the solute being observed.
+The element name of individual observations indicate the quantity being observed.  Below is a list of currently available observations.  Individual observations require the subelements ``assigned_regions``, ``functional``, and ``time_macros``.  ``aqueous_conc`` observations also take an attribute ``name`` which indicates the name of the solute being observed.
 
 Available Observations:
 
@@ -1334,17 +1334,17 @@ An example ``observations`` element looks like the following.
 	<aqueous_pressure>
 	  <assigned_regions>Obs_r1</assigned_regions>
 	  <functional>point</functional>
-	  <time_macro>Observation Times</time_macro>
+	  <time_macros>Observation Times</time_macros>
 	</aqueous_pressure>
 	<aqueous_pressure>
 	  <assigned_regions>Obs_r2</assigned_regions>
 	  <functional>point</functional>
-	  <time_macro>Observation Times</time_macro>
+	  <time_macros>Observation Times</time_macros>
 	</aqueous_pressure>
 	<aqueous_pressure>
 	  <assigned_regions>Obs_r2</assigned_regions>
 	  <functional>point</functional>
-	  <time_macro>Observation Times</time_macro>
+	  <time_macros>Observation Times</time_macros>
 	</aqueous_pressure>
       </liquid_phase>
 

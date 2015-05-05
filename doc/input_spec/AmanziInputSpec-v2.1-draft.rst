@@ -1386,7 +1386,7 @@ The observation element identifies the field quantity to be observed.  Subelemen
 .. code-block :: xml
 
    <observation_type>
-     Required Elements: assigned_region, functional, time_macro 
+     Required Elements: assigned_region, functional, time_macros 
      Optional Elements: NONE
    </observation_type>
 
@@ -1404,17 +1404,17 @@ Example:
 	<aqueous_pressure>
 	  <assigned_regions>Obs_r1</assigned_regions>
 	  <functional>point</functional>
-	  <time_macro>Observation Times</time_macro>
+	  <time_macros>Observation Times</time_macros>
 	</aqueous_pressure>
 	<aqueous_pressure>
 	  <assigned_regions>Obs_r2</assigned_regions>
 	  <functional>point</functional>
-	  <time_macro>Observation Times</time_macro>
+	  <time_macros>Observation Times</time_macros>
 	</aqueous_pressure>
 	<aqueous_pressure>
 	  <assigned_regions>Obs_r2</assigned_regions>
 	  <functional>point</functional>
-	  <time_macro>Observation Times</time_macro>
+	  <time_macros>Observation Times</time_macros>
 	</aqueous_pressure>
       </liquid_phase>
 
