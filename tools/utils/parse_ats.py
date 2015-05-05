@@ -53,6 +53,8 @@ def readATS(directory='.', base="visdump_data.h5", inds=None, time_range=None):
         return keys, times, dat
 
 def getSurfaceData(keys, dat, name):
+    if not name.endswith(".cell.0"):
+        name = name + ".cell.0"
     return np.array([dat[name][key][0] for key in keys])
 
 def subsetFile(directory=".", base="visdump_data.h5", outfile="my_visdump_data.h5", inds=None, interval=1, time_range=None, names=None):
