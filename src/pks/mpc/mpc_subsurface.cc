@@ -121,7 +121,7 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
       } else {
         ddivKgT_dp_ = Teuchos::rcp(new Operators::OperatorDiffusionMFD(divq_plist,dE_dp_block_));
       }
-      ddivKgT_dp_->SetBCs(sub_pks_[1]->BCs());
+      ddivKgT_dp_->SetBCs(sub_pks_[1]->BCs(), sub_pks_[1]->BCs());
 
     }
 
@@ -251,7 +251,7 @@ void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
     AmanziGeometry::Point g(3);
     g[0] = (*gvec)[0]; g[1] = (*gvec)[1]; g[2] = (*gvec)[2];
     ddivq_dT_->SetGravity(g);    
-    ddivq_dT_->SetBCs(sub_pks_[0]->BCs());
+    ddivq_dT_->SetBCs(sub_pks_[0]->BCs(), sub_pks_[0]->BCs());
     ddivq_dT_->Setup(richards_pk_->K_);
   }
 
@@ -271,11 +271,11 @@ void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
     AmanziGeometry::Point g(3);
     g[0] = (*gvec)[0]; g[1] = (*gvec)[1]; g[2] = (*gvec)[2];
     ddivhq_dp_->SetGravity(g);    
-    ddivhq_dp_->SetBCs(sub_pks_[1]->BCs());
+    ddivhq_dp_->SetBCs(sub_pks_[1]->BCs(), sub_pks_[1]->BCs());
     ddivhq_dp_->Setup(richards_pk_->K_);
 
     ddivhq_dT_->SetGravity(g);    
-    ddivhq_dT_->SetBCs(sub_pks_[1]->BCs());
+    ddivhq_dT_->SetBCs(sub_pks_[1]->BCs(), sub_pks_[1]->BCs());
     ddivhq_dT_->Setup(richards_pk_->K_);
   }  
 }
@@ -343,10 +343,10 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       Teuchos::RCP<const CompositeVector> flux = S_next_->GetFieldData("darcy_flux");
       Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData("mass_density_liquid");
 
-      ddivq_dT_->SetVectorDensity(rho);
+      ddivq_dT_->SetDensity(rho);
       ddivq_dT_->Setup(kr_uw, dkrdT_uw);
       ddivq_dT_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
-      ddivq_dT_->ApplyBCs(false);
+      ddivq_dT_->ApplyBCs(false, true);
     }
 
     // -- dWC/dT diagonal term
@@ -369,7 +369,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       ddivKgT_dp_->Setup(Kappa, dKdp);
       ASSERT(false); // this UpdateMatrices call does not work?
       ddivKgT_dp_->UpdateMatrices(Teuchos::null, up->SubVector(1)->Data().ptr());
-      ddivKgT_dp_->ApplyBCs(false);
+      ddivKgT_dp_->ApplyBCs(false, true);
     }
 
     // -- d adv / dp   This one is a bit more complicated...
@@ -430,7 +430,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData("mass_density_liquid");
 
       // form the operator: pressure component
-      ddivhq_dp_->SetVectorDensity(rho);
+      ddivhq_dp_->SetDensity(rho);
       ddivhq_dp_->Setup(enth_kr_uw, denth_kr_dp_uw);
       // -- update the local matrices, div h * kr grad
       ddivhq_dp_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -440,14 +440,14 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       ddivhq_dp_->UpdateFlux(*up->SubVector(0)->Data(), adv_flux);
       // -- add in components div (d h*kr / dp) grad q_a / (h*kr)
       ddivhq_dp_->UpdateMatricesNewtonCorrection(adv_flux_ptr, up->SubVector(0)->Data().ptr());
-      ddivhq_dp_->ApplyBCs(false);
+      ddivhq_dp_->ApplyBCs(false, true);
 
       // form the operator: temperature component
-      ddivhq_dT_->SetVectorDensity(rho);
+      ddivhq_dT_->SetDensity(rho);
       ddivhq_dT_->Setup(enth_kr_uw, denth_kr_dT_uw);
       // -- add in components div (d h*kr / dp) grad q_a / (h*kr)
       ddivhq_dT_->UpdateMatricesNewtonCorrection(adv_flux_ptr, up->SubVector(0)->Data().ptr());
-      ddivhq_dT_->ApplyBCs(false);
+      ddivhq_dT_->ApplyBCs(false, true);
 
     }
 

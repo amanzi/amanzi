@@ -29,7 +29,7 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 
   S_next_->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S_next_.ptr(), name_);
   Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
-  matrix_diff_->SetVectorDensity(rho);
+  matrix_diff_->SetDensity(rho);
 
   Teuchos::RCP<const CompositeVector> rel_perm =
     S->GetFieldData("numerical_rel_perm");
@@ -47,7 +47,7 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
     matrix_diff_->UpdateFlux(*pres, *flux);
     //  }
 
-  matrix_diff_->ApplyBCs(true);
+  matrix_diff_->ApplyBCs(true, true);
 
   // calculate the residual
   matrix_->ComputeNegativeResidual(*pres, *g);

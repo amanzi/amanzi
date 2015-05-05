@@ -271,7 +271,7 @@ void OverlandHeadFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   //                                          bc_values_);
   // }
 
-  preconditioner_diff_->ApplyBCs(true);
+  preconditioner_diff_->ApplyBCs(true, true);
   
   // 3.d: Rescale to use as a pressure matrix if used in a coupler
   if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_flux_) {

@@ -94,12 +94,12 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
   Teuchos::ParameterList mfd_plist = plist_->sublist("Diffusion");
   matrix_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(mfd_plist, mesh_));
   matrix_ = matrix_diff_->global_operator();
-  matrix_diff_->SetBCs(bc_);
+  matrix_diff_->SetBCs(bc_, bc_);
   matrix_diff_->Setup(Teuchos::null);
 
   Teuchos::ParameterList mfd_pc_plist = plist_->sublist("Diffusion PC");
   preconditioner_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(mfd_pc_plist, mesh_));
-  preconditioner_diff_->SetBCs(bc_);
+  preconditioner_diff_->SetBCs(bc_, bc_);
   preconditioner_diff_->Setup(Teuchos::null);
   preconditioner_ = preconditioner_diff_->global_operator();
   preconditioner_->SymbolicAssembleMatrix();

@@ -217,7 +217,7 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   }
 
   // Apply boundary conditions.
-  preconditioner_diff_->ApplyBCs(true);
+  preconditioner_diff_->ApplyBCs(true, true);
   if (precon_used_) {
     preconditioner_->AssembleMatrix();
     preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
