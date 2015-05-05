@@ -209,13 +209,17 @@ PorousMedia::RegisterPhysicsBasedEvents()
 
   if (execution_mode==INIT_TO_STEADY) {
     std::string event_name = "Switch_Time";
-    std::cout << "Registering event: " << event_name << " to occur at t = " << switch_time << std::endl;
+    if (ParallelDescriptor::IOProcessor()) {
+      std::cout << "Registering event: " << event_name << " to occur at t = " << switch_time << std::endl;
+    }
     PMParent()->RegisterEvent(event_name,new EventCoord::TimeEvent(Array<Real>(1,switch_time)));
   }
 
   for (int i=0; i<bc_array.size(); ++i) {
     const std::string& event_name = bc_array[i].Label();
-    std::cout << "Registering event: " << event_name << " " << bc_array[i].time() << std::endl;
+    if (ParallelDescriptor::IOProcessor()) {
+	std::cout << "Registering event: " << event_name << " " << bc_array[i].time() << std::endl;
+      }
     PMParent()->RegisterEvent(event_name,new EventCoord::TimeEvent(bc_array[i].time()));
   }
 
@@ -225,7 +229,9 @@ PorousMedia::RegisterPhysicsBasedEvents()
       BL_ASSERT(tbc_array.size()>n);
       BL_ASSERT(tbc_array[n].size()>i);
       const std::string& event_name = tbc_array[n][i].Label() + "_" + soluteNames()[n];
-      std::cout << "Registering event: " << event_name << " " << tbc_array[n][i].Time() << std::endl;
+      if (ParallelDescriptor::IOProcessor()) {
+	  std::cout << "Registering event: " << event_name << " " << tbc_array[n][i].Time() << std::endl;
+	}
       pmamr.RegisterEvent(event_name,new EventCoord::TimeEvent(tbc_array[n][i].Time()));
     }
   }
@@ -5116,10 +5122,12 @@ PorousMedia::post_regrid (int lbase,
   BL_PROFILE("PorousMedia::post_regrid()");
   init_rock_properties();
 
+  // NOTE: If grids change at any level, the layout (and RS) is no longer valid
+  Layout& layout = PMParent()->GetLayout();
+  layout.Build(); // Internally destroys itself on rebuild
+
   if (model != PM_STEADY_SATURATED && level == lbase) {
 
-    // NOTE: If grids change at any level, the layout (and RS) is no longer valid
-    Layout& layout = PMParent()->GetLayout();
     PMAmr* pm_parent = PMParent();
     int new_nLevs = new_finest - lbase + 1;
 
@@ -5138,7 +5146,6 @@ PorousMedia::post_regrid (int lbase,
       richard_solver_data = 0;
     }
 
-    layout.Build(); // Internally destroys itself on rebuild
     richard_solver_control = new NLScontrol();
     richard_solver_data = new RSAMRdata(0,new_nLevs,layout,pm_parent,*richard_solver_control,rock_manager);
     BuildNLScontrolData(*richard_solver_control,*richard_solver_data,"Flow_PK");
