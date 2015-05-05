@@ -143,6 +143,7 @@ protected:
   FluxUpdateMode update_flux_;
   Operators::UpwindMethod upwind_method_;
   bool is_source_term_;
+  bool source_in_meters_;
   bool modify_predictor_with_consistent_faces_;
   bool symmetric_;
   bool perm_update_required_;
@@ -152,6 +153,7 @@ protected:
   // coupling term
   bool coupled_to_subsurface_via_head_;
   bool coupled_to_subsurface_via_flux_;
+  Key mass_source_key_;
   bool full_jacobian_;
 
   // work data space
