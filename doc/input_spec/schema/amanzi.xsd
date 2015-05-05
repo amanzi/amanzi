@@ -159,6 +159,48 @@ Changes by TDS June 2013:
   </xs:restriction>
 </xs:simpleType>
 
+<!-- Numerical Control Options -->
+
+<xs:simpleType name="typedef_discretization_method">
+  <xs:restriction base="xs:string">
+    <xs:enumeration value="fv-default" />
+    <xs:enumeration value="fv-monotone" />
+    <xs:enumeration value="fv-multi_point_flux_approximation" />
+    <xs:enumeration value="fv-extended_to_boundary_edges" />
+    <xs:enumeration value="mfd-default" />
+    <xs:enumeration value="mfd-optimized_for_sparsity" />
+    <xs:enumeration value="mfd-support_operator" />
+    <xs:enumeration value="mfd-optimized_for_monotonicity" />
+    <xs:enumeration value="mfd-two_point_flux_approximation" />
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="typedef_rel_perm_method">
+  <xs:restriction base="xs:string">
+    <xs:enumeration value="upwind-darcy_velocity" />
+    <xs:enumeration value="upwind-gravity" />
+    <xs:enumeration value="upwind-amanzi" />
+    <xs:enumeration value="other-arithmetic_average" />
+    <xs:enumeration value="other-harmonic_average" />
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="typedef_preconditioning_strategy">
+  <xs:restriction base="xs:string">
+    <xs:enumeration value="diffusion_operator" />
+    <xs:enumeration value="linearized_operator" />
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="typedef_algorithm">
+  <xs:restriction base="xs:string">
+    <xs:enumeration value="explicit first-order" />
+    <xs:enumeration value="explicit second-order" />
+    <xs:enumeration value="implicit upwind" />
+    <xs:enumeration value="none" />
+  </xs:restriction>
+</xs:simpleType>
+
 <!-- =========================================== Macro Types ========================================== -->
 
 <xs:complexType name="typedef_variable_macro">
@@ -573,19 +615,37 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:complexType name="typedef_unstructured_controls">
   <xs:all minOccurs = "0" maxOccurs = "1">
     <xs:element name="comments" minOccurs="0" maxOccurs="1"/>
+    <xs:element name="unstr_flow_controls" type="typedef_unstr_flow_controls" minOccurs="0" maxOccurs="1"/>
+    <xs:element name="unstr_transport_controls" type="typedef_unstr_transport_controls" minOccurs="0" maxOccurs="1"/>
+    <xs:element name="unstr_chemistry_controls" type="typedef_unstr_chemistry_controls" minOccurs="0" maxOccurs="1"/>
     <xs:element name="unstr_steady-state_controls" type="typedef_unstr_steady-state_controls" minOccurs="0" maxOccurs="1"/>
     <xs:element name="unstr_transient_controls" type="typedef_unstr_transient_controls" minOccurs="0" maxOccurs="1"/>
     <xs:element name="unstr_linear_solver" type="typedef_unstr_linear_solver" minOccurs="0" maxOccurs="1"/>
     <xs:element name="unstr_nonlinear_solver" type="typedef_unstr_nonlinear_solver" minOccurs="0" maxOccurs="1"/>
-    <xs:element name="unstr_chemistry_controls" type="typedef_unstr_chemistry_controls" minOccurs="0" maxOccurs="1"/>
+  </xs:all>
+</xs:complexType>
+
+<xs:complexType name="typedef_unstr_flow_controls">
+	<xs:all minOccurs = "0" maxOccurs = "1">
+		<xs:element name="discretization_method" type="typedef_discretization_method"/>
+                <xs:element name="rel_perm_method" type="typedef_rel_perm_method" default="upwind-darcy_velocity"/>
+                <xs:element name="preconditioning_strategy" type="typedef_preconditioning_strategy" default="linearized_operator"/>
+        </xs:all>
+</xs:complexType>
+
+<xs:complexType name="typedef_unstr_transport_controls">
+  <xs:all minOccurs = "0" maxOccurs = "1">
+    <xs:element name="algorithm" type="typedef_algorithm" default="explicit first-order"/>
+    <xs:element name="sub_cycling" type="xs:string" default="off"/>
+    <xs:assert  test="@sub_cycling = ('on','off')"/>
   </xs:all>
 </xs:complexType>
 
 <xs:complexType name="typedef_unstr_chemistry_controls">
-	<xs:all minOccurs = "0" maxOccurs = "1">
-		<xs:element name="chem_tolerance" type="typedef_exponential"/>
-		<xs:element name="chem_max_newton_iterations" type="xs:integer"/>
-	</xs:all>
+  <xs:all minOccurs = "0" maxOccurs = "1">
+    <xs:element name="chem_tolerance" type="typedef_exponential"/>
+    <xs:element name="chem_max_newton_iterations" type="xs:integer"/>
+  </xs:all>
 </xs:complexType>
 
 <xs:complexType name="typedef_unstr_steady-state_controls">
@@ -602,8 +662,8 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:element name="nonlinear_iteration_divergence_factor" type="typedef_exponential" minOccurs = "0" maxOccurs = "1"/>
 	<xs:element name="max_divergent_iterations" type="xs:integer" minOccurs = "0" maxOccurs = "1"/>
 	<xs:element name="initialize_with_darcy" type="xs:boolean" minOccurs = "0" maxOccurs = "1"/>
-	<xs:element name="restart_tolerance_factor" type="typedef_exponential"/>
-	<xs:element name="restart_tolerance_relaxation_factor" type="typedef_exponential"/>
+	<xs:element name="restart_tolerance_factor" type="typedef_exponential" minOccurs = "0" maxOccurs = "1"/>
+	<xs:element name="restart_tolerance_relaxation_factor" type="typedef_exponential" minOccurs = "0" maxOccurs = "1"/>
         <xs:assert  test="@error_control_options = ('pressure','residual')"/>
     </xs:all>
 </xs:complexType>
@@ -1350,26 +1410,15 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:complexType name="typedef_flow">
 	<xs:attribute name="state" type="xs:string"/>
 	<xs:attribute name="model" type="xs:string"/>
-	<xs:attribute name="discretization_method" type="xs:string"/>
-        <xs:attribute name="rel_perm_method" type="xs:string"/>
-        <xs:attribute name="preconditioning_strategy" type="xs:string"/>
-	<xs:assert  test="@state = ('on','off')"/>	
-	<xs:assert  test="@model = ('richards','saturated','constant')"/>	
-	<xs:assert test="@discretization_method = ('fv-default','fv-monotone','fv-multi_point_flux_approximation','fv-extended_to_boundary_edges','mfd-default','mfd-optimized_for_sparsity','mfd-support_operator','mfd-optimized_for_monotonicity','mfd-two_point_flux_approximation)"/>
-        <xs:assert  test="@rel_perm_method = ('upwind-darcy_velocity','upwind-gravity','upwind-amanzi','other-arithmetic_average','other-harmonic_average')"/>
-        <!-- default: upwind-darcy_velocity; experimental: 'upwind-amanzi -->
-        <xs:assert  test="@preconditioning_strategy = ('diffusion_operator','linearized_operator')"/>
-        <!-- default: diffusion_operator -->
+	<xs:assert  test="@state = ('on','off')"/>
+	<xs:assert  test="@model = ('richards','saturated','constant','none')"/>
+        <xs:assert  test="((@state = 'on' and not(@model = 'none'))"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_transport">
 	<xs:attribute name="state" type="xs:string"/>
 	<xs:attribute name="algorithm" type="xs:string"/>
-	<xs:attribute name="sub_cycling" type="xs:string" default="off"/> 
 	<xs:assert  test="@state = ('on','off')"/>	
-	<xs:assert  test="@algorithm = ('explicit first-order', 'explicit second-order', 'implicit upwind', 'none')"/>
-	<xs:assert  test="(@algorithm = 'none' and @state = 'off') or (@state = 'on' and not(@algorithm = 'none'))"/>	
-	<xs:assert  test="@sub_cycling = ('on','off')"/>	
 </xs:complexType>
 
 
@@ -1380,7 +1429,8 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:assert  test="@state = ('on','off')"/>	
 	<xs:assert  test="@engine = ('amanzi','pflotran','none')"/>	
 	<xs:assert  test="@process_model = ('implicit operator split','none')"/>	
-	<xs:assert  test="(@engine = 'none' and @state = 'off') or (@state = 'on' and not(@engine = 'none'))"/>	
+        <!--xs:assert  test="(@engine = 'none' and @state = 'off') or (@state = 'on' and not(@engine = 'none'))"/-->
+        <xs:assert  test="((@state = 'on' and not(@engine = 'none'))"/>
 </xs:complexType>
 
 <!-- ============================================ Phases ============================================== -->
