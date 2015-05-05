@@ -7,24 +7,50 @@
 include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/surface_subsurface_fluxes)
 include_directories(${ATS_SOURCE_DIR}/src/pks)
 include_directories(constitutive_relations/SEB)
+include_directories(constitutive_relations/litter)
 
 add_library(pk_surface_balance_SEB
        constitutive_relations/SEB/SnowEnergyBalance.cc
        constitutive_relations/SEB/SnowEnergyBalance_VPL.cc
        constitutive_relations/SEB/seb_physics_defs.cc
        constitutive_relations/SEB/seb_physics_funcs.cc
+       constitutive_relations/litter/litter_drainage_evaluator.cc
+       constitutive_relations/litter/latent_heat_evaluator.cc
+       constitutive_relations/litter/latent_heat_model.cc       
+       constitutive_relations/litter/evaporative_flux_relaxation_evaluator.cc       
+       constitutive_relations/litter/evaporative_flux_relaxation_model.cc
        SEB/surface_balance_SEB.cc
        SEB/surface_balance_evaluator.cc
        SEB_VPL/surface_balance_SEB_VPL.cc
        SEB_VPL/surface_balance_evaluator_VPL.cc
        explicit/surface_balance_explicit.cc
-       implicit/surface_balance_implicit.cc)
+       implicit/surface_balance_implicit.cc
+       base/surface_balance_base.cc
+)
+
 
 
 install(TARGETS pk_surface_balance_SEB DESTINATION lib)
 
 #================================================
 # register evaluators/factories/pks
+
+# SEB evalutors
+register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/litter/litter_drainage_evaluator_reg.hh
+  LISTNAME SURFACE_BALANCE_SEB_REG
+)
+
+register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/litter/latent_heat_evaluator_reg.hh
+  LISTNAME SURFACE_BALANCE_SEB_REG
+)
+
+
+register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/litter/evaporative_flux_relaxation_evaluator_reg.hh
+  LISTNAME SURFACE_BALANCE_SEB_REG
+)
 
 # SEB explicit
 register_evaluator_with_factory(
@@ -35,6 +61,11 @@ register_evaluator_with_factory(
 # SEB implicit
 register_evaluator_with_factory(
   HEADERFILE implicit/surface_balance_implicit_reg.hh
+  LISTNAME SURFACE_BALANCE_SEB_REG
+)
+
+register_evaluator_with_factory(
+  HEADERFILE base/surface_balance_base_reg.hh
   LISTNAME SURFACE_BALANCE_SEB_REG
 )
 

@@ -4,51 +4,16 @@ ATS Native XML Input Specification V1
 
 .. contents:: **Table of Contents**
 
-Relation to ATS
-==================
+Notes
+=====
 
-ATS's input spec is similar, but not identical, to ASCEM Amanzi's Native
-input spec.  Much of this document is stolen from Amanzi's Native Spec
-(v4).
+* ATS's input spec is similar, but not identical, to Amanzi's Native
+  input spec.  Much of this document is stolen from Amanzi's Native Spec.
 
-Additionally, some sections include parameters entitled `"Currently not supported...`".
-These are parameters from Amanzi which have not yet been implemented in ATS.
+* Note also that nearly **everything** takes a VerboseObject_ spec.  Assume all specs may take a VerboseObject_ spec within a sublist named `"VerboseObject`" unless otherwise noted.
 
 
-ParameterList XML
-=================
-
-The ATS input file is an ASCII text XML-formatted file that must be framed 
-at the beginning and end by the following statements:
-
-
-.. code-block:: xml
-
-  <ParameterList name="Main">
-
-  </ParameterList>
-
-The value in the "name" can be anything ("Main" in this example).  
-A ParameterList consists of just two types of entries: Parameter and ParameterList.  
-ParameterLists are labeled with a `"name`" ``[string]``, while Parameters have a separate 
-fields for `"name`" ``[string]``, `"type`" ``[string]`` and `"value`" ``[TYPE]``, where "TYPE" can 
-be any of the following: double, float, short, int, bool, string, Array(double), Array(float), 
-Array(short), Array(int), Array(bool), Array(string).  
-The value of the parameter is given in quotes (e.g. "2.7e3").  
-Array data is specified as a single comma-deliminated string bounded by {}'s (e.g. "{2.4, 2.1, 5.7}").
-
-.. code-block:: xml
-
-  <ParameterList name="Sub">
-    <Parameter name="CFL" type="double" value="0.9"/>
-    <Parameter name="ratio" type="Array(int)" value="{2, 2, 4}"/>
-  </ParameterList>
-
-In this example, the sublist "Sub" has a parameter named "CFL" that is a "double" and has 
-the value of 0.9, and a Teuchos::Array<int> parameter named "ratio" such that ratio[0] = 2, 
-ratio[1]=2, and ratio[2]=4.
-
-
+  
 Syntax of the Specification
 ===========================
 
@@ -62,22 +27,19 @@ Syntax of the Specification
   and its gradient are required).  
   Where ATS supports a number of parameterized models for quantity Z, the available 
   models will be listed by name, and then will be described in the subsequent section.  
-  For example, the specification might begin with the following:
-
-
-  * `"X`" ``[list]`` 
+  For example, the specification for an `"X`" list might begin with the following:
 
   * `"Y`" ``[string]`` **"default_value"**, `"other`", `"valid`", `"options`"
 
-  * Z ``[list]`` Model for Z, choose exactly one of the following: (1) `"Z: z1`", or (2) `"Z: z2`" (see below) 
+  * Z ``[Z-spec]`` Model for Z, choose exactly one of the following: (1) `"z1`", or (2) `"z2`" (see below) 
 
 Here, an `"X`" is defined by a `"Y`" and a `"Z`".  
 The `"Y`" is a string parameter but the `"Z`" is given by a model (which will require its own set of parameters).
-The options for `"Z`" will then be described:
+The options for `"Z`" will then be described as a spec:
 
- * `"Z: z1`" applies model z1.  Requires `"z1a`" ``[string]``
+ * `"z1`" applies model z1.  Requires `"z1a`" ``[string]``
 
- * `"Z: z2`" applies model z2.  Requires `"z2a`" ``[double]`` and `"z2b`" ``[int]``
+ * `"z2`" applies model z2.  Requires `"z2a`" ``[double]`` and `"z2b`" ``[int]``
 
 An example of using such a specification:
 
@@ -85,7 +47,7 @@ An example of using such a specification:
 
     <ParameterList name="X">
       <Parameter name="Y" type="string" value="hello"/>
-      <ParameterList name="Z: z2">
+      <ParameterList name="z2">
         <Parameter name="z2a" type="double" value="0.7"/>
         <Parameter name="z2b" type="int" value="3"/>
       </ParameterList>   
@@ -98,15 +60,17 @@ Conventions:
 * Reserved keywords and labels are `"quoted and italicized`" -- these
   labels or values of parameters in user-generated input files must
   match (using XML matching rules) the specified or allowable values.
-  User-defined labels are indicated with ALL-CAPS, and are meant to
+
+* User-defined labels are indicated with ALL-CAPS, and are meant to
   represent a typical name given by a user - these can be names or
   numbers or whatever serves best the organization of the user input
-  data.  Bold values are default values, and are used if the Parameter
+  data.
+
+* Bold values are default values, and are used if the Parameter
   is not provided.
 
-* Where applicable, the relevant section of the MRD is referred to by section or chapter number in parentheses.
 
-
+  
 Main
 ====
 
@@ -115,218 +79,29 @@ one sublist for each of the following sections.  Additionally, for
 compatibility with Amanzi, the following Parameters are typically
 present, and should not be changed, as ATS does not currently support Amanzi-S.
 
- * `"Native Unstructured Input`" ``[bool]``, **true**
+* `"Native Unstructured Input`" ``[bool]``, **true**
  
- * `"grid_option`" ``[string]``, **"Unstructured"**
+* `"grid_option`" ``[string]``, **"Unstructured"**
 
+* `"Mesh`" ``[mesh-spec]`` See the Mesh_ spec.
 
-Coordinator
-===========
+* `"Domain`" ``[domain-spec]`` See the Domain_ spec.
 
-In the `"coordinator`" sublist the user specifies global control of
-the simulation, including starting and ending times and restart options.
- 
- * `"start time`" ``[double]``, **0.**
- 
- * `"start time units`" ``[string]``, **"s"**, `"d`", `"yr`"
+* `"Regions`" ``[list]`` List of multiple Region_ specs, each in its own sublist named uniquely by the user.
 
- * `"end time`" ``[double]``
- 
- * `"end time units`" ``[string]``, **"s"**, `"d`", `"yr`"
+* `"coordinator`" ``[coordinator-spec]`` See the Coordinator_ spec.
 
- * `"end cycle`" ``[int]``
+* `"visualization`" ``[visualization-spec]`` A Visualization_ spec for the main domain.
 
- * `"restart from checkpoint file`" ``[string]`` requires a path to the checkpoint file.
+* `"visualization XX`" ``[visualization-spec]`` Potentially more than one other Visualization_ specs, one for each domain `"XX`".  e.g. `"surface`"
 
-Note that either `"end cycle`" or `"end time`" are required, and if
-both are present, the simulation will stop with whichever arrives
-first.  An `"end cycle`" is commonly used to ensure that, in the case
-of a time step crash, we do not continue on forever spewing output.
+* `"checkpoint`" ``[checkpoint-spec]`` A Checkpoint_ spec.
 
-Example:
+* `"observations`" ``[observation-spec]`` An Observation_ spec.
 
-.. code-block::xml
+* `"PKs`" ``[list]`` A list containing exactly one sublist, a PK_ spec with the top level PK.
 
-   <!-- simulation control -->
-   <ParameterList name="coordinator">
-     <Parameter  name="end cycle" type="int" value="6000"/>
-     <Parameter  name="start time" type="double" value="0."/>
-     <Parameter  name="start time units" type="string" value="s"/>
-     <Parameter  name="end time" type="double" value="1"/>
-     <Parameter  name="end time units" type="string" value="yr"/>
-   </ParameterList>
-
-
-Visualization Data
-==================
-
-A user may request periodic writes of field data for the purposes of visualization in the `"visualization`" sublists.
-ATS accepts a visualization list for each domain/mesh -- currently this is up to two (one for the subsurface, and one for the surface). 
-These are in separate ParameterLists, entitled `"visualization`" for the main mesh, and `"visualization surface`" on the surface mesh.
-It is expected that, for any addition meshes, each will have a domain name and therefore admit a spec of the form: `"visualization DOMAIN-NAME`".
-
-Each list is a visualization spec, which is of the form:
-
-  * `"file name base`" ``[string]`` **"visdump_data"**, **"visdump_surface_data"**
-  
-  * `"cycles start period stop`" ``[Array(int)]`` 
-
-    The first entry is the start cycle, the second is the cycle
-    period, and the third is the stop cycle or -1, in which case there
-    is no stop cycle. A visualization dump is written at such
-    cycles that satisfy cycle = start + n*period, for n=0,1,2,... and
-    cycle < stop if stop != -1.0.
-
-  * `"cycles start period stop N`" ``[Array(int)]`` 
-
-    If multiple cycles start period stop parameters are needed, then
-    use these parameters with N=0,1,2,...
-
-  * `"cycles`" ``[Array(int)]`` 
-  
-    An array of discrete cycles that at which a visualization dump is
-    written.
-
-  * `"times start period stop`" ``[Array(double)]`` 
-
-    The first entry is the start time, the second is the time period,
-    and the third is the stop time or -1, in which case there is no
-    stop time. A visualization dump is written at such times that
-    satisfy time = start + n*period, for n=0,1,2,... and time < stop
-    if stop != -1.0.  Note that all times units are in seconds.
-
-  * `"times start period stop n`" ``[Array(double) 
-
-    If multiple start period stop parameters are needed, then use this
-    these parameters with n=0,1,2,..., and not the single `"times
-    start period stop`" parameter.  Note that all times units are in
-    seconds.
-
-  * `"times`" ``[Array(double)]`` 
-
-    An array of discrete times that at which a visualization dump
-    shall be written.  Note that all times units are in seconds.
-
-  * `"dynamic mesh`" ``[bool]`` **false** 
-
-    Write mesh data for every visualization dump, this facilitates
-    visualizing deforming meshes.
-
-**Currently not supported...**
-
-  * `"regions`" ``[Array(string)]`` **empty array**
-
-    Write an array into the visualization file that can be used to
-    identify a region or regions. The first entry in the regions array
-    is marked with the value 1.0 in the array, the second with the
-    value 2.0, and so forth. The code ignores entries in the regions
-    array that are not valid regions that contain cells.
-
-  * `"write partition`" ``[bool]`` **false**
-
-    If this parameter is true, then write an array into the
-    visualization file that contains the rank number of the processor
-    that owns a mesh cell.
-
-
-Example:
-
-.. code-block:: xml
-
-  <ParameterList name="visualization">
-    <Parameter name="file name base" type="string" value="visdump_data"/>
-  
-    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
-    <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
-
-    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
-    <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
-    <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
-
-    <Parameter name="dynamic mesh" type="bool" value="false"/>
-  </ParameterList>
-
-
-
-
-
-Checkpoint Data
-===============
-
-A user may request periodic dumps of ATS Checkpoint Data in the
-`"checkpoint`" sublist.  The user has no explicit control over the
-content of these files, but has the guarantee that the ATS run will be
-reproducible (with accuracies determined by machine round errors and
-randomness due to execution in a parallel computing environment).
-Therefore, output controls for Checkpoint Data are limited to file
-name generation and writing frequency, by numerical cycle number.
-Unlike `"visualization`", there is only one `"checkpoint`" list for
-all domains/meshes.
-
-The checkpoint spec is as follows:
-
-  * `"file name base`" ``[string]`` **"checkpoint"**
-  
-  * `"file name digits`" ``[int]`` **5**
-
-  * `"cycles start period stop`" ``[Array(int)]`` 
-
-    The first entry is the start cycle, the second is the cycle
-    period, and the third is the stop cycle or -1, in which case there
-    is no stop cycle. A visualization dump shall be written at such
-    cycles that satisfy cycle = start + n*period, for n=0,1,2,... and
-    cycle < stop if stop != -1.0.
-
-  * `"cycles start period stop n`" ``[Array(int)]`` 
-
-    If multiple cycles start period stop parameters are needed, then
-    use these parameters with n=0,1,2,..., and not the single `"cycles
-    start period stop`" parameter.
-
-  * `"cycles`" ``[Array(int)]`` 
-
-    An array of discrete cycles that at which a visualization dump
-    shall be written.
-
-  * `"times start period stop`" ``[Array(double)]`` 
-
-    The first entry is the start time, the second is the time period,
-    and the third is the stop time or -1 in which case there is no
-    stop time. A visualization dump shall be written at such times
-    that satisfy time = start + n*period, for n=0,1,2,... and time <
-    stop if stop != -1.0.  Note that all times units are in seconds.
-
-  * `"times start period stop n`" ``[Array(double)]`` 
-
-    If multiple start period stop parameters are needed, then use this
-    these parameters with n=0,1,2,..., and not the single `"times
-    start period stop`" parameter.  Note that all times units are in
-    seconds.
-
-  * `"times`" ``[Array(double)]`` 
-
-    An array of discrete times that at which a visualization dump
-    shall be written.  Note that all times units are in seconds.
-
-
-Example:
-
-.. code-block:: xml
-
-  <ParameterList name="checkpoint">
-    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
-    <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
-
-    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
-    <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
-    <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
-  </ParameterList>
-
-In this example, checkpoint files are written when the cycle number is
-a multiple of 100, every 10 seconds for the first 100 seconds, and
-every 25 seconds thereafter, along with times 101, 303, and 422.
-
-
+* `"state`" ``[list]`` A State_ spec.
 
 Mesh
 ====
@@ -348,8 +123,8 @@ Example of a mesh generated internally:
        <ParameterList name="Generate Mesh"/>
          <ParameterList name="Uniform Structured"/>
            <Parameter name="Number of Cells" type="Array(int)" value="{100, 1, 100}"/>
-           <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0, 0.0}" />
-           <Parameter name="Domain High Corner" type="Array(double)" value="{103.2, 1.0, 103.2}" />
+           <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}" />
+           <Parameter name="Domain High Coordinate" type="Array(double)" value="{103.2, 1.0, 103.2}" />
          </ParameterList>   
        </ParameterList>   
      </ParameterList>   
@@ -370,13 +145,23 @@ Example of a mesh read from an external file, along with a surface mesh:
       </ParameterList>   
     </ParameterList>
 
-Note that in this case, ATS expects there to also be a Regions_ spec
+Note that in this case, ATS expects there to also be a Region_ spec
 (in this example named) `"surface_region`" which describes a face set
 of the main mesh.
 
 
-Regions
-=======
+
+Domain
+======
+
+The domain simply refers to the geometric model in which a mesh is contained.  Currently it has a single parameter.
+
+ * `"Spatial Dimension`" ``[int]`` **3**
+
+
+
+Region
+======
 
 Regions are geometrical constructs used in ATS to define subsets of the computational domain in order to specify the problem
 to be solved, and the output desired.  Regions may represents zero-, one-, two- or three-dimensional subsets of physical space.
@@ -385,22 +170,7 @@ regions.  If the simulation domain is N-dimensional, the boundary conditions mus
 
 User-defined regions are constructed using the following syntax
 
-  * `"Regions`" ``[list]`` 
-
-    can accept a number of lists, each of which is a list.
-
-    * REGION-NAME ``[list]``
-
-      This list serves to name the region, and contains exactly one `region-spec`.
-
-      * REGION-SHAPE [region-spec] 
-
-        In this case the list name is a geometric model primitive:
-        choose exactly one of the following [see table below]:
-        `"Region: Point`", `"Region: Box`", `"Region: Plane`",
-        `"Region: Labeled Set`", `"Region: Layer`", `"Region:
-        Surface`"
-
+* REGION-SHAPE [list] In this case the list name is a geometric model primitive, from the table below.
 
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 |  shape functional name         | parameters                              | type(s)                      | Comment                                                                |
@@ -547,8 +317,198 @@ region defined by the value 25 in color function file.
 
 
 
-PKs
-===
+Coordinator
+===========
+
+In the `"coordinator`" sublist the user specifies global control of
+the simulation, including starting and ending times and restart options.
+ 
+* `"start time`" ``[double]``, **0.**
+ 
+* `"start time units`" ``[string]``, **"s"**, `"d`", `"yr`"
+
+* `"end time`" ``[double]``
+ 
+* `"end time units`" ``[string]``, **"s"**, `"d`", `"yr`"
+
+* `"end cycle`" ``[int]``
+
+* `"restart from checkpoint file`" ``[string]`` requires a path to the checkpoint file.
+
+* `"wallclock end time`" [double] ?? This works, but this documentation needs updated.   
+
+* `"required times`" ``[time-control-spec]`` A TimeControl_ spec that sets a collection of times/cycles at which the simulation is guaranteed to hit exactly.  This is useful for situations such as where data is provided at a regular interval, and interpolation error related to that data is to be minimized.
+   
+Note that either `"end cycle`" or `"end time`" are required, and if
+both are present, the simulation will stop with whichever arrives
+first.  An `"end cycle`" is commonly used to ensure that, in the case
+of a time step crash, we do not continue on forever spewing output.
+
+Example:
+
+.. code-block::xml
+
+   <!-- simulation control -->
+   <ParameterList name="coordinator">
+     <Parameter  name="end cycle" type="int" value="6000"/>
+     <Parameter  name="start time" type="double" value="0."/>
+     <Parameter  name="start time units" type="string" value="s"/>
+     <Parameter  name="end time" type="double" value="1"/>
+     <Parameter  name="end time units" type="string" value="yr"/>
+     <ParameterList name="required times">
+       ...
+     </ParameterList>
+   </ParameterList>
+
+
+Visualization
+=============
+
+A user may request periodic writes of field data for the purposes of visualization in the `"visualization`" sublists.
+ATS accepts a visualization list for each domain/mesh -- currently this is up to two (one for the subsurface, and one for the surface). 
+These are in separate ParameterLists, entitled `"visualization`" for the main mesh, and `"visualization surface`" on the surface mesh.
+It is expected that, for any addition meshes, each will have a domain name and therefore admit a spec of the form: `"visualization DOMAIN-NAME`".
+
+Each list contains all parameters as in a TimeControl_ spec, and also:
+
+* `"file name base`" ``[string]`` **"visdump_data"**, **"visdump_surface_data"**
+  
+* `"dynamic mesh`" ``[bool]`` **false** 
+
+    Write mesh data for every visualization dump, this facilitates
+    visualizing deforming meshes.
+
+**Currently not supported...**
+
+* `"regions`" ``[Array(string)]`` **empty array**  Write an array into the visualization file that can be used to
+    identify a region or regions. The first entry in the regions array
+    is marked with the value 1.0 in the array, the second with the
+    value 2.0, and so forth. The code ignores entries in the regions
+    array that are not valid regions that contain cells.
+
+* `"write partition`" ``[bool]`` **false**  If this parameter is true, then write an array into the
+    visualization file that contains the rank number of the processor
+    that owns a mesh cell.
+
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="visualization">
+    <Parameter name="file name base" type="string" value="visdump_data"/>
+  
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
+    <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
+
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
+    <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
+    <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
+
+    <Parameter name="dynamic mesh" type="bool" value="false"/>
+  </ParameterList>
+
+
+  
+Checkpoint
+==========
+
+A user may request periodic dumps of ATS Checkpoint Data in the
+`"checkpoint`" sublist.  The user has no explicit control over the
+content of these files, but has the guarantee that the ATS run will be
+reproducible (with accuracies determined by machine round errors and
+randomness due to execution in a parallel computing environment).
+Therefore, output controls for Checkpoint Data are limited to file
+name generation and writing frequency, by numerical cycle number.
+Unlike `"visualization`", there is only one `"checkpoint`" list for
+all domains/meshes.
+
+The checkpoint-spec includes all parameters as in a TimeControl_ spec and additionally:
+
+* `"file name base`" ``[string]`` **"checkpoint"**
+  
+* `"file name digits`" ``[int]`` **5**
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="checkpoint">
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
+    <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
+    <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
+    <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
+  </ParameterList>
+
+In this example, checkpoint files are written when the cycle number is
+a multiple of 100, every 10 seconds for the first 100 seconds, and
+every 25 seconds thereafter, along with times 101, 303, and 422.
+
+
+ 
+Observation
+===========
+
+**This is not currently correct!**
+
+A user may request any number of specific observations from ATS.  Each labeled Observation Data quantity involves a field quantity, a model, a region from which it will extract its source data, and a list of discrete times 
+for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of ATS arguments.
+
+* `"Observation Data`" [list] can accept multiple lists for named observations (OBSERVATION)
+
+ * `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
+
+ * OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`", and all TimeControl_ spec options.
+
+  * `"Variables`" [Array(string)] a list of field quantities taken from the list of 
+      available field quantities:
+
+   * Volumetric water content [volume water / bulk volume]
+   * Aqueous saturation [volume water / volume pore space]
+   * Aqueous pressure [Pa]
+   * Hydraulic Head [m] 
+   * XXX Aqueous concentration [moles of solute XXX / volume water in MKS] (name formed by string concatenation, given the definitions in `"Phase Definition`" section)
+   * X-, Y-, Z- Aqueous volumetric fluxe [m/s]
+   * MaterialID
+
+  * `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
+
+  * `"Region`" [string] the label of a user-defined region
+
+The following Observation Data functionals are currently supported.  All of them operate on the variables identified.
+
+* `"Observation Data: Point`" returns the value of the field quantity at a point
+
+* `"Observation Data: Integral`" returns the integral of the field quantity over the region specified
+
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="Observation Data">
+    <Parameter name="Observation Output Filename" type="string" value="obs_output.out"/>
+    <ParameterList name="some observation name">
+      <Parameter name="Region" type="string" value="some point region name"/>
+      <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+      <Parameter name="Variable" type="string" value="Volumetric water content"/>
+      <Parameter name="times" type="Array(double)" value="{100000.0, 200000.0}"/>
+
+      <Parameter name="cycles" type="Array(int)" value="{100000, 200000, 400000, 500000}"/>
+      <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
+
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
+      <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
+      <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
+
+    </ParameterList>
+  </ParameterList>
+
+
+
+PK
+==
 
 The `"PKs`" ParameterList in Main_ is expected to have one and only one sublist, which corresponds to the PK at the top of the PK tree.
 This top level PK is also often an MPC (MPCs are PKs).
@@ -592,8 +552,6 @@ Therefore, (nearly) all PKs accept this input spec.
 
    This is automatically written as the `"name`" attribute of the
    containing PK sublist, and need not be included in the spec
-
- * `"VerboseObject`" ``[list]`` see the `VerboseObject spec`_.
 
 PKPhysicalBase
 ^^^^^^^^^^^^^^
@@ -700,6 +658,7 @@ conditions`", which is a terrible name which must be fixed.
 example:
 
 .. code-block:: xml
+                
   <ParameterList name="state">
     <ParameterList name="field evaluators">
       ...
@@ -723,13 +682,15 @@ Many field evaluators exist, but most derive from one of four base types.
 Initial Conditions
 ------------------
 
-Initial condition specs are used in two places -- in the PKs_ sublist
+Initial condition specs are used in two places -- in the PK_ spec
 which describes the initial condition of primary variables, and in the
 initial conditions sublist of state, in which the value of atomic
 constants are provided.  In Amanzi, this list is also used for initial
 conditions of primary variables are specified here, not within the PK
 list (hence the name of this sublist).  In ATS, this sublist is pretty
 much only used for constant scalars and constant vectors.
+
+This list needs to be renamed -- it has nothing to do with inital conditions anymore.
 
 Initialization of constant scalars
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -869,9 +830,6 @@ Common specs for all solvers and time integrators.
 Time Integrator
 ---------------
 
-Timestep Controller Spec
-------------------------
-
 Linear Solver Spec
 ------------------
 
@@ -890,8 +848,6 @@ For each solver, a few parameters are used:
 
 * `"size of Krylov space`" ``[int]`` is used in GMRES iterative method. The default value is 10.
 
-* `"VerboseObject`" ``[list]`` a `VerboseObject spec`_.
-
 .. code-block:: xml
 
      <ParameterList name="my solver">
@@ -908,7 +864,7 @@ For each solver, a few parameters are used:
 
 
 Preconditioner Spec
-------------------
+-------------------
 
 These can be used by a process kernel lists to define a preconditioner.  The only common parameter required by all lists is the type:
 
@@ -932,6 +888,23 @@ Hypre AMG
 
 Internal parameters of Boomer AMG includes
 
+ * `"tolerance`" ``[double]`` **0.0** if is not zero, the preconditioner is dynamic 
+   and approximate the inverse matrix with the prescribed tolerance (in
+   the energy norm?).
+
+ * `"smoother sweeps`" ``[int]`` Number of smoothing iterations at each level on each cycle.
+
+ * `"cycle applications`" ``[int]`` **5** Number of V/W cycles to take.
+
+ * `"strong threshold`" ``[double]`` **0.5** Tolerance for including an off-diagonal when coarsening?  This is a very tunable parameter.
+
+ * `"relaxation type`" ``[int]`` **6** defines the smoother to be used. Default is 6 
+   which specifies a symmetric hybrid Gauss-Seidel / Jacobi hybrid method.
+  
+* `"verbosity`" ``[int]`` **0** prints BoomerAMG statistics useful for analysis. 
+
+ * `"number of functions`" ``[int]`` **1** Used in systems, this is very important to set correctly if you have two or more seperate variables interleaved.
+
 .. code-block:: xml
 
    <ParameterList name="boomer amg parameters">
@@ -939,19 +912,10 @@ Internal parameters of Boomer AMG includes
      <Parameter name="smoother sweeps" type="int" value="3"/>
      <Parameter name="cycle applications" type="int" value="5"/>
      <Parameter name="strong threshold" type="double" value="0.5"/>
-     <Parameter name="verbosity" type="int" value="0"/>
      <Parameter name="relaxation type" type="int" value="6"/>
+     <Parameter name="verbosity" type="int" value="0"/>
+     <Parameter name="number of functions" type="int" value="1"/>
    </ParameterList>
-
-* `"tolerance`" ``[double]`` if is not zero, the preconditioner is dynamic 
-  and approximate the inverse matrix with the prescribed tolerance (in
-  the energy norm ???).
-
-* `"relaxation type`" ``[int]`` defines the smoother to be used. Default is 6 
-  which specifies a symmetric hybrid Gauss-Seidel / Jacobi hybrid method.
-
-* `"verbosity`" ``[int]`` prints BoomerAMG statistics useful for analysis. 
-  Default is 0.
 
 
 Trilinos ML
@@ -1007,27 +971,66 @@ The default, no PC applied.
 
 
 
-.. _`nonlinear solver spec`:
-Nonlinear Solver
--------------
+NonlinearSolver
+----------------
 
 
 
 
-Other specs
-=========
+Common Specs
+============
 
-.. _`VerboseObject spec`:
-
-VerboseObject Spec
+TimeControl
 -----------
+
+The time-control-spec is used for multiple lists that need to indicate simulation times or cycles on which to do something.
+
+  * `"cycles start period stop`" ``[Array(int)]`` 
+
+    The first entry is the start cycle, the second is the cycle
+    period, and the third is the stop cycle or -1, in which case there
+    is no stop cycle. A visualization dump is written at such
+    cycles that satisfy cycle = start + n*period, for n=0,1,2,... and
+    cycle < stop if stop != -1.0.
+
+  * `"cycles start period stop N`" ``[Array(int)]`` 
+
+    If multiple cycles start period stop parameters are needed, then
+    use these parameters with N=0,1,2,...
+
+  * `"cycles`" ``[Array(int)]`` 
+  
+    An array of discrete cycles that at which a visualization dump is
+    written.
+
+  * `"times start period stop`" ``[Array(double)]`` 
+
+    The first entry is the start time, the second is the time period,
+    and the third is the stop time or -1, in which case there is no
+    stop time. A visualization dump is written at such times that
+    satisfy time = start + n*period, for n=0,1,2,... and time < stop
+    if stop != -1.0.  Note that all times units are in seconds.
+
+  * `"times start period stop n`" ``[Array(double)]``
+
+    If multiple start period stop parameters are needed, then use this
+    these parameters with n=0,1,2,..., and not the single `"times
+    start period stop`" parameter.  Note that all times units are in
+    seconds.
+
+  * `"times`" ``[Array(double)]`` 
+
+    An array of discrete times that at which a visualization dump
+    shall be written.  Note that all times units are in seconds.
+
+VerboseObject
+-------------
 
 ``Teuchos::VerboseObject`` is a tool for managing code output.  See also the `Trilinos documentation <http://trilinos.org/docs/r11.6/packages/teuchos/doc/html/classTeuchos_1_1VerboseObject.html>`_
 
  * `"Verbosity Level`" ``[string]`` **GLOBAL_VERBOSITY**, `"low`", `"medium`", `"high`", `"extreme`"  The default is set by the global verbosity spec, (fix me!)  Typically, `"low`" prints out minimal information, `"medium`" prints out errors and overall high level information, `"high`" prints out basic debugging, and `"extreme`" prints out local debugging information.  `"medium`" is the standard.
 
-
-.. _`function spec`:
+   
 
 Function
 --------
@@ -1137,7 +1140,7 @@ Here i san example of a quartic polynomial:
   
 
 Multi-variable linear function
-^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A multi-variable linear function is formally defined by
  
@@ -1160,7 +1163,7 @@ Here is an example:
   
 
 Separable function
-^^^^^^^^^^^^^^^^ 
+^^^^^^^^^^^^^^^^^^
 
 A separable function is defined as the product of other functions such as
 
@@ -1178,93 +1181,6 @@ where :math:`f_1` is defined by the `"function1`" sublist, and
     </ParameterList>
     <ParameterList name="function2">
       function-specification
-    </ParameterList>
-  </ParameterList>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-**Currently not supported...**
-
-
-Observation Data
-----------------
-
-
-
-A user may request any number of specific observations from ATS.  Each labeled Observation Data quantity involves a field quantity, a model, a region from which it will extract its source data, and a list of discrete times 
-for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of ATS arguments.
-
-* `"Observation Data`" [list] can accept multiple lists for named observations (OBSERVATION)
-
-  * `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
-
-  * OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`", `"times`", and TSPS (see below).
-
-    * `"Variables`" [Array(string)] a list of field quantities taken from the list of 
-      available field quantities:
-
-      * Volumetric water content [volume water / bulk volume]
-      * Aqueous saturation [volume water / volume pore space]
-      * Aqueous pressure [Pa]
-      * Hydraulic Head [m] 
-      * XXX Aqueous concentration [moles of solute XXX / volume water in MKS] (name formed by string concatenation, given the definitions in `"Phase Definition`" section)
-      * X-, Y-, Z- Aqueous volumetric fluxe [m/s]
-      * MaterialID
-
-    * `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
-
-    * `"Region`" [string] the label of a user-defined region
-
-    * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written at such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
-
-    * `"cycles start period stop n`" [Array(int)] if multiple cycles start period stop parameters are needed, then use these parameters with n=0,1,2,..., and not the single `"cycles start period stop`" parameter.
-
-    * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written. 
-
-    * `"times start period stop`" [Array(double)] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
-
-    * `"times start period stop n`" [Array(double) if multiple start period stop parameters are needed, then use this these parameters with n=0,1,2,..., and not the single  `"times start period stop`" parameter.
-
-    * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
-
-
-The following Observation Data functionals are currently supported.  All of them operate on the variables identified.
-
-* `"Observation Data: Point`" returns the value of the field quantity at a point
-
-* `"Observation Data: Integral`" returns the integral of the field quantity over the region specified
-
-
-Example:
-
-.. code-block:: xml
-
-  <ParameterList name="Observation Data">
-    <Parameter name="Observation Output Filename" type="string" value="obs_output.out"/>
-    <ParameterList name="some observation name">
-      <Parameter name="Region" type="string" value="some point region name"/>
-      <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-      <Parameter name="Variable" type="string" value="Volumetric water content"/>
-      <Parameter name="times" type="Array(double)" value="{100000.0, 200000.0}"/>
-
-      <Parameter name="cycles" type="Array(int)" value="{100000, 200000, 400000, 500000}"/>
-      <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
-
-      <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
-      <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
-      <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
-
     </ParameterList>
   </ParameterList>
 
