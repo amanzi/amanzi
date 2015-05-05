@@ -83,29 +83,36 @@ void OverlandHeadFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g) {
 
   if (is_source_term_) {
     // Add in external source term.
-    S_next_->GetFieldEvaluator("surface_mass_source")
+    S_next_->GetFieldEvaluator(mass_source_key_)
         ->HasFieldChanged(S_next_.ptr(), name_);
     const Epetra_MultiVector& source1 =
-        *S_next_->GetFieldData("surface_mass_source")->ViewComponent("cell",false);
+        *S_next_->GetFieldData(mass_source_key_)->ViewComponent("cell",false);
 
-    // External source term is in [m water / s], not in [mols / s], so a
-    // density is required.  This density should be upwinded.
-    S_next_->GetFieldEvaluator("surface_molar_density_liquid")
-        ->HasFieldChanged(S_next_.ptr(), name_);
-    S_next_->GetFieldEvaluator("surface_source_molar_density")
-        ->HasFieldChanged(S_next_.ptr(), name_);
+    if (source_in_meters_) {
+      // External source term is in [m water / s], not in [mols / s], so a
+      // density is required.  This density should be upwinded.
+      S_next_->GetFieldEvaluator("surface_molar_density_liquid")
+          ->HasFieldChanged(S_next_.ptr(), name_);
+      S_next_->GetFieldEvaluator("surface_source_molar_density")
+          ->HasFieldChanged(S_next_.ptr(), name_);
 
-    const Epetra_MultiVector& nliq1 =
-        *S_next_->GetFieldData("surface_molar_density_liquid")
-        ->ViewComponent("cell",false);
-    const Epetra_MultiVector& nliq1_s =
+      const Epetra_MultiVector& nliq1 =
+          *S_next_->GetFieldData("surface_molar_density_liquid")
+          ->ViewComponent("cell",false);
+      const Epetra_MultiVector& nliq1_s =
         *S_next_->GetFieldData("surface_source_molar_density")
-        ->ViewComponent("cell",false);
+          ->ViewComponent("cell",false);
 
-    int ncells = g_c.MyLength();
-    for (int c=0; c!=ncells; ++c) {
-      double s1 = source1[0][c] > 0. ? source1[0][c] * nliq1_s[0][c] : source1[0][c] * nliq1[0][c];
-      g_c[0][c] -= cv1[0][c] * s1;
+      int ncells = g_c.MyLength();
+      for (int c=0; c!=ncells; ++c) {
+        double s1 = source1[0][c] > 0. ? source1[0][c] * nliq1_s[0][c] : source1[0][c] * nliq1[0][c];
+        g_c[0][c] -= cv1[0][c] * s1;
+      }
+    } else {
+      int ncells = g_c.MyLength();
+      for (int c=0; c!=ncells; ++c) {
+        g_c[0][c] -= cv1[0][c] * source1[0][c];
+      }
     }
   }
 
