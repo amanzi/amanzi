@@ -5,10 +5,9 @@ Takes non-contiguous data structure spaces (CompositeVector, TreeVector) and
 converts them into a single map.
 
 DESIGN FLAW: Currently this assumes that component names are unique, and if
-two components share the same name, they share thee same map.  This is
+two components share the same name, they share the same map.  This is
 obviously wrong when multple meshes are involved -- for instance a TV of
 surface + subsurface, both with "cell" components, would break miserably.
-
 */
 
 #ifndef AMANZI_OPERATORS_SUPER_MAP_HH_

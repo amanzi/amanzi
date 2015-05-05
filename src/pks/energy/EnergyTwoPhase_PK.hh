@@ -17,7 +17,7 @@
 
 // Amanzi
 #include "BDF1_TI.hh"
-#include "eos.hh"
+#include "EOS.hh"
 #include "IEM.hh"
 #include "PK_Factory.hh"
 
@@ -40,7 +40,7 @@ public:
   virtual void Setup();
   virtual void Initialize();
 
-  virtual bool AdvanceStep(double t_old, double t_new);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
   virtual void CommitStep(double t_old, double t_new);
   virtual void CalculateDiagnostics() {};
 
@@ -66,8 +66,8 @@ public:
   void InitializeFields_();
 
  protected:
-  // models for evaluating enthalpy
-  Teuchos::RCP<Relations::EOS> eos_liquid_;
+  // models for evaluating total energy
+  Teuchos::RCP<EOS::EOS> eos_liquid_;
   Teuchos::RCP<IEM> iem_liquid_;
 
  private:

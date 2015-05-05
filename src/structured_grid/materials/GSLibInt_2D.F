@@ -47,7 +47,7 @@ c :: ----------------------------------------------------------
 c :: Conditioned the data using internal values. One big fab.
 c :: ----------------------------------------------------------
       subroutine FORT_INTERNAL_DATA(dat,DIMS(dat),
-     &     scratch_c,c_sz,c_idx,condg,sig,dx,plo,domlo,domhi)
+     &     scratch_c,c_sz,c_idx,condg,dx,plo,domlo,domhi)
 
 #include "sgsim2.inc"
 
@@ -56,39 +56,10 @@ c :: ----------------------------------------------------------
       integer domlo(SDIM),domhi(SDIM)
       REAL_T  dat(DIMV(dat))
       REAL_T  scratch_c(c_sz)
-      REAL_T  dx(SDIM),plo(SDIM),condg,sig
-
-      integer i,j,idx,nnx,nny,nnxy
+      REAL_T  dx(SDIM),plo(SDIM),condg
 
       if (do_cond .eq. 1) then
          call read_cond_data(scratch_c,c_sz,c_idx)
-
-      else if (do_cond .eq. 2) then
-
-c         nnx = ARG_H1(dat)-ARG_L1(dat)+1
-c         nny = ARG_H2(dat)-ARG_L2(dat)+1
-         nnx  = domhi(1)-domlo(1)+1
-         nny  = domhi(2)-domlo(2)+1
-         nnxy = nnx*nny
-
-         do j = ARG_L2(dat),ARG_H2(dat)
-            do i = ARG_L1(dat),ARG_H1(dat)
-               idx = (j-domlo(2))*nnx + (i-domlo(1))
-               scratch_c(c_idx(1)+idx) = plo(1) + (dble(i)+0.5d0)*dx(1)
-               scratch_c(c_idx(2)+idx) = plo(2) + (dble(j)+0.5d0)*dx(2)
-               scratch_c(c_idx(3)+idx) = zero
-               scratch_c(c_idx(4)+idx) = log(dat(i,j)/condg)/sig
-               scratch_c(c_idx(5)+idx) = 1
-               scratch_c(c_idx(6)+idx) = log(dat(i,j)/condg)/sig;
-               scratch_c(c_idx(7)+idx) = 1
-               scratch_c(c_idx(8)+idx) = zero
-               scratch_c(c_idx(9)+idx) = zero
-            end do 
-         end do
-
-         nd  = nnxy
-         ntr = nnxy
-
       end if
       end
 
@@ -107,43 +78,10 @@ c :: ----------------------------------------------------------
       REAL_T  scratch_r(real_sz)
       REAL_T  dat(DIMV(dat)),dx(SDIM),condg,sig
 
-      integer i,j,ioff,joff,ic,jc,idx,nnx,nny
-      integer l1,l2,h1,h2,idxlvm
-      
       if (ktype .ge. 2) then
          if (do_cond .eq. 1) then
             call read_sec()
-
-         else 
-
-            idxlvm = real_idx(13)
-         
-            l1 = -3
-            l2 = -3
-            h1 = (ARG_H1(dat)-2)*ratios(1)+2
-            h2 = (ARG_H2(dat)-2)*ratios(2)+2
-            
-            nnx = h1 - l1 + 1
-            nny = h2 - l2 + 1
-            
-            do jc = ARG_L2(dat),ARG_H2(dat)
-               do joff = 0,ratios(2)-1
-                  j = (jc)*ratios(2) + joff
-                  do ic = ARG_L1(dat),ARG_H1(dat)
-                     do ioff = 0,ratios(1)-1
-                        i = (ic)*ratios(1) + ioff
-                        if (i .ge. l1 .and. j .ge. l2 .and.
-     &                      i .le. h1 .and. j .le. h2) then
-                           idx = idxlvm + (j-l2)*nnx + (i-l1)
-                           scratch_r(idx) = log(dat(ic,jc)/condg)/sig
-                        end if
-                     end do
-                  end do
-               end do 
-            end do
-
          end if
-
       end if
 
       end
@@ -259,15 +197,15 @@ c :: ----------------------------------------------------------
       real*8  acorni
 
       scratch_i(int_idx(1)) = ARG_H1(dat)-ARG_L1(dat)+1
-      scratch_i(int_idx(2)) = ARG_H2(dat)-ARG_L2(dat)+1
-      scratch_i(int_idx(3)) = 1
+      scratch_i(int_idx(3)) = ARG_H2(dat)-ARG_L2(dat)+1
+      scratch_i(int_idx(2)) = 1
 
       scratch_r(int_idx(1)) = plo(1) + (ARG_L1(dat)+0.5d0)*dx(1)
-      scratch_r(int_idx(2)) = plo(2) + (ARG_L2(dat)+0.5d0)*dx(2)
-      scratch_r(int_idx(3)) = 0.d0
+      scratch_r(int_idx(3)) = plo(2) + (ARG_L2(dat)+0.5d0)*dx(2)
+      scratch_r(int_idx(2)) = 0.d0
       scratch_r(int_idx(4)) = dx(1)
-      scratch_r(int_idx(5)) = dx(2)
-      scratch_r(int_idx(6)) = dx(1)
+      scratch_r(int_idx(5)) = 0.d0
+      scratch_r(int_idx(6)) = dx(2)
 
       if (ixv(1) .eq. 0) ixv(1) = iseed
       nxyz = (ARG_H1(dat)-ARG_L1(dat)+1)*(ARG_H2(dat)-ARG_L2(dat)+1)
@@ -382,11 +320,11 @@ c :: ----------------------------------------------------------
 c :: ----------------------------------------------------------
 c :: Turn normal field into lognormal field
 c :: ----------------------------------------------------------
-      subroutine FORT_LGNORM(dat,DIMS(dat),condg,sig)
+      subroutine FORT_LGNORM(dat,DIMS(dat),condg)
 
       integer i,j
       integer DIMDEC(dat)
-      REAL_T  condg,sig
+      REAL_T  condg
       REAL_T  dat(DIMV(dat))
 
       do i=ARG_L1(dat),ARG_H1(dat)

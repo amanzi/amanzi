@@ -23,6 +23,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "LeastSquare.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
@@ -186,8 +187,8 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
   }
 
   /* convergence rates */
-  double p_rate = Amanzi::Flow::bestLSfit(h, p_error);
-  double v_rate = Amanzi::Flow::bestLSfit(h, v_error);
+  double p_rate = Amanzi::Utils::bestLSfit(h, p_error);
+  double v_rate = Amanzi::Utils::bestLSfit(h, v_error);
   printf("convergence rates: %23.2f %22.2f\n", p_rate, v_rate);
 
   CHECK_CLOSE(p_rate, 2.0, 0.2);

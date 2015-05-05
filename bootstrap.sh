@@ -107,6 +107,9 @@ pflotran=${FALSE}
 shared=${FALSE}
 spacedim=2
 native=${FALSE}
+nersc=${FALSE}
+nersc_tpl_opts=
+nersc_amanzi_opts=
 
 
 # ---------------------------------------------------------------------------- #
@@ -267,6 +270,8 @@ Configuration:
   --branch=BRANCH         build TPLs and Amanzi found in BRANCH ['"${amanzi_branch}"']
   
   --spacedim=DIM          dimension of structured build (DIM=2 or 3) ['"${spacedim}"']
+
+  --nersc_build           use cmake options required on NERSC machines ['"${nersc}"']
   
 Build features:
 Each feature listed here can be enabled/disabled with --[enable|disable]-[feature]
@@ -365,6 +370,7 @@ Build configuration:
     parallel            ='"${parallel_jobs}"'
     shared              ='"${shared}"'
     spacedim            ='"${spacedim}"'
+    nersc_build         ='"${nersc}"'
 
 Build Features:   
     structured          ='"${structured}"'
@@ -452,6 +458,10 @@ function parse_argv()
 
       --spacedim=*)
                  spacedim=`parse_option_with_equal "${opt}" 'spacedim'`
+                 ;;
+
+      --nersc_build)
+                 nersc=${TRUE}
                  ;;
 
       --with-c-compiler=*)
@@ -1026,6 +1036,16 @@ function define_structured_dependencies
   fi
 }
 
+function define_nersc_options
+{
+  if [ "${nersc}" -eq "${TRUE}" ]; then
+    nersc_tpl_opts="-DPREFER_STATIC_LIBRARIES:BOOL=TRUE"
+    nersc_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=TRUE -DTESTS_REQUIRE_FULLPATH:BOOL=TRUE -DPREFER_STATIC_LIBRARIES:BOOL=TRUE -DBUILD_STATIC_EXECUTABLES:BOOL=TRUE"
+    status_message "NERSC TPL OPTS = ${nersc_tpl_opts}"
+    status_message "NERSC AMANZI OPTS = ${nersc_amanzi_opts}"
+  fi
+}
+
 #
 # End functions
 # ---------------------------------------------------------------------------- #
@@ -1038,6 +1058,9 @@ function define_structured_dependencies
 # Parse the command line arguments
 array=( "$@" )
 parse_argv "${array[@]}"
+
+# Set extra options for building on nersc
+define_nersc_options
 
 # Set packages that depend on unstructured
 define_unstructured_dependencies
@@ -1106,6 +1129,8 @@ if [ -z "${tpl_config_file}" ]; then
                 -DENABLE_PFLOTRAN:BOOL=${plotran} \
                 -DBUILD_SHARED_LIBS:BOOL=${shared} \
                 -DCCSE_BL_SPACEDIM:INT=${spacedim} \
+                -DPREFER_STATIC_LIBRARIES:BOOL=${static} \
+                ${nersc_tpl_opts} \
                 ${tpl_build_src_dir}
 
   if [ $? -ne 0 ]; then
@@ -1191,6 +1216,7 @@ ${cmake_binary} \
               -DCCSE_BL_SPACEDIM:INT=${spacedim} \
 	      -DENABLE_Regression_Tests:BOOL=${reg_tests} \
 	      -DENABLE_NATIVE_XML_OUTPUT:BOOL=${native} \
+              ${nersc_amanzi_opts} \
               ${amanzi_source_dir}
 
 

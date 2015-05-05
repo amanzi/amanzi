@@ -1,0 +1,20 @@
+Attaches permeability attribute to cells of partitioned phase2_dvz mesh
+You will need to link or point to exoatt.
+exoatt will install in the bin directory ($AMANZI_INSTALL_DIR/bin)
+
+Create attribute file:
+python create_att.py
+
+Create mesh directory:
+mkdir mesh
+
+Attach perms to existing mesh (mesh.exo):
+mpiexec -n 2 exoatt --classify=1 --partition=1 --partition-method=1 ../dvz_3_layer/mesh.exo dvz_att.txt mesh/mesh_att.exo
+
+Change names of mesh files:
+mv mesh/mesh_att.exo.2.0 mesh/mesh_att.par.2.0 
+mv mesh/mesh_att.exo.2.1 mesh/mesh_att.par.2.1 
+
+Run amanzi:
+mpiexec -n 2 amanzi --xml_file=dvz_3_layer_2d-isv2_1.xml
+

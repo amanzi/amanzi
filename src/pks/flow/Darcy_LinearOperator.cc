@@ -29,7 +29,7 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, CompositeVector& u)
 {
   // add diffusion operator
   op_->RestoreCheckPoint();
-  op_diff_->ApplyBCs();
+  op_diff_->ApplyBCs(true, true);
   op_->AssembleMatrix();
   op_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 

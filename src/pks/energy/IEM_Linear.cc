@@ -8,9 +8,9 @@
 
   Author: Ethan Coon
 
-  Linear internal energy model -- function of Cv and temperature
+  Linear internal energy model -- function of cv and temperature
 
-   IE = Cv * (T - T_ref)
+   IE = cv * (T - Tref)
 
   UNITS: J/{mol/kg}
 */
@@ -22,26 +22,26 @@ namespace Energy {
 
 IEM_Linear::IEM_Linear(Teuchos::ParameterList& plist) : plist_(plist) {
   InitializeFromPlist_();
-};
+}
 
 
 double IEM_Linear::InternalEnergy(double temp) {
-  return Cv_ * (temp - T_ref_);
-};
+  return cv_ * (temp - Tref_);
+}
 
 
 void IEM_Linear::InitializeFromPlist_()
 {
   if (plist_.isParameter("heat capacity [J/kg-K]")) {
-    Cv_ = plist_.get<double>("heat capacity [J/kg-K]");
+    cv_ = plist_.get<double>("heat capacity [J/kg-K]");
     molar_basis_ = false;
   } else {
-    Cv_ = plist_.get<double>("heat capacity [J/mol-K]");
+    cv_ = plist_.get<double>("heat capacity [J/mol-K]");
     molar_basis_ = true;
   }
 
-  T_ref_ = plist_.get<double>("Reference temperature [K]", 273.15);
-};
+  Tref_ = plist_.get<double>("reference temperature", 273.15);
+}
 
 }  // namespace Energy
 }  // namespace Amanzi

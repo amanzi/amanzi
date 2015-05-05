@@ -40,7 +40,7 @@ class Dummy_PK : public FnTimeIntegratorPK {
   };
 
   // Advance PK by step size dt.
-  virtual bool AdvanceStep(double t_old, double t_new);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
 
   // Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new) {}

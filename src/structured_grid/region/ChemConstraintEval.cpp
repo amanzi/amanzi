@@ -1,55 +1,6 @@
 
 #include <ChemConstraintEval.H>
 
-ChemConstraintEval::ChemConstraintEval(const std::string&          name,
-				       int                         tracerIdx,
-				       RockManager*                rockMgr,
-				       ChemistryHelper_Structured* chemHelper,
-                                       Real&                       water_density,
-                                       Real&                       temperature)
-  : mTracerIdx(tracerIdx), mRockMgr(rockMgr), mChemHelper(chemHelper),
-    mWaterDensity(water_density), mTemperature(temperature)
-{
-  mTimes.push_back(0);
-  mConstraintNames.push_back(name);
-  int Nnames = mConstraintNames.size();
-  mInit.resize(Nnames);
-  mVals.resize(Nnames);
-}
-
-ChemConstraintEval::ChemConstraintEval(const std::vector<std::string>& names,
-				       const std::vector<Real>&        times,
-				       int                             tracerIdx,
-				       RockManager*                    rockMgr,
-				       ChemistryHelper_Structured*     chemHelper,
-                                       Real&                           water_density,
-                                       Real&                           temperature)
-  : mConstraintNames(names), mTimes(times), mTracerIdx(tracerIdx), mRockMgr(rockMgr), mChemHelper(chemHelper),
-    mWaterDensity(water_density), mTemperature(temperature)
-{
-  int Nnames = mConstraintNames.size();
-  mInit.resize(Nnames);
-  mVals.resize(Nnames);
-}
-
-ChemConstraintEval *
-ChemConstraintEval::clone () const
-{
-  return new ChemConstraintEval(*this);
-}
-
-ChemConstraintEval::ChemConstraintEval(const ChemConstraintEval& rhs)
-  : mWaterDensity(rhs.mWaterDensity), mTemperature(rhs.mTemperature)
-{
-  mConstraintNames = rhs.mConstraintNames;
-  mTracerIdx = rhs.mTracerIdx;
-  mRockMgr = rhs.mRockMgr;
-  mChemHelper = rhs.mChemHelper;
-  mVals = rhs.mVals;
-  mInit = rhs.mInit;
-  mTimes = rhs.mTimes;
-}
-
 static int
 which_constraint(Real time, const std::vector<Real>& times)
 {
@@ -61,25 +12,6 @@ which_constraint(Real time, const std::vector<Real>& times)
     }
   }
   return i;
-}
-
-const std::vector<Real>&
-ChemConstraintEval::operator()(int i, Real t) const
-{
-  Initialize(i,t);
-  int j = which_constraint(t,mTimes);
-  BL_ASSERT(j<mVals.size());
-  BL_ASSERT(i<mVals[j].size());
-  return mVals[j][i];
-}
-
-bool
-ChemConstraintEval::Initialized(int i, Real t) const
-{
-  int j = which_constraint(t,mTimes);
-  BL_ASSERT(j<mInit.size());
-  BL_ASSERT(i<mInit[j].size());
-  return mInit[j][i];
 }
 
 template< typename T>
@@ -117,60 +49,102 @@ MY_RESIZEV(std::vector<std::vector<T> >& vec, const T& def, int idx, int size)
   }
 }
 
+ChemConstraintEval::ChemConstraintEval(const std::string&          name,
+				       int                         tracerIdx,
+				       RockManager*                rockMgr,
+				       ChemistryHelper_Structured* chemHelper)
+  : mTracerIdx(tracerIdx), mRockMgr(rockMgr), mChemHelper(chemHelper)
+{
+  mTimes.push_back(0);
+  mConstraintNames.push_back(name);
+}
+
+ChemConstraintEval::ChemConstraintEval(const std::vector<std::string>& names,
+				       const std::vector<Real>&        times,
+				       int                             tracerIdx,
+				       RockManager*                    rockMgr,
+				       ChemistryHelper_Structured*     chemHelper)
+  : mConstraintNames(names), mTimes(times), mTracerIdx(tracerIdx), mRockMgr(rockMgr), mChemHelper(chemHelper)
+{}
+
+ChemConstraintEval *
+ChemConstraintEval::clone () const
+{
+  return new ChemConstraintEval(*this);
+}
+
+ChemConstraintEval::ChemConstraintEval(const ChemConstraintEval& rhs)
+{
+  mConstraintNames = rhs.mConstraintNames;
+  mTracerIdx = rhs.mTracerIdx;
+  mRockMgr = rhs.mRockMgr;
+  mChemHelper = rhs.mChemHelper;
+  mTimes = rhs.mTimes;
+}
+
+std::vector<Real>
+ChemConstraintEval::operator()(const Array<Real>& primary_species_mobile,
+			       const Array<Real>& auxiliary_chem_data,
+			       Real               aqueous_phase_density,
+			       Real               aqueous_phase_temperature,
+			       Real               evaluation_time) const
+{
+  int j = which_constraint(evaluation_time,mTimes);
+
+  const IntVect iv(D_DECL(0,0,0));
+  Box box(iv,iv);
+  const std::map<std::string,int>& auxChemVariablesMap = mChemHelper->AuxChemVariablesMap();
+
+  int Nmobile = mChemHelper->NumMobile();
+  BL_ASSERT(Nmobile <= primary_species_mobile.size());
+  FArrayBox prim(box,Nmobile);
+  for (int i=0; i<Nmobile; ++i) {
+    prim(iv,i) = primary_species_mobile[i];
+  }
+
+  int Naux = auxChemVariablesMap.size();
+  BL_ASSERT(Naux <= auxiliary_chem_data.size());
+  FArrayBox aux(box,Naux);
+  for (int i=0; i<Naux; ++i) {
+    aux(iv,i) = auxiliary_chem_data[i];
+  }
+
+  int chem_verbose = 0;
+  mChemHelper->EnforceCondition(prim,0,aux,aqueous_phase_density,aqueous_phase_temperature,
+				box,mConstraintNames[j],evaluation_time,chem_verbose);
+
+  int nComp = NComp();
+  Array<Real> retVals(nComp);
+  BL_ASSERT(nComp >= Naux+1);
+  for (int i=0; i<Naux; ++i) {
+    retVals[i] = aux(iv,i);
+  }
+  retVals[nComp - 1] = prim.dataPtr()[mTracerIdx];
+  return retVals; // Copied
+}
+
 int
 ChemConstraintEval::NComp() const
 {
   int Naux = mChemHelper->AuxChemVariablesMap().size();
-  //int Nmobile = mChemHelper->NumMobile();
   return Naux + 1; // Here, doing 1 mobile solute per constraint
 }
 
 void
-ChemConstraintEval::Initialize(int i, Real t) const
+ChemConstraint::apply(FArrayBox&       fab, int vcomp,
+		      FArrayBox&       aux, int acomp,
+		      const IArrayBox& idx,
+		      const Real*      dx,
+		      const Box&       box,
+		      const FArrayBox& density,     int dComp,
+		      const FArrayBox& temperature, int TComp,
+		      Real             time) const
 {
-  if (i<0) {
-    BoxLib::Abort("VecEvaluator::Initialize: Invalid material index");
+  const ChemConstraintEval* evaluator = dynamic_cast<const ChemConstraintEval*>(mEvaluator);
+  if (evaluator == 0) {
+    BoxLib::Abort("ChemConstraint not constructed with a ChemConstraintEval evaluator, unable to proceed");
   }
-  int j = which_constraint(t,mTimes);
-  BL_ASSERT(j<mVals.size());
-  BL_ASSERT(j<mInit.size());
-  MY_RESIZE(mInit[j],false,i);
-  MY_RESIZEV(mVals[j],-1.0,i,NComp());
 
-  if (!mInit[j][i]) {
-    Real cur_time = 0;
-    Box boxTMP(IntVect(D_DECL(0,0,0)),IntVect(D_DECL(0,0,0)));
-    const std::map<std::string,int>& auxChemVariablesMap = mChemHelper->AuxChemVariablesMap();
-    int Nmobile = mChemHelper->NumMobile();
-    FArrayBox primTMP(boxTMP,Nmobile); primTMP.setVal(0);
-    int Naux = auxChemVariablesMap.size();
-    FArrayBox auxTMP(boxTMP,Naux); auxTMP.setVal(0);
-
-    const std::map<std::string,int>& aux_chem_variables_map = mChemHelper->AuxChemVariablesMap();
-    const std::string& material_name = mRockMgr->GetMaterial(i).Name();
-
-    mRockMgr->RockChemistryProperties(auxTMP,material_name,aux_chem_variables_map);
-    mChemHelper->EnforceCondition(primTMP,0,auxTMP,mWaterDensity,mTemperature,boxTMP,mConstraintNames[j],cur_time);
-
-    mVals[j][i].resize(NComp());
-    for (int L=0; L<Naux; ++L) {
-      mVals[j][i][L] = auxTMP.dataPtr(L)[0];
-    }
-    mVals[j][i][Naux] = primTMP.dataPtr()[mTracerIdx];
-    mInit[j][i] = true;
-  }
-}
-
-void
-ChemConstraint::apply(FArrayBox&       fab,
-                      FArrayBox&       aux,
-                      const IArrayBox& idx,
-                      const Real*      dx,
-                      int              vcomp,
-                      int              acomp,
-                      const Box&       box,
-                      Real             time) const
-{
   if (vcomp>=fab.nComp()) BoxLib::Abort();
   FArrayBox mask(box,1); mask.setVal(-1);
   for (int j=0; j<mRegions.size(); ++j) { 
@@ -179,12 +153,37 @@ ChemConstraint::apply(FArrayBox&       fab,
 
   for (IntVect iv=box.smallEnd(); iv<=box.bigEnd(); box.next(iv)) {
     if (mask(iv,0) > 0) {
-      const std::vector<Real>& val = (*mEvaluator)(idx(iv,0),time);
-      if (acomp+val.size()-1>aux.nComp()) BoxLib::Abort();
+
+      const ChemistryHelper_Structured* chemHelper = evaluator->ChemHelper();
+      BL_ASSERT(chemHelper != 0);
+
+      int Nmobile = chemHelper->NumMobile();
+      Array<Real> primary_species_mobile(Nmobile,0.0);
+
+#if 0  // FIXME: Currently, assume the constraint evaluator does not need solute concentrations, saturations and pressures on input
+      for (int i=0; i<Nmobile; ++i) {
+	primary_species_mobile[i] = fab(iv,vcomp+i);
+      }
+#endif
+
+      int Naux = chemHelper->AuxChemVariablesMap().size();
+      Array<Real> auxiliary_chem_data(Naux);
+      for (int i=0; i<Naux; ++i) {
+	auxiliary_chem_data[i] = aux(iv,acomp+i);
+      }
+
+      Real density_pt = density(iv,dComp);
+      Real temperature_pt = temperature(iv,TComp);
+
+      const std::vector<Real> val = (*evaluator)(primary_species_mobile, auxiliary_chem_data,
+						 density_pt, temperature_pt, time);
+
+      BL_ASSERT(val.size() == Naux + 1);
       for (int i=0; i<val.size()-1; ++i) {
         aux(iv,acomp+i) = val[i];
       }
-      fab(iv,vcomp) = val[val.size()-1];
+      fab(iv,vcomp) = val[val.size()-1]; // Extract only one component
+
     }
   }
 }

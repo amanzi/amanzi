@@ -7,7 +7,12 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Linear solution plus constant tensorial coefficient.
 */
+
+#ifndef AMANZI_OPERATOR_ANALYTIC_02_HH_
+#define AMANZI_OPERATOR_ANALYTIC_02_HH_
 
 #include "AnalyticBase.hh"
 
@@ -49,4 +54,6 @@ class Analytic02 : public AnalyticBase {
     return 0.0;
   }
 };
+
+#endif
 

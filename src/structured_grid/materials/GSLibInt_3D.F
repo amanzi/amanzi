@@ -46,7 +46,7 @@ c :: ----------------------------------------------------------
 c :: Conditioned the data using internal values. One big fab.  WRONG!!!
 c :: ----------------------------------------------------------
       subroutine FORT_INTERNAL_DATA(dat,DIMS(dat),
-     &     scratch_c,c_sz,c_idx,condg,sig,dx,plo,domlo,domhi)
+     &     scratch_c,c_sz,c_idx,condg,dx,plo,domlo,domhi)
 
 #include "sgsim2.inc"
 
@@ -55,39 +55,10 @@ c :: ----------------------------------------------------------
       integer domlo(SDIM),domhi(SDIM)
       REAL_T  dat(DIMV(dat))
       REAL_T  scratch_c(c_sz)
-      REAL_T  dx(SDIM),plo(SDIM),condg,sig
-
-      integer i,j,k,idx,nnx,nny,nnz,nnxyz
+      REAL_T  dx(SDIM),plo(SDIM),condg
 
       if (do_cond .eq. 1) then
          call read_cond_data(scratch_c,c_sz,c_idx)
-
-      else if (do_cond .eq. 2) then
-
-         nnx  = domhi(1)-domlo(1)+1
-         nny  = domhi(2)-domlo(2)+1
-         nnz  = domhi(3)-domlo(3)+1
-         nnxyz= nnx*nny*nnz
-         do k = ARG_L2(dat),ARG_H2(dat)
-            do j = ARG_L2(dat),ARG_H2(dat)
-               do i = ARG_L1(dat),ARG_H1(dat)
-                  idx =  (k-domlo(3))*nnx*nny + (j-domlo(2))*nnx + (i-domlo(1))
-                  scratch_c(c_idx(1)+idx) = plo(1) + (dble(i)+0.5d0)*dx(1)
-                  scratch_c(c_idx(2)+idx) = plo(2) + (dble(j)+0.5d0)*dx(2)
-                  scratch_c(c_idx(3)+idx) = plo(3) + (dble(k)+0.5d0)*dx(3)
-                  scratch_c(c_idx(4)+idx) = log(dat(i,j,k)/condg)/sig
-                  scratch_c(c_idx(5)+idx) = 1
-                  scratch_c(c_idx(6)+idx) = log(dat(i,j,k)/condg)/sig
-                  scratch_c(c_idx(7)+idx) = 1
-                  scratch_c(c_idx(8)+idx) = log(dat(i,j,k)/condg)/sig
-                  scratch_c(c_idx(9)+idx) = 1
-               end do
-            end do 
-         end do
-
-         nd  = nnxyz
-         ntr = nnxyz
-
       end if
       
       end
@@ -107,50 +78,10 @@ c :: ----------------------------------------------------------
       REAL_T  scratch_r(real_sz)
       REAL_T  dat(DIMV(dat)),dx(SDIM),condg,sig
 
-      integer i,j,k,ioff,joff,koff,ic,jc,kc,idx,nnx,nny,nnz
-      integer l1,l2,l3,h1,h2,h3,idxlvm
-      
       if (ktype .ge. 2) then
          if (do_cond .eq. 1) then
             call read_sec()
-
-         else 
-
-            idxlvm = real_idx(13)
-         
-            l1 = -3
-            l2 = -3
-            l3 = -3 
-            h1 = (ARG_H1(dat)-2)*ratios(1)+2
-            h2 = (ARG_H2(dat)-2)*ratios(2)+2
-            h3 = (ARG_H3(dat)-2)*ratios(3)+2            
-            nnx = h1 - l1 + 1
-            nny = h2 - l2 + 1
-            nnz = h3 - l3 + 1
-
-            do kc = ARG_L3(dat),ARG_H3(dat)
-            do koff = 0,ratios(3)-1
-               k = (kc)*ratios(3) + koff            
-               do jc = ARG_L2(dat),ARG_H2(dat)
-               do joff = 0,ratios(2)-1
-                  j = (jc)*ratios(2) + joff
-                  do ic = ARG_L1(dat),ARG_H1(dat)
-                  do ioff = 0,ratios(1)-1
-                     i = (ic)*ratios(1) + ioff
-                     if (i .ge. l1 .and. j .ge. l2 .and. k .ge. l3 .and.
-     &                   i .le. h1 .and. j .le. h2 .and. k .le. h3) then
-                        idx = idxlvm + (k-l3)*nnx*nny + (j-l2)*nnx + (i-l1)
-                        scratch_r(idx) = log(dat(ic,jc,kc)/condg)/sig
-                     end if
-                  end do
-                  end do
-               end do 
-               end do
-            end do
-            end do
-
          end if
-
       end if
 
       end
@@ -411,11 +342,11 @@ c :: ----------------------------------------------------------
 c :: ----------------------------------------------------------
 c :: Turn normal field into lognormal field
 c :: ----------------------------------------------------------
-      subroutine FORT_LGNORM(dat,DIMS(dat),condg,sig)
+      subroutine FORT_LGNORM(dat,DIMS(dat),condg)
 
       integer i,j,k
       integer DIMDEC(dat)
-      REAL_T  condg,sig
+      REAL_T  condg
       REAL_T  dat(DIMV(dat))
 
       do k = ARG_L3(dat),ARG_H3(dat)      

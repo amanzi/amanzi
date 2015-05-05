@@ -20,7 +20,7 @@ namespace Flow {
 class PorosityModel {
  public:
   virtual double Porosity(double p) = 0;
-  virtual double dPorositydPressure(double p) = 0;  // derivative w.r.t. to pressure
+  virtual double dPorositydPressure(double p) = 0;  // derivative wrt to pressure
 };
 
 }  // namespace Flow

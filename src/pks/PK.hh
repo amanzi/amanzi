@@ -8,7 +8,7 @@
 
   Author: Ethan Coon
 
-  Virtual interface for Process Kernels.  Note that PKs deriving from this
+  Virtual interface for Process Kernels. Note that PKs deriving from this
   class must implement the commented constructor interface as well, and should
   add the private static member (following the Usage notes in
   src/pks/PK_Factory.hh) to register the derived PK with the PK factory.
@@ -46,18 +46,20 @@ class PK {
   // Set a time step for a PK.
   virtual void set_dt(double dt) = 0;
 
-  // Advance PK by step size dt.
-  virtual bool AdvanceStep(double t_old, double t_new) = 0;
+  // Advance PK from time t_old to time t_new. Last parameter indicates
+  // drastic change of boundary and/or source terms that may need PK's
+  // attention. 
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit) = 0;
 
   // Update any needed secondary variables at time t_new from a sucessful step
-  // from t_old.  This is called after every successful AdvanceStep() call,
+  // from t_old. This is called after every successful AdvanceStep() call,
   // independent of coupling.
   virtual void CommitStep(double t_old, double t_new) = 0;
 
-  // Calculate any diagnostics at S->time() for viz.
+  // Calculate any diagnostics at S->time(), currently for visualization.
   virtual void CalculateDiagnostics() = 0;
 
-  // name the PK
+  // Return PK's name
   virtual std::string name() = 0;
 };
 

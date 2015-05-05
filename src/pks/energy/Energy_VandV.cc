@@ -11,17 +11,10 @@
 
 #include <set>
 
-#include "errors.hh"
-#include "OperatorDefs.hh"
-
 #include "Energy_PK.hh"
 
 namespace Amanzi {
 namespace Energy {
-
-/* ****************************************************************
-*
-**************************************************************** */
 
 }  // namespace Energy
 }  // namespace Amanzi

@@ -24,15 +24,21 @@ class PorosityModel_Compressible : public PorosityModel {
   explicit PorosityModel_Compressible(Teuchos::ParameterList& plist) {
     porosity_ = plist.get<double>("undeformed soil porosity");
     p_ref_ = plist.get<double>("reference pressure");
-    c_ = plist.get<double>("compressibility");
+    c_ = plist.get<double>("pore compressibility");
 
     factor_ = porosity_ * c_;
   }
   ~PorosityModel_Compressible() {};
   
   // required methods from the base class
-  inline double Porosity(double p) { return porosity_ * std::exp(c_ * (p - p_ref_)); }
-  inline double dPorositydPressure(double p) { return factor_ * std::exp(c_ * (p - p_ref_)); }  
+  inline double Porosity(double p) {
+    double dp = p - p_ref_;
+    return (dp <= 0.0) ? porosity_ : porosity_ * std::exp(c_ * dp);
+  }
+  inline double dPorositydPressure(double p) { 
+    double dp = p - p_ref_;
+    return (dp <= 0.0) ? 0.0 : factor_ * std::exp(c_ * dp);
+  }  
 
  private:
   double porosity_, p_ref_, c_;

@@ -22,7 +22,7 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
 					   const Teuchos::RCP<Teuchos::ParameterList>& global_list,
 					   const Teuchos::RCP<State>& S,
 					   const Teuchos::RCP<TreeVector>& soln) :
-  Amanzi::MPC_add_PK<PK>(pk_tree, global_list, S, soln) { 
+  Amanzi::MPCAdditive<PK>(pk_tree, global_list, S, soln) { 
 
   storage_created = false;
   chem_step_succeeded = true;
@@ -47,7 +47,7 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
 // 
 // -----------------------------------------------------------------------------
 void ReactiveTransport_PK::Initialize() {
-  Amanzi::MPC_add_PK<PK>::Initialize();
+  Amanzi::MPCAdditive<PK>::Initialize();
 
   if (S_->HasField("total_component_concentration")) {
     total_component_concentration_stor = 
@@ -93,12 +93,12 @@ void ReactiveTransport_PK::set_dt(double dt) {
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
-bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new) {
+bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
   bool fail = false;
   chem_step_succeeded = false;
 
  // First we do a transport step.
-  bool pk_fail = tranport_pk_->AdvanceStep(t_old, t_new);
+  bool pk_fail = tranport_pk_->AdvanceStep(t_old, t_new, reinit);
 
   //Right now transport step is always succeeded.
   if (!pk_fail) {
@@ -113,7 +113,7 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new) {
   try {
     chemistry_pk_->set_total_component_concentration(total_component_concentration_stor);
 
-    pk_fail = chemistry_pk_->AdvanceStep(t_old, t_new);
+    pk_fail = chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
     chem_step_succeeded = true;
 
     *S_->GetFieldData("total_component_concentration", "state")->ViewComponent("cell", true)

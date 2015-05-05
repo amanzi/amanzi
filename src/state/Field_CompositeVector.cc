@@ -12,6 +12,11 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 
 #include <string>
 
+#include <boost/regex.hpp>
+#define BOOST_FILESYSTEM_NO_DEPRECATED
+#include <boost/filesystem.hpp>
+#include <boost/format.hpp>
+
 #include "exodusII.h" 
 
 #include "dbc.hh"
@@ -520,7 +525,10 @@ void Field_CompositeVector::ReadAttributeFromExodusII_(Teuchos::ParameterList& f
   if (comm.NumProc() > 1) { 
     std::stringstream add_extension; 
     add_extension << "." << comm.NumProc() << "." << comm.MyPID(); 
-    file_name.append(add_extension.str()); 
+    //file_name.append(add_extension.str()); 
+    int ndigits = (int)floor(log10(comm.NumProc())) + 1;
+    std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
+    file_name = boost::str(boost::format(fmt) % file_name % comm.NumProc() % comm.MyPID());
   } 
  
   int CPU_word_size(8), IO_word_size(0), ierr; 
@@ -579,9 +587,13 @@ void Field_CompositeVector::ReadVariableFromExodusII_(Teuchos::ParameterList& fi
   const Epetra_Comm& comm = data_->Comm(); 
  
   if (comm.NumProc() > 1) { 
-    std::stringstream add_extension; 
-    add_extension << "." << comm.NumProc() << "." << comm.MyPID(); 
-    file_name.append(add_extension.str()); 
+    //std::stringstream add_extension; 
+    //add_extension << "." << comm.NumProc() << "." << comm.MyPID(); 
+    //file_name.append(add_extension.str()); 
+    // EIB: need to account for leading zeros in format of file extension
+    int ndigits = (int)floor(log10(comm.NumProc())) + 1;
+    std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
+    file_name = boost::str(boost::format(fmt) % file_name % comm.NumProc() % comm.MyPID());
   } 
  
   int CPU_word_size(8), IO_word_size(0), ierr; 

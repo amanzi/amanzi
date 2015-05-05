@@ -179,7 +179,8 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   //RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 1, gm);
   RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
-  /* modify diffusion coefficient */
+  // modify diffusion coefficient
+  // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -225,16 +226,16 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator mixed");
   Teuchos::RCP<OperatorDiffusionMFD> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
-  op->SetBCs(bc);
+  op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // set up the diffusion operator
-  op->Setup(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->Setup(K, Teuchos::null, Teuchos::null);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs();
+  op->ApplyBCs(true, true);
 
   // put in a random set of cell values
   CompositeVector x(cvs);
@@ -254,5 +255,5 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
   double norm;
   res.ViewComponent("face",false)->NormInf(&norm);
-  CHECK_CLOSE(0., norm, 1.e-8);
+  CHECK_CLOSE(0.0, norm, 1.e-8);
 }

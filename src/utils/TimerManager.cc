@@ -28,7 +28,7 @@ TimerManager::~TimerManager() {
  */
 void TimerManager::add(std::string name, Timer::Type type) {
   _timer.insert(
-      std::make_pair<std::string, boost::shared_ptr<Timer> >( name, boost::shared_ptr<Timer>(new Timer(name, type)) ) );
+      std::make_pair<std::string, boost::shared_ptr<Timer> >(name, boost::shared_ptr<Timer>(new Timer(name, type))));
 }
 
 /**

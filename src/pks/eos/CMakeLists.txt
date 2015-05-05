@@ -21,51 +21,51 @@ include_directories(${ATK_SOURCE_DIR})
 # EOS registrations
 #
 register_evaluator_with_factory(
-  HEADERFILE eos_evaluator_reg.hh
+  HEADERFILE EOSEvaluator_reg.hh
   LISTNAME   EOS_EVALUATORS
   )
 register_evaluator_with_factory(
-  HEADERFILE effective_pressure_evaluator_reg.hh
+  HEADERFILE EffectivePressureEvaluator_reg.hh
   LISTNAME   EOS_EVALUATORS
   )
 register_evaluator_with_factory(
-  HEADERFILE eos_constant_reg.hh
+  HEADERFILE EOS_Constant_reg.hh
   LISTNAME   EOS_EVALUATORS
   )
 register_evaluator_with_factory(
-  HEADERFILE eos_water_reg.hh
+  HEADERFILE EOS_Water_reg.hh
   LISTNAME   EOS_EVALUATORS
   )
 register_evaluator_with_factory(
-  HEADERFILE viscosity_water_reg.hh
+  HEADERFILE Viscosity_Water_reg.hh
   LISTNAME   EOS_EVALUATORS
   )
 register_evaluator_with_factory(
-  HEADERFILE viscosity_constant_reg.hh
+  HEADERFILE Viscosity_Constant_reg.hh
   LISTNAME   EOS_EVALUATORS
   )
 register_evaluator_with_factory(
-  HEADERFILE viscosity_evaluator_reg.hh
+  HEADERFILE ViscosityEvaluator_reg.hh
   LISTNAME   EOS_EVALUATORS
   )
 register_evaluator_with_factory(
-  HEADERFILE eos_ideal_gas_reg.hh
+  HEADERFILE EOS_IdealGas_reg.hh
   LISTNAME   EOS_EVALUATORS
   )
 register_evaluator_with_factory(
-  HEADERFILE molar_fraction_gas_evaluator_reg.hh
+  HEADERFILE MolarFractionGasEvaluator_reg.hh
   LISTNAME   EOS_EVALUATORS
   )
 register_evaluator_with_factory(
-  HEADERFILE isobaric_eos_evaluator_reg.hh
+  HEADERFILE IsobaricEOSEvaluator_reg.hh
   LISTNAME   EOS_EVALUATORS
   )
 register_evaluator_with_factory(
-  HEADERFILE eos_vapor_in_gas_reg.hh
+  HEADERFILE EOS_VaporInGas_reg.hh
   LISTNAME   EOS_EVALUATORS
   )
 register_evaluator_with_factory(
-  HEADERFILE vapor_pressure_water_reg.hh
+  HEADERFILE VaporPressure_Water_reg.hh
   LISTNAME   EOS_EVALUATORS
   )
 generate_evaluators_registration_header(
@@ -77,21 +77,23 @@ generate_evaluators_registration_header(
 #
 # Library: eos
 #
-set(eos_src_files eos_factory.cc 
-    eos_evaluator.cc
-    molar_fraction_gas_evaluator.cc
-    eos_ideal_gas.cc
-    eos_vapor_in_gas.cc
-    eos_constant.cc
-    eos_water.cc
-    viscosity_water.cc
-    viscosity_constant.cc
-    viscosity_relation_factory.cc
-    viscosity_evaluator.cc
-    vapor_pressure_water.cc
-    vapor_pressure_relation_factory.cc
-    isobaric_eos_evaluator.cc
-    effective_pressure_evaluator.cc
+set(eos_src_files 
+    EffectivePressureEvaluator.cc
+    EOSEvaluator.cc
+    EOSFactory.cc 
+    EOS_Constant.cc
+    EOS_IdealGas.cc
+    EOS_VaporInGas.cc
+    EOS_Water.cc
+    IsobaricEOSEvaluator.cc
+    MolarFractionGasEvaluator.cc
+    ThermalConductivity_Water.cc
+    VaporPressure_Water.cc
+    VaporPressureBaseFactory.cc
+    Viscosity_Water.cc
+    Viscosity_Constant.cc
+    ViscosityBaseFactory.cc
+    ViscosityEvaluator.cc
    )
 
 add_amanzi_library(eos
@@ -102,26 +104,27 @@ add_amanzi_library(eos
 # Install Targets
 #
 set(eos_inc_files 
-    eos.hh
-    eos_factory.hh
-    eos_evaluator.hh
+    EffectivePressureEvaluator.cc
+    EOS.hh
+    EOSEvaluator.hh
+    EOSFactory.hh
+    EOS_Constant.hh
+    EOS_ConstantMolarMass.hh
+    EOS_IdealGas.hh
+    EOS_VaporInGas.hh
+    EOS_Water.hh
     eos_registration.hh
-    molar_fraction_gas_evaluator.hh
-    isobaric_eos_evaluator.hh
-    effective_pressure_evaluator.cc
-    eos_ideal_gas.hh
-    eos_constant.hh
-    eos_constant_molar_mass.hh
-    eos_vapor_in_gas.hh
-    eos_water.hh
-    viscosity_water.hh
-    viscosity_constant.hh
-    viscosity_relation.hh
-    viscosity_relation_factory.hh
-    viscosity_evaluator.hh
-    vapor_pressure_water.hh
-    vapor_pressure_relation.hh
-    vapor_pressure_relation_factory.hh)
+    IsobaricEOSEvaluator.hh
+    MolarFractionGasEvaluator.hh
+    ThermalConductivity_Water.hh
+    VaporPressure_Base.hh
+    VaporPressure_Water.hh
+    VaporPressureBaseFactory.hh
+    Viscosity_Base.hh
+    Viscosity_Constant.hh
+    Viscosity_Water.hh
+    ViscosityBaseFactory.hh
+    ViscosityEvaluator.hh)
 
 add_install_include_file(${eos_inc_files})
 

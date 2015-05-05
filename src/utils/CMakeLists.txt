@@ -2,7 +2,7 @@
 
 
 #
-#  Amanzi Tool Kit (AKT)
+#  Amanzi Tool Kit (ATK)
 #    General utilities
 #    This directory has become a dumping ground for things that do not
 #    have a well-defined home. Will go away or get renamed. For now we
@@ -27,10 +27,24 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 
 
 add_amanzi_library(atk
-                   SOURCE Timer.cc TimerManager.cc TimeStepManager.cc XMLParameterListWriter.cc 
-                           VerboseObject.cc 
-                   HEADERS HDF5Reader.hh Utils.hh Timer.hh TimerManager.hh TimeStepManager.hh XMLParameterListWriter.hh
-                           VerboseObject.hh VerboseObject_objs.hh GlobalVerbosity.hh factory.hh factory_with_state.hh
+                   SOURCE Timer.cc 
+                          TimerManager.cc
+                          TimeStepManager.cc
+                          XMLParameterListWriter.cc 
+                          LeastSquare.cc 
+                          VerboseObject.cc 
+                   HEADERS HDF5Reader.hh
+                           Utils.hh
+                           Timer.hh
+                           TimerManager.hh
+                           TimeStepManager.hh
+                           XMLParameterListWriter.hh
+                           VerboseObject.hh
+                           VerboseObject_objs.hh
+                           GlobalVerbosity.hh
+                           factory.hh
+                           factory_with_state.hh
+                           LeastSquare.hh
                    )
 if (BUILD_TESTS)
   
@@ -55,6 +69,7 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/test_verboseobject.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
+
 
 endif()
 

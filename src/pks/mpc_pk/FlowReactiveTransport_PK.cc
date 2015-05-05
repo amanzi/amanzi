@@ -57,11 +57,11 @@ void FlowReactiveTransport_PK::CommitStep(double t_old, double t_new) {
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
-bool FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new) {
+bool FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
   bool fail = false;
 
   // advance the master PK using the full step size
-  fail = sub_pks_[master_]->AdvanceStep(t_old, t_new);
+  fail = sub_pks_[master_]->AdvanceStep(t_old, t_new, reinit);
   if (fail) return fail;
 
   master_dt_ = t_new - t_old;
@@ -85,7 +85,7 @@ bool FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new) {
     }
 
     // take the step
-    fail = sub_pks_[slave_]->AdvanceStep(t_old + dt_done, t_old + dt_done + dt_next);
+    fail = sub_pks_[slave_]->AdvanceStep(t_old + dt_done, t_old + dt_done + dt_next, reinit);
 
     if (fail) {
       // if fail, cut the step and try again

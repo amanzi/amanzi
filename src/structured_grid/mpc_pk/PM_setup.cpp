@@ -372,6 +372,11 @@ static int tang_vel_bc[] =
     INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, HOEXTRAP, EXT_DIR
   };
 
+static int aux_bc[] =
+  {
+    INT_DIR, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN
+  };
+
 static BCRec trac_bc; // Set in read_trac, used in variableSetUp
 
 static
@@ -413,6 +418,20 @@ set_pressure_bc (BCRec&       bc,
     {
       bc.setLo(i,press_bc[lo_bc[i]]);
       bc.setHi(i,press_bc[hi_bc[i]]);
+    }
+}
+
+static
+void
+set_aux_bc (BCRec&       bc,
+	    const BCRec& phys_bc)
+{
+  const int* lo_bc = phys_bc.lo();
+  const int* hi_bc = phys_bc.hi();
+  for (int i = 0; i < BL_SPACEDIM; i++)
+    {
+      bc.setLo(i,aux_bc[lo_bc[i]]);
+      bc.setHi(i,aux_bc[hi_bc[i]]);
     }
 }
 
@@ -814,14 +833,14 @@ PorousMedia::variableSetUp ()
     if (num_aux_chem_variables > 0)
     {
       Array<BCRec> cbcs(num_aux_chem_variables);
+      set_aux_bc(bc,phys_bc);
       Array<std::string> tmp_aux(num_aux_chem_variables);
       for (std::map<std::string,int>::const_iterator it=aux_chem_variables_map.begin(); 
 	   it!=aux_chem_variables_map.end(); ++it)
       {
 	int i = it->second;
 	tmp_aux[i] = it->first;
-	cbcs[i] = bc;
-	  
+	cbcs[i] = bc;	  
       }
 
       FORT_AUXPARAMS(&num_aux_chem_variables);
@@ -1588,17 +1607,19 @@ void  PorousMedia::read_comp()
 
                   bool is_consistent = true;
                   if (is_hi) {
+
                       is_consistent = ( (rinflow_bc_hi[dir] == is_inflow)
                                         && (phys_bc.hi()[dir] == component_bc)
                                         && (pres_bc.hi()[dir] == pressure_bc) );
                   }
                   else {
+
                       is_consistent = ( (rinflow_bc_lo[dir] == is_inflow)
                                         && (phys_bc.lo()[dir] == component_bc)
                                         && (pres_bc.lo()[dir] == pressure_bc) );
                   }
 
-                  if (is_consistent) {
+                  if (!is_consistent) {
                       BoxLib::Abort("Inconconsistent type for boundary ");
                   }
               }
@@ -1748,10 +1769,8 @@ void  PorousMedia::read_tracer()
           }
         }
 
-        int verbose_chemistry = 2;
         chemistry_helper = new AmanziChemHelper_Structured(tNames,sorbedPrimarySpecies,minerals,sorption_sites,hasCationExchangeCapacity,
-                                                           isothermNames,tNames,amanzi_thermo_file,amanzi_thermo_fmt,activity_model,
-                                                           verbose_chemistry);
+                                                           isothermNames,tNames,amanzi_thermo_file,amanzi_thermo_fmt,activity_model);
 #if ALQUIMIA_ENABLED
       } else {
         BL_ASSERT(chemistry_model_name == "Alquimia");
@@ -1850,8 +1869,7 @@ void  PorousMedia::read_tracer()
             }
             std::string geocond; ppri.get("geochemical_condition",geocond);
             tic_array[i].set(n, new ChemConstraint(tNames[i],tic_regions,tic_type,
-                                                   ChemConstraintEval(geocond,i,rock_manager,chemistry_helper,
-                                                                      PorousMedia::Density()[0],PorousMedia::Temperature())));
+                                                   ChemConstraintEval(geocond,i,rock_manager,chemistry_helper)));
           }
           else {
             int nv = ppri.countval("val");
@@ -1968,9 +1986,7 @@ void  PorousMedia::read_tracer()
                 times.resize(1,0);
               }
               tbc_array[i].set(tbc_cnt++, new ChemConstraint(tbc_names[n],tbc_regions,tbc_type,
-                                                             ChemConstraintEval(geoconds,times,i,rock_manager,chemistry_helper,
-                                                                                PorousMedia::Density()[0],PorousMedia::Temperature())));
-
+							     ChemConstraintEval(geoconds,times,i,rock_manager,chemistry_helper)));
             }
             else {
               int nv = ppri.countval("vals");

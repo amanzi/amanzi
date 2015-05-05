@@ -32,13 +32,14 @@ void EnergyTwoPhase_PK::Functional(
   double h = t_new - t_old;  // get timestep
 
   // update BCs and conductivity
+  temperature_eval_->SetFieldAsChanged(S_.ptr());
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
-  UpdateConductivityData(S_.ptr());
+  S_->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S_.ptr(), passwd_);
 
   // assemble residual for diffusion operator
   op_matrix_->Init();
   op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
-  op_matrix_diff_->ApplyBCs(true);
+  op_matrix_diff_->ApplyBCs(true, true);
 
   op_matrix_->ComputeNegativeResidual(*u_new->Data(), *g->Data());
 
@@ -66,10 +67,10 @@ void EnergyTwoPhase_PK::Functional(
   op_matrix_advection_->Setup(flux);
   op_matrix_advection_->UpdateMatrices(flux);
 
-  CompositeVector g_adv(g->Data()->Map());
   CompositeVector tmp(enthalpy);
   tmp.Multiply(1.0, tmp, n_l, 0.0);
 
+  CompositeVector g_adv(g->Data()->Map());
   op_advection_->Apply(tmp, g_adv);
   g->Data()->Update(1.0, g_adv, 1.0);
 }
@@ -88,12 +89,12 @@ void EnergyTwoPhase_PK::UpdatePreconditioner(
 
   // update BCs and conductivity
   UpdateSourceBoundaryData(t, t + dt, *up->Data());
-  UpdateConductivityData(S_.ptr());
+  S_->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S_.ptr(), passwd_);
 
   // assemble residual for diffusion operator
   op_preconditioner_->Init();
   op_preconditioner_diff_->UpdateMatrices(Teuchos::null, up->Data().ptr());
-  op_preconditioner_diff_->ApplyBCs(true);
+  op_preconditioner_diff_->ApplyBCs(true, true);
 
   // update with accumulation terms
   // update the accumulation derivatives, dE/dT
@@ -102,6 +103,17 @@ void EnergyTwoPhase_PK::UpdatePreconditioner(
 
   if (dt > 0.0) {
     op_acc_->AddAccumulationTerm(*up->Data().ptr(), dEdT, dt, "cell");
+  }
+
+  // add advection term dHdT
+  if (prec_include_enthalpy_) {
+    const CompositeVector& darcy_flux = *S_->GetFieldData("darcy_flux");
+
+    S_->GetFieldEvaluator(enthalpy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, "temperature");
+    const CompositeVector& dHdT = *S_->GetFieldData("denthalpy_dtemperature");
+
+    op_preconditioner_advection_->Setup(darcy_flux);
+    op_preconditioner_advection_->UpdateMatrices(darcy_flux, dHdT);
   }
 
   // finalize preconditioner

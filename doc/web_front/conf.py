@@ -32,9 +32,10 @@ extensions = ['sphinx.ext.todo',
               'sphinx.ext.doctest',
               'matplotlib.sphinxext.only_directives',
               'matplotlib.sphinxext.plot_directive',
-              'matplotlib.sphinxext.ipython_directive',
-              'matplotlib.sphinxext.ipython_console_highlighting',
+              'IPython.sphinxext.ipython_console_highlighting',
+              'IPython.sphinxext.ipython_directive', 
               'sphinxcontrib.tikz',
+              'sphinxcontrib.autorun',
               ]
 
 
@@ -57,7 +58,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Amanzi'
-copyright = u'2013, Amanzi Development Team'
+copyright = u'2015, Amanzi Development Team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

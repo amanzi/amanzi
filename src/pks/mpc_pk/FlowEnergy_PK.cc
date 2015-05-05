@@ -16,22 +16,24 @@
 
 namespace Amanzi {
 
-// -----------------------------------------------------------------------------
-// Constructor
-// -----------------------------------------------------------------------------
+/* ******************************************************************* 
+* Constructor
+******************************************************************* */
 FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
                              const Teuchos::RCP<Teuchos::ParameterList>& glist,
                              const Teuchos::RCP<State>& S,
                              const Teuchos::RCP<TreeVector>& soln) :
     glist_(glist),
     Amanzi::MPCStrong<FnTimeIntegratorPK>(pk_tree, glist, S, soln)
-{ 
-};
+{
+  Teuchos::ParameterList vlist;
+  vo_ = new VerboseObject("FlowEnergy_PK", vlist); 
+}
 
 
-// -----------------------------------------------------------------------------
-// Physics-based setup of PK.
-// -----------------------------------------------------------------------------
+/* ******************************************************************* 
+* Physics-based setup of PK.
+******************************************************************* */
 void FlowEnergy_PK::Setup()
 {
   mesh_ = S_->GetMesh();
@@ -39,7 +41,8 @@ void FlowEnergy_PK::Setup()
 
   Teuchos::ParameterList& elist = S_->FEList();
 
-  // solid
+  // Fields for solids
+  // -- rock
   if (!S_->HasField("density_rock")) {
     S_->RequireField("density_rock", "density_rock")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -55,13 +58,15 @@ void FlowEnergy_PK::Setup()
          .set<double>("heat capacity [J/mol-K]", 620.0);
   }
 
-  // gas
+  // Fields for gas
+  // -- internal energy
   if (!S_->HasField("internal_energy_gas")) {
     elist.sublist("internal_energy_gas")
          .set<std::string>("field evaluator type", "iem water vapor")
          .set<std::string>("internal energy key", "internal_energy_gas");
   }
 
+  // -- molar density
   if (!S_->HasField("molar_density_gas")) {
     elist.sublist("molar_density_gas")
          .set<std::string>("field evaluator type", "eos")
@@ -74,6 +79,7 @@ void FlowEnergy_PK::Setup()
          .set<std::string>("EOS type", "ideal gas");
   }
 
+  // -- molar fraction
   if (!S_->HasField("molar_fraction_gas")) {
     elist.sublist("molar_fraction_gas")
          .set<std::string>("field evaluator type", "molar fraction gas")
@@ -83,7 +89,8 @@ void FlowEnergy_PK::Setup()
          .set<std::string>("vapor pressure model type", "water vapor over water/ice");
   }
 
-  // liquid
+  // Fields for liquid
+  // -- internal energy
   if (!S_->HasField("internal_energy_liquid")) {
     elist.sublist("internal_energy_liquid")
          .set<std::string>("field evaluator type", "iem")
@@ -94,6 +101,7 @@ void FlowEnergy_PK::Setup()
          .set<double>("heat capacity [J/mol-K]", 76.0);
   }
 
+  // -- molar and mass density
   if (!S_->HasField("molar_density_liquid")) {
     elist.sublist("molar_density_liquid")
          .set<std::string>("field evaluator type", "eos")
@@ -102,32 +110,103 @@ void FlowEnergy_PK::Setup()
          .set<std::string>("mass density key", "mass_density_liquid");
     elist.sublist("molar_density_liquid").sublist("EOS parameters")
          .set<std::string>("EOS type", "liquid water");
-  }
+    elist.sublist("molar_density_liquid")
+         .sublist("VerboseObject").set<std::string>("Verbosity Level", "medium");
 
-  if (!S_->HasField("mass_density_liquid")) {
-    S_->RequireField("mass_density_liquid", "mass_density_liquid")->SetMesh(mesh_)->SetGhosted(true)
+    S_->RequireField("molar_density_liquid", "molar_density_liquid")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireFieldEvaluator("mass_density_liquid");
+    S_->RequireFieldEvaluator("molar_density_liquid");
   }
 
-  // other
+  // -- viscosity model
+  if (!S_->HasField("viscosity_liquid")) {
+    elist.sublist("viscosity_liquid")
+         .set<std::string>("field evaluator type", "viscosity")
+         .set<std::string>("viscosity key", "viscosity_liquid")
+         .sublist("viscosity model parameters")
+         .set<std::string>("viscosity relation type", "liquid water");
+    elist.sublist("viscosity_liquid")
+         .sublist("VerboseObject").set<std::string>("Verbosity Level", "high");
+
+    S_->RequireField("viscosity_liquid", "viscosity_liquid")->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireFieldEvaluator("viscosity_liquid");
+  }
+
+  // Other fields
   if (!S_->HasField("effective_pressure")) {
     elist.sublist("effective_pressure")
          .set<std::string>("field evaluator type", "effective_pressure");
-  }
 
-  if (!S_->HasField("mass_density_liquid")) {
-    S_->RequireFieldEvaluator("mass_density_liquid");
+    S_->RequireField("effective_pressure", "effective_pressure")->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireFieldEvaluator("effective_pressure");
+    S_->GetField("effective_pressure", "effective_pressure")->set_io_vis(false);
   }
 
   // inform other PKs about strong coupling
-  Teuchos::ParameterList& tmp = glist_->sublist("PKs").sublist("Flow")
-                                       .sublist("Richards problem").sublist("physics coupling");
-  tmp.set("vapor diffusion", true);
-  tmp.set<std::string>("water content model", "generic");
+  // -- flow
+  Teuchos::ParameterList& flow = glist_->sublist("PKs").sublist("Flow")
+                                        .sublist("Richards problem")
+                                        .sublist("physical models and assumptions");
+  flow.set("vapor diffusion", true);
+  flow.set<std::string>("water content model", "generic");
+
+  // -- energy
+  Teuchos::ParameterList& energy = glist_->sublist("PKs").sublist("Energy")
+                                          .sublist("physical models and assumptions");
+  energy.set("vapor diffusion", true);
 
   // process other PKs.
   MPCStrong<FnTimeIntegratorPK>::Setup();
+}
+
+
+/* ******************************************************************* 
+* Performs one time step.
+******************************************************************* */
+bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
+{
+  // flow
+  // -- swap saturations
+  S_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_.ptr(), "flow");
+  const CompositeVector& sat = *S_->GetFieldData("saturation_liquid");
+  CompositeVector& sat_prev = *S_->GetFieldData("prev_saturation_liquid", "flow");
+
+  CompositeVector sat_prev_copy(sat_prev);
+  sat_prev = sat;
+
+  // -- swap water_contents
+  S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
+  CompositeVector& wc = *S_->GetFieldData("water_content", "water_content");
+  CompositeVector& wc_prev = *S_->GetFieldData("prev_water_content", "flow");
+
+  CompositeVector wc_prev_copy(wc_prev);
+  wc_prev = wc;
+
+  // energy
+  // -- swap conserved energys
+  S_->GetFieldEvaluator("energy")->HasFieldChanged(S_.ptr(), "thermal");
+  const CompositeVector& e = *S_->GetFieldData("energy");
+  CompositeVector& e_prev = *S_->GetFieldData("prev_energy", "thermal");
+
+  CompositeVector e_prev_copy(e_prev);
+  e_prev = e;
+ 
+  // try a step
+  bool fail = MPCStrong<FnTimeIntegratorPK>::AdvanceStep(t_old, t_new, reinit);
+
+  if (fail) {
+    // revover the original conserved quantaties
+    *S_->GetFieldData("prev_saturation_liquid", "flow") = sat_prev_copy;
+    *S_->GetFieldData("prev_water_content", "flow") = wc_prev_copy;
+    *S_->GetFieldData("prev_energy", "thermal") = e_prev_copy;
+
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Step failed. Restored prev_saturation_liquid, prev_water_content, prev_energy" << std::endl;
+  }
+
+  return fail;
 }
 
 }  // namespace Amanzi

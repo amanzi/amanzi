@@ -233,7 +233,7 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(3,sharex=True,figsize=(8,10))
     
     try:
-        # hardwired for 1d-calcite: Ca = component 2, last time = '71'
+        # hardwired for 1d-calcite: Ca = component 2, last time = '72'
 #        times = ['31','41','51','61','71']
         times = ['71']
 

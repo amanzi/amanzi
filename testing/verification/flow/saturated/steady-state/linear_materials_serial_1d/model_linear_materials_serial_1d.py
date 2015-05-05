@@ -85,10 +85,10 @@ def createFromXML(filename):
     #
     #  Domain Size
     #
-    params["x_0"] = search.getElementByTagPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain Low Corner").value[0]
-    params["z_0"] = search.getElementByTagPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain Low Corner").value[2]
-    params["x_1"] = search.getElementByTagPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain High Corner").value[0]
-    params["z_1"] = search.getElementByTagPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain High Corner").value[2] 
+    params["x_0"] = search.getElementByTagPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain Low Coordinate").value[0]
+    params["z_0"] = search.getElementByTagPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain Low Coordinate").value[2]
+    params["x_1"] = search.getElementByTagPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain High Coordinate").value[0]
+    params["z_1"] = search.getElementByTagPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain High Coordinate").value[2] 
 
     #
     #  Material Properties

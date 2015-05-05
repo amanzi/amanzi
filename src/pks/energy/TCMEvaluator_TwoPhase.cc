@@ -28,11 +28,11 @@ TCMEvaluator_TwoPhase::TCMEvaluator_TwoPhase(Teuchos::ParameterList& plist) :
     my_key_ = plist_.get<std::string>("thermal conductivity key", "thermal_conductivity");
   }
 
-  poro_key_ = plist_.get<std::string>("porosity key", "porosity");
-  dependencies_.insert(poro_key_);
+  porosity_key_ = plist_.get<std::string>("porosity key", "porosity");
+  dependencies_.insert(porosity_key_);
 
-  sat_key_ = plist_.get<std::string>("saturation key", "saturation_liquid");
-  dependencies_.insert(sat_key_);
+  saturation_key_ = plist_.get<std::string>("saturation key", "saturation_liquid");
+  dependencies_.insert(saturation_key_);
 
   ASSERT(plist_.isSublist("thermal conductivity parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters");
@@ -46,8 +46,8 @@ TCMEvaluator_TwoPhase::TCMEvaluator_TwoPhase(Teuchos::ParameterList& plist) :
 ****************************************************************** */
 TCMEvaluator_TwoPhase::TCMEvaluator_TwoPhase(const TCMEvaluator_TwoPhase& other) :
     SecondaryVariableFieldEvaluator(other),
-    poro_key_(other.poro_key_),
-    sat_key_(other.sat_key_),
+    porosity_key_(other.porosity_key_),
+    saturation_key_(other.saturation_key_),
     tc_(other.tc_) {};
 
 
@@ -66,17 +66,17 @@ void TCMEvaluator_TwoPhase::EvaluateField_(
     const Teuchos::Ptr<State>& S, const Teuchos::Ptr<CompositeVector>& result)
 {
   // pull out the dependencies
-  Teuchos::RCP<const CompositeVector> poro = S->GetFieldData(poro_key_);
-  Teuchos::RCP<const CompositeVector> sat = S->GetFieldData(sat_key_);
+  Teuchos::RCP<const CompositeVector> poro = S->GetFieldData(porosity_key_);
+  Teuchos::RCP<const CompositeVector> sat = S->GetFieldData(saturation_key_);
 
-  for (CompositeVector::name_iterator comp=result->begin(); comp!=result->end(); ++comp) {
+  for (CompositeVector::name_iterator comp = result->begin(); comp != result->end(); ++comp) {
     // much more efficient to pull out vectors first
-    const Epetra_MultiVector& poro_v = *poro->ViewComponent(*comp,false);
-    const Epetra_MultiVector& sat_v = *sat->ViewComponent(*comp,false);
-    Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
+    const Epetra_MultiVector& poro_v = *poro->ViewComponent(*comp, false);
+    const Epetra_MultiVector& sat_v = *sat->ViewComponent(*comp, false);
+    Epetra_MultiVector& result_v = *result->ViewComponent(*comp, false);
 
     int ncomp = result->size(*comp, false);
-    for (int i=0; i!=ncomp; ++i) {
+    for (int i = 0; i != ncomp; ++i) {
       result_v[0][i] = tc_->ThermalConductivity(poro_v[0][i], sat_v[0][i]);
     }
   }

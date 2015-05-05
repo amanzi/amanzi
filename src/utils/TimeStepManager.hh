@@ -50,8 +50,9 @@ class TimeStepManager {
   };
 
  public:
-  TimeStepManager();// {dt_stable_storage=-1.; vo_ = Teuchos::NULL;}
-  TimeStepManager(Teuchos::RCP<VerboseObject> verb_object);
+  TimeStepManager();
+  TimeStepManager(Teuchos::ParameterList& verb_list);
+  TimeStepManager(Teuchos::RCP<VerboseObject> vo_cd);
   void RegisterTimeEvent(double start, double period, double stop, bool phys=true);
   void RegisterTimeEvent(std::vector<double> times, bool phys=true);
   void RegisterTimeEvent(double time, bool phys=true);

@@ -24,12 +24,10 @@ AmanziChemHelper_Structured::AmanziChemHelper_Structured(const std::vector<std::
                                                          const std::vector<std::string>& _freeIonSpeciesNames,
                                                          const std::string&              _thermo_database_filename,
                                                          const std::string&              _thermo_database_format,
-                                                         const std::string&              _activity_model,
-                                                         int                             _verbose)
+                                                         const std::string&              _activity_model)
   : thermo_database_file(_thermo_database_filename),
     thermo_database_format(_thermo_database_format),
-    activity_model(_activity_model),
-    verbose(_verbose)
+    activity_model(_activity_model)
 {
   using_sorption = false;
   using_isotherms = false;
@@ -64,7 +62,7 @@ AmanziChemHelper_Structured::AmanziChemHelper_Structured(const std::vector<std::
 
   SetupAuxVariables();
 
-  if (ParallelDescriptor::IOProcessor() && verbose>1) {
+  if (ParallelDescriptor::IOProcessor()) {
     std::cout << "AmanziChemHelper_Structured: Iniitialized" << std::endl;
     std::cout << "   Auxiliary data structure will contain the following components:" << std::endl;
 
@@ -175,7 +173,8 @@ AmanziChemHelper_Structured::~AmanziChemHelper_Structured()
 void
 AmanziChemHelper_Structured::EnforceCondition(FArrayBox& primary_species_mobile,   int sPrimMob,
                                               FArrayBox& auxiliary_data, Real water_density, Real temperature,
-                                              const Box& box, const std::string& condition_name, Real time)
+                                              const Box& box, const std::string& condition_name, Real time,
+					      int chem_verbose)
 {
   BoxLib::Abort("Geochemical conditions/constraints not currently support in Amanzi native chemistry engine");
 }
@@ -188,7 +187,7 @@ AmanziChemHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       
                                      FArrayBox&       primary_species_mobile,   int sPrimMob,
                                      FArrayBox&       fcnCnt,                   int sFunc,
                                      FArrayBox&       aux_data, Real water_density, Real temperature,
-                                     const Box& box, Real dt)
+                                     const Box& box, Real dt, int chem_verbose)
 {
 #if (BL_SPACEDIM == 3) && defined(_OPENMP)
 #pragma omp parallel for schedule(dynamic,1) 
@@ -298,6 +297,12 @@ AmanziChemHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       
 
       chem_ok = true;
 
+      if (ParallelDescriptor::IOProcessor() && chem_verbose>0) {
+	std::cout << "iv: " << iv << std::endl;
+	std::cout << "dt: " << dt << std::endl;
+	DumpChemStructures(std::cout,TheChemSolve,TheComponent,TheParameter);
+      }
+
       Amanzi::AmanziChemistry::Beaker::SolverStatus stat;
       try
       { 
@@ -309,7 +314,7 @@ AmanziChemHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       
       }
       catch (const Amanzi::AmanziChemistry::ChemistryException& geochem_error)
       {
-        if (verbose>-1) {
+        if (chem_verbose>=0) {
           std::cout << "CHEMISTRY FAILED on level at " << iv << " : ";
           TheComponent.Display("components: ");
           if (abort_on_chem_fail) {
@@ -525,15 +530,12 @@ AmanziChemHelper_Structured::Initialize(const FArrayBox& aqueous_saturation,    
       }
       catch (const Amanzi::AmanziChemistry::ChemistryException& geochem_error)
       {
-        if (verbose>-1) {
-          std::cout << "CHEMISTRY SPECIATION FAILED on level at " << iv << " : ";
-          TheComponent.Display("components: ");
-          if (abort_on_chem_fail) {
-            BoxLib::Abort(geochem_error.what());
-          }
-        } else {
-          chem_ok = false;
-        }
+	std::cout << "CHEMISTRY SPECIATION FAILED on level at " << iv << " : ";
+	TheComponent.Display("components: ");
+	if (abort_on_chem_fail) {
+	  BoxLib::Abort(geochem_error.what());
+	}
+	chem_ok = false;
       }
 
       // If successful update the state variables.
@@ -611,3 +613,84 @@ AmanziChemHelper_Structured::Initialize(const FArrayBox& aqueous_saturation,    
   }
 }
 
+void
+AmanziChemHelper_Structured::DumpChemStructures(std::ostream&                                      os,
+						Amanzi::AmanziChemistry::SimpleThermoDatabase&     TheChemSolve,
+						Amanzi::AmanziChemistry::Beaker::BeakerComponents& TheComponent,
+						Amanzi::AmanziChemistry::Beaker::BeakerParameters& TheParameter)
+{
+  os << "Volume " << TheParameter.volume << std::endl;
+  os << "Saturation " << TheParameter.saturation << std::endl;
+  os << "Water density " << TheParameter.water_density << std::endl;
+  os << "Porosity " << TheParameter.porosity << std::endl;
+
+  for (int i=0; i<Nmobile; ++i) {
+    const std::string label=primarySpeciesNames[i] + "_Primary_Species_Mobile"; 
+    os << label << "  " << TheComponent.total[i] << std::endl;
+  }
+
+  if (using_sorption) {
+    for (int i=0; i<Nmobile; ++i) {
+      const std::string label=primarySpeciesNames[i] + "_Sorbed_Concentration"; 
+      os << label << "  " << TheComponent.total_sorbed[i] << std::endl;
+    }
+  }
+
+  if (Nminerals > 0) {
+    for (int i=0; i<Nminerals; ++i) {
+      const std::string label=mineralNames[i] + "_Volume_Fraction"; 
+      os << label << "  " << TheComponent.mineral_volume_fraction[i] << std::endl;
+    }
+    for (int i=0; i<mineralNames.size(); ++i) {
+      const std::string label=mineralNames[i] + "_Specific_Surface_Area"; 
+      os << label << "  " << TheComponent.mineral_specific_surface_area[i] << std::endl;
+    }
+  }
+
+  if (NionExchange > 0) {
+    int ndigIES = std::log(NionExchange+1);
+    for (int i=0; i<NionExchange; ++i) {
+      const std::string label = BoxLib::Concatenate("Ion_Exchange_Site_Density_",i,ndigIES);
+      os << label << "  " << TheComponent.ion_exchange_sites[i] << std::endl;
+    }
+
+    for (int i=0; i<NionExchange; ++i) {
+      const std::string label = BoxLib::Concatenate("Ion_Exchange_Reference_Cation_Concentration_",i,ndigIES);
+      os << label << "  " << TheComponent.ion_exchange_ref_cation_conc[i] << std::endl;
+    }
+  }
+      
+  if (NsorptionSites > 0) {
+    for (int i=0; i<surfSiteNames.size(); ++i) {
+      const std::string label=surfSiteNames[i] + "_Surface_Site_Density"; 
+      os << label << "  " << TheComponent.surface_site_density[i] << std::endl;
+    }
+  }
+
+  for (int i = 0; i < Nmobile; ++i) {
+    const std::string label=primarySpeciesNames[i] + "_Activity_Coefficient"; 
+    os << label << "  " << TheComponent.primary_activity_coeff[i] << std::endl;
+  }
+
+  if (NfreeIonSpecies > 0) {
+    for (int i=0; i<primarySpeciesNames.size(); ++i) {
+      const std::string label=primarySpeciesNames[i] + "_Free_Ion_Guess"; 
+      os << label << "  " << TheComponent.free_ion[i] << std::endl;
+    }
+  }
+
+  if (using_isotherms) {
+    for (int i=0; i<Nisotherms; ++i) {
+      const std::string label=primarySpeciesNames[i] + "_Isotherm_Kd"; 
+      os << label << "  " << TheComponent.isotherm_kd[i] << std::endl;
+    }
+    for (int i=0; i<Nisotherms; ++i) {
+      const std::string label=primarySpeciesNames[i] + "_Isotherm_Freundlich_n"; 
+      os << label << "  " << TheComponent.isotherm_freundlich_n[i] << std::endl;
+    }
+    for (int i=0; i<Nisotherms; ++i) {
+      const std::string label=primarySpeciesNames[i] + "_Isotherm_Langmuir_b"; 
+      os << label << "  " << TheComponent.isotherm_langmuir_b[i] << std::endl;
+    }
+  }
+}

@@ -49,9 +49,7 @@ void Flow_PK::Setup()
   if (!S_->HasField("fluid_density")) {
     S_->RequireScalar("fluid_density", passwd_);
   }
-  if (!S_->HasField("fluid_viscosity")) {
-    S_->RequireScalar("fluid_viscosity", passwd_);
-  }
+
   if (!S_->HasField("gravity")) {
     S_->RequireConstantVector("gravity", passwd_, dim);  // state resets ownership.
   } 
@@ -87,15 +85,11 @@ void Flow_PK::Initialize()
                                           // are not sure if gravity_data is an
                                           // array or vector
   g_ = fabs(gravity_[dim - 1]);
-
   rho_ = *S_->GetScalarData("fluid_density");
-  mu_ = *S_->GetScalarData("fluid_viscosity");
 
   // -- molar rescaling of some quantatities.
   molar_rho_ = rho_ / CommonDefs::MOLAR_MASS_H2O;
   molar_gravity_.set(gravity_ * CommonDefs::MOLAR_MASS_H2O);
-  // molar_rho_ = rho_;
-  // molar_gravity_.set(gravity_);
   flux_units_ = 0.0;  // scaling from kg to moles
 
   // parallel execution data
@@ -117,10 +111,10 @@ void Flow_PK::InitializeFields_()
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // set popular default values for missed fields.
-  if (S_->GetField("porosity")->owner() == passwd_) {
-    if (!S_->GetField("porosity", passwd_)->initialized()) {
-      S_->GetFieldData("porosity", passwd_)->PutScalar(0.2);
-      S_->GetField("porosity", passwd_)->set_initialized();
+  if (S_->GetField("porosity")->owner() == "porosity") {
+    if (!S_->GetField("porosity", "porosity")->initialized()) {
+      S_->GetFieldData("porosity", "porosity")->PutScalar(0.2);
+      S_->GetField("porosity", "porosity")->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
           *vo_->os() << "initilized porosity to default value 0.2" << std::endl;  
@@ -137,12 +131,14 @@ void Flow_PK::InitializeFields_()
     }
   }
 
-  if (!S_->GetField("fluid_viscosity", passwd_)->initialized()) {
-    *(S_->GetScalarData("fluid_viscosity", passwd_)) = 0.001;
-    S_->GetField("fluid_viscosity", passwd_)->set_initialized();
+  if (S_->HasField("fluid_viscosity")) {
+    if (!S_->GetField("fluid_viscosity", passwd_)->initialized()) {
+      *(S_->GetScalarData("fluid_viscosity", passwd_)) = 0.001;
+      S_->GetField("fluid_viscosity", passwd_)->set_initialized();
 
-    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-        *vo_->os() << "initilized fluid_viscosity to default value 0.001" << std::endl;  
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initilized fluid_viscosity to default value 0.001" << std::endl;  
+    }
   }
 
   if (!S_->GetField("gravity", "state")->initialized()) {

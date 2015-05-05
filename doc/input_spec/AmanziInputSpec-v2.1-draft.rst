@@ -871,7 +871,7 @@ Mechanical_properties
 
 * `"mechanical_properties`" has six elements that can be either values or specified as files.  It has the following requirements.
 
-    * `"porosity`" is defined in-line using attributes.  Either it is specified as a value between 0 and 1 using `"value`" or it specified through a file using `"filename`" and `"type`". NOTE - FILE OPTION NOT IMPLEMENTED YET.
+    * `"porosity`" is defined in-line using attributes.  It is specified in oneof three ways: as a value between 0 and 1 using value="<value>", through a file using type="file" and filename="<filename>", or as a gslib file using type="gslib", parameter_file="<filename>", value="<value>" and (optionally) data_file="<filename>" (defaults to `"porosity_data`".  NOTE - FILE OPTION NOT IMPLEMENTED YET.
 
     * `"particle_density`" is defined in-line using attributes.  Either it is specified as a value greater than 0 using `"value`" or it specified through a file using `"filename`" and `"type`".  NOTE - FILE OPTION NOT IMPLEMENTED YET.
 
@@ -904,16 +904,18 @@ Assigned_regions
 
     <assigned_regions>Region1, Region_2, Region 3</assigned_regions>
 
-* `"permeability`" is the permeability and has the attributes `"x`", `"y`", and `"z`". Permeability or hydraulic_conductivity must be specified but not both.  Reading permeability from the attributes of an Exodus II file is also available.
-
 Permeability
 ------------
+
+Permeability or hydraulic_conductivity must be specified but not both. If specified as constant values, permeability has the attributes `"x`", `"y`", and `"z`".  Permeability may also be extracted from the attributes of an Exodus II file, or generated as a gslib file.
 
 .. code-block:: xml
 
   <permeability x="exponential" y="exponential" z="exponential" />
   or
-  <permeability filename="file name" type="file" attribute="attribute name"/>
+  <permeability type="file" filename="file name" attribute="attribute name"/>
+  or
+  <permeability type="gslib" parameter_file="file name" value="exponential" data_file="file name"/>
 
 Hydraulic_conductivity
 ----------------------
@@ -923,6 +925,8 @@ Hydraulic_conductivity
 .. code-block:: xml
 
   <hydraulic_conductivity x="exponential" y="exponential" z="exponential" />
+  or
+  <hydraulic_conductivity type="gslib" parameter_file="file name" value="exponential" data_file="file name"/>
 
 Cap_pressure
 ------------
@@ -1040,7 +1044,7 @@ Some general discussion of the `"Phases`" section goes here.
 .. code-block:: xml
 
   <Phases>
-      Required Elements: liquid_phase
+      Required Elements: liquid_phase 
       Optional Elements: solid_phase
   </Phases>
 
@@ -1432,8 +1436,24 @@ Example:
      <cycle_macro>Every_100_steps</cycle_macro>
   </walkabout>
 
+Misc
+====
+
+This section includes a collection of miscellaneous global options, specified as root tags.  Each of these options has a default behavior that will occur if the parameter is omitted.  If the parameter appears with no attributes specified, the default values for the attributes will be assumed.
+
+.. code-block:: xml
+
+  <echo_translated_input format="some tag" file_name="some name"/>
+
+* Write the input data after internal translation.  There are two specifyable attributes, `"format`" and `"file_name`".  If this parameter is omitted, no translated files are written.
+
+  * `"format`" is a specific format tag, and can be `"v1`" (DEFAULT) or `"native`".  The actual format created for the `"native`" tag will depend on the value of the `"type`" specified under `"amanzi_input`" (see above).
+
+  * `"file_name`" is the name of the translated output file.  If `"format`" = `"v1`", then `"file_name`" defaults to `"XXX_oldspec.xml`", where `"XXX.xml`" is the name of the original Amanzi input file.  If `"format`" = `"native`", then `"file_name`" defaults to `"translated_inpus.xml`".
+
+
 Full Example
-------------
+============
 
 .. code-block:: xml
 
@@ -1449,6 +1469,7 @@ Full Example
         <conc_unit>molar</conc_unit>
       </units>
     </model_description>
+    <echo_translated_input format="v1" file_name="my_translated_input.xml">
     <definitions>
       <macros>
         <time_macro name="time macro">

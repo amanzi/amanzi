@@ -108,6 +108,9 @@ if ( ENABLE_CCSE_TOOLS )
     # We need to link against libquadmath on Linux, it seems.
     set(AMRDERIVETECPLOT_ARGS "LDFLAGS=\"-lquadmath\"")
   endif()
+  if (APPLE)
+    set(AMRDERIVETECPLOT_ARGS "LDFLAGS=\"-lgfortran\"")
+  endif()
   add_custom_command(TARGET ${CCSE_BUILD_TARGET}
                      POST_BUILD
                      COMMAND $(MAKE) BOXLIB_HOME=${CCSE_source_dir} ${AMRDERIVETECPLOT_ARGS}

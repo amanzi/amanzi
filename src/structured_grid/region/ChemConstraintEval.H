@@ -12,38 +12,35 @@ public:
   ChemConstraintEval(const std::string&          name,
 		     int                         tracerIdx,
 		     RockManager*                rockMgr,
-		     ChemistryHelper_Structured* chemHelper,
-                     Real&                       water_density,
-                     Real&                       temperature);
+		     ChemistryHelper_Structured* chemHelper);
 
   ChemConstraintEval(const std::vector<std::string>& names,
 		     const std::vector<Real>&        times,
 		     int                             tracerIdx,
 		     RockManager*                    rockMgr,
-		     ChemistryHelper_Structured*     chemHelper,
-                     Real&                           water_density,
-                     Real&                           temperature);
+		     ChemistryHelper_Structured*     chemHelper);
 
   virtual ~ChemConstraintEval() {}
   virtual ChemConstraintEval * clone () const;
   ChemConstraintEval(const ChemConstraintEval& rhs);
 
-  virtual const std::vector<Real>& operator()(int i, Real t) const;
+  virtual std::vector<Real> operator()(int i, Real t) const {BoxLib::Abort("ChemConstraintEval::operator() not implemented");}
+  std::vector<Real> operator()(const Array<Real>& primary_species_mobile,
+			       const Array<Real>& auxiliary_chem_data,
+			       Real               aqueous_phase_density,
+			       Real               aqueous_phase_temperature,
+			       Real               evaluation_time) const;
+
   virtual int NComp() const;
-  bool Initialized(int i, Real t) const;
+
+  const ChemistryHelper_Structured* ChemHelper() const {return mChemHelper;}
 
 protected:
-  void Initialize(int i, Real t) const;
-
   std::vector<std::string>    mConstraintNames;
   std::vector<Real>           mTimes;
   int                         mTracerIdx;
   RockManager*                mRockMgr;
   ChemistryHelper_Structured* mChemHelper;
-  Real&                       mWaterDensity;
-  Real&                       mTemperature;
-  mutable std::vector<std::vector<std::vector<Real> > > mVals; // mVals[constraintIdx][materialIdx][comp]
-  mutable std::vector<std::vector<bool> > mInit; // mInit[constraintIdx][materialIdx]
 };
 
 class ChemConstraint
@@ -58,14 +55,14 @@ public:
 
   ~ChemConstraint();
 
-  virtual void apply(FArrayBox&       fab,
-                     FArrayBox&       aux,
-                     const IArrayBox& idx,
-                     const Real*      dx,
-                     int              vcomp,
-                     int              acomp,
-                     const Box&       box,
-                     Real             time = 0) const;
+  virtual void apply(FArrayBox&       fab, int vcomp,
+		     FArrayBox&       aux, int acomp,
+		     const IArrayBox& idx,
+		     const Real*      dx,
+		     const Box&       box,
+		     const FArrayBox& density,     int dComp,
+		     const FArrayBox& temperature, int TComp,
+		     Real             time) const;
 };
 
 

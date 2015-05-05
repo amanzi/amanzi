@@ -1574,7 +1574,6 @@ namespace Amanzi {
       const std::string param_file_name="GSLib Parameter File";
       const std::string data_file_name="GSLib Data File"; reqP.push_back(data_file_name);
       const std::string value_name="Value"; reqP.push_back(value_name);
-      const std::string std_name="Std";
       PLoptions opt(fPLin,nullList,reqP,false,false);
 
       fPLout.set<std::string>("gslib_data_file",fPLin.get<std::string>(data_file_name));
@@ -1583,9 +1582,6 @@ namespace Amanzi {
       for (int i=0; i<optP.size(); ++i) {
 	if (optP[i] == param_file_name) {
 	  fPLout.set<std::string>("gslib_param_file",fPLin.get<std::string>(param_file_name));
-	}
-	else if (optP[i] == std_name) {
-	  fPLout.set<double>("std",fPLin.get<double>(std_name));
 	}
 	else {
           std::string str = "Unrecognized \"Porosity: GSLib\" option";
@@ -1603,7 +1599,6 @@ namespace Amanzi {
       const std::string param_file_name="GSLib Parameter File";
       const std::string data_file_name="GSLib Data File"; reqP.push_back(data_file_name);
       const std::string value_name="Value"; reqP.push_back(value_name);
-      const std::string std_name="Std";
       PLoptions opt(fPLin,nullList,reqP,false,false);
 
       fPLout.set<std::string>("gslib_data_file",fPLin.get<std::string>(data_file_name));
@@ -1613,9 +1608,6 @@ namespace Amanzi {
       for (int i=0; i<optP.size(); ++i) {
 	if (optP[i] == param_file_name) {
 	  fPLout.set<std::string>("gslib_param_file",fPLin.get<std::string>(param_file_name));
-	}
-	else if (optP[i] == std_name) {
-	  fPLout.set<double>("std",fPLin.get<double>(std_name) * 1.01325e15); // convert from m^2 to mDa
 	}
 	else {
           std::string str = "Unrecognized \"Permeability: GSLib\" option";

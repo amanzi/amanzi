@@ -32,21 +32,21 @@ class BCs;
 class OperatorDiffusionWithGravity : public OperatorDiffusionMFD {
  public:
   OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
-                    const Teuchos::RCP<Operator>& global_op) :
+                               const Teuchos::RCP<Operator>& global_op) :
       OperatorDiffusionMFD(plist, global_op)
   {
     Init_();
   }
 
   OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
-                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+                               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       OperatorDiffusionMFD(plist, mesh)
   {
     Init_();
   }
 
   OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
-                    const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+                               const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
       OperatorDiffusionMFD(plist, mesh)
   {
     Init_();
@@ -58,7 +58,14 @@ class OperatorDiffusionWithGravity : public OperatorDiffusionMFD {
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
 
   virtual void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
-  virtual void SetVectorDensity(const Teuchos::RCP<const CompositeVector>& rho) { rho_cv_ = rho; }
+  virtual void SetDensity(double rho) {
+    scalar_rho_ = true;
+    rho_ = rho;
+  }
+  virtual void SetDensity(const Teuchos::RCP<const CompositeVector>& rho) {
+    scalar_rho_ = false;
+    rho_cv_ = rho;
+  }
   
  protected:
   virtual void AddGravityToRHS_();

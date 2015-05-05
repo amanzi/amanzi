@@ -59,24 +59,39 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
     InitDiffusion_(plist);
   }
 
-  // main virtual members
-  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-                     double rho, double mu);
-  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-                     const Teuchos::RCP<const CompositeVector>& rho,
-                     const Teuchos::RCP<const CompositeVector>& mu);
+  // main virtual members for populating an operator
+  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
   virtual void Setup(const Teuchos::RCP<const CompositeVector>& k,
                      const Teuchos::RCP<const CompositeVector>& dkdp);
   using OperatorDiffusion::Setup;
 
+  // -- To calculate elemetal matrices, we can use input parameters flux 
+  //    and u from the previous nonlinear iteration. Otherwise, use null-pointers.
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-          const Teuchos::Ptr<const CompositeVector>& u);
-  virtual void UpdateMatricesNewtonCorrection(
-      const Teuchos::Ptr<const CompositeVector>& flux,
-      const Teuchos::Ptr<const CompositeVector>& u);
-  virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
-  virtual void ApplyBCs(bool primary = true);
+                              const Teuchos::Ptr<const CompositeVector>& u);
+
+  // -- Approximation of the Jacobian requires non-null flux from the 
+  //    previous nonlinear iteration. The second parameter, u, so far is a
+  //    placeholder for new approximation methods.
+  virtual void UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
+                                              const Teuchos::Ptr<const CompositeVector>& u);
+
+  // modify the operator
+  // -- by incorporating boundary conditions. Variable 'primary' indicates
+  //    that we put 1 on the matrix diagonal. Variable 'eliminate' says
+  //    that we eliminate essential BCs for the trial function, i.e. zeros
+  //    go in the corresponding matrix columns.
+  virtual void ApplyBCs(bool primary, bool eliminate);
+
+  // -- by breaking p-lambda coupling.
   virtual void ModifyMatrices(const CompositeVector& u);
+
+  // -- by rescaling mass matrices.
+  virtual void ScaleMassMatrices(double s);
+
+  // main virtual members after solving the problem
+  // -- calculate the flux variable.
+  virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
 
   // working with consistent faces -- EXPERIMENTAL
   virtual void UpdateConsistentFaces(CompositeVector& u);
@@ -97,17 +112,20 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   void UpdateMatricesMixedWithGrad_(const Teuchos::Ptr<const CompositeVector>& flux);
 
   void AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVector>& flux,
-          const Teuchos::Ptr<const CompositeVector>& u);
+                                const Teuchos::Ptr<const CompositeVector>& u);
 
-
-  void ApplyBCs_Mixed_(BCs& bc, bool primary);
-  void ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
-                       const Teuchos::Ptr<BCs>& bc_n, bool primary);
-  void ApplyBCs_Cell_(BCs& bc, bool primary);
+  void ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
+                       bool primary, bool eliminate);
+  void ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f, const Teuchos::Ptr<BCs>& bc_n,
+                       bool primary, bool eliminate);
+  void ApplyBCs_Cell_(BCs& bc_trial, BCs& bc_test,
+                      bool primary, bool eliminate);
 
  protected:
   Teuchos::ParameterList plist_;
   std::vector<WhetStone::DenseMatrix> Wff_cells_;
+  bool mass_matrices_initialized_;
+
   int newton_correction_;
   double factor_;
   bool exclude_primary_terms_;

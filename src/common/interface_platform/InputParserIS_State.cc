@@ -20,27 +20,23 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
   Errors::Message msg;
 
   // first we write initial conditions for scalars and vectors, not region-specific
-
   Teuchos::ParameterList& stt_ev = stt_list.sublist("field evaluators");
   Teuchos::ParameterList& stt_ic = stt_list.sublist("initial conditions");
-  //
+  
   // --- gravity
-  //  
   Teuchos::Array<double> gravity(spatial_dimension_);
   for (int i = 0; i != spatial_dimension_-1; ++i) gravity[i] = 0.0;
   gravity[spatial_dimension_-1] = -GRAVITY_MAGNITUDE;
   stt_ic.sublist("gravity").set<Teuchos::Array<double> >("value", gravity);
-  //
+
   // --- viscosity
-  //
   Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
   double viscosity = phase_list.sublist(phases_[0].name)
                                .sublist("Phase Properties")
                                .sublist("Viscosity: Uniform").get<double>("Viscosity");
   stt_ic.sublist("fluid_viscosity").set<double>("value", viscosity);
-  //
+
   // --- density
-  //
   double density = phase_list.sublist(phases_[0].name)
                              .sublist("Phase Properties")
                              .sublist("Density: Uniform").get<double>("Density");
@@ -53,9 +49,8 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
       .set<double>("value", density);
 
   constant_density = density;  // save it for PKs
-  //
+
   // --- region specific initial conditions from material properties
-  //
   std::map<std::string,int> region_to_matid;
   std::map<int,std::string> matid_to_material;
   int matid_ctr = 0;
@@ -217,8 +212,8 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
             .set<std::string>("file",perm_file)
             .set<std::string>("attribute",perm_attribute);
       } else {
-        msg << "Permeabily initialization from file, incompatible format specified: \"" 
-            << perm_format << "\", only \"exodus\" is supported.";
+        msg << "Permeability initialization from file, incompatible format specified: \"" 
+            << perm_format << "\", only \"Exodus II\" is supported.";
         Exceptions::amanzi_throw(msg);
       }
      

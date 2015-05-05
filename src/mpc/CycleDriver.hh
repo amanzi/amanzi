@@ -103,6 +103,7 @@ class CycleDriver {
 
   // time period control
   std::vector<std::pair<double,double> > reset_info_;
+  std::vector<std::pair<double,double> > reset_max_;
 
   // //  checkpoint/restart 
   // Teuchos::RCP<Amanzi::Checkpoint> restart_;
