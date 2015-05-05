@@ -50,7 +50,7 @@ void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const Tree
 
   if (precon_used_) {
     preconditioner_->AssembleMatrix();
-    preconditioner_->InitPreconditioner("preconditioner", plist_->sublist("Diffusion PC"));
+    preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
   }      
   
   

@@ -38,6 +38,13 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
   // methods, so we need a unique overrider.
   virtual void initialize(const Teuchos::Ptr<State>& S);
 
+  // Default preconditioner is Picard
+  virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu)
+  { *Pu = *u; }
+
+  // updates the preconditioner, default does nothing
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {}
+
   // Default implementations of BDFFnBase methods.
   // -- Compute a norm on u-du and return the result.
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,

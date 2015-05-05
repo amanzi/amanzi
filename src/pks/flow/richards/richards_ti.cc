@@ -266,7 +266,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
   unsigned int ncells = dwc_dp.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
-    ASSERT(dwc_dp[0][c] > 1.e-10);
+    //    ASSERT(dwc_dp[0][c] > 1.e-10);
     Acc_cells[c] += dwc_dp[0][c] / h;
   }
 
