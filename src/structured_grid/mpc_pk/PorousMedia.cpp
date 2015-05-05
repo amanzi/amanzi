@@ -2473,6 +2473,10 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
       // Set up "old" tracers from previous "new" tracers
       int first_tracer = ncomps;
       MultiFab::Copy(state[State_Type].oldData(),state[State_Type].newData(),first_tracer,first_tracer,ntracers,0);
+      if (chemistry_helper != 0) {
+	int Naux = AmrLevel::get_desc_lst()[Aux_Chem_Type].nComp();
+	MultiFab::Copy(state[Aux_Chem_Type].oldData(),state[Aux_Chem_Type].newData(),0,0,Naux,0);
+      }
 
       int nGrowF = 1;
       MultiFab Fext(grids,ncomps+ntracers,nGrowF);
@@ -2502,20 +2506,24 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 	MultiFab::Subtract(Fext,*aofs,first_tracer,ncomps,ntracers,0);// S_diffusion = Fext - Div(AdvectionFlux), ng=0
 	bool reflux_on_this_call = true;
 
-      // Set time interval for this advection step, for State_Type and Aux_Chem_Type
-      state[State_Type].setNewTimeLevel(t_subtr+dt_subtr);
-      state[State_Type].allocOldData();
-      state[State_Type].setOldTimeLevel(t_subtr);
+	// Set time interval for this advection step, for State_Type and Aux_Chem_Type
+	state[State_Type].setNewTimeLevel(t_subtr+dt_subtr);
+	state[State_Type].allocOldData();
+	state[State_Type].setOldTimeLevel(t_subtr);
 
-      // Set up "old" tracers from previous "new" tracers
-      int first_tracer = ncomps;
-      MultiFab::Copy(state[State_Type].oldData(),state[State_Type].newData(),first_tracer,first_tracer,ntracers,0);
+	if (chemistry_helper != 0) { // Need to ensure Aux_Chem_Type data exists over t range
+	  state[Aux_Chem_Type].setNewTimeLevel(t_subtr+dt_subtr);
+	  state[Aux_Chem_Type].allocOldData();
+	  state[Aux_Chem_Type].setOldTimeLevel(t_subtr);
+	}
 
-      if (chemistry_helper != 0) { // Need to ensure Aux_Chem_Type data exists over t range
-	state[Aux_Chem_Type].setNewTimeLevel(t_subtr+dt_subtr);
-	state[Aux_Chem_Type].allocOldData();
-	state[Aux_Chem_Type].setOldTimeLevel(t_subtr);
-      }
+	// Set up "old" tracers from previous "new" tracers
+	int first_tracer = ncomps;
+	MultiFab::Copy(state[State_Type].oldData(),state[State_Type].newData(),first_tracer,first_tracer,ntracers,0);
+	if (chemistry_helper != 0) {
+	  int Naux = AmrLevel::get_desc_lst()[Aux_Chem_Type].nComp();
+	  MultiFab::Copy(state[Aux_Chem_Type].oldData(),state[Aux_Chem_Type].newData(),0,0,Naux,0);
+	}
 
         tracer_diffusion (reflux_on_this_call,use_cached_sat,Fext);
       }
@@ -5079,19 +5087,22 @@ void PorousMedia::post_restart()
       observations[i].process(prev_time, curr_time, parent->levelSteps(0));
     }
 
-    Layout& layout = PMParent()->GetLayout();
-    PMAmr* pm_parent = PMParent();
-    int new_nLevs = parent->finestLevel() + 1;
+    if (model != PM_STEADY_SATURATED) {
 
-    BL_ASSERT(richard_solver_control == 0);
-    richard_solver_control = new NLScontrol();
+      Layout& layout = PMParent()->GetLayout();
+      PMAmr* pm_parent = PMParent();
+      int new_nLevs = parent->finestLevel() + 1;
 
-    BL_ASSERT(richard_solver_data == 0);
-    richard_solver_data = new RSAMRdata(0,new_nLevs,layout,pm_parent,*richard_solver_control,rock_manager);
-    BuildNLScontrolData(*richard_solver_control,*richard_solver_data,"Flow_PK");
+      BL_ASSERT(richard_solver_control == 0);
+      richard_solver_control = new NLScontrol();
 
-    BL_ASSERT(richard_solver == 0);
-    richard_solver = new RichardSolver(*richard_solver_data,*richard_solver_control);
+      BL_ASSERT(richard_solver_data == 0);
+      richard_solver_data = new RSAMRdata(0,new_nLevs,layout,pm_parent,*richard_solver_control,rock_manager);
+      BuildNLScontrolData(*richard_solver_control,*richard_solver_data,"Flow_PK");
+
+      BL_ASSERT(richard_solver == 0);
+      richard_solver = new RichardSolver(*richard_solver_data,*richard_solver_control);
+    }
   }
 }
 
@@ -5105,7 +5116,7 @@ PorousMedia::post_regrid (int lbase,
   BL_PROFILE("PorousMedia::post_regrid()");
   init_rock_properties();
 
-  if (level == lbase) {
+  if (model != PM_STEADY_SATURATED && level == lbase) {
 
     // NOTE: If grids change at any level, the layout (and RS) is no longer valid
     Layout& layout = PMParent()->GetLayout();
