@@ -85,6 +85,7 @@ set(ATS_LIBS
                       flow_relations_elevation
                       flow_relations_porosity
                       flow_relations_surface_subsurface_fluxes
+                      generic_evaluators
                       relations_eos
                       relations_ewc
                       bc_factory
