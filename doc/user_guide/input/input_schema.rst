@@ -368,13 +368,24 @@ Unstructured_controls
 _____________________
 
 
-The ``unstructured_controls`` sections is divided in the subsections: ``unstr_steady-state_controls``, ``unstr_transient_controls``, ``unstr_linear_solver``, ``unstr_nonlinear_solver``, and ``unstr_chemistry_controls``.  The list of available options is as follows:
+The ``unstructured_controls`` sections is divided in the subsections: ``unstr_steady-state_controls``, ``unstr_transient_controls``, ``unstr_linear_solver``, ``unstr_nonlinear_solver``, ``unstr_flow_controls``, ``unstr_transport_controls``, and ``unstr_chemistry_controls``.  The list of available options is as follows:
 
 .. code-block:: xml
 
   <unstructured_controls>
 
     <comments>Numerical controls comments here</comments>
+
+    <unstr_flow_controls>
+      <discretization_method> fv-default | fv-monotone | fv-multi_point_flux_approximation | fv-extended_to_boundary_edges | mfd-default | mfd-optimized_for_sparsity | mfd-support_operator | mfd-optimized_for_monotonicity | mfd-two_point_flux_approximation </discretization_method>
+      <rel_perm_method> upwind-darcy_velocity (default) | upwind-gravity |  upwind-amanzi |  other-arithmetic_average |  other-harmonic_average </rel_perm_method>
+      <preconditioning_strategy> linearized_operator(default) | diffusion_operator </preconditioning_strategy>
+    </unstr_flow_controls>
+
+    <unstr_transport_controls>
+      <algorithm> explicit first-order(default) | explicit second-order | implicit upwind </algorithm>
+      <sub_cycling> off(default) | on </sub_cycling>
+    </unstr_transport_controls>
 
     <unstr_steady-state_controls>
       <comments>Comment text here</comments>
@@ -523,7 +534,7 @@ Here is an overall example for the ``unstructured_controls`` element.
 Structured_controls
 ___________________
 
-The ``structured_controls`` sections is divided in the subsections: ``str_steady-state_controls``, ``str_transient_controls``, ``str_amr_controls``, and ``max_n_subcycle_transport``.  The list of available options is as follows:
+The ``structured_controls`` sections is divided in the subsections: ``str_steady-state_controls``, ``str_transient_controls``, ``str_amr_controls``, ``<petsc_options_file>``, and ``max_n_subcycle_transport``.  The list of available options is as follows:
 
 .. code-block:: xml
 
@@ -531,6 +542,7 @@ The ``structured_controls`` sections is divided in the subsections: ``str_steady
 
     <comments>Numerical controls comments here</comments>
 
+    <petsc_options_file> String </petsc_options_file>
     <str_steady-state_controls>
       <max_pseudo_time> Exponential </max_pseudo_time>
       <limit_iterations> Integer </limit_iterations>
@@ -981,33 +993,19 @@ ____
 
 Currently three scenarios are available for calculated the flow field.  `"richards`" is a single phase, variably saturated flow assuming constant gas pressure.  `"saturated`" is a single phase, fully saturated flow.  `"constant`" is equivalent to the flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
 
-The attributes `"discretization_method`" and `"rel_perm_method`" are only relevant for the unstructured algorithm.
-
-`"discretization_method`" specifies the spatial discretization method. The available options options for the finite volume method: "fv-default", "fv-monotone", "fv-multi_point_flux_approximation", and "fv-extended_to_boundary_edges". The available option for the mimetic finite difference method are "mfd-default", "mfd-optimized_for_sparsity", "mfd-support_operator", "mfd-optimized_for_monotonicity", and "mfd-two_point_flux_approximation". The option "mfd-optimized_for_sparsity" cannot be applied to all meshes. When it is not acceptable, the discretization method falls back to "mfd-optimized_for_sparsity".
-
-`"rel_perm_method`" defines a method for calculating the upwinded relative permeability. The available options are:"upwind-darcy_velocity" (default), "upwind-gravity", "upwind-amanzi", "other-arithmetic_average"  and "other-harmonic_average".
-
 .. code-block:: xml
 
     <flow state = "on | off" 
-          model = "richards | saturated | constant"
-          discretization_method = "fv-default | fv-monotone | fv-multi_point_flux_approximation | 
-                                   fv-extended_to_boundary_edges | 
-                                   mfd-default | mfd-optimized_for_sparsity | mfd-support_operator | 
-                                   mfd-optimized_for_monotonicity | mfd-two_point_flux_approximation"
-          rel_perm_method = "upwind-darcy_velocity | upwind-gravity | upwind-amanzi | 
-                             other-arithmetic_average | other-harmonic_average" />
+          model = "richards | saturated | constant" />
 
 Transport
 _________
 
-For `"transport`" a combination of `"state`" and `"algorithm`" must be specified.  If `"state`" is `"off`" then `"algorithm`" is set to `"none`".  Otherwise the integration algorithm must be specified.  Whether sub-cycling is to be utilized within the transport algorithm is also specified here.
+For `"transport`" a `"state`" must be specified.  
 
 .. code-block:: xml
 
-    <transport state = "on | off" 
-               algorithm = "explicit first-order | explicit second-order | implicit upwind | none" 
-               sub_cycling = "on | off"/>
+    <transport state = "on | off" />
 
 Chemistry
 _________

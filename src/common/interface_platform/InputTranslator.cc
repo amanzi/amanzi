@@ -131,11 +131,15 @@ Teuchos::ParameterList translate(const std::string& xmlfilename) {
   new_list.sublist("Boundary Conditions") = get_boundary_conditions(doc, def_list);
   new_list.sublist("Sources") = get_sources(doc, def_list);
   new_list.sublist("Output") = get_output(doc, def_list);
+  
   // hack to go back and add chemistry list (not geochemistry, for kd problem)
   if ( def_list.isSublist("Chemistry") ) {
     new_list.sublist("Chemistry") = def_list.sublist("Chemistry");
   } else { 
     new_list.sublist("Chemistry") = make_chemistry(def_list);
+  }
+  
+  if (def_list.isParameter("petsc_options_file")) {
   }
 
   delete errorHandler;
@@ -2990,6 +2994,14 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
             else if (strcmp(nodeName,"max_n_subcycle_transport")==0) {
               textContent = XMLString::transcode(tmpNode->getTextContent());
               expertPL.set<int>("max_n_subcycle_transport",get_int_constant(textContent,*def_list));
+              XMLString::release(&textContent);
+            }
+            else if (strcmp(nodeName,"petsc_options_file")==0) {
+              // This specifies the name of the file containing petsc options
+              // The default filename ".petsc" is found automatically
+              // Utilize this option if the file uses an alternative name
+              textContent = XMLString::transcode(tmpNode->getTextContent());
+              def_list->set<std::string>("petsc_options_file",trim_string(textContent));
               XMLString::release(&textContent);
             }
           }
