@@ -26,7 +26,7 @@ public:
   virtual ~VecEvaluator();
   virtual VecEvaluator * clone () const;
 
-  virtual const std::vector<Real>& operator()(int i, Real time) const;
+  virtual std::vector<Real> operator()(int i, Real time) const;
   bool Initialized(const std::string& color) const;
 
 protected:
@@ -102,7 +102,7 @@ VecEvaluator::Initialized(const std::string& color) const
 }
 
 
-const std::vector<Real>&
+std::vector<Real>
 VecEvaluator::operator()(int i, Real time) const
 {
   if (!mInit[i]) {

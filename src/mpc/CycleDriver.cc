@@ -827,6 +827,9 @@ void CycleDriver::Go() {
       ResetDriver(time_period_id_); 
       restart_dT =  tp_dt_[time_period_id_];
     }
+    else {
+      Initialize();
+    }
   }
 
 

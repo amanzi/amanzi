@@ -127,6 +127,7 @@ void Richards_PK::EnforceConstraints(double Tp, Teuchos::RCP<CompositeVector> u)
         double Knn = ((K[c] * normal) * normal) / (area * area);
         // double save = 3.0;
         // k_face[0][f] = std::min(1.0, -save * bc_value[f] * mu_cell[0][c] / (Knn * rho_ * rho_ * g_));
+        // k_face[0][f] *= rho_ / mu_cell[0][c];
         double value = bc_value[f] / flux_units_;
         double kr1 = relperm_->Compute(c, u_cell[0][c]);
         double kr2 = std::min(1.0, -value * mu_cell[0][c] / (Knn * rho_ * rho_ * g_));

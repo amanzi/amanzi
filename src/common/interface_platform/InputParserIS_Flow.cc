@@ -327,6 +327,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
             sti_bdf1.set<int>("max preconditioner lag iterations", 0);
 	    sti_bdf1.set<bool>("extrapolate initial guess", false);	    
             sti_list.set<std::string>("linear solver", "GMRES for Newton");
+            sti_list.set<std::string>("preconditioner enhancement", "GMRES for Newton");
           }
 
 	  if (time_regime == STEADY_REGIME) {
@@ -350,7 +351,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           if (flow_single_phase) {
             tti_list.set<std::string>("linear solver", TR_SOLVER_DARCY);
           } else if (nonlinear_solver == std::string("Newton")) {
-            tti_list.set<std::string>("linear solver", "GMRESforNewton");
+            tti_list.set<std::string>("linear solver", "GMRES for Newton");
           } else {
             tti_list.set<std::string>("linear solver", TR_SOLVER);
           }
@@ -1055,6 +1056,11 @@ Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(
   op_list.sublist("diffusion operator").sublist("matrix") = tmp_list;
   op_list.sublist("diffusion operator").sublist("preconditioner") = tmp_list;
 
+  if (prec_method == "Linearized Operator") {
+    op_list.sublist("diffusion operator").sublist("preconditioner")
+        .set<std::string>("newton correction", "approximate jacobian");
+  }
+
   if (nonlinear_solver == "Newton") {
     Teuchos::ParameterList& prec_list = 
         op_list.sublist("diffusion operator").sublist("preconditioner");
@@ -1070,10 +1076,6 @@ Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(
     criteria.push_back("relative residual");
     gmres_list.set<Teuchos::Array<std::string> >("convergence criteria", criteria);
     gmres_list.sublist("VerboseObject") = CreateVerbosityList_("low");
-  }
-  if (prec_method == "Linearized Operator") {
-    op_list.sublist("diffusion operator").sublist("preconditioner")
-        .set<std::string>("newton correction", "approximate jacobian");
   }
 
   // "standard" is the most robust upwind method for variety of subsurface

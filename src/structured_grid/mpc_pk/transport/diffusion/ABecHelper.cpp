@@ -33,9 +33,18 @@ ABecHelper::compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
   
   Real _alpha = get_alpha();
   Real _beta = get_beta();
-  for (MFIter inmfi(in); inmfi.isValid(); ++inmfi)
+
+  const bool tiling = true;
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+  for (MFIter inmfi(in,tiling); inmfi.isValid(); ++inmfi)
   {
-    const Box& vbx   = inmfi.validbox();
+    D_TERM(const Box& xbx   = inmfi.nodaltilebox(0);,
+	   const Box& ybx   = inmfi.nodaltilebox(1);,
+	   const Box& zbx   = inmfi.nodaltilebox(2););
+
     FArrayBox& infab = in[inmfi];
     
     D_TERM(const FArrayBox& bxfab = bX[inmfi];,
@@ -60,7 +69,14 @@ ABecHelper::compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
               ARLIM(bzfab.loVect()), ARLIM(bzfab.hiVect()),
 #endif
 #endif
-              vbx.loVect(), vbx.hiVect(), &num_comp,
+	      xbx.loVect(), xbx.hiVect(), 
+#if (BL_SPACEDIM >= 2)
+	      ybx.loVect(), ybx.hiVect(), 
+#if (BL_SPACEDIM == 3)
+	      zbx.loVect(), zbx.hiVect(), 
+#endif
+#endif
+              &num_comp,
               h[level],
               xfluxfab.dataPtr(dst_comp),
               ARLIM(xfluxfab.loVect()), ARLIM(xfluxfab.hiVect())
@@ -120,7 +136,12 @@ ABecHelper::residual (MultiFab&       residL,
   int bndryComp = default_bndryComp;
   apply(residL, solnL, level, bc_mode, local, srcComp, destComp, numComp, bndryComp);
   
-  for (MFIter solnLmfi(solnL); solnLmfi.isValid(); ++solnLmfi)
+  const bool tiling = true;
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+  for (MFIter solnLmfi(solnL,tiling); solnLmfi.isValid(); ++solnLmfi)
   {
     const int nc = residL.nComp();
     //
@@ -128,9 +149,9 @@ ABecHelper::residual (MultiFab&       residL,
     //
     BL_ASSERT(nc == 1);
     
-    const Box& vbx = solnLmfi.validbox();
+    const Box& tbx = solnLmfi.tilebox();
     
-    BL_ASSERT(gbox[level][solnLmfi.index()] == vbx);
+    BL_ASSERT(gbox[level][solnLmfi.index()] == solnLmfi.validbox());
     
     FArrayBox& residfab = residL[solnLmfi];
     const FArrayBox& rhsfab = rhsL[solnLmfi];
@@ -142,7 +163,7 @@ ABecHelper::residual (MultiFab&       residL,
       ARLIM(rhsfab.loVect()), ARLIM(rhsfab.hiVect()),
       residfab.dataPtr(), 
       ARLIM(residfab.loVect()), ARLIM(residfab.hiVect()),
-      vbx.loVect(), vbx.hiVect(), &nc);
+      tbx.loVect(), tbx.hiVect(), &nc);
   }
 }
 
@@ -187,38 +208,56 @@ ABecHelper::norm (int nm, int level, const bool local)
   Real _alpha = get_alpha();
   Real _beta = get_beta();
 
-  for (MFIter amfi(a); amfi.isValid(); ++amfi)
-  {
-    Real tres;
+  const bool tiling = true;
 
-    const Box&       vbx  = amfi.validbox();
-    const FArrayBox& afab = a[amfi];
-
-    D_TERM(const FArrayBox& bxfab = bX[amfi];,
-           const FArrayBox& byfab = bY[amfi];,
-           const FArrayBox& bzfab = bZ[amfi];);
-
-#if (BL_SPACEDIM==2)
-    FORT_NORMA(&tres,
-               &_alpha, &_beta,
-               afab.dataPtr(alphaComp),  ARLIM(afab.loVect()), ARLIM(afab.hiVect()),
-               bxfab.dataPtr(betaComp), ARLIM(bxfab.loVect()), ARLIM(bxfab.hiVect()),
-               byfab.dataPtr(betaComp), ARLIM(byfab.loVect()), ARLIM(byfab.hiVect()),
-               vbx.loVect(), vbx.hiVect(), &nc,
-               h[level]);
-#elif (BL_SPACEDIM==3)
-
-    FORT_NORMA(&tres,
-               &_alpha, &_beta,
-               afab.dataPtr(alphaComp),  ARLIM(afab.loVect()), ARLIM(afab.hiVect()),
-               bxfab.dataPtr(betaComp), ARLIM(bxfab.loVect()), ARLIM(bxfab.hiVect()),
-               byfab.dataPtr(betaComp), ARLIM(byfab.loVect()), ARLIM(byfab.hiVect()),
-               bzfab.dataPtr(betaComp), ARLIM(bzfab.loVect()), ARLIM(bzfab.hiVect()),
-               vbx.loVect(), vbx.hiVect(), &nc,
-               h[level]);
+#ifdef _OPENMP
+#pragma omp parallel
 #endif
-    res = std::max(res, tres);
+  {
+    Real pres = 0.0;
+
+    for (MFIter amfi(a,tiling); amfi.isValid(); ++amfi)
+    {
+
+      Real tres;
+
+      const Box&       tbx  = amfi.tilebox();
+      const FArrayBox& afab = a[amfi];
+
+      D_TERM(const FArrayBox& bxfab = bX[amfi];,
+	     const FArrayBox& byfab = bY[amfi];,
+	     const FArrayBox& bzfab = bZ[amfi];);
+ 
+#if (BL_SPACEDIM==2)
+      FORT_NORMA(&tres,
+		 &_alpha, &_beta,
+		 afab.dataPtr(alphaComp), ARLIM(afab.loVect()),  ARLIM(afab.hiVect()),
+		 bxfab.dataPtr(betaComp), ARLIM(bxfab.loVect()), ARLIM(bxfab.hiVect()),
+		 byfab.dataPtr(betaComp), ARLIM(byfab.loVect()), ARLIM(byfab.hiVect()),
+		 tbx.loVect(), tbx.hiVect(), &nc,
+		 h[level]);
+
+#elif (BL_SPACEDIM==3)
+      FORT_NORMA(&tres,
+		 &_alpha, &_beta,
+		 afab.dataPtr(alphaComp),  ARLIM(afab.loVect()), ARLIM(afab.hiVect()),
+		 bxfab.dataPtr(betaComp), ARLIM(bxfab.loVect()), ARLIM(bxfab.hiVect()),
+		 byfab.dataPtr(betaComp), ARLIM(byfab.loVect()), ARLIM(byfab.hiVect()),
+		 bzfab.dataPtr(betaComp), ARLIM(bzfab.loVect()), ARLIM(bzfab.hiVect()),
+		 tbx.loVect(), tbx.hiVect(), &nc,
+		 h[level]);
+#endif
+      pres = std::max(pres, tres);
+    }
+    
+#ifdef _OPENMP
+#pragma omp critical(ABec_norm)
+#endif
+    { // reduction(max:) only became available in OpenMP 3.1, so we still use omp critical here
+      res = std::max(res, pres);
+    }
   }
+
   if (!local)
     ParallelDescriptor::ReduceRealMax(res);
   return res;
@@ -256,9 +295,14 @@ ABecHelper::Fapply (MultiFab&       out,
          const MultiFab& bY  = bCoefficients(1,level);,
          const MultiFab& bZ  = bCoefficients(2,level););
 
-  for (MFIter mfi(out); mfi.isValid(); ++mfi)
+  const bool tiling = true;
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+  for (MFIter mfi(out,tiling); mfi.isValid(); ++mfi)
   {
-    const Box&       vbx  = mfi.validbox();
+    const Box&       tbx  = mfi.tilebox();
     FArrayBox&       outfab = out[mfi];
     const FArrayBox& infab = in[mfi];
     const FArrayBox& afab = a[mfi];
@@ -281,7 +325,7 @@ ABecHelper::Fapply (MultiFab&       out,
                ARLIM(bxfab.loVect()), ARLIM(bxfab.hiVect()),
                byfab.dataPtr(betaComp), 
                ARLIM(byfab.loVect()), ARLIM(byfab.hiVect()),
-               vbx.loVect(), vbx.hiVect(), &num_comp,
+               tbx.loVect(), tbx.hiVect(), &num_comp,
                h[level]);
 #endif
 #if (BL_SPACEDIM ==3)
@@ -297,7 +341,7 @@ ABecHelper::Fapply (MultiFab&       out,
                ARLIM(byfab.loVect()), ARLIM(byfab.hiVect()),
                bzfab.dataPtr(betaComp), 
                ARLIM(bzfab.loVect()), ARLIM(bzfab.hiVect()),
-               vbx.loVect(), vbx.hiVect(), &num_comp,
+               tbx.loVect(), tbx.hiVect(), &num_comp,
                h[level]);
 #endif
   }
@@ -334,9 +378,14 @@ ABecHelper::Fsmooth (MultiFab&       solnL,
   //const int nc = solnL.nComp(); // FIXME: This LinOp only really supports single-component
   const int nc = 1;
 
-  for (MFIter solnLmfi(solnL); solnLmfi.isValid(); ++solnLmfi)
+  const bool tiling = true;
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+  for (MFIter solnLmfi(solnL,tiling); solnLmfi.isValid(); ++solnLmfi)
   {
-    oitr.rewind();
+    OrientationIter oitr;
 
     const int gn = solnLmfi.index();
 
@@ -350,6 +399,7 @@ ABecHelper::Fsmooth (MultiFab&       solnL,
     const Mask& m4 = *mtuple[oitr()]; oitr++;
     const Mask& m5 = *mtuple[oitr()]; oitr++;
 #endif
+    const Box&       tbx     = solnLmfi.tilebox();
     const Box&       vbx     = solnLmfi.validbox();
     FArrayBox&       solnfab = solnL[gn];
     const FArrayBox& rhsfab  = rhsL[gn];
@@ -386,7 +436,7 @@ ABecHelper::Fsmooth (MultiFab&       solnL,
               m2.dataPtr(), ARLIM(m2.loVect()),   ARLIM(m2.hiVect()),
               f3fab.dataPtr(), ARLIM(f3fab.loVect()),   ARLIM(f3fab.hiVect()),
               m3.dataPtr(), ARLIM(m3.loVect()),   ARLIM(m3.hiVect()),
-              vbx.loVect(), vbx.hiVect(),
+              tbx.loVect(), tbx.hiVect(), vbx.loVect(), vbx.hiVect(),
               &nc, h[level], &redBlackFlag);
 #endif
 
@@ -410,7 +460,7 @@ ABecHelper::Fsmooth (MultiFab&       solnL,
               m4.dataPtr(), ARLIM(m4.loVect()), ARLIM(m4.hiVect()),
               f5fab.dataPtr(), ARLIM(f5fab.loVect()), ARLIM(f5fab.hiVect()),
               m5.dataPtr(), ARLIM(m5.loVect()), ARLIM(m5.hiVect()),
-              vbx.loVect(), vbx.hiVect(),
+              tbx.loVect(), tbx.hiVect(), vbx.loVect(), vbx.hiVect(),
               &nc, h[level], &redBlackFlag);
 #endif
   }

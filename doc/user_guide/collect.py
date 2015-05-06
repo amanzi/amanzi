@@ -92,31 +92,31 @@ verification['confined_flow']={'index_entry' : 'confined_flow/index.rst',
                                     'dest_dir' : 'doc/user_guide/verification/confined_flow/linear_materials_parallel',
                                     'index_entry' : 'linear_materials_parallel/amanzi_linear_materials_parallel_1d.rst'
                                     },
-                               'theis_isotropic' :
-                                   {'from_dir' : 'testing/verification/flow/saturated/transient/theis_isotropic_1d',
-                                    'dest_dir' : 'doc/user_guide/verification/confined_flow/theis_isotropic',
-                                    'index_entry' : 'theis_isotropic/amanzi_theis_isotropic_1d.rst',
-                                    },
-                               'hantush_anisotropic' :
-                                   {'from_dir' : 'testing/verification/flow/saturated/transient/hantush_anisotropic_2d',
-                                    'dest_dir' : 'doc/user_guide/verification/confined_flow/hantush_anisotropic_2d',
-                                    'index_entry' : 'hantush_anisotropic_2d/amanzi_hantush_anisotropic_2d.rst',
-                                    },
-                               'butler_strip_2d' :
-                                   {'from_dir' : 'testing/verification/flow/saturated/transient/butler_strip_2d',
-                                    'dest_dir' : 'doc/user_guide/verification/confined_flow/butler_strip_2d',
-                                    'index_entry' : 'butler_strip_2d/amanzi_butler_strip_2d.rst',
-                                    },
-                               'butler_pod_2d' :
-                                   {'from_dir' : 'testing/verification/flow/saturated/transient/butler_pod_2d',
-                                    'dest_dir' : 'doc/user_guide/verification/confined_flow/butler_pod_2d',
-                                    'index_entry' : 'butler_pod_2d/amanzi_butler_pod_2d.rst',
-                                    },
-                               'boundedDomain_2d' :
-                                   {'from_dir' : 'testing/verification/flow/saturated/transient/boundedDomain_2d',
-                                    'dest_dir' : 'doc/user_guide/verification/confined_flow/boundedDomain_2d',
-                                    'index_entry' : 'boundedDomain_2d/amanzi_boundedDomain_2d.rst',
-                                    },
+                               #'theis_isotropic' :
+                               #    {'from_dir' : 'testing/verification/flow/saturated/transient/theis_isotropic_1d',
+                               #     'dest_dir' : 'doc/user_guide/verification/confined_flow/theis_isotropic',
+                               #     'index_entry' : 'theis_isotropic/amanzi_theis_isotropic_1d.rst',
+                               #     },
+                               #'hantush_anisotropic' :
+                               #    {'from_dir' : 'testing/verification/flow/saturated/transient/hantush_anisotropic_2d',
+                               #     'dest_dir' : 'doc/user_guide/verification/confined_flow/hantush_anisotropic_2d',
+                               #     'index_entry' : 'hantush_anisotropic_2d/amanzi_hantush_anisotropic_2d.rst',
+                               #     },
+                               #'butler_strip_2d' :
+                               #    {'from_dir' : 'testing/verification/flow/saturated/transient/butler_strip_2d',
+                               #     'dest_dir' : 'doc/user_guide/verification/confined_flow/butler_strip_2d',
+                               #     'index_entry' : 'butler_strip_2d/amanzi_butler_strip_2d.rst',
+                               #     },
+                               #'butler_pod_2d' :
+                               #    {'from_dir' : 'testing/verification/flow/saturated/transient/butler_pod_2d',
+                               #     'dest_dir' : 'doc/user_guide/verification/confined_flow/butler_pod_2d',
+                               #     'index_entry' : 'butler_pod_2d/amanzi_butler_pod_2d.rst',
+                               #     },
+                               #'boundedDomain_2d' :
+                               #    {'from_dir' : 'testing/verification/flow/saturated/transient/boundedDomain_2d',
+                               #     'dest_dir' : 'doc/user_guide/verification/confined_flow/boundedDomain_2d',
+                               #     'index_entry' : 'boundedDomain_2d/amanzi_boundedDomain_2d.rst',
+                               #     },
                                }
 
 
@@ -226,29 +226,21 @@ benchmark['transport']={'index_entry' : 'transport/index.rst',
 mycase={}
 mycase['index']={'index_title' : 'My Prototype Documentation',
                  'index_file' : 'doc/user_guide/mycase/index.rst',
-                 'index_list' : ['strip', 'pod', 'boundedDomain'],
-#                 'index_list' : ['strip', 'pod', 'boundedDomain', 'theis_isotropic'],
-             }
+                 'index_list' : ['linear_head_head', 
+                                 ],
+}
 
-mycase['strip']={'from_dir' : 'testing/verification/flow/saturated/transient/butler_strip_2d',
-                   'dest_dir' : 'doc/user_guide/mycase/butler_strip_2d',
-                   'index_entry' : 'butler_strip_2d/amanzi_butler_strip_2d.rst',
-             }
+mycase['linear_head_head']={'from_dir' : 'testing/verification/flow/saturated/steady-state/linear_head_head_1d',
+                            'dest_dir' : 'doc/user_guide/mycase/linear_head_head',
+                            'index_entry' : 'linear_head_head/amanzi_linear_head_head_1d.rst'
+                        }
 
-mycase['pod']={'from_dir' : 'testing/verification/flow/saturated/transient/butler_pod_2d',
-                   'dest_dir' : 'doc/user_guide/mycase/butler_pod_2d',
-                   'index_entry' : 'butler_pod_2d/amanzi_butler_pod_2d.rst',
-             }
+#mycase['linear_flux_head']={'from_dir' : 'testing/verification/flow/saturated/steady-state/linear_flux_head_1d',
+#                            'dest_dir' : 'doc/user_guide/verification/confined_flow/linear_flux_head',
+#                            'index_entry' : 'linear_flux_head/amanzi_linear_flux_head_1d.rst'
+#                        }
 
-mycase['boundedDomain']={'from_dir' : 'testing/verification/flow/saturated/transient/boundedDomain_2d',
-                   'dest_dir' : 'doc/user_guide/mycase/boundedDomain_2d',
-                   'index_entry' : 'boundedDomain_2d/amanzi_boundedDomain_2d.rst',
-             }
 
-#mycase['theis_isotropic']= {'from_dir' : 'testing/verification/flow/saturated/transient/theis_isotropic_1d',
-#                            'dest_dir' : 'doc/user_guide/verification/confined_flow/theis_isotropic',
-#                            'index_entry' : 'theis_isotropic/amanzi_theis_isotropic_1d.rst',
-#             }
 # =========================================================================================================================
 #
 #  Create parser and options

@@ -151,7 +151,7 @@ void OperatorDiffusionMFD::UpdateMatricesNewtonCorrection(
 
 /* ******************************************************************
 * Second-order reconstruction of little k inside mesh cells.
-* This member of DIVK-pamily of methods required to recalcualte all
+* This member of DIVK-pamily of methods requires to recalcualte all
 * mass matrices.
 ****************************************************************** */
 void OperatorDiffusionMFD::UpdateMatricesMixedWithGrad_(
@@ -696,7 +696,7 @@ void OperatorDiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
 {
   AmanziMesh::Entity_ID_List faces, nodes, cells;
 
-  global_op_->rhs()->PutScalarGhosted(0.);
+  global_op_->rhs()->PutScalarGhosted(0.0);
   Epetra_MultiVector& rhs_node = *global_op_->rhs()->ViewComponent("node", true);
 
   int nn(0), nm(0);
@@ -1185,7 +1185,6 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
     little_k_ = OPERATOR_LITTLE_K_DIVK_TWIN_GRAD;
   } else if (name == "divk: cell-face-twin") {  
     little_k_ = OPERATOR_LITTLE_K_DIVK_TWIN;  // for resolved simulation
-    ASSERT(false);
   } else {
     ASSERT(false);
   }

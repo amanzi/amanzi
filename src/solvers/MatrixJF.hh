@@ -39,7 +39,7 @@ class MatrixJF {
       fn_(fn) {
     map_ = Teuchos::rcp(new VectorSpace(map));
     r0_ = Teuchos::rcp(new Vector(*map_));
-    u0_ = Teuchos::rcp(new Vector(*map_));
+    // u0_ = Teuchos::rcp(new Vector(*map_));
 
     Init_();
   }
@@ -120,12 +120,8 @@ int MatrixJF<Vector,VectorSpace>::ApplyInverse(const Vector& b, Vector& x) const
 
 template<class Vector, class VectorSpace>
 void MatrixJF<Vector,VectorSpace>::set_linearization_point(const Teuchos::RCP<const Vector>& u) {
-  // std::cout << "setting lin point:" << std::endl;
-  // u->Print(std::cout);
-  *u0_ = *u;
+  u0_ = Teuchos::rcp_const_cast<Vector>(u);
   fn_->Residual(u0_, r0_);
-  // std::cout << "res( lin point ):" << std::endl;
-  // r0_->Print(std::cout);
 }
 
 

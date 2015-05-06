@@ -1,5 +1,5 @@
 ==============================================
-Amanzi XML Input Specification (Version 2.1.x)
+Amanzi XML Input Specification (Version 2.1.0)
 ==============================================
 
 .. contents:: **Table of Contents**
@@ -367,6 +367,22 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
 
 `"unstructured_controls`" contains options specific to the unstructured modes.  It has the following structure and elements
 
+  * `"unstr_flow_controls`" specifies numerical controls for the flow process kernal avaiable under the unstructured algorithm.  It has the following elements
+
+    * `"discretization_method`" specifies the spatial discretization method. Is has type "string" (options: fv-default, fv-monotone, fv-multi_point_flux_approximation, fv-extended_to_boundary_edges, mfd-default, mfd-optimized_for_sparsity, mfd-support_operator, mfd-optimized_for_monotonicity, mfd-two_point_flux_approximation)
+
+    * `"rel_perm_method`" defines a method for calculating the upwinded relative permeability. It has type "string" (options: upwind-darcy_velocity(default), upwind-gravity, upwind-amanzi, other-arithmetic_average, other-harmonic_average)
+
+    * `"preconditioning_strategy`" = "string" (options: linearized_operator(default), diffusion_operator)
+
+  * `"unstr_transport_controls`" specifies numerical controls for the transport process kernal avaiable under the unstructured algorithm.  It has the following elements
+
+    * `"algorithm`" = "string" (options: explicit first-order(default), explicit second-order, implicit upwind)
+
+    * `"sub_cycling`" = "string" (options: off(default), on)
+
+  * `"unstr_transport_controls`" specifies numerical controls for the flow process kernal avaiable under the unstructured algorithm.  It has the following elements
+
   * `"unstr_steady-state_controls`"  has the following elements
 
     * `"comments`" = "string" - SKIPPED
@@ -509,6 +525,8 @@ Structured_controls
 
 * `"structured_controls`" 
 
+  * `"petsc_options_file`"  is an element that specifies the name of a petsc control options file.  By default, the filename is .petsc and will be read in automatically if it exists.  This options allows the user to specify a file with an alternative name.
+  
   * `"str_steady-state_controls`"  has the following elements
   
     * `"max_pseudo_time`" = "exponential"
@@ -998,17 +1016,9 @@ Flow
 
       *  `"model`" = " richards | saturated | constant" 
 
-      *  `"discretization_method`" = "fv-default | fv-monotone | fv-multi_point_flux_approximation | fv-extended_to_boundary_edges | mfd-default | mfd-optimized_for_sparsity | mfd-support_operator | mfd-optimized_for_monotonicity | mfd-two_point_flux_approximation"
-
-      *  `"rel_perm_method`" = "upwind-darcy_velocity | upwind-gravity | upwind-amanzi | other-arithmetic_average | other-harmonic_average" 
-
 Currently three scenarios are available for calculated the flow field.  `"richards`" is a single phase, variably saturated flow assuming constant gas pressure.  `"saturated`" is a single phase, fully saturated flow.  `"constant`" is equivalent to the a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
 
-The attributes `"discretization_method`" and `"rel_perm_method`" are only relevant for the unstructured algorithm.
-
-`"discretization_method`" specifies the spatial discretization method. The available options options for the finite volume method: "fv-default", "fv-monotone", "fv-multi_point_flux_approximation", and "fv-extended_to_boundary_edges". The available option for the mimetic finite difference method are "mfd-default", "mfd-optimized_for_sparsity", "mfd-support_operator", "mfd-optimized_for_monotonicity", and "mfd-two_point_flux_approximation". The option "mfd-optimized_for_sparsity" cannot be applied to all meshes. When it is not acceptable, the discretization method falls back to "mfd-optimized_for_sparsity".
-
-`"rel_perm_method`" defines a method for calculating the upwinded relative permeability. The available options are:"upwind-darcy_velocity" (default), "upwind-gravity", "upwind-amanzi", "other-arithmetic_average"  and "other-harmonic_average".
+Note:  Unstructured options `"discretization_method`",  `"rel_perm_method`", and `"preconditioning_strategy`" have been moved to the `"unstr_flow_controls`" section under `"numerical_controls`"/
 
 Transport
 ---------
@@ -1017,11 +1027,9 @@ Transport
       
       * `"state`" = "on | off"
 
-      *  `"algorithm`" = " explicit first-order | explicit second-order | none " 
+For `"transport`" the `"state`" must be specified.  
 
-      * `"sub_cycling`" = "on | off"
-
-For `"transport`" a combination of `"state`" and `"algorithm`" must be specified.  If `"state`" is `"off`" then `"algorithm`" is set to `"none`".  Otherwise the integration algorithm must be specified.  Whether sub-cycling is to be utilized within the transport algorithm is also specified here.
+Note:  Unstructured options `"algorithm`" and `"sub_cycling`" have been moved to the `"unstr_transport_controls`" section under `"numerical_controls`"/
 
 Chemistry
 ---------
@@ -1044,7 +1052,7 @@ Some general discussion of the `"Phases`" section goes here.
 .. code-block:: xml
 
   <Phases>
-      Required Elements: liquid_phase
+      Required Elements: liquid_phase 
       Optional Elements: solid_phase
   </Phases>
 
@@ -1378,7 +1386,7 @@ The observation element identifies the field quantity to be observed.  Subelemen
 .. code-block :: xml
 
    <observation_type>
-     Required Elements: assigned_region, functional, time_macro 
+     Required Elements: assigned_region, functional, time_macros 
      Optional Elements: NONE
    </observation_type>
 
@@ -1396,17 +1404,17 @@ Example:
 	<aqueous_pressure>
 	  <assigned_regions>Obs_r1</assigned_regions>
 	  <functional>point</functional>
-	  <time_macro>Observation Times</time_macro>
+	  <time_macros>Observation Times</time_macros>
 	</aqueous_pressure>
 	<aqueous_pressure>
 	  <assigned_regions>Obs_r2</assigned_regions>
 	  <functional>point</functional>
-	  <time_macro>Observation Times</time_macro>
+	  <time_macros>Observation Times</time_macros>
 	</aqueous_pressure>
 	<aqueous_pressure>
 	  <assigned_regions>Obs_r2</assigned_regions>
 	  <functional>point</functional>
-	  <time_macro>Observation Times</time_macro>
+	  <time_macros>Observation Times</time_macros>
 	</aqueous_pressure>
       </liquid_phase>
 
@@ -1436,8 +1444,24 @@ Example:
      <cycle_macro>Every_100_steps</cycle_macro>
   </walkabout>
 
+Misc
+====
+
+This section includes a collection of miscellaneous global options, specified as root tags.  Each of these options has a default behavior that will occur if the parameter is omitted.  If the parameter appears with no attributes specified, the default values for the attributes will be assumed.
+
+.. code-block:: xml
+
+  <echo_translated_input format="some tag" file_name="some name"/>
+
+* Write the input data after internal translation.  There are two specifyable attributes, `"format`" and `"file_name`".  If this parameter is omitted, no translated files are written.
+
+  * `"format`" is a specific format tag, and can be `"v1`" (DEFAULT) or `"native`".  The actual format created for the `"native`" tag will depend on the value of the `"type`" specified under `"amanzi_input`" (see above).
+
+  * `"file_name`" is the name of the translated output file.  If `"format`" = `"v1`", then `"file_name`" defaults to `"XXX_oldspec.xml`", where `"XXX.xml`" is the name of the original Amanzi input file.  If `"format`" = `"native`", then `"file_name`" defaults to `"translated_inpus.xml`".
+
+
 Full Example
-------------
+============
 
 .. code-block:: xml
 
@@ -1453,6 +1477,7 @@ Full Example
         <conc_unit>molar</conc_unit>
       </units>
     </model_description>
+    <echo_translated_input format="v1" file_name="my_translated_input.xml">
     <definitions>
       <macros>
         <time_macro name="time macro">

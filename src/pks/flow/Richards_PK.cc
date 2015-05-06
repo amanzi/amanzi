@@ -34,6 +34,7 @@
 // Flow
 #include "DarcyVelocityEvaluator.hh"
 #include "Flow_BC_Factory.hh"
+#include "PorosityModelEvaluator.hh"
 #include "RelPermEvaluator.hh"
 #include "Richards_PK.hh"
 #include "VWContentEvaluator.hh"
@@ -215,7 +216,23 @@ void Richards_PK::Setup()
   if (!S_->HasField("porosity")) {
     S_->RequireField("porosity", "porosity")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireFieldEvaluator("porosity");
+
+    Teuchos::RCP<Teuchos::ParameterList> physical_models = 
+        Teuchos::sublist(rp_list_, "physical models and assumptions");
+    std::string pom_name = physical_models->get<std::string>("porosity model", "constant porosity");
+
+    if (pom_name == "compressible: pressure function") {
+      Teuchos::RCP<Teuchos::ParameterList>
+          pom_list = Teuchos::sublist(rp_list_, "porosity models", true);
+      Teuchos::RCP<PorosityModelPartition> pom = CreatePorosityModelPartition(mesh_, pom_list);
+
+      Teuchos::ParameterList elist;
+      // elist.sublist("VerboseObject").set<std::string>("Verbosity Level", "extreme");
+      Teuchos::RCP<PorosityModelEvaluator> eval = Teuchos::rcp(new PorosityModelEvaluator(elist, pom));
+      S_->SetFieldEvaluator("porosity", eval);
+    } else {
+      S_->RequireFieldEvaluator("porosity");
+    }
   }
 
   // -- viscosity: if not requested by any PK, we request its constant value.
@@ -353,7 +370,8 @@ void Richards_PK::Initialize()
   if (upw_upd == "every nonlinear iteration") update_upwind = FLOW_UPWIND_UPDATE_ITERATION;
   else update_upwind = FLOW_UPWIND_UPDATE_TIMESTEP;  
 
-  // coupling with other physical PKs
+  // models and assumptions
+  // -- coupling with other physical PKs
   Teuchos::RCP<Teuchos::ParameterList> physical_models = 
       Teuchos::sublist(rp_list_, "physical models and assumptions");
   vapor_diffusion_ = physical_models->get<bool>("vapor diffusion", false);

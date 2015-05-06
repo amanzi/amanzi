@@ -34,7 +34,7 @@ TEST(MSTK_EXTFACE_MAP_4P)
   MPI_Comm_size(MPI_COMM_WORLD,&size);
   CHECK_EQUAL(4,size);
 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_ss.exo",comm.get(),3));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo",comm.get(),3));
 
   Epetra_Map face_map(mesh->face_map(false));
   Epetra_Map extface_map(mesh->exterior_face_map());

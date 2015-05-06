@@ -735,7 +735,14 @@ Physical models and assumptions
 
 This list is used to summarize physical models and assumptions, such as
 coupling with other PKs.
-This list is often generated on a fly by a high-level MPC PK.
+This list is often generated or extended by a high-level MPC PK.
+
+In the code development, this list plays a two-fold role. 
+First, it provides necessary information for coupling different PKs such 
+as flags for adding a vapor diffusion to Richards' equations.
+Second, developers may use it instead of a factory of evaluators such as
+creation of primary and secondary evaluators for rock porosity models.
+Combination of both approaches may lead to a more efficient code.
 
 * `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
   e.g. by EnergyFlow PK. The default value is `"false`".
@@ -746,6 +753,10 @@ This list is often generated on a fly by a high-level MPC PK.
 * `"viscosity model`" [string] changes the evaluator for liquid viscosity.
   Available options are `"generic`" and `"constant viscosity`" (default).
 
+* `"porosity model`" [string] specifies an isothermal porosity model.
+  Available options are `"compressible: storativity coefficient`",
+  `"compressible: pressure function`", and `"constant porosity`" (default).
+
 .. code-block:: xml
 
    <ParameterList name="Richards problem">  <!-- parent list -->
@@ -753,6 +764,7 @@ This list is often generated on a fly by a high-level MPC PK.
        <Parameter name="vapor diffusion" type="bool" value="false"/>
        <Parameter name="water content model" type="string" value="constant density"/>
        <Parameter name="viscosity model" type="string" value="constant viscosity"/>
+       <Parameter name="porosity model" type="string" value="compressible: pressure function"/>
      </ParameterList>
    </ParameterList>
 
@@ -766,10 +778,10 @@ This list is required for `"Richards problem`" only.
  
 The water retention models are associated with non-overlapping regions. Each of the sublists (e.g. `"Soil 1`") 
 includes a few mandatory parameters: region name, model name, and parameters for the selected model.
-The later is used only to set up a simple analytic solution for convergence study. 
 
 * `"water retention model`" [string] specifies a model for the soil.
   The available models are `"van Genuchten`", `"Brooks Corey`", and `"fake`". 
+  The later is used only to set up a simple analytic solution for convergence study. 
 
   * The model `"van Genuchten`" requires `"van Genuchten alpha`" [double],
     `"van Genuchten m`" [double], `"van Genuchten l`" [double], `"residual saturation`" [double],
@@ -832,6 +844,47 @@ if the list `"output`" is provided. This list has two mandatory parameters:
    </ParameterList>
 
 In this example, we define two different water retention models in two soils.
+
+
+Porosity models
+...............
+
+User defines porosity models in sublist `"porosity models`". 
+It contains as many sublists, e.g. `"SOIL_1`", `"SOIL_2`", etc, as there are different soils. 
+
+The porosity models are associated with non-overlapping regions. Each of the sublists (e.g. `"Soil 1`") 
+includes a few mandatory parameters: region name, model name, and parameters for the selected model.
+
+* `"porosity model`" [string] specifies a model for the soil.
+  The available models are `"compressible`" and `"constant`". 
+
+  * The model `"compressible`" requires `"undeformed soil porosity"`" [double],
+    `"reference pressure`" [double], and `"pore compressibility`" [string].
+    Default value for `"reference pressure`" is 101325.0 [Pa].
+
+  * The model `"constant`" requires `"value`" [double].
+
+.. code-block:: xml
+
+   <ParameterList name="Richards problem">  <!-- parent list -->
+     <ParameterList name="porosity models">
+       <ParameterList name="SOIL_1">
+         <Parameter name="region" type="string" value="TOP HALF"/>
+         <Parameter name="porosity model" type="string" value="constant"/>
+         <Parameter name="value" type="double" value="0.2"/>
+       </ParameterList>
+
+       <ParameterList name="SOIL_2">
+         <Parameter name="region" type="string" value="BOTTOM HALF"/>
+         <Parameter name="porosity model" type="string" value="compressible"/>
+         <Parameter name="undeformed soil porosity" type="double" value="0.2"/>
+         <Parameter name="reference pressure" type="double" value="101325.0"/>
+         <Parameter name="pore compressibility" type="double" value="1e-8"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
+In this example, we define two different porosity models in two soils.
 
 
 Diffusion operators

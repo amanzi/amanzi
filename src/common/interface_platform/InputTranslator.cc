@@ -131,11 +131,15 @@ Teuchos::ParameterList translate(const std::string& xmlfilename) {
   new_list.sublist("Boundary Conditions") = get_boundary_conditions(doc, def_list);
   new_list.sublist("Sources") = get_sources(doc, def_list);
   new_list.sublist("Output") = get_output(doc, def_list);
+  
   // hack to go back and add chemistry list (not geochemistry, for kd problem)
   if ( def_list.isSublist("Chemistry") ) {
     new_list.sublist("Chemistry") = def_list.sublist("Chemistry");
   } else { 
     new_list.sublist("Chemistry") = make_chemistry(def_list);
+  }
+  
+  if (def_list.isParameter("petsc_options_file")) {
   }
 
   delete errorHandler;
@@ -932,80 +936,6 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
         else {
           throw_error_illformed("process_kernels", "state", "flow");
         }
-        // EIB: stubbing in for feature in spec, but not yet in schema
-        if (flowElement->hasAttribute((XMLString::transcode("discretization_method")))) {
-          textContent = XMLString::transcode(flowElement->getAttribute(XMLString::transcode("discretization_method")));
-          std::string discr_method;
-          if (strcmp(textContent,"fv-default")==0) {
-            discr_method.append("FV: Default");
-          }
-          else if (strcmp(textContent,"fv-monotone")==0) {
-            discr_method.append("FV: Monotone");
-          }
-          else if (strcmp(textContent,"fv-multi_point_flux_approximation")==0) {
-            discr_method.append("FV: Multi-Point Flux Approximation");
-          }
-          else if (strcmp(textContent,"fv-extended_to_boundary_edges")==0) {
-            discr_method.append("FV: Extended to Boundary Edges");
-          }
-          else if (strcmp(textContent,"mfd-default")==0) {
-            discr_method.append("MFD: Default");
-          }
-          else if (strcmp(textContent,"mfd-optimized_for_sparsity")==0) {
-            discr_method.append("MFD: Optimized for Sparsity");
-          }
-          else if (strcmp(textContent,"mfd-support_operator")==0) {
-            discr_method.append("MFD: Support Operator");
-          }
-          else if (strcmp(textContent,"mfd-optimized_for_monotonicity")==0) {
-            discr_method.append("MFD: Optimized for Monotonicity");
-          }
-          else if (strcmp(textContent,"mfd-two_point_flux_approximation")==0) {
-            discr_method.append("MFD: Two-Point Flux Approximation");
-          }
-          fpkPL.set<std::string>("Discretization Method",discr_method.c_str());
-          XMLString::release(&textContent);
-        }
-        // EIB: stubbing in for feature in spec, but not yet in schema
-        if (flowElement->hasAttribute((XMLString::transcode("rel_perm_method")))) {
-          textContent = XMLString::transcode(flowElement->getAttribute(XMLString::transcode("rel_perm_method")));
-          std::string rel_perm_method;
-          if (strcmp(textContent,"upwind-gravity")==0) {
-            rel_perm_method.append("Upwind: Gravity");
-          }
-          else if (strcmp(textContent,"upwind-darcy_velocity")==0) {
-            rel_perm_method.append("Upwind: Darcy Velocity");
-          }
-          else if (strcmp(textContent,"upwind-amanzi")==0) {
-            rel_perm_method.append("Upwind: Amanzi");
-          }
-          else if (strcmp(textContent,"other-arithmetic_average")==0) {
-            rel_perm_method.append("Other: Arithmetic Average");
-          }
-          else if (strcmp(textContent,"other-harmonic_average")==0) {
-            rel_perm_method.append("Other: Harmonic Average");
-          }
-          fpkPL.set<std::string>("Relative Permeability",rel_perm_method.c_str());
-          XMLString::release(&textContent);
-        }
-        // EIB: stubbing in for feature in spec, but not yet in schema
-        if (flowElement->hasAttribute((XMLString::transcode("atmospheric_pressure")))) {
-          textContent = XMLString::transcode(flowElement->getAttribute(XMLString::transcode("atmospheric_pressure")));
-          fpkPL.set<double>("atmospheric pressure",get_double_constant(textContent,*def_list));
-          XMLString::release(&textContent);
-        }
-        if (flowElement->hasAttribute((XMLString::transcode("preconditioning_strategy")))) {
-          textContent = XMLString::transcode(flowElement->getAttribute(XMLString::transcode("preconditioning_strategy")));
-          std::string op;
-          if (strcmp(textContent,"diffusion_operator")==0) {
-            op.append("Diffusion Operator");
-          }
-          else if (strcmp(textContent,"linearized_operator")==0) {
-            op.append("Linearized Operator");
-          }
-          fpkPL.set<std::string>("Preconditioning Strategy",op.c_str());
-          XMLString::release(&textContent);
-        }
       }
       else {
         throw_error_illformed("process_kernels", "element", "flow");
@@ -1025,35 +955,6 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
           list.set<std::string>("Transport Model","On");
           transportON=true;
         }
-        XMLString::release(&textContent);
-      }
-      if (transElement->hasAttribute((XMLString::transcode("algorithm")))) {
-        textContent = XMLString::transcode(transElement->getAttribute(XMLString::transcode("algorithm")));
-        if (strcmp(textContent,"explicit first-order")==0) {
-          tpkPL.set<std::string>("Transport Integration Algorithm","Explicit First-Order");
-        }
-        else if (strcmp(textContent,"explicit second-order")==0) {
-          tpkPL.set<std::string>("Transport Integration Algorithm","Explicit Second-Order");
-        }
-        else if (strcmp(textContent,"none")==0) {
-          tpkPL.set<std::string>("Transport Integration Algorithm","None");
-        }
-        XMLString::release(&textContent);
-      }
-      if (transElement->hasAttribute((XMLString::transcode("sub_cycling")))) {
-        textContent = XMLString::transcode(transElement->getAttribute(XMLString::transcode("sub_cycling")));
-        if (strcmp(textContent,"on")==0) {
-          tpkPL.set<bool>("transport subcycling",true);
-        }
-        else  {
-          tpkPL.set<bool>("transport subcycling",false);
-        }
-        XMLString::release(&textContent);
-      }
-      // EIB: stubbing in for feature in spec, but not yet in schema
-      if (transElement->hasAttribute((XMLString::transcode("cfl")))) {
-        textContent = XMLString::transcode(transElement->getAttribute(XMLString::transcode("cfl")));
-        tpkPL.set<double>("CFL",atof(textContent));
         XMLString::release(&textContent);
       }
 
@@ -1851,8 +1752,131 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
         for(int j=0; j<childList->getLength(); j++) {
           DOMNode* tmpNode = childList->item(j) ;
           if (DOMNode::ELEMENT_NODE == tmpNode->getNodeType()) {
-            char* nodeName = XMLString::transcode(tmpNode->getNodeName());
-            if (strcmp(nodeName,"unstr_steady-state_controls")==0) {
+            std::string nodeName(std::string(XMLString::transcode(tmpNode->getNodeName())));
+            if (nodeName == "unstr_flow_controls") {
+              DOMNodeList* children = tmpNode->getChildNodes();
+              for (int k=0; k<children->getLength(); k++) {
+                DOMNode* currentNode = children->item(k) ;
+                if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
+                  std::string elemName(std::string(XMLString::transcode(currentNode->getNodeName())));
+                  if (elemName,"discretization_method") {
+                    std::string textValue(std::string(XMLString::transcode(currentNode->getTextContent())));
+                    std::string discr_method;
+                    if (textValue == "fv-default") {
+                      discr_method.append("FV: Default");
+                    }
+                    else if (textValue == "fv-monotone") {
+                      discr_method.append("FV: Monotone");
+                    }
+                    
+                    else if (textValue == "fv-multi_point_flux_approximation") {
+                      discr_method.append("FV: Multi-Point Flux Approximation");
+                    }
+                    
+                    else if (textValue == "fv-extended_to_boundary_edges") {
+                      discr_method.append("FV: Extended to Boundary Edges");
+                    }
+                    else if (textValue == "mfd-default") {
+                      discr_method.append("MFD: Default");
+                    }
+                    else if (textValue == "mfd-optimized_for_sparsity") {
+                      discr_method.append("MFD: Optimized for Sparsity");
+                    }
+                    else if (textValue == "mfd-support_operator") {
+                      discr_method.append("MFD: Support Operator");
+                    }
+                    else if (textValue == "mfd-optimized_for_monotonicity") {
+                      discr_method.append("MFD: Optimized for Monotonicity");
+                    }
+                    else if (textValue == "mfd-two_point_flux_approximation") {
+                      discr_method.append("MFD: Two-Point Flux Approximation");
+                    }
+                    fpkPL.set<std::string>("Discretization Method",discr_method.c_str());
+                    XMLString::release(&textContent);
+                  }
+                  else if (elemName,"rel_perm_method") {
+                    std::string textValue(std::string(XMLString::transcode(currentNode->getTextContent())));
+                    std::string rel_perm_method("upwind-darcy_velocity");
+                    if (textValue == "upwind-gravity") {
+                      rel_perm_method = "Upwind: Gravity";
+                    }
+                    else if (textValue == "upwind-darcy_velocity") {
+                      rel_perm_method = "Upwind: Darcy Velocity";
+                    }
+                    else if (textValue == "upwind-amanzi") {
+                      rel_perm_method = "Upwind: Amanzi";
+                    }
+                    else if (textValue == "other-arithmetic_average") {
+                      rel_perm_method = "Other: Arithmetic Average";
+                    }
+                    
+                    else if (textValue == "other-harmonic_average") {
+                      rel_perm_method = "Other: Harmonic Average";
+                    }
+                    fpkPL.set<std::string>("Relative Permeability",rel_perm_method.c_str());
+                    XMLString::release(&textContent);
+
+                  }
+                  else if (elemName,"atmospheric_pressure") {
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    fpkPL.set<double>("atmospheric pressure",get_double_constant(textContent,*def_list));
+                    XMLString::release(&textContent);
+                  }
+                  else if (elemName,"preconditioning_strategy") {
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    std::string textValue(std::string(textContent));
+                    std::string op("linearized_operator");
+                    if (strcmp(textContent,"diffusion_operator")==0) {
+                      op = "Diffusion Operator";
+                    }
+                    else if (strcmp(textContent,"linearized_operator")==0) {
+                      op = "Linearized Operator";
+                    }
+                    fpkPL.set<std::string>("Preconditioning Strategy",op.c_str());
+                    XMLString::release(&textContent);
+                  }
+                }
+              }
+            }
+            else if (nodeName == "unstr_transport_controls") {
+              DOMNodeList* children = tmpNode->getChildNodes();
+              for (int k=0; k<children->getLength(); k++) {
+                DOMNode* currentNode = children->item(k) ;
+                if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
+                  std::string elemName(std::string(XMLString::transcode(currentNode->getNodeName())));
+                  if (elemName == "algorithm") {
+                    std::string textValue(std::string(XMLString::transcode(currentNode->getTextContent())));
+                    std::string algo("explicit first-order");
+                    if (textValue == "explicit first-order") {
+                      algo = "Explicit First-Order";
+                    }
+                    else if (textValue == "explicit second-order") {
+                      algo = "Explicit Second-Order";
+                    }
+                    else if (strcmp(textContent,"none")==0) {
+                      algo = "None";
+                    }
+                    tpkPL.set<std::string>("Transport Integration Algorithm",algo.c_str());
+                  }
+                  else if (elemName == "sub_cycling") {
+                    std::string textValue(std::string(XMLString::transcode(currentNode->getTextContent())));
+                    tpkPL.set<bool>("transport subcycling",false);
+                    if (textValue == "on") {
+                      tpkPL.set<bool>("transport subcycling",true);
+                    }
+                    else {
+                      tpkPL.set<bool>("transport subcycling",false);
+                    }
+                  }
+                  else if (elemName == "cfl") {
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    tpkPL.set<double>("CFL",atof(textContent));
+                    XMLString::release(&textContent);
+                  }
+                }
+              }
+            }
+            else if (nodeName == "unstr_steady-state_controls") {
             // loop through children and deal with them
             DOMNodeList* children = tmpNode->getChildNodes();
             for (int k=0; k<children->getLength(); k++) {
@@ -2002,7 +2026,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 
             //list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Implicit Time Integration") = ssPL;
 	  }
-            else if (strcmp(nodeName,"unstr_transient_controls")==0) {
+            else if (nodeName == "unstr_transient_controls") {
 	    // check for incr/red factors from execution_controls first
 	    // grab integration method, then loop through it's attributes
             DOMElement* tcElement = static_cast<DOMElement*>(tmpNode);
@@ -2211,7 +2235,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
             }
             //list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Transient Implicit Time Integration") = tcPL;
           }
-            else if (strcmp(nodeName,"unstr_nonlinear_solver")==0) {
+            else if (nodeName == "unstr_nonlinear_solver") {
             Teuchos::ParameterList nlPL;
             attrMap = tmpNode->getAttributes();
             nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
@@ -2234,7 +2258,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
             XMLString::release(&textContent);
             list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlPL;
           }
-            else if (strcmp(nodeName,"unstr_linear_solver")==0) {
+            else if (nodeName == "unstr_linear_solver") {
               Teuchos::ParameterList lsPL;
               Teuchos::ParameterList pcPL;
               bool usePCPL=false;
@@ -2395,7 +2419,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
               if (usePCPL)
                 list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Preconditioners") = pcPL;
             }
-            else if (strcmp(nodeName,"nonlinear_solver")==0) {
+            else if (nodeName == "nonlinear_solver") {
             // EIB: creating sub for section that doesn't actually exist yet in the New Schema, but does in the Input Spec
             Teuchos::ParameterList nlsPL;
             DOMNodeList* children = tmpNode->getChildNodes();
@@ -2412,7 +2436,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 	      }
             list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlsPL;
           }
-            else if (strcmp(nodeName,"unstr_chemistry_controls")==0) {
+            else if (nodeName == "unstr_chemistry_controls") {
             Teuchos::ParameterList chemistryPL;
             // go ahead and add bdg file to PL
             // build bgd filename
@@ -2970,6 +2994,14 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
             else if (strcmp(nodeName,"max_n_subcycle_transport")==0) {
               textContent = XMLString::transcode(tmpNode->getTextContent());
               expertPL.set<int>("max_n_subcycle_transport",get_int_constant(textContent,*def_list));
+              XMLString::release(&textContent);
+            }
+            else if (strcmp(nodeName,"petsc_options_file")==0) {
+              // This specifies the name of the file containing petsc options
+              // The default filename ".petsc" is found automatically
+              // Utilize this option if the file uses an alternative name
+              textContent = XMLString::transcode(tmpNode->getTextContent());
+              def_list->set<std::string>("petsc_options_file",trim_string(textContent));
               XMLString::release(&textContent);
             }
           }
@@ -3786,719 +3818,6 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
       }
       
       XMLString::release(&nodeName);
-      // add region to new xml
-      
-      /////////
-      /*
-      if  (strcmp(tagName,"region") == 0){
-	attrMap = cur->getAttributes();
-        nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-	if (nodeAttr) {
-          regName = XMLString::transcode(nodeAttr->getNodeValue());
-          haveName = true;
-	} else {
-          throw_error_missattr("Regions","attribute","name","region");
-	}
-        
-	// deal with children: comments, box/file
-        DOMNodeList* kids = cur->getChildNodes();
-        for (int j=0; j<kids->getLength(); j++) {
-          DOMNode* curKid = kids->item(j) ;
-          if (DOMNode::ELEMENT_NODE == curKid->getNodeType()) {
-            nodeName  = XMLString::transcode(curKid->getNodeName());
-	    
-            if  (strcmp(nodeName,"box") == 0){
-              
-              // add region name to array of region names
-              if (reg_names.isParameter(regName)) {
-                // warn, region of this name already exists, overwriting
-              } else {
-                reg_names.set<std::string>(regName,"box");
-                regionNames_string_.append(regName);
-              }
-              
-	      attrMap = curKid->getAttributes();
-              nodeAttr = attrMap->getNamedItem(XMLString::transcode("low_coordinates"));
-	      if (nodeAttr) {
-                textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-	      } else {
-                throw_error_missattr("Regions","attribute","low_coordinates","box");
-	      }
-
-	      Teuchos::Array<double> low = make_coordinates(textContent2, *def_list);
-              list.sublist(regName).sublist("Region: Box").set<Teuchos::Array<double> >("Low Coordinate",low);
-	      XMLString::release(&textContent2);
-              nodeAttr = attrMap->getNamedItem(XMLString::transcode("high_coordinates"));
-              if (nodeAttr) {
-                textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-	      } else {
-                throw_error_missattr("Regions","attribute","high_coordinates","box");
-	      }
-	      Teuchos::Array<double> high = make_coordinates(textContent2,* def_list);
-              list.sublist(regName).sublist("Region: Box").set<Teuchos::Array<double> >("High Coordinate",high);
-	      XMLString::release(&textContent2);
-	    }
-            else if  (strcmp(nodeName,"plane") == 0){
-              
-              // add region name to array of region names
-              if (reg_names.isParameter(regName)) {
-                // warn, region of this name already exists, overwriting
-              } else {
-                reg_names.set<std::string>(regName,"plane");
-                regionNames_string_.append(regName);
-              }
-              
-	      attrMap = curKid->getAttributes();
-              nodeAttr = attrMap->getNamedItem(XMLString::transcode("location"));
-              if (nodeAttr) {
-                textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-	      } else {
-                throw_error_missattr("Regions","attribute","location","plane");
-	      }
-	      Teuchos::Array<double> loc = make_coordinates(textContent2, *def_list);
-              list.sublist(regName).sublist("Region: Plane").set<Teuchos::Array<double> >("Location",loc);
-              nodeAttr = attrMap->getNamedItem(XMLString::transcode("normal"));
-              if (nodeAttr) {
-                textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-	      } else {
-                throw_error_missattr("Regions","attribute","normal","plane");
-	      }
-	      Teuchos::Array<double> dir = make_coordinates(textContent2, *def_list);
-              list.sublist(regName).sublist("Region: Plane").set<Teuchos::Array<double> >("Direction",dir);
-	      XMLString::release(&textContent2);
-	    }
-            else if  (strcmp(nodeName,"region_file") == 0){
-	      //TODO: EIB - add file
-	      Teuchos::ParameterList rfPL;
-	      attrMap = curKid->getAttributes();
-              
-              // add region name to array of region names
-              if (reg_names.isParameter(regName)) {
-                // warn, region of this name already exists, overwriting
-              } else {
-                reg_names.set<std::string>(regName,"region_file");
-                regionNames_string_.append(regName);
-              }
-              
-              nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-              if (nodeAttr) {
-                textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-	      } else {
-                throw_error_missattr("Regions","attribute","name","region_file");
-	      }
-	      rfPL.set<std::string>("File",trim_string(textContent2));
-	      XMLString::release(&textContent2);
-              
-              nodeAttr = attrMap->getNamedItem(XMLString::transcode("type"));
-              if (nodeAttr) {
-                textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-	      } else {
-                throw_error_missattr("Regions","attribute","type","region_file");
-	      }
-              if  (strcmp(textContent2,"color") == 0){
-                nodeAttr = attrMap->getNamedItem(XMLString::transcode("label"));
-                char* value;
-		if (nodeAttr) {
-                  value = XMLString::transcode(nodeAttr->getNodeValue());
-	        } else {
-                  throw_error_missattr("Regions","attribute","label","color");
-	        }
-	        rfPL.set<int>("Value",atoi(value));
-	        XMLString::release(&value);
-                list.sublist(regName).sublist("Region: Color Function") = rfPL;
-	      }
-              else if  (strcmp(textContent2,"labeled set") == 0){
-                nodeAttr = attrMap->getNamedItem(XMLString::transcode("label"));
-                char* value ;
-		if (nodeAttr) {
-                  value = XMLString::transcode(nodeAttr->getNodeValue());
-	        } else {
-                  throw_error_missattr("Regions","attribute","label","labeled set");
-	        }
-	        rfPL.set<std::string>("Label",trim_string(value));
-	        XMLString::release(&value);
-                
-                nodeAttr = attrMap->getNamedItem(XMLString::transcode("format"));
-		if (nodeAttr) {
-                  value = XMLString::transcode(nodeAttr->getNodeValue());
-	        } else {
-                  throw_error_missattr("Regions","attribute","format","labeled set");
-	        }
-	        if  (strcmp(value,"exodus ii") == 0){
-	          rfPL.set<std::string>("Format","Exodus II");
-		}
-	        XMLString::release(&value);
-                
-                nodeAttr = attrMap->getNamedItem(XMLString::transcode("entity"));
-		if (nodeAttr) {
-                  value = XMLString::transcode(nodeAttr->getNodeValue());
-	        } else {
-                  throw_error_missattr("Regions","attribute","entity","labeled set");
-	        }
-	        rfPL.set<std::string>("Entity",trim_string(value));
-	        XMLString::release(&value);
-                
-                list.sublist(regName).sublist("Region: Labeled Set") = rfPL;
-	      }
-	      XMLString::release(&textContent2);
-            }
-            else if  (strcmp(nodeName,"point") == 0){
-              attrMap = curKid->getAttributes();
-              nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-              if (nodeAttr) {
-                regName = XMLString::transcode(nodeAttr->getNodeValue());
-              } else {
-                if (!haveName)
-                  throw_error_missattr("Regions","attribute","name","point");
-              }
-         
-              // add region name to array of region names
-              if (reg_names.isParameter(regName)) {
-                // warn, region of this name already exists, overwriting
-              } else {
-                reg_names.set<std::string>(regName,"point");
-                regionNames_string_.append(regName);
-              }
-         
-              nodeAttr = attrMap->getNamedItem(XMLString::transcode("coordinate"));
-              if (nodeAttr) {
-                textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-              } else {
-                throw_error_missattr("Regions","attribute","coordinate","point");
-              }
-         
-              Teuchos::Array<double> coord = make_coordinates(textContent2, *def_list);
-              list.sublist(regName).sublist("Region: Point").set<Teuchos::Array<double> >("Coordinate",coord);
-              XMLString::release(&textContent2);
-            }
-            else if  (strcmp(nodeName,"polygonal_surface") == 0){
-              if (!isUnstr_) {
-                throw_error_str_ustr("Regions", tagName, "Unstructured");
-              }
-              // get attribute: name
-              attrMap = curKid->getAttributes();
-              nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-              if (nodeAttr) {
-                regName = XMLString::transcode(nodeAttr->getNodeValue());
-              } else {
-                if (!haveName)
-                  throw_error_missattr("Regions","attribute","name","polygonal_surface");
-              }
-              // add region name to array of region names
-              if (reg_names.isParameter(regName)) {
-                // warn, region of this name already exists, overwriting
-              } else {
-                reg_names.set<std::string>(regName,"polygonal_surface");
-                regionNames_string_.append(regName);
-              }
-              
-              // if attribute 'num_points' exists, get it
-              int num_points(-1);
-              int pt_cnt(0);
-              attrMap = cur->getAttributes();
-              nodeAttr = attrMap->getNamedItem(XMLString::transcode("num_points"));
-              if (nodeAttr) {
-                textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-                std::string str(textContent2);
-                boost::algorithm::trim(str);
-                num_points = atoi(textContent2);
-                list.sublist(regName).sublist("Region: Polygonal Surface").set<int>("Number of points",num_points);
-                XMLString::release(&textContent2);
-              }
-              // get verticies (add count them)
-              Teuchos::Array<Teuchos::Array<double> > points;
-              DOMNodeList* gkids = curKid->getChildNodes();
-              for (int j=0; j<gkids->getLength(); j++) {
-                DOMNode* curGKid = gkids->item(j) ;
-                if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
-                  nodeName  = XMLString::transcode(curGKid->getNodeName());
-                  if  (strcmp(nodeName,"point") == 0){
-                    textContent2 = XMLString::transcode(curKid->getNodeValue());
-                    Teuchos::Array<double> point = make_coordinates(textContent2, *def_list);
-                    points.append(point);
-                    pt_cnt++;
-                    XMLString::release(&textContent2);
-                  }
-                }
-              }
-              list.sublist(regName).sublist("Region: Polygonal Surface").set<Teuchos::Array<Teuchos::Array<double> > >("Points",points);
-              // check that 'num_points' with current count
-              if (!list.sublist(regName).sublist("Region: Polygonal Surface").isParameter("Number of points")) {
-                list.sublist(regName).sublist("Region: Polygonal Surface").set<int>("Number of points",pt_cnt);
-              }
-            }
-            else if  (strcmp(nodeName,"logical") == 0){
-              if (!isUnstr_) {
-                throw_error_str_ustr("Regions", tagName, "Unstructured");
-              }
-              // get attribute: name
-              attrMap = cur->getAttributes();
-              nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-              if (nodeAttr) {
-                regName = XMLString::transcode(nodeAttr->getNodeValue());
-              } else {
-                if (!haveName)
-                  throw_error_missattr("Regions","attribute","name","logical");
-              }
-              // add region name to array of region names
-              if (reg_names.isParameter(regName)) {
-                // warn, region of this name already exists, overwriting
-              } else {
-                reg_names.set<std::string>(regName,"logical");
-                regionNames_string_.append(regName);
-              }
-         
-              // loop over children to get operation and region list
-              DOMNodeList* gkids = curKid->getChildNodes();
-              for (int j=0; j<gkids->getLength(); j++) {
-                DOMNode* curGKid = gkids->item(j) ;
-                if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
-                  nodeName  = XMLString::transcode(curGKid->getNodeName());
-                  if  (strcmp(nodeName,"operation") == 0){
-                    textContent2 = XMLString::transcode(curGKid->getTextContent());
-                    if ( strcmp(textContent2,"union") == 0) {
-                      list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Union");
-                    }
-                    else if (strcmp(textContent2,"intersection") == 0) {
-                      list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Intersection");
-                    }
-                    else if (strcmp(textContent2,"subtraction") == 0) {
-                      list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Subtraction");
-                    }
-                    else if (strcmp(textContent2,"complement") == 0) {
-                      list.sublist(regName).sublist("Region: Logical").set<std::string>("Operation","Complement");
-                    }
-                    XMLString::release(&textContent2);
-                  }
-                  else if (strcmp(nodeName,"region_list") == 0) {
-                    textContent2 = XMLString::transcode(curGKid->getTextContent());
-                    Teuchos::Array<std::string> regs = make_regions_list(textContent2);
-                    list.sublist(regName).sublist("Region: Logical").set<Teuchos::Array<std::string> >("Regions",regs);
-                    XMLString::release(&textContent2);
-                  }
-                }
-              }
-            }
-            else if  (strcmp(nodeName,"polygon") == 0){
-              if (isUnstr_) {
-                throw_error_str_ustr("Regions", tagName, "Structured");
-              }
-              if (dimension_ != 2) {
-                Errors::Message msg;
-                msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing Regions - " ;
-                msg << "Regions type 'polygon' is only available for 2D. \n" ;
-                  msg << "  Please correct and try again \n" ;
-              Exceptions::amanzi_throw(msg);
-              }
-              // get attribute: name
-              attrMap = cur->getAttributes();
-              nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-              if (nodeAttr) {
-                regName = XMLString::transcode(nodeAttr->getNodeValue());
-              } else {
-                if (!haveName)
-                  throw_error_missattr("Regions","attribute","name","polygon");
-              }
-              // add region name to array of region names
-              if (reg_names.isParameter(regName)) {
-                // warn, region of this name already exists, overwriting
-              } else {
-                reg_names.set<std::string>(regName,"polygon");
-                regionNames_string_.append(regName);
-              }
-         
-              // get verticies (add count them)
-              Teuchos::Array<double> pointsX;
-              Teuchos::Array<double> pointsY;
-              DOMNodeList* gkids = curKid->getChildNodes();
-              for (int j=0; j<gkids->getLength(); j++) {
-                DOMNode* curGKid = gkids->item(j) ;
-                if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
-                  nodeName  = XMLString::transcode(curGKid->getNodeName());
-                  if  (strcmp(nodeName,"point") == 0){
-                    textContent2 = XMLString::transcode(curKid->getNodeValue());
-                    Teuchos::Array<double> point = make_coordinates(textContent2, *def_list);
-                    pointsX.append(point[0]);
-                    pointsY.append(point[1]);
-                    XMLString::release(&textContent2);
-                  }
-                }
-              }
-              list.sublist(regName).sublist("Region: Polygon").set<Teuchos::Array<double> >("VerticesV1",pointsX);
-              list.sublist(regName).sublist("Region: Polygon").set<Teuchos::Array<double> >("VerticesV2",pointsY);
-            }
-            else if  (strcmp(nodeName,"ellipse") == 0){
-              if (isUnstr_) {
-                throw_error_str_ustr("Regions", tagName, "Structured");
-              }
-              if (dimension_ != 2) {
-                Errors::Message msg;
-                msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing Regions - " ;
-                msg << "Regions type 'ellipse' is only available for 2D. \n" ;
-                msg << "  Please correct and try again \n" ;
-                Exceptions::amanzi_throw(msg);
-              }
-              // get attribute: name
-              attrMap = cur->getAttributes();
-              nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-              if (nodeAttr) {
-                regName = XMLString::transcode(nodeAttr->getNodeValue());
-              } else {
-                if (!haveName)
-                  throw_error_missattr("Regions","attribute","name","ellipse");
-              }
-              // add region name to array of region names
-              if (reg_names.isParameter(regName)) {
-                // warn, region of this name already exists, overwriting
-              } else {
-                reg_names.set<std::string>(regName,"ellipse");
-                regionNames_string_.append(regName);
-              }
-              // get verticies (add count them)
-              Teuchos::Array<Teuchos::Array<double> > points;
-              DOMNodeList* gkids = curKid->getChildNodes();
-              for (int j=0; j<gkids->getLength(); j++) {
-                DOMNode* curGKid = gkids->item(j) ;
-                if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
-                  nodeName  = XMLString::transcode(curGKid->getNodeName());
-                  if (strcmp(nodeName,"center") == 0){
-                    textContent2 = XMLString::transcode(curKid->getNodeValue());
-                    Teuchos::Array<double> center = make_coordinates(textContent2, *def_list);
-                    list.sublist(regName).sublist("Region: Ellipse").set<Teuchos::Array<double> >("Center",center);
-                    XMLString::release(&textContent2);
-                  }
-                  else if (strcmp(nodeName,"raduis") == 0){
-                    textContent2 = XMLString::transcode(curKid->getNodeValue());
-                    Teuchos::Array<double> raduis = make_coordinates(textContent2, *def_list);
-                    list.sublist(regName).sublist("Region: Ellipse").set<Teuchos::Array<double> >("Radius",raduis);
-                    XMLString::release(&textContent2);
-                  }
-                }
-              }
-            }
-            else if  (strcmp(nodeName,"rotated_polygon") == 0){
-              if (isUnstr_) {
-                throw_error_str_ustr("Regions", tagName, "Structured");
-              }
-              if (dimension_ != 3) {
-                Errors::Message msg;
-                msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing Regions - " ;
-                msg << "Regions type 'rotated_polygon' is only available for 3D. \n" ;
-                msg << "  Please correct and try again \n" ;
-                Exceptions::amanzi_throw(msg);
-              }
-              // get attribute: name
-              attrMap = cur->getAttributes();
-              nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-              if (nodeAttr) {
-                regName = XMLString::transcode(nodeAttr->getNodeValue());
-              } else {
-                if (!haveName)
-                  throw_error_missattr("Regions","attribute","name","rotated_polygon");
-              }
-              // add region name to array of region names
-              if (reg_names.isParameter(regName)) {
-                // warn, region of this name already exists, overwriting
-              } else {
-                reg_names.set<std::string>(regName,"rotated_polygon");
-                regionNames_string_.append(regName);
-              }
-              // get verticies (add count them)
-              Teuchos::Array<double> pointsX;
-              Teuchos::Array<double> pointsY;
-              Teuchos::Array<double> pointsZ;
-              DOMNodeList* gkids = curKid->getChildNodes();
-              for (int j=0; j<gkids->getLength(); j++) {
-                DOMNode* curGKid = gkids->item(j) ;
-                if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
-                  nodeName  = XMLString::transcode(curGKid->getNodeName());
-                  if  (strcmp(nodeName,"point") == 0){
-                    textContent2 = XMLString::transcode(curGKid->getNodeValue());
-                    Teuchos::Array<double> point = make_coordinates(textContent2, *def_list);
-                    pointsX.append(point[0]);
-                    pointsY.append(point[1]);
-                    pointsZ.append(point[2]);
-                    XMLString::release(&textContent2);
-                  }
-                  else if  (strcmp(nodeName,"reference_point") == 0){
-                    textContent2 = XMLString::transcode(curGKid->getNodeValue());
-                    Teuchos::Array<double> point = make_coordinates(textContent2, *def_list);
-                    list.sublist(regName).sublist("Region: Rotated Polygon").set<Teuchos::Array<double> >("Reference Point", point);
-                    XMLString::release(&textContent2);
-                  }
-                  else if  (strcmp(nodeName,"plane") == 0){
-                    textContent2 = XMLString::transcode(curGKid->getNodeValue());
-                    if ( strcmp(textContent2,"xy") == 0 | strcmp(textContent2,"yx") == 0) {
-                      list.sublist(regName).sublist("Region: Rotated Polygon").set<std::string>("Plane","XY");
-                    }
-                    else if (strcmp(textContent2,"yz") == 0 | strcmp(textContent2,"zy") == 0) {
-                      list.sublist(regName).sublist("Region: Rotated Polygon").set<std::string>("Plane","YZ");
-                    }
-                    else if (strcmp(textContent2,"xz") == 0 | strcmp(textContent2,"zx") == 0) {
-                      list.sublist(regName).sublist("Region: Rotated Polygon").set<std::string>("Plane","XZ");
-                    }
-                    else {
-                      throw_error_illformed("Regions", "value", "plane", "xy, yx, xz");
-                    }
-                    XMLString::release(&textContent2);
-                  }
-                  else if  (strcmp(nodeName,"axis") == 0){
-                    textContent2 = XMLString::transcode(curGKid->getNodeValue());
-                    if ( strcmp(textContent2,"x") == 0) {
-                      list.sublist(regName).sublist("Region: Rotated Polygon").set<std::string>("Plane","X");
-                    }
-                    else if (strcmp(textContent2,"y") == 0) {
-                      list.sublist(regName).sublist("Region: Rotated Polygon").set<std::string>("Plane","Y");
-                    }
-                    else if (strcmp(textContent2,"z") == 0) {
-                      list.sublist(regName).sublist("Region: Rotated Polygon").set<std::string>("Plane","Z");
-                    }
-                    else {
-                      throw_error_illformed("Regions", "value", "axis", "x, y, z");
-                    }
-                    XMLString::release(&textContent2);
-                  }
-                }
-              }
-              list.sublist(regName).sublist("Region: Rotated Polygon").set<Teuchos::Array<double> >("VerticesV1",pointsX);
-              list.sublist(regName).sublist("Region: Rotated Polygon").set<Teuchos::Array<double> >("VerticesV2",pointsY);
-              list.sublist(regName).sublist("Region: Rotated Polygon").set<Teuchos::Array<double> >("VerticesV3",pointsZ);
-            }
-            else if  (strcmp(nodeName,"swept_polygon") == 0){
-              if (isUnstr_) {
-                throw_error_str_ustr("Regions", tagName, "Structured");
-              }
-              if (dimension_ != 3) {
-                Errors::Message msg;
-                msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing Regions - " ;
-                msg << "Regions type 'swept_polygon' is only available for 3D. \n" ;
-                msg << "  Please correct and try again \n" ;
-                Exceptions::amanzi_throw(msg);
-              }
-              // get attribute: name
-              attrMap = cur->getAttributes();
-              nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-              if (nodeAttr) {
-                regName = XMLString::transcode(nodeAttr->getNodeValue());
-              } else {
-                if (!haveName)
-                  throw_error_missattr("Regions","attribute","name","swept_polygon");
-              }
-              // add region name to array of region names
-              if (reg_names.isParameter(regName)) {
-                // warn, region of this name already exists, overwriting
-              } else {
-                reg_names.set<std::string>(regName,"swept_polygon");
-                regionNames_string_.append(regName);
-              }
-              // get verticies (add count them)
-              Teuchos::Array<double> pointsX;
-              Teuchos::Array<double> pointsY;
-              Teuchos::Array<double> pointsZ;
-              Teuchos::Array<double> extent;
-              extent.append(0.0);
-              extent.append(0.0);
-              DOMNodeList* gkids = curKid->getChildNodes();
-                for (int j=0; j<gkids->getLength(); j++) {
-                  DOMNode* curGKid = gkids->item(j) ;
-                  if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
-                    nodeName  = XMLString::transcode(curGKid->getNodeName());
-                    if  (strcmp(nodeName,"point") == 0){
-                      textContent2 = XMLString::transcode(curGKid->getNodeValue());
-                      Teuchos::Array<double> point = make_coordinates(textContent2, *def_list);
-                      pointsX.append(point[0]);
-                      pointsY.append(point[1]);
-                      pointsZ.append(point[2]);
-                      XMLString::release(&textContent2);
-                    }
-                    else if  (strcmp(nodeName,"extent_min") == 0){
-                      textContent2 = XMLString::transcode(curGKid->getNodeValue());
-                      extent[0] = atof(textContent2);
-                      XMLString::release(&textContent2);
-                    }
-                    else if  (strcmp(nodeName,"extent_max") == 0){
-                      textContent2 = XMLString::transcode(curGKid->getNodeValue());
-                      extent[0] = atof(textContent2);
-                      XMLString::release(&textContent2);
-                    }
-                    else if  (strcmp(nodeName,"plane") == 0){
-                      textContent2 = XMLString::transcode(curGKid->getNodeValue());
-                      if ( strcmp(textContent2,"xy") == 0 | strcmp(textContent2,"yx") == 0) {
-                        list.sublist(regName).sublist("Region: Swept Polygon").set<std::string>("Plane","XY");
-                      }
-                      else if (strcmp(textContent2,"yz") == 0 | strcmp(textContent2,"zy") == 0) {
-                        list.sublist(regName).sublist("Region: Swept Polygon").set<std::string>("Plane","YZ");
-                      }
-                      else if (strcmp(textContent2,"xz") == 0 | strcmp(textContent2,"zx") == 0) {
-                        list.sublist(regName).sublist("Region: Swept Polygon").set<std::string>("Plane","XZ");
-                      }
-                      else {
-                        throw_error_illformed("Regions", "value", "plane", "xy, yx, xz");
-                      }
-                    XMLString::release(&textContent2);
-                  }
-                }
-              }
-              list.sublist(regName).sublist("Region: Swept Polygon").set<Teuchos::Array<double> >("VerticesV1",pointsX);
-              list.sublist(regName).sublist("Region: Swept Polygon").set<Teuchos::Array<double> >("VerticesV2",pointsY);
-              list.sublist(regName).sublist("Region: Swept Polygon").set<Teuchos::Array<double> >("VerticesV3",pointsZ);
-              list.sublist(regName).sublist("Region: Swept Polygon").set<Teuchos::Array<double> >("Extent",extent);
-            }
-
-	    XMLString::release(&nodeName);
-	  }
-	}
-      }
-      
-      if  (strcmp(tagName,"box") == 0){
-	attrMap = cur->getAttributes();
-        nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-	if (nodeAttr) {
-          regName = XMLString::transcode(nodeAttr->getNodeValue());
-        } else {
-          if (!haveName)
-            throw_error_missattr("Regions","attribute","name","box");
-	}
-	// add region name to array of region names
-        if (reg_names.isParameter(regName)) {
-          // warn, region of this name already exists, overwriting
-        } else {
-          reg_names.set<std::string>(regName,"box");
-          regionNames_string_.append(regName);
-        }
-        
-	// get low coord
-        nodeAttr = attrMap->getNamedItem(XMLString::transcode("low_coordinates"));
-	if (nodeAttr) {
-          textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-	} else {
-          throw_error_missattr("Regions","attribute","low_coordinates","box");
-	}
-	Teuchos::Array<double> low = make_coordinates(textContent2, *def_list);
-        list.sublist(regName).sublist("Region: Box").set<Teuchos::Array<double> >("Low Coordinate",low);
-	XMLString::release(&textContent2);
-	// get high coord
-        nodeAttr = attrMap->getNamedItem(XMLString::transcode("high_coordinates"));
-	if (nodeAttr) {
-          textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-	} else {
-          throw_error_missattr("Regions","attribute","high_coordinates","box");
-	}
-	Teuchos::Array<double> high = make_coordinates(textContent2, *def_list);
-        list.sublist(regName).sublist("Region: Box").set<Teuchos::Array<double> >("High Coordinate",high);
-	XMLString::release(&textContent2);
-      }
-      else if  (strcmp(tagName,"plane") == 0){
-	attrMap = cur->getAttributes();
-        nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-	if (nodeAttr) {
-          regName = XMLString::transcode(nodeAttr->getNodeValue());
-	} else {
-          if (!haveName)
-            throw_error_missattr("Regions","attribute","name","plane");
-	}
-
-	// add region name to array of region names
-        if (reg_names.isParameter(regName)) {
-          // warn, region of this name already exists, overwriting
-        } else {
-          reg_names.set<std::string>(regName,"plane");
-          regionNames_string_.append(regName);
-        }
-        
-        nodeAttr = attrMap->getNamedItem(XMLString::transcode("location"));
-	if (nodeAttr) {
-          textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-	} else {
-          throw_error_missattr("Regions","attribute","location","plane");
-	}
-
-	Teuchos::Array<double> loc = make_coordinates(textContent2, *def_list);
-        list.sublist(regName).sublist("Region: Plane").set<Teuchos::Array<double> >("Location",loc);
-        nodeAttr = attrMap->getNamedItem(XMLString::transcode("normal"));
-	if (nodeAttr) {
-          textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-	} else {
-          throw_error_missattr("Regions","attribute","normal","plane");
-	}
-
-	Teuchos::Array<double> dir = make_coordinates(textContent2, *def_list);
-        list.sublist(regName).sublist("Region: Plane").set<Teuchos::Array<double> >("Direction",dir);
-	XMLString::release(&textContent2);
-      }
-      else if  (strcmp(tagName,"region_file") == 0){
-        //TODO: EIB - add file
-        Teuchos::ParameterList rfPL;
-        attrMap = cur->getAttributes();
-        
-        // add region name to list
-        if (reg_names.isParameter(regName)) {
-          // warn, region of this name already exists, overwriting
-        } else {
-          reg_names.set<std::string>(regName,"region_file");
-          regionNames_string_.append(regName);
-        }
-        
-        // get file name
-        nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-        if (nodeAttr) {
-          textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-        } else {
-          throw_error_missattr("Regions","attribute","name","region_file");
-        }
-        rfPL.set<std::string>("File",trim_string(textContent2));
-        XMLString::release(&textContent2);
-        nodeAttr = attrMap->getNamedItem(XMLString::transcode("type"));
-        if (nodeAttr) {
-          textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-        } else {
-          throw_error_missattr("Regions","attribute","type","region_file");
-        }
-        if  (strcmp(textContent2,"color") == 0){
-          nodeAttr = attrMap->getNamedItem(XMLString::transcode("label"));
-          char* value;
-          if (nodeAttr) {
-            value = XMLString::transcode(nodeAttr->getNodeValue());
-          } else {
-            throw_error_missattr("Regions","attribute","label","color");
-          }
-          rfPL.set<int>("Value",atoi(value));
-          XMLString::release(&value);
-          list.sublist(regName).sublist("Region: Color Function") = rfPL;
-        }
-        else if  (strcmp(textContent2,"labeled set") == 0){
-          nodeAttr = attrMap->getNamedItem(XMLString::transcode("label"));
-          char* value ;
-          if (nodeAttr) {
-            value = XMLString::transcode(nodeAttr->getNodeValue());
-          } else {
-            throw_error_missattr("Regions","attribute","label","labeled set");
-          }
-          rfPL.set<std::string>("Label",trim_string(value));
-          XMLString::release(&value);
-          nodeAttr = attrMap->getNamedItem(XMLString::transcode("format"));
-          if (nodeAttr) {
-            value = XMLString::transcode(nodeAttr->getNodeValue());
-          } else {
-            throw_error_missattr("Regions","attribute","format","labeled set");
-          }
-          if  (strcmp(value,"exodus ii") == 0){
-            rfPL.set<std::string>("Format","Exodus II");
-          }
-          XMLString::release(&value);
-          nodeAttr = attrMap->getNamedItem(XMLString::transcode("entity"));
-          if (nodeAttr) {
-            value = XMLString::transcode(nodeAttr->getNodeValue());
-          } else {
-            throw_error_missattr("Regions","attribute","entity","labeled set");
-          }
-          rfPL.set<std::string>("Entity",trim_string(value));
-          XMLString::release(&value);
-          list.sublist(regName).sublist("Region: Labeled Set") = rfPL;
-        }
-        XMLString::release(&textContent2);
-      }
-      */
       
       XMLString::release(&tagName);
       if (haveName) XMLString::release(&regName);
@@ -4607,7 +3926,8 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
 
 		  const std::string type_str_DEF("nonfile");
 		  const std::string type_str_gslib("gslib");
-		  const std::string type_str_file("file");
+                  const std::string type_str_file("file");
+                  const std::string type_str_exo("exodus ii");
 
 		  std::string type_str(type_str_DEF);
 
@@ -4624,7 +3944,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
 		      get_gslib_info(propertyPL, def_list, propElem, "porosity", "mechanical_properties", dfile_DEF);
 		      porName = "Porosity: GSLib";
 
-		    } else if (type_str == type_str_file) {
+		    } else if (type_str == type_str_file || type_str == type_str_exo) {
 
 		      propertyPL = get_file_info(propertyPL, propElem, "porosity", "mechanical_properties");
 		      porName = "Porosity: File";
@@ -4636,12 +3956,10 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
 		      std::cout << "    Please specify a value."  << std::endl;
 
 		    } else {
-
-		      Errors::Message msg;
-		      msg << "Amanzi::InputTranslator: ERROR - porosity 'type' can only be either";
-		      msg << " 'gslib' or 'file' per material. Material - " << matName << "\n";
-		      msg << "  Please correct and try again \n" ;
-		      Exceptions::amanzi_throw(msg);
+                      
+                      std::string section;
+                      section = "Material (" + matName + ") - porosity";
+                      throw_error_illformed(section, "attribute", "type", "gslib or file");
 
 		    }
 		    
@@ -7030,8 +6348,9 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
 	                    obPL.set<std::string>("Functional","Observation Data: Mean");
 	                  }
 		        }
-                        else if (strcmp(Elem,"time_macro")==0) {
-	                  obPL.set<std::string>("Time Macro",trim_string(Value));
+                        else if (strcmp(Elem,"time_macros")==0) {
+                          Teuchos::Array<std::string> reg_list = make_regions_list(Value);
+	                  obPL.set<Teuchos::Array<std::string> >("Time Macros",reg_list);
 		        }
                         XMLString::release(&Elem);
                         XMLString::release(&Value);

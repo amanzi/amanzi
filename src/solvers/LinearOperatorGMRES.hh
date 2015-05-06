@@ -39,7 +39,7 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
       initialized_(false) {}
 
   void Init(Teuchos::ParameterList& plist);
-  void Init() { LinearOperator<Matrix,Vector,VectorSpace>::Init(); }
+  void Init() { LinearOperator<Matrix, Vector, VectorSpace>::Init(); }
 
   int ApplyInverse(const Vector& v, Vector& hv) const {
     if (!initialized_) {
@@ -86,7 +86,7 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
   int max_itrs_, criteria_, krylov_dim_;
   double tol_, overflow_tol_;
   mutable int num_itrs_, num_itrs_total_, returned_code_;
-  mutable double residual_, fnorm_;
+  mutable double residual_, fnorm_, rnorm0_;
   mutable bool initialized_;
 };
 
@@ -109,6 +109,8 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRESRestart_(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
   num_itrs_total_ = 0;
+  rnorm0_ = -1.0;
+
   int ierr(LIN_SOLVER_MAX_ITERATIONS);
   while (ierr == LIN_SOLVER_MAX_ITERATIONS && num_itrs_total_ < max_itrs) {
     int max_itrs_left = max_itrs - num_itrs_total_;
@@ -165,6 +167,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
   double rnorm0;
   r.Norm2(&rnorm0);
   residual_ = rnorm0;
+  if (rnorm0_ < 0.0) rnorm0_ = rnorm0;
 
   if (fnorm == 0.0) {
     x.PutScalar(0.0);
@@ -244,11 +247,11 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
     }
 
     if (criteria & LIN_SOLVER_RELATIVE_RESIDUAL) {
-      if (residual_ < tol * rnorm0) {
+      if (residual_ < tol * rnorm0_) {
         ComputeSolution_(x, i, T, s, v);  // vector s is overwritten
         if (vo_->os_OK(Teuchos::VERB_MEDIUM))
           *vo_->os() << "Converged (relative res), itr=" << num_itrs_total_ 
-                     << " ||r||=" << residual_ << " ||r0||=" << rnorm0 << std::endl;
+                     << " ||r||=" << residual_ << " ||r0||=" << rnorm0_ << std::endl;
         return LIN_SOLVER_RELATIVE_RESIDUAL;
       }
     }

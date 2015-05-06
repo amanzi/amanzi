@@ -737,6 +737,28 @@ Mesh_MSTK::internal_name_of_set(const AmanziGeometry::RegionPtr r,
   return internal_name;
 }
 
+// Get an alternate name (elemset_N instead of matset_N) for sets of type 
+// Labeled Set and entity kind Cell. For everything else return regular name 
+
+std::string 
+Mesh_MSTK::other_internal_name_of_set(const AmanziGeometry::RegionPtr r,
+                                      const Entity_kind entity_kind) const {
+
+  std::string internal_name;
+  
+  if (r->type() == AmanziGeometry::LABELEDSET && entity_kind == CELL) {
+    
+    AmanziGeometry::LabeledSetRegionPtr lsrgn = 
+      dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (r);
+    std::string label = lsrgn->label();
+
+    internal_name = "elemset_" + label;
+    return internal_name;
+  }
+  else
+    return internal_name_of_set(r,entity_kind);
+}
+
 
 
 // Extract a list of MSTK entities and make a new MSTK mesh
@@ -2848,6 +2870,28 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
       }
 
       mset = MESH_MSetByName(mesh,internal_name.c_str());
+
+      std::string other_internal_name = other_internal_name_of_set(region,kind);
+      MSet_ptr mset2 = MESH_MSetByName(mesh,other_internal_name.c_str());
+
+      if (mset) {
+        if (mset2) {
+          std::stringstream mesg_stream;
+          mesg_stream << "Exodus II file has element block and element set with the same ID " << label << " - Amanzi cannot handle this case.";
+          Errors::Message mesg(mesg_stream.str());
+          amanzi_throw(mesg);
+        }
+      } 
+      else {
+        if (mset2)
+          mset = mset2;
+        else {
+          std::stringstream mesg_stream;
+          mesg_stream << "Exodus II file has no labeled cell set with ID " << label;
+          Errors::Message mesg(mesg_stream.str());
+          amanzi_throw(mesg);
+        }
+      }
     }
     else {
       Errors::Message mesg("Region type not applicable/supported for cell sets");
@@ -3210,6 +3254,28 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
 
       mset1 = MESH_MSetByName(mesh,internal_name.c_str());
       
+      // Since both element blocks and cell sets are referenced with the 
+      // region type 'Labeled Set' and Entity kind 'Cell' we have to
+      // account for both possibilities. NOTE: THIS MEANS THAT IF AN
+      // ELEMENT BLOCK AND ELEMENT SET HAVE THE SAME ID, ONLY THE ELEMENT
+      // BLOCK WILL GET PICKED UP - WE CHECKED FOR THIS IN BUILD SET
+
+
+      std::string internal_name2 = other_internal_name_of_set(rgn,kind);
+
+
+      if (!mset1) {
+        MSet_ptr mset2 = MESH_MSetByName(mesh,internal_name2.c_str());
+        if (mset2)
+          mset1 = mset2;
+        else { 
+          std::stringstream mesg_stream;
+          mesg_stream << "Exodus II file has no labeled set with ID " << label;
+          Errors::Message mesg(mesg_stream.str());
+          amanzi_throw(mesg);
+        }
+      }
+
       /// Due to the parallel partitioning its possible that this set
       /// is not on this processor
       

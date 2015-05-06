@@ -185,8 +185,7 @@ void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVecto
     // preparing upwind data
     Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
     if (k_ != Teuchos::null) {
-      if (k_->HasComponent("face"))
-        k_face = k_->ViewComponent("face", true);
+      if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
     }
 
     // updating matrix blocks
@@ -256,11 +255,12 @@ void OperatorDiffusionFV::ApplyBCs(bool primary, bool eliminate)
   if (k_ != Teuchos::null) {
     k_face = k_->ViewComponent("face", true);
   }
-  Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
+
+  Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell", true);
 
   AmanziMesh::Entity_ID_List cells;
 
-  for (int f = 0; f < nfaces_wghost; f++) {
+  for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model[f] != OPERATOR_BC_NONE) {
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       int c = cells[0];
@@ -507,7 +507,7 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh_);
   cvs.SetGhosted(true);
-  cvs.SetComponent("face", AmanziMesh::FACE, 2);
+  cvs.SetComponent("face", AmanziMesh::FACE, 1);
 
   CompositeVector beta(cvs, true);
   Epetra_MultiVector& beta_face = *beta.ViewComponent("face", true);
@@ -517,44 +517,35 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
   Epetra_MultiVector& h_face = *h.ViewComponent("face", true);
   h.PutScalar(0.0);
 
-  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_List faces, cells;
   AmanziGeometry::Point a_dist, a;
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1); 
-  Kc(0,0) = 1.0;
+  Kc(0, 0) = 1.0;
 
-  for (int f = 0; f < nfaces_owned; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    int ncells = cells.size();
+  for (int c = 0; c < ncells_owned; ++c) {
+    if (K_.get()) Kc = (*K_)[c];
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
 
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-    double area = mesh_->face_area(f);
+    for (int i = 0; i < nfaces; i++) {
+      int f = faces[i];
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+      double area = mesh_->face_area(f);
 
-    int k(0);
-    for (int i = 0; i < ncells; i++) {
-      int c = cells[i];
-      if (K_.get()) Kc = (*K_)[c];
+      a = xf - mesh_->cell_centroid(c);
+      double h_tmp = norm(a);
+      double s = area / h_tmp;
+      double perm = ((Kc * a) * normal) * s;
+      double dxn = a * normal;
 
-      if (c < ncells_owned) {
-        a = xf - mesh_->cell_centroid(c);
-        double h_tmp = norm(a);
-        double s = area / h_tmp;
-        double perm = ((Kc * a) * normal) * s;
-        double dxn = a * normal;
-
-        h_face[k][f] = h_tmp;
-        beta_face[k][f] = fabs(perm / dxn);
-        k++;
-      } 
+      h_face[0][f] += h_tmp;
+      beta_face[0][f] += fabs(dxn / perm);
     }
-    if (k != ncells) {
-      h_face[1][f] = h_face[0][f];
-      beta_face[1][f] = beta_face[0][f];
-    }  
   }
 
-  beta.ScatterMasterToGhosted(true);
-  h.ScatterMasterToGhosted(true);
+  beta.GatherGhostedToMaster(Add);
+  h.GatherGhostedToMaster(Add);
 
   // Compute transmissibilities. Since it is done only, we repeat
   // some calculatons.
@@ -580,13 +571,8 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
     double grav = (gravity * a_dist) * dir;
 
     double trans_f = 0.0;
-    if (ncells == 2) {
-      grav *= (h_face[0][f] + h_face[1][f]);
-      trans_f = (beta_face[0][f] * beta_face[1][f]) / (beta_face[0][f] + beta_face[1][f]);
-    } else if (ncells == 1) {    
-      grav *= h_face[0][f];
-      trans_f = beta_face[0][f];
-    } 
+    grav *= h_face[0][f];
+    trans_f = 1.0 / beta_face[0][f];
 
     trans_face[0][f] = trans_f;
     if (gravity_) {

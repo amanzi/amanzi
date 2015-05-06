@@ -264,6 +264,7 @@ OperatorAdvection::UpdateFlux(const CompositeVector& h, const CompositeVector& u
   }  
 }
 
+
 /* *******************************************************************
 * Identify flux direction based on orientation of the face normal 
 * and sign of the  Darcy velocity.                               

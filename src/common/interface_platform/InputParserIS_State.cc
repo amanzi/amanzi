@@ -212,8 +212,8 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
             .set<std::string>("file",perm_file)
             .set<std::string>("attribute",perm_attribute);
       } else {
-        msg << "Permeabily initialization from file, incompatible format specified: \"" 
-            << perm_format << "\", only \"exodus\" is supported.";
+        msg << "Permeability initialization from file, incompatible format specified: \"" 
+            << perm_format << "\", only \"Exodus II\" is supported.";
         Exceptions::amanzi_throw(msg);
       }
      

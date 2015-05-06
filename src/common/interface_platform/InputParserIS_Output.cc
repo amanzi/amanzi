@@ -216,21 +216,47 @@ Teuchos::ParameterList InputParserIS::CreateObservationDataList_(Teuchos::Parame
         if (olist.isSublist(i->first)) {
           // copy the observation data sublist into the local list
           obs_list.sublist(i->first) = olist.sublist(i->first);
-
-          if (obs_list.sublist(i->first).isParameter("Time Macro")) {
-            std::string time_macro = obs_list.sublist(i->first).get<std::string>("Time Macro");
+          
+          Teuchos::Array<double> all_times;
+          all_times.clear();
+          if (obs_list.sublist(i->first).isParameter("Time Macros")) {
+            std::vector<std::string> time_macros;
+            time_macros = obs_list.sublist(i->first).get<Teuchos::Array<std::string> >("Time Macros").toVector();
             // Create a local parameter list and store the time macro (3 doubles)
-            Teuchos::ParameterList time_macro_list = CreateTimeMacro_(time_macro, plist);
-            if (time_macro_list.isParameter("Start_Period_Stop")) {
-              obs_list.sublist(i->first).set("times start period stop", time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
+            int j(0);
+            for (int k = 0; k < time_macros.size(); k++) {
+              // Create a local parameter to store the time macro
+              Teuchos::ParameterList time_macro_list = CreateTimeMacro_(time_macros[k], plist);
+              if (time_macro_list.isParameter("Start_Period_Stop")) {
+                std::stringstream ss;
+                ss << "times start period stop " << j;
+                obs_list.sublist(i->first).set(ss.str(),time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
+                ++j;
+              }
+              if (time_macro_list.isParameter("Values")) {
+                Teuchos::Array<double> times;
+                times = time_macro_list.get<Teuchos::Array<double> >("Values");
+                
+                std::list<double> all_list, cur_list;
+                for (Teuchos::Array<double>::iterator at = all_times.begin(); at != all_times.end(); ++at) {
+                  all_list.push_back(*at);
+                }
+                for (Teuchos::Array<double>::iterator t = times.begin(); t != times.end(); ++t) {
+                  cur_list.push_back(*t);
+                }
+                all_list.sort();
+                cur_list.sort();
+                
+                all_list.merge(cur_list);
+                all_list.unique();
+                
+                all_times.clear();
+                for (std::list<double>::iterator al = all_list.begin(); al != all_list.end(); ++al) {
+                  all_times.push_back(*al);
+                }
+              }
             }
-            if (time_macro_list.isParameter("Values")) {
-              obs_list.sublist(i->first).set("Values",time_macro_list.get<Teuchos::Array<double> >("Values"));
-              Teuchos::Array<double> values = time_macro_list.get<Teuchos::Array<double> >("Values");
-              obs_list.sublist(i->first).set<Teuchos::Array<double> >("times",values);
-              obs_list.sublist(i->first).remove("Values");
-            }
-            obs_list.sublist(i->first).remove("Time Macro");
+            obs_list.sublist(i->first).remove("Time Macros");
           }
           if (obs_list.sublist(i->first).isParameter("Cycle Macro")) {
             std::string cycle_macro = obs_list.sublist(i->first).get<std::string>("Cycle Macro");
