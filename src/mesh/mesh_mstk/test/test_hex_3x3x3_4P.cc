@@ -44,7 +44,7 @@ TEST(MSTK_HEX_3x3x3_4P)
 
   // Load a single hex from the hex1.exo file
 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_ss.exo",comm.get(),3));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo",comm.get(),3));
 
 
   std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(6);
