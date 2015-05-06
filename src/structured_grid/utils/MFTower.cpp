@@ -359,7 +359,7 @@ MFTower::AverageDown(MFTower& mft,
     const Array<IntVect>& refRatio = theLayout.RefRatio();
     const Array<BoxArray>& gridArray = theLayout.GridArray();
     FArrayBox cfab;
-    for (int lev=1; lev<numLevs; ++lev) {
+    for (int lev=numLevs-1; lev>0; --lev) {
         MultiFab& mfe = mft[lev];
         BL_ASSERT(sComp+nComp<=mfe.nComp());
         const IntVect& ratio = refRatio[lev-1];
