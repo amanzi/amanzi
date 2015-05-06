@@ -57,6 +57,7 @@
 #   0.92.13      - update MSTK to v2.22, includes installation of mesh utilities
 #   0.92.14      - update Hypre to v2.10.0b (and added patch for to ensure tol>0)
 #   0.92.15      - updated Alquimia to v0.2 (backward compatible)
+#   0.92.16      - update CCSE to version 1.3.0 
 
 include(CMakeParseArguments)
 
@@ -106,7 +107,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 92)
-set (AMANZI_TPLS_VERSION_PATCH 15)
+set (AMANZI_TPLS_VERSION_PATCH 16)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -169,13 +170,13 @@ set(METIS_MD5_SUM        5465e67079419a69e0116de24fce58fe)
 # TPL: CCSE
 #
 set(CCSE_VERSION_MAJOR 1)
-set(CCSE_VERSION_MINOR 2)
-set(CCSE_VERSION_PATCH 8)
+set(CCSE_VERSION_MINOR 3)
+set(CCSE_VERSION_PATCH 0)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
 set(CCSE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(CCSE_ARCHIVE_FILE   ccse-${CCSE_VERSION}.tar.gz) 
-set(CCSE_MD5_SUM        dacee6cff1031bd92c9d1fad5a486077)
+set(CCSE_MD5_SUM        5c34d1447907725dc076844030fcaf26)
 
 #
 # TPL: UnitTest

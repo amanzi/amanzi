@@ -2807,7 +2807,7 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
 
           for (int d=0; d<BL_SPACEDIM; ++d) {
             if (d!=face.coordDir()) {
-              const Box& tvelBox = Box(outBox).surroundingNodes(d);
+              const Box tvelBox = Box(outBox).surroundingNodes(d);
               MultiFab& Ut = pm->u_macG_curr[d];
               for (MFIter mfi(Ut); mfi.isValid(); ++mfi) {
                 FArrayBox& ut = Ut[mfi];
