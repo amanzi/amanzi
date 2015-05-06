@@ -18,7 +18,7 @@ MPCDelegateWater::MPCDelegateWater(const Teuchos::RCP<Teuchos::ParameterList>& p
       plist_->get<bool>("modify predictor damp and cap the water spurt", false);
   modify_predictor_tempfromsource_ =
       plist_->get<bool>("modify predictor surface temperature from source", false);
-  
+
   // precon control
   face_limiter_ = plist_->get<double>("global water face limiter", -1.0);
   cap_the_spurt_ = plist_->get<bool>("cap the water spurt", false);
@@ -92,8 +92,8 @@ MPCDelegateWater::ModifyCorrection_WaterSpurtDamp(double h, Teuchos::RCP<const T
       if ((p_new > patm + cap_size_) && (p_old < patm)) {
         double my_damp = ((patm + cap_size_) - p_old) / (p_new - p_old);
         damp = std::min(damp, my_damp);
-	if (vo_->os_OK(Teuchos::VERB_EXTREME))
-	  std::cout << "   DAMPING THE SPURT (sc=" << surf_mesh->cell_map(false).GID(cs) << "): p_old = " << p_old << ", p_new = " << p_new << ", coef = " << my_damp << std::endl;
+        if (vo_->os_OK(Teuchos::VERB_EXTREME))
+          std::cout << "   DAMPING THE SPURT (sc=" << surf_mesh->cell_map(false).GID(cs) << "): p_old = " << p_old << ", p_new = " << p_new << ", coef = " << my_damp << std::endl;
       }
     }
 
@@ -158,7 +158,7 @@ MPCDelegateWater::ModifyPredictor_Heuristic(double h, const Teuchos::RCP<TreeVec
   if (modify_predictor_heuristic_) {
     if (vo_->os_OK(Teuchos::VERB_HIGH))
       *vo_->os() << "  MPCWaterCoupler: Modifying predictor with water heuristic" << std::endl;
-    
+
     Epetra_MultiVector& domain_u_f =
         *u->SubVector(i_domain_)->Data()->ViewComponent("face",false);
     Epetra_MultiVector& surf_u_c =
@@ -182,7 +182,7 @@ MPCDelegateWater::ModifyPredictor_Heuristic(double h, const Teuchos::RCP<TreeVec
         if (dp > pnew) {
           if (vo_->os_OK(Teuchos::VERB_HIGH))
             *vo_->os() << "CHANGING (first over?): p = " << surf_u_c[0][c]
-                  << " to " << patm + cap_size_ << std::endl;
+                       << " to " << patm + cap_size_ << std::endl;
           surf_u_c[0][c] = patm + cap_size_;
           domain_u_f[0][f] = surf_u_c[0][c];
 
@@ -224,7 +224,7 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
     const Epetra_MultiVector& domain_pold_f =
         *S_->GetFieldData("pressure")->ViewComponent("face",false);
 
-
+    int rank = surf_mesh->get_comm()->MyPID();
     double damp = 1.;
     for (unsigned int cs=0; cs!=ncells_surf; ++cs) {
       AmanziMesh::Entity_ID f =
@@ -235,14 +235,14 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
         // first over
         double my_damp = ((patm + cap_size_) - p_old) / (p_new - p_old);
         damp = std::min(damp, my_damp);
-	if (vo_->os_OK(Teuchos::VERB_EXTREME))
-	  std::cout << "   DAMPING THE SPURT (1st over) (sc=" << surf_mesh->cell_map(false).GID(cs) << "): p_old = " << p_old << ", p_new = " << p_new << ", coef = " << my_damp << std::endl;
+        if (vo_->os_OK(Teuchos::VERB_EXTREME))
+          std::cout << "   DAMPING THE SPURT (1st over) (sc=" << surf_mesh->cell_map(false).GID(cs) << "): p_old = " << p_old << ", p_new = " << p_new << ", coef = " << my_damp << std::endl;
       } else if ((p_old > patm) && (p_new - p_old > p_old - patm)) {
         // second over
         double my_damp = ((patm + 2*(p_old - patm)) - p_old) / (p_new - p_old);
         damp = std::min(damp, my_damp);
-	if (vo_->os_OK(Teuchos::VERB_EXTREME))
-	  std::cout << "   DAMPING THE SPURT (2nd over) (sc=" << surf_mesh->cell_map(false).GID(cs) << "): p_old = " << p_old << ", p_new = " << p_new << ", coef = " << my_damp << std::endl;
+        if (vo_->os_OK(Teuchos::VERB_EXTREME))
+          std::cout << "   DAMPING THE SPURT (2nd over) (sc=" << surf_mesh->cell_map(false).GID(cs) << "): p_old = " << p_old << ", p_new = " << p_new << ", coef = " << my_damp << std::endl;
       }
     }
 
@@ -255,8 +255,11 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
       // apply the damping
       Teuchos::RCP<const CompositeVector> domain_pold = S_->GetFieldData("pressure");
       Teuchos::RCP<CompositeVector> domain_pnew = u->SubVector(i_domain_)->Data();
+      db_->WriteVector("p_old", domain_pold.ptr());
+      db_->WriteVector("p_new", domain_pnew.ptr());
       domain_pnew->Update(1. - damp, *domain_pold, damp);
-      
+      db_->WriteVector("p_damped", domain_pnew.ptr());
+
       // undamp and cap the surface
       for (unsigned int cs=0; cs!=ncells_surf; ++cs) {
         AmanziMesh::Entity_ID f =
@@ -267,19 +270,19 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
           // first over
           domain_pnew_f[0][f] = patm + cap_size_;
           surf_pnew_c[0][cs] = domain_pnew_f[0][f];
-	  if (vo_->os_OK(Teuchos::VERB_HIGH))
-	    std::cout << "  CAPPING THE SPURT (1st over) (sc=" << surf_mesh->cell_map(false).GID(cs) << "): p_old = " << p_old << ", p_new = " << p_new << ", p_capped = " << domain_pnew_f[0][f] << std::endl;
+          if (vo_->os_OK(Teuchos::VERB_HIGH))
+            std::cout << "  CAPPING THE SPURT (1st over) (sc=" << surf_mesh->cell_map(false).GID(cs) << "): p_old = " << p_old << ", p_new = " << p_new << ", p_capped = " << domain_pnew_f[0][f] << std::endl;
         } else if ((p_old > patm) && (p_new - p_old > p_old - patm)) {
           // second over
           domain_pnew_f[0][f] = patm + 2*(p_old - patm);
           surf_pnew_c[0][cs] = domain_pnew_f[0][f];
-	  if (vo_->os_OK(Teuchos::VERB_HIGH))
-	    std::cout << "  CAPPING THE SPURT (2nd over) (sc=" << surf_mesh->cell_map(false).GID(cs) << "): p_old = " << p_old << ", p_new = " << p_new << ", p_capped = " << domain_pnew_f[0][f] << std::endl;
+          if (vo_->os_OK(Teuchos::VERB_HIGH))
+            std::cout << "  CAPPING THE SPURT (2nd over) (sc=" << surf_mesh->cell_map(false).GID(cs) << "): p_old = " << p_old << ", p_new = " << p_new << ", p_capped = " << domain_pnew_f[0][f] << std::endl;
         } else {
           surf_pnew_c[0][cs] = domain_pnew_f[0][f];
         }
       }
-    }    
+    }
 
     return damp < 1.0;
   }
@@ -306,7 +309,7 @@ MPCDelegateWater::ModifyPredictor_TempFromSource(double h, const Teuchos::RCP<Tr
     const Epetra_MultiVector& Told = *S_->GetFieldData("surface_temperature")
         ->ViewComponent("cell",false);
     const Epetra_MultiVector& Tsource = *S_next_->GetFieldData("surface_mass_source_temperature")
-        ->ViewComponent("cell",false);    
+        ->ViewComponent("cell",false);
     const Epetra_MultiVector& hold = *S_->GetFieldData("ponded_depth")
         ->ViewComponent("cell",false);
     const Epetra_MultiVector& dhsource = *S_->GetFieldData("surface_mass_source")

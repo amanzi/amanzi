@@ -120,7 +120,7 @@ public:
 
 
   // boundary condition members
-  virtual void UpdateBoundaryConditions_();
+  virtual void UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S);
   virtual void ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature);
 
   // physical methods
@@ -147,6 +147,7 @@ public:
 
   // boundary conditions
   Teuchos::RCP<Functions::BoundaryFunction> bc_temperature_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_diff_flux_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
 
   std::vector<int> bc_markers_adv_;

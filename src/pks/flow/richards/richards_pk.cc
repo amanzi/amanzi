@@ -428,6 +428,7 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   preconditioner_->SymbolicAssembleMatrix();
 
   face_matrix_diff_->SetGravity(g);
+  face_matrix_diff_->SetBCs(bc_);
   face_matrix_diff_->Setup(K_);
   face_matrix_diff_->Setup(Teuchos::null, Teuchos::null);
   face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -661,11 +662,12 @@ bool Richards::UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 // Evaluate boundary conditions at the current time.
 // -----------------------------------------------------------------------------
-void Richards::UpdateBoundaryConditions_() {
+void Richards::UpdateBoundaryConditions_(bool kr) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "  Updating BCs." << std::endl;
 
+  // initialize all to 0
   for (unsigned int n=0; n!=bc_markers_.size(); ++n) {
     bc_markers_[n] = Operators::OPERATOR_BC_NONE;
     bc_values_[n] = 0.0;
@@ -678,8 +680,9 @@ void Richards::UpdateBoundaryConditions_() {
     bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
     bc_values_[f] = bc->second;
   }
-  if (bc_pressure_->size() > 0)
-    std::cout << "Dirichlet with " << bc_pressure_->size() << " faces" << std::endl;
+
+  const Epetra_MultiVector& rel_perm = 
+    *S_next_->GetFieldData("numerical_rel_perm")->ViewComponent("face",false);
 
   if (!infiltrate_only_if_unfrozen_) {
     // Standard Neuman boundary conditions
@@ -687,6 +690,7 @@ void Richards::UpdateBoundaryConditions_() {
       int f = bc->first;
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_values_[f] = bc->second;
+      if (!kr && rel_perm[0][f] > 0.) bc_values_[f] /= rel_perm[0][f];
     }
   } else {
     // Neumann boundary conditions that turn off if temp < freezing
@@ -696,6 +700,9 @@ void Richards::UpdateBoundaryConditions_() {
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
       if (temp[0][f] > 273.15) {
         bc_values_[f] = bc->second;
+        if (!kr && rel_perm[0][f] > 0.) {
+          bc_values_[f] /= rel_perm[0][f];
+        }
       } else {
         bc_values_[f] = 0.;
       }
@@ -712,6 +719,7 @@ void Richards::UpdateBoundaryConditions_() {
     if (bc_pressure < bc->second) {
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_values_[f] = 0.;
+      
     } else {
       bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_values_[f] = bc->second;
@@ -755,6 +763,12 @@ void Richards::UpdateBoundaryConditions_() {
       // -- set that value to Neumann
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_values_[f] = flux[0][c] / mesh_->face_area(f);
+      if (!kr && rel_perm[0][f] > 0.) bc_values_[f] /= rel_perm[0][f];
+
+      if ((surface->cell_map(false).GID(c) == 0) && vo_->os_OK(Teuchos::VERB_HIGH)) {
+        *vo_->os() << "  bc for coupled surface: val=" << bc_values_[f] << std::endl;
+      }
+      
       // NOTE: flux[0][c] is in units of mols / s, where as Neumann BCs are in
       //       units of mols / s / A.  The right A must be chosen, as it is
       //       the subsurface mesh's face area, not the surface mesh's cell
@@ -898,18 +912,42 @@ bool Richards::ModifyPredictorWC_(double h, Teuchos::RCP<TreeVector> u) {
 void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "  Modifying predictor for consistent faces" << std::endl;
 
-  // update the rel perm according to the scheme of choice
+  // average cells to faces to give a reasonable place to start
+  u->ScatterMasterToGhosted("cell");
+  const Epetra_MultiVector& u_c = *u->ViewComponent("cell",true);
+  Epetra_MultiVector& u_f = *u->ViewComponent("face",false);
+
+  int f_owned = u_f.MyLength();
+  for (int f=0; f!=f_owned; ++f) {
+    AmanziMesh::Entity_ID_List cells;
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    double face_value = 0.0;
+    for (int n=0; n!=ncells; ++n) {
+      face_value += u_c[0][cells[n]];
+    }
+    u_f[0][f] = face_value / ncells;
+  }
   ChangedSolution();
-  UpdatePermeabilityData_(S_next_.ptr());
+  
+  // Using the old BCs, so should use the old rel perm?
+  // update the rel perm according to the scheme of choice
+  //  UpdatePermeabilityData_(S_next_.ptr());
 
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
-  UpdateBoundaryConditions_();
+  UpdateBoundaryConditions_(false); // without rel perm
 
   Teuchos::RCP<const CompositeVector> rel_perm = 
     S_next_->GetFieldData("numerical_rel_perm");
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "  consistent face rel perm = " << (*rel_perm->ViewComponent("face",false))[0][7] << std::endl;
+  }
 
   S_next_->GetFieldEvaluator("mass_density_liquid")
       ->HasFieldChanged(S_next_.ptr(), name_);
@@ -919,14 +957,18 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
       S_next_->GetConstantVectorData("gravity");
 
   // Update the preconditioner with darcy and gravity fluxes
+  Teuchos::RCP<CompositeVector> rel_perm_one = Teuchos::rcp(new CompositeVector(*rel_perm, INIT_MODE_NONE));
+  rel_perm_one->PutScalar(1.);
   matrix_->Init();
   matrix_diff_->SetDensity(rho);
-  matrix_diff_->Setup(rel_perm, Teuchos::null);
+  matrix_diff_->Setup(rel_perm_one, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   matrix_diff_->ApplyBCs(true, true);
 
   // derive the consistent faces, involves a solve
   matrix_diff_->UpdateConsistentFaces(*u);
+
+  db_->WriteVector(" p_consistent face Richards:", u.ptr(), true);
 }
 
 // -----------------------------------------------------------------------------

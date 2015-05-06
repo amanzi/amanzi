@@ -336,7 +336,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       double min,max;
       dkrdT_uw->ViewComponent("face",false)->MaxValue(&max);
       dkrdT_uw->ViewComponent("face",false)->MinValue(&min);
-      std::cout << "Min/Max dkrdT = " << min << ", " << max << std::endl;
+      //      std::cout << "Min/Max dkrdT = " << min << ", " << max << std::endl;
 
       // form the operator
       Teuchos::RCP<const CompositeVector> kr_uw = S_next_->GetFieldData("numerical_rel_perm");
