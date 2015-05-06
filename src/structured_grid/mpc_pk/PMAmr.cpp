@@ -596,19 +596,19 @@ PMAmr::coarseTimeStep (Real _stop_time)
         if (verbose>3 && ParallelDescriptor::IOProcessor())
             std::cout << "\nCoarse TimeStep time: " << run_stop << '\n' ;
 
-        long min_fab_bytes = BoxLib::total_bytes_allocated_in_fabs_hwm;
-        long max_fab_bytes = BoxLib::total_bytes_allocated_in_fabs_hwm;
+        long min_fab_kilobytes = BoxLib::TotalBytesAllocatedInFabsHWM()/1024;
+        long max_fab_kilobytes = min_fab_kilobytes;
 
-        ParallelDescriptor::ReduceLongMin(min_fab_bytes,IOProc);
-        ParallelDescriptor::ReduceLongMax(max_fab_bytes,IOProc);
+        ParallelDescriptor::ReduceLongMin(min_fab_kilobytes,IOProc);
+        ParallelDescriptor::ReduceLongMax(max_fab_kilobytes,IOProc);
         //
         // Reset to zero to calculate high-water-mark for next timestep.
         //
-        BoxLib::total_bytes_allocated_in_fabs_hwm = 0;
+	BoxLib::ResetTotalBytesAllocatedInFabsHWM();
 
         if (verbose>3 && ParallelDescriptor::IOProcessor())
-            std::cout << "\nFAB byte spread across MPI nodes for timestep: ["
-                      << min_fab_bytes << " ... " << max_fab_bytes << "]\n";
+            std::cout << "\nFAB kilobyte spread across MPI nodes for timestep: ["
+                      << min_fab_kilobytes << " ... " << max_fab_kilobytes << "]\n";
     }
 
     std::string units_str = do_output_time_in_years ? "Y" : "s";
