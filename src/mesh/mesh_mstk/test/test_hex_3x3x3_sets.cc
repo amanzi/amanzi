@@ -14,11 +14,12 @@
 TEST(MSTK_HEX_3x3x3_SETS)
 {
 
-  std::string expcsetnames[12] = {"Bottom LS", "Middle LS", "Top LS", 
+  std::string expcsetnames[15] = {"Bottom LS", "Middle LS", "Top LS", 
                                  "Bottom+Middle Box", "Top Box",
                                  "Sample Point InCell", "Sample Point OnFace",
                                  "Sample Point OnEdge", "Sample Point OnVertex",
-                                 "Bottom ColFunc", "Middle ColFunc", "Top ColFunc"};
+                                 "Bottom ColFunc", "Middle ColFunc", "Top ColFunc",
+                                 "Cell Set 1", "Cell Set 2", "Cell Set 3"};
   Amanzi::AmanziMesh::Set_ID csetsize;
   
   std::string expfsetnames[7] = {"Face 101", "Face 102", 
@@ -80,6 +81,8 @@ TEST(MSTK_HEX_3x3x3_SETS)
           if (expfsetnames[j] == reg_name) break;
         }
         
+        if (j >= 7)
+          std::cerr << "Side set " << reg_name << "not found" << "\n";
         CHECK(j < 7);
         
         
@@ -105,6 +108,8 @@ TEST(MSTK_HEX_3x3x3_SETS)
           if (expnsetnames[j] == reg_name) break;
         }
 
+        if (j >= 2)
+          std::cerr << "Nodeset " << reg_name << "not found" << "\n";
         CHECK(j < 2);
         
         
@@ -143,6 +148,8 @@ TEST(MSTK_HEX_3x3x3_SETS)
               if (expfsetnames[j] == reg_name) break;
             }
             
+            if (j >= 7)
+              std::cerr << "Side set " << reg_name << "not found" << "\n";
             CHECK(j < 7);
             
             
@@ -182,6 +189,8 @@ TEST(MSTK_HEX_3x3x3_SETS)
               if (expnsetnames[j] == reg_name) break;
             }
             
+            if (j >= 2)
+              std::cerr << "Node set " << reg_name << " not found" << "\n";
             CHECK(j < 2);
             
             
@@ -210,6 +219,8 @@ TEST(MSTK_HEX_3x3x3_SETS)
 	  for (j = 0; j < 9; j++)
 	    if (reg_name == expcsetnames[j]) break;
 	  
+          if (j >= 9)
+            std::cerr << "Cell set " << reg_name << " not found" << "\n";
 	  CHECK(j < 9);
 	  
 	  // Verify that we can get the number of entities in the set
@@ -233,6 +244,8 @@ TEST(MSTK_HEX_3x3x3_SETS)
         if (expcsetnames[j] == reg_name) break;
       }
       
+      if (j >= 9) 
+        std::cerr << "Cell set corresponding to region " << reg_name << " not found" << "\n";
       CHECK(j < 9);
             
             
@@ -267,6 +280,8 @@ TEST(MSTK_HEX_3x3x3_SETS)
         for (j = 0; j < 7; j++)
           if (reg_name == expfsetnames[j]) break;
 
+        if (j >= 7)
+          std::cerr << "Side set " << reg_name << "not found" << "\n";
         CHECK(j < 7);
 	
 	// Verify that we can get the number of entities in the set
@@ -282,17 +297,19 @@ TEST(MSTK_HEX_3x3x3_SETS)
       }
       else if (entity_type == "Cell") {
 
-	// Do we have a valid sideset by this name
+	// Do we have a valid cellset  by this name
 
 	CHECK(mesh->valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
 	
         // Find the expected face set info corresponding to this name
 
         int j;
-        for (j = 0; j < 5; j++)
+        for (j = 0; j < 15; j++)
           if (reg_name == expcsetnames[j]) break;
 
-        CHECK(j < 5);
+        if (j >= 15)
+          std::cerr << "Cell set " << reg_name << " not found" << "\n";
+        CHECK(j < 15);
 	
 	// Verify that we can get the number of entities in the set
 	
@@ -314,10 +331,12 @@ TEST(MSTK_HEX_3x3x3_SETS)
       // Find the expected face set info corresponding to this name
       
       int j;
-      for (j = 0; j < 12; j++)
+      for (j = 0; j < 15; j++)
         if (reg_name == expcsetnames[j]) break;
       
-      CHECK(j < 12);
+      if (j >= 15)
+        std::cerr << "Cell set corresponding to region " << reg_name << " not found" << "\n";
+      CHECK(j < 15);
       
       // Verify that we can get the number of entities in the set
       
