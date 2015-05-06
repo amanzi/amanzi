@@ -82,7 +82,7 @@ protected:
   virtual void SetupRichardsFlow_(const Teuchos::Ptr<State>& S);
 
   // boundary condition members
-  virtual void UpdateBoundaryConditions_();
+  virtual void UpdateBoundaryConditions_(bool kr=true);
   virtual void ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& pres);
 
   // -- builds tensor K, along with faced-based Krel if needed by the rel-perm method

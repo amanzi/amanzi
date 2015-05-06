@@ -8,6 +8,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "VerboseObject.hh"
+#include "Debugger.hh"
 #include "TreeVector.hh"
 #include "CompositeVector.hh"
 #include "State.hh"
@@ -19,6 +20,8 @@ class MPCDelegateWater {
  public:
   MPCDelegateWater(const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
+  void set_db(const Teuchos::RCP<Debugger>& db) { db_ = db; }
+  
   void
   set_states(const Teuchos::RCP<const State>& S,
              const Teuchos::RCP<State>& S_inter,
@@ -67,6 +70,7 @@ class MPCDelegateWater {
  protected:
   Teuchos::RCP<Teuchos::ParameterList> plist_;
   Teuchos::RCP<VerboseObject> vo_;
+  Teuchos::RCP<Debugger> db_;
   
   // states
   Teuchos::RCP<State> S_next_;

@@ -70,7 +70,7 @@ void AdvectionDiffusion::setup(const Teuchos::Ptr<State>& S) {
   Teuchos::ParameterList bc_plist = plist_->sublist("boundary conditions", true);
   EnergyBCFactory bc_factory(S->GetMesh(), bc_plist);
   bc_temperature_ = bc_factory.CreateTemperature();
-  bc_flux_ = bc_factory.CreateEnthalpyFlux();
+  bc_flux_ = bc_factory.CreateTotalFlux();
 
   int nfaces = S->GetMesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);

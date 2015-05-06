@@ -60,8 +60,9 @@ void EnergyBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector>
 
   // update boundary conditions
   bc_temperature_->Compute(t_new);
+  bc_diff_flux_->Compute(t_new);
   bc_flux_->Compute(t_new);
-  UpdateBoundaryConditions_();
+  UpdateBoundaryConditions_(S_next_.ptr());
 
   // zero out residual
   Teuchos::RCP<CompositeVector> res = g->Data();
@@ -157,8 +158,9 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 
   // update boundary conditions
   bc_temperature_->Compute(S_next_->time());
+  bc_diff_flux_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
-  UpdateBoundaryConditions_();
+  UpdateBoundaryConditions_(S_next_.ptr());
 
   // div K_e grad u
   UpdateConductivityData_(S_next_.ptr());

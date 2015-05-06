@@ -211,7 +211,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   Teuchos::ParameterList bc_plist = plist_->sublist("boundary conditions", true);
   EnergyBCFactory bc_factory(mesh_, bc_plist);
   bc_temperature_ = bc_factory.CreateTemperature();
-  bc_flux_ = bc_factory.CreateEnthalpyFlux();
+  bc_diff_flux_ = bc_factory.CreateDiffusiveFlux();
+  bc_flux_ = bc_factory.CreateTotalFlux();
 
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
@@ -329,26 +330,27 @@ void EnergyBase::commit_state(double dt, const Teuchos::RCP<State>& S) {
     *vo_->os() << "Commiting state." << std::endl;
   PKPhysicalBDFBase::commit_state(dt, S);
 
+  bc_temperature_->Compute(S->time());
+  bc_diff_flux_->Compute(S->time());
+  bc_flux_->Compute(S->time());
+  UpdateBoundaryConditions_(S.ptr());
+  
   niter_ = 0;
   bool update = UpdateConductivityData_(S.ptr());
 
-  if (update_flux_ == UPDATE_FLUX_TIMESTEP ||
-      (update_flux_ == UPDATE_FLUX_ITERATION && update)) {
-    Teuchos::RCP<const CompositeVector> conductivity =
-        S->GetFieldData(uw_conductivity_key_);
-    matrix_diff_->global_operator()->Init();
-    matrix_diff_->Setup(conductivity, Teuchos::null);
-    matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  // if (update_flux_ == UPDATE_FLUX_TIMESTEP ||
+  //     (update_flux_ == UPDATE_FLUX_ITERATION && update)) {
+  Teuchos::RCP<const CompositeVector> conductivity =
+      S->GetFieldData(uw_conductivity_key_);
+  matrix_diff_->global_operator()->Init();
+  matrix_diff_->Setup(conductivity, Teuchos::null);
+  matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-    Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
-    Teuchos::RCP<CompositeVector> flux = S->GetFieldData(energy_flux_key_, name_);
-    matrix_diff_->UpdateFlux(*temp, *flux);
-  }
-};
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
+  Teuchos::RCP<CompositeVector> eflux = S->GetFieldData(energy_flux_key_, name_);
+  matrix_diff_->UpdateFlux(*temp, *eflux);
+  //  }
 
-
-// -- Calculate any diagnostics prior to doing vis
-void EnergyBase::calculate_diagnostics(const Teuchos::RCP<State>& S) {
   // calculate the advected energy as a diagnostic
   Teuchos::RCP<const CompositeVector> flux = S->GetFieldData(flux_key_);
   matrix_adv_->Setup(*flux);
@@ -358,6 +360,12 @@ void EnergyBase::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 
   CompositeVector& adv_energy = *S->GetFieldData(adv_energy_flux_key_, name_);  
   matrix_adv_->UpdateFlux(*enth, *flux, bc_adv_, adv_energy);  
+
+};
+
+
+// -- Calculate any diagnostics prior to doing vis
+void EnergyBase::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 }
 
 
@@ -372,7 +380,8 @@ bool EnergyBase::UpdateConductivityData_(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 // Evaluate boundary conditions at the current time.
 // -----------------------------------------------------------------------------
-void EnergyBase::UpdateBoundaryConditions_() {
+void EnergyBase::UpdateBoundaryConditions_(
+    const Teuchos::Ptr<State>& S) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "  Updating BCs." << std::endl;
@@ -404,11 +413,20 @@ void EnergyBase::UpdateBoundaryConditions_() {
     // push all onto diffusion, assuming that the incoming enthalpy is 0 (likely mass flux is 0)
   }
 
+  // Zero diffusive flux, potentially advective flux
+  for (Functions::BoundaryFunction::Iterator bc=bc_diff_flux_->begin();
+       bc!=bc_diff_flux_->end(); ++bc) {
+    int f = bc->first;
+    bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+    bc_values_[f] = bc->second;
+    bc_markers_adv_[f] = Operators::OPERATOR_BC_DIRICHLET;
+  }
+  
   // Dirichlet temperature boundary conditions from a coupled surface.
   if (coupled_to_surface_via_temp_) {
     // Face is Dirichlet with value of surface temp
-    Teuchos::RCP<const AmanziMesh::Mesh> surface = S_next_->GetMesh("surface");
-    const Epetra_MultiVector& temp = *S_next_->GetFieldData("surface_temperature")
+    Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
+    const Epetra_MultiVector& temp = *S->GetFieldData("surface_temperature")
         ->ViewComponent("cell",false);
 
     int ncells_surface = temp.MyLength();
@@ -429,9 +447,9 @@ void EnergyBase::UpdateBoundaryConditions_() {
   if (coupled_to_surface_via_flux_) {
     // Diffusive fluxes are given by the residual of the surface equation.
     // Advective fluxes are given by the surface temperature and whatever flux we have.
-    Teuchos::RCP<const AmanziMesh::Mesh> surface = S_next_->GetMesh("surface");
+    Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
     const Epetra_MultiVector& flux =
-        *S_next_->GetFieldData("surface_subsurface_energy_flux")
+        *S->GetFieldData("surface_subsurface_energy_flux")
         ->ViewComponent("cell",false);
 
     int ncells_surface = flux.MyLength();
@@ -626,8 +644,9 @@ void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u
 
   // update boundary conditions
   bc_temperature_->Compute(S_next_->time());
+  bc_diff_flux_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
-  UpdateBoundaryConditions_();
+  UpdateBoundaryConditions_(S_next_.ptr());
 
   // div K_e grad u
   ChangedSolution();
@@ -635,7 +654,7 @@ void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u
   Teuchos::RCP<const CompositeVector> conductivity =
       S_next_->GetFieldData(uw_conductivity_key_);
 
-  // Update the preconditioner with darcy and gravity fluxes
+  // Update the preconditioner
   matrix_diff_mfd_->global_operator()->Init();
   matrix_diff_mfd_->Setup(conductivity, Teuchos::null);
   matrix_diff_mfd_->UpdateMatrices(Teuchos::null, Teuchos::null);

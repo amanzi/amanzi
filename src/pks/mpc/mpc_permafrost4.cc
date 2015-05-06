@@ -131,9 +131,7 @@ MPCPermafrost4::setup(const Teuchos::Ptr<State>& S) {
   domain_db_ = domain_flow_pk_->debugger();
   surf_db_ = surf_flow_pk_->debugger();
 
-  // grab the debuggers
-  domain_db_ = domain_flow_pk_->debugger();
-  surf_db_ = surf_flow_pk_->debugger();
+  water_->set_db(surf_db_);
 }
 
 void
@@ -236,8 +234,10 @@ MPCPermafrost4::ApplyPreconditioner(Teuchos::RCP<const TreeVector> r,
 
   // make a new TreeVector that is just the subsurface values (by pointer).
   // -- note these const casts are necessary to create the new TreeVector, but
-  //    since the TreeVector COULD be const (it is only used in a single method,
-  //    in which it is const), const-correctness is not violated here.
+  // since the TreeVector COULD be const (it is only used in a single method,
+  // in which it is const), const-correctness is not violated here.  The
+  // correct solution would be to have a TV constructor that took const
+  // subvectors and made a const TV?
   Teuchos::RCP<TreeVector> domain_u_tv = Teuchos::rcp(new TreeVector());
   domain_u_tv->PushBack(Teuchos::rcp_const_cast<TreeVector>(r->SubVector(0)));
   domain_u_tv->PushBack(Teuchos::rcp_const_cast<TreeVector>(r->SubVector(1)));
@@ -249,7 +249,10 @@ MPCPermafrost4::ApplyPreconditioner(Teuchos::RCP<const TreeVector> r,
   // call the operator's inverse
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Precon applying coupled subsurface operator." << std::endl;
-  MPCSubsurface::ApplyPreconditioner(domain_u_tv, domain_Pu_tv);
+  linsolve_preconditioner_->ApplyInverse(*domain_u_tv, *domain_Pu_tv);
+
+  // rescale to Pa from MPa
+  Pr->SubVector(0)->Data()->Scale(1.e6);
 
   // Copy subsurface face corrections to surface cell corrections
   CopySubsurfaceToSurface(*Pr->SubVector(0)->Data(),
@@ -308,6 +311,12 @@ MPCPermafrost4::UpdatePreconditioner(double t,
   surf_db_->WriteVectors(vnames, vecs, false);
 
   // assemble
+  // -- scale the pressure dofs
+  CompositeVector scaling(sub_pks_[0]->preconditioner()->DomainMap());
+  scaling.PutScalar(1.e6); // dWC/dp_Pa * (Pa / MPa) --> dWC/dp_MPa
+  sub_pks_[0]->preconditioner()->Rescale(scaling);
+  dE_dp_block_->Rescale(scaling);
+  
   preconditioner_->AssembleMatrix();
 
   if (dump_) {
@@ -328,6 +337,25 @@ MPCPermafrost4::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
         Teuchos::RCP<TreeVector> u) {
   bool modified = false;
 
+  // write predictor
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "Extrapolated Prediction (surface):" << std::endl;
+    std::vector<std::string> vnames;
+    vnames.push_back("  ps_extrap");
+    vnames.push_back("  Ts_extrap");
+    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    vecs.push_back(u->SubVector(2)->Data().ptr());
+    vecs.push_back(u->SubVector(3)->Data().ptr());
+    surf_db_->WriteVectors(vnames, vecs, true);
+
+    *vo_->os() << "Extrapolated Prediction (subsurface):" << std::endl;
+    vnames[0] = "  p_extrap";
+    vnames[1] = "  T_extrap";
+    vecs[0] = u->SubVector(0)->Data().ptr();
+    vecs[1] = u->SubVector(1)->Data().ptr();
+    domain_db_->WriteVectors(vnames, vecs, true);
+  }
+
   // Make a new TreeVector that is just the subsurface values (by pointer).
   Teuchos::RCP<TreeVector> sub_u = Teuchos::rcp(new TreeVector());
   sub_u->PushBack(u->SubVector(0));
@@ -336,10 +364,48 @@ MPCPermafrost4::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   // Subsurface EWC, modifies cells
   modified |= ewc_->ModifyPredictor(h,sub_u);
 
+  // write predictor
+  if (modified && vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "EWC Prediction (surface):" << std::endl;
+    std::vector<std::string> vnames;
+    vnames.push_back("  ps_extrap");
+    vnames.push_back("  Ts_extrap");
+    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    vecs.push_back(u->SubVector(2)->Data().ptr());
+    vecs.push_back(u->SubVector(3)->Data().ptr());
+    surf_db_->WriteVectors(vnames, vecs, true);
+
+    *vo_->os() << "EWC Prediction (subsurface):" << std::endl;
+    vnames[0] = "  p_extrap";
+    vnames[1] = "  T_extrap";
+    vecs[0] = u->SubVector(0)->Data().ptr();
+    vecs[1] = u->SubVector(1)->Data().ptr();
+    domain_db_->WriteVectors(vnames, vecs, true);
+  }
+  
   // Calculate consistent faces
   modified |= domain_flow_pk_->ModifyPredictor(h, u0->SubVector(0), u->SubVector(0));
   modified |= domain_energy_pk_->ModifyPredictor(h, u0->SubVector(1), u->SubVector(1));
 
+  // write predictor
+  if (modified && vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "EWC/Consistent Face Prediction (surface):" << std::endl;
+    std::vector<std::string> vnames;
+    vnames.push_back("  ps_extrap");
+    vnames.push_back("  Ts_extrap");
+    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    vecs.push_back(u->SubVector(2)->Data().ptr());
+    vecs.push_back(u->SubVector(3)->Data().ptr());
+    surf_db_->WriteVectors(vnames, vecs, true);
+
+    *vo_->os() << "EWC/Consistent Face Prediction (subsurface):" << std::endl;
+    vnames[0] = "  p_extrap";
+    vnames[1] = "  T_extrap";
+    vecs[0] = u->SubVector(0)->Data().ptr();
+    vecs[1] = u->SubVector(1)->Data().ptr();
+    domain_db_->WriteVectors(vnames, vecs, true);
+  }
+  
   // Copy consistent faces to surface
   if (modified) {
     S_next_->GetFieldEvaluator("surface_relative_permeability")->HasFieldChanged(S_next_.ptr(),name_);
@@ -354,6 +420,26 @@ MPCPermafrost4::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   newly_modified |= water_->ModifyPredictor_WaterSpurtDamp(h, u);
   newly_modified |= water_->ModifyPredictor_TempFromSource(h, u);
   modified |= newly_modified;
+
+  // write predictor
+  if (newly_modified && vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "Spurt Fixed Prediction (surface):" << std::endl;
+    std::vector<std::string> vnames;
+    vnames.push_back("  ps_extrap");
+    vnames.push_back("  Ts_extrap");
+    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    vecs.push_back(u->SubVector(2)->Data().ptr());
+    vecs.push_back(u->SubVector(3)->Data().ptr());
+    surf_db_->WriteVectors(vnames, vecs, true);
+
+    *vo_->os() << "Spurt Fixed Prediction (subsurface):" << std::endl;
+    vnames[0] = "  p_extrap";
+    vnames[1] = "  T_extrap";
+    vecs[0] = u->SubVector(0)->Data().ptr();
+    vecs[1] = u->SubVector(1)->Data().ptr();
+    domain_db_->WriteVectors(vnames, vecs, true);
+  }
+  
 
   // -- copy surf --> sub
   //  if (newly_modified) {
