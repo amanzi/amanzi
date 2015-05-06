@@ -23,6 +23,30 @@
       <Parameter name="Entity" type="string" value="Cell"/>
     </ParameterList>
   </ParameterList>
+  <ParameterList name="Cell Set 1">
+    <ParameterList name="Region: Labeled Set">
+      <Parameter name="Label" type="string" value="1"/>
+      <Parameter name="File" type="string" value="hex_3x3x3.exo"/>
+      <Parameter name="Format" type="string" value="Exodus II"/>
+      <Parameter name="Entity" type="string" value="Cell"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="Cell Set 2">
+    <ParameterList name="Region: Labeled Set">
+      <Parameter name="Label" type="string" value="2"/>
+      <Parameter name="File" type="string" value="hex_3x3x3.exo"/>
+      <Parameter name="Format" type="string" value="Exodus II"/>
+      <Parameter name="Entity" type="string" value="Cell"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="Cell Set 3">
+    <ParameterList name="Region: Labeled Set">
+      <Parameter name="Label" type="string" value="3"/>
+      <Parameter name="File" type="string" value="hex_3x3x3.exo"/>
+      <Parameter name="Format" type="string" value="Exodus II"/>
+      <Parameter name="Entity" type="string" value="Cell"/>
+    </ParameterList>
+  </ParameterList>
   <ParameterList name="Bottom+Middle Box">
     <ParameterList name="Region: Box">
       <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
