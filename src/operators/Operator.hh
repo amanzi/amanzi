@@ -129,6 +129,7 @@ class Operator {
 
   // boundary conditions (BC) require information on test and
   // trial spaces. For a single PDE, these BCs could be the same.
+  // Note that trial corresponds to the column, while test corresponds to the row.
   virtual void SetBCs(const Teuchos::RCP<BCs>& bc_trial, const Teuchos::RCP<BCs>& bc_test) {
     bc_trial_ = bc_trial;
     bc_test_ = bc_test;

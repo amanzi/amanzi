@@ -27,7 +27,8 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
   Mesh(verbobj,request_faces,request_edges), 
   mpicomm(incomm->GetMpiComm()), meshxyz(NULL), 
   faces_initialized(false), edges_initialized(false),
-  target_cell_volumes(NULL), min_cell_volumes(NULL)
+  target_cell_volumes(NULL), min_cell_volumes(NULL),
+  extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {  
 
   int numprocs = incomm->NumProc();
@@ -161,7 +162,8 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
   Mesh(verbobj,request_faces,request_edges), 
   mpicomm(incomm->GetMpiComm()), meshxyz(NULL), 
   faces_initialized(false), edges_initialized(false),
-  target_cell_volumes(NULL), min_cell_volumes(NULL)
+  target_cell_volumes(NULL), min_cell_volumes(NULL),
+  extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {
 
   // Assume three dimensional problem if constructor called without 
@@ -261,7 +263,8 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
   Mesh(verbobj,request_faces,request_edges), 
   mpicomm(incomm->GetMpiComm()), meshxyz(NULL), 
   faces_initialized(false), edges_initialized(false),
-  target_cell_volumes(NULL), min_cell_volumes(NULL)
+  target_cell_volumes(NULL), min_cell_volumes(NULL),
+  extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {
   int ok;
 
@@ -352,7 +355,8 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
   Mesh(verbobj,request_faces,request_edges), 
   mpicomm(incomm->GetMpiComm()), meshxyz(NULL), 
   faces_initialized(false), edges_initialized(false),
-  target_cell_volumes(NULL), min_cell_volumes(NULL)
+  target_cell_volumes(NULL), min_cell_volumes(NULL),
+  extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {
   int ok;
   int space_dim = 2;
@@ -454,7 +458,8 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
   Mesh(verbobj,request_faces,request_edges), 
   mpicomm(incomm->GetMpiComm()), meshxyz(NULL), 
   faces_initialized(false), edges_initialized(false),
-  target_cell_volumes(NULL), min_cell_volumes(NULL)
+  target_cell_volumes(NULL), min_cell_volumes(NULL),
+  extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {
   int ok;
 
@@ -563,7 +568,8 @@ Mesh_MSTK::Mesh_MSTK (const Mesh *inmesh,
 		      const bool request_faces,
 		      const bool request_edges) :
   mpicomm(inmesh->get_comm()->GetMpiComm()),
-  Mesh(inmesh->verbosity_obj(),request_faces,request_edges)
+  Mesh(inmesh->verbosity_obj(),request_faces,request_edges),
+  extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {  
 
   Mesh_ptr inmesh_mstk = ((Mesh_MSTK *)inmesh)->mesh;
@@ -615,7 +621,8 @@ Mesh_MSTK::Mesh_MSTK (const Mesh& inmesh,
 		      const bool request_faces,
 		      const bool request_edges) :
   mpicomm(inmesh.get_comm()->GetMpiComm()),
-  Mesh(inmesh.verbosity_obj(),request_faces,request_edges)
+  Mesh(inmesh.verbosity_obj(),request_faces,request_edges),
+  extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {  
 
   Mesh_ptr inmesh_mstk = ((Mesh_MSTK&) inmesh).mesh;
@@ -674,7 +681,8 @@ Mesh_MSTK::Mesh_MSTK (const Mesh& inmesh,
 		      const bool request_faces,
 		      const bool request_edges) :
   mpicomm(inmesh.get_comm()->GetMpiComm()),
-  Mesh(inmesh.verbosity_obj(),request_faces,request_edges)
+  Mesh(inmesh.verbosity_obj(),request_faces,request_edges),
+  extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {  
   // store pointers to the MESH_XXXFromID functions so that they can
   // be called without a switch statement 
@@ -1271,8 +1279,8 @@ Mesh_MSTK::~Mesh_MSTK() {
   if (edge_map_w_ghosts_) delete edge_map_w_ghosts_;
   delete node_map_wo_ghosts_;
   delete node_map_w_ghosts_;
-  delete extface_map_wo_ghosts_;
-  delete owned_to_extface_importer_;
+  if (extface_map_wo_ghosts_) delete extface_map_wo_ghosts_;
+  if (owned_to_extface_importer_) delete owned_to_extface_importer_;
   delete [] faceflip;
 
   if (OwnedVerts) MSet_Delete(OwnedVerts);
