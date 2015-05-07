@@ -428,7 +428,7 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   preconditioner_->SymbolicAssembleMatrix();
 
   face_matrix_diff_->SetGravity(g);
-  face_matrix_diff_->SetBCs(bc_);
+  face_matrix_diff_->SetBCs(bc_, bc_);
   face_matrix_diff_->Setup(K_);
   face_matrix_diff_->Setup(Teuchos::null, Teuchos::null);
   face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
