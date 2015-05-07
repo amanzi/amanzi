@@ -830,8 +830,10 @@ void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
 
-    double v = std::abs(kf[0][f]) > 0. ? flux_f[0][f] / kf[0][f] : 0.;
-    double vmod = v * dkdp_f[0][f];
+    double v = flux_f[0][f];
+    double vmod = kf[0][f] > 0.0 ? fabs(v) * dkdp_f[0][f] / kf[0][f] : 0.0;
+    // double v = std::abs(kf[0][f]) > 0. ? flux_f[0][f] / kf[0][f] : 0.;
+    // double vmod = v * dkdp_f[0][f];
     if (scalar_rho_) {
       vmod *= rho_;
     } else {
