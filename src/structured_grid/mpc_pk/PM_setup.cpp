@@ -3,7 +3,6 @@
 #include <Interpolater.H>
 #include <MultiGrid.H>
 #include <ArrayLim.H>
-#include <Profiler.H>
 #include <TagBox.H>
 #include <DataServices.H>
 #include <AmrData.H>
