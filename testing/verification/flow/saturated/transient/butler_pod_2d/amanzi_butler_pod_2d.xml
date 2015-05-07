@@ -1,4 +1,5 @@
 <amanzi_input version="2.1.0" type="unstructured">
+   <echo_translated_input file_name="oldspec.xml" format="v1"/>
    <model_description name="SR Test Problem">
       <comments>Confind aquifer transient drawdown (Theis 1935)</comments>
       <model_id>Theis</model_id>
@@ -59,7 +60,7 @@
     Execution Control
    -->
     <execution_controls>
-        <verbosity level="high"/>
+        <verbosity level="extreme"/>
         <execution_control_defaults init_dt="3.64" increase_factor="1.5" method="bdf1"/>
         <execution_control start="0.0" end="1.e9" init_dt="3.64" mode="transient"/>
     </execution_controls>
@@ -206,12 +207,12 @@
             <drawdown>
             <assigned_regions>Obs1</assigned_regions>
             <functional>point</functional>
-            <time_macro>Observation Times</time_macro>
+            <time_macros>Observation Times</time_macros>
             </drawdown>
             <drawdown>
             <assigned_regions>Obs2</assigned_regions>
             <functional>point</functional>
-            <time_macro>Observation Times</time_macro>
+            <time_macros>Observation Times</time_macros>
             </drawdown>
         </liquid_phase>
         </observations>

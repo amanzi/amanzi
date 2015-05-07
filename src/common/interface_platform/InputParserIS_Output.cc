@@ -256,6 +256,9 @@ Teuchos::ParameterList InputParserIS::CreateObservationDataList_(Teuchos::Parame
                 }
               }
             }
+            if (all_times.size() != 0) {
+              obs_list.sublist(i->first).set("times", all_times);
+            }
             obs_list.sublist(i->first).remove("Time Macros");
           }
           if (obs_list.sublist(i->first).isParameter("Cycle Macro")) {
