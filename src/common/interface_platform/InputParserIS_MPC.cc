@@ -6,6 +6,7 @@
 #include "exceptions.hh"
 #include "dbc.hh"
 
+#include "Teuchos_RCP.hpp"
 #include "InputParserIS.hh"
 #include "InputParserIS_Defs.hh"
 
@@ -260,14 +261,27 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::ParameterL
     }
 
     if (exe_sublist.isParameter("Flow Model")) {
+
+
+	bool darcy_vel_given = false;
+	if (plist->isSublist("Initial Conditions"))
+	  if (plist->sublist("Initial Conditions").isSublist("All"))
+	    if (plist->sublist("Initial Conditions").sublist("All").isSublist("IC: Uniform Velocity"))
+	      darcy_vel_given = true;
+
       if (exe_sublist.get<std::string>("Flow Model") == "Off" || exe_sublist.get<std::string>("Flow Model") == "off") {
         flow_on = false;
       } else if (exe_sublist.get<std::string>("Flow Model") == "Richards") {
         flow_pk = "richards";
         flow_on = true;
       } else if (exe_sublist.get<std::string>("Flow Model") == "Single Phase") {
-        flow_pk = "darcy";
-        flow_on = true;
+	if (darcy_vel_given){
+	  flow_on = false;
+	}
+	else {
+	  flow_pk = "darcy";
+	  flow_on = true;
+	}
       } else {
         Exceptions::amanzi_throw(Errors::Message("Flow Model must either be Richards, Single Phase, or Off"));
       }
