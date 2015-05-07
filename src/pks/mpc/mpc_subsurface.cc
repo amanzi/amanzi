@@ -121,7 +121,7 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
       } else {
         ddivKgT_dp_ = Teuchos::rcp(new Operators::OperatorDiffusionMFD(divq_plist,dE_dp_block_));
       }
-      ddivKgT_dp_->SetBCs(sub_pks_[1]->BCs(), sub_pks_[1]->BCs());
+      ddivKgT_dp_->SetBCs(sub_pks_[0]->BCs(), sub_pks_[1]->BCs());
 
     }
 
@@ -251,7 +251,7 @@ void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
     AmanziGeometry::Point g(3);
     g[0] = (*gvec)[0]; g[1] = (*gvec)[1]; g[2] = (*gvec)[2];
     ddivq_dT_->SetGravity(g);    
-    ddivq_dT_->SetBCs(sub_pks_[0]->BCs(), sub_pks_[0]->BCs());
+    ddivq_dT_->SetBCs(sub_pks_[1]->BCs(), sub_pks_[0]->BCs());
     ddivq_dT_->Setup(richards_pk_->K_);
   }
 
@@ -271,7 +271,7 @@ void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
     AmanziGeometry::Point g(3);
     g[0] = (*gvec)[0]; g[1] = (*gvec)[1]; g[2] = (*gvec)[2];
     ddivhq_dp_->SetGravity(g);    
-    ddivhq_dp_->SetBCs(sub_pks_[1]->BCs(), sub_pks_[1]->BCs());
+    ddivhq_dp_->SetBCs(sub_pks_[0]->BCs(), sub_pks_[1]->BCs());
     ddivhq_dp_->Setup(richards_pk_->K_);
 
     ddivhq_dT_->SetGravity(g);    
