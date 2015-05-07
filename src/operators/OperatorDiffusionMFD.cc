@@ -832,7 +832,7 @@ void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
 
     double v = std::abs(kf[0][f]) > 0. ? flux_f[0][f] / kf[0][f] : 0.;
     double vmod = v * dkdp_f[0][f];
-    if (scalar_rho_mu_) {
+    if (scalar_rho_) {
       vmod *= rho_;
     } else {
       ASSERT(false);
