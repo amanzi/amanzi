@@ -58,6 +58,7 @@
 #   0.92.14      - update Hypre to v2.10.0b (and added patch for to ensure tol>0)
 #   0.92.15      - updated Alquimia to v0.2 (backward compatible)
 #   0.92.16      - update CCSE to version 1.3.0 
+#   0.92.17      - update MSTK to version 2.2.3 (adds element set capabilities)
 
 include(CMakeParseArguments)
 
@@ -107,7 +108,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 92)
-set (AMANZI_TPLS_VERSION_PATCH 16)
+set (AMANZI_TPLS_VERSION_PATCH 17)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -267,12 +268,12 @@ set(ExodusII_MD5_SUM       cfd240dbc1251b08fb1d0ee2de40a44c)
 # TPL: MSTK
 #
 set(MSTK_VERSION_MAJOR 2)
-set(MSTK_VERSION_MINOR 22)
+set(MSTK_VERSION_MINOR 23)
 set(MSTK_VERSION_PATCH )
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tgz)
-set(MSTK_MD5_SUM        096343f847f27b0385519745295b66e6)
+set(MSTK_MD5_SUM        d1ceedfd43e18f8b5eee85b2d8e7d4fe)
 
 #
 # TPL: MOAB
