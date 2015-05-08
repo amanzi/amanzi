@@ -562,7 +562,7 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
   AmanziMesh::Entity_ID_List faces;
 
   const std::vector<int>& bc_model_trial = bc_trial.bc_model();
-  const std::vector<int>& bc_model_test = bc_trial.bc_model();
+  const std::vector<int>& bc_model_test = bc_test.bc_model();
 
   const std::vector<double>& bc_value = bc_trial.bc_value();
   const std::vector<double>& bc_mixed = bc_trial.bc_mixed();
@@ -830,10 +830,14 @@ void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
 
-    double v = flux_f[0][f];
-    double vmod = kf[0][f] > 0.0 ? fabs(v) * dkdp_f[0][f] / kf[0][f] : 0.0;
-    // double v = std::abs(kf[0][f]) > 0. ? flux_f[0][f] / kf[0][f] : 0.;
-    // double vmod = v * dkdp_f[0][f];
+    // This change is to deal with the case where kf < 0, i.e. for energy when:
+    //  div (qh) = div (h k grad p), where h is enthalpy and can be negative.
+    // I believe I have the sign correct now fixing #1550.  --etc 
+    //    double v = flux_f[0][f];
+    //    double vmod = kf[0][f] > 0.0 ? fabs(v) * dkdp_f[0][f] / kf[0][f] : 0.0;
+    double v = std::abs(kf[0][f]) > 0. ? flux_f[0][f] / kf[0][f] : 0.;
+    double vmod = std::abs(v) * dkdp_f[0][f];
+
     if (scalar_rho_) {
       vmod *= rho_;
     } else {
