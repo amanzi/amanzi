@@ -218,7 +218,7 @@ void Richards_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
 
 
 /* ******************************************************************
-* Update new preconditioner B(p, dT_prec).                                   
+* Update new preconditioner on the interval (tp-dtp, tp].
 ****************************************************************** */
 void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp)
 {

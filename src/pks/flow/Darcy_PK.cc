@@ -353,7 +353,7 @@ void Darcy_PK::Initialize()
     Epetra_MultiVector& lambda = *solution->ViewComponent("face");
     DeriveFaceValuesFromCellValues(p, lambda);
 
-    SolveFullySaturatedProblem(t_old, *solution);
+    SolveFullySaturatedProblem(*solution);
   }
 
   // print initialization head for this time period

@@ -168,7 +168,7 @@ void FlowEnergy_PK::Setup()
 bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   // flow
-  // -- swap saturations
+  // -- swap saturations (current and previous)
   S_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_.ptr(), "flow");
   const CompositeVector& sat = *S_->GetFieldData("saturation_liquid");
   CompositeVector& sat_prev = *S_->GetFieldData("prev_saturation_liquid", "flow");
@@ -176,7 +176,7 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   CompositeVector sat_prev_copy(sat_prev);
   sat_prev = sat;
 
-  // -- swap water_contents
+  // -- swap water_contents (current and previous)
   S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
   CompositeVector& wc = *S_->GetFieldData("water_content", "water_content");
   CompositeVector& wc_prev = *S_->GetFieldData("prev_water_content", "flow");
@@ -185,7 +185,7 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   wc_prev = wc;
 
   // energy
-  // -- swap conserved energys
+  // -- swap conserved energies (current and previous)
   S_->GetFieldEvaluator("energy")->HasFieldChanged(S_.ptr(), "thermal");
   const CompositeVector& e = *S_->GetFieldData("energy");
   CompositeVector& e_prev = *S_->GetFieldData("prev_energy", "thermal");

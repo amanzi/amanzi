@@ -21,19 +21,22 @@ namespace Amanzi {
 namespace Flow {
 
 /* ******************************************************************
-* Solve single phase problem using boundary conditions at time T0.
+* Solve single phase problem using boundary conditions at time t_old.
 * We populate both matrix and preconditoner here but use only the
 * preconditioner. Matrix may be used in external flux calculation. 
 * Moving flux calculation here impose restrictions on multiple 
 * possible scenarios of data flow.
+*
+* Comment:
+* When this is used by Init, shouldn't this also get preconditioner_name_ini 
+* instead of preconditioner_name? --etc
 ****************************************************************** */
-// When this is used by Init, shouldn't this also get preconditioner_name_ini instead of preconditioner_name? --etc
 void Richards_PK::SolveFullySaturatedProblem(
-    double T0, CompositeVector& u, const std::string& solver_name)
+    double t_old, CompositeVector& u, const std::string& solver_name)
 {
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
 
-  UpdateSourceBoundaryData(T0, T0, u);
+  UpdateSourceBoundaryData(t_old, t_old, u);
   krel_->PutScalarMasterAndGhosted(molar_rho_);
   Operators::CellToFace_ScaleInverse(mu, krel_);
   dKdP_->PutScalarMasterAndGhosted(0.0);
@@ -80,14 +83,15 @@ void Richards_PK::SolveFullySaturatedProblem(
 
 
 /* ******************************************************************
-* Enforce constraints at time Tp by solving diagonalized MFD problem.
-* Algorithm is based on de-coupling pressure-lambda system.
+* Enforce constraints, using new BCs at time t_new, by solving the 
+* block-diagonalized problem. Algorithm is based on de-coupling 
+* pressure-lambda system via zeroing-out off-diagonal blocks.
 ****************************************************************** */
-void Richards_PK::EnforceConstraints(double Tp, Teuchos::RCP<CompositeVector> u)
+void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector> u)
 {
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
 
-  UpdateSourceBoundaryData(Tp, Tp, *u);
+  UpdateSourceBoundaryData(t_new, t_new, *u);
 
   CompositeVector utmp(*u);
   Epetra_MultiVector& utmp_face = *utmp.ViewComponent("face");

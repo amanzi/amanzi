@@ -862,25 +862,25 @@ void Richards_PK::CommitStep(double t_old, double t_new)
 
 
 /* ******************************************************************
- * * A wrapper for updating boundary conditions.
- * ****************************************************************** */
-void Richards_PK::UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u)
+* A wrapper for updating boundary conditions.
+****************************************************************** */
+void Richards_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u)
 {
   if (src_sink != NULL) {
     if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      src_sink->ComputeDistribute(T0, T1, Kxy->Values());
+      src_sink->ComputeDistribute(t_old, t_new, Kxy->Values());
     } else {
-      src_sink->ComputeDistribute(T0, T1);
+      src_sink->ComputeDistribute(t_old, t_new);
     }
   }
 
-  bc_pressure->Compute(T1);
-  bc_flux->Compute(T1);
-  bc_seepage->Compute(T1);
+  bc_pressure->Compute(t_new);
+  bc_flux->Compute(t_new);
+  bc_seepage->Compute(t_new);
   if (shift_water_table_.getRawPtr() == NULL)
-    bc_head->Compute(T1);
+    bc_head->Compute(t_new);
   else
-    bc_head->ComputeShift(T1, shift_water_table_->Values());
+    bc_head->ComputeShift(t_new, shift_water_table_->Values());
 
   ComputeBCs(u);
 }
