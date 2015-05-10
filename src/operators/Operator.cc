@@ -345,6 +345,8 @@ int Operator::CopyShadowToMaster(int iops)
   int nops = ops_.size();
   ASSERT(iops < nops);
   ops_[iops]->CopyShadowToMaster();
+
+  return 0;
 } 
 
 

@@ -583,6 +583,7 @@ class Mesh
   {
     Errors::Message mesg("Edges not implemented in this framework");
     amanzi_throw(mesg);
+    return face_map(include_ghost);  // avoids clang warnings for every file.
   }; 
 
   virtual

@@ -822,6 +822,11 @@ void CycleDriver::Go() {
       if (it == reset_info_.end() ) break;
     }
 
+    if (vo_->os_OK(Teuchos::VERB_LOW)) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "Restarting from checkpoint file: " << restart_filename_ << std::endl;
+    }
+
     if (position == TIME_PERIOD_END) {
       time_period_id_++;
       ResetDriver(time_period_id_); 

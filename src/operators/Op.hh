@@ -66,6 +66,7 @@ class Op {
       }
     }
     vals = vals_shadow;
+    return 0;
   }
 
   // For backward compatibility... must go away

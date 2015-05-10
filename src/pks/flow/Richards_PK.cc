@@ -641,7 +641,8 @@ void Richards_PK::Initialize()
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << std::endl 
-        << vo_->color("green") << "Initalization of TI period is complete." << vo_->reset() << std::endl;
+        << vo_->color("green") << "Initalization of TP is complete, told=" << t_old 
+        << " tnew=" << t_new << vo_->reset() << std::endl;
     *vo_->os()<< "EC:" << error_control_ << " Src:" << src_sink_distribution
               << " Upwind:" << relperm_->method() << op_matrix_diff_->little_k()
               << " PC:\"" << preconditioner_name_.c_str() << "\"" 
@@ -778,6 +779,15 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   CompositeVector wc_prev_copy(wc_prev);
   wc_prev = wc;
+
+  // enter subspace
+  if (reinit) {
+    EnforceConstraints(t_new, solution);
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+      VV_PrintHeadExtrema(*solution);
+    }
+  }
 
   // initialization
   if (num_itrs_ == 0) {
