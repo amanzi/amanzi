@@ -448,7 +448,7 @@ void CycleDriver::ReadParameterList_() {
     const std::string & tp_name = time_periods_list.name(item);
     tp_start_[i] = time_periods_list.sublist(tp_name).get<double>("start period time");
     tp_end_[i] = time_periods_list.sublist(tp_name).get<double>("end period time");
-    tp_dt_[i] = time_periods_list.sublist(tp_name).get<double>("initial time step", 1);
+    tp_dt_[i] = time_periods_list.sublist(tp_name).get<double>("initial time step", 1.0);
     tp_max_cycle_[i] = time_periods_list.sublist(tp_name).get<int>("maximum cycle number", -1);
    
     std::string t_units = time_periods_list.sublist(tp_name).get<std::string>("start time units", "s");
@@ -555,7 +555,6 @@ void CycleDriver::ReadParameterList_() {
     std::sort(reset_info_.begin(), reset_info_.end(), reset_info_compfunc);
     std::sort(reset_max_.begin(),  reset_max_.end(),  reset_info_compfunc);
   }
-
 }
 
 
@@ -566,7 +565,7 @@ double CycleDriver::get_dt( bool after_failure) {
   // get the physical step size
   double dt;
 
-  dt  = pk_->get_dt();
+  dt = pk_->get_dt();
 
   std::vector<std::pair<double,double> >::const_iterator it;
   std::vector<std::pair<double,double> >::const_iterator it_max;
@@ -835,7 +834,6 @@ void CycleDriver::Go() {
       Initialize();
     }
   }
-
 
 
   if (restart_requested_) {

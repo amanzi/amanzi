@@ -116,16 +116,6 @@ void OperatorDiffusionMFD::UpdateMatrices(
       UpdateMatricesTPFA_();
     }
   }
-
-  // add Newton-type corrections
-  // if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
-  //   if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
-  //     AddNewtonCorrectionCell_(flux, u);
-  //   } else {
-  //     Errors::Message msg("OperatorDiffusion: Newton correction may only be applied to schemas that include CELL dofs.");
-  //     Exceptions::amanzi_throw(msg);
-  //   }
-  // }
 }
 
 
