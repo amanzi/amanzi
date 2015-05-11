@@ -2313,15 +2313,10 @@ Diffusion operator
     that must be added to the matrix. These terms represent Jacobian and are needed 
     for the preconditoner. Available options are `"true jacobian`" and `"approximate jacobian`".
 
-  * `"consistent faces`" [sublist] to be described by E.Coon
-
-    * `"linear operator`" [sublist] add parameters for a linear solver that defines a preconditioner
-      for the diffusion operator (see section LinearSolvers_).
-
   * `"consistent faces`" [sublist] may contain a `"preconditioner`" and
     `"linear operator`" list (see sections Preconditioners_ and LinearSolvers_
     respectively).  If these lists are provided, and the `"discretization
-    primary`" is of type `"mfd: *`", then the OperatorDiffusionMFD method
+    primary`" is of type `"mfd: *`", then the diffusion method
     UpdateConsistentFaces() can be used.  This method, given a set of cell
     values, determines the faces constraints that satisfy the constraint
     equation in MFD by assembling and inverting the face-only system.  This is
