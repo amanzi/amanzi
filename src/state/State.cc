@@ -1064,14 +1064,14 @@ double ReadCheckpointInitialTime(Epetra_MpiComm* comm,
 };
 
 // Non-member function for checkpointing.
-double ReadCheckpointPosition(Epetra_MpiComm* comm,
+int ReadCheckpointPosition(Epetra_MpiComm* comm,
         std::string filename) {
   Teuchos::Ptr<HDF5_MPI> checkpoint = Teuchos::ptr(new HDF5_MPI(*comm, filename));
 
   // load the attributes
-  double pos(0.);
+  int pos = 0;
   checkpoint->open_h5file();
-  checkpoint->readAttrReal(pos, "position");
+  checkpoint->readAttrInt(pos, "position");
   checkpoint->close_h5file();
   return pos;
 };

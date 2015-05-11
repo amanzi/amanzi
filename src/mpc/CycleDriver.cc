@@ -784,21 +784,20 @@ void CycleDriver::Go() {
 
   time_period_id_ = 0;
   int position = 0;
+  double restart_time = 0.;
 
   if (restart_requested_) {
-    double restart_time = ReadCheckpointInitialTime(comm_, restart_filename_);
+    restart_time = ReadCheckpointInitialTime(comm_, restart_filename_);
     position = ReadCheckpointPosition(comm_, restart_filename_);
-
     for (int i=0;i<num_time_periods_;i++) {
-      if (restart_time - tp_end_[i] > 1e-10) time_period_id_++;
-    }
-    if (position == TIME_PERIOD_END) time_period_id_--;    
+      if (restart_time - tp_end_[i] > -1e-10) 
+	time_period_id_++;
+    }    
+    if (position == TIME_PERIOD_END) 
+      time_period_id_--;    
   }
 
   Init_PK(time_period_id_);
-
-  S_->set_time(tp_start_[time_period_id_]);
-  S_->set_cycle(cycle0_);
 
   // start at time t = t0 and initialize the state.
   S_->set_time(tp_start_[time_period_id_]);
@@ -924,6 +923,11 @@ void CycleDriver::Go() {
 * TBW.
 ****************************************************************** */
 void CycleDriver::ResetDriver(int time_pr_id) {
+
+  if (vo_->os_OK(Teuchos::VERB_LOW)) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "Reset of CD: TP "<<time_pr_id - 1<<"-> TP "<<time_pr_id<<"." << std::endl;
+  }
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(S_->GetMesh("domain"));
   S_old_ = S_;
