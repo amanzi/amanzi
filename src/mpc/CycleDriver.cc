@@ -924,7 +924,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   if (vo_->os_OK(Teuchos::VERB_LOW)) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "Reset of CD: TP "<<time_pr_id - 1<<"-> TP "<<time_pr_id<<"." << std::endl;
+      *vo_->os() << "Reseting CD: TP " << time_pr_id - 1 << " -> TP " << time_pr_id << "." << std::endl;
   }
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(S_->GetMesh("domain"));

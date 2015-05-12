@@ -509,71 +509,8 @@ void Field_CompositeVector::EnsureSubfieldNames_() {
 
 
 // -----------------------------------------------------------------------------
-// Deprecated routine for reading attributes
-// -----------------------------------------------------------------------------
-void Field_CompositeVector::ReadAttributeFromExodusII_(Teuchos::ParameterList& file_list) 
-{ 
-  Epetra_MultiVector& dat_f = *data_->ViewComponent("cell", false); 
-  int nvectors = dat_f.NumVectors(); 
- 
-  std::string file_name = file_list.get<std::string>("file"); 
-  std::string attribute_name = file_list.get<std::string>("attribute"); 
- 
-  // open ExodusII file 
-  const Epetra_Comm& comm = data_->Comm(); 
- 
-  if (comm.NumProc() > 1) { 
-    std::stringstream add_extension; 
-    add_extension << "." << comm.NumProc() << "." << comm.MyPID(); 
-    //file_name.append(add_extension.str()); 
-    int ndigits = (int)floor(log10(comm.NumProc())) + 1;
-    std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
-    file_name = boost::str(boost::format(fmt) % file_name % comm.NumProc() % comm.MyPID());
-  } 
- 
-  int CPU_word_size(8), IO_word_size(0), ierr; 
-  float version; 
-  int exoid = ex_open(file_name.c_str(), EX_READ, &CPU_word_size, &IO_word_size, &version); 
-  printf("Opening file: %s ws=%d %d\n", file_name.c_str(), CPU_word_size, IO_word_size); 
- 
-  // read database parameters 
-  int dim, num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets; 
-  char title[MAX_LINE_LENGTH + 1]; 
-  ierr = ex_get_init(exoid, title, &dim, &num_nodes, &num_elem, 
-                     &num_elem_blk, &num_node_sets, &num_side_sets); 
- 
-  int* ids = (int*) calloc(num_elem_blk, sizeof(int)); 
-  ierr = ex_get_elem_blk_ids(exoid, ids); 
- 
-  // read attributes block-by-block 
-  int offset = 0; 
-  char elem_type[MAX_LINE_LENGTH + 1]; 
-  for (int i = 0; i < num_elem_blk; i++) { 
-    int num_elem_this_blk, num_attr, num_nodes_elem; 
-    ierr = ex_get_elem_block(exoid, ids[i], elem_type, &num_elem_this_blk, 
-                             &num_nodes_elem, &num_attr); 
- 
-    double* attrib = (double*) calloc(num_elem_this_blk * num_attr, sizeof(double)); 
-    ierr = ex_get_elem_attr(exoid, ids[i], attrib); 
- 
-    for (int n = 0; n < num_elem_this_blk; n++) { 
-      int c = n + offset; 
-      for (int k = 0; k < nvectors; k++) dat_f[k][c] = attrib[n]; 
-    } 
-    std::cout << num_elem_this_blk << " " << nvectors << std::endl;
-    free(attrib); 
-    printf("MyPID=%d  ierr=%d  id=%d  ncells=%d\n", comm.MyPID(), ierr, ids[i], num_elem_this_blk); 
- 
-    offset += num_elem_this_blk; 
-  } 
- 
-  ierr = ex_close(exoid); 
-  printf("Closing file: %s ncells=%d error=%d\n", file_name.c_str(), offset, ierr); 
-} 
-
-
-// -----------------------------------------------------------------------------
 // New routine for reading cell-based varibles as attributes.
+// It recongnizes parallel and serial inputs.
 // -----------------------------------------------------------------------------
 void Field_CompositeVector::ReadVariableFromExodusII_(Teuchos::ParameterList& file_list) 
 { 
@@ -599,62 +536,87 @@ void Field_CompositeVector::ReadVariableFromExodusII_(Teuchos::ParameterList& fi
   int CPU_word_size(8), IO_word_size(0), ierr; 
   float version; 
   int exoid = ex_open(file_name.c_str(), EX_READ, &CPU_word_size, &IO_word_size, &version); 
-  printf("Opening file: %s ws=%d %d\n", file_name.c_str(), CPU_word_size, IO_word_size); 
+  if (comm.MyPID() == 0) {
+    printf("Trying file: %s ws=%d %d  id=%d\n", file_name.c_str(), CPU_word_size, IO_word_size, exoid); 
+  }
+
+  // check if we have to use serial file
+  int fail = (exoid < 0) ? 1 : 0;
+  int fail_tmp(fail);
+  bool distributed_data(true);
+
+  comm.SumAll(&fail_tmp, &fail, 1);
+  if (fail == comm.NumProc()) {
+    Errors::Message msg("Rao is working on new data layout which we need to proceed.");
+    Exceptions::amanzi_throw(msg);
+
+    file_name = file_list.get<std::string>("file"); 
+    distributed_data = false;
+    if (comm.MyPID() == 0) {
+      exoid = ex_open(file_name.c_str(), EX_READ, &CPU_word_size, &IO_word_size, &version); 
+      printf("Opening file: %s ws=%d %d  id=%d\n", file_name.c_str(), CPU_word_size, IO_word_size, exoid); 
+    }
+  } else if (fail > 0) {
+    Errors::Message msg("A few parallel Exodus files are missing, but not all.");
+    Exceptions::amanzi_throw(msg);
+  }
  
   // read database parameters 
-  int dim, num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets; 
-  char title[MAX_LINE_LENGTH + 1]; 
-  ierr = ex_get_init(exoid, title, &dim, &num_nodes, &num_elem, 
-                     &num_elem_blk, &num_node_sets, &num_side_sets); 
+  if (comm.MyPID() == 0 || distributed_data) {  
+    int dim, num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets; 
+    char title[MAX_LINE_LENGTH + 1]; 
+    ierr = ex_get_init(exoid, title, &dim, &num_nodes, &num_elem, 
+                       &num_elem_blk, &num_node_sets, &num_side_sets); 
  
-  int* ids = (int*) calloc(num_elem_blk, sizeof(int)); 
-  ierr = ex_get_elem_blk_ids(exoid, ids); 
+    int* ids = (int*) calloc(num_elem_blk, sizeof(int)); 
+    ierr = ex_get_elem_blk_ids(exoid, ids); 
  
-  // read number of variables 
-  int num_vars;
-  ierr = ex_get_var_param(exoid, "e", &num_vars);
-  if (ierr < 0) printf("Exodus file has no variables.\n");
+    // read number of variables 
+    int num_vars;
+    ierr = ex_get_var_param(exoid, "e", &num_vars);
+    if (ierr < 0) printf("Exodus file has no variables.\n");
 
-  char* var_names[num_vars];
-  for (int i = 0; i < num_vars; i++) {
-    var_names[i] = (char*) calloc ((MAX_STR_LENGTH+1), sizeof(char));
-  }
+    char* var_names[num_vars];
+    for (int i = 0; i < num_vars; i++) {
+      var_names[i] = (char*) calloc ((MAX_STR_LENGTH+1), sizeof(char));
+    }
 
-  ierr = ex_get_var_names(exoid, "e", num_vars, var_names);
-  if (ierr < 0) printf("Exodus file cannot read variable names.\n");
+    ierr = ex_get_var_names(exoid, "e", num_vars, var_names);
+    if (ierr < 0) printf("Exodus file cannot read variable names.\n");
 
-  int var_index(-1);
-  for (int i = 0; i < num_vars; i++) {
-    std::string tmp(var_names[i]);
-    if (tmp == attribute_name) var_index = i + 1;
-    free(var_names[i]);
-  }
-  if (var_index < 0) printf("Exodus file has no variable \"%s\".\n", attribute_name.c_str());
-  printf("Variable \"%s\" has index %d.\n", attribute_name.c_str(), var_index);
+    int var_index(-1);
+    for (int i = 0; i < num_vars; i++) {
+      std::string tmp(var_names[i]);
+      if (tmp == attribute_name) var_index = i + 1;
+      free(var_names[i]);
+    }
+    if (var_index < 0) printf("Exodus file has no variable \"%s\".\n", attribute_name.c_str());
+    printf("Variable \"%s\" has index %d.\n", attribute_name.c_str(), var_index);
 
-  // read one variable 'attribute_name'
-  int offset = 0; 
-  char elem_type[MAX_LINE_LENGTH + 1]; 
-  for (int i = 0; i < num_elem_blk; i++) { 
-    int num_elem_this_blk, num_attr, num_nodes_elem; 
-    ierr = ex_get_elem_block(exoid, ids[i], elem_type, &num_elem_this_blk, 
-                             &num_nodes_elem, &num_attr); 
+    // read one variable 'attribute_name'
+    int offset = 0; 
+    char elem_type[MAX_LINE_LENGTH + 1]; 
+    for (int i = 0; i < num_elem_blk; i++) { 
+      int num_elem_this_blk, num_attr, num_nodes_elem; 
+      ierr = ex_get_elem_block(exoid, ids[i], elem_type, &num_elem_this_blk, 
+                               &num_nodes_elem, &num_attr); 
  
-    double* var_values = (double*) calloc(num_elem_this_blk, sizeof(double)); 
-    ierr = ex_get_elem_var(exoid, 1, var_index, ids[i], num_elem_this_blk, var_values); 
+      double* var_values = (double*) calloc(num_elem_this_blk, sizeof(double)); 
+      ierr = ex_get_elem_var(exoid, 1, var_index, ids[i], num_elem_this_blk, var_values); 
  
-    for (int n = 0; n < num_elem_this_blk; n++) { 
-      int c = n + offset; 
-      for (int k = 0; k < nvectors; k++) dat_f[k][c] = var_values[n]; 
+      for (int n = 0; n < num_elem_this_blk; n++) { 
+        int c = n + offset; 
+        for (int k = 0; k < nvectors; k++) dat_f[k][c] = var_values[n]; 
+      } 
+      free(var_values); 
+      printf("MyPID=%d  ierr=%d  id=%d  ncells=%d\n", comm.MyPID(), ierr, ids[i], num_elem_this_blk); 
+ 
+      offset += num_elem_this_blk; 
     } 
-    free(var_values); 
-    printf("MyPID=%d  ierr=%d  id=%d  ncells=%d\n", comm.MyPID(), ierr, ids[i], num_elem_this_blk); 
  
-    offset += num_elem_this_blk; 
-  } 
- 
-  ierr = ex_close(exoid); 
-  printf("Closing file: %s ncells=%d error=%d\n", file_name.c_str(), offset, ierr); 
+    ierr = ex_close(exoid); 
+    printf("Closing file: %s ncells=%d error=%d\n", file_name.c_str(), offset, ierr); 
+  }
 } 
 
 
