@@ -152,6 +152,16 @@ void CycleDriver::Setup() {
     checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint());
   }
 
+  // create the walkabout
+  if (parameter_list_->isSublist("Walkabout Data")){
+    Teuchos::ParameterList& walk_plist = parameter_list_->sublist("Walkabout Data");
+    walkabout_ = Teuchos::rcp(new Amanzi::Walkabout_observations(walk_plist, comm_));
+  }
+  else {
+    walkabout_ = Teuchos::rcp(new Amanzi::Walkabout_observations());
+  }
+
+
 
   pk_->Setup();
   S_->RequireScalar("dt", "coordinator");
@@ -701,6 +711,7 @@ bool CycleDriver::Advance(double dt) {
       Visualize(force_vis);
       WriteCheckpoint(dt, force_check);
       Observations(force_obser);
+      WriteWalkabout(false);
     }
     //Amanzi::timer_manager.start("I/O");
 
@@ -776,6 +787,16 @@ void CycleDriver::WriteCheckpoint(double dt, bool force) {
 }
 
 
+void CycleDriver::WriteWalkabout(bool force){
+  if (walkabout_ != Teuchos::null) {
+    if (walkabout_->DumpRequested(S_->cycle(), S_->time()) || force) {
+      *vo_->os() << "Cycle " << S_->cycle() << ": writing walkabout " << std::endl;
+      walkabout_->WriteWalkabout(S_);
+    }
+  }
+
+}
+
 /* ******************************************************************
 * timestep loop.
 ****************************************************************** */
@@ -793,7 +814,8 @@ void CycleDriver::Go() {
 	time_period_id_++;
     }    
     if (position == TIME_PERIOD_END) 
-      time_period_id_--;    
+      if (time_period_id_>0) 
+	time_period_id_--;    
   }
 
   Init_PK(time_period_id_);
