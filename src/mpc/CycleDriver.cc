@@ -711,7 +711,7 @@ bool CycleDriver::Advance(double dt) {
       Visualize(force_vis);
       WriteCheckpoint(dt, force_check);
       Observations(force_obser);
-      WriteWalkabout(false);
+      WriteWalkabout(force_check);
     }
     //Amanzi::timer_manager.start("I/O");
 
