@@ -11,3 +11,5 @@ exoatt --setfile=dvz_elsets.txt ../dvz_3_layer/mesh.exo mesh_elsets.exo
 Run amanzi:
 amanzi --xml_file=dvz_3_layer_2d-isv2_1.xml
 
+Results:
+amanzi_output_perms.png
