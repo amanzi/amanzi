@@ -571,7 +571,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     bool flag_op1(true);
     double md_change, md_old(0.0), md_new, residual(0.0);
 
-    // disperse and diffuse aqueous componetns
+    // Disperse and diffuse aqueous components
     for (int i = 0; i < num_aqueous; i++) {
       FindDiffusionValue(component_names_[i], &md_new, &phase);
       md_change = md_new - md_old;
@@ -592,6 +592,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       }
 
       if (flag_op1) {
+        op->Init();
         Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D);
         op1->Setup(Dptr, Teuchos::null, Teuchos::null);
         op1->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -632,7 +633,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       }
     }
 
-    // Disperse and diffuse gaseous components. We ignore dispersion 
+    // Diffuse gaseous components. We ignore dispersion 
     // tensor (D is reset). Inactive cells (s[c] = 1 and D[c] = 0) 
     // are treated with a hack of the accumulation term.
     D.clear();
@@ -655,6 +656,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         sol.ViewComponent("face")->PutScalar(0.0);
       }
 
+      op->Init();
       Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D);
       op1->Setup(Dptr, Teuchos::null, Teuchos::null);
       op1->UpdateMatrices(Teuchos::null, Teuchos::null);
