@@ -506,8 +506,14 @@
 
     <ParameterList name="Flow">
       <ParameterList name="Richards problem">
-        <Parameter name="relative permeability" type="string" value="upwind: amanzi"/>
-        <Parameter name="upwind update" type="string" value="every timestep"/>
+        <ParameterList name="upwind">
+          <Parameter name="relative permeability" type="string" value="upwind: amanzi"/>
+          <Parameter name="upwind update" type="string" value="every timestep"/>
+          <Parameter name="upwind method" type="string" value="divk"/>
+          <ParameterList name="upwind divk parameters">
+            <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
+          </ParameterList>
+        </ParameterList>
         <ParameterList name="VerboseObject">
           <Parameter name="Verbosity Level" type="string" value="high"/>
         </ParameterList>
@@ -560,12 +566,6 @@
               <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="gravity" type="bool" value="true"/>
               <Parameter name="newton correction" type="string" value="approximate jacobian"/>
-            </ParameterList>
-            <ParameterList name="upwind">
-              <Parameter name="upwind method" type="string" value="divk"/>
-              <ParameterList name="upwind divk parameters">
-                <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
-              </ParameterList>
             </ParameterList>
             <ParameterList name="vapor matrix">
               <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>

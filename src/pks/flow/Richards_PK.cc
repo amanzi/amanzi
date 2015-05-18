@@ -343,7 +343,8 @@ void Richards_PK::Initialize()
   op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // Create relative permeability
-  relperm_ = Teuchos::rcp(new RelPerm(*rp_list_, mesh_, atm_pressure_, wrm_));
+  Teuchos::RCP<Teuchos::ParameterList> upw_list = Teuchos::sublist(rp_list_, "upwind", true);
+  relperm_ = Teuchos::rcp(new RelPerm(*upw_list, mesh_, atm_pressure_, wrm_));
 
   CompositeVectorSpace cvs; 
   cvs.SetMesh(mesh_);
@@ -360,13 +361,10 @@ void Richards_PK::Initialize()
   dKdP_->PutScalarMasterAndGhosted(0.0);
 
   // parameter which defines when update direction of update
-  Teuchos::ParameterList upw_list = rp_list_->sublist("operators")
-                                             .sublist("diffusion operator")
-                                             .sublist("upwind");
   Operators::UpwindFactory<RelPerm> upwind_factory;
-  upwind_ = upwind_factory.Create(mesh_, relperm_, upw_list);
+  upwind_ = upwind_factory.Create(mesh_, relperm_, *upw_list);
 
-  std::string upw_upd = rp_list_->get<std::string>("upwind update", "every timestep");
+  std::string upw_upd = upw_list->get<std::string>("upwind update", "every timestep");
   if (upw_upd == "every nonlinear iteration") update_upwind = FLOW_UPWIND_UPDATE_ITERATION;
   else update_upwind = FLOW_UPWIND_UPDATE_TIMESTEP;  
 
@@ -404,7 +402,7 @@ void Richards_PK::Initialize()
   Teuchos::ParameterList oplist_matrix = tmp_list.sublist("matrix");
   Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
 
-  std::string name = rp_list_->get<std::string>("relative permeability");
+  std::string name = rp_list_->sublist("upwind").get<std::string>("relative permeability");
   int upw_id(Operators::OPERATOR_UPWIND_FLUX);
   std::string upw_method("standard: cell");
   if (name == "upwind: darcy velocity") {

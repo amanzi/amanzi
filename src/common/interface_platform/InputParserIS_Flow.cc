@@ -94,8 +94,20 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
         }
         else if (flow_model == "Richards") {
           Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards problem");
-          richards_problem.set<std::string>("relative permeability", boost::to_lower_copy(rel_perm));
-          richards_problem.set<std::string>("upwind update", update_upwind);
+
+          Teuchos::ParameterList& upw_list = richards_problem.sublist("upwind");
+          upw_list.set<std::string>("relative permeability", boost::to_lower_copy(rel_perm));
+          upw_list.set<std::string>("upwind update", update_upwind);
+          // "standard" is the most robust upwind method for variety of subsurface
+          // scenarios. Note that "Upwind: Amanzi" requires "upwind method"="divk" 
+          // to reproduce the same behavior on orthogonal meshes. 
+          if (rel_perm == "Upwind: Amanzi") {
+            upw_list.set<std::string>("upwind method", "divk");
+            upw_list.sublist("upwind divk parameters").set<double>("tolerance", 1e-12);
+          } else {
+            upw_list.set<std::string>("upwind method", "standard");
+            upw_list.sublist("upwind standard parameters").set<double>("tolerance", 1e-12);
+          }
           // this one should come from the input file...
           richards_problem.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
           richards_problem.set<double>("atmospheric pressure", atm_pres);
@@ -1076,18 +1088,6 @@ Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(
     criteria.push_back("relative residual");
     gmres_list.set<Teuchos::Array<std::string> >("convergence criteria", criteria);
     gmres_list.sublist("VerboseObject") = CreateVerbosityList_("low");
-  }
-
-  // "standard" is the most robust upwind method for variety of subsurface
-  // scenarios. Note that "Upwind: Amanzi" requires "upwind method"="divk" 
-  // to reproduce the same behavior on orthogonal meshes. 
-  Teuchos::ParameterList& upw_list = op_list.sublist("diffusion operator").sublist("upwind");
-  if (rel_perm == "Upwind: Amanzi") {
-    upw_list.set<std::string>("upwind method", "divk");
-    upw_list.sublist("upwind divk parameters").set<double>("tolerance", 1e-12);
-  } else {
-    upw_list.set<std::string>("upwind method", "standard");
-    upw_list.sublist("upwind standard parameters").set<double>("tolerance", 1e-12);
   }
 
   return op_list;

@@ -94,7 +94,7 @@ void OperatorDiffusionWithGravity::AddGravityToRHS_()
       }
 
       // add gravity term to the right-hand side vector.
-      // -- all methods expect for DIVK-family of methods.
+      // -- all methods except for DIVK-family of methods.
       if (little_k_ != OPERATOR_LITTLE_K_DIVK && 
           little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN) {
         if (K_.get()) Kc = (*K_)[c];
