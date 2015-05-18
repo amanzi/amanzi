@@ -1174,7 +1174,13 @@ The first part controls preliminary steps in the time integrator.
 
   * `"method`" [string] specifies an optional initialization methods. The available 
     options are `"picard`" and `"saturated solver`". The latter option leads to solving 
-    a Darcy problem.
+    a Darcy problem. The former option uses sublist `"picard parameters`".
+
+  * `"picard parameters`" [sublist] defines control parameters for the Picard solver.
+
+    * `"convergence tolerance`" [double] specifies nonlinear convergence tolerance. 
+      Default is 1e-8.
+    * `"maximum number of iterations`" [int] limits the number of iterations. Default is 400. 
 
   * `"linear solver`" [string] refers to a solver sublist of the list `"Solvers`".
 
@@ -1208,10 +1214,19 @@ The first part controls preliminary steps in the time integrator.
        <Parameter name="linear solver as preconditioner" type="string" value="GMRES_with_AMG"/>
        <Parameter name="preconditioner" type="string" value="HYPRE_AMG"/>
 
-       <ParameterList name="initialization">
+       <ParameterList name="initialization">  <!-- first method -->
          <Parameter name="method" type="string" value="saturated solver"/>
          <Parameter name="linear solver" type="string" value="PCG_with_AMG"/>
          <Parameter name="clipping pressure value" type="double" value="50000.0"/>
+       </ParameterList>
+
+       <ParameterList name="initialization">  <!-- alternative method -->
+         <Parameter name="method" type="string" value="picard"/>
+         <Parameter name="linear solver" type="string" value="PCG_with_AMG"/>
+         <ParameterList name="picard parameters">
+           <Parameter name="convergence tolerance" type="double" value="1e-8"/> 
+           <Parameter name="maximum number of iterations" type="int" value="20"/> 
+         </ParameterList>
        </ParameterList>
 
        <ParameterList name="pressure-lambda constraints">
