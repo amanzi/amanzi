@@ -1194,14 +1194,10 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
   
   // loop over non-steady, non-restart entries to get name and convert to time value
   for (int idx = 0; idx < start_times.length(); idx++) {
-    std::cout << "EIB>> got idx = " << idx << std::endl;
     for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
-      std::cout << "  EIB>> got name = " << it->first << std::endl;
       if (it->first != "restart") {
         double time = get_time_value(it->first, *def_list);
-        std::cout << "    EIB>> comparing time = " << time << " to start_times["<<idx<<"] = " << start_times[idx] << std::endl;
         if (time == start_times[idx]) {
-          std::cout << "      EIB>> got inside loop" << std::endl;
           if ( ecsPL.sublist(it->first).isParameter("init_dt") ) {
             init_array.append(get_time_value(ecsPL.sublist(it->first).get<std::string>("init_dt"), *def_list));
           }
@@ -1224,9 +1220,6 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
   list.sublist("Time Period Control").set<Teuchos::Array<double> >("Maximum Time Step",max_array);
   // add default entry
   list.sublist("Time Period Control").set<double>("Default Initial Time Step",def_init);
-  
-  std::cout << "EIB>> new list" << std::endl;
-  list.sublist("Time Period Control").print(std::cout);
   
   // Steady case
   if (hasSteady && !hasTrans) {
