@@ -58,6 +58,7 @@ class CycleDriver {
   void Observations(bool force = false);
   void WriteCheckpoint(double dt, bool force = false);
   void WriteWalkabout(bool force);
+  //  void RegisterOutput();
   double get_dt(bool after_failuer = false);
   void set_dt(double dt);
   void ResetDriver(int time_period_id);
@@ -101,6 +102,7 @@ class CycleDriver {
   std::vector<Teuchos::RCP<Visualization> > failed_visualization_;
   Teuchos::RCP<Checkpoint> checkpoint_;
   bool restart_requested_;
+  //  bool output_registered_;
   std::string restart_filename_;
 
   // time period control

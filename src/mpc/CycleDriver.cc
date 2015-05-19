@@ -161,84 +161,8 @@ void CycleDriver::Setup() {
     walkabout_ = Teuchos::rcp(new Amanzi::Walkabout_observations());
   }
 
-
-
-  pk_->Setup();
-  S_->RequireScalar("dt", "coordinator");
-  S_->Setup();
-
-  // create the time step manager
-  tsm_ = Teuchos::ptr(new TimeStepManager(parameter_list_->sublist("Cycle Driver")));
-  //tsm_ = Teuchos::ptr(new TimeStepManager(vo_));
-
-  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Setup is complete." << std::endl;
-  }
-
-
-}
-
-/* ******************************************************************
-* Initialize State followed by initialization of PK.
-****************************************************************** */
-void CycleDriver::Initialize() {
- 
-  *S_->GetScalarData("dt", "coordinator") = tp_dt_[0];
-  S_->GetField("dt", "coordinator")->set_initialized();
-
-  // Initialize the state (initializes all dependent variables).
-  S_->InitializeFields();
-  S_->InitializeEvaluators();
-
-  // Initialize the process kernels
-  pk_->Initialize();
-
-  // Final checks.
-  S_->CheckNotEvaluatedFieldsInitialized();
-  S_->CheckAllFieldsInitialized();
-
-  // S_->WriteDependencyGraph();
-
-  S_->GetMeshPartition("materials");
-
-  // commit the initial conditions.
-  // pk_->CommitStep(t0_-get_dt(), get_dt());
-  if (!restart_requested_) {
-    pk_->CommitStep(S_->time(), S_->time());
-    // visualize();
-    // checkpoint(*S_->GetScalarData("dt", "coordinator"));
-  }
-
-  // // vis for the state
-  // // HACK to vis with a surrogate surface mesh.  This needs serious re-design. --etc
+  // vis successful steps
   bool surface_done = false;
-  // if (S_->HasMesh("surface") && S_->HasMesh("surface_3d")) {
-  //   Teuchos::RCP<const AmanziMesh::Mesh> surface_3d = S_->GetMesh("surface_3d");
-  //   Teuchos::RCP<const AmanziMesh::Mesh> surface = S_->GetMesh("surface");
-
-  //   // vis successful timesteps
-  //   std::string plist_name = "Visualization Data surface";
-  //   Teuchos::ParameterList& vis_plist = parameter_list_->sublist(plist_name);
-  //   Teuchos::RCP<Visualization> vis = Teuchos::rcp(new Visualization(vis_plist, comm_));
-  //   vis->set_mesh(surface_3d);
-  //   vis->CreateFiles();
-  //   vis->set_mesh(surface);
-  //   visualization_.push_back(vis);
-  //   surface_done = true;
-
-  //   // vis unsuccesful timesteps
-  //   std::string fail_plist_name = "Visualization Data surface Failed Steps";
-  //   if (parameter_list_->isSublist(fail_plist_name)) {
-  //     Teuchos::ParameterList& fail_vis_plist = parameter_list_->sublist(fail_plist_name);
-  //     Teuchos::RCP<Visualization> fail_vis = Teuchos::rcp(new Visualization(fail_vis_plist, comm_));
-  //     fail_vis->set_mesh(surface_3d);
-  //     fail_vis->CreateFiles();
-  //     fail_vis->set_mesh(surface);
-  //     failed_visualization_.push_back(fail_vis);
-  //   }
-  // }
-
   for (State::mesh_iterator mesh=S_->mesh_begin();
        mesh!=S_->mesh_end(); ++mesh) {
     if (mesh->first == "surface_3d") {
@@ -280,6 +204,16 @@ void CycleDriver::Initialize() {
     }
   }
 
+
+  pk_->Setup();
+  S_->RequireScalar("dt", "coordinator");
+  S_->Setup();
+
+
+  // create the time step manager
+  tsm_ = Teuchos::ptr(new TimeStepManager(parameter_list_->sublist("Cycle Driver")));
+  //tsm_ = Teuchos::ptr(new TimeStepManager(vo_));
+
   // set up the TSM
   // -- register visualization times
   for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
@@ -287,6 +221,7 @@ void CycleDriver::Initialize() {
     (*vis)->RegisterWithTimeStepManager(tsm_.ptr());
   }
   // -- register checkpoint times
+  if (checkpoint_ != Teuchos::null) 
   checkpoint_->RegisterWithTimeStepManager(tsm_.ptr());
   // -- register observation times
   if (observations_ != Teuchos::null) 
@@ -300,10 +235,50 @@ void CycleDriver::Initialize() {
   for (int i=0;i<num_time_periods_; i++) {
     tsm_->RegisterTimeEvent(tp_end_[i]);
     tsm_->RegisterTimeEvent(tp_start_[i] + tp_dt_[i]);
+  } 
+
+
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Setup is complete." << std::endl;
   }
-  
-  //tsm_->RegisterTimeEvent(t1_);
+
+
 }
+
+/* ******************************************************************
+* Initialize State followed by initialization of PK.
+****************************************************************** */
+void CycleDriver::Initialize() {
+ 
+  *S_->GetScalarData("dt", "coordinator") = tp_dt_[0];
+  S_->GetField("dt", "coordinator")->set_initialized();
+
+  // Initialize the state (initializes all dependent variables).
+  S_->InitializeFields();
+  S_->InitializeEvaluators();
+
+  // Initialize the process kernels
+  pk_->Initialize();
+
+  // Final checks.
+  S_->CheckNotEvaluatedFieldsInitialized();
+  S_->CheckAllFieldsInitialized();
+
+  // S_->WriteDependencyGraph();
+
+  S_->GetMeshPartition("materials");
+
+  // commit the initial conditions.
+  // pk_->CommitStep(t0_-get_dt(), get_dt());
+  if (!restart_requested_) {
+    pk_->CommitStep(S_->time(), S_->time());
+    // visualize();
+    // checkpoint(*S_->GetScalarData("dt", "coordinator"));
+  }
+
+}
+
 
 
 /* ******************************************************************
@@ -856,7 +831,7 @@ void CycleDriver::Go() {
     }
 
     if (position == TIME_PERIOD_END) {
-      time_period_id_++;
+      if (time_period_id_ < num_time_periods_ - 1) time_period_id_++;
       ResetDriver(time_period_id_); 
       restart_dT =  tp_dt_[time_period_id_];
     }
@@ -1004,6 +979,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   S_->GetMeshPartition("materials");
 
+  //if (!output_registered_) RegisterOutput();
 
   pk_->set_dt(tp_dt_[time_pr_id]);
 
