@@ -1183,6 +1183,51 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
     list.sublist("Restart") = restartPL;
   }
 
+  // Translate to "Time Period Control"
+  
+  Teuchos::Array<double> start_array;
+  Teuchos::Array<double> init_array;
+  Teuchos::Array<double> max_array;
+  // get default values
+  double def_init = get_time_value(defPL.get<std::string>("init_dt"), *def_list);
+  double def_max = get_time_value(defPL.get<std::string>("max_dt"), *def_list);
+  
+  // loop over non-steady, non-restart entries to get name and convert to time value
+  for (int idx = 0; idx < start_times.length(); idx++) {
+    std::cout << "EIB>> got idx = " << idx << std::endl;
+    for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
+      std::cout << "  EIB>> got name = " << it->first << std::endl;
+      if (it->first != "restart") {
+        double time = get_time_value(it->first, *def_list);
+        std::cout << "    EIB>> comparing time = " << time << " to start_times["<<idx<<"] = " << start_times[idx] << std::endl;
+        if (time == start_times[idx]) {
+          std::cout << "      EIB>> got inside loop" << std::endl;
+          if ( ecsPL.sublist(it->first).isParameter("init_dt") ) {
+            init_array.append(get_time_value(ecsPL.sublist(it->first).get<std::string>("init_dt"), *def_list));
+          }
+          else {
+            init_array.append(def_init);
+          }
+          if ( ecsPL.sublist(it->first).isParameter("max_dt") ) {
+            max_array.append(get_time_value(ecsPL.sublist(it->first).get<std::string>("max_dt"), *def_list));
+          }
+          else {
+            max_array.append(def_max);
+          }
+        }
+      }
+    }
+  }
+  // add to "Time Period Control" in order
+  list.sublist("Time Period Control").set<Teuchos::Array<double> >("Start Times",start_times);
+  list.sublist("Time Period Control").set<Teuchos::Array<double> >("Initial Time Step",init_array);
+  list.sublist("Time Period Control").set<Teuchos::Array<double> >("Maximum Time Step",max_array);
+  // add default entry
+  list.sublist("Time Period Control").set<double>("Default Initial Time Step",def_init);
+  
+  std::cout << "EIB>> new list" << std::endl;
+  list.sublist("Time Period Control").print(std::cout);
+  
   // Steady case
   if (hasSteady && !hasTrans) {
     if (voI_->getVerbLevel() >= Teuchos::VERB_HIGH) {
