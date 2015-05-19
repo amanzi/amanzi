@@ -806,33 +806,41 @@ void CycleDriver::Go() {
   int position = 0;
   double restart_time = 0.;
 
-  if (restart_requested_) {
+
+  double dt;
+  double restart_dT(1.0e99);
+
+  if (!restart_requested_){     /// No restart
+    Init_PK(time_period_id_);
+    // start at time t = t0 and initialize the state.
+    S_->set_time(tp_start_[time_period_id_]);
+    S_->set_cycle(cycle0_);
+    S_->set_position(TIME_PERIOD_START);
+
+    Setup();
+    Initialize();
+
+    dt = tp_dt_[time_period_id_];
+    dt = tsm_->TimeStep(S_->time(), dt);
+    pk_->set_dt(dt);
+
+  }
+  else {                        /// Read restart
+
     restart_time = ReadCheckpointInitialTime(comm_, restart_filename_);
-    position = ReadCheckpointPosition(comm_, restart_filename_);
+    position     = ReadCheckpointPosition(comm_, restart_filename_);
     for (int i=0;i<num_time_periods_;i++) {
       if (restart_time - tp_end_[i] > -1e-10) 
 	time_period_id_++;
     }    
     if (position == TIME_PERIOD_END) 
       if (time_period_id_>0) 
-	time_period_id_--;    
-  }
+	time_period_id_--;   
 
-  Init_PK(time_period_id_);
+    Init_PK(time_period_id_); 
+    Setup();
+    //Initialize();
 
-  // start at time t = t0 and initialize the state.
-  S_->set_time(tp_start_[time_period_id_]);
-  S_->set_cycle(cycle0_);
-
-  Setup();
-  Initialize();
-
-
-  S_->set_position(TIME_PERIOD_START);
-
-  double dt;
-  double restart_dT(1.0e99);
-  if (restart_requested_) {
     // re-initialize the state object
     restart_dT = ReadCheckpoint(comm_, Teuchos::ptr(&*S_), restart_filename_);
     cycle0_ = S_->cycle();
@@ -855,18 +863,11 @@ void CycleDriver::Go() {
     else {
       Initialize();
     }
-  }
 
-
-  if (restart_requested_) {
     S_->set_initial_time(S_->time());
     dt = tsm_->TimeStep(S_->time(), restart_dT);
     pk_->set_dt(dt);
-  }
-  else {    
-    dt = tp_dt_[time_period_id_];
-    dt = tsm_->TimeStep(S_->time(), dt);
-    pk_->set_dt(dt);
+
   }
 
   *S_->GetScalarData("dt", "coordinator") = dt;
@@ -957,6 +958,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   S_->RegisterMesh("domain", mesh);
   S_->set_cycle(S_old_->cycle());
   S_->set_time(tp_start_[time_pr_id]); 
+  S_->set_position(TIME_PERIOD_START);
 
   //delete the old global solution vector
   // soln_ = Teuchos::null;
@@ -980,8 +982,11 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   // Setup
   pk_->Setup();
 
+
   S_->RequireScalar("dt", "coordinator");
   S_->Setup();
+  *S_->GetScalarData("dt", "coordinator") = tp_dt_[time_pr_id];
+  S_->GetField("dt", "coordinator")->set_initialized();
 
   // Initialize
   S_->InitializeFields();
@@ -999,14 +1004,11 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   S_->GetMeshPartition("materials");
 
+
   pk_->set_dt(tp_dt_[time_pr_id]);
 
   S_old_ = Teuchos::null;
 
-  // WriteCheckpoint(tp_dt_[time_pr_id], true);
-  // Visualize(true);
-  // WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), tp_dt_[time_pr_id]);
-  // exit(0);
 }
 
 }  // namespace Amanzi

@@ -218,7 +218,7 @@ void Flow_PK::UpdateLocalFields_()
 
   // calculate hydraulic head
   double g = fabs(gravity_[dim - 1]);
-
+ 
   for (int c = 0; c != ncells_owned; ++c) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c); 
     double z = xc[dim - 1]; 

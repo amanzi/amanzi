@@ -714,24 +714,25 @@ void State::Initialize(Teuchos::RCP<State> S) {
         Errors::Message message(messagestream.str());
         Exceptions::amanzi_throw(message);
       }
-      switch (field->type()){
-      case CONSTANT_SCALAR:
-        *field->GetScalarData() = *copy->GetScalarData();
-        break;
-      case CONSTANT_VECTOR:
-        *field->GetConstantVectorData() = *copy->GetConstantVectorData();
-        break;
-      case COMPOSITE_VECTOR_FIELD:
-        *field->GetFieldData() = *copy->GetFieldData();
-        break;
-      default:
-        Errors::Message message("Copy field with unknown type\n");
-        Exceptions::amanzi_throw(message);
+      if (copy->initialized()){
+        switch (field->type()){
+        case CONSTANT_SCALAR:
+          *field->GetScalarData() = *copy->GetScalarData();
+          break;
+        case CONSTANT_VECTOR:
+          *field->GetConstantVectorData() = *copy->GetConstantVectorData();
+          break;
+        case COMPOSITE_VECTOR_FIELD:
+          *field->GetFieldData() = *copy->GetFieldData();
+          break;
+        default:
+          Errors::Message message("Copy field with unknown type\n");
+          Exceptions::amanzi_throw(message);
+        }
+        field -> set_initialized();      
       }
-      field -> set_initialized();      
     }   
   }
-
 
   // Initialize any other fields from state plist.
   InitializeFields();
@@ -1001,6 +1002,7 @@ void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk,
   }
 };
 
+
 // Non-member function for checkpointing.
 double ReadCheckpoint(Epetra_MpiComm* comm,
                       const Teuchos::Ptr<State>& S,
@@ -1105,5 +1107,6 @@ void DeformCheckpointMesh(const Teuchos::Ptr<State>& S) {
     write_access_mesh_->deform( nodeids, new_pos, true, &final_pos); // deforms the mesh
   }
 }
+
 
 } // namespace amanzi
