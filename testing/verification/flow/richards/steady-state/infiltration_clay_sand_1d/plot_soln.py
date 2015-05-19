@@ -115,5 +115,5 @@ if __name__ == "__main__":
     plt.tick_params(axis='both', which='major', labelsize=20)
 
     plt.show()
-    #plt.savefig(root+"_1d.png",format="png")
-    #plt.close()
+    # plt.savefig(root+"_1d.png",format="png")
+    # plt.close()

@@ -41,13 +41,16 @@
           <max_iterations>100</max_iterations>
           <tolerance>1.0e-16</tolerance>
           <clf>1.0e-16</clf>
-          <preconditioner name="hypre_amg">
+          <preconditioner>hypre_amg</preconditioner>
+        </unstr_linear_solver>
+        <unstr_preconditioners>
+          <hypre_amg>
             <hypre_cycle_applications>5</hypre_cycle_applications>
             <hypre_smoother_sweeps>3</hypre_smoother_sweeps>
             <hypre_tolerance>0.0</hypre_tolerance>
             <hypre_strong_threshold>0.5</hypre_strong_threshold>
-          </preconditioner>
-        </unstr_linear_solver>
+          </hypre_amg>
+        </unstr_preconditioners>
         <unstr_nonlinear_solver name="nka"/>
       </unstructured_controls>
     </numerical_controls>
