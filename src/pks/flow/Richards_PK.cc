@@ -552,8 +552,10 @@ void Richards_PK::Initialize()
   }
 
   // Optional step: calculate hydrostatic solution consistent with BCs
-  // and clip it as requested. We have to do it only once per time period.
-  if (ti_list_->isSublist("initialization") && initialize_with_darcy_) {
+  // and clip it as requested. We have to do it only once at the beginning
+  // of time period.
+  if (ti_list_->isSublist("initialization") && initialize_with_darcy_ 
+      && S_->position() == Amanzi::TIME_PERIOD_START) {
     initialize_with_darcy_ = false;
     Teuchos::ParameterList& ini_list = ti_list_->sublist("initialization");
  
@@ -615,8 +617,9 @@ void Richards_PK::Initialize()
     for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
   }
 
-  // subspace entering: re-inititime lambdas.
-  if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face")) {
+  // subspace entering: re-initialize lambdas.
+  if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face")
+      && S_->position() == Amanzi::TIME_PERIOD_START) {
     solver_name_constraint_ = ti_list_->sublist("pressure-lambda constraints").get<std::string>("linear solver");
 
     EnforceConstraints(t_new, solution);

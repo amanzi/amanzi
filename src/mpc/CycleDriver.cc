@@ -672,7 +672,6 @@ bool CycleDriver::Advance(double dt) {
     }      
 
     fail = pk_->AdvanceStep(S_->time(), S_->time()+dt, reinit);
-
   }
 
   if (!fail) {
@@ -790,7 +789,8 @@ void CycleDriver::WriteCheckpoint(double dt, bool force) {
 void CycleDriver::WriteWalkabout(bool force){
   if (walkabout_ != Teuchos::null) {
     if (walkabout_->DumpRequested(S_->cycle(), S_->time()) || force) {
-      *vo_->os() << "Cycle " << S_->cycle() << ": writing walkabout " << std::endl;
+      if (!walkabout_->is_disabled())
+         *vo_->os() << "Cycle " << S_->cycle() << ": writing walkabout file" << std::endl;
       walkabout_->WriteWalkabout(S_);
     }
   }
