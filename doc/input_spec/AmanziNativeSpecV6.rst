@@ -205,7 +205,7 @@ terminated because its allocation of time ran out.
 
 * `"Restart`" [list]
 
-  * `"Checkpoint Data File Name`" [string] provides name of the existing checkpoint data file to restart from.
+  * `"File Name`" [string] provides name of the existing checkpoint data file to restart from.
 
   * `"initialize from checkpoint data file and do not restart`" [bool] (optional) If this is set to false 
     (default), then a restart is performed, if it is set to true, then all fields are initialized from 
@@ -215,7 +215,7 @@ terminated because its allocation of time ran out.
   
   <ParameterList name="Cycle Driver">  <!-- parent list -->
     <ParameterList name="Restart">
-      <Parameter name="Checkpoint Data File Name" type="string" value="CHECK00123.h5"/>
+      <Parameter name="File Name" type="string" value="CHECK00123.h5"/>
     </ParameterList>
   </ParameterList>
 

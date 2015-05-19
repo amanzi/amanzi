@@ -21,8 +21,8 @@
     </ParameterList>
     <ParameterList name="Well">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{-0.01, -0.01}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{-0.01, 0.01}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.49,  0.49}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{0.51, 0.51}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

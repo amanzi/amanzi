@@ -508,7 +508,7 @@ void CycleDriver::ReadParameterList_() {
 
     if (restart_requested_) {
       Teuchos::ParameterList restart_list = coordinator_list_->sublist("Restart");
-      restart_filename_ = restart_list.get<std::string>("Checkpoint Data File Name");
+      restart_filename_ = restart_list.get<std::string>("File Name");
 
       // make sure that the restart file actually exists, if not throw an error
       boost::filesystem::path restart_from_filename_path(restart_filename_);

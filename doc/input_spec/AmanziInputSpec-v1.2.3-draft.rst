@@ -1891,14 +1891,14 @@ terminated because its allocation of time ran out.
 
 * [S] `"Restart`" [list]
 
-  * [S] `"Checkpoint Data File Name`" [string] file name of the specific Checkpoint Data file to restart from
+  * [S] `"File Name`" [string] file name of the specific Checkpoint Data file to restart from
 
 Example:
 
 .. code-block:: xml
 
   <ParameterList name="Restart">
-     <Parameter name="Checkpoint Data File Name" type="string" value="chk00123.h5"/>
+     <Parameter name="File Name" type="string" value="chk00123.h5"/>
   </ParameterList>
 
 In this example, Amanzi is restarted with all state data initialized from the Checkpoint 
