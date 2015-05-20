@@ -2,33 +2,15 @@
     <model_description name="Richards-1D-infiltration_sand_loam"/>
     <definitions>
       <macros>
-        
-            
         <cycle_macro name="Every_100">
-          
-                
           <start>0</start>
-          
-                
           <timestep_interval>100</timestep_interval>
-          
-                
           <stop>-1</stop>
-          
-            
         </cycle_macro>
         <cycle_macro name="Every_1000">
-          
-                
           <start>0</start>
-          
-                
           <timestep_interval>1000</timestep_interval>
-          
-                
           <stop>-1</stop>
-          
-            
         </cycle_macro>
       </macros>
     </definitions>
@@ -59,23 +41,16 @@
           <max_iterations>100</max_iterations>
           <tolerance>1.0e-16</tolerance>
           <clf>1.0e-16</clf>
-          <preconditioner name="hypre_amg">
-            
-                
-            <hypre_cycle_applications>5</hypre_cycle_applications>
-            
-                
-            <hypre_smoother_sweeps>3</hypre_smoother_sweeps>
-            
-                
-            <hypre_tolerance>0.0</hypre_tolerance>
-            
-                
-            <hypre_strong_threshold>0.5</hypre_strong_threshold>
-            
-            
-          </preconditioner>
+          <preconditioner>hypre_amg</preconditioner>
         </unstr_linear_solver>
+        <unstr_preconditioners>
+          <hypre_amg>
+            <hypre_cycle_applications>5</hypre_cycle_applications>
+            <hypre_smoother_sweeps>3</hypre_smoother_sweeps>
+            <hypre_tolerance>0.0</hypre_tolerance>
+            <hypre_strong_threshold>0.5</hypre_strong_threshold>
+          </hypre_amg>
+        </unstr_preconditioners>
         <unstr_nonlinear_solver name="nka"/>
       </unstructured_controls>
     </numerical_controls>
@@ -97,49 +72,25 @@
     </regions>
     <materials>
       <material name="loam">
-        
-            
         <mechanical_properties>
-          
-                
           <porosity value="0.43"/>
-          
-                
           <particle_density value="2720.0"/>
-          
-            
         </mechanical_properties>
         <permeability x="5.92360e-13" y="5.92360e-13" z="5.92360e-13"/>
         <cap_pressure model="van_genuchten">
-          
-                
           <parameters alpha="4.08622e-4" m="0.375" sr="0.186047"/>
-          
-            
         </cap_pressure>
         <rel_perm model="mualem"/>
         <assigned_regions>Bottom Region</assigned_regions>
       </material>
       <material name="sand">
-        
-            
         <mechanical_properties>
-          
-                
           <porosity value="0.43"/>
-          
-                
           <particle_density value="2720.0"/>
-          
-            
         </mechanical_properties>
         <permeability x="1.18472E-11" y="1.18472E-11" z="1.18472E-11"/>
         <cap_pressure model="van_genuchten">
-          
-                
           <parameters alpha="1.532333E-03" m="0.6666667" sr="0.104651"/>
-          
-            
         </cap_pressure>
         <rel_perm model="mualem"/>
         <assigned_regions>Top Region</assigned_regions>
@@ -147,100 +98,54 @@
     </materials>
     <phases>
       <liquid_phase name="water">
-        
-            
         <viscosity>1.002e-3</viscosity>
         <density>998.2</density>
         <dissolved_components>
-          
-                
           <solutes>
-            
-                    
             <solute coefficient_of_diffusion="1e-9">Tc-99</solute>
-            
-                
           </solutes>
-          
-            
         </dissolved_components>
       </liquid_phase>
     </phases>
     <initial_conditions>
       <initial_condition name="IC">
-        
-            
         <assigned_regions>All</assigned_regions>
         <liquid_phase name="water">
-          
-                
           <liquid_component name="water">
-            
-                    
             <uniform_pressure value="81747.0"/>
-            
-                
           </liquid_component>
-          
-                
           <solute_component function="uniform" name="Tc-99" value="0.0"/>
-          
-            
         </liquid_phase>
       </initial_condition>
     </initial_conditions>
     <boundary_conditions>
       <boundary_condition name="Top">
-        
-            
         <assigned_regions>Top Surface</assigned_regions>
         <liquid_phase name="water">
-          
-                
           <liquid_component name="water">
-            
-                    
             <inward_mass_flux function="constant" start="0 y" value="5.776620E-5"/>
-            
-                
           </liquid_component>
-          
-            
         </liquid_phase>
       </boundary_condition>
       <boundary_condition name="Bottom">
-        
-            
         <assigned_regions>Bottom Surface</assigned_regions>
         <liquid_phase name="water">
-          
-                
           <liquid_component name="water">
-            
-                    
             <uniform_pressure function="constant" start="0 y" value="99630.6336"/>
-            
-                
           </liquid_component>
-          
-            
         </liquid_phase>
       </boundary_condition>
     </boundary_conditions>
     <output>
       <vis>
-        
-            
         <base_filename>case_2b_plot</base_filename>
         <num_digits>5</num_digits>
-        <cycle_macro>Every_100</cycle_macro>
+        <cycle_macros>Every_100</cycle_macros>
       </vis>
       <checkpoint>
-        
-            
         <base_filename>case_2b_checkpoint</base_filename>
         <num_digits>5</num_digits>
-        <cycle_macro>Every_1000</cycle_macro>
+        <cycle_macros>Every_1000</cycle_macros>
       </checkpoint>
     </output>
   </amanzi_input>
