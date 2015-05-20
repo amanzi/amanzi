@@ -145,12 +145,12 @@
       <vis>
         <base_filename>case_2c_plot</base_filename>
         <num_digits>5</num_digits>
-        <cycle_macro>Every_100</cycle_macro>
+        <cycle_macros>Every_100</cycle_macros>
       </vis>
       <checkpoint>
         <base_filename>chkpoint</base_filename>
         <num_digits>5</num_digits>
-        <cycle_macro>Every_1000</cycle_macro>
+        <cycle_macros>Every_1000</cycle_macros>
       </checkpoint>
     </output>
   </amanzi_input>
