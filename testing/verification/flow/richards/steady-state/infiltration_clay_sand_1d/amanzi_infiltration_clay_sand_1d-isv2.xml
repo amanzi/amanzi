@@ -21,7 +21,7 @@
     </process_kernels>
     <execution_controls>
       <verbosity level="medium"/>
-      <execution_control_defaults increase_factor="1.2" reduction_factor="0.8"/>
+      <execution_control_defaults increase_factor="1.2" reduction_factor="0.8" init_dt="2 s" max_dt="1000 y"/>
       <execution_control end="10000 y" increase_factor="1.25" init_dt="2 s" max_dt="1000 y" method="bdf1" mode="steady" reduction_factor="0.8" start="0 y"/>
     </execution_controls>
     <numerical_controls>
