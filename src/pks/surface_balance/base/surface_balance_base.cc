@@ -29,6 +29,7 @@ SurfaceBalanceBase::SurfaceBalanceBase(
   // name the layer
   layer_ = plist->get<std::string>("layer name", name_);
   source_key_  = layer_+std::string("_source");
+  source_key_ = plist->get<std::string>("source key", source_key_);
 
   if (plist->isParameter("conserved quantity")) {
     conserved_quantity_ = true;
@@ -106,8 +107,7 @@ SurfaceBalanceBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVect
     g->Data()->Multiply(-(1.0 - theta_), *S_inter_->GetFieldData(source_key_), *cv, 1.);
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       db_->WriteVector("source0", S_inter_->GetFieldData(source_key_).ptr(), false);
-      db_->WriteVector(" drainage0", S_inter_->GetFieldData("litter_drainage").ptr(), false);
-      
+      //      db_->WriteVector(" drainage0", S_inter_->GetFieldData("litter_drainage").ptr(), false);
     }
   }
   if (theta_ > 0.0) {
@@ -115,7 +115,7 @@ SurfaceBalanceBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVect
     g->Data()->Multiply(-theta_, *S_next_->GetFieldData(source_key_), *cv, 1.);
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       db_->WriteVector("source1", S_next_->GetFieldData(source_key_).ptr(), false);
-      db_->WriteVector(" drainage1", S_next_->GetFieldData("litter_drainage").ptr(), false);
+      //      db_->WriteVector(" drainage1", S_next_->GetFieldData("litter_drainage").ptr(), false);
     }
   }
 }
