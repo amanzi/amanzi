@@ -72,6 +72,7 @@ MPCCoupledWater::setup(const Teuchos::Ptr<State>& S) {
   // grab the debuggers
   domain_db_ = domain_flow_pk_->debugger();
   surf_db_ = surf_flow_pk_->debugger();
+  water_->set_db(domain_db_);
 }
 
 void
