@@ -165,7 +165,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   S->RequireField(uw_conductivity_key_, name_)->SetMesh(mesh_)->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
   S->GetField(uw_conductivity_key_,name_)->set_io_vis(false);
-  std::string method_name = plist_->get<std::string>("upwind conductivity method", "arithmetic mean");
+  std::string method_name = plist_->get<std::string>("upwind conductivity method", "cell centered");
   if (method_name == "cell centered") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindCellCentered(name_,
             conductivity_key_, uw_conductivity_key_));

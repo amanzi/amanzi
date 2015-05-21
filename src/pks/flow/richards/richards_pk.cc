@@ -280,7 +280,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
   // operator with no krel for flux direction, consistent faces
   Teuchos::ParameterList face_diff_list(mfd_plist);
-  face_diff_list.set("upwind method", "none");
+  face_diff_list.set("nonlinear coefficient", "none");
   face_matrix_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionWithGravity(face_diff_list, mesh_));
 
   // preconditioner for the NKA system
