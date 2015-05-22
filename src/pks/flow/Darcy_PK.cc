@@ -347,6 +347,7 @@ void Darcy_PK::Initialize()
   
   // Optional step: calculate hydrostatic solution consistent with BCs.
   // We have to do it only once per time period.
+  bool init_darcy(false);
   if (ti_list_->isSublist("initialization") && initialize_with_darcy_) {
     initialize_with_darcy_ = false;
     Epetra_MultiVector& p = *solution->ViewComponent("cell");
@@ -354,6 +355,7 @@ void Darcy_PK::Initialize()
     DeriveFaceValuesFromCellValues(p, lambda);
 
     SolveFullySaturatedProblem(*solution);
+    init_darcy = true;
   }
 
   // print initialization head for this time period
@@ -367,7 +369,7 @@ void Darcy_PK::Initialize()
                << " PC:\"" << preconditioner_name_.c_str() << "\"" << std::endl;
     *vo_->os() << "constant viscosity model, mu=" << mu << std::endl;
 
-    if (initialize_with_darcy_) {
+    if (init_darcy) {
       *vo_->os() << "initial pressure guess: \"saturated solution\"\n" << std::endl;
     } else {
       *vo_->os() << "initial pressure guess: \"from State\"\n" << std::endl;
