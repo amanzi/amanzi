@@ -51,7 +51,7 @@ public:
               const std::string& obs_type,
               const std::string& eventLabel);
 
-  void process(Real t_old, Real t_new, int iter);
+  void process(Real t_old, Real t_new, int iter, int verbose);
   static void setPMAmrPtr(PMAmr* amr) {amrp = amr;}
   static PMAmr* PMAmrPtr() {return amrp;} 
   static void Cleanup ();

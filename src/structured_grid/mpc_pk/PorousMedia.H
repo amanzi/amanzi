@@ -946,6 +946,9 @@ protected:
   // source term
   static bool do_source_term;
 
+  // observation processing
+  static int verbose_observation_processing;
+
 #ifdef AMANZI
 
 #ifdef ALQUIMIA_ENABLED
