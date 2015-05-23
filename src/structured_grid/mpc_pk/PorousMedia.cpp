@@ -1592,7 +1592,7 @@ PorousMedia::richard_init_to_steady()
       prev_time = state[State_Type].prevTime();
       PArray<Observation>& observations = PMParent()->TheObservations();
       for (int i=0; i<observations.size(); ++i) {
-        observations[i].process(prev_time, time_after_init, parent->levelSteps(0));
+        observations[i].process(prev_time, time_after_init, parent->levelSteps(0),verbose_observation_processing);
       }
 	
       richard_solver_verbose = old_richard_solver_verbose;
@@ -2097,7 +2097,7 @@ PorousMedia::multilevel_advance (Real  time,
     Real curr_time = state[State_Type].curTime();
     PArray<Observation>& observations = PMParent()->TheObservations();
     for (int i=0; i<observations.size(); ++i) {
-      observations[i].process(prev_time, curr_time, parent->levelSteps(0));
+      observations[i].process(prev_time, curr_time, parent->levelSteps(0),verbose_observation_processing);
     }
   }
 
@@ -5090,7 +5090,7 @@ void PorousMedia::post_restart()
     Real curr_time = state[State_Type].curTime();
     PArray<Observation>& observations = PMParent()->TheObservations();
     for (int i=0; i<observations.size(); ++i) {
-      observations[i].process(prev_time, curr_time, parent->levelSteps(0));
+      observations[i].process(prev_time, curr_time, parent->levelSteps(0),verbose_observation_processing);
     }
 
     if (model != PM_STEADY_SATURATED) {
@@ -5297,7 +5297,7 @@ PorousMedia::post_init (Real stop_time)
       Real curr_time = state[State_Type].curTime();
       PArray<Observation>& observations = PMParent()->TheObservations();
       for (int i=0; i<observations.size(); ++i)
-          observations[i].process(prev_time, curr_time, parent->levelSteps(0));
+	observations[i].process(prev_time, curr_time, parent->levelSteps(0),verbose_observation_processing);
     }
 }
 

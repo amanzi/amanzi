@@ -3,7 +3,7 @@
 #include <PMAmr.H>
 #include <Observation.H>
 #include <EventCoord.H>
-
+#include <PMAMR_Labels.H>
 
 
 PMAmr* Observation::amrp;
@@ -60,7 +60,8 @@ process_events(Real time, Real dt, int iter, int diter, const std::string& event
     }
     EventCoord& event_coord = Observation::PMAmrPtr()->eventCoord();
     std::pair<Real,Array<std::string> > nextEvent = event_coord.NextEvent(time,dt,iter, diter);
-    if (nextEvent.second.size()) 
+    //if (nextEvent.second.size()) 
+    if (nextEvent.first > 0) 
     {
         // Process event
         const Array<std::string>& eventList = nextEvent.second;
@@ -78,7 +79,8 @@ process_events(Real time, Real dt, int iter, int diter, const std::string& event
 void 
 Observation::process(Real t_old, 
 		     Real t_new,
-                     int  iter)
+                     int  iter,
+		     int  verbose)
 {
   // Must set the amr pointer prior to use via Observation::setAmrPtr
   BL_ASSERT(amrp); 
@@ -138,6 +140,14 @@ Observation::process(Real t_old,
             times.push_back(t_old + dt_red);
             Real eta = std::min(1.,std::max(0.,dt_red/(t_new-t_old)));
             vals[times.size()-1] = (val_old*(1 - eta) + val_new*eta);
+
+	    if (verbose>0 && ParallelDescriptor::IOProcessor()) {
+	      const int old_prec = std::cout.precision(16);
+	      std::cout.setf(std::ios::scientific);
+	      std::cout << "Observation::\"" << Amanzi::AmanziInput::GlobalData::AMR_to_Amanzi_label_map[name]
+			<< "\": (" << times.back() << ", " << vals[times.size()-1] << ")\n";
+	      std::cout.precision(old_prec);
+	    }
         }
     }
   val_old = val_new;

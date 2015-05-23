@@ -5,7 +5,7 @@
 #include <PMAmr.H>
 #include <PorousMedia.H>
 #include <Observation.H>
-#include "PMAMR_Labels.H"
+#include <PMAMR_Labels.H>
 
 namespace
 {
@@ -1404,7 +1404,7 @@ void PMAmr::FlushObservations(std::ostream& out)
   // print out observations
   if (observations.size() && ParallelDescriptor::IOProcessor()) {
 
-    out.precision(16);
+    const int old_prec = out.precision(16);
     out.setf(std::ios::scientific);
 
     out << "Observation Name, Region, Functional, Variable, Time, Value\n";
@@ -1422,7 +1422,7 @@ void PMAmr::FlushObservations(std::ostream& out)
             << ", " << it->second << std::endl;
       }
     }
-    std::cout << "\n";
+    out.precision(old_prec);
   }
 }
 
