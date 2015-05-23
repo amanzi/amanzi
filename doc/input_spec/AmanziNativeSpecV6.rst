@@ -968,13 +968,13 @@ scheme, and selects assembling schemas for matrices and preconditioners.
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
           <Parameter name="gravity" type="bool" value="true"/>
+          <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
         </ParameterList>
         <ParameterList name="preconditioner">
           <Parameter name="discretization primary" type="string" value="monotone mfd"/>
           <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-          <Parameter name="gravity" type="bool" value="true"/>
           <Parameter name="newton correction" type="string" value="approximate jacobian"/>
         </ParameterList>
       </ParameterList>
@@ -1403,6 +1403,38 @@ The remaining `"Flow`" parameters are
        <Parameter name="Verbosity Level" type="string" value="medium"/>
      </ParameterList>
    </ParameterList>
+
+
+Verbose output
+..............
+
+When verbosity is set to *high*, this PK reports infomation about 
+current status of the simulation.
+Here after keyword *global* referes to the whole simulation including
+all time periods, keyword *local* refers to the currect time period.
+The incomplete list is
+
+ * [global] cycle number, time T, and time step dT
+ * [global] T and dT inside the time integrator (in seconds)
+ * frequence of preconditioner updates
+ * number of performed nonlinear steps and value of the nonlinear resodual
+ * [local] total number of succesful time steps (TS), failed time steps (FS),
+   preconditioner updates (PC/1) and preconditioner applies (PC/2),
+   linear solves insides preconditioner (LS)
+ * amount of liquid (water) in the reservoir and amount of water entering
+   and living domain through its boundary (based on darcy flux).
+
+.. code-block:: xml
+
+  CycleDriver      |   Cycle 40: time(y) = 0.953452, dt(y) = 0.238395
+  TI::BDF1         |    step 40 T = 3.00887e+07 [sec]  dT = 7.52316e+06
+  TI::BDF1         |    preconditioner lag is 20 out of 20
+  TI::BDF1         |    success: 4 nonlinear itrs error=7.87642e-08
+  TI::BDF1         |    TS:40 FS:0 NS:64 PC:42 64 LS:0 dt:1.0000e+03 7.5232e+06
+  FlowPK::Richards |    reservoir water mass=1.36211e+06 [kg], total influx=897.175 [kg]
+  CycleDriver      |   New time(y) = 1.19185
+  FlowPK::Richards |    Secondary fields: hydraulic head, darcy_velocity
+ 
 
 
 Transport PK
@@ -2334,6 +2366,12 @@ Diffusion operator
 
   * `"gravity`" [bool] specifies if flow is driven also by the gravity.
 
+  * `"gravity term discretization`" [string] selects a model for discretizing the 
+    gravity term. Available options are `"hydraulic head`" [default] and `"finite volume`". 
+    The first option starts with equation for the shifted solution, i.e. the hydraulic head,
+    and derives gravity discretization by the reserve shifting.
+    The second option is based on the divergence formula.
+
   * `"newton correction`" [string] specifies a model for non-physical terms 
     that must be added to the matrix. These terms represent Jacobian and are needed 
     for the preconditoner. Available options are `"true jacobian`" and `"approximate jacobian`".
@@ -2355,6 +2393,7 @@ Diffusion operator
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
       <Parameter name="gravity" type="bool" value="true"/>
+      <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
       <Parameter name="upwind method" type="string" value="standard: cell"/>
       <Parameter name="newton correction" type="string" value="true jacobian"/>
 

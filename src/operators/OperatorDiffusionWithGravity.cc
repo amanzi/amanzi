@@ -61,6 +61,10 @@ void OperatorDiffusionWithGravity::AddGravityToRHS_()
     WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
     Kc(0, 0) = 1.0;
 
+    // gravity discretization
+    bool fv_flag = (gravity_method_ == OPERATOR_GRAVITY_FV) ||
+        (little_k_ != OPERATOR_LITTLE_K_DIVK && little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN);
+
     for (int c = 0; c < ncells_owned; c++) {
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       int nfaces = faces.size();
@@ -94,9 +98,9 @@ void OperatorDiffusionWithGravity::AddGravityToRHS_()
       }
 
       // add gravity term to the right-hand side vector.
-      // -- all methods except for DIVK-family of methods.
-      if (little_k_ != OPERATOR_LITTLE_K_DIVK && 
-          little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN) {
+      // -- use always for the finite volume method
+      // -- use for all other methods except for DIVK-family of methods
+      if (fv_flag) { 
         if (K_.get()) Kc = (*K_)[c];
         AmanziGeometry::Point Kcg(Kc * g_);
 
@@ -130,8 +134,7 @@ void OperatorDiffusionWithGravity::AddGravityToRHS_()
 
       // Amanzi's first upwind: the family of DIVK methods uses hydraulic
       // head as the primary variable and linear transformation for pressure.
-      if (little_k_ == OPERATOR_LITTLE_K_DIVK ||
-          little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
+      if (!fv_flag) {
         WhetStone::DenseVector v(nfaces), av(nfaces);
         for (int n = 0; n < nfaces; n++) {
           int f = faces[n];
@@ -188,6 +191,10 @@ void OperatorDiffusionWithGravity::UpdateFlux(
   WhetStone::Tensor Kc(dim, 1);
   Kc(0, 0) = 1.0;
 
+  // gravity discretization
+  bool fv_flag = (gravity_method_ == OPERATOR_GRAVITY_FV) ||
+      (little_k_ != OPERATOR_LITTLE_K_DIVK && little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN);
+
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -213,7 +220,7 @@ void OperatorDiffusionWithGravity::UpdateFlux(
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
     }
 
-    if (little_k_ != OPERATOR_LITTLE_K_DIVK) {
+    if (fv_flag) { 
       if (K_.get()) Kc = (*K_)[c];
       AmanziGeometry::Point Kcg(Kc * g_);
 
@@ -247,7 +254,7 @@ void OperatorDiffusionWithGravity::UpdateFlux(
       }
     }
 
-    if (little_k_ == OPERATOR_LITTLE_K_DIVK) {
+    if (!fv_flag) { 
       WhetStone::DenseVector v(nfaces), av(nfaces);
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
@@ -270,6 +277,22 @@ void OperatorDiffusionWithGravity::UpdateFlux(
       }
     }
   }
+}
+
+
+/* ******************************************************************
+* Put here stuff that has to be done in constructor, i.e. only once.
+****************************************************************** */
+void OperatorDiffusionWithGravity::Init_(Teuchos::ParameterList& plist)
+{
+  gravity_special_projection_ = (mfd_primary_ == WhetStone::DIFFUSION_TPFA);
+
+  // gravity discretization
+  std::string name = plist.get<std::string>("gravity term discretization", "hydraulic head");
+  if (name == "hydraulic head")
+    gravity_method_ = OPERATOR_GRAVITY_HH;
+  else
+    gravity_method_ = OPERATOR_GRAVITY_FV;
 }
 
 

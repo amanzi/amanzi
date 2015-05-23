@@ -68,6 +68,8 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
 
   Teuchos::ParameterList vo_list = plist.sublist("Verbose Object");
   vo_ = Teuchos::rcp(new VerboseObject("Operators", vo_list));
+
+  apply_calls_ = 0; 
 }
 
 
