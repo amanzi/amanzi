@@ -133,11 +133,11 @@ void Flow_PK::InitializeFields_()
 
   if (S_->HasField("fluid_viscosity")) {
     if (!S_->GetField("fluid_viscosity", passwd_)->initialized()) {
-      *(S_->GetScalarData("fluid_viscosity", passwd_)) = 0.001;
+      *(S_->GetScalarData("fluid_viscosity", passwd_)) = CommonDefs::ISOTHERMAL_VISCOSITY;
       S_->GetField("fluid_viscosity", passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized fluid_viscosity to default value 0.001" << std::endl;  
+          *vo_->os() << "initilized fluid_viscosity to default value 1.002e-3" << std::endl;  
     }
   }
 

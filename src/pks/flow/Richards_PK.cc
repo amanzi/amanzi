@@ -684,7 +684,7 @@ void Richards_PK::InitializeFields_()
       S_->GetField("viscosity_liquid", passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized viscosity_liquid to value " << mu << std::endl;  
+          *vo_->os() << "initilized viscosity_liquid to input value " << mu << std::endl;  
     }
   }
 
