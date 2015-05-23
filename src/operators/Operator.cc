@@ -216,6 +216,8 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
   //   ierr |= AddSuperVectorToCompositeVector(*smap_, Ycopy, Y, 0);
   //   ASSERT(!ierr);
   // } else {
+  apply_calls_++;
+
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     (*it)->ApplyMatrixFreeOp(this, X, Y);
   }

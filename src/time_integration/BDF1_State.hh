@@ -10,7 +10,6 @@
 #define AMANZI_BDF1STATE_HH_
 
 #include <limits>
-#include <vector>
 
 #include "errors.hh"
 #include "dbc.hh"
@@ -31,7 +30,6 @@ struct BDF1_State {
     seq = -1;
     failed_solve = 0;
     solve_itrs = 0;
-    linear_itrs.clear();
 
     pc_calls = 0;
     pc_updates = 0;
@@ -66,7 +64,6 @@ struct BDF1_State {
 
   // performane of nonlinear solver
   int solve_itrs;
-  std::vector<int> linear_itrs;
 
   // restart fine constrol
   double tol_multiplier, tol_multiplier_damp;

@@ -58,7 +58,6 @@ class BDF1_SolverFnBase : public AmanziSolvers::SolverFnBase<Vector> {
   virtual void ChangedSolution();
 
   // Other methods
-  // ---------------------------
   void SetTimes(double t_old, double t_new) {
     t_old_ = t_old;
     t_new_ = t_new;
@@ -79,8 +78,6 @@ class BDF1_SolverFnBase : public AmanziSolvers::SolverFnBase<Vector> {
 };
 
 
-// SolverFnBase interface
-// ---------------------------
 // computes the non-linear functional r = F(u)
 template<class Vector>
 void BDF1_SolverFnBase<Vector>::Residual(const Teuchos::RCP<Vector>& u,

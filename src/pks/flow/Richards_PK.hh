@@ -104,6 +104,11 @@ class Richards_PK : public Flow_PK {
     pressure_eval_->SetFieldAsChanged(S_.ptr());
   }
 
+  // -- returns the number of linear iterations.
+  int ReportStatistics() { 
+    return op_preconditioner_->apply_calls();
+  }
+
   // other flow methods
   // -- initization members
   void SolveFullySaturatedProblem(double t_old, CompositeVector& u, const std::string& solver_name);

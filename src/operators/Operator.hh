@@ -101,7 +101,7 @@ class Operator {
  public:
   // main constructor
   // At themoment CVS is the domain and range of the operator
-  Operator() {}
+  Operator() { apply_calls_ = 0; }
   Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
            Teuchos::ParameterList& plist,
            int schema);
@@ -110,7 +110,7 @@ class Operator {
 
   // main members
   // -- virtual methods potentially altered by the schema
-  virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar=0.) const;
+  virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
   // symbolic assembly:
@@ -169,6 +169,8 @@ class Operator {
   Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; }
   Teuchos::RCP<CompositeVector> rhs() { return rhs_; }
   Teuchos::RCP<const CompositeVector> rhs() const { return rhs_; }
+
+  int apply_calls() { return apply_calls_; }
 
   // block access
   typedef std::vector<Teuchos::RCP<Op> >::const_iterator const_op_iterator;
@@ -294,6 +296,8 @@ class Operator {
   std::string schema_string_;
   bool symbolic_assembled_;
   bool assembled_;
+
+  mutable int apply_calls_;
 
  private:
   Operator(const Operator& op);

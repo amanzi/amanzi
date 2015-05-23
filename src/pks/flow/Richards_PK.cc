@@ -782,7 +782,7 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   wc_prev = wc;
 
   // enter subspace
-  if (reinit) {
+  if (reinit && solution->HasComponent("face")) {
     EnforceConstraints(t_new, solution);
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
