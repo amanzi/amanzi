@@ -1,4 +1,5 @@
   <amanzi_input type="unstructured" version="2.1.0">
+    <echo_translated_input format="v1" file_name="oldspec.xml"/>
     <model_description name="unconfined_head_head_no_recharge_2d">
       <comments>Steady-State Richards: no_recharge_2d</comments>
       <model_id>??</model_id>
