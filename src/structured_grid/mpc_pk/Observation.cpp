@@ -238,14 +238,6 @@ Observation::integral_and_volume (Real time)
 
   for (int lev = 0; lev <= finest_level; lev++)
     {
-      if (lev>0)
-        {
-          for (int d=0; d<BL_SPACEDIM; ++d)
-            {
-              vol_scale_lev *= 1./refRatio[lev][d];
-            }
-        }
-
       int nGrow = 0;
       const MultiFab* S = amrp->getLevel(lev).derive(field,time,nGrow);
       BoxArray baf;
@@ -281,13 +273,15 @@ Observation::integral_and_volume (Real time)
             }
 
           // Now increment volume and integral inside
-          vol_inside += fabVOL.sum(0) * vol_scale_lev;
+          vol_inside += fabVOL.sum(0);
           
           fabINT.resize(cbox,1);
           fabINT.copy((*S)[mfi],0,0,1);
           fabINT.mult(fabVOL);
           int_inside += fabINT.sum(0);
         }
+
+      delete S;
     }
   ParallelDescriptor::ReduceRealSum(vol_inside);
   ParallelDescriptor::ReduceRealSum(int_inside);
@@ -297,8 +291,7 @@ Observation::integral_and_volume (Real time)
 Real
 Observation::peak_sample (Real time)
 {
-  Real peak_val;
-  bool first = true;
+  Real peak_val = - std::numeric_limits<Real>::max();
   const int finest_level = amrp->finestLevel();
   const Array<IntVect>& refRatio = amrp->refRatio();
 
@@ -314,10 +307,12 @@ Observation::peak_sample (Real time)
     if (lev < finest_level) {
       cfba = BoxArray(amrp->getLevel(lev).boxArray()).coarsen(refRatio[lev]);
     }
+
     for (MFIter mfi(*S); mfi.isValid(); ++mfi) {
       const FArrayBox& fab = (*S)[mfi];
       const Box& box = mfi.validbox();
       mask.resize(box,1);
+      mask.setVal(0);
       region.setVal(mask,1,0,dx,0);
 
       // Mask out covered data
@@ -328,18 +323,14 @@ Observation::peak_sample (Real time)
 	}
       }
 
+      // Do check only over relevant cells
       for (IntVect iv=box.smallEnd(), End=box.bigEnd(); iv<=End; box.next(iv)) {
         if (mask(iv,0) != 0) {
-          if (first) {
-            peak_val = fab(iv,0);
-            first = false;
-          }
-          else {
-            peak_val = std::max(peak_val,fab(iv,0));
-          }
+	  peak_val = std::max(peak_val,fab(iv,0));
         }
       }
     }
+    delete S;
   }
   ParallelDescriptor::ReduceRealMax(peak_val);
   return peak_val;

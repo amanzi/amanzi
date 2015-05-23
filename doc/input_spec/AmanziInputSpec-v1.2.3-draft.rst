@@ -1722,7 +1722,7 @@ The following Observation Data functionals are currently supported.  All of them
 
 * `"Observation Data: Cummulative Integral`" returns the integral of the field quantity, accumulated over the intervals defined by the time macro
 
-* `"Observation Data: Peak Value`" returns the peak value of the field quantity over the region
+* [S] `"Observation Data: Peak Value`" returns the peak value of the field quantity over the region
 
 
 Example:
