@@ -1056,6 +1056,11 @@ PMAmr::restart (const std::string& filename)
 
     } else {
 
+       BoxLib::Abort("PMAmr::restart(): max_level is lower on restart than in checkpoint file.  Adjust refinement criteria to achieve desired max_level");
+
+#if 0
+       // Remove this robustification since material properties with a different max_level will not be consistent
+
        if (ParallelDescriptor::IOProcessor())
           BoxLib::Warning("PMAmr::restart(): max_level is lower than before");
 
@@ -1121,7 +1126,7 @@ PMAmr::restart (const std::string& filename)
        //
        for (lev = 0; lev <= new_finest_level; lev++)
            amr_level[lev].post_restart();
-
+#endif
     }
 
     for (int lev = 0; lev <= finest_level; lev++)
