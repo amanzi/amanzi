@@ -158,7 +158,7 @@ Teuchos::ParameterList InputParserIS::CreateChemistryList_(Teuchos::ParameterLis
         Teuchos::ParameterList& isotherm_langmuir_b_ic = chem_ic.sublist("isotherm_langmuir_b");
         Teuchos::ParameterList& isotherm_freundlich_n_ic = chem_ic.sublist("isotherm_freundlich_n");
 
-        Teuchos::ParameterList& sorption_isotherms_list = matprop_list.sublist(matprop_list.name(i)).sublist("Sorption Isotherms");
+        Teuchos::ParameterList& sorption_isotherms_list = matprop_list.sublist(matprop_list.name(i)).sublist("Sorption Isotherms").sublist("Aqueous").sublist("Water");
 
         for (Teuchos::Array<std::string>::const_iterator ir=regions.begin(); ir!=regions.end(); ir++) {
 
