@@ -71,6 +71,8 @@ Alquimia_Chemistry_PK::Alquimia_Chemistry_PK(const Teuchos::ParameterList& param
       current_time_(0.0),
       saved_time_(0.0) 
 {
+  ASSERT(!chem_state.is_null());
+
   // We need the top-level parameter list.
   chem_param_list_ = main_param_list_.sublist("PKs").sublist("Chemistry");
 }  // end Alquimia_Chemistry_PK()
