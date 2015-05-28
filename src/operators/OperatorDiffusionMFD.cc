@@ -1167,7 +1167,7 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
   scaled_constraint_ = plist.get<bool>("scaled constraint equation", false);
 
   // little-k options
-  std::string name = plist.get<std::string>("nonlinear coefficient");
+  std::string name = plist.get<std::string>("nonlinear coefficient", "standard: cell");
   if (name == "none") {
     little_k_ = OPERATOR_LITTLE_K_NONE;
   } else if (name == "upwind: face") {
