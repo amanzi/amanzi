@@ -350,7 +350,7 @@ public:
   int Multiply(double scalarAB, const CompositeVector& A, const CompositeVector& B,
                double scalarThis);
 
-  // this <- scalarAB * A@B + scalarThis*this  (@ is the elementwise product
+  // this <- scalarAB * A^-1@B + scalarThis*this  (@ is the elementwise product
   int ReciprocalMultiply(double scalarAB, const CompositeVector& A,
                          const CompositeVector& B, double scalarThis);
 
