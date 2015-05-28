@@ -116,16 +116,6 @@ void OperatorDiffusionMFD::UpdateMatrices(
       UpdateMatricesTPFA_();
     }
   }
-
-  // add Newton-type corrections
-  // if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
-  //   if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
-  //     AddNewtonCorrectionCell_(flux, u);
-  //   } else {
-  //     Errors::Message msg("OperatorDiffusion: Newton correction may only be applied to schemas that include CELL dofs.");
-  //     Exceptions::amanzi_throw(msg);
-  //   }
-  // }
 }
 
 
@@ -831,11 +821,10 @@ void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
     Aface.PutScalar(0.0);
 
     // This change is to deal with the case where kf < 0, i.e. for energy when:
-    //  div (qh) = div (h k grad p), where h is enthalpy and can be negative.
-    // I believe I have the sign correct now fixing #1550.  --etc 
-    //    double v = flux_f[0][f];
-    //    double vmod = kf[0][f] > 0.0 ? fabs(v) * dkdp_f[0][f] / kf[0][f] : 0.0;
-    double v = std::abs(kf[0][f]) > 0. ? flux_f[0][f] / kf[0][f] : 0.;
+    // div (qh) = div (h k grad p), where h is enthalpy and can be negative.
+    //   double v = flux_f[0][f];
+    //   double vmod = kf[0][f] > 0.0 ? fabs(v) * dkdp_f[0][f] / kf[0][f] : 0.0;
+    double v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] / kf[0][f] : 0.0;
     double vmod = std::abs(v) * dkdp_f[0][f];
 
     if (scalar_rho_) {

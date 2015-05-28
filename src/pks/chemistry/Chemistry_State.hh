@@ -33,14 +33,6 @@ class Chemistry_State {
                   const std::vector<std::string>& component_names,
                   const Teuchos::RCP<State>& S);
 
-  Chemistry_State(const Teuchos::RCP<State>& S,
-                  const std::vector<std::string>& component_names,
-                  int number_of_minerals,
-                  int number_of_ion_exchange_sites,
-                  int number_of_sorption_sites,
-                  bool using_sorption,
-                  bool using_sorption_isotherms);
-
   virtual ~Chemistry_State() {};
 
   void Setup();

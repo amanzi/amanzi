@@ -85,8 +85,8 @@ void ReactiveTransport_PK::set_dt(double dt) {
   //dTchem_ = chemistry_pk_ -> get_dt();
   //if (dTchem_ > dTtran_) dTchem_ = dTtran_;
   //if (dTtran_ > dTchem_) dTtran_= dTchem_; 
-  chemistry_pk_ -> set_dt(dTchem_);
-  tranport_pk_ -> set_dt(dTtran_);
+  chemistry_pk_->set_dt(dTchem_);
+  tranport_pk_->set_dt(dTtran_);
 }
 
 

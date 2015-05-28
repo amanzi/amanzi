@@ -77,7 +77,7 @@ void EnergyTwoPhase_PK::Functional(
 
 
 /* ******************************************************************
-* Update the preconditioner at time t and u = up
+* Update the preconditioner on the interval (t, t + dt] using u = up.
 ****************************************************************** */
 void EnergyTwoPhase_PK::UpdatePreconditioner(
     double t, Teuchos::RCP<const TreeVector> up, double dt)
@@ -123,7 +123,8 @@ void EnergyTwoPhase_PK::UpdatePreconditioner(
 
 
 /* ******************************************************************
-* TBW
+* Error is defined as the relative change of temperature. 
+* The reference temprerature value is 273 K.
 ****************************************************************** */
 double EnergyTwoPhase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
                                     Teuchos::RCP<const TreeVector> du)

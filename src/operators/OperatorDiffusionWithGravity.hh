@@ -35,21 +35,21 @@ class OperatorDiffusionWithGravity : public OperatorDiffusionMFD {
                                const Teuchos::RCP<Operator>& global_op) :
       OperatorDiffusionMFD(plist, global_op)
   {
-    Init_();
+    Init_(plist);
   }
 
   OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
                                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       OperatorDiffusionMFD(plist, mesh)
   {
-    Init_();
+    Init_(plist);
   }
 
   OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
                                const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
       OperatorDiffusionMFD(plist, mesh)
   {
-    Init_();
+    Init_(plist);
   }
   
   // main members
@@ -69,13 +69,13 @@ class OperatorDiffusionWithGravity : public OperatorDiffusionMFD {
   
  protected:
   virtual void AddGravityToRHS_();
-
   inline AmanziGeometry::Point GravitySpecialDirection_(int f) const;
-  void Init_() { gravity_special_projection_ = (mfd_primary_ == WhetStone::DIFFUSION_TPFA); }
+  void Init_(Teuchos::ParameterList& plist);
 
  protected:
   AmanziGeometry::Point g_;
   bool gravity_special_projection_;
+  int gravity_method_;
 };
 
 }  // namespace Operators

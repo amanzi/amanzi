@@ -68,6 +68,8 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
 
   Teuchos::ParameterList vo_list = plist.sublist("Verbose Object");
   vo_ = Teuchos::rcp(new VerboseObject("Operators", vo_list));
+
+  apply_calls_ = 0; 
 }
 
 
@@ -216,6 +218,8 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
   //   ierr |= AddSuperVectorToCompositeVector(*smap_, Ycopy, Y, 0);
   //   ASSERT(!ierr);
   // } else {
+  apply_calls_++;
+
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     (*it)->ApplyMatrixFreeOp(this, X, Y);
   }
@@ -345,6 +349,8 @@ int Operator::CopyShadowToMaster(int iops)
   int nops = ops_.size();
   ASSERT(iops < nops);
   ops_[iops]->CopyShadowToMaster();
+
+  return 0;
 } 
 
 

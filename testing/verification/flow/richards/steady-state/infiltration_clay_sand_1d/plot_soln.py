@@ -21,8 +21,19 @@ def GetXY_AmanziU(path,root,time,comp):
     yy = np.array([y[4*i] for i in range(len(y)/4)])
     x_amanziU = yy[0:-1]+np.diff(yy)/2
 
-    # extract concentration array
-    c_amanziU = np.array(amanzi_file[comp][time])
+    if time == '-1':
+      # extract field array for largest cycle
+      group = amanzi_file[comp]
+      cycle_max = 0
+      for cycle,val in dict(group).iteritems():
+        cycle_max = max(cycle, cycle_max)
+
+      print 'Found maximum cycle:', cycle_max
+      c_amanziU = np.array(group[cycle_max])
+    else:
+      # extract field array for gived time
+      c_amanziU = np.array(amanzi_file[comp][time])
+
     c_amanziU = c_amanziU.reshape(len(c_amanziU))
 
     amanzi_file.close()
@@ -70,8 +81,7 @@ if __name__ == "__main__":
     fig, ax = plt.subplots() 
         
     try:
-        #time = '385'
-        time = '404'
+        time = '-1'
         comp = 'pressure.cell.0'
         path_to_amanziU = "."
         root_amanziU = 'case_2c_plot'
@@ -81,7 +91,7 @@ if __name__ == "__main__":
         unstruct = 0
 
     try:
-        time = '407'
+        time = '-1'
         comp = 'pressure.cell.0'
         path_to_amanziU = "golden_output"
         root_amanziU = 'case_2c_plot'
@@ -89,9 +99,10 @@ if __name__ == "__main__":
         unstruct_gold = len(x_amanziU_gold)
     except:
         unstruct_gold = 0
-    print "EIB>> unstruct      = ",unstruct
-    print "EIB>> unstruct_gold = ",unstruct_gold
-    print "EIB>> struct        = ",struct
+
+    print "EIB>> unstruct      = ", unstruct
+    print "EIB>> unstruct_gold = ", unstruct_gold
+    print "EIB>> struct        = ", struct
 
     # Do plot
     if (unstruct>0):
@@ -115,5 +126,5 @@ if __name__ == "__main__":
     plt.tick_params(axis='both', which='major', labelsize=20)
 
     plt.show()
-    #plt.savefig(root+"_1d.png",format="png")
-    #plt.close()
+    # plt.savefig(root+"_1d.png",format="png")
+    # plt.close()

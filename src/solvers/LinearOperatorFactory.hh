@@ -62,9 +62,9 @@ class LinearOperatorFactory {
 
 
 /* ******************************************************************
- * The following calls have to be supported: m->Apply(...) and
- * h->ApplyInverse(...).
- ****************************************************************** */
+* The following calls have to be supported: m->Apply(...) and
+* h->ApplyInverse(...).
+****************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
 Teuchos::RCP<LinearOperator<Matrix, Vector, VectorSpace> >
 LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
@@ -86,9 +86,9 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
 
 
 /* ******************************************************************
- * The following calls have to be supported: m->Apply(...) and
- * h->ApplyInverse(...).
- ****************************************************************** */
+* The following calls have to be supported: m->Apply(...) and
+* h->ApplyInverse(...).
+****************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
 Teuchos::RCP<LinearOperator<Matrix, Vector, VectorSpace> >
 LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(

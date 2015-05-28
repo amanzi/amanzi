@@ -205,7 +205,7 @@ terminated because its allocation of time ran out.
 
 * `"Restart`" [list]
 
-  * `"Checkpoint Data File Name`" [string] provides name of the existing checkpoint data file to restart from.
+  * `"File Name`" [string] provides name of the existing checkpoint data file to restart from.
 
   * `"initialize from checkpoint data file and do not restart`" [bool] (optional) If this is set to false 
     (default), then a restart is performed, if it is set to true, then all fields are initialized from 
@@ -215,7 +215,7 @@ terminated because its allocation of time ran out.
   
   <ParameterList name="Cycle Driver">  <!-- parent list -->
     <ParameterList name="Restart">
-      <Parameter name="Checkpoint Data File Name" type="string" value="CHECK00123.h5"/>
+      <Parameter name="File Name" type="string" value="CHECK00123.h5"/>
     </ParameterList>
   </ParameterList>
 
@@ -887,6 +887,54 @@ includes a few mandatory parameters: region name, model name, and parameters for
 In this example, we define two different porosity models in two soils.
 
 
+Upwind 
+......
+
+This section discusses interface treatment of cell-centered fields such as 
+relative permeability, density and viscosity.
+
+* `"upwind`" [sublist] collects information required for treatment of
+  relative permeability, density and viscosity on mesh faces.
+
+  * `"relative permeability`" [string] defines a method for calculating the *upwinded* 
+    relative permeability. The available options are: `"upwind: gravity`", 
+    `"upwind: darcy velocity`" (default), `"upwind: amanzi", `"upwind: artificial diffusion`" (experimental), 
+    `"other: harmonic average`", and `"other: arithmetic average`".
+
+  * `"upwind update`" [string] defines frequency of recalculating Darcy flux inside
+    nonlinear solver. The available options are `"every time step`" and `"every nonlinear iteration`".
+    The first option freezes the Darcy flux for the whole time step. The second option
+    updates it on each iteration of a nonlinear solver. The second option is recommended
+    for the New ton solver. It may impact significantly upwinding of the relative permeability 
+    and convergence rate of this solver.
+
+  * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
+    Available options are `"standard`", `"divk`" (default), and `"second-order`" (experimental). 
+
+  * `"upwind NAME parameters`" [sublist] defines parameters for upwind method `"NAME`".
+
+    * `"tolerance`" [double] specifies relative tolerance for almost zero local flux. In such
+      a case the flow is assumed to be parallel to a mesh face. Default value is 1e-12.
+
+    * [WIP] `"reconstruction method`" [string] defines a reconstruction method for the second-order upwind.
+
+    * [WIP] `"limiting method`" [string] defines limiting method for the second-order upwind.
+
+.. code-block:: xml
+
+   <ParameterList name="Richards problem">  <!-- parent list -->
+     <ParameterList name="upwind">
+       <Parameter name="relative permeability" type="string" value="upwind with Darcy flux"/>
+       <Parameter name="upwind update" type="string" value="every timestep"/>
+
+       <Parameter name="upwind method" type="string" value="standard"/>
+       <ParameterList name="upwind standard parameters">
+          <Parameter name="tolerance" type="double" value="1e-12"/>
+       </ParameterList>
+     </ParameterList>  
+   </ParameterList>  
+
+
 Diffusion operators
 ...................
 
@@ -909,20 +957,6 @@ scheme, and selects assembling schemas for matrices and preconditioners.
       When `"Richards problem`" is selected, Flow PK sets up proper value for parameter `"upwind method`" of 
       this sublist.
 
-    * `"upwind`" [sublist] defines upwind method for relative permeability.
-
-      * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
-        Available options are `"standard`", `"divk`" (default), and `"second-order`" (experimental). 
-
-      * `"upwind NAME parameters`" [sublist] defines parameters for upwind method `"NAME`".
-
-        * `"tolerance`" [double] specifies relative tolerance for almost zero local flux. In such
-          a case the flow is assumed to be parallel to a mesh face. Default value is 1e-12.
-
-        * [WIP] `"reconstruction method`" [string] defines a reconstruction method for the second-order upwind.
-
-        * [WIP] `"limiting method`" [string] defines limiting method for the second-order upwind.
-
 .. code-block:: xml
 
   <ParameterList name="Richards problem">  <!-- parent list -->
@@ -934,23 +968,14 @@ scheme, and selects assembling schemas for matrices and preconditioners.
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
           <Parameter name="gravity" type="bool" value="true"/>
-          <!--Parameter name="upwind method" type="string" value="standard"/-->  <!--redefined internally-->
+          <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
         </ParameterList>
         <ParameterList name="preconditioner">
           <Parameter name="discretization primary" type="string" value="monotone mfd"/>
           <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-          <Parameter name="gravity" type="bool" value="true"/>
           <Parameter name="newton correction" type="string" value="approximate jacobian"/>
-          <!--Parameter name="upwind method" type="string" value="standard"/-->  <!--redefined internally-->
-        </ParameterList>
-
-        <ParameterList name="upwind">
-          <Parameter name="upwind method" type="string" value="standard"/>
-          <ParameterList name="upwind standard parameters">
-             <Parameter name="tolerance" type="double" value="1e-12"/>
-          </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -1149,7 +1174,13 @@ The first part controls preliminary steps in the time integrator.
 
   * `"method`" [string] specifies an optional initialization methods. The available 
     options are `"picard`" and `"saturated solver`". The latter option leads to solving 
-    a Darcy problem.
+    a Darcy problem. The former option uses sublist `"picard parameters`".
+
+  * `"picard parameters`" [sublist] defines control parameters for the Picard solver.
+
+    * `"convergence tolerance`" [double] specifies nonlinear convergence tolerance. 
+      Default is 1e-8.
+    * `"maximum number of iterations`" [int] limits the number of iterations. Default is 400. 
 
   * `"linear solver`" [string] refers to a solver sublist of the list `"Solvers`".
 
@@ -1183,10 +1214,19 @@ The first part controls preliminary steps in the time integrator.
        <Parameter name="linear solver as preconditioner" type="string" value="GMRES_with_AMG"/>
        <Parameter name="preconditioner" type="string" value="HYPRE_AMG"/>
 
-       <ParameterList name="initialization">
+       <ParameterList name="initialization">  <!-- first method -->
          <Parameter name="method" type="string" value="saturated solver"/>
          <Parameter name="linear solver" type="string" value="PCG_with_AMG"/>
          <Parameter name="clipping pressure value" type="double" value="50000.0"/>
+       </ParameterList>
+
+       <ParameterList name="initialization">  <!-- alternative method -->
+         <Parameter name="method" type="string" value="picard"/>
+         <Parameter name="linear solver" type="string" value="PCG_with_AMG"/>
+         <ParameterList name="picard parameters">
+           <Parameter name="convergence tolerance" type="double" value="1e-8"/> 
+           <Parameter name="maximum number of iterations" type="int" value="20"/> 
+         </ParameterList>
        </ParameterList>
 
        <ParameterList name="pressure-lambda constraints">
@@ -1339,18 +1379,6 @@ The remaining `"Flow`" parameters are
   for calculating absolute permeability. The available options are `"cartesian`"
   and `"layer`".
 
-* `"relative permeability`" [string] defines a method for calculating the *upwinded* 
-  relative permeability. The available options are: `"upwind: gravity`", 
-  `"upwind: darcy velocity`" (default), `"upwind: amanzi", `"upwind: artificial diffusion`" (experimental), 
-  `"other: harmonic average`", and `"other: arithmetic average`".
-
-* `"upwind update`" [string] defines frequency of recalculating Darcy flux inside
-  nonlinear solver. The available options are `"every time step`" and `"every nonlinear iteration`".
-  The first option freezes the Darcy flux for the whole time step. The second option
-  updates it on each iteration of a nonlinear solver. The second option is recommended
-  for the New ton solver. It may impact significantly upwinding of the relative permeability 
-  and convergence rate of this solver.
-
 * `"clipping parameters`"[list] defines how corrections in nonlinear solver modified (clipped)
 
 .. code-block:: xml
@@ -1371,13 +1399,42 @@ The remaining `"Flow`" parameters are
 
    <ParameterList name="Richards problem">  <!-- parent list -->
      <Parameter name="atmospheric pressure" type="double" value="101325.0"/>
-     <Parameter name="relative permeability" type="string" value="upwind with Darcy flux"/>
-     <Parameter name="upwind update" type="string" value="every timestep"/>
-
      <ParameterList name="VerboseObject">
        <Parameter name="Verbosity Level" type="string" value="medium"/>
      </ParameterList>
    </ParameterList>
+
+
+Verbose output
+..............
+
+When verbosity is set to *high*, this PK reports infomation about 
+current status of the simulation.
+Here after keyword *global* referes to the whole simulation including
+all time periods, keyword *local* refers to the currect time period.
+The incomplete list is
+
+ * [global] cycle number, time T, and time step dT
+ * [global] T and dT inside the time integrator (in seconds)
+ * frequence of preconditioner updates
+ * number of performed nonlinear steps and value of the nonlinear resodual
+ * [local] total number of succesful time steps (TS), failed time steps (FS),
+   preconditioner updates (PC/1) and preconditioner applies (PC/2),
+   linear solves insides preconditioner (LS)
+ * amount of liquid (water) in the reservoir and amount of water entering
+   and living domain through its boundary (based on darcy flux).
+
+.. code-block:: xml
+
+  CycleDriver      |   Cycle 40: time(y) = 0.953452, dt(y) = 0.238395
+  TI::BDF1         |    step 40 T = 3.00887e+07 [sec]  dT = 7.52316e+06
+  TI::BDF1         |    preconditioner lag is 20 out of 20
+  TI::BDF1         |    success: 4 nonlinear itrs error=7.87642e-08
+  TI::BDF1         |    TS:40 FS:0 NS:64 PC:42 64 LS:0 dt:1.0000e+03 7.5232e+06
+  FlowPK::Richards |    reservoir water mass=1.36211e+06 [kg], total influx=897.175 [kg]
+  CycleDriver      |   New time(y) = 1.19185
+  FlowPK::Richards |    Secondary fields: hydraulic head, darcy_velocity
+ 
 
 
 Transport PK
@@ -2102,7 +2159,7 @@ It also has one global parameters.
 
 
 Diffusion operator
-..................
+``````````````````
 
 Operators sublist describes the PDE structure of the flow, specifies a discretization
 scheme, and selects assembling schemas for matrices and preconditioners.
@@ -2151,7 +2208,7 @@ This example uses cell-centered discretization for
 
 
 Advection operator
-..................
+``````````````````
 
 This section to be written.
 
@@ -2309,19 +2366,20 @@ Diffusion operator
 
   * `"gravity`" [bool] specifies if flow is driven also by the gravity.
 
+  * `"gravity term discretization`" [string] selects a model for discretizing the 
+    gravity term. Available options are `"hydraulic head`" [default] and `"finite volume`". 
+    The first option starts with equation for the shifted solution, i.e. the hydraulic head,
+    and derives gravity discretization by the reserve shifting.
+    The second option is based on the divergence formula.
+
   * `"newton correction`" [string] specifies a model for non-physical terms 
     that must be added to the matrix. These terms represent Jacobian and are needed 
     for the preconditoner. Available options are `"true jacobian`" and `"approximate jacobian`".
 
-  * `"consistent faces`" [sublist] to be described by E.Coon
-
-    * `"linear operator`" [sublist] add parameters for a linear solver that defines a preconditioner
-      for the diffusion operator (see section LinearSolvers_).
-
   * `"consistent faces`" [sublist] may contain a `"preconditioner`" and
     `"linear operator`" list (see sections Preconditioners_ and LinearSolvers_
     respectively).  If these lists are provided, and the `"discretization
-    primary`" is of type `"mfd: *`", then the OperatorDiffusionMFD method
+    primary`" is of type `"mfd: *`", then the diffusion method
     UpdateConsistentFaces() can be used.  This method, given a set of cell
     values, determines the faces constraints that satisfy the constraint
     equation in MFD by assembling and inverting the face-only system.  This is
@@ -2335,11 +2393,10 @@ Diffusion operator
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
       <Parameter name="gravity" type="bool" value="true"/>
+      <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
       <Parameter name="upwind method" type="string" value="standard: cell"/>
       <Parameter name="newton correction" type="string" value="true jacobian"/>
-      <ParameterList name="linear solver">
-        ...
-      </ParameterList>
+
       <ParameterList name="consistent faces">
         <ParameterList name="linear solver">
           ...

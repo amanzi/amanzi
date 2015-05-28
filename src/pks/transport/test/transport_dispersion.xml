@@ -54,7 +54,7 @@
 	    <Parameter name="alphaL" type="double" value="0.1"/>
 	    <Parameter name="alphaT" type="double" value="0.01"/>
 	  </ParameterList>
-	  <Parameter name="tortuosity" type="double" value="0.0"/>
+	  <Parameter name="aqueous tortuosity" type="double" value="0.0"/>
 	</ParameterList>
       </ParameterList>
 

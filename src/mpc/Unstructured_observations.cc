@@ -212,8 +212,14 @@ void Unstructured_observations::MakeObservations(State& state)
 
       double value(0.0), volume(0.0);
 
-      // the user is asking to for an observation on tcc
+      // the user is asking for an observation on tcc
       if (obs_solute) { 
+        if (!state.HasField("total_component_concentration")) {  // bail out if this field is not yet created
+          Teuchos::OSTab tab = vo_->getOSTab();
+          *vo_->os() << "Field \"total_component_concentration\" does not exist, skipping it." << std::endl;
+          continue;
+        }
+
         const Epetra_MultiVector& tcc = 
             *state.GetFieldData("total_component_concentration")->ViewComponent("cell", false);
 

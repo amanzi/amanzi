@@ -1722,7 +1722,7 @@ The following Observation Data functionals are currently supported.  All of them
 
 * `"Observation Data: Cummulative Integral`" returns the integral of the field quantity, accumulated over the intervals defined by the time macro
 
-* `"Observation Data: Peak Value`" returns the peak value of the field quantity over the region
+* [S] `"Observation Data: Peak Value`" returns the peak value of the field quantity over the region
 
 
 Example:
@@ -1891,14 +1891,14 @@ terminated because its allocation of time ran out.
 
 * [S] `"Restart`" [list]
 
-  * [S] `"Checkpoint Data File Name`" [string] file name of the specific Checkpoint Data file to restart from
+  * [S] `"File Name`" [string] file name of the specific Checkpoint Data file to restart from
 
 Example:
 
 .. code-block:: xml
 
   <ParameterList name="Restart">
-     <Parameter name="Checkpoint Data File Name" type="string" value="chk00123.h5"/>
+     <Parameter name="File Name" type="string" value="chk00123.h5"/>
   </ParameterList>
 
 In this example, Amanzi is restarted with all state data initialized from the Checkpoint 

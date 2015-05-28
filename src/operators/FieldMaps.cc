@@ -30,6 +30,7 @@ namespace Operators {
 int CellToFace_Scale(Teuchos::RCP<CompositeVector>& f1,
                      Teuchos::RCP<CompositeVector>& f2)
 {
+  return 0;
 }
 
 
@@ -69,6 +70,8 @@ int CellToFace_ScaleInverse(Teuchos::RCP<const CompositeVector> f1,
     for (int n = 0; n < ncells; ++n) tmp += f1c[0][cells[n]];
     f2f[0][f] /= (tmp / ncells); 
   }
+
+  return 0;
 }
 
 }  // namespace Operators

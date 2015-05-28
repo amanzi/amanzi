@@ -14,7 +14,7 @@
 #include "WRMFactory.hh"
 
 // explicity instantitate the static data of factory
-template<> 
-Amanzi::Utils::Factory<Amanzi::Flow::WRM>::map_type* 
-Amanzi::Utils::Factory<Amanzi::Flow::WRM>::map_;
+template<> Amanzi::Utils::Factory<Amanzi::Flow::WRM>::map_type* 
+    Amanzi::Utils::Factory<Amanzi::Flow::WRM>::map_;
+
 

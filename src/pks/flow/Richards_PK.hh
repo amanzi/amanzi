@@ -104,10 +104,16 @@ class Richards_PK : public Flow_PK {
     pressure_eval_->SetFieldAsChanged(S_.ptr());
   }
 
+  // -- returns the number of linear iterations.
+  int ReportStatistics() { 
+    return op_preconditioner_->apply_calls();
+  }
+
   // other flow methods
   // -- initization members
-  void SolveFullySaturatedProblem(double T0, CompositeVector& u, const std::string& solver_name);
-  void EnforceConstraints(double T1, Teuchos::RCP<CompositeVector> u);
+  void SolveFullySaturatedProblem(double t_old, CompositeVector& u, const std::string& solver_name);
+  void EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector> u);
+  void EnforceConstraints_Inflow(Teuchos::RCP<CompositeVector> u);
 
   void ClipHydrostaticPressure(const double pmin, Epetra_MultiVector& p);
   void ClipHydrostaticPressure(const double pmin, const double s0, Epetra_MultiVector& p);
@@ -116,7 +122,7 @@ class Richards_PK : public Flow_PK {
   double CalculateRelaxationFactor(const Epetra_MultiVector& uold, const Epetra_MultiVector& unew);
 
   // -- miscaleneous methods
-  void UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u);
+  void UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u);
   double ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du);
  
   // access methods

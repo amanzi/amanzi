@@ -21,19 +21,22 @@ namespace Amanzi {
 namespace Flow {
 
 /* ******************************************************************
-* Solve single phase problem using boundary conditions at time T0.
+* Solve single phase problem using boundary conditions at time t_old.
 * We populate both matrix and preconditoner here but use only the
 * preconditioner. Matrix may be used in external flux calculation. 
 * Moving flux calculation here impose restrictions on multiple 
 * possible scenarios of data flow.
+*
+* Comment:
+* When this is used by Init, shouldn't this also get preconditioner_name_ini 
+* instead of preconditioner_name? --etc
 ****************************************************************** */
-// When this is used by Init, shouldn't this also get preconditioner_name_ini instead of preconditioner_name? --etc
 void Richards_PK::SolveFullySaturatedProblem(
-    double T0, CompositeVector& u, const std::string& solver_name)
+    double t_old, CompositeVector& u, const std::string& solver_name)
 {
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
 
-  UpdateSourceBoundaryData(T0, T0, u);
+  UpdateSourceBoundaryData(t_old, t_old, u);
   krel_->PutScalarMasterAndGhosted(molar_rho_);
   Operators::CellToFace_ScaleInverse(mu, krel_);
   dKdP_->PutScalarMasterAndGhosted(0.0);
@@ -80,14 +83,15 @@ void Richards_PK::SolveFullySaturatedProblem(
 
 
 /* ******************************************************************
-* Enforce constraints at time Tp by solving diagonalized MFD problem.
-* Algorithm is based on de-coupling pressure-lambda system.
+* Enforce constraints, using new BCs at time t_new, by solving the 
+* block-diagonalized problem. Algorithm is based on de-coupling 
+* pressure-lambda system via zeroing-out off-diagonal blocks.
 ****************************************************************** */
-void Richards_PK::EnforceConstraints(double Tp, Teuchos::RCP<CompositeVector> u)
+void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector> u)
 {
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
 
-  UpdateSourceBoundaryData(Tp, Tp, *u);
+  UpdateSourceBoundaryData(t_new, t_new, *u);
 
   CompositeVector utmp(*u);
   Epetra_MultiVector& utmp_face = *utmp.ViewComponent("face");
@@ -110,33 +114,7 @@ void Richards_PK::EnforceConstraints(double Tp, Teuchos::RCP<CompositeVector> u)
   dKdP_->ScaleMasterAndGhosted(molar_rho_);
 
   // modify relative permeability coefficient for influx faces
-  bool inflow_krel_correction(true);
-  if (inflow_krel_correction) {
-    const Epetra_MultiVector& mu_cell = *mu->ViewComponent("cell");
-    Epetra_MultiVector& k_face = *krel_->ViewComponent("face", true);
-    AmanziMesh::Entity_ID_List cells;
-
-    for (int f = 0; f < nfaces_owned; f++) {
-      if ((bc_model[f] == Operators::OPERATOR_BC_NEUMANN || 
-           bc_model[f] == Operators::OPERATOR_BC_MIXED) && bc_value[f] < 0.0) {
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-        int c = cells[0];
-
-        const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-        double area = mesh_->face_area(f);
-        double Knn = ((K[c] * normal) * normal) / (area * area);
-        // double save = 3.0;
-        // k_face[0][f] = std::min(1.0, -save * bc_value[f] * mu_cell[0][c] / (Knn * rho_ * rho_ * g_));
-        // k_face[0][f] *= rho_ / mu_cell[0][c];
-        double value = bc_value[f] / flux_units_;
-        double kr1 = relperm_->Compute(c, u_cell[0][c]);
-        double kr2 = std::min(1.0, -value * mu_cell[0][c] / (Knn * rho_ * rho_ * g_));
-        k_face[0][f] = (molar_rho_ / mu_cell[0][c]) * (kr1 + kr2) / 2;
-      } 
-    }
-
-    krel_->ScatterMasterToGhosted("face");
-  }
+  EnforceConstraints_Inflow(u);
 
   // calculate diffusion operator
   op_matrix_->Init();
@@ -179,6 +157,42 @@ void Richards_PK::EnforceConstraints(double Tp, Teuchos::RCP<CompositeVector> u)
     msg << "\nLinear solver returned an unrecoverable error code.\n";
     Exceptions::amanzi_throw(msg);
   }
+}
+
+
+/* ******************************************************************
+* Enforce constraints on the inflow boundary.
+****************************************************************** */
+void Richards_PK::EnforceConstraints_Inflow(Teuchos::RCP<CompositeVector> u)
+{
+  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
+  const Epetra_MultiVector& mu_cell = *mu->ViewComponent("cell");
+
+  Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
+  Epetra_MultiVector& k_face = *krel_->ViewComponent("face", true);
+  AmanziMesh::Entity_ID_List cells;
+
+  for (int f = 0; f < nfaces_owned; f++) {
+    if ((bc_model[f] == Operators::OPERATOR_BC_NEUMANN || 
+         bc_model[f] == Operators::OPERATOR_BC_MIXED) && bc_value[f] < 0.0) {
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int c = cells[0];
+
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      double area = mesh_->face_area(f);
+      double Knn = ((K[c] * normal) * normal) / (area * area);
+      // old version
+      // double save = 3.0;
+      // k_face[0][f] = std::min(1.0, -save * bc_value[f] * mu_cell[0][c] / (Knn * rho_ * rho_ * g_));
+      // k_face[0][f] *= rho_ / mu_cell[0][c];
+      double value = bc_value[f] / flux_units_;
+      double kr1 = relperm_->Compute(c, u_cell[0][c]);
+      double kr2 = std::min(1.0, -value * mu_cell[0][c] / (Knn * rho_ * rho_ * g_));
+      k_face[0][f] = (molar_rho_ / mu_cell[0][c]) * (kr1 + kr2) / 2;
+    } 
+  }
+
+  krel_->ScatterMasterToGhosted("face");
 }
 
 }  // namespace Flow

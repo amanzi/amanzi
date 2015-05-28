@@ -76,7 +76,9 @@ class Energy_PK : public FnTimeIntegratorPK {
   AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
       ModifyCorrection(double dt, Teuchos::RCP<const TreeVector> res,
                        Teuchos::RCP<const TreeVector> u,
-                       Teuchos::RCP<TreeVector> du) {};
+                       Teuchos::RCP<TreeVector> du) {
+    return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
+  }
 
   // -- calling this indicates that the time integration
   //    scheme is changing the value of the solution in state.

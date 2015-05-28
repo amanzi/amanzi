@@ -4,8 +4,6 @@
       <model_id>1SSUncFlow1/PORFLOW 4.2.1</model_id>
       <author>Greg Flach</author>
       <units>
-        
-			
         <length_unit>m</length_unit>
         <time_unit>s</time_unit>
         <mass_unit>kg</mass_unit>
@@ -14,14 +12,8 @@
     </model_description>
     <definitions>
       <macros>
-        
-			
         <time_macro name="Steady State">
-          
-				
           <time>3.0e+9</time>
-          
-			
         </time_macro>
       </macros>
     </definitions>
@@ -33,8 +25,6 @@
     </process_kernels>
     <phases>
       <liquid_phase name="water">
-        
-			
         <eos>false</eos>
         <viscosity>1.002E-03</viscosity>
         <density>998.2</density>
@@ -42,7 +32,7 @@
     </phases>
     <execution_controls>
       <verbosity level="high"/>
-      <execution_control_defaults method="bdf1" mode="steady"/>
+      <execution_control_defaults method="bdf1" mode="steady" init_dt="0.01" max_dt="1000 y"/>
       <execution_control end="3.0e+9" init_dt="0.01" method="bdf1" mode="steady" start="0.0"/>
     </execution_controls>
     <numerical_controls>
@@ -57,8 +47,6 @@
       <comments>Two-dimensional box 30.48m x 18.288m (100ft x 60ft)</comments>
       <dimension>2</dimension>
       <generate>
-        
-			
         <number_of_cells nx="100" ny="60"/>
         <box high_coordinates="30.48, 18.288" low_coordinates="0.0, 0.0"/>
       </generate>
@@ -66,20 +54,14 @@
     <regions>
       <comments/>
       <region name="Aquifer">
-        
-			
         <comments>One region comprising the entire domain</comments>
         <box high_coordinates="30.48, 18.288" low_coordinates="0.0, 0.0"/>
       </region>
       <region name="Left">
-        
-			
         <comments>Left boundary</comments>
         <plane location="0.0, 0.0" normal="-1.0, 0.0"/>
       </region>
       <region name="Right">
-        
-			
         <comments>Right boundary</comments>
         <plane location="30.48, 0.0" normal="1.0, 0.0"/>
       </region>
@@ -97,23 +79,13 @@
     </regions>
     <materials>
       <material name="Aquifer">
-        
-		       	
         <comments>Aquifer</comments>
         <mechanical_properties>
-          
-                         	
           <porosity value="0.43"/>
-          
- 	 	      	
         </mechanical_properties>
         <permeability x="3.1198e-11" y="3.1198e-10"/>
         <cap_pressure model="van_genuchten">
-          
-				
           <parameters alpha="1.46e-3" m="0.314" sr="0.052"/>
-          
-			
         </cap_pressure>
         <rel_perm model="mualem">
 			</rel_perm>
@@ -122,413 +94,156 @@
     </materials>
     <initial_conditions>
       <initial_condition name="Initial Condition">
-        
-			
         <comments>Aquifer</comments>
         <assigned_regions>Aquifer</assigned_regions>
         <liquid_phase name="water">
-          
-				
           <liquid_component name="water">
-            
-					
             <pressure function="uniform" value="101325.0"/>
-            
-				
           </liquid_component>
-          
-			
         </liquid_phase>
       </initial_condition>
     </initial_conditions>
     <boundary_conditions>
       <comments/>
       <boundary_condition name="LeftBC">
-        
-			
         <comments>Boundary condition at x=0</comments>
         <assigned_regions>Left</assigned_regions>
         <liquid_phase name="water">
-          
-				
           <liquid_component name="water">
-            
-					
             <hydrostatic function="constant" start="0.0" value="12.192"/>
-            
-				
           </liquid_component>
-          
-			
         </liquid_phase>
       </boundary_condition>
       <boundary_condition name="RightBC">
-        
-			
         <comments>Boundary condition at x=L</comments>
         <assigned_regions>Right</assigned_regions>
         <liquid_phase name="water">
-          
-				
           <liquid_component name="water">
-            
-					
             <hydrostatic function="constant" start="0.0" value="6.096"/>
-            
-				
           </liquid_component>
-          
-			
         </liquid_phase>
       </boundary_condition>
     </boundary_conditions>
     <output>
       <observations>
-        
-		        
         <filename>observation.out</filename>
         <liquid_phase name="water">
-          
-			        
           <hydraulic_head>
-            
-				        
             <assigned_regions>Point0</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </hydraulic_head>
-          
-			        
           <hydraulic_head>
-            
-				        
             <assigned_regions>Point10</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </hydraulic_head>
-          
-			        
           <hydraulic_head>
-            
-				        
             <assigned_regions>Point20</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </hydraulic_head>
-          
-			        
           <hydraulic_head>
-            
-				        
             <assigned_regions>Point30</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </hydraulic_head>
-          
-			        
           <hydraulic_head>
-            
-				        
             <assigned_regions>Point40</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </hydraulic_head>
-          
-			        
           <hydraulic_head>
-            
-				        
             <assigned_regions>Point50</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </hydraulic_head>
-          
-			        
           <hydraulic_head>
-            
-				        
             <assigned_regions>Point60</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </hydraulic_head>
-          
-			        
           <hydraulic_head>
-            
-				        
             <assigned_regions>Point70</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </hydraulic_head>
-          
-			        
           <hydraulic_head>
-            
-				        
             <assigned_regions>Point80</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </hydraulic_head>
-          
-			        
           <hydraulic_head>
-            
-				        
             <assigned_regions>Point90</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </hydraulic_head>
-          
-			        
           <hydraulic_head>
-            
-				        
             <assigned_regions>Point100</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </hydraulic_head>
-          
-
-			        
           <aqueous_pressure>
-            
-				        
             <assigned_regions>Point0</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </aqueous_pressure>
-          
-			        
           <aqueous_pressure>
-            
-				        
             <assigned_regions>Point10</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </aqueous_pressure>
-          
-			        
           <aqueous_pressure>
-            
-				        
             <assigned_regions>Point20</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </aqueous_pressure>
-          
-			        
           <aqueous_pressure>
-            
-				        
             <assigned_regions>Point30</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </aqueous_pressure>
-          
-			        
           <aqueous_pressure>
-            
-				        
             <assigned_regions>Point40</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </aqueous_pressure>
-          
-			        
           <aqueous_pressure>
-            
-				        
             <assigned_regions>Point50</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </aqueous_pressure>
-          
-			        
           <aqueous_pressure>
-            
-				        
             <assigned_regions>Point60</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </aqueous_pressure>
-          
-			        
           <aqueous_pressure>
-            
-				        
             <assigned_regions>Point70</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </aqueous_pressure>
-          
-			        
           <aqueous_pressure>
-            
-				        
             <assigned_regions>Point80</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </aqueous_pressure>
-          
-			        
           <aqueous_pressure>
-            
-				        
             <assigned_regions>Point90</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </aqueous_pressure>
-          
-			        
           <aqueous_pressure>
-            
-				        
             <assigned_regions>Point100</assigned_regions>
-            
-				        
             <functional>point</functional>
-            
-				        
-            <time_macro>Steady State</time_macro>
-            
-				
+            <time_macros>Steady State</time_macros>
           </aqueous_pressure>
-          
-			
         </liquid_phase>
       </observations>
       <vis>
-        
-			
         <base_filename>steady-flow-isv2</base_filename>
         <num_digits>5</num_digits>
-        <time_macro>Steady State</time_macro>
+        <time_macros>Steady State</time_macros>
       </vis>
     </output>
   </amanzi_input>
