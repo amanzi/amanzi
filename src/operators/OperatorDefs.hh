@@ -65,6 +65,7 @@ const int OPERATOR_UPWIND_AMANZI_SECOND_ORDER = 8;
 const double OPERATOR_UPWIND_RELATIVE_TOLERANCE = 1e-12;
 
 // method for nonlinear coefficient
+const int OPERATOR_LITTLE_K_NONE = 0;
 const int OPERATOR_LITTLE_K_UPWIND = 1;
 const int OPERATOR_LITTLE_K_DIVK = 2;
 const int OPERATOR_LITTLE_K_DIVK_TWIN = 3;
