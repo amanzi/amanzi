@@ -1084,8 +1084,8 @@ framework_extract(const Epetra_MpiComm *comm, const Framework& f,
                   const Mesh *inmesh, 
                   const std::vector<std::string>& setnames,
                   const Entity_kind setkind,
-                  const bool request_faces, const bool request_edges,
-                  const bool flatten, const bool extrude)
+                  const bool flatten, const bool extrude,
+                  const bool request_faces, const bool request_edges)
 {
   Teuchos::RCP<Mesh> result;
   switch (f) {
