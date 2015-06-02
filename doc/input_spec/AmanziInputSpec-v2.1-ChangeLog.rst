@@ -7,7 +7,29 @@ Change Log for Amanzi XML Input Specification (Version 2.x.x)
 Overview
 ========
 
-The Amanzi simulator will continue to expand the available features and enhance current functionality.  This progress will result in modifications and additions to the XML input specificition.  Specific versions of the XML input specificiation will only work with the corresponding Amanzi release version.  The following is a description of the changes made to the XML input specification and the Amanzi release version(s) that accept the input version.
+The Amanzi simulator will continue to expand the available features and enhance current functionality.  This progress will result in modifications and additions to the XML input specificition.  Specific versions of the XML input specification will only work with the corresponding Amanzi release version.  The following is a description of the changes made to the XML input specification and the Amanzi release version(s) that accept the input version.
+
+Version 2.1.0 (Amanzi Release - devel - 7926)
+=============================================
+
+Changeset 8005
+
+NERSC build on  June 2, 2015.  
+
+Edison build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.17/default-150602  
+
+Hopper build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.17/default-150602
+
+Execution Controls
+------------------
+
+* Added translation of execution time periods to `"Time Period Controls`" in the 1.2.3 input spec.
+
+Output
+------
+
+* Both the 2.1.0 input schema and 1.2.3 input spec are moving towards using plural macros for time and cycle specifications.  This will affect vis, observations, checkpoint, and walkabout elements.  To help users transition the input translator (2.1.0 to 1.2.3) will read singular `"time_macro`" and `"cycle_macro`" and translate these to `"Time Macros`" and `"Cycle Macros`" with a single macro specified.  Also, the input parser for the unstructured algorithm will continue to read both singular and plural forms.  Note, these are temporary measures to ease transition.  Please updating input files to use the plural forms.
+
 
 Version 2.1.0 (Amanzi Release - devel - 7926)
 =============================================
@@ -71,7 +93,7 @@ Numerical Controls
 
     * `"sub_cycling`" is now an element located under `"unstr_transport_controls`".  Valid options for this element are `"on`" and `"off`".  The default option is `"off`".
 
-* Added an element for specifing a petsc options file.  By default, the file named .petsc will automatically be read.  However, if the user wishes to use a different filename this option will specify that filename.  The new element is `"petsc_options_file`" and is located under `"numerical_controls`" -> `"structured_controls`".
+* Added an element for specifying a petsc options file.  By default, the file named .petsc will automatically be read.  However, if the user wishes to use a different filename this option will specify that filename.  The new element is `"petsc_options_file`" and is located under `"numerical_controls`" -> `"structured_controls`".
 
 .. Geochemistry
 .. ------------
@@ -91,7 +113,7 @@ Numerical Controls
 Output
 ------
 
-* For the obeservation output options, the element `"time_macro`" has been updated to `"time_macros`" to allow users to provide a list of time macros to be utilized.
+* For the observation output options, the element `"time_macro`" has been updated to `"time_macros`" to allow users to provide a list of time macros to be utilized.
 
 
 Version 2.1.0 (Amanzi Release - devel - 7478)
