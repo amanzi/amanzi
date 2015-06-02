@@ -1188,27 +1188,78 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
   Teuchos::Array<double> start_array;
   Teuchos::Array<double> init_array;
   Teuchos::Array<double> max_array;
-  // get default values
-  double def_init = get_time_value(defPL.get<std::string>("init_dt"), *def_list);
-  double def_max = get_time_value(defPL.get<std::string>("max_dt"), *def_list);
   
-  // loop over non-steady, non-restart entries to get name and convert to time value
+  // loop over non-restart entries to get list of time step mins/maxs
   for (int idx = 0; idx < start_times.length(); idx++) {
     for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
       if (it->first != "restart") {
         double time = get_time_value(it->first, *def_list);
         if (time == start_times[idx]) {
+          // look for init_dt in current execution control
           if ( ecsPL.sublist(it->first).isParameter("init_dt") ) {
             init_array.append(get_time_value(ecsPL.sublist(it->first).get<std::string>("init_dt"), *def_list));
           }
-          else {
-            init_array.append(def_init);
+          // if not there, look for default exectution control
+          else if ( defPL.isParameter("init_dt") ){
+            init_array.append(get_time_value(defPL.get<std::string>("init_dt"), *def_list));
           }
+          // deremine mode and get defaults from InputParserIS_Def.hh
+          else {
+            // look for mode in current execution control
+            if ( ecsPL.sublist(it->first).isParameter("mode") ) {
+              if (ecsPL.sublist(it->first).get<std::string>("mode") == "steady") {
+                init_array.append(ST_MIN_TS);
+              }
+              else {
+                init_array.append(TR_MIN_TS);
+              }
+            }
+            // else look in default execution contorl
+            else if (defPL.isParameter("mode") ){
+              if (defPL.get<std::string>("mode") == "steady") {
+                init_array.append(ST_MIN_TS);
+              }
+              else {
+                init_array.append(TR_MIN_TS);
+              }
+            }
+            // finally assume min of steady and transient (shouldn't get to here)
+            else {
+              init_array.append(ST_MIN_TS);
+            }
+          }
+          // repeat for max_dt
           if ( ecsPL.sublist(it->first).isParameter("max_dt") ) {
             max_array.append(get_time_value(ecsPL.sublist(it->first).get<std::string>("max_dt"), *def_list));
           }
+          // if not there, look for default exectution control
+          else if ( defPL.isParameter("max_dt") ){
+            max_array.append(get_time_value(defPL.get<std::string>("max_dt"), *def_list));
+          }
+          // deremine mode and get defaults from InputParserIS_Def.hh
           else {
-            max_array.append(def_max);
+            // look for mode in current execution control
+            if ( ecsPL.sublist(it->first).isParameter("mode") ) {
+              if (ecsPL.sublist(it->first).get<std::string>("mode") == "steady") {
+                max_array.append(ST_MAX_TS);
+              }
+              else {
+                max_array.append(TR_MAX_TS);
+              }
+            }
+            // else look in default execution contorl
+            else if (defPL.isParameter("mode") ){
+              if (defPL.get<std::string>("mode") == "steady") {
+                max_array.append(ST_MAX_TS);
+              }
+              else {
+                max_array.append(TR_MAX_TS);
+              }
+            }
+            // finally assume min of steady and transient (shouldn't get to here)
+            else {
+              max_array.append(ST_MAX_TS);
+            }
           }
         }
       }
@@ -1218,8 +1269,12 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
   list.sublist("Time Period Control").set<Teuchos::Array<double> >("Start Times",start_times);
   list.sublist("Time Period Control").set<Teuchos::Array<double> >("Initial Time Step",init_array);
   list.sublist("Time Period Control").set<Teuchos::Array<double> >("Maximum Time Step",max_array);
-  // add default entry
-  list.sublist("Time Period Control").set<double>("Default Initial Time Step",def_init);
+  
+  // add default entry, if it exists
+  if (defPL.isParameter("init_dt")) {
+    list.sublist("Time Period Control").set<double>("Default Initial Time Step",get_time_value(defPL.get<std::string>("init_dt"), *def_list));
+  }
+  
   
   // Steady case
   if (hasSteady && !hasTrans) {
@@ -6000,18 +6055,16 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
               visPL.set<int>("File Name Digits",get_int_constant(textContent2,def_list));
               XMLString::release(&textContent2);
 	    }
-            else if (strcmp(textContent,"time_macros")==0) {
+            else if (strcmp(textContent,"time_macros")==0 || strcmp(textContent,"time_macro")==0) {
 	      textContent2 = XMLString::transcode(curKid->getTextContent());
 	      Teuchos::Array<std::string> macro = make_regions_list(textContent2);
               visPL.set<Teuchos::Array<std::string> >("Time Macros",macro);
               XMLString::release(&textContent2);
 	    }
-            else if (strcmp(textContent,"cycle_macros")==0) {
+            else if (strcmp(textContent,"cycle_macros")==0 || strcmp(textContent,"cycle_macro")==0) {
 	      textContent2 = XMLString::transcode(curKid->getTextContent());
-	      Teuchos::Array<std::string> macro;
-              macro.append(textContent2);
+	      Teuchos::Array<std::string> macro = make_regions_list(textContent2);
               visPL.set<Teuchos::Array<std::string> >("Cycle Macros",macro);
-              //visPL.set<std::string>("Cycle Macros",textContent2);
               XMLString::release(&textContent2);
 	    }
             else if (strcmp(textContent,"write_regions")==0) {
@@ -6055,12 +6108,10 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
               chkPL.set<int>("File Name Digits",get_int_constant(textContent2,def_list));
               XMLString::release(&textContent2);
 	    }
-            else if (strcmp(textContent,"cycle_macro")==0) {
-	      textContent2 = XMLString::transcode(curKid->getTextContent());
-	      Teuchos::Array<std::string> macro;
-              macro.append(textContent2);
-              //chkPL.set<Teuchos::Array<std::string> >("Cycle Macros",macro);
-              chkPL.set<std::string >("Cycle Macro",textContent2);
+            else if (strcmp(textContent,"cycle_macros")==0 || strcmp(textContent,"cycle_macro")==0) {
+              textContent2 = XMLString::transcode(curKid->getTextContent());
+              Teuchos::Array<std::string> macro = make_regions_list(textContent2);
+              chkPL.set<Teuchos::Array<std::string> >("Cycle Macros",macro);
               XMLString::release(&textContent2);
 	    }
             XMLString::release(&textContent);
@@ -6087,12 +6138,10 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
               chkPL.set<int>("File Name Digits",get_int_constant(textContent2,def_list));
               XMLString::release(&textContent2);
 	    }
-            else if (strcmp(textContent,"cycle_macro")==0) {
-	      textContent2 = XMLString::transcode(curKid->getTextContent());
-	      Teuchos::Array<std::string> macro;
-              macro.append(textContent2);
-              //chkPL.set<Teuchos::Array<std::string> >("Cycle Macros",macro);
-              chkPL.set<std::string >("Cycle Macro",textContent2);
+            else if (strcmp(textContent,"cycle_macros")==0 || strcmp(textContent,"cycle_macro")==0) {
+              textContent2 = XMLString::transcode(curKid->getTextContent());
+              Teuchos::Array<std::string> macro = make_regions_list(textContent2);
+              chkPL.set<Teuchos::Array<std::string> >("Cycle Macros",macro);
               XMLString::release(&textContent2);
 	    }
             XMLString::release(&textContent);
@@ -6314,10 +6363,15 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
 	                    obPL.set<std::string>("Functional","Observation Data: Mean");
 	                  }
 		        }
-                        else if (strcmp(Elem,"time_macros")==0) {
-                          Teuchos::Array<std::string> reg_list = make_regions_list(Value);
-	                  obPL.set<Teuchos::Array<std::string> >("Time Macros",reg_list);
-		        }
+                        // Keeping singular macro around to help users.  This will go away
+                        else if (strcmp(Elem,"time_macros")==0 || strcmp(Elem,"time_macro")==0) {
+                          Teuchos::Array<std::string> macros = make_regions_list(Value);
+	                  obPL.set<Teuchos::Array<std::string> >("Time Macros",macros);
+                        }
+                        else if (strcmp(Elem,"cycle_macros")==0 || strcmp(Elem,"cycle_macro")==0) {
+                          Teuchos::Array<std::string> macros = make_regions_list(Value);
+                          obPL.set<Teuchos::Array<std::string> >("Cycle Macros",macros);
+                        }
                         XMLString::release(&Elem);
                         XMLString::release(&Value);
 	              }
