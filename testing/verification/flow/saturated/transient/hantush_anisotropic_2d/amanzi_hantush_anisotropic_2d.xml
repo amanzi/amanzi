@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.3"/>
 
   <!--
     Transient, Two-Dimensional Flow to a Well in an Anisotropic Confined Aquifer (Hantush and Thomas, 1966)
@@ -212,19 +212,19 @@
         <Parameter name="Region" type="string" value="Obs_x"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Pressure 02">
         <Parameter name="Region" type="string" value="Obs_y"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Pressure 03">
         <Parameter name="Region" type="string" value="Obs_xy"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
     </ParameterList>
     
