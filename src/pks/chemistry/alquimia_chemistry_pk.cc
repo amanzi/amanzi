@@ -250,11 +250,13 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
         assert(cond_sublist.isSublist(species_name));
         const Teuchos::ParameterList& aqueous_constraint = cond_sublist.sublist(species_name);
         
-        // If the primary species has an associated mineral, we need to retrieve its information.
-        std::string mineral_name;
-        if (aqueous_constraint.isParameter("species"))
+        // If the primary species has an associated equilibration constraint, we need to retrieve its information.
+        std::string equilibrate_name;
+        if (aqueous_constraint.isParameter("equilibrate"))
         {
-          mineral_name = aqueous_constraint.get<std::string>("species");
+          equilibrate_name = aqueous_constraint.get<std::string>("equilibrate");
+
+          /* Sergi: This below is not the case anymore - to be removed
 
           // The information for this mineral species must appear alongside the 
           // aqueous constraint in the geochemical condition.
@@ -291,6 +293,9 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
 
           // Add the mineral constraint to the chemistry engine.
           chem_engine_->AddMineralConstraint(cond_name, mineral_name, volume_fraction, specific_surface_area);
+         
+          end of block that added mineral constraint -- to be removed see: Sergi */
+
         }
 
         // What kind of aqueous constraint do we have on this species?
@@ -302,15 +307,26 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
         {
           if (aqueous_constraint.isParameter(valid_types[i]))
             type = std::string(valid_types[i]);
+          // check whether a mineral or gas name have been provided to equilibrate with
+          if (type == "mineral" || type == "gas")
+          {
+            if (equilibrate_name == "")
+            {
+               msg << "No mineral or gas species has been given to equilibrate with species '" << species_name << "'.\n";
+               Exceptions::amanzi_throw(msg);
+            }
+          }  
         }
         if (!type.empty())
         {
           // It's a valid aqueous constraint, so we add it to the chemistry engine
           // under the current geochemical condition.
-          chem_engine_->AddAqueousConstraint(cond_name, species_name, type, mineral_name);
+          chem_engine_->AddAqueousConstraint(cond_name, species_name, type, equilibrate_name);
         }
         else
         {
+          /* Sergi: This is not the case anymore - to be removed
+
           // This is either a mineral constraint or an invalid aqueous constraint.
           if (aqueous_constraint.isParameter("Volume Fraction") && 
               aqueous_constraint.isParameter("Specific Surface Area"))
@@ -320,11 +336,13 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
           }
           else
           {
+          This is not the case anymore - to be removed - see Sergi */
+
             // We have an invalid aqueous contraint.
             msg << "Invalid aqueous constraint type for " << species_name << ".\n";
             msg << "Valid types are total_aqueous, total_sorb, free, mineral, gas, pH, and charge.\n";
             Exceptions::amanzi_throw(msg);
-          }
+            // to be removed         }
         }
       }
     }
