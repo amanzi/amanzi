@@ -134,7 +134,6 @@
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
 
       <ParameterList name="IC: Uniform Pressure">
-        <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Value" type="double" value="101325.0"/>
       </ParameterList>
 

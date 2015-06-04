@@ -289,6 +289,8 @@ void ChemistryEngine::CreateCondition(const std::string& condition_name)
   chem_conditions_[condition_name] = condition;
 }
 
+  /* Mineral constraints will be discontinued in Alquimia -- see Sergi
+
 void ChemistryEngine::AddMineralConstraint(const std::string& condition_name,
                                            const std::string& mineral_name,
                                            double volume_fraction,
@@ -334,6 +336,7 @@ void ChemistryEngine::AddMineralConstraint(const std::string& condition_name,
     Exceptions::amanzi_throw(msg); 
   }
 }
+Mineral constraints will be discontinued in Alquimia -- see Sergi */
 
 void ChemistryEngine::AddAqueousConstraint(const std::string& condition_name,
                                            const std::string& primary_species_name,
@@ -351,6 +354,8 @@ void ChemistryEngine::AddAqueousConstraint(const std::string& condition_name,
   {
     AlquimiaGeochemicalCondition* condition = &iter->second->condition;
 
+    /* Mineral constraints will be discontinued from Alquimia in the near future -- see Sergi
+
     // Is there a mineral constraint for the associated species?
     if (!associated_species.empty())
     {
@@ -367,6 +372,8 @@ void ChemistryEngine::AddAqueousConstraint(const std::string& condition_name,
         Exceptions::amanzi_throw(msg); 
       }
     }
+
+    Mineral constraints will be discontinued from Alquimia in the near future -- see Sergi */
 
     // Do we have an existing constraint?
     int index = -1;
