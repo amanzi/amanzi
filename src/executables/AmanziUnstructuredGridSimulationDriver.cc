@@ -40,7 +40,6 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
-  
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(mpi_comm);
 #else  
@@ -51,12 +50,12 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   MPI_Comm_rank(mpi_comm,&rank);
   MPI_Comm_size(mpi_comm,&size);
 
-  bool native = input_parameter_list.get<bool>("Native Unstructured Input",false);
+  bool native = input_parameter_list.get<bool>("Native Unstructured Input", false);
   
   Teuchos::ParameterList new_list; 
   Teuchos::ParameterList sub_list;
   
-  if (! native) {
+  if (!native) {
     Amanzi::AmanziInput::InputParserIS parser;
     new_list = parser.Translate(&input_parameter_list, comm->NumProc());
 
@@ -107,8 +106,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
   // Create a VerboseObject to pass to the geometric model class 
 
-  Amanzi::VerboseObject *gmverbobj = 
-    new Amanzi::VerboseObject("Geometric Model",new_list);
+  Amanzi::VerboseObject *gmverbobj = new Amanzi::VerboseObject("Geometric Model", new_list);
 
   // Create the simulation domain
   Amanzi::timer_manager.add("Geometric Model creation",Amanzi::Timer::ONCE);
@@ -132,7 +130,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   Teuchos::ParameterList reg_params = new_list.sublist("Regions");
 
   Amanzi::AmanziGeometry::GeometricModelPtr 
-      geom_model_ptr( new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm) );
+      geom_model_ptr(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm));
 
 
   // Add the geometric model to the domain
@@ -153,8 +151,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
   // Create a Verbose object to pass to the mesh_factory and mesh
 
-  Amanzi::VerboseObject *meshverbobj = 
-    new Amanzi::VerboseObject("Mesh", new_list);
+  Amanzi::VerboseObject *meshverbobj = new Amanzi::VerboseObject("Mesh", new_list);
 
   // Create a mesh factory for this geometric model
   Amanzi::AmanziMesh::MeshFactory factory(comm, meshverbobj) ;
@@ -364,6 +361,8 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   
   // Clean up
   mesh.reset();
+  delete meshverbobj;
+  delete gmverbobj;
   delete simdomain_ptr;
   delete comm;
       
