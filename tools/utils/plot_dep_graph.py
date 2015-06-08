@@ -1,3 +1,10 @@
+# using this:
+#
+# 1. run this to generate a dot file
+# 2. run through dot2tex:
+#    
+
+
 import networkx as nx
 from matplotlib import pyplot as plt
 plt.rc('text', usetex=True)
@@ -155,7 +162,8 @@ with open("dependency_graph.txt",'r') as fid:
                     assert dep is not None
                     add_edge(g,key, dep)
 
-if g.has_node(reg["water_content"]):
+if reg.has_key("water_content"):
+    #g.has_node(reg["water_content"]):
     add_node(g,"res_flow","residual",lbl=texify(r"res^{flow}"))
     add_node(g,"flux","secondary",lbl=texify(r"q"))
     add_edge(g,"res_flow", "water_content")
@@ -167,14 +175,16 @@ if g.has_node(reg["water_content"]):
     add_edge(g,"flux","density_liquid")
     add_edge(g,"flux","viscosity_liquid")
 
-    if g.has_node(reg["surface_water_content"]):
+    if reg.has_key("surface_water_content"):
+        #if g.has_node(reg["surface_water_content"]):
         add_node(g,"flux_surf_subsurf","secondary",lbl=texify(r"q_{ss}"))
         add_edge(g,"res_flow","flux_surf_subsurf")
         add_edge(g,"flux_surf_subsurf","pressure")
         add_edge(g,"flux_surf_subsurf","surface_pressure")
         add_edge(g,"flux_surf_subsurf","unfrozen_fraction_relperm")
 
-if g.has_node(reg["surface_water_content"]):
+if reg.has_key("surface_water_content"):
+    #g.has_node(reg["surface_water_content"]):
     add_node(g,"res_surface_flow","residual",lbl=texify(r"res^{flow}_s"))
     add_node(g,"surface_flux","secondary",lbl=texify(r"q_s"))
     add_edge(g,"res_surface_flow", "surface_water_content")
@@ -184,11 +194,13 @@ if g.has_node(reg["surface_water_content"]):
     add_edge(g,"flux","overland_conductivity")
     add_edge(g,"flux","pres_elev")
 
-    if g.has_node(reg["water_content"]):
+    if reg.has_key("water_content"):
+        #    if g.has_node(reg["water_content"]):
         add_edge(g,"res_surface_flow","flux_surf_subsurf")
 
 
-if g.has_node(reg["energy"]):
+if reg.has_key("energy"):
+    #if g.has_node(reg["energy"]):
     add_node(g,"res_energy","residual",lbl=texify(r"res^{energy}"))
     add_node(g,"energy_flux","secondary",lbl=texify(r"q^E"))
     add_edge(g,"res_energy","energy")
@@ -199,13 +211,15 @@ if g.has_node(reg["energy"]):
     add_edge(g,"energy_flux", "thermal_conductivity")
     add_edge(g,"energy_flux", "temperature")
 
-    if g.has_node(reg["surface_energy"]):
+    if reg.has_key("surface_energy"):
+        #    if g.has_node(reg["surface_energy"]):
         add_node(g,"energy_flux_surf_subsurf","secondary",lbl=texify(r"q^E_{ss}"))
         add_edge(g,"res_energy","energy_flux_surf_subsurf")
         add_edge(g,"energy_flux_surf_subsurf","temperature")
         add_edge(g,"energy_flux_surf_subsurf","surface_temperature")
 
-if g.has_node(reg["surface_energy"]):
+if reg.has_key("surface_energy"):
+    #if g.has_node(reg["surface_energy"]):
     add_node(g,"res_surface_energy","residual",lbl=texify(r"res^{energy}_s"))
     add_node(g,"surface_energy_flux","secondary",lbl=texify(r"q^E_s"))
     add_edge(g,"res_surface_energy","surface_energy")
@@ -217,7 +231,8 @@ if g.has_node(reg["surface_energy"]):
     add_edge(g,"surface_energy_flux", "surface_thermal_conductivity")
     add_edge(g,"surface_energy_flux", "surface_temperature")
 
-    if g.has_node(reg["energy"]):
+    if reg.has_key("energy"):
+        #    if g.has_node(reg["energy"]):
         add_edge(g,"res_surface_energy","energy_flux_surf_subsurf")
 
 
