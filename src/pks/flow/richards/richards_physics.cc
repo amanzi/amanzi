@@ -112,7 +112,7 @@ void Richards::AddSources_(const Teuchos::Ptr<State>& S,
 
 void Richards::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
   // external sources of energy (temperature dependent source)
-  if (is_source_term_ && !explicit_source_ &&
+  if (is_source_term_ && !explicit_source_ && source_term_is_differentiable_ &&
       S->GetFieldEvaluator("mass_source")->IsDependency(S, key_)) {
     std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
 

@@ -42,6 +42,40 @@ namespace Flow {
 #define DEBUG_FLAG 1
 #define DEBUG_RES_FLAG 0
 
+OverlandHeadFlow::OverlandHeadFlow(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+        Teuchos::ParameterList& FElist,
+        const Teuchos::RCP<TreeVector>& solution) :
+    PKDefaultBase(plist, FElist, solution),
+    PKPhysicalBDFBase(plist, FElist, solution),
+    standalone_mode_(false),
+    is_source_term_(false),
+    coupled_to_subsurface_via_head_(false),
+    coupled_to_subsurface_via_flux_(false),
+    perm_update_required_(true),
+    update_flux_(UPDATE_FLUX_ITERATION),
+    full_jacobian_(false),
+    niter_(0),
+    source_only_if_unfrozen_(false),
+    precon_used_(true)
+{
+  plist_->set("primary variable key", "surface_pressure");
+  plist_->set("conserved quantity key", "surface_water_content");
+  plist_->set("domain name", "surface");
+  
+  // clone the ponded_depth parameter list for ponded_depth bar
+  Teuchos::ParameterList& pd_list = FElist.sublist("ponded_depth");
+  Teuchos::ParameterList pdbar_list(pd_list);
+  pdbar_list.set("ponded depth bar", true);
+  pdbar_list.set("height key", "ponded_depth_bar");
+  FElist.set("ponded_depth_bar", pdbar_list);
+
+  // set a default absolute tolerance
+  if (!plist_->isParameter("absolute error tolerance"))
+    plist_->set("absolute error tolerance", .01 * 55000.); // h * nl
+
+}
+
+
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------
@@ -55,6 +89,15 @@ void OverlandHeadFlow::setup(const Teuchos::Ptr<State>& S) {
   } else {
     standalone_mode_ = false;
   }
+
+  // -- water content
+  S->RequireField("surface_water_content")->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList& wc_plist =
+      plist_->sublist("overland water content evaluator");
+  Teuchos::RCP<FlowRelations::OverlandHeadWaterContentEvaluator> wc_evaluator =
+      Teuchos::rcp(new FlowRelations::OverlandHeadWaterContentEvaluator(wc_plist));
+  S->SetFieldEvaluator("surface_water_content", wc_evaluator);
 
   PKPhysicalBDFBase::setup(S);
   SetupOverlandFlow_(S);
@@ -229,22 +272,15 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     S->RequireFieldEvaluator("surface_source_molar_density");
   }
 
-  // -- water content
-  S->RequireField("surface_water_content")->SetMesh(mesh_)->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList& wc_plist =
-      plist_->sublist("overland water content evaluator");
-  Teuchos::RCP<FlowRelations::OverlandHeadWaterContentEvaluator> wc_evaluator =
-      Teuchos::rcp(new FlowRelations::OverlandHeadWaterContentEvaluator(wc_plist));
-  S->SetFieldEvaluator("surface_water_content", wc_evaluator);
-
   // -- water content bar (can be negative)
   S->RequireField("surface_water_content_bar")->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList& wc_plist =
+      plist_->sublist("overland water content evaluator");
   Teuchos::ParameterList wcbar_plist(wc_plist);
   wcbar_plist.set<bool>("water content bar", true);
-  wc_evaluator = Teuchos::rcp(
-      new FlowRelations::OverlandHeadWaterContentEvaluator(wcbar_plist));
+  Teuchos::RCP<FlowRelations::OverlandHeadWaterContentEvaluator> wc_evaluator =
+      Teuchos::rcp(new FlowRelations::OverlandHeadWaterContentEvaluator(wcbar_plist));
   S->SetFieldEvaluator("surface_water_content_bar", wc_evaluator);
 
   // -- ponded depth
@@ -393,6 +429,9 @@ void OverlandHeadFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
   matrix_diff_->Setup(conductivity, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
+  // Patch up BCs for zero-gradient
+  FixBCsForOperator_(S.ptr());
+  
   // derive the fluxes
   Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
   Teuchos::RCP<CompositeVector> flux = S->GetFieldData("surface_flux", name_);

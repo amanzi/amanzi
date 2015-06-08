@@ -61,7 +61,11 @@ Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
 {
   // set a few parameters before setup
   plist_->set("primary variable key", "pressure");
-  plist_->sublist("primary variable evaluator").set("manage communication", true);
+  plist_->set("conserved quantity key", "water_content");
+
+  // set a default absolute tolerance
+  if (!plist_->isParameter("absolute error tolerance"))
+    plist_->set("absolute error tolerance", .5 * .1 * 55000.); // phi * s * nl
 }
 
 // -------------------------------------------------------------
@@ -150,6 +154,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // source terms
   is_source_term_ = plist_->get<bool>("source term", false);
   if (is_source_term_) {
+    source_term_is_differentiable_ =
+        plist_->get<bool>("source term is differentiable", true);
     explicit_source_ = plist_->get<bool>("explicit source term", false);
     S->RequireField("mass_source")->SetMesh(mesh_)
         ->AddComponent("cell", AmanziMesh::CELL, 1);
