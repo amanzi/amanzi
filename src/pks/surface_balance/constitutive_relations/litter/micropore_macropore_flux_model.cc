@@ -46,6 +46,8 @@ MicroporeMacroporeFluxModel::InitializeFromPlist_(Teuchos::ParameterList& plist)
 double
 MicroporeMacroporeFluxModel::MicroporeMacroporeFlux(double pm, double pM, double krM, double krm, double K) const
 {
+  std::cout << "micro-macro: kr = " << krm << ", " << krM << std::endl;
+  std::cout << "micro-macro: p = " << pm << ", " << pM << std::endl;
   double C = gamma_ / delta_ * K * (pm > pM ? krm : krM);
   return C * (pM - pm);
 }

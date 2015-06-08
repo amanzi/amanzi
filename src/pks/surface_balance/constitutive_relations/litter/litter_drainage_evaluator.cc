@@ -70,15 +70,15 @@ void LitterDrainageEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     res_c[0][c] = 0.0;
     
     double wc_sat = n_liq_ * ld[0][c] * cv[0][c] * wc_sat_;
-    std::cout << "wc = " << wc[0][c] << ", wc_sat = " << wc_sat;
+    //    std::cout << "wc = " << wc[0][c] << ", wc_sat = " << wc_sat;
     if (wc[0][c] > wc_sat) {
       // litter is oversaturated and draining
       res_c[0][c] = (wc[0][c] - wc_sat) / tau_;
-      std::cout << std::endl;
+      //      std::cout << std::endl;
     } else {
       // litter is undersaturated and there is surface water to be absorbed
       double litter_wetting = std::min(pd[0][c] / ld[0][c], 1.0);
-      std::cout << ", litter wetting = " << litter_wetting << std::endl;
+      //      std::cout << ", litter wetting = " << litter_wetting << std::endl;
       res_c[0][c] = litter_wetting * (wc[0][c] - wc_sat) / tau_;
     }
   }
