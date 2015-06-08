@@ -55,6 +55,7 @@ void throw_error_illformed(std::string section, std::string element_type, std::s
 void throw_error_illformed(std::string section, std::string element_type, std::string ill_formed, std::string options);
 void throw_error_missattr(std::string section, std::string att_elem_type, std::string missing, std::string elem_name);
 void throw_error_missattr(std::string section, std::string att_elem_type, std::string missing, std::string elem_name, std::string options);
+void throw_warning_skip(std::string element);
 
 static bool isUnstr_ ;
 static int dimension_;

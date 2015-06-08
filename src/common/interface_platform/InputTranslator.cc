@@ -1677,8 +1677,9 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 	      } 
 	      if (ecsPL.sublist(it->first).isParameter("method")) {
                 value = ecsPL.sublist(it->first).get<std::string>("method");
-	        if (strcmp(value.c_str(),"true")==0)
+                if (strcmp(value.c_str(),"true")==0) {
                   fpkPL.set<bool>("Use Picard","true");
+                }
                 /* EIB - moved 'Use Picard' as 1.2.2 update */
 	          //initPL.set<bool>("Use Picard",true);
       	      }
@@ -1852,7 +1853,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                 DOMNode* currentNode = children->item(k) ;
                 if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
                   std::string elemName(std::string(XMLString::transcode(currentNode->getNodeName())));
-                  if (elemName,"discretization_method") {
+                  if (elemName == "discretization_method") {
                     std::string textValue(std::string(XMLString::transcode(currentNode->getTextContent())));
                     std::string discr_method;
                     if (textValue == "fv-default") {
@@ -1887,7 +1888,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     fpkPL.set<std::string>("Discretization Method",discr_method.c_str());
                     XMLString::release(&textContent);
                   }
-                  else if (elemName,"rel_perm_method") {
+                  else if (elemName == "rel_perm_method") {
                     std::string textValue(std::string(XMLString::transcode(currentNode->getTextContent())));
                     std::string rel_perm_method("upwind-darcy_velocity");
                     if (textValue == "upwind-gravity") {
@@ -1910,12 +1911,12 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     XMLString::release(&textContent);
 
                   }
-                  else if (elemName,"atmospheric_pressure") {
+                  else if (elemName == "atmospheric_pressure") {
                     textContent = XMLString::transcode(currentNode->getTextContent());
                     fpkPL.set<double>("atmospheric pressure",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
-                  else if (elemName,"preconditioning_strategy") {
+                  else if (elemName == "preconditioning_strategy") {
                     textContent = XMLString::transcode(currentNode->getTextContent());
                     std::string textValue(std::string(textContent));
                     std::string op("linearized_operator");
@@ -1927,6 +1928,12 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     }
                     fpkPL.set<std::string>("Preconditioning Strategy",op.c_str());
                     XMLString::release(&textContent);
+                  }
+                  else if (elemName != "comments") {
+                    // warn about unrecognized element
+                    std::stringstream elem_name;
+                    elem_name << nodeName <<  "->"  << elemName;
+                    throw_warning_skip(elem_name.str());
                   }
                 }
               }
@@ -1966,6 +1973,12 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     tpkPL.set<double>("CFL",atof(textContent));
                     XMLString::release(&textContent);
                   }
+                  else if (elemName != "comments") {
+                    // warn about unrecognized element
+                    std::stringstream elem_name;
+                    elem_name << nodeName <<  "->"  << elemName;
+                    throw_warning_skip(elem_name.str());
+                  }
                 }
               }
             }
@@ -1999,6 +2012,21 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                 else if (strcmp(tagname,"nonlinear_tolerance")==0) {
                   textContent = XMLString::transcode(currentNode->getTextContent());
                   ssPL.set<double>("steady nonlinear tolerance",get_double_constant(textContent,*def_list));
+                  XMLString::release(&textContent);
+                }
+                else if (strcmp(tagname,"nonlinear_iteration_divergence_factor")==0) {
+                  textContent = XMLString::transcode(currentNode->getTextContent());
+                  ssPL.set<double>("steady nonlinear iteration divergence factor",get_double_constant(textContent,*def_list));
+                  XMLString::release(&textContent);
+                }
+                else if (strcmp(tagname,"nonlinear_iteration_damping_factor")==0) {
+                  textContent = XMLString::transcode(currentNode->getTextContent());
+                  ssPL.set<double>("steady nonlinear iteration damping factor",get_double_constant(textContent,*def_list));
+                  XMLString::release(&textContent);
+                }
+                else if (strcmp(tagname,"max_divergent_iterations")==0) {
+                  textContent = XMLString::transcode(currentNode->getTextContent());
+                  ssPL.set<int>("steady max divergent iterations",get_int_constant(textContent,*def_list));
                   XMLString::release(&textContent);
                 }
                 else if (strcmp(tagname,"error_control_options")==0) { //default = 'pressure' options = 'pressure','residual'
@@ -2129,6 +2157,12 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   //ssPL.sublist("Steady-State Pseudo-Time Implicit Solver") = ptiPL;
                   list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Pseudo-Time Implicit Solver") = ptiPL;
                 }
+                else if (strcmp(tagname,"comments")!=0) {
+                  // warn about unrecognized element
+                  std::stringstream elem_name;
+                  elem_name << nodeName <<  "->"  << tagname;
+                  throw_warning_skip(elem_name.str());
+                }
               }
 	    }
 	    // get items from steadyPL, from execution_controls
@@ -2223,53 +2257,71 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                 XMLString::release(&textContent);
               }
 	    }
-
-	    // grab preconditioner node and loop through it's childern to get information
-            tmpList = tcElement->getElementsByTagName(XMLString::transcode("preconditioner"));
-	    if (tmpList->getLength() > 0) {
-              DOMNode* nodeP = tmpList->item(0);
-	      textContent = XMLString::transcode(nodeP->getTextContent());
-              
-	      if (strcmp(textContent,"trilinos_ml")==0) {
-                tcPL.set<std::string>("transient preconditioner","Trilinos ML");
+            
+            DOMNodeList* children = tmpNode->getChildNodes();
+            for (int k=0; k<children->getLength(); k++) {
+              DOMNode* currentNode = children->item(k) ;
+              if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
+                char* tagname = XMLString::transcode(currentNode->getNodeName());
+                
+                //if (strcmp(tagname,"bdf1_integration_method")==0) {
+                //}
+                if (strcmp(tagname,"preconditioner")==0) {
+                  std::string value(trim_string(XMLString::transcode(currentNode->getTextContent())));
+                  if (value == "trilinos_ml") {
+                    tcPL.set<std::string>("transient preconditioner","Trilinos ML");
+                  }
+                  else if (value == "hypre_amg") {
+                    tcPL.set<std::string>("transient preconditioner","Hypre AMG");
+                  }
+                  else if (value == "block_ilu") {
+                    tcPL.set<std::string>("transient preconditioner","Block ILU");
+                  }
+                  else {
+                    throw_error_illformed("transient preconditioner", "value", "preconditioner", "trilinos_ml, hypre_amg, block_ilu");
+                  }
+                }
+                else if (strcmp(tagname,"initialize_with_darcy")==0) {
+                  std::string value(trim_string(XMLString::transcode(currentNode->getTextContent())));
+                  bool iwd(false);
+                  value == "true" ? iwd = true : iwd = false;
+                  if (!iwd)
+                    value == "1" ? iwd = true : iwd = false;
+                  tcPL.set<bool>("transient initialize with darcy",iwd);
+                  XMLString::release(&textContent);
+                }
+                else if (strcmp(tagname,"bdf1_integration_method")!=0) {
+                  // warn about unrecognized element
+                  std::stringstream elem_name;
+                  elem_name << nodeName <<  "->"  << tagname;
+                  throw_warning_skip(elem_name.str());
+                }
               }
-              else if (strcmp(textContent,"hypre_amg")==0) {
-                tcPL.set<std::string>("transient preconditioner","Hypre AMG");
-	      }
-              else if (strcmp(textContent,"block_ilu")==0) {
-                tcPL.set<std::string>("transient preconditioner","Block ILU");
-               }
-              else {
-                throw_error_illformed("transient preconditioner", "value", "preconditioner", "trilinos_ml, hypre_amg, block_ilu");
-              }
-              XMLString::release(&textContent);
-	    
             }
-            //list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Transient Implicit Time Integration") = tcPL;
           }
             else if (nodeName == "unstr_nonlinear_solver") {
-            Teuchos::ParameterList nlPL;
-            attrMap = tmpNode->getAttributes();
-            nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-            if (nodeAttr) {
-              textContent = XMLString::transcode(nodeAttr->getNodeValue());
-            }
-            else {
-              throw_error_missattr("numerical_controls","attribute","name","nonlinear_solver");
-            }
+              Teuchos::ParameterList nlPL;
+              attrMap = tmpNode->getAttributes();
+              nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
+              if (nodeAttr) {
+                textContent = XMLString::transcode(nodeAttr->getNodeValue());
+              }
+              else {
+                throw_error_missattr("numerical_controls","attribute","name","nonlinear_solver");
+              }
 
-            if (strcmp(textContent,"nka")==0) {
-              nlPL.set<std::string>("Nonlinear Solver Type","NKA");
+              if (strcmp(textContent,"nka")==0) {
+                nlPL.set<std::string>("Nonlinear Solver Type","NKA");
+              }
+              else if (strcmp(textContent,"newton")==0) {
+                nlPL.set<std::string>("Nonlinear Solver Type","Newton");
+              }
+              else if (strcmp(textContent,"inexact newton")==0) {
+                nlPL.set<std::string>("Nonlinear Solver Type","inexact Newton");
+              }
+              XMLString::release(&textContent);
+              list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlPL;
             }
-            else if (strcmp(textContent,"newton")==0) {
-              nlPL.set<std::string>("Nonlinear Solver Type","Newton");
-            }
-            else if (strcmp(textContent,"inexact newton")==0) {
-              nlPL.set<std::string>("Nonlinear Solver Type","inexact Newton");
-            }
-            XMLString::release(&textContent);
-            list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlPL;
-          }
             else if (nodeName == "unstr_linear_solver") {
               Teuchos::ParameterList lsPL;
               Teuchos::ParameterList pcPL;
@@ -2301,7 +2353,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   }
                   else if (strcmp(tagname,"cfl")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    lsPL.set<double>("CFL",get_double_constant(textContent,*def_list));
+                    tpkPL.set<double>("CFL",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"preconditioner")==0) {
@@ -2322,6 +2374,12 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                       throw_error_illformed("linear solver preconditioner", "value", "preconditioner", "trilinos_ml, hypre_amg, block_ilu");
                     }
                     XMLString::release(&textContent);
+                  }
+                  else if (strcmp(tagname,"comments")!=0) {
+                    // warn about unrecognized element
+                    std::stringstream elem_name;
+                    elem_name << nodeName <<  "->"  << tagname;
+                    throw_warning_skip(elem_name.str());
                   }
                 }
               }
@@ -6805,6 +6863,17 @@ void write_BDG_file(Teuchos::ParameterList sorption_list, Teuchos::ParameterList
   bgd_file.close();
 }
 
+/*
+**********************************************************************
+* Generate unified warning message for unrecognized element (skipping)
+**********************************************************************
+*/
+void throw_warning_skip(std::string element){
+  
+  *voI_->os() << "Amanzi::InputTranslator: WARNING - The following is an unrecognized element and is being skipped during translation." << std::endl << element << " was unrecognized option." << std::endl << " Please check input file schema for correct naming and syntax." << std::endl;
+}
+  
+  
 /*
  *******************************************************************
  * Generate unified error message for Structure/Unstructure conflict
