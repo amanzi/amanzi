@@ -306,58 +306,5 @@ void OverlandHeadFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   */
 };
 
-double OverlandHeadFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                       Teuchos::RCP<const TreeVector> du) {
-  Teuchos::OSTab tab = vo_->getOSTab();
-
-  // Calculate water content at the solution.
-  S_next_->GetFieldEvaluator("surface_water_content")
-      ->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& wc = *S_next_->GetFieldData("surface_water_content")
-      ->ViewComponent("cell",false);
-
-  // const Epetra_MultiVector& flux = *S_next_->GetFieldData("surface_flux")
-  //     ->ViewComponent("face",false);
-  // double flux_max(0.);
-  // flux.NormInf(&flux_max);
-
-  Teuchos::RCP<const CompositeVector> res = du->Data();
-  const Epetra_MultiVector& res_c = *res->ViewComponent("cell",false);
-  const Epetra_MultiVector& cv = *S_next_->GetFieldData("surface_cell_volume")
-      ->ViewComponent("cell",false);
-  double h = S_next_->time() - S_inter_->time();
-
-  // Cell error is based upon error in mass conservation relative to
-  // the current water content
-  double enorm_cell(-1.);
-  int bad_cell = -1;
-  unsigned int ncells = res_c.MyLength();
-  for (unsigned int c=0; c!=ncells; ++c) {
-    double tmp = std::abs(h*res_c[0][c]) / (atol_ * .01 * cv[0][c] * 55000. + rtol_*std::abs(wc[0][c]));
-    if (tmp > enorm_cell) {
-      enorm_cell = tmp;
-      bad_cell = c;
-    }
-  }
-
-  // Write out Inf norms too.
-  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-    double infnorm_c(0.);
-    res_c.NormInf(&infnorm_c);
-    ENorm_t err_c;
-    ENorm_t l_err_c;
-    l_err_c.value = enorm_cell;
-    l_err_c.gid = res_c.Map().GID(bad_cell);
-
-    MPI_Allreduce(&l_err_c, &err_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
-    *vo_->os() << "ENorm (cells) = " << err_c.value << "[" << err_c.gid << "] (" << infnorm_c << ")" << std::endl;
-  }
-
-  double enorm_val(enorm_cell);
-  double buf = enorm_val;
-  MPI_Allreduce(&buf, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-  return enorm_val;
-};
-
 }  // namespace Flow
 }  // namespace Amanzi

@@ -41,15 +41,21 @@ class SurfaceBalanceBase : public PKPhysicalBDFBase {
   // computes the non-linear functional g = g(t,u,udot)
   virtual void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                           Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
+  // updates the preconditioner
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
+
+  // applies preconditioner to u and returns the result in Pu
+  virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
   
  protected:
 
   Key layer_;
   bool conserved_quantity_;
-  Key conserved_key_;
   Key source_key_;
 
   double theta_;
+
+  Teuchos::RCP<CompositeVector> jac_;
   
  private:
   // factory registration
