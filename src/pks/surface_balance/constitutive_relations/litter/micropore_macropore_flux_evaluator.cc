@@ -102,11 +102,11 @@ void
 MicroporeMacroporeFluxEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 {
-  Teuchos::RCP<const CompositeVector> pm = S->GetFieldData("micropore_pressure");
-  Teuchos::RCP<const CompositeVector> pM = S->GetFieldData("pressure");
-  Teuchos::RCP<const CompositeVector> krM = S->GetFieldData("relative_permeability");
-  Teuchos::RCP<const CompositeVector> krm = S->GetFieldData("micropore_relative_permeability");
-  Teuchos::RCP<const CompositeVector> K = S->GetFieldData("micropore_absolute_permeability");
+  Teuchos::RCP<const CompositeVector> pm = S->GetFieldData(pm_key_);
+  Teuchos::RCP<const CompositeVector> pM = S->GetFieldData(pM_key_);
+  Teuchos::RCP<const CompositeVector> krM = S->GetFieldData(krM_key_);
+  Teuchos::RCP<const CompositeVector> krm = S->GetFieldData(krm_key_);
+  Teuchos::RCP<const CompositeVector> K = S->GetFieldData(K_key_);
 
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
@@ -129,11 +129,11 @@ void
 MicroporeMacroporeFluxEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
-  Teuchos::RCP<const CompositeVector> pm = S->GetFieldData("micropore_pressure");
-  Teuchos::RCP<const CompositeVector> pM = S->GetFieldData("pressure");
-  Teuchos::RCP<const CompositeVector> krM = S->GetFieldData("relative_permeability");
-  Teuchos::RCP<const CompositeVector> krm = S->GetFieldData("micropore_relative_permeability");
-  Teuchos::RCP<const CompositeVector> K = S->GetFieldData("micropore_absolute_permeability");
+  Teuchos::RCP<const CompositeVector> pm = S->GetFieldData(pm_key_);
+  Teuchos::RCP<const CompositeVector> pM = S->GetFieldData(pM_key_);
+  Teuchos::RCP<const CompositeVector> krM = S->GetFieldData(krM_key_);
+  Teuchos::RCP<const CompositeVector> krm = S->GetFieldData(krm_key_);
+  Teuchos::RCP<const CompositeVector> K = S->GetFieldData(K_key_);
 
   if (wrt_key == "micropore_pressure") {
     for (CompositeVector::name_iterator comp=result->begin();
