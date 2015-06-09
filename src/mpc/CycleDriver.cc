@@ -974,7 +974,11 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   S_->GetMeshPartition("materials");
 
-  //if (!output_registered_) RegisterOutput();
+
+  pk_->CalculateDiagnostics();
+  // // Visualize();
+  // // WriteCheckpoint(dt);
+  Observations();
 
   pk_->set_dt(tp_dt_[time_pr_id]);
 

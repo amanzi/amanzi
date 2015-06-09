@@ -390,8 +390,17 @@ void Unstructured_observations::MakeObservations(State& state)
       
       data_triplet.is_valid = true;
       data_triplet.time = state.time();
-      
-      od.push_back(data_triplet);
+
+      bool time_exist = false;
+      for (std::vector<Amanzi::ObservationData::DataTriple>::iterator it = od.begin(); it != od.end(); ++it){
+        if (it->time == data_triplet.time){
+          time_exist = true;
+          break;
+        }
+      }
+            
+      if (!time_exist) od.push_back(data_triplet);
+
     }
   }
 
