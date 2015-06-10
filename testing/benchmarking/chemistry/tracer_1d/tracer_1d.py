@@ -245,7 +245,7 @@ if __name__ == "__main__":
 
     #pyplot.show()
     plt.savefig(root+"_1d.png",format="png")
-    plt.close()
+#    plt.close()
 
 #    finally:
 #        pass 
