@@ -32,6 +32,7 @@ struct SolverFactory {
 }  // namespace Amanzisolvers
 }  // namespace Amanzi
 
+#include "SolverAA.hh"
 #include "SolverNKA.hh"
 #include "SolverNKA_BT.hh"
 #include "SolverNKA_BT_ATS.hh"
@@ -80,6 +81,15 @@ SolverFactory<Vector, VectorSpace>::Create(Teuchos::ParameterList& slist)
       Teuchos::ParameterList nka_list = slist.sublist("nka parameters");
       Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
           Teuchos::rcp(new SolverNKA<Vector,VectorSpace>(nka_list));
+      return solver;
+    } else if (type == "aa") {
+      if (!slist.isSublist("nka parameters")) {
+        Errors::Message msg("SolverFactory: missing sublist \"nka parameters\"");
+        Exceptions::amanzi_throw(msg);
+      }
+      Teuchos::ParameterList nka_list = slist.sublist("nka parameters");
+      Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
+          Teuchos::rcp(new SolverAA<Vector,VectorSpace>(nka_list));
       return solver;
     } else if (type == "Newton") {
       if (!slist.isSublist("Newton parameters")) {

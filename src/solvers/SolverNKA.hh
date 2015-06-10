@@ -171,6 +171,7 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
   double l2_error_initial(0.0);
   double du_norm(0.0), previous_du_norm(0.0);
   int divergence_count(0);
+  int prec_error;
 
   do {
     // Check for too many nonlinear iterations.
@@ -220,7 +221,7 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
 
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
-    fn_->ApplyPreconditioner(r, du_tmp);
+    prec_error = fn_->ApplyPreconditioner(r, du_tmp);
 
     // Calculate the accelerated correction.
     if (num_itrs_ <= nka_lag_space_) {

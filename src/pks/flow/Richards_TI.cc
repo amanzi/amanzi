@@ -209,11 +209,11 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
 /* ******************************************************************
 * Apply preconditioner inv(B) * X.                                                 
 ****************************************************************** */
-void Richards_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, 
+int Richards_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, 
                                       Teuchos::RCP<TreeVector> Y)
 {
   Y->PutScalar(0.0);
-  op_pc_solver_->ApplyInverse(*X->Data(), *Y->Data());
+  return op_pc_solver_->ApplyInverse(*X->Data(), *Y->Data());
 }
 
 

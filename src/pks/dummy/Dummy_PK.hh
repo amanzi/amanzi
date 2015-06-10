@@ -60,7 +60,7 @@ class Dummy_PK : public FnTimeIntegratorPK {
   }
 
   // applies preconditioner to u and returns the result in Pu
-  virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   }
 
   // computes a norm on u-du and returns the result

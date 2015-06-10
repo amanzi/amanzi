@@ -224,7 +224,7 @@ int SolverNKA_BT<Vector, VectorSpace>::NKA_BT_(const Teuchos::RCP<Vector>& u) {
 
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
-    fn_->ApplyPreconditioner(r, du_tmp);
+    int  prec_error = fn_->ApplyPreconditioner(r, du_tmp);
 
     // Calculate the accelerated correction.
     if (num_itrs_ <= nka_lag_space_) {

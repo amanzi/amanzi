@@ -18,7 +18,7 @@ class BDFFnBase {
                           Teuchos::RCP<Vector> u_new, Teuchos::RCP<Vector> f) = 0;
 
   // applies preconditioner to u and returns the result in Pu
-  virtual void ApplyPreconditioner(Teuchos::RCP<const Vector> u, Teuchos::RCP<Vector> Pu) = 0;
+  virtual int ApplyPreconditioner(Teuchos::RCP<const Vector> u, Teuchos::RCP<Vector> Pu) = 0;
 
   // computes a norm on u-du and returns the result
   virtual double ErrorNorm(Teuchos::RCP<const Vector> u, Teuchos::RCP<const Vector> du) = 0;

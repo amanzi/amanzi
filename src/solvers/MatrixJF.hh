@@ -112,8 +112,9 @@ int MatrixJF<Vector,VectorSpace>::ApplyInverse(const Vector& b, Vector& x) const
   // ugliness in interfaces...
   Teuchos::RCP<const Vector> b_ptr = Teuchos::rcpFromRef(b);
   Teuchos::RCP<Vector> x_ptr = Teuchos::rcpFromRef(x);
+  int prec_error;
 
-  fn_->ApplyPreconditioner(b_ptr, x_ptr);
+  prec_error = fn_->ApplyPreconditioner(b_ptr, x_ptr);
   return 0;
 }
 

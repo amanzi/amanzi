@@ -73,7 +73,7 @@ class Richards_PK : public Flow_PK {
   double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
 
   // -- management of the preconditioner
-  void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu);
+  int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu);
   void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt);
 
   // -- check the admissibility of a solution

@@ -13,6 +13,7 @@
 #include "SolverNKA_BT_ATS.hh"
 #include "SolverNewton.hh"
 #include "SolverJFNK.hh"
+#include "SolverAA.hh"
 
 using namespace Amanzi;
 
@@ -234,12 +235,47 @@ TEST_FIXTURE(test_data, NKA_BT_ATS_SOLVER) {
 
   // solve
   nka_bt->Solve(u);
+
+  std::cout<<"Solution "<<(*u)[0]<<" "<<(*u)[1]<<"\n";
+
   CHECK_CLOSE(0.0, (*u)[0], 1.0e-6);
   CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
 };
 
-}  // SUITE
+TEST_FIXTURE(test_data, AA_SOLVER) {
+  std::cout << std::endl << "AA solver...." << std::endl;
 
+  // create the function class
+  Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, true));
+
+  // create the SolverState
+  Teuchos::ParameterList plist;
+  plist.set("nonlinear tolerance", 1e-7);
+  plist.set("diverged tolerance", 1e10);
+  plist.set("limit iterations", 15);
+  plist.set("max du growth factor", 1e5);
+  plist.set("max divergent iterations", 3);
+  plist.set("max aa vectors", 3);
+  plist.sublist("VerboseObject").set("Verbosity Level", "high");
+
+  // create the Solver
+  Teuchos::RCP<AmanziSolvers::SolverAA<Epetra_Vector, Epetra_BlockMap> > aa  =
+      Teuchos::rcp(new AmanziSolvers::SolverAA<Epetra_Vector, Epetra_BlockMap>(plist));
+  aa->Init(fn, *map);
+
+  // initial guess
+  Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
+  (*u)[0] = -0.5;
+  (*u)[1] =  0.4;
+
+  // solve
+  aa->Solve(u);
+  CHECK_CLOSE(0.0, (*u)[0], 1.0e-6);
+  CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
+};
+
+
+}  // SUITE
 
 
 

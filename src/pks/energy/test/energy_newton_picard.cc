@@ -56,7 +56,7 @@ class HeatConduction : public AmanziSolvers::SolverFnBase<CompositeVector> {
 
   void UpdatePreconditioner(const Teuchos::RCP<const Amanzi::CompositeVector>& up);
 
-  void ApplyPreconditioner(const Teuchos::RCP<const CompositeVector>& u,
+  int ApplyPreconditioner(const Teuchos::RCP<const CompositeVector>& u,
                            const Teuchos::RCP<CompositeVector>& hu);
 
   double ErrorNorm(const Teuchos::RCP<const CompositeVector>& u,
@@ -277,10 +277,12 @@ void HeatConduction::UpdatePreconditioner(const Teuchos::RCP<const CompositeVect
 }
 
 
-void HeatConduction::ApplyPreconditioner(const Teuchos::RCP<const CompositeVector>& u,
+int HeatConduction::ApplyPreconditioner(const Teuchos::RCP<const CompositeVector>& u,
                                          const Teuchos::RCP<CompositeVector>& hu)
 {
-  op_->ApplyInverse(*u, *hu);
+  int ierr = op_->ApplyInverse(*u, *hu);
+  return (ierr > 0) ? 0 : 1;
+  //return op_->ApplyInverse(*u, *hu);
 }
 
 

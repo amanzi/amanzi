@@ -44,7 +44,8 @@ class LinearOperatorPCG : public LinearOperator<Matrix, Vector, VectorSpace> {
     }
     int ierr = PCG_(v, hv, tol_, max_itrs_, criteria_);
     returned_code_ = ierr;
-    return (ierr > 0) ? 0 : 1;  // Positive ierr code means success.
+    //    return (ierr > 0) ? 0 : 1;  // Positive ierr code means success.
+    return returned_code_;
   }
 
   // access members

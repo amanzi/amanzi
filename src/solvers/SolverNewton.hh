@@ -207,7 +207,7 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
     r->Norm2(&res_l2);
     r->NormInf(&res_inf);
 
-    fn_->ApplyPreconditioner(r, du);
+    int  prec_error = fn_->ApplyPreconditioner(r, du);
 
     du->Norm2(&du_l2);
     du->NormInf(&du_inf);
