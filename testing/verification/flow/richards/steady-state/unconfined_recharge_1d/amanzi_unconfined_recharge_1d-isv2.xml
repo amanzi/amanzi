@@ -38,8 +38,8 @@
     </phases>
     <execution_controls>
       <verbosity level="high"/>
-      <execution_control_defaults method="bdf1" mode="steady" init_dt="0.01" max_dt="1000 y"/>
-      <execution_control end="3.0e+10" init_dt="0.01" method="bdf1" mode="steady" reduction_factor="0.5" start="0.0"/>
+      <execution_control_defaults method="picard" mode="steady" init_dt="0.01" max_dt="1000 y"/>
+      <execution_control end="3.0e+10" init_dt="0.01" method="picard" mode="steady" reduction_factor="0.5" start="0.0"/>
     </execution_controls>
     <numerical_controls>
       <unstructured_controls>

@@ -60,8 +60,7 @@ process_events(Real time, Real dt, int iter, int diter, const std::string& event
     }
     EventCoord& event_coord = Observation::PMAmrPtr()->eventCoord();
     std::pair<Real,Array<std::string> > nextEvent = event_coord.NextEvent(time,dt,iter, diter);
-    //if (nextEvent.second.size()) 
-    if (nextEvent.first > 0) 
+    if (nextEvent.second.size()) 
     {
         // Process event
         const Array<std::string>& eventList = nextEvent.second;
@@ -136,7 +135,7 @@ Observation::process(Real t_old,
         std::pair<bool,Real> ret = process_events(t_old,t_new-t_old,iter,1,event_label);
         
         if (ret.first) {
-            Real dt_red = ret.second;
+            Real dt_red = ret.second < 0 ? t_new - t_old : ret.second;
             times.push_back(t_old + dt_red);
             Real eta = std::min(1.,std::max(0.,dt_red/(t_new-t_old)));
             vals[times.size()-1] = (val_old*(1 - eta) + val_new*eta);

@@ -37,13 +37,13 @@ ascem_protocol=https
 ascem_site='software.lanl.gov/ascem'
 ascem_tpl_site="${ascem_site}/tpls"
 
-# Default root install and build prefix
-dflt_install_prefix=$HOME/amanzi
+# Default root build and install prefix
 dflt_build_prefix=`pwd`
+dflt_install_prefix=`pwd`
 
 # Source and build directories
-amanzi_build_dir="${dflt_build_prefix}/amanzi-build"
-amanzi_install_prefix="${dflt_install_prefix}"
+amanzi_build_dir="${dflt_build_prefix}/build/amanzi"
+amanzi_install_prefix="${dflt_install_prefix}/install/amanzi"
 
 # Mercurial
 hg_binary=`which hg`
@@ -82,9 +82,9 @@ mpi_root_dir=
 tpl_config_file=
 
 # TPL build parameters
-tpl_build_dir="${dflt_build_prefix}/TPL_BUILD"
+tpl_build_dir=${dflt_build_prefix}/build/tpls
 tpl_download_dir=${tpl_build_dir}/Downloads
-tpl_install_prefix=${dflt_install_prefix}/tpls
+tpl_install_prefix=${dflt_install_prefix}/install/tpls
 
 # Color output display
 no_color=$FALSE
@@ -415,10 +415,6 @@ function parse_argv()
                 exit_now 0
                 ;;
 
-      --print)
-                 print_exit=${TRUE}
-		 ;;
-
       --prefix=*)
                  tmp=`parse_option_with_equal "${opt}" 'prefix'`
 		 prefix=`make_fullpath ${tmp}`
@@ -553,6 +549,10 @@ function parse_argv()
                  tmp=`parse_option_with_equal "${opt}" 'tpl-config-file'`
                  tpl_config_file=`make_fullpath $tmp`
                  ;;
+
+      --print)
+                 print_exit=${TRUE}
+		 ;;
 
        *)
                  error_message "'${opt}' is an unknown option or an option missing a value"

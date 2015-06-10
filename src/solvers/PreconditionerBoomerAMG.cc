@@ -42,7 +42,6 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
     Exceptions::amanzi_throw(msg);
   }
     
-  
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetTol,
 						      plist_.get<double>("tolerance", 0.0))));
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetPrintLevel,

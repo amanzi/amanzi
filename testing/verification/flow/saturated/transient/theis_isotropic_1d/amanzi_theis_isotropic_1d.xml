@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.3"/>
 
   <!--
      Confined Aquifer Transient Drawdown (Theis 1935)
@@ -25,7 +25,7 @@
         </ParameterList>
     </ParameterList>
 
-    <Parameter name="Verbosity" type="string" value="High"/>
+    <Parameter name="Verbosity" type="string" value="Extreme"/>
 
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
@@ -34,7 +34,8 @@
           <Parameter name="linear solver maximum iterations" type="int" value="1000"/>
         </ParameterList>
 	<ParameterList name="Transient Implicit Time Integration">
-	  <Parameter name="Transient Time Step Increase Factor" type="double" value="1.1"/>
+	  <Parameter name="transient time step increase factor" type="double" value="1.1"/>
+	  <Parameter name="transient initialize with darcy" type="bool" value="true"/>
 	</ParameterList>
       </ParameterList>
     </ParameterList>
@@ -272,19 +273,19 @@
 	<Parameter name="Region" type="string" value="Obs_r10"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Aqueous pressure"/>
-	<Parameter name="Time Macro" type="string" value="Observation Times"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Pressure 02">
 	<Parameter name="Region" type="string" value="Obs_r30"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Aqueous pressure"/>
-	<Parameter name="Time Macro" type="string" value="Observation Times"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Pressure 03">
 	<Parameter name="Region" type="string" value="Obs_r50"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Aqueous pressure"/>
-	<Parameter name="Time Macro" type="string" value="Observation Times"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
     </ParameterList>
 

@@ -72,7 +72,7 @@
   -->
   <execution_controls>
     <verbosity level="high"/>
-    <execution_control_defaults init_dt= "3.64" increase_factor="1.5" method="bdf1"/>
+    <execution_control_defaults init_dt= "3.64" increase_factor="1.5" max_dt="1.64e7" method="bdf1"/>
     <execution_control start="0.0" end="1.64e7" init_dt="3.64" mode="transient"/>
   </execution_controls>
 
@@ -269,12 +269,12 @@
 	<drawdown>
 	  <assigned_regions>Obs_r24</assigned_regions>
 	  <functional>point</functional>
-	  <time_macro>Observation Times</time_macro>
+	  <time_macros>Observation Times</time_macros>
 	</drawdown>
 	<drawdown>
 	  <assigned_regions>Obs_r100</assigned_regions>
 	  <functional>point</functional>
-	  <time_macro>Observation Times</time_macro>
+	  <time_macros>Observation Times</time_macros>
 	</drawdown>
       </liquid_phase>
 

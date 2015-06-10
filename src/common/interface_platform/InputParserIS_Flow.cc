@@ -59,6 +59,9 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
             if (fl_exp_params.isParameter("Preconditioning Strategy")) {
               prec_method = fl_exp_params.get<std::string>("Preconditioning Strategy");
             }
+            if (fl_exp_params.isParameter("Use Picard")) {
+              use_picard_ = fl_exp_params.get<bool>("Use Picard");
+            }
           }
           if (ua_list.isSublist("Nonlinear Solver")) {
             Teuchos::ParameterList fl_exp_params = ua_list.sublist("Nonlinear Solver");

@@ -3262,33 +3262,22 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
       else {
         mset1 = MESH_MSetByName(mesh,internal_name.c_str());
       
-        // Since both element blocks and cell sets are referenced with
-        // the region type 'Labeled Set' and Entity kind 'Cell' we
-        // have to account for both possibilities. NOTE: THIS MEANS
-        // THAT IF AN ELEMENT BLOCK AND ELEMENT SET HAVE THE SAME ID,
-        // ONLY THE ELEMENT BLOCK WILL GET PICKED UP - WE CHECKED FOR
-        // THIS IN BUILD SET
+        if (!mset1 && kind == CELL) {
+          // Since both element blocks and cell sets are referenced
+          // with the region type 'Labeled Set' and Entity kind 'Cell'
+          // we have to account for both possibilities. NOTE: THIS
+          // MEANS THAT IF AN ELEMENT BLOCK AND ELEMENT SET HAVE THE
+          // SAME ID, ONLY THE ELEMENT BLOCK WILL GET PICKED UP - WE
+          // CHECKED FOR THIS IN BUILD SET
 
-
-        std::string internal_name2 = other_internal_name_of_set(rgn,kind);
-        
-        
-        if (!mset1) {
-          MSet_ptr mset2 = MESH_MSetByName(mesh,internal_name2.c_str());
-          if (mset2)
-            mset1 = mset2;
-          else { 
-            std::stringstream mesg_stream;
-            mesg_stream << "Exodus II file has no labeled set with ID " << label;
-            Errors::Message mesg(mesg_stream.str());
-            amanzi_throw(mesg);
-          }
+          std::string internal_name2 = other_internal_name_of_set(rgn,kind);
+          mset1 = MESH_MSetByName(mesh,internal_name2.c_str());
         }
 
         /// Due to the parallel partitioning its possible that this
         /// set is not on this processor
       
-        if (mset1 == NULL) {
+        if (!mset1) {
           if (epcomm->NumProc() == 1) {
             std::stringstream mesg_stream;
             mesg_stream << "Could not find labeled set " << label << " in mesh file in order to initialize mesh set " << setname << ". Verify mesh file.";

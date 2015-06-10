@@ -133,6 +133,7 @@
 				<!-- default: explicit first-order -->
 		        	<sub_cycling>on | off</sub_cycling>
 				<!-- default: on -->
+				<cfl>exp</cfl>
 			</unstr_transport_controls>
 
 		  	<unstr_chemistry_controls>
@@ -190,7 +191,6 @@
 				<method>gmres | pcg</method> <!-- default: gmres -->
 				<max_iterations>int</max_iterations> <!-- default: 100 suggested range: 50-1000 -->
 				<tolerance>exp</tolerance> <!-- default: 1.0e-16 suggested range:1.0e-20-1.0e-14 -->
-				<cfl>exp</cfl>
 	    	            	<preconditioner>hypre_amg | trilinos_ml | block_ilu</preconditioner> <!-- default: hypre_amg -->
 			</unstr_linear_solver>
 

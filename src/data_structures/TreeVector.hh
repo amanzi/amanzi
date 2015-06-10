@@ -120,6 +120,10 @@ class TreeVector {
   int Multiply(double scalarAB, const TreeVector& A, const TreeVector& B,
                double scalarThis);
 
+  // this <- scalarAB * A^-1@B + scalarThis*this  (@ is the elementwise product
+  int ReciprocalMultiply(double scalarAB, const TreeVector& A,
+                         const TreeVector& B, double scalarThis);
+
   // non-inherited extras
   void Print(std::ostream &os) const;
 

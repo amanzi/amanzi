@@ -37,9 +37,14 @@ class Unstructured_observations {
     const Teuchos::ParameterList& plist_;
   };
 
+  // constructor and destructor
   Unstructured_observations(Teuchos::ParameterList obs_list,
                             Amanzi::ObservationData& observation_data,
 			    Epetra_MpiComm* comm);
+
+  ~Unstructured_observations() {
+    if (vo_ != NULL) delete vo_;
+  }
   
   void RegisterComponentNames(std::vector<std::string> comp_names) {
     comp_names_ = comp_names;

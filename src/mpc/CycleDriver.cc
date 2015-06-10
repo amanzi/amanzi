@@ -50,7 +50,6 @@ bool reset_info_compfunc(std::pair<double,double> x, std::pair<double,double> y)
 }
 
 
-
 double rss_usage() { // return ru_maxrss in MBytes
 #if (defined(__unix__) || defined(__unix) || defined(unix) || defined(__APPLE__) || defined(__MACH__))
   struct rusage usage;
@@ -179,8 +178,7 @@ void CycleDriver::Setup() {
 
       if (parameter_list_->isSublist(plist_name)) {
         Teuchos::ParameterList& vis_plist = parameter_list_->sublist(plist_name);
-        Teuchos::RCP<Visualization> vis =
-          Teuchos::rcp(new Visualization(vis_plist, comm_));
+        Teuchos::RCP<Visualization> vis = Teuchos::rcp(new Visualization(vis_plist, comm_));
         vis->set_mesh(mesh->second.first);
         vis->CreateFiles();
         visualization_.push_back(vis);
@@ -242,9 +240,8 @@ void CycleDriver::Setup() {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Setup is complete." << std::endl;
   }
-
-
 }
+
 
 /* ******************************************************************
 * Initialize State followed by initialization of PK.
@@ -276,9 +273,7 @@ void CycleDriver::Initialize() {
     // visualize();
     // checkpoint(*S_->GetScalarData("dt", "coordinator"));
   }
-
 }
-
 
 
 /* ******************************************************************
@@ -979,7 +974,11 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   S_->GetMeshPartition("materials");
 
-  //if (!output_registered_) RegisterOutput();
+
+  pk_->CalculateDiagnostics();
+  // // Visualize();
+  // // WriteCheckpoint(dt);
+  Observations();
 
   pk_->set_dt(tp_dt_[time_pr_id]);
 
