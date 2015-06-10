@@ -603,9 +603,9 @@ void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
       int c = cells[0];
 
       double hz_f = bc->second + elevation[0][f];
-      double hz_c = h_c[0][c] + elevation_c[0][f];
+      double hz_c = h_c[0][c] + elevation_c[0][c];
 
-      if (hz_f >= hz_f) {
+      if (hz_f >= hz_c) {
         bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_values_[f] = 0.0;
       } else {
