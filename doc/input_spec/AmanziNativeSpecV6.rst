@@ -2948,6 +2948,11 @@ Newton-Krylov acceleration (NKA)
   to the initial increment) is above this value, the solver is terminated.
   Default is 1e+10.
 
+* `"diverged residual tolerance`" [double] defines another way to identify divergence
+  of the solver. If the relative L2 norm of the residual (with respect
+  to the initial residual) is above this value, the solver is terminated.
+  Default is 1e+10.
+
 * `"max du growth factor`" [double] allows the solver to identify divergence 
   pattern on earlier iterations. If the maximum norm of the solution increment
   changes drastically on two consecutive iterations, the solver is terminated.
@@ -2974,7 +2979,7 @@ Newton-Krylov acceleration (NKA)
   the local space. If a new vector does not satisfy this requirement, the space is modified. 
   Default is 0.05.
 
-* `"VerboseObject`" [sublist] defines the standard verbosity object.
+* `"VerboseObject`" [sublist] defines the standard verbosity object. Default is the global verbosity.
 
 .. code-block:: xml
 
@@ -2985,7 +2990,8 @@ Newton-Krylov acceleration (NKA)
      <Parameter name="limit iterations" type="int" value="20"/>
      <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
      <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
-     <Parameter name="divergedpcc tolerance" type="double" value="1.0e+10"/>
+     <Parameter name="diverged pc tolerance" type="double" value="1.0e+10"/>
+     <Parameter name="diverged residual tolerance" type="double" value="1.0e+10"/>
      <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
      <Parameter name="max error growth factor" type="double" value="1.0e+05"/>
      <Parameter name="max divergent iterations" type="int" value="3"/>
