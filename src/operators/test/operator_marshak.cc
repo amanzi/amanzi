@@ -36,7 +36,7 @@
 #include "UpwindStandard.hh"
 
 const double TemperatureSource = 100.0; 
-const double TemperatureFloor = 0.02; 
+const double TemperatureFloor = 0.00;
 
 namespace Amanzi{
 
