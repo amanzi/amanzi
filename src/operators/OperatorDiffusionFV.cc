@@ -72,9 +72,6 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
     little_k_ = OPERATOR_LITTLE_K_NONE;
   } else if (uwname == "upwind: face") {
     little_k_ = OPERATOR_LITTLE_K_UPWIND;
-  } else if (uwname == "artificial diffusion: cell-face") {  
-    little_k_ = OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION;
-    ASSERT(false);
   } else if (uwname == "divk: cell-face") {  
     little_k_ = OPERATOR_LITTLE_K_DIVK;
     ASSERT(false);

@@ -63,7 +63,7 @@ void OperatorDiffusionWithGravity::AddGravityToRHS_()
 
     // gravity discretization
     bool fv_flag = (gravity_method_ == OPERATOR_GRAVITY_FV) ||
-        (little_k_ != OPERATOR_LITTLE_K_DIVK && little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN);
+        !(little_k_ & OPERATOR_LITTLE_K_DIVK_BASE);
 
     for (int c = 0; c < ncells_owned; c++) {
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -83,16 +83,15 @@ void OperatorDiffusionWithGravity::AddGravityToRHS_()
         kc = (*k_cell)[0][c];
         for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
 
+      // -- new scheme: SPD discretization with upwind and equal spliting
+      } else if (little_k_ == OPERATOR_LITTLE_K_DIVK_BASE) {
+        for (int n = 0; n < nfaces; n++) kf[n] = std::sqrt((*k_face)[0][faces[n]]);
+
       // -- the second most popular choice: classical upwind
       } else if(little_k_ == OPERATOR_LITTLE_K_UPWIND) {
         for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
 
       } else if (little_k_ == OPERATOR_LITTLE_K_STANDARD && k_cell != Teuchos::null) {
-        kc = (*k_cell)[0][c];
-        for (int n = 0; n < nfaces; n++) kf[n] = kc;
-
-      // -- highly experimental (for developers only)
-      } else if (little_k_ == OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION) {
         kc = (*k_cell)[0][c];
         for (int n = 0; n < nfaces; n++) kf[n] = kc;
       }
@@ -117,14 +116,6 @@ void OperatorDiffusionWithGravity::AddGravityToRHS_()
             tmp *= copysign(norm(normal) / norm(xcc), sign);
           } else {
             tmp = (Kcg * normal) * rho * kf[n] * dirs[n];
-          }
-
-          if (little_k_ == OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION) {
-            double alpha = (*k_face)[0][f] - kc;
-            if (alpha > 0) {
-              alpha *= Wff(n, n) * rho * norm(g_);
-              tmp -= alpha * (zf - zc);
-            }
           }
 
           rhs_face[0][f] += tmp; 
@@ -193,7 +184,7 @@ void OperatorDiffusionWithGravity::UpdateFlux(
 
   // gravity discretization
   bool fv_flag = (gravity_method_ == OPERATOR_GRAVITY_FV) ||
-      (little_k_ != OPERATOR_LITTLE_K_DIVK && little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN);
+      !(little_k_ & OPERATOR_LITTLE_K_DIVK_BASE);
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -207,12 +198,11 @@ void OperatorDiffusionWithGravity::UpdateFlux(
     // Update terms due to nonlinear coefficient
     double kc(1.0);
     std::vector<double> kf(nfaces, 1.0);
-    if (little_k_ == OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION) {
-      kc = (*k_cell)[0][c];
-      for (int n = 0; n < nfaces; n++) kf[n] = kc;
-    } else if (little_k_ == OPERATOR_LITTLE_K_DIVK) {
+    if (little_k_ == OPERATOR_LITTLE_K_DIVK) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+    } else if (little_k_ == OPERATOR_LITTLE_K_DIVK_BASE) {
+      for (int n = 0; n < nfaces; n++) kf[n] = std::sqrt((*k_face)[0][faces[n]]);
     } else if (little_k_ == OPERATOR_LITTLE_K_STANDARD && k_cell != Teuchos::null) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
@@ -238,17 +228,6 @@ void OperatorDiffusionWithGravity::UpdateFlux(
             flux_data[0][f] += (Kcg * normal) * rho * kf[n];
           }
             
-          if (little_k_ == OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION) {
-            double alpha = (*k_face)[0][f] - kc;
-            if (alpha > 0) {
-              int dir;
-              const AmanziGeometry::Point& exterior = mesh_->face_normal(f, false, c, &dir);
-              double zf = mesh_->face_centroid(f)[dim - 1];
-              alpha *= Wff(n, n) * rho * norm(g_);
-              flux_data[0][f] -= alpha * (zf - zc) * dir;
-            }
-          }
-
           flag[f] = 1;
         }
       }

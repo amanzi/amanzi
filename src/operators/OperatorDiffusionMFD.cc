@@ -253,6 +253,11 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
     if (little_k_ == OPERATOR_LITTLE_K_DIVK && k_face != Teuchos::null) {
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
 
+    // -- new scheme: SPD discretization with upwind and equal spliting
+    } else if (little_k_ == OPERATOR_LITTLE_K_DIVK_BASE) {
+      kc = 1.0;
+      for (int n = 0; n < nfaces; n++) kf[n] = std::sqrt((*k_face)[0][faces[n]]);
+
     // -- same as above but remains second-order for dicontinuous coefficients
     } else if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
       for (int n = 0; n < nfaces; n++) {
@@ -267,16 +272,11 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
 
     } else if (little_k_ == OPERATOR_LITTLE_K_STANDARD) {
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
-
-    // -- highly experimental (for developers only)
-    } else if (little_k_ == OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION) {
-      for (int n = 0; n < nfaces; n++) kf[n] = kc;
     }
-      
+
     // create stiffness matrix by ellimination of the mass matrix
     // -- all methods expect for DIVK-family of methods.
-    if (little_k_ != OPERATOR_LITTLE_K_DIVK &&
-        little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN) {
+    if ((little_k_ & OPERATOR_LITTLE_K_DIVK_BASE) == 0) {
       // -- not scaled constraint: kr > 0
       if (!scaled_constraint_) {
         double matsum = 0.0; 
@@ -324,8 +324,7 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
     }
 
     // Amanzi's first upwind: the family of DIVK fmethods
-    if (little_k_ == OPERATOR_LITTLE_K_DIVK ||
-        little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
+    if (little_k_ & OPERATOR_LITTLE_K_DIVK_BASE) {
       ASSERT(!scaled_constraint_);
       double matsum = 0.0; 
       for (int n = 0; n < nfaces; n++) {
@@ -344,22 +343,6 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
       Acell(nfaces, nfaces) = matsum;
     }
     
-    // Amanzi's second highly experimental upwind: add additional flux.
-    if (little_k_ == OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION) {
-      ASSERT(!scaled_constraint_);
-      for (int n = 0; n < nfaces; n++) {
-        int f = faces[n];
-        double alpha = (*k_face)[0][f] - kc;
-        if (alpha > 0) {
-          alpha *= Wff(n, n);
-          Acell(n, n) += alpha;
-          Acell(n, nfaces) -= alpha;
-          Acell(nfaces, n) -= alpha;
-          Acell(nfaces, nfaces) += alpha;
-        }
-      }
-    }
-
     local_op_->matrices[c] = Acell;
   }
 }
@@ -1218,10 +1201,10 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
     little_k_ = OPERATOR_LITTLE_K_NONE;
   } else if (name == "upwind: face") {
     little_k_ = OPERATOR_LITTLE_K_UPWIND;  // upwind scheme (non-symmetric in general)
-  } else if (name == "artificial diffusion: cell-face") {  
-    little_k_ = OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION;
+  } else if (name == "divk: face") {
+    little_k_ = OPERATOR_LITTLE_K_DIVK_BASE;  // new SPD upwind scheme
   } else if (name == "divk: cell-face") {
-    little_k_ = OPERATOR_LITTLE_K_DIVK;  // SPD upwind scheme
+    little_k_ = OPERATOR_LITTLE_K_DIVK;  // standard SPD upwind scheme
   } else if (name == "standard: cell") {
     little_k_ = OPERATOR_LITTLE_K_STANDARD;  // cell-centered scheme.
   } else if (name == "divk: cell-grad-face-twin") {  
