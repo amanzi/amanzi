@@ -85,7 +85,11 @@ void OperatorDiffusionWithGravity::AddGravityToRHS_()
 
       // -- new scheme: SPD discretization with upwind and equal spliting
       } else if (little_k_ == OPERATOR_LITTLE_K_DIVK_BASE) {
-        for (int n = 0; n < nfaces; n++) kf[n] = std::sqrt((*k_face)[0][faces[n]]);
+        if (!fv_flag) {
+          for (int n = 0; n < nfaces; n++) kf[n] = std::sqrt((*k_face)[0][faces[n]]);
+        } else {
+          for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+        }
 
       // -- the second most popular choice: classical upwind
       } else if(little_k_ == OPERATOR_LITTLE_K_UPWIND) {

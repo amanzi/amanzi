@@ -412,6 +412,7 @@ void Richards_PK::Initialize()
     upw_id = Operators::OPERATOR_UPWIND_CONSTANT_VECTOR;
   } else if (name == "upwind: amanzi") {
     upw_method = "divk: cell-face";
+    // upw_method = "divk: face";
   } else if (name == "other: arithmetic average") {
     upw_method = "upwind: face";
     upw_id = Operators::OPERATOR_UPWIND_ARITHMETIC_AVERAGE;
