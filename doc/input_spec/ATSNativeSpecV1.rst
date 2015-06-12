@@ -79,27 +79,33 @@ one sublist for each of the following sections.  Additionally, for
 compatibility with Amanzi, the following Parameters are typically
 present, and should not be changed, as ATS does not currently support Amanzi-S.
 
-* `"Native Unstructured Input`" ``[bool]``, **true**
+* `"Native Unstructured Input`" ``[bool]``,  Should always be `"true`"
  
-* `"grid_option`" ``[string]``, **"Unstructured"**
+* `"grid_option`" ``[string]``,  Should always be `"Unstructured`"
 
-* `"Mesh`" ``[mesh-spec]`` See the Mesh_ spec.
+* `"Mesh`" ``[mesh-spec]``  See the Mesh_ spec.
 
-* `"Domain`" ``[domain-spec]`` See the Domain_ spec.
+* `"Domain`" ``[domain-spec]``  See the Domain_ spec.
 
-* `"Regions`" ``[list]`` List of multiple Region_ specs, each in its own sublist named uniquely by the user.
+* `"Regions`" ``[list]``
 
-* `"coordinator`" ``[coordinator-spec]`` See the Coordinator_ spec.
+  List of multiple Region_ specs, each in its own sublist named uniquely by the user.
 
-* `"visualization`" ``[visualization-spec]`` A Visualization_ spec for the main domain.
+* `"coordinator`" ``[coordinator-spec]``  See the Coordinator_ spec.
 
-* `"visualization XX`" ``[visualization-spec]`` Potentially more than one other Visualization_ specs, one for each domain `"XX`".  e.g. `"surface`"
+* `"visualization`" ``[visualization-spec]`` A Visualization_ spec for the main mesh/domain.
+
+* `"visualization XX`" ``[visualization-spec]``
+
+  Potentially more than one other Visualization_ specs, one for each domain `"XX`".  e.g. `"surface`"
 
 * `"checkpoint`" ``[checkpoint-spec]`` A Checkpoint_ spec.
 
 * `"observations`" ``[observation-spec]`` An Observation_ spec.
 
-* `"PKs`" ``[list]`` A list containing exactly one sublist, a PK_ spec with the top level PK.
+* `"PKs`" ``[list]``
+
+  A list containing exactly one sublist, a PK_ spec with the top level PK.
 
 * `"state`" ``[list]`` A State_ spec.
 
@@ -333,11 +339,17 @@ the simulation, including starting and ending times and restart options.
 
 * `"end cycle`" ``[int]``
 
-* `"restart from checkpoint file`" ``[string]`` requires a path to the checkpoint file.
+* `"restart from checkpoint file`" ``[string]``
 
-* `"wallclock end time`" [double] ?? This works, but this documentation needs updated.   
+  requires a path to the checkpoint file.
 
-* `"required times`" ``[time-control-spec]`` A TimeControl_ spec that sets a collection of times/cycles at which the simulation is guaranteed to hit exactly.  This is useful for situations such as where data is provided at a regular interval, and interpolation error related to that data is to be minimized.
+* `"wallclock end time`" [double]
+
+  ?? This works, but this documentation needs updated.   
+
+* `"required times`" ``[time-control-spec]``
+
+  A TimeControl_ spec that sets a collection of times/cycles at which the simulation is guaranteed to hit exactly.  This is useful for situations such as where data is provided at a regular interval, and interpolation error related to that data is to be minimized.
    
 Note that either `"end cycle`" or `"end time`" are required, and if
 both are present, the simulation will stop with whichever arrives
@@ -360,6 +372,7 @@ Example:
      </ParameterList>
    </ParameterList>
 
+   
 
 Visualization
 =============
@@ -373,22 +386,19 @@ Each list contains all parameters as in a TimeControl_ spec, and also:
 
 * `"file name base`" ``[string]`` **"visdump_data"**, **"visdump_surface_data"**
   
-* `"dynamic mesh`" ``[bool]`` **false** 
+* `"dynamic mesh`" ``[bool]`` **false**
 
-    Write mesh data for every visualization dump, this facilitates
-    visualizing deforming meshes.
+  Write mesh data for every visualization dump, this facilitates visualizing deforming meshes.
 
 **Currently not supported...**
 
-* `"regions`" ``[Array(string)]`` **empty array**  Write an array into the visualization file that can be used to
-    identify a region or regions. The first entry in the regions array
-    is marked with the value 1.0 in the array, the second with the
-    value 2.0, and so forth. The code ignores entries in the regions
-    array that are not valid regions that contain cells.
+* `"regions`" ``[Array(string)]`` **empty array**
 
-* `"write partition`" ``[bool]`` **false**  If this parameter is true, then write an array into the
-    visualization file that contains the rank number of the processor
-    that owns a mesh cell.
+  Write an array into the visualization file that can be used to identify a region or regions. The first entry in the regions array is marked with the value 1.0 in the array, the second with the value 2.0, and so forth. The code ignores entries in the regions array that are not valid regions that contain cells.
+
+* `"write partition`" ``[bool]`` **false**
+
+  If this parameter is true, then write an array into the visualization file that contains the rank number of the processor that owns a mesh cell.
 
 
 Example:
@@ -443,7 +453,7 @@ Example:
 
 In this example, checkpoint files are written when the cycle number is
 a multiple of 100, every 10 seconds for the first 100 seconds, and
-every 25 seconds thereafter, along with times 101, 303, and 422.
+every 25 seconds thereafter, along with times 101, 303, and 422.  Files will be written in the form: `"checkpoint00000.h5`".
 
 
  
@@ -461,8 +471,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
  * OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`", and all TimeControl_ spec options.
 
-  * `"Variables`" [Array(string)] a list of field quantities taken from the list of 
-      available field quantities:
+  * `"Variables`" [Array(string)] a list of field quantities taken from the list of available field quantities:
 
    * Volumetric water content [volume water / bulk volume]
    * Aqueous saturation [volume water / volume pore space]
@@ -513,6 +522,16 @@ PK
 The `"PKs`" ParameterList in Main_ is expected to have one and only one sublist, which corresponds to the PK at the top of the PK tree.
 This top level PK is also often an MPC (MPCs are PKs).
 
+All PKs have the following parameters in their spec:
+
+* `"PK type`" ``[string]``
+
+  The PK type is a special key-word which corresponds to a given class in the PK factory.  See available PK types listed below in the `Physical PKs`_ section.
+
+* `"PK name`" ``[string]`` **LIST-NAME**
+
+  This is automatically written as the `"name`" attribute of the containing PK sublist, and need not be included by the user.
+
 Example:
 
 .. code-block:: xml
@@ -533,7 +552,7 @@ Example:
     </ParameterList>
   </ParameterList>
 
-Each PK, which may be named arbitrarily, is one of the following pk-specs.
+Each PK, which may be named arbitrarily, is one of the following PK specs listed below.
 
 
 Base PKs
@@ -546,46 +565,33 @@ PKDefaultBase
 ^^^^^^^^^^^^^
 
 ``PKDefaultBase`` is not a true PK, but is a helper for providing some basic functionality shared by (nearly) all PKs.
-Therefore, (nearly) all PKs accept this input spec.
-
- * `"PK name`" ``[string]`` **LIST-NAME**
-
-   This is automatically written as the `"name`" attribute of the
-   containing PK sublist, and need not be included in the spec
+Therefore, (nearly) all PKs inherit from this base class.  No input required.
 
 PKPhysicalBase
 ^^^^^^^^^^^^^^
 
 ``PKPhysicalBase (v)-->`` PKDefaultBase_
 
-``PKPhysicalBase`` is a base class providing some functionality for
-PKs which are defined on a single mesh, and represent a single process
-model.  Typically all leaves of the PK tree will inherit from
-``PKPhysicalBase``.
+``PKPhysicalBase`` is a base class providing some functionality for PKs which are defined on a single mesh, and represent a single process model.
+Typically all leaves of the PK tree will inherit from ``PKPhysicalBase``.
 
- * `"domain`" ``[string]`` **""**, e.g. `"surface`".  
+* `"domain`" ``[string]`` **""**, e.g. `"surface`".
 
-   Domains and meshes are 1-to-1, and the empty string refers to the
-   main domain or mesh.  PKs defined on other domains must specify
-   which domain/mesh they refer to.
+  Domains and meshes are 1-to-1, and the empty string refers to the main domain or mesh.  PKs defined on other domains must specify which domain/mesh they refer to.
 
- * `"primary variable key`" ``[string]``
+* `"primary variable key`" ``[string]``
 
-   The primary variable associated with this PK, i.e. `"pressure`" or
-   `"temperature`"
+  The primary variable associated with this PK, i.e. `"pressure`", `"temperature`", `"surface_pressure`", etc.
 
- * `"initial condition`" ``[initial-condition-spec]``
+* `"initial condition`" ``[initial-condition-spec]``  See InitialConditions_.
 
-   See `Initial Conditions`_.  Additionally, the following parameters
-   are supported:
+  Additionally, the following parameters are supported:
 
-   - `"initialize faces from cell`" ``[bool]`` **false**
+ - `"initialize faces from cell`" ``[bool]`` **false**
 
-     Indicates that the primary variable field has both CELL and FACE
-     objects, and the FACE values are calculated as the average of the
-     neighboring cells.
+   Indicates that the primary variable field has both CELL and FACE objects, and the FACE values are calculated as the average of the neighboring cells.
 
-   - other, PK-specific additions
+ - other, PK-specific additions
 
 
 PKBDFBase
@@ -593,22 +599,25 @@ PKBDFBase
 
 ``PKBDFBase  (v)-->`` PKDefaultBase_
 
-``PKBDFBase`` is a base class from which PKs that want to use the ``BDF`` series of time integrators must derive.  It specifies both the ``BDFFnBase`` interface and implements some basic functionality for ``BDF`` PKs.  
+``PKBDFBase`` is a base class from which PKs that want to use the ``BDF`` series of implicit time integrators must derive.  It specifies both the ``BDFFnBase`` interface and implements some basic functionality for ``BDF`` PKs.  
 
- * `"initial time step`" ``[double]`` **1.**
+* `"initial time step`" ``[double]`` **1.**
 
-   The initial timestep size for the PK, this ensures that the initial
-   timestep will not be **larger** than this value.
+  The initial timestep size for the PK, this ensures that the initial timestep will not be **larger** than this value.
 
- * `"assemble preconditioner`" ``[bool]`` **true** 
+* `"assemble preconditioner`" ``[bool]`` **true** 
 
-   A flag for the PK to not assemble its preconditioner if it is not
-   needed by a controlling PK.  This is usually set by the MPC, not by
-   the user.
+  A flag for the PK to not assemble its preconditioner if it is not needed by a controlling PK.  This is usually set by the MPC, not by the user.
 
- * `"time integrator`" ``[time-integrator-spec]``
+In the top-most (in the PK tree) PK that is meant to be integrated implicitly, several additional specs are included.  For instance, in a strongly coupled flow and energy problem, these specs are included in the ``StrongMPC`` that couples the flow and energy PKs, not to the flow or energy PK itself.
+  
+* `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_.
 
-   The `time integrator`_.
+  Note that this is only provided in the top-most ``PKBDFBase`` in the tree -- this is often a StrongMPC_ or a class deriving from StrongMPC_, not a PKPhysicalBDFBase_.
+
+* `"preconditioner`" ``[preconditioner-spec]`` is a Preconditioner_.
+
+  This spec describes how to form the (approximate) inverse of the preconditioner.
 
 
 
@@ -621,12 +630,99 @@ PKPhysicalBDFBase
 
 A base class for all PKs that are all of the above.
 
- * `"absolute error tolerance`" [double] **1.0**, ``a_tol``
+* `"debug cells`" [Array(int)]
 
- * `"relative error tolerance`" [double] **1.0**  ``r_tol``
+  List of global cell IDs for which (if the verbosity is set high enough) more debugging info is printed to the log file.
+
+* `"absolute error tolerance`" [double] **1.0**
+
+  Absolute tolerance, :math:`a_tol` in the equation below.
+
+* `"relative error tolerance`" [double] **1.0**
+
+  Relative tolerance, :math:`r_tol` in the equation below.
 
 By default, the error norm used by solvers is given by:
 :math:`ENORM(u, du) = |du| / ( a_tol + r_tol * |u| )`
+
+
+Physical PKs
+------------
+
+Physical PKs are the physical capability implemented within ATS.
+
+Flow PKs
+^^^^^^^^
+
+
+Richards PK
+~~~~~~~~~~~
+
+Permafrost Flow PK
+~~~~~~~~~~~~~~~~~~
+
+Overland Flow, head primary variable PK
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Overland Flow, pressure primary variable, PK
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Snow Distribution PK
+~~~~~~~~~~~~~~~~~~~~
+
+
+
+Energy PKs
+^^^^^^^^^^
+
+
+Advection Diffusion PK
+~~~~~~~~~~~~~~~~~~~~~~
+
+Energy Base PK
+~~~~~~~~~~~~~~
+
+Two-Phase subsurface Energy PK
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Three-Phase subsurface Energy PK
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Three-Phase subsurface Energy PK
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Surface Ice Energy PK
+~~~~~~~~~~~~~~~~~~~~~
+
+
+
+Surface Energy Balance PKs
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+Surface Energy Balance / Snow -- Monolithic Version
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Surface Energy Balance -- Generic Version
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+Biogeochemistry
+^^^^^^^^^^^^^^^
+
+
+Biogeochemistry -- Monolithic Version
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+Deformation
+^^^^^^^^^^^
+
+
+Volumetric Deformation
+~~~~~~~~~~~~~~~~~~~~~~
 
 
 
@@ -635,17 +731,25 @@ MPCs
 
 MPCs couple other PKs, and are the non-leaf nodes in the PK tree.
 
-...
+WeakMPC
+^^^^^^^
 
+StrongMPC
+^^^^^^^^^
 
-Physical PKs
-------------
+Physical MPCs
+-------------
 
-Physical PKs are the physical capability implemented within ATS.
+Often coupling is an art, and requires special off-diagonal work.  Physical MPCs can derive from default MPCs to provide special work.
 
+Coupled Water MPC
+^^^^^^^^^^^^^^^^^
 
-...
+Subsurface MPC
+^^^^^^^^^^^^^^
 
+Permafrost MPC
+^^^^^^^^^^^^^^
 
 
 State
@@ -674,13 +778,27 @@ Field Evaluators
 
 Many field evaluators exist, but most derive from one of four base types.
 
+Field Evaluator Base Classes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-...
+PrimaryVariableEvaluator
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+SecondaryVariableEvaluator
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+SecondaryVariablesEvaluator
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+IndependentVariableEvaluator
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+While these provide base functionality, all of the physics are in the following 
 
 
 
-Initial Conditions
-------------------
+InitialConditions
+-----------------
 
 Initial condition specs are used in two places -- in the PK_ spec
 which describes the initial condition of primary variables, and in the
@@ -824,11 +942,11 @@ example:
 Time integrators, solvers, and other mathematical specs
 =======================================================
 
-Common specs for all solvers and time integrators.
+Common specs for all solvers and time integrators, used in PKs.
 
 
-Time Integrator
----------------
+TimeIntegrator
+--------------
 
 Linear Solver Spec
 ------------------
@@ -863,8 +981,8 @@ For each solver, a few parameters are used:
      </ParameterList>
 
 
-Preconditioner Spec
--------------------
+Preconditioner
+--------------
 
 These can be used by a process kernel lists to define a preconditioner.  The only common parameter required by all lists is the type:
 
@@ -919,7 +1037,7 @@ Internal parameters of Boomer AMG includes
 
 
 Trilinos ML
-^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^
 
 
 Internal parameters of Trilinos ML includes
@@ -948,7 +1066,7 @@ Internal parameters of Trilinos ML includes
 
 
 Block ILU
-^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^
 
 The internal parameters of the block ILU are as follows:
 
@@ -965,7 +1083,7 @@ The internal parameters of the block ILU are as follows:
 
 
 Indentity
-^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^
 
 The default, no PC applied.
 
@@ -977,8 +1095,8 @@ NonlinearSolver
 
 
 
-Common Specs
-============
+Other Common Specs
+==================
 
 TimeControl
 -----------

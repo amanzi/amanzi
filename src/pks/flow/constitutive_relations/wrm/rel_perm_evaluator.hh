@@ -12,6 +12,7 @@
 #include "wrm.hh"
 #include "wrm_partition.hh"
 #include "secondary_variable_field_evaluator.hh"
+#include "factory.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -57,6 +58,9 @@ class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
   
   double perm_scale_;
   double min_val_;
+
+ private:
+  static Utils::RegisteredFactory<FieldEvaluator,RelPermEvaluator> factory_;
 };
 
 } //namespace

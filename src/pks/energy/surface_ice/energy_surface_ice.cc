@@ -44,6 +44,7 @@ EnergySurfaceIce::EnergySurfaceIce(const Teuchos::RCP<Teuchos::ParameterList>& p
     is_air_conductivity_(false) {
   plist_->set("primary variable key", "surface_temperature");
   plist_->set("domain name", "surface");
+  plist_->set("conserved quantity key", "surface_energy");
 }
 
 

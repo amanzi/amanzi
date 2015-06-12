@@ -39,23 +39,34 @@ def get_keys_and_times(dat, time_range=None):
 
     
 
-def readATS(directory='.', base="visdump_data.h5", inds=None, time_range=None):
+def readATS(directory='.', base="visdump_data.h5", inds=None, time_range=None,
+            timeunits='yr'):
     """Main access point to data."""
     dat = h5py.File(os.path.join(directory,base),'r')
 
     if inds is None:
         keys, times = get_keys_and_times(dat, time_range)
-        return keys, times, dat
     else:
         keys = get_keys(dat, time_range)
         keys = [keys[ind] for ind in inds]
         times = get_times(dat, keys)
-        return keys, times, dat
+
+    times = np.array(times)
+    if timeunits == 'd':
+        times = np.array([t*365.25 for t in times])
+    elif timeunits == 's':
+        times = np.array([t*365.25*86400 for t in times])
+    elif timeunits != 'yr':
+        raise RuntimeError("Invalid time unit: %s"%timeunits)
+    return keys, times, dat
 
 def getSurfaceData(keys, dat, name):
     if not name.endswith(".cell.0"):
         name = name + ".cell.0"
-    return np.array([dat[name][key][0] for key in keys])
+    res = np.array([dat[name][key][0] for key in keys])
+    if len(res.shape) == 2 and res.shape[1] == 1:
+        res = res[:,0]
+    return res
 
 def subsetFile(directory=".", base="visdump_data.h5", outfile="my_visdump_data.h5", inds=None, interval=1, time_range=None, names=None):
     """Read one file, write another"""

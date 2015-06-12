@@ -73,7 +73,9 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
   Teuchos::RCP<Operators::BCs> bc_;
 
   // error criteria
-  double atol_, rtol_;
+  Key conserved_key_;
+  Key cell_vol_key_;
+  double atol_, rtol_, fluxtol_;
 };
 
 

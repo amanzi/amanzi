@@ -30,6 +30,9 @@ void OverlandHeadFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   // update the potential
   S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S.ptr(), name_);
 
+  // Patch up BCs for zero-gradient
+  FixBCsForOperator_(S_next_.ptr());
+
   // derive fluxes -- this gets done independently fo update as precon does
   // not calculate fluxes.
   Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData("pres_elev");
@@ -38,9 +41,6 @@ void OverlandHeadFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
         S->GetFieldData("surface_flux", name_);
     matrix_diff_->UpdateFlux(*pres_elev, *flux);
   }
-
-  // Patch up BCs for zero-gradient
-  FixBCsForOperator_(S_next_.ptr());
 
   // assemble the stiffness matrix
   matrix_diff_->ApplyBCs(true, true);
