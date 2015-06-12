@@ -46,9 +46,9 @@ class PK {
   // Set a time step for a PK.
   virtual void set_dt(double dt) = 0;
 
-  // Advance PK from time t_old to time t_new. Last parameter indicates
-  // drastic change of boundary and/or source terms that may need PK's
-  // attention. 
+  // Advance PK from time t_old to time t_new. True value of the last 
+  // parameter indicates drastic change of boundary and/or source terms
+  // that may need PK's attention. 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit) = 0;
 
   // Update any needed secondary variables at time t_new from a sucessful step

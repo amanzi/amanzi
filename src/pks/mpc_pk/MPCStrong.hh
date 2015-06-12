@@ -382,6 +382,7 @@ bool MPCStrong<PK_Base>::IsAdmissible(Teuchos::RCP<const TreeVector> u)
       return false;
     }
   }
+  return true;
 }
 
 

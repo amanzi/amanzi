@@ -43,7 +43,7 @@ EnergyTwoPhase_PK::EnergyTwoPhase_PK(
   // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners", true);
   ti_list_ = Teuchos::sublist(ep_list_, "time integrator");
-};
+}
 
 
 /* ******************************************************************
@@ -88,6 +88,11 @@ void EnergyTwoPhase_PK::Setup()
 ****************************************************************** */
 void EnergyTwoPhase_PK::Initialize()
 {
+  // times, initialization could be done on any non-zero interval.
+  double t_old = S_->time(); 
+  dt_ = ti_list_->get<double>("initial time step", 1.0);
+  double t_new = t_old + dt_;
+
   // create verbosity object
   Teuchos::ParameterList vlist;
   vlist.sublist("VerboseObject") = ep_list_->sublist("VerboseObject");
@@ -169,7 +174,8 @@ void EnergyTwoPhase_PK::Initialize()
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << std::endl << vo_->color("green")
-               << "Initalization of TI period is complete." << vo_->reset() << std::endl;
+               << "Initalization of TP is complete, T=" << t_old 
+               << " dT=" << dt_ << vo_->reset() << std::endl;
   }
 }
 

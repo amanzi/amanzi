@@ -29,7 +29,7 @@
             <Parameter name="steady nonlinear tolerance" type="double" value="1e-6"/>
             <Parameter name="steady max time step" type="double" value="3.16E11"  units="s"/>
             <Parameter name="steady max preconditioner lag iterations" type="int" value="1"/>
-            <Parameter name="steady time step reduction factor" type="double" value="0.8"/>
+            <Parameter name="steady time step reduction factor" type="double" value="0.5"/>
             <Parameter name="steady time step increase factor" type="double" value="1.25"/>
           </ParameterList>
           <ParameterList name="Transient Implicit Time Integration">
@@ -39,7 +39,7 @@
             <Parameter name="transient nonlinear tolerance" type="double" value="1e-6"/>
             <Parameter name="transient max time step" type="double" value="8.64E3"  units="s"/>
             <Parameter name="transient max preconditioner lag iterations" type="int" value="0"/>
-            <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
+            <Parameter name="transient time step reduction factor" type="double" value="0.5"/>
             <Parameter name="transient time step increase factor" type="double" value="1.25"/>
           </ParameterList>
         </ParameterList>
@@ -100,6 +100,7 @@
 			<!-- changed from residual water content of 0.045 to residual saturation of 0.104651 -->
           <Parameter name="m" type="double" value="0.6666667"/>
           <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+          <Parameter name="krel smoothing interval" type="double" value="0.0"/>
         </ParameterList>
         <Parameter name="Assigned Regions" type="Array(string)" value="{Region between Plane Surface 0 and Plane Surface 1}"/>
       </ParameterList>

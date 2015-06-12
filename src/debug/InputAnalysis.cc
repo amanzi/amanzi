@@ -117,7 +117,7 @@ void InputAnalysis::RegionAnalysis()
         for (int n = 0; n < nblock; n++) 
             volume += mesh_->cell_volume(block[n]);
       }
-       else if (mesh_->valid_set_name(regions[i], AmanziMesh::FACE)) {
+      else if (mesh_->valid_set_name(regions[i], AmanziMesh::FACE)) {
         mesh_->get_set_entities(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED, &block);
         nblock = block.size();
         type = "faces";

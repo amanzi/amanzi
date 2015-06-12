@@ -1183,6 +1183,99 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
     list.sublist("Restart") = restartPL;
   }
 
+  // Translate to "Time Period Control"
+  
+  Teuchos::Array<double> start_array;
+  Teuchos::Array<double> init_array;
+  Teuchos::Array<double> max_array;
+  
+  // loop over non-restart entries to get list of time step mins/maxs
+  for (int idx = 0; idx < start_times.length(); idx++) {
+    for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
+      if (it->first != "restart") {
+        double time = get_time_value(it->first, *def_list);
+        if (time == start_times[idx]) {
+          // look for init_dt in current execution control
+          if ( ecsPL.sublist(it->first).isParameter("init_dt") ) {
+            init_array.append(get_time_value(ecsPL.sublist(it->first).get<std::string>("init_dt"), *def_list));
+          }
+          // if not there, look for default exectution control
+          else if ( defPL.isParameter("init_dt") ){
+            init_array.append(get_time_value(defPL.get<std::string>("init_dt"), *def_list));
+          }
+          // deremine mode and get defaults from InputParserIS_Def.hh
+          else {
+            // look for mode in current execution control
+            if ( ecsPL.sublist(it->first).isParameter("mode") ) {
+              if (ecsPL.sublist(it->first).get<std::string>("mode") == "steady") {
+                init_array.append(ST_MIN_TS);
+              }
+              else {
+                init_array.append(TR_MIN_TS);
+              }
+            }
+            // else look in default execution contorl
+            else if (defPL.isParameter("mode") ){
+              if (defPL.get<std::string>("mode") == "steady") {
+                init_array.append(ST_MIN_TS);
+              }
+              else {
+                init_array.append(TR_MIN_TS);
+              }
+            }
+            // finally assume min of steady and transient (shouldn't get to here)
+            else {
+              init_array.append(ST_MIN_TS);
+            }
+          }
+          // repeat for max_dt
+          if ( ecsPL.sublist(it->first).isParameter("max_dt") ) {
+            max_array.append(get_time_value(ecsPL.sublist(it->first).get<std::string>("max_dt"), *def_list));
+          }
+          // if not there, look for default exectution control
+          else if ( defPL.isParameter("max_dt") ){
+            max_array.append(get_time_value(defPL.get<std::string>("max_dt"), *def_list));
+          }
+          // deremine mode and get defaults from InputParserIS_Def.hh
+          else {
+            // look for mode in current execution control
+            if ( ecsPL.sublist(it->first).isParameter("mode") ) {
+              if (ecsPL.sublist(it->first).get<std::string>("mode") == "steady") {
+                max_array.append(ST_MAX_TS);
+              }
+              else {
+                max_array.append(TR_MAX_TS);
+              }
+            }
+            // else look in default execution contorl
+            else if (defPL.isParameter("mode") ){
+              if (defPL.get<std::string>("mode") == "steady") {
+                max_array.append(ST_MAX_TS);
+              }
+              else {
+                max_array.append(TR_MAX_TS);
+              }
+            }
+            // finally assume min of steady and transient (shouldn't get to here)
+            else {
+              max_array.append(ST_MAX_TS);
+            }
+          }
+        }
+      }
+    }
+  }
+  // add to "Time Period Control" in order
+  list.sublist("Time Period Control").set<Teuchos::Array<double> >("Start Times",start_times);
+  list.sublist("Time Period Control").set<Teuchos::Array<double> >("Initial Time Step",init_array);
+  list.sublist("Time Period Control").set<Teuchos::Array<double> >("Maximum Time Step",max_array);
+  
+  // add default entry, if it exists
+  if (defPL.isParameter("init_dt")) {
+    list.sublist("Time Period Control").set<double>("Default Initial Time Step",get_time_value(defPL.get<std::string>("init_dt"), *def_list));
+  }
+  
+  
   // Steady case
   if (hasSteady && !hasTrans) {
     if (voI_->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -1584,8 +1677,9 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 	      } 
 	      if (ecsPL.sublist(it->first).isParameter("method")) {
                 value = ecsPL.sublist(it->first).get<std::string>("method");
-	        if (strcmp(value.c_str(),"true")==0)
+                if (strcmp(value.c_str(),"true")==0) {
                   fpkPL.set<bool>("Use Picard","true");
+                }
                 /* EIB - moved 'Use Picard' as 1.2.2 update */
 	          //initPL.set<bool>("Use Picard",true);
       	      }
@@ -1759,7 +1853,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                 DOMNode* currentNode = children->item(k) ;
                 if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
                   std::string elemName(std::string(XMLString::transcode(currentNode->getNodeName())));
-                  if (elemName,"discretization_method") {
+                  if (elemName == "discretization_method") {
                     std::string textValue(std::string(XMLString::transcode(currentNode->getTextContent())));
                     std::string discr_method;
                     if (textValue == "fv-default") {
@@ -1794,7 +1888,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     fpkPL.set<std::string>("Discretization Method",discr_method.c_str());
                     XMLString::release(&textContent);
                   }
-                  else if (elemName,"rel_perm_method") {
+                  else if (elemName == "rel_perm_method") {
                     std::string textValue(std::string(XMLString::transcode(currentNode->getTextContent())));
                     std::string rel_perm_method("upwind-darcy_velocity");
                     if (textValue == "upwind-gravity") {
@@ -1817,12 +1911,12 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     XMLString::release(&textContent);
 
                   }
-                  else if (elemName,"atmospheric_pressure") {
+                  else if (elemName == "atmospheric_pressure") {
                     textContent = XMLString::transcode(currentNode->getTextContent());
                     fpkPL.set<double>("atmospheric pressure",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
-                  else if (elemName,"preconditioning_strategy") {
+                  else if (elemName == "preconditioning_strategy") {
                     textContent = XMLString::transcode(currentNode->getTextContent());
                     std::string textValue(std::string(textContent));
                     std::string op("linearized_operator");
@@ -1834,6 +1928,12 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     }
                     fpkPL.set<std::string>("Preconditioning Strategy",op.c_str());
                     XMLString::release(&textContent);
+                  }
+                  else if (elemName != "comments") {
+                    // warn about unrecognized element
+                    std::stringstream elem_name;
+                    elem_name << nodeName <<  "->"  << elemName;
+                    throw_warning_skip(elem_name.str());
                   }
                 }
               }
@@ -1873,6 +1973,12 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     tpkPL.set<double>("CFL",atof(textContent));
                     XMLString::release(&textContent);
                   }
+                  else if (elemName != "comments") {
+                    // warn about unrecognized element
+                    std::stringstream elem_name;
+                    elem_name << nodeName <<  "->"  << elemName;
+                    throw_warning_skip(elem_name.str());
+                  }
                 }
               }
             }
@@ -1906,6 +2012,21 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                 else if (strcmp(tagname,"nonlinear_tolerance")==0) {
                   textContent = XMLString::transcode(currentNode->getTextContent());
                   ssPL.set<double>("steady nonlinear tolerance",get_double_constant(textContent,*def_list));
+                  XMLString::release(&textContent);
+                }
+                else if (strcmp(tagname,"nonlinear_iteration_divergence_factor")==0) {
+                  textContent = XMLString::transcode(currentNode->getTextContent());
+                  ssPL.set<double>("steady nonlinear iteration divergence factor",get_double_constant(textContent,*def_list));
+                  XMLString::release(&textContent);
+                }
+                else if (strcmp(tagname,"nonlinear_iteration_damping_factor")==0) {
+                  textContent = XMLString::transcode(currentNode->getTextContent());
+                  ssPL.set<double>("steady nonlinear iteration damping factor",get_double_constant(textContent,*def_list));
+                  XMLString::release(&textContent);
+                }
+                else if (strcmp(tagname,"max_divergent_iterations")==0) {
+                  textContent = XMLString::transcode(currentNode->getTextContent());
+                  ssPL.set<int>("steady max divergent iterations",get_int_constant(textContent,*def_list));
                   XMLString::release(&textContent);
                 }
                 else if (strcmp(tagname,"error_control_options")==0) { //default = 'pressure' options = 'pressure','residual'
@@ -1943,6 +2064,24 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   ssPL.set<bool>("steady initialize with darcy",iwd);
                   XMLString::release(&textContent);
                 }
+                else if (strcmp(tagname,"preconditioner")==0) {
+                  textContent = XMLString::transcode(currentNode->getTextContent());
+                  
+                  if (strcmp(textContent,"hypre_amg")==0) {
+                    ssPL.set<std::string>("steady preconditioner","Hypre AMG");
+                  }
+                  else if (strcmp(textContent,"trilinos_ml")==0) {
+                    ssPL.set<std::string>("steady preconditioner","Trilinos ML");
+                  }
+                  else if (strcmp(textContent,"block_ilu")==0) {
+                    ssPL.set<std::string>("steady preconditioner","Block ILU");
+                  }
+                  else {
+                    throw_error_illformed("steady preconditioner", "value", "preconditioner", "trilinos_ml, hypre_amg, block_ilu");
+                  }
+                  
+                  XMLString::release(&textContent);
+                }
                 else if (strcmp(tagname,"unstr_pseudo_time_integrator")==0) {
                   Teuchos::ParameterList ptiPL;
                   DOMNodeList* kids = currentNode->getChildNodes();
@@ -1967,6 +2106,9 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                         }
                         else if (strcmp(textContent,"block_ilu")==0) {
                           ptiPL.set<std::string>("pseudo time integrator preconditioner","Block ILU");
+                        }
+                        else {
+                          throw_error_illformed("pseudo time preconditioner", "value", "preconditioner", "trilinos_ml, hypre_amg, block_ilu");
                         }
                         XMLString::release(&textContent);
                       }
@@ -2014,6 +2156,12 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   }
                   //ssPL.sublist("Steady-State Pseudo-Time Implicit Solver") = ptiPL;
                   list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Pseudo-Time Implicit Solver") = ptiPL;
+                }
+                else if (strcmp(tagname,"comments")!=0) {
+                  // warn about unrecognized element
+                  std::stringstream elem_name;
+                  elem_name << nodeName <<  "->"  << tagname;
+                  throw_warning_skip(elem_name.str());
                 }
               }
 	    }
@@ -2109,155 +2257,71 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                 XMLString::release(&textContent);
               }
 	    }
-
-	    // grab preconditioner node and loop through it's childern to get information
-            tmpList = tcElement->getElementsByTagName(XMLString::transcode("preconditioner"));
-	    if (tmpList->getLength() > 0) {
-	      DOMNode* preconNode = tmpList->item(0);
-	      nodeAttr = preconNode->getAttributes()->getNamedItem(XMLString::transcode("name"));
-	      if (nodeAttr) {
-                textContent = XMLString::transcode(nodeAttr->getNodeValue());
-	      }
-              else {
-                throw_error_missattr("preconditioner", "attribute", "name", "preconditioner", "trilinos_ml, hypre_amg, block_ilu");
-	      }
-	      if (strcmp(textContent,"trilinos_ml")==0) {
-                tcPL.set<std::string>("transient preconditioner","Trilinos ML");
-                DOMNodeList* children = preconNode->getChildNodes();
-	        Teuchos::ParameterList preconPL;
-                for (int k=0; k<children->getLength(); k++) {
-                  DOMNode* currentNode = children->item(k) ;
-                  if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
-    	            char* tagname = XMLString::transcode(currentNode->getNodeName());
-                    if (strcmp(tagname,"trilinos_smoother_type")==0) {
-                      char* textContent2 = XMLString::transcode(currentNode->getTextContent());
-		      if (strcmp(textContent2,"jacobi")==0) {
-                        preconPL.set<std::string>("ML smoother type","Jacobi");
-		      }
-                      else if (strcmp(textContent2,"gauss_seidel")==0) {
-                        preconPL.set<std::string>("ML smoother type","Gauss-Seidel");
-		      }
-                      else if (strcmp(textContent2,"ilu")==0) {
-                        preconPL.set<std::string>("ML smoother type","ILU");
-		     }
-                      XMLString::release(&textContent2);
-		    }
-                    else if (strcmp(tagname,"trilinos_threshold")==0) {
-                      char* textContent2 = XMLString::transcode(currentNode->getTextContent());
-                      preconPL.set<double>("ML aggregation threshold",get_double_constant(textContent2,*def_list));
-                      XMLString::release(&textContent2);
-		    }
-                    else if (strcmp(tagname,"trilinos_smoother_sweeps")==0) {
-                      char* textContent2 = XMLString::transcode(currentNode->getTextContent());
-                      preconPL.set<int>("ML smoother sweeps",get_int_constant(textContent2,*def_list));
-                      XMLString::release(&textContent2);
-		    }
-                    else if (strcmp(tagname,"trilinos_cycle_applications")==0) {
-                      char* textContent2 = XMLString::transcode(currentNode->getTextContent());
-                      preconPL.set<int>("ML cycle applications",get_int_constant(textContent2,*def_list));
-                      XMLString::release(&textContent2);
-		    }
-		  }
-	        }
-	        list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Preconditioners").sublist("Trilinos ML") = preconPL;
-              }
-              else if (strcmp(textContent,"hypre_amg")==0) {
-                tcPL.set<std::string>("transient preconditioner","Hypre AMG");
-                DOMNodeList* children = preconNode->getChildNodes();
-	        Teuchos::ParameterList preconPL;
-                for (int k=0; k<children->getLength(); k++) {
-                  DOMNode* currentNode = children->item(k) ;
-                  if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
-    	            char* tagname = XMLString::transcode(currentNode->getNodeName());
-                    if (strcmp(tagname,"hypre_cycle_applications")==0) {
-                      char* textContent2 = XMLString::transcode(currentNode->getTextContent());
-                      preconPL.set<int>("Hypre AMG cycle applications",get_int_constant(textContent2,*def_list));
-                      XMLString::release(&textContent2);
-		    }
-                    else if (strcmp(tagname,"hypre_smoother_sweeps")==0) {
-                      char* textContent2 = XMLString::transcode(currentNode->getTextContent());
-                      preconPL.set<int>("Hypre AMG smoother sweeps",get_int_constant(textContent2,*def_list));
-                      XMLString::release(&textContent2);
-		    }
-                    else if (strcmp(tagname,"hypre_tolerance")==0) {
-                      char* textContent2 = XMLString::transcode(currentNode->getTextContent());
-                      preconPL.set<double>("Hypre AMG tolerance",get_double_constant(textContent2,*def_list));
-                      XMLString::release(&textContent2);
-		    } else if (strcmp(tagname,"hypre_strong_threshold")==0) {
-                      char* textContent2 = XMLString::transcode(currentNode->getTextContent());
-                      preconPL.set<double>("Hypre AMG strong threshold",get_double_constant(textContent2,*def_list));
-                      XMLString::release(&textContent2);
-		    }
-		  }
-	        }
-	        list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Preconditioners").sublist("Hypre AMG") = preconPL;
-	      }
-              else if (strcmp(textContent,"block_ilu")==0) {
-                tcPL.set<std::string>("transient preconditioner","Block ILU");
-                DOMNodeList* children = preconNode->getChildNodes();
-                Teuchos::ParameterList preconPL;
-                for (int k=0; k<children->getLength(); k++) {
-                  DOMNode* currentNode = children->item(k) ;
-                  if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
-    	            char* tagname = XMLString::transcode(currentNode->getNodeName());
-                    if (strcmp(tagname,"ilu_overlap")==0) {
-                      char* textContent2 = XMLString::transcode(currentNode->getTextContent());
-                      preconPL.set<int>("Block ILU overlap",get_int_constant(textContent2,*def_list));
-                      XMLString::release(&textContent2);
-                    }
-                    else if (strcmp(tagname,"ilu_relax")==0) {
-                      char* textContent2 = XMLString::transcode(currentNode->getTextContent());
-                      preconPL.set<double>("Block ILU relax value",get_double_constant(textContent2,*def_list));
-                      XMLString::release(&textContent2);
-                    }
-                    else if (strcmp(tagname,"ilu_rel_threshold")==0) {
-                      char* textContent2 = XMLString::transcode(currentNode->getTextContent());
-                      preconPL.set<double>("Block ILU relative threshold",get_double_constant(textContent2,*def_list));
-                      XMLString::release(&textContent2);
-                    }
-                    else if (strcmp(tagname,"ilu_abs_threshold")==0) {
-                      char* textContent2 = XMLString::transcode(currentNode->getTextContent());
-                      preconPL.set<double>("Block ILU absolute threshold",get_double_constant(textContent2,*def_list));
-                      XMLString::release(&textContent2);
-                    }
-                    else if (strcmp(tagname,"ilu_level_of_fill")==0) {
-                      char* textContent2 = XMLString::transcode(currentNode->getTextContent());
-                      preconPL.set<int>("Block ILU level of fill",get_int_constant(textContent2,*def_list));
-                      XMLString::release(&textContent2);
-                    }
+            
+            DOMNodeList* children = tmpNode->getChildNodes();
+            for (int k=0; k<children->getLength(); k++) {
+              DOMNode* currentNode = children->item(k) ;
+              if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
+                char* tagname = XMLString::transcode(currentNode->getNodeName());
+                
+                //if (strcmp(tagname,"bdf1_integration_method")==0) {
+                //}
+                if (strcmp(tagname,"preconditioner")==0) {
+                  std::string value(trim_string(XMLString::transcode(currentNode->getTextContent())));
+                  if (value == "trilinos_ml") {
+                    tcPL.set<std::string>("transient preconditioner","Trilinos ML");
                   }
-	        }
-	        list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Preconditioners").sublist("Block ILU") = preconPL;
- 
-	      }
-              XMLString::release(&textContent);
-	    
+                  else if (value == "hypre_amg") {
+                    tcPL.set<std::string>("transient preconditioner","Hypre AMG");
+                  }
+                  else if (value == "block_ilu") {
+                    tcPL.set<std::string>("transient preconditioner","Block ILU");
+                  }
+                  else {
+                    throw_error_illformed("transient preconditioner", "value", "preconditioner", "trilinos_ml, hypre_amg, block_ilu");
+                  }
+                }
+                else if (strcmp(tagname,"initialize_with_darcy")==0) {
+                  std::string value(trim_string(XMLString::transcode(currentNode->getTextContent())));
+                  bool iwd(false);
+                  value == "true" ? iwd = true : iwd = false;
+                  if (!iwd)
+                    value == "1" ? iwd = true : iwd = false;
+                  tcPL.set<bool>("transient initialize with darcy",iwd);
+                  XMLString::release(&textContent);
+                }
+                else if (strcmp(tagname,"bdf1_integration_method")!=0) {
+                  // warn about unrecognized element
+                  std::stringstream elem_name;
+                  elem_name << nodeName <<  "->"  << tagname;
+                  throw_warning_skip(elem_name.str());
+                }
+              }
             }
-            //list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Transient Implicit Time Integration") = tcPL;
           }
             else if (nodeName == "unstr_nonlinear_solver") {
-            Teuchos::ParameterList nlPL;
-            attrMap = tmpNode->getAttributes();
-            nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-            if (nodeAttr) {
-              textContent = XMLString::transcode(nodeAttr->getNodeValue());
-            }
-            else {
-              throw_error_missattr("numerical_controls","attribute","name","nonlinear_solver");
-            }
+              Teuchos::ParameterList nlPL;
+              attrMap = tmpNode->getAttributes();
+              nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
+              if (nodeAttr) {
+                textContent = XMLString::transcode(nodeAttr->getNodeValue());
+              }
+              else {
+                throw_error_missattr("numerical_controls","attribute","name","nonlinear_solver");
+              }
 
-            if (strcmp(textContent,"nka")==0) {
-              nlPL.set<std::string>("Nonlinear Solver Type","NKA");
+              if (strcmp(textContent,"nka")==0) {
+                nlPL.set<std::string>("Nonlinear Solver Type","NKA");
+              }
+              else if (strcmp(textContent,"newton")==0) {
+                nlPL.set<std::string>("Nonlinear Solver Type","Newton");
+              }
+              else if (strcmp(textContent,"inexact newton")==0) {
+                nlPL.set<std::string>("Nonlinear Solver Type","inexact Newton");
+              }
+              XMLString::release(&textContent);
+              list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlPL;
             }
-            else if (strcmp(textContent,"newton")==0) {
-              nlPL.set<std::string>("Nonlinear Solver Type","Newton");
-            }
-            else if (strcmp(textContent,"inexact newton")==0) {
-              nlPL.set<std::string>("Nonlinear Solver Type","inexact Newton");
-            }
-            XMLString::release(&textContent);
-            list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlPL;
-          }
             else if (nodeName == "unstr_linear_solver") {
               Teuchos::ParameterList lsPL;
               Teuchos::ParameterList pcPL;
@@ -2269,9 +2333,13 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                 if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
                   char* tagname = XMLString::transcode(currentNode->getNodeName());
                   if (strcmp(tagname,"method")==0) {
-                    textContent = XMLString::transcode(currentNode->getTextContent());
-                    lsPL.set<std::string>("linear solver preconditioner",trim_string(textContent));
-                    XMLString::release(&textContent);
+                    std::string value(trim_string(XMLString::transcode(currentNode->getTextContent())));
+                    if (value.length() > 0) {
+                    lsPL.set<std::string>("linear solver iterative method",value);
+                    }
+                    else { // set default value
+                      lsPL.set<std::string>("linear solver iterative method","gmres");
+                    }
                   }
                   else if (strcmp(tagname,"max_iterations")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
@@ -2285,139 +2353,39 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   }
                   else if (strcmp(tagname,"cfl")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    lsPL.set<double>("CFL",get_double_constant(textContent,*def_list));
+                    tpkPL.set<double>("CFL",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"preconditioner")==0) {
                     // which precondition is stored in attribute, options are: trilinos_ml, hypre_amg, block_ilu
-                    attrMap = currentNode->getAttributes();
-                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-                    if (nodeAttr) {
-                      textContent = XMLString::transcode(nodeAttr->getNodeValue());
-                    }
-                    else {
-                      throw_error_missattr("linear_solver", "attribute", "name", "preconditioner", "trilinos_ml, hypre_amg, block_ilu");
-                    }
-                    usePCPL = true;
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    //usePCPL = true;
+                    
                     if (strcmp(textContent,"hypre_amg")==0) {
-                      // TODO:: EIB - this is hacky, really need to check if list exist, if it doesn't need to flag
-                      //              so this doesn't get overwritten later when the list actually gets created.
-                      list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Implicit Time Integration").set<std::string>("steady preconditioner","Hypre AMG");
-                      // loop through children and deal with them
-                      DOMNodeList* preconChildren= currentNode->getChildNodes();
-                      for (int l=0; l<preconChildren->getLength();l++) {
-                        DOMNode* currentKid = preconChildren->item(l) ;
-                        if (DOMNode::ELEMENT_NODE == currentKid->getNodeType()) {
-                          char* kidname = XMLString::transcode(currentKid->getNodeName());
-                          if (strcmp(kidname,"hypre_cycle_applications")==0) {
-                            elemContent = XMLString::transcode(currentKid->getTextContent());
-                            pcPL.sublist("Hypre AMG").set<int>("Hypre AMG cycle applications",get_int_constant(elemContent,*def_list));
-                            XMLString::release(&elemContent);
-                          }
-                          else if (strcmp(kidname,"hypre_smoother_sweeps")==0) {
-                            elemContent = XMLString::transcode(currentKid->getTextContent());
-                            pcPL.sublist("Hypre AMG").set<int>("Hypre AMG smoother sweeps",get_int_constant(elemContent,*def_list));
-                            XMLString::release(&elemContent);
-                          }
-                          else if (strcmp(kidname,"hypre_tolerance")==0) {
-                            elemContent = XMLString::transcode(currentKid->getTextContent());
-                            pcPL.sublist("Hypre AMG").set<double>("Hypre AMG tolerance",get_double_constant(elemContent,*def_list));
-                            XMLString::release(&elemContent);
-                          }
-                          else if (strcmp(kidname,"hypre_strong_threshold")==0) {
-                            elemContent = XMLString::transcode(currentKid->getTextContent());
-                            pcPL.sublist("Hypre AMG").set<double>("Hypre AMG strong threshold",get_double_constant(elemContent,*def_list));
-                            XMLString::release(&elemContent);
-                          }
-                        }
-                      }
+                      lsPL.set<std::string>("linear solver preconditioner","Hypre AMG");
                     }
                     else if (strcmp(textContent,"trilinos_ml")==0) {
-                      // TODO:: EIB - this is hacky, really need to check if list exist, if it doesn't need to flag
-                      //              so this doesn't get overwritten later when the list actually gets created.
-                      list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Implicit Time Integration").set<std::string>("steady preconditioner","Trilinos ML");
-                      // loop through children and deal with them
-                      DOMNodeList* preconChildren= currentNode->getChildNodes();
-                      for (int l=0; l<preconChildren->getLength();l++) {
-                        DOMNode* currentKid = preconChildren->item(l) ;
-                        if (DOMNode::ELEMENT_NODE == currentKid->getNodeType()) {
-                          char* kidname = XMLString::transcode(currentKid->getNodeName());
-                          if (strcmp(kidname,"trilinos_smoother_type")==0) {
-                            elemContent = XMLString::transcode(currentKid->getTextContent());
-                            if (strcmp(elemContent,"jacobi")==0) {
-                              pcPL.sublist("Trilinos ML").set<std::string>("ML smoother type","Jacobi");
-                            }
-                            else if (strcmp(elemContent,"gauss_seidel")==0) {
-                              pcPL.sublist("Trilinos ML").set<std::string>("ML smoother type","Gauss-Seidel");
-                            }
-                            else if (strcmp(elemContent,"ilu")==0) {
-                              pcPL.sublist("Trilinos ML").set<std::string>("ML smoother type","ILU");
-                            }
-                            XMLString::release(&elemContent);
-                          }
-                          else if (strcmp(kidname,"trilinos_threshold")==0) {
-                            elemContent = XMLString::transcode(currentKid->getTextContent());
-                            pcPL.sublist("Trilinos ML").set<double>("ML aggregation threshold",get_double_constant(elemContent,*def_list));
-                            XMLString::release(&elemContent);
-                          }
-                          else if (strcmp(kidname,"trilinos_smoother_sweeps")==0) {
-                            elemContent = XMLString::transcode(currentKid->getTextContent());
-                            pcPL.sublist("Trilinos ML").set<int>("ML smoother sweeps",get_int_constant(elemContent,*def_list));
-                            XMLString::release(&elemContent);
-                          }
-                          else if (strcmp(kidname,"trilinos_cycle_applications")==0) {
-                            elemContent = XMLString::transcode(currentKid->getTextContent());
-                            pcPL.sublist("Trilinos ML").set<int>("ML cycle applications",get_int_constant(elemContent,*def_list));
-                            XMLString::release(&elemContent);
-                          }
-                        }
-                      }
+                      lsPL.set<std::string>("linear solver preconditioner","Trilinos ML");
 		    }
                     else if (strcmp(textContent,"block_ilu")==0) {
-                      // TODO:: EIB - this is hacky, really need to check if list exist, if it doesn't need to flag
-                      //              so this doesn't get overwritten later when the list actually gets created.
-                      list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Implicit Time Integration").set<std::string>("steady preconditioner","Block ILU");
-                      // loop through children and deal with them
-                      DOMNodeList* preconChildren= currentNode->getChildNodes();
-                      for (int l=0; l<preconChildren->getLength();l++) {
-                        DOMNode* currentKid = preconChildren->item(l) ;
-                        if (DOMNode::ELEMENT_NODE == currentKid->getNodeType()) {
-                          char* kidname = XMLString::transcode(currentKid->getNodeName());
-                          if (strcmp(kidname,"ilu_overlap")==0) {
-                            elemContent = XMLString::transcode(currentKid->getTextContent());
-                            pcPL.sublist("Block ILU").set<int>("Block ILU overlap",get_int_constant(elemContent,*def_list));
-                            XMLString::release(&elemContent);
-                          }
-                          else if (strcmp(kidname,"ilu_relax")==0) {
-                            elemContent = XMLString::transcode(currentKid->getTextContent());
-                            pcPL.sublist("Block ILU").set<double>("Block ILU relax value",get_double_constant(elemContent,*def_list));
-                            XMLString::release(&elemContent);
-                          }
-                          else if (strcmp(kidname,"ilu_rel_threshold")==0) {
-                            elemContent = XMLString::transcode(currentKid->getTextContent());
-                            pcPL.sublist("Block ILU").set<double>("Block ILU relative threshold",get_double_constant(elemContent,*def_list));
-                            XMLString::release(&elemContent);
-                          }
-                          else if (strcmp(kidname,"ilu_abs_threshold")==0) {
-                            elemContent = XMLString::transcode(currentKid->getTextContent());
-                            pcPL.sublist("Block ILU").set<double>("Block ILU absolute threshold",get_double_constant(elemContent,*def_list));
-                            XMLString::release(&elemContent);
-                          }
-                          else if (strcmp(kidname,"ilu_level_of_fill")==0) {
-                            elemContent = XMLString::transcode(currentKid->getTextContent());
-                            pcPL.sublist("Block ILU").set<int>("Block ILU level of fill",get_int_constant(elemContent,*def_list));
-                            XMLString::release(&elemContent);
-                          }
-                        }
-                      }
-		    }
+                      lsPL.set<std::string>("linear solver preconditioner","Block ILU");
+                    }
+                    else {
+                      throw_error_illformed("linear solver preconditioner", "value", "preconditioner", "trilinos_ml, hypre_amg, block_ilu");
+                    }
                     XMLString::release(&textContent);
+                  }
+                  else if (strcmp(tagname,"comments")!=0) {
+                    // warn about unrecognized element
+                    std::stringstream elem_name;
+                    elem_name << nodeName <<  "->"  << tagname;
+                    throw_warning_skip(elem_name.str());
                   }
                 }
               }
               list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Linear Solver") = lsPL;
-              if (usePCPL)
-                list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Preconditioners") = pcPL;
+              //if (usePCPL)
+              //  list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Preconditioners") = pcPL;
             }
             else if (nodeName == "nonlinear_solver") {
             // EIB: creating sub for section that doesn't actually exist yet in the New Schema, but does in the Input Spec
@@ -2436,6 +2404,117 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 	      }
             list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlsPL;
           }
+            else if (nodeName == "unstr_preconditioners") {
+              // loop over known preconditioner types
+              DOMNodeList* children = tmpNode->getChildNodes();
+              for (int k=0; k<children->getLength(); k++) {
+                DOMNode* currentNode = children->item(k) ;
+                if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
+                  std::string elemName(std::string(XMLString::transcode(currentNode->getNodeName())));
+                  if (elemName == "hypre_amg") {
+                    // loop over children to get options
+                    Teuchos::ParameterList hypre;
+                    DOMNodeList* gkids = currentNode->getChildNodes();
+                    for (int l=0; l<gkids->getLength(); l++) {
+                      DOMNode* currentGKid = gkids->item(l) ;
+                      if (DOMNode::ELEMENT_NODE == currentGKid->getNodeType()) {
+                        std::string gkidName(std::string(XMLString::transcode(currentGKid->getNodeName())));
+                        if (gkidName == "hypre_cycle_applications") {
+                          hypre.set<int>("Hypre AMG cycle applications",
+                                         get_int_constant(XMLString::transcode(currentGKid->getTextContent()),*def_list));
+                        }
+                        else if (gkidName == "hypre_smoother_sweeps") {
+                          hypre.set<int>("Hypre AMG smoother sweeps",
+                                         get_int_constant(XMLString::transcode(currentGKid->getTextContent()),*def_list));
+                        }
+                        else if (gkidName == "hypre_tolerance") {
+                          hypre.set<double>("Hypre AMG tolerance",
+                                            get_double_constant(XMLString::transcode(currentGKid->getTextContent()),*def_list));
+                        }
+                        else if (gkidName == "hypre_strong_threshold") {
+                          hypre.set<double>("Hypre AMG strong threshold",
+                                            get_double_constant(XMLString::transcode(currentGKid->getTextContent()),*def_list));
+                        }
+                      }
+                    }
+                    list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Preconditioners").sublist("Hypre AMG") = hypre;
+                  }
+                  else if (elemName == "trilinos_ml") {
+                    // loop over children to get options
+                    Teuchos::ParameterList trilinos;
+                    DOMNodeList* gkids = currentNode->getChildNodes();
+                    for (int l=0; l<gkids->getLength(); l++) {
+                      DOMNode* currentGKid = gkids->item(l) ;
+                      if (DOMNode::ELEMENT_NODE == currentGKid->getNodeType()) {
+                        std::string gkidName(std::string(XMLString::transcode(currentGKid->getNodeName())));
+                        if (gkidName == "trilinos_smoother_type") {
+                          std::string stype(XMLString::transcode(currentNode->getTextContent()));
+                          if (stype == "jacobi") {
+                            trilinos.set<std::string>("ML smoother type","Jacobi");
+                          }
+                          else if (stype == "gauss_seidel") {
+                            trilinos.set<std::string>("ML smoother type","Gauss-Seidel");
+                          }
+                          else if (stype == "ilu") {
+                            trilinos.set<std::string>("ML smoother type","ILU");
+                          }
+                        
+                        }
+                        else if (gkidName == "trilinos_threshold") {
+                          trilinos.set<double>("ML aggregation threshold",
+                                         get_double_constant(XMLString::transcode(currentGKid->getTextContent()),*def_list));
+                        }
+                        else if (gkidName == "trilinos_smoother_sweeps") {
+                          trilinos.set<int>("ML smoother sweeps",
+                                            get_int_constant(XMLString::transcode(currentGKid->getTextContent()),*def_list));
+                        }
+                        else if (gkidName == "trilinos_cycle_applications") {
+                          trilinos.set<int>("ML cycle applications",
+                                            get_int_constant(XMLString::transcode(currentGKid->getTextContent()),*def_list));
+                        }
+                      }
+                    }
+                    list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Preconditioners").sublist("Trilinos ML") = trilinos;
+                  }
+                  else if (elemName == "block_ilu") {
+                    // loop over children to get options
+                    Teuchos::ParameterList ilu;
+                    DOMNodeList* gkids = currentNode->getChildNodes();
+                    for (int l=0; l<gkids->getLength(); l++) {
+                      DOMNode* currentGKid = gkids->item(l) ;
+                      if (DOMNode::ELEMENT_NODE == currentGKid->getNodeType()) {
+                        std::string gkidName(std::string(XMLString::transcode(currentGKid->getNodeName())));
+                        if (gkidName == "ilu_overlap") {
+                          ilu.set<int>("Block ILU overlap",
+                                         get_int_constant(XMLString::transcode(currentGKid->getTextContent()),*def_list));
+                        }
+                        else if (gkidName == "ilu_relax") {
+                          ilu.set<double>("Block ILU relax value",
+                                         get_double_constant(XMLString::transcode(currentGKid->getTextContent()),*def_list));
+                        }
+                        else if (gkidName == "ilu_rel_threshold") {
+                          ilu.set<double>("Block ILU relative threshold",
+                                            get_double_constant(XMLString::transcode(currentGKid->getTextContent()),*def_list));
+                        }
+                        else if (gkidName == "ilu_abs_threshold") {
+                          ilu.set<double>("Block ILU absolute threshold",
+                                            get_double_constant(XMLString::transcode(currentGKid->getTextContent()),*def_list));
+                        }
+                        else if (gkidName == "ilu_level_of_fill") {
+                          ilu.set<int>("Block ILU level of fill",
+                                       get_int_constant(XMLString::transcode(currentGKid->getTextContent()),*def_list));
+                        }
+                      }
+                    }
+                    list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Preconditioners").sublist("Block ILU") = ilu;
+                  }
+                  else {
+                    throw_error_illformed("preconditioners", "subelement", "preconditioner type", "trilinos_ml, hypre_amg, block_ilu");
+                  }
+                }
+              }
+              
+            }
             else if (nodeName == "unstr_chemistry_controls") {
             Teuchos::ParameterList chemistryPL;
             // go ahead and add bdg file to PL
@@ -6034,18 +6113,16 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
               visPL.set<int>("File Name Digits",get_int_constant(textContent2,def_list));
               XMLString::release(&textContent2);
 	    }
-            else if (strcmp(textContent,"time_macros")==0) {
+            else if (strcmp(textContent,"time_macros")==0 || strcmp(textContent,"time_macro")==0) {
 	      textContent2 = XMLString::transcode(curKid->getTextContent());
 	      Teuchos::Array<std::string> macro = make_regions_list(textContent2);
               visPL.set<Teuchos::Array<std::string> >("Time Macros",macro);
               XMLString::release(&textContent2);
 	    }
-            else if (strcmp(textContent,"cycle_macros")==0) {
+            else if (strcmp(textContent,"cycle_macros")==0 || strcmp(textContent,"cycle_macro")==0) {
 	      textContent2 = XMLString::transcode(curKid->getTextContent());
-	      Teuchos::Array<std::string> macro;
-              macro.append(textContent2);
+	      Teuchos::Array<std::string> macro = make_regions_list(textContent2);
               visPL.set<Teuchos::Array<std::string> >("Cycle Macros",macro);
-              //visPL.set<std::string>("Cycle Macros",textContent2);
               XMLString::release(&textContent2);
 	    }
             else if (strcmp(textContent,"write_regions")==0) {
@@ -6089,12 +6166,10 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
               chkPL.set<int>("File Name Digits",get_int_constant(textContent2,def_list));
               XMLString::release(&textContent2);
 	    }
-            else if (strcmp(textContent,"cycle_macro")==0) {
-	      textContent2 = XMLString::transcode(curKid->getTextContent());
-	      Teuchos::Array<std::string> macro;
-              macro.append(textContent2);
-              //chkPL.set<Teuchos::Array<std::string> >("Cycle Macros",macro);
-              chkPL.set<std::string >("Cycle Macro",textContent2);
+            else if (strcmp(textContent,"cycle_macros")==0 || strcmp(textContent,"cycle_macro")==0) {
+              textContent2 = XMLString::transcode(curKid->getTextContent());
+              Teuchos::Array<std::string> macro = make_regions_list(textContent2);
+              chkPL.set<Teuchos::Array<std::string> >("Cycle Macros",macro);
               XMLString::release(&textContent2);
 	    }
             XMLString::release(&textContent);
@@ -6121,12 +6196,10 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
               chkPL.set<int>("File Name Digits",get_int_constant(textContent2,def_list));
               XMLString::release(&textContent2);
 	    }
-            else if (strcmp(textContent,"cycle_macro")==0) {
-	      textContent2 = XMLString::transcode(curKid->getTextContent());
-	      Teuchos::Array<std::string> macro;
-              macro.append(textContent2);
-              //chkPL.set<Teuchos::Array<std::string> >("Cycle Macros",macro);
-              chkPL.set<std::string >("Cycle Macro",textContent2);
+            else if (strcmp(textContent,"cycle_macros")==0 || strcmp(textContent,"cycle_macro")==0) {
+              textContent2 = XMLString::transcode(curKid->getTextContent());
+              Teuchos::Array<std::string> macro = make_regions_list(textContent2);
+              chkPL.set<Teuchos::Array<std::string> >("Cycle Macros",macro);
               XMLString::release(&textContent2);
 	    }
             XMLString::release(&textContent);
@@ -6348,10 +6421,15 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
 	                    obPL.set<std::string>("Functional","Observation Data: Mean");
 	                  }
 		        }
-                        else if (strcmp(Elem,"time_macros")==0) {
-                          Teuchos::Array<std::string> reg_list = make_regions_list(Value);
-	                  obPL.set<Teuchos::Array<std::string> >("Time Macros",reg_list);
-		        }
+                        // Keeping singular macro around to help users.  This will go away
+                        else if (strcmp(Elem,"time_macros")==0 || strcmp(Elem,"time_macro")==0) {
+                          Teuchos::Array<std::string> macros = make_regions_list(Value);
+	                  obPL.set<Teuchos::Array<std::string> >("Time Macros",macros);
+                        }
+                        else if (strcmp(Elem,"cycle_macros")==0 || strcmp(Elem,"cycle_macro")==0) {
+                          Teuchos::Array<std::string> macros = make_regions_list(Value);
+                          obPL.set<Teuchos::Array<std::string> >("Cycle Macros",macros);
+                        }
                         XMLString::release(&Elem);
                         XMLString::release(&Value);
 	              }
@@ -6785,6 +6863,17 @@ void write_BDG_file(Teuchos::ParameterList sorption_list, Teuchos::ParameterList
   bgd_file.close();
 }
 
+/*
+**********************************************************************
+* Generate unified warning message for unrecognized element (skipping)
+**********************************************************************
+*/
+void throw_warning_skip(std::string element){
+  
+  *voI_->os() << "Amanzi::InputTranslator: WARNING - The following is an unrecognized element and is being skipped during translation." << std::endl << element << " was unrecognized option." << std::endl << " Please check input file schema for correct naming and syntax." << std::endl;
+}
+  
+  
 /*
  *******************************************************************
  * Generate unified error message for Structure/Unstructure conflict

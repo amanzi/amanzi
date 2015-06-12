@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.3"/>
 
   <ParameterList name="Execution Control">
     <Parameter name="Flow Model" type="string" value="Single Phase"/>
@@ -378,223 +378,223 @@
         <Parameter name="Region" type="string" value="Origin"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 01">
         <Parameter name="Region" type="string" value="Upstrm210"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 02">
         <Parameter name="Region" type="string" value="Upstrm150"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 03">
         <Parameter name="Region" type="string" value="Upstrm090"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 04">
         <Parameter name="Region" type="string" value="Upstrm030"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 05">
         <Parameter name="Region" type="string" value="Dnstrm030"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 06">
         <Parameter name="Region" type="string" value="Dnstrm090"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 07">
         <Parameter name="Region" type="string" value="Dnstrm150"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 08">
         <Parameter name="Region" type="string" value="Dnstrm210"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 09">
         <Parameter name="Region" type="string" value="Dnstrm270"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 10">
         <Parameter name="Region" type="string" value="Dnstrm330"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 11">
         <Parameter name="Region" type="string" value="Dnstrm390"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 12">
         <Parameter name="Region" type="string" value="Dnstrm450"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 13">
         <Parameter name="Region" type="string" value="Dnstrm510"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 14">
         <Parameter name="Region" type="string" value="Dnstrm570"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 15">
         <Parameter name="Region" type="string" value="Dnstrm630"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 16">
         <Parameter name="Region" type="string" value="Dnstrm690"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 17">
         <Parameter name="Region" type="string" value="Dnstrm750"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 18">
         <Parameter name="Region" type="string" value="Dnstrm810"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 19">
         <Parameter name="Region" type="string" value="Dnstrm870"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 20">
         <Parameter name="Region" type="string" value="Dnstrm930"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 21">
         <Parameter name="Region" type="string" value="Cross0030"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 22">
         <Parameter name="Region" type="string" value="Cross0060"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 23">
         <Parameter name="Region" type="string" value="Cross0090"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 24">
         <Parameter name="Region" type="string" value="Cross0120"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 25">
         <Parameter name="Region" type="string" value="Cross0150"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 26">
         <Parameter name="Region" type="string" value="Cross0180"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 27">
         <Parameter name="Region" type="string" value="Cross0210"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 28">
         <Parameter name="Region" type="string" value="Cross0240"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 29">
         <Parameter name="Region" type="string" value="Crossb030"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 30">
         <Parameter name="Region" type="string" value="Crossb060"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 31">
         <Parameter name="Region" type="string" value="Crossb090"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 32">
         <Parameter name="Region" type="string" value="Crossb120"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 33">
         <Parameter name="Region" type="string" value="Crossb150"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 34">
         <Parameter name="Region" type="string" value="Crossb180"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 35">
         <Parameter name="Region" type="string" value="Crossb210"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Point 36">
         <Parameter name="Region" type="string" value="Crossb240"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

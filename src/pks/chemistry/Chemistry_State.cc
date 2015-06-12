@@ -48,31 +48,6 @@ Chemistry_State::Chemistry_State(Teuchos::ParameterList& plist,
   // RequireAuxData_();
 }
 
-
-Chemistry_State::Chemistry_State(const Teuchos::RCP<State>& S,
-        const std::vector<std::string>& component_names,
-        int number_of_minerals,
-        int number_of_ion_exchange_sites,
-        int number_of_sorption_sites,
-        bool using_sorption,
-        bool using_sorption_isotherms) :
-    S_(S),
-    ghosted_(true),
-    name_("state"),
-    number_of_aqueous_components_(component_names.size()),
-    number_of_minerals_(number_of_minerals),
-    number_of_ion_exchange_sites_(number_of_ion_exchange_sites),
-    number_of_sorption_sites_(number_of_sorption_sites),
-    using_sorption_(using_sorption),
-    using_sorption_isotherms_(using_sorption_isotherms),
-    compnames_(component_names),
-    num_aux_data_(-1) {
-  mesh_ = S_->GetMesh();
-  // RequireData_();  
-  // RequireAuxData_();
-}
-
-
 void Chemistry_State::Setup() {
   RequireData_();  
   RequireAuxData_();

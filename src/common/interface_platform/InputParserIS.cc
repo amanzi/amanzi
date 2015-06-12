@@ -116,7 +116,7 @@ void InputParserIS::CheckAmanziInputVersion_(Teuchos::ParameterList* plist)
 
   if ((major != AMANZI_OLD_INPUT_VERSION_MAJOR) ||
       (minor != AMANZI_OLD_INPUT_VERSION_MINOR) ||
-      (micro != AMANZI_OLD_INPUT_VERSION_MICRO)) {
+      ((micro != AMANZI_OLD_INPUT_VERSION_MICRO) && micro != (AMANZI_OLD_INPUT_VERSION_MICRO + 1)) ) {
     std::stringstream ss_ver_reqd;
     ss_ver_reqd << AMANZI_OLD_INPUT_VERSION_MAJOR << "." << AMANZI_OLD_INPUT_VERSION_MINOR << "." << AMANZI_OLD_INPUT_VERSION_MICRO;
     std::stringstream ss_ver_inp;

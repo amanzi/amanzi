@@ -92,6 +92,7 @@ class ChemistryEngine {
   // data in the given containers.
   void CreateCondition(const std::string& condition_name);
 
+  /* Mineral constraints will be discontinued in Alquimia -- see Sergi
   // Adds a mineral constraint to the geochemical condition with the given name. If another 
   // constraint with the same mineral name exists for this condition, it is replaced by 
   // this one.
@@ -99,6 +100,7 @@ class ChemistryEngine {
                             const std::string& mineral_name,
                             double volume_fraction,
                             double specific_surface_area);
+  Mineral constraints will be discontinued in Alquimia -- see Sergi */
 
   // Adds an aqueous constraint to the geochemical condition with the given name. If another 
   // constraint involving the same primary species exists for this condition, it is replaced by 

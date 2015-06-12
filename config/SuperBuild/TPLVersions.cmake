@@ -58,6 +58,8 @@
 #   0.92.14      - update Hypre to v2.10.0b (and added patch for to ensure tol>0)
 #   0.92.15      - updated Alquimia to v0.2 (backward compatible)
 #   0.92.16      - update CCSE to version 1.3.0 
+#   0.92.17      - update MSTK to version 2.2.3 (adds element set capabilities)
+#   0.92.18      - update Boost to version 1.58.0 
 
 include(CMakeParseArguments)
 
@@ -107,7 +109,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 92)
-set (AMANZI_TPLS_VERSION_PATCH 16)
+set (AMANZI_TPLS_VERSION_PATCH 18)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -192,13 +194,13 @@ set(UnitTest_MD5_SUM       bd373a53403ed51ea1bbb60b1952d7e3)
 # TPL: Boost
 #
 set(Boost_VERSION_MAJOR 1)
-set(Boost_VERSION_MINOR 56)
+set(Boost_VERSION_MINOR 58)
 set(Boost_VERSION_PATCH 0)
 set(Boost_VERSION        ${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH})
 set(Boost_VERSION_STRING ${Boost_VERSION_MAJOR}_${Boost_VERSION_MINOR}_${Boost_VERSION_PATCH})
 set(Boost_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(Boost_ARCHIVE_FILE   boost_${Boost_VERSION_STRING}.tar.bz2)
-set(Boost_MD5_SUM        a744cf167b05d72335f27c88115f211d)
+set(Boost_MD5_SUM        b8839650e61e9c1c0a89f371dd475546)
 
 #
 # TPL: BoostCmake
@@ -267,12 +269,12 @@ set(ExodusII_MD5_SUM       cfd240dbc1251b08fb1d0ee2de40a44c)
 # TPL: MSTK
 #
 set(MSTK_VERSION_MAJOR 2)
-set(MSTK_VERSION_MINOR 22)
+set(MSTK_VERSION_MINOR 23)
 set(MSTK_VERSION_PATCH )
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tgz)
-set(MSTK_MD5_SUM        096343f847f27b0385519745295b66e6)
+set(MSTK_MD5_SUM        d1ceedfd43e18f8b5eee85b2d8e7d4fe)
 
 #
 # TPL: MOAB

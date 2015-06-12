@@ -54,7 +54,7 @@ Output data from Amanzi is currently organized into four specific groups:
 
 * `"Log Data`": running commentary on the performance and status of Amanzi's execution.  Typically such data is written to a C++ stream which may be directed to a pipe or file.  The amount and detail of log data is determined by a range of verbosity controls.
 
-Generally, `"Visualization Data`" and `"Checkpoint Data`" consists of high-dimensional field data representing snapshots of the evolving discrete variables.  These are large datasets, relative to the other types, and are most often written to disk in a file format that allows a direct repesentation of the underlying discrete mesh and parallel data distribution.
+Generally, `"Visualization Data`" and `"Checkpoint Data`" consists of high-dimensional field data representing snapshots of the evolving discrete variables.  These are large datasets, relative to the other types, and are most often written to disk in a file format that allows a direct representation of the underlying discrete mesh and parallel data distribution.
 
 
 ParameterList XML
@@ -69,7 +69,7 @@ The Amanzi input file is an ASCII text XML-formatted file that must be framed at
 
   </ParameterList>
 
-The value in the "name" can be anything ("Main" in this example).  A ParameterList consists of just two types of entries: Parameter and ParameterList.  ParameterLists are labeled with a `"name`" [string], while Parameters have a separate fields for `"name`" [string], `"type`" [string] and `"value`" [TYPE], where "TYPE" can be any of the following: double, int, bool, string, Array(double), Array(int), Array(bool), Array(string).  The value of the parameter is given in quotes (e.g. "2.7e3").  Array data is specified as a single comma-deliminated string bounded by {}'s (e.g. "{2.4, 2.1, 5.7}").
+The value in the "name" can be anything ("Main" in this example).  A ParameterList consists of just two types of entries: Parameter and ParameterList.  ParameterLists are labeled with a `"name`" [string], while Parameters have a separate fields for `"name`" [string], `"type`" [string] and `"value`" [TYPE], where "TYPE" can be any of the following: double, int, bool, string, Array(double), Array(int), Array(bool), Array(string).  The value of the parameter is given in quotes (e.g. "2.7e3").  Array data is specified as a single comma-delimited string bounded by {}'s (e.g. "{2.4, 2.1, 5.7}").
 
 .. code-block:: xml
 
@@ -226,7 +226,7 @@ Usage:
 
    * [SU] `"End`" [double]: End of integration period
    
-   * [SU] `"Initial Time Step`" [double] (Optional) The intitial time step for the transient calculation. (see S Note below)
+   * [SU] `"Initial Time Step`" [double] (Optional) The initial time step for the transient calculation. (see S Note below)
 
 
    * [SU] `"Maximum Cycle Number`" [int]: (Optional) The maximum allowed cycle number.
@@ -240,7 +240,7 @@ Usage:
 
    * [SU] `"End`" [double]: End of integration period
    
-   * [SU] `"Initial Time Step`" [double]  (Optional) The intitial time step for the transient calculation. (see S Note below)
+   * [SU] `"Initial Time Step`" [double]  (Optional) The initial time step for the transient calculation. (see S Note below)
 
    * [SU] `"Maximum Cycle Number`" [int]: (Optional) The maximum allowed cycle number.
 
@@ -252,9 +252,9 @@ Usage:
 
    * [SU] `"End`" [double]: The end of the time-integration period
     
-   * [SU] `"Steady Initial Time Step`" [double]: (Optional) The intitial time step for the steady state initialization calculation.
+   * [SU] `"Steady Initial Time Step`" [double]: (Optional) The initial time step for the steady state initialization calculation.
 
-   * [SU] `"Transient Initial Time Step`" [double]: (Optional)  The intitial time step for the transient calculation after "Switch" time.  (see S Note below)
+   * [SU] `"Transient Initial Time Step`" [double]: (Optional)  The initial time step for the transient calculation after "Switch" time.  (see S Note below)
 
 S Note: If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
 
@@ -273,19 +273,19 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
   * [SU] `"Medium`": Includes summary-level activity of each process kernel
 
-  * [SU] `"High`": Includes numerical performance statistics of each process kernal, and miscellaneous status of primary variables
+  * [SU] `"High`": Includes numerical performance statistics of each process kernel, and miscellaneous status of primary variables
 
-  * [SU] `"Extreme`": Includes detailed iteration-level convergence properties of process kernal sovlers
+  * [SU] `"Extreme`": Includes detailed iteration-level convergence properties of process kernel solvers
 
  * [SU] `"Numerical Control Parameters`" [list]: Any common control parameters are in the `"Common Controls`" list while detailed control parameters associated with the underlying numerical implementation are seperated into specific lists.
  
  For both unstructured and structured, the following common list of parameters is valid:
 
-  * [SU] `"Common Controls"` [list]: Control parameters associtated with both algorithms.  This section will be filled as the input parameters for both algorithms are brought closer in line with each other.
+  * [SU] `"Common Controls"` [list]: Control parameters associated with both algorithms.  This section will be filled as the input parameters for both algorithms are brought closer in line with each other.
 
   If the unstructured option is active, the following list of parameters is valid:
 
-  * [U] `"Unstructured Algorithm"` [list]: Control parameters associtated with the unstructured algorithm.
+  * [U] `"Unstructured Algorithm"` [list]: Control parameters associated with the unstructured algorithm.
 
    * [U] `"Flow Process Kernel`" [list]: Control parameters for the flow methods
 
@@ -350,7 +350,7 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [U] `"steady nonlinear iteration divergence factor`" [double] If during the nonlinear solve, the inf norm of the nonlinear update is larger by this factor than the inf norm of the update in the prior iteration, we abort the nonlinear solve to protect against a runaway divergent iteration that causes numerical overflow. As a result the current time step will repeated with a smaller delta T. (default: `"1000.0`", suggested range: 100.0 ... 10000.0)
 
-     * [U] `"steady restart tolerance relaxation factor`" [double] when the time integrator is started, it may be beneficial to set this parameter to something > 1.0 to loosen the nonlinear tolerance on the first several time steps. The parameter `"steady restart tolerance relaxation factor damping`" controls how fast the this loosened nonlinear tolerance will revert back to the one specified in  `"steady nonlinear tolerance"`: If the nonlinear tolerance is ntol, the initial timestep factor is ntol_factor, and the damping is ntol_damping, then the actual nonlinear tolerance is ntol*ntol_factor, and after every time step, ntol_factor = max(1.0,ntol_factor*ntol_damping), such that a few iterations after a time integrator start, the actual tolerance equals ntol, again. The default for this paramameter is 1.0, while reasonable values are > 1.0, maybe as large as 1000.0. The default for the damping factor is 1.0, while reasonable values are between 0 and 1. (default: `"1.0`", suggested range: 1.0 ... 1000.0)
+     * [U] `"steady restart tolerance relaxation factor`" [double] when the time integrator is started, it may be beneficial to set this parameter to something > 1.0 to loosen the nonlinear tolerance on the first several time steps. The parameter `"steady restart tolerance relaxation factor damping`" controls how fast the this loosened nonlinear tolerance will revert back to the one specified in  `"steady nonlinear tolerance"`: If the nonlinear tolerance is ntol, the initial timestep factor is ntol_factor, and the damping is ntol_damping, then the actual nonlinear tolerance is ntol*ntol_factor, and after every time step, ntol_factor = max(1.0,ntol_factor*ntol_damping), such that a few iterations after a time integrator start, the actual tolerance equals ntol, again. The default for this parameter is 1.0, while reasonable values are > 1.0, maybe as large as 1000.0. The default for the damping factor is 1.0, while reasonable values are between 0 and 1. (default: `"1.0`", suggested range: 1.0 ... 1000.0)
 
      * [U] `"steady restart tolerance relaxation factor damping`" [double] see `"steady nonlinear iteration initial timestep factor`" for a detailed explanation of this parameter. (default: `"1.0`", suggested range: 0.001 ... 1.0)
 
@@ -386,7 +386,7 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [U] `"transient nonlinear iteration divergence factor`" [double] If during the nonlinear solve, the inf norm of the nonlinear update is larger by this factor than the inf norm of the update in the prior iteration, we abort the nonlinear solve to protect against a runaway divergent iteration that causes numerical overflow. As a result the current time step will repeated with a smaller delta T. (default: `"1000.0`", suggested range: 100.0 ... 10000.0)
 
-     * [U] `"transient restart tolerance relaxation factor`" [double] when the time integrator is restarted, at a time when a boundary condition drastically changes, it may be beneficial to set this parameter to something > 1.0 to loosen the nonlinear tolerance on the first several time steps after the time integrator restart. The parameter `"transient restart tolerance relaxation factor damping`" controls how fast the this loosened nonlinear tolerance will revert back to the one specified in  `"transient nonlinear tolerance"`: If the nonlinear tolerance is ntol, the initial timestep factor is ntol_factor, and the damping is ntol_damping, then the actual nonlinear tolerance is ntol*ntol_factor, and after every time step, ntol_factor = max(1.0,ntol_factor*ntol_damping), such that a few iterations after a time integrator restart, the actual tolerance equals ntol, again. The default for this paramameter is 1.0, while reasonable values are > 1.0, maybe as large as 1000.0. The default for the damping factor is 1.0, while reasonable values are between 0 and 1. (default: `"1.0`", suggested range: 1.0 ... 1000.0)
+     * [U] `"transient restart tolerance relaxation factor`" [double] when the time integrator is restarted, at a time when a boundary condition drastically changes, it may be beneficial to set this parameter to something > 1.0 to loosen the nonlinear tolerance on the first several time steps after the time integrator restart. The parameter `"transient restart tolerance relaxation factor damping`" controls how fast the this loosened nonlinear tolerance will revert back to the one specified in  `"transient nonlinear tolerance"`: If the nonlinear tolerance is ntol, the initial timestep factor is ntol_factor, and the damping is ntol_damping, then the actual nonlinear tolerance is ntol*ntol_factor, and after every time step, ntol_factor = max(1.0,ntol_factor*ntol_damping), such that a few iterations after a time integrator restart, the actual tolerance equals ntol, again. The default for this parameter is 1.0, while reasonable values are > 1.0, maybe as large as 1000.0. The default for the damping factor is 1.0, while reasonable values are between 0 and 1. (default: `"1.0`", suggested range: 1.0 ... 1000.0)
 
      * [U] `"transient restart tolerance relaxation factor damping`" [double] see `"transient nonlinear iteration initial timestep factor`" for a detailed explanation of this parameter. (default: `"1.0`", suggested range: 0.001 ... 1.0)
 
@@ -403,7 +403,7 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [U] `"pseudo time integrator clipping saturation value`" [double] (default: 0.9, suggested range: 0.7 ... 0.95)
 
-     * [U] `"pseudo time integrator time integration method`" [double] select the pseudo time integration method (currrently only Picard is supported). (default: `"Picard`")
+     * [U] `"pseudo time integrator time integration method`" [double] select the pseudo time integration method (currently only Picard is supported). (default: `"Picard`")
 
      * [U] `"pseudo time integrator preconditioner`" [string] select the preconditioner to be used in the pseudo time integration method, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`". (default: `"Hypre AMG`")
 
@@ -441,7 +441,7 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [U] `"Trilinos ML`" Parameter used by Trilinos multi-level solver, ML
 
-       * [U] `"ML smoother type`" [string] The smoother to be used by ML, valid paramters are `"Jacobi`" (default), `"Gauss-Seidel`", and `"ILU`". (default: `"Jacobi`")
+       * [U] `"ML smoother type`" [string] The smoother to be used by ML, valid parameters are `"Jacobi`" (default), `"Gauss-Seidel`", and `"ILU`". (default: `"Jacobi`")
 
        * [U] `"ML aggregation threshold`" [double] This parameter influences the coarsening strategy of ML. The default is 0.0, which is a good choice for regular meshes. For meshes that have high aspect ratio cells, it is worth trying to set this parameter to something positive, but small, for example 0.0001. (default: `"0.0`", suggested range: 0.0 ... 0.1)
 
@@ -496,11 +496,11 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [S] `"initial_time_step_multiplier`" [double] (Optional) If internally computed time step used, it will be scaled by this factor (default value: 1)
 
-     * [S] `"do_richard_init_to_steady`" [int]  If 1, triggers a psuedo-transient time-evolution of the initial data, prior to entering the `"Execution Mode`" phases descussed above.  (default: `"0`", suggested range: 0 ... 1)
+     * [S] `"do_richard_init_to_steady`" [int]  If 1, triggers a psuedo-transient time-evolution of the initial data, prior to entering the `"Execution Mode`" phases discussed above.  (default: `"0`", suggested range: 0 ... 1)
 
-     * [S] `"richard_init_to_steady_verbose`" [int]  Verbosity level of psuedo-transient time-evolution of the initial data, prior to entering the `"Execution Mode`" phases descussed above.  (default: `"0`", suggested range: 0 ... 4)
+     * [S] `"richard_init_to_steady_verbose`" [int]  Verbosity level of psuedo-transient time-evolution of the initial data, prior to entering the `"Execution Mode`" phases discussed above.  (default: `"0`", suggested range: 0 ... 4)
 
-     * [S] `"steady_max_pseudo_time`" [double]  Stopping time for the psuedo-transient time-evolution of the initial data, prior to entering the `"Execution Mode`" phases descussed above.  (default: `"1.e10`", suggested range: 0 ... 1.e12)
+     * [S] `"steady_max_pseudo_time`" [double]  Stopping time for the psuedo-transient time-evolution of the initial data, prior to entering the `"Execution Mode`" phases discussed above.  (default: `"1.e10`", suggested range: 0 ... 1.e12)
 
      * [S] `"steady_time_step_reduction_factor`" [double]  Scale factor to reduce time step size for retry if Newton iterations fail.  (default: `"0.8`", suggested range: 0.1 ... 0.99)
 
@@ -576,7 +576,7 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [S] `"Regrid Interval`" [Array(int)] Number of base (coarse) grid time steps between regrid operations (one value > 0 required for each coarse level)
 
-     * [S] `"Blocking Factor`" [Array(int)] Number by which each grid per level is evenly divisable in each dimension (typically used to guarantee multigrid hierachy depth).  A single value implies that the same is to be used for all levels, otherwise one value is required for each fine level.
+     * [S] `"Blocking Factor`" [Array(int)] Number by which each grid per level is evenly divisible in each dimension (typically used to guarantee multigrid hierarchy depth).  A single value implies that the same is to be used for all levels, otherwise one value is required for each fine level.
 
      * [S] `"Number Error Buffer Cells`" [Array(int)] Number of coarse cells automatically tagged to surround user-tagged cells prior to generation of fine grids.  Used to guarantee buffer between refinement levels.
 
@@ -695,7 +695,7 @@ Amanzi supports both structured and unstructured numerical solution approaches. 
 
 * `"Structured`": This instructs Amanzi to use BoxLib data structures and an associated paradigm to numerically represent the flow equations.  Data containers in the BoxLib software library, developed by CCSE at LBNL, are based on a hierarchical set of uniform Cartesian grid patches.  `"Structured`" requires that the simulation domain be a single coordinate-aligned rectangle, and that the "base mesh" consists of a logically rectangular set of uniform hexahedral cells.  This option supports a block-structured approach to dynamic mesh refinement, wherein successively refined subregions of the solution are constructed dynamically to track "interesting" features of the evolving solution.  The numerical solution approach implemented under the `"Structured`" framework is highly optimized to exploit regular data and access patterns on massively parallel computing architectures.
 
-* `"Unstructured`": This instructs Amanzi to use data structures provided in the Trilinos software framework.  To the extent possible, the discretization algorithms implemented under this option are largely independent of the shape and connectivity of the underlying cells.  As a result, this option supports an arbitrarily complex computational mesh structure that enables users to work with numerical meshes that can be aligned with geometrically complex man-made or geostatigraphical features.  Under this option, the user typically provides a mesh file that was generated with an external software package.  The following mesh file formats are currently supported: `"Exodus 2`" (see example), `"MSTK`" (see example), `"MOAB`" (see example).  Amanzi also provides a rudmentary capability to generate unstructured meshes automatically.
+* `"Unstructured`": This instructs Amanzi to use data structures provided in the Trilinos software framework.  To the extent possible, the discretization algorithms implemented under this option are largely independent of the shape and connectivity of the underlying cells.  As a result, this option supports an arbitrarily complex computational mesh structure that enables users to work with numerical meshes that can be aligned with geometrically complex man-made or geostatigraphical features.  Under this option, the user typically provides a mesh file that was generated with an external software package.  The following mesh file formats are currently supported: `"Exodus 2`" (see example), `"MSTK`" (see example), `"MOAB`" (see example).  Amanzi also provides a rudimentary capability to generate unstructured meshes automatically.
 
 Usage:
 
@@ -1007,7 +1007,7 @@ the following set of physical properties using the supported models described be
 
   * [SU] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" or `"Brooks Corey`" (see below)
 
-  * [SU] Particle Density [list] Choose exatly one of the following: `"Particle Density: Uniform`". 
+  * [SU] Particle Density [list] Choose exactly one of the following: `"Particle Density: Uniform`". 
 
   * [SU] Specific Storage [list] Parameterized model for Specific Storage [L^-1]. Choose exactly one of the following: `"Specific Storage: Uniform`".
 
@@ -1114,7 +1114,7 @@ The following models are currently supported for capillary pressure (Section 3.3
  * [SU] `"Relative Permeability`" [string] (either (0) [U] `"Burdine`", or (2) [SU] `"Mualem`") determines n
    in Equation 3.10, and the form of relative permeability (either Equation 3.12, or Equation 3.11, respectively).
 
- * [U] `"krel smoothing interval`" [double] If this parameter is positive, a cubic hermite interpolant in used in place of the van Genuchten relative permeability function when the capillary pressure is in the interval [0.0, krel smoothing interval]. The default for this parameter is 0.0, such that there is no relative premeability smoothing.  
+ * [U] `"krel smoothing interval`" [double] If this parameter is positive, a cubic hermite interpolant in used in place of the van Genuchten relative permeability function when the capillary pressure is in the interval [0.0, krel smoothing interval]. The default for this parameter is 0.0, such that there is no relative permeability smoothing.  
 
  * [] `"WRM Plot File`" [string] (Optional) name of ASCII text file to write 3-column, space-delimited data for water saturation, capillary pressure and relative permeability.  If not give, no file is created.  Also, if file exists, it will be overwritten.
 
@@ -1272,7 +1272,7 @@ phase, the list identifies the set of all independent variables that are to be s
 Phases, components and solutes
 ------------------------------
 
-The terminology for flow in porous media can be somewhat ambiguous between the multiphase and groundwater communities, particurly in regards to "components", "solutes" and "chemicals".  Since Amanzi is designed to handle a 
+The terminology for flow in porous media can be somewhat ambiguous between the multiphase and groundwater communities, particularly in regards to "components", "solutes" and "chemicals".  Since Amanzi is designed to handle a 
 wide variety of problems, we must settle on a nomenclature for our use here.  In the general problem, multiple "phases" may coexist in the domain (e.g. gaseous, aqueous/liquid, etc), and each is
 comprised of a number of "components" (section 2.2).  In turn, each component may carry a number of "solutes" and some of these may participate
 in chemical reactions.  As a result of reactions, a chemical source or sink term may appear for the solutes involved in the reaction, including solutes in other mobile phases or in the material matrix.  
@@ -1337,7 +1337,7 @@ In order to support the rather general specification requirements (involving com
 
  * [SU] `"Gaseous`" phase [list] can accept the following lists: `"Phase Components`". Since, we not solving for flow yet, there is no need to specify phase properties.
 
-  * [SU] `"Phase Components`" can accept COMP [list] named after a user-defined phase component. We probably do not need more than one phase component in the gasesous phase, but will keep this sublist for a moment.
+  * [SU] `"Phase Components`" can accept COMP [list] named after a user-defined phase component. We probably do not need more than one phase component in the gaseous phase, but will keep this sublist for a moment.
 
    * [SU] COMP [list] can accept a list of solutes carried by the component, e.g. Air.
 
@@ -1390,7 +1390,7 @@ Next, we specify boundary conditions.  Again, support is provided for specifying
 
     * [SU] COMPONENT [list] can accept SOLUTE (label of solute defined above), or keyword `"Alquimia`" to support geochemical conditions
 
-     * [SU] BC function [list] Parameterized model to specify the contcentration profile, only `"BC: Uniform Concentration`" is supported (see below) in units of molarity (moles/volume).
+     * [SU] BC function [list] Parameterized model to specify the concentration profile, only `"BC: Uniform Concentration`" is supported (see below) in units of molarity (moles/volume).
 
 Finally, we specify sources.  Support is provided for specifying sources on the aqueous phase (flow), and for the solutes (total component concentration of primary species in reactive transport).
 
@@ -1460,7 +1460,7 @@ The following boundary condition parameterizations are supported:
 
 * `"BC: Linear Saturation`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Reference Values`" [Array(double)] `"Reference Point`" [Array(double)] `"Gradient Value`" [Array(double)]
 
-* [U] `"BC: Seepage`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and one of `"Inward Mass Flux`" [Array(double)] or `"Inward Volumetric Flux`" [Array(double)].  Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward refers to the flux being in the direction of the inward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" is supported.)
+* [U] `"BC: Seepage`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and one of `"Inward Mass Flux`" [Array(double)] or `"Inward Volumetric Flux`" [Array(double)].  Here volumetric flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilograms per meter squared per second. Inward refers to the flux being in the direction of the inward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" is supported.)
     * [U] "rainfall" [bool] indicates that the mass flux is defined with respect
       to the gravity vector and the actual influx depends on boundary
       slope (default value is "false").
@@ -1494,7 +1494,7 @@ The following source parameterizations are supported.
 
 * [U] `"Source: Permeability Weighted`" [kg/s] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* [U] `"Source: Uniform Concentration`" [mol/s/m^3] uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)],  and `"Values`" [Array(double)] OR `"Geochemical Condition`"
+* [U] `"Source: Uniform Concentration`" [mol/s/m^3] uses a volume weighting to distribute the source uniformly over the specified region(s).  Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)],  and `"Values`" [Array(double)] OR `"Geochemical Condition`"
 
   * `"Times`" [Array(double)], list of times used by the time function.
   * `"Time Functions`" [Array(string)], list of functions for the time intervals listed in `"Times`"
@@ -1508,7 +1508,7 @@ The following source parameterizations are supported.
   * `"Values`" [Array(double)], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
   * `"Geochemical Condition`" [String], name of a geochemical condition defined in Alquimia's chemistry engine input file or in the Chemistry block.
  
-* [U] `"Source: Diffusion Dominated Release Model`" uses a volume weighting to distribute the source uniformally over the specified region(s). Requires `"Total Inventory`" [double], `"Mixing Length`" [double], `"Effective Diffusion Coefficient`" [double], and `"Times`" [Array(double)]. 
+* [U] `"Source: Diffusion Dominated Release Model`" uses a volume weighting to distribute the source uniformly over the specified region(s). Requires `"Total Inventory`" [double], `"Mixing Length`" [double], `"Effective Diffusion Coefficient`" [double], and `"Times`" [Array(double)]. 
 
   * `"Times`" [Array(double)], release start and end times. 
 
@@ -1549,7 +1549,7 @@ NOTE 1: If a single constant value is to be applied over all time, an abbreviate
 
       <Parameter name="Values" type="Array(double)" value="{10}"/>
 
-NOTE 2: Amanzi's simulator supports a complex variety of standard mathematical functions that are pending implemenation of a user interface.
+NOTE 2: Amanzi's simulator supports a complex variety of standard mathematical functions that are pending implementation of a user interface.
 
 
 Example Phase Definition
@@ -1576,7 +1576,7 @@ The chemistry list is needed if the Chemistry model is set to `"Alquimia`" or `"
 
   * [SU] `"Time Step Cut Threshold`" [int]: (default=8) Number of Netwon iterations that if exceeded will trigger a time step cut.
   * [SU] `"Time Step Cut Factor`" [double]: (default=2.0) Factor by which the time step is cut.
-  * [SU] `"Time Step Increase Threshold`" [int]: (default=4) Number of consectuive successful time steps that will trigger a time step increase.
+  * [SU] `"Time Step Increase Threshold`" [int]: (default=4) Number of consecutive successful time steps that will trigger a time step increase.
   * [SU] `"Time Step Increase Factor`" [double]: (default=1.2) Factor by which the time step is increased.
 
   * [SU] `"Geochemical Conditions`" [list] (*optional*, allows definition of geochemical conditions within XML.)
@@ -1629,9 +1629,9 @@ Output
 
 Output data from Amanzi is currently organized into four specific groups: `"Observation Data`", `"Visualization Data`", `"Checkpoint Data`", `"Walkabout Data`", and `"Log Data`".  Each of these is controlled in different ways, reflecting their intended use.
 
-* `"Checkpoint Data`" is intended to represent all that is necesary to repeat or continue an Amanzi run.  The specific data contained in a Checkpoint Data dump is specific to the algorithm optoins and mesh framework selected.  Checkpoint Data is special in that no interpolation is perfomed prior to writing the data files; the raw binary state is necessary.  As a result, the user is allowed to only write Checkpoint Data at the discrete intervals of the simulation.
+* `"Checkpoint Data`" is intended to represent all that is necessary to repeat or continue an Amanzi run.  The specific data contained in a Checkpoint Data dump is specific to the algorithm options and mesh framework selected.  Checkpoint Data is special in that no interpolation is performed prior to writing the data files; the raw binary state is necessary.  As a result, the user is allowed to only write Checkpoint Data at the discrete intervals of the simulation.
 
-* `"Visualization Data`" is intended to represent spatially complete snapshots of the solution at defined instances during the simulation.  Dependeing on the control parameters provided here, visualizatoin files may include only a fraction of the state data, and may contiain auxiliary "derived" information (see below for more discussion).
+* `"Visualization Data`" is intended to represent spatially complete snapshots of the solution at defined instances during the simulation.  Depending on the control parameters provided here, visualization files may include only a fraction of the state data, and may contain auxiliary "derived" information (see below for more discussion).
 
 * `"Observation Data`" is intended to represent diagnostic values to be returned to the calling routine from Amanzi's simulation driver.  Observations are typically generated at arbitrary times, and frequently involve various point samplings and volumetric reductions that are interpolated in time to the desired instant.  Observations may involve derived quantities (see discussion below) or state fields.
 
@@ -1699,7 +1699,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
   * [SU] `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
 
-  * [SU] OBSERVATION [list] user-defined label, can accept values for `"Variable`", `"Functional`", `"Region`", `"Time Macro`", and `"Cycle Macro`".
+  * [SU] OBSERVATION [list] user-defined label, can accept values for `"Variable`", `"Functional`", `"Region`", `"Time Macros`", and `"Cycle Macros`".
 
     * [SU] `"Variable`" [string] name of field quantities taken from the list of "Available field quantities" defined under `"Time and Cycle specification`"
 
@@ -1707,9 +1707,9 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
     * [SU] `"Region`" [string] the label of a user-defined region
 
-    * [SU] `"Time Macro`" [string] one of the labeled time macros (see below)
+    * [SU] `"Time Macros`" [Array(string)] can accept a list of the labeled time macros (see above) (NOTE: previously accepted `"Time Macro`" a single labeled time macro.  Moving towards all output only accepting plural macros.  Please update current input files accordingly.)
 
-    * [SU] `"Cycle Macro`" [string] one of the labeled time macros (see below)
+    * [SU] `"Cycle Macros`" [Array(string)] can accept a list of of user-defined Cycle Macro (see above) (NOTE: previously accepted `"Cycle Macro`" a single labeled cycle macro.  Moving towards all output only accepting plural macros.  Please update current input files accordingly.)
 
 
 The following Observation Data functionals are currently supported.  All of them operate on the variables identified.
@@ -1722,7 +1722,7 @@ The following Observation Data functionals are currently supported.  All of them
 
 * `"Observation Data: Cummulative Integral`" returns the integral of the field quantity, accumulated over the intervals defined by the time macro
 
-* `"Observation Data: Peak Value`" returns the peak value of the field quantity over the region
+* [S] `"Observation Data: Peak Value`" returns the peak value of the field quantity over the region
 
 
 Example:
@@ -1741,7 +1741,7 @@ Example:
       <Parameter name="Region" type="string" value="All"/>
       <Parameter name="Functional" type="string" value="Observation Data: Integral"/>
       <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
-      <Parameter name="Time Macro" type="string" value="Annual"/>
+      <Parameter name="Time Macros" type="Array(string)" value="{Annual}"/>
     </ParameterList>
   </ParameterList>
 
@@ -1761,7 +1761,7 @@ by machine round errors and randomness due to execution in a parallel computing 
 
   * [SU] `"File Name Digits`" [int] specify the number of digits that should be appended to the file name for the cycle number.
 
-  * [SU] `"Cycle Macro`" [string] can accept label of user-defined Cycle Macro (see above)
+  * [SU] `"Cycle Macros`" [Array(string)] can accept a list of of user-defined Cycle Macro (see above) (NOTE: previously accepted `"Cycle Macro`" a single labeled cycle macro.  Moving towards all output only accepting plural macros.  Please update current input files accordingly.)
 
 Notes:
 
@@ -1783,7 +1783,7 @@ Example:
   <ParameterList name="Checkpoint Data">
     <Parameter name="File Name Base" type="string" value="chk"/>
     <Parameter name="File Name Digits" type="int" value="5"/>
-    <Parameter name="Cycle Macro" type="string" value="Every-5"/>
+    <Parameter name="Cycle Macros" type="Array(string)" value="{Every-5}"/>
   </ParameterList>
 
 In this example, Checkpoint Data files are written when the cycle number is evenly divisible by 5.
@@ -1833,7 +1833,7 @@ Example:
     <Parameter name="Cycle Macros" type="Array(string)" value="Every-10">
   </ParameterList>
 
-In this example, the liquid pressure and moisture content are written when the cycle number is evenly divisble by 5.
+In this example, the liquid pressure and moisture content are written when the cycle number is evenly divisible by 5.
 
 
 
@@ -1849,7 +1849,7 @@ A user may request periodic dumps of Walkabout Data.  Output controls for Walkab
 
   * [U] `"File Name Digits`" [int] specify the number of digits that should be appended to the file name for the cycle number.
 
-  * [U] `"Cycle Macro`" [string] can accept label of user-defined Cycle Macro (see above)
+  * [U] `"Cycle Macros`" [Array(string)] can accept a list of of user-defined Cycle Macro (see above) (NOTE: previously accepted `"Cycle Macro`" a single labeled cycle macro.  Moving towards all output only accepting plural macros.  Please update current input files accordingly.)
 
 Notes:
 
@@ -1871,7 +1871,7 @@ Example:
   <ParameterList name="Walkabout Data">
     <Parameter name="File Name Base" type="string" value="walk"/>
     <Parameter name="File Name Digits" type="int" value="5"/>
-    <Parameter name="Cycle Macro" type="string" value="Every-5"/>
+    <Parameter name="Cycle Macros" type="Array(string)" value="{Every-5}"/>
   </ParameterList>
 
 In this example, Checkpoint Data files are written when the cycle number is evenly divisible by 5.
@@ -1891,14 +1891,14 @@ terminated because its allocation of time ran out.
 
 * [S] `"Restart`" [list]
 
-  * [S] `"Checkpoint Data File Name`" [string] file name of the specific Checkpoint Data file to restart from
+  * [S] `"File Name`" [string] file name of the specific Checkpoint Data file to restart from
 
 Example:
 
 .. code-block:: xml
 
   <ParameterList name="Restart">
-     <Parameter name="Checkpoint Data File Name" type="string" value="chk00123.h5"/>
+     <Parameter name="File Name" type="string" value="chk00123.h5"/>
   </ParameterList>
 
 In this example, Amanzi is restarted with all state data initialized from the Checkpoint 
@@ -2594,7 +2594,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                <Parameter name="Region" type="string" value="All"/>
                <Parameter name="Functional" type="string" value="Observation Data: Integral"/>
                <Parameter name="Variables" type="Array(string)" value="{Water Mass Density, Tc-99 Aqueous Concentration}"/>
-               <Parameter name="Time Macro" type="string" value="Annual"/>
+               <Parameter name="Time Macros" type="Array(string)" value="{Annual}"/>
              </ParameterList>
 
              <!-- Point samples of water and Tc-99 -->
@@ -2602,21 +2602,21 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                <Parameter name="Region" type="string" value="Sample Point 1 Region"/>
                <Parameter name="Functional" type="string" value="Observation Data: Point"/>
                <Parameter name="Variables" type="Array(string)" value="{Water Mass Density, Tc-99 Aqueous Concentration}"/>
-               <Parameter name="Time Macro" type="string" value="Daily_1957-1967"/>
+               <Parameter name="Time Macros" type="Array(string)" value="{Daily_1957-1967}"/>
              </ParameterList>
 
              <ParameterList name="Point Sample 2">
                <Parameter name="Region" type="string" value="Sample Point 2 Region"/>
                <Parameter name="Functional" type="string" value="Observation Data: Point"/>
                <Parameter name="Variables" type="Array(string)" value="{Water Mass Density, Tc-99 Aqueous Concentration}"/>
-               <Parameter name="Time Macro" type="string" value="Daily_1957-1967"/>
+               <Parameter name="Time Macros" type="Array(string)" value="{Daily_1957-1967}"/>
              </ParameterList>
 
              <ParameterList name="Point Sample 3">
                <Parameter name="Region" type="string" value="Sample Point 3 Region"/>
                <Parameter name="Functional" type="string" value="Observation Data: Point"/>
                <Parameter name="Variables" type="Array(string)" value="{Water Mass Density, Tc-99 Aqueous Concentration}"/>
-               <Parameter name="Time Macro" type="string" value="Daily_1957-1967"/>
+               <Parameter name="Time Macros" type="Array(string)" value="{Daily_1957-1967}"/>
              </ParameterList>
 
              <!-- cummulative flux of Tc-99 -->
@@ -2624,28 +2624,28 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                <Parameter name="Region" type="string" value="Bottom Surface Region"/>
                <Parameter name="Functional" type="string" value="Observation Data: Cummulative Integral"/>
                <Parameter name="Variables" type="Array(string)" value="{Tc-99 Aqueous Concentration}"/>
-               <Parameter name="Time Macro" type="string" value="Daily_1957-2006"/>
+               <Parameter name="Time Macros" type="Array(string)" value="{Daily_1957-2006}"/>
              </ParameterList>
 
              <ParameterList name="Cummulative Tc-99 Flux Integral - Crib 1">
                <Parameter name="Region" type="string" value="Crib 1 Region"/>
                <Parameter name="Functional" type="string" value="Observation Data: Cummulative Integral"/>
                <Parameter name="Variables" type="Array(string)" value="{Tc-99 Aqueous Concentration}"/>
-               <Parameter name="Time Macro" type="string" value="Daily_1957-2006"/>
+               <Parameter name="Time Macros" type="Array(string)" value="{Daily_1957-2006}"/>
              </ParameterList>
 
              <ParameterList name="Cummulative Tc-99 Flux Integral - Crib 2">
                <Parameter name="Region" type="string" value="Crib 2 Region"/>
                <Parameter name="Functional" type="string" value="Observation Data: Cummulative Integral"/>
                <Parameter name="Variables" type="Array(string)" value="{Tc-99 Aqueous Concentration}"/>
-               <Parameter name="Time Macro" type="string" value="Daily_1957-2006"/>
+               <Parameter name="Time Macros" type="Array(string)" value="{Daily_1957-2006}"/>
              </ParameterList>
 
              <ParameterList name="Cummulative Tc-99 Flux Integral - 90m">
                <Parameter name="Region" type="string" value="90 Meter Plane Region"/>
                <Parameter name="Functional" type="string" value="Observation Data: Cummulative Integral"/>
                <Parameter name="Variables" type="Array(string)" value="{Tc-99 Aqueous Concentration}"/>
-               <Parameter name="Time Macro" type="string" value="Daily_1957-2006"/>
+               <Parameter name="Time Macros" type="Array(string)" value="{Daily_1957-2006}"/>
              </ParameterList>
 
            </ParameterList>
@@ -2653,13 +2653,13 @@ required to specify a real simulation with Amanzi envisioned functional for the 
 
            <ParameterList name="Visualization Data">
              <Parameter name="File Name Base" type="string" value="viz-"/>
-             <Parameter name="Cycle Macro" type="string" value="Every-10-steps"/>
+             <Parameter name="Cycle Macros" type="Array(string)" value="{Every-10-steps}"/>
              <Parameter name="Variables" type="Array(string)" value="{Aqueous Pressure, Tc-99 Aqueous Concentration}"/>
            </ParameterList>
 
            <ParameterList name="Checkpoint Data">
              <Parameter name="File Name Base" type="string" value="dump-"/>
-             <Parameter name="Cycle Macro" type="string" value="Every-100-steps"/>
+             <Parameter name="Cycle Macros" type="Array(string)" value="{Every-100-steps}"/>
            </ParameterList>
 
          </ParameterList> <!-- End of Output -->

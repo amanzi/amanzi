@@ -114,8 +114,8 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   TI_Specs ti_specs;
   ti_specs.T0 = 0.0;
   ti_specs.dT0 = 1.0;
-  ti_specs.T1 = 1e+10;
-  ti_specs.max_itrs = 100;
+  ti_specs.T1 = 1e+7;
+  ti_specs.max_itrs = 10;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
   RPK->CommitStep(0.0, 1.0);  // dummy times for flow

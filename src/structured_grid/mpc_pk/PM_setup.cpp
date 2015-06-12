@@ -3,7 +3,6 @@
 #include <Interpolater.H>
 #include <MultiGrid.H>
 #include <ArrayLim.H>
-#include <Profiler.H>
 #include <TagBox.H>
 #include <DataServices.H>
 #include <AmrData.H>
@@ -154,6 +153,10 @@ Array<int>  PorousMedia::rinflow_bc_hi;
 // Temperature.
 //
 Real  PorousMedia::temperature;
+//
+// Observations
+//
+int PorousMedia::verbose_observation_processing;
 //
 // Flow.
 //
@@ -538,6 +541,8 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::wt_hi = 0;
 
   PorousMedia::temperature = 0;
+
+  PorousMedia::verbose_observation_processing = 0;
 
   PorousMedia::verbose      = 0;
   PorousMedia::cfl          = 0.8;
@@ -1124,6 +1129,8 @@ void PorousMedia::read_prob()
   if (be_cn_theta > 1.0 || be_cn_theta < 0)
     BoxLib::Abort("PorousMedia::Must have be_cn_theta_trac <= 1.0 && >= 0");   
   pb.query("harm_avg_cen2edge", def_harm_avg_cen2edge);
+
+  pb.query("verbose_observation_processing",verbose_observation_processing);
 }
 
 //

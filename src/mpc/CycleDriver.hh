@@ -24,6 +24,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "Walkabout_observations.hh"
 #include "ObservationData.hh"
 #include "Unstructured_observations.hh"
 #include "VerboseObject.hh"
@@ -56,6 +57,8 @@ class CycleDriver {
   void Visualize(bool force = false);
   void Observations(bool force = false);
   void WriteCheckpoint(double dt, bool force = false);
+  void WriteWalkabout(bool force);
+  //  void RegisterOutput();
   double get_dt(bool after_failuer = false);
   void set_dt(double dt);
   void ResetDriver(int time_period_id);
@@ -99,6 +102,7 @@ class CycleDriver {
   std::vector<Teuchos::RCP<Visualization> > failed_visualization_;
   Teuchos::RCP<Checkpoint> checkpoint_;
   bool restart_requested_;
+  //  bool output_registered_;
   std::string restart_filename_;
 
   // time period control
@@ -109,7 +113,7 @@ class CycleDriver {
   // Teuchos::RCP<Amanzi::Checkpoint> restart_;
  
   // walkabout
-  Teuchos::RCP<Amanzi::Checkpoint> walkabout;  
+  Teuchos::RCP<Amanzi::Walkabout_observations> walkabout_;  
 
   // fancy OS
   Teuchos::RCP<VerboseObject> vo_;

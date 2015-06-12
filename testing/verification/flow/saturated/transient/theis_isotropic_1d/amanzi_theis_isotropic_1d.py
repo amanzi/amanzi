@@ -129,6 +129,7 @@ if __name__ == "__main__":
        
         cmap = plotTheisObservations(obs_xml,obs_data,axes1)
         plotTheisAnalytic(input_filename,cmap,axes1,obs_xml,obs_data)
+        # plt.show()
         MakeTable(obs_data,obs_xml,input_filename)
 
     finally:

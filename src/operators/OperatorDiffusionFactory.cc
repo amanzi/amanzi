@@ -57,6 +57,22 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
   }
 }
 
+Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                                       Teuchos::RCP<BCs> bc,
+                                       Teuchos::ParameterList& oplist)
+{
+  // Let us try to identify a FV scheme.
+  std::string name = oplist.get<std::string>("discretization primary");
+  if (name == "fv: default") {
+    Teuchos::RCP<OperatorDiffusionFV> op = Teuchos::rcp(new OperatorDiffusionFV(oplist, mesh));
+    op->SetBCs(bc, bc);
+    return op;
+  }
+  
+  Teuchos::RCP<OperatorDiffusionMFD> op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, mesh));
+  op->SetBCs(bc, bc);
+  return op;
+}
 }  // namespace Operators
 }  // namespace Amanzi
 

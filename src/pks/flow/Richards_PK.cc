@@ -312,8 +312,8 @@ void Richards_PK::Setup()
 ****************************************************************** */
 void Richards_PK::Initialize()
 {
-  //times 
-  double t_old = ti_list_->get<double>("start interval time", 0.0);
+  // times, initialization could be done on any non-zero interval.
+  double t_old = S_->time(); 
   dt_ = ti_list_->get<double>("initial time step", 1.0);
   double t_new = t_old + dt_;
 
@@ -343,7 +343,8 @@ void Richards_PK::Initialize()
   op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // Create relative permeability
-  relperm_ = Teuchos::rcp(new RelPerm(*rp_list_, mesh_, atm_pressure_, wrm_));
+  Teuchos::RCP<Teuchos::ParameterList> upw_list = Teuchos::sublist(rp_list_, "upwind", true);
+  relperm_ = Teuchos::rcp(new RelPerm(*upw_list, mesh_, atm_pressure_, wrm_));
 
   CompositeVectorSpace cvs; 
   cvs.SetMesh(mesh_);
@@ -360,13 +361,10 @@ void Richards_PK::Initialize()
   dKdP_->PutScalarMasterAndGhosted(0.0);
 
   // parameter which defines when update direction of update
-  Teuchos::ParameterList upw_list = rp_list_->sublist("operators")
-                                             .sublist("diffusion operator")
-                                             .sublist("upwind");
   Operators::UpwindFactory<RelPerm> upwind_factory;
-  upwind_ = upwind_factory.Create(mesh_, relperm_, upw_list);
+  upwind_ = upwind_factory.Create(mesh_, relperm_, *upw_list);
 
-  std::string upw_upd = rp_list_->get<std::string>("upwind update", "every timestep");
+  std::string upw_upd = upw_list->get<std::string>("upwind update", "every timestep");
   if (upw_upd == "every nonlinear iteration") update_upwind = FLOW_UPWIND_UPDATE_ITERATION;
   else update_upwind = FLOW_UPWIND_UPDATE_TIMESTEP;  
 
@@ -404,7 +402,7 @@ void Richards_PK::Initialize()
   Teuchos::ParameterList oplist_matrix = tmp_list.sublist("matrix");
   Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
 
-  std::string name = rp_list_->get<std::string>("relative permeability");
+  std::string name = rp_list_->sublist("upwind").get<std::string>("relative permeability");
   int upw_id(Operators::OPERATOR_UPWIND_FLUX);
   std::string upw_method("standard: cell");
   if (name == "upwind: darcy velocity") {
@@ -412,8 +410,6 @@ void Richards_PK::Initialize()
   } else if (name == "upwind: gravity") {
     upw_method = "upwind: face";
     upw_id = Operators::OPERATOR_UPWIND_CONSTANT_VECTOR;
-  } else if (name == "upwind: artificial diffusion") {
-    upw_method = "artificial diffusion: cell-face";
   } else if (name == "upwind: amanzi") {
     upw_method = "divk: cell-face";
   } else if (name == "other: arithmetic average") {
@@ -554,8 +550,10 @@ void Richards_PK::Initialize()
   }
 
   // Optional step: calculate hydrostatic solution consistent with BCs
-  // and clip it as requested. We have to do it only once per time period.
-  if (ti_list_->isSublist("initialization") && initialize_with_darcy_) {
+  // and clip it as requested. We have to do it only once at the beginning
+  // of time period.
+  if (ti_list_->isSublist("initialization") && initialize_with_darcy_ 
+      && S_->position() == Amanzi::TIME_PERIOD_START) {
     initialize_with_darcy_ = false;
     Teuchos::ParameterList& ini_list = ti_list_->sublist("initialization");
  
@@ -617,8 +615,9 @@ void Richards_PK::Initialize()
     for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
   }
 
-  // subspace entering: re-inititime lambdas.
-  if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face")) {
+  // subspace entering: re-initialize lambdas.
+  if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face")
+      && S_->position() == Amanzi::TIME_PERIOD_START) {
     solver_name_constraint_ = ti_list_->sublist("pressure-lambda constraints").get<std::string>("linear solver");
 
     EnforceConstraints(t_new, solution);
@@ -641,7 +640,8 @@ void Richards_PK::Initialize()
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << std::endl 
-        << vo_->color("green") << "Initalization of TI period is complete." << vo_->reset() << std::endl;
+        << vo_->color("green") << "Initalization of TP is complete, T=" << t_old 
+        << " dT=" << dt_ << vo_->reset() << std::endl;
     *vo_->os()<< "EC:" << error_control_ << " Src:" << src_sink_distribution
               << " Upwind:" << relperm_->method() << op_matrix_diff_->little_k()
               << " PC:\"" << preconditioner_name_.c_str() << "\"" 
@@ -682,7 +682,7 @@ void Richards_PK::InitializeFields_()
       S_->GetField("viscosity_liquid", passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized viscosity_liquid to value " << mu << std::endl;  
+          *vo_->os() << "initilized viscosity_liquid to input value " << mu << std::endl;  
     }
   }
 
@@ -738,7 +738,6 @@ void Richards_PK::InitializeUpwind_()
 {
   // Create RCP pointer to upwind flux.
   if (relperm_->method() == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
-      relperm_->method() == FLOW_RELATIVE_PERM_AMANZI_ARTIFICIAL_DIFFUSION ||
       relperm_->method() == FLOW_RELATIVE_PERM_AMANZI_MFD) {
     darcy_flux_upwind = darcy_flux_copy;
   } else if (relperm_->method() == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
@@ -778,6 +777,15 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   CompositeVector wc_prev_copy(wc_prev);
   wc_prev = wc;
+
+  // enter subspace
+  if (reinit && solution->HasComponent("face")) {
+    EnforceConstraints(t_new, solution);
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+      VV_PrintHeadExtrema(*solution);
+    }
+  }
 
   // initialization
   if (num_itrs_ == 0) {
@@ -852,25 +860,25 @@ void Richards_PK::CommitStep(double t_old, double t_new)
 
 
 /* ******************************************************************
- * * A wrapper for updating boundary conditions.
- * ****************************************************************** */
-void Richards_PK::UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u)
+* A wrapper for updating boundary conditions.
+****************************************************************** */
+void Richards_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u)
 {
   if (src_sink != NULL) {
     if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      src_sink->ComputeDistribute(T0, T1, Kxy->Values());
+      src_sink->ComputeDistribute(t_old, t_new, Kxy->Values());
     } else {
-      src_sink->ComputeDistribute(T0, T1);
+      src_sink->ComputeDistribute(t_old, t_new);
     }
   }
 
-  bc_pressure->Compute(T1);
-  bc_flux->Compute(T1);
-  bc_seepage->Compute(T1);
+  bc_pressure->Compute(t_new);
+  bc_flux->Compute(t_new);
+  bc_seepage->Compute(t_new);
   if (shift_water_table_.getRawPtr() == NULL)
-    bc_head->Compute(T1);
+    bc_head->Compute(t_new);
   else
-    bc_head->ComputeShift(T1, shift_water_table_->Values());
+    bc_head->ComputeShift(t_new, shift_water_table_->Values());
 
   ComputeBCs(u);
 }

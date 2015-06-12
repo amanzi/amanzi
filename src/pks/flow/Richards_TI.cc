@@ -218,7 +218,7 @@ void Richards_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
 
 
 /* ******************************************************************
-* Update new preconditioner B(p, dT_prec).                                   
+* Update new preconditioner on the interval (tp-dtp, tp].
 ****************************************************************** */
 void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp)
 {
@@ -227,6 +227,8 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   // update coefficients
   if (update_upwind == FLOW_UPWIND_UPDATE_ITERATION) {
     op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
+    Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face");
+    for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
   }
   darcy_flux_copy->ScatterMasterToGhosted("face");
 

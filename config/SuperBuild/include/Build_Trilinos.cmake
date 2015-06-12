@@ -95,13 +95,13 @@ endif()
 # Boost
 list(APPEND Trilinos_CMAKE_TPL_ARGS
             "-DTPL_ENABLE_Boost:BOOL=ON" 
-            "-DBoost_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include"
-            "-DBoost_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib")
+            "-DTPL_Boost_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include"
+            "-DTPL_Boost_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib")
 
 # NetCDF
 list(APPEND Trilinos_CMAKE_TPL_ARGS
             "-DTPL_ENABLE_Netcdf:BOOL=ON"
-            "-DTPL_Netcdf_INCLUDE_DIRS:STRING=${NetCDF_INCLUDE_DIRS}"
+            "-DTPL_Netcdf_INCLUDE_DIRS:FILEPATH=${NetCDF_INCLUDE_DIRS}"
             "-DTPL_Netcdf_LIBRARIES:STRING=${NetCDF_C_LIBRARIES}")
 
 
@@ -110,7 +110,7 @@ if( ENABLE_HYPRE )
   list(APPEND Trilinos_CMAKE_TPL_ARGS
               "-DTPL_ENABLE_HYPRE:BOOL=ON"
               "-DTPL_HYPRE_LIBRARIES:STRING=${HYPRE_LIBRARIES}"
-              "-DHYPRE_INCLUDE_DIRS:PATH=${TPL_INSTALL_PREFIX}/include")
+              "-DTPL_HYPRE_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include")
 endif()
 
 #  - Addtional Trilinos CMake Arguments

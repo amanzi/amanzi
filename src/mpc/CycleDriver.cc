@@ -50,7 +50,6 @@ bool reset_info_compfunc(std::pair<double,double> x, std::pair<double,double> y)
 }
 
 
-
 double rss_usage() { // return ru_maxrss in MBytes
 #if (defined(__unix__) || defined(__unix) || defined(unix) || defined(__APPLE__) || defined(__MACH__))
   struct rusage usage;
@@ -152,22 +151,97 @@ void CycleDriver::Setup() {
     checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint());
   }
 
+  // create the walkabout
+  if (parameter_list_->isSublist("Walkabout Data")){
+    Teuchos::ParameterList& walk_plist = parameter_list_->sublist("Walkabout Data");
+    walkabout_ = Teuchos::rcp(new Amanzi::Walkabout_observations(walk_plist, comm_));
+  }
+  else {
+    walkabout_ = Teuchos::rcp(new Amanzi::Walkabout_observations());
+  }
+
+  // vis successful steps
+  bool surface_done = false;
+  for (State::mesh_iterator mesh=S_->mesh_begin();
+       mesh!=S_->mesh_end(); ++mesh) {
+    if (mesh->first == "surface_3d") {
+      // pass
+    } else if ((mesh->first == "surface") && surface_done) {
+      // pass
+    } else {
+      // vis successful steps
+      std::string plist_name = "Visualization Data "+mesh->first;
+      // in the case of just a domain mesh, we want to allow no name.
+      if ((mesh->first == "domain") && !parameter_list_->isSublist(plist_name)) {
+        plist_name = "Visualization Data";
+      }
+
+      if (parameter_list_->isSublist(plist_name)) {
+        Teuchos::ParameterList& vis_plist = parameter_list_->sublist(plist_name);
+        Teuchos::RCP<Visualization> vis = Teuchos::rcp(new Visualization(vis_plist, comm_));
+        vis->set_mesh(mesh->second.first);
+        vis->CreateFiles();
+        visualization_.push_back(vis);
+      }
+
+      // vis unsuccessful steps
+      std::string fail_plist_name = "Visualization Data "+mesh->first+" Failed Steps";
+      // in the case of just a domain mesh, we want to allow no name.
+      if ((mesh->first == "domain") && !parameter_list_->isSublist(fail_plist_name)) {
+        fail_plist_name = "Visualization Data Failed Steps";
+      }
+
+      if (parameter_list_->isSublist(fail_plist_name)) {
+        Teuchos::ParameterList& fail_vis_plist = parameter_list_->sublist(fail_plist_name);
+        Teuchos::RCP<Visualization> fail_vis =
+          Teuchos::rcp(new Visualization(fail_vis_plist, comm_));
+        fail_vis->set_mesh(mesh->second.first);
+        fail_vis->CreateFiles();
+        failed_visualization_.push_back(fail_vis);
+      }
+    }
+  }
+
 
   pk_->Setup();
   S_->RequireScalar("dt", "coordinator");
   S_->Setup();
 
+
   // create the time step manager
   tsm_ = Teuchos::ptr(new TimeStepManager(parameter_list_->sublist("Cycle Driver")));
   //tsm_ = Teuchos::ptr(new TimeStepManager(vo_));
+
+  // set up the TSM
+  // -- register visualization times
+  for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
+       vis!=visualization_.end(); ++vis) {
+    (*vis)->RegisterWithTimeStepManager(tsm_.ptr());
+  }
+  // -- register checkpoint times
+  if (checkpoint_ != Teuchos::null) 
+  checkpoint_->RegisterWithTimeStepManager(tsm_.ptr());
+  // -- register observation times
+  if (observations_ != Teuchos::null) 
+    observations_->RegisterWithTimeStepManager(tsm_.ptr());
+  // -- register the final time
+  // register reset_times
+  for(std::vector<std::pair<double,double> >::const_iterator it = reset_info_.begin();
+      it != reset_info_.end(); ++it) tsm_->RegisterTimeEvent(it->first);
+
+
+  for (int i=0;i<num_time_periods_; i++) {
+    tsm_->RegisterTimeEvent(tp_end_[i]);
+    tsm_->RegisterTimeEvent(tp_start_[i] + tp_dt_[i]);
+  } 
+
 
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Setup is complete." << std::endl;
   }
-
-
 }
+
 
 /* ******************************************************************
 * Initialize State followed by initialization of PK.
@@ -199,100 +273,6 @@ void CycleDriver::Initialize() {
     // visualize();
     // checkpoint(*S_->GetScalarData("dt", "coordinator"));
   }
-
-  // // vis for the state
-  // // HACK to vis with a surrogate surface mesh.  This needs serious re-design. --etc
-  bool surface_done = false;
-  // if (S_->HasMesh("surface") && S_->HasMesh("surface_3d")) {
-  //   Teuchos::RCP<const AmanziMesh::Mesh> surface_3d = S_->GetMesh("surface_3d");
-  //   Teuchos::RCP<const AmanziMesh::Mesh> surface = S_->GetMesh("surface");
-
-  //   // vis successful timesteps
-  //   std::string plist_name = "Visualization Data surface";
-  //   Teuchos::ParameterList& vis_plist = parameter_list_->sublist(plist_name);
-  //   Teuchos::RCP<Visualization> vis = Teuchos::rcp(new Visualization(vis_plist, comm_));
-  //   vis->set_mesh(surface_3d);
-  //   vis->CreateFiles();
-  //   vis->set_mesh(surface);
-  //   visualization_.push_back(vis);
-  //   surface_done = true;
-
-  //   // vis unsuccesful timesteps
-  //   std::string fail_plist_name = "Visualization Data surface Failed Steps";
-  //   if (parameter_list_->isSublist(fail_plist_name)) {
-  //     Teuchos::ParameterList& fail_vis_plist = parameter_list_->sublist(fail_plist_name);
-  //     Teuchos::RCP<Visualization> fail_vis = Teuchos::rcp(new Visualization(fail_vis_plist, comm_));
-  //     fail_vis->set_mesh(surface_3d);
-  //     fail_vis->CreateFiles();
-  //     fail_vis->set_mesh(surface);
-  //     failed_visualization_.push_back(fail_vis);
-  //   }
-  // }
-
-  for (State::mesh_iterator mesh=S_->mesh_begin();
-       mesh!=S_->mesh_end(); ++mesh) {
-    if (mesh->first == "surface_3d") {
-      // pass
-    } else if ((mesh->first == "surface") && surface_done) {
-      // pass
-    } else {
-      // vis successful steps
-      std::string plist_name = "Visualization Data "+mesh->first;
-      // in the case of just a domain mesh, we want to allow no name.
-      if ((mesh->first == "domain") && !parameter_list_->isSublist(plist_name)) {
-        plist_name = "Visualization Data";
-      }
-
-      if (parameter_list_->isSublist(plist_name)) {
-        Teuchos::ParameterList& vis_plist = parameter_list_->sublist(plist_name);
-        Teuchos::RCP<Visualization> vis =
-          Teuchos::rcp(new Visualization(vis_plist, comm_));
-        vis->set_mesh(mesh->second.first);
-        vis->CreateFiles();
-        visualization_.push_back(vis);
-      }
-
-      // vis unsuccessful steps
-      std::string fail_plist_name = "Visualization Data "+mesh->first+" Failed Steps";
-      // in the case of just a domain mesh, we want to allow no name.
-      if ((mesh->first == "domain") && !parameter_list_->isSublist(fail_plist_name)) {
-        fail_plist_name = "Visualization Data Failed Steps";
-      }
-
-      if (parameter_list_->isSublist(fail_plist_name)) {
-        Teuchos::ParameterList& fail_vis_plist = parameter_list_->sublist(fail_plist_name);
-        Teuchos::RCP<Visualization> fail_vis =
-          Teuchos::rcp(new Visualization(fail_vis_plist, comm_));
-        fail_vis->set_mesh(mesh->second.first);
-        fail_vis->CreateFiles();
-        failed_visualization_.push_back(fail_vis);
-      }
-    }
-  }
-
-  // set up the TSM
-  // -- register visualization times
-  for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
-       vis!=visualization_.end(); ++vis) {
-    (*vis)->RegisterWithTimeStepManager(tsm_.ptr());
-  }
-  // -- register checkpoint times
-  checkpoint_->RegisterWithTimeStepManager(tsm_.ptr());
-  // -- register observation times
-  if (observations_ != Teuchos::null) 
-    observations_->RegisterWithTimeStepManager(tsm_.ptr());
-  // -- register the final time
-  // register reset_times
-  for(std::vector<std::pair<double,double> >::const_iterator it = reset_info_.begin();
-      it != reset_info_.end(); ++it) tsm_->RegisterTimeEvent(it->first);
-
-
-  for (int i=0;i<num_time_periods_; i++) {
-    tsm_->RegisterTimeEvent(tp_end_[i]);
-    tsm_->RegisterTimeEvent(tp_start_[i] + tp_dt_[i]);
-  }
-  
-  //tsm_->RegisterTimeEvent(t1_);
 }
 
 
@@ -448,7 +428,7 @@ void CycleDriver::ReadParameterList_() {
     const std::string & tp_name = time_periods_list.name(item);
     tp_start_[i] = time_periods_list.sublist(tp_name).get<double>("start period time");
     tp_end_[i] = time_periods_list.sublist(tp_name).get<double>("end period time");
-    tp_dt_[i] = time_periods_list.sublist(tp_name).get<double>("initial time step", 1);
+    tp_dt_[i] = time_periods_list.sublist(tp_name).get<double>("initial time step", 1.0);
     tp_max_cycle_[i] = time_periods_list.sublist(tp_name).get<int>("maximum cycle number", -1);
    
     std::string t_units = time_periods_list.sublist(tp_name).get<std::string>("start time units", "s");
@@ -498,7 +478,7 @@ void CycleDriver::ReadParameterList_() {
 
     if (restart_requested_) {
       Teuchos::ParameterList restart_list = coordinator_list_->sublist("Restart");
-      restart_filename_ = restart_list.get<std::string>("Checkpoint Data File Name");
+      restart_filename_ = restart_list.get<std::string>("File Name");
 
       // make sure that the restart file actually exists, if not throw an error
       boost::filesystem::path restart_from_filename_path(restart_filename_);
@@ -555,7 +535,6 @@ void CycleDriver::ReadParameterList_() {
     std::sort(reset_info_.begin(), reset_info_.end(), reset_info_compfunc);
     std::sort(reset_max_.begin(),  reset_max_.end(),  reset_info_compfunc);
   }
-
 }
 
 
@@ -566,7 +545,7 @@ double CycleDriver::get_dt( bool after_failure) {
   // get the physical step size
   double dt;
 
-  dt  = pk_->get_dt();
+  dt = pk_->get_dt();
 
   std::vector<std::pair<double,double> >::const_iterator it;
   std::vector<std::pair<double,double> >::const_iterator it_max;
@@ -663,7 +642,6 @@ bool CycleDriver::Advance(double dt) {
     }      
 
     fail = pk_->AdvanceStep(S_->time(), S_->time()+dt, reinit);
-
   }
 
   if (!fail) {
@@ -702,6 +680,7 @@ bool CycleDriver::Advance(double dt) {
       Visualize(force_vis);
       WriteCheckpoint(dt, force_check);
       Observations(force_obser);
+      WriteWalkabout(force_check);
     }
     //Amanzi::timer_manager.start("I/O");
 
@@ -777,6 +756,17 @@ void CycleDriver::WriteCheckpoint(double dt, bool force) {
 }
 
 
+void CycleDriver::WriteWalkabout(bool force){
+  if (walkabout_ != Teuchos::null) {
+    if (walkabout_->DumpRequested(S_->cycle(), S_->time()) || force) {
+      if (!walkabout_->is_disabled())
+         *vo_->os() << "Cycle " << S_->cycle() << ": writing walkabout file" << std::endl;
+      walkabout_->WriteWalkabout(S_);
+    }
+  }
+
+}
+
 /* ******************************************************************
 * timestep loop.
 ****************************************************************** */
@@ -784,35 +774,43 @@ void CycleDriver::Go() {
 
   time_period_id_ = 0;
   int position = 0;
+  double restart_time = 0.;
 
-  if (restart_requested_) {
-    double restart_time = ReadCheckpointInitialTime(comm_, restart_filename_);
-    position = ReadCheckpointPosition(comm_, restart_filename_);
-
-    for (int i=0;i<num_time_periods_;i++) {
-      if (restart_time - tp_end_[i] > 1e-10) time_period_id_++;
-    }
-    if (position == TIME_PERIOD_END) time_period_id_--;    
-  }
-
-  Init_PK(time_period_id_);
-
-  S_->set_time(tp_start_[time_period_id_]);
-  S_->set_cycle(cycle0_);
-
-  // start at time t = t0 and initialize the state.
-  S_->set_time(tp_start_[time_period_id_]);
-  S_->set_cycle(cycle0_);
-
-  Setup();
-  Initialize();
-
-
-  S_->set_position(TIME_PERIOD_START);
 
   double dt;
   double restart_dT(1.0e99);
-  if (restart_requested_) {
+
+  if (!restart_requested_){     /// No restart
+    Init_PK(time_period_id_);
+    // start at time t = t0 and initialize the state.
+    S_->set_time(tp_start_[time_period_id_]);
+    S_->set_cycle(cycle0_);
+    S_->set_position(TIME_PERIOD_START);
+
+    Setup();
+    Initialize();
+
+    dt = tp_dt_[time_period_id_];
+    dt = tsm_->TimeStep(S_->time(), dt);
+    pk_->set_dt(dt);
+
+  }
+  else {                        /// Read restart
+
+    restart_time = ReadCheckpointInitialTime(comm_, restart_filename_);
+    position     = ReadCheckpointPosition(comm_, restart_filename_);
+    for (int i=0;i<num_time_periods_;i++) {
+      if (restart_time - tp_end_[i] > -1e-10) 
+	time_period_id_++;
+    }    
+    if (position == TIME_PERIOD_END) 
+      if (time_period_id_>0) 
+	time_period_id_--;   
+
+    Init_PK(time_period_id_); 
+    Setup();
+    //Initialize();
+
     // re-initialize the state object
     restart_dT = ReadCheckpoint(comm_, Teuchos::ptr(&*S_), restart_filename_);
     cycle0_ = S_->cycle();
@@ -822,27 +820,24 @@ void CycleDriver::Go() {
       if (it == reset_info_.end() ) break;
     }
 
+    if (vo_->os_OK(Teuchos::VERB_LOW)) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "Restarting from checkpoint file: " << restart_filename_ << std::endl;
+    }
+
     if (position == TIME_PERIOD_END) {
-      time_period_id_++;
+      if (time_period_id_ < num_time_periods_ - 1) time_period_id_++;
       ResetDriver(time_period_id_); 
       restart_dT =  tp_dt_[time_period_id_];
     }
     else {
       Initialize();
     }
-  }
 
-
-
-  if (restart_requested_) {
     S_->set_initial_time(S_->time());
     dt = tsm_->TimeStep(S_->time(), restart_dT);
     pk_->set_dt(dt);
-  }
-  else {    
-    dt = tp_dt_[time_period_id_];
-    dt = tsm_->TimeStep(S_->time(), dt);
-    pk_->set_dt(dt);
+
   }
 
   *S_->GetScalarData("dt", "coordinator") = dt;
@@ -920,6 +915,11 @@ void CycleDriver::Go() {
 ****************************************************************** */
 void CycleDriver::ResetDriver(int time_pr_id) {
 
+  if (vo_->os_OK(Teuchos::VERB_LOW)) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "Reseting CD: TP " << time_pr_id - 1 << " -> TP " << time_pr_id << "." << std::endl;
+  }
+
   Teuchos::RCP<AmanziMesh::Mesh> mesh = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(S_->GetMesh("domain"));
   S_old_ = S_;
 
@@ -928,6 +928,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   S_->RegisterMesh("domain", mesh);
   S_->set_cycle(S_old_->cycle());
   S_->set_time(tp_start_[time_pr_id]); 
+  S_->set_position(TIME_PERIOD_START);
 
   //delete the old global solution vector
   // soln_ = Teuchos::null;
@@ -951,8 +952,11 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   // Setup
   pk_->Setup();
 
+
   S_->RequireScalar("dt", "coordinator");
   S_->Setup();
+  *S_->GetScalarData("dt", "coordinator") = tp_dt_[time_pr_id];
+  S_->GetField("dt", "coordinator")->set_initialized();
 
   // Initialize
   S_->InitializeFields();
@@ -970,14 +974,16 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   S_->GetMeshPartition("materials");
 
+
+  pk_->CalculateDiagnostics();
+  // // Visualize();
+  // // WriteCheckpoint(dt);
+  Observations();
+
   pk_->set_dt(tp_dt_[time_pr_id]);
 
   S_old_ = Teuchos::null;
 
-  // WriteCheckpoint(tp_dt_[time_pr_id], true);
-  // Visualize(true);
-  // WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), tp_dt_[time_pr_id]);
-  // exit(0);
 }
 
 }  // namespace Amanzi

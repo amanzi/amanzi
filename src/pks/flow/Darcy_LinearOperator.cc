@@ -25,7 +25,7 @@ namespace Flow {
 * does not depend on time. The boundary conditions are calculated
 * only once, during the initialization step.                                                
 ****************************************************************** */
-void Darcy_PK::SolveFullySaturatedProblem(double Tp, CompositeVector& u)
+void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u)
 {
   // add diffusion operator
   op_->RestoreCheckPoint();

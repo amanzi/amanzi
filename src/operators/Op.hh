@@ -66,6 +66,7 @@ class Op {
       }
     }
     vals = vals_shadow;
+    return 0;
   }
 
   // For backward compatibility... must go away
@@ -101,7 +102,15 @@ class Op {
           int my_block_row, int my_block_col) const = 0;
 
   // Mutators of local matrices.
+  // -- rescale local matrices in the container using a CV
   virtual void Rescale(const CompositeVector& scaling) = 0;
+
+  // -- rescale local matrices in the container using a double
+  virtual void Rescale(double scaling) {
+    for (int i = 0; i != matrices.size(); ++i) {
+      matrices[i] *= scaling;
+    }
+  }
 
  public:
   int schema;

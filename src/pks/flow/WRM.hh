@@ -20,6 +20,8 @@ namespace Flow {
 
 class WRM {
  public:
+  virtual ~WRM() {};
+
   virtual double k_relative(double pc) = 0;
   virtual double saturation(double pc) = 0;
   virtual double dSdPc(double pc) = 0;  // derivative of saturation w.r.t. to capillary pressure

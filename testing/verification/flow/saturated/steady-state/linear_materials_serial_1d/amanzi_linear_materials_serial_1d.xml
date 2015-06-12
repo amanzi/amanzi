@@ -1,6 +1,6 @@
 <ParameterList name="Main">
 
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.3"/>
 
   <!--
      Getting started on a simple 2D steady-state saturated test
@@ -284,50 +284,50 @@ Intrinsic Permeability: Uniform, or Intrinsic Permeability: Anisotropic Uniform"
         <Parameter name="Region" type="string" value="LeftBoundary"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous pressure"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Pressure 2">
         <Parameter name="Region" type="string" value="RightBoundary"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous pressure"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Pressure 3">
         <Parameter name="Region" type="string" value="Midpoint"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous pressure"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Pressure 4">
         <Parameter name="Region" type="string" value="LeftmostCell"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous pressure"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Pressure 5">
         <Parameter name="Region" type="string" value="RightmostCell"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous pressure"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Pressure 6">
         <Parameter name="Region" type="string" value="LeftMidpointCell"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous pressure"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Pressure 7">
         <Parameter name="Region" type="string" value="RightMidpointCell"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous pressure"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
 <!--
       <ParameterList name="Darcy velocity / volumetric flux 3">
         <Parameter name="Region" type="string" value="MidpointCell"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="X-Aqueous volumetric flux"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
 -->
     </ParameterList>

@@ -212,8 +212,14 @@ void Unstructured_observations::MakeObservations(State& state)
 
       double value(0.0), volume(0.0);
 
-      // the user is asking to for an observation on tcc
+      // the user is asking for an observation on tcc
       if (obs_solute) { 
+        if (!state.HasField("total_component_concentration")) {  // bail out if this field is not yet created
+          Teuchos::OSTab tab = vo_->getOSTab();
+          *vo_->os() << "Field \"total_component_concentration\" does not exist, skipping it." << std::endl;
+          continue;
+        }
+
         const Epetra_MultiVector& tcc = 
             *state.GetFieldData("total_component_concentration")->ViewComponent("cell", false);
 
@@ -384,8 +390,17 @@ void Unstructured_observations::MakeObservations(State& state)
       
       data_triplet.is_valid = true;
       data_triplet.time = state.time();
-      
-      od.push_back(data_triplet);
+
+      bool time_exist = false;
+      for (std::vector<Amanzi::ObservationData::DataTriple>::iterator it = od.begin(); it != od.end(); ++it){
+        if (it->time == data_triplet.time){
+          time_exist = true;
+          break;
+        }
+      }
+            
+      if (!time_exist) od.push_back(data_triplet);
+
     }
   }
 

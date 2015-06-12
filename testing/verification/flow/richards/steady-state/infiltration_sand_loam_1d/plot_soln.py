@@ -70,7 +70,7 @@ if __name__ == "__main__":
     fig, ax = plt.subplots() 
         
     try:
-        time = '256'
+        time = '235'
         comp = 'pressure.cell.0'
         path_to_amanziU = "."
         root_amanziU = 'case_2b_plot'

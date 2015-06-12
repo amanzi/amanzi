@@ -3212,12 +3212,13 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
 				  std::vector<Entity_ID> *setents) const 
 {
   int idx, i, lid;
-  MSet_ptr mset, mset1;
+  MSet_ptr mset=NULL, mset1=NULL;
   MEntity_ptr ment;
   bool found(false);
   int celldim = Mesh::cell_dimension();
   int spacedim = Mesh::space_dimension();
   const Epetra_Comm *epcomm = get_comm();
+  const VerboseObject *verbobj = verbosity_obj();
 
   assert(setents != NULL);
   
@@ -3254,45 +3255,35 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
           (kind == FACE && entity_type != "FACE") ||
           (kind == NODE && entity_type != "NODE"))
         {
-          std::stringstream mesg_stream;
-          mesg_stream << "Found labeled set region named " << setname << " but it contains entities of type " << entity_type << ", not the requested type";
-          Errors::Message mesg(mesg_stream.str());
-          amanzi_throw(mesg);
+          if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+            *(verbobj->os()) << "Found labeled set region named " << setname << " but it contains entities of type " << entity_type << ", not the requested type";
+          }
         } 
-
-      mset1 = MESH_MSetByName(mesh,internal_name.c_str());
+      else {
+        mset1 = MESH_MSetByName(mesh,internal_name.c_str());
       
-      // Since both element blocks and cell sets are referenced with the 
-      // region type 'Labeled Set' and Entity kind 'Cell' we have to
-      // account for both possibilities. NOTE: THIS MEANS THAT IF AN
-      // ELEMENT BLOCK AND ELEMENT SET HAVE THE SAME ID, ONLY THE ELEMENT
-      // BLOCK WILL GET PICKED UP - WE CHECKED FOR THIS IN BUILD SET
+        if (!mset1 && kind == CELL) {
+          // Since both element blocks and cell sets are referenced
+          // with the region type 'Labeled Set' and Entity kind 'Cell'
+          // we have to account for both possibilities. NOTE: THIS
+          // MEANS THAT IF AN ELEMENT BLOCK AND ELEMENT SET HAVE THE
+          // SAME ID, ONLY THE ELEMENT BLOCK WILL GET PICKED UP - WE
+          // CHECKED FOR THIS IN BUILD SET
 
-
-      std::string internal_name2 = other_internal_name_of_set(rgn,kind);
-
-
-      if (!mset1) {
-        MSet_ptr mset2 = MESH_MSetByName(mesh,internal_name2.c_str());
-        if (mset2)
-          mset1 = mset2;
-        else { 
-          std::stringstream mesg_stream;
-          mesg_stream << "Exodus II file has no labeled set with ID " << label;
-          Errors::Message mesg(mesg_stream.str());
-          amanzi_throw(mesg);
+          std::string internal_name2 = other_internal_name_of_set(rgn,kind);
+          mset1 = MESH_MSetByName(mesh,internal_name2.c_str());
         }
-      }
 
-      /// Due to the parallel partitioning its possible that this set
-      /// is not on this processor
+        /// Due to the parallel partitioning its possible that this
+        /// set is not on this processor
       
-      if (mset1 == NULL) {
-        if (epcomm->NumProc() == 1) {
-          std::stringstream mesg_stream;
-          mesg_stream << "Could not find labeled set " << label << " in mesh file in order to initialize mesh set " << setname << ". Verify mesh file.";
-          Errors::Message mesg(mesg_stream.str());
-          amanzi_throw(mesg);
+        if (!mset1) {
+          if (epcomm->NumProc() == 1) {
+            std::stringstream mesg_stream;
+            mesg_stream << "Could not find labeled set " << label << " in mesh file in order to initialize mesh set " << setname << ". Verify mesh file.";
+            Errors::Message mesg(mesg_stream.str());
+            amanzi_throw(mesg);
+          }
         }
       }
     }
