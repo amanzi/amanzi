@@ -898,7 +898,7 @@ relative permeability, density and viscosity.
 
   * `"relative permeability`" [string] defines a method for calculating the *upwinded* 
     relative permeability. The available options are: `"upwind: gravity`", 
-    `"upwind: darcy velocity`" (default), `"upwind: amanzi", `"upwind: artificial diffusion`" (experimental), 
+    `"upwind: darcy velocity`" (default), `"upwind: amanzi``", 
     `"other: harmonic average`", and `"other: arithmetic average`".
 
   * `"upwind update`" [string] defines frequency of recalculating Darcy flux inside
@@ -2328,10 +2328,11 @@ Diffusion operator
 
   * `"nonlinear coefficient`" [string] specifies a method for treating nonlinear diffusion
     coefficient, if any. Available options are `"upwind: face`", `"divk: cell-face`" (default),
-    `"standard: cell`", `"divk: cell-face-twin`", `"divk: cell-grad-face-twin`",
-    `"artificial diffusion: cell-face`" (highly experimental).
+    `"divk: face`", `"standard: cell`", `"divk: cell-face-twin`" and `"divk: cell-grad-face-twin`".
     Symmetry preserving methods are the divk-family of methods and the classical cell-centred
-    method (`"standard: cell`").
+    method (`"standard: cell`"). The first part of the name indicates the base scheme.
+    The second part (after the semi-column) indicates required components of the composite vector
+    that must be provided by a physical PK.
 
   * `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
     geometric objects.
