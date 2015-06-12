@@ -93,7 +93,7 @@ double exact(double t, const Amanzi::AmanziGeometry::Point& p) {
 }
 
 
-void RunTest(std::string op_list_name) {
+void RunTestMarshak(std::string op_list_name) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -317,6 +317,6 @@ void RunTest(std::string op_list_name) {
 // }
 
 TEST(MARSHAK_NONLINEAR_WAVE_SFF) {
-  RunTest("diffusion operator Sff");
+  RunTestMarshak("diffusion operator Sff");
 }
 
