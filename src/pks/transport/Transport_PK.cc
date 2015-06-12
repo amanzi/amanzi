@@ -514,6 +514,14 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       if (diffusion_phase_[i]->values().size() != 0) flag_diffusion = true;
     }
   }
+  if (flag_diffusion) {
+    // no molecular diffusion if all tortuosities are zero.
+    double tau(0.0);
+    for (int i = 0; i < mat_properties_.size(); i++) {
+      tau += mat_properties_[i]->tau[0] + mat_properties_[i]->tau[1];
+    }
+    if (tau == 0.0) flag_diffusion = false;
+  }
 
   if (flag_dispersion || flag_diffusion) {
     Teuchos::ParameterList op_list;

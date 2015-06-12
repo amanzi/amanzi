@@ -1422,14 +1422,16 @@ The conceptual PDE model for the fully saturated flow is
   \frac{\partial (\phi s_l C_l)}{\partial t} 
   =
   - \boldsymbol{\nabla} \cdot (\boldsymbol{q}_l C_l) 
-  + \boldsymbol{\nabla} \cdot (\phi s_l \boldsymbol{D}_l \boldsymbol{\nabla} C_l) + Q,
+  + \boldsymbol{\nabla} \cdot (\phi s_l (\boldsymbol{D}_l + \tau \boldsymbol{M}_l) \boldsymbol{\nabla} C_l) + Q,
 
 where 
 :math:`\phi` is porosity,
 :math:`s_l` is liquid saturation, 
 :math:`Q` is source or sink term,
 :math:`\boldsymbol{q}_l` is the Darcy velocity,
-and :math:`\boldsymbol{D}_l` is dispersion tensor.
+:math:`\boldsymbol{D}_l` is dispersion tensor,
+:math:`\boldsymbol{M}_l` is diffusion coefficient,
+and :math:`\tau` is tortuosity.
 For an isotropic medium with no preferred axis of symmetry the dispersion 
 tensor has the folowing form:
 
