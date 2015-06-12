@@ -97,6 +97,12 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
   // Protect against unset names
   EnsureSubfieldNames_();
 
+  bool checkpoint_io = plist.get<bool>("write checkpoint", true);
+  set_io_checkpoint(checkpoint_io);
+
+  bool vis_io = plist.get<bool>("write vis", true);
+  set_io_vis(vis_io);
+
   // First try all initialization method which set the entire data structure.
   // ------ Try to set values from a restart file -----
   if (plist.isParameter("restart file")) {
