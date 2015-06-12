@@ -122,9 +122,9 @@ if (ENABLE_Structured)
   list(APPEND ssc_tpl_libs ${CCSE_EXT_LIBRARIES})
 endif()
 
-if (ENALE_ALQUIMIA)
-  list(APPEND ssc_tpl_libs ${ALQUIMIA_LIBRARIES})
-endif()
+# if (ENALE_ALQUIMIA)
+#   list(APPEND ssc_tpl_libs ${ALQUIMIA_LIBRARIES})
+# endif()
 
 list(APPEND ssc_tpl_libs ${PETSC_LIBRARIES})
 
