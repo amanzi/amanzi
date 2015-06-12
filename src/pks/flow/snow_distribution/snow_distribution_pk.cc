@@ -28,6 +28,21 @@ namespace Flow {
 
 #define DEBUG_FLAG 1
 
+SnowDistribution::SnowDistribution(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+        Teuchos::ParameterList& FElist,
+        const Teuchos::RCP<TreeVector>& solution) :
+    PKDefaultBase(plist, FElist, solution),
+    PKPhysicalBDFBase(plist, FElist, solution),
+    full_jacobian_(false) {
+  plist_->set("primary variable key", "precipitation_snow");
+  plist_->set("domain name", "surface");
+
+  // set a default absolute tolerance
+  if (!plist_->isParameter("absolute error tolerance"))
+    plist_->set("absolute error tolerance", .01); // h * nl
+}
+
+
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------

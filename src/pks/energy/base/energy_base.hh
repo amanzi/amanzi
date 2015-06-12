@@ -38,19 +38,8 @@ class EnergyBase : public PKPhysicalBDFBase {
 public:
   EnergyBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
              Teuchos::ParameterList& FElist,
-             const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, FElist, solution),
-      PKPhysicalBDFBase(plist, FElist, solution),
-      modify_predictor_with_consistent_faces_(false),
-      modify_predictor_for_freezing_(false),
-      coupled_to_subsurface_via_temp_(false),
-      coupled_to_subsurface_via_flux_(false),
-      coupled_to_surface_via_temp_(false),
-      coupled_to_surface_via_flux_(false),
-      niter_(0),
-      flux_exists_(true),
-      implicit_advection_(true) {}
-
+             const Teuchos::RCP<TreeVector>& solution);
+  
   // Virtual destructor
   virtual ~EnergyBase() {}
 
@@ -81,10 +70,6 @@ public:
 
   // problems with temperatures -- setting a range of admissible temps
   virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up);
-
-  // error monitor
-  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                       Teuchos::RCP<const TreeVector> du);
 
   virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
           Teuchos::RCP<TreeVector> u);
@@ -167,9 +152,6 @@ public:
   Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
   Teuchos::RCP<Operators::OperatorAdvection> preconditioner_adv_;
 
-  // custom enorm tolerances
-  double flux_tol_;
-
   // flags and control
   double dT_max_;
   FluxUpdateMode update_flux_;
@@ -190,7 +172,6 @@ public:
 
   // Keys
   Key energy_key_;
-  Key cell_vol_key_;
   Key enthalpy_key_;
   Key denthalpy_key_;
   Key flux_key_;

@@ -35,31 +35,8 @@ class OverlandHeadFlow : public PKPhysicalBDFBase {
 public:
   OverlandHeadFlow(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                    Teuchos::ParameterList& FElist,
-                   const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, FElist, solution),
-      PKPhysicalBDFBase(plist, FElist, solution),
-      standalone_mode_(false),
-      is_source_term_(false),
-      coupled_to_subsurface_via_head_(false),
-      coupled_to_subsurface_via_flux_(false),
-      perm_update_required_(true),
-      update_flux_(UPDATE_FLUX_ITERATION),
-      full_jacobian_(false),
-      niter_(0),
-      source_only_if_unfrozen_(false),
-      precon_used_(true)
-  {
-    plist_->set("primary variable key", "surface_pressure");
-    plist_->set("domain name", "surface");
-
-    // clone the ponded_depth parameter list for ponded_depth bar
-    Teuchos::ParameterList& pd_list = FElist.sublist("ponded_depth");
-    Teuchos::ParameterList pdbar_list(pd_list);
-    pdbar_list.set("ponded depth bar", true);
-    pdbar_list.set("height key", "ponded_depth_bar");
-    FElist.set("ponded_depth_bar", pdbar_list);
-  }
-
+                   const Teuchos::RCP<TreeVector>& solution);
+  
   // Virtual destructor
   virtual ~OverlandHeadFlow() {}
 
@@ -86,10 +63,6 @@ public:
 
   // updates the preconditioner
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
-
-  // error monitor
-  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                       Teuchos::RCP<const TreeVector> du);
 
   virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
           Teuchos::RCP<TreeVector> u);

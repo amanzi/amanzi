@@ -29,16 +29,16 @@ SurfaceBalanceBase::SurfaceBalanceBase(
   // name the layer
   layer_ = plist->get<std::string>("layer name", name_);
   source_key_  = layer_+std::string("_source");
+  source_key_ = plist->get<std::string>("source key", source_key_);
 
-  if (plist->isParameter("conserved quantity")) {
-    conserved_quantity_ = true;
-    conserved_key_ = plist->get<std::string>("conserved quantity");
-  } 
-
-  theta_ = plist->get<double>("time discretization theta", 0.5);
+  theta_ = plist->get<double>("time discretization theta", 1.0);
   ASSERT(theta_ <= 1.);
   ASSERT(theta_ >= 0.);
-  
+
+  // set a default absolute tolerance
+  if (!plist_->isParameter("absolute error tolerance"))
+    plist_->set("absolute error tolerance", .01 * 55000.); // h * nl
+
 }
 
 // main methods
@@ -56,6 +56,7 @@ SurfaceBalanceBase::setup(const Teuchos::Ptr<State>& S) {
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(source_key_);
 
+  conserved_quantity_ = conserved_key_ != key_;
   if (conserved_quantity_) {
     S->RequireField(conserved_key_)->SetMesh(mesh_)
         ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -88,8 +89,8 @@ SurfaceBalanceBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVect
     db_->WriteDivider();
   }
 
-  S_next_->GetFieldEvaluator("surface_cell_volume")->HasFieldChanged(S_next_.ptr(), name_);
-  Teuchos::RCP<const CompositeVector> cv = S_next_->GetFieldData("surface_cell_volume");
+  S_next_->GetFieldEvaluator(cell_vol_key_)->HasFieldChanged(S_next_.ptr(), name_);
+  Teuchos::RCP<const CompositeVector> cv = S_next_->GetFieldData(cell_vol_key_);
 
   if (conserved_quantity_) {
     S_next_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_next_.ptr(), name_);
@@ -100,14 +101,14 @@ SurfaceBalanceBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVect
   } else {
     g->Update(1.0/dt, *u_new, -1.0/dt, *u_old, 0.0);
   }
+  db_->WriteVector("res(acc)", g->Data().ptr());
 
   if (theta_ < 1.0) {
     S_inter_->GetFieldEvaluator(source_key_)->HasFieldChanged(S_inter_.ptr(), name_);
     g->Data()->Multiply(-(1.0 - theta_), *S_inter_->GetFieldData(source_key_), *cv, 1.);
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       db_->WriteVector("source0", S_inter_->GetFieldData(source_key_).ptr(), false);
-      db_->WriteVector(" drainage0", S_inter_->GetFieldData("litter_drainage").ptr(), false);
-      
+      //      db_->WriteVector(" drainage0", S_inter_->GetFieldData("litter_drainage").ptr(), false);
     }
   }
   if (theta_ > 0.0) {
@@ -115,13 +116,54 @@ SurfaceBalanceBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVect
     g->Data()->Multiply(-theta_, *S_next_->GetFieldData(source_key_), *cv, 1.);
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       db_->WriteVector("source1", S_next_->GetFieldData(source_key_).ptr(), false);
-      db_->WriteVector(" drainage1", S_next_->GetFieldData("litter_drainage").ptr(), false);
+      //      db_->WriteVector(" drainage1", S_next_->GetFieldData("litter_drainage").ptr(), false);
     }
   }
+  db_->WriteVector("res(source)", g->Data().ptr());
 }
 
   
+// updates the preconditioner
+void
+SurfaceBalanceBase::UpdatePreconditioner(double t,
+        Teuchos::RCP<const TreeVector> up, double h) {
+  // update state with the solution up.
+  ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
+  PKDefaultBase::solution_to_state(*up, S_next_);
 
+  if (conserved_quantity_) {
+    if (jac_ == Teuchos::null) {
+      jac_ = Teuchos::rcp(new CompositeVector(*up->Data()));
+    }
+
+    S_next_->GetFieldEvaluator(conserved_key_)
+        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+    std::string dkey = std::string("d")+conserved_key_+std::string("_d")+key_;
+    *jac_ = *S_next_->GetFieldData(dkey);
+    jac_->Scale(1./h);
+  }
+
+}
+
+
+// applies preconditioner to u and returns the result in Pu
+void
+SurfaceBalanceBase::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
+        Teuchos::RCP<TreeVector> Pu) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "Precon application:" << std::endl;
+
+  if (conserved_quantity_) {
+    db_->WriteVector("seb_res", u->Data().ptr(), true);
+    Pu->Data()->ReciprocalMultiply(1., *jac_, *u->Data(), 0.);
+    db_->WriteVector("jac", jac_.ptr(), true);
+    db_->WriteVector("PC*p_res", Pu->Data().ptr(), true);
+  } else {
+    *Pu = *u;
+    Pu->Scale(S_next_->time() - S_->time());
+  }
+}
 
 
 } // namespace

@@ -127,6 +127,11 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/wrm/rel_perm_evaluator_reg.hh
+  LISTNAME   WMR_EVALUATORS_FACTORIES
+  )
+
+register_evaluator_with_factory(
   HEADERFILE constitutive_relations/wrm/wrm_permafrost_evaluator_reg.hh
   LISTNAME   WMR_EVALUATORS_FACTORIES
   )
@@ -201,6 +206,11 @@ register_evaluator_with_factory(
 
 register_evaluator_with_factory(
   HEADERFILE constitutive_relations/wrm/models/wrm_zero_relperm_reg.hh
+  LISTNAME   WRM_MODELS_EVALUATORS_FACTORIES
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/wrm/models/wrm_linear_relperm_reg.hh
   LISTNAME   WRM_MODELS_EVALUATORS_FACTORIES
   )
 

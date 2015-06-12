@@ -63,10 +63,6 @@ public:
   // updates the preconditioner
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
 
-  // error monitor
-  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                       Teuchos::RCP<const TreeVector> du);
-
   virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
           Teuchos::RCP<TreeVector> u);
 
@@ -156,6 +152,7 @@ protected:
   bool symmetric_;
   bool precon_wc_;
   bool is_source_term_;
+  bool source_term_is_differentiable_;
   bool explicit_source_;
   bool precon_used_;
   bool clobber_surf_kr_;

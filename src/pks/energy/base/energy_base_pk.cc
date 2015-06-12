@@ -29,6 +29,35 @@ namespace Amanzi {
 namespace Energy {
 
 
+EnergyBase::EnergyBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                       Teuchos::ParameterList& FElist,
+                       const Teuchos::RCP<TreeVector>& solution) :
+    PKDefaultBase(plist, FElist, solution),
+    PKPhysicalBDFBase(plist, FElist, solution),
+    modify_predictor_with_consistent_faces_(false),
+    modify_predictor_for_freezing_(false),
+    coupled_to_subsurface_via_temp_(false),
+    coupled_to_subsurface_via_flux_(false),
+    coupled_to_surface_via_temp_(false),
+    coupled_to_surface_via_flux_(false),
+    niter_(0),
+    flux_exists_(true),
+    implicit_advection_(true) {
+
+  // set a default absolute tolerance
+  if (!plist_->isParameter("absolute error tolerance")) {
+    std::string domain = plist_->get<std::string>("domain name", "domain");
+    if (domain == "domain") {    
+      plist_->set("absolute error tolerance", .5 * .1 * 55000. * 76.e-6); // phi * s * nl * u at 1C in MJ/mol
+    } else if (domain == "surface") {
+      plist_->set("absolute error tolerance", .01 * 55000. * 76.e-6); // h * nl * u at 1C in MJ/mol
+    } else {
+      ASSERT(0);
+    }
+  }
+}
+
+
 // -------------------------------------------------------------
 // Setup
 // -------------------------------------------------------------
@@ -36,8 +65,6 @@ void EnergyBase::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBDFBase::setup(S);
   SetupEnergy_(S);
   SetupPhysicalEvaluators_(S);
-
-  flux_tol_ = plist_->get<double>("flux tolerance", 1.);
 };
 
 
@@ -46,10 +73,6 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   if (energy_key_ == std::string()) {
     energy_key_ = plist_->get<std::string>("energy key",
             domain_prefix_+std::string("energy"));
-  }
-  if (cell_vol_key_ == std::string()) {
-    cell_vol_key_ = plist_->get<std::string>("cell volume key",
-            domain_prefix_+std::string("cell_volume"));
   }
   if (enthalpy_key_ == std::string()) {
     enthalpy_key_ = plist_->get<std::string>("enthalpy key",
@@ -165,7 +188,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   S->RequireField(uw_conductivity_key_, name_)->SetMesh(mesh_)->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
   S->GetField(uw_conductivity_key_,name_)->set_io_vis(false);
-  std::string method_name = plist_->get<std::string>("upwind conductivity method", "arithmetic mean");
+  std::string method_name = plist_->get<std::string>("upwind conductivity method", "cell centered");
   if (method_name == "cell centered") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindCellCentered(name_,
             conductivity_key_, uw_conductivity_key_));

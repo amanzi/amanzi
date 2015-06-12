@@ -28,14 +28,8 @@ class SnowDistribution : public PKPhysicalBDFBase {
 public:
   SnowDistribution(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                Teuchos::ParameterList& FElist,
-               const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, FElist, solution),
-      PKPhysicalBDFBase(plist, FElist, solution),
-      full_jacobian_(false) {
-    plist_->set("primary variable key", "precipitation_snow");
-    plist_->set("domain name", "surface");
-  }
-
+                   const Teuchos::RCP<TreeVector>& solution);
+  
   // Virtual destructor
   virtual ~SnowDistribution() {}
 

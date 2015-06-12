@@ -774,7 +774,7 @@ SurfaceBalanceImplicit::UpdatePreconditioner(double t,
         Teuchos::RCP<const TreeVector> up, double h) {}
 
 
-// error monitor
+// error monitor, inf norm is good, this is relative to 1m snow pack
 double
 SurfaceBalanceImplicit::ErrorNorm(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<const TreeVector> du) {

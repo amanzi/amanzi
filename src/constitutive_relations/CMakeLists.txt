@@ -95,6 +95,11 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
+  HEADERFILE surface_subsurface_fluxes/top_cells_surface_evaluator_reg.hh
+  LISTNAME   CONSTITUTIVE_RELATIONS_SURFACE_SUBSURFACE_FLUXES_EVALUATORS
+  )
+
+register_evaluator_with_factory(
   HEADERFILE surface_subsurface_fluxes/overland_source_from_subsurface_flux_evaluator_reg.hh
   LISTNAME   CONSTITUTIVE_RELATIONS_SURFACE_SUBSURFACE_FLUXES_EVALUATORS
   )
