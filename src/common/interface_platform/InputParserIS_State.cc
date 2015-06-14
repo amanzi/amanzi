@@ -174,6 +174,8 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
     }
 
     Teuchos::ParameterList &permeability_ic = stt_ic.sublist("permeability");
+    // For now permeability is not dumped into checkpoint files
+    permeability_ic.set<bool>("write checkpoint", false);
     if (perm_init_from_file) {
       if (perm_format == std::string("Exodus II")) {
         // first make sure the file actually exists
