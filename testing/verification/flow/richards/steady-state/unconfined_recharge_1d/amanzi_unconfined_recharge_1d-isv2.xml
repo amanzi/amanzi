@@ -78,7 +78,7 @@
               <linear_solver>aztec00</linear_solver>
               <control_options>pressure</control_options>
               <convergence_tolerance>1.0e-8</convergence_tolerance>
-              <max_iterations>100</max_iterations>
+              <max_iterations>10</max_iterations>
           </unstr_pseudo_time_integrator>
         </unstr_steady-state_controls>
       </unstructured_controls>

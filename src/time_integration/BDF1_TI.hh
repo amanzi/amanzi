@@ -194,7 +194,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
 
   if (factor > 1.0) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      *vo_->os() << "modified tolerance=" << tol << std::endl;
+      *vo_->os() << "modified tolerance=" << tol << ", setting PC lag to 0" << std::endl;
     }
   }
 
@@ -237,6 +237,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
       state_->pc_lag = std::max(state_->pc_lag - 1, 0);
     }
   }
+  if (factor > 1.0) state_->pc_lag = 0;
   solver_->set_pc_lag(state_->pc_lag);
 
   // update performance statistics
