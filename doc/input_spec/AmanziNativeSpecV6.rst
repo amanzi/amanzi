@@ -18,7 +18,7 @@ Changes V5 -> V6
 
 * Switched to a more flexible MPC driver, called Cycle Driver.
 * Added Energy PK and FlowEnergy PK.
-* Described the conceptual model.
+* Described the PDE forms of conceptual models.
 
 
 ParameterList XML
