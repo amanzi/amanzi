@@ -237,6 +237,45 @@ void OverlandHeadFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
     Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] / h;
   }
 
+  // // -- update the source term derivatives
+  // if (S_next_->GetFieldEvaluator(mass_source_key_)->IsDependency(S_next_.ptr(), key_)) {
+  //   S_next_->GetFieldEvaluator(mass_source_key_)
+  //       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+  //   std::string dkey = std::string("d")+mass_source_key_+std::string("_d")+key_;
+  //   const Epetra_MultiVector& dq_dp = *S_next_->GetFieldData(dkey)
+  //       ->ViewComponent("cell",false);
+
+  //   const Epetra_MultiVector& cv =
+  //       *S_next_->GetFieldData("surface_cell_volume")->ViewComponent("cell",false);
+    
+  //   if (source_in_meters_) {
+  //     // External source term is in [m water / s], not in [mols / s], so a
+  //     // density is required.  This density should be upwinded.
+  //     S_next_->GetFieldEvaluator("surface_molar_density_liquid")
+  //         ->HasFieldChanged(S_next_.ptr(), name_);
+  //     S_next_->GetFieldEvaluator("surface_source_molar_density")
+  //         ->HasFieldChanged(S_next_.ptr(), name_);
+  //     const Epetra_MultiVector& nliq1 =
+  //         *S_next_->GetFieldData("surface_molar_density_liquid")
+  //         ->ViewComponent("cell",false);
+  //     const Epetra_MultiVector& nliq1_s =
+  //       *S_next_->GetFieldData("surface_source_molar_density")
+  //         ->ViewComponent("cell",false);
+  //     const Epetra_MultiVector& q = *S_next_->GetFieldData(mass_source_key_)
+  //         ->ViewComponent("cell",false);
+
+  //     for (int c=0; c!=cv.MyLength(); ++c) {
+  //       double s1 = q[0][c] > 0. ? dq_dp[0][c] * nliq1_s[0][c] : dq_dp[0][c] * nliq1[0][c];
+  //       Acc_cells[c] -= cv[0][c] * s1 / dh_dp[0][c];
+  //     }
+  //   } else {
+  //     for (int c=0; c!=cv.MyLength(); ++c) {
+  //       Acc_cells[c] -= cv[0][c] * dq_dp[0][c] / dh_dp[0][c];
+  //     }
+  //   }
+  // }      
+  
+
   // 3. Assemble and precompute the Schur complement for inversion.
   // 3.a: Patch up BCs in the case of zero conductivity
   FixBCsForPrecon_(S_next_.ptr());

@@ -271,6 +271,11 @@ register_evaluator_with_factory(
   LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
   )
 
+register_evaluator_with_factory(
+  HEADERFILE overland_head/overland_head_water_content_evaluator_reg.hh
+  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
+  )
+
 generate_evaluators_registration_header(
   HEADERFILE flow_overland_head_registration.hh
   LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC

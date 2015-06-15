@@ -43,7 +43,7 @@ class OverlandHeadWaterContentEvaluator : public SecondaryVariableFieldEvaluator
   double rollover_;
   
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,OverlandHeadWaterContentEvaluator> factory_;
+  static Utils::RegisteredFactory<FieldEvaluator,OverlandHeadWaterContentEvaluator> reg_;
 
 };
 

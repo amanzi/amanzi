@@ -93,11 +93,7 @@ void OverlandHeadFlow::setup(const Teuchos::Ptr<State>& S) {
   // -- water content
   S->RequireField("surface_water_content")->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList& wc_plist =
-      plist_->sublist("overland water content evaluator");
-  Teuchos::RCP<FlowRelations::OverlandHeadWaterContentEvaluator> wc_evaluator =
-      Teuchos::rcp(new FlowRelations::OverlandHeadWaterContentEvaluator(wc_plist));
-  S->SetFieldEvaluator("surface_water_content", wc_evaluator);
+  S->RequireFieldEvaluator("surface_water_content");
 
   PKPhysicalBDFBase::setup(S);
   SetupOverlandFlow_(S);
