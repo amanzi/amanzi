@@ -32,7 +32,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "height_evaluator.hh"
 #include "overland_source_from_subsurface_flux_evaluator.hh"
 
-#include "OperatorDiffusionFV.hh"
+#include "OperatorDiffusionFactory.hh"
 
 #include "overland_head.hh"
 
@@ -103,9 +103,32 @@ void OverlandHeadFlow::setup(const Teuchos::Ptr<State>& S) {
 
 void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   // Require fields and evaluators for those fields.
-  S->RequireField(key_, name_)->SetMesh(mesh_)->SetGhosted()
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-
+  std::vector<AmanziMesh::Entity_kind> locations2(2);
+  std::vector<std::string> names2(2);
+  std::vector<int> num_dofs2(2, 1);
+  locations2[0] = AmanziMesh::CELL;
+  locations2[1] = AmanziMesh::FACE;
+  names2[0] = "cell";
+  names2[1] = "face";
+  
+  
+  std::vector<AmanziMesh::Entity_kind> locations1(1);
+  std::vector<std::string> names1(1);
+  std::vector<int> num_dofs1(1,1);
+  locations1[0] = AmanziMesh::CELL;
+  names1[0] = "cell";
+  
+  if (!(plist_->sublist("Diffusion").get<bool>("TPFA use cells only", false)) ){
+    // -- primary variable: pressure on both cells and faces, ghosted, with 1 dof
+    S->RequireField(key_, name_)->SetMesh(mesh_)->SetGhosted()
+    ->SetComponents(names2, locations2, num_dofs2);
+  }
+  else {
+    // -- primary variable: pressure on both cells and boundary faces, ghosted, with 1 dof
+    S->RequireField(key_, name_)->SetMesh(mesh_)->SetGhosted()
+    ->SetComponents(names1, locations1, num_dofs1);
+  }
+  
 // #if DEBUG_RES_FLAG
 //   // -- residuals of various iterations for debugging
 //   for (int i=1; i!=23; ++i) {
@@ -137,7 +160,7 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     //    which picks the fluxes from "darcy_flux" field.
     S->RequireFieldEvaluator("surface_subsurface_flux");
     S->RequireField("surface_subsurface_flux")
-        ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
+        ->SetMesh(mesh_)->SetComponents(names1, locations1, num_dofs1);
   }
 
   // Create the upwinding method.
@@ -183,24 +206,25 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   // operator for the diffusion terms: must use ScaledConstraint version
   Teuchos::ParameterList& mfd_plist = plist_->sublist("Diffusion");
-  matrix_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(mfd_plist, mesh_));
-  matrix_ = matrix_diff_->global_operator();
-  matrix_diff_->SetBCs(bc_, bc_);
+  mfd_plist.set("scaled constraint equation", true);
+  Operators::OperatorDiffusionFactory opfactory;
+  matrix_diff_ = opfactory.Create(mesh_, bc_, mfd_plist);
   matrix_diff_->Setup(Teuchos::null);
+  matrix_ = matrix_diff_->global_operator();
 
   // operator for flux directions -- this should be removed eventually
   Teuchos::ParameterList face_diff_list(mfd_plist);
-  face_diff_list.set("upwind method", "none");
-  face_matrix_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(face_diff_list, mesh_));
-  face_matrix_diff_->SetBCs(bc_, bc_);
+  face_diff_list.set("nonlinear coefficient", "none");
+  face_diff_list.set("scaled constraint equation", true);
+  face_matrix_diff_ = opfactory.Create(mesh_, bc_, face_diff_list);
   face_matrix_diff_->Setup(Teuchos::null);
   face_matrix_diff_->Setup(Teuchos::null, Teuchos::null);
   face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   
   // diffusion operator for the preconditioner
   Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("Diffusion PC");
-  preconditioner_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(mfd_pc_plist, mesh_));
-  preconditioner_diff_->SetBCs(bc_, bc_);
+  mfd_pc_plist.set("scaled constraint equation", true);
+  preconditioner_diff_ = opfactory.Create(mesh_, bc_, mfd_pc_plist);
   preconditioner_diff_->Setup(Teuchos::null);
   preconditioner_ = preconditioner_diff_->global_operator();
 
@@ -224,12 +248,27 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 // retention, rel perm, etc, that are specific to Richards.
 // -------------------------------------------------------------
 void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
+  std::vector<AmanziMesh::Entity_kind> locations2(2);
+  std::vector<std::string> names2(2);
+  std::vector<int> num_dofs2(2, 1);
+  locations2[0] = AmanziMesh::CELL;
+  locations2[1] = AmanziMesh::FACE;
+  names2[0] = "cell";
+  names2[1] = "face";
+  
+  
+  std::vector<AmanziMesh::Entity_kind> locations1(1);
+  std::vector<std::string> names1(1);
+  std::vector<int> num_dofs1(1,1);
+  locations1[0] = AmanziMesh::CELL;
+  names1[0] = "cell";
+  
   // -- evaluator for surface geometry.
   S->RequireField("elevation")->SetMesh(S->GetMesh("surface"))->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("face", AmanziMesh::FACE, 1);
+  ->AddComponents(names2, locations2, num_dofs2);
+
   S->RequireField("slope_magnitude")->SetMesh(S->GetMesh("surface"))
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponents(names1, locations1, num_dofs1);
 
   Teuchos::RCP<FlowRelations::ElevationEvaluator> elev_evaluator;
   if (standalone_mode_) {
@@ -244,8 +283,14 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->SetFieldEvaluator("slope_magnitude", elev_evaluator);
 
   // -- evaluator for potential field, h + z
-  S->RequireField("pres_elev")->SetMesh(S->GetMesh("surface"))->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  if (!(plist_->sublist("Diffusion").get<bool>("TPFA use cells only", false)) ){
+    S->RequireField("pres_elev")->SetMesh(S->GetMesh("surface"))->SetGhosted()
+    ->SetComponents(names2, locations2, num_dofs2);
+  }
+  else {
+    S->RequireField("pres_elev")->SetMesh(S->GetMesh("surface"))->SetGhosted()
+    ->SetComponents(names1, locations1, num_dofs1);
+  }
   Teuchos::ParameterList pres_elev_plist = plist_->sublist("potential evaluator");
   Teuchos::RCP<FlowRelations::PresElevEvaluator> pres_elev_eval =
       Teuchos::rcp(new FlowRelations::PresElevEvaluator(pres_elev_plist));
@@ -259,18 +304,18 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     // source term itself [m/s]
     mass_source_key_ = plist_->get<std::string>("mass source key", "surface_mass_source");
     S->RequireField(mass_source_key_)->SetMesh(mesh_)
-        ->AddComponent("cell", AmanziMesh::CELL, 1);
+        ->AddComponents(names1, locations1, num_dofs1);
     S->RequireFieldEvaluator(mass_source_key_);
 
     // density of incoming water [mol/m^3]
     S->RequireField("surface_source_molar_density")->SetMesh(mesh_)
-        ->AddComponent("cell", AmanziMesh::CELL, 1);
+        ->AddComponents(names1, locations1, num_dofs1);
     S->RequireFieldEvaluator("surface_source_molar_density");
   }
 
   // -- water content bar (can be negative)
   S->RequireField("surface_water_content_bar")->SetMesh(mesh_)->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponents(names1, locations1, num_dofs1);
   Teuchos::ParameterList& wc_plist =
       plist_->sublist("overland water content evaluator");
   Teuchos::ParameterList wcbar_plist(wc_plist);
@@ -280,26 +325,32 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->SetFieldEvaluator("surface_water_content_bar", wc_evaluator);
 
   // -- ponded depth
-  S->RequireField("ponded_depth")->SetMesh(mesh_)->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  if (!(plist_->sublist("Diffusion").get<bool>("TPFA use cells only", false)) ){
+    S->RequireField("ponded_depth")->SetMesh(mesh_)->SetGhosted()
+    ->SetComponents(names2, locations2, num_dofs2);
+  }
+  else {
+    S->RequireField("ponded_depth")->SetMesh(mesh_)->SetGhosted()
+    ->SetComponents(names1, locations1, num_dofs1);
+  }
   S->RequireFieldEvaluator("ponded_depth");
 
   // -- ponded depth bar
   S->RequireField("ponded_depth_bar")->SetMesh(mesh_)->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponents(names1, locations1, num_dofs1);
   S->RequireFieldEvaluator("ponded_depth_bar");
 
   // -- effective accumulation ponded depth (smoothing of derivatives as h --> 0)
   smoothed_ponded_accumulation_ = plist_->get<bool>("smooth ponded accumulation",false);
   if (smoothed_ponded_accumulation_) {
     S->RequireField("smoothed_ponded_depth")->SetMesh(mesh_)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponents(names1, locations1, num_dofs1);
     S->RequireFieldEvaluator("smoothed_ponded_depth");
   }
 
   // -- conductivity evaluator
   S->RequireField("overland_conductivity")->SetMesh(mesh_)->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponents(names1, locations1, num_dofs1);
   ASSERT(plist_->isSublist("overland conductivity evaluator"));
   Teuchos::ParameterList cond_plist = plist_->sublist("overland conductivity evaluator");
   Teuchos::RCP<FlowRelations::OverlandConductivityEvaluator> cond_evaluator =
