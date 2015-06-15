@@ -242,6 +242,15 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     preconditioner_->SymbolicAssembleMatrix();
   }
 
+  // Potentially create a linear solver
+  if (plist_->isSublist("linear solver")) {
+    Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
+    AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
+    lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);
+  } else {
+    lin_solver_ = preconditioner_;
+  }
+  
   // how often to update the fluxes?
   update_flux_ = UPDATE_FLUX_ITERATION;
 };
