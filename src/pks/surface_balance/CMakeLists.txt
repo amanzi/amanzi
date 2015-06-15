@@ -21,6 +21,8 @@ add_library(pk_surface_balance_SEB
        constitutive_relations/litter/evaporative_flux_relaxation_model.cc
        constitutive_relations/litter/micropore_macropore_flux_evaluator.cc       
        constitutive_relations/litter/micropore_macropore_flux_model.cc       
+       constitutive_relations/litter/macropore_surface_flux_evaluator.cc       
+       constitutive_relations/litter/macropore_surface_flux_model.cc       
        SEB/surface_balance_SEB.cc
        SEB/surface_balance_evaluator.cc
        SEB_VPL/surface_balance_SEB_VPL.cc
@@ -50,6 +52,11 @@ register_evaluator_with_factory(
 
 register_evaluator_with_factory(
   HEADERFILE constitutive_relations/litter/micropore_macropore_flux_evaluator_reg.hh
+  LISTNAME SURFACE_BALANCE_SEB_REG
+)
+
+register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/litter/macropore_surface_flux_evaluator_reg.hh
   LISTNAME SURFACE_BALANCE_SEB_REG
 )
 

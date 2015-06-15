@@ -102,11 +102,11 @@ void
 MicroporeMacroporeFluxEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 {
-  Teuchos::RCP<const CompositeVector> pm = S->GetFieldData(pm_key_);
-  Teuchos::RCP<const CompositeVector> pM = S->GetFieldData(pM_key_);
-  Teuchos::RCP<const CompositeVector> krM = S->GetFieldData(krM_key_);
-  Teuchos::RCP<const CompositeVector> krm = S->GetFieldData(krm_key_);
-  Teuchos::RCP<const CompositeVector> K = S->GetFieldData(K_key_);
+Teuchos::RCP<const CompositeVector> pm = S->GetFieldData(pm_key_);
+Teuchos::RCP<const CompositeVector> pM = S->GetFieldData(pM_key_);
+Teuchos::RCP<const CompositeVector> krM = S->GetFieldData(krM_key_);
+Teuchos::RCP<const CompositeVector> krm = S->GetFieldData(krm_key_);
+Teuchos::RCP<const CompositeVector> K = S->GetFieldData(K_key_);
 
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
@@ -129,13 +129,13 @@ void
 MicroporeMacroporeFluxEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
-  Teuchos::RCP<const CompositeVector> pm = S->GetFieldData(pm_key_);
-  Teuchos::RCP<const CompositeVector> pM = S->GetFieldData(pM_key_);
-  Teuchos::RCP<const CompositeVector> krM = S->GetFieldData(krM_key_);
-  Teuchos::RCP<const CompositeVector> krm = S->GetFieldData(krm_key_);
-  Teuchos::RCP<const CompositeVector> K = S->GetFieldData(K_key_);
+Teuchos::RCP<const CompositeVector> pm = S->GetFieldData(pm_key_);
+Teuchos::RCP<const CompositeVector> pM = S->GetFieldData(pM_key_);
+Teuchos::RCP<const CompositeVector> krM = S->GetFieldData(krM_key_);
+Teuchos::RCP<const CompositeVector> krm = S->GetFieldData(krm_key_);
+Teuchos::RCP<const CompositeVector> K = S->GetFieldData(K_key_);
 
-  if (wrt_key == "micropore_pressure") {
+  if (wrt_key == pm_key_) {
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& pm_v = *pm->ViewComponent(*comp, false);
@@ -151,7 +151,7 @@ MicroporeMacroporeFluxEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::
       }
     }
 
-  } else if (wrt_key == "pressure") {
+  } else if (wrt_key == pM_key_) {
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& pm_v = *pm->ViewComponent(*comp, false);
@@ -167,7 +167,7 @@ MicroporeMacroporeFluxEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::
       }
     }
 
-  } else if (wrt_key == "relative_permeability") {
+  } else if (wrt_key == krM_key_) {
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& pm_v = *pm->ViewComponent(*comp, false);
@@ -183,7 +183,7 @@ MicroporeMacroporeFluxEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::
       }
     }
 
-  } else if (wrt_key == "micropore_relative_permeability") {
+  } else if (wrt_key == krm_key_) {
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& pm_v = *pm->ViewComponent(*comp, false);
@@ -199,7 +199,7 @@ MicroporeMacroporeFluxEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::
       }
     }
 
-  } else if (wrt_key == "micropore_absolute_permeability") {
+  } else if (wrt_key == K_key_) {
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& pm_v = *pm->ViewComponent(*comp, false);
