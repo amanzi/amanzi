@@ -1,1 +1,1 @@
-  if (wrt_key == "{arg}") {{
+  if (wrt_key == {var}_key_) {{
