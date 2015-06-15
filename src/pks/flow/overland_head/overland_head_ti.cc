@@ -146,8 +146,7 @@ void OverlandHeadFlow::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teu
 #endif
 
   // apply the preconditioner
-  preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
-
+  lin_solver_->ApplyInverse(*u->Data(), *Pu->Data());
 
 #if DEBUG_FLAG
   db_->WriteVector("PC*h_res (h-coords)", Pu->Data().ptr(), true);
@@ -202,7 +201,9 @@ void OverlandHeadFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   preconditioner_diff_->Setup(cond, Teuchos::null);
   Teuchos::RCP<const CompositeVector> pres_elev = S_next_->GetFieldData("pres_elev");
   preconditioner_diff_->UpdateMatrices(Teuchos::null, pres_elev.ptr());
-
+  Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData("surface_flux", name_);
+  preconditioner_diff_->UpdateFlux(*up->Data(), *flux);
+  preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
 
   // 2. Accumulation shift
   //    The desire is to keep this matrix invertible for pressures less than

@@ -342,6 +342,11 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
   mesh.reset();
   delete comm;
   delete simdomain_ptr;
+
+  // this is poor design
+  for (int i=0; i!=geom_model_ptr->Num_Regions(); ++i) {
+    delete geom_model_ptr->Region_i(i);
+  }
   delete geom_model_ptr;
   return Amanzi::Simulator::SUCCESS;
 }
