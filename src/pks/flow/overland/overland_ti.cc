@@ -118,7 +118,7 @@ void OverlandFlow::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos
 #endif
 
   // apply the preconditioner
-  preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
+  lin_solver_->ApplyInverse(*u->Data(), *Pu->Data());
 
 #if DEBUG_FLAG
   db_->WriteVector("PC*h_res (h-coords)", Pu->Data().ptr(), true);
@@ -157,14 +157,22 @@ void OverlandFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
 
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_overland_conductivity");
-  Teuchos::RCP<const CompositeVector> dcond =
-    S_next_->GetFieldData("dupwind_overland_conductivity_dponded_depth");
+  Teuchos::RCP<const CompositeVector> dcond;
+
+  if (preconditioner_->RangeMap().HasComponent("face")) {
+    dcond = S_next_->GetFieldData("dupwind_overland_conductivity_dponded_depth");
+  } else {
+    dcond = S_next_->GetFieldData("doverland_conductivity_dponded_depth");
+  }
 
   // 1.b: Create all local matrices.
   preconditioner_->Init();
-  preconditioner_diff_->Setup(cond, Teuchos::null);
+  preconditioner_diff_->Setup(cond, dcond);
   Teuchos::RCP<const CompositeVector> pres_elev = S_next_->GetFieldData("pres_elev");
   preconditioner_diff_->UpdateMatrices(Teuchos::null, pres_elev.ptr());
+  Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData("surface_flux", name_);
+  preconditioner_diff_->UpdateFlux(*up->Data(), *flux);
+  preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
 
 
   // 2. Accumulation shift
@@ -190,6 +198,97 @@ void OverlandFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
   preconditioner_->AssembleMatrix();
   preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
 };
+
+
+
+// -----------------------------------------------------------------------------
+// Default enorm that uses an abs and rel tolerance to monitor convergence.
+// -----------------------------------------------------------------------------
+double OverlandFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
+        Teuchos::RCP<const TreeVector> du) {
+  const Epetra_MultiVector& pd = *S_next_->GetFieldData(key_)
+      ->ViewComponent("cell",true);
+  const Epetra_MultiVector& cv = *S_next_->GetFieldData(cell_vol_key_)
+      ->ViewComponent("cell",true);
+
+  // VerboseObject stuff.
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+    *vo_->os() << "ENorm (Infnorm) of: " << key_ << ": " << std::endl;
+
+  Teuchos::RCP<const CompositeVector> dvec = du->Data();
+  double h = S_next_->time() - S_inter_->time();
+
+  double enorm_val = 0.0;
+  for (CompositeVector::name_iterator comp=dvec->begin();
+       comp!=dvec->end(); ++comp) {
+    double enorm_comp = 0.0;
+    int enorm_loc = -1;
+    const Epetra_MultiVector& dvec_v = *dvec->ViewComponent(*comp, false);
+
+    if (*comp == std::string("cell")) {
+      // error done relative to extensive, conserved quantity
+      int ncells = dvec->size(*comp,false);
+      for (unsigned int c=0; c!=ncells; ++c) {
+        double enorm_c = std::abs(h * dvec_v[0][c])
+            / ((atol_ + rtol_*std::abs(pd[0][c]))*cv[0][c]);
+
+        if (enorm_c > enorm_comp) {
+          enorm_comp = enorm_c;
+          enorm_loc = c;
+        }
+      }
+      
+    } else if (*comp == std::string("face")) {
+      // error in flux -- relative to cell's extensive conserved quantity
+      int nfaces = dvec->size(*comp, false);
+
+      for (unsigned int f=0; f!=nfaces; ++f) {
+        AmanziMesh::Entity_ID_List cells;
+        mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+        double cv_min = cells.size() == 1 ? cv[0][cells[0]]
+            : std::min(cv[0][cells[0]],cv[0][cells[1]]);
+        double conserved_min = cells.size() == 1 ? pd[0][cells[0]]
+            : std::min(pd[0][cells[0]],pd[0][cells[1]]);
+      
+        double enorm_f = fluxtol_ * h * std::abs(dvec_v[0][f])
+            / ((atol_ + rtol_*std::abs(conserved_min))*cv_min);
+        if (enorm_f > enorm_comp) {
+          enorm_comp = enorm_f;
+          enorm_loc = f;
+        }
+      }
+
+    } else {
+      Errors::Message msg;
+      msg << "Unused error component \"" << *comp << "\" in conserved quantity error norm.";
+      Exceptions::amanzi_throw(msg);      
+    }
+
+    // Write out Inf norms too.
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      double infnorm(0.);
+      dvec_v.NormInf(&infnorm);
+
+      ENorm_t err;
+      ENorm_t l_err;
+      l_err.value = enorm_comp;
+      l_err.gid = dvec_v.Map().GID(enorm_loc);
+
+      int ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+      ASSERT(!ierr);
+      *vo_->os() << "  ENorm (" << *comp << ") = " << err.value << "[" << err.gid << "] (" << infnorm << ")" << std::endl;
+    }
+
+    enorm_val = std::max(enorm_val, enorm_comp);
+  }
+
+  double enorm_val_l = enorm_val;
+  int ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+  ASSERT(!ierr);
+  return enorm_val;
+};
+
 
 }  // namespace Flow
 }  // namespace Amanzi

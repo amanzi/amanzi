@@ -92,7 +92,7 @@ void OverlandFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g) {
     const Epetra_MultiVector& source1 =
         *S_next_->GetFieldData(source_key_)->ViewComponent("cell",false);
 
-    g_c.Multiply(1., source1, cv1, 1.);
+    g_c.Multiply(-1., source1, cv1, 1.);
   }
 };
 

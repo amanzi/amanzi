@@ -159,6 +159,16 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   // symbolic assemble
   preconditioner_->SymbolicAssembleMatrix();
+ 
+  // Potentially create a linear solver
+  if (plist_->isSublist("linear solver")) {
+    Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
+    AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
+    lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);
+  } else {
+    lin_solver_ = preconditioner_;
+  }
+
 };
 
 
@@ -168,7 +178,17 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 // -------------------------------------------------------------
 void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- evaluator for surface geometry.
-  S->RequireField("elevation")->Update(matrix_->RangeMap())->SetGhosted();
+  std::vector<AmanziMesh::Entity_kind> locations2(2);
+  std::vector<std::string> names2(2);
+  std::vector<int> num_dofs2(2, 1);
+  locations2[0] = AmanziMesh::CELL;
+  locations2[1] = AmanziMesh::FACE;
+  names2[0] = "cell";
+  names2[1] = "face";
+
+  S->RequireField("elevation")->SetMesh(S->GetMesh("surface"))->SetGhosted()
+      ->AddComponents(names2, locations2, num_dofs2);
+  
   S->RequireField("slope_magnitude")->SetMesh(S->GetMesh("surface"))
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
