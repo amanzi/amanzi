@@ -195,7 +195,7 @@ double MatrixJF<Vector,VectorSpace>::CalculateEpsilon_(const Vector& u, const Ve
   //     double u_l1(0.);
   //     u.Norm1(&u_l1);
 
-  //     //int num = u.Size();
+  //     int num = u.Size();
   //     //std::cout<<u_l1<<" "<<x_l2<<" "<<num<<"\n";    
   //     eps = (b*u_l1)/(num*x_l2) + b;
   //   }

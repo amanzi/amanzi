@@ -88,7 +88,7 @@ class OperatorDiffusionFV : public OperatorDiffusion {
   virtual void ScaleMassMatrices(double s) {};
 
   template <class Model> 
-  double DeriveBoundaryFaceValue(int f, const CompositeVector& u, const Model& model);
+  double DeriveBoundaryFaceValue(int f, double atm_pressure, const CompositeVector& u, const Model& model);
 
   //access function
   const CompositeVector transmissibility() { return *transmissibility_; }

@@ -439,10 +439,16 @@ and the function itself.
 * `"component`" [string] specifies a mesh object on which the discrete field 
   is defined.
 
+Optional parameters are `"write checkpoint`", `"write vis`". These
+parameters define  whether  the field has to be written into
+checkpoints of vis files. Default values are true.
+
 .. code-block:: xml
 
    <ParameterList name="initial conditions">  <!-- parent list -->
      <ParameterList name="pressure"> 
+       <Parameter name="write checkpoint" type="bool" value ="false">   
+       <Parameter name="write vis" type="bool" value ="true">
        <ParameterList name="function">
          <ParameterList name="MESH BLOCK 1">
            <Parameter name="regions" type="Array(string)" value="DOMAIN 1"/>
@@ -475,6 +481,10 @@ The required parameters are `"Number of DoFs`" and `"Function type`".
 * `"dot with normal`" [bool] triggers special initialization of a
   vector field such as the darcy flux. This field is defined by
   projection of a vector field on face normals.
+
+Optional parameters are `"write checkpoint`", `"write vis`". These
+parameters define  whether  the field has to be written into
+checkpoints of vis files. Default values are true.
 
 .. code-block:: xml
 
@@ -3079,7 +3089,7 @@ We describe parameters of the second sublist only.
   Default is 1e-8.
 
 * `"method for epsilon`" [string] defines a method for calculating finite difference epsilon.
-  Available option is `"Knoll-Keyes`".
+  Available option is `"Knoll-Keyes`", `"Knoll-Keyes L2`", `"Brown-Saad`".
 
 .. code-block:: xml
 
@@ -3089,7 +3099,7 @@ We describe parameters of the second sublist only.
 
        <ParameterList name="JF matrix parameters">
          <Parameter name="finite difference epsilon" type="double" value="1.0e-8"/>
-         <Parameter name="method for epsilon" type="string" value="Knoll-Keyes"/>
+         <Parameter name="method for epsilon" type="string" value="Knoll-Keyes L2"/>
        </ParameterList>
 
        <ParameterList name="nonlinear solver">
