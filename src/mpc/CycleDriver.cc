@@ -809,7 +809,11 @@ void CycleDriver::Go() {
 
     Init_PK(time_period_id_); 
     Setup();
-    //Initialize();
+    // Only field which are in State are initialize from the input file
+    // to initialize field which are not in the restart file
+    S_->InitializeFields();
+    S_->InitializeEvaluators();
+    
 
     // re-initialize the state object
     restart_dT = ReadCheckpoint(comm_, Teuchos::ptr(&*S_), restart_filename_);

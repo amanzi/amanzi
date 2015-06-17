@@ -26,7 +26,7 @@ struct test_data {
 
   test_data() {
     comm = new Epetra_MpiComm(MPI_COMM_SELF);
-    map = Teuchos::rcp(new Epetra_Map(2, 0, *comm));
+    map = Teuchos::rcp(new Epetra_Map(5, 0, *comm));
     vec = Teuchos::rcp(new Epetra_Vector(*map));
   }
 
@@ -255,7 +255,7 @@ TEST_FIXTURE(test_data, AA_SOLVER) {
   plist.set("limit iterations", 15);
   plist.set("max du growth factor", 1e5);
   plist.set("max divergent iterations", 3);
-  plist.set("max aa vectors", 3);
+  plist.set("max aa vectors", 4);
   plist.sublist("VerboseObject").set("Verbosity Level", "high");
 
   // create the Solver
@@ -265,8 +265,12 @@ TEST_FIXTURE(test_data, AA_SOLVER) {
 
   // initial guess
   Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
-  (*u)[0] = -0.5;
-  (*u)[1] =  0.4;
+  (*u)[0] = -0.9;
+  (*u)[1] =  0.9;
+  (*u)[2] = -0.5;
+  (*u)[3] =  0.9;
+  (*u)[4] = -0.5;
+
 
   // solve
   aa->Solve(u);

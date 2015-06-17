@@ -29,10 +29,10 @@ class AA_Base {
     vo_ = Teuchos::rcp(new VerboseObject("AA_Base", plist));
   }
 
+  void QRdelete();
   void Relax();
   void Restart();
-  void Correction(const Vector&, Vector&,
-                  const Teuchos::Ptr<const Vector>& oldv=Teuchos::null);
+  void Correction(const Vector&, Vector&, const Teuchos::Ptr<const Vector>& oldv=Teuchos::null);
 
  private:
   int subspace_;  // boolean: a nonempty subspace
@@ -43,9 +43,13 @@ class AA_Base {
 
   Teuchos::RCP<Vector> *u_;  // previous iterates
   Teuchos::RCP<Vector> *dF_;  // preconditioner residuals
+  Teuchos::RCP<Vector> *dG_;  // preconditioner residuals
+  Teuchos::RCP<Vector> *Q_;  // Q matrix in QR decomposition
   Teuchos::RCP<Vector> *F_test;  // preconditioner residuals
 
-  double **h_;  // matrix of w vector inner products 
+  //  double **h_;  // matrix of w vector inner products 
+  double *R_;
+
 
   // Linked-list organization of the vector storage.
   int first_f_;  // index of first_f subspace vector
@@ -69,22 +73,28 @@ AA_Base<Vector, VectorSpace>::AA_Base(int mvec, double vtol, double beta, const 
   mvec_ = std::max(mvec, 1);  // we cannot have mvec_ < 1
   vtol_ = vtol;
   beta_ = beta;
+  
 
   u_ = new Teuchos::RCP<Vector> [mvec_ + 1];
   dF_ = new Teuchos::RCP<Vector> [mvec_ + 1];
+  dG_ = new Teuchos::RCP<Vector> [mvec_ + 1];
   F_test = new Teuchos::RCP<Vector> [mvec_ + 1];
+  Q_ = new Teuchos::RCP<Vector> [mvec_ + 1];
 
   for (int i = 0; i < mvec_ + 1; i++) {
     u_[i] = Teuchos::rcp(new Vector(map));
     dF_[i] = Teuchos::rcp(new Vector(map));
+    dG_[i] = Teuchos::rcp(new Vector(map));
     F_test[i] = Teuchos::rcp(new Vector(map));
+    Q_[i] = Teuchos::rcp(new Vector(map));
   }
 
-  h_ = new double* [mvec_];
-  for (int j = 0; j < mvec_; j++) {
-     h_[j] = new double[mvec_];
-  }
+  // h_ = new double* [mvec_];
+  // for (int j = 0; j < mvec_; j++) {
+  //    h_[j] = new double[mvec_];
+  // }
 
+  R_ = new double[mvec_*(mvec_+1)/2];
 
   // next_f_ = new int [mvec_ + 1];
   // prev_f_ = new int [mvec_ + 1];
@@ -103,10 +113,10 @@ AA_Base<Vector, VectorSpace>::~AA_Base()
 {
   delete [] u_;
   delete [] dF_;
-  for (int j = 0; j <mvec_; ++j) {
-    delete [] h_[j];
-  }
-  delete [] h_;
+  // for (int j = 0; j <mvec_; ++j) {
+  //   delete [] h_[j];
+  // }
+  // delete [] h_;
   // delete [] next_f_;
   // delete [] prev_f_;
 };
@@ -163,6 +173,66 @@ void AA_Base<Vector, VectorSpace>::Restart()
 }
 
 
+template<class Vector, class VectorSpace>
+void AA_Base<Vector, VectorSpace>::QRdelete(){
+
+  std::cout<<"*************** QR DELETE ******************\n";
+
+  Teuchos::RCP<Vector> temp_vec = Teuchos::rcp(new Vector(*Q_[0]));
+  int m = num_vec_ - 1;
+
+  for (int i=0; i < m - 1; i++){
+    int loc_id = (i+2)*(i+3)/2 - 1; 
+    double temp =  sqrt( R_[loc_id]*R_[loc_id] + R_[loc_id-1]*R_[loc_id-1]);
+    double c = R_[loc_id-1]/temp;
+    double s =   R_[loc_id]/temp;
+    std::cout<<"temp "<<temp<<" c "<<c<<" s "<<s<<"\n";
+    R_[loc_id-1] = temp;
+    R_[loc_id] = 0.;
+    if (i < m - 2){
+      for (int j=i+2; j<m; j++){
+        loc_id = j*(j+1)/2 + i;
+        temp = c*R_[loc_id] + s*R_[loc_id + 1];
+        R_[loc_id + 1] = -s*R_[loc_id] + c*R_[loc_id + 1];
+        R_[loc_id] = temp;          
+      }
+    }
+    //    int I  = (first_f_ + i)%(mvec_ + 1);
+    // int I2 = (first_f_ + i + 1)%(mvec_ + 1);
+    *temp_vec = *Q_[i];
+    temp_vec -> Update(s, *Q_[i+1], c);
+    Q_[i+1] -> Update(-s, *Q_[i], c);
+   *Q_[i] = *temp_vec;
+  }
+
+  for (int i=0;i<m*(m-1)/2;i++){
+    R_[i] = R_[i+1];
+  }
+
+  first_f_=(first_f_ + 1)%(mvec_ + 1);
+  num_vec_--;
+
+  
+
+  // for (int i=0;i<m;i++){
+  //   //int I = (first_f_ + i)%(mvec_ + 1);
+  //   std::cout<<"Q "<<i<<"\n";
+  //   Q_[i]->Print(std::cout);
+  // }
+
+  // std::cout<<"R matrix "<<"\n";
+  // for (int i=0;i<m-1; i++){
+  //   for (int j=i;j<m-1; j++){
+  //     int loc_id=j*(j+1)/2 + i;
+  //     std::cout<<R_[loc_id]<<" ";
+  //   }
+  //   std::cout<<"\n";
+  // }
+  //exit(0);
+
+}
+
+
 /* ******************************************************************
  * TBW
  ***************************************************************** */
@@ -177,10 +247,11 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   Teuchos::RCP<Vector> vp, wp;
   Teuchos::RCP<Vector> ff = Teuchos::rcp(new Vector(f));
   Teuchos::RCP<Vector> fun = Teuchos::rcp(new Vector(f));
+  Teuchos::RCP<Vector> tmp = Teuchos::rcp(new Vector(f));
 
   std::cout.precision(12);
 
-  std::cout<<"mvec "<<mvec_<<"\n";
+  std::cout<<"mvec "<<mvec_<<" num_vec_ "<<num_vec_<<"\n";
   std::cout<<"new "<<new_f_<<" first "<<first_f_<<" last "<<last_f_<<"\n";
   std::cout<<"\n";
 
@@ -192,200 +263,133 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
 
   //ff->Scale(-1.);
 
-  *dF_[new_f_] = *ff;
-  *F_test[new_f_] = *ff;
-  if (u_old != Teuchos::null) *u_[new_f_] = *u_old; 
+  *dF_[new_f_] = *ff;                             // F_new = ff
+  //*F_test[new_f_] = *ff;
+  if (u_old != Teuchos::null) {
+    *u_[new_f_] = *u_old;                         // u_new = u_old
+    *dG_[new_f_] = *u_old;
+    dG_[new_f_]->Update(-1., *dF_[new_f_], 1);
+  }
 
   if (last_f_ >= 0){
     k = last_f_;
     dF_[last_f_] -> Update(1., *dF_[new_f_], -1.); 
-
-    while (k != first_f_) {
-      k--;
-      if (k < 0) k = mvec_;
-      //std::cout<<"k "<<k<<"\n";
-      dF_[k]->Update(1., *dF_[last_f_], 1. );
-      if (k == first_f_) break;
-    }      
+    dG_[last_f_] -> Update(1., *dG_[new_f_], -1.); 
+    // std::cout<<"last_f "<<last_f_<<"\n";
+    // dF_[last_f_] -> Print(std::cout);
   }
 
-  double *b  = new double[num_vec_];
-  // double *d  = new double[num_vec_];
-  // double **l  = new double*[num_vec_];
-  double *th = new double[num_vec_];
-  double *th_test = new double[num_vec_];
-  double *y = new double[num_vec_];
-  int *row = new int[num_vec_];
+  //std::cout<<"new_f "<<new_f_<<"\n";
+  //  dF_[new_f_] -> Print(std::cout);
+
+  // double *th_test = new double[num_vec_];
+  // double *y = new double[num_vec_];
+  // int *row = new int[num_vec_];
   double alp;
+  double eps = 1e-12;
 
-  for (int i=0; i<num_vec_; i++){
-    th[i]=0.;
-    row[i] = i;
-    // l[i] = new double[num_vec_];
-    // for (int j=0;j<num_vec_;j++) l[i][j] = 0.;
-  }
-
-  // std::cout<<"NEW\n";
-  // F_test[new_f_]->Print(std::cout);
-
-  // /// Construct system of normal equations
-  for (i=0; i<num_vec_; i++){
-    int I = (first_f_ + i)%(mvec_ + 1);
-    //    F_test[I]->Print(std::cout);
-    for (j=i; j<num_vec_; j++){
-      int J = (first_f_ + j)%(mvec_ + 1);
-      dF_[I]->Dot( *dF_[J], &h_[i][j]);
-      h_[j][i] = h_[i][j];
+  if (num_vec_ == 1){
+    if (last_f_ == 0){
+      double norm2;
+      *Q_[last_f_] = *dF_[last_f_];
+      Q_[last_f_] -> Norm2(&norm2);
+      Q_[last_f_] -> Scale(1./norm2);
+      R_[0] = norm2;
     }
-    //    d[i] = h_[i][i];
-    for (j=0; j<num_vec_; j++) std::cout<<h_[i][j]<<" ";
-    dF_[I]->Dot(*dF_[new_f_], &b[i]);
-    std::cout<<"  =  "<<b[i]<<"\n";
-  }
-
-  bool singular = false;
-  double eps = 1e-16;
-
-  // /// Choletsky decomposition
-  for (int m=0; m<num_vec_; m++){
-    double max_val = 0;
-    int i_max_val;
-    for (int i=m;i<num_vec_;i++){
-      if (h_[row[i]][m] > max_val){
-        i_max_val = i;
-        max_val = h_[row[i]][m];
-      }
+  }else if (num_vec_ > 1){
+    if (num_vec_ == mvec_){
+    // Delete old Vector
+      QRdelete();
     }
-    if (max_val< eps) {
-      h_[row[m]][m] = 0.;
-      singular = true;
-      break;
+
+    double norm2 = 0.;
+    int last_col_i;
+    while ((norm2 < 1e-12)&&(num_vec_ > 1)){
+      last_col_i = num_vec_*(num_vec_ - 1)/2;    
+      *tmp = *dF_[last_f_];
+      for (int i=0; i<num_vec_ - 1; i++){
+        //int I = (first_f_ + i)%(mvec_ + 1);
+        double val;
+        tmp -> Dot(*Q_[i], &val);
+        R_[last_col_i + i] = val;
+        std::cout<<"val "<<last_col_i + i <<" "<<val<<"\n";
+        tmp -> Update(-val, *Q_[i], 1.);
+      }    
+      tmp -> Norm2(&norm2); 
+      if (norm2 < 1e-12) QRdelete();
     }
-    // int k = row[m];
-    // row[m] = i_max_val;
-    // row[i_max_val] = k;
 
-    std::cout<<"h_[row[m]][m] "<<h_[row[m]][m]<<"\n";
-    h_[row[m]][m] = sqrt(h_[row[m]][m]);
-    for (int j=m+1; j<num_vec_; j++){
-      h_[row[m]][j] = h_[row[m]][j]/ h_[row[m]][m];
-    }
-    for (int i=m+1; i<num_vec_; i++){
-      for (int j=i; j<num_vec_; j++){
-        h_[row[i]][j] -= h_[row[m]][j]*h_[row[m]][i];
-        //        std::cout<<h_[row[i]][j]<<" ";
-      }       
-      //std::cout<<"\n";
-    }                  
+    *Q_[last_f_] = *tmp;
+    Q_[last_f_] -> Scale(1./norm2);
+    R_[last_col_i + num_vec_ - 1] = norm2; 
 
-    // l[m][row[m]] = sqrt(d[row[m]]);
+    // while ((norm2 < 1e-12)&&(num_vec_ > 1)){
+    //   dF_[last_f_] -> Print(std::cout);
+    // }
 
-    // for (int i=m+1; i<num_vec_;i++){
-    //   l[m][row[i]] = h_[row[m]][row[i]];       
-    //   for (int j=0;j<m;j++) {
-    //     l[m][row[i]] -= l[j][row[m]]*l[j][row[i]];
-    //   }
-    //   l[m][row[i]] /=  l[m][row[m]];
-    //   d[row[i]] = d[row[i]] - l[m][row[m]]*l[m][row[i]];
-    // }    
-  }
-                                                
-  std::cout<<"LLLLL\n";
-  for (int i=0;i<num_vec_;i++) std::cout<<row[i]<<" ";std::cout<<"\n";
-  
-  for (int i=0;i<num_vec_;i++){
-    for (int j=0; j<num_vec_; j++) std::cout<<h_[i][j]<<" ";
-    std::cout<<"\n";
   }
 
-  //if (num_vec_ > 2) exit(0);
 
-  
-   
+  // for (int i=0;i<num_vec_;i++){
+  //   //    int I = (first_f_ + i)%(mvec_ + 1);
+  //   std::cout<<"Q "<<i<<"\n";
+  //   Q_[i]->Print(std::cout);
+  // }
 
-  //if (!singular){
-  for (int i=0; i<num_vec_; i++){
-    y[row[i]] = b[row[i]];
-    for (int j=0; j<i; j++) y[row[i]] -= h_[row[j]][i]*y[row[j]];
-    if (h_[row[i]][i] > eps)
-      y[row[i]] /= h_[row[i]][i];
-    else
-      y[row[i]] = 0.;
-  }
+  // std::cout<<"R matrix "<<"\n";
+  // for (int i=0;i<num_vec_; i++){
+  //   for (int j=i;j<num_vec_; j++){
+  //     int loc_id=j*(j+1)/2 + i;
+  //     std::cout<<R_[loc_id]<<" ";
+  //   }
+  //   std::cout<<"\n";
+  // }
 
-  // std::cout<<"y val\n";
-  // //  for (int i=0;i<num_vec_;i++) th[i] = 0.001;
-  // for (int i=0;i<num_vec_;i++)  std::cout<<y[i]<<" "; std::cout<<"\n\n";
-
-  for (int i=num_vec_ - 1; i>=0; i--){
-    th[row[i]] = y[row[i]];
-    for (int j=num_vec_ - 1; j>i; j--) th[row[i]] -= h_[row[i]][j]*th[row[j]];
-    if (h_[row[i]][i] > eps)
-      th[row[i]] /= h_[row[i]][i];
-    else
-      th[row[i]] = 0.;
-  }
-    //}
-  // else{
-  //   exit(0);
-  //}
-
-  std::cout<<"theta\n";
-  //  for (int i=0;i<num_vec_;i++) th[i] = 0.001;
-  for (int i=0;i<num_vec_;i++)  std::cout<<th[i]<<" "; std::cout<<"\n\n";
-  //if (singular) exit(0);
-  /// TEST
-  double tt, tt_new;
-  if (num_vec_ > 0){
-    double alp = 1.;
-    for (int i=0; i<num_vec_; i++) alp -= th[i];
-
-    *fun = *dF_[new_f_];
-    fun->Scale(alp);
-
-    for (int i=0; i<num_vec_; i++){
-      int I = (first_f_ + i)%(mvec_ + 1);
-      std::cout<<"I="<<I<<"\n";
-      fun->Update(th[i], *F_test[I], 1.);
-    }
-    fun->Norm2(&tt);
-    std::cout<<"fun orig"<<tt<<"\n";
-    std::srand(time(NULL));   
-    for (int k=0;k<20;k++){
-
-      for (int i=0; i<num_vec_; i++) th_test[i] = th[i] - 1 + 2*(double)std::rand()/(RAND_MAX);
-      alp=1.;
-      for (int i=0; i<num_vec_; i++) alp -= th_test[i];
-      tt_new = 0.;
-
-      *fun = *dF_[new_f_];
-      fun->Scale(alp);
+  // std::cout<<"mvec "<<mvec_<<" num_vec_ "<<num_vec_<<"\n";
+  // std::cout<<"new "<<new_f_<<" first "<<first_f_<<" last "<<last_f_<<"\n";
+  // std::cout<<"\n";
       
-      for (int i=0; i<num_vec_; i++){
-        int I = (first_f_ + i)%(mvec_ + 1);
-        fun->Update(th_test[i], *F_test[I], 1.);
-      }
-      fun->Norm2( &tt_new);
-      std::cout<<"fun new "<<tt_new<<"\n"; 
-      if (tt_new - tt <0)    exit(0);
-    }    
+  double *b  = new double[num_vec_];
+  double *th = new double[num_vec_];
+
+  std::cout<<"NEW\n";
+  dF_[new_f_]->Print(std::cout);
+
+  for (int i=0; i<num_vec_; i++){
+    th[i] = 0.;
+    dF_[new_f_]->Dot(*Q_[i], &b[i]);
   }
 
-  // std::cout<<"theta\n";                               
-  // for (int i=0;i<num_vec_;i++) std::cout<<th[i]<<" "; std::cout<<"\n\n";
-
-  alp = 0.;
-  for (int i=0;i<num_vec_;i++) alp += th[i];
-  alp = 1 - alp;
+  for (int i = num_vec_ - 1; i>=0; i--){
+    th[i] = b[i];
+    int diag_id = (i+1)*(i+2)/2 - 1;
+    for (int j=i+1; j<num_vec_; j++){
+      int loc_id = j*(j+1)/2 + i;
+      th[i] -= R_[loc_id]*th[j];
+    }
+    //std::cout<<"i "<<i<<" diag_id "<<diag_id<<"\n";
+    th[i] = th[i]/R_[diag_id];
+  }
+  
 
   // alp = 1.;// - 0.001*num_vec_;
-  // for (int i=0;i<num_vec_;i++) th[i] = 0.;
-  std::cout<<"alpha "<<alp<<"\n";
+  // // for (int i=0;i<num_vec_;i++) th[i] = 0.;
+  // std::cout<<"alpha "<<alp<<"\n";
   
 
   // dir =  *u_[new_f_];
   // dir.Update(-alp, *u_[new_f_], 1.);
   // dir.Update(alp, *F_test[new_f_], 1.); 
+
+  //  dir.PutScalar(0.);
+
+  dir = *dF_[new_f_];
+  for (int i=0; i<num_vec_; i++){
+    int I = (first_f_ + i)%(mvec_ + 1);
+    dir.Update(-th[i], *dG_[I], 1.);
+  }
+
+
 
   // for (int i=0; i<num_vec_; i++) {
   //   int I = (first_f_ + i)%(mvec_ + 1);
@@ -394,17 +398,17 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   //   dir.Update(th[i], *F_test[I], 1.);
   // }
 
-  beta_ = 0.95;
+  // beta_ = 1.;
 
-  dir =  *u_[new_f_];
-  dir.Update(-alp, *u_[new_f_], 1.);
-  dir.Update(beta_, *dF_[new_f_], 1.);
+  // dir =  *u_[new_f_];
+  // dir.Update(-alp, *u_[new_f_], 1.);
+  // dir.Update(beta_, *dF_[new_f_], 1.);
 
-  for (int i=0; i<num_vec_; i++) {
-    int I = (first_f_ + i)%(mvec_ + 1);
-    dir.Update(-th[i]*beta_, *dF_[I], 1.);
-    dir.Update(-th[i], *u_[I], 1.);
-  }
+  // for (int i=0; i<num_vec_; i++) {
+  //   int I = (first_f_ + i)%(mvec_ + 1);
+  //   dir.Update(-th[i]*beta_, *dF_[I], 1.);
+  //   dir.Update(-th[i], *u_[I], 1.);
+  // }
 
   // dir.Scale(beta_);
 
@@ -419,16 +423,19 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
 
   //  std::cout<<"dir\n"; dir.Print(std::cout);
 
-  delete[] y;
+  //delete[] y;
   delete[] b;
   delete[] th;
 
 
 
   if (num_vec_ < mvec_){
-    first_f_ = 0;
+    if (first_f_ < 0){
+      first_f_ = 0;
+    }
     last_f_ = new_f_;
-    if (new_f_++ > mvec_) new_f_ = 0;
+    new_f_++;
+    if (new_f_ > mvec_) new_f_ = 0;
     num_vec_ ++;
   }
   else {

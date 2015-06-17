@@ -14,8 +14,11 @@
 
 #include <boost/math/tools/roots.hpp>
 
+
 namespace Amanzi {
 namespace Operators {
+
+
 
 template <class Nonlin_rcp_ptr>
 class FlowFluxTPFA_BCFunc {
@@ -73,9 +76,18 @@ struct Tol_ {
 };
 
 
+
+template <class WRM>
+double solve_nonlinear_bisection(double face_val, 
+                                 double atm_press, 
+                                 FlowFluxTPFA_BCFunc<WRM>& func,
+                                 Tol_& tol,
+                                 int max_it,
+                                 int& actual_it);
+
 template <class WRM>
 double OperatorDiffusionFV::DeriveBoundaryFaceValue(
-    int f, const CompositeVector& u, const WRM& wrm)
+               int f, double atm_pressure, const CompositeVector& u, const WRM& wrm)
 {
   if (u.HasComponent("face")) {
     const Epetra_MultiVector& u_face = *u.ViewComponent("face");
@@ -107,65 +119,18 @@ double OperatorDiffusionFV::DeriveBoundaryFaceValue(
 	  double trans = trans_face[0][f];
 	  double gflux = gravity_face[0][f];
 	  double bc_flux = bc_value[f]* mesh_->face_area(f);
-	  double atm_pressure_ = 101325;
 
 	  FlowFluxTPFA_BCFunc<WRM> func(trans, face_val, i, u_cell[0][c],
-					bc_flux, gflux, dirs[i], atm_pressure_, wrm);
+					bc_flux, gflux, dirs[i], atm_pressure, wrm);
           // -- convergence criteria
 	  double eps = std::max(1.e-4 * std::abs(bc_flux), 1.e-8);
 	  Tol_ tol(eps);
 	  boost::uintmax_t max_it = 100;
 	  boost::uintmax_t actual_it(max_it);
+
+          face_val = solve_nonlinear_bisection(face_val, atm_pressure, func, tol, max_it, actual_it);
 	  
-	  double res = func(face_val);
-	  double left = 0.;
-	  double right = 0.;
-	  double lres = 0.;
-	  double rres = 0.;
-
-	  if (res > 0.) {
-	    left = face_val;
-	    lres = res;
-	    right = std::max(face_val, atm_pressure_);
-	    rres = func(right);
-	    while (rres > 0.) {
-	      right += atm_pressure_;
-	      rres = func(right);
-	    }
-	  } else {
-	    right = face_val;
-	    rres = res;
-#if DEBUG_FLAG
-	    std::cout << "RIGHT = " << right << ", " << rres << std::endl;
-#endif
-	    left = std::min(101325., face_val);
-	    lres = func(left);
-	    while (lres < 0.) {
-#if DEBUG_FLAG
-	      std::cout << "LEFT = " << left << ", " << lres << std::endl;
-#endif
-	      left -= 101325.;
-	      lres = func(left);
-	    }
-	  }
-#if DEBUG_FLAG
-  std::cout << "   bracket (res): " << left << " (" << lres << "), "
-            << right << " (" << rres << ")" << std::endl;
-#endif
-
-          std::pair<double,double> result =
-	    boost::math::tools::toms748_solve(func, left, right, lres, rres, tol, actual_it);
-	  if (actual_it >= max_it) {
-	    std::cout << " Failed to converged in " << actual_it << " steps." << std::endl;
-	    return 3;
-	  }
-	  
-	  face_val = (result.first + result.second) / 2.;
-
-#if DEBUG_FLAG
-	  std::cout << "face_val = "<<face_val<<"\n";
-#endif
-        return face_val;
+          return face_val;
         }
       }
 
@@ -178,6 +143,10 @@ double OperatorDiffusionFV::DeriveBoundaryFaceValue(
     }
   }
 }
+
+
+
+
 
 }  // namespace Operators
 }  // namespace Amanzi

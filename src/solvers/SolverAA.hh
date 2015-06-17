@@ -144,7 +144,7 @@ void SolverAA<Vector, VectorSpace>::Init_()
 
   residual_ = -1.0;
 
-  // update the verbose options
+  //update the verbose options
   vo_ = Teuchos::rcp(new VerboseObject("Solver::AA", plist_));
 }
 

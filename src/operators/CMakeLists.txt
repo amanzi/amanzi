@@ -91,6 +91,7 @@ set(operators_inc_files
 add_amanzi_library(operators 
                    SOURCE OperatorUtils.cc
                           FieldMaps.cc
+                          FluxTPFABCfunc.cc
                           Operator.cc
                           Operator_Cell.cc Operator_FaceCell.cc
                           Operator_FaceCellScc.cc
