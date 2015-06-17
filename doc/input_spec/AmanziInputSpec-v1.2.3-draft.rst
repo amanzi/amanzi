@@ -1889,9 +1889,9 @@ The purpose of restarting Amanzi in this fashion is mostly to continue a run tha
 terminated because its allocation of time ran out.
 
 
-* [S] `"Restart`" [list]
+* [SU] `"Restart`" [list]
 
-  * [S] `"File Name`" [string] file name of the specific Checkpoint Data file to restart from
+  * [SU] `"File Name`" [string] file name of the specific Checkpoint Data file to restart from
 
 Example:
 

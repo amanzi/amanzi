@@ -18,7 +18,7 @@ Changes V5 -> V6
 
 * Switched to a more flexible MPC driver, called Cycle Driver.
 * Added Energy PK and FlowEnergy PK.
-* Described the conceptual model.
+* Described the PDE forms of conceptual models.
 
 
 ParameterList XML
@@ -898,7 +898,7 @@ relative permeability, density and viscosity.
 
   * `"relative permeability`" [string] defines a method for calculating the *upwinded* 
     relative permeability. The available options are: `"upwind: gravity`", 
-    `"upwind: darcy velocity`" (default), `"upwind: amanzi", `"upwind: artificial diffusion`" (experimental), 
+    `"upwind: darcy velocity`" (default), `"upwind: amanzi``", 
     `"other: harmonic average`", and `"other: arithmetic average`".
 
   * `"upwind update`" [string] defines frequency of recalculating Darcy flux inside
@@ -1422,14 +1422,16 @@ The conceptual PDE model for the fully saturated flow is
   \frac{\partial (\phi s_l C_l)}{\partial t} 
   =
   - \boldsymbol{\nabla} \cdot (\boldsymbol{q}_l C_l) 
-  + \boldsymbol{\nabla} \cdot (\phi s_l \boldsymbol{D}_l \boldsymbol{\nabla} C_l) + Q,
+  + \boldsymbol{\nabla} \cdot (\phi s_l (\boldsymbol{D}_l + \tau \boldsymbol{M}_l) \boldsymbol{\nabla} C_l) + Q,
 
 where 
 :math:`\phi` is porosity,
 :math:`s_l` is liquid saturation, 
 :math:`Q` is source or sink term,
 :math:`\boldsymbol{q}_l` is the Darcy velocity,
-and :math:`\boldsymbol{D}_l` is dispersion tensor.
+:math:`\boldsymbol{D}_l` is dispersion tensor,
+:math:`\boldsymbol{M}_l` is diffusion coefficient,
+and :math:`\tau` is tortuosity.
 For an isotropic medium with no preferred axis of symmetry the dispersion 
 tensor has the folowing form:
 
@@ -2328,10 +2330,11 @@ Diffusion operator
 
   * `"nonlinear coefficient`" [string] specifies a method for treating nonlinear diffusion
     coefficient, if any. Available options are `"upwind: face`", `"divk: cell-face`" (default),
-    `"standard: cell`", `"divk: cell-face-twin`", `"divk: cell-grad-face-twin`",
-    `"artificial diffusion: cell-face`" (highly experimental).
+    `"divk: face`", `"standard: cell`", `"divk: cell-face-twin`" and `"divk: cell-grad-face-twin`".
     Symmetry preserving methods are the divk-family of methods and the classical cell-centred
-    method (`"standard: cell`").
+    method (`"standard: cell`"). The first part of the name indicates the base scheme.
+    The second part (after the semi-column) indicates required components of the composite vector
+    that must be provided by a physical PK.
 
   * `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
     geometric objects.

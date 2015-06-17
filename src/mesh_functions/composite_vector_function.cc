@@ -95,7 +95,9 @@ void CompositeVectorFunction::Compute(double time,
             } else if (kind == AmanziMesh::NODE) {
               mesh->node_get_coordinates(id, &xc);
             } else {
-              ASSERT(0);
+              Errors::Message msg;
+              msg << "In CompositeVectorFunction: unknown mesh kind: \"" << kind << "\"";
+              Exceptions::amanzi_throw(msg);
             }
             for (int i=0; i!=dim; ++i) args[i+1] = xc[i];
 

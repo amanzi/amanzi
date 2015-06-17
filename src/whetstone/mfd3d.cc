@@ -456,7 +456,7 @@ int MFD3D::SimplexFindFeasibleSolution_(
       // Exchange left and right-hand variables
       SimplexExchangeVariables_(T, kp, ip);
 
-      // Exchanged out an artificial variable foranequality constraint.
+      // Exchanged out an artificial variable for inequality constraint.
       // Make sure it stays out by removing it from the l1 list.
       if (iypos[ip] >= n + m1 + m2 + 1) {
         for (int k = 1; k <= nl1; k++) {

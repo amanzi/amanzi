@@ -410,10 +410,9 @@ void Richards_PK::Initialize()
   } else if (name == "upwind: gravity") {
     upw_method = "upwind: face";
     upw_id = Operators::OPERATOR_UPWIND_CONSTANT_VECTOR;
-  } else if (name == "upwind: artificial diffusion") {
-    upw_method = "artificial diffusion: cell-face";
   } else if (name == "upwind: amanzi") {
     upw_method = "divk: cell-face";
+    // upw_method = "divk: face";
   } else if (name == "other: arithmetic average") {
     upw_method = "upwind: face";
     upw_id = Operators::OPERATOR_UPWIND_ARITHMETIC_AVERAGE;
@@ -740,7 +739,6 @@ void Richards_PK::InitializeUpwind_()
 {
   // Create RCP pointer to upwind flux.
   if (relperm_->method() == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
-      relperm_->method() == FLOW_RELATIVE_PERM_AMANZI_ARTIFICIAL_DIFFUSION ||
       relperm_->method() == FLOW_RELATIVE_PERM_AMANZI_MFD) {
     darcy_flux_upwind = darcy_flux_copy;
   } else if (relperm_->method() == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
