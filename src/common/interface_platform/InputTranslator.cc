@@ -2092,60 +2092,60 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                       if (tag == "method") {
                         textContent = XMLString::transcode(curNode->getTextContent());
                         if (strcmp(textContent,"picard")==0) {
-                          ptiPL.set<std::string>("pseudo time integrator time integration method","Picard");
+                          ptiPL.set<std::string>("time integration method","Picard");
                         }
                         XMLString::release(&textContent);
                       }
                       else if (tag == "preconditioner") {
                         textContent = XMLString::transcode(curNode->getTextContent());
                         if (strcmp(textContent,"trilinos_ml")==0) {
-                          ptiPL.set<std::string>("pseudo time integrator preconditioner","Trilinos ML");
+                          ptiPL.set<std::string>("preconditioner","Trilinos ML");
                         }
                         else if (strcmp(textContent,"hypre_amg")==0) {
-                          ptiPL.set<std::string>("pseudo time integrator preconditioner","Hypre AMG");
+                          ptiPL.set<std::string>("preconditioner","Hypre AMG");
                         }
                         else if (strcmp(textContent,"block_ilu")==0) {
-                          ptiPL.set<std::string>("pseudo time integrator preconditioner","Block ILU");
+                          ptiPL.set<std::string>("preconditioner","Block ILU");
                         }
                         else {
-                          throw_error_illformed("pseudo time preconditioner", "value", "preconditioner", "trilinos_ml, hypre_amg, block_ilu");
+                          throw_error_illformed("unstr_initialization", "value", "preconditioner", "trilinos_ml, hypre_amg, block_ilu");
                         }
                         XMLString::release(&textContent);
                       }
                       else if (tag == "linear_solver") {
                         textContent = XMLString::transcode(curNode->getTextContent());
                         if (strcmp(textContent,"aztec00")==0) {
-                          ptiPL.set<std::string>("pseudo time integrator linear solver","AztecOO");
+                          ptiPL.set<std::string>("linear solver","AztecOO");
                         }
                         XMLString::release(&textContent);
                       }
                       else if (tag == "error_control_options") { //default = 'pressure'
                         textContent = XMLString::transcode(curNode->getTextContent());
                         Teuchos::Array<std::string> err_opts = make_regions_list(textContent);
-                        ptiPL.set<Teuchos::Array<std::string> >("pseudo time integrator error control options",err_opts);
+                        ptiPL.set<Teuchos::Array<std::string> >("error control options",err_opts);
                         XMLString::release(&textContent);
                       }
                       else if (tag == "max_iterations") {
                         textContent = XMLString::transcode(curNode->getTextContent());
-                        ptiPL.set<int>("pseudo time integrator picard maximum number of iterations",
+                        ptiPL.set<int>("picard maximum number of iterations",
                                        get_int_constant(textContent,*def_list));
                         XMLString::release(&textContent);
                       }
                       else if (tag == "clipping_saturation") {
                         textContent = XMLString::transcode(curNode->getTextContent());
-                        ptiPL.set<double>("pseudo time integrator clipping saturation value",
+                        ptiPL.set<double>("clipping saturation value",
                                           get_double_constant(textContent,*def_list));
                         XMLString::release(&textContent);
                       }
                       else if (tag == "clipping_pressure") {
                         textContent = XMLString::transcode(curNode->getTextContent());
-                        ptiPL.set<double>("pseudo time integrator clipping pressure value",
+                        ptiPL.set<double>("clipping pressure value",
                                           get_double_constant(textContent,*def_list));
                         XMLString::release(&textContent);
                       }
                       else if (tag == "convergence_tolerance") {
                         textContent = XMLString::transcode(curNode->getTextContent());
-                        ptiPL.set<double>("pseudo time integrator picard convergence tolerance",
+                        ptiPL.set<double>("picard convergence tolerance",
                                           get_double_constant(textContent,*def_list));
                         XMLString::release(&textContent);
                       }
@@ -2155,7 +2155,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                         std::string(textContent) == "true" ? iwd = true : iwd = false;
                         if (!iwd)
                           std::string(textContent) == "1" ? iwd = true : iwd = false;
-                        ptiPL.set<bool>("pseudo time integrator initialize with darcy",iwd);
+                        ptiPL.set<bool>("initialize with darcy",iwd);
                         XMLString::release(&textContent);
                       }
                     }
