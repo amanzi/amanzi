@@ -69,9 +69,11 @@ void Richards_PK::Functional(double t_old, double t_new,
 
   // add accumulation term 
   Epetra_MultiVector& f_cell = *f->Data()->ViewComponent("cell");
-  const Epetra_MultiVector& phi_c = *S_->GetFieldData("porosity")->ViewComponent("cell");
 
   pressure_eval_->SetFieldAsChanged(S_.ptr());
+  S_->GetFieldEvaluator("porosity")->HasFieldChanged(S_.ptr(), "flow");
+  const Epetra_MultiVector& phi_c = *S_->GetFieldData("porosity")->ViewComponent("cell");
+
   S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
   const Epetra_MultiVector& wc_c = *S_->GetFieldData("water_content")->ViewComponent("cell");
   const Epetra_MultiVector& wc_prev_c = *S_->GetFieldData("prev_water_content")->ViewComponent("cell");

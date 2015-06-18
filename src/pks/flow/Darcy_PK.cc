@@ -441,7 +441,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   ComputeBCs(*solution);
 
-  // calculate and assemble elemental stifness matrices
+  // calculate and assemble elemental stiffness matrices
   double factor = 1.0 / g_;
   const CompositeVector& ss = *S_->GetFieldData("specific_storage");
   CompositeVector ss_g(ss); 
