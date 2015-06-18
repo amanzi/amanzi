@@ -397,7 +397,7 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
 
     * `"unstr_initialization`"  has the following elements
 
-        * `"method`" = "string" (options: picard)
+        * `"method`" = "string" (options: picard, darcy_solver)
 
         * `"preconditioner`" = "string" (options: trilinos_ml, hypre_amg, block_ilu)
 
@@ -412,8 +412,6 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
         * `"clipping_pressure`" = "exponential"
 
         * `"convergence_tolerance`" = "exponential"
-
-        * `"initialize_with_darcy`" = "boolean"
 
     * `"limit_iterations`" = "integer"
 

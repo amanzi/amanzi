@@ -178,10 +178,9 @@
 				<nonlinear_iteration_initial_guess_extrapolation_order>int</nonlinear_iteration_initial_guess_extrapolation_order> <!-- EIB add --> <!-- default: 1 -->
 				<unstr_initialization>
 				        <!-- EIB: ask Konstantin if this only needs to be included if steady method = picard? -->
-					<initialize_with_darcy>true | false</initialize_with_darcy> <!-- default: true -->
 					<clipping_saturation>exp</clipping_saturation> <!-- default: 0.9 suggested range: 0.7-0.95 -->
 					<clipping_pressure>exp</clipping_pressure> 
-					<method>picard</method> <!-- default: picard -->
+					<method>picard | darcy_solver</method> <!-- default: picard -->
 					<preconditioner>hypre_amg | trilinos_ml | block_ilu</preconditioner> <!-- default: hypre_amg -->
 					<linear_solver>aztec00</linear_solver> <!-- default: aztec00 -->
 					<error_control_options>pressure | residual</error_control_options> <!-- default: pressure -->

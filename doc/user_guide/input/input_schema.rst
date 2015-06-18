@@ -394,11 +394,11 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
       <max_iterations> Integer </max_iterations>
       <max_preconditioner_lag_iterations> Integer </max_preconditioner_lag_iterations>
       <nonlinear_tolerance> Exponential </nonlinear_tolerance>
+      <initialize_with_darcy>true | false</initialize_with_darcy>
       <unstr_initialization>
-        <initialize_with_darcy> Boolean </initialize_with_darcy>
         <clipping_saturation> Exponential </clipping_saturation>
         <clipping_pressure> Exponential </clipping_pressure>
-        <method>picard</method>
+        <method>picard | darcy_solver</method>
         <preconditioner> trilinos_ml | hypre_amg | block_ilu </preconditioner>
         <linear_solver>aztec00</linear_solver>
         <control_options> pressure | residual </control_options>

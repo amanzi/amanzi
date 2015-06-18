@@ -2094,6 +2094,12 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                         if (strcmp(textContent,"picard")==0) {
                           ptiPL.set<std::string>("time integration method","Picard");
                         }
+                        else if (strcmp(textContent,"darcy_solver")==0) {
+                          ptiPL.set<std::string>("time integration method","darcy solver");
+                        }
+                        else {
+                          //TODO: EIB - warn, unrecognized method name
+                        }
                         XMLString::release(&textContent);
                       }
                       else if (tag == "preconditioner") {
@@ -2147,15 +2153,6 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                         textContent = XMLString::transcode(curNode->getTextContent());
                         ptiPL.set<double>("picard convergence tolerance",
                                           get_double_constant(textContent,*def_list));
-                        XMLString::release(&textContent);
-                      }
-                      else if (tag == "initialize_with_darcy") {
-                        textContent = XMLString::transcode(curNode->getTextContent());
-                        bool iwd(false);
-                        std::string(textContent) == "true" ? iwd = true : iwd = false;
-                        if (!iwd)
-                          std::string(textContent) == "1" ? iwd = true : iwd = false;
-                        ptiPL.set<bool>("initialize with darcy",iwd);
                         XMLString::release(&textContent);
                       }
                     }

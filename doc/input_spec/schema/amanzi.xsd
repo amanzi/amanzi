@@ -681,10 +681,9 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_unstr_initialization">
 	<xs:all minOccurs = "0" maxOccurs = "1">
-		<xs:element name="initialize_with_darcy" type="xs:boolean" minOccurs = "0" maxOccurs = "1"/>
 		<xs:element name="clipping_saturation" type="typedef_exponential" minOccurs = "0" maxOccurs = "1"/>
 		<xs:element name="clipping_pressure" type="typedef_exponential" minOccurs = "0" maxOccurs = "1"/>
-		<xs:element name="method" type="typedef_unstr_pseudo_time_method" minOccurs = "0" maxOccurs = "1"/>
+		<xs:element name="method" type="typedef_unstr_initialization_method" minOccurs = "0" maxOccurs = "1"/>
 		<xs:element name="preconditioner" type="xs:string" minOccurs = "0" maxOccurs = "1"/>
 		<xs:element name="linear_solver" type="typedef_unstr_pseudo_time_linear_solver" minOccurs = "0" maxOccurs = "1"/>
 		<xs:element name="error_control_options" type="xs:string" minOccurs = "0" maxOccurs = "1"/>
@@ -695,9 +694,10 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
         <xs:assert  test="not(exists(preconditioner)) or preconditioner = ('hypre_amg','trilinos_ml','block_ilu')"/>
 </xs:complexType>
 
-<xs:simpleType name="typedef_unstr_pseudo_time_method">
+<xs:simpleType name="typedef_unstr_initialization_method">
 	<xs:restriction base="xs:string">
 		<xs:enumeration value="picard"/>
+		<xs:enumeration value="darcy_solver"/>
 	</xs:restriction>
 </xs:simpleType>
 

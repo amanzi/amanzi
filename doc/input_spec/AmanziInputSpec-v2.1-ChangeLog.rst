@@ -9,10 +9,10 @@ Overview
 
 The Amanzi simulator will continue to expand the available features and enhance current functionality.  This progress will result in modifications and additions to the XML input specificition.  Specific versions of the XML input specification will only work with the corresponding Amanzi release version.  The following is a description of the changes made to the XML input specification and the Amanzi release version(s) that accept the input version.
 
-Version 2.1.0 (Amanzi Release - devel - 8067)
+Version 2.1.0 (Amanzi Release - devel - 8061/8064)
 =============================================
 
-Changeset 8067
+Changeset 8061/8064
 
 NERSC build on  June 18, 2015.  
 
@@ -28,6 +28,10 @@ Numerical Controls
 * Changed element name from `"unstr_pseudo_time_integrator`" to `"unstr_initialization`".
 
 * Added the parameter `"clipping_pressure`" to the renamed `"unstr_initialization`" list.
+
+* Removed the parameter `"initialize_with_darcy`" from the section `"unstr_initialization`".  This section's parameters are used to initialize the steady time step and `"initialize_with_darcy`" is already specified under the steady-state section.
+
+* Added the option `"darcy_solver`" the parameter `"method`" in the `"unstr_initialization`" list.
 
 
 Version 2.1.0 (Amanzi Release - devel - 8005)
