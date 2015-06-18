@@ -1765,7 +1765,8 @@ The remaining parameters that can be used by a developes include
 
 * `"runtime diagnostics: solute names`" [Array(string)] defines solutes that will be 
   tracked closely each time step if verbosity `"high`". Default value is the first 
-  solute in the global list of `"aqueous names`".
+  solute in the global list of `"aqueous names`" and the first gas in the global list 
+  of `"gaseous names`".
 
 * `"runtime diagnostics: regions`" [Array(string)] defines a boundary region for 
   tracking solutes. Default value is a seepage face boundary, see Flow PK.

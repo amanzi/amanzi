@@ -860,8 +860,8 @@ Teuchos::ParameterList InputParserIS::CreateSS_FlowBC_List_(Teuchos::ParameterLi
         ss << "BC " << bc_counter++;
 
         Teuchos::ParameterList& tbc = ssf_list.sublist("seepage face").sublist(ss.str());
-        tbc.set<Teuchos::Array<std::string> >("regions", regions );
-        tbc.set<bool>("rainfall", bc_flux.get<bool>("rainfall",false));
+        tbc.set<Teuchos::Array<std::string> >("regions", regions);
+        tbc.set<bool>("rainfall", bc_flux.get<bool>("rainfall", false));
 
         if (times.size() == 1) {
           Teuchos::ParameterList& tbcs = tbc.sublist("outward mass flux").sublist("function-constant");

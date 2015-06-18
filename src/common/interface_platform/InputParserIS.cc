@@ -77,8 +77,9 @@ Teuchos::ParameterList InputParserIS::Translate(Teuchos::ParameterList* plist, i
   // analysis list
   new_list.sublist("Analysis") = CreateAnalysisList_();
 
-  // hack (additional transport diagnostics form flow)
-  new_list.sublist("Transport").set<Teuchos::Array<std::string> >("runtime diagnostics: regions", transport_diagnostics_);
+  // hack (additional transport diagnostics)
+  new_list.sublist("PKs").sublist("Transport")
+          .set<Teuchos::Array<std::string> >("runtime diagnostics: regions", transport_diagnostics_);
 
   return new_list;
 }
@@ -191,7 +192,7 @@ void InputParserIS::InitGlobalInfo_(Teuchos::ParameterList* plist)
   if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
     *vo_->os() << "verbosity level=" <<  vo_->getVerbLevel()
                << " (low=" << Teuchos::VERB_LOW 
-               << ", ..., extreme=" << Teuchos::VERB_EXTREME << ")" << std::endl;
+               << ", medium, high, extreme=" << Teuchos::VERB_EXTREME << ")" << std::endl;
   }
 
   // check if Transport is Off
