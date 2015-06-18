@@ -9,7 +9,28 @@ Overview
 
 The Amanzi simulator will continue to expand the available features and enhance current functionality.  This progress will result in modifications and additions to the XML input specificition.  Specific versions of the XML input specification will only work with the corresponding Amanzi release version.  The following is a description of the changes made to the XML input specification and the Amanzi release version(s) that accept the input version.
 
-Version 2.1.0 (Amanzi Release - devel - 7926)
+Version 2.1.0 (Amanzi Release - devel - 8067)
+=============================================
+
+Changeset 8067
+
+NERSC build on  June 18, 2015.  
+
+Edison build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.18/default-150618  
+
+Hopper build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.18/default-150618
+
+Numerical Controls
+------------------
+
+* Changed `"bdf1_integration_method`" attributes to elements.  This was done for consistency and readability.
+
+* Changed element name from `"unstr_pseudo_time_integrator`" to `"unstr_initialization`".
+
+* Added the parameter `"clipping_pressure`" to the renamed `"unstr_initialization`" list.
+
+
+Version 2.1.0 (Amanzi Release - devel - 8005)
 =============================================
 
 Changeset 8005

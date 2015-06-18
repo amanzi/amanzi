@@ -395,7 +395,7 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
 
     * `"nonlinear_tolerance`" = "exponential"
 
-    * `"unstr_pseudo_time_integrator`"  has the following elements
+    * `"unstr_initialization`"  has the following elements
 
         * `"method`" = "string" (options: picard)
 
@@ -408,6 +408,8 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
         * `"max_iterations`" = "integer"
 
         * `"clipping_saturation`" = "exponential"
+
+        * `"clipping_pressure`" = "exponential"
 
         * `"convergence_tolerance`" = "exponential"
 

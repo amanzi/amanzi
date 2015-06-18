@@ -394,33 +394,17 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
       <max_iterations> Integer </max_iterations>
       <max_preconditioner_lag_iterations> Integer </max_preconditioner_lag_iterations>
       <nonlinear_tolerance> Exponential </nonlinear_tolerance>
-      <unstr_pseudo_time_integrator>
+      <unstr_initialization>
         <initialize_with_darcy> Boolean </initialize_with_darcy>
         <clipping_saturation> Exponential </clipping_saturation>
+        <clipping_pressure> Exponential </clipping_pressure>
         <method>picard</method>
         <preconditioner> trilinos_ml | hypre_amg | block_ilu </preconditioner>
-             <!-- if trilinos_ml -->
-          <trilinos_smoother_type> jacobi | gauss_seidel | ilu </trilinos_smoother_type>
-          <trilinos_threshold> Exponential </trilinos_threshold>
-          <trilinos_smoother_sweeps> Integer </trilinos_smoother_sweeps>
-          <trilinos_cycle_applications> Integer </trilinos_cycle_applications>
-             <!-- if hypre_amg -->
-          <hypre_cycle_applications> Integer </hypre_cycle_applications>
-          <hypre_smoother_sweeps> Integer </hypre_smoother_sweeps>
-          <hypre_tolerance> Exponential </hypre_tolerance>
-          <hypre_strong_threshold> Exponential </hypre_strong_threshold>
-             <!-- if block_ilu -->
-          <ilu_overlap> Integer </ilu_overlap>
-          <ilu_relax> Exponential </ilu_relax>
-          <ilu_rel_threshold> Exponential </ilu_rel_threshold>
-          <ilu_abs_threshold> Exponential </ilu_abs_threshold>
-          <ilu_level_of_fill> Integer </ilu_level_of_fill>
-        </preconditioner>
         <linear_solver>aztec00</linear_solver>
         <control_options> pressure | residual </control_options>
         <convergence_tolerance> Exponential </convergence_tolerance>
         <max_iterations> Integer </max_iterations>
-      </unstr_pseudo_time_integrator>
+      </unstr_initialization>
       <limit_iterations> Integer </limit_iterations>
       <nonlinear_iteration_damping_factor> Exponential </nonlinear_iteration_damping_factor>
       <nonlinear_iteration_divergence_factor> Exponential </nonlinear_iteration_divergence_factor>
@@ -431,35 +415,22 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
 
     <unstr_transient_controls>
       <comments>Comment text here</comments>
-      <bdf1_integration_method min_iterations="Integer" 
-                               max_iterations="Integer" 
-                               limit_iterations="Integer"
-                               nonlinear_tolerance="Exponential"
-                               nonlinear_iteration_damping_factor="Exponential"
-                               max_preconditioner_lag_iterations="Integer"
-                               max_divergent_iterations="Integer"
-                               nonlinear_iteration_divergence_factor="Exponential"
-                               restart_tolerance_factor="Exponential"
-                               restart_tolerance_relaxation_factor="Exponential"
-                               initialize_with_darcy="boolean" />
+      <bdf1_integration_method> 
+        <min_iterations> Integer </min_iterations>
+        <max_iterations> Integer </max_iterations>
+        <limit_iterations> Integer </limit_iterations>
+        <nonlinear_tolerance> Exponential </nonlinear_tolerance>
+        <nonlinear_iteration_damping_factor> Exponential </nonlinear_iteration_damping_factor>
+        <max_preconditioner_lag_iterations> Integer </max_preconditioner_lag_iterations>
+        <max_divergent_iterations> Integer </max_divergent_iterations>
+        <nonlinear_iteration_divergence_factor> Exponential </nonlinear_iteration_divergence_factor>
+        <restart_tolerance_factor> Exponential </restart_tolerance_factor>
+        <restart_tolerance_relaxation_factor> Exponential </restart_tolerance_relaxation_factor>
+        <initialize_with_darcy> true | false </initialize_with_darcy>
+      <bdf1_integration_method> 
       <preconditioner> trilinos_ml | hypre_amg | block_ilu </preconditioner>
-           <!-- if trilinos_ml -->
-        <trilinos_smoother_type> jacobi | gauss_seidel | ilu </trilinos_smoother_type>
-        <trilinos_threshold> Exponential </trilinos_threshold>
-        <trilinos_smoother_sweeps> Integer </trilinos_smoother_sweeps>
-        <trilinos_cycle_applications> Integer </trilinos_cycle_applications>
-           <!-- if hypre_amg -->
-        <hypre_cycle_applications> Integer </hypre_cycle_applications>
-        <hypre_smoother_sweeps> Integer </hypre_smoother_sweeps>
-        <hypre_tolerance> Exponential </hypre_tolerance>
-        <hypre_strong_threshold> Exponential </hypre_strong_threshold>
-           <!-- if block_ilu -->
-        <ilu_overlap> Integer </ilu_overlap>
-        <ilu_relax> Exponential </ilu_relax>
-        <ilu_rel_threshold> Exponential </ilu_rel_threshold>
-        <ilu_abs_threshold> Exponential </ilu_abs_threshold>
-        <ilu_level_of_fill> Integer </ilu_level_of_fill>
-      </preconditioner>
+      <initialize_with_darcy>true | false</initialize_with_darcy>
+      <nonlinear_iteration_initial_guess_extrapolation_order>int</nonlinear_iteration_initial_guess_extrapolation_order>
     </unstr_transient_controls>
 
     <unstr_linear_solver>
@@ -467,24 +438,7 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
       <method> gmres </method>
       <max_iterations> Integer </max_iterations>
       <tolerance> Exponential </tolerance>
-      <preconditioner name="trilinos_ml | hypre_amg | block_ilu">
-           <!-- if trilinos_ml -->
-        <trilinos_smoother_type> jacobi | gauss_seidel | ilu </trilinos_smoother_type>
-        <trilinos_threshold> Exponential </trilinos_threshold>
-        <trilinos_smoother_sweeps> Integer </trilinos_smoother_sweeps>
-        <trilinos_cycle_applications> Integer </trilinos_cycle_applications>
-           <!-- if hypre_amg -->
-        <hypre_cycle_applications> Integer </hypre_cycle_applications>
-        <hypre_smoother_sweeps> Integer </hypre_smoother_sweeps>
-        <hypre_tolerance> Exponential </hypre_tolerance>
-        <hypre_strong_threshold> Exponential </hypre_strong_threshold>
-           <!-- if block_ilu -->
-        <ilu_overlap> Integer </ilu_overlap>
-        <ilu_relax> Exponential </ilu_relax>
-        <ilu_rel_threshold> Exponential </ilu_rel_threshold>
-        <ilu_abs_threshold> Exponential </ilu_abs_threshold>
-        <ilu_level_of_fill> Integer </ilu_level_of_fill>
-      </preconditioner>
+      <preconditioner> trilinos_ml | hypre_amg | block_ilu </preconditioner>
     </unstr_linear_solver>
 
     <unstr_nonlinear_solver name="nka | newton | inexact newton" />
@@ -493,6 +447,28 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
       <chem_tolerance> Exponential </chem_tolerance>
       <chem_max_newton_iterations> Integer </chem_max_newton_iterations>
     </unstr_chemistry_controls>
+
+    <unstr_preconditioners>
+      <hypre_amg>
+        <hypre_cycle_applications>int</hypre_cycle_applications>
+        <hypre_smoother_sweeps>int</hypre_smoother_sweeps
+        <hypre_tolerance>exp</hypre_tolerance>
+        <hypre_strong_threshold>exp</hypre_strong_threshold>
+      </hypre_amg>
+      <trilinos_ml>
+        <trilinos_cycle_applications>int</trilinos_cycle_applications>
+        <trilinos_smoother_sweeps>int</trilinos_smoother_sweeps>
+        <trilinos_threshold>exp</trilinos_threshold>
+        <trilinos_smoother_type>jacobi | gauss_seidel | ilu</trilinos_smoother_type>
+      </trilinos_ml>
+      <block_ilu>
+        <ilu_overlap>int</ilu_overlap>
+        <ilu_relax>exp</ilu_relax>
+        <ilu_rel_threshold>exp</ilu_rel_threshold>
+        <ilu_abs_threshold>exp</ilu_abs_threshold>
+        <ilu_level_of_fill>int</ilu_level_of_fill>
+      </block_ilu>
+    </unstr_preconditioners>
 
   </unstructured_controls>
 
@@ -520,12 +496,7 @@ Here is an overall example for the ``unstructured_controls`` element.
 			<method>gmres</method>
 			<max_iterations>20</max_iterations>
 			<tolerance>1.0e-18</tolerance>
-	                <preconditioner name = "hypre_amg">
-	                     	<hypre_cycle_applications>10</hypre_cycle_applications>
-	                	<hypre_smoother_sweeps>3</hypre_smoother_sweeps>
-	                       	<hypre_tolerance>0.1</hypre_tolerance>
-	                       	<hypre_strong_threshold>0.4</hypre_strong_threshold>
-	                 </preconditioner>
+                        <preconditioner> trilinos_ml | hypre_amg | block_ilu </preconditioner>
  		</unstr_linear_solver>
 
 	</unstructured_controls>
