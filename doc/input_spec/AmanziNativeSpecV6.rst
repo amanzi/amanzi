@@ -1185,6 +1185,7 @@ The first part controls preliminary steps in the time integrator.
   * `"method`" [string] specifies an optional initialization methods. The available 
     options are `"picard`" and `"saturated solver`". The latter option leads to solving 
     a Darcy problem. The former option uses sublist `"picard parameters`".
+    *Picard works better if a bounded initial pressure guess is provided.* 
 
   * `"picard parameters`" [sublist] defines control parameters for the Picard solver.
 

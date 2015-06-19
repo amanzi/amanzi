@@ -53,25 +53,10 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u)
                << " code=" << code << std::endl;
   }
 
-  // if (ierr != 0) {
-  //   Errors::Message msg;
-  //   msg << "\nLinear solver returned an unrecoverable error code.\n";
-  //   Exceptions::amanzi_throw(msg);
-  // }
+  // catastrophic failure.
   if (ierr < 0) {
     Errors::Message msg;
-    switch(ierr){
-    case  Amanzi::AmanziSolvers::LIN_SOLVER_NON_SPD_APPLY:
-      msg << "Linear system is not SPD.\n";
-    case  Amanzi::AmanziSolvers::LIN_SOLVER_NON_SPD_APPLY_INVERSE:
-      msg << "Linear system is not SPD.\n";
-    case  Amanzi::AmanziSolvers::LIN_SOLVER_MAX_ITERATIONS:
-      msg << "Maximum iterations are reached in solution of linear system.\n";
-    case  Amanzi::AmanziSolvers::LIN_SOLVER_RESIDUAL_OVERFLOW:
-      msg << "Residual overflow in solution of linear system.\n";
-    default:
-      msg << "\nLinear solver returned an unrecoverable error code: "<<ierr<<".\n";
-    }
+    msg = solver->DecodeErrorCode(ierr);
     Exceptions::amanzi_throw(msg);
   }
 }

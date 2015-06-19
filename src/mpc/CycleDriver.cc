@@ -707,9 +707,10 @@ bool CycleDriver::Advance(double dt) {
 void CycleDriver::Observations(bool force) {
   if (observations_ != Teuchos::null) {
     if (observations_->DumpRequested(S_->cycle(), S_->time()) || force) {
-      //pk_->CalculateDiagnostics();
-      *vo_->os() << "Cycle " << S_->cycle() << ": writing to observation " << std::endl;
-      observations_->MakeObservations(*S_);
+      // pk_->CalculateDiagnostics();
+      int n = observations_->MakeObservations(*S_);
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "Cycle " << S_->cycle() << ": writing observations... " << n << std::endl;
     }
   }
 }
@@ -749,7 +750,7 @@ void CycleDriver::WriteCheckpoint(double dt, bool force) {
   if (force || checkpoint_->DumpRequested(S_->cycle(), S_->time())) {
     Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt);
     
-    //if (force) pk_->CalculateDiagnostics();
+    // if (force) pk_->CalculateDiagnostics();
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Cycle " << S_->cycle() << ": writing checkpoint file" << std::endl;
   }
