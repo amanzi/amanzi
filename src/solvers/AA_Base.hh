@@ -186,7 +186,7 @@ void AA_Base<Vector, VectorSpace>::QRdelete(){
     double temp =  sqrt( R_[loc_id]*R_[loc_id] + R_[loc_id-1]*R_[loc_id-1]);
     double c = R_[loc_id-1]/temp;
     double s =   R_[loc_id]/temp;
-    std::cout<<"temp "<<temp<<" c "<<c<<" s "<<s<<"\n";
+    //std::cout<<"temp "<<temp<<" c "<<c<<" s "<<s<<"\n";
     R_[loc_id-1] = temp;
     R_[loc_id] = 0.;
     if (i < m - 2){
@@ -251,9 +251,9 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
 
   std::cout.precision(12);
 
-  std::cout<<"mvec "<<mvec_<<" num_vec_ "<<num_vec_<<"\n";
-  std::cout<<"new "<<new_f_<<" first "<<first_f_<<" last "<<last_f_<<"\n";
-  std::cout<<"\n";
+  // std::cout<<"mvec "<<mvec_<<" num_vec_ "<<num_vec_<<"\n";
+  // std::cout<<"new "<<new_f_<<" first "<<first_f_<<" last "<<last_f_<<"\n";
+  // std::cout<<"\n";
 
   // std::cout<<"F\n"; ff->Print(std::cout);
   // std::cout<<"u\n"; u_old->Print(std::cout);
@@ -267,8 +267,9 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   //*F_test[new_f_] = *ff;
   if (u_old != Teuchos::null) {
     *u_[new_f_] = *u_old;                         // u_new = u_old
+
     *dG_[new_f_] = *u_old;
-    dG_[new_f_]->Update(-1., *dF_[new_f_], 1);
+     dG_[new_f_]->Update(-1., *ff, 1);
   }
 
   if (last_f_ >= 0){
@@ -312,7 +313,7 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
         double val;
         tmp -> Dot(*Q_[i], &val);
         R_[last_col_i + i] = val;
-        std::cout<<"val "<<last_col_i + i <<" "<<val<<"\n";
+        //std::cout<<"val "<<last_col_i + i <<" "<<val<<"\n";
         tmp -> Update(-val, *Q_[i], 1.);
       }    
       tmp -> Norm2(&norm2); 
@@ -330,20 +331,20 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   }
 
 
-  // for (int i=0;i<num_vec_;i++){
-  //   //    int I = (first_f_ + i)%(mvec_ + 1);
-  //   std::cout<<"Q "<<i<<"\n";
-  //   Q_[i]->Print(std::cout);
-  // }
+  for (int i=0;i<num_vec_;i++){
+    //    int I = (first_f_ + i)%(mvec_ + 1);
+    std::cout<<"Q "<<i<<"\n";
+    Q_[i]->Print(std::cout);
+  }
 
-  // std::cout<<"R matrix "<<"\n";
-  // for (int i=0;i<num_vec_; i++){
-  //   for (int j=i;j<num_vec_; j++){
-  //     int loc_id=j*(j+1)/2 + i;
-  //     std::cout<<R_[loc_id]<<" ";
-  //   }
-  //   std::cout<<"\n";
-  // }
+  std::cout<<"R matrix "<<"\n";
+  for (int i=0;i<num_vec_; i++){
+    for (int j=i;j<num_vec_; j++){
+      int loc_id=j*(j+1)/2 + i;
+      std::cout<<R_[loc_id]<<" ";
+    }
+    std::cout<<"\n";
+  }
 
   // std::cout<<"mvec "<<mvec_<<" num_vec_ "<<num_vec_<<"\n";
   // std::cout<<"new "<<new_f_<<" first "<<first_f_<<" last "<<last_f_<<"\n";
@@ -352,8 +353,10 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   double *b  = new double[num_vec_];
   double *th = new double[num_vec_];
 
-  std::cout<<"NEW\n";
+  std::cout<<"NEW F\n";
   dF_[new_f_]->Print(std::cout);
+  std::cout<<"NEW U\n";
+  u_[new_f_]->Print(std::cout);
 
   for (int i=0; i<num_vec_; i++){
     th[i] = 0.;
@@ -373,7 +376,10 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   
 
   // alp = 1.;// - 0.001*num_vec_;
-  // // for (int i=0;i<num_vec_;i++) th[i] = 0.;
+
+  std::cout<<"theta\n";
+  for (int i=0;i<num_vec_;i++) std::cout<<th[i]<<" ";
+  std::cout<<"\n";
   // std::cout<<"alpha "<<alp<<"\n";
   
 
@@ -386,10 +392,11 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   dir = *dF_[new_f_];
   for (int i=0; i<num_vec_; i++){
     int I = (first_f_ + i)%(mvec_ + 1);
-    dir.Update(-th[i], *dG_[I], 1.);
+    dir.Update(th[i], *dG_[I], 1.);
   }
-
-
+  std::cout<<"dir\n";
+  dir.Print(std::cout);
+  
 
   // for (int i=0; i<num_vec_; i++) {
   //   int I = (first_f_ + i)%(mvec_ + 1);
@@ -452,8 +459,8 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
 
 
 
-  std::cout<<"new_f "<<new_f_<<" first "<<first_f_<<" last "<<last_f_<<"\n";
-  std::cout<<"\n";
+  // std::cout<<"new_f "<<new_f_<<" first "<<first_f_<<" last "<<last_f_<<"\n";
+  // std::cout<<"\n";
 
 };
 

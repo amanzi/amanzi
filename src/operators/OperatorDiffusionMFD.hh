@@ -38,6 +38,7 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
       plist_(plist),
       factor_(1.0)
   {
+    operator_type_ = OPERATOR_DIFFUSION_MFD;
     InitDiffusion_(plist);
   }
 
@@ -47,6 +48,7 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
       plist_(plist),
       factor_(1.0)
   {
+    operator_type_ = OPERATOR_DIFFUSION_MFD;
     InitDiffusion_(plist);
   }
 
@@ -56,6 +58,7 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
       plist_(plist),
       factor_(1.0)
   {
+    operator_type_ = OPERATOR_DIFFUSION_MFD;
     InitDiffusion_(plist);
   }
 
@@ -120,6 +123,9 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
                        bool primary, bool eliminate);
   void ApplyBCs_Cell_(BCs& bc_trial, BCs& bc_test,
                       bool primary, bool eliminate);
+
+  virtual double ComputeTransmisibility(int face){return 0.;};
+  virtual double ComputeGravityFlux(int face){return 0.;};
 
  protected:
   Teuchos::ParameterList plist_;

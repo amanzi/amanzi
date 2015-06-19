@@ -38,6 +38,7 @@ class OperatorDiffusionFV : public OperatorDiffusion {
       OperatorDiffusion(global_op),
       gravity_(false)      
   {
+    operator_type_ = OPERATOR_DIFFUSION_FV;
     InitDiffusion_(plist);
   }
 
@@ -46,6 +47,7 @@ class OperatorDiffusionFV : public OperatorDiffusion {
       OperatorDiffusion(mesh),
       gravity_(false)
   {
+    operator_type_ = OPERATOR_DIFFUSION_FV;
     InitDiffusion_(plist);
   }
 
@@ -54,6 +56,7 @@ class OperatorDiffusionFV : public OperatorDiffusion {
       OperatorDiffusion(mesh),
       gravity_(false)
   {
+    operator_type_ = OPERATOR_DIFFUSION_FV;
     InitDiffusion_(plist);
   }
 
@@ -86,6 +89,10 @@ class OperatorDiffusionFV : public OperatorDiffusion {
   virtual void ApplyBCs(bool primary, bool eliminate);
   virtual void ModifyMatrices(const CompositeVector& u) {};
   virtual void ScaleMassMatrices(double s) {};
+
+  virtual double ComputeTransmisibility(int face);
+  virtual double ComputeGravityFlux(int face);
+
 
   template <class Model> 
   double DeriveBoundaryFaceValue(int f, double atm_pressure, const CompositeVector& u, const Model& model);
@@ -122,7 +129,5 @@ class OperatorDiffusionFV : public OperatorDiffusion {
 }  // namespace Operators
 }  // namespace Amanzi
 
-// Description of templated function DeriveBoundaryFaceValue(f, u, model)
-#include "FluxTPFABCfunc.hh"
 
 #endif

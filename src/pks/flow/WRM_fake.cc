@@ -32,7 +32,7 @@ WRM_fake::WRM_fake(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Relative permeability formula.                                          
 ****************************************************************** */
-double WRM_fake::k_relative(double pc)
+double WRM_fake::k_relative(double pc) const
 {
   if (pc < 0.0)
     return 1.0 / (1.0 + pow(alpha*pc, n));
@@ -44,7 +44,7 @@ double WRM_fake::k_relative(double pc)
 /* ******************************************************************
 * Verify (lipnikov@lanl.gov)                                     
 ****************************************************************** */
-double WRM_fake::saturation(double pc)
+double WRM_fake::saturation(double pc) const
 {
   if (pc < 0.0)
     return 1.0; // 1.0 / (1.0 + pc * pc);
@@ -56,7 +56,7 @@ double WRM_fake::saturation(double pc)
 /* ******************************************************************
 * Verify (lipnikov@lanl.gov).                                         
 ****************************************************************** */
-double WRM_fake::dSdPc(double pc)
+double WRM_fake::dSdPc(double pc) const
 {
   if (pc < 0.0)
     return 0.0;  // pc / (1.0 + pc * pc);
@@ -68,7 +68,7 @@ double WRM_fake::dSdPc(double pc)
 /* ******************************************************************
 * Verify (lipnikov@lanl.gov).                                       
 ****************************************************************** */
-double WRM_fake::capillaryPressure(double sl)
+double WRM_fake::capillaryPressure(double sl) const
 {
   return 0.0;
 }

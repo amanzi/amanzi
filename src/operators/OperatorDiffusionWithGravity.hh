@@ -35,6 +35,7 @@ class OperatorDiffusionWithGravity : public OperatorDiffusionMFD {
                                const Teuchos::RCP<Operator>& global_op) :
       OperatorDiffusionMFD(plist, global_op)
   {
+    operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
     Init_(plist);
   }
 
@@ -42,6 +43,7 @@ class OperatorDiffusionWithGravity : public OperatorDiffusionMFD {
                                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       OperatorDiffusionMFD(plist, mesh)
   {
+    operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
     Init_(plist);
   }
 
@@ -49,6 +51,7 @@ class OperatorDiffusionWithGravity : public OperatorDiffusionMFD {
                                const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
       OperatorDiffusionMFD(plist, mesh)
   {
+    operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
     Init_(plist);
   }
   

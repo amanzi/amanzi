@@ -27,10 +27,13 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vecto
 
   double ErrorNorm(const Teuchos::RCP<const Epetra_Vector>& u,
                    const Teuchos::RCP<const Epetra_Vector>& du) {
+    double norm2_du;
     double norm_du, norm_u;
     du->NormInf(&norm_du);
     u->NormInf(&norm_u);
-    return norm_du / (atol_ + rtol_ * norm_u);
+    du->Norm2(&norm2_du);
+    return norm_du;
+    //return norm_du / (atol_ + rtol_ * norm_u);
   }
 
   void UpdatePreconditioner(const Teuchos::RCP<const Epetra_Vector>& up) {

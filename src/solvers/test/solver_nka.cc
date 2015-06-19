@@ -265,11 +265,11 @@ TEST_FIXTURE(test_data, AA_SOLVER) {
 
   // initial guess
   Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
-  (*u)[0] = -0.9;
-  (*u)[1] =  0.9;
-  (*u)[2] = -0.5;
-  (*u)[3] =  0.9;
-  (*u)[4] = -0.5;
+  (*u)[0] = -0.95;
+  (*u)[1] =  0.15;
+  (*u)[2] = -0.51;
+  (*u)[3] =  0.35;
+  (*u)[4] = -0.54;
 
 
   // solve

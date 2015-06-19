@@ -70,7 +70,7 @@ set(operators_inc_files
     Operator_ConsistentFace.hh
     Operator_Node.hh
     Operator_Edge.hh
-    FluxTPFABCfunc.hh
+    BoundaryFlux.hh
     OperatorDiffusion.hh
     OperatorDiffusionFactory.hh
     OperatorDiffusionMFD.hh
@@ -91,7 +91,6 @@ set(operators_inc_files
 add_amanzi_library(operators 
                    SOURCE OperatorUtils.cc
                           FieldMaps.cc
-                          FluxTPFABCfunc.cc
                           Operator.cc
                           Operator_Cell.cc Operator_FaceCell.cc
                           Operator_FaceCellScc.cc
@@ -217,6 +216,11 @@ if ( BUILD_TESTS )
     add_amanzi_test(operators_reconstruction operators_reconstruction
                     KIND unit
                     SOURCE test/Main.cc test/operator_reconstruction.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(test_boundary_flux_solver test_boundary_flux_solver
+                    KIND unit
+                    SOURCE test/Main.cc test/test_boundary_flux_solver.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_reconstruction_2pe operators_reconstruction NPROCS 2 KIND unit)

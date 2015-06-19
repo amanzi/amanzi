@@ -40,6 +40,8 @@
 #include "VWContentEvaluator.hh"
 #include "VWContentEvaluatorFactory.hh"
 #include "WRMEvaluator.hh"
+#include "WRM.hh"
+#include "BoundaryFlux.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -902,6 +904,50 @@ double Richards_PK::BoundaryFaceValue(int f, const CompositeVector& u)
   return face_value;
 }
 
+/* ******************************************************************
+* Calculates solution value on the boundary.
+****************************************************************** */
+//template <class Model> 
+double Richards_PK::DeriveBoundaryFaceValue(
+    int f, const CompositeVector& u, Teuchos::RCP<const WRM> wrm_model) 
+{
+  if (u.HasComponent("face")) {
+    const Epetra_MultiVector& u_face = *u.ViewComponent("face");
+    return u_face[f][0];
+  } else {
+    const std::vector<int>& bc_model = op_bc_->bc_model();
+    const std::vector<double>& bc_value = op_bc_->bc_value();
+
+    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+      return bc_value[f];
+    } else {
+      const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
+      AmanziMesh::Entity_ID_List cells;
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int c = cells[0];
+      double patm = rp_list_->get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);   
+      double trans_f = 1;
+      double g_f = 2.;
+      double lmd =  u_cell[0][c];
+      double bnd_flux = bc_value[f];
+      int dir = 1;
+
+      double max_val = 10*patm;
+      double min_val = -10*patm;
+      double eps=std::max(1.e-4 * std::abs(bnd_flux), 1.e-8);
+
+      const KRelFn func = &WRM::k_relative; 
+      
+
+      Amanzi::BoundaryFaceSolver<WRM> BndFaceSolver(trans_f, g_f, u_cell[0][c], lmd, bnd_flux, dir, patm, 
+                                           max_val, min_val, eps, wrm_model, func);
+      lmd = BndFaceSolver.FaceValue();
+
+      return  lmd;      
+
+    }
+  }
+}
 
 /* ******************************************************************
 * This is strange.

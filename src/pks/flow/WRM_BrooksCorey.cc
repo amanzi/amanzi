@@ -88,7 +88,7 @@ void WRM_BrooksCorey::Init_(
 * The original curve is regulized on interval (0, pc0) using the 
 * Hermite interpolant of order 3. Formulas (3.14)-(3.15).   
 ****************************************************************** */
-double WRM_BrooksCorey::k_relative(double pc)
+double WRM_BrooksCorey::k_relative(double pc) const
 {
   if (pc <= pc_bubble_) {
     return 1.0;
@@ -105,7 +105,7 @@ double WRM_BrooksCorey::k_relative(double pc)
 /* ******************************************************************
 * Saturation formula (3.5)-(3.8).                                         
 ****************************************************************** */
-double WRM_BrooksCorey::saturation(double pc)
+double WRM_BrooksCorey::saturation(double pc) const
 {
   if (pc > pc_bubble_) {
     return pow(alpha_ * pc, -lambda_) * (1.0 - sr_) + sr_;
@@ -119,7 +119,7 @@ double WRM_BrooksCorey::saturation(double pc)
 * Derivative of the saturation formula w.r.t. capillary pressure.
 * Warning: remember that dSdP = -dSdPc.                                        
 ****************************************************************** */
-double WRM_BrooksCorey::dSdPc(double pc)
+double WRM_BrooksCorey::dSdPc(double pc) const
 {
   if (pc > pc_bubble_) {
     return -pow(alpha_ * pc, -lambda_ - 1.0) * (1.0 - sr_) * alpha_ * lambda_;
@@ -132,7 +132,7 @@ double WRM_BrooksCorey::dSdPc(double pc)
 /* ******************************************************************
 * Pressure as a function of saturation, formula (3.9).                                       
 ****************************************************************** */
-double WRM_BrooksCorey::capillaryPressure(double s)
+double WRM_BrooksCorey::capillaryPressure(double s) const
 {
   if (s == sr_) return 0.0;
   double se = (s - sr_) / (1.0 - sr_);
@@ -143,7 +143,7 @@ double WRM_BrooksCorey::capillaryPressure(double s)
 /* ******************************************************************
 * Derivative of the original relative permeability w.r.t. capillary pressure.                                     
 ****************************************************************** */
-double WRM_BrooksCorey::dKdPc(double pc)
+double WRM_BrooksCorey::dKdPc(double pc)  const
 {
   if (pc > pc_bubble_) {
     return factor_ * alpha_ * pow(alpha_ * pc, factor_ - 1.0);

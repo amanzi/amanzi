@@ -15,7 +15,6 @@
 
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionFV.hh"
-#include "FluxTPFABCfunc.hh"
 #include "Op.hh"
 #include "Op_SurfaceFace_SurfaceCell.hh"
 #include "Op_Face_Cell.hh"
@@ -589,6 +588,17 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
 
   transmissibility_initialized_ = true;
 }
+
+double OperatorDiffusionFV::ComputeTransmisibility(int face){
+  const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
+  return trans_face[0][face];
+}
+
+double OperatorDiffusionFV::ComputeGravityFlux(int face){
+  const Epetra_MultiVector& gravity_face = *gravity_term_->ViewComponent("face", true); 
+  return gravity_face[0][face];
+}
+
 
 }  // namespace Operators
 }  // namespace Amanzi

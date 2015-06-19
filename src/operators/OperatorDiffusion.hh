@@ -58,6 +58,9 @@ class OperatorDiffusion {
           const Teuchos::Ptr<const CompositeVector>& flux,
           const Teuchos::Ptr<const CompositeVector>& u) {};
 
+  //Apply nonlinear 1D solver to compute consistent solution value on a boundary face
+  double DeriveBoundaryFaceValue(int f, double atm_pressure, const CompositeVector& u);
+
   // -- after solving the problem: postrocessing
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux) = 0;
 
@@ -65,6 +68,9 @@ class OperatorDiffusion {
   virtual void ApplyBCs(bool primary, bool eliminate) = 0;
   virtual void ModifyMatrices(const CompositeVector& u) = 0;
   virtual void ScaleMassMatrices(double s) = 0;
+
+  virtual double ComputeTransmisibility(int face){return 0.;};
+  virtual double ComputeGravityFlux(int face){return 0.;};
 
   // default implementation  
   virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
@@ -171,6 +177,7 @@ class OperatorDiffusion {
   Teuchos::RCP<Op> jac_op_;
   int global_op_schema_, local_op_schema_, jac_op_schema_;
   std::vector<Teuchos::RCP<BCs> > bcs_trial_, bcs_test_;
+  OperatorType operator_type_;
 
   // mesh info
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -178,6 +185,9 @@ class OperatorDiffusion {
   int nfaces_owned, nfaces_wghost;
   int nnodes_owned, nnodes_wghost;
 };
+
+
+
 
 }  // namespace Operators
 }  // namespace Amanzi
