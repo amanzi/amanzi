@@ -148,9 +148,13 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
             Teuchos::ParameterList& ncp_list = exe_list.sublist("Numerical Control Parameters");
             if (ncp_list.isSublist("Unstructured Algorithm")) {
               Teuchos::ParameterList& ua_list = ncp_list.sublist("Unstructured Algorithm");
-              if (ua_list.isSublist("Steady-State Pseudo-Time Implicit Solver")) {
-                have_picard_params = true;
-                pic_params = ua_list.sublist("Steady-State Pseudo-Time Implicit Solver");
+              if (ua_list.isSublist("Initialization")) {
+                std::string name = ua_list.sublist("Initialization")
+                                          .get<std::string>("time integration method", "Darcy Solver");
+                if (name == "Picard") {
+                  have_picard_params = true;
+                  pic_params = ua_list.sublist("Initialization");
+                }
               }
             }
           }
@@ -309,19 +313,17 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 		  Teuchos::ParameterList& sti_init = sti_list.sublist("initialization");
                   if (have_picard_params && use_picard_) {
 		    sti_init.set<std::string>("method", "picard");
-                    sti_init.set<std::string>("linear solver",
-                        pic_params.get<std::string>("pseudo time integrator linear solver", PIC_SOLVE));
-                    sti_init.set<double>("clipping saturation value", 
-                        pic_params.get<double>("pseudo time integrator clipping saturation value", PIC_CLIP_SAT));
+                    sti_init.set<std::string>("linear solver", pic_params.get<std::string>("linear solver", PIC_SOLVE));
+                    sti_init.set<double>("clipping saturation value", pic_params.get<double>("clipping saturation value", PIC_CLIP_SAT));
+                    sti_init.set<double>("clipping pressure value", pic_params.get<double>("clipping pressure value", PIC_CLIP_PRESSURE));
 
                     Teuchos::ParameterList& pic_list = sti_init.sublist("picard parameters");
-                    pic_list.set<double>("convergence tolerance",
-                        pic_params.get<double>("pseudo time integrator picard convergence tolerance", PICARD_TOLERANCE));
-                    pic_list.set<int>("maximum number of iterations",
-                        pic_params.get<int>("pseudo time integrator picard maximum number of iterations", PIC_MAX_ITER));
+                    pic_list.set<double>("convergence tolerance", pic_params.get<double>("picard convergence tolerance", PICARD_TOLERANCE));
+                    pic_list.set<int>("maximum number of iterations", pic_params.get<int>("picard maximum number of iterations", PIC_MAX_ITER));
                   } else if (use_picard_) {
 		    sti_init.set<std::string>("method", "picard");
                     sti_init.set<double>("clipping saturation value", PIC_CLIP_SAT);
+                    sti_init.set<double>("clipping pressure value", PIC_CLIP_PRESSURE);
 
                     Teuchos::ParameterList& pic_list = sti_init.sublist("picard parameters");
                     pic_list.set<std::string>("linear solver", PIC_SOLVE);
