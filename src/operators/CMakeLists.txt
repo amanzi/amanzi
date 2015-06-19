@@ -147,7 +147,7 @@ if ( BUILD_TESTS )
                         SOURCE test/Main.cc test/operator_laplace_beltrami.cc 
                                             test/operator_parabolic_surface.cc
                                             test/operator_nonlinear_surface.cc
-					    test/operator_marshak.cc
+                                            test/operator_marshak.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()
 

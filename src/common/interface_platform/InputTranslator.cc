@@ -2045,12 +2045,12 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   ssPL.set<double>("steady error abs tol",get_double_constant(textContent,*def_list));
                   XMLString::release(&textContent);
                 }
-                else if (strcmp(tagname,"restart_tolerance_factor")==0) {
+                else if (strcmp(tagname,"restart_tolerance_relaxation_factor")==0) {
                   textContent = XMLString::transcode(currentNode->getTextContent());
                   ssPL.set<double>("steady restart tolerance relaxation factor",get_double_constant(textContent,*def_list));
                   XMLString::release(&textContent);
                 }
-                else if (strcmp(tagname,"restart_tolerance_relaxation_factor")==0) {
+                else if (strcmp(tagname,"restart_tolerance_relaxation_factor_damping")==0) {
                   textContent = XMLString::transcode(currentNode->getTextContent());
                   ssPL.set<double>("steady restart tolerance relaxation factor damping",get_double_constant(textContent,*def_list));
                   XMLString::release(&textContent);
@@ -2082,80 +2082,83 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   
                   XMLString::release(&textContent);
                 }
-                else if (strcmp(tagname,"unstr_pseudo_time_integrator")==0) {
+                else if (strcmp(tagname,"unstr_initialization")==0) {
                   Teuchos::ParameterList ptiPL;
                   DOMNodeList* kids = currentNode->getChildNodes();
                   for (int l=0; l<kids->getLength(); l++) {
                     DOMNode* curNode = kids->item(l) ;
                     if (DOMNode::ELEMENT_NODE == curNode->getNodeType()) {
-                      char* tag = XMLString::transcode(curNode->getNodeName());
-                      if (strcmp(tag,"method")==0) {
+                      std::string tag = std::string(XMLString::transcode(curNode->getNodeName()));
+                      if (tag == "method") {
                         textContent = XMLString::transcode(curNode->getTextContent());
                         if (strcmp(textContent,"picard")==0) {
-                          ptiPL.set<std::string>("pseudo time integrator time integration method","Picard");
+                          ptiPL.set<std::string>("time integration method","Picard");
                         }
-                        XMLString::release(&textContent);
-                      }
-                      else if (strcmp(tag,"preconditioner")==0) {
-                        textContent = XMLString::transcode(curNode->getTextContent());
-                        if (strcmp(textContent,"trilinos_ml")==0) {
-                          ptiPL.set<std::string>("pseudo time integrator preconditioner","Trilinos ML");
-                        }
-                        else if (strcmp(textContent,"hypre_amg")==0) {
-                          ptiPL.set<std::string>("pseudo time integrator preconditioner","Hypre AMG");
-                        }
-                        else if (strcmp(textContent,"block_ilu")==0) {
-                          ptiPL.set<std::string>("pseudo time integrator preconditioner","Block ILU");
+                        else if (strcmp(textContent,"darcy_solver")==0) {
+                          ptiPL.set<std::string>("time integration method","darcy solver");
                         }
                         else {
-                          throw_error_illformed("pseudo time preconditioner", "value", "preconditioner", "trilinos_ml, hypre_amg, block_ilu");
+                          //TODO: EIB - warn, unrecognized method name
                         }
                         XMLString::release(&textContent);
                       }
-                      else if (strcmp(tag,"linear_solver")==0) {
+                      else if (tag == "preconditioner") {
+                        textContent = XMLString::transcode(curNode->getTextContent());
+                        if (strcmp(textContent,"trilinos_ml")==0) {
+                          ptiPL.set<std::string>("preconditioner","Trilinos ML");
+                        }
+                        else if (strcmp(textContent,"hypre_amg")==0) {
+                          ptiPL.set<std::string>("preconditioner","Hypre AMG");
+                        }
+                        else if (strcmp(textContent,"block_ilu")==0) {
+                          ptiPL.set<std::string>("preconditioner","Block ILU");
+                        }
+                        else {
+                          throw_error_illformed("unstr_initialization", "value", "preconditioner", "trilinos_ml, hypre_amg, block_ilu");
+                        }
+                        XMLString::release(&textContent);
+                      }
+                      else if (tag == "linear_solver") {
                         textContent = XMLString::transcode(curNode->getTextContent());
                         if (strcmp(textContent,"aztec00")==0) {
-                          ptiPL.set<std::string>("pseudo time integrator linear solver","AztecOO");
+                          ptiPL.set<std::string>("linear solver","AztecOO");
                         }
                         XMLString::release(&textContent);
                       }
-                      else if (strcmp(tag,"error_control_options")==0) { //default = 'pressure'
+                      else if (tag == "error_control_options") { //default = 'pressure'
                         textContent = XMLString::transcode(curNode->getTextContent());
                         Teuchos::Array<std::string> err_opts = make_regions_list(textContent);
-                        ptiPL.set<Teuchos::Array<std::string> >("pseudo time integrator error control options",err_opts);
+                        ptiPL.set<Teuchos::Array<std::string> >("error control options",err_opts);
                         XMLString::release(&textContent);
                       }
-                      else if (strcmp(tag,"max_iterations")==0) {
+                      else if (tag == "max_iterations") {
                         textContent = XMLString::transcode(curNode->getTextContent());
-                        ptiPL.set<int>("pseudo time integrator picard maximum number of iterations",
-						   get_int_constant(textContent,*def_list));
+                        ptiPL.set<int>("picard maximum number of iterations",
+                                       get_int_constant(textContent,*def_list));
                         XMLString::release(&textContent);
                       }
-                      else if (strcmp(tag,"clipping_saturation")==0) {
+                      else if (tag == "clipping_saturation") {
                         textContent = XMLString::transcode(curNode->getTextContent());
-                        ptiPL.set<double>("pseudo time integrator clipping saturation value",
-						  get_double_constant(textContent,*def_list));
+                        ptiPL.set<double>("clipping saturation value",
+                                          get_double_constant(textContent,*def_list));
                         XMLString::release(&textContent);
                       }
-                      else if (strcmp(tag,"convergence_tolerance")==0) {
+                      else if (tag == "clipping_pressure") {
                         textContent = XMLString::transcode(curNode->getTextContent());
-                        ptiPL.set<double>("pseudo time integrator picard convergence tolerance",
-						  get_double_constant(textContent,*def_list));
+                        ptiPL.set<double>("clipping pressure value",
+                                          get_double_constant(textContent,*def_list));
                         XMLString::release(&textContent);
                       }
-                      else if (strcmp(tag,"initialize_with_darcy")==0) {
+                      else if (tag == "convergence_tolerance") {
                         textContent = XMLString::transcode(curNode->getTextContent());
-                        bool iwd(false);
-                        std::string(textContent) == "true" ? iwd = true : iwd = false;
-                        if (!iwd)
-                          std::string(textContent) == "1" ? iwd = true : iwd = false;
-                        ptiPL.set<bool>("pseudo time integrator initialize with darcy",iwd);
+                        ptiPL.set<double>("picard convergence tolerance",
+                                          get_double_constant(textContent,*def_list));
                         XMLString::release(&textContent);
                       }
                     }
                   }
                   //ssPL.sublist("Steady-State Pseudo-Time Implicit Solver") = ptiPL;
-                  list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Pseudo-Time Implicit Solver") = ptiPL;
+                  list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Initialization") = ptiPL;
                 }
                 else if (strcmp(tagname,"comments")!=0) {
                   // warn about unrecognized element
@@ -2178,95 +2181,95 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 	    // check for incr/red factors from execution_controls first
 	    // grab integration method, then loop through it's attributes
             DOMElement* tcElement = static_cast<DOMElement*>(tmpNode);
-            DOMNodeList* tmpList = tcElement->getElementsByTagName(XMLString::transcode("bdf1_integration_method"));
-	    if (tmpList->getLength() > 0) {
-	      DOMElement* bdfElement = static_cast<DOMElement*>(tmpList->item(0));
-	      if (bdfElement->hasAttribute(XMLString::transcode("min_iterations"))){
-		textContent = XMLString::transcode(
-			      bdfElement->getAttribute(XMLString::transcode("min_iterations")));
-                tcPL.set<int>("transient min iterations",get_int_constant(textContent,*def_list));
-                XMLString::release(&textContent);
-	      }
-	      if (bdfElement->hasAttribute(XMLString::transcode("max_iterations"))){
-		textContent = XMLString::transcode(
-		   	      bdfElement->getAttribute(XMLString::transcode("max_iterations")));
-                tcPL.set<int>("transient max iterations",get_int_constant(textContent,*def_list));
-                XMLString::release(&textContent);
-	      }
-	      if (bdfElement->hasAttribute(XMLString::transcode("limit_iterations"))){
-		textContent = XMLString::transcode(
-			      bdfElement->getAttribute(XMLString::transcode("limit_iterations")));
-                tcPL.set<int>("transient limit iterations",get_int_constant(textContent,*def_list));
-                XMLString::release(&textContent);
-	      }
-	      if (bdfElement->hasAttribute(XMLString::transcode("nonlinear_tolerance"))){
-		textContent = XMLString::transcode(
-			      bdfElement->getAttribute(XMLString::transcode("nonlinear_tolerance")));
-                tcPL.set<double>("transient nonlinear tolerance",get_double_constant(textContent,*def_list));
-                XMLString::release(&textContent);
-	      }
-	      if (bdfElement->hasAttribute(XMLString::transcode("max_divergent_iterations"))){
-		textContent = XMLString::transcode(
-			      bdfElement->getAttribute(XMLString::transcode("max_divergent_iterations")));
-                tcPL.set<int>("transient max divergent iterations",get_int_constant(textContent,*def_list));
-                XMLString::release(&textContent);
-	      }  
-	      if (bdfElement->hasAttribute(XMLString::transcode("max_preconditioner_lag_iterations"))){
-		textContent = XMLString::transcode(
-		              bdfElement->getAttribute(XMLString::transcode("max_preconditioner_lag_iterations")));
-                tcPL.set<int>("transient max preconditioner lag iterations",get_int_constant(textContent,*def_list));
-                XMLString::release(&textContent);
-	      }
-	      if (bdfElement->hasAttribute(XMLString::transcode("nonlinear_iteration_damping_factor"))){
-		textContent = XMLString::transcode(
-		           bdfElement->getAttribute(XMLString::transcode("nonlinear_iteration_damping_factor")));
-                tcPL.set<double>("transient nonlinear iteration damping factor",get_double_constant(textContent,*def_list));
-                XMLString::release(&textContent);
-	      }
-	      if (bdfElement->hasAttribute(XMLString::transcode("nonlinear_iteration_divergence_factor"))){
-		textContent = XMLString::transcode(
-		           bdfElement->getAttribute(XMLString::transcode("nonlinear_iteration_divergence_factor")));
-                tcPL.set<double>("transient nonlinear iteration divergence factor",get_double_constant(textContent,*def_list));
-                XMLString::release(&textContent);
-	      }
-	      if (bdfElement->hasAttribute(XMLString::transcode("restart_tolerance_factor"))){
-		textContent = XMLString::transcode(
-		            bdfElement->getAttribute(XMLString::transcode("restart_tolerance_factor")));
-                tcPL.set<double>("transient restart tolerance relaxation factor",get_double_constant(textContent,*def_list));
-                XMLString::release(&textContent);
-	      }
-	      if (bdfElement->hasAttribute(XMLString::transcode("restart_tolerance_relaxation_factor"))){
-		textContent = XMLString::transcode(
-		            bdfElement->getAttribute(XMLString::transcode("restart_tolerance_relaxation_factor")));
-                tcPL.set<double>("transient restart tolerance relaxation factor damping",get_double_constant(textContent,*def_list));
-                XMLString::release(&textContent);
-	      }
-	      if (bdfElement->hasAttribute(XMLString::transcode("initialize_with_darcy"))) {
-                textContent = XMLString::transcode(bdfElement->getAttribute(XMLString::transcode("initialize_with_darcy")));
-                bool iwd(false);
-		std::string(textContent) == "true" ? iwd = true : iwd = false;  
-		if (!iwd)
-                  std::string(textContent) == "1" ? iwd = true : iwd = false;
-		tcPL.set<bool>("transient initialize with darcy",iwd);
-                XMLString::release(&textContent);
-              }
-              if (bdfElement->hasAttribute(XMLString::transcode("error_control_options"))){
-                textContent = XMLString::transcode(bdfElement->getAttribute(XMLString::transcode("error_control_options")));
-                Teuchos::Array<std::string> err_opts = make_regions_list(textContent);
-                tcPL.set<Teuchos::Array<std::string> >("transient error control options",err_opts);
-                XMLString::release(&textContent);
-              }
-	    }
             
             DOMNodeList* children = tmpNode->getChildNodes();
             for (int k=0; k<children->getLength(); k++) {
               DOMNode* currentNode = children->item(k) ;
               if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
-                char* tagname = XMLString::transcode(currentNode->getNodeName());
+                std::string tagname(XMLString::transcode(currentNode->getNodeName()));
                 
-                //if (strcmp(tagname,"bdf1_integration_method")==0) {
-                //}
-                if (strcmp(tagname,"preconditioner")==0) {
+                if (tagname == "bdf1_integration_method") {
+                  DOMNodeList* gkids = currentNode->getChildNodes();
+                  for (int l=0; l<gkids->getLength(); l++) {
+                    DOMNode* kidNode = gkids->item(l) ;
+                    if (DOMNode::ELEMENT_NODE == kidNode->getNodeType()) {
+                      std::string bdf1_tagname(XMLString::transcode(kidNode->getNodeName()));
+                      if (bdf1_tagname == "min_iterations") {
+                        textContent = XMLString::transcode(kidNode->getTextContent());
+                        tcPL.set<int>("transient min iterations",get_int_constant(textContent,*def_list));
+                        XMLString::release(&textContent);
+                      }
+                      else if (bdf1_tagname == "max_iterations") {
+                        textContent = XMLString::transcode(kidNode->getTextContent());
+                        tcPL.set<int>("transient max iterations",get_int_constant(textContent,*def_list));
+                        XMLString::release(&textContent);
+                      }
+                      else if (bdf1_tagname == "limit_iterations") {
+                        textContent = XMLString::transcode(kidNode->getTextContent());
+                        tcPL.set<int>("transient limit iterations",get_int_constant(textContent,*def_list));
+                        XMLString::release(&textContent);
+                      }
+                      else if (bdf1_tagname == "nonlinear_tolerance") {
+                        textContent = XMLString::transcode(kidNode->getTextContent());
+                        tcPL.set<double>("transient nonlinear tolerance",get_double_constant(textContent,*def_list));
+                        XMLString::release(&textContent);
+                      }
+                      else if (bdf1_tagname == "max_divergent_iterations") {
+                        textContent = XMLString::transcode(kidNode->getTextContent());
+                        tcPL.set<int>("transient max divergent iterations",get_int_constant(textContent,*def_list));
+                        XMLString::release(&textContent);
+                      }
+                      else if (bdf1_tagname == "max_preconditioner_lag_iterations") {
+                        textContent = XMLString::transcode(kidNode->getTextContent());
+                        tcPL.set<int>("transient max preconditioner lag iterations",get_int_constant(textContent,*def_list));
+                        XMLString::release(&textContent);
+                      }
+                      else if (bdf1_tagname == "nonlinear_iteration_damping_factor") {
+                        textContent = XMLString::transcode(kidNode->getTextContent());
+                        tcPL.set<double>("transient nonlinear iteration damping factor",get_double_constant(textContent,*def_list));
+                        XMLString::release(&textContent);
+                      }
+                      else if (bdf1_tagname == "nonlinear_iteration_divergence_factor") {
+                        textContent = XMLString::transcode(kidNode->getTextContent());
+                        tcPL.set<double>("transient nonlinear iteration divergence factor",get_double_constant(textContent,*def_list));
+                        XMLString::release(&textContent);
+                      }
+                      else if (bdf1_tagname == "restart_tolerance_relaxation_factor") {
+                        textContent = XMLString::transcode(kidNode->getTextContent());
+                        tcPL.set<double>("transient restart tolerance relaxation factor",get_double_constant(textContent,*def_list));
+                        XMLString::release(&textContent);
+                      }
+                      else if (bdf1_tagname == "restart_tolerance_relaxation_factor_damping") {
+                        textContent = XMLString::transcode(kidNode->getTextContent());
+                        tcPL.set<double>("transient restart tolerance relaxation factor damping",get_double_constant(textContent,*def_list));
+                        XMLString::release(&textContent);
+                      }
+                      else if (bdf1_tagname == "initialize_with_darcy") {
+                        textContent = XMLString::transcode(kidNode->getTextContent());bool iwd(false);
+                        std::string(textContent) == "true" ? iwd = true : iwd = false;
+                        if (!iwd)
+                          std::string(textContent) == "1" ? iwd = true : iwd = false;
+                        tcPL.set<bool>("transient initialize with darcy",iwd);
+                        XMLString::release(&textContent);
+                      }
+                      else if (bdf1_tagname == "error_control_options") {
+                        textContent = XMLString::transcode(kidNode->getTextContent());
+                        Teuchos::Array<std::string> err_opts = make_regions_list(textContent);
+                        tcPL.set<Teuchos::Array<std::string> >("transient error control options",err_opts);
+                        XMLString::release(&textContent);
+                      }
+                      else {
+                        if (bdf1_tagname != "comments") {
+                          // warn about unrecognized element
+                          std::stringstream elem_name;
+                          elem_name << nodeName <<  "->"  << tagname;
+                          throw_warning_skip(elem_name.str());
+                        }
+                      }
+                    }
+                  }
+                }
+                if (tagname == "preconditioner") {
                   std::string value(trim_string(XMLString::transcode(currentNode->getTextContent())));
                   if (value == "trilinos_ml") {
                     tcPL.set<std::string>("transient preconditioner","Trilinos ML");
@@ -2281,7 +2284,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     throw_error_illformed("transient preconditioner", "value", "preconditioner", "trilinos_ml, hypre_amg, block_ilu");
                   }
                 }
-                else if (strcmp(tagname,"initialize_with_darcy")==0) {
+                else if (tagname == "initialize_with_darcy") {
                   std::string value(trim_string(XMLString::transcode(currentNode->getTextContent())));
                   bool iwd(false);
                   value == "true" ? iwd = true : iwd = false;
@@ -2290,7 +2293,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   tcPL.set<bool>("transient initialize with darcy",iwd);
                   XMLString::release(&textContent);
                 }
-                else if (strcmp(tagname,"bdf1_integration_method")!=0) {
+                else if (tagname != "comments") {
                   // warn about unrecognized element
                   std::stringstream elem_name;
                   elem_name << nodeName <<  "->"  << tagname;
@@ -2316,10 +2319,51 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
               else if (strcmp(textContent,"newton")==0) {
                 nlPL.set<std::string>("Nonlinear Solver Type","Newton");
               }
-              else if (strcmp(textContent,"inexact newton")==0) {
-                nlPL.set<std::string>("Nonlinear Solver Type","inexact Newton");
+              else if (strcmp(textContent,"jfnk")==0) {
+                nlPL.set<std::string>("Nonlinear Solver Type","JFNK");
+              }
+              else if (strcmp(textContent,"newton_picard")==0) {
+                nlPL.set<std::string>("Nonlinear Solver Type","Newton-Picard");
               }
               XMLString::release(&textContent);
+              
+              // loop through children and deal with them
+              DOMNodeList* children = tmpNode->getChildNodes();
+              for (int k=0; k<children->getLength(); k++) {
+                DOMNode* currentNode = children->item(k) ;
+                if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
+                  std::string tagname(std::string(XMLString::transcode(currentNode->getNodeName())));
+                  if (tagname == "modify_correction") {
+                    std::string textContent(trim_string(XMLString::transcode(currentNode->getTextContent())));
+                    bool iwd(false);
+                    textContent == "true" ? iwd = true : iwd = false;
+                    if (!iwd)
+                      textContent == "1" ? iwd = true : iwd = false;
+                    nlPL.set<bool>("modify correction",iwd);
+                  }
+                  else if (tagname == "update_upwind_frequency") {
+                    // which precondition is stored in attribute, options are: trilinos_ml, hypre_amg, block_ilu
+                    std::string textContent(std::string(XMLString::transcode(currentNode->getTextContent())));
+                    //usePCPL = true;
+                    
+                    if (textContent == "every_timestep") {
+                      nlPL.set<std::string>("update upwind frequency","every timestep");
+                    }
+                    else if (textContent == "every_nonlinear_iteration") {
+                      nlPL.set<std::string>("update upwind frequency","every nonlinear iteration");
+                    }
+                    else {
+                      throw_error_illformed(nodeName, "value", "update_upwind_frequency", "every_timestep, every_nonlinear_iteration");
+                    }
+                  }
+                  else if (tagname == "comments") {
+                    // warn about unrecognized element
+                    std::stringstream elem_name;
+                    elem_name << nodeName <<  "->"  << tagname;
+                    throw_warning_skip(elem_name.str());
+                  }
+                }
+              }
               list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlPL;
             }
             else if (nodeName == "unstr_linear_solver") {
@@ -2569,41 +2613,51 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
             for (int k=0; k<children->getLength(); k++) {
               DOMNode* currentNode = children->item(k) ;
               if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
-                char* tagname = XMLString::transcode(currentNode->getNodeName());
-                if (strcmp(tagname,"chem_tolerance")==0) {
+                std::string tagname(std::string(XMLString::transcode(currentNode->getNodeName())));
+                if (tagname == "chem_tolerance") {
                   if (currentNode) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
                     chemistryPL.set<double>("Tolerance",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
                   else {
-                    throw_error_illformed("numerical_controls", "chem_tolerance", "chemistry_controls");
+                    throw_error_illformed(algo_str_name, "chem_tolerance", nodeName);
                   }
                 }
-                else if (strcmp(tagname,"chem_max_newton_iterations")==0) {
+                else if (tagname == "chem_max_newton_iterations") {
                   if (currentNode) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
                     chemistryPL.set<int>("Maximum Newton Iterations",get_int_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
                   else {
-                    throw_error_illformed("numerical_controls", "chem_max_newton_iterations", "chemistry_controls");
+                    throw_error_illformed(algo_str_name, "chem_max_newton_iterations", nodeName);
                   }
                   // TODO:: EIB - this need to be added to schema!!
                 }
-                else if (strcmp(tagname,"chem_max_time_step")==0) {
+                else if (tagname == "chem_max_time_step") {
                   if (currentNode) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
                     chemistryPL.set<double>("Max Time Step (s)",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
                   else {
-                    throw_error_illformed("numerical_controls", "chem_max_time_step", "chemistry_controls");
+                    throw_error_illformed(algo_str_name, "chem_max_time_step", nodeName);
+                  }
+                }
+                else if (tagname == "max_chemistry_transport_timestep_ratio") {
+                  if (currentNode) {
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    chemistryPL.set<double>("max chemistry to transport timestep ratio",get_double_constant(textContent,*def_list));
+                    XMLString::release(&textContent);
+                  }
+                  else {
+                    throw_error_illformed(algo_str_name, "max_chemistry_transport_timestep_ratio", nodeName);
                   }
                 }
                 else {
                   // TODO:: EIB - should I error or just ignore???
-                  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing numerical_controls->chemistry_controls - " ;
+                  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing " << algo_str_name << "->" << nodeName << " - " ;
                   msg << tagname << " was unrecognized option. \n  Please correct and try again \n" ;
                   Exceptions::amanzi_throw(msg);
                 }
@@ -2958,7 +3012,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     amrPL.set<int>("max_grid_size",get_int_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
-                  else if (strcmp(tagname,"refinement_indicators")==0) {
+                  else if (strcmp(tagname,"refinement_indicator")==0) {
                     char* nameRefinement;
                     Teuchos::ParameterList refinePL;
                     bool foundOne = false;
@@ -3125,7 +3179,7 @@ Teuchos::ParameterList get_phases(DOMDocument* xmlDoc, Teuchos::ParameterList de
   DOMNode* nodeAttr3;
   DOMNamedNodeMap* attrMap;
   DOMNamedNodeMap* attrMap2;
-  char* tagName;
+  std::string tagName;
   char* textContent;
   char* textContent2;
 
@@ -3172,10 +3226,10 @@ Teuchos::ParameterList get_phases(DOMDocument* xmlDoc, Teuchos::ParameterList de
       DOMNode* cur = childern->item(i) ;
       if (DOMNode::ELEMENT_NODE == cur->getNodeType()) {
         DOMElement* propElem = static_cast<DOMElement*>(cur);
-        tagName  = XMLString::transcode(cur->getNodeName());
+        std::string tagName(XMLString::transcode(cur->getNodeName()));
         textContent = XMLString::transcode(cur->getTextContent());
 	//TODO: NOTE: EIB - skipping EOS, not currently supported
-	if (strcmp(tagName,"viscosity")==0){
+	if (tagName == "viscosity"){
           if (propElem->hasAttribute(XMLString::transcode("type"))) {
             Teuchos::ParameterList propertyPL;
             propertyPL = get_file_info(propertyPL, static_cast<DOMElement*>(cur), "viscosity", "liquid_phase");
@@ -3189,7 +3243,7 @@ Teuchos::ParameterList get_phases(DOMDocument* xmlDoc, Teuchos::ParameterList de
             list.sublist("Aqueous").sublist("Phase Properties").sublist("Viscosity: Uniform").set<double>("Viscosity",get_double_constant(textContent,def_list));
           }
 	}
-        else if (strcmp(tagName,"density")==0) {
+        else if (tagName == "density") {
           if (propElem->hasAttribute(XMLString::transcode("type"))) {
             Teuchos::ParameterList propertyPL;
             propertyPL = get_file_info(propertyPL, static_cast<DOMElement*>(cur), "density", "liquid_phase");
@@ -3203,62 +3257,102 @@ Teuchos::ParameterList get_phases(DOMDocument* xmlDoc, Teuchos::ParameterList de
             list.sublist("Aqueous").sublist("Phase Properties").sublist("Density: Uniform").set<double>("Density",get_double_constant(textContent,def_list));
           }
 	}
-	else if (strcmp(tagName,"dissolved_components")==0) {
+	else if (tagName == "dissolved_components") {
 	  Teuchos::ParameterList dcPL;
 	  Teuchos::Array<double> diffusion;  // TODO: EIB - not using any diffusion constants right now, where do the go???
 	  Teuchos::Array<std::string> solutes;
-          DOMElement* discompElem = static_cast<DOMElement*>(cur);
-          nodeList2 = discompElem->getElementsByTagName(XMLString::transcode("solutes"));
-          if (nodeList2->getLength() > 0) {
-            nodeTmp2 = nodeList2->item(0);
-            DOMNodeList* kids = nodeTmp2->getChildNodes();
-            for (int j=0; j<kids->getLength(); j++) {
-              DOMNode* curKid = kids->item(j) ;
-              if (DOMNode::ELEMENT_NODE == curKid->getNodeType()) {
-                tagName  = XMLString::transcode(curKid->getNodeName());
-	        if (strcmp(tagName,"solute")==0){
-                  Teuchos::ParameterList solPL;
-		  // put value in solutes array
-                  textContent2 = XMLString::transcode(curKid->getTextContent());
-		  solutes.append(textContent2);
-                  std::stringstream sol_name;
-                  sol_name << textContent2;
-                  XMLString::release(&textContent2);
-	          attrMap = curKid->getAttributes();
-		  // put attribute - coefficient_of_diffusion in diffusion array
-                  nodeAttr = attrMap->getNamedItem(XMLString::transcode("coefficient_of_diffusion"));
-		  if (nodeAttr) {
-                    textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-		    if (isUnstr_) {
-                      solPL.set<double>("Molecular Diffusivity: Uniform",get_double_constant(textContent2,def_list));
-		    }
-		    else {
-                      solPL.set<double>("Molecular Diffusivity",get_double_constant(textContent2,def_list));
-		    }
-                    XMLString::release(&textContent2);
-	          }
-                  else {
-                    if (isUnstr_) {
-                      throw_error_missattr("dissolved_components", "attribute", "coefficient_of_diffusion", "solute");
+          
+          // EIB: new stuff
+          DOMNodeList* gkids = cur->getChildNodes();
+          for (int j=0; j<gkids->getLength(); j++) {
+            DOMNode* curGKid = gkids->item(j) ;
+            if (DOMNode::ELEMENT_NODE == curGKid->getNodeType()) {
+              std::string grpName  = XMLString::transcode(curGKid->getNodeName());
+              /* TODO: EIB - finish implementing primaries and secondaries
+              if (grpName == "primaries") {
+                DOMNodeList* ggkids = curGKid->getChildNodes();
+                for (int k=0; k<ggkids->getLength(); k++) {
+                  DOMNode* curGGKid = ggkids->item(k) ;
+                  if (DOMNode::ELEMENT_NODE == curGGKid->getNodeType()) {
+                    std::string elemName  = XMLString::transcode(curGGKid->getNodeName());
+                    if (elemName == "primary") {
+                      // TODO: EIB - get primary name from element text
+                      // TODO: EIB - loop over attributes
+                      // TODO: EIB - if primary doubles as solute, then need diffusion; if not, skip it here
                     }
-	          }
-		   // put attribute - first_order_decay_constant in diffusion array
-                  nodeAttr = attrMap->getNamedItem(XMLString::transcode("first_order_decay_constant"));
-		  if (nodeAttr) {
-                    textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-                    solPL.set<double>("First Order Decay Constant",get_double_constant(textContent2,def_list));
-                    XMLString::release(&textContent2);
-	          }
-		  // no error message, because this is optional
-                  // add parameters to solute PL
-                  dcPL.sublist(sol_name.str()) = solPL;
-		}
-	      }
-	    }
-	    dcPL.set<Teuchos::Array<std::string> >("Component Solutes",solutes);
-	    list.sublist("Aqueous").sublist("Phase Components").sublist(phaseName) = dcPL;
-            foundPC = true;
+                    else {
+                      // TODO: EIB - warn that skipping this because i don't recognize it
+                    }
+                  }
+                }
+              }
+              else if (grpName == "secondaries") {
+                DOMNodeList* ggkids = curGKid->getChildNodes();
+                for (int k=0; k<ggkids->getLength(); k++) {
+                  DOMNode* curGGKid = ggkids->item(k) ;
+                  if (DOMNode::ELEMENT_NODE == curGGKid->getNodeType()) {
+                    std::string elemName  = XMLString::transcode(curGGKid->getNodeName());
+                    if (elemName == "secondary") {
+                      // TODO: EIB - do something with this info
+                    }
+                    else {
+                      // TODO: EIB - warn that skipping this because i don't recognize it
+                    }
+                  }
+                }
+              }
+               */
+              if (grpName == "solutes") {
+                Teuchos::ParameterList solutesPL;
+                DOMNodeList* ggkids = curGKid->getChildNodes();
+                for (int k=0; k<ggkids->getLength(); k++) {
+                  DOMNode* curGGKid = ggkids->item(k) ;
+                  if (DOMNode::ELEMENT_NODE == curGGKid->getNodeType()) {
+                    std::string elemName  = XMLString::transcode(curGGKid->getNodeName());
+                    if (elemName == "solute") {
+                      // TODO: EIB - do something with this info
+                      Teuchos::ParameterList solPL;
+                      std::string soluteName(XMLString::transcode(curGGKid->getTextContent()));
+                      attrMap = curGGKid->getAttributes();
+                      // put attribute - coefficient_of_diffusion in diffusion array
+                      nodeAttr = attrMap->getNamedItem(XMLString::transcode("coefficient_of_diffusion"));
+                      if (nodeAttr) {
+                        textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
+                        if (isUnstr_) {
+                          solPL.set<double>("Molecular Diffusivity: Uniform",get_double_constant(textContent2,def_list));
+                        }
+                        else {
+                          solPL.set<double>("Molecular Diffusivity",get_double_constant(textContent2,def_list));
+                        }
+                        XMLString::release(&textContent2);
+                      }
+                      else {
+                        if (isUnstr_) {
+                          throw_error_missattr("dissolved_components", "attribute", "coefficient_of_diffusion", "solute");
+                        }
+                      }
+                      // put attribute - first_order_decay_constant in diffusion array
+                      nodeAttr = attrMap->getNamedItem(XMLString::transcode("first_order_decay_constant"));
+                      if (nodeAttr) {
+                        textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
+                        solPL.set<double>("First Order Decay Constant",get_double_constant(textContent2,def_list));
+                        XMLString::release(&textContent2);
+                      }
+                      // no error message, because this is optional
+                      
+                      // add parameters to solute PL
+                      dcPL.sublist(soluteName) = solPL;
+                    }
+                    else {
+                      // TODO: EIB - warn that skipping this because i don't recognize it
+                    }
+                  }
+                }
+              }
+            }
           }
+          
+          
 	}
         XMLString::release(&textContent);
       }
@@ -3285,7 +3379,7 @@ Teuchos::ParameterList get_phases(DOMDocument* xmlDoc, Teuchos::ParameterList de
         DOMNode* curKid = kids->item(i) ;
         if (DOMNode::ELEMENT_NODE == curKid->getNodeType()) {
           tagName  = XMLString::transcode(curKid->getNodeName());
-	  if (strcmp(tagName,"mineral")==0){
+	  if (tagName == "mineral"){
             textContent2 = XMLString::transcode(curKid->getTextContent());
 	    minerals.append(textContent2);
             XMLString::release(&textContent2);

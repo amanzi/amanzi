@@ -1185,6 +1185,7 @@ The first part controls preliminary steps in the time integrator.
   * `"method`" [string] specifies an optional initialization methods. The available 
     options are `"picard`" and `"saturated solver`". The latter option leads to solving 
     a Darcy problem. The former option uses sublist `"picard parameters`".
+    *Picard works better if a bounded initial pressure guess is provided.* 
 
   * `"picard parameters`" [sublist] defines control parameters for the Picard solver.
 
@@ -1765,7 +1766,8 @@ The remaining parameters that can be used by a developes include
 
 * `"runtime diagnostics: solute names`" [Array(string)] defines solutes that will be 
   tracked closely each time step if verbosity `"high`". Default value is the first 
-  solute in the global list of `"aqueous names`".
+  solute in the global list of `"aqueous names`" and the first gas in the global list 
+  of `"gaseous names`".
 
 * `"runtime diagnostics: regions`" [Array(string)] defines a boundary region for 
   tracking solutes. Default value is a seepage face boundary, see Flow PK.

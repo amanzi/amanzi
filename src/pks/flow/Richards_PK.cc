@@ -581,6 +581,11 @@ void Richards_PK::Initialize()
         clip = true;
       }
 
+      if (clip && vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "Clipped pressure field." << std::endl;
+      }
+
       if (clip && solution->HasComponent("face")) {
         Epetra_MultiVector& p = *solution->ViewComponent("cell");
         Epetra_MultiVector& lambda = *solution->ViewComponent("face", true);

@@ -27,8 +27,8 @@ namespace AmanziGeometry {
 
 // Constructor
 
-  GeometricModel::GeometricModel(const unsigned int dim, 
-                                 const VerboseObject *verbobj) : 
+GeometricModel::GeometricModel(const unsigned int dim, 
+                               const VerboseObject *verbobj) : 
     topo_dimension_(dim), verbosity_obj_(verbobj)
 {
   if (dim != 2 && dim != 3) {
