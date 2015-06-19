@@ -589,7 +589,7 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
   transmissibility_initialized_ = true;
 }
 
-double OperatorDiffusionFV::ComputeTransmisibility(int face){
+double OperatorDiffusionFV::ComputeTransmissibility(int face){
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
   return trans_face[0][face];
 }

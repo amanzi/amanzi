@@ -124,7 +124,7 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   void ApplyBCs_Cell_(BCs& bc_trial, BCs& bc_test,
                       bool primary, bool eliminate);
 
-  virtual double ComputeTransmisibility(int face){return 0.;};
+  virtual double ComputeTransmissibility(int face){return 0.;};
   virtual double ComputeGravityFlux(int face){return 0.;};
 
  protected:

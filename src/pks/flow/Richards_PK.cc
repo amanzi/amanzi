@@ -930,21 +930,25 @@ double Richards_PK::DeriveBoundaryFaceValue(
       AmanziMesh::Entity_ID_List cells;
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       int c = cells[0];
-      double patm = rp_list_->get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);   
-      double trans_f = 1;
-      double g_f = 2.;
+      double pc_shift = atm_pressure_;   
+      double trans_f = op_matrix_diff_->ComputeTransmissibility(f);
+      double g_f = op_matrix_diff_->ComputeGravityFlux(f);
       double lmd =  u_cell[0][c];
       double bnd_flux = bc_value[f];
-      int dir = 1;
+      int dir;
+      mesh_->face_normal(f, false, c, &dir);
 
-      double max_val = 10*patm;
-      double min_val = -10*patm;
+      double max_val = atm_pressure_;
+      double min_val;
+      if (bnd_flux < 0.){
+        min_val = u_cell[0][c];
+      }
+      else {
+        min_val= u_cell[0][c] + (g_f - bc_value[f])/(dir*trans_f);
+      }
       double eps=std::max(1.e-4 * std::abs(bnd_flux), 1.e-8);
-
-      const KRelFn func = &WRM::k_relative; 
-      
-
-      Amanzi::BoundaryFaceSolver<WRM> BndFaceSolver(trans_f, g_f, u_cell[0][c], lmd, bnd_flux, dir, patm, 
+      const KRelFn func = &WRM::k_relative;       
+      Amanzi::BoundaryFaceSolver<WRM> BndFaceSolver(trans_f, g_f, u_cell[0][c], lmd, bnd_flux, dir, pc_shift, 
                                            max_val, min_val, eps, wrm_model, func);
       lmd = BndFaceSolver.FaceValue();
 

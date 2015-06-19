@@ -90,7 +90,7 @@ class OperatorDiffusionFV : public OperatorDiffusion {
   virtual void ModifyMatrices(const CompositeVector& u) {};
   virtual void ScaleMassMatrices(double s) {};
 
-  virtual double ComputeTransmisibility(int face);
+  virtual double ComputeTransmissibility(int face);
   virtual double ComputeGravityFlux(int face);
 
 

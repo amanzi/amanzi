@@ -309,11 +309,9 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
       last_col_i = num_vec_*(num_vec_ - 1)/2;    
       *tmp = *dF_[last_f_];
       for (int i=0; i<num_vec_ - 1; i++){
-        //int I = (first_f_ + i)%(mvec_ + 1);
         double val;
         tmp -> Dot(*Q_[i], &val);
         R_[last_col_i + i] = val;
-        //std::cout<<"val "<<last_col_i + i <<" "<<val<<"\n";
         tmp -> Update(-val, *Q_[i], 1.);
       }    
       tmp -> Norm2(&norm2); 
@@ -331,11 +329,11 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   }
 
 
-  for (int i=0;i<num_vec_;i++){
-    //    int I = (first_f_ + i)%(mvec_ + 1);
-    std::cout<<"Q "<<i<<"\n";
-    Q_[i]->Print(std::cout);
-  }
+  // for (int i=0;i<num_vec_;i++){
+  //   //    int I = (first_f_ + i)%(mvec_ + 1);
+  //   std::cout<<"Q "<<i<<"\n";
+  //   Q_[i]->Print(std::cout);
+  // }
 
   std::cout<<"R matrix "<<"\n";
   for (int i=0;i<num_vec_; i++){
@@ -353,10 +351,10 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   double *b  = new double[num_vec_];
   double *th = new double[num_vec_];
 
-  std::cout<<"NEW F\n";
-  dF_[new_f_]->Print(std::cout);
-  std::cout<<"NEW U\n";
-  u_[new_f_]->Print(std::cout);
+  // std::cout<<"NEW F\n";
+  // dF_[new_f_]->Print(std::cout);
+  // std::cout<<"NEW U\n";
+  // u_[new_f_]->Print(std::cout);
 
   for (int i=0; i<num_vec_; i++){
     th[i] = 0.;
@@ -394,8 +392,8 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
     int I = (first_f_ + i)%(mvec_ + 1);
     dir.Update(th[i], *dG_[I], 1.);
   }
-  std::cout<<"dir\n";
-  dir.Print(std::cout);
+  // std::cout<<"dir\n";
+  // dir.Print(std::cout);
   
 
   // for (int i=0; i<num_vec_; i++) {
