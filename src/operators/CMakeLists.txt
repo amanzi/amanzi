@@ -74,8 +74,9 @@ set(operators_inc_files
     OperatorDiffusion.hh
     OperatorDiffusionFactory.hh
     OperatorDiffusionMFD.hh
-    OperatorDiffusionWithGravity.hh
+    OperatorDiffusionMFDwithGravity.hh
     OperatorDiffusionFV.hh
+    OperatorDiffusionFVwithGravity.hh
     OperatorAccumulation.hh
     OperatorAdvection.hh
     TreeOperator.hh
@@ -99,8 +100,9 @@ add_amanzi_library(operators
                           Operator_Node.cc
                           Operator_Edge.cc
                           OperatorDiffusionMFD.cc
-                          OperatorDiffusionWithGravity.cc
+                          OperatorDiffusionMFDwithGravity.cc
                           OperatorDiffusionFV.cc
+                          OperatorDiffusionFVwithGravity.cc
                           OperatorDiffusionFactory.cc                   
                           OperatorAccumulation.cc
                           OperatorAdvection.cc  

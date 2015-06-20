@@ -85,11 +85,19 @@
       <!--Parameter name="file name" type="string" value="test/struct.exo"/-->
     </ParameterList>
 
-    <ParameterList name="diffusion operator gravity">
+    <ParameterList name="diffusion operator gravity mfd">
       <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+      <Parameter name="gravity" type="bool" value="true"/>
+    </ParameterList>
+
+    <ParameterList name="diffusion operator gravity fv">
+      <Parameter name="discretization primary" type="string" value="fv: default"/>
+      <Parameter name="discretization secondary" type="string" value="fv: default"/>
+      <Parameter name="schema" type="Array(string)" value="{cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
       <Parameter name="gravity" type="bool" value="true"/>
     </ParameterList>
 

@@ -30,7 +30,8 @@
 #include "HeatConduction.hh"
 
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionWithGravity.hh"
+#include "OperatorDiffusion.hh"
+#include "OperatorDiffusionFactory.hh"
 #include "UpwindSecondOrder.hh"
 #include "UpwindStandard.hh"
 
@@ -38,7 +39,7 @@
 /* *****************************************************************
 * Comparison of gravity models with constant and vector density.
 ***************************************************************** */
-TEST(OPERATOR_DIFFUSION_GRAVITY_2D) {
+void RunTestGravity(std::string op_list_name) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -52,7 +53,7 @@ TEST(OPERATOR_DIFFUSION_GRAVITY_2D) {
   std::string xmlFileName = "test/operator_diffusion.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
-  Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator gravity");
+  Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist(op_list_name);
 
   // create a mesh framework
   FrameworkPreference pref;
@@ -85,12 +86,17 @@ TEST(OPERATOR_DIFFUSION_GRAVITY_2D) {
 
   // create diffusion operator 
   // -- set gravity and boundary conditions
-  Teuchos::RCP<OperatorDiffusion> op1 = Teuchos::rcp(new OperatorDiffusionWithGravity(op_list, mesh));
-  op1->SetGravity(g);
-  op1->SetBCs(bc, bc);
+  Operators::OperatorDiffusionFactory opfactory;
+  Teuchos::RCP<OperatorDiffusion> op1 = opfactory.Create(mesh, bc, op_list, g, 0);
 
   // -- we need flux and dummy solution to populate nonlinear coefficient
-  const CompositeVectorSpace& cvs = op1->global_operator()->DomainMap();
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh);
+  cvs.SetGhosted(true);
+  cvs.SetComponent("cell", AmanziMesh::CELL, 1);
+  cvs.SetOwned(false);
+  cvs.AddComponent("face", AmanziMesh::FACE, 1);
+
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs));
   Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
 
@@ -123,9 +129,8 @@ TEST(OPERATOR_DIFFUSION_GRAVITY_2D) {
   op1->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // create and populate the second operator using vector rho
-  Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusionWithGravity(op_list, mesh));
-  op2->SetGravity(g);
-  op2->SetBCs(bc, bc);
+  Teuchos::RCP<OperatorDiffusion> op2 = opfactory.Create(mesh, bc, op_list, g, 0);
+
   op2->Setup(K, knc->values(), knc->derivatives(), rho_cv);
   op2->UpdateMatrices(flux.ptr(), Teuchos::null);
 
@@ -144,3 +149,14 @@ TEST(OPERATOR_DIFFUSION_GRAVITY_2D) {
   CHECK_CLOSE(a1, a2, 1e-12);
 }
 
+
+/* *****************************************************************
+* Two tests fo rMFd and FV methods.
+* **************************************************************** */
+TEST(OPERATOR_DIFFUSION_GRAVITY_MFD) {
+  RunTestGravity("diffusion operator gravity mfd");
+}
+
+TEST(OPERATOR_DIFFUSION_GRAVITY_FV) {
+  RunTestGravity("diffusion operator gravity fv");
+}

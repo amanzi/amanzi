@@ -36,7 +36,7 @@ class WRM {
   std::string region_;
 };
 
-typedef  double(WRM::*KRelFn)(double pc) const; 
+typedef double(WRM::*KRelFn)(double pc) const; 
 
 }  // namespace Flow
 }  // namespace Amanzi

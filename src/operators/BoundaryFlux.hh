@@ -9,17 +9,21 @@
   Author: Daniil Svyatskiy (dasvyat@lanl.gov)
 */
 
-#ifndef AMANZI_BOUNDARYFLUX_FUNC
-#define AMANZI_BOUNDARYFLUX_FUNC
+#ifndef AMANZI_BOUNDARY_FLUX_FUNC
+#define AMANZI_BOUNDARY_FLUX_FUNC
 
 #include <boost/math/tools/roots.hpp>
 
 
 namespace Amanzi {
 
-  //#define DEBUG_FLAG 1
+#define DEBUG_FLAG 0
 
-
+/* ******************************************************************
+* Nonlinear function F(x) = k(p0 - x) * [(T*d) * (p - x) + g] - bc
+* where k is the nonlinear function provided by the model
+* and p0, T, d, p, g, bc are constant parameters.
+****************************************************************** */
 template <class Model>
 class BoundaryFluxFn {
  public:
@@ -44,20 +48,10 @@ class BoundaryFluxFn {
 
   double operator()(double face_p) {
     lambda_ = face_p;
-    double Krel;
-    Krel = ((*model_).*nonlinfunc_)(patm_ - lambda_);
+    double krel = ((*model_).*nonlinfunc_)(patm_ - lambda_);
+    double flux = dir_ * trans_f_ * krel * (cell_p_ - lambda_);
 
-    return flux_() + g_flux_*Krel - bc_flux_;
-  }
-
- protected:
-  double flux_() {
-    double s = 0.;
-    double Krel;
-    Krel = ((*model_).*nonlinfunc_)(patm_ - lambda_);
-
-    s = dir_ * trans_f_ * Krel * (cell_p_ - lambda_);
-    return s;
+    return flux + g_flux_ * krel - bc_flux_;
   }
 
  protected:
@@ -74,6 +68,10 @@ class BoundaryFluxFn {
   NonlinFunc nonlinfunc_;
 };
 
+
+/* ******************************************************************
+* Auxiliaty class for toms748: convergence criteria.
+****************************************************************** */
 struct Tol_ {
   Tol_(double eps) : eps_(eps) {};
   bool operator()(const double& a, const double& b) const {
@@ -83,17 +81,19 @@ struct Tol_ {
 };
 
 
+/* ******************************************************************
+* Bisection solver based on toms748 algorithm.
+****************************************************************** */
 template <class Model>
 class BoundaryFaceSolver {
  public:
-
   typedef double(Model::*NonlinFunc)(double p) const;
 
   BoundaryFaceSolver(double trans_f, double g_f,
                      double cell_val, double lambda,
                      double bnd_flux, int dir, double patm, 
                      double min_val, double max_val, double eps,
-                     Teuchos::RCP<const Model> model, NonlinFunc test_fun):
+                     Teuchos::RCP<const Model> model, NonlinFunc test_fun) :
     trans_f_(trans_f), 
     g_f_(g_f), 
     cell_val_(cell_val), 
@@ -104,16 +104,9 @@ class BoundaryFaceSolver {
     eps_(eps),
     bnd_flux_(bnd_flux)
   {
-
-    
-
     func_ = Teuchos::rcp(new BoundaryFluxFn<Model>(trans_f, lambda, cell_val, bnd_flux,
-                                                   g_f, dir, patm, model, test_fun) );
-    // nonlinfunc_ = test_fun;
-    // std::cout<<((*model).*nonlinfunc_)(0)<<"\n";;
-
-
-  };
+                                                   g_f, dir, patm, model, test_fun));
+  }
 
   double SolveBisection(double face_val, 
                         double min_val,
@@ -123,30 +116,21 @@ class BoundaryFaceSolver {
                         boost::uintmax_t max_it,
                         boost::uintmax_t& actual_it);
 
-  double FaceValue(){
-    // double eps = std::max(1.e-4 * std::abs(bnd_flux_), 1.e-8);
-    // eps = 1e-8;
+  double FaceValue() {
     Tol_ tol(eps_);
     boost::uintmax_t max_it = 100;
     boost::uintmax_t actual_it(max_it);
     
-    
     return SolveBisection(lambda_, min_val_, max_val_, *func_, tol, max_it, actual_it);
-  };
+  }
 
-  double trans_f_;
-  double lambda_;
-  double cell_val_;
-  double g_f_;
-  double patm_;
-  double bnd_flux_;
-  double min_val_;
-  double max_val_;
+  double lambda_;  // initial guess
+  double cell_val_, trans_f_, g_f_, patm_, bnd_flux_;  // input data
+  double min_val_, max_val_;  // bracket values
   double eps_;
   Teuchos::RCP<BoundaryFluxFn<Model> > func_;
-  
-
 };
+
 
 template <class Model>
 double BoundaryFaceSolver<Model>::SolveBisection(double face_val, 
@@ -155,64 +139,63 @@ double BoundaryFaceSolver<Model>::SolveBisection(double face_val,
                                                  BoundaryFluxFn<Model>& func,
                                                  Tol_& tol,
                                                  boost::uintmax_t max_it,
-                                                 boost::uintmax_t& actual_it){
-
+                                                 boost::uintmax_t& actual_it)
+{
   double res = func(face_val);
-  double left = 0.;
-  double right = 0.;
-  double lres = 0.;
-  double rres = 0.;
+  double left(0.0), right(0.0), lres(0.0), rres(0.0);
 
-  if (res > 0.) {
+  if (res > 0.0) {
     left = face_val;
     lres = res;
     right = std::max(face_val, max_val);
     rres = func(right);
-    while (rres > 0.) {
+#if DEBUG_FLAG
+  std::cout << "---set right:      " << left << " (" << lres << "), " << right << " (" << rres << ")\n";
+#endif
+    while (rres > 0.0) {
       right += fabs(right);
       rres = func(right);
+#if DEBUG_FLAG
+  std::cout << "   change right:   " << right << " (" << rres << ")\n";
+#endif
     }
-  }
-  else {
+  } else {
     right = face_val;
     rres = res;
-#if DEBUG_FLAG
-    std::cout << "RIGHT = " << right << ", " << rres << std::endl;
-#endif
     left = std::min(min_val, face_val);
     lres = func(left);
-    while (lres < 0.) {
 #if DEBUG_FLAG
-      std::cout << "LEFT = " << left << ", " << lres << std::endl;
+  std::cout << "---set left:       " << left << " (" << lres << "), " << right << " (" << rres << ")\n";
 #endif
+    while (lres < 0.0) {
       left -= fabs(left);
       lres = func(left);
+#if DEBUG_FLAG
+  std::cout << "   change left:    " << left << " (" << lres << ")\n";
+#endif
     }
   }
 #if DEBUG_FLAG
-  std::cout << "   bracket (res): " << left << " (" << lres << "), "
-            << right << " (" << rres << ")" << std::endl;
+  std::cout << "+++bracket (func): " << left << " (" << lres << "), " << right << " (" << rres << ")\n";
 #endif
 
-  std::pair<double,double> result;
-
-  result = boost::math::tools::toms748_solve(func, left, right, lres, rres, tol, actual_it);
-  // if (actual_it >= max_it) {
-  //   std::cout << " Failed to converged in " << actual_it << " steps." << std::endl;
-  //   return 3;
-  // }
-	  
-  face_val = (result.first + result.second) / 2.;
+  if (tol(left, right)) {
+    face_val = right;
+    actual_it = 0;
+  } else {
+    std::pair<double, double> result;
+    result = boost::math::tools::toms748_solve(func, left, right, lres, rres, tol, actual_it);
+    // if (actual_it >= max_it) {
+    //   std::cout << " Failed to converged in " << actual_it << " steps." << std::endl;
+    // }
+    face_val = (result.first + result.second) / 2.0;
+  }
 
 #if DEBUG_FLAG
-  std::cout << "face_val = "<<face_val<<"\n";
+  std::cout << "   solution = " << face_val << " itrs = " << actual_it << "\n";
 #endif
   return face_val;
-
-
 }
-
-
 
 }  // namespace Amanzi
 

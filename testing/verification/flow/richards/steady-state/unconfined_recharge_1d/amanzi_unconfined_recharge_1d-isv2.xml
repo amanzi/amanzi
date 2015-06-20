@@ -275,7 +275,7 @@
       <vis>
         <base_filename>steady-flow</base_filename>
         <num_digits>5</num_digits>
-        <time_macross>Steady State</time_macross>
+        <time_macros>Steady State</time_macros>
       </vis>
     </output>
   </amanzi_input>

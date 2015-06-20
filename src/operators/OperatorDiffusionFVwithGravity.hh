@@ -10,8 +10,8 @@
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_OPERATOR_DIFFUSION_FV_HH_
-#define AMANZI_OPERATOR_DIFFUSION_FV_HH_
+#ifndef AMANZI_OPERATOR_DIFFUSION_FV_WITH_GRAVITY_HH_
+#define AMANZI_OPERATOR_DIFFUSION_FV_WITH_GRAVITY_HH_
 
 #include <strings.h>
 
@@ -22,7 +22,7 @@
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
 #include "Preconditioner.hh"
-#include "OperatorDiffusion.hh"
+#include "OperatorDiffusionFV.hh"
 
 
 namespace Amanzi {
@@ -30,29 +30,29 @@ namespace Operators {
 
 class BCs;
 
-class OperatorDiffusionFV : public OperatorDiffusion {
+class OperatorDiffusionFVwithGravity : public OperatorDiffusionFV {
  public:
-  OperatorDiffusionFV(Teuchos::ParameterList& plist,
-                      const Teuchos::RCP<Operator>& global_op) :
-      OperatorDiffusion(global_op)
+  OperatorDiffusionFVwithGravity(Teuchos::ParameterList& plist,
+                                 const Teuchos::RCP<Operator>& global_op) :
+      OperatorDiffusionFV(plist, global_op)
   {
-    operator_type_ = OPERATOR_DIFFUSION_FV;
+    operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
     InitDiffusion_(plist);
   }
 
-  OperatorDiffusionFV(Teuchos::ParameterList& plist,
-                      const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      OperatorDiffusion(mesh)
+  OperatorDiffusionFVwithGravity(Teuchos::ParameterList& plist,
+                                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      OperatorDiffusionFV(plist, mesh)
   {
-    operator_type_ = OPERATOR_DIFFUSION_FV;
+    operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
     InitDiffusion_(plist);
   }
 
-  OperatorDiffusionFV(Teuchos::ParameterList& plist,
-                      const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      OperatorDiffusion(mesh)
+  OperatorDiffusionFVwithGravity(Teuchos::ParameterList& plist,
+                                 const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+      OperatorDiffusionFV(plist, mesh)
   {
-    operator_type_ = OPERATOR_DIFFUSION_FV;
+    operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
     InitDiffusion_(plist);
   }
 
@@ -63,6 +63,9 @@ class OperatorDiffusionFV : public OperatorDiffusion {
                      const Teuchos::RCP<const CompositeVector>& dkdp);
   using OperatorDiffusion::Setup;
 
+  virtual void SetGravity(const AmanziGeometry::Point& g) {
+    g_ = g;
+  }
   virtual void SetDensity(double rho) {
     scalar_rho_ = true;
     rho_ = rho;
@@ -83,19 +86,12 @@ class OperatorDiffusionFV : public OperatorDiffusion {
   virtual void ScaleMassMatrices(double s) {};
 
   // nonlinear boundary conditions
-  virtual double ComputeTransmissibility(int face);
-
-  template <class Model> 
-  double DeriveBoundaryFaceValue(int f, double atm_pressure, const CompositeVector& u, const Model& model);
+  virtual double ComputeGravityFlux(int face);
 
   // access
-  const CompositeVector transmissibility() { return *transmissibility_; }
+  const CompositeVector gravity_terms() { return *gravity_term_; }
 
  protected:
-  void ComputeTransmissibility_(AmanziGeometry::Point* g, Teuchos::RCP<CompositeVector> g_cv);
-
-  void AnalyticJacobian_(const CompositeVector& solution);
-
   virtual void ComputeJacobianLocal_(
       int mcells, int f, int face_dir, int Krel_method,
       int bc_model, double bc_value,
@@ -103,13 +99,10 @@ class OperatorDiffusionFV : public OperatorDiffusion {
       WhetStone::DenseMatrix& Jpp);
 
   virtual void InitDiffusion_(Teuchos::ParameterList& plist);
-  
- protected:
-  Teuchos::RCP<CompositeVector> transmissibility_;
-  bool transmissibility_initialized_;
 
-  int newton_correction_;
-  bool exclude_primary_terms_;
+ protected:
+  AmanziGeometry::Point g_;
+  Teuchos::RCP<CompositeVector> gravity_term_;
 };
 
 }  // namespace Operators

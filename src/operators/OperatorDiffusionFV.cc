@@ -23,8 +23,6 @@
 namespace Amanzi {
 namespace Operators {
 
-#define DEBUG_FLAG 0
-
 /* ******************************************************************
 * Initialization
 ****************************************************************** */
@@ -116,8 +114,6 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
   cvs.SetComponent("face", AmanziMesh::FACE, 1);
   transmissibility_ = Teuchos::rcp(new CompositeVector(cvs, true));
 
-  g_.set(mesh_->space_dimension(), 0.0);
-
   // default parameters for Newton correction
   scalar_rho_ = true;
   rho_ = 1.0;
@@ -132,11 +128,8 @@ void OperatorDiffusionFV::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor
 {
   K_ = K;
 
-  if (gravity_ && !gravity_term_.get())
-      gravity_term_ = Teuchos::rcp(new CompositeVector(*transmissibility_));
-  
   if (!transmissibility_initialized_) {
-    ComputeTransmissibility_();
+    ComputeTransmissibility_(NULL, Teuchos::null);
   }
 }
 
@@ -164,7 +157,7 @@ void OperatorDiffusionFV::Setup(const Teuchos::RCP<const CompositeVector>& k,
 
   // verify that mass matrices were initialized.
   if (!transmissibility_initialized_) {
-    ComputeTransmissibility_();
+    ComputeTransmissibility_(NULL, Teuchos::null);
   }
 }
 
@@ -210,23 +203,6 @@ void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVecto
 
       local_op_->matrices[f] = Aface;
     }
-
-    // populating right-hand side
-    if (gravity_) {
-      const Epetra_MultiVector& gravity_face = *gravity_term_->ViewComponent("face", true);
-      Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
-
-      for (int c = 0; c != ncells_owned; ++c) {
-        mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-        int nfaces = faces.size();
-
-        for (int n = 0; n != nfaces; ++n) {
-          int f = faces[n];
-          if (bc_model[f] == OPERATOR_BC_NEUMANN) continue;
-          rhs_cell[0][c] -= dirs[n] * gravity_face[0][f] * (k_face.get() ? (*k_face)[0][f] : 1.0);
-        }
-      }
-    }
   }
 
   // Add derivatives to the matrix (Jacobian in this case)
@@ -242,9 +218,6 @@ void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVecto
 void OperatorDiffusionFV::ApplyBCs(bool primary, bool eliminate)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
-  Epetra_MultiVector* gravity_face;
-  if (gravity_) 
-      gravity_face = &*gravity_term_->ViewComponent("face", true);
 
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
@@ -271,7 +244,6 @@ void OperatorDiffusionFV::ApplyBCs(bool primary, bool eliminate)
             
         rhs_cell[0][c] -= bc_value[f] * mesh_->face_area(f);
         // trans_face[0][f] = 0.0;
-        if (gravity_) (*gravity_face)[0][f] = 0.0;
       }
     }
   }
@@ -340,15 +312,6 @@ void OperatorDiffusionFV::UpdateFlux(
       }
     }
   }
-
-  // add in gravity terms
-  if (gravity_ && gravity_term_.get()) {
-    if (Krel_face.get()) {
-      flux.Multiply(1.0, *Krel_face, *gravity_term_->ViewComponent("face", false), 1.0);
-    } else {
-      flux.Update(1.0, *gravity_term_->ViewComponent("face", false), 1.0);
-    }
-  }
 }
 
 
@@ -403,9 +366,8 @@ void OperatorDiffusionFV::AnalyticJacobian_(const CompositeVector& u)
           dkdp[0] = dKdP_face[0][f];
         }
 
-        // const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0], &dir);
         ComputeJacobianLocal_(mcells, f, face_dir, little_k_,
-                bc_model[f], bc_value[f], pres, dkdp, Aface);
+                              bc_model[f], bc_value[f], pres, dkdp, Aface);
 
         jac_op_->matrices[f] = Aface;
         flag[f] = 1;
@@ -426,30 +388,14 @@ void OperatorDiffusionFV::ComputeJacobianLocal_(
     WhetStone::DenseMatrix& Jpp)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
-  const Teuchos::Ptr<Epetra_MultiVector> gravity_face =
-      gravity_term_.get() ? gravity_term_->ViewComponent("face", true).ptr() : Teuchos::null;
-
   double dKrel_dp[2];
   double dpres;
 
   if (mcells == 2) {
     dpres = pres[0] - pres[1];  // + grn;
-    if (Krel_method == OPERATOR_UPWIND_CONSTANT_VECTOR) {  // Define K 
-      double cos_angle = face_dir * (*gravity_face)[0][f] / (rho_ * mesh_->face_area(f));
-      if (cos_angle > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
-        dKrel_dp[0] = dkdp_cell[0];
-        dKrel_dp[1] = 0.0;
-      } else if (cos_angle < -OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
-        dKrel_dp[0] = 0.0;
-        dKrel_dp[1] = dkdp_cell[1];
-      } else if (fabs(cos_angle) < OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
-        dKrel_dp[0] = 0.5 * dkdp_cell[0];
-        dKrel_dp[1] = 0.5 * dkdp_cell[1];
-      }
-    } else if (Krel_method == OPERATOR_LITTLE_K_UPWIND) {
+    if (Krel_method == OPERATOR_LITTLE_K_UPWIND) {
       double flux0to1;
       flux0to1 = trans_face[0][f] * dpres;
-      if (gravity_face.get()) flux0to1 += face_dir * (*gravity_face)[0][f];
       if (flux0to1  > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
         dKrel_dp[0] = dkdp_cell[0];
         dKrel_dp[1] = 0.0;
@@ -470,22 +416,14 @@ void OperatorDiffusionFV::ComputeJacobianLocal_(
     Jpp(0, 0) = trans_face[0][f] * dpres * dKrel_dp[0];
     Jpp(0, 1) = trans_face[0][f] * dpres * dKrel_dp[1];
 
-    if (gravity_face.get()) {
-      Jpp(0,0) += face_dir * (*gravity_face)[0][f] * dKrel_dp[0];
-      Jpp(0,1) += face_dir * (*gravity_face)[0][f] * dKrel_dp[1];
-    }
     Jpp(1, 0) = -Jpp(0, 0);
     Jpp(1, 1) = -Jpp(0, 1);
 
   } else if (mcells == 1) {
     if (bc_model_f == OPERATOR_BC_DIRICHLET) {                   
       pres[1] = bc_value_f;
-      dpres = pres[0] - pres[1];  // + grn;
+      dpres = pres[0] - pres[1];
       Jpp(0, 0) = trans_face[0][f] * dpres * dkdp_cell[0];
-      if (gravity_face.get())
-        Jpp(0,0) += face_dir * (*gravity_face)[0][f] * dkdp_cell[0];
-      //Jpp(0, 0) = 0.0;
-      //std::cout<<"Local J dkdp_cell[0] "<<f<<"  "<<dkdp_cell[0]<<" "<<bc_value_f<<" "<<pres[0]<<" "<<"\n";
     } else {
       Jpp(0, 0) = 0.0;
     }
@@ -496,7 +434,8 @@ void OperatorDiffusionFV::ComputeJacobianLocal_(
 /* ******************************************************************
 * Compute transmissibilities on faces 
 ****************************************************************** */
-void OperatorDiffusionFV::ComputeTransmissibility_()
+void OperatorDiffusionFV::ComputeTransmissibility_(
+   AmanziGeometry::Point* g, Teuchos::RCP<CompositeVector> g_cv)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
 
@@ -549,8 +488,6 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
   // some calculatons.
   transmissibility_->PutScalar(0.0);
 
-  AmanziGeometry::Point gravity(g_ * rho_);
-
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
@@ -563,40 +500,31 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
     } 
     a_dist *= 1.0 / norm(a_dist);
 
-    // double grav = (gravity * normal) / area;
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    double dir = copysign(1.0, normal * a_dist);
-    double grav = (gravity * a_dist) * dir;
+    trans_face[0][f] = 1.0 / beta_face[0][f];
+    if (g != NULL) {
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      double dir = copysign(1.0, normal * a_dist);
+      // double grav = (gravity * normal) / area;
+      double grav = ((*g) * a_dist) * rho_ * dir;
+      grav *= h_face[0][f];
 
-    double trans_f = 0.0;
-    grav *= h_face[0][f];
-    trans_f = 1.0 / beta_face[0][f];
-
-    trans_face[0][f] = trans_f;
-    if (gravity_) {
-      Epetra_MultiVector& gravity_face = *gravity_term_->ViewComponent("face", true);
+      Epetra_MultiVector& gravity_face = *g_cv->ViewComponent("face", true);
       gravity_face[0][f] = trans_face[0][f] * grav;
     }
   }
 
 #ifdef HAVE_MPI
   transmissibility_->ScatterMasterToGhosted("face", true);
-  if (gravity_) {
-    gravity_term_->ScatterMasterToGhosted("face", true);
-  }
+  if (g != NULL) g_cv->ScatterMasterToGhosted("face", true);
 #endif
 
   transmissibility_initialized_ = true;
 }
 
-double OperatorDiffusionFV::ComputeTransmissibility(int face){
+
+double OperatorDiffusionFV::ComputeTransmissibility(int face) {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
   return trans_face[0][face];
-}
-
-double OperatorDiffusionFV::ComputeGravityFlux(int face){
-  const Epetra_MultiVector& gravity_face = *gravity_term_->ViewComponent("face", true); 
-  return gravity_face[0][face];
 }
 
 

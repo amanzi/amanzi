@@ -8,11 +8,11 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Discrete gravity operator blended with the diffusion operator.
+  Discrete gravity operator blended with the MFD diffusion operator.
 */
 
-#ifndef AMANZI_OPERATOR_DIFFUSION_WITH_GRAVITY_HH_
-#define AMANZI_OPERATOR_DIFFUSION_WITH_GRAVITY_HH_
+#ifndef AMANZI_OPERATOR_DIFFUSION_MFD_WITH_GRAVITY_HH_
+#define AMANZI_OPERATOR_DIFFUSION_MFD_WITH_GRAVITY_HH_
 
 #include "Epetra_IntVector.h"
 
@@ -29,9 +29,9 @@ namespace Operators {
 
 class BCs;
 
-class OperatorDiffusionWithGravity : public OperatorDiffusionMFD {
+class OperatorDiffusionMFDwithGravity : public OperatorDiffusionMFD {
  public:
-  OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
+  OperatorDiffusionMFDwithGravity(Teuchos::ParameterList& plist,
                                const Teuchos::RCP<Operator>& global_op) :
       OperatorDiffusionMFD(plist, global_op)
   {
@@ -39,7 +39,7 @@ class OperatorDiffusionWithGravity : public OperatorDiffusionMFD {
     Init_(plist);
   }
 
-  OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
+  OperatorDiffusionMFDwithGravity(Teuchos::ParameterList& plist,
                                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       OperatorDiffusionMFD(plist, mesh)
   {
@@ -47,7 +47,7 @@ class OperatorDiffusionWithGravity : public OperatorDiffusionMFD {
     Init_(plist);
   }
 
-  OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
+  OperatorDiffusionMFDwithGravity(Teuchos::ParameterList& plist,
                                const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
       OperatorDiffusionMFD(plist, mesh)
   {

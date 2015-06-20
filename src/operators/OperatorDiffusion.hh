@@ -69,8 +69,8 @@ class OperatorDiffusion {
   virtual void ModifyMatrices(const CompositeVector& u) = 0;
   virtual void ScaleMassMatrices(double s) = 0;
 
-  virtual double ComputeTransmissibility(int face){};
-  virtual double ComputeGravityFlux(int face){};
+  virtual double ComputeTransmissibility(int face) { return 0.0; }
+  virtual double ComputeGravityFlux(int face) { return 0.0; }
 
   // default implementation  
   virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,

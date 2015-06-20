@@ -65,8 +65,7 @@ TEST(BOUNDARYFLUX) {
 
   if (MyPID == 0) std::cout << "\nTest: BoundaryFluxSolver" << std::endl;
 
-
-    // create model of nonlinearity
+  // create model of nonlinearity
   Teuchos::RCP<const Model> model  = Teuchos::rcp(new Model());
   NonLinFn func = &Model::Value;
 
@@ -81,20 +80,14 @@ TEST(BOUNDARYFLUX) {
   double min_val = 0;
   double eps=1e-6;
 
-
   BoundaryFaceSolver<Model> BndFaceSolver(trans_f, g_f, cell_val, lmd, bnd_flux, dir, patm, 
                                            max_val, min_val, eps, model, func);
-
 
   double face_value; 
   face_value = BndFaceSolver.FaceValue();
 
-  if (comm.MyPID() == 0)
-    std::cout<<"Face value "<<face_value<<"\n";
+  if (MyPID == 0) std::cout << "Face value " << face_value <<"\n";
 
-  CHECK(fabs(face_value - 0.585786)< eps);
-
-
+  CHECK(fabs(face_value - 0.585786) < eps);
 }
-
 
