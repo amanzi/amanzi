@@ -88,6 +88,9 @@ class MFD3D_Diffusion : public MFD3D {
   int RecoverGradient_StiffnessMatrix(int c, const std::vector<double>& solution, 
                                       AmanziGeometry::Point& gradient);
 
+  // utils
+  double Transmissibility(int f, int c, const Tensor& K);
+
  private:  
   // stability methods (add matrix Ms in M = Mc + Ms)
   int StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& Mc, DenseMatrix& M);

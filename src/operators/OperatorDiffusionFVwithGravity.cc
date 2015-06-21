@@ -214,11 +214,14 @@ void OperatorDiffusionFVwithGravity::ComputeJacobianLocal_(
 }
 
 
-double OperatorDiffusionFVwithGravity::ComputeGravityFlux(int face) {
+/* ******************************************************************
+* Return value of the gravity flux on the given face f.
+****************************************************************** */
+double OperatorDiffusionFVwithGravity::ComputeGravityFlux(int f) const
+{
   const Epetra_MultiVector& gravity_face = *gravity_term_->ViewComponent("face", true); 
-  return gravity_face[0][face];
+  return gravity_face[0][f];
 }
-
 
 }  // namespace Operators
 }  // namespace Amanzi

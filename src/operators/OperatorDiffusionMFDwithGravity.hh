@@ -70,6 +70,10 @@ class OperatorDiffusionMFDwithGravity : public OperatorDiffusionMFD {
     rho_cv_ = rho;
   }
   
+  // Developments
+  // -- interface to solvers for treating nonlinear BCs.
+  virtual double ComputeGravityFlux(int f) const;
+
  protected:
   virtual void AddGravityToRHS_();
   inline AmanziGeometry::Point GravitySpecialDirection_(int f) const;

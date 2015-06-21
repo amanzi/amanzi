@@ -82,14 +82,13 @@ class OperatorDiffusionFV : public OperatorDiffusion {
   virtual void ModifyMatrices(const CompositeVector& u) {};
   virtual void ScaleMassMatrices(double s) {};
 
-  // nonlinear boundary conditions
-  virtual double ComputeTransmissibility(int face);
-
-  template <class Model> 
-  double DeriveBoundaryFaceValue(int f, double atm_pressure, const CompositeVector& u, const Model& model);
+  // Developments
+  // -- interface to solvers for treating nonlinear BCs.
+  virtual double ComputeTransmissibility(int f) const;
+  virtual double ComputeGravityFlux(int f) const { return 0.0; }
 
   // access
-  const CompositeVector transmissibility() { return *transmissibility_; }
+  const CompositeVector& transmissibility() { return *transmissibility_; }
 
  protected:
   void ComputeTransmissibility_(AmanziGeometry::Point* g, Teuchos::RCP<CompositeVector> g_cv);

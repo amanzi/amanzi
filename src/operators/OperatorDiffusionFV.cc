@@ -522,9 +522,13 @@ void OperatorDiffusionFV::ComputeTransmissibility_(
 }
 
 
-double OperatorDiffusionFV::ComputeTransmissibility(int face) {
+/* ******************************************************************
+* Return transmissibility value on the given face f.
+****************************************************************** */
+double OperatorDiffusionFV::ComputeTransmissibility(int f) const
+{
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
-  return trans_face[0][face];
+  return trans_face[0][f];
 }
 
 

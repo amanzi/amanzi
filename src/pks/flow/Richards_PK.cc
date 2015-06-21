@@ -894,7 +894,8 @@ void Richards_PK::UpdateSourceBoundaryData(double t_old, double t_new, const Com
 
 
 /* ******************************************************************
-* 
+* Returns either known pressure face value or calculates it using
+* the two-point flux approximation (FV) scheme.
 ****************************************************************** */
 double Richards_PK::BoundaryFaceValue(int f, const CompositeVector& u)
 {
@@ -910,52 +911,48 @@ double Richards_PK::BoundaryFaceValue(int f, const CompositeVector& u)
   return face_value;
 }
 
+
 /* ******************************************************************
-* Calculates solution value on the boundary.
+* Calculates pressure value on the boundary using the two-point flux 
+* approximation (FV) scheme.
 ****************************************************************** */
-//template <class Model> 
 double Richards_PK::DeriveBoundaryFaceValue(
     int f, const CompositeVector& u, Teuchos::RCP<const WRM> wrm_model) 
 {
-  if (u.HasComponent("face")) {
-    const Epetra_MultiVector& u_face = *u.ViewComponent("face");
-    return u_face[f][0];
+  const std::vector<int>& bc_model = op_bc_->bc_model();
+  const std::vector<double>& bc_value = op_bc_->bc_value();
+
+  if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+    return bc_value[f];
   } else {
-    const std::vector<int>& bc_model = op_bc_->bc_model();
-    const std::vector<double>& bc_value = op_bc_->bc_value();
+    const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
+    AmanziMesh::Entity_ID_List cells;
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int c = cells[0];
 
-    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      return bc_value[f];
+    double pc_shift = atm_pressure_;   
+    double trans_f = op_matrix_diff_->ComputeTransmissibility(f);
+    double g_f = op_matrix_diff_->ComputeGravityFlux(f);
+    double lmd = u_cell[0][c];
+    double bnd_flux = bc_value[f];
+    int dir;
+    mesh_->face_normal(f, false, c, &dir);
+
+    double max_val = atm_pressure_;
+    double min_val;
+    if (bnd_flux < 0.0) {
+      min_val = u_cell[0][c];
     } else {
-      const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
-      AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      int c = cells[0];
-
-      double pc_shift = atm_pressure_;   
-      double trans_f = op_matrix_diff_->ComputeTransmissibility(f);
-      double g_f = op_matrix_diff_->ComputeGravityFlux(f);
-      double lmd = u_cell[0][c];
-      double bnd_flux = bc_value[f];
-      int dir;
-      mesh_->face_normal(f, false, c, &dir);
-
-      double max_val = atm_pressure_;
-      double min_val;
-      if (bnd_flux < 0.0) {
-        min_val = u_cell[0][c];
-      } else {
-        min_val= u_cell[0][c] + (g_f - bc_value[f]) / (dir*trans_f);
-      }
-      double eps = std::max(1.0e-4 * std::abs(bnd_flux), 1.0e-8);
-
-      const KRelFn func = &WRM::k_relative;       
-      Amanzi::BoundaryFaceSolver<WRM> bnd_solver(trans_f, g_f, u_cell[0][c], lmd, bnd_flux, dir, pc_shift, 
-                                                 min_val, max_val, eps, wrm_model, func);
-      lmd = bnd_solver.FaceValue();
-
-      return lmd;      
+      min_val= u_cell[0][c] + (g_f - bc_value[f]) / (dir * trans_f);
     }
+    double eps = std::max(1.0e-4 * std::abs(bnd_flux), 1.0e-8);
+
+    const KRelFn func = &WRM::k_relative;       
+    Amanzi::BoundaryFaceSolver<WRM> bnd_solver(trans_f, g_f, u_cell[0][c], lmd, bnd_flux, dir, pc_shift, 
+                                               min_val, max_val, eps, wrm_model, func);
+    lmd = bnd_solver.FaceValue();
+
+    return lmd;      
   }
 }
 

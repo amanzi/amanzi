@@ -296,5 +296,34 @@ AmanziGeometry::Point OperatorDiffusionMFDwithGravity::GravitySpecialDirection_(
   }
 }
 
+
+/* ******************************************************************
+* Return value of the gravity flux on the given face f.
+****************************************************************** */
+double OperatorDiffusionMFDwithGravity::ComputeGravityFlux(int f) const
+{
+  AmanziMesh::Entity_ID_List cells;
+  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  int c = cells[0];
+
+  double gflux;
+  const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+
+  if (K_.get()) {
+    gflux = (((*K_)[c] * g_) * normal);
+  } else {
+    gflux = g_ * normal;
+  }
+
+  if (rho_cv_ == Teuchos::null) {
+    gflux *= rho_;
+  } else {
+    const Epetra_MultiVector& rho_c = *rho_cv_->ViewComponent("cell", true);
+    gflux *= rho_c[0][c];
+  }
+
+  return gflux;
+}
+
 }  // namespace Operators
 }  // namespace Amanzi

@@ -26,21 +26,18 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* This is a conventional tro-point flux approximation scheme for
-* general meshes.
+* The conventional FV scheme for a general mesh.
 ****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverseTPFA(int cell, const Tensor& permeability,
-                                           DenseMatrix& W)
+int MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& W)
 {
   int d = mesh_->space_dimension();
-  double volume = mesh_->cell_volume(cell);
 
   Entity_ID_List faces;
   std::vector<int> dirs;
-  mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
   int nfaces = faces.size();
 
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(cell);
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   AmanziGeometry::Point a(d);
 
   W.PutScalar(0.0);
@@ -51,7 +48,7 @@ int MFD3D_Diffusion::MassMatrixInverseTPFA(int cell, const Tensor& permeability,
 
     a = xf - xc;
     double s = mesh_->face_area(f) * dirs[n] / norm(a);
-    double Knn = ((permeability * a) * normal) * s;
+    double Knn = ((K * a) * normal) * s;
     double dxn = a * normal;
     W(n, n) = Knn / fabs(dxn);
   }
@@ -60,24 +57,47 @@ int MFD3D_Diffusion::MassMatrixInverseTPFA(int cell, const Tensor& permeability,
 
 
 /* ******************************************************************
-* This is a debug version of the above routine for a scalar tensor
-* and an orthogonal brick element.
+* The one-sided transmissibility coefficient. Any change to this 
+* routine must be consistent with the above routine.
 ****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverseDiagonal(int cell, const Tensor& permeability,
-                                               DenseMatrix& W)
+double MFD3D_Diffusion::Transmissibility(int f, int c, const Tensor& K)
+{
+  int dir, d = mesh_->space_dimension();
+
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  AmanziGeometry::Point a(d);
+
+  const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+  const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+
+  a = xf - xc;
+  double s = mesh_->face_area(f) * dir / norm(a);
+  double Knn = ((K * a) * normal) * s;
+  double dxn = a * normal;
+  double W = Knn / fabs(dxn);
+
+  return W;
+}
+
+
+/* ******************************************************************
+* The debug version of the above FV scheme for a scalar tensor and
+* an orthogonal brick element.
+****************************************************************** */
+int MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatrix& W)
 {
   int d = mesh_->space_dimension();
-  double volume = mesh_->cell_volume(cell);
+  double volume = mesh_->cell_volume(c);
 
   Entity_ID_List faces;
-  mesh_->cell_get_faces(cell, &faces);
+  mesh_->cell_get_faces(c, &faces);
   int nfaces = faces.size();
 
   W.PutScalar(0.0);
   for (int n = 0; n < nfaces; n++) {
     int f = faces[n];
     double area = mesh_->face_area(f);
-    W(n, n) = nfaces * permeability(0, 0) * area * area / (d * volume);
+    W(n, n) = nfaces * K(0, 0) * area * area / (d * volume);
   }
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
@@ -86,21 +106,20 @@ int MFD3D_Diffusion::MassMatrixInverseDiagonal(int cell, const Tensor& permeabil
 /* ******************************************************************
 * Second-generation MFD method as inlemented in RC1.
 ****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverseSO(int cell, const Tensor& permeability,
-                                         DenseMatrix& W)
+int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
 {
   int d = mesh_->space_dimension();
 
   Entity_ID_List faces;
   std::vector<int> fdirs;
-  mesh_->cell_get_faces_and_dirs(cell, &faces, &fdirs);
+  mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
 
   Entity_ID_List nodes, corner_faces;
-  mesh_->cell_get_nodes(cell, &nodes);
+  mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
-  Tensor K(permeability);
-  K.Inverse();
+  Tensor Kinv(K);
+  Kinv.Inverse();
 
   // collect all corner matrices
   std::vector<Tensor> Mv;
@@ -110,7 +129,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int cell, const Tensor& permeability,
 
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
-    mesh_->node_get_cell_faces(v, cell, (ParallelTypeCast)WhetStone::USED, &corner_faces);
+    mesh_->node_get_cell_faces(v, c, (ParallelTypeCast)WhetStone::USED, &corner_faces);
     int nfaces = corner_faces.size();
     if (nfaces < d) {
       Errors::Message msg;
@@ -125,7 +144,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int cell, const Tensor& permeability,
     double cwgt_tmp = fabs(N.Det());
 
     N.Inverse();
-    NK = N * K;
+    NK = N * Kinv;
 
     N.Transpose();
     Mv_tmp = NK * N;
@@ -141,7 +160,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int cell, const Tensor& permeability,
   // rescale corner weights
   double factor = 0.0;
   for (int n = 0; n < nnodes; n++) factor += cwgt[n];
-  factor = mesh_->cell_volume(cell) / factor;
+  factor = mesh_->cell_volume(c) / factor;
 
   for (int n = 0; n < nnodes; n++) cwgt[n] *= factor;
 
@@ -149,7 +168,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int cell, const Tensor& permeability,
   W.PutScalar(0.0);
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
-    mesh_->node_get_cell_faces(v, cell, (ParallelTypeCast)WhetStone::USED, &corner_faces);
+    mesh_->node_get_cell_faces(v, c, (ParallelTypeCast)WhetStone::USED, &corner_faces);
 
     Tensor& Mv_tmp = Mv[n];
     for (int i = 0; i < d; i++) {

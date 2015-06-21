@@ -193,6 +193,10 @@ void Richards_PK::EnforceConstraints_Inflow(Teuchos::RCP<CompositeVector> u)
       double kr1 = relperm_->Compute(c, u_cell[0][c]);
       double kr2 = std::min(1.0, -value * mu_cell[0][c] / (Knn * rho_ * rho_ * g_));
       k_face[0][f] = (molar_rho_ / mu_cell[0][c]) * (kr1 + kr2) / 2;
+
+// bc_value[f] /= flux_units_;
+// value = DeriveBoundaryFaceValue(f, *u, wrm_->second[(*wrm_->first)[c]]);
+// std::cout << f << " val =" << relperm_->Compute(c, value) << " est=" << (kr1 + kr2) / 2 << std::endl; 
     } 
   }
 

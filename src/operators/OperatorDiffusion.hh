@@ -58,9 +58,6 @@ class OperatorDiffusion {
           const Teuchos::Ptr<const CompositeVector>& flux,
           const Teuchos::Ptr<const CompositeVector>& u) {};
 
-  //Apply nonlinear 1D solver to compute consistent solution value on a boundary face
-  double DeriveBoundaryFaceValue(int f, double atm_pressure, const CompositeVector& u);
-
   // -- after solving the problem: postrocessing
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux) = 0;
 
@@ -68,9 +65,6 @@ class OperatorDiffusion {
   virtual void ApplyBCs(bool primary, bool eliminate) = 0;
   virtual void ModifyMatrices(const CompositeVector& u) = 0;
   virtual void ScaleMassMatrices(double s) = 0;
-
-  virtual double ComputeTransmissibility(int face) { return 0.0; }
-  virtual double ComputeGravityFlux(int face) { return 0.0; }
 
   // default implementation  
   virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
@@ -144,6 +138,10 @@ class OperatorDiffusion {
     Exceptions::amanzi_throw(msg);
   }
   
+  // interface to solvers for treating nonlinear BCs.
+  virtual double ComputeTransmissibility(int f) const = 0;
+  virtual double ComputeGravityFlux(int f) const = 0;
+
   // access
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
   Teuchos::RCP<Operator> global_operator() { return global_op_; }

@@ -85,11 +85,12 @@ class OperatorDiffusionFVwithGravity : public OperatorDiffusionFV {
   virtual void ModifyMatrices(const CompositeVector& u) {};
   virtual void ScaleMassMatrices(double s) {};
 
-  // nonlinear boundary conditions
-  virtual double ComputeGravityFlux(int face);
+  // Developments
+  // -- interface to solvers for treating nonlinear BCs.
+  virtual double ComputeGravityFlux(int f) const;
 
   // access
-  const CompositeVector gravity_terms() { return *gravity_term_; }
+  const CompositeVector& gravity_terms() { return *gravity_term_; }
 
  protected:
   virtual void ComputeJacobianLocal_(
