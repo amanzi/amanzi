@@ -115,7 +115,7 @@ class Richards_PK : public Flow_PK {
   // -- initization members
   void SolveFullySaturatedProblem(double t_old, CompositeVector& u, const std::string& solver_name);
   void EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector> u);
-  void EnforceConstraints_Inflow(Teuchos::RCP<CompositeVector> u);
+  void EnforceConstraints_Inflow(Teuchos::RCP<const CompositeVector> u);
 
   void ClipHydrostaticPressure(const double pmin, Epetra_MultiVector& p);
   void ClipHydrostaticPressure(const double pmin, const double s0, Epetra_MultiVector& p);

@@ -309,20 +309,23 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
                       num_list.get<double>("steady time step increase factor",ST_SP_DT_INCR_FACTOR));
                 }
 		// initialization
-		if (num_list.get<bool>("steady initialize with darcy", ST_INIT_DARCY_BOOL)) {
+		if (ua_list.isSublist("Initialization")) {
+		  Teuchos::ParameterList& ini_list = ua_list.sublist("Initialization");
 		  Teuchos::ParameterList& sti_init = sti_list.sublist("initialization");
+                  if (ini_list.isParameter("clipping saturation value"))
+                      sti_init.set<double>("clipping saturation value", ini_list.get<double>("clipping saturation value"));
+                  if (ini_list.isParameter("clipping pressure value"))
+                      sti_init.set<double>("clipping pressure value", ini_list.get<double>("clipping pressure value"));
+
                   if (have_picard_params && use_picard_) {
 		    sti_init.set<std::string>("method", "picard");
                     sti_init.set<std::string>("linear solver", pic_params.get<std::string>("linear solver", PIC_SOLVE));
-                    sti_init.set<double>("clipping saturation value", pic_params.get<double>("clipping saturation value", PIC_CLIP_SAT));
-                    sti_init.set<double>("clipping pressure value", pic_params.get<double>("clipping pressure value", PIC_CLIP_PRESSURE));
 
                     Teuchos::ParameterList& pic_list = sti_init.sublist("picard parameters");
                     pic_list.set<double>("convergence tolerance", pic_params.get<double>("picard convergence tolerance", PICARD_TOLERANCE));
                     pic_list.set<int>("maximum number of iterations", pic_params.get<int>("picard maximum number of iterations", PIC_MAX_ITER));
                   } else if (use_picard_) {
 		    sti_init.set<std::string>("method", "picard");
-                    sti_init.set<double>("clipping saturation value", PIC_CLIP_SAT);
                     sti_init.set<double>("clipping pressure value", PIC_CLIP_PRESSURE);
 
                     Teuchos::ParameterList& pic_list = sti_init.sublist("picard parameters");

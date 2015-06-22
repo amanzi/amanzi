@@ -167,12 +167,12 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
 /* ******************************************************************
 * Enforce constraints on the inflow boundary.
 ****************************************************************** */
-void Richards_PK::EnforceConstraints_Inflow(Teuchos::RCP<CompositeVector> u)
+void Richards_PK::EnforceConstraints_Inflow(Teuchos::RCP<const CompositeVector> u)
 {
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
   const Epetra_MultiVector& mu_cell = *mu->ViewComponent("cell");
 
-  Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
+  const Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
   Epetra_MultiVector& k_face = *krel_->ViewComponent("face", true);
   AmanziMesh::Entity_ID_List cells;
 
@@ -194,9 +194,9 @@ void Richards_PK::EnforceConstraints_Inflow(Teuchos::RCP<CompositeVector> u)
       double kr2 = std::min(1.0, -value * mu_cell[0][c] / (Knn * rho_ * rho_ * g_));
       k_face[0][f] = (molar_rho_ / mu_cell[0][c]) * (kr1 + kr2) / 2;
 
-// bc_value[f] /= flux_units_;
 // value = DeriveBoundaryFaceValue(f, *u, wrm_->second[(*wrm_->first)[c]]);
 // std::cout << f << " val =" << relperm_->Compute(c, value) << " est=" << (kr1 + kr2) / 2 << std::endl; 
+// k_face[0][f] = value * (molar_rho_ / mu_cell[0][c]);
     } 
   }
 
