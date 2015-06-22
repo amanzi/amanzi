@@ -925,6 +925,7 @@ double Richards_PK::DeriveBoundaryFaceValue(
   if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
     return bc_value[f];
   } else {
+    const Epetra_MultiVector& mu_cell = *S_->GetFieldData("viscosity_liquid")->ViewComponent("cell");
     const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
     AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -934,7 +935,7 @@ double Richards_PK::DeriveBoundaryFaceValue(
     double trans_f = op_matrix_diff_->ComputeTransmissibility(f);
     double g_f = op_matrix_diff_->ComputeGravityFlux(f);
     double lmd = u_cell[0][c];
-    double bnd_flux = bc_value[f];
+    double bnd_flux = bc_value[f] / (molar_rho_ / mu_cell[0][c]);
     int dir;
     mesh_->face_normal(f, false, c, &dir);
 

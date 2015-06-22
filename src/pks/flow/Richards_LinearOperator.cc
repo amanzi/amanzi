@@ -116,7 +116,7 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
   dKdP_->ScaleMasterAndGhosted(molar_rho_);
 
   // modify relative permeability coefficient for influx faces
-  EnforceConstraints_Inflow(u);
+  UpwindInflowBoundary(u);
 
   // calculate diffusion operator
   op_matrix_->Init();
@@ -165,9 +165,9 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
 
 
 /* ******************************************************************
-* Enforce constraints on the inflow boundary.
+* Calculates rel perm on the upwind boundary using a FV model.
 ****************************************************************** */
-void Richards_PK::EnforceConstraints_Inflow(Teuchos::RCP<const CompositeVector> u)
+void Richards_PK::UpwindInflowBoundary(Teuchos::RCP<const CompositeVector> u)
 {
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
   const Epetra_MultiVector& mu_cell = *mu->ViewComponent("cell");
@@ -193,10 +193,33 @@ void Richards_PK::EnforceConstraints_Inflow(Teuchos::RCP<const CompositeVector> 
       double kr1 = relperm_->Compute(c, u_cell[0][c]);
       double kr2 = std::min(1.0, -value * mu_cell[0][c] / (Knn * rho_ * rho_ * g_));
       k_face[0][f] = (molar_rho_ / mu_cell[0][c]) * (kr1 + kr2) / 2;
+    } 
+  }
 
-// value = DeriveBoundaryFaceValue(f, *u, wrm_->second[(*wrm_->first)[c]]);
-// std::cout << f << " val =" << relperm_->Compute(c, value) << " est=" << (kr1 + kr2) / 2 << std::endl; 
-// k_face[0][f] = value * (molar_rho_ / mu_cell[0][c]);
+  krel_->ScatterMasterToGhosted("face");
+}
+
+
+/* ******************************************************************
+* Calculates rel perm on the upwind boundary using a FV model.
+****************************************************************** */
+void Richards_PK::UpwindInflowBoundary_New(Teuchos::RCP<const CompositeVector> u)
+{
+  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
+  const Epetra_MultiVector& mu_cell = *mu->ViewComponent("cell");
+
+  Epetra_MultiVector& k_face = *krel_->ViewComponent("face", true);
+  AmanziMesh::Entity_ID_List cells;
+
+  for (int f = 0; f < nfaces_owned; f++) {
+    if ((bc_model[f] == Operators::OPERATOR_BC_NEUMANN || 
+         bc_model[f] == Operators::OPERATOR_BC_MIXED) && bc_value[f] < 0.0) {
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int c = cells[0];
+
+      double value = DeriveBoundaryFaceValue(f, *u, wrm_->second[(*wrm_->first)[c]]);
+      double kr = relperm_->Compute(c, value);
+      k_face[0][f] = kr * (molar_rho_ / mu_cell[0][c]);
     } 
   }
 

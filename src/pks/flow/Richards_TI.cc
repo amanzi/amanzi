@@ -49,6 +49,9 @@ void Richards_PK::Functional(double t_old, double t_new,
   Operators::CellToFace_ScaleInverse(mu, krel_);
   krel_->ScaleMasterAndGhosted(molar_rho_);
 
+  // modify relative permeability coefficient for influx faces
+  // UpwindInflowBoundary_New(u_new->Data());
+
   relperm_->ComputeDerivative(u_new->Data(), dKdP_); 
   RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
   upwind_->Compute(*darcy_flux_upwind, *u_new->Data(), bc_model, bc_value, *dKdP_, *dKdP_, func2);
@@ -239,6 +242,9 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   upwind_->Compute(*darcy_flux_upwind, *u->Data(), bc_model, bc_value, *krel_, *krel_, func1);
   Operators::CellToFace_ScaleInverse(mu, krel_);
   krel_->ScaleMasterAndGhosted(molar_rho_);
+
+  // modify relative permeability coefficient for influx faces
+  // UpwindInflowBoundary_New(u->Data());
 
   relperm_->ComputeDerivative(u->Data(), dKdP_);
   RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
