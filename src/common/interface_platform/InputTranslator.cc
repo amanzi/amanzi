@@ -998,7 +998,8 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
           //TODO: EIB - error handle here!!!
 	}
         XMLString::release(&textContent);
-    	//TODO: EIB - now get process model option
+    	//TODO: EIB - moved this to unstr_chemistry_controls
+        /*
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("process_model"));
 	if (nodeAttr) {
           textContent = XMLString::transcode(nodeAttr->getNodeValue());
@@ -1011,6 +1012,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
           //cpkPL.set<double>("max chemistry to transport timestep ratio",get_double_constant(textContent,*def_list));
 	}
         XMLString::release(&textContent);
+         */
       }
       XMLString::release(&attrName);
     }
@@ -2082,6 +2084,11 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   
                   XMLString::release(&textContent);
                 }
+                else if (strcmp(tagname,"nonlinear_iteration_initial_guess_extrapolation_order")==0) {
+                  textContent = XMLString::transcode(currentNode->getTextContent());
+                  ssPL.set<int>("steady nonlinear iteration initial guess extrapolation order",get_int_constant(textContent,*def_list));
+                  XMLString::release(&textContent);
+                }
                 else if (strcmp(tagname,"unstr_initialization")==0) {
                   Teuchos::ParameterList ptiPL;
                   DOMNodeList* kids = currentNode->getChildNodes();
@@ -2269,7 +2276,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     }
                   }
                 }
-                if (tagname == "preconditioner") {
+                else if (tagname == "preconditioner") {
                   std::string value(trim_string(XMLString::transcode(currentNode->getTextContent())));
                   if (value == "trilinos_ml") {
                     tcPL.set<std::string>("transient preconditioner","Trilinos ML");
@@ -2291,6 +2298,11 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   if (!iwd)
                     value == "1" ? iwd = true : iwd = false;
                   tcPL.set<bool>("transient initialize with darcy",iwd);
+                  XMLString::release(&textContent);
+                }
+                else if (tagname == "nonlinear_iteration_initial_guess_extrapolation_order") {
+                  textContent = XMLString::transcode(currentNode->getTextContent());
+                  tcPL.set<int>("transient nonlinear iteration initial guess extrapolation order",get_int_constant(textContent,*def_list));
                   XMLString::release(&textContent);
                 }
                 else if (tagname != "comments") {
@@ -2655,11 +2667,25 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     throw_error_illformed(algo_str_name, "max_chemistry_transport_timestep_ratio", nodeName);
                   }
                 }
-                else {
-                  // TODO:: EIB - should I error or just ignore???
-                  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing " << algo_str_name << "->" << nodeName << " - " ;
-                  msg << tagname << " was unrecognized option. \n  Please correct and try again \n" ;
-                  Exceptions::amanzi_throw(msg);
+                else if (tagname == "process_model") {
+                  // TODO: EIB - not sure where this goes anymore
+                  if (currentNode) {
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    chemistryPL.set<double>("Tolerance",get_double_constant(textContent,*def_list));
+                    XMLString::release(&textContent);
+                  }
+                  // TODO: EIB - removed error message until I figure out where this went
+                  /*
+                  else {
+                    throw_error_illformed(algo_str_name, "process_model", nodeName);
+                  }
+                   */
+                }
+                else if (tagname != "comments") {
+                  // warn about unrecognized element
+                  std::stringstream elem_name;
+                  elem_name << nodeName <<  "->"  << tagname;
+                  throw_warning_skip(elem_name.str());
                 }
               }
             }
@@ -3313,6 +3339,7 @@ Teuchos::ParameterList get_phases(DOMDocument* xmlDoc, Teuchos::ParameterList de
                       // TODO: EIB - do something with this info
                       Teuchos::ParameterList solPL;
                       std::string soluteName(XMLString::transcode(curGGKid->getTextContent()));
+                      solutes.append(soluteName);
                       attrMap = curGGKid->getAttributes();
                       // put attribute - coefficient_of_diffusion in diffusion array
                       nodeAttr = attrMap->getNamedItem(XMLString::transcode("coefficient_of_diffusion"));
@@ -3348,6 +3375,9 @@ Teuchos::ParameterList get_phases(DOMDocument* xmlDoc, Teuchos::ParameterList de
                     }
                   }
                 }
+                dcPL.set<Teuchos::Array<std::string> >("Component Solutes",solutes);
+                list.sublist("Aqueous").sublist("Phase Components").sublist(phaseName ) = dcPL;
+                foundPC = true;
               }
             }
           }
