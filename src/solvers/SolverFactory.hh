@@ -83,13 +83,13 @@ SolverFactory<Vector, VectorSpace>::Create(Teuchos::ParameterList& slist)
           Teuchos::rcp(new SolverNKA<Vector,VectorSpace>(nka_list));
       return solver;
     } else if (type == "aa") {
-      if (!slist.isSublist("nka parameters")) {
+      if (!slist.isSublist("aa parameters")) {
         Errors::Message msg("SolverFactory: missing sublist \"nka parameters\"");
         Exceptions::amanzi_throw(msg);
       }
-      Teuchos::ParameterList nka_list = slist.sublist("nka parameters");
+      Teuchos::ParameterList aa_list = slist.sublist("aa parameters");
       Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
-          Teuchos::rcp(new SolverAA<Vector,VectorSpace>(nka_list));
+          Teuchos::rcp(new SolverAA<Vector,VectorSpace>(aa_list));
       return solver;
     } else if (type == "Newton") {
       if (!slist.isSublist("Newton parameters")) {

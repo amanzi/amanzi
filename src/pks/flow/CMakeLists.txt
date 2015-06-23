@@ -253,6 +253,12 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/flow_bc_factory.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: flow-boundary solver test
+    add_amanzi_test(flow_richards_boundary_solver flow_richards_boundary_solver
+                    KIND unit
+                    SOURCE test/Main.cc test/flow_richards_boundary_solver.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
     # Test: 3D Richards
     set(amanzi_libs geometry mesh mesh_factory flow pks operators state whetstone solvers output data_structures)

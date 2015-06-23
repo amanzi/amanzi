@@ -455,9 +455,10 @@ void Richards_PK::Initialize()
   seepage_mass_ = 0.0;
   initialize_with_darcy_ = true;
   num_itrs_ = 0;
-
+  
   // Conditional initialization of lambdas from pressures.
   CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
+
   if (pressure.HasComponent("face")) {
     DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
                                    *pressure.ViewComponent("face"));

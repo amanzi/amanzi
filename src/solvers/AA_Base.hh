@@ -30,6 +30,7 @@ class AA_Base {
   }
 
   void QRdelete();
+  void TestQR(int nv);
   void Relax();
   void Restart();
   void Correction(const Vector&, Vector&, const Teuchos::Ptr<const Vector>& oldv=Teuchos::null);
@@ -176,17 +177,36 @@ void AA_Base<Vector, VectorSpace>::Restart()
 template<class Vector, class VectorSpace>
 void AA_Base<Vector, VectorSpace>::QRdelete(){
 
-  std::cout<<"*************** QR DELETE ******************\n";
+  //std::cout<<"*************** QR DELETE ******************\n";
 
   Teuchos::RCP<Vector> temp_vec = Teuchos::rcp(new Vector(*Q_[0]));
   int m = num_vec_ - 1;
 
+  // for (int i=0;i< m;i++){
+  //   //int I = (first_f_ + i)%(mvec_ + 1);
+  //   std::cout<<"Q "<<i<<"\n";
+  //   Q_[i]->Print(std::cout);
+  // }
+
+  // std::cout<<"R matrix "<<"\n";
+  // for (int i=0;i< m; i++){
+  //   for (int j=i;j< m; j++){
+  //     int loc_id=j*(j+1)/2 + i;
+  //     std::cout<<R_[loc_id]<<" ";
+  //   }
+  //   std::cout<<"\n";
+  // }
+
+
+
+
   for (int i=0; i < m - 1; i++){
     int loc_id = (i+2)*(i+3)/2 - 1; 
+
     double temp =  sqrt( R_[loc_id]*R_[loc_id] + R_[loc_id-1]*R_[loc_id-1]);
     double c = R_[loc_id-1]/temp;
     double s =   R_[loc_id]/temp;
-    //std::cout<<"temp "<<temp<<" c "<<c<<" s "<<s<<"\n";
+
     R_[loc_id-1] = temp;
     R_[loc_id] = 0.;
     if (i < m - 2){
@@ -197,16 +217,20 @@ void AA_Base<Vector, VectorSpace>::QRdelete(){
         R_[loc_id] = temp;          
       }
     }
-    //    int I  = (first_f_ + i)%(mvec_ + 1);
-    // int I2 = (first_f_ + i + 1)%(mvec_ + 1);
+
     *temp_vec = *Q_[i];
     temp_vec -> Update(s, *Q_[i+1], c);
     Q_[i+1] -> Update(-s, *Q_[i], c);
    *Q_[i] = *temp_vec;
   }
 
-  for (int i=0;i<m*(m-1)/2;i++){
-    R_[i] = R_[i+1];
+
+  for (int i=0;i<m-1; i++){
+    for (int j=0;j<=i ; j++){
+      int new_id =i*(i+1)/2 + j;
+      int old_id =(i+1)*(i+2)/2 + j;
+      R_[new_id] = R_[old_id];
+    }
   }
 
   first_f_=(first_f_ + 1)%(mvec_ + 1);
@@ -214,7 +238,7 @@ void AA_Base<Vector, VectorSpace>::QRdelete(){
 
   
 
-  // for (int i=0;i<m;i++){
+  // for (int i=0;i<m-1;i++){
   //   //int I = (first_f_ + i)%(mvec_ + 1);
   //   std::cout<<"Q "<<i<<"\n";
   //   Q_[i]->Print(std::cout);
@@ -229,6 +253,40 @@ void AA_Base<Vector, VectorSpace>::QRdelete(){
   //   std::cout<<"\n";
   // }
   //exit(0);
+
+}
+
+
+template<class Vector, class VectorSpace>
+void AA_Base<Vector, VectorSpace>::TestQR(int nv){
+
+  std::cout<<"*************** Test QR ******************\n";
+  Teuchos::RCP<Vector> ff = Teuchos::rcp(new Vector(*Q_[0]));
+
+  double norm2 = 0;
+  int loc_id = 0.;
+  ff -> PutScalar(0.);
+  std::cout << "num_vec_ "<<num_vec_<<"\n";
+  for (int i=0; i<nv; i++){
+    ff -> PutScalar(0.);
+    for (int j=0; j<=i; j++){
+      // std::cout<<"R_ "<<R_[loc_id]<<"\n";
+      ff -> Update(R_[loc_id], *Q_[j], 1.);
+      loc_id++;
+      // std::cout<<"Q "<<j<<"\n";
+      // Q_[j]->Print(std::cout);
+    }
+    int I = (first_f_ + i)%(mvec_ + 1);
+    ff -> Update(-1., *dF_[I], 1.);
+
+    //std::cout<<"I "<<I<<"\n";
+    //dF_[I]->Print(std::cout);
+
+    ff->Norm2(&norm2);
+    std::cout<<"norm2 "<<norm2<<"\n";
+  }
+
+  if (norm2 > 0.0001) exit(0);
 
 }
 
@@ -249,43 +307,40 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   Teuchos::RCP<Vector> fun = Teuchos::rcp(new Vector(f));
   Teuchos::RCP<Vector> tmp = Teuchos::rcp(new Vector(f));
 
-  std::cout.precision(12);
 
-  // std::cout<<"mvec "<<mvec_<<" num_vec_ "<<num_vec_<<"\n";
-  // std::cout<<"new "<<new_f_<<" first "<<first_f_<<" last "<<last_f_<<"\n";
-  // std::cout<<"\n";
 
   // std::cout<<"F\n"; ff->Print(std::cout);
   // std::cout<<"u\n"; u_old->Print(std::cout);
+
+  // double norm_u, norm_f;
+  // ff->Norm2(&norm_f);
+  // u_old->Norm2(&norm_u);
+
+  // std::cout<<"norm_f "<<norm_f<<" norm_u "<<norm_u<<"\n";
 
   assert(new_f_ >= 0);
   // Save the accelerated correction for the next_f_ call.
 
   //ff->Scale(-1.);
 
-  *dF_[new_f_] = *ff;                             // F_new = ff
+  *dF_[new_f_] = *ff;                             // dF_new = ff
   //*F_test[new_f_] = *ff;
   if (u_old != Teuchos::null) {
     *u_[new_f_] = *u_old;                         // u_new = u_old
 
     *dG_[new_f_] = *u_old;
-     dG_[new_f_]->Update(-1., *ff, 1);
+    dG_[new_f_]->Update(-1., *ff, 1);            // dG_new = u - ff
   }
 
   if (last_f_ >= 0){
     k = last_f_;
-    dF_[last_f_] -> Update(1., *dF_[new_f_], -1.); 
-    dG_[last_f_] -> Update(1., *dG_[new_f_], -1.); 
-    // std::cout<<"last_f "<<last_f_<<"\n";
-    // dF_[last_f_] -> Print(std::cout);
+    dF_[last_f_] -> Update(1., *dF_[new_f_], -1.);   //dF_last =  dF_new - dF_last
+    dG_[last_f_] -> Update(1., *dG_[new_f_], -1.);   //dG_last = dG_new  - dG_last
   }
 
-  //std::cout<<"new_f "<<new_f_<<"\n";
-  //  dF_[new_f_] -> Print(std::cout);
+  // std::cout<<"new_f "<<new_f_<<"\n";
+  // dF_[new_f_] -> Print(std::cout);
 
-  // double *th_test = new double[num_vec_];
-  // double *y = new double[num_vec_];
-  // int *row = new int[num_vec_];
   double alp;
   double eps = 1e-12;
 
@@ -294,6 +349,7 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
       double norm2;
       *Q_[last_f_] = *dF_[last_f_];
       Q_[last_f_] -> Norm2(&norm2);
+      //std::cout<<"norm2 "<<norm2<<"\n";
       Q_[last_f_] -> Scale(1./norm2);
       R_[0] = norm2;
     }
@@ -301,6 +357,7 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
     if (num_vec_ == mvec_){
     // Delete old Vector
       QRdelete();
+      //TestQR(num_vec_ - 1);
     }
 
     double norm2 = 0.;
@@ -315,19 +372,19 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
         tmp -> Update(-val, *Q_[i], 1.);
       }    
       tmp -> Norm2(&norm2); 
-      if (norm2 < 1e-12) QRdelete();
+
+      if (norm2 < 1e-12) {
+        QRdelete();       
+        //TestQR(num_vec_ - 1);
+        //exit(0);
+      }
     }
 
-    *Q_[last_f_] = *tmp;
-    Q_[last_f_] -> Scale(1./norm2);
-    R_[last_col_i + num_vec_ - 1] = norm2; 
-
-    // while ((norm2 < 1e-12)&&(num_vec_ > 1)){
-    //   dF_[last_f_] -> Print(std::cout);
-    // }
+    *Q_[num_vec_ - 1] = *tmp;
+    Q_[num_vec_ - 1] -> Scale(1./norm2);
+    R_[last_col_i + num_vec_ - 1] = norm2;     
 
   }
-
 
   // for (int i=0;i<num_vec_;i++){
   //   //    int I = (first_f_ + i)%(mvec_ + 1);
@@ -335,26 +392,22 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   //   Q_[i]->Print(std::cout);
   // }
 
-  std::cout<<"R matrix "<<"\n";
-  for (int i=0;i<num_vec_; i++){
-    for (int j=i;j<num_vec_; j++){
-      int loc_id=j*(j+1)/2 + i;
-      std::cout<<R_[loc_id]<<" ";
-    }
-    std::cout<<"\n";
-  }
+  // std::cout<<"R matrix "<<"\n";
+  // for (int i=0;i<num_vec_; i++){
+  //   for (int j=i;j<num_vec_; j++){
+  //     int loc_id=j*(j+1)/2 + i;
+  //     std::cout<<R_[loc_id]<<" ";
+  //   }
+  //   std::cout<<"\n";
+  // }
 
-  // std::cout<<"mvec "<<mvec_<<" num_vec_ "<<num_vec_<<"\n";
-  // std::cout<<"new "<<new_f_<<" first "<<first_f_<<" last "<<last_f_<<"\n";
-  // std::cout<<"\n";
+  //TestQR(num_vec_);
+
       
   double *b  = new double[num_vec_];
   double *th = new double[num_vec_];
 
-  // std::cout<<"NEW F\n";
-  // dF_[new_f_]->Print(std::cout);
-  // std::cout<<"NEW U\n";
-  // u_[new_f_]->Print(std::cout);
+  // Solve system R*th = Q^t * F_new
 
   for (int i=0; i<num_vec_; i++){
     th[i] = 0.;
@@ -368,16 +421,15 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
       int loc_id = j*(j+1)/2 + i;
       th[i] -= R_[loc_id]*th[j];
     }
-    //std::cout<<"i "<<i<<" diag_id "<<diag_id<<"\n";
     th[i] = th[i]/R_[diag_id];
   }
   
 
   // alp = 1.;// - 0.001*num_vec_;
 
-  std::cout<<"theta\n";
-  for (int i=0;i<num_vec_;i++) std::cout<<th[i]<<" ";
-  std::cout<<"\n";
+  // std::cout<<"theta\n";
+  // for (int i=0;i<num_vec_;i++) std::cout<<th[i]<<" ";
+  // std::cout<<"\n";
   // std::cout<<"alpha "<<alp<<"\n";
   
 
@@ -394,41 +446,16 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   }
   // std::cout<<"dir\n";
   // dir.Print(std::cout);
-  
 
-  // for (int i=0; i<num_vec_; i++) {
-  //   int I = (first_f_ + i)%(mvec_ + 1);
-  //   std::cout<<"dir I "<<I<<"\n";
-  //   dir.Update(-th[i], *u_[I], 1.);
-  //   dir.Update(th[i], *F_test[I], 1.);
-  // }
-
-  // beta_ = 1.;
-
-  // dir =  *u_[new_f_];
-  // dir.Update(-alp, *u_[new_f_], 1.);
-  // dir.Update(beta_, *dF_[new_f_], 1.);
-
-  // for (int i=0; i<num_vec_; i++) {
-  //   int I = (first_f_ + i)%(mvec_ + 1);
-  //   dir.Update(-th[i]*beta_, *dF_[I], 1.);
-  //   dir.Update(-th[i], *u_[I], 1.);
-  // }
-
-  // dir.Scale(beta_);
-
-  // if (num_vec_ > 0){
-  //   for (int i=0; i<num_vec_; i++) {
-  //     int I = (first_f_ + i)%(mvec_ + 1);
-  //     dir.Update(-th[i], *u_[I], 1.);
-  //   }
-  //   dir.Update(alp, *u_[new_f_], 1.);
-  // }
+  if ((beta_ >0)&&(beta_ != 1.)){
+    dir.Update(beta_ - 1, *dF_[new_f_], 1);
+    for (int i=0; i<num_vec_; i++){
+      int I = (first_f_ + i)%(mvec_ + 1);
+      dir.Update((1-beta_)*th[i], *dF_[I], 1.);
+    }
+  }
 
 
-  //  std::cout<<"dir\n"; dir.Print(std::cout);
-
-  //delete[] y;
   delete[] b;
   delete[] th;
 

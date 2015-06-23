@@ -121,7 +121,7 @@ void SolverAA<Vector, VectorSpace>::Init_()
   max_divergence_count_ = plist_.get<int>("max divergent iterations", 3);
   aa_lag_iterations_ = plist_.get<int>("lag iterations", 0);
   modify_correction_ = plist_.get<bool>("modify correction", false);
-  aa_beta_ = plist_.get<double>("relaxation parameter", 1.0);
+  aa_beta_ = plist_.get<double>("relaxation parameter", 0.7);
 
   std::string monitor_name = plist_.get<std::string>("monitor", "monitor update");
   if (monitor_name == "monitor residual") {
@@ -225,6 +225,7 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
     prec_error = fn_->ApplyPreconditioner(r, du_tmp);
+    //std::cout << "prec_error "<<prec_error<<"\n";
     //*du_tmp = *r;
 
     // Calculate the accelerated correction.

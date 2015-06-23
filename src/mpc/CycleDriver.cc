@@ -678,7 +678,7 @@ bool CycleDriver::Advance(double dt) {
     if (advance) {
       pk_->CalculateDiagnostics();
       Visualize(force_vis);
-      WriteCheckpoint(dt, force_check);
+      WriteCheckpoint(get_dt(fail), force_check);   // write Checkpoint with new dt
       Observations(force_obser);
       WriteWalkabout(force_check);
     }
