@@ -256,6 +256,7 @@ TEST_FIXTURE(test_data, AA_SOLVER) {
   plist.set("max du growth factor", 1e5);
   plist.set("max divergent iterations", 3);
   plist.set("max aa vectors", 4);
+  plist.set("relaxation parameter", 1.);
   plist.sublist("VerboseObject").set("Verbosity Level", "high");
 
   // create the Solver
