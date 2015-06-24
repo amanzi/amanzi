@@ -10,7 +10,7 @@ Overview
 The Amanzi simulator will continue to expand the available features and enhance current functionality.  This progress will result in modifications and additions to the XML input specificition.  Specific versions of the XML input specification will only work with the corresponding Amanzi release version.  The following is a description of the changes made to the XML input specification and the Amanzi release version(s) that accept the input version.
 
 Version 2.1.0 (Amanzi Release - devel - 8061/8064)
-=============================================
+==================================================
 
 Changeset 8061/8064
 
