@@ -646,13 +646,21 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_unstr_chemistry_controls">
   <xs:all minOccurs = "0" maxOccurs = "1">
+    <!-- for amanzi chemistry -->
     <xs:element name="process_model" type="xs:string"/>
     <xs:element name="chem_tolerance" type="typedef_exponential"/>
     <xs:element name="chem_max_newton_iterations" type="xs:integer"/>
-    <xs:element name="log_formulation" type="xs:string"/>
+    <xs:element name="chem_max_time_step" type="typedef_exponential"/>
     <xs:element name="max_chemistry_transport_timestep_ratio" type="typedef_exponential"/>
     <xs:assert  test="@process_model = ('implicit operator split','none')"/>	
-    <xs:assert  test="@log_formulation = ('on','off')"/>	
+    <xs:assert  test="@log_formulation = ('on','off')"/>
+    
+    
+    <!-- for pflotran chemistry -->
+    <xs:element name="log_formulation" type="xs:string"/>
+    <xs:element name="generate_chemistry_engine_inputfile" type="xs:string"/>
+    <xs:element name="read_chemistry_engine_inputfile" type="xs:string"/>
+    
   </xs:all>
 </xs:complexType>
 
@@ -1427,7 +1435,8 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_chemistry">
 	<xs:attribute name="state" type="xs:string"/>
-	<xs:attribute name="engine" type="xs:string"/>
+        <xs:attribute name="engine" type="xs:string"/>
+        <xs:attribute name="input_filename" type="xs:string"/>
 	<xs:assert  test="@state = ('on','off')"/>	
 	<xs:assert  test="@engine = ('amanzi','pflotran','none')"/>	
         <xs:assert  test="(@state = 'off' or (@state = 'on' and not(@engine = 'none')))"/>
