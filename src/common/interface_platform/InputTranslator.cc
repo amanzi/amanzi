@@ -912,6 +912,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
             char* textContent2 = XMLString::transcode(flowElement->getAttribute(XMLString::transcode("model")));
 	    std::string value2 = trim_string(textContent2);
 	    value2[0] = std::tolower(value2[0]);
+            def_list->set<std::string>("flow",value2);
             if (value2 == "saturated") {
               list.set<std::string>("Flow Model","Single Phase");
             }
@@ -948,12 +949,14 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
         textContent = XMLString::transcode(transElement->getAttribute(XMLString::transcode("state")));
 	value = trim_string(textContent);
 	value[0] = std::tolower(value[0]);
+        def_list->set<bool>("transport",false);
         if (value == "off"){
           list.set<std::string>("Transport Model","Off");
         }
         else {
           list.set<std::string>("Transport Model","On");
           transportON=true;
+          def_list->set<bool>("transport",true);
         }
         XMLString::release(&textContent);
       }
@@ -975,10 +978,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
         list.set<std::string>("Chemistry Model","Off");
       }
       else {
-	// EIB - this is no longer valid
-        //list.set<std::string>("Chemistry Model","On");
     	chemistryON=true;
-    	//TODO: EIB - now get chemistry engine option
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("engine"));
 	if (nodeAttr) {
           textContent = XMLString::transcode(nodeAttr->getNodeValue());
@@ -989,30 +989,32 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 
 	if (strcmp(textContent,"amanzi")==0) {
           list.set<std::string>("Chemistry Model","Amanzi");
+          def_list->set<std::string>("chemistry_engine","amanzi");
 	}
         else if (strcmp(textContent,"pflotran")==0) {
-	  // TODO: EIB - should this be pflotran or alquimia????
           list.set<std::string>("Chemistry Model","Alquimia");
+          def_list->set<std::string>("chemistry_engine","pflotran");
+          
+          // start chemistry list in def_list for later use - set engine
+          Teuchos::ParameterList chemPL;
+          if (def_list->isSublist("chemistry_PL")) {
+            chemPL = def_list->sublist("chemistry_PL");
+          }
+          chemPL.set<std::string>("Engine","PFloTran");
+          // get input file name
+          DOMNode* nodeAttr1 = attrMap->getNamedItem(XMLString::transcode("input_filename"));
+          if (nodeAttr1) {
+            char* attrName1 = XMLString::transcode(nodeAttr1->getNodeValue());
+            chemPL.set<std::string>("Engine Input File",attrName1);
+          }
+          // attach list if it didn't exist
+          def_list->sublist("chemistry_PL") = chemPL;
 	}
         else {
           //TODO: EIB - error handle here!!!
-	}
-        XMLString::release(&textContent);
-    	//TODO: EIB - moved this to unstr_chemistry_controls
-        /*
-        nodeAttr = attrMap->getNamedItem(XMLString::transcode("process_model"));
-	if (nodeAttr) {
-          textContent = XMLString::transcode(nodeAttr->getNodeValue());
         }
-        else {
-          throw_error_missattr("process_kernels", "attribute", "process_model", "chemistry");
-        }
-
-	if (strcmp(textContent,"implicit operator split")==0) {
-          //cpkPL.set<double>("max chemistry to transport timestep ratio",get_double_constant(textContent,*def_list));
-	}
+        def_list->set<std::string>("chemistry_engine",textContent);
         XMLString::release(&textContent);
-         */
       }
       XMLString::release(&attrName);
     }
@@ -2458,8 +2460,8 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 		  }
                 }
 	      }
-            list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlsPL;
-          }
+              list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlsPL;
+            }
             else if (nodeName == "unstr_preconditioners") {
               // loop over known preconditioner types
               DOMNodeList* children = tmpNode->getChildNodes();
@@ -2572,125 +2574,187 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
               
             }
             else if (nodeName == "unstr_chemistry_controls") {
-            Teuchos::ParameterList chemistryPL;
-            // go ahead and add bdg file to PL
-            // build bgd filename
-            std::string bgdfilename;
-            if (def_list->isParameter("xmlfilename") ) {
-              bgdfilename = def_list->get<std::string>("xmlfilename") ;
-              std::string new_extension(".bgd");
-              size_t pos = bgdfilename.find(".xml");
-              bgdfilename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)4);
-            }
-            else {
-              // defaulting to hardcoded name
-              bgdfilename = "isotherms.bgd" ;
-            }
-            // add bgd file and parameters to list
-            Teuchos::ParameterList bgdPL;
-            bgdPL.set<std::string>("Format","simple");
-            bgdPL.set<std::string>("File",bgdfilename);
-            chemistryPL.sublist("Thermodynamic Database") = bgdPL;
-            chemistryPL.set<std::string>("Activity Model","unit");
-            Teuchos::Array<std::string> verb;
-            if (def_list->sublist("simulation").isParameter("verbosity")) {
-              std::string verbosity = def_list->sublist("simulation").get<std::string>("verbosity") ;
-              if (verbosity == "extreme") {
-                verb.append("error");
-                chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
-              }
-              else if (verbosity == "high") {
-                verb.append("warning");
-                chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
-              }
-              else if (verbosity == "medium") {
-                verb.append("verbose");
-                chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
-              }
-              else if (verbosity == "low") {
-                verb.append("terse");
-                chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
+              Teuchos::ParameterList chemistryPL;
+              // chemistry options are difference based on engine
+              // deal with common items
+              Teuchos::Array<std::string> verb;
+              if (def_list->sublist("simulation").isParameter("verbosity")) {
+                std::string verbosity = def_list->sublist("simulation").get<std::string>("verbosity") ;
+                if (verbosity == "extreme") {
+                  verb.append("error");
+                  chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
+                }
+                else if (verbosity == "high") {
+                  verb.append("warning");
+                  chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
+                }
+                else if (verbosity == "medium") {
+                  verb.append("verbose");
+                  chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
+                }
+                else if (verbosity == "low") {
+                  verb.append("terse");
+                  chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
+                }
+                else {
+                  verb.append("silent");
+                  chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
+                }
               }
               else {
                 verb.append("silent");
                 chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
               }
-            }
-            else {
-              verb.append("silent");
-              chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
-            }
-            // loop over chemistry controls to get other options to add to PL
-            DOMNodeList* children = tmpNode->getChildNodes();
-            for (int k=0; k<children->getLength(); k++) {
-              DOMNode* currentNode = children->item(k) ;
-              if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
-                std::string tagname(std::string(XMLString::transcode(currentNode->getNodeName())));
-                if (tagname == "chem_tolerance") {
-                  if (currentNode) {
-                    textContent = XMLString::transcode(currentNode->getTextContent());
-                    chemistryPL.set<double>("Tolerance",get_double_constant(textContent,*def_list));
-                    XMLString::release(&textContent);
+              
+              // determine engine and proceed accordingly
+              if (def_list->isParameter("chemistry_engine")) {
+                if (def_list->get<std::string>("chemistry_engine") == "amanzi") {
+                  // go ahead and add bdg file to PL
+                  // build bgd filename
+                  std::string bgdfilename;
+                  if (def_list->isParameter("xmlfilename") ) {
+                    bgdfilename = def_list->get<std::string>("xmlfilename") ;
+                    std::string new_extension(".bgd");
+                    size_t pos = bgdfilename.find(".xml");
+                    bgdfilename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)4);
                   }
                   else {
-                    throw_error_illformed(algo_str_name, "chem_tolerance", nodeName);
+                    // defaulting to hardcoded name
+                    bgdfilename = "isotherms.bgd" ;
+                  }
+                  // add bgd file and parameters to list
+                  Teuchos::ParameterList bgdPL;
+                  bgdPL.set<std::string>("Format","simple");
+                  bgdPL.set<std::string>("File",bgdfilename);
+                  chemistryPL.sublist("Thermodynamic Database") = bgdPL;
+                  chemistryPL.set<std::string>("Activity Model","unit");
+                  
+                  // loop over chemistry controls to get other options to add to PL
+                  DOMNodeList* children = tmpNode->getChildNodes();
+                  for (int k=0; k<children->getLength(); k++) {
+                    DOMNode* currentNode = children->item(k) ;
+                    if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
+                      std::string tagname(std::string(XMLString::transcode(currentNode->getNodeName())));
+                      if (tagname == "chem_tolerance") {
+                        if (currentNode) {
+                          textContent = XMLString::transcode(currentNode->getTextContent());
+                          chemistryPL.set<double>("Tolerance",get_double_constant(textContent,*def_list));
+                          XMLString::release(&textContent);
+                        }
+                        else {
+                          throw_error_illformed(algo_str_name, "chem_tolerance", nodeName);
+                        }
+                      }
+                      else if (tagname == "chem_max_newton_iterations") {
+                        if (currentNode) {
+                          textContent = XMLString::transcode(currentNode->getTextContent());
+                          chemistryPL.set<int>("Maximum Newton Iterations",get_int_constant(textContent,*def_list));
+                          XMLString::release(&textContent);
+                        }
+                        else {
+                          throw_error_illformed(algo_str_name, "chem_max_newton_iterations", nodeName);
+                        }
+                        // TODO:: EIB - this need to be added to schema!!
+                      }
+                      else if (tagname == "chem_max_time_step") {
+                        if (currentNode) {
+                          textContent = XMLString::transcode(currentNode->getTextContent());
+                          chemistryPL.set<double>("Max Time Step (s)",get_double_constant(textContent,*def_list));
+                          XMLString::release(&textContent);
+                        }
+                        else {
+                          throw_error_illformed(algo_str_name, "chem_max_time_step", nodeName);
+                        }
+                      }
+                      else if (tagname == "max_chemistry_transport_timestep_ratio") {
+                        if (currentNode) {
+                          textContent = XMLString::transcode(currentNode->getTextContent());
+                          chemistryPL.set<double>("max chemistry to transport timestep ratio",get_double_constant(textContent,*def_list));
+                          XMLString::release(&textContent);
+                        }
+                        else {
+                          throw_error_illformed(algo_str_name, "max_chemistry_transport_timestep_ratio", nodeName);
+                        }
+                      }
+                      else if (tagname == "process_model") {
+                        // TODO: EIB - not sure where this goes anymore
+                        if (currentNode) {
+                          textContent = XMLString::transcode(currentNode->getTextContent());
+                          chemistryPL.set<double>("Tolerance",get_double_constant(textContent,*def_list));
+                          XMLString::release(&textContent);
+                        }
+                        // TODO: EIB - removed error message until I figure out where this went
+                        /*
+                         else {
+                         throw_error_illformed(algo_str_name, "process_model", nodeName);
+                         }
+                         */
+                      }
+                      else if (tagname != "comments") {
+                        // warn about unrecognized element
+                        std::stringstream elem_name;
+                        elem_name << nodeName <<  "->"  << tagname;
+                        throw_warning_skip(elem_name.str());
+                      }
+                    }
                   }
                 }
-                else if (tagname == "chem_max_newton_iterations") {
-                  if (currentNode) {
-                    textContent = XMLString::transcode(currentNode->getTextContent());
-                    chemistryPL.set<int>("Maximum Newton Iterations",get_int_constant(textContent,*def_list));
-                    XMLString::release(&textContent);
+                else if (def_list->get<std::string>("chemistry_engine") == "pflotran") {
+                  chemistryPL.set<std::string>("Engine","PFloTran");
+                  
+                  // check file *.in filename in def_list
+                  if (def_list->isSublist("chemistry_PL")) {
+                    if (def_list->sublist("chemistry_PL").isParameter("Engine Input File")) {
+                      chemistryPL.set<std::string>("Engine Input File",def_list->sublist("chemistry_PL").get<std::string>("Engine Input File"));
+                    }
                   }
-                  else {
-                    throw_error_illformed(algo_str_name, "chem_max_newton_iterations", nodeName);
+                  
+                  // loop over children
+                  DOMNodeList* children = tmpNode->getChildNodes();
+                  for (int k=0; k<children->getLength(); k++) {
+                    DOMNode* currentNode = children->item(k) ;
+                    if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
+                      std::string tagname(std::string(XMLString::transcode(currentNode->getNodeName())));
+                      if (tagname == "chem_max_time_step") {
+                        if (currentNode) {
+                          textContent = XMLString::transcode(currentNode->getTextContent());
+                          chemistryPL.set<double>("Max Time Step (s)",get_double_constant(textContent,*def_list));
+                          XMLString::release(&textContent);
+                        }
+                        else {
+                          throw_error_illformed(algo_str_name, "chem_max_time_step", nodeName);
+                        }
+                      }
+                      else if (tagname == "generate_chemistry_engine_inputfile") {
+                        if (currentNode) {
+                          textContent = XMLString::transcode(currentNode->getTextContent());
+                          chemistryPL.set<std::string>("Engine Input File",textContent);
+                          XMLString::release(&textContent);
+                        }
+                      }
+                      else if (tagname == "read_chemistry_engine_inputfile") {
+                        // TODO: EIB - not sure where this goes anymore
+                        if (currentNode) {
+                          textContent = XMLString::transcode(currentNode->getTextContent());
+                          chemistryPL.set<std::string>("Engine Input File",textContent);
+                          XMLString::release(&textContent);
+                        }
+                      }
+                      else if (tagname != "comments") {
+                        // warn about unrecognized element
+                        std::stringstream elem_name;
+                        elem_name << nodeName <<  "->"  << tagname;
+                        throw_warning_skip(elem_name.str());
+                      }
+                    }
                   }
-                  // TODO:: EIB - this need to be added to schema!!
-                }
-                else if (tagname == "chem_max_time_step") {
-                  if (currentNode) {
-                    textContent = XMLString::transcode(currentNode->getTextContent());
-                    chemistryPL.set<double>("Max Time Step (s)",get_double_constant(textContent,*def_list));
-                    XMLString::release(&textContent);
-                  }
-                  else {
-                    throw_error_illformed(algo_str_name, "chem_max_time_step", nodeName);
-                  }
-                }
-                else if (tagname == "max_chemistry_transport_timestep_ratio") {
-                  if (currentNode) {
-                    textContent = XMLString::transcode(currentNode->getTextContent());
-                    chemistryPL.set<double>("max chemistry to transport timestep ratio",get_double_constant(textContent,*def_list));
-                    XMLString::release(&textContent);
-                  }
-                  else {
-                    throw_error_illformed(algo_str_name, "max_chemistry_transport_timestep_ratio", nodeName);
-                  }
-                }
-                else if (tagname == "process_model") {
-                  // TODO: EIB - not sure where this goes anymore
-                  if (currentNode) {
-                    textContent = XMLString::transcode(currentNode->getTextContent());
-                    chemistryPL.set<double>("Tolerance",get_double_constant(textContent,*def_list));
-                    XMLString::release(&textContent);
-                  }
-                  // TODO: EIB - removed error message until I figure out where this went
-                  /*
-                  else {
-                    throw_error_illformed(algo_str_name, "process_model", nodeName);
-                  }
-                   */
-                }
-                else if (tagname != "comments") {
-                  // warn about unrecognized element
-                  std::stringstream elem_name;
-                  elem_name << nodeName <<  "->"  << tagname;
-                  throw_warning_skip(elem_name.str());
                 }
               }
+            
+              
+              // now add chemistry list
+              def_list->sublist("Chemistry") = chemistryPL;
             }
-            def_list->sublist("Chemistry") = chemistryPL;
-          }
           }
         }
       }
