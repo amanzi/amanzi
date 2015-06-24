@@ -938,20 +938,20 @@ double Richards_PK::DeriveBoundaryFaceValue(
     double lmd = u_cell[0][c];
     int dir;
     const AmanziGeometry::Point n = mesh_->face_normal(f, false, c, &dir);
-    double bnd_flux = bc_value[f] / (molar_rho_ / mu_cell[0][c]);
+    double bnd_flux = dir*bc_value[f] / (molar_rho_ / mu_cell[0][c]);
 
     double max_val = atm_pressure_;
     double min_val;
     if (bnd_flux <= 0.0) {
       min_val = u_cell[0][c];
     } else {
-      min_val= u_cell[0][c] + (g_f - bc_value[f]) / (dir * trans_f);
+      min_val= u_cell[0][c] + (g_f - bnd_flux) / (dir * trans_f);
     }
     double eps = std::max(1.0e-4 * std::abs(bnd_flux), 1.0e-8);
 
-    std::cout<<"min_val "<<min_val<<" max_val "<<max_val<<" "<<" trans_f "<<trans_f<<"\n";
-    std::cout<<"g_f "<<g_f<<" bnd "<< bnd_flux <<" dir "<<dir<<"\n";
-    std::cout<<c <<"norm "<<n<<"\n";
+    // std::cout<<"min_val "<<min_val<<" max_val "<<max_val<<" "<<" trans_f "<<trans_f<<"\n";
+    // std::cout<<"g_f "<<g_f<<" bnd "<< bnd_flux <<" dir "<<dir<<"\n";
+    // std::cout<<c <<"norm "<<n<<"\n";
 
     const KRelFn func = &WRM::k_relative;       
     Amanzi::BoundaryFaceSolver<WRM> bnd_solver(trans_f, g_f, u_cell[0][c], lmd, bnd_flux, dir, pc_shift, 

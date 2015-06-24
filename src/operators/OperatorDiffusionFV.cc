@@ -512,7 +512,8 @@ void OperatorDiffusionFV::ComputeTransmissibility_(
       gravity_face[0][f] = trans_face[0][f] * grav;
     }
   }
-  //std::cout<<trans_face<<"\n";
+  // Epetra_MultiVector& gravity_face = *g_cv->ViewComponent("face", true);
+  // std::cout<<gravity_face<<"\n";
 
 #ifdef HAVE_MPI
   transmissibility_->ScatterMasterToGhosted("face", true);
