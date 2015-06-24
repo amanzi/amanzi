@@ -48,109 +48,193 @@ TEST(FLOW_BOUNDARY_SOLVER) {
 
   // create a mesh framework
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
 
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);
-  pref.push_back(STKMESH);
 
-  double bottom = -10.;
+
+  double bottom = -0.5;
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, bottom, 1.0, 0.0, 1, 10, gm);
+  //Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, bottom, 1.0, 0.0, 1, 10, gm);
+  Teuchos::RCP<const Mesh> mesh1 = meshfactory("test/hex_2x2x1-1.exo", gm);
+  Teuchos::RCP<const Mesh> mesh2 = meshfactory("test/hex_2x2x1-2.exo", gm);
 
-  // create a simple state and populate it
-  Teuchos::ParameterList state_list = plist->sublist("State");
-  Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
-  S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
-  Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(plist, "Flow", S, soln));
+  std::cout<<"MESH1\n";
 
-  RPK->Setup();
-  S->Setup();
-  S->InitializeFields();
-  S->InitializeEvaluators();
+  int nfaces = mesh1 -> num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  for (int f = 0; f < nfaces; f++) {
+    AmanziMesh::Entity_ID_List cells;
+    mesh1->face_get_cells(f, AmanziMesh::USED, &cells);
+    int dir;
+    const Point& norm = mesh1->face_normal(f, false, cells[0], &dir);
+    if ((cells.size() == 1) && (norm[2]*dir > 0)){
+      std::cout<<cells[0]<<": "<<norm<<"\n";
+    }
+  }
 
-  // modify the default state for the problem at hand
-  std::string passwd("flow"); 
-  Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell");
+  std::cout<<"MESH2\n";
+
+  nfaces = mesh2 -> num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  for (int f = 0; f < nfaces; f++) {
+    AmanziMesh::Entity_ID_List cells;
+    mesh2->face_get_cells(f, AmanziMesh::USED, &cells);
+    int dir;
+    const Point& norm = mesh2->face_normal(f, false, cells[0], &dir);
+
+    if ((cells.size() == 1) && (norm[2]*dir > 0)){
+      std::cout<<cells[0]<<": "<<norm<<"\n";
+    }     
+  }
+
+  CHECK(true);
+
+
+
+  // // create a simple state and populate it
+  // Teuchos::ParameterList state_list = plist->sublist("State");
+  // Teuchos::RCP<State> S1 = Teuchos::rcp(new State(state_list));
+  // Teuchos::RCP<State> S2 = Teuchos::rcp(new State(state_list));
+  // S1->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh1));
+  // S2->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh2));
+
+  // Teuchos::RCP<TreeVector> soln1 = Teuchos::rcp(new TreeVector());
+  // Teuchos::RCP<Richards_PK> RPK1 = Teuchos::rcp(new Richards_PK(plist, "Flow", S1, soln1));
+  // Teuchos::RCP<TreeVector> soln2 = Teuchos::rcp(new TreeVector());
+  // Teuchos::RCP<Richards_PK> RPK2 = Teuchos::rcp(new Richards_PK(plist, "Flow", S2, soln2));
+
+  // RPK1->Setup();
+  // S1->Setup();
+  // S1->InitializeFields();
+  // S1->InitializeEvaluators();
+
+  // RPK2->Setup();
+  // S2->Setup();
+  // S2->InitializeFields();
+  // S2->InitializeEvaluators();
+
+  // // modify the default state for the problem at hand
+  // std::string passwd("flow"); 
+  // Epetra_MultiVector& K1 = *S1->GetFieldData("permeability", passwd)->ViewComponent("cell"); 
+  // AmanziMesh::Entity_ID_List block;
+  // mesh1->get_set_entities("All", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  // for (int i = 0; i != block.size(); ++i) {
+  //   int c = block[i];
+  //   K1[0][c] = 1e-9;
+  //   K1[1][c] = 1e-9;
+  //   K1[2][c] = 1e-9;
+  // }
+  // S1->GetField("permeability", "flow")->set_initialized();
+
   
-  AmanziMesh::Entity_ID_List block;
-  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K[0][c] = 1e-13;
-    K[1][c] = 1e-13;
-  }
+  // Epetra_MultiVector&  K2 = *S2->GetFieldData("permeability", passwd)->ViewComponent("cell");  
+  // mesh2->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  // for (int i = 0; i != block.size(); ++i) {
+  //   int c = block[i];
+  //   K2[0][c] = 1e-9;
+  //   K2[1][c] = 1e-9;
+  //   K2[2][c] = 1e-9;
+  // }
+  // S2->GetField("permeability", "flow")->set_initialized();
 
-  S->GetField("permeability", "flow")->set_initialized();
+  // double atm_pressure = 101325.;
+  // double rho = *S1->GetScalarData("fluid_density", passwd);
 
-  double atm_pressure = 101325.;
-  double rho = *S->GetScalarData("fluid_density", passwd);
+  // Epetra_Vector& gravity = *S1->GetConstantVectorData("gravity", "state");
+  // gravity[2] = -9.8;
+  // S1->GetField("gravity", "state")->set_initialized();
 
-  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
-  gravity[1] = -9.8;
-  S->GetField("gravity", "state")->set_initialized();
+  // gravity = *S2->GetConstantVectorData("gravity", "state");
+  // gravity[2] = -9.8;
+  // S2->GetField("gravity", "state")->set_initialized();
 
-  // create the initial pressure function
-  Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell");
+  // // create the initial pressure function
+  // Epetra_MultiVector& p1 = *S1->GetFieldData("pressure", passwd)->ViewComponent("cell");
+  // Epetra_MultiVector& p2 = *S2->GetFieldData("pressure", passwd)->ViewComponent("cell");
 
-  for (int c = 0; c < p.MyLength(); c++) {
-    const Point& xc = mesh->cell_centroid(c);
-    p[0][c] = atm_pressure + rho*gravity[1]*(xc[1] - bottom);
-  }
+  // for (int c = 0; c < p1.MyLength(); c++) {
+  //   const Point& xc = mesh1->cell_centroid(c);
+  //   p1[0][c] = 0.6*atm_pressure + rho*gravity[1]*(xc[1] - bottom);
+  //   p2[0][c] = 0.6*atm_pressure + rho*gravity[1]*(xc[1] - bottom);
+  // }
 
    
-  // initialize the Richards process kernel
-  RPK->Initialize();
-  S->CheckAllFieldsInitialized();
-  
-  double boundary_val;
+  // // initialize the Richards process kernel
+  // RPK1->Initialize();
+  // S1->CheckAllFieldsInitialized();
+  // RPK2->Initialize();
+  // S2->CheckAllFieldsInitialized();
 
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+
+  // std::cout<<p1<<"\n";
+  // std::cout<<p2<<"\n";
+
+  // double bnd_val1, bnd_val2;
+
+  // std::cout<<"MESH1\n";
+
+  // int nfaces = mesh1 -> num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   // for (int f = 0; f < nfaces; f++) {
   //   AmanziMesh::Entity_ID_List cells;
-  //   mesh->face_get_cells(f, AmanziMesh::USED, &cells);
-  //   if ((cells.size() == 1)&&(cells[0] == 9)){
-  int f = 29;
-  boundary_val = RPK->BoundaryFaceValue(f, *S->GetFieldData("pressure", passwd));
-  std::cout<<": "<<f<<" "<<" "<< boundary_val<<"\n";
-
+  //   mesh1->face_get_cells(f, AmanziMesh::USED, &cells);
+  //   int dir;
+  //   const Point& norm = mesh1->face_normal(f, false, cells[0], &dir);
+  //   if ((cells.size() == 1) && (norm[2]*dir > 0)){
+  //     bnd_val1 = RPK1->BoundaryFaceValue(f, *S1->GetFieldData("pressure", passwd));
+  //     std::cout<<": "<<f<<" "<<bnd_val1<<" "<< bnd_val2<<"\n";
   //   }
   // }
 
-  //exit(0);
+  // std::cout<<"MESH2\n";
+
+  // nfaces = mesh2 -> num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  // for (int f = 0; f < nfaces; f++) {
+  //   AmanziMesh::Entity_ID_List cells;
+  //   mesh2->face_get_cells(f, AmanziMesh::USED, &cells);
+  //   int dir;
+  //   const Point& norm = mesh2->face_normal(f, false, cells[0], &dir);
+  //   if ((cells.size() == 1) && (norm[2]*dir > 0)){
+  //     const Point& xc = mesh2->cell_centroid(cells[0]);
+  //     //std::cout << "norm2 "<<mesh2->face_normal(f)<<"\n";
+  //     //bnd_val1 = RPK1->BoundaryFaceValue(f, *S1->GetFieldData("pressure", passwd));
+  //     bnd_val2 = RPK2->BoundaryFaceValue(f, *S2->GetFieldData("pressure", passwd));
+  //     std::cout<<": "<<f<<" "<<" "<< bnd_val2 <<"\n";
+  //   }
+  // }
+
+  // CHECK(true);
 
 
-  // std::cout<<p<<"\n";
-  // exit(0);
+  // // // std::cout<<p<<"\n";
+  // // // exit(0);
 
-  // // solve the problem 
-  // TI_Specs ti_specs;
-  // ti_specs.T0 = 0.0;
-  // ti_specs.dT0 = 1.0;
-  // ti_specs.T1 = 1.0;
-  // ti_specs.max_itrs = 400;
+  // // // // solve the problem 
+  // // // TI_Specs ti_specs;
+  // // // ti_specs.T0 = 0.0;
+  // // // ti_specs.dT0 = 1.0;
+  // // // ti_specs.T1 = 1.0;
+  // // // ti_specs.max_itrs = 400;
 
-  // AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-  // RPK->CommitStep(0.0, 1.0);  // dummy times
+  // // // AdvanceToSteadyState(S, *RPK, ti_specs, soln);
+  // // // RPK->CommitStep(0.0, 1.0);  // dummy times
 
 
 
-  if (MyPID == 0) {
-    GMV::open_data_file(*mesh, (std::string)"flow.gmv");
-    GMV::start_data();
-    GMV::write_cell_data(p, 0, "pressure");
-    GMV::close_data_file();
-  }
+  // if (MyPID == 0) {
+  //   GMV::open_data_file(*mesh1, (std::string)"flow.gmv");
+  //   GMV::start_data();
+  //   //GMV::write_cell_data(p, 0, "pressure");
+  //   GMV::close_data_file();
+  // }
 
-  // check the pressure
-  // int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  // for (int c = 0; c < ncells; c++) CHECK(p[0][c] > -4.0 && p[0][c] < 0.01);
+  // // check the pressure
+  // // int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  // // for (int c = 0; c < ncells; c++) CHECK(p[0][c] > -4.0 && p[0][c] < 0.01);
 
-  CHECK (fabs(78341.9 - boundary_val) < 1e-1);
+  // CHECK (fabs(78341.9 - boundary_val) < 1e-1);
 
 }
 

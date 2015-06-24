@@ -475,7 +475,6 @@ void OperatorDiffusionFV::ComputeTransmissibility_(
       double s = area / h_tmp;
       double perm = ((Kc * a) * normal) * s;
       double dxn = a * normal;
-
       h_face[0][f] += h_tmp;
       beta_face[0][f] += fabs(dxn / perm);
     }
@@ -501,6 +500,7 @@ void OperatorDiffusionFV::ComputeTransmissibility_(
     a_dist *= 1.0 / norm(a_dist);
 
     trans_face[0][f] = 1.0 / beta_face[0][f];
+
     if (g != NULL) {
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
       double dir = copysign(1.0, normal * a_dist);
@@ -512,6 +512,7 @@ void OperatorDiffusionFV::ComputeTransmissibility_(
       gravity_face[0][f] = trans_face[0][f] * grav;
     }
   }
+  //std::cout<<trans_face<<"\n";
 
 #ifdef HAVE_MPI
   transmissibility_->ScatterMasterToGhosted("face", true);
