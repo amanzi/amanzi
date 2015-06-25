@@ -182,7 +182,6 @@ Teuchos::ParameterList get_verbosity(DOMDocument* xmlDoc) {
                           textContent = XMLString::transcode(nodeAttr->getNodeValue());
                           simPL.sublist("VerboseObject").set<std::string>("Verbosity Level",trim_string(textContent));
                           simPL.set<std::string>("verbosity",trim_string(textContent));
-                          
 			} else {
                           throw_error_illformed("verbosity", "value", "level");
 			}
@@ -1646,11 +1645,8 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
     }
       else {
       // proceed, user really meant Initialize to Steady case
-      if (def_list->sublist("simulation").isParameter("verbosity")) {
-        std::string verbosity = def_list->sublist("simulation").get<std::string>("verbosity") ;
-        if (verbosity == "extreme") {
+      if (voI_->getVerbLevel() >= Teuchos::VERB_HIGH) {
           *voI_->os() << "Creating Initialize to Steady Execution Control" << std::endl;
-        }
       }
       Teuchos::Array<double> start_times;
       Teuchos::Array<double> init_steps;
@@ -2578,32 +2574,25 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
               // chemistry options are difference based on engine
               // deal with common items
               Teuchos::Array<std::string> verb;
-              if (def_list->sublist("simulation").isParameter("verbosity")) {
-                std::string verbosity = def_list->sublist("simulation").get<std::string>("verbosity") ;
-                if (verbosity == "extreme") {
+              if (voI_->getVerbLevel() == Teuchos::VERB_EXTREME) {
                   verb.append("error");
                   chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
-                }
-                else if (verbosity == "high") {
+              }
+              else if (voI_->getVerbLevel() == Teuchos::VERB_HIGH) {
                   verb.append("warning");
                   chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
-                }
-                else if (verbosity == "medium") {
+              }
+              else if (voI_->getVerbLevel() == Teuchos::VERB_MEDIUM) {
                   verb.append("verbose");
                   chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
-                }
-                else if (verbosity == "low") {
+              }
+              else if (voI_->getVerbLevel() == Teuchos::VERB_LOW ) {
                   verb.append("terse");
                   chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
-                }
-                else {
-                  verb.append("silent");
-                  chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
-                }
               }
               else {
-                verb.append("silent");
-                chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
+                  verb.append("silent");
+                  chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
               }
               
               // determine engine and proceed accordingly
@@ -4835,8 +4824,15 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
 	    }
 	    matlist.sublist("Sorption Isotherms") = sorptionPL;
 	    // write BGD file
-            write_BDG_file(sorptionPL, def_list);
-	    // Chemistry list is also necessary - this is created under numerical controls section 
+            if (def_list.isParameter("chemistry_engine")) {
+              if (def_list.get<std::string>("chemistry_engine") == "amanzi") {
+                write_BDG_file(sorptionPL, def_list);
+              }
+            }
+            else {
+              write_BDG_file(sorptionPL, def_list);
+            }
+	    // Chemistry list is also necessary - this is created under numerical controls section
 	  }
  	  XMLString::release(&tagName);
           // If dispersion or diffusion is on, need the other.  This is a hack to correct for user forgetting one.
@@ -6937,65 +6933,85 @@ Teuchos::Array<double> make_coordinates(char* char_array, Teuchos::ParameterList
  */
 Teuchos::ParameterList make_chemistry(Teuchos::ParameterList def_list)
 {
-    Teuchos::ParameterList chemistryPL;
-    Teuchos::ParameterList bgdPL;
+  Teuchos::ParameterList chemistryPL;
+  Teuchos::ParameterList bgdPL;
 
-    // build bgd filename
-    std::string bgdfilename;
-    if (def_list.isParameter("xmlfilename") ) {
+  // Get common options
+  Teuchos::Array<std::string> verb;
+  if (def_list.sublist("simulation").isParameter("verbosity")) {
+    if (voI_->getVerbLevel() == Teuchos::VERB_EXTREME) {
+      verb.append("error");
+      chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
+    }
+    else if (voI_->getVerbLevel() == Teuchos::VERB_HIGH) {
+      verb.append("warning");
+      chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
+    }
+    else if (voI_->getVerbLevel() == Teuchos::VERB_MEDIUM) {
+      verb.append("verbose");
+      chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
+    }
+    else if (voI_->getVerbLevel() == Teuchos::VERB_LOW) {
+      verb.append("terse");
+      chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
+    }
+    else {
+      verb.append("silent");
+      chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
+    }
+  }
+  else {
+    verb.append("silent");
+    chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
+  }
+  
+  
+  if (def_list.isParameter("chemistry_engine")) {
+    // get Amanzi Native options
+    if (def_list.get<std::string>("chemistry_engine") == "amanzi") {
+      // go ahead and add bdg file to PL
+      // build bgd filename
+      std::string bgdfilename;
+      if (def_list.isParameter("xmlfilename") ) {
         bgdfilename = def_list.get<std::string>("xmlfilename") ;
         std::string new_extension(".bgd");
         size_t pos = bgdfilename.find(".xml");
         bgdfilename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)4);
-    }
-    else {
+      }
+      else {
         // defaulting to hardcoded name
         bgdfilename = "isotherms.bgd" ;
+      }
+      // add bgd file and parameters to list
+      Teuchos::ParameterList bgdPL;
+      bgdPL.set<std::string>("Format","simple");
+      bgdPL.set<std::string>("File",bgdfilename);
+      chemistryPL.sublist("Thermodynamic Database") = bgdPL;
+      chemistryPL.set<std::string>("Activity Model","unit");
     }
-
-    bgdPL.set<std::string>("Format","simple");
-    bgdPL.set<std::string>("File",bgdfilename);
-    chemistryPL.sublist("Thermodynamic Database") = bgdPL;
-    chemistryPL.set<std::string>("Activity Model","unit");
-    Teuchos::Array<std::string> verb;
-    if (def_list.sublist("simulation").isParameter("verbosity")) {
-        std::string verbosity = def_list.sublist("simulation").get<std::string>("verbosity") ;
-        if (voI_->getVerbLevel() == Teuchos::VERB_EXTREME) {
-	    verb.append("error");
-	    chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
+    // get Alquimia options
+    else if (def_list.get<std::string>("chemistry_engine") == "pflotran") {
+      chemistryPL.set<std::string>("Engine","PFloTran");
+      
+      // check file *.in filename in def_list
+      if (def_list.isSublist("chemistry_PL")) {
+        if (def_list.sublist("chemistry_PL").isParameter("Engine Input File")) {
+          chemistryPL.set<std::string>("Engine Input File",def_list.sublist("chemistry_PL").get<std::string>("Engine Input File"));
         }
-        else if (voI_->getVerbLevel() == Teuchos::VERB_HIGH) {
-	    verb.append("warning");
-	    chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
-	}
-        else if (voI_->getVerbLevel() == Teuchos::VERB_MEDIUM) {
-	    verb.append("verbose");
-	    chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
-	}
-        else if (voI_->getVerbLevel() == Teuchos::VERB_LOW) {
-	    verb.append("terse");
-	    chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
-	}
-        else {
-	    verb.append("silent");
-	    chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
-	}
+      }
     }
-    else {
-	verb.append("silent");
-	chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
-    }
+  }
 
     // fill in default values
     //chemistryPL.set<double>("Tolerance",1e-12);
     //chemistryPL.set<int>("Maximum Newton Iterations",200);
     //chemistryPL.set<double>("Max Time Step (s)",9e9);
-    
+  
     return chemistryPL;
 }
 
 
-/* 
+/*
  ******************************************************************
  * Empty
  ******************************************************************
