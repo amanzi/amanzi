@@ -117,6 +117,7 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
 
   // modify relative permeability coefficient for influx faces
   UpwindInflowBoundary(u);
+  // UpwindInflowBoundary_New(u);
 
   // calculate diffusion operator
   op_matrix_->Init();

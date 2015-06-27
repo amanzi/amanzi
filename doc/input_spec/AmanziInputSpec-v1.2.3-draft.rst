@@ -356,7 +356,7 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [U] `"steady preconditioner`" [string] select the preconditioner to be used in the nonlinear solver for the steady state problem, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`". (default: `"Hypre AMG`")
 
-     * [U] `"steady initialize with darcy`" [bool] Initialize the flow field using a Darcy solve. (default `"true`")  
+     * [U] `"steady initialize with darcy`" [bool] Initialize the flow field using a Darcy solve. (default `"true`") DEPRECATED, use the list `"Initialization`" instead.
 
      * [U] `"steady nonlinear iteration initial guess extrapolation order`" [int] defines how the initial guess (predictor) for a new time step is calculated. If set to zero, the previous solution is used as the initial guess. (default: 1)  
 
@@ -392,14 +392,14 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [U] `"transient preconditioner`" [string] select the preconditioner to be used in the nonlinear solver for the steady state problem, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`". (default: `"Hypre AMG`")
 
-     * [U] `"transient initialize with darcy`" [bool] Initialize the flow field using a Darcy solve. (default `"false`") 
+     * [U] `"transient initialize with darcy`" [bool] Initialize the flow field using a Darcy solve. (default `"false`") DEPRECATED, use the list `"Initialization`" instead.
 
      * [U] `"transient nonlinear iteration initial guess extrapolation order`" [int] defines how the initial guess (predictor) for a new time step is calculated. If set to zero, the previous solution is used as the initial guess. (default: 1)  
 
 
    * [U] `"Initialization`" [list] Parameters for solution initialization at the beginning of time period
 
-     * [U] `"time integration method`" [string] select the initialization method (currently only Picard is supported). (options `"Picard`", `"Darcy Solver`" (default))
+     * [U] `"time integration method`" [string] select the initialization method. (options `"Picard`", `"Darcy Solver`" (default))
 
      * [U] `"clipping saturation value`" [double] (default: 0.9, suggested range: 0.7 ... 0.95)
 

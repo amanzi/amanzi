@@ -142,6 +142,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 
         // do need to add picard list to initialization?
         bool have_picard_params(false);
+        bool create_init(true);
         Teuchos::ParameterList pic_params;
         if (use_picard_) {
           if (exe_list.isSublist("Numerical Control Parameters")) {
@@ -308,6 +309,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
                   sti_bdf1_std.set<double>("time step increase factor",
                       num_list.get<double>("steady time step increase factor",ST_SP_DT_INCR_FACTOR));
                 }
+
 		// initialization
 		if (ua_list.isSublist("Initialization")) {
 		  Teuchos::ParameterList& ini_list = ua_list.sublist("Initialization");
@@ -336,6 +338,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 		    sti_init.set<std::string>("method", "saturated solver");
                     sti_init.set<std::string>("linear solver", ST_INIT_SOLVER);
                   }
+                  create_init = false;
 		}
               }
             }
@@ -477,12 +480,42 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
                   tti_bdf1_std.set<double>("time step increase factor",
                       num_list.get<double>("transient time step increase factor", TR_SP_DT_INCR_FACTOR));
                 }
-		// create an initialization sublist
-		if (num_list.get<bool>("transient initialize with darcy", TR_INIT_DARCY_BOOL)) {
+
+		// initialization
+		if (ua_list.isSublist("Initialization") && create_init) {
+		  Teuchos::ParameterList& ini_list = ua_list.sublist("Initialization");
 		  Teuchos::ParameterList& tti_init = tti_list.sublist("initialization");
-		  tti_init.set<std::string>("method", "saturated solver");
-		  tti_init.set<std::string>("linear solver", TR_INIT_SOLVER);
+                  if (ini_list.isParameter("clipping saturation value"))
+                      tti_init.set<double>("clipping saturation value", ini_list.get<double>("clipping saturation value"));
+                  if (ini_list.isParameter("clipping pressure value"))
+                      tti_init.set<double>("clipping pressure value", ini_list.get<double>("clipping pressure value"));
+
+                  if (have_picard_params && use_picard_) {
+		    tti_init.set<std::string>("method", "picard");
+                    tti_init.set<std::string>("linear solver", pic_params.get<std::string>("linear solver", PIC_SOLVE));
+
+                    Teuchos::ParameterList& pic_list = tti_init.sublist("picard parameters");
+                    pic_list.set<double>("convergence tolerance", pic_params.get<double>("picard convergence tolerance", PICARD_TOLERANCE));
+                    pic_list.set<int>("maximum number of iterations", pic_params.get<int>("picard maximum number of iterations", PIC_MAX_ITER));
+                  } else if (use_picard_) {
+		    tti_init.set<std::string>("method", "picard");
+                    tti_init.set<double>("clipping pressure value", PIC_CLIP_PRESSURE);
+
+                    Teuchos::ParameterList& pic_list = tti_init.sublist("picard parameters");
+                    pic_list.set<std::string>("linear solver", PIC_SOLVE);
+                    pic_list.set<double>("convergence tolerance", PICARD_TOLERANCE);
+                    pic_list.set<int>("maximum number of iterations", PIC_MAX_ITER);
+                  } else {
+		    tti_init.set<std::string>("method", "saturated solver");
+                    tti_init.set<std::string>("linear solver", ST_INIT_SOLVER);
+                  }
+                  create_init = false;
 		}
+		// if (num_list.get<bool>("transient initialize with darcy", TR_INIT_DARCY_BOOL)) {
+		//   Teuchos::ParameterList& tti_init = tti_list.sublist("initialization");
+		//   tti_init.set<std::string>("method", "saturated solver");
+		//   tti_init.set<std::string>("linear solver", TR_INIT_SOLVER);
+		// }
 	      }
             }
           }
