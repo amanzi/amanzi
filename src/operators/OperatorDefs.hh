@@ -15,6 +15,13 @@
 namespace Amanzi {
 namespace Operators {
 
+typedef enum { OPERATOR_DIFFUSION_MFD,
+               OPERATOR_DIFFUSION_FV,
+               OPERATOR_DIFFUSION_MFD_GRAVITY,
+               OPERATOR_DIFFUSION_FV_GRAVITY,
+               OPERATOR_ADVECTION,
+               OPERATOR_ACCUMULATION} OperatorType;
+
 // Constants in the next block must powers of 2.
 const int OPERATOR_SCHEMA_DOFS_FACE = 1;
 const int OPERATOR_SCHEMA_DOFS_CELL = 2;
@@ -64,14 +71,14 @@ const int OPERATOR_UPWIND_AMANZI_DIVK = 7;
 const int OPERATOR_UPWIND_AMANZI_SECOND_ORDER = 8;
 const double OPERATOR_UPWIND_RELATIVE_TOLERANCE = 1e-12;
 
-// method for nonlinear coefficient
+// method for nonlinear coefficient (use power of 2)
 const int OPERATOR_LITTLE_K_NONE = 0;
 const int OPERATOR_LITTLE_K_UPWIND = 1;
-const int OPERATOR_LITTLE_K_DIVK = 2;
-const int OPERATOR_LITTLE_K_DIVK_TWIN = 3;
-const int OPERATOR_LITTLE_K_DIVK_TWIN_GRAD = 4;
-const int OPERATOR_LITTLE_K_STANDARD = 5;
-const int OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION = 6;
+const int OPERATOR_LITTLE_K_DIVK_BASE = 2;  // base (only face component)
+const int OPERATOR_LITTLE_K_DIVK = 6;  // add cell component
+const int OPERATOR_LITTLE_K_DIVK_TWIN = 10;  // add twin component
+const int OPERATOR_LITTLE_K_DIVK_TWIN_GRAD = 18;  // add grad component 
+const int OPERATOR_LITTLE_K_STANDARD = 32;
 
 // method for gravity
 const int OPERATOR_GRAVITY_HH = 1;

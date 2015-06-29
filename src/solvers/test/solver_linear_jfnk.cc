@@ -38,9 +38,9 @@ SUITE(SOLVERS) {
     }
     
     // preconditioner toolkit
-    virtual void ApplyPreconditioner(const Teuchos::RCP<const Epetra_Vector>& r,
+    virtual int ApplyPreconditioner(const Teuchos::RCP<const Epetra_Vector>& r,
             const Teuchos::RCP<Epetra_Vector>& Pr) {
-      ApplyInverse(*r, *Pr);
+      return ApplyInverse(*r, *Pr);
     }
     virtual void UpdatePreconditioner(const Teuchos::RCP<const Epetra_Vector>& u) {}
     

@@ -103,7 +103,7 @@ void WRM_vanGenuchten::Init_(
 * The original curve is regulized on interval (0, pc0) using the 
 * Hermite interpolant of order 3. Formulas (3.11)-(3.12).     
 ****************************************************************** */
-double WRM_vanGenuchten::k_relative(double pc)
+double WRM_vanGenuchten::k_relative(double pc) const
 {
   if (pc >= pc0_) {
     double se = pow(1.0 + pow(alpha_*pc, n_), -m_);
@@ -126,7 +126,7 @@ double WRM_vanGenuchten::k_relative(double pc)
 /* ******************************************************************
 * Saturation formula (3.5)-(3.6).                                         
 ****************************************************************** */
-double WRM_vanGenuchten::saturation(double pc)
+double WRM_vanGenuchten::saturation(double pc)  const
 {
   if (pc > 0.0) {
     return pow(1.0 + pow(alpha_*pc, n_), -m_) * (1.0 - sr_) + sr_;
@@ -140,7 +140,7 @@ double WRM_vanGenuchten::saturation(double pc)
 * Derivative of the saturation formula w.r.t. capillary pressure.
 * Warning: remember that dSdP = -dSdPc.                                        
 ****************************************************************** */
-double WRM_vanGenuchten::dSdPc(double pc)
+double WRM_vanGenuchten::dSdPc(double pc) const
 {
   if (pc > 0.0) {
     double alpha_pc = alpha_*pc;
@@ -156,7 +156,7 @@ double WRM_vanGenuchten::dSdPc(double pc)
 /* ******************************************************************
 * Pressure as a function of saturation.                                       
 ****************************************************************** */
-double WRM_vanGenuchten::capillaryPressure(double s)
+double WRM_vanGenuchten::capillaryPressure(double s) const
 {
   double se = (s - sr_) / (1.0 - sr_);
   return (pow(pow(se, -1.0/m_) - 1.0, 1.0/n_)) / alpha_;
@@ -166,7 +166,7 @@ double WRM_vanGenuchten::capillaryPressure(double s)
 /* ******************************************************************
 * Derivative of the original relative permeability w.r.t. capillary pressure.                                     
 ****************************************************************** */
-double WRM_vanGenuchten::dKdPc(double pc)
+double WRM_vanGenuchten::dKdPc(double pc) const
 {
   if (pc >= pc0_) {
     double se = pow(1.0 + pow(alpha_*pc, n_), -m_);

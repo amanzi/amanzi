@@ -207,6 +207,8 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
   bool nka_applied(false), nka_restarted(false);
   int nka_itr = 0;
   int total_backtrack = 0;
+  int  prec_error;
+
 
   // Evaluate the nonlinear function.
   fun_calls_++;
@@ -255,7 +257,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
     du_pic->PutScalar(0.);
-    fn_->ApplyPreconditioner(res, du_pic);
+    prec_error = fn_->ApplyPreconditioner(res, du_pic);
 
     if (nka_restarted) {
       // NKA was working, but failed.  Reset the iteration counter.

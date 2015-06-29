@@ -367,7 +367,7 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
 
 `"unstructured_controls`" contains options specific to the unstructured modes.  It has the following structure and elements
 
-  * `"unstr_flow_controls`" specifies numerical controls for the flow process kernal avaiable under the unstructured algorithm.  It has the following elements
+  * `"unstr_flow_controls`" specifies numerical controls for the flow process kernel available under the unstructured algorithm.  It has the following elements
 
     * `"discretization_method`" specifies the spatial discretization method. Is has type "string" (options: fv-default, fv-monotone, fv-multi_point_flux_approximation, fv-extended_to_boundary_edges, mfd-default, mfd-optimized_for_sparsity, mfd-support_operator, mfd-optimized_for_monotonicity, mfd-two_point_flux_approximation)
 
@@ -375,13 +375,13 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
 
     * `"preconditioning_strategy`" = "string" (options: linearized_operator(default), diffusion_operator)
 
-  * `"unstr_transport_controls`" specifies numerical controls for the transport process kernal avaiable under the unstructured algorithm.  It has the following elements
+  * `"unstr_transport_controls`" specifies numerical controls for the transport process kernel available under the unstructured algorithm.  It has the following elements
 
     * `"algorithm`" = "string" (options: explicit first-order(default), explicit second-order, implicit upwind)
 
     * `"sub_cycling`" = "string" (options: off(default), on)
 
-  * `"unstr_transport_controls`" specifies numerical controls for the flow process kernal avaiable under the unstructured algorithm.  It has the following elements
+  * `"unstr_transport_controls`" specifies numerical controls for the flow process kernel available under the unstructured algorithm.  It has the following elements
 
   * `"unstr_steady-state_controls`"  has the following elements
 
@@ -395,9 +395,9 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
 
     * `"nonlinear_tolerance`" = "exponential"
 
-    * `"unstr_pseudo_time_integrator`"  has the following elements
+    * `"unstr_initialization`"  has the following elements
 
-        * `"method`" = "string" (options: picard)
+        * `"method`" = "string" (options: picard, darcy_solver)
 
         * `"preconditioner`" = "string" (options: trilinos_ml, hypre_amg, block_ilu)
 
@@ -409,9 +409,9 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
 
         * `"clipping_saturation`" = "exponential"
 
-        * `"convergence_tolerance`" = "exponential"
+        * `"clipping_pressure`" = "exponential"
 
-        * `"initialize_with_darcy`" = "boolean"
+        * `"convergence_tolerance`" = "exponential"
 
     * `"limit_iterations`" = "integer"
 
@@ -1016,7 +1016,7 @@ Flow
 
       *  `"model`" = " richards | saturated | constant" 
 
-Currently three scenarios are available for calculated the flow field.  `"richards`" is a single phase, variably saturated flow assuming constant gas pressure.  `"saturated`" is a single phase, fully saturated flow.  `"constant`" is equivalent to the a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
+Currently three scenarios are available for calculated the flow field.  `"richards`" is a single phase, variably saturated flow assuming constant gas pressure.  `"saturated`" is a single phase, fully saturated flow.  `"constant`" is equivalent to a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
 
 Note:  Unstructured options `"discretization_method`",  `"rel_perm_method`", and `"preconditioning_strategy`" have been moved to the `"unstr_flow_controls`" section under `"numerical_controls`"/
 
@@ -1249,7 +1249,7 @@ Liquid_phase
 
     * `"seepage_face`"is defined in-line using attributes.  The attributes include "function", "start", and "value". Function specifies linear or constant temporal functional form during each time interval.  Start is a series of time values at which time intervals start.  inward_mass_flux is the value of the inward_mass_flux during the time interval.
  
-    * `"hydrostatic`" is an element with the attributes below.  By default the coordinate_system is set to "absolute".  Not specifing the attribute will result in the default value being used.  The attribute submodel is optional.  If not specified the submodel options will not be utilized.
+    * `"hydrostatic`" is an element with the attributes below.  By default the coordinate_system is set to "absolute".  Not specifying the attribute will result in the default value being used.  The attribute submodel is optional.  If not specified the submodel options will not be utilized.
 
     * `"linear_hydrostatic`" is defined in-line using attributes.  Linear refers to linear in spatial dimension. Gradient_value specifies the gradient value in each direction in the form of a coordinate (grad_x, grad_y, grad_z).  Reference_point specifies a reference location as a coordinate.  Reference_water_table_height specifies a reference value for the water table.  Optionally, the attribute "submodel" can be used to specify no flow above the water table height.
 
@@ -1339,11 +1339,13 @@ The ''checkpoint'' element defines the file naming scheme and frequency for writ
 .. code-block:: xml
 
   <checkpoint>
-      Required Elements: base_filename, num_digits, cycle_macro
+      Required Elements: base_filename, num_digits, cycle_macros
       Optional Elements: NONE
   </checkpoint>
 
-The *base_filename* element contain the text component of the how the checkpoint files will be named.  The *base_filename* is appended with an index number to indicate the sequential order of the checkpoint files.  The *num_digits* elements indicates how many digits to use for the index. (*EIB NOTE* - verify if this is sequence index or iteration id)  Final the *cycle_macro* element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the checkpoint files. See the about NOTE about specifying a file location other than the current working directory.
+The *base_filename* element contain the text component of the how the checkpoint files will be named.  The *base_filename* is appended with an index number to indicate the sequential order of the checkpoint files.  The *num_digits* elements indicates how many digits to use for the index. (*EIB NOTE* - verify if this is sequence index or iteration id)  Final the *cycle_macros* element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the checkpoint files. Multiple cycle_macro may be specified in a comma seperated list. See the about NOTE about specifying a file location other than the current working directory.
+
+NOTE: Previously the ''walkabout'' element had the subelement ''cycle_macro''.  All output is moving away from only allowing a single macro to be specified to allowing multiple macros as a comma separated list.  To ease the transition for users both singular and plural are currently accepted.  However, the singular option will go away in the future.  Please update existing input files to use ''cycle_macros''.
 
 Example:
 
@@ -1352,7 +1354,7 @@ Example:
   <checkpoint>
      <base_filename>chk</base_filename>
      <num_digits>5</num_digits>
-     <cycle_macro>Every_100_steps</cycle_macro>
+     <cycle_macros>Every_100_steps</cycle_macros>
   </checkpoint>
 
 
@@ -1386,11 +1388,14 @@ The observation element identifies the field quantity to be observed.  Subelemen
 .. code-block :: xml
 
    <observation_type>
-     Required Elements: assigned_region, functional, time_macros 
+     Required Elements: assigned_region, functional, time_macros or cycle_macros 
      Optional Elements: NONE
    </observation_type>
 
 The only exception is aqueous_conc requires an attribute Name="Solute Name".
+
+NOTE: Previously individual observation elements had the subelement ''cycle_macro'' or ''time_macro''.  All output is moving away from only allowing a single macro to be specified to allowing multiple macros as a comma separated list.  To ease the transition for users both singular and plural are currently accepted.  However, the singular option will go away in the future.  Please update existing input files to use ''cycle_macros'' or ''time_macros''.
+
 
 Example:
 
@@ -1428,11 +1433,13 @@ The ''walkabout'' element defines the file naming scheme and frequency for writi
 .. code-block:: xml
 
   <walkabout>
-      Required Elements: base_filename, num_digits, cycle_macro
+      Required Elements: base_filename, num_digits, cycle_macros
       Optional Elements: NONE
   </walkabout>
 
-The *base_filename* element contain the text component of the how the walkabout files will be named.  The *base_filename* is appended with an index number to indicate the sequential order of the walkabout files.  The *num_digits* elements indicates how many digits to use for the index.  Final the *cycle_macro* element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the walkabout files. See the about NOTE about specifying a file location other than the current working directory.
+The *base_filename* element contain the text component of the how the walkabout files will be named.  The *base_filename* is appended with an index number to indicate the sequential order of the walkabout files.  The *num_digits* elements indicates how many digits to use for the index.  Final the *cycle_macros* element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the walkabout files. See the about NOTE about specifying a file location other than the current working directory.
+
+NOTE: Previously the ''walkabout'' element had the subelement ''cycle_macro''.  All output is moving away from only allowing a single macro to be specified to allowing multiple macros as a comma separated list.  To ease the transition for users both singular and plural are currently accepted.  However, the singular option will go away in the future.  Please update existing input files to use ''cycle_macros''.
 
 Example:
 
@@ -1441,7 +1448,7 @@ Example:
   <walkabout>
      <base_filename>chk</base_filename>
      <num_digits>5</num_digits>
-     <cycle_macro>Every_100_steps</cycle_macro>
+     <cycle_macros>Every_100_steps</cycle_macros>
   </walkabout>
 
 Misc
@@ -1453,7 +1460,7 @@ This section includes a collection of miscellaneous global options, specified as
 
   <echo_translated_input format="some tag" file_name="some name"/>
 
-* Write the input data after internal translation.  There are two specifyable attributes, `"format`" and `"file_name`".  If this parameter is omitted, no translated files are written.
+* Write the input data after internal translation.  There are two specifiable attributes, `"format`" and `"file_name`".  If this parameter is omitted, no translated files are written.
 
   * `"format`" is a specific format tag, and can be `"v1`" (DEFAULT) or `"native`".  The actual format created for the `"native`" tag will depend on the value of the `"type`" specified under `"amanzi_input`" (see above).
 

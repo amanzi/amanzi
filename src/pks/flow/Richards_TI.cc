@@ -49,6 +49,9 @@ void Richards_PK::Functional(double t_old, double t_new,
   Operators::CellToFace_ScaleInverse(mu, krel_);
   krel_->ScaleMasterAndGhosted(molar_rho_);
 
+  // modify relative permeability coefficient for influx faces
+  // UpwindInflowBoundary_New(u_new->Data());
+
   relperm_->ComputeDerivative(u_new->Data(), dKdP_); 
   RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
   upwind_->Compute(*darcy_flux_upwind, *u_new->Data(), bc_model, bc_value, *dKdP_, *dKdP_, func2);
@@ -69,9 +72,11 @@ void Richards_PK::Functional(double t_old, double t_new,
 
   // add accumulation term 
   Epetra_MultiVector& f_cell = *f->Data()->ViewComponent("cell");
-  const Epetra_MultiVector& phi_c = *S_->GetFieldData("porosity")->ViewComponent("cell");
 
   pressure_eval_->SetFieldAsChanged(S_.ptr());
+  S_->GetFieldEvaluator("porosity")->HasFieldChanged(S_.ptr(), "flow");
+  const Epetra_MultiVector& phi_c = *S_->GetFieldData("porosity")->ViewComponent("cell");
+
   S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
   const Epetra_MultiVector& wc_c = *S_->GetFieldData("water_content")->ViewComponent("cell");
   const Epetra_MultiVector& wc_prev_c = *S_->GetFieldData("prev_water_content")->ViewComponent("cell");
@@ -209,11 +214,11 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
 /* ******************************************************************
 * Apply preconditioner inv(B) * X.                                                 
 ****************************************************************** */
-void Richards_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, 
+int Richards_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, 
                                       Teuchos::RCP<TreeVector> Y)
 {
   Y->PutScalar(0.0);
-  op_pc_solver_->ApplyInverse(*X->Data(), *Y->Data());
+  return op_pc_solver_->ApplyInverse(*X->Data(), *Y->Data());
 }
 
 
@@ -237,6 +242,9 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   upwind_->Compute(*darcy_flux_upwind, *u->Data(), bc_model, bc_value, *krel_, *krel_, func1);
   Operators::CellToFace_ScaleInverse(mu, krel_);
   krel_->ScaleMasterAndGhosted(molar_rho_);
+
+  // modify relative permeability coefficient for influx faces
+  // UpwindInflowBoundary_New(u->Data());
 
   relperm_->ComputeDerivative(u->Data(), dKdP_);
   RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;

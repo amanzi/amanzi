@@ -298,6 +298,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
  
   /* convergence estimate */
+  double dt0;
   std::vector<double> h;
   std::vector<double> L1error, L2error;
 
@@ -356,7 +357,6 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     if (nx == 20) TPK.PrintStatistics();
  
     /* advance the state */
-    double dt0;
     if (nx == 20) dt0 = TPK.CalculateTransportDt();
     else dt0 /= 2;
 

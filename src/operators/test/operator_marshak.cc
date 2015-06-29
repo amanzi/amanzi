@@ -36,7 +36,7 @@
 #include "UpwindStandard.hh"
 
 const double TemperatureSource = 100.0; 
-const double TemperatureFloor = 0.02; 
+const double TemperatureFloor = 0.00;
 
 namespace Amanzi{
 
@@ -93,7 +93,7 @@ double exact(double t, const Amanzi::AmanziGeometry::Point& p) {
 }
 
 
-void RunTest(std::string op_list_name) {
+void RunTestMarshak(std::string op_list_name) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -124,7 +124,6 @@ void RunTest(std::string op_list_name) {
   // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 3.0, 1.0, 200, 10, gm);
   RCP<const Mesh> mesh = meshfactory("test/marshak.exo", gm);
   // RCP<const Mesh> mesh = meshfactory("test/marshak_poly.exo", gm);
-  // RCP<const Mesh> mesh = meshfactory("test/aaa.exo", gm);
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
@@ -317,6 +316,6 @@ void RunTest(std::string op_list_name) {
 // }
 
 TEST(MARSHAK_NONLINEAR_WAVE_SFF) {
-  RunTest("diffusion operator Sff");
+  RunTestMarshak("diffusion operator Sff");
 }
 

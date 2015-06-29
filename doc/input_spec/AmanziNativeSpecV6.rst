@@ -18,7 +18,7 @@ Changes V5 -> V6
 
 * Switched to a more flexible MPC driver, called Cycle Driver.
 * Added Energy PK and FlowEnergy PK.
-* Described the conceptual model.
+* Described the PDE forms of conceptual models.
 
 
 ParameterList XML
@@ -439,10 +439,16 @@ and the function itself.
 * `"component`" [string] specifies a mesh object on which the discrete field 
   is defined.
 
+Optional parameters are `"write checkpoint`", `"write vis`". These
+parameters define  whether  the field has to be written into
+checkpoints of vis files. Default values are true.
+
 .. code-block:: xml
 
    <ParameterList name="initial conditions">  <!-- parent list -->
      <ParameterList name="pressure"> 
+       <Parameter name="write checkpoint" type="bool" value ="false">   
+       <Parameter name="write vis" type="bool" value ="true">
        <ParameterList name="function">
          <ParameterList name="MESH BLOCK 1">
            <Parameter name="regions" type="Array(string)" value="DOMAIN 1"/>
@@ -475,6 +481,10 @@ The required parameters are `"Number of DoFs`" and `"Function type`".
 * `"dot with normal`" [bool] triggers special initialization of a
   vector field such as the darcy flux. This field is defined by
   projection of a vector field on face normals.
+
+Optional parameters are `"write checkpoint`", `"write vis`". These
+parameters define  whether  the field has to be written into
+checkpoints of vis files. Default values are true.
 
 .. code-block:: xml
 
@@ -898,7 +908,7 @@ relative permeability, density and viscosity.
 
   * `"relative permeability`" [string] defines a method for calculating the *upwinded* 
     relative permeability. The available options are: `"upwind: gravity`", 
-    `"upwind: darcy velocity`" (default), `"upwind: amanzi", `"upwind: artificial diffusion`" (experimental), 
+    `"upwind: darcy velocity`" (default), `"upwind: amanzi``", 
     `"other: harmonic average`", and `"other: arithmetic average`".
 
   * `"upwind update`" [string] defines frequency of recalculating Darcy flux inside
@@ -1175,6 +1185,7 @@ The first part controls preliminary steps in the time integrator.
   * `"method`" [string] specifies an optional initialization methods. The available 
     options are `"picard`" and `"saturated solver`". The latter option leads to solving 
     a Darcy problem. The former option uses sublist `"picard parameters`".
+    *Picard works better if a bounded initial pressure guess is provided.* 
 
   * `"picard parameters`" [sublist] defines control parameters for the Picard solver.
 
@@ -1237,39 +1248,50 @@ The first part controls preliminary steps in the time integrator.
      </ParameterList>
    </ParameterList>
 
-The time step change is controlled by parameter `"time step controller type`".
-Available options are `"fixed`", `"standard`", `"smarter`", and `"adaptive`".
-The later is under development and is based on a posteriori error estimates.
+The time step change is controlled by parameter `"time step controller type`"
+and the related list of options.
+Nonlinear solver is controlled by parameter `"solver type`"  and related list of options.
+Amanzi supports a few nonlinear solvers described in details in a separate section.
 
-* `"max preconditioner lag iterations`" [int] specifies frequency of 
-  preconditioner recalculation.
+* `"time step controller type`" [list]
+  Available options are `"fixed`", `"standard`", `"smarter`", and `"adaptive`".
+  The later is under development and is based on a posteriori error estimates.
 
-* `"extrapolate initial guess`" [bool] identifies forward time extrapolation
-  of the initial guess. Default is `"true`".
+  * `"max preconditioner lag iterations`" [int] specifies frequency of 
+    preconditioner recalculation.
 
-* `"restart tolerance relaxation factor`" [double] changes the nonlinear
-  tolerance. The time integrator is usually restarted when a boundary condition 
-  changes drastically. It may be beneficial to loosen the nonlinear 
-  tolerance on the first several time steps after the time integrator restart. 
-  The default value is 1, while reasonable values maybe as large as 1000. 
+  * `"extrapolate initial guess`" [bool] identifies forward time extrapolation
+    of the initial guess. Default is `"true`".
 
-* `"restart tolerance relaxation factor damping`" controls how fast the loosened 
-  nonlinear tolerance will revert back to the one specified in `"nonlinear tolerance"`.
-  If the nonlinear tolerance is `"tol`", the relaxation factor is `"factor`", and 
-  the damping is `"d`", and the time step count is `"n`" then the actual nonlinear 
-  tolerance is `"tol * max(1.0, factor * d ** n)`".
-  The default value is 1, while reasonable values are between 0 and 1.
+  * `"restart tolerance relaxation factor`" [double] changes the nonlinear
+    tolerance. The time integrator is usually restarted when a boundary condition 
+    changes drastically. It may be beneficial to loosen the nonlinear 
+    tolerance on the first several time steps after the time integrator restart. 
+    The default value is 1, while reasonable values maybe as large as 1000. 
 
-* `"time step increase factor`" [double] defines geometric grow rate for the
-  initial time step. This factor is applied when nonlinear solver converged
-  in less than `"min iterations`" iterations. Default is 1.0.
+  * `"restart tolerance relaxation factor damping`" controls how fast the loosened 
+    nonlinear tolerance will revert back to the one specified in `"nonlinear tolerance"`.
+    If the nonlinear tolerance is `"tol`", the relaxation factor is `"factor`", and 
+    the damping is `"d`", and the time step count is `"n`" then the actual nonlinear 
+    tolerance is `"tol * max(1.0, factor * d ** n)`".
+    The default value is 1, while reasonable values are between 0 and 1.
 
-* `"time step reduction factor`" [double] defines abrupt time step reduction
-  when nonlinear solver failed or did not converge in  `"max iterations`" iterations.
+  * `"time step increase factor`" [double] defines geometric grow rate for the
+    initial time step. This factor is applied when nonlinear solver converged
+    in less than `"min iterations`" iterations. Default is 1.0.
 
-* `"max time step`" [double] is the maximum allowed time step.
+  * `"time step reduction factor`" [double] defines abrupt time step reduction
+    when nonlinear solver failed or did not converge in  `"max iterations`" iterations.
 
-* `"min time step`" [double] is the minimum allowed time step.
+  * `"max time step`" [double] is the maximum allowed time step.
+
+  * `"min time step`" [double] is the minimum allowed time step.
+
+* `"solver type`" [string] defines nonlinear solver used on each time step for
+  a nonlinear algebraic system :math:`F(x) = 0`. 
+  The available options `"nka`" and `"Newton`".
+
+  * `"nka parameters`" [list] internal parameters for the nonlinear solver NKA.
 
 .. code-block:: xml
 
@@ -1291,6 +1313,22 @@ The later is under development and is based on a posteriori error estimates.
            <Parameter name="max time step" type="double" value="1e+9"/>
            <Parameter name="min time step" type="double" value="0.0"/>
          </ParameterList>
+
+         <Parameter name="solver type" type="string" value="nka"/>
+         <ParameterList name="nka parameters">
+           <Parameter name="nonlinear tolerance" type="double" value="1e-5"/>
+           <Parameter name="limit iterations" type="int" value="30"/>
+           <Parameter name="diverged tolerance" type="double" value="1e+10"/>
+           <Parameter name="diverged l2 tolerance" type="double" value="1e+10"/>
+           <Parameter name="diverged pc tolerance" type="double" value="1e+10"/>
+           <Parameter name="max du growth factor" type="double" value="1e+5"/>
+           <Parameter name="max divergent iterations" type="int" value="3"/>
+           <Parameter name="max nka vectors" type="int" value="10"/>
+           <Parameter name="modify correction" type="bool" value="false"/>
+           <ParameterList name="VerboseObject">
+           <Parameter name="Verbosity Level" type="string" value="high"/>
+           </ParameterList>
+         </ParameterList>
        </ParameterList>
      </ParameterList>
    </ParameterList>
@@ -1300,57 +1338,6 @@ solver converges in 10 or less iterations.
 The time step is not changed when the number of nonlinear iterations is
 between 11 and 15.
 The time step will be cut twice if the number of nonlinear iterations exceeds 15.
-
-Amanzi supports a few nonlinear solvers described in details in a separate section.
-Here, we recall parameters used in the NKA solver.
-
-* `"solver type`" [string] defines nonlinear solver used on each time step for
-  a nonlinear algebraic system :math:`F(x) = 0`. 
-  The available options `"nka`" and `"Newton`".
-
-* `"nka parameters`" [list] internal parameters for the nonlinear solver NKA.
-
-  * `"nonlinear tolerance`" [double] is the convergence tolerance.
-
-  * `"limit iterations`" [int] is the maximum allowed number of iterations.
-
-  * `"diverged tolerance`" [double] is the maximum allowed error norm.
-
-  * `"diverged l2 tolerance`" [double] is the maximum allowed relative L2 error norm.
-    At the moment it is to prevent overflow only in the first NKA increment.
-
-  * `"max du growth factor`" [double] limits the maximum change of the norm of
-    the increment `du` during one nonlinear iteration step. 
-
-  * `"max divergent iterations`" [int] limits the number of times the error
-    can jump up during sequence of nonlinear iterations.
-
-  * `"max nka vectors`" [int] is the size of the Krylov space.
-
-  * `"modify correction`" [bool] allows to change (e.g. clip or damp) 
-    the NKA or Newton correction. This is the experimental option with default `"false`".
-
-
-.. code-block:: xml
-
-   <ParameterList name="time integrator">  <!-- parent list -->
-     <ParameterList name="BDF1">
-       <Parameter name="solver type" type="string" value="nka"/>
-       <ParameterList name="nka parameters">
-         <Parameter name="nonlinear tolerance" type="double" value="1e-5"/>
-         <Parameter name="limit iterations" type="int" value="30"/>
-         <Parameter name="diverged tolerance" type="double" value="1e+10"/>
-         <Parameter name="diverged l2 tolerance" type="double" value="1e+5"/>
-         <Parameter name="max du growth factor" type="double" value="1e+5"/>
-         <Parameter name="max divergent iterations" type="int" value="3"/>
-         <Parameter name="max nka vectors" type="int" value="10"/>
-         <Parameter name="modify correction" type="bool" value="false"/>
-         <ParameterList name="VerboseObject">
-         <Parameter name="Verbosity Level" type="string" value="high"/>
-         </ParameterList>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
 
 The remaining parameters in the time integrator sublist include 
 those needed for unit tests, and future code development. 
@@ -1446,14 +1433,16 @@ The conceptual PDE model for the fully saturated flow is
   \frac{\partial (\phi s_l C_l)}{\partial t} 
   =
   - \boldsymbol{\nabla} \cdot (\boldsymbol{q}_l C_l) 
-  + \boldsymbol{\nabla} \cdot (\phi s_l \boldsymbol{D}_l \boldsymbol{\nabla} C_l) + Q,
+  + \boldsymbol{\nabla} \cdot (\phi s_l (\boldsymbol{D}_l + \tau \boldsymbol{M}_l) \boldsymbol{\nabla} C_l) + Q,
 
 where 
 :math:`\phi` is porosity,
 :math:`s_l` is liquid saturation, 
 :math:`Q` is source or sink term,
 :math:`\boldsymbol{q}_l` is the Darcy velocity,
-and :math:`\boldsymbol{D}_l` is dispersion tensor.
+:math:`\boldsymbol{D}_l` is dispersion tensor,
+:math:`\boldsymbol{M}_l` is diffusion coefficient,
+and :math:`\tau` is tortuosity.
 For an isotropic medium with no preferred axis of symmetry the dispersion 
 tensor has the folowing form:
 
@@ -1777,7 +1766,8 @@ The remaining parameters that can be used by a developes include
 
 * `"runtime diagnostics: solute names`" [Array(string)] defines solutes that will be 
   tracked closely each time step if verbosity `"high`". Default value is the first 
-  solute in the global list of `"aqueous names`".
+  solute in the global list of `"aqueous names`" and the first gas in the global list 
+  of `"gaseous names`".
 
 * `"runtime diagnostics: regions`" [Array(string)] defines a boundary region for 
   tracking solutes. Default value is a seepage face boundary, see Flow PK.
@@ -2352,10 +2342,11 @@ Diffusion operator
 
   * `"nonlinear coefficient`" [string] specifies a method for treating nonlinear diffusion
     coefficient, if any. Available options are `"upwind: face`", `"divk: cell-face`" (default),
-    `"standard: cell`", `"divk: cell-face-twin`", `"divk: cell-grad-face-twin`",
-    `"artificial diffusion: cell-face`" (highly experimental).
+    `"divk: face`", `"standard: cell`", `"divk: cell-face-twin`" and `"divk: cell-grad-face-twin`".
     Symmetry preserving methods are the divk-family of methods and the classical cell-centred
-    method (`"standard: cell`").
+    method (`"standard: cell`"). The first part of the name indicates the base scheme.
+    The second part (after the semi-column) indicates required components of the composite vector
+    that must be provided by a physical PK.
 
   * `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
     geometric objects.
@@ -2967,6 +2958,16 @@ Newton-Krylov acceleration (NKA)
   of the solver. If the relative L2 norm of the solution increment is above this
   value, the solver is terminated. Default is 1e+10.
 
+* `"diverged pc tolerance`" [double] defines another way to identify divergence
+  of the solver. If the relative maximum norm of the solution increment (with respect
+  to the initial increment) is above this value, the solver is terminated.
+  Default is 1e+10.
+
+* `"diverged residual tolerance`" [double] defines another way to identify divergence
+  of the solver. If the relative L2 norm of the residual (with respect
+  to the initial residual) is above this value, the solver is terminated.
+  Default is 1e+10.
+
 * `"max du growth factor`" [double] allows the solver to identify divergence 
   pattern on earlier iterations. If the maximum norm of the solution increment
   changes drastically on two consecutive iterations, the solver is terminated.
@@ -2993,7 +2994,7 @@ Newton-Krylov acceleration (NKA)
   the local space. If a new vector does not satisfy this requirement, the space is modified. 
   Default is 0.05.
 
-* `"VerboseObject`" [sublist] defines the standard verbosity object.
+* `"VerboseObject`" [sublist] defines the standard verbosity object. Default is the global verbosity.
 
 .. code-block:: xml
 
@@ -3004,6 +3005,8 @@ Newton-Krylov acceleration (NKA)
      <Parameter name="limit iterations" type="int" value="20"/>
      <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
      <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
+     <Parameter name="diverged pc tolerance" type="double" value="1.0e+10"/>
+     <Parameter name="diverged residual tolerance" type="double" value="1.0e+10"/>
      <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
      <Parameter name="max error growth factor" type="double" value="1.0e+05"/>
      <Parameter name="max divergent iterations" type="int" value="3"/>
@@ -3088,7 +3091,7 @@ We describe parameters of the second sublist only.
   Default is 1e-8.
 
 * `"method for epsilon`" [string] defines a method for calculating finite difference epsilon.
-  Available option is `"Knoll-Keyes`".
+  Available option is `"Knoll-Keyes`", `"Knoll-Keyes L2`", `"Brown-Saad`".
 
 .. code-block:: xml
 
@@ -3098,7 +3101,7 @@ We describe parameters of the second sublist only.
 
        <ParameterList name="JF matrix parameters">
          <Parameter name="finite difference epsilon" type="double" value="1.0e-8"/>
-         <Parameter name="method for epsilon" type="string" value="Knoll-Keyes"/>
+         <Parameter name="method for epsilon" type="string" value="Knoll-Keyes L2"/>
        </ParameterList>
 
        <ParameterList name="nonlinear solver">

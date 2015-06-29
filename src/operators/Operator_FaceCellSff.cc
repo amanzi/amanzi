@@ -107,7 +107,7 @@ int Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector
         Epetra_MultiVector& Yf_short = *Y.ViewComponent("face", false);
 
         ierr = preconditioner_->ApplyInverse(Tf_short, Yf_short);
-        ASSERT(!ierr);
+        ASSERT(ierr >= 0);
       }
 
       Y.ScatterMasterToGhosted("face");

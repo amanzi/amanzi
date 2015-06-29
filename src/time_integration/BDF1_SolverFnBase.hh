@@ -31,7 +31,7 @@ class BDF1_SolverFnBase : public AmanziSolvers::SolverFnBase<Vector> {
                         const Teuchos::RCP<Vector>& r);
 
   // preconditioner application
-  virtual void ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
+  virtual int ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
                                    const Teuchos::RCP<Vector>& Pr);
 
   // preconditioner update
@@ -87,9 +87,9 @@ void BDF1_SolverFnBase<Vector>::Residual(const Teuchos::RCP<Vector>& u,
 
 // preconditioner application
 template<class Vector>
-void BDF1_SolverFnBase<Vector>::ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
+int  BDF1_SolverFnBase<Vector>::ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
                                                     const Teuchos::RCP<Vector>& Pr) {
-  bdf_fn_->ApplyPreconditioner(r, Pr);
+  return bdf_fn_->ApplyPreconditioner(r, Pr);
 }
 
 // preconditioner update

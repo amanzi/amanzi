@@ -23,7 +23,7 @@
 #include "Mesh.hh"
 #include "CompositeVectorSpace.hh"
 #include "CompositeVector.hh"
-
+#include "OperatorDefs.hh"
 #include "BCs.hh"
 
 /* ******************************************************************
@@ -296,6 +296,7 @@ class Operator {
   std::string schema_string_;
   bool symbolic_assembled_;
   bool assembled_;
+
 
   mutable int apply_calls_;
 

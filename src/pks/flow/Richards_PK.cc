@@ -19,6 +19,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 // Amanzi
+#include "BoundaryFlux.hh"
 #include "dbc.hh"
 #include "exceptions.hh"
 #include "independent_variable_field_evaluator_fromfunction.hh"
@@ -40,6 +41,7 @@
 #include "VWContentEvaluator.hh"
 #include "VWContentEvaluatorFactory.hh"
 #include "WRMEvaluator.hh"
+#include "WRM.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -410,10 +412,9 @@ void Richards_PK::Initialize()
   } else if (name == "upwind: gravity") {
     upw_method = "upwind: face";
     upw_id = Operators::OPERATOR_UPWIND_CONSTANT_VECTOR;
-  } else if (name == "upwind: artificial diffusion") {
-    upw_method = "artificial diffusion: cell-face";
   } else if (name == "upwind: amanzi") {
     upw_method = "divk: cell-face";
+    // upw_method = "divk: face";
   } else if (name == "other: arithmetic average") {
     upw_method = "upwind: face";
     upw_id = Operators::OPERATOR_UPWIND_ARITHMETIC_AVERAGE;
@@ -445,10 +446,6 @@ void Richards_PK::Initialize()
   pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap_owned));
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap_owned));
 
-  // Initialize boundary and source data. 
-  CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
-  UpdateSourceBoundaryData(t_old, t_new, pressure);
-
   // Initialize two fields for upwind operators.
   darcy_flux_copy = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("darcy_flux", passwd_)));
   InitializeUpwind_();
@@ -458,14 +455,14 @@ void Richards_PK::Initialize()
   seepage_mass_ = 0.0;
   initialize_with_darcy_ = true;
   num_itrs_ = 0;
+  
+  // Conditional initialization of lambdas from pressures.
+  CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
 
-  // initialize lambdas in pressure
   if (pressure.HasComponent("face")) {
     DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
                                    *pressure.ViewComponent("face"));
   }
-
-  UpdateSourceBoundaryData(t_old, t_new, pressure);
 
   // error control options
   ASSERT(ti_list_->isParameter("error control options"));
@@ -504,17 +501,23 @@ void Richards_PK::Initialize()
   InitializeUpwind_();
 
   // initialize matrix and preconditioner operators.
-  // since we use the molar density, we will rescale gravity later.
+  // -- setup phase
+  // -- molar density requires to rescale gravity later.
   op_matrix_->Init();
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
   op_matrix_diff_->SetBCs(op_bc_, op_bc_);
   op_matrix_diff_->Setup(Kptr, krel_, dKdP_, molar_rho_);
-  op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
-  op_matrix_diff_->ApplyBCs(true, true);
 
   op_preconditioner_->Init();
   op_preconditioner_->SetBCs(op_bc_, op_bc_);
   op_preconditioner_diff_->Setup(Kptr, krel_, dKdP_, molar_rho_);
+
+  // -- assemble phase
+  UpdateSourceBoundaryData(t_old, t_new, pressure);
+
+  op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
+  op_matrix_diff_->ApplyBCs(true, true);
+
   op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
   op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr());
   op_preconditioner_diff_->ApplyBCs(true, true);
@@ -578,6 +581,11 @@ void Richards_PK::Initialize()
         Epetra_MultiVector& p = *solution->ViewComponent("cell");
         ClipHydrostaticPressure(clip_pressure, p);
         clip = true;
+      }
+
+      if (clip && vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "Clipped pressure field." << std::endl;
       }
 
       if (clip && solution->HasComponent("face")) {
@@ -734,13 +742,12 @@ void Richards_PK::InitializeFields_()
 
 
 /* ******************************************************************
-* Set defaults parameters. It should be called once
+* Set defaults parameters. It could be called only once.
 ****************************************************************** */
 void Richards_PK::InitializeUpwind_()
 {
   // Create RCP pointer to upwind flux.
   if (relperm_->method() == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
-      relperm_->method() == FLOW_RELATIVE_PERM_AMANZI_ARTIFICIAL_DIFFUSION ||
       relperm_->method() == FLOW_RELATIVE_PERM_AMANZI_MFD) {
     darcy_flux_upwind = darcy_flux_copy;
   } else if (relperm_->method() == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
@@ -888,7 +895,8 @@ void Richards_PK::UpdateSourceBoundaryData(double t_old, double t_new, const Com
 
 
 /* ******************************************************************
-* 
+* Returns either known pressure face value or calculates it using
+* the two-point flux approximation (FV) scheme.
 ****************************************************************** */
 double Richards_PK::BoundaryFaceValue(int f, const CompositeVector& u)
 {
@@ -904,6 +912,55 @@ double Richards_PK::BoundaryFaceValue(int f, const CompositeVector& u)
   return face_value;
 }
 
+
+/* ******************************************************************
+* Calculates pressure value on the boundary using the two-point flux 
+* approximation (FV) scheme.
+****************************************************************** */
+double Richards_PK::DeriveBoundaryFaceValue(
+    int f, const CompositeVector& u, Teuchos::RCP<const WRM> wrm_model) 
+{
+  const std::vector<int>& bc_model = op_bc_->bc_model();
+  const std::vector<double>& bc_value = op_bc_->bc_value();
+
+  if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+    return bc_value[f];
+  } else {
+    const Epetra_MultiVector& mu_cell = *S_->GetFieldData("viscosity_liquid")->ViewComponent("cell");
+    const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
+    AmanziMesh::Entity_ID_List cells;
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int c = cells[0];
+
+    double pc_shift = atm_pressure_;   
+    double trans_f = op_matrix_diff_->ComputeTransmissibility(f);
+    double g_f = op_matrix_diff_->ComputeGravityFlux(f);
+    double lmd = u_cell[0][c];
+    int dir;
+    const AmanziGeometry::Point n = mesh_->face_normal(f, false, c, &dir);
+    double bnd_flux = dir*bc_value[f] / (molar_rho_ / mu_cell[0][c]);
+
+    double max_val = atm_pressure_;
+    double min_val;
+    if (bnd_flux <= 0.0) {
+      min_val = u_cell[0][c];
+    } else {
+      min_val= u_cell[0][c] + (g_f - bnd_flux) / (dir * trans_f);
+    }
+    double eps = std::max(1.0e-4 * std::abs(bnd_flux), 1.0e-8);
+
+    // std::cout<<"min_val "<<min_val<<" max_val "<<max_val<<" "<<" trans_f "<<trans_f<<"\n";
+    // std::cout<<"g_f "<<g_f<<" bnd "<< bnd_flux <<" dir "<<dir<<"\n";
+    // std::cout<<c <<"norm "<<n<<"\n";
+
+    const KRelFn func = &WRM::k_relative;       
+    Amanzi::BoundaryFaceSolver<WRM> bnd_solver(trans_f, g_f, u_cell[0][c], lmd, bnd_flux, dir, pc_shift, 
+                                               min_val, max_val, eps, wrm_model, func);
+    lmd = bnd_solver.FaceValue();
+
+    return lmd;      
+  }
+}
 
 /* ******************************************************************
 * This is strange.

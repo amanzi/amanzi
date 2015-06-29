@@ -38,6 +38,7 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
       plist_(plist),
       factor_(1.0)
   {
+    operator_type_ = OPERATOR_DIFFUSION_MFD;
     InitDiffusion_(plist);
   }
 
@@ -47,6 +48,7 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
       plist_(plist),
       factor_(1.0)
   {
+    operator_type_ = OPERATOR_DIFFUSION_MFD;
     InitDiffusion_(plist);
   }
 
@@ -56,6 +58,7 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
       plist_(plist),
       factor_(1.0)
   {
+    operator_type_ = OPERATOR_DIFFUSION_MFD;
     InitDiffusion_(plist);
   }
 
@@ -93,11 +96,16 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   // -- calculate the flux variable.
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
 
-  // working with consistent faces -- EXPERIMENTAL
+  // Developments
+  // -- working with consistent faces
   virtual int UpdateConsistentFaces(CompositeVector& u);
   Teuchos::RCP<const Operator> consistent_face_operator() const { return consistent_face_op_; }
   Teuchos::RCP<Operator> consistent_face_operator() { return consistent_face_op_; }
   
+  // -- interface to solvers for treating nonlinear BCs.
+  virtual double ComputeTransmissibility(int f) const;
+  virtual double ComputeGravityFlux(int f) const { return 0.0; }
+ 
   // developer checks
   int nfailed_primary() { return nfailed_primary_; }
   void set_factor(double factor) { factor_ = factor; }

@@ -71,7 +71,7 @@ class SolverNKA : public Solver<Vector,VectorSpace> {
   int nka_dim_;
 
  private:
-  double tol_, overflow_tol_, overflow_l2_tol_;
+  double tol_, overflow_tol_, overflow_l2_tol_, overflow_pc_tol_, overflow_r_tol_;
 
   int max_itrs_, num_itrs_, returned_code_;
   int fun_calls_, pc_calls_;
@@ -113,6 +113,8 @@ void SolverNKA<Vector, VectorSpace>::Init_()
   tol_ = plist_.get<double>("nonlinear tolerance", 1.e-6);
   overflow_tol_ = plist_.get<double>("diverged tolerance", 1.0e10);
   overflow_l2_tol_ = plist_.get<double>("diverged l2 tolerance", 1.0e10);
+  overflow_pc_tol_ = plist_.get<double>("diverged pc tolerance", 1.0e10);
+  overflow_r_tol_ = plist_.get<double>("diverged residual tolerance", 1.0e10);
   max_itrs_ = plist_.get<int>("limit iterations", 20);
   max_du_growth_factor_ = plist_.get<double>("max du growth factor", 1.0e5);
   max_error_growth_factor_ = plist_.get<double>("max error growth factor", 1.0e5);
@@ -169,8 +171,9 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0), l2_error(0.0);
   double l2_error_initial(0.0);
-  double du_norm(0.0), previous_du_norm(0.0);
+  double du_norm(0.0), previous_du_norm(0.0), du_tmp_norm_initial, r_norm_initial;
   int divergence_count(0);
+  int prec_error;
 
   do {
     // Check for too many nonlinear iterations.
@@ -193,6 +196,21 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
     // Evaluate the nonlinear function.
     fun_calls_++;
     fn_->Residual(u, r);
+
+    // Make sure that residual does not cause numerical overflow.
+    double r_norm;
+    r->Norm2(&r_norm);
+
+    if (num_itrs_ == 1) {
+      r_norm_initial = r_norm;
+    } else {
+      if (r_norm > overflow_r_tol_ * r_norm_initial) {
+        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "teminating due to L2-norm overflow: ||r||=" << r_norm 
+                     << " ||r0||=" << r_norm_initial << std::endl;
+        return SOLVER_OVERFLOW;
+      }
+    }
 
     // If monitoring the residual, check for convergence.
     if (monitor_ == SOLVER_MONITOR_RESIDUAL) {
@@ -220,7 +238,22 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
 
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
-    fn_->ApplyPreconditioner(r, du_tmp);
+    prec_error = fn_->ApplyPreconditioner(r, du_tmp);
+
+    // Make sure that preconditioner does not cause numerical overflow.
+    double du_tmp_norm;
+    du_tmp->NormInf(&du_tmp_norm);
+
+    if (num_itrs_ == 1) {
+      du_tmp_norm_initial = du_tmp_norm;
+    } else {
+      if (du_tmp_norm > overflow_pc_tol_ * du_tmp_norm_initial) {
+        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "terminating due to preconditioner overflow: ||du_tmp||=" << du_tmp_norm
+                     << " ||du_tmp0||=" << du_tmp_norm_initial << std::endl;
+        return SOLVER_OVERFLOW;
+      }
+    }
 
     // Calculate the accelerated correction.
     if (num_itrs_ <= nka_lag_space_) {

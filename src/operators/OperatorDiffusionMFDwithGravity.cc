@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionWithGravity.hh"
+#include "OperatorDiffusionMFDwithGravity.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -20,7 +20,7 @@ namespace Operators {
 /* ******************************************************************
 * Add a gravity term to the diffusion operator.
 ****************************************************************** */
-void OperatorDiffusionWithGravity::UpdateMatrices(
+void OperatorDiffusionMFDwithGravity::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
@@ -34,7 +34,7 @@ void OperatorDiffusionWithGravity::UpdateMatrices(
 /* ******************************************************************
 * Add a gravity term to the RHS of the operator
 ****************************************************************** */
-void OperatorDiffusionWithGravity::AddGravityToRHS_()
+void OperatorDiffusionMFDwithGravity::AddGravityToRHS_()
 {
   // vector or scalar rho?
   const Epetra_MultiVector* rho_c;
@@ -63,7 +63,7 @@ void OperatorDiffusionWithGravity::AddGravityToRHS_()
 
     // gravity discretization
     bool fv_flag = (gravity_method_ == OPERATOR_GRAVITY_FV) ||
-        (little_k_ != OPERATOR_LITTLE_K_DIVK && little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN);
+        !(little_k_ & OPERATOR_LITTLE_K_DIVK_BASE);
 
     for (int c = 0; c < ncells_owned; c++) {
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -83,16 +83,19 @@ void OperatorDiffusionWithGravity::AddGravityToRHS_()
         kc = (*k_cell)[0][c];
         for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
 
+      // -- new scheme: SPD discretization with upwind and equal spliting
+      } else if (little_k_ == OPERATOR_LITTLE_K_DIVK_BASE) {
+        if (!fv_flag) {
+          for (int n = 0; n < nfaces; n++) kf[n] = std::sqrt((*k_face)[0][faces[n]]);
+        } else {
+          for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+        }
+
       // -- the second most popular choice: classical upwind
       } else if(little_k_ == OPERATOR_LITTLE_K_UPWIND) {
         for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
 
       } else if (little_k_ == OPERATOR_LITTLE_K_STANDARD && k_cell != Teuchos::null) {
-        kc = (*k_cell)[0][c];
-        for (int n = 0; n < nfaces; n++) kf[n] = kc;
-
-      // -- highly experimental (for developers only)
-      } else if (little_k_ == OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION) {
         kc = (*k_cell)[0][c];
         for (int n = 0; n < nfaces; n++) kf[n] = kc;
       }
@@ -117,14 +120,6 @@ void OperatorDiffusionWithGravity::AddGravityToRHS_()
             tmp *= copysign(norm(normal) / norm(xcc), sign);
           } else {
             tmp = (Kcg * normal) * rho * kf[n] * dirs[n];
-          }
-
-          if (little_k_ == OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION) {
-            double alpha = (*k_face)[0][f] - kc;
-            if (alpha > 0) {
-              alpha *= Wff(n, n) * rho * norm(g_);
-              tmp -= alpha * (zf - zc);
-            }
           }
 
           rhs_face[0][f] += tmp; 
@@ -163,7 +158,7 @@ void OperatorDiffusionWithGravity::AddGravityToRHS_()
 * WARNING: Since gravity flux is not continuous, we derive it only once
 * (using flag) and in exactly the same manner as in other routines.
 * **************************************************************** */
-void OperatorDiffusionWithGravity::UpdateFlux(
+void OperatorDiffusionMFDwithGravity::UpdateFlux(
     const CompositeVector& u, CompositeVector& flux)
 {
   // Calculate diffusive part of the flux.
@@ -193,7 +188,7 @@ void OperatorDiffusionWithGravity::UpdateFlux(
 
   // gravity discretization
   bool fv_flag = (gravity_method_ == OPERATOR_GRAVITY_FV) ||
-      (little_k_ != OPERATOR_LITTLE_K_DIVK && little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN);
+      !(little_k_ & OPERATOR_LITTLE_K_DIVK_BASE);
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -207,12 +202,11 @@ void OperatorDiffusionWithGravity::UpdateFlux(
     // Update terms due to nonlinear coefficient
     double kc(1.0);
     std::vector<double> kf(nfaces, 1.0);
-    if (little_k_ == OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION) {
-      kc = (*k_cell)[0][c];
-      for (int n = 0; n < nfaces; n++) kf[n] = kc;
-    } else if (little_k_ == OPERATOR_LITTLE_K_DIVK) {
+    if (little_k_ == OPERATOR_LITTLE_K_DIVK) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+    } else if (little_k_ == OPERATOR_LITTLE_K_DIVK_BASE) {
+      for (int n = 0; n < nfaces; n++) kf[n] = std::sqrt((*k_face)[0][faces[n]]);
     } else if (little_k_ == OPERATOR_LITTLE_K_STANDARD && k_cell != Teuchos::null) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
@@ -238,17 +232,6 @@ void OperatorDiffusionWithGravity::UpdateFlux(
             flux_data[0][f] += (Kcg * normal) * rho * kf[n];
           }
             
-          if (little_k_ == OPERATOR_LITTLE_K_ARTIFICIAL_DIFFUSION) {
-            double alpha = (*k_face)[0][f] - kc;
-            if (alpha > 0) {
-              int dir;
-              const AmanziGeometry::Point& exterior = mesh_->face_normal(f, false, c, &dir);
-              double zf = mesh_->face_centroid(f)[dim - 1];
-              alpha *= Wff(n, n) * rho * norm(g_);
-              flux_data[0][f] -= alpha * (zf - zc) * dir;
-            }
-          }
-
           flag[f] = 1;
         }
       }
@@ -283,7 +266,7 @@ void OperatorDiffusionWithGravity::UpdateFlux(
 /* ******************************************************************
 * Put here stuff that has to be done in constructor, i.e. only once.
 ****************************************************************** */
-void OperatorDiffusionWithGravity::Init_(Teuchos::ParameterList& plist)
+void OperatorDiffusionMFDwithGravity::Init_(Teuchos::ParameterList& plist)
 {
   gravity_special_projection_ = (mfd_primary_ == WhetStone::DIFFUSION_TPFA);
 
@@ -300,7 +283,7 @@ void OperatorDiffusionWithGravity::Init_(Teuchos::ParameterList& plist)
 * Compute non-normalized unsigned direction to the next cell needed
 * to project gravity vector in the MFD-TPFA discretization method.
 ****************************************************************** */
-AmanziGeometry::Point OperatorDiffusionWithGravity::GravitySpecialDirection_(int f) const
+AmanziGeometry::Point OperatorDiffusionMFDwithGravity::GravitySpecialDirection_(int f) const
 {
   AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -311,6 +294,35 @@ AmanziGeometry::Point OperatorDiffusionWithGravity::GravitySpecialDirection_(int
   } else {
     return mesh_->face_centroid(f) - mesh_->cell_centroid(cells[0]);
   }
+}
+
+
+/* ******************************************************************
+* Return value of the gravity flux on the given face f.
+****************************************************************** */
+double OperatorDiffusionMFDwithGravity::ComputeGravityFlux(int f) const
+{
+  AmanziMesh::Entity_ID_List cells;
+  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  int c = cells[0];
+
+  double gflux;
+  const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+
+  if (K_.get()) {
+    gflux = (((*K_)[c] * g_) * normal);
+  } else {
+    gflux = g_ * normal;
+  }
+
+  if (rho_cv_ == Teuchos::null) {
+    gflux *= rho_;
+  } else {
+    const Epetra_MultiVector& rho_c = *rho_cv_->ViewComponent("cell", true);
+    gflux *= rho_c[0][c];
+  }
+
+  return gflux;
 }
 
 }  // namespace Operators

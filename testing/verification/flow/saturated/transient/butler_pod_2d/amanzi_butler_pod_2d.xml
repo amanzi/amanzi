@@ -61,7 +61,7 @@
    -->
     <execution_controls>
         <verbosity level="extreme"/>
-        <execution_control_defaults init_dt="3.64" increase_factor="1.5" method="bdf1"/>
+        <execution_control_defaults init_dt="3.64" increase_factor="1.5" max_dt="10 y" method="bdf1"/>
         <execution_control start="0.0" end="1.e9" init_dt="3.64" mode="transient"/>
     </execution_controls>
 

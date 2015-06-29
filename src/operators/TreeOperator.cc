@@ -97,11 +97,12 @@ int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
   Epetra_Vector Xcopy(A_->RowMap());
   Epetra_Vector Ycopy(A_->RowMap());
   int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
+  int returned_code(0);
 
-  ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
+  returned_code = preconditioner_->ApplyInverse(Xcopy, Ycopy);
   ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, Y);
   ASSERT(!ierr);
-  return ierr;
+  return returned_code;
 }
 
     

@@ -19,7 +19,8 @@
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorDiffusionMFD.hh"
 #include "OperatorDiffusionFV.hh"
-#include "OperatorDiffusionWithGravity.hh"
+#include "OperatorDiffusionMFDwithGravity.hh"
+#include "OperatorDiffusionFVwithGravity.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -34,29 +35,51 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
     const AmanziGeometry::Point& g,
     int upwind_method)
 {
-  // Let us try to identify a FV scheme.
   std::string name = oplist.get<std::string>("discretization primary");
-  if (name == "fv: default") {
+  bool flag = oplist.get<bool>("gravity", false);
+
+  // FV methods
+  if (name == "fv: default" && !flag) {
     Teuchos::RCP<OperatorDiffusionFV> op = Teuchos::rcp(new OperatorDiffusionFV(oplist, mesh));
-    if (oplist.get<bool>("gravity", false)) op->SetGravity(g);
     op->SetBCs(bc, bc);
     return op;
-  }
+  } else if (name == "fv: default" && flag) {
+    Teuchos::RCP<OperatorDiffusionFVwithGravity> op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh));
+    op->SetGravity(g);
+    op->SetBCs(bc, bc);
+    return op;
 
-  // Let us see if we have gravity.
-  bool flag = oplist.get<bool>("gravity", false);
-  if (!flag) {
+  // MFD methods
+  } else if (!flag) {
     Teuchos::RCP<OperatorDiffusionMFD> op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, mesh));
     op->SetBCs(bc, bc);
     return op;
   } else {
-    Teuchos::RCP<OperatorDiffusionWithGravity> op = Teuchos::rcp(new OperatorDiffusionWithGravity(oplist, mesh));
+    Teuchos::RCP<OperatorDiffusionMFDwithGravity> op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, mesh));
     op->SetGravity(g);
     op->SetBCs(bc, bc);
     return op;
   }
 }
 
+
+Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+    Teuchos::RCP<BCs> bc,
+    Teuchos::ParameterList& oplist)
+{
+  std::string name = oplist.get<std::string>("discretization primary");
+
+  if (name == "fv: default") {
+    Teuchos::RCP<OperatorDiffusionFV> op = Teuchos::rcp(new OperatorDiffusionFV(oplist, mesh));
+    op->SetBCs(bc, bc);
+    return op;
+  } else {
+    Teuchos::RCP<OperatorDiffusionMFD> op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, mesh));
+    op->SetBCs(bc, bc);
+    return op;
+  }
+}
 }  // namespace Operators
 }  // namespace Amanzi
 

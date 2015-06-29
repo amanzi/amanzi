@@ -50,7 +50,6 @@ bool reset_info_compfunc(std::pair<double,double> x, std::pair<double,double> y)
 }
 
 
-
 double rss_usage() { // return ru_maxrss in MBytes
 #if (defined(__unix__) || defined(__unix) || defined(unix) || defined(__APPLE__) || defined(__MACH__))
   struct rusage usage;
@@ -179,8 +178,7 @@ void CycleDriver::Setup() {
 
       if (parameter_list_->isSublist(plist_name)) {
         Teuchos::ParameterList& vis_plist = parameter_list_->sublist(plist_name);
-        Teuchos::RCP<Visualization> vis =
-          Teuchos::rcp(new Visualization(vis_plist, comm_));
+        Teuchos::RCP<Visualization> vis = Teuchos::rcp(new Visualization(vis_plist, comm_));
         vis->set_mesh(mesh->second.first);
         vis->CreateFiles();
         visualization_.push_back(vis);
@@ -242,9 +240,8 @@ void CycleDriver::Setup() {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Setup is complete." << std::endl;
   }
-
-
 }
+
 
 /* ******************************************************************
 * Initialize State followed by initialization of PK.
@@ -276,9 +273,7 @@ void CycleDriver::Initialize() {
     // visualize();
     // checkpoint(*S_->GetScalarData("dt", "coordinator"));
   }
-
 }
-
 
 
 /* ******************************************************************
@@ -683,7 +678,7 @@ bool CycleDriver::Advance(double dt) {
     if (advance) {
       pk_->CalculateDiagnostics();
       Visualize(force_vis);
-      WriteCheckpoint(dt, force_check);
+      WriteCheckpoint(get_dt(fail), force_check);   // write Checkpoint with new dt
       Observations(force_obser);
       WriteWalkabout(force_check);
     }
@@ -712,9 +707,10 @@ bool CycleDriver::Advance(double dt) {
 void CycleDriver::Observations(bool force) {
   if (observations_ != Teuchos::null) {
     if (observations_->DumpRequested(S_->cycle(), S_->time()) || force) {
-      //pk_->CalculateDiagnostics();
-      *vo_->os() << "Cycle " << S_->cycle() << ": writing to observation " << std::endl;
-      observations_->MakeObservations(*S_);
+      // pk_->CalculateDiagnostics();
+      int n = observations_->MakeObservations(*S_);
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "Cycle " << S_->cycle() << ": writing observations... " << n << std::endl;
     }
   }
 }
@@ -754,7 +750,7 @@ void CycleDriver::WriteCheckpoint(double dt, bool force) {
   if (force || checkpoint_->DumpRequested(S_->cycle(), S_->time())) {
     Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt);
     
-    //if (force) pk_->CalculateDiagnostics();
+    // if (force) pk_->CalculateDiagnostics();
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Cycle " << S_->cycle() << ": writing checkpoint file" << std::endl;
   }
@@ -814,7 +810,11 @@ void CycleDriver::Go() {
 
     Init_PK(time_period_id_); 
     Setup();
-    //Initialize();
+    // Only field which are in State are initialize from the input file
+    // to initialize field which are not in the restart file
+    S_->InitializeFields();
+    S_->InitializeEvaluators();
+    
 
     // re-initialize the state object
     restart_dT = ReadCheckpoint(comm_, Teuchos::ptr(&*S_), restart_filename_);
@@ -979,7 +979,11 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   S_->GetMeshPartition("materials");
 
-  //if (!output_registered_) RegisterOutput();
+
+  pk_->CalculateDiagnostics();
+  // // Visualize();
+  // // WriteCheckpoint(dt);
+  Observations();
 
   pk_->set_dt(tp_dt_[time_pr_id]);
 

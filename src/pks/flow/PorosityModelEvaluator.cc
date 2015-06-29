@@ -91,7 +91,7 @@ void PorosityModelEvaluator::EvaluateFieldPartialDerivative_(
 
   int ncells = phi_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
-    phi_c[0][c] = -pom_->second[(*pom_->first)[c]]->dPorositydPressure(pres_c[0][c]);
+    phi_c[0][c] = pom_->second[(*pom_->first)[c]]->dPorositydPressure(pres_c[0][c]);
   }
 }
 

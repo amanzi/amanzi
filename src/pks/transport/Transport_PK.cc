@@ -22,6 +22,7 @@
 #include "errors.hh"
 #include "Explicit_TI_RK.hh"
 #include "GMVMesh.hh"
+#include "LinearOperatorDefs.hh"
 #include "LinearOperatorFactory.hh"
 #include "Mesh.hh"
 #include "OperatorDefs.hh"
@@ -514,6 +515,14 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       if (diffusion_phase_[i]->values().size() != 0) flag_diffusion = true;
     }
   }
+  if (flag_diffusion) {
+    // no molecular diffusion if all tortuosities are zero.
+    double tau(0.0);
+    for (int i = 0; i < mat_properties_.size(); i++) {
+      tau += mat_properties_[i]->tau[0] + mat_properties_[i]->tau[1];
+    }
+    if (tau == 0.0) flag_diffusion = false;
+  }
 
   if (flag_dispersion || flag_diffusion) {
     Teuchos::ParameterList op_list;
@@ -619,9 +628,9 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       CompositeVector& rhs = *op->rhs();
       int ierr = solver->ApplyInverse(rhs, sol);
 
-      if (ierr != 0) {
+      if (ierr < 0) {
         Errors::Message msg;
-        msg << "\nLinear solver returned an unrecoverable error code.\n";
+        msg = solver->DecodeErrorCode(ierr);
         Exceptions::amanzi_throw(msg);
       }
 
@@ -687,9 +696,25 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       CompositeVector& rhs = *op->rhs();
       int ierr = solver->ApplyInverse(rhs, sol);
 
-      if (ierr != 0) {
+      // if (ierr != 0) {
+      //   // Errors::Message msg;
+      //   // msg << "\nLinear solver returned an unrecoverable error code.\n";
+      //   // Exceptions::amanzi_throw(msg);
+      // }
+      if (ierr < 0) {
         Errors::Message msg;
-        msg << "\nLinear solver returned an unrecoverable error code.\n";
+        switch(ierr){
+        case  Amanzi::AmanziSolvers::LIN_SOLVER_NON_SPD_APPLY:
+          msg << "Linear system is not SPD.\n";
+        case  Amanzi::AmanziSolvers::LIN_SOLVER_NON_SPD_APPLY_INVERSE:
+          msg << "Linear system is not SPD.\n";
+        case  Amanzi::AmanziSolvers::LIN_SOLVER_MAX_ITERATIONS:
+          msg << "Maximum iterations are reached in solution of linear system.\n";
+        case  Amanzi::AmanziSolvers::LIN_SOLVER_RESIDUAL_OVERFLOW:
+          msg << "Residual overflow in solution of linear system.\n";
+        default:
+          msg << "\nLinear solver returned an unrecoverable error code: "<<ierr<<".\n";
+        }
         Exceptions::amanzi_throw(msg);
       }
 

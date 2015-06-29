@@ -161,6 +161,7 @@ void Transport_PK::ProcessParameterList()
     runtime_solutes_ = tp_list_->get<Teuchos::Array<std::string> >("runtime diagnostics: solute names").toVector();
   } else {
     runtime_solutes_.push_back(component_names_[0]);
+    if (num_gaseous > 0) runtime_solutes_.push_back(component_names_[num_aqueous]);
   }
   mass_solutes_exact_.assign(num_aqueous + num_gaseous, 0.0);
   mass_solutes_source_.assign(num_aqueous + num_gaseous, 0.0);
