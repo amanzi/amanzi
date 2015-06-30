@@ -155,8 +155,7 @@ SurfaceBalanceBase::UpdatePreconditioner(double t,
 
 
 // applies preconditioner to u and returns the result in Pu
-void
-SurfaceBalanceBase::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
+int SurfaceBalanceBase::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
@@ -171,6 +170,8 @@ SurfaceBalanceBase::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
     *Pu = *u;
     Pu->Scale(S_next_->time() - S_->time());
   }
+  
+  return 0;
 }
 
 

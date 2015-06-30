@@ -761,10 +761,11 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
 
 
 // applies preconditioner to u and returns the result in Pu
-void
-SurfaceBalanceImplicit::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
+int SurfaceBalanceImplicit::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
   *Pu = *u;
+  
+  return 0;
 }
 
 

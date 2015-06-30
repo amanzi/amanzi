@@ -127,7 +127,7 @@ void Richards::Functional(double t_old,
 // -----------------------------------------------------------------------------
 // Apply the preconditioner to u and return the result in Pu.
 // -----------------------------------------------------------------------------
-void Richards::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+int Richards::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "Precon application:" << std::endl;
@@ -137,7 +137,7 @@ void Richards::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RC
 #endif
 
   // Apply the preconditioner
-  preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
+  int ierr = preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
 
 #if DEBUG_FLAG
   db_->WriteVector("PC*p_res", Pu->Data().ptr(), true);
@@ -149,6 +149,8 @@ void Richards::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RC
 //     db_->WriteVector("PC_WC*p_res", Pu->Data().ptr(), true);
 // #endif
 //   }
+  
+  return (ierr > 0) ? 0 : 1;
 };
 
 

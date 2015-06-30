@@ -85,9 +85,10 @@ void ConstantTemperature::Functional(double t_old, double t_new, Teuchos::RCP<Tr
 };
 
 // -- preconditioning (the identity matrix)
-void ConstantTemperature::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
+int ConstantTemperature::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
   *Pu = *u;
+  return 0;
 };
 
 
