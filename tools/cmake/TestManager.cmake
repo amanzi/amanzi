@@ -281,6 +281,7 @@ endfunction(ADD_AMANZI_TEST)
 #                            INPUT file.xml
 #                            NORM L1 | L2 | Linf  <--- not supported yet.
 #                            TOLERANCE tolerance
+#                            [FILES file1;file2;...;fileN]
 #                            [FIELD field_name]
 #                            [OBSERVATION obs_name] 
 #                            [PARALLEL] 
@@ -298,6 +299,10 @@ endfunction(ADD_AMANZI_TEST)
 #
 # KEYWORD INPUT is required. This key word defines the Amanzi XML input file or 
 #         observation file.
+#
+# Option FILES lists any additional files that the test needs to run in its 
+# directory/environment. These files will be copied from the source directory
+# to the run directory.
 #
 # Option PARALLEL signifies that this is a parallel job. This is also
 # implied by an NPROCS value > 1
@@ -317,7 +322,7 @@ function(ADD_AMANZI_COMPARISON_TEST test_name)
 
   # Parse through the remaining options
   set(options PARALLEL)
-  set(oneValueArgs FIELD OBSERVATION INPUT REFERENCE TOLERANCE)
+  set(oneValueArgs FIELD OBSERVATION INPUT REFERENCE TOLERANCE FILES)
   set(multiValueArgs NPROCS MPI_EXEC_ARGS)
   cmake_parse_arguments(AMANZI_COMPARISON_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -353,16 +358,25 @@ function(ADD_AMANZI_COMPARISON_TEST test_name)
     set(amanzi_test_args ${amanzi_test_args} MPI_EXEC_ARGS ${AMANZI_COMPARISON_TEST_MPI_EXEC_ARGS})
   endif()
 
+  # Copy input and files into place.
+  file(COPY ${PROJECT_SOURCE_DIR}/${AMANZI_COMPARISON_TEST_INPUT} DESTINATION .)
+  foreach(f ${AMANZI_COMPARISON_TEST_FILES})
+    file(COPY ${PROJECT_SOURCE_DIR}/${f} DESTINATION .)
+  endforeach()
+
   # Call add_test
-  add_amanzi_test(NAME run_${test_name}_for_comparison KIND AMANZI AMANZI_INPUT ${AMANZI_COMPARISON_TEST_INPUT} ${amanzi_test_args})
+  add_amanzi_test(run_${test_name}_for_comparison KIND AMANZI AMANZI_INPUT ${AMANZI_COMPARISON_TEST_INPUT} ${amanzi_test_args})
+  _append_test_label(run_${test_name}_for_comparison REG)
   if (AMANZI_COMPARISON_TEST_FIELD)
-    add_test(NAME compare_${test_name}_field COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tools/testing/compare_field_results.py ${AMANZI_COMPARISON_TEST_FIELD} ${AMANZI_COMPARISON_TEST_INPUT} ${AMANZI_COMPARISON_TEST_REFERENCE} ${AMANZI_COMPARISON_TEST_TOLERANCE})
+    add_test(NAME compare_${test_name}_field COMMAND ${PYTHON_EXECUTABLE} ${AMANZI_SOURCE_DIR}/tools/testing/compare_field_results.py ${AMANZI_COMPARISON_TEST_FIELD} ${AMANZI_COMPARISON_TEST_INPUT} ${AMANZI_COMPARISON_TEST_REFERENCE} ${AMANZI_COMPARISON_TEST_TOLERANCE})
     set_tests_properties( compare_${test_name}_field PROPERTIES DEPENDS run_${test_name}_for_comparison )
-    set_tests_properties( compare_${test_name}_field PROPERTIES FAIL_REGULAR_EXPRSSION "Comparison Failed" )
+    set_tests_properties( compare_${test_name}_field PROPERTIES PASS_REGULAR_EXPRESSION "Comparison Passed" )
+    _append_test_label(compare_${test_name}_field REG)
   else()
-    add_test(NAME compare_${test_name}_observation COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tools/testing/compare_observation_results.py ${AMANZI_COMPARISON_TEST_OBSERVATION} ${AMANZI_COMPARISON_TEST_INPUT} ${AMANZI_COMPARISON_TEST_REFERENCE} ${AMANZI_COMPARISON_TEST_TOLERANCE})
+    add_test(NAME compare_${test_name}_observation COMMAND ${PYTHON_EXECUTABLE} ${AMANZI_SOURCE_DIR}/tools/testing/compare_observation_results.py ${AMANZI_COMPARISON_TEST_OBSERVATION} ${AMANZI_COMPARISON_TEST_INPUT} ${AMANZI_COMPARISON_TEST_REFERENCE} ${AMANZI_COMPARISON_TEST_TOLERANCE})
     set_tests_properties( compare_${test_name}_observation PROPERTIES DEPENDS run_${test_name}_for_comparison )
-    set_tests_properties( compare_${test_name}_observation PROPERTIES FAIL_REGULAR_EXPRSSION "Comparison Failed" )
+    set_tests_properties( compare_${test_name}_observation PROPERTIES PASS_REGULAR_EXPRESSION "Comparison Passed" )
+    _append_test_label(compare_${test_name}_observation REG)
   endif()
 
 endfunction(ADD_AMANZI_COMPARISON_TEST)
