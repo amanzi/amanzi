@@ -23,7 +23,6 @@ class MPCDelegateEWCSubsurface;
 
 namespace Operators {
 class OperatorDiffusion;
-class OperatorDiffusionWithGravity;
 class OperatorAdvection;
 class OperatorAccumulation;
 class Operator;
@@ -69,7 +68,7 @@ class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h, bool assemble);
   
   // preconditioner application
-  virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
       ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
                        Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
@@ -96,15 +95,15 @@ class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
   // equations are given by:
   // dWC/dt + div q = 0
   // dE/dt + div K grad T + div hq = 0
-  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> ddivq_dT_;
+  Teuchos::RCP<Operators::OperatorDiffusion> ddivq_dT_;
   Teuchos::RCP<Operators::Upwinding> uw_dkrdT_;
 
   Teuchos::RCP<Operators::OperatorAccumulation> dWC_dT_;
   Teuchos::RCP<Operators::Operator> dWC_dT_block_;
 
   Teuchos::RCP<Operators::OperatorDiffusion> ddivKgT_dp_;
-  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> ddivhq_dp_;
-  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> ddivhq_dT_;
+  Teuchos::RCP<Operators::OperatorDiffusion> ddivhq_dp_;
+  Teuchos::RCP<Operators::OperatorDiffusion> ddivhq_dT_;
   Teuchos::RCP<Operators::OperatorAccumulation> dE_dp_;
   Teuchos::RCP<Operators::Operator> dE_dp_block_;
 

@@ -58,7 +58,7 @@ void AdvectionDiffusion::Functional(double t_old, double t_new, Teuchos::RCP<Tre
 };
 
 // applies preconditioner to u and returns the result in Pu
-void AdvectionDiffusion::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+int AdvectionDiffusion::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "Precon application:" << std::endl;
     *vo_->os() << "  u: " << (*u->Data())("cell",0);
@@ -67,7 +67,7 @@ void AdvectionDiffusion::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, T
     *vo_->os() << std::endl;
   }
 
-  preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
+  int ierr = preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "  Pu: " << (*Pu->Data())("cell",0);
@@ -75,6 +75,8 @@ void AdvectionDiffusion::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, T
       *vo_->os() << "  f: " << (*Pu->Data())("face",80);
     *vo_->os() << std::endl;
   }
+  
+  return (ierr > 0) ? 0 : 1;
 };
 
 

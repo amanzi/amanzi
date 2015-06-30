@@ -186,10 +186,14 @@ void MPCDelegateEWC::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
 // -----------------------------------------------------------------------------
 // Application of the preconditioner.
 // -----------------------------------------------------------------------------
-void MPCDelegateEWC::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+int MPCDelegateEWC::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+  int ierr = 0;
   if ((precon_type_ == PRECON_EWC) || (precon_type_ == PRECON_SMART_EWC)) {
     precon_ewc_(u,Pu);
   }
+  else ierr = 1;
+  
+  return ierr;
 }
 
 
