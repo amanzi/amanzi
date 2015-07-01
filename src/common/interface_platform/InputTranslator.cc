@@ -1953,7 +1953,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     else if (textValue == "explicit second-order") {
                       algo = "Explicit Second-Order";
                     }
-                    else if (strcmp(textContent,"none")==0) {
+                    else if (textValue == "none") {
                       algo = "None";
                     }
                     tpkPL.set<std::string>("Transport Integration Algorithm",algo.c_str());
@@ -2267,7 +2267,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                         if (bdf1_tagname != "comments") {
                           // warn about unrecognized element
                           std::stringstream elem_name;
-                          elem_name << nodeName <<  "->"  << tagname;
+                          elem_name << nodeName <<  "->"  << bdf1_tagname;
                           throw_warning_skip(elem_name.str());
                         }
                       }
