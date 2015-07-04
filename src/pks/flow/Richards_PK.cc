@@ -626,23 +626,24 @@ void Richards_PK::Initialize()
   }
 
   // subspace entering: re-initialize lambdas.
-  if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face")
-      && S_->position() == Amanzi::TIME_PERIOD_START) {
+  if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face")) {
     solver_name_constraint_ = ti_list_->sublist("pressure-lambda constraints").get<std::string>("linear solver");
 
-    EnforceConstraints(t_new, solution);
-    pressure_eval_->SetFieldAsChanged(S_.ptr());
+    if (S_->position() == Amanzi::TIME_PERIOD_START) {
+      EnforceConstraints(t_new, solution);
+      pressure_eval_->SetFieldAsChanged(S_.ptr());
 
-    // update mass flux
-    op_matrix_->Init();
-    op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
-    op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
+      // update mass flux
+      op_matrix_->Init();
+      op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
+      op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
 
-    // normalize to Darcy flux, m/s
-    Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face", true);
-    for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
+      // normalize to Darcy flux, m/s
+      Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face", true);
+      for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
 
-    InitializeUpwind_();
+      InitializeUpwind_();
+    }
   }
 
   // verbose output
