@@ -1001,7 +1001,7 @@ the following set of physical properties using the supported models described be
 
   Additional ''Material Properties'' related to flow are:
 
-  * [SU] Porosity [list] Parameterized model for porosity.  Choose exactly one of the following: `"Porosity: Uniform`" (see below)
+  * [SU] Porosity [list] Parameterized model for porosity.  Choose exactly one of the following: `"Porosity: Uniform`" or `"Porosity: Compressible`" (see below)
 
   * [SU] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" or `"Brooks Corey`" (see below)
 
@@ -1047,11 +1047,17 @@ the following set of physical properties using the supported models described be
 
   * [SU] `"Assigned Regions`" (Array(string)) a set of labels corresponding to volumetric regions defined above.  If any regions specified here are not three-dimensional, an error is thrown. (NOTE: [S] if layers in this list overlap spatially, this list implies the precedence ordering, right to left)
 
-The following models can be specified for porosity (only `"Porosity: Uniform`" is supported at the moment):
+The following models can be specified for porosity `"Porosity: Uniform`" or `"Porosity:Complessible`":
 
 * [SU] `"Porosity: Uniform`" [list] requires 
  
  * [SU] `"Value`" [double] to specify the constant value of porosity.
+
+* [U] `"Porosity: Compressible`" [list] requires 
+ 
+ * [U] `"Reference Value`" [double] to specify the constant value of underformed porosity.
+ * [U] `"Reference Pressure`" [double] to specify the constant value of reference pressure (sefault is 101325.0 [Pa]).
+ * [U] `"Pore Compressibility`" [double] to specify rock compressibility ([Pa^{-1}]. 
 
 The following models can be specified for the intrinsic permeability of the material:
 

@@ -118,9 +118,17 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           // see if we need to generate a Picard list
           flow_list = &richards_problem; // we use this below to insert sublists that are shared by Richards and Darcy
 
-          // insert the water retention models sublist (these are only relevant for Richards)
           Teuchos::ParameterList& water_retention_models = richards_problem.sublist("water retention models");
+          // insert the water retention models sublist
           water_retention_models = CreateWRM_List_(plist);
+
+          // insert the porosity models sublist and inform Flow about non-constant models.
+          Teuchos::ParameterList& porosity_models = richards_problem.sublist("porosity models");
+          porosity_models = CreatePOM_List_(plist);
+          if (porosity_models.numParams() > 0) {
+            flow_list->sublist("physical models and assumptions")
+                      .set<std::string>("porosity model", "compressible: pressure function");
+          }
         }
 
         // insert operator sublist
@@ -952,7 +960,6 @@ Teuchos::ParameterList InputParserIS::CreateWRM_List_(Teuchos::ParameterList* pl
   // loop through the material properties list and extract the water retention model info
   Teuchos::ParameterList& matprop_list = plist->sublist("Material Properties");
 
-  int counter = 0;
   for (Teuchos::ParameterList::ConstIterator i = matprop_list.begin(); i != matprop_list.end(); i++) {
     // get the wrm parameters
     Teuchos::ParameterList& cp_list = matprop_list.sublist(i->first);
@@ -1070,6 +1077,64 @@ Teuchos::ParameterList InputParserIS::CreateWRM_List_(Teuchos::ParameterList* pl
     }
   }
   return wrm_list;
+}
+
+
+/* ******************************************************************
+* POM sublist. If no compressiblity models is found, the created list 
+* is destroyed.
+****************************************************************** */
+Teuchos::ParameterList InputParserIS::CreatePOM_List_(Teuchos::ParameterList* plist)
+{
+  Errors::Message msg;
+  Teuchos::OSTab tab = vo_->getOSTab();
+
+  Teuchos::ParameterList out_list;
+  compressibility_ = false;
+
+  // loop through the material properties list and extract the water retention model info
+  Teuchos::ParameterList& mat_list = plist->sublist("Material Properties");
+
+  for (Teuchos::ParameterList::ConstIterator i = mat_list.begin(); i != mat_list.end(); i++) {
+    Teuchos::ParameterList& cp_list = mat_list.sublist(i->first);
+
+    // now get the assigned regions
+    Teuchos::Array<std::string> regions = cp_list.get<Teuchos::Array<std::string> >("Assigned Regions");
+
+    for (Teuchos::Array<std::string>::const_iterator i = regions.begin(); i != regions.end(); i++) {
+      std::stringstream ss;
+      ss << "POM for " << *i;
+
+      Teuchos::ParameterList& pom_list = out_list.sublist(ss.str());
+      pom_list.set<std::string>("region", *i);
+
+      // we can have either van Genuchten or Brooks Corey
+      if (cp_list.isSublist("Porosity: Uniform")) {
+        pom_list.set<std::string>("porosity model", "constant");
+        Teuchos::ParameterList& params = cp_list.sublist("Porosity: Uniform");
+        pom_list.set<double>("value", params.get<double>("Value"));
+
+      } else if (cp_list.isSublist("Porosity: Compressible")) {
+        compressibility_ = true;
+        pom_list.set<std::string>("porosity model", "compressible");
+        Teuchos::ParameterList& params = cp_list.sublist("Porosity: Compressible");
+        pom_list.set<double>("undeformed soil porosity", params.get<double>("Reference Value"));
+        pom_list.set<double>("reference pressure", params.get<double>("Reference Pressure"));
+        pom_list.set<double>("pore compressibility", params.get<double>("Pore Compressibility"));
+
+      } else {
+        msg << "An unknown porositymodel was specified, must specify" 
+            << " either 'Porosity: Uniform' or 'Porosity: Compressibe'";
+        Exceptions::amanzi_throw(msg);
+      }
+    }
+  }
+
+  if (!compressibility_) {
+    Teuchos::ParameterList empty;
+    out_list = empty;
+  }
+  return out_list;
 }
 
 

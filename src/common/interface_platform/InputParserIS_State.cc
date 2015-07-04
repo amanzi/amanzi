@@ -81,21 +81,23 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
       reg_str = reg_str + *ireg;
     }
 
-    // porosity...
-    double porosity;
-    if (matprop_list.sublist(matprop_list.name(i)).isSublist("Porosity: Uniform")) {
-      porosity = matprop_list.sublist(matprop_list.name(i)).sublist("Porosity: Uniform").get<double>("Value");
-    } else {
-      msg << "Porosity must be specified as Intrinsic Porosity: Uniform, for every region.";
-      Exceptions::amanzi_throw(msg);
+    // -- porosity: skip if compressibility model was already provided.
+    if (!compressibility_) {
+      double porosity;
+      if (matprop_list.sublist(matprop_list.name(i)).isSublist("Porosity: Uniform")) {
+        porosity = matprop_list.sublist(matprop_list.name(i)).sublist("Porosity: Uniform").get<double>("Value");
+      } else {
+        msg << "Porosity must be specified as Intrinsic Porosity: Uniform, for every region.";
+        Exceptions::amanzi_throw(msg);
+      }
+      Teuchos::ParameterList& porosity_ev = stt_ev.sublist("porosity");
+      porosity_ev.sublist("function").sublist(reg_str)
+          .set<Teuchos::Array<std::string> >("regions",regions)
+          .set<std::string>("component","cell")
+          .sublist("function").sublist("function-constant")
+          .set<double>("value", porosity);
+      porosity_ev.set<std::string>("field evaluator type", "independent variable");
     }
-    Teuchos::ParameterList& porosity_ev = stt_ev.sublist("porosity");
-    porosity_ev.sublist("function").sublist(reg_str)
-        .set<Teuchos::Array<std::string> >("regions",regions)
-        .set<std::string>("component","cell")
-        .sublist("function").sublist("function-constant")
-        .set<double>("value", porosity);
-    porosity_ev.set<std::string>("field evaluator type", "independent variable");
 
     // permeability...
     double perm_x, perm_y, perm_z;

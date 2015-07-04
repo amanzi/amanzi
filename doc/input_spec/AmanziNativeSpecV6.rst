@@ -869,7 +869,7 @@ includes a few mandatory parameters: region name, model name, and parameters for
   The available models are `"compressible`" and `"constant`". 
 
   * The model `"compressible`" requires `"undeformed soil porosity"`" [double],
-    `"reference pressure`" [double], and `"pore compressibility`" [string].
+    `"reference pressure`" [double], and `"pore compressibility`" [string] [Pa^-1].
     Default value for `"reference pressure`" is 101325.0 [Pa].
 
   * The model `"constant`" requires `"value`" [double].
