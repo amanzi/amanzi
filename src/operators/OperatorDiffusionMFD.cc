@@ -231,6 +231,7 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
     if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
     if (k_->HasComponent("twin")) k_twin = k_->ViewComponent("twin", true);
   }
+
 /*
   double kf_hmean = 0;
   if (scaled_constraint_ && (k_face != Teuchos::null)) {
@@ -245,6 +246,7 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
     kf_hmean = nval / kf_hmean;
   }
 */
+
   // update matrix blocks
   AmanziMesh::Entity_ID_List faces, cells;
   std::vector<int> dirs;
@@ -280,9 +282,10 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
       }
 
     // -- the second most popular choice: classical upwind
-    } else if (little_k_ == OPERATOR_LITTLE_K_UPWIND)
+    } else if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
-    else if (little_k_ == OPERATOR_LITTLE_K_STANDARD) {
+
+    } else if (little_k_ == OPERATOR_LITTLE_K_STANDARD) {
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
     }
 
@@ -316,7 +319,7 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
         double matsum = 0.0;
         for (int n = 0; n < nfaces; n++) {
           double rowsum = 0.0;
-//          double cur_kf = (kf[n] < 1.0) || (kf[n] > kf_hmean) ? 1.0 : kf[n];
+//        double cur_kf = (kf[n] < 1.0) || (kf[n] > kf_hmean) ? 1.0 : kf[n];
           double cur_kf = (kf[n] < 1.0) ? 1.0 : kf[n];
           for (int m = 0; m < nfaces; m++) {
             double tmp = Wff(n, m) * cur_kf;
@@ -418,7 +421,7 @@ void OperatorDiffusionMFD::UpdateMatricesNodal_()
 ****************************************************************** */
 void OperatorDiffusionMFD::UpdateMatricesTPFA_()
 {
-  // This does not seem to consider Krel? --etc
+  // This does not seem to consider little k? --etc
 
   // populate transmissibilities
   WhetStone::MFD3D_Diffusion mfd(mesh_);
@@ -570,6 +573,7 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
     if (k_->HasComponent("cell")) k_cell = k_->ViewComponent("cell");
     if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
   }
+
 /*
   double kf_hmean = 0;
   if (scaled_constraint_ && (k_face != Teuchos::null)) {
@@ -584,6 +588,7 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
     kf_hmean = nval / kf_hmean;
   }
 */
+
   for (int c = 0; c != ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
@@ -647,18 +652,19 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
         }
 
       } else if (bc_model_trial[f] == OPERATOR_BC_NEUMANN) {
-        if(scaled_constraint_) {
+        if (scaled_constraint_) {
           if (std::abs(kf[n]) < 1e-12) {
             ASSERT(value == 0.0);
             rhs_face[0][f] = 0.0;
-          }
-//          else if ((kf[n] < 1.0) || (kf[n] > kf_hmean)) {
-          else if (kf[n] < 1.0) {
+//        } else if ((kf[n] < 1.0) || (kf[n] > kf_hmean)) {
+          } else if (kf[n] < 1.0) {
             rhs_face[0][f] -= value * mesh_->face_area(f) / kf[n];
+          } else {
+            rhs_face[0][f] -= value * mesh_->face_area(f);
           }
-          else rhs_face[0][f] -= value * mesh_->face_area(f);
+        } else {
+          rhs_face[0][f] -= value * mesh_->face_area(f);
         }
-        else rhs_face[0][f] -= value * mesh_->face_area(f);
 
       } else if (bc_model_trial[f] == OPERATOR_BC_MIXED) {
         if (flag) {  // make a copy of elemental matrix
@@ -666,22 +672,19 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
           flag = false;
         }
         double area = mesh_->face_area(f);
-        if(scaled_constraint_) {
+        if (scaled_constraint_) {
           if (std::abs(kf[n]) < 1e-12) {
             ASSERT((value == 0.0) && (bc_mixed[f] == 0.0));
             rhs_face[0][f] = 0.0;
-          }
-//          else if ((kf[n] < 1.0) || (kf[n] > kf_hmean)) {
-          else if (kf[n] < 1.0) {
+          // } else if ((kf[n] < 1.0) || (kf[n] > kf_hmean)) {
+          } else if (kf[n] < 1.0) {
             rhs_face[0][f] -= value * area / kf[n];
             Acell(n, n) += bc_mixed[f] * area / kf[n];
-          }
-          else {
+          } else {
             rhs_face[0][f] -= value * area;
             Acell(n, n) += bc_mixed[f] * area;
           }
-        }
-        else {
+        } else {
           rhs_face[0][f] -= value * area;
           Acell(n, n) += bc_mixed[f] * area;
         }
@@ -1226,7 +1229,7 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
     global_op_->OpPushBack(local_op_);
   }
   
-  // scaled constraint -- enables zero rel perm
+  // scaled constraint -- enables zero value of k on a face
   scaled_constraint_ = plist.get<bool>("scaled constraint equation", false);
 
   // little-k options
