@@ -126,7 +126,7 @@ void EnergyBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector>
 // -----------------------------------------------------------------------------
 // Apply the preconditioner to u and return the result in Pu.
 // -----------------------------------------------------------------------------
-void EnergyBase::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+int EnergyBase::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
 #if DEBUG_FLAG
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
@@ -135,11 +135,13 @@ void EnergyBase::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::
 #endif
 
   // apply the preconditioner
-  preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
+  int ierr = preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
 
 #if DEBUG_FLAG
   db_->WriteVector("PC*T_res", Pu->Data().ptr(), true);
 #endif
+  
+  return (ierr > 0) ? 0 : 1;
 };
 
 

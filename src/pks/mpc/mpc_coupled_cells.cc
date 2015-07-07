@@ -124,9 +124,11 @@ void MPCCoupledCells::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVect
 
 
 // applies preconditioner to u and returns the result in Pu
-void MPCCoupledCells::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+int MPCCoupledCells::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   if (decoupled_) return StrongMPC<PKPhysicalBDFBase>::ApplyPreconditioner(u,Pu);
-  linsolve_preconditioner_->ApplyInverse(*u, *Pu);
+  int ierr = linsolve_preconditioner_->ApplyInverse(*u, *Pu);
+  
+  return (ierr > 0) ? 0 : 1;
 }
 
 

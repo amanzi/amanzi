@@ -14,7 +14,7 @@
 #include "boundary_function.hh"
 #include "upwinding.hh"
 
-#include "OperatorDiffusionWithGravity.hh"
+#include "OperatorDiffusionFactory.hh"
 #include "OperatorAccumulation.hh"
 
 #include "pk_factory.hh"
@@ -58,7 +58,7 @@ public:
                    Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
 
   // applies preconditioner to u and returns the result in Pu
-  virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
   // updates the preconditioner
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
@@ -175,9 +175,9 @@ protected:
 
   // mathematical operators
   Teuchos::RCP<Operators::Operator> matrix_; // pc in PKPhysicalBDFBase
-  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> matrix_diff_;
-  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> preconditioner_diff_;
-  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> face_matrix_diff_;
+  Teuchos::RCP<Operators::OperatorDiffusion> matrix_diff_;
+  Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
+  Teuchos::RCP<Operators::OperatorDiffusion> face_matrix_diff_;
   Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
 
   // residual vector for vapor diffusion

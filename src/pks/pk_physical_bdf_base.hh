@@ -39,8 +39,10 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
   virtual void initialize(const Teuchos::Ptr<State>& S);
 
   // Default preconditioner is Picard
-  virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu)
-  { *Pu = *u; }
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+    *Pu = *u;
+    return 0;
+  }
 
   // updates the preconditioner, default does nothing
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {}

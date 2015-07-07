@@ -206,8 +206,7 @@ MPCPermafrost4::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> 
 }
 
 // -- Apply preconditioner
-void
-MPCPermafrost4::ApplyPreconditioner(Teuchos::RCP<const TreeVector> r,
+int MPCPermafrost4::ApplyPreconditioner(Teuchos::RCP<const TreeVector> r,
         Teuchos::RCP<TreeVector> Pr) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -249,7 +248,7 @@ MPCPermafrost4::ApplyPreconditioner(Teuchos::RCP<const TreeVector> r,
   // call the operator's inverse
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Precon applying coupled subsurface operator." << std::endl;
-  linsolve_preconditioner_->ApplyInverse(*domain_u_tv, *domain_Pu_tv);
+  int ierr = linsolve_preconditioner_->ApplyInverse(*domain_u_tv, *domain_Pu_tv);
 
   // rescale to Pa from MPa
   Pr->SubVector(0)->Data()->Scale(1.e6);
@@ -271,6 +270,7 @@ MPCPermafrost4::ApplyPreconditioner(Teuchos::RCP<const TreeVector> r,
     vecs.push_back(Pr->SubVector(3)->Data().ptr());
     surf_db_->WriteVectors(vnames, vecs, true);
   }
+  return (ierr > 0) ? 0 : 1;
 }
 
 // -- Update the preconditioner.
