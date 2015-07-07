@@ -136,7 +136,7 @@ void OverlandHeadFlow::Functional( double t_old,
 // -----------------------------------------------------------------------------
 // Apply the preconditioner to u and return the result in Pu.
 // -----------------------------------------------------------------------------
-void OverlandHeadFlow::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+int OverlandHeadFlow::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "Precon application:" << std::endl;
@@ -146,7 +146,7 @@ void OverlandHeadFlow::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teu
 #endif
 
   // apply the preconditioner
-  lin_solver_->ApplyInverse(*u->Data(), *Pu->Data());
+  int ierr = lin_solver_->ApplyInverse(*u->Data(), *Pu->Data());
 
 #if DEBUG_FLAG
   db_->WriteVector("PC*h_res (h-coords)", Pu->Data().ptr(), true);
@@ -163,6 +163,8 @@ void OverlandHeadFlow::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teu
 #if DEBUG_FLAG
   db_->WriteVector("PC*h_res (p-coords)", Pu->Data().ptr(), true);
 #endif
+  
+  return (ierr > 0) ? 0 : 1;
 };
 
 
