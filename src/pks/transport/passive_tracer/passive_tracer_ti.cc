@@ -29,8 +29,9 @@ void PassiveTracer::Functional(double t_old, double t_new, Teuchos::RCP<TreeVect
 };
 
 // -- preconditioning (currently none)
-void PassiveTracer::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+int PassiveTracer::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   *Pu = *u;
+  return 0;
 };
 
 // computes a norm on u-du and returns the result

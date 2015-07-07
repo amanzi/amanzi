@@ -62,7 +62,7 @@ public:
   // StrongMPC's preconditioner is, by default, just the block-diagonal
   // operator formed by placing the sub PK's preconditioners on the diagonal.
   // -- Apply preconditioner to u and returns the result in Pu.
-  virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
   // -- Update the preconditioner.
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
@@ -199,8 +199,9 @@ void StrongMPC<PK_t>::Functional(double t_old, double t_new, Teuchos::RCP<TreeVe
 // Applies preconditioner to u and returns the result in Pu.
 // -----------------------------------------------------------------------------
 template<class PK_t>
-void StrongMPC<PK_t>::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+int StrongMPC<PK_t>::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   // loop over sub-PKs
+  int ierr = 0;
   for (unsigned int i=0; i!=sub_pks_.size(); ++i) {
     // pull out the u sub-vector
     Teuchos::RCP<const TreeVector> pk_u = u->SubVector(i);
@@ -217,12 +218,14 @@ void StrongMPC<PK_t>::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuc
     }
 
     // Fill the preconditioned u as the block-diagonal product using each sub-PK.
-    sub_pks_[i]->ApplyPreconditioner(pk_u, pk_Pu);
+    int icur_err = sub_pks_[i]->ApplyPreconditioner(pk_u, pk_Pu);
+    ierr += icur_err;
   }
 
 //   std::cout<<*(((Pu->SubVector("flow"))->Data())->ViewComponent("cell", false));
 //   cout<<"Exit from StrongMPC precon\n";
 //   exit(0);
+  return ierr;
 };
 
 

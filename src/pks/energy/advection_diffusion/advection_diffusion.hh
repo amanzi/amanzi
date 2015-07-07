@@ -60,7 +60,7 @@ public:
                    Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f);
 
   // applies preconditioner to u and returns the result in Pu
-  virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
   // updates the preconditioner
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);

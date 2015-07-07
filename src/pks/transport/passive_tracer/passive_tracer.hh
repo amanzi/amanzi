@@ -67,7 +67,7 @@ public:
                    Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f);
 
   // applies preconditioner to u and returns the result in Pu
-  virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
   // computes a norm on u-du and returns the result
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);

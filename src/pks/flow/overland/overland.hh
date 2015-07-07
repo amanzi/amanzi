@@ -56,11 +56,15 @@ public:
            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
 
   // applies preconditioner to u and returns the result in Pu
-  virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
   // updates the preconditioner
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
 
+  // -- Compute a norm on u-du and return the result.
+  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
+                       Teuchos::RCP<const TreeVector> du);
+  
 protected:
   // setup methods
   virtual void SetupOverlandFlow_(const Teuchos::Ptr<State>& S);
@@ -114,6 +118,7 @@ protected:
   Teuchos::RCP<Operators::OperatorDiffusion> face_matrix_diff_;
   Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
   Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
+  Teuchos::RCP<Operators::Operator> lin_solver_;
 
   // boundary condition data
   Teuchos::RCP<Functions::BoundaryFunction> bc_zero_gradient_;
