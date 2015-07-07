@@ -60,8 +60,8 @@
         </unstr_preconditioners>
         <unstr_steady-state_controls>
           <initialize_with_darcy>true</initialize_with_darcy>
-          <restart_tolerance_factor>1000.0</restart_tolerance_factor>
-          <restart_tolerance_relaxation_factor>0.95</restart_tolerance_relaxation_factor>
+          <restart_tolerance_relaxation_factor>1000.0</restart_tolerance_relaxation_factor>
+          <restart_tolerance_relaxation_factor_damping>0.95</restart_tolerance_relaxation_factor_damping>
           <min_iterations>10</min_iterations>
           <max_iterations>15</max_iterations>
           <max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
@@ -70,16 +70,17 @@
           <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
           <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
           <max_divergent_iterations>3</max_divergent_iterations>
-          <unstr_pseudo_time_integrator>
+          <unstr_initialization>
               <initialize_with_darcy>true</initialize_with_darcy>
               <clipping_saturation>0.9</clipping_saturation>
+              <clipping_pressure>90000.0</clipping_pressure>
               <method>picard</method>
               <preconditioner>hypre_amg</preconditioner>
               <linear_solver>aztec00</linear_solver>
               <control_options>pressure</control_options>
               <convergence_tolerance>1.0e-8</convergence_tolerance>
               <max_iterations>10</max_iterations>
-          </unstr_pseudo_time_integrator>
+          </unstr_initialization>
         </unstr_steady-state_controls>
       </unstructured_controls>
     </numerical_controls>
@@ -274,7 +275,7 @@
       <vis>
         <base_filename>steady-flow</base_filename>
         <num_digits>5</num_digits>
-        <time_macross>Steady State</time_macross>
+        <time_macros>Steady State</time_macros>
       </vis>
     </output>
   </amanzi_input>

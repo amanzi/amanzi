@@ -61,6 +61,7 @@ class InputParserIS {
      const std::string& disc_method, const std::string& prec_method,
      const std::string& nonlinear_solver, const std::string& rel_perm);
   Teuchos::ParameterList CreateWRM_List_(Teuchos::ParameterList* plist);
+  Teuchos::ParameterList CreatePOM_List_(Teuchos::ParameterList* plist);
 
   // transport
   Teuchos::ParameterList CreateTransportList_(Teuchos::ParameterList* plist);
@@ -123,7 +124,7 @@ class InputParserIS {
 
   double constant_density;
   int spatial_dimension_;  
-  bool flow_single_phase, use_picard_;
+  bool flow_single_phase, use_picard_, compressibility_;
   bool need_dispersion_;
   std::vector<std::string> transport_diagnostics_;
 

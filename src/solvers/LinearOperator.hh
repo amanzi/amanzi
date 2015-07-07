@@ -17,6 +17,8 @@ Usage:
 #include "dbc.hh"
 #include "errors.hh"
 
+#include "LinearOperatorDefs.hh"
+
 namespace Amanzi {
 namespace AmanziSolvers {
 
@@ -61,6 +63,23 @@ class LinearOperator : public Matrix {
 
   std::string name() { return name_; }
   void set_name(std::string name) { name_ = name; }
+
+  Errors::Message DecodeErrorCode(int ierr) {
+    Errors::Message msg;
+    switch(ierr) {
+    case AmanziSolvers::LIN_SOLVER_NON_SPD_APPLY:
+         msg << "Linear system is not SPD.\n";
+    case AmanziSolvers::LIN_SOLVER_NON_SPD_APPLY_INVERSE:
+         msg << "Linear system is not SPD.\n";
+    case AmanziSolvers::LIN_SOLVER_MAX_ITERATIONS:
+         msg << "Maximum iterations are reached in solution of linear system.\n";
+    case AmanziSolvers::LIN_SOLVER_RESIDUAL_OVERFLOW:
+         msg << "Residual overflow in solution of linear system.\n";
+    default:
+         msg << "\nLinear solver returned an unrecoverable error code: " << ierr << ".\n";
+    }
+    return msg;
+  }
 
  protected:
   Teuchos::RCP<const Matrix> m_;

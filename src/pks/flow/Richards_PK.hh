@@ -34,6 +34,8 @@
 #include "RelPerm.hh"
 #include "RelPermEvaluator.hh"
 #include "WRMPartition.hh"
+#include "WRM.hh"
+
 
 namespace Amanzi {
 namespace Flow {
@@ -73,7 +75,7 @@ class Richards_PK : public Flow_PK {
   double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
 
   // -- management of the preconditioner
-  void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu);
+  int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu);
   void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt);
 
   // -- check the admissibility of a solution
@@ -110,10 +112,11 @@ class Richards_PK : public Flow_PK {
   }
 
   // other flow methods
-  // -- initization members
+  // -- initialization members
   void SolveFullySaturatedProblem(double t_old, CompositeVector& u, const std::string& solver_name);
   void EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector> u);
-  void EnforceConstraints_Inflow(Teuchos::RCP<CompositeVector> u);
+  void UpwindInflowBoundary(Teuchos::RCP<const CompositeVector> u);
+  void UpwindInflowBoundary_New(Teuchos::RCP<const CompositeVector> u);
 
   void ClipHydrostaticPressure(const double pmin, Epetra_MultiVector& p);
   void ClipHydrostaticPressure(const double pmin, const double s0, Epetra_MultiVector& p);
@@ -131,8 +134,8 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > get_bdf1_dae() { return bdf1_dae; }
 
   // developement members
-  template <class Model> 
-  double DeriveBoundaryFaceValue(int f, const CompositeVector& u, const Model& model);
+  //template <class Model> 
+  double DeriveBoundaryFaceValue(int f, const CompositeVector& u, Teuchos::RCP<const WRM> model);
   virtual double BoundaryFaceValue(int f, const CompositeVector& pressure);
   void PlotWRMcurves(Teuchos::ParameterList& plist);
 
@@ -205,31 +208,6 @@ class Richards_PK : public Flow_PK {
 };
 
 
-/* ******************************************************************
-* Calculates solution value on the boundary.
-****************************************************************** */
-template <class Model> 
-double Richards_PK::DeriveBoundaryFaceValue(
-    int f, const CompositeVector& u, const Model& model) 
-{
-  if (u.HasComponent("face")) {
-    const Epetra_MultiVector& u_face = *u.ViewComponent("face");
-    return u_face[f][0];
-  } else {
-    const std::vector<int>& bc_model = op_bc_->bc_model();
-    const std::vector<double>& bc_value = op_bc_->bc_value();
-
-    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      return bc_value[f];
-    } else {
-      const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
-      AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      int c = cells[0];
-      return u_cell[0][c];
-    }
-  }
-}
 
 }  // namespace Flow
 }  // namespace Amanzi

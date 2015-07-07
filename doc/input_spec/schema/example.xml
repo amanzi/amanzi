@@ -63,7 +63,7 @@
 		<comments>string</comments>
       		<flow state = "on | off" model = "richards | saturated | constant | none"/>
       		<transport state = "on | off"/>
-      		<chemistry state = "on | off" engine="amanzi | pflotran | none" process_model="implicit operator split | none"/>
+      		<chemistry state = "on | off" engine="amanzi | pflotran | none" />
 
 	</process_kernels>
 
@@ -80,14 +80,30 @@
 				<solutes>
 					<solute coefficient_of_diffusion="exp" first_order_decay_constant="exp">solute_name_string</solute>
 				</solutes> 
+				<primaries>
+					<primary coefficient_of_diffusion="exp">primary_name_string</primary>
+					<!-- primary name must match the name in the engine database -->
+				</primaries> 
+				<secondaries>
+					<secondary>secondary_name_string</secondary>
+					<!-- secondary name must match the name in the engine database -->
+				</secondaries> 
 			</dissolved_components>
 		</liquid_phase>
 
 		<solid_phase>
 		    	<minerals>
-			    <mineral>mineral_name_string</mineral>
+			    <mineral rate_constant="exp">mineral_name_string</mineral>
+			    <!-- mineral name must match the name in the engine database -->
 			</minerals>
 		</solid_phase>
+
+		<gas_phase>
+		    	<gases>
+			    <gas>gas_name_string</gas>
+			    <!-- gas name must match the name in the engine database -->
+			</gases>
+		</gas_phase>
 
 	</phases>
 
@@ -126,75 +142,86 @@
 				<!-- default: upwind-darcy_velocity -->
 		        	<preconditioning_strategy>diffusion_operator | linearized_operator</preconditioning_strategy>
 				<!-- default: linearized_operator -->
+				<atmospheric_pressure>exp</atmospheric_pressure>
 			</unstr_flow_controls>
 
 		  	<unstr_transport_controls>
-			    	<algorithm>explicit first-order | explicit second-order | implicit upwind</algorithm> 
-				<!-- default: explicit first-order -->
-		        	<sub_cycling>on | off</sub_cycling>
-				<!-- default: on -->
+			    	<algorithm>explicit first-order | explicit second-order | implicit upwind</algorithm> <!-- default: explicit first-order -->
+		        	<sub_cycling>on | off</sub_cycling> <!-- default: on -->
 				<cfl>exp</cfl>
 			</unstr_transport_controls>
 
 		  	<unstr_chemistry_controls>
-		        	<chem_tolerance>exp</chem_tolerance>
-		        	<chem_max_newton_iterations>int</chem_max_newton_iterations>
+				<process_model>implicit operator split | none</process_model>
+				<chem_tolerance>exp</chem_tolerance> <!-- EIB: add/remove to translator? goes in engine file? -->
+		        	<chem_max_newton_iterations>int</chem_max_newton_iterations> <!-- EIB: add/remove to translator? goes in engine file? -->
+				<log_formulation>on | off</log_formulation> <!-- EIB: add/remove to translator? goes in engine file? -->
+				<max_chemistry_transport_timestep_ratio>exp</max_chemistry_transport_timestep_ratio> <!-- default: 1.0 suggested range: 0.2 - 10.0 -->
 			</unstr_chemistry_controls>
 
 			<unstr_steady-state_controls>
 		        	<comments>string</comments>
           			<min_iterations>int</min_iterations> <!-- default: 10 suggested range: 5-15 -->
-				<limit_iterations>int</limit_iterations> <!-- default: 20 suggested range: 20-50 -->
 		      		<max_iterations>int</max_iterations> <!-- default: 15 suggested range: 10-20 -->
-          			<max_preconditioner_lag_iterations>int</max_preconditioner_lag_iterations> <!-- default: 5 suggested range: 0-10 -->
+				<limit_iterations>int</limit_iterations> <!-- default: 20 suggested range: 20-50 -->
           			<nonlinear_tolerance>exp</nonlinear_tolerance> <!-- default: 1.0e-5 suggested range: 1.0e-8 - 1.0e-6 -->
 				<error_control_options>pressure | residual</error_control_options> <!-- default: pressure -->
-				<unstr_pseudo_time_integrator>
-					<initialize_with_darcy>true | false</initialize_with_darcy> <!-- default: true -->
+				<nonlinear_iteration_damping_factor>exp</nonlinear_iteration_damping_factor> <!-- default: 1.0 (no damping) suggested range: 0.1-1.0 -->
+          			<max_preconditioner_lag_iterations>int</max_preconditioner_lag_iterations> <!-- default: 5 suggested range: 0-10 -->
+				<max_divergent_iterations>int</max_divergent_iterations> <!-- default: 3 suggested range: 3-8 -->
+				<nonlinear_iteration_divergence_factor>exp</nonlinear_iteration_divergence_factor> <!-- default: 1000.0 suggested range: 100.0-10000.0 -->
+				<restart_tolerance_relaxation_factor>exp</restart_tolerance_relaxation_factor> <!-- default: 1.0 suggested range: 1.0-1000.0 -->
+				<restart_tolerance_relaxation_factor_damping>exp</restart_tolerance_relaxation_factor_damping> <!-- default: 1.0 suggested range: 0.001-1.0 -->
+
+				<preconditioner>hypre_amg | trilinos_ml | block_ilu</preconditioner> <!-- default: hypre_amg -->
+				<initialize_with_darcy>true | false</initialize_with_darcy> <!-- default: true -->
+				<nonlinear_iteration_initial_guess_extrapolation_order>int</nonlinear_iteration_initial_guess_extrapolation_order> <!-- EIB add --> <!-- default: 1 -->
+				<unstr_initialization>
+				        <!-- EIB: ask Konstantin if this only needs to be included if steady method = picard? -->
 					<clipping_saturation>exp</clipping_saturation> <!-- default: 0.9 suggested range: 0.7-0.95 -->
-					<method>picard</method> <!-- default: picard -->
+					<clipping_pressure>exp</clipping_pressure> 
+					<method>picard | darcy_solver</method> <!-- default: picard -->
 					<preconditioner>hypre_amg | trilinos_ml | block_ilu</preconditioner> <!-- default: hypre_amg -->
 					<linear_solver>aztec00</linear_solver> <!-- default: aztec00 -->
 					<error_control_options>pressure | residual</error_control_options> <!-- default: pressure -->
 					<convergence_tolerance>exp</convergence_tolerance> <!-- default: 1.0e-8 suggested range: 1.0e-10-1.0e-4 -->
 					<max_iterations>int</max_iterations> <!-- default: 400 suggested range: 50-1000 -->
-				</unstr_pseudo_time_integrator>
-				<nonlinear_iteration_damping_factor>exp</nonlinear_iteration_damping_factor> <!-- default: 1.0 suggested range: 0.1-1.0 -->
-				<nonlinear_iteration_divergence_factor>exp</nonlinear_iteration_divergence_factor> <!-- default: 1000.0 suggested range: 100.0-10000.0 -->
-				<max_divergent_iterations>int</max_divergent_iterations>
-				<initialize_with_darcy>true | false</initialize_with_darcy> <!-- default: true -->
-				<restart_tolerance_factor>exp</restart_tolerance_factor> <!-- default: 1.0 suggested range: 0.001-1.0 -->
-				<restart_tolerance_relaxation_factor>exp</restart_tolerance_relaxation_factor> <!-- default: 1.0 suggested range: 1.0-1000.0 -->
-				<preconditioner>hypre_amg | trilinos_ml | block_ilu</preconditioner> <!-- default: hypre_amg -->
+				</unstr_initialization>
 			</unstr_steady-state_controls>
 
 			<unstr_transient_controls>
 				<comments>string</comments>
-				<bdf1_integration_method 
-				    	min_iterations="int" 
-				    	max_iterations="int"
-					limit_iterations="int"
-					nonlinear_tolerance="exp"
-					nonlinear_iteration_damping_factor="exp"
-					max_preconditioner_lag_iterations="int"
-					max_divergent_iterations="int"
-					nonlinear_iteration_divergence_factor="exp"
-					restart_tolerance_factor="exp"
-					restart_tolerance_relaxation_factor="exp"
-					initialize_with_darcy="true | false"
-					error_control_options="string" /> <!-- EIB: add defaults after converting to subelements -->
+				<bdf1_integration_method>
+				        <!-- EIB: ask Konstantin if any of these need to be elevated -->
+				        <min_iterations>int</min_iterations> <!-- default: 10 suggested range: 5-15 -->
+					<max_iterations>int</max_iterations> <!-- default: 15 suggested range: 10-20 -->
+					<limit_iterations>int</limit_iterations> <!-- default: 20 suggested range: 20-50 -->
+					<nonlinear_tolerance>exp</nonlinear_tolerance> <!-- default: 1.0e-5 suggested range: 1.0e-6 - 1.0e-5 -->
+					<error_control_options>pressure | residual</error_control_options> <!-- default: pressure,residual -->
+					<nonlinear_iteration_damping_factor>exp</nonlinear_iteration_damping_factor> <!-- default: 1.0 suggested range: 0.1 - 1.0-->
+					<max_preconditioner_lag_iterations>int</max_preconditioner_lag_iterations> <!-- default: 5 suggested range: 0-10 -->
+					<max_divergent_iterations>int</max_divergent_iterations> <!-- default: 3 suggested range: 3 - 8-->
+					<nonlinear_iteration_divergence_factor>exp</nonlinear_iteration_divergence_factor> <!-- default: 1000.0 suggested range: 100.0 - 10000.0-->
+					<restart_tolerance_relaxation_factor>exp</restart_tolerance_relaxation_factor> <!-- default: 1.0 suggested range: 1.0 - 1000.0 -->
+				        <restart_tolerance_relaxation_factor_damping>exp</restart_tolerance_relaxation_factor_damping> <!-- default: 1.0 suggested range: 0.001-1.0 -->
+				</bdf1_integration_method>
 				<preconditioner>hypre_amg | trilinos_ml | block_ilu</preconditioner> <!-- default: hypre_amg -->
+				<initialize_with_darcy>true | false</initialize_with_darcy> <!-- default: false -->
+				<nonlinear_iteration_initial_guess_extrapolation_order>int</nonlinear_iteration_initial_guess_extrapolation_order> <!-- EIB add --> <!-- default: 1 -->
 			</unstr_transient_controls>
 
 			<unstr_linear_solver>
 				<comments>string</comments>
-				<method>gmres | pcg</method> <!-- default: gmres -->
-				<max_iterations>int</max_iterations> <!-- default: 100 suggested range: 50-1000 -->
 				<tolerance>exp</tolerance> <!-- default: 1.0e-16 suggested range:1.0e-20-1.0e-14 -->
+				<max_iterations>int</max_iterations> <!-- default: 100 suggested range: 50-1000 -->
 	    	            	<preconditioner>hypre_amg | trilinos_ml | block_ilu</preconditioner> <!-- default: hypre_amg -->
+				<method>gmres | pcg</method> <!-- default: gmres -->
 			</unstr_linear_solver>
 
-			<unstr_nonlinear_solver name="nka | newton | inexact newton" />
+			<unstr_nonlinear_solver name="nka | newton | jfnk | newton_picard" >
+			        <modify_correction>true | false</modify_correction> <!-- default: false -->
+				<update_upwind_frequency>every_timestep | every_nonlinear_iteration</update_upwind_frequency> <!-- default: every_timestep -->
+			</unstr_nonlinear_solver>
 
 			<unstr_preconditioners>
 			    	<hypre_amg>
@@ -271,6 +298,8 @@
 				<comments>string</comments>
 				<amr_levels>int</amr_levels>
 				<refinement_ratio>
+				        <!-- min entries = #levels -1; additional will be ignored -->
+					<!-- must be entered/read in order -->
 				    	<int>int</int>
 				</refinement_ratio>
 				<do_amr_cubcycling>true | false</do_amr_cubcycling>
@@ -278,26 +307,35 @@
 				    	<int>int</int>
 				</regrid_interval>
 				<blocking_factor>
+				        <!-- min entries = #levels; additional will be ignored -->
+					<!-- must be entered/read in order -->
+					<!-- include if using a multi-grid solver -->
 				    	<int>int</int>
 				</blocking_factor>
 				<number_error_buffer_cells>
+				        <!-- min entries = #levels -1; additional will be ignored -->
+					<!-- must be entered/read in order -->
 				    	<int>int</int>
 				</number_error_buffer_cells>
 				<max_grid_size>
+				        <!-- min entries = #levels; additional will be ignored -->
+					<!-- must be entered/read in order -->
 				    	<int>int</int>
 				</max_grid_size>
-				<refinement_indicators>
+
+				<!-- may have unbounded number of refinement indicators -->
+				<refinement_indicator name="string">
 				    	<field_name>string</field_name>
 				    	<regions>string</regions>
 				    	<max_refinement_level>int</max_refinement_level>
 				    	<start_time>exp</start_time>
 				    	<end_time>exp</end_time>
-					<!-- choose 1 of the following -->
+					<!-- indicator to apply: choose 1 of the following -->
 				    	<value_greater>exp</value_greater>
 				    	<value_less>exp</value_less>
 				    	<adjacent_difference_greater>exp</adjacent_difference_greater>
 				    	<inside_region>true | false</inside_region>
-				</refinement_indicators>
+				</refinement_indicator>
 			</str_amr_controls>
 			
 			<max_n_subcycle_transport>int</max_n_subcycle_transport>
@@ -364,6 +402,28 @@
 
 	</regions>
 
+	<geochemistry>
+		<!-- EIB: should database and engine options go here or above in chemistry controls section? -->
+		<database>default_reduced_database.dat</database>
+	        <!-- Akuna will write a reduced database file containing only the items requested -->
+		<activity_coefficients>timestep</activity_coefficients>
+		<constraints>
+			<!-- Provide a list of constraints for various chemistry in system. -->
+                        <!-- Chemistry input needs to be consolidated and migrated to xml file
+                             as funding becomes available -->
+			<!-- activity model, database specification, mineral kinetics, secondary species specified
+			     in external file -->
+			<constraint name="string">
+			        <!-- EIB: need full set of examples here, what are the various options? -->
+				<primary name="primary_name_string"     initial_guess="exp"   type="free"/>
+				<primary name="primary_name_string"     initial_guess="exp"   type="mineral" mineral="geothite"/>
+				<primary name="primary_name_string(aq)" initial_guess="exp"   type="Gas" gas = "CO2(g)"/>
+				<mineral name="mineral_name_string"     volume_fraction="exp" surface_area ="exp"/>
+				<!-- cation exchange capacity and surface site density are specified in the
+				     external pflotran input file, and scaled by mineral volume fraction -->
+			</constraint>
+		</constraints>
+  	</geochemistry>
 
 	<!-- unstructured mesh element -->
 	<mesh framework="mstk | stk::mesh | simple"> <!-- default is MSTK for unstructured -->
@@ -462,7 +522,7 @@
 				<solute_component name="string" value = "0" function="linear | constant" reference_coord="coordinate" gradient="coordinate"/>
 
 				<geochemistry>
-					<constraint name="string" start="time"/>
+					<constraint name="constraint_name" start="time" function="constant | linear"/>
 				</geochemistry>
 			</liquid_phase>
 
@@ -470,7 +530,7 @@
 			    	<mineral/>
 
 				<geochemistry>
-					<constraint name="string" start="time"/>
+					<constraint name="constraint_name" start="time" function="constant | linear"/>
 				</geochemistry>
 			</solid_phase>
          	</initial_condition>

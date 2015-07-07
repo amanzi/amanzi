@@ -26,7 +26,7 @@ class SolverFnBase {
                         const Teuchos::RCP<Vector>& r) = 0;
 
   // preconditioner toolkit
-  virtual void ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
+  virtual int ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
                                    const Teuchos::RCP<Vector>& Pr) = 0;
   virtual void UpdatePreconditioner(const Teuchos::RCP<const Vector>& u) = 0;
 

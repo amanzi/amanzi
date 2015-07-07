@@ -27,12 +27,12 @@ class WRM_BrooksCorey : public WRM {
   ~WRM_BrooksCorey() {};
   
   // required methods from the base class
-  double k_relative(double pc);
-  double saturation(double pc);
-  double dSdPc(double pc);  
-  double capillaryPressure(double saturation);
-  double residualSaturation() { return sr_; }
-  double dKdPc(double pc);
+  double k_relative(double pc) const;
+  double saturation(double pc) const;
+  double dSdPc(double pc) const;  
+  double capillaryPressure(double saturation) const;
+  double residualSaturation() const { return sr_; }
+  double dKdPc(double pc) const;
 
  private:
   void Init_(double lambda, double l, double alpha, 

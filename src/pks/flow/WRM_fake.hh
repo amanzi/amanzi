@@ -31,11 +31,11 @@ class WRM_fake : public WRM {
   ~WRM_fake() {};
   
   // required methods from the base class
-  double k_relative(double pc);
-  double saturation(double pc);
-  double dSdPc(double pc);  
-  double capillaryPressure(double saturation);
-  double residualSaturation() { return 0.0; }
+  double k_relative(double pc) const;
+  double saturation(double pc) const;
+  double dSdPc(double pc) const;  
+  double capillaryPressure(double saturation) const;
+  double residualSaturation() const { return 0.0; }
 
  private:
   double m, n, alpha;

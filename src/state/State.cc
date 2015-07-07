@@ -400,6 +400,30 @@ void State::WriteDependencyGraph() const {
 }
 
 
+void State::WriteStatistics(Teuchos::RCP<VerboseObject>& vo) const {
+  if (vo->os_OK(Teuchos::VERB_HIGH)) {
+    Teuchos::OSTab tab = vo->getOSTab();
+    *vo->os() << "\nField                     Min/Max/Avg" << std::endl;
+
+    for (FieldMap::const_iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
+      std::string name(f_it->first);
+      name.resize(25, '.');
+
+      double vmin, vmax, vavg;
+      if (f_it->second->type() == COMPOSITE_VECTOR_FIELD) {
+        f_it->second->GetFieldData()->MinValue(&vmin);
+        f_it->second->GetFieldData()->MaxValue(&vmax);
+        f_it->second->GetFieldData()->MeanValue(&vavg);
+        *vo->os() << name << " " << vmin << " / " << vmax << " / " << vavg << std::endl;
+      } else if (f_it->second->type() == CONSTANT_SCALAR) {
+        vmin = *f_it->second->GetScalarData();
+        *vo->os() << name << " " << vmin << std::endl;
+      }
+    }
+  }
+};
+
+
 // -----------------------------------------------------------------------------
 // State handles data management.
 // -----------------------------------------------------------------------------

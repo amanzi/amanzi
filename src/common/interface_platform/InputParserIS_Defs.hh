@@ -83,6 +83,7 @@
  
 #define PIC_INIT_DARCY                  true
 #define PIC_CLIP_SAT                    0.9
+#define PIC_CLIP_PRESSURE               50000.0
 #define PICARD_TOLERANCE                1.0e-8
 #define PIC_MAX_ITER                    400
 #define PIC_PRECOND                     "Hypre AMG"

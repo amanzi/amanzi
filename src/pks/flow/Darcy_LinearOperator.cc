@@ -53,9 +53,10 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u)
                << " code=" << code << std::endl;
   }
 
-  if (ierr != 0) {
+  // catastrophic failure.
+  if (ierr < 0) {
     Errors::Message msg;
-    msg << "\nLinear solver returned an unrecoverable error code.\n";
+    msg = solver->DecodeErrorCode(ierr);
     Exceptions::amanzi_throw(msg);
   }
 }

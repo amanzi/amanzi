@@ -20,7 +20,7 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vecto
     }
   }
 
-  void ApplyPreconditioner(const Teuchos::RCP<const Epetra_Vector>& u,
+  int ApplyPreconditioner(const Teuchos::RCP<const Epetra_Vector>& u,
                            const Teuchos::RCP<Epetra_Vector>& hu) {
     hu->ReciprocalMultiply(1.0, *h_, *u, 0.0);
   }

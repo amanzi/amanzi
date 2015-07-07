@@ -32,8 +32,8 @@ public:
     }
   }
 
-  void ApplyPreconditioner(Teuchos::RCP<const Epetra_Vector> u, Teuchos::RCP<Epetra_Vector> Pu) {
-    Pu->ReciprocalMultiply(1., *Pu_, *u, 0.);
+  int ApplyPreconditioner(Teuchos::RCP<const Epetra_Vector> u, Teuchos::RCP<Epetra_Vector> Pu) {
+    return Pu->ReciprocalMultiply(1., *Pu_, *u, 0.);
   }
 
   double ErrorNorm(Teuchos::RCP<const Epetra_Vector> u, Teuchos::RCP<const Epetra_Vector> du) {

@@ -162,8 +162,7 @@ void CycleDriver::Setup() {
 
   // vis successful steps
   bool surface_done = false;
-  for (State::mesh_iterator mesh=S_->mesh_begin();
-       mesh!=S_->mesh_end(); ++mesh) {
+  for (State::mesh_iterator mesh=S_->mesh_begin(); mesh!=S_->mesh_end(); ++mesh) {
     if (mesh->first == "surface_3d") {
       // pass
     } else if ((mesh->first == "surface") && surface_done) {
@@ -678,7 +677,7 @@ bool CycleDriver::Advance(double dt) {
     if (advance) {
       pk_->CalculateDiagnostics();
       Visualize(force_vis);
-      WriteCheckpoint(dt, force_check);
+      WriteCheckpoint(get_dt(fail), force_check);   // write Checkpoint with new dt
       Observations(force_obser);
       WriteWalkabout(force_check);
     }
@@ -707,9 +706,10 @@ bool CycleDriver::Advance(double dt) {
 void CycleDriver::Observations(bool force) {
   if (observations_ != Teuchos::null) {
     if (observations_->DumpRequested(S_->cycle(), S_->time()) || force) {
-      //pk_->CalculateDiagnostics();
-      *vo_->os() << "Cycle " << S_->cycle() << ": writing to observation " << std::endl;
-      observations_->MakeObservations(*S_);
+      // pk_->CalculateDiagnostics();
+      int n = observations_->MakeObservations(*S_);
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "Cycle " << S_->cycle() << ": writing observations... " << n << std::endl;
     }
   }
 }
@@ -749,7 +749,7 @@ void CycleDriver::WriteCheckpoint(double dt, bool force) {
   if (force || checkpoint_->DumpRequested(S_->cycle(), S_->time())) {
     Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt);
     
-    //if (force) pk_->CalculateDiagnostics();
+    // if (force) pk_->CalculateDiagnostics();
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Cycle " << S_->cycle() << ": writing checkpoint file" << std::endl;
   }
@@ -776,11 +776,10 @@ void CycleDriver::Go() {
   int position = 0;
   double restart_time = 0.;
 
-
   double dt;
   double restart_dT(1.0e99);
 
-  if (!restart_requested_){     /// No restart
+  if (!restart_requested_) {     /// No restart
     Init_PK(time_period_id_);
     // start at time t = t0 and initialize the state.
     S_->set_time(tp_start_[time_period_id_]);
@@ -809,11 +808,11 @@ void CycleDriver::Go() {
 
     Init_PK(time_period_id_); 
     Setup();
-
     // Only field which are in State are initialize from the input file
     // to initialize field which are not in the restart file
     S_->InitializeFields();
     S_->InitializeEvaluators();
+    
 
     // re-initialize the state object
     restart_dT = ReadCheckpoint(comm_, Teuchos::ptr(&*S_), restart_filename_);
@@ -841,7 +840,6 @@ void CycleDriver::Go() {
     S_->set_initial_time(S_->time());
     dt = tsm_->TimeStep(S_->time(), restart_dT);
     pk_->set_dt(dt);
-
   }
 
   *S_->GetScalarData("dt", "coordinator") = dt;
@@ -853,6 +851,7 @@ void CycleDriver::Go() {
   Visualize();
   WriteCheckpoint(dt);
   Observations();
+  S_->WriteStatistics(vo_);
   //Amanzi::timer_manager.stop("I/O");
  
   // iterate process kernels
@@ -920,8 +919,8 @@ void CycleDriver::Go() {
 void CycleDriver::ResetDriver(int time_pr_id) {
 
   if (vo_->os_OK(Teuchos::VERB_LOW)) {
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "Reseting CD: TP " << time_pr_id - 1 << " -> TP " << time_pr_id << "." << std::endl;
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Reseting CD: TP " << time_pr_id - 1 << " -> TP " << time_pr_id << "." << std::endl;
   }
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(S_->GetMesh("domain"));
@@ -947,7 +946,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   // create the global solution vector
   soln_ = Teuchos::rcp(new TreeVector());
   
-  // create new pk;
+  // create new pk
   Init_PK(time_pr_id);
 
   // register observation times with the time step manager
@@ -955,7 +954,6 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   // Setup
   pk_->Setup();
-
 
   S_->RequireScalar("dt", "coordinator");
   S_->Setup();
@@ -978,16 +976,15 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   S_->GetMeshPartition("materials");
 
-
   pk_->CalculateDiagnostics();
-  // // Visualize();
-  // // WriteCheckpoint(dt);
+  // Visualize();
+  // WriteCheckpoint(dt);
   Observations();
+  S_->WriteStatistics(vo_);
 
   pk_->set_dt(tp_dt_[time_pr_id]);
 
   S_old_ = Teuchos::null;
-
 }
 
 }  // namespace Amanzi

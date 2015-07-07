@@ -70,12 +70,13 @@ set(operators_inc_files
     Operator_ConsistentFace.hh
     Operator_Node.hh
     Operator_Edge.hh
-    FluxTPFABCfunc.hh
+    BoundaryFlux.hh
     OperatorDiffusion.hh
     OperatorDiffusionFactory.hh
     OperatorDiffusionMFD.hh
-    OperatorDiffusionWithGravity.hh
+    OperatorDiffusionMFDwithGravity.hh
     OperatorDiffusionFV.hh
+    OperatorDiffusionFVwithGravity.hh
     OperatorAccumulation.hh
     OperatorAdvection.hh
     TreeOperator.hh
@@ -99,8 +100,9 @@ add_amanzi_library(operators
                           Operator_Node.cc
                           Operator_Edge.cc
                           OperatorDiffusionMFD.cc
-                          OperatorDiffusionWithGravity.cc
+                          OperatorDiffusionMFDwithGravity.cc
                           OperatorDiffusionFV.cc
+                          OperatorDiffusionFVwithGravity.cc
                           OperatorDiffusionFactory.cc                   
                           OperatorAccumulation.cc
                           OperatorAdvection.cc  
@@ -147,7 +149,7 @@ if ( BUILD_TESTS )
                         SOURCE test/Main.cc test/operator_laplace_beltrami.cc 
                                             test/operator_parabolic_surface.cc
                                             test/operator_nonlinear_surface.cc
-					    test/operator_marshak.cc
+                                            test/operator_marshak.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()
 
@@ -216,6 +218,11 @@ if ( BUILD_TESTS )
     add_amanzi_test(operators_reconstruction operators_reconstruction
                     KIND unit
                     SOURCE test/Main.cc test/operator_reconstruction.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(test_boundary_flux_solver test_boundary_flux_solver
+                    KIND unit
+                    SOURCE test/Main.cc test/test_boundary_flux_solver.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_reconstruction_2pe operators_reconstruction NPROCS 2 KIND unit)

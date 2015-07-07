@@ -360,6 +360,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   // Save the accelerated correction for the next_v_ call.
   *v_[new_v] = *ff;
 
+
   // Prepend the new vectors to the list.
   prev_v_[new_v] = NKA_EOL;
   next_v_[new_v] = first_v_;
@@ -372,6 +373,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
 
   // The original f and accelerated correction are cached for the next_v_ call.
   pending_ = NKA_TRUE;
+
 
   dir = *ff;
 };

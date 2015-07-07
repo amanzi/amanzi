@@ -32,28 +32,27 @@ class BCs;
 
 class OperatorDiffusionFV : public OperatorDiffusion {
  public:
-
   OperatorDiffusionFV(Teuchos::ParameterList& plist,
-                    const Teuchos::RCP<Operator>& global_op) :
-      OperatorDiffusion(global_op),
-      gravity_(false)      
+                      const Teuchos::RCP<Operator>& global_op) :
+      OperatorDiffusion(global_op)
   {
+    operator_type_ = OPERATOR_DIFFUSION_FV;
     InitDiffusion_(plist);
   }
 
   OperatorDiffusionFV(Teuchos::ParameterList& plist,
-                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      OperatorDiffusion(mesh),
-      gravity_(false)
+                      const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      OperatorDiffusion(mesh)
   {
+    operator_type_ = OPERATOR_DIFFUSION_FV;
     InitDiffusion_(plist);
   }
 
   OperatorDiffusionFV(Teuchos::ParameterList& plist,
-                    const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      OperatorDiffusion(mesh),
-      gravity_(false)
+                      const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+      OperatorDiffusion(mesh)
   {
+    operator_type_ = OPERATOR_DIFFUSION_FV;
     InitDiffusion_(plist);
   }
 
@@ -64,10 +63,6 @@ class OperatorDiffusionFV : public OperatorDiffusion {
                      const Teuchos::RCP<const CompositeVector>& dkdp);
   using OperatorDiffusion::Setup;
 
-  virtual void SetGravity(const AmanziGeometry::Point& g) {
-    g_ = g;
-    gravity_ = true;
-  }
   virtual void SetDensity(double rho) {
     scalar_rho_ = true;
     rho_ = rho;
@@ -87,32 +82,29 @@ class OperatorDiffusionFV : public OperatorDiffusion {
   virtual void ModifyMatrices(const CompositeVector& u) {};
   virtual void ScaleMassMatrices(double s) {};
 
-  template <class Model> 
-  double DeriveBoundaryFaceValue(int f, const CompositeVector& u, const Model& model);
+  // Developments
+  // -- interface to solvers for treating nonlinear BCs.
+  virtual double ComputeTransmissibility(int f) const;
+  virtual double ComputeGravityFlux(int f) const { return 0.0; }
 
-  //access function
-  const CompositeVector transmissibility() { return *transmissibility_; }
-  const CompositeVector gravity_terms() { return *gravity_term_; }
+  // access
+  const CompositeVector& transmissibility() { return *transmissibility_; }
 
  protected:
-  void ComputeTransmissibility_();
+  void ComputeTransmissibility_(AmanziGeometry::Point* g, Teuchos::RCP<CompositeVector> g_cv);
 
   void AnalyticJacobian_(const CompositeVector& solution);
 
-  void ComputeJacobianLocal_(
+  virtual void ComputeJacobianLocal_(
       int mcells, int f, int face_dir, int Krel_method,
       int bc_model, double bc_value,
       double *pres, double *dkdp_cell,
       WhetStone::DenseMatrix& Jpp);
 
-  void InitDiffusion_(Teuchos::ParameterList& plist);
+  virtual void InitDiffusion_(Teuchos::ParameterList& plist);
   
  protected:
-  AmanziGeometry::Point g_;
-  bool gravity_;
-
   Teuchos::RCP<CompositeVector> transmissibility_;
-  Teuchos::RCP<CompositeVector> gravity_term_;
   bool transmissibility_initialized_;
 
   int newton_correction_;
@@ -122,7 +114,5 @@ class OperatorDiffusionFV : public OperatorDiffusion {
 }  // namespace Operators
 }  // namespace Amanzi
 
-// Description of templated function DeriveBoundaryFaceValue(f, u, model)
-#include "FluxTPFABCfunc.hh"
 
 #endif

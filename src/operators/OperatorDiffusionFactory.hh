@@ -38,6 +38,12 @@ class OperatorDiffusionFactory {
   Teuchos::RCP<OperatorDiffusion> Create(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                                          Teuchos::RCP<BCs> bc,
                                          Teuchos::ParameterList& oplist);
+  
+  Teuchos::RCP<OperatorDiffusion> Create(Teuchos::ParameterList& oplist,
+                                         Teuchos::RCP<const AmanziMesh::Mesh> mesh);
+  
+  Teuchos::RCP<OperatorDiffusion> Create(Teuchos::ParameterList& oplist,
+                                         const Teuchos::RCP<Operator>& global_op);
 };
 
 }  // namespace Operators

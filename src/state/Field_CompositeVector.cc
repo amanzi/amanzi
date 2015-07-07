@@ -103,6 +103,7 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
   bool vis_io = plist.get<bool>("write vis", true);
   set_io_vis(vis_io);
 
+
   // First try all initialization method which set the entire data structure.
   // ------ Try to set values from a restart file -----
   if (plist.isParameter("restart file")) {
@@ -112,6 +113,7 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
     set_initialized();
     return;
   }
+
 
   // ------ Try to set values from an file -----
   if (plist.isSublist("exodus file initialization")) {

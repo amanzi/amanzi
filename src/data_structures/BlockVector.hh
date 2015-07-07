@@ -135,6 +135,10 @@ public:
   int Norm1(double* norm) const;
   int Norm2(double* norm) const;
 
+  int MinValue(double* value) const;
+  int MaxValue(double* value) const;
+  int MeanValue(double* value) const;
+
   // Extras
   void Print(std::ostream &os, bool data_io = true) const;
 

@@ -8,11 +8,11 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Discrete gravity operator blended with the diffusion operator.
+  Discrete gravity operator blended with the MFD diffusion operator.
 */
 
-#ifndef AMANZI_OPERATOR_DIFFUSION_WITH_GRAVITY_HH_
-#define AMANZI_OPERATOR_DIFFUSION_WITH_GRAVITY_HH_
+#ifndef AMANZI_OPERATOR_DIFFUSION_MFD_WITH_GRAVITY_HH_
+#define AMANZI_OPERATOR_DIFFUSION_MFD_WITH_GRAVITY_HH_
 
 #include "Epetra_IntVector.h"
 
@@ -29,26 +29,29 @@ namespace Operators {
 
 class BCs;
 
-class OperatorDiffusionWithGravity : public OperatorDiffusionMFD {
+class OperatorDiffusionMFDwithGravity : public OperatorDiffusionMFD {
  public:
-  OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
+  OperatorDiffusionMFDwithGravity(Teuchos::ParameterList& plist,
                                const Teuchos::RCP<Operator>& global_op) :
       OperatorDiffusionMFD(plist, global_op)
   {
+    operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
     Init_(plist);
   }
 
-  OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
+  OperatorDiffusionMFDwithGravity(Teuchos::ParameterList& plist,
                                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       OperatorDiffusionMFD(plist, mesh)
   {
+    operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
     Init_(plist);
   }
 
-  OperatorDiffusionWithGravity(Teuchos::ParameterList& plist,
+  OperatorDiffusionMFDwithGravity(Teuchos::ParameterList& plist,
                                const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
       OperatorDiffusionMFD(plist, mesh)
   {
+    operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
     Init_(plist);
   }
   
@@ -67,6 +70,10 @@ class OperatorDiffusionWithGravity : public OperatorDiffusionMFD {
     rho_cv_ = rho;
   }
   
+  // Developments
+  // -- interface to solvers for treating nonlinear BCs.
+  virtual double ComputeGravityFlux(int f) const;
+
  protected:
   virtual void AddGravityToRHS_();
   inline AmanziGeometry::Point GravitySpecialDirection_(int f) const;

@@ -138,6 +138,17 @@ class OperatorDiffusion {
     Exceptions::amanzi_throw(msg);
   }
   
+  // -- working with consistent faces -- may not be implemented
+  virtual int UpdateConsistentFaces(CompositeVector& u){
+    Errors::Message msg("OperatorDiffusion: This diffusion implementation does not support working with consistent faces.");
+    Exceptions::amanzi_throw(msg);
+    return 1;
+  }
+  
+  // interface to solvers for treating nonlinear BCs.
+  virtual double ComputeTransmissibility(int f) const = 0;
+  virtual double ComputeGravityFlux(int f) const = 0;
+
   // access
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
   Teuchos::RCP<Operator> global_operator() { return global_op_; }
@@ -171,6 +182,7 @@ class OperatorDiffusion {
   Teuchos::RCP<Op> jac_op_;
   int global_op_schema_, local_op_schema_, jac_op_schema_;
   std::vector<Teuchos::RCP<BCs> > bcs_trial_, bcs_test_;
+  OperatorType operator_type_;
 
   // mesh info
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -178,6 +190,9 @@ class OperatorDiffusion {
   int nfaces_owned, nfaces_wghost;
   int nnodes_owned, nnodes_wghost;
 };
+
+
+
 
 }  // namespace Operators
 }  // namespace Amanzi

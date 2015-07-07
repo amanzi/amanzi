@@ -47,7 +47,7 @@ class SolverFnBaseJF : public SolverFnBase<Vector> {
   }
 
   // preconditioner application
-  virtual void ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
+  virtual int ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
 				   const Teuchos::RCP<Vector>& Pr);
 
   // Update the preconditioner
@@ -111,7 +111,7 @@ SolverFnBaseJF<Vector,VectorSpace>::SolverFnBaseJF(Teuchos::ParameterList& plist
 
 // preconditioner application
 template<class Vector, class VectorSpace>
-void SolverFnBaseJF<Vector,VectorSpace>::ApplyPreconditioner(
+int SolverFnBaseJF<Vector,VectorSpace>::ApplyPreconditioner(
     const Teuchos::RCP<const Vector>& r, const Teuchos::RCP<Vector>& Pr) {
   int ierr = lin_op_->ApplyInverse(*r, *Pr);
 }

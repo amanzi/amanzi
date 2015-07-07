@@ -50,7 +50,7 @@ class Unstructured_observations {
     comp_names_ = comp_names;
   }
 
-  void MakeObservations(State& state);
+  int MakeObservations(State& S);
 
   bool DumpRequested(const int);
   bool DumpRequested(const double);

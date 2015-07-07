@@ -15,6 +15,13 @@
 namespace Amanzi {
 namespace Operators {
 
+typedef enum { OPERATOR_DIFFUSION_MFD,
+               OPERATOR_DIFFUSION_FV,
+               OPERATOR_DIFFUSION_MFD_GRAVITY,
+               OPERATOR_DIFFUSION_FV_GRAVITY,
+               OPERATOR_ADVECTION,
+               OPERATOR_ACCUMULATION} OperatorType;
+
 // Constants in the next block must powers of 2.
 const int OPERATOR_SCHEMA_DOFS_FACE = 1;
 const int OPERATOR_SCHEMA_DOFS_CELL = 2;

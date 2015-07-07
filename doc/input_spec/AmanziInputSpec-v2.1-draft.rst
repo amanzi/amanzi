@@ -395,9 +395,9 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
 
     * `"nonlinear_tolerance`" = "exponential"
 
-    * `"unstr_pseudo_time_integrator`"  has the following elements
+    * `"unstr_initialization`"  has the following elements
 
-        * `"method`" = "string" (options: picard)
+        * `"method`" = "string" (options: picard, darcy_solver)
 
         * `"preconditioner`" = "string" (options: trilinos_ml, hypre_amg, block_ilu)
 
@@ -409,9 +409,9 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
 
         * `"clipping_saturation`" = "exponential"
 
-        * `"convergence_tolerance`" = "exponential"
+        * `"clipping_pressure`" = "exponential"
 
-        * `"initialize_with_darcy`" = "boolean"
+        * `"convergence_tolerance`" = "exponential"
 
     * `"limit_iterations`" = "integer"
 

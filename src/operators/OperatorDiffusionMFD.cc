@@ -1337,15 +1337,38 @@ OperatorDiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
     CompositeVector u_f_copy(y);
     ierr = lin_solver->ApplyInverse(y, u_f_copy);
     *u.ViewComponent("face",false) = *u_f_copy.ViewComponent("face",false);
-    ASSERT(!ierr);
+    ASSERT(ierr >= 0);
   } else {
     CompositeVector u_f_copy(y);
     ierr = consistent_face_op_->ApplyInverse(y, u);
     *u.ViewComponent("face",false) = *u_f_copy.ViewComponent("face",false);
-    ASSERT(!ierr);
+    ASSERT(ierr >= 0);
   }
-  return ierr;
+  
+  return (ierr > 0) ? 0 : 1;
+  //return ierr;
 }
   
+
+/* ******************************************************************
+* Calculates transmissibility value on the given BOUNDARY face f.
+****************************************************************** */
+double OperatorDiffusionMFD::ComputeTransmissibility(int f) const
+{
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
+
+  AmanziMesh::Entity_ID_List cells;
+  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  int c = cells[0];
+
+  if (K_.get()) {
+    return mfd.Transmissibility(f, c, (*K_)[c]);
+  } else {
+    WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
+    Kc(0, 0) = 1.0;
+    return mfd.Transmissibility(f, c, Kc);
+  }
+}
+
 }  // namespace Operators
 }  // namespace Amanzi

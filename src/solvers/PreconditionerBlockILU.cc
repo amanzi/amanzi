@@ -25,7 +25,8 @@ namespace AmanziPreconditioners {
 int PreconditionerBlockILU::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv)
 {
   returned_code_ = IfpILU_->ApplyInverse(v, hv);
-  return (returned_code_ == 0) ? 0 : 1;
+  //return (returned_code_ == 0) ? 0 : 1;
+  return returned_code_;
 }
 
 

@@ -27,6 +27,6 @@ class MatrixBase {
   // Apply matrix, b <-- Ax, returns ierr = 0 if success, !0 otherwise
   int Apply(const Vector& x, Vector& b) const;
 
-  // Apply the inverse, x <-- A^-1 b, returns ierr = 0 if success, !0 otherwise
+  // Apply the inverse, x <-- A^-1 b, returns ierr >= 0 if success, <0 otherwise
   int ApplyInverse(const Vector& b, Vector& x) const;
 };

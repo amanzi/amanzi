@@ -39,7 +39,7 @@ class SolverFnNLFV : public AmanziSolvers::SolverFnBase<Vector> {
   void Residual(const Teuchos::RCP<Vector>& u, const Teuchos::RCP<Vector>& r);
 
   // preconditioner toolkit
-  void ApplyPreconditioner(const Teuchos::RCP<const Vector>& v,
+  int ApplyPreconditioner(const Teuchos::RCP<const Vector>& v,
                            const Teuchos::RCP<Vector>& hv);
   void UpdatePreconditioner(const Teuchos::RCP<const Vector>& u);
 
@@ -79,14 +79,16 @@ void SolverFnNLFV<Vector>::Residual(const Teuchos::RCP<Vector>& u, const Teuchos
 * Use linear solver. 
 ****************************************************************** */
 template<class Vector>
-void SolverFnNLFV<Vector>::ApplyPreconditioner(
+int SolverFnNLFV<Vector>::ApplyPreconditioner(
     const Teuchos::RCP<const Vector>& v, const Teuchos::RCP<Vector>& hv)
 {
   AmanziSolvers::LinearOperatorFactory<Dispersion, Epetra_Vector, Epetra_BlockMap> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Dispersion, Epetra_Vector, Epetra_BlockMap> >
      solver = factory.Create("Dispersion Solver", TPK_->solvers_list, TPK_->dispersion_matrix());
 
+  int ierr(0);
   solver->ApplyInverse(*v, *hv);
+  return ierr;
 }
 
 

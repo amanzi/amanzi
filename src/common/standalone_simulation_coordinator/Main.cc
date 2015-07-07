@@ -359,7 +359,7 @@ int main(int argc, char *argv[]) {
       amanzi_throw(Errors::Message("The amanzi simulator returned an error code, this is most likely due to an error in the mesh creation."));
     }
 
-    Amanzi::timer_manager.stop( "Full Simulation" );
+    Amanzi::timer_manager.stop("Full Simulation");
     Amanzi::timer_manager.parSync(mpi_comm);
 
     if (rank == 0) {
@@ -385,12 +385,20 @@ int main(int argc, char *argv[]) {
       }
     }
   }
+  catch (int& ierr) {
+    if (rank == 0) {
+      std::cout << "Catched unknown exception with code " << ierr 
+                << ". Known sources: Epetra_MultiVector::AllocateForCopy" << std::endl;
+      std::cout << "Amanzi::SIMULATION_FAILED\n";
+    }
+  }
   
   // catch all
   catch (...) {
     if (rank == 0) {
+      std::cout << "Unknown exception" << std::endl;
       std::cout << "Amanzi::SIMULATION_FAILED\n";
     }
   }
-
 }
+
