@@ -160,7 +160,7 @@ void OperatorDiffusionFV::Setup(const Teuchos::RCP<const CompositeVector>& k,
   }
   if (dkdp_ != Teuchos::null) {
     ASSERT(dkdp_->HasComponent("cell"));
-    ASSERT(dkdp_->HasComponent("face"));
+    //ASSERT(dkdp_->HasComponent("face"));
   }
 
   // verify that mass matrices were initialized.

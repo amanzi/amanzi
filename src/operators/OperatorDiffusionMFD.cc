@@ -231,7 +231,20 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
     if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
     if (k_->HasComponent("twin")) k_twin = k_->ViewComponent("twin", true);
   }
-
+/*
+  double kf_hmean = 0;
+  if (scaled_constraint_ && (k_face != Teuchos::null)) {
+    int nfaces = (*k_face).GlobalLength();
+    int nval = 0;
+    for (int f = 0; f < nfaces; f++) {
+      if ((*k_face)[0][f] > 1.0) {
+        kf_hmean += 1 / (*k_face)[0][f];
+        nval++;
+      }
+    }
+    kf_hmean = nval / kf_hmean;
+  }
+*/
   // update matrix blocks
   AmanziMesh::Entity_ID_List faces, cells;
   std::vector<int> dirs;
@@ -267,10 +280,9 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
       }
 
     // -- the second most popular choice: classical upwind
-    } else if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
+    } else if (little_k_ == OPERATOR_LITTLE_K_UPWIND)
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
-
-    } else if (little_k_ == OPERATOR_LITTLE_K_STANDARD) {
+    else if (little_k_ == OPERATOR_LITTLE_K_STANDARD) {
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
     }
 
@@ -304,22 +316,23 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
         double matsum = 0.0;
         for (int n = 0; n < nfaces; n++) {
           double rowsum = 0.0;
+//          double cur_kf = (kf[n] < 1.0) || (kf[n] > kf_hmean) ? 1.0 : kf[n];
+          double cur_kf = (kf[n] < 1.0) ? 1.0 : kf[n];
           for (int m = 0; m < nfaces; m++) {
-            double tmp = Wff(n, m);
+            double tmp = Wff(n, m) * cur_kf;
             rowsum += tmp;
             Acell(n, m) = tmp;
           }
-
           Acell(n, nfaces) = -rowsum;
-          matsum += rowsum * kf[n];
         }
-        Acell(nfaces, nfaces) = matsum;
 
         for (int n = 0; n < nfaces; n++) {
           double colsum = 0.0;
-          for (int m = 0; m < nfaces; m++) colsum += Acell(m, n) * kf[m];
+          for (int m = 0; m < nfaces; m++) colsum += Wff(m, n) * kf[m];
           Acell(nfaces, n) = -colsum;
+          matsum += colsum;
         }
+        Acell(nfaces, nfaces) = matsum;
       }
     }
 
@@ -551,6 +564,26 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
   Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
 
+  Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
+  Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
+  if (k_ != Teuchos::null) {
+    if (k_->HasComponent("cell")) k_cell = k_->ViewComponent("cell");
+    if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
+  }
+/*
+  double kf_hmean = 0;
+  if (scaled_constraint_ && (k_face != Teuchos::null)) {
+    int nfaces = (*k_face).GlobalLength();
+    int nval = 0;
+    for (int f = 0; f < nfaces; f++) {
+      if ((*k_face)[0][f] > 1.0) {
+        kf_hmean += 1 / (*k_face)[0][f];
+        nval++;
+      }
+    }
+    kf_hmean = nval / kf_hmean;
+  }
+*/
   for (int c = 0; c != ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
@@ -560,14 +593,6 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
     std::vector<double> kf(nfaces, 1.0);
     if (scaled_constraint_) {
       // un-rolling little-k data
-      Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
-      Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
-      Teuchos::RCP<const Epetra_MultiVector> k_twin = Teuchos::null;
-      if (k_ != Teuchos::null) {
-        if (k_->HasComponent("cell")) k_cell = k_->ViewComponent("cell");
-        if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
-      }
-      
       if (k_cell != Teuchos::null && k_cell.get()) kc = (*k_cell)[0][c];
       
       if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
@@ -623,11 +648,15 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
 
       } else if (bc_model_trial[f] == OPERATOR_BC_NEUMANN) {
         if(scaled_constraint_) {
-          if (kf[n] == 0.0) {
+          if (std::abs(kf[n]) < 1e-12) {
             ASSERT(value == 0.0);
             rhs_face[0][f] = 0.0;
           }
-          else rhs_face[0][f] -= value * mesh_->face_area(f) / kf[n];
+//          else if ((kf[n] < 1.0) || (kf[n] > kf_hmean)) {
+          else if (kf[n] < 1.0) {
+            rhs_face[0][f] -= value * mesh_->face_area(f) / kf[n];
+          }
+          else rhs_face[0][f] -= value * mesh_->face_area(f);
         }
         else rhs_face[0][f] -= value * mesh_->face_area(f);
 
@@ -638,13 +667,18 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
         }
         double area = mesh_->face_area(f);
         if(scaled_constraint_) {
-          if (kf[n] == 0.0) {
+          if (std::abs(kf[n]) < 1e-12) {
             ASSERT((value == 0.0) && (bc_mixed[f] == 0.0));
             rhs_face[0][f] = 0.0;
           }
-          else {
+//          else if ((kf[n] < 1.0) || (kf[n] > kf_hmean)) {
+          else if (kf[n] < 1.0) {
             rhs_face[0][f] -= value * area / kf[n];
             Acell(n, n) += bc_mixed[f] * area / kf[n];
+          }
+          else {
+            rhs_face[0][f] -= value * area;
+            Acell(n, n) += bc_mixed[f] * area;
           }
         }
         else {
