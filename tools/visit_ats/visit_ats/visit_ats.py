@@ -81,6 +81,7 @@ class VisItWindow:
         
         self.setDimension(3)
         self.plots = []
+        self.nonplots = [] # other objects like meshes
         self._slice = None
         self.exaggeration = None
         
@@ -124,8 +125,27 @@ class VisItWindow:
                     v.AddOperator("Transform")
                     v.SetOperatorOptions(tr)
                     plot.operators.append(Operator("exaggerate_vertical", "Transform", tr))
-                    
 
+    def createMesh(self, color='w', opacity=0.15):
+        _colors = dict(w=(255,255,255,255),
+                       k=(0,0,0,255)
+                       )
+
+        v.AddPlot('Mesh', "Mesh")
+        ma = v.MeshAttributes()
+        ma.legendFlag = 0
+        ma.meshColor = _colors[color]
+        ma.meshColorSource = ma.MeshCustom
+        ma.opaqueMode = ma.On
+        ma.opacity = opacity
+        v.SetPlotOptions(ma)
+
+        pname = v.GetPlotList().GetPlots(v.GetNumPlots()-1).plotName
+        plot = Plot(pname, 'Mesh', ma)
+        self.nonplots.append(plot)
+        return plot
+
+        
     def createPseudocolor(self, varname, display_name=None, cmap=None, 
                           limits=None, linewidth=None, legend=True, alpha=False):
         """Generic creation of pseudocolor"""
@@ -284,19 +304,28 @@ class Vis:
                     surface_prefix="visdump_surface_data"):
         """Loads source files for subsurface and potentially surface."""
 
-        self.subsurface_src = ":".join((self.hostname, os.path.join(self.directory, "%s.VisIt.xmf"%prefix)))
-        self.surface_src = ":".join((self.hostname, os.path.join(self.directory, "%s.VisIt.xmf"%surface_prefix)))
+        if prefix is None:
+            self.subsurface_src = None
+        else:
+            self.subsurface_src = ":".join((self.hostname, os.path.join(self.directory, "%s.VisIt.xmf"%prefix)))
+
+        if surface_prefix is None:
+            self.surface_src = None
+        else:
+            self.surface_src = ":".join((self.hostname, os.path.join(self.directory, "%s.VisIt.xmf"%surface_prefix)))
 
         # open the subsurface database
-        v.OpenDatabase(self.subsurface_src)
+        if self.subsurface_src is not None:
+            v.OpenDatabase(self.subsurface_src)
 
-        if surface:
+        if surface_prefix is not None:
             # open the surface database
             v.OpenDatabase(self.surface_src)
 
-            # create the database correlation
-            v.CreateDatabaseCorrelation("my_correlation", (self.subsurface_src, self.surface_src), 0)
-            v.SetActiveTimeSlider("my_correlation")
+            if prefix is not None:
+                # create the database correlation
+                v.CreateDatabaseCorrelation("my_correlation", (self.subsurface_src, self.surface_src), 0)
+                v.SetActiveTimeSlider("my_correlation")
 
             # create vector expressions for ponded depth and snow depth
             v.DefineVectorExpression("ponded_depth_displace", "{0,0,ponded_depth.cell.0}")
@@ -344,7 +373,8 @@ class ATSVis(Vis):
         return win.createPseudocolor(varname, limits=limits, cmap=cmap,
                                      legend=True)
     
-    def createSurfacePseudocolor(self, varname, limits=None, cmap=None, window=None):
+    def createSurfacePseudocolor(self, varname, limits=None, cmap=None, window=None,
+                                 displace=True, alpha=False, legend=False):
         """Simplified interface to create standard pseudocolors on the surface."""
         self.activateSurface()
 
@@ -353,16 +383,17 @@ class ATSVis(Vis):
         win = self.getActiveWindow()
 
         pcolor = win.createPseudocolor(varname, limits=limits, cmap=cmap, 
-                                        legend=False)
-        # deform by surface vector
-        v.AddOperator("Displace")
-        da = v.DisplaceAttributes()
-        da.variable = "ponded_depth_displace"
-        v.SetOperatorOptions(da)
-        pcolor.operators.append(Operator("displace", "Displace", da))
+                                        legend=legend, alpha=alpha)
+        if displace:
+            # deform by surface vector
+            v.AddOperator("Displace")
+            da = v.DisplaceAttributes()
+            da.variable = "ponded_depth_displace"
+            v.SetOperatorOptions(da)
+            pcolor.operators.append(Operator("displace", "Displace", da))
         return pcolor
 
-    def createSnowPseudocolor(self, varname, limits=None, cmap=None, window=None):
+    def createSnowPseudocolor(self, varname, limits=None, cmap=None, window=None, legend=False):
         """Simplified interface to create standard pseudocolors on the snow surface."""
         self.activateSurface()
 
@@ -370,8 +401,11 @@ class ATSVis(Vis):
             self.setActiveWindow(window)
         win = self.getActiveWindow()
 
+        if cmap is None:
+            cmap = "hot"
+        
         pcolor = win.createPseudocolor(varname, limits=limits, cmap=cmap, 
-                                       legend=False)
+                                       legend=legend)
                                     
         # deform by surface vector
         v.AddOperator("Displace")
@@ -461,15 +495,14 @@ class ATSVis(Vis):
         return self.createSnowPseudocolor("snow_temperature.cell.0", limits=limits,
                                           cmap=cmap, window=window)
 
-    def plotPondedDepth(self, window=None, limits=None):
+    def plotPondedDepth(self, **kwargs):
         """Adds a plot of surface ponded depth"""
-        return self.createSurfacePseudocolor("ponded_depth.cell.0", limits=limits,
-                                             cmap="water_brown", window=window)
+        return self.createSurfacePseudocolor("ponded_depth.cell.0", **kwargs)
 
-    def plotSnowDepth(self, window=None, limits=None):
+    def plotSnowDepth(self, window=None, limits=None, legend=False):
         """Adds a plot of snow depth"""
         return self.createSnowPseudocolor("snow_depth.cell.0", limits=limits,
-                                          cmap="Set3_r", window=window)
+                                          cmap="snow_white", window=window, legend=legend)
 
     def _getIndexByTime(self, time):
         pass
@@ -495,6 +528,20 @@ class ATSVis(Vis):
             round = vrc.rcParams['time.round']
         self.time_annot.text = vt.visitTime(round)
 
+    def plotSurfaceMesh(self, color='w', opacity=.15):
+        """Simplified interface to create standard pseudocolors on the surface."""
+        self.activateSurface()
+        win = self.getActiveWindow()
+        mesh = win.createMesh(color,opacity)
+        return mesh
+
+    def plotSubsurfaceMesh(self, color='w', opacity=.15):
+        """Simplified interface to create standard pseudocolors on the surface."""
+        self.activateSubsurface()
+        win = self.getActiveWindow()
+        mesh = win.createMesh(color,opacity)
+        return mesh
+    
 
     def draw(self):
         """Draw the plots"""

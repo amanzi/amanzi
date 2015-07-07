@@ -48,7 +48,6 @@ double
 MacroporeSurfaceFluxModel::MacroporeSurfaceFlux(double pM, double ps, double krs, double krM, double K) const
 {
   double C = gamma_ / delta_ * K * ( (pM > ps) ? krM : 0.);
-  std::cout <<  "flux (pos -> macro): " << C*(ps-pM) << std::endl;
   return C * (ps - pM);
 }
 
