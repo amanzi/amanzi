@@ -274,8 +274,7 @@ MPCPermafrost3::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> 
 }
 
 // -- Apply preconditioner
-void
-MPCPermafrost3::ApplyPreconditioner(Teuchos::RCP<const TreeVector> r,
+int MPCPermafrost3::ApplyPreconditioner(Teuchos::RCP<const TreeVector> r,
         Teuchos::RCP<TreeVector> Pr) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -315,7 +314,8 @@ MPCPermafrost3::ApplyPreconditioner(Teuchos::RCP<const TreeVector> r,
   // call the operator's inverse
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Precon applying coupled subsurface operator." << std::endl;
-  lin_solver_->ApplyInverse(*domain_u_tv, *domain_Pu_tv);
+  int ierr = lin_solver_->ApplyInverse(*domain_u_tv, *domain_Pu_tv);
+  ierr = (ierr > 0) ? 0 : 1;
 
   if (S_next_->cycle() == 339) {
     Epetra_Vector vec(precon_->Schur()->Map());
@@ -352,8 +352,9 @@ MPCPermafrost3::ApplyPreconditioner(Teuchos::RCP<const TreeVector> r,
     *Pu_std = *domain_Pu_tv;
 
     // call EWC, which does Pu_p <-- Pu_p_std + dPu_p
-    sub_ewc_->ApplyPreconditioner(domain_u_tv, domain_Pu_tv);
-
+    int ierr_ewc = sub_ewc_->ApplyPreconditioner(domain_u_tv, domain_Pu_tv);
+    ierr += ierr_ewc;
+    
     // calculate dPu_lambda from dPu_p
     Pu_std->Update(1.0, *domain_Pu_tv, -1.0);
     precon_->UpdateConsistentFaceCorrection(*res0, Pu_std.ptr());
@@ -396,6 +397,8 @@ MPCPermafrost3::ApplyPreconditioner(Teuchos::RCP<const TreeVector> r,
     vecs[1] = Pr->SubVector(1)->Data().ptr();
     domain_db_->WriteVectors(vnames, vecs, true);
   }
+  
+  return ierr;
 }
 
 // -- Update the preconditioner.

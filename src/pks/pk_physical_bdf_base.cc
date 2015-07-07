@@ -75,7 +75,7 @@ double PKPhysicalBDFBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   // VerboseObject stuff.
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-    *vo_->os() << "ENorm (Infnorm) of: " << conserved_key_ << ": ";
+    *vo_->os() << "ENorm (Infnorm) of: " << conserved_key_ << ": " << std::endl;
 
   Teuchos::RCP<const CompositeVector> dvec = du->Data();
   double h = S_next_->time() - S_inter_->time();
@@ -106,7 +106,7 @@ double PKPhysicalBDFBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
       for (unsigned int f=0; f!=nfaces; ++f) {
         AmanziMesh::Entity_ID_List cells;
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
         double cv_min = cells.size() == 1 ? cv[0][cells[0]]
             : std::min(cv[0][cells[0]],cv[0][cells[1]]);
         double conserved_min = cells.size() == 1 ? conserved[0][cells[0]]
@@ -138,7 +138,7 @@ double PKPhysicalBDFBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
       int ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
       ASSERT(!ierr);
-      *vo_->os() << "ENorm (" << *comp << ") = " << err.value << "[" << err.gid << "] (" << infnorm << ")" << std::endl;
+      *vo_->os() << "  ENorm (" << *comp << ") = " << err.value << "[" << err.gid << "] (" << infnorm << ")" << std::endl;
     }
 
     enorm_val = std::max(enorm_val, enorm_comp);

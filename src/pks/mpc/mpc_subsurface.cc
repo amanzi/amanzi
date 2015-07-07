@@ -13,7 +13,7 @@ with freezing.
 
 #include "MultiplicativeEvaluator.hh"
 #include "TreeOperator.hh"
-#include "OperatorDiffusionWithGravity.hh"
+#include "OperatorDiffusionFactory.hh"
 #include "OperatorAdvection.hh"
 #include "OperatorAccumulation.hh"
 #include "Operator.hh"
@@ -96,7 +96,8 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
       Teuchos::ParameterList divq_plist(plist_->sublist("PKs").sublist(pk_order[0]).sublist("Diffusion PC"));
       divq_plist.set("newton correction", "approximate jacobian");
       divq_plist.set("exclude primary terms", true);
-      ddivq_dT_ = Teuchos::rcp(new Operators::OperatorDiffusionWithGravity(divq_plist,mesh_));
+      Operators::OperatorDiffusionFactory opfactory;
+      ddivq_dT_ = opfactory.Create(divq_plist, mesh_);
       dWC_dT_block_ = ddivq_dT_->global_operator();
     }
 
@@ -115,11 +116,12 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
       Teuchos::ParameterList divq_plist(plist_->sublist("PKs").sublist(pk_order[1]).sublist("Diffusion PC"));
       divq_plist.set("newton correction", "approximate jacobian");
       divq_plist.set("exclude primary terms", true);
+      Operators::OperatorDiffusionFactory opfactory;
       if (dE_dp_block_ == Teuchos::null) {
-        ddivKgT_dp_ = Teuchos::rcp(new Operators::OperatorDiffusionMFD(divq_plist,mesh_));
+        ddivKgT_dp_ = opfactory.Create(divq_plist, mesh_);
         dE_dp_block_ = ddivKgT_dp_->global_operator();
       } else {
-        ddivKgT_dp_ = Teuchos::rcp(new Operators::OperatorDiffusionMFD(divq_plist,dE_dp_block_));
+        ddivKgT_dp_ = opfactory.Create(divq_plist, dE_dp_block_);
       }
       ddivKgT_dp_->SetBCs(sub_pks_[0]->BCs(), sub_pks_[1]->BCs());
 
@@ -131,18 +133,19 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
       Teuchos::ParameterList divhq_dp_plist(plist_->sublist("PKs").sublist(pk_order[0]).sublist("Diffusion PC"));
       divhq_dp_plist.set("newton correction", "approximate jacobian");
 
+      Operators::OperatorDiffusionFactory opfactory;
       if (dE_dp_block_ == Teuchos::null) {
-        ddivhq_dp_ = Teuchos::rcp(new Operators::OperatorDiffusionWithGravity(divhq_dp_plist,mesh_));
+        ddivhq_dp_ = opfactory.Create(divhq_dp_plist, mesh_);
         dE_dp_block_ = ddivhq_dp_->global_operator();
       } else {
-        ddivhq_dp_ = Teuchos::rcp(new Operators::OperatorDiffusionWithGravity(divhq_dp_plist, dE_dp_block_));
+        ddivhq_dp_ = opfactory.Create(divhq_dp_plist, dE_dp_block_);
       }
 
       // derivative with respect to temperature
       Teuchos::ParameterList divhq_dT_plist(plist_->sublist("PKs").sublist(pk_order[0]).sublist("Diffusion PC"));
       divhq_dT_plist.set("exclude primary terms", true);
       divhq_dT_plist.set("newton correction", "approximate jacobian");
-      ddivhq_dT_ = Teuchos::rcp(new Operators::OperatorDiffusionWithGravity(divhq_dT_plist, pcB));
+      ddivhq_dT_ = opfactory.Create(divhq_dT_plist, pcB);
 
       // need a field, evaluator, and upwinding for h * kr * rho/mu
       // -- first the evaluator
@@ -489,7 +492,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
 // -----------------------------------------------------------------------------
 // Wrapper to call the requested preconditioner.
 // -----------------------------------------------------------------------------
-void MPCSubsurface::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
+int MPCSubsurface::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -506,15 +509,16 @@ void MPCSubsurface::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
     db_->WriteVectors(vnames, vecs, true);
   }
   
-    
+  int ierr;
   if (precon_type_ == PRECON_NONE) {
     *Pu = *u;
+    ierr = 1;
   } else if (precon_type_ == PRECON_BLOCK_DIAGONAL) {
-    StrongMPC::ApplyPreconditioner(u,Pu);
+    ierr = StrongMPC::ApplyPreconditioner(u,Pu);
   } else if (precon_type_ == PRECON_PICARD) {
-    linsolve_preconditioner_->ApplyInverse(*u, *Pu);
+    ierr = linsolve_preconditioner_->ApplyInverse(*u, *Pu);
   } else if (precon_type_ == PRECON_EWC) {
-    linsolve_preconditioner_->ApplyInverse(*u, *Pu);
+    ierr = linsolve_preconditioner_->ApplyInverse(*u, *Pu);
 
   //   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
   //     *vo_->os() << "PC_std * residuals:" << std::endl;
@@ -556,6 +560,8 @@ void MPCSubsurface::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
     vecs.push_back(Pu->SubVector(1)->Data().ptr()); 
     db_->WriteVectors(vnames, vecs, true);
   }
+  
+  return (ierr > 0) ? 0 : 1;
 }
 
 
