@@ -1,18 +1,23 @@
 /* -------------------------------------------------------------------------
-   ATS
+  Amanzi & ATS
 
-   License: see $ATS_DIR/COPYRIGHT
-   Author: Ethan Coon
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+  See $ATS_DIR/COPYRIGHT
 
-   Interface for the State.  State is a simple data-manager, allowing PKs to
-   require, read, and write various fields, including:
+  Author: Ethan Coon
+
+  Interface for the State.  State is a simple data-manager, allowing PKs to
+  require, read, and write various fields, including:
     -- Acts as a factory for fields through the various require methods.
     -- Provides some data protection by providing both const and non-const
        data pointers to PKs.
     -- Provides some initialization capability -- this is where all
        independent variables can be initialized (as independent variables
        are owned by state, not by any PK).
-   ------------------------------------------------------------------------- */
+------------------------------------------------------------------------- */
 
 #ifndef STATE_STATE_HH_
 #define STATE_STATE_HH_
@@ -239,6 +244,7 @@ class State {
 
   // Write evaluators to file for drawing dependency graph.
   void WriteDependencyGraph() const;
+  void WriteStatistics(Teuchos::RCP<VerboseObject>& vo) const;
 
   // -----------------------------------------------------------------------------
   // State handles model parameters.
@@ -284,7 +290,7 @@ class State {
   int position() const { return position_in_tp_; }
   void set_position(int pos ) { position_in_tp_ = pos;}
 
-private:
+ private:
 
   // Accessors that return null if the Key does not exist.
   Teuchos::RCP<AmanziMesh::Mesh> GetMesh_(Key key) const;

@@ -165,7 +165,7 @@ class Flow_PK : public FnTimeIntegratorPK {
   // water balance
   FlowDomainFunction* src_sink;
   int src_sink_distribution; 
-  mutable double mass_bc, seepage_mass_;
+  mutable double mass_bc, seepage_mass_, mass_initial;
 
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
   Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval_;

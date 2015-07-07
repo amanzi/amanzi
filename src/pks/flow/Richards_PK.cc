@@ -453,6 +453,7 @@ void Richards_PK::Initialize()
   // Other quantatities: injected water mass
   mass_bc = 0.0;
   seepage_mass_ = 0.0;
+  mass_initial = 0.0;
   initialize_with_darcy_ = true;
   num_itrs_ = 0;
   

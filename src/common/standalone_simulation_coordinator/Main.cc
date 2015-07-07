@@ -359,7 +359,7 @@ int main(int argc, char *argv[]) {
       amanzi_throw(Errors::Message("The amanzi simulator returned an error code, this is most likely due to an error in the mesh creation."));
     }
 
-    Amanzi::timer_manager.stop( "Full Simulation" );
+    Amanzi::timer_manager.stop("Full Simulation");
     Amanzi::timer_manager.parSync(mpi_comm);
 
     if (rank == 0) {

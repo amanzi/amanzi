@@ -359,6 +359,10 @@ public:
   int Norm1(double* norm) const;
   int Norm2(double* norm) const;
 
+  int MinValue(double* value) const;
+  int MaxValue(double* value) const;
+  int MeanValue(double* value) const;
+
   // -- Utilities --
 
   // Write components to outstream.
@@ -503,6 +507,21 @@ CompositeVector::Norm1(double* norm) const {
 inline int
 CompositeVector::Norm2(double* norm) const {
   return mastervec_->Norm2(norm);
+}
+
+inline int
+CompositeVector::MinValue(double* value) const {
+  return mastervec_->MinValue(value);
+}
+
+inline int
+CompositeVector::MaxValue(double* value) const {
+  return mastervec_->MaxValue(value);
+}
+
+inline int
+CompositeVector::MeanValue(double* value) const {
+  return mastervec_->MeanValue(value);
 }
 
 inline void
