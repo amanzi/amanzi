@@ -272,6 +272,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
   // operators for the diffusion terms
   Teuchos::ParameterList& mfd_plist = plist_->sublist("Diffusion");
+  mfd_plist.set("gravity", true);
   Operators::OperatorDiffusionFactory opfactory;
   matrix_diff_ = opfactory.Create(mfd_plist, mesh_);
   matrix_ = matrix_diff_->global_operator();
@@ -292,6 +293,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
   // preconditioner for the NKA system
   Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("Diffusion PC");
+  mfd_pc_plist.set("gravity", true);
   preconditioner_diff_ = opfactory.Create(mfd_pc_plist, mesh_);
   preconditioner_ = preconditioner_diff_->global_operator();
   preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, preconditioner_));
