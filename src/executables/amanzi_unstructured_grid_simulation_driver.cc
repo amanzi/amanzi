@@ -34,6 +34,7 @@ Effectively stolen from Amanzi, with few modifications.
 
 #include "MeshAudit.hh"
 #include "MeshFactory.hh"
+#include "ColumnMesh.hh"
 #include "Domain.hh"
 #include "GeometricModel.hh"
 #include "coordinator.hh"
@@ -318,6 +319,16 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
     }  // If expert_params_specified
   }
 
+  // column meshes
+  std::vector<Teuchos::RCP<Amanzi::AmanziMesh::Mesh> > col_meshes;
+  if (mesh_plist.isSublist("Column Meshes")) {
+    int nc = mesh->num_columns();
+    col_meshes.resize(nc, Teuchos::null);
+    for (int c=0; c!=nc; ++c) {
+      col_meshes[c] = Teuchos::rcp(new Amanzi::AmanziMesh::ColumnMesh(*mesh, c));
+    }
+  }  
+  
   Teuchos::TimeMonitor::summarize();
   Teuchos::TimeMonitor::zeroOutTimers();
 
@@ -333,6 +344,14 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
   if (surface_mesh != Teuchos::null)
     S->RegisterMesh("surface", surface_mesh, deformable);
 
+  if (col_meshes.size() > 0) {
+    for (int c=0; c!=col_meshes.size(); ++c) {
+      std::stringstream namestream;
+      namestream << "column_" << c;
+      S->RegisterMesh(namestream.str(), col_meshes[c], deformable);
+    }
+  }
+  
   // create the top level Coordinator
   Amanzi::Coordinator coordinator(params_copy, S, comm);
 
