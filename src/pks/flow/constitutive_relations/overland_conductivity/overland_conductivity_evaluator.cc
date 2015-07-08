@@ -9,6 +9,7 @@
 #include "independent_variable_field_evaluator.hh"
 #include "overland_conductivity_evaluator.hh"
 #include "manning_conductivity_model.hh"
+// #include "no_denominator_conductivity_model.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -45,7 +46,15 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterL
   // create the model, hard-coded until we have a 2nd model
   ASSERT(plist_.isSublist("overland conductivity model"));
   Teuchos::ParameterList sublist = plist_.sublist("overland conductivity model");
-  model_ = Teuchos::rcp(new ManningConductivityModel(sublist));
+  std::string model_type = sublist.get<std::string>("overland conductivity type", "manning");
+  if (model_type == "manning") {
+    model_ = Teuchos::rcp(new ManningConductivityModel(sublist));
+  } else if (model_type == "no denominator") {
+    //    model_ = Teuchos::rcp(new NoDenominatorConductivityModel(sublist));
+  } else {
+    ASSERT(0);
+  }
+    
 }
 
 
