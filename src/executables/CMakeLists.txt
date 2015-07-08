@@ -1,5 +1,19 @@
 # -*- mode: cmake -*-
 
+
+# Need this define. Errors from MSTK include files 
+# about MPI_COMM_WORLD. --lpritch
+add_definitions("-DMSTK_HAVE_MPI")
+
+if (WITH_MSTK_2_20rc1_OR_NEWER)
+  add_definitions("-DMSTK_2_20rc1_OR_NEWER")
+endif ()
+
+if (WITH_MSTK_2_21rc1_OR_NEWER)
+  add_definitions("-DMSTK_2_21rc1_OR_NEWER")
+endif ()
+
+
 #
 #  ATS
 #    Executable
@@ -50,6 +64,8 @@ include_evaluators_directories(LISTNAME BGC_REG_INCLUDES)
 include_evaluators_directories(LISTNAME TEST_PKS_REG_INCLUDES)
 include_evaluators_directories(LISTNAME MPC_PK_FAC_INCLUDES)
 #include_evaluators_directories(LISTNAME TRANSPORT_PASSIVE_TRACER_REG_INCLUDES)
+
+
 
 add_executable(ats amanzi_unstructured_grid_simulation_driver.cc main.cc )
 
@@ -103,6 +119,7 @@ set(AMANZI_LIBS
 	                  amanzi_solvers
                       amanzi_data_structures
                       amanzi_mesh
+                      amanzi_column_mesh
                       amanzi_mesh_audit
                       amanzi_mesh_functions
                       amanzi_functions
