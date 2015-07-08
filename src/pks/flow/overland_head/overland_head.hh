@@ -70,7 +70,10 @@ public:
 
   // evaluating consistent faces for given BCs and cell values
   virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
-
+  
+  // -- Compute a norm on u-du and return the result.
+  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
+                           Teuchos::RCP<const TreeVector> du);
 protected:
   // setup methods
   virtual void SetupOverlandFlow_(const Teuchos::Ptr<State>& S);
