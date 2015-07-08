@@ -23,7 +23,7 @@
 #include "MeshFactory.hh"
 #include "FrameworkTraits.hh"
 #include "Geometry.hh"
-#include "../Column_mesh.hh"
+#include "../ColumnMesh.hh"
 
 
 TEST(COLUMN_MESH_3D)
@@ -111,7 +111,7 @@ TEST(COLUMN_MESH_3D)
 
     // Create a column mesh from one of the columns
 
-    Amanzi::AmanziMesh::Column_mesh colmesh(*mesh,10);
+    Amanzi::AmanziMesh::ColumnMesh colmesh(*mesh,10);
 
     // Verify column mesh topology
 
