@@ -150,6 +150,13 @@ void Coordinator::initialize() {
     // vis successful timesteps
     std::string plist_name = "visualization surface";
     Teuchos::ParameterList& vis_plist = parameter_list_->sublist(plist_name);
+/*
+    Teuchos::RCP<Visualization> vis_2d = Teuchos::rcp(new Visualization(vis_plist, comm_));
+    vis_2d->set_mesh(surface);
+    vis_2d->CreateFiles();
+    vis_2d->set_mesh(surface);
+    visualization_.push_back(vis_2d);
+*/    
     Teuchos::RCP<Visualization> vis = Teuchos::rcp(new Visualization(vis_plist, comm_));
     vis->set_mesh(surface_3d);
     vis->CreateFiles();

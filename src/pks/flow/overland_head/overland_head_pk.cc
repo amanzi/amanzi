@@ -206,7 +206,6 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   // operator for the diffusion terms: must use ScaledConstraint version
   Teuchos::ParameterList& mfd_plist = plist_->sublist("Diffusion");
-  mfd_plist.set("scaled constraint equation", true);
   Operators::OperatorDiffusionFactory opfactory;
   matrix_diff_ = opfactory.Create(mesh_, bc_, mfd_plist);
   matrix_diff_->Setup(Teuchos::null);
@@ -215,7 +214,6 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   // operator for flux directions -- this should be removed eventually
   Teuchos::ParameterList face_diff_list(mfd_plist);
   face_diff_list.set("nonlinear coefficient", "none");
-  face_diff_list.set("scaled constraint equation", true);
   face_matrix_diff_ = opfactory.Create(mesh_, bc_, face_diff_list);
   face_matrix_diff_->Setup(Teuchos::null);
   face_matrix_diff_->Setup(Teuchos::null, Teuchos::null);
@@ -223,7 +221,7 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   
   // diffusion operator for the preconditioner
   Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("Diffusion PC");
-  mfd_pc_plist.set("scaled constraint equation", true);
+  mfd_pc_plist.set("scaled constraint equation", mfd_plist.get<bool>("scaled constraint equation", false));
   preconditioner_diff_ = opfactory.Create(mesh_, bc_, mfd_pc_plist);
   preconditioner_diff_->Setup(Teuchos::null);
   preconditioner_ = preconditioner_diff_->global_operator();
