@@ -24,7 +24,7 @@ namespace Amanzi {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-Unstructured_observations::Unstructured_observations(Teuchos::ParameterList obs_list,
+Unstructured_observations::Unstructured_observations(Teuchos::ParameterList& obs_list,
                                                      Amanzi::ObservationData& observation_data,
                                                      Epetra_MpiComm* comm)
     : observation_data_(observation_data), obs_list_(obs_list)
