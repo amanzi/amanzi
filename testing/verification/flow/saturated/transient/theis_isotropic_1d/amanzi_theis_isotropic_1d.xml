@@ -35,7 +35,9 @@
         </ParameterList>
 	<ParameterList name="Transient Implicit Time Integration">
 	  <Parameter name="transient time step increase factor" type="double" value="1.1"/>
-	  <Parameter name="transient initialize with darcy" type="bool" value="true"/>
+	</ParameterList>
+	<ParameterList name="Initialization">
+	  <Parameter name="time integration method" type="string" value="Darcy Solver"/>
 	</ParameterList>
       </ParameterList>
     </ParameterList>
