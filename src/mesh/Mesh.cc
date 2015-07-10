@@ -530,26 +530,53 @@ int Mesh::compute_cell_geometry(const Entity_ID cellid, double *volume,
     int nf = faces.size();
     nfnodes.resize(nf);
 
-    for (int j = 0; j < nf; j++) {
+    if (nf == 2) { /* special case of column mesh - only top and bottom faces
+                      are returned */
 
-      face_get_coordinates(faces[j],&fcoords);
-      nfnodes[j] = fcoords.size();
+      AmanziGeometry::Point fcentroid0(spacedim), fcentroid1(spacedim);
+      AmanziGeometry::Point normal(spacedim);
+      double farea;
 
-      if (fdirs[j] == 1) {
-        for (int k = 0; k < nfnodes[j]; k++)
-          cfcoords.push_back(fcoords[k]);
+      /* compute volume on the assumption that the top and bottom faces form
+         a vertical columnar cell or in other words a polygonal prism */
+
+      face_get_coordinates(faces[0],&fcoords);
+      AmanziGeometry::polygon_get_area_centroid_normal(fcoords,&farea,
+                                                       &fcentroid0,&normal);
+
+      face_get_coordinates(faces[1],&fcoords);
+      AmanziGeometry::polygon_get_area_centroid_normal(fcoords,&farea,
+                                                       &fcentroid1,&normal);
+
+      *centroid = (fcentroid0+fcentroid1)/2.0;
+      double height = norm(fcentroid1-fcentroid0);
+
+      *volume = farea*height;
+    }
+    else { /* general case */
+
+      for (int j = 0; j < nf; j++) {
+        
+        face_get_coordinates(faces[j],&fcoords);
+        nfnodes[j] = fcoords.size();
+        
+        if (fdirs[j] == 1) {
+          for (int k = 0; k < nfnodes[j]; k++)
+            cfcoords.push_back(fcoords[k]);
+        }
+        else {
+          for (int k = nfnodes[j]-1; k >=0; k--)
+            cfcoords.push_back(fcoords[k]);
+        }
       }
-      else {
-        for (int k = nfnodes[j]-1; k >=0; k--)
-          cfcoords.push_back(fcoords[k]);
-      }
+      
+      cell_get_coordinates(cellid,&ccoords);
+      
+      AmanziGeometry::polyhed_get_vol_centroid(ccoords,nf,nfnodes,
+                                               cfcoords,volume,
+                                               centroid);
     }
 
-    cell_get_coordinates(cellid,&ccoords);
-
-    AmanziGeometry::polyhed_get_vol_centroid(ccoords,nf,nfnodes,
-            cfcoords,volume,
-            centroid);
     return 1;
   }
   else if (celldim == 2) {
