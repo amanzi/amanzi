@@ -100,7 +100,7 @@ TEST(COLUMN_MESH_3D)
       mesh->node_get_coordinates(n,&xyz);
       xyz[0] += 0.01*xyz[2];
       xyz[1] += 0.01*xyz[2];
-      xyz[2] += 0.005*xyz[0]*xyz[1];
+      xyz[2] += 0.005*xyz[0]*xyz[1]*xyz[2];
       mesh->node_set_coordinates(n,xyz);
     }
 
@@ -170,14 +170,18 @@ TEST(COLUMN_MESH_3D)
     // centroid of base face 
 
     Amanzi::AmanziGeometry::Point fcenbase(3);
-    colmesh.face_centroid(0,&fcenbase);
+    fcenbase = colmesh.face_centroid(0);
+
+    // area of base face
+
+    double fareabase = colmesh.face_area(0);
 
     // Make sure centroids of other faces are stacked up 
     // exactly above that of the base face
 
     for (int j = 1; j < nfaces; j++) {
       Amanzi::AmanziGeometry::Point fcen(3);
-      colmesh.face_centroid(j,&fcen);
+      fcen = colmesh.face_centroid(j);
       CHECK_EQUAL(fcenbase[0],fcen[0]);
       CHECK_EQUAL(fcenbase[1],fcen[1]);
     }
@@ -190,15 +194,38 @@ TEST(COLUMN_MESH_3D)
     for (int i = 0; i < ncells; i++) {
       Amanzi::AmanziGeometry::Point ccen(3), fcen0(3), fcen1(3);
 
-      colmesh.cell_centroid(i,&ccen);
+      ccen = colmesh.cell_centroid(i);
 
-      colmesh.face_centroid(i,&fcen0);
-      colmesh.face_centroid(i+1,&fcen1);
+      fcen0 = colmesh.face_centroid(i);
+      fcen1 = colmesh.face_centroid(i+1);
 
       CHECK_EQUAL(fcenbase[0],ccen[0]);
       CHECK_EQUAL(fcenbase[1],ccen[1]);
 
       CHECK_EQUAL((fcen0[2]+fcen1[2])/2.0,ccen[2]);
+    }
+
+    // Verify the volume of cells is computed correctly in spite of
+    // the topology being special (lateral faces of the cell are
+    // omitted). The volume of each cell should be the area of the
+    // base face times the distance between the centroids of the lower
+    // face of the cell and the upper face of the cell
+
+    for (int j = 0; j < ncells; j++) {
+      Amanzi::AmanziMesh::Entity_ID_List cfaces;
+      colmesh.cell_get_faces(j,&cfaces);
+    
+      Amanzi::AmanziGeometry::Point locen(3), hicen(3);
+      locen = colmesh.face_centroid(cfaces[0]);
+      hicen = colmesh.face_centroid(cfaces[1]);
+      
+      double height = norm(hicen-locen);
+
+      double expvolume = fareabase*height;
+
+      double volume = colmesh.cell_volume(j);
+
+      CHECK_CLOSE(expvolume,volume,1.0e-08);
     }
       
   } // for each framework i
