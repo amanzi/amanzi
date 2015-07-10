@@ -186,6 +186,16 @@ TEST(COLUMN_MESH_3D)
       CHECK_EQUAL(fcenbase[1],fcen[1]);
     }
 
+    // Make sure the normals of the faces are have only a Z component
+
+    for (int j = 0; j < nfaces; j++) {
+      Amanzi::AmanziGeometry::Point normal(3);
+      normal = colmesh.face_normal(j);
+      CHECK_EQUAL(0.0,normal[0]);
+      CHECK_EQUAL(0.0,normal[1]);
+      CHECK_EQUAL(1.0,fabs(normal[2]));
+    }
+
     // Make sure centroids of cells are stacked up 
     // exactly above that of the base face and that 
     // their z value is exactly between the z-values
