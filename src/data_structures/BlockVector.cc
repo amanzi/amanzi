@@ -345,7 +345,7 @@ int BlockVector::MinValue(double* value) const {
   if (data_.size() == 0) return 1;
 
   int ierr = 0;
-  double value_loc[0];
+  double value_loc[1];
 
   *value = 1e+50;
   for (int i = 0; i != num_components_; ++i) {
@@ -364,7 +364,7 @@ int BlockVector::MaxValue(double* value) const {
   if (data_.size() == 0) return 1;
 
   int ierr = 0;
-  double value_loc[0];
+  double value_loc[1];
 
   *value = -1e+50;
   for (int i = 0; i != num_components_; ++i) {
@@ -383,7 +383,7 @@ int BlockVector::MeanValue(double* value) const {
   if (data_.size() == 0) return 1;
 
   int ierr(0), n(0), n_loc;
-  double value_loc[0];
+  double value_loc[1];
 
   *value = 0.0;
   for (int i = 0; i != num_components_; ++i) {

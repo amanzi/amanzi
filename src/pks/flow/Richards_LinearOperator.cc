@@ -73,6 +73,9 @@ void Richards_PK::SolveFullySaturatedProblem(
     *vo_->os() << "saturated solver (" << solver->name() 
                << "): ||p,lambda||=" << pnorm << " itr=" << num_itrs 
                << " code=" << code << std::endl;
+
+    double residual = solver->TrueResidual(rhs, *solution);
+    *vo_->os() << "true l2 residual: ||r||=" << residual << std::endl;
   }
 
   // catastrophic failure
