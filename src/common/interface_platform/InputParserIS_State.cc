@@ -14,7 +14,7 @@ namespace AmanziInput {
 /* ******************************************************************
 * STATE sublist
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Teuchos::ParameterList stt_list;
   Errors::Message msg;
@@ -483,7 +483,7 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
 /* ******************************************************************
 * Mesh patition sublist based on materials
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreatePartitionList_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreatePartitionList_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Teuchos::ParameterList part_list;
   Teuchos::ParameterList& tmp_list = part_list.sublist("materials");

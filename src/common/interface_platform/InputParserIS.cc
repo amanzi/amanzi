@@ -18,7 +18,9 @@ namespace AmanziInput {
 /* ******************************************************************
 * Empty
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::Translate(Teuchos::ParameterList* plist, int numproc) {
+Teuchos::ParameterList InputParserIS::Translate(Teuchos::ParameterList* input_plist, int numproc)
+{
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::rcp(input_plist, false);
   numproc_ = numproc;
 
   // first make sure the version is correct
@@ -95,7 +97,7 @@ Teuchos::ParameterList InputParserIS::Translate(Teuchos::ParameterList* plist, i
 /* ******************************************************************
 * Verify that we use XML file with the correct amanzi version.
 ****************************************************************** */
-void InputParserIS::CheckAmanziInputVersion_(Teuchos::ParameterList* plist)
+void InputParserIS::CheckAmanziInputVersion_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   std::string version = plist->get<std::string>("Amanzi Input Format Version", "FAIL");
   if (version == "FAIL") {
@@ -138,7 +140,7 @@ void InputParserIS::CheckAmanziInputVersion_(Teuchos::ParameterList* plist)
 /* ******************************************************************
 * Initizialize some global information.
 ****************************************************************** */
-void InputParserIS::InitGlobalInfo_(Teuchos::ParameterList* plist)
+void InputParserIS::InitGlobalInfo_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Errors::Message msg;
 

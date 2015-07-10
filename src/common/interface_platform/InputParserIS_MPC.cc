@@ -16,7 +16,7 @@ namespace AmanziInput {
 /* ******************************************************************
 * Empty
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Teuchos::ParameterList tpc_list;
 
@@ -32,160 +32,152 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::Para
   /* EIB: proposed v1.2.2 update - Add Maximum Cycle Number for Transient modes */
   double max_cycle_number;
 
-  if (plist->isSublist("Execution Control")) {
-    Teuchos::ParameterList exe_sublist = plist->sublist("Execution Control");
+  Teuchos::ParameterList exe_sublist = *Teuchos::sublist(plist, "Execution Control", true);
 
-    // get the default initial time step
-    if (exe_sublist.isSublist("Time Period Control")) {
-      default_initial_time_step = exe_sublist.sublist("Time Period Control").get<double>("Default Initial Time Step",RESTART_TIME_STEP);
-      default_max_time_step = exe_sublist.sublist("Time Period Control").get<double>("Default Maximum Time Step", MAXIMUM_TIME_STEP);
-    }
+  // get the default initial time step
+  if (exe_sublist.isSublist("Time Period Control")) {
+    default_initial_time_step = exe_sublist.sublist("Time Period Control").get<double>("Default Initial Time Step",RESTART_TIME_STEP);
+    default_max_time_step = exe_sublist.sublist("Time Period Control").get<double>("Default Maximum Time Step", MAXIMUM_TIME_STEP);
+  }
 
-    if (exe_sublist.isParameter("Flow Model")) {
-      std::string flow_model = exe_sublist.get<std::string>("Flow Model");
-      if (flow_model != "Off") { // we need to process boudary conditions to possibly add additional time periods
+  if (exe_sublist.isParameter("Flow Model")) {
+    std::string flow_model = exe_sublist.get<std::string>("Flow Model");
+    if (flow_model != "Off") { // we need to process boudary conditions to possibly add additional time periods
 
-        Teuchos::ParameterList& bc_sublist = plist->sublist("Boundary Conditions");
+      Teuchos::ParameterList& bc_sublist = plist->sublist("Boundary Conditions");
 
-        for (Teuchos::ParameterList::ConstIterator i = bc_sublist.begin(); i != bc_sublist.end(); i++) {
-          // look at sublists
-          if (bc_sublist.isSublist(bc_sublist.name(i))) {
-            Teuchos::ParameterList& bc = bc_sublist.sublist(bc_sublist.name(i));
+      for (Teuchos::ParameterList::ConstIterator i = bc_sublist.begin(); i != bc_sublist.end(); i++) {
+        // look at sublists
+        if (bc_sublist.isSublist(bc_sublist.name(i))) {
+          Teuchos::ParameterList& bc = bc_sublist.sublist(bc_sublist.name(i));
 
-            Teuchos::ParameterList bc_list;
+          Teuchos::ParameterList bc_list;
 
-            if (bc.isSublist("BC: Flux")) {
-              bc_list = bc.sublist("BC: Flux");
-            } else if (bc.isSublist("BC: Uniform Pressure")) {
-              bc_list = bc.sublist("BC: Uniform Pressure");
-            } else if (bc.isSublist("BC: Seepage")) {
-              bc_list = bc.sublist("BC: Seepage");
-            } else if (bc.isSublist("BC: Zero Flow")) {
-              bc_list = bc.sublist("BC: Zero Flow");
-            }
-
-            if (bc_list.isParameter("Times")) {
-              Teuchos::Array<double> times = bc_list.get<Teuchos::Array<double> >("Times");
-
-              for (Teuchos::Array<double>::const_iterator times_it = times.begin();
-                   times_it != times.end(); ++times_it) {
-                // skip the first one, there is no jump
-                if (times_it != times.begin()) {
-                  time_map[*times_it] = default_initial_time_step;
-                  max_dt_map[*times_it] = -1;
-                }
-              }
-            }
+          if (bc.isSublist("BC: Flux")) {
+            bc_list = bc.sublist("BC: Flux");
+          } else if (bc.isSublist("BC: Uniform Pressure")) {
+            bc_list = bc.sublist("BC: Uniform Pressure");
+          } else if (bc.isSublist("BC: Seepage")) {
+            bc_list = bc.sublist("BC: Seepage");
+          } else if (bc.isSublist("BC: Zero Flow")) {
+            bc_list = bc.sublist("BC: Zero Flow");
           }
-        }
 
-        Teuchos::ParameterList& src_sublist = plist->sublist("Sources");
+          if (bc_list.isParameter("Times")) {
+            Teuchos::Array<double> times = bc_list.get<Teuchos::Array<double> >("Times");
 
-        for (Teuchos::ParameterList::ConstIterator i = src_sublist.begin(); i != src_sublist.end(); i++) {
-          // look at sublists
-          if (src_sublist.isSublist(src_sublist.name(i))) {
-            Teuchos::ParameterList& src = src_sublist.sublist(src_sublist.name(i));
-
-            Teuchos::ParameterList src_list;
-
-            if (src.isSublist("Source: Uniform")) {
-              src_list = src.sublist("Source: Uniform");
-            } else if (src.isSublist("Source: Volume Weighted")) {
-              src_list = src.sublist("Source: Volume Weighted");
-            } else if (src.isSublist("Source: Permeability Weighted")) {
-              src_list = src.sublist("Source: Permeability Weighted");
-            }
-
-            if (src_list.isParameter("Times")) {
-              Teuchos::Array<double> times = src_list.get<Teuchos::Array<double> >("Times");
-
-              for (Teuchos::Array<double>::const_iterator times_it = times.begin();
-                   times_it != times.end(); ++times_it) {
-                // skip the first one, there is no jump
-                if (times_it != times.begin()) {
-                  time_map[*times_it] = default_initial_time_step;
-                  max_dt_map[*times_it] = -1;
-                }
+            for (Teuchos::Array<double>::const_iterator times_it = times.begin(); times_it != times.end(); ++times_it) {
+              // skip the first one, there is no jump
+              if (times_it != times.begin()) {
+                time_map[*times_it] = default_initial_time_step;
+                max_dt_map[*times_it] = -1;
               }
             }
           }
         }
       }
-    }
 
+      Teuchos::ParameterList& src_sublist = plist->sublist("Sources");
 
-    // add the these last so that the default initial time steps get overwritten
-    if (exe_sublist.isSublist("Time Period Control")) {
-      start_times = exe_sublist.sublist("Time Period Control").get<Teuchos::Array<double> >("Start Times");
-      initial_time_step = exe_sublist.sublist("Time Period Control").get<Teuchos::Array<double> >("Initial Time Step");
-      if (exe_sublist.sublist("Time Period Control").isParameter("Maximum Time Step")){
-        maximum_time_step = exe_sublist.sublist("Time Period Control").get<Teuchos::Array<double> >("Maximum Time Step");
-      }
+      for (Teuchos::ParameterList::ConstIterator i = src_sublist.begin(); i != src_sublist.end(); i++) {
+        // look at sublists
+        if (src_sublist.isSublist(src_sublist.name(i))) {
+          Teuchos::ParameterList& src = src_sublist.sublist(src_sublist.name(i));
 
-      if (maximum_time_step.size() != initial_time_step.size()){
-        maximum_time_step.resize(initial_time_step.size());
-        for (int i=0; i < maximum_time_step.size(); ++i){
-          maximum_time_step[i] = default_max_time_step;
+          Teuchos::ParameterList src_list;
+
+          if (src.isSublist("Source: Uniform")) {
+            src_list = src.sublist("Source: Uniform");
+          } else if (src.isSublist("Source: Volume Weighted")) {
+            src_list = src.sublist("Source: Volume Weighted");
+          } else if (src.isSublist("Source: Permeability Weighted")) {
+            src_list = src.sublist("Source: Permeability Weighted");
+          }
+
+          if (src_list.isParameter("Times")) {
+            Teuchos::Array<double> times = src_list.get<Teuchos::Array<double> >("Times");
+
+            for (Teuchos::Array<double>::const_iterator times_it = times.begin(); times_it != times.end(); ++times_it) {
+              // skip the first one, there is no jump
+              if (times_it != times.begin()) {
+                time_map[*times_it] = default_initial_time_step;
+                max_dt_map[*times_it] = -1;
+              }
+            }
+          }
         }
       }
-
-      Teuchos::Array<double>::const_iterator initial_time_step_it = initial_time_step.begin();
-      Teuchos::Array<double>::const_iterator max_time_step_it = maximum_time_step.begin();
-      for (Teuchos::Array<double>::const_iterator start_times_it = start_times.begin();
-           start_times_it != start_times.end(); ++start_times_it) {
-        time_map[*start_times_it] = *initial_time_step_it;
-        ++initial_time_step_it;
-
-        max_dt_map[*start_times_it] = *max_time_step_it;
-        ++max_time_step_it;
-      }
-    }
-
-    // delete the start, switch, and end times, since the user must specify initial time steps for those seperately
-    if (exe_sublist.isSublist("Time Integration Mode")) {
-      if (exe_sublist.sublist("Time Integration Mode").isSublist("Initialize To Steady")) {
-        double start_time = exe_sublist.sublist("Time Integration Mode").sublist("Initialize To Steady").get<double>("Start");
-        double switch_time = exe_sublist.sublist("Time Integration Mode").sublist("Initialize To Steady").get<double>("Switch");
-        double end_time = exe_sublist.sublist("Time Integration Mode").sublist("Initialize To Steady").get<double>("End");
-
-        time_map.erase(start_time);  max_dt_map.erase(start_time);
-        time_map.erase(switch_time); max_dt_map.erase(switch_time);
-        time_map.erase(end_time);    max_dt_map.erase(end_time);
-      }
-      if (exe_sublist.sublist("Time Integration Mode").isSublist("Steady")) {
-        double start_time = exe_sublist.sublist("Time Integration Mode").sublist("Steady").get<double>("Start");
-        double end_time = exe_sublist.sublist("Time Integration Mode").sublist("Steady").get<double>("End");
-
-        time_map.erase(start_time);  max_dt_map.erase(start_time);
-        time_map.erase(end_time);    max_dt_map.erase(end_time);
-      }
-      if (exe_sublist.sublist("Time Integration Mode").isSublist("Transient")) {
-        double start_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient").get<double>("Start");
-        double end_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient").get<double>("End");
-
-        time_map.erase(start_time);  max_dt_map.erase(start_time);
-        time_map.erase(end_time);    max_dt_map.erase(end_time);
-        
-        /* EIB: proposed v1.2.2 update - Add Maximum Cycle Number for Transient modes */
-        if (exe_sublist.sublist("Time Integration Mode").sublist("Transient").isParameter("Maximum Cycle Number"))
-          max_cycle_number =exe_sublist.sublist("Time Integration Mode").sublist("Transient").get<double>("Maximum Cycle Number");
-      }
-      if (exe_sublist.sublist("Time Integration Mode").isSublist("Transient with Static Flow")) {
-        double start_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("Start");
-        double end_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("End");
-
-        time_map.erase(start_time);  max_dt_map.erase(start_time);
-        time_map.erase(end_time);    max_dt_map.erase(end_time);
-        
-        /* EIB: proposed v1.2.2 update - Add Maximum Cycle Number for Transient modes */
-        if (exe_sublist.sublist("Time Integration Mode").sublist("Transient").isParameter("Maximum Cycle Number"))
-            max_cycle_number =exe_sublist.sublist("Time Integration Mode").sublist("Transient").get<double>("Maximum Cycle Number");
-      }      
     }
   }
 
+  // add the these last so that the default initial time steps get overwritten
+  if (exe_sublist.isSublist("Time Period Control")) {
+    start_times = exe_sublist.sublist("Time Period Control").get<Teuchos::Array<double> >("Start Times");
+    initial_time_step = exe_sublist.sublist("Time Period Control").get<Teuchos::Array<double> >("Initial Time Step");
+    if (exe_sublist.sublist("Time Period Control").isParameter("Maximum Time Step")){
+      maximum_time_step = exe_sublist.sublist("Time Period Control").get<Teuchos::Array<double> >("Maximum Time Step");
+    }
 
+    if (maximum_time_step.size() != initial_time_step.size()) {
+      maximum_time_step.resize(initial_time_step.size());
+      for (int i=0; i < maximum_time_step.size(); ++i){
+        maximum_time_step[i] = default_max_time_step;
+      }
+    }
 
+    Teuchos::Array<double>::const_iterator initial_time_step_it = initial_time_step.begin();
+    Teuchos::Array<double>::const_iterator max_time_step_it = maximum_time_step.begin();
+    for (Teuchos::Array<double>::const_iterator start_times_it = start_times.begin();
+         start_times_it != start_times.end(); ++start_times_it) {
+      time_map[*start_times_it] = *initial_time_step_it;
+      ++initial_time_step_it;
+
+      max_dt_map[*start_times_it] = *max_time_step_it;
+      ++max_time_step_it;
+    }
+  }
+
+  // delete the start, switch, and end times, since the user must specify initial time steps for those seperately
+  if (exe_sublist.isSublist("Time Integration Mode")) {
+    if (exe_sublist.sublist("Time Integration Mode").isSublist("Initialize To Steady")) {
+      double start_time = exe_sublist.sublist("Time Integration Mode").sublist("Initialize To Steady").get<double>("Start");
+      double switch_time = exe_sublist.sublist("Time Integration Mode").sublist("Initialize To Steady").get<double>("Switch");
+      double end_time = exe_sublist.sublist("Time Integration Mode").sublist("Initialize To Steady").get<double>("End");
+
+      time_map.erase(start_time);  max_dt_map.erase(start_time);
+      time_map.erase(switch_time); max_dt_map.erase(switch_time);
+      time_map.erase(end_time);    max_dt_map.erase(end_time);
+    }
+    if (exe_sublist.sublist("Time Integration Mode").isSublist("Steady")) {
+      double start_time = exe_sublist.sublist("Time Integration Mode").sublist("Steady").get<double>("Start");
+      double end_time = exe_sublist.sublist("Time Integration Mode").sublist("Steady").get<double>("End");
+
+      time_map.erase(start_time);  max_dt_map.erase(start_time);
+      time_map.erase(end_time);    max_dt_map.erase(end_time);
+    }
+    if (exe_sublist.sublist("Time Integration Mode").isSublist("Transient")) {
+      double start_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient").get<double>("Start");
+      double end_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient").get<double>("End");
+
+      time_map.erase(start_time);  max_dt_map.erase(start_time);
+      time_map.erase(end_time);    max_dt_map.erase(end_time);
+       
+      /* EIB: proposed v1.2.2 update - Add Maximum Cycle Number for Transient modes */
+      if (exe_sublist.sublist("Time Integration Mode").sublist("Transient").isParameter("Maximum Cycle Number"))
+        max_cycle_number =exe_sublist.sublist("Time Integration Mode").sublist("Transient").get<double>("Maximum Cycle Number");
+    }
+    if (exe_sublist.sublist("Time Integration Mode").isSublist("Transient with Static Flow")) {
+      double start_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("Start");
+      double end_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("End");
+
+      time_map.erase(start_time);  max_dt_map.erase(start_time);
+      time_map.erase(end_time);    max_dt_map.erase(end_time);
+        
+      /* EIB: proposed v1.2.2 update - Add Maximum Cycle Number for Transient modes */
+      if (exe_sublist.sublist("Time Integration Mode").sublist("Transient").isParameter("Maximum Cycle Number"))
+        max_cycle_number =exe_sublist.sublist("Time Integration Mode").sublist("Transient").get<double>("Maximum Cycle Number");
+    }      
+  }
 
   ASSERT(start_times.size() == initial_time_step.size());
   ASSERT(start_times.size() == maximum_time_step.size());
@@ -226,9 +218,9 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::Para
 
 
 /* ******************************************************************
-* Empty
+* Create MPC list, version 2, dubbed cycle driver.
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Teuchos::ParameterList cycle_driver_list, pk_tree_list, pk_tree_list_pre;
 
@@ -490,7 +482,7 @@ void InputParserIS::RegisterPKlist_(Teuchos::ParameterList& pk_tree, Teuchos::Pa
 /* ******************************************************************
 * Empty
 ****************************************************************** */
-void InputParserIS::FillPKslist_(Teuchos::ParameterList* plist, Teuchos::ParameterList& pks_list)
+void InputParserIS::FillPKslist_(Teuchos::RCP<Teuchos::ParameterList>& plist, Teuchos::ParameterList& pks_list)
 {
   for (Teuchos::ParameterList::ConstIterator it = pks_list.begin(); it != pks_list.end(); ++it) {
     if ((it->second).isList()) {

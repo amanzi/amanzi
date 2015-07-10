@@ -14,7 +14,7 @@ namespace AmanziInput {
 /* ******************************************************************
  * Populate Transport parameters.
  ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Errors::Message msg;
   Teuchos::ParameterList trp_list;
@@ -305,7 +305,7 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
 /* ******************************************************************
 * Sources for transport are placed in the list "src_list".
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreateTransportSrcList_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreateTransportSrcList_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Errors::Message msg;
   Teuchos::ParameterList src_list;
