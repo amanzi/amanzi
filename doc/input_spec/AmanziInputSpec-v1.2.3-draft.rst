@@ -356,8 +356,6 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [U] `"steady preconditioner`" [string] select the preconditioner to be used in the nonlinear solver for the steady state problem, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`". (default: `"Hypre AMG`")
 
-     * [U] `"steady initialize with darcy`" [bool] Initialize the flow field using a Darcy solve. (default `"true`") DEPRECATED, use the list `"Initialization`" instead.
-
      * [U] `"steady nonlinear iteration initial guess extrapolation order`" [int] defines how the initial guess (predictor) for a new time step is calculated. If set to zero, the previous solution is used as the initial guess. (default: 1)  
 
    * [U] `"Transient Implicit Time Integration`" [list] Parameters for BDF1 transient time integration 
@@ -391,8 +389,6 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
      * [U] `"transient restart tolerance relaxation factor damping`" [double] see `"transient nonlinear iteration initial timestep factor`" for a detailed explanation of this parameter. (default: `"1.0`", suggested range: 0.001 ... 1.0)
 
      * [U] `"transient preconditioner`" [string] select the preconditioner to be used in the nonlinear solver for the steady state problem, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`". (default: `"Hypre AMG`")
-
-     * [U] `"transient initialize with darcy`" [bool] Initialize the flow field using a Darcy solve. (default `"false`") DEPRECATED, use the list `"Initialization`" instead.
 
      * [U] `"transient nonlinear iteration initial guess extrapolation order`" [int] defines how the initial guess (predictor) for a new time step is calculated. If set to zero, the previous solution is used as the initial guess. (default: 1)  
 
