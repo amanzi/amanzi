@@ -14,7 +14,7 @@ namespace AmanziInput {
 /* ******************************************************************
 * Collects default preconditioners
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreatePreconditionersList_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreatePreconditionersList_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Teuchos::ParameterList prec_list;
   prec_list.sublist("Trilinos ML") = CreateDPC_List_(plist);
@@ -27,7 +27,7 @@ Teuchos::ParameterList InputParserIS::CreatePreconditionersList_(Teuchos::Parame
 /* ******************************************************************
 * Collects linear solvers
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreateSolversList_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreateSolversList_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Teuchos::ParameterList solver_list;
   Teuchos::ParameterList& aztecoo_list = solver_list.sublist("AztecOO");
@@ -98,7 +98,7 @@ Teuchos::ParameterList InputParserIS::CreateSolversList_(Teuchos::ParameterList*
 /* ******************************************************************
 * ML preconditioner sublist
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreateDPC_List_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreateDPC_List_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Teuchos::ParameterList dpc_list;
 
@@ -138,8 +138,7 @@ Teuchos::ParameterList InputParserIS::CreateDPC_List_(Teuchos::ParameterList* pl
       }
       if (nonlinear_solver == std::string("Newton")) {
 	dpc_list.set<std::string>("discretization method", "fv: default");
-      }
-      else{
+      } else {
 	dpc_list.set<std::string>("discretization method", "mfd: optimized for sparsity");
       }
     }
@@ -170,7 +169,7 @@ Teuchos::ParameterList InputParserIS::CreateDPC_List_(Teuchos::ParameterList* pl
 /* ******************************************************************
 * Block ILU preconditioner sublist
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreateBILU_List_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreateBILU_List_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Teuchos::ParameterList bilu_list;
 
@@ -236,7 +235,7 @@ Teuchos::ParameterList InputParserIS::CreateBILU_List_(Teuchos::ParameterList* p
 /* ******************************************************************
 * HypreBoomerAMG preconditioner sublist
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreateHypreAMG_List_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreateHypreAMG_List_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Teuchos::ParameterList dpc_list;
   dpc_list.set<std::string>("preconditioner type", "boomer amg");

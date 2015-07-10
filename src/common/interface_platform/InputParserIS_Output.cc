@@ -15,114 +15,111 @@ namespace AmanziInput {
 /* ******************************************************************
 * Populate visualization list.
 ******************************************************************* */
-Teuchos::ParameterList InputParserIS::CreateVisualizationDataList_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreateVisualizationDataList_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
-  Teuchos::ParameterList vis_list;
   Teuchos::Array<double> visualizationPoints;
 
-  if (plist->isSublist("Output")) {
-    if (plist->sublist("Output").isSublist("Visualization Data")) {
-      vis_list = plist->sublist("Output").sublist("Visualization Data");
+  Teuchos::RCP<Teuchos::ParameterList> olist = Teuchos::sublist(plist, "Output", false);
+  Teuchos::ParameterList vis_list = *Teuchos::sublist(olist, "Visualization Data", false);
 
-      // file name
-      if (vis_list.isParameter("File Name Base")) {
-        vis_list.set<std::string>("file name base", vis_list.get<std::string>("File Name Base"));
-        vis_list.remove("File Name Base");
-      }
-      if (vis_list.isParameter("File Name Digits")) {
-        vis_list.remove("File Name Digits");
-      }
+  if (vis_list.numParams() > 0) {
+    // file name
+    if (vis_list.isParameter("File Name Base")) {
+      vis_list.set<std::string>("file name base", vis_list.get<std::string>("File Name Base"));
+      vis_list.remove("File Name Base");
+    }
+    if (vis_list.isParameter("File Name Digits")) {
+      vis_list.remove("File Name Digits");
+    }
 
-      // Cycle Macro
-      Teuchos::Array<int> all_cycles;
-      all_cycles.clear();
-      if (vis_list.isParameter("Cycle Macros")) {
-        std::vector<std::string> cycle_macros;
-       	cycle_macros = vis_list.get<Teuchos::Array<std::string> >("Cycle Macros").toVector();
+    // Cycle Macro
+    Teuchos::Array<int> all_cycles;
+    all_cycles.clear();
+    if (vis_list.isParameter("Cycle Macros")) {
+      std::vector<std::string> cycle_macros;
+      cycle_macros = vis_list.get<Teuchos::Array<std::string> >("Cycle Macros").toVector();
 
-	int j(0);
-        for (int i = 0; i < cycle_macros.size(); i++) {
-          //Teuchos::Array<int> cm = CreateCycleMacro_(cycle_macro,plist);
-          Teuchos::ParameterList cycle_macro_list = CreateCycleMacro_(cycle_macros[i], plist);
-          if (cycle_macro_list.isParameter("Start_Period_Stop")) {
-            std::stringstream ss;
-            ss << "cycles start period stop " << j;
-            vis_list.set(ss.str(),cycle_macro_list.get<Teuchos::Array<int> >("Start_Period_Stop"));
-            ++j;
-          } else if (cycle_macro_list.isParameter("Values")) {
-            Teuchos::Array<int> cycles;
-            cycles = cycle_macro_list.get<Teuchos::Array<int> >("Values");
+      int j(0);
+      for (int i = 0; i < cycle_macros.size(); i++) {
+        Teuchos::ParameterList cycle_macro_list = CreateCycleMacro_(cycle_macros[i], plist);
+        if (cycle_macro_list.isParameter("Start_Period_Stop")) {
+          std::stringstream ss;
+          ss << "cycles start period stop " << j;
+          vis_list.set(ss.str(),cycle_macro_list.get<Teuchos::Array<int> >("Start_Period_Stop"));
+          ++j;
+        } else if (cycle_macro_list.isParameter("Values")) {
+          Teuchos::Array<int> cycles;
+          cycles = cycle_macro_list.get<Teuchos::Array<int> >("Values");
 
-            std::list<int> all_list, cur_list;
-            for (Teuchos::Array<int>::iterator at = all_cycles.begin(); at != all_cycles.end(); ++at) {
-              all_list.push_back(*at);
-            }
-            for (Teuchos::Array<int>::iterator t = cycles.begin(); t != cycles.end(); ++t) {
-              cur_list.push_back(*t);
-            }
-            all_list.sort();
-            cur_list.sort();
-
-            all_list.merge(cur_list);
-            all_list.unique();
-
-            all_cycles.clear();
-            for (std::list<int>::iterator al = all_list.begin(); al != all_list.end(); ++al) {
-              all_cycles.push_back(*al);
-            }
-          } else {
-            Exceptions::amanzi_throw(Errors::Message("Cycle Macros must hace either the Values of Start_Period_Stop parameter."));
+          std::list<int> all_list, cur_list;
+          for (Teuchos::Array<int>::iterator at = all_cycles.begin(); at != all_cycles.end(); ++at) {
+            all_list.push_back(*at);
           }
-	}
-        // delete the cycle macro
-        vis_list.remove("Cycle Macros");
-      }
-
-      // Time Macros
-      Teuchos::Array<double> all_times;
-      all_times.clear();
-      if (vis_list.isParameter("Time Macros")) {
-        std::vector<std::string> time_macros;
-        time_macros = vis_list.get<Teuchos::Array<std::string> >("Time Macros").toVector();
-
-        int j(0);
-        for (int i = 0; i < time_macros.size(); i++) {
-          // Create a local parameter to store the time macro
-          Teuchos::ParameterList time_macro_list = CreateTimeMacro_(time_macros[i], plist);
-          if (time_macro_list.isParameter("Start_Period_Stop")) {
-            std::stringstream ss;
-            ss << "times start period stop " << j;
-            vis_list.set(ss.str(),time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
-            ++j;
+          for (Teuchos::Array<int>::iterator t = cycles.begin(); t != cycles.end(); ++t) {
+            cur_list.push_back(*t);
           }
-          if (time_macro_list.isParameter("Values")) {
-            Teuchos::Array<double> times;
-            times = time_macro_list.get<Teuchos::Array<double> >("Values");
+          all_list.sort();
+          cur_list.sort();
 
-            std::list<double> all_list, cur_list;
-            for (Teuchos::Array<double>::iterator at = all_times.begin(); at != all_times.end(); ++at) {
-              all_list.push_back(*at);
-            }
-            for (Teuchos::Array<double>::iterator t = times.begin(); t != times.end(); ++t) {
-              cur_list.push_back(*t);
-            }
-            all_list.sort();
-            cur_list.sort();
+          all_list.merge(cur_list);
+          all_list.unique();
 
-            all_list.merge(cur_list);
-            all_list.unique();
+          all_cycles.clear();
+          for (std::list<int>::iterator al = all_list.begin(); al != all_list.end(); ++al) {
+            all_cycles.push_back(*al);
+          }
+        } else {
+          Exceptions::amanzi_throw(Errors::Message("Cycle Macros must hace either the Values of Start_Period_Stop parameter."));
+        }
+      }
+      // delete the cycle macro
+      vis_list.remove("Cycle Macros");
+    }
 
-            all_times.clear();
-            for (std::list<double>::iterator al = all_list.begin(); al != all_list.end(); ++al) {
-              all_times.push_back(*al);
-            }
+    // Time Macros
+    Teuchos::Array<double> all_times;
+    all_times.clear();
+    if (vis_list.isParameter("Time Macros")) {
+      std::vector<std::string> time_macros;
+      time_macros = vis_list.get<Teuchos::Array<std::string> >("Time Macros").toVector();
+
+      int j(0);
+      for (int i = 0; i < time_macros.size(); i++) {
+        // Create a local parameter to store the time macro
+        Teuchos::ParameterList time_macro_list = CreateTimeMacro_(time_macros[i], plist);
+        if (time_macro_list.isParameter("Start_Period_Stop")) {
+          std::stringstream ss;
+          ss << "times start period stop " << j;
+          vis_list.set(ss.str(),time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
+          ++j;
+        }
+        if (time_macro_list.isParameter("Values")) {
+          Teuchos::Array<double> times;
+          times = time_macro_list.get<Teuchos::Array<double> >("Values");
+
+          std::list<double> all_list, cur_list;
+          for (Teuchos::Array<double>::iterator at = all_times.begin(); at != all_times.end(); ++at) {
+            all_list.push_back(*at);
+          }
+          for (Teuchos::Array<double>::iterator t = times.begin(); t != times.end(); ++t) {
+            cur_list.push_back(*t);
+          }
+          all_list.sort();
+          cur_list.sort();
+
+          all_list.merge(cur_list);
+          all_list.unique();
+
+          all_times.clear();
+          for (std::list<double>::iterator al = all_list.begin(); al != all_list.end(); ++al) {
+            all_times.push_back(*al);
           }
         }
-        vis_list.remove("Time Macros");
       }
-      if (all_times.size() != 0) {
-        vis_list.set("times", all_times);
-      }
+      vis_list.remove("Time Macros");
+    }
+    if (all_times.size() != 0) {
+      vis_list.set("times", all_times);
     }
   }
   return vis_list;
@@ -132,71 +129,68 @@ Teuchos::ParameterList InputParserIS::CreateVisualizationDataList_(Teuchos::Para
 /* ******************************************************************
 * Checkpoint list.
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreateCheckpointDataList_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreateCheckpointDataList_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Teuchos::ParameterList restart_list;
 
-  if (plist->isSublist("Output")) {
-    if (plist->sublist("Output").isSublist("Checkpoint Data")) {
-      Teuchos::ParameterList rlist = plist->sublist("Output").sublist("Checkpoint Data");
+  Teuchos::RCP<Teuchos::ParameterList> olist = Teuchos::sublist(plist, "Output", false);
+  Teuchos::RCP<Teuchos::ParameterList> rlist = Teuchos::sublist(olist, "Checkpoint Data", false);
 
-      restart_list.set<std::string>("file name base", rlist.get<std::string>("File Name Base",std::string("checkpoint")));
-      restart_list.set<int>("file name digits", rlist.get<int>("File Name Digits",5));
+  if (rlist->numParams() > 0) {
+    restart_list.set<std::string>("file name base", rlist->get<std::string>("File Name Base", std::string("checkpoint")));
+    restart_list.set<int>("file name digits", rlist->get<int>("File Name Digits", 5));
 
-      // check if the cycle range is defined via a macro
-      Teuchos::Array<int> all_cycles;
-      all_cycles.clear();
-      if (rlist.isParameter("Cycle Macros")) {
+    // check if the cycle range is defined via a macro
+    Teuchos::Array<int> all_cycles;
+    all_cycles.clear();
+    if (rlist->isParameter("Cycle Macros")) {
+      std::vector<std::string> cycle_macros;
+      cycle_macros = rlist->get<Teuchos::Array<std::string> >("Cycle Macros").toVector();
         
-        std::vector<std::string> cycle_macros;
-       	cycle_macros = rlist.get<Teuchos::Array<std::string> >("Cycle Macros").toVector();
-        
-        int j(0);
-        for (int i = 0; i < cycle_macros.size(); i++) {
-          Teuchos::ParameterList cycle_macro_list = CreateCycleMacro_(cycle_macros[i], plist);
-          if (cycle_macro_list.isParameter("Start_Period_Stop")) {
-            std::stringstream ss;
-            ss << "cycles start period stop " << j;
-            restart_list.set(ss.str(),cycle_macro_list.get<Teuchos::Array<int> >("Start_Period_Stop"));
-            ++j;
-          } else if (cycle_macro_list.isParameter("Values")) {
-            Teuchos::Array<int> cycles;
-            cycles = cycle_macro_list.get<Teuchos::Array<int> >("Values");
+      int j(0);
+      for (int i = 0; i < cycle_macros.size(); i++) {
+        Teuchos::ParameterList cycle_macro_list = CreateCycleMacro_(cycle_macros[i], plist);
+        if (cycle_macro_list.isParameter("Start_Period_Stop")) {
+          std::stringstream ss;
+          ss << "cycles start period stop " << j;
+          restart_list.set(ss.str(),cycle_macro_list.get<Teuchos::Array<int> >("Start_Period_Stop"));
+          ++j;
+        } else if (cycle_macro_list.isParameter("Values")) {
+          Teuchos::Array<int> cycles;
+          cycles = cycle_macro_list.get<Teuchos::Array<int> >("Values");
             
-            std::list<int> all_list, cur_list;
-            for (Teuchos::Array<int>::iterator at = all_cycles.begin(); at != all_cycles.end(); ++at) {
-              all_list.push_back(*at);
-            }
-            for (Teuchos::Array<int>::iterator t = cycles.begin(); t != cycles.end(); ++t) {
-              cur_list.push_back(*t);
-            }
-            all_list.sort();
-            cur_list.sort();
-            
-            all_list.merge(cur_list);
-            all_list.unique();
-            
-            all_cycles.clear();
-            for (std::list<int>::iterator al = all_list.begin(); al != all_list.end(); ++al) {
-              all_cycles.push_back(*al);
-            }
-          } else {
-            Exceptions::amanzi_throw(Errors::Message("Cycle Macros must hace either the Values of Start_Period_Stop parameter."));
+          std::list<int> all_list, cur_list;
+          for (Teuchos::Array<int>::iterator at = all_cycles.begin(); at != all_cycles.end(); ++at) {
+            all_list.push_back(*at);
           }
+          for (Teuchos::Array<int>::iterator t = cycles.begin(); t != cycles.end(); ++t) {
+            cur_list.push_back(*t);
+          }
+          all_list.sort();
+          cur_list.sort();
+          
+          all_list.merge(cur_list);
+          all_list.unique();
+            
+          all_cycles.clear();
+          for (std::list<int>::iterator al = all_list.begin(); al != all_list.end(); ++al) {
+            all_cycles.push_back(*al);
+          }
+        } else {
+          Exceptions::amanzi_throw(Errors::Message("Cycle Macros must hace either the Values of Start_Period_Stop parameter."));
         }
-        // delete the cycle macro
-        rlist.remove("Cycle Macros");
       }
+      // delete the cycle macro
+      rlist->remove("Cycle Macros");
+    }
       
-      // Keeping singular macro to help user transition.  This will go away.
-      if (rlist.isParameter("Cycle Macro")) {
-        std::string cycle_macro = rlist.get<std::string>("Cycle Macro");
-        
-        Teuchos::Array<int> range = CreateCycleMacro_(cycle_macro, plist).get<Teuchos::Array<int> >("Start_Period_Stop");
-        
-        restart_list.set<Teuchos::Array<int> >("cycles start period stop", range);
-      }
+    // Keeping singular macro to help user transition.  This will go away.
+    if (rlist->isParameter("Cycle Macro")) {
+      std::string cycle_macro = rlist->get<std::string>("Cycle Macro");
       
+      Teuchos::Array<int> range = CreateCycleMacro_(cycle_macro, plist).get<Teuchos::Array<int> >("Start_Period_Stop");
+        
+      restart_list.set<Teuchos::Array<int> >("cycles start period stop", range);
     }
   }
 
@@ -205,72 +199,71 @@ Teuchos::ParameterList InputParserIS::CreateCheckpointDataList_(Teuchos::Paramet
 
 
 /* ******************************************************************
-* Walkabout list.
+* Walkabout list controls output for other packages.
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreateWalkaboutDataList_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreateWalkaboutDataList_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Teuchos::ParameterList walkabout_list;
 
-  if (plist->isSublist("Output")) {
-    if (plist->sublist("Output").isSublist("Walkabout Data")) {
-      Teuchos::ParameterList rlist = plist->sublist("Output").sublist("Walkabout Data");
+  Teuchos::RCP<Teuchos::ParameterList> olist = Teuchos::sublist(plist, "Output", false);
+  Teuchos::RCP<Teuchos::ParameterList> wlist = Teuchos::sublist(olist, "Walkabout Data", false);
 
-      walkabout_list.set<std::string>("file name base", rlist.get<std::string>("File Name Base",std::string("walkabout")));
-      walkabout_list.set<int>("file name digits", rlist.get<int>("File Name Digits",5));
+  if (wlist->numParams() > 0) {
+    walkabout_list.set<std::string>("file name base", wlist->get<std::string>("File Name Base", std::string("walkabout")));
+    walkabout_list.set<int>("file name digits", wlist->get<int>("File Name Digits", 5));
 
-      // check if the cycle range is defined via a macro
-      Teuchos::Array<int> all_cycles;
-      all_cycles.clear();
-      if (rlist.isParameter("Cycle Macros")) {
+    // check if the cycle range is defined via a macro
+    Teuchos::Array<int> all_cycles;
+    all_cycles.clear();
+    if (wlist->isParameter("Cycle Macros")) {
         
-        std::vector<std::string> cycle_macros;
-       	cycle_macros = rlist.get<Teuchos::Array<std::string> >("Cycle Macros").toVector();
+      std::vector<std::string> cycle_macros;
+      cycle_macros = wlist->get<Teuchos::Array<std::string> >("Cycle Macros").toVector();
         
-        int j(0);
-        for (int i = 0; i < cycle_macros.size(); i++) {
-          Teuchos::ParameterList cycle_macro_list = CreateCycleMacro_(cycle_macros[i], plist);
-          if (cycle_macro_list.isParameter("Start_Period_Stop")) {
-            std::stringstream ss;
-            ss << "cycles start period stop " << j;
-            walkabout_list.set(ss.str(),cycle_macro_list.get<Teuchos::Array<int> >("Start_Period_Stop"));
-            ++j;
-          } else if (cycle_macro_list.isParameter("Values")) {
-            Teuchos::Array<int> cycles;
-            cycles = cycle_macro_list.get<Teuchos::Array<int> >("Values");
-            
-            std::list<int> all_list, cur_list;
-            for (Teuchos::Array<int>::iterator at = all_cycles.begin(); at != all_cycles.end(); ++at) {
-              all_list.push_back(*at);
-            }
-            for (Teuchos::Array<int>::iterator t = cycles.begin(); t != cycles.end(); ++t) {
-              cur_list.push_back(*t);
-            }
-            all_list.sort();
-            cur_list.sort();
-            
-            all_list.merge(cur_list);
-            all_list.unique();
-            
-            all_cycles.clear();
-            for (std::list<int>::iterator al = all_list.begin(); al != all_list.end(); ++al) {
-              all_cycles.push_back(*al);
-            }
-          } else {
-            Exceptions::amanzi_throw(Errors::Message("Cycle Macros must hace either the Values of Start_Period_Stop parameter."));
+      int j(0);
+      for (int i = 0; i < cycle_macros.size(); i++) {
+        Teuchos::ParameterList cycle_macro_list = CreateCycleMacro_(cycle_macros[i], plist);
+        if (cycle_macro_list.isParameter("Start_Period_Stop")) {
+          std::stringstream ss;
+          ss << "cycles start period stop " << j;
+          walkabout_list.set(ss.str(),cycle_macro_list.get<Teuchos::Array<int> >("Start_Period_Stop"));
+          ++j;
+        } else if (cycle_macro_list.isParameter("Values")) {
+          Teuchos::Array<int> cycles;
+          cycles = cycle_macro_list.get<Teuchos::Array<int> >("Values");
+          
+          std::list<int> all_list, cur_list;
+          for (Teuchos::Array<int>::iterator at = all_cycles.begin(); at != all_cycles.end(); ++at) {
+            all_list.push_back(*at);
           }
+          for (Teuchos::Array<int>::iterator t = cycles.begin(); t != cycles.end(); ++t) {
+            cur_list.push_back(*t);
+          }
+          all_list.sort();
+          cur_list.sort();
+          
+          all_list.merge(cur_list);
+          all_list.unique();
+            
+          all_cycles.clear();
+          for (std::list<int>::iterator al = all_list.begin(); al != all_list.end(); ++al) {
+            all_cycles.push_back(*al);
+          }
+        } else {
+          Exceptions::amanzi_throw(Errors::Message("Cycle Macros must hace either the Values of Start_Period_Stop parameter."));
         }
-        // delete the cycle macro
-        rlist.remove("Cycle Macros");
       }
+      // delete the cycle macro
+      wlist->remove("Cycle Macros");
+    }
       
-      // Keeping singular macro to help user transition.  This will go away.
-      if (rlist.isParameter("Cycle Macro")) {
-        std::string cycle_macro = rlist.get<std::string>("Cycle Macro");
+    // Keeping singular macro to help user transition.  This will go away.
+    if (wlist->isParameter("Cycle Macro")) {
+      std::string cycle_macro = wlist->get<std::string>("Cycle Macro");
         
-        Teuchos::Array<int> range = CreateCycleMacro_(cycle_macro, plist).get<Teuchos::Array<int> >("Start_Period_Stop");
+      Teuchos::Array<int> range = CreateCycleMacro_(cycle_macro, plist).get<Teuchos::Array<int> >("Start_Period_Stop");
         
-        walkabout_list.set<Teuchos::Array<int> >("cycles start period stop", range);
-      }
+      walkabout_list.set<Teuchos::Array<int> >("cycles start period stop", range);
     }
   }
 
@@ -281,7 +274,7 @@ Teuchos::ParameterList InputParserIS::CreateWalkaboutDataList_(Teuchos::Paramete
 /* ******************************************************************
 * Observation list.
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreateObservationDataList_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreateObservationDataList_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   using namespace boost;
   using boost::bind;
@@ -471,7 +464,7 @@ Teuchos::ParameterList InputParserIS::CreateObservationDataList_(Teuchos::Parame
 * Create a time macro.
 ****************************************************************** */
 Teuchos::ParameterList InputParserIS::CreateTimeMacro_(
-    const std::string& macro_name, Teuchos::ParameterList* plist) 
+    const std::string& macro_name, Teuchos::RCP<Teuchos::ParameterList>& plist) 
 {
   Teuchos::ParameterList time_macro;
 
@@ -505,7 +498,7 @@ Teuchos::ParameterList InputParserIS::CreateTimeMacro_(
 * Create cycle macro
 ****************************************************************** */
 Teuchos::ParameterList InputParserIS::CreateCycleMacro_(
-    const std::string& macro_name, Teuchos::ParameterList* plist)
+    const std::string& macro_name, Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Teuchos::ParameterList cycle_macro;
 

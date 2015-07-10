@@ -14,7 +14,7 @@ namespace AmanziInput {
 /* ******************************************************************
 * Chemisty sublist
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreateChemistryList_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreateChemistryList_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Teuchos::ParameterList chem_list;
   if (plist->isSublist("Chemistry")) {

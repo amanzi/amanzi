@@ -14,7 +14,7 @@ namespace AmanziInput {
 /* ******************************************************************
 * Empty
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreateMeshList_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreateMeshList_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Teuchos::ParameterList msh_list;
 
@@ -101,14 +101,9 @@ Teuchos::ParameterList InputParserIS::CreateMeshList_(Teuchos::ParameterList* pl
 /* ******************************************************************
 * Empty
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CopyDomainList_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CopyDomainList_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
-  Teuchos::ParameterList dom_list;
-
-  if (plist->isSublist("Domain")) {
-    dom_list = plist->sublist("Domain");
-  }
-
+  Teuchos::ParameterList dom_list = *Teuchos::sublist(plist, "Domain", false);
   return dom_list;
 }
 
@@ -116,7 +111,7 @@ Teuchos::ParameterList InputParserIS::CopyDomainList_(Teuchos::ParameterList* pl
 /* ******************************************************************
 * Empty
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CopyRegionsList_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CopyRegionsList_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Teuchos::ParameterList reg_list;
   if (plist->isSublist("Regions")) {
