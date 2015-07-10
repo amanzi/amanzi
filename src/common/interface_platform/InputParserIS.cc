@@ -2,13 +2,15 @@
 #include <string>
 #include <algorithm>
 
+#include "Teuchos_XMLParameterListHelpers.hpp"
+
 #include "errors.hh"
 #include "exceptions.hh"
 #include "dbc.hh"
 
 #include "InputParserIS.hh"
 #include "InputParserIS_Defs.hh"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "XMLParameterListWriter.hh"
 
 namespace Amanzi {
 namespace AmanziInput {
@@ -80,6 +82,11 @@ Teuchos::ParameterList InputParserIS::Translate(Teuchos::ParameterList* plist, i
   // hack (additional transport diagnostics)
   new_list.sublist("PKs").sublist("Transport")
           .set<Teuchos::Array<std::string> >("runtime diagnostics: regions", transport_diagnostics_);
+
+  // output unused parameters (experimental)
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    PrintUnused_(plist->sublist("Execution Control").sublist("Numerical Control Parameters"), vo_);
+  }
 
   return new_list;
 }
@@ -358,6 +365,31 @@ Teuchos::ParameterList InputParserIS::CreateAnalysisList_()
   alist.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
 
   return alist;
+}
+
+
+/* ******************************************************************
+* Analysis of unused parameters
+****************************************************************** */
+void InputParserIS::PrintUnused_(const Teuchos::ParameterList& p, VerboseObject* vo) const
+{
+  Teuchos::OSTab tab = vo_->getOSTab();
+  // print parameters first
+  for (Teuchos::ParameterList::ConstIterator i = p.begin(); i != p.end(); ++i) {
+    if (!(p.entry(i).isUsed())) {
+      *vo->os() << vo_->color("yellow") << "Unused: \"" << p.name(i) << "\"" << vo_->reset() << std::endl;
+    }
+  }
+  
+  // print sublists second
+  for (Teuchos::ParameterList::ConstIterator i = p.begin(); i != p.end(); ++i) {
+    const Teuchos::ParameterEntry& entry_i = p.entry(i);
+    if (!entry_i.isList()) continue;
+
+    const std::string& docString = entry_i.docString();
+    const std::string& name_i = p.name(i);
+    PrintUnused_(Teuchos::getValue<Teuchos::ParameterList>(entry_i), vo);
+  }
 }
 
 }  // namespace AmanziInput

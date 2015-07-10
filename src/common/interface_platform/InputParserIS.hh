@@ -111,6 +111,7 @@ class InputParserIS {
   Teuchos::ParameterList CreateVerbosityList_(const std::string& vlevel);
   Teuchos::ParameterList CreateAnalysisList_();
   Teuchos::Array<std::string> TranslateForms_(Teuchos::Array<std::string>& forms);
+  void PrintUnused_(const Teuchos::ParameterList& p, VerboseObject* vo) const;
 
  private:
   std::vector<Phase> phases_;
