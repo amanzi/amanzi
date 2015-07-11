@@ -358,6 +358,7 @@ bool OverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
     // Then upwind.  This overwrites the boundary if upwinding says so.
     upwinding_->Update(S);
+    uw_cond->ScatterMasterToGhosted("face");
   }
 
   if (update_perm && vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -404,6 +405,7 @@ bool OverlandFlow::UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<State>& 
 
     // Then upwind.  This overwrites the boundary if upwinding says so.
     upwinding_dkdp_->Update(S);
+    duw_cond->ScatterMasterToGhosted("face");
   }
 
   if (update_perm && vo_->os_OK(Teuchos::VERB_EXTREME))
