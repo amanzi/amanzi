@@ -58,7 +58,6 @@ class Op_Cell_Cell : public Op {
             my_block_row, my_block_col);
   }
   
-
   virtual void Rescale(const CompositeVector& scaling) {
     if (scaling.HasComponent("cell")) {
       const Epetra_MultiVector& s_c = *scaling.ViewComponent("cell",false);
@@ -67,8 +66,6 @@ class Op_Cell_Cell : public Op {
       }
     }
   }
-  
-
 };
 
 }  // namespace Operators

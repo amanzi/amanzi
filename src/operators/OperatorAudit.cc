@@ -77,6 +77,9 @@ int CheckMatrixSymmetry(Teuchos::RCP<Epetra_CrsMatrix> A)
   Epetra_Vector x(A->DomainMap());
   Epetra_Vector y(x), z(x);
 
+  if (A->Comm().MyPID() == 0)
+    printf("Running 10 symmetry tests: size(A)=%d\n", A->NumGlobalRows());
+
   for (int n = 0; n < 10; n++) {
     for (int f = 0; f < nrows; f++) {
       x[f] = double(random()) / RAND_MAX;
@@ -105,6 +108,9 @@ int CheckMatrixCoercivity(Teuchos::RCP<Epetra_CrsMatrix> A)
   int nrows = A->NumMyRows();
   Epetra_Vector x(A->DomainMap());
   Epetra_Vector y(x), z(x);
+
+  if (A->Comm().MyPID() == 0)
+    printf("Running 10 coercivity tests: size(A)=%d\n", A->NumGlobalRows());
 
   for (int n = 0; n < 10; n++) {
     for (int f = 0; f < nrows; f++) {
