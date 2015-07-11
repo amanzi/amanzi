@@ -306,30 +306,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(
           if (ua_list->isSublist("Initialization")) {
             Teuchos::ParameterList& ini_list = ua_list->sublist("Initialization");
             Teuchos::ParameterList& sti_init = sti_list.sublist("initialization");
-            if (ini_list.isParameter("clipping saturation value"))
-                sti_init.set<double>("clipping saturation value", ini_list.get<double>("clipping saturation value"));
-            if (ini_list.isParameter("clipping pressure value"))
-                sti_init.set<double>("clipping pressure value", ini_list.get<double>("clipping pressure value"));
-
-            if (have_picard_params && use_picard_) {
-	      sti_init.set<std::string>("method", "picard");
-              sti_init.set<std::string>("linear solver", pic_params.get<std::string>("linear solver", PIC_SOLVE));
-
-              Teuchos::ParameterList& pic_list = sti_init.sublist("picard parameters");
-              pic_list.set<double>("convergence tolerance", pic_params.get<double>("picard convergence tolerance", PICARD_TOLERANCE));
-              pic_list.set<int>("maximum number of iterations", pic_params.get<int>("picard maximum number of iterations", PIC_MAX_ITER));
-            } else if (use_picard_) {
-	      sti_init.set<std::string>("method", "picard");
-              sti_init.set<double>("clipping pressure value", PIC_CLIP_PRESSURE);
-
-              Teuchos::ParameterList& pic_list = sti_init.sublist("picard parameters");
-              pic_list.set<std::string>("linear solver", PIC_SOLVE);
-              pic_list.set<double>("convergence tolerance", PICARD_TOLERANCE);
-              pic_list.set<int>("maximum number of iterations", PIC_MAX_ITER);
-            } else {
-              sti_init.set<std::string>("method", "saturated solver");
-              sti_init.set<std::string>("linear solver", ST_INIT_SOLVER);
-            }
+            sti_init = CreateInitializationList_(ini_list, have_picard_params, pic_params);
             create_init = false;
           }
         }
@@ -467,37 +444,9 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(
           if (ua_list->isSublist("Initialization") && create_init) {
             Teuchos::ParameterList& ini_list = ua_list->sublist("Initialization");
             Teuchos::ParameterList& tti_init = tti_list.sublist("initialization");
-            if (ini_list.isParameter("clipping saturation value"))
-                tti_init.set<double>("clipping saturation value", ini_list.get<double>("clipping saturation value"));
-            if (ini_list.isParameter("clipping pressure value"))
-                tti_init.set<double>("clipping pressure value", ini_list.get<double>("clipping pressure value"));
-
-            if (have_picard_params && use_picard_) {
-              tti_init.set<std::string>("method", "picard");
-              tti_init.set<std::string>("linear solver", pic_params.get<std::string>("linear solver", PIC_SOLVE));
-
-              Teuchos::ParameterList& pic_list = tti_init.sublist("picard parameters");
-              pic_list.set<double>("convergence tolerance", pic_params.get<double>("picard convergence tolerance", PICARD_TOLERANCE));
-              pic_list.set<int>("maximum number of iterations", pic_params.get<int>("picard maximum number of iterations", PIC_MAX_ITER));
-            } else if (use_picard_) {
-              tti_init.set<std::string>("method", "picard");
-              tti_init.set<double>("clipping pressure value", PIC_CLIP_PRESSURE);
-
-              Teuchos::ParameterList& pic_list = tti_init.sublist("picard parameters");
-              pic_list.set<std::string>("linear solver", PIC_SOLVE);
-              pic_list.set<double>("convergence tolerance", PICARD_TOLERANCE);
-              pic_list.set<int>("maximum number of iterations", PIC_MAX_ITER);
-            } else {
-              tti_init.set<std::string>("method", "saturated solver");
-              tti_init.set<std::string>("linear solver", ST_INIT_SOLVER);
-            }
+            tti_init = CreateInitializationList_(ini_list, have_picard_params, pic_params);
             create_init = false;
           }
-          // if (num_list.get<bool>("transient initialize with darcy", TR_INIT_DARCY_BOOL)) {
-          //   Teuchos::ParameterList& tti_init = tti_list.sublist("initialization");
-          //   tti_init.set<std::string>("method", "saturated solver");
-          //   tti_init.set<std::string>("linear solver", TR_INIT_SOLVER);
-          // }
         }
 
         if (nonlinear_solver == std::string("Newton")) {
@@ -521,6 +470,46 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(
 
   return flw_list;
  }
+
+
+/* ******************************************************************
+* Initlization list for TP.
+****************************************************************** */
+Teuchos::ParameterList InputParserIS::CreateInitializationList_(
+    Teuchos::ParameterList& ini_list,
+    bool have_picard_params, Teuchos::ParameterList& pic_params)
+{
+  Teuchos::ParameterList out_init;
+
+  if (ini_list.isParameter("clipping saturation value"))
+      out_init.set<double>("clipping saturation value", ini_list.get<double>("clipping saturation value"));
+  if (ini_list.isParameter("clipping pressure value"))
+      out_init.set<double>("clipping pressure value", ini_list.get<double>("clipping pressure value"));
+
+  if (have_picard_params && use_picard_) {
+    out_init.set<std::string>("method", "picard");
+    out_init.set<std::string>("linear solver", pic_params.get<std::string>("linear solver", PIC_SOLVE));
+
+    Teuchos::ParameterList& pic_list = out_init.sublist("picard parameters");
+    pic_list.set<double>("convergence tolerance",
+        pic_params.get<double>("picard convergence tolerance", PICARD_TOLERANCE));
+    pic_list.set<int>("maximum number of iterations",
+        pic_params.get<int>("picard maximum number of iterations", PIC_MAX_ITER));
+  } else if (use_picard_) {
+    out_init.set<std::string>("method", "picard");
+    out_init.set<double>("clipping pressure value", PIC_CLIP_PRESSURE);
+
+    Teuchos::ParameterList& pic_list = out_init.sublist("picard parameters");
+    pic_list.set<std::string>("linear solver", PIC_SOLVE);
+    pic_list.set<double>("convergence tolerance", PICARD_TOLERANCE);
+    pic_list.set<int>("maximum number of iterations", PIC_MAX_ITER);
+  } else {
+    out_init.set<std::string>("method", "saturated solver");
+    out_init.set<std::string>("linear solver", ST_INIT_SOLVER);
+  }
+
+  return out_init;
+}
 
 
 /* ******************************************************************

@@ -58,6 +58,8 @@ class InputParserIS {
      const std::string& nonlinear_solver, const std::string& rel_perm);
   Teuchos::ParameterList CreateWRM_List_(Teuchos::RCP<Teuchos::ParameterList>& plist);
   Teuchos::ParameterList CreatePOM_List_(Teuchos::RCP<Teuchos::ParameterList>& plist);
+  Teuchos::ParameterList CreateInitializationList_(Teuchos::ParameterList& ini_list,
+                                                   bool have_picard, Teuchos::ParameterList& pic_list);
 
   // transport
   Teuchos::ParameterList CreateTransportList_(Teuchos::RCP<Teuchos::ParameterList>& plist);
