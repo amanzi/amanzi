@@ -25,9 +25,9 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(
   Teuchos::ParameterList flw_list;
   Teuchos::ParameterList *flow_list;
 
-  Teuchos::ParameterList exe_list = *Teuchos::sublist(plist, "Execution Control", true);
-  if (exe_list.isParameter("Flow Model")) {
-    std::string flow_model = exe_list.get<std::string>("Flow Model");
+  Teuchos::RCP<Teuchos::ParameterList> exe_list = Teuchos::sublist(plist, "Execution Control", true);
+  if (exe_list->isParameter("Flow Model")) {
+    std::string flow_model = exe_list->get<std::string>("Flow Model");
 
     // set up default values for some expert parameters
     std::string disc_method("MFD: Optimized for Sparsity");
@@ -39,38 +39,34 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(
     bool modify_correction(false);
 
     // process expert parameters
-    if (exe_list.isSublist("Numerical Control Parameters")) {
-      Teuchos::ParameterList& ncp_list = exe_list.sublist("Numerical Control Parameters");
+    Teuchos::RCP<Teuchos::ParameterList> ncp_list = Teuchos::sublist(exe_list, "Numerical Control Parameters", false);
+    Teuchos::RCP<Teuchos::ParameterList> ua_list = Teuchos::sublist(ncp_list, "Unstructured Algorithm", false);
+    Teuchos::ParameterList fl_exp_params = *Teuchos::sublist(ua_list, "Flow Process Kernel", false);
 
-      if (ncp_list.isSublist("Unstructured Algorithm")) {
-        Teuchos::ParameterList& ua_list = ncp_list.sublist("Unstructured Algorithm");
-        if (ua_list.isSublist("Flow Process Kernel")) {
-          Teuchos::ParameterList fl_exp_params = ua_list.sublist("Flow Process Kernel");
-          if (fl_exp_params.isParameter("Discretization Method")) {
-            disc_method = fl_exp_params.get<std::string>("Discretization Method");
-          }
-          if (fl_exp_params.isParameter("Relative Permeability")) {
-            rel_perm = fl_exp_params.get<std::string>("Relative Permeability");
-          }
-          if (fl_exp_params.isParameter("atmospheric pressure")) {
-            atm_pres = fl_exp_params.get<double>("atmospheric pressure");
-          }
-          if (fl_exp_params.isParameter("Preconditioning Strategy")) {
-            prec_method = fl_exp_params.get<std::string>("Preconditioning Strategy");
-          }
-          if (fl_exp_params.isParameter("Use Picard")) {
-            use_picard_ = fl_exp_params.get<bool>("Use Picard");
-          }
-        }
-        if (ua_list.isSublist("Nonlinear Solver")) {
-          Teuchos::ParameterList fl_exp_params = ua_list.sublist("Nonlinear Solver");
-          if (fl_exp_params.isParameter("Nonlinear Solver Type")) {
-            nonlinear_solver = fl_exp_params.get<std::string>("Nonlinear Solver Type");
-          }
-          update_upwind = fl_exp_params.get<std::string>("update upwind frequency", "every timestep");
-          modify_correction = fl_exp_params.get<bool>("modify correction", false);
-        }
+    if (fl_exp_params.numParams() > 0) {
+      if (fl_exp_params.isParameter("Discretization Method")) {
+        disc_method = fl_exp_params.get<std::string>("Discretization Method");
       }
+      if (fl_exp_params.isParameter("Relative Permeability")) {
+        rel_perm = fl_exp_params.get<std::string>("Relative Permeability");
+      }
+      if (fl_exp_params.isParameter("atmospheric pressure")) {
+        atm_pres = fl_exp_params.get<double>("atmospheric pressure");
+      }
+      if (fl_exp_params.isParameter("Preconditioning Strategy")) {
+        prec_method = fl_exp_params.get<std::string>("Preconditioning Strategy");
+      }
+      if (fl_exp_params.isParameter("Use Picard")) {
+        use_picard_ = fl_exp_params.get<bool>("Use Picard");
+      }
+    }
+    if (ua_list->isSublist("Nonlinear Solver")) {
+      Teuchos::ParameterList fl_exp_params = ua_list->sublist("Nonlinear Solver");
+      if (fl_exp_params.isParameter("Nonlinear Solver Type")) {
+        nonlinear_solver = fl_exp_params.get<std::string>("Nonlinear Solver Type");
+      }
+      update_upwind = fl_exp_params.get<std::string>("update upwind frequency", "every timestep");
+      modify_correction = fl_exp_params.get<bool>("modify correction", false);
     }
 
     // Newton method requires to overwrite other parameters.
@@ -152,24 +148,18 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(
       bool create_init(true);
       Teuchos::ParameterList pic_params;
       if (use_picard_) {
-        if (exe_list.isSublist("Numerical Control Parameters")) {
-          Teuchos::ParameterList& ncp_list = exe_list.sublist("Numerical Control Parameters");
-          if (ncp_list.isSublist("Unstructured Algorithm")) {
-            Teuchos::ParameterList& ua_list = ncp_list.sublist("Unstructured Algorithm");
-            if (ua_list.isSublist("Initialization")) {
-              std::string name = ua_list.sublist("Initialization")
-                                        .get<std::string>("time integration method", "Darcy Solver");
-              if (name == "Picard") {
-                have_picard_params = true;
-                pic_params = ua_list.sublist("Initialization");
-              }
-            }
+        if (ua_list->isSublist("Initialization")) {
+          std::string name = ua_list->sublist("Initialization")
+                                     .get<std::string>("time integration method", "Darcy Solver");
+          if (name == "Picard") {
+            have_picard_params = true;
+            pic_params = ua_list->sublist("Initialization");
           }
         }
       }
 
       // only include a steady state time integrator list if not transient
-      Teuchos::ParameterList& ti_mode_list = exe_list.sublist("Time Integration Mode");
+      Teuchos::ParameterList& ti_mode_list = exe_list->sublist("Time Integration Mode");
 
       if (! ti_mode_list.isSublist("Transient")) {
         // create sublists for the steady state time integrator
@@ -271,83 +261,76 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(
         sti_bdf1.set<int>("max preconditioner lag iterations", ST_MAX_PREC_LAG);
         sti_bdf1.set<bool>("extrapolate initial guess", true);
 
-        if (exe_list.isSublist("Numerical Control Parameters")) {
-          Teuchos::ParameterList& ncp_list = exe_list.sublist("Numerical Control Parameters");
-          if (ncp_list.isSublist("Unstructured Algorithm")) {
-            Teuchos::ParameterList& ua_list = ncp_list.sublist("Unstructured Algorithm");
-            if (ua_list.isSublist("Steady-State Implicit Time Integration")) {
-              Teuchos::ParameterList& num_list = ua_list.sublist("Steady-State Implicit Time Integration");
-              sti_bdf1_std.set<int>("max iterations", num_list.get<int>("steady max iterations", ST_MAX_ITER));
-              sti_bdf1_std.set<int>("min iterations", num_list.get<int>("steady min iterations", ST_MIN_ITER));
-              sti_bdf1_solver->set<int>("limit iterations", 
-                  num_list.get<int>("steady limit iterations", ST_LIMIT_ITER));
-              sti_bdf1_solver->set<double>("nonlinear tolerance",
-                  num_list.get<double>("steady nonlinear tolerance", STEADY_NONLINEAR_TOLERANCE));
-              sti_bdf1_std.set<double>("time step reduction factor",
-                  num_list.get<double>("steady time step reduction factor", ST_TS_RED_FACTOR));
-              sti_bdf1_std.set<double>("time step increase factor",
-                  num_list.get<double>("steady time step increase factor", ST_TS_INC_FACTOR));
-              // sti_bdf1_std.set<double>("max time step",
-              //     num_list.get<double>("steady max time step", ST_MAX_TS));
-              sti_bdf1.set<int>("max preconditioner lag iterations",
-                  num_list.get<int>("steady max preconditioner lag iterations", ST_MAX_PREC_LAG));
-              sti_bdf1_solver->set<int>("max divergent iterations",
-                  num_list.get<int>("steady max divergent iterations", ST_MAX_DIVERGENT_ITERATIONS));
-              sti_bdf1.set<double>("nonlinear iteration damping factor",
-                  num_list.get<double>("steady nonlinear iteration damping factor", ST_NONLIN_DAMP));
-              sti_bdf1.set<int>("nonlinear iteration initial guess extrapolation order",
-                  num_list.get<int>("steady nonlinear iteration initial guess extrapolation order",
-                  ST_NONLIN_INIT_GUESS_EXTR_ORD));
-              sti_bdf1.set<double>("restart tolerance relaxation factor",
-                  num_list.get<double>("steady restart tolerance relaxation factor", ST_NONLIN_INIT_TS_FACTOR));
-              sti_bdf1.set<double>("restart tolerance relaxation factor damping",
-                  num_list.get<double>("steady restart tolerance relaxation factor damping",
-                  ST_NONLIN_INIT_TS_FACTOR_DAMP));
-              sti_bdf1_solver->set<double>("max du growth factor",
-                  num_list.get<double>("steady nonlinear iteration divergence factor", ST_DIVERG_FACT));
+        if (ua_list->isSublist("Steady-State Implicit Time Integration")) {
+          Teuchos::ParameterList& num_list = ua_list->sublist("Steady-State Implicit Time Integration");
+          sti_bdf1_std.set<int>("max iterations", num_list.get<int>("steady max iterations", ST_MAX_ITER));
+          sti_bdf1_std.set<int>("min iterations", num_list.get<int>("steady min iterations", ST_MIN_ITER));
+          sti_bdf1_solver->set<int>("limit iterations", num_list.get<int>("steady limit iterations", ST_LIMIT_ITER));
+          sti_bdf1_solver->set<double>("nonlinear tolerance",
+              num_list.get<double>("steady nonlinear tolerance", STEADY_NONLINEAR_TOLERANCE));
+          sti_bdf1_std.set<double>("time step reduction factor",
+              num_list.get<double>("steady time step reduction factor", ST_TS_RED_FACTOR));
+          sti_bdf1_std.set<double>("time step increase factor",
+              num_list.get<double>("steady time step increase factor", ST_TS_INC_FACTOR));
+          // sti_bdf1_std.set<double>("max time step",
+          //     num_list.get<double>("steady max time step", ST_MAX_TS));
+          sti_bdf1.set<int>("max preconditioner lag iterations",
+              num_list.get<int>("steady max preconditioner lag iterations", ST_MAX_PREC_LAG));
+          sti_bdf1_solver->set<int>("max divergent iterations",
+              num_list.get<int>("steady max divergent iterations", ST_MAX_DIVERGENT_ITERATIONS));
+          sti_bdf1.set<double>("nonlinear iteration damping factor",
+              num_list.get<double>("steady nonlinear iteration damping factor", ST_NONLIN_DAMP));
+          sti_bdf1.set<int>("nonlinear iteration initial guess extrapolation order",
+              num_list.get<int>("steady nonlinear iteration initial guess extrapolation order",
+              ST_NONLIN_INIT_GUESS_EXTR_ORD));
+          sti_bdf1.set<double>("restart tolerance relaxation factor",
+              num_list.get<double>("steady restart tolerance relaxation factor", ST_NONLIN_INIT_TS_FACTOR));
+          sti_bdf1.set<double>("restart tolerance relaxation factor damping",
+              num_list.get<double>("steady restart tolerance relaxation factor damping",
+              ST_NONLIN_INIT_TS_FACTOR_DAMP));
+          sti_bdf1_solver->set<double>("max du growth factor",
+              num_list.get<double>("steady nonlinear iteration divergence factor", ST_DIVERG_FACT));
 
-              sti_list.set<Teuchos::Array<std::string> >("error control options",
-                  num_list.get<Teuchos::Array<std::string> >("steady error control options",
-                  err_opts));
-              sti_list.set<std::string>("preconditioner",
-                  num_list.get<std::string>("steady preconditioner", ST_PRECOND));
+          sti_list.set<Teuchos::Array<std::string> >("error control options",
+              num_list.get<Teuchos::Array<std::string> >("steady error control options",
+              err_opts));
+          sti_list.set<std::string>("preconditioner",
+              num_list.get<std::string>("steady preconditioner", ST_PRECOND));
 
-              if (flow_model == "Single Phase") {
-                sti_bdf1_std.set<double>("time step increase factor",
-                    num_list.get<double>("steady time step increase factor",ST_SP_DT_INCR_FACTOR));
-              }
+          if (flow_model == "Single Phase") {
+            sti_bdf1_std.set<double>("time step increase factor",
+                num_list.get<double>("steady time step increase factor",ST_SP_DT_INCR_FACTOR));
+          }
 
-	      // initialization
-              if (ua_list.isSublist("Initialization")) {
-                Teuchos::ParameterList& ini_list = ua_list.sublist("Initialization");
-                Teuchos::ParameterList& sti_init = sti_list.sublist("initialization");
-                if (ini_list.isParameter("clipping saturation value"))
-                    sti_init.set<double>("clipping saturation value", ini_list.get<double>("clipping saturation value"));
-                if (ini_list.isParameter("clipping pressure value"))
-                    sti_init.set<double>("clipping pressure value", ini_list.get<double>("clipping pressure value"));
+	  // initialization
+          if (ua_list->isSublist("Initialization")) {
+            Teuchos::ParameterList& ini_list = ua_list->sublist("Initialization");
+            Teuchos::ParameterList& sti_init = sti_list.sublist("initialization");
+            if (ini_list.isParameter("clipping saturation value"))
+                sti_init.set<double>("clipping saturation value", ini_list.get<double>("clipping saturation value"));
+            if (ini_list.isParameter("clipping pressure value"))
+                sti_init.set<double>("clipping pressure value", ini_list.get<double>("clipping pressure value"));
 
-                if (have_picard_params && use_picard_) {
-		  sti_init.set<std::string>("method", "picard");
-                  sti_init.set<std::string>("linear solver", pic_params.get<std::string>("linear solver", PIC_SOLVE));
+            if (have_picard_params && use_picard_) {
+	      sti_init.set<std::string>("method", "picard");
+              sti_init.set<std::string>("linear solver", pic_params.get<std::string>("linear solver", PIC_SOLVE));
 
-                  Teuchos::ParameterList& pic_list = sti_init.sublist("picard parameters");
-                  pic_list.set<double>("convergence tolerance", pic_params.get<double>("picard convergence tolerance", PICARD_TOLERANCE));
-                  pic_list.set<int>("maximum number of iterations", pic_params.get<int>("picard maximum number of iterations", PIC_MAX_ITER));
-                } else if (use_picard_) {
-		  sti_init.set<std::string>("method", "picard");
-                  sti_init.set<double>("clipping pressure value", PIC_CLIP_PRESSURE);
+              Teuchos::ParameterList& pic_list = sti_init.sublist("picard parameters");
+              pic_list.set<double>("convergence tolerance", pic_params.get<double>("picard convergence tolerance", PICARD_TOLERANCE));
+              pic_list.set<int>("maximum number of iterations", pic_params.get<int>("picard maximum number of iterations", PIC_MAX_ITER));
+            } else if (use_picard_) {
+	      sti_init.set<std::string>("method", "picard");
+              sti_init.set<double>("clipping pressure value", PIC_CLIP_PRESSURE);
 
-                  Teuchos::ParameterList& pic_list = sti_init.sublist("picard parameters");
-                  pic_list.set<std::string>("linear solver", PIC_SOLVE);
-                  pic_list.set<double>("convergence tolerance", PICARD_TOLERANCE);
-                  pic_list.set<int>("maximum number of iterations", PIC_MAX_ITER);
-                } else {
-                  sti_init.set<std::string>("method", "saturated solver");
-                  sti_init.set<std::string>("linear solver", ST_INIT_SOLVER);
-                }
-                create_init = false;
-              }
+              Teuchos::ParameterList& pic_list = sti_init.sublist("picard parameters");
+              pic_list.set<std::string>("linear solver", PIC_SOLVE);
+              pic_list.set<double>("convergence tolerance", PICARD_TOLERANCE);
+              pic_list.set<int>("maximum number of iterations", PIC_MAX_ITER);
+            } else {
+              sti_init.set<std::string>("method", "saturated solver");
+              sti_init.set<std::string>("linear solver", ST_INIT_SOLVER);
             }
+            create_init = false;
           }
         }
 
@@ -439,91 +422,82 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(
         tti_bdf1.set<int>("max preconditioner lag iterations", TR_MAX_PREC_LAG);
         tti_bdf1.set<bool>("extrapolate initial guess", true);
 
-        if (exe_list.isSublist("Numerical Control Parameters")) {
-          Teuchos::ParameterList& ncp_list = exe_list.sublist("Numerical Control Parameters");
-          if (ncp_list.isSublist("Unstructured Algorithm")) {
-            Teuchos::ParameterList& ua_list = ncp_list.sublist("Unstructured Algorithm");
-            if (ua_list.isSublist("Transient Implicit Time Integration")) {
-              Teuchos::ParameterList& num_list = ua_list.sublist("Transient Implicit Time Integration");
+        if (ua_list->isSublist("Transient Implicit Time Integration")) {
+          Teuchos::ParameterList& num_list = ua_list->sublist("Transient Implicit Time Integration");
 
-              tti_bdf1_std.set<int>("max iterations",
-                  num_list.get<int>("transient max iterations", TR_MAX_ITER));
-              tti_bdf1_std.set<int>("min iterations",
-                  num_list.get<int>("transient min iterations", TR_MIN_ITER));
-              tti_bdf1_solver->set<int>("limit iterations", 
-                  num_list.get<int>("transient limit iterations", TR_LIMIT_ITER));
-              tti_bdf1_solver->set<double>("nonlinear tolerance",
-                  num_list.get<double>("transient nonlinear tolerance", TRANSIENT_NONLINEAR_TOLERANCE));
-              tti_bdf1_std.set<double>("time step reduction factor",
-                  num_list.get<double>("transient time step reduction factor", TR_TS_RED_FACTOR));
-              tti_bdf1_std.set<double>("time step increase factor",
-                  num_list.get<double>("transient time step increase factor", TR_TS_INC_FACTOR));
-              // tti_bdf1_std.set<double>("max time step", num_list.get<double>("transient max time step", TR_MAX_TS));
-              tti_bdf1.set<int>("max preconditioner lag iterations",
-                  num_list.get<int>("transient max preconditioner lag iterations", TR_MAX_PREC_LAG));
-              tti_bdf1_solver->set<int>("max divergent iterations",
-                  num_list.get<int>("transient max divergent iterations", TR_MAX_DIVERGENT_ITERATIONS));
-              tti_bdf1.set<double>("nonlinear iteration damping factor",
-                  num_list.get<double>("transient nonlinear iteration damping factor", TR_NONLIN_DAMP));
-              tti_bdf1.set<int>("nonlinear iteration initial guess extrapolation order",
-                  num_list.get<int>("transient nonlinear iteration initial guess extrapolation order", 
-                  TR_NONLIN_INIT_GUESS_EXTR_ORD));
-              tti_bdf1.set<double>("restart tolerance relaxation factor",
-                  num_list.get<double>("transient restart tolerance relaxation factor", TR_NONLIN_INIT_TS_FACTOR));
-              tti_bdf1.set<double>("restart tolerance relaxation factor damping",
-                  num_list.get<double>("transient restart tolerance relaxation factor damping", 
-                  TR_NONLIN_INIT_TS_FACTOR_DAMP));
-              tti_bdf1_solver->set<double>("max du growth factor",
-                  num_list.get<double>("transient nonlinear iteration divergence factor", TR_DIVERG_FACT));
+          tti_bdf1_std.set<int>("max iterations", num_list.get<int>("transient max iterations", TR_MAX_ITER));
+          tti_bdf1_std.set<int>("min iterations", num_list.get<int>("transient min iterations", TR_MIN_ITER));
+          tti_bdf1_solver->set<int>("limit iterations", 
+              num_list.get<int>("transient limit iterations", TR_LIMIT_ITER));
+          tti_bdf1_solver->set<double>("nonlinear tolerance",
+              num_list.get<double>("transient nonlinear tolerance", TRANSIENT_NONLINEAR_TOLERANCE));
+          tti_bdf1_std.set<double>("time step reduction factor",
+              num_list.get<double>("transient time step reduction factor", TR_TS_RED_FACTOR));
+          tti_bdf1_std.set<double>("time step increase factor",
+              num_list.get<double>("transient time step increase factor", TR_TS_INC_FACTOR));
+          // tti_bdf1_std.set<double>("max time step", num_list.get<double>("transient max time step", TR_MAX_TS));
+          tti_bdf1.set<int>("max preconditioner lag iterations",
+              num_list.get<int>("transient max preconditioner lag iterations", TR_MAX_PREC_LAG));
+          tti_bdf1_solver->set<int>("max divergent iterations",
+              num_list.get<int>("transient max divergent iterations", TR_MAX_DIVERGENT_ITERATIONS));
+          tti_bdf1.set<double>("nonlinear iteration damping factor",
+              num_list.get<double>("transient nonlinear iteration damping factor", TR_NONLIN_DAMP));
+          tti_bdf1.set<int>("nonlinear iteration initial guess extrapolation order",
+              num_list.get<int>("transient nonlinear iteration initial guess extrapolation order", 
+              TR_NONLIN_INIT_GUESS_EXTR_ORD));
+          tti_bdf1.set<double>("restart tolerance relaxation factor",
+              num_list.get<double>("transient restart tolerance relaxation factor", TR_NONLIN_INIT_TS_FACTOR));
+          tti_bdf1.set<double>("restart tolerance relaxation factor damping",
+              num_list.get<double>("transient restart tolerance relaxation factor damping", 
+              TR_NONLIN_INIT_TS_FACTOR_DAMP));
+          tti_bdf1_solver->set<double>("max du growth factor",
+              num_list.get<double>("transient nonlinear iteration divergence factor", TR_DIVERG_FACT));
 
-              tti_list.set<Teuchos::Array<std::string> >("error control options",
-                  num_list.get<Teuchos::Array<std::string> >("transient error control options",
-                  err_opts));
-              tti_list.set<std::string>("preconditioner",
-                  num_list.get<std::string>("transient preconditioner", TR_PRECOND));
+          tti_list.set<Teuchos::Array<std::string> >("error control options",
+              num_list.get<Teuchos::Array<std::string> >("transient error control options", err_opts));
+          tti_list.set<std::string>("preconditioner",
+              num_list.get<std::string>("transient preconditioner", TR_PRECOND));
 
-              if (flow_model == "Single Phase") {
-                tti_bdf1_std.set<double>("time step increase factor",
-                    num_list.get<double>("transient time step increase factor", TR_SP_DT_INCR_FACTOR));
-              }
-
-              // initialization
-              if (ua_list.isSublist("Initialization") && create_init) {
-                Teuchos::ParameterList& ini_list = ua_list.sublist("Initialization");
-                Teuchos::ParameterList& tti_init = tti_list.sublist("initialization");
-                if (ini_list.isParameter("clipping saturation value"))
-                    tti_init.set<double>("clipping saturation value", ini_list.get<double>("clipping saturation value"));
-                if (ini_list.isParameter("clipping pressure value"))
-                    tti_init.set<double>("clipping pressure value", ini_list.get<double>("clipping pressure value"));
-
-                if (have_picard_params && use_picard_) {
-                  tti_init.set<std::string>("method", "picard");
-                  tti_init.set<std::string>("linear solver", pic_params.get<std::string>("linear solver", PIC_SOLVE));
-
-                  Teuchos::ParameterList& pic_list = tti_init.sublist("picard parameters");
-                  pic_list.set<double>("convergence tolerance", pic_params.get<double>("picard convergence tolerance", PICARD_TOLERANCE));
-                  pic_list.set<int>("maximum number of iterations", pic_params.get<int>("picard maximum number of iterations", PIC_MAX_ITER));
-                } else if (use_picard_) {
-                  tti_init.set<std::string>("method", "picard");
-                  tti_init.set<double>("clipping pressure value", PIC_CLIP_PRESSURE);
-
-                  Teuchos::ParameterList& pic_list = tti_init.sublist("picard parameters");
-                  pic_list.set<std::string>("linear solver", PIC_SOLVE);
-                  pic_list.set<double>("convergence tolerance", PICARD_TOLERANCE);
-                  pic_list.set<int>("maximum number of iterations", PIC_MAX_ITER);
-                } else {
-                  tti_init.set<std::string>("method", "saturated solver");
-                  tti_init.set<std::string>("linear solver", ST_INIT_SOLVER);
-                }
-                create_init = false;
-              }
-              // if (num_list.get<bool>("transient initialize with darcy", TR_INIT_DARCY_BOOL)) {
-              //   Teuchos::ParameterList& tti_init = tti_list.sublist("initialization");
-              //   tti_init.set<std::string>("method", "saturated solver");
-              //   tti_init.set<std::string>("linear solver", TR_INIT_SOLVER);
-              // }
-            }
+          if (flow_model == "Single Phase") {
+            tti_bdf1_std.set<double>("time step increase factor",
+                num_list.get<double>("transient time step increase factor", TR_SP_DT_INCR_FACTOR));
           }
+
+          // initialization
+          if (ua_list->isSublist("Initialization") && create_init) {
+            Teuchos::ParameterList& ini_list = ua_list->sublist("Initialization");
+            Teuchos::ParameterList& tti_init = tti_list.sublist("initialization");
+            if (ini_list.isParameter("clipping saturation value"))
+                tti_init.set<double>("clipping saturation value", ini_list.get<double>("clipping saturation value"));
+            if (ini_list.isParameter("clipping pressure value"))
+                tti_init.set<double>("clipping pressure value", ini_list.get<double>("clipping pressure value"));
+
+            if (have_picard_params && use_picard_) {
+              tti_init.set<std::string>("method", "picard");
+              tti_init.set<std::string>("linear solver", pic_params.get<std::string>("linear solver", PIC_SOLVE));
+
+              Teuchos::ParameterList& pic_list = tti_init.sublist("picard parameters");
+              pic_list.set<double>("convergence tolerance", pic_params.get<double>("picard convergence tolerance", PICARD_TOLERANCE));
+              pic_list.set<int>("maximum number of iterations", pic_params.get<int>("picard maximum number of iterations", PIC_MAX_ITER));
+            } else if (use_picard_) {
+              tti_init.set<std::string>("method", "picard");
+              tti_init.set<double>("clipping pressure value", PIC_CLIP_PRESSURE);
+
+              Teuchos::ParameterList& pic_list = tti_init.sublist("picard parameters");
+              pic_list.set<std::string>("linear solver", PIC_SOLVE);
+              pic_list.set<double>("convergence tolerance", PICARD_TOLERANCE);
+              pic_list.set<int>("maximum number of iterations", PIC_MAX_ITER);
+            } else {
+              tti_init.set<std::string>("method", "saturated solver");
+              tti_init.set<std::string>("linear solver", ST_INIT_SOLVER);
+            }
+            create_init = false;
+          }
+          // if (num_list.get<bool>("transient initialize with darcy", TR_INIT_DARCY_BOOL)) {
+          //   Teuchos::ParameterList& tti_init = tti_list.sublist("initialization");
+          //   tti_init.set<std::string>("method", "saturated solver");
+          //   tti_init.set<std::string>("linear solver", TR_INIT_SOLVER);
+          // }
         }
 
         if (nonlinear_solver == std::string("Newton")) {

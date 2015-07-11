@@ -205,10 +205,6 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::RCP<
     }
   }
 
-
-
-
-
   tpc_list.set<Teuchos::Array<double> >("Start Times", start_times);
   tpc_list.set<Teuchos::Array<double> >("Initial Time Step", initial_time_step);
   tpc_list.set<Teuchos::Array<double> >("Maximum Time Step", maximum_time_step);
@@ -236,115 +232,110 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::RCP<Teucho
   int model = 0;
   int model_pre = 0;
 
-  if (plist->isSublist("Execution Control")) {
-    Teuchos::ParameterList exe_sublist = plist->sublist("Execution Control");
+  Teuchos::RCP<Teuchos::ParameterList> exe_list = Teuchos::sublist(plist, "Execution Control", true);
 
-    if (exe_sublist.isParameter("Transport Model")) {
-      if (exe_sublist.get<std::string>("Transport Model") == "Off" || exe_sublist.get<std::string>("Transport Model") == "off") {
-        transport_on = false;
-      } else if (exe_sublist.get<std::string>("Transport Model") == "On" || exe_sublist.get<std::string>("Transport Model") == "on") {
-        transport_on = true;
-      } else {
-        Exceptions::amanzi_throw(Errors::Message("Transport Model must either be On or Off"));
-      }
+  if (exe_list->isParameter("Transport Model")) {
+    if (exe_list->get<std::string>("Transport Model") == "Off" ||
+        exe_list->get<std::string>("Transport Model") == "off") {
+      transport_on = false;
+    } else if (exe_list->get<std::string>("Transport Model") == "On" ||
+               exe_list->get<std::string>("Transport Model") == "on") {
+      transport_on = true;
+    } else {
+      Exceptions::amanzi_throw(Errors::Message("Transport Model must either be On or Off"));
     }
-    else {
-      Exceptions::amanzi_throw(Errors::Message("The parameter Transport Model must be specified."));
-    }
-
-    if (exe_sublist.isParameter("Flow Model")) {
-
-
-	bool darcy_vel_given = false;
-	if (plist->isSublist("Initial Conditions"))
-	  if (plist->sublist("Initial Conditions").isSublist("All"))
-	    if (plist->sublist("Initial Conditions").sublist("All").isSublist("IC: Uniform Velocity"))
-	      darcy_vel_given = true;
-
-      if (exe_sublist.get<std::string>("Flow Model") == "Off" || exe_sublist.get<std::string>("Flow Model") == "off") {
-        flow_on = false;
-      } else if (exe_sublist.get<std::string>("Flow Model") == "Richards") {
-        flow_pk = "richards";
-        flow_on = true;
-      } else if (exe_sublist.get<std::string>("Flow Model") == "Single Phase") {
-	if (darcy_vel_given){
-	  flow_on = false;
-	}
-	else {
-	  flow_pk = "darcy";
-	  flow_on = true;
-	}
-      } else {
-        Exceptions::amanzi_throw(Errors::Message("Flow Model must either be Richards, Single Phase, or Off"));
-      }
-    }
-    else {
-      Exceptions::amanzi_throw(Errors::Message("The parameter Flow Model must be specified."));
-    }
-
-     chemistry_model_ = "Amanzi";
-    if (exe_sublist.isParameter("Chemistry Model")) {
-      if (exe_sublist.get<std::string>("Chemistry Model") == "Off") {
-        chemistry_on = false;
-      } else if  (exe_sublist.get<std::string>("Chemistry Model") == "Amanzi") {
-        chemistry_on = true;
-        chemistry_pk = "chemistry";    
-      } else if  (exe_sublist.get<std::string>("Chemistry Model") == "Alquimia") {
-        chemistry_on = true;
-        chemistry_pk = "chemistry";
-        chemistry_model_ = "Alquimia";
-      }
-    }
-    else {
-      Exceptions::amanzi_throw(Errors::Message("The parameter \'Chemistry Model\' must be specified."));
-    }
-
-    model = chemistry_on + 2*transport_on + 4*flow_on;
-
-    if (exe_sublist.isSublist("Time Integration Mode")) {
-      if (exe_sublist.sublist("Time Integration Mode").isSublist("Initialize To Steady")) {
-        start_time = exe_sublist.sublist("Time Integration Mode").sublist("Initialize To Steady").get<double>("Start");
-        switch_time = exe_sublist.sublist("Time Integration Mode").sublist("Initialize To Steady").get<double>("Switch");
-        end_time = exe_sublist.sublist("Time Integration Mode").sublist("Initialize To Steady").get<double>("End");
-      
-      dt_steady = exe_sublist.sublist("Time Integration Mode").sublist("Initialize To Steady").get<double>("Steady Initial Time Step", 1);
-      dt_tran = exe_sublist.sublist("Time Integration Mode").sublist("Initialize To Steady").get<double>("Transient Initial Time Step", 1);
-      flow_name = "Flow";
-
-      model_pre = 4*flow_on;
-      }
-      if (exe_sublist.sublist("Time Integration Mode").isSublist("Steady")) {
-        start_time = exe_sublist.sublist("Time Integration Mode").sublist("Steady").get<double>("Start");
-        end_time = exe_sublist.sublist("Time Integration Mode").sublist("Steady").get<double>("End");
-        dt_steady = exe_sublist.sublist("Time Integration Mode").sublist("Steady").get<double>("Initial Time Step",  1);
-        switch_time = start_time;
-        dt_tran = dt_steady;
-        flow_name = "Flow Steady";
-      }
-      if (exe_sublist.sublist("Time Integration Mode").isSublist("Transient")) {
-        start_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient").get<double>("Start");
-        end_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient").get<double>("End");
-        switch_time = start_time;
-        dt_tran = exe_sublist.sublist("Time Integration Mode").sublist("Transient").get<double>("Initial Time Step", 1);
-        flow_name = "Flow";
-        
-        /* EIB: proposed v1.2.2 update - Add Maximum Cycle Number for Transient modes */
-        if (exe_sublist.sublist("Time Integration Mode").sublist("Transient").isParameter("Maximum Cycle Number"))
-          max_cycle_number =exe_sublist.sublist("Time Integration Mode").sublist("Transient").get<double>("Maximum Cycle Number");
-      }
-      if (exe_sublist.sublist("Time Integration Mode").isSublist("Transient with Static Flow")) {
-        start_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("Start");
-        end_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("End");
-        switch_time = start_time;
-        dt_tran = exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("Initial Time Step", 1);
-        flow_name = "Flow";
-
-        /* EIB: proposed v1.2.2 update - Add Maximum Cycle Number for Transient modes */
-        if (exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").isParameter("Maximum Cycle Number"))
-            max_cycle_number =exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("Maximum Cycle Number");
-      }      
-    }
+  } else {
+    Exceptions::amanzi_throw(Errors::Message("The parameter Transport Model must be specified."));
   }
+
+  if (exe_list->isParameter("Flow Model")) {
+    bool darcy_vel_given = false;
+    if (plist->isSublist("Initial Conditions"))
+      if (plist->sublist("Initial Conditions").isSublist("All"))
+        if (plist->sublist("Initial Conditions").sublist("All").isSublist("IC: Uniform Velocity"))
+          darcy_vel_given = true;
+
+    if (exe_list->get<std::string>("Flow Model") == "Off" ||
+        exe_list->get<std::string>("Flow Model") == "off") {
+      flow_on = false;
+    } else if (exe_list->get<std::string>("Flow Model") == "Richards") {
+      flow_pk = "richards";
+      flow_on = true;
+    } else if (exe_list->get<std::string>("Flow Model") == "Single Phase") {
+      if (darcy_vel_given) {
+	flow_on = false;
+      } else {
+        flow_pk = "darcy";
+        flow_on = true;
+      }
+    } else {
+      Exceptions::amanzi_throw(Errors::Message("Flow Model must either be Richards, Single Phase, or Off"));
+    }
+  } else {
+    Exceptions::amanzi_throw(Errors::Message("The parameter Flow Model must be specified."));
+  }
+
+  chemistry_model_ = "Amanzi";
+  if (exe_list->isParameter("Chemistry Model")) {
+    if (exe_list->get<std::string>("Chemistry Model") == "Off") {
+      chemistry_on = false;
+    } else if (exe_list->get<std::string>("Chemistry Model") == "Amanzi") {
+      chemistry_on = true;
+      chemistry_pk = "chemistry";    
+    } else if (exe_list->get<std::string>("Chemistry Model") == "Alquimia") {
+      chemistry_on = true;
+      chemistry_pk = "chemistry";
+      chemistry_model_ = "Alquimia";
+    }
+  } else {
+    Exceptions::amanzi_throw(Errors::Message("The parameter \'Chemistry Model\' must be specified."));
+  }
+
+  model = chemistry_on + 2*transport_on + 4*flow_on;
+
+  Teuchos::RCP<Teuchos::ParameterList> tim_list = Teuchos::sublist(exe_list, "Time Integration Mode", true);
+
+  if (tim_list->isSublist("Initialize To Steady")) {
+    start_time = tim_list->sublist("Initialize To Steady").get<double>("Start");
+    switch_time = tim_list->sublist("Initialize To Steady").get<double>("Switch");
+    end_time = tim_list->sublist("Initialize To Steady").get<double>("End");
+      
+    dt_steady = tim_list->sublist("Initialize To Steady").get<double>("Steady Initial Time Step", 1);
+    dt_tran = tim_list->sublist("Initialize To Steady").get<double>("Transient Initial Time Step", 1);
+    flow_name = "Flow";
+
+    model_pre = 4*flow_on;
+  }
+  if (tim_list->isSublist("Steady")) {
+    start_time = tim_list->sublist("Steady").get<double>("Start");
+    end_time = tim_list->sublist("Steady").get<double>("End");
+    dt_steady = tim_list->sublist("Steady").get<double>("Initial Time Step",  1);
+    switch_time = start_time;
+    dt_tran = dt_steady;
+    flow_name = "Flow Steady";
+  }
+  if (tim_list->isSublist("Transient")) {
+    start_time = tim_list->sublist("Transient").get<double>("Start");
+    end_time = tim_list->sublist("Transient").get<double>("End");
+    switch_time = start_time;
+    dt_tran = tim_list->sublist("Transient").get<double>("Initial Time Step", 1);
+    flow_name = "Flow";
+        
+    /* EIB: proposed v1.2.2 update - Add Maximum Cycle Number for Transient modes */
+    if (tim_list->sublist("Transient").isParameter("Maximum Cycle Number"))
+      max_cycle_number = tim_list->sublist("Transient").get<double>("Maximum Cycle Number");
+  }
+  if (tim_list->isSublist("Transient with Static Flow")) {
+    start_time = tim_list->sublist("Transient with Static Flow").get<double>("Start");
+    end_time = tim_list->sublist("Transient with Static Flow").get<double>("End");
+    switch_time = start_time;
+    dt_tran = tim_list->sublist("Transient with Static Flow").get<double>("Initial Time Step", 1);
+    flow_name = "Flow";
+
+    /* EIB: proposed v1.2.2 update - Add Maximum Cycle Number for Transient modes */
+    if (tim_list->sublist("Transient with Static Flow").isParameter("Maximum Cycle Number"))
+      max_cycle_number = tim_list->sublist("Transient with Static Flow").get<double>("Maximum Cycle Number");
+  }      
 
   int time_pr_id = 0;
   std::string tp_list_name;
