@@ -19,7 +19,7 @@ namespace Amanzi {
 // Constructors
 // ---------------------------------------------------------------------------
 PrimaryVariableFieldEvaluator::PrimaryVariableFieldEvaluator(
-        Teuchos::ParameterList plist) :
+    Teuchos::ParameterList& plist) :
     FieldEvaluator(plist) {
   my_key_ = plist_.get<std::string>("evaluator name");
 }

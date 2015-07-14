@@ -20,6 +20,9 @@
 namespace Amanzi {
 namespace Operators {
 
+int CheckMatrixSymmetry(Teuchos::RCP<Epetra_CrsMatrix> A);
+int CheckMatrixCoercivity(Teuchos::RCP<Epetra_CrsMatrix> A);
+
 class OperatorAudit {
  public:
   OperatorAudit(Teuchos::RCP<const Op> op) : op_(op) {};
@@ -27,8 +30,6 @@ class OperatorAudit {
 
   // main members
   int CheckSpectralBounds(int schema);
-  friend int CheckMatrixSymmetry(Teuchos::RCP<Epetra_CrsMatrix> A);
-  friend int CheckMatrixCoercivity(Teuchos::RCP<Epetra_CrsMatrix> A);
 
  private:
   void OrderByIncrease_(int n, double* mem);

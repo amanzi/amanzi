@@ -1,8 +1,18 @@
 #ifndef INPUT_PARSERIS_DEFS_HH__ 
 #define INPUT_PARSERIS_DEFS_HH__
 
-// define defaults that are used in the input parser here
+namespace Amanzi {
+namespace AmanziInput {
 
+#define AMANZI_OLD_INPUT_VERSION_MAJOR 1
+#define AMANZI_OLD_INPUT_VERSION_MINOR 2
+#define AMANZI_OLD_INPUT_VERSION_MICRO 2
+
+}  // namespace AmanziInput
+}  // namespace Amanzi
+
+
+// define defaults that are used in the input parser here
 #define ATMOSPHERIC_PRESSURE            101325.0
 
 

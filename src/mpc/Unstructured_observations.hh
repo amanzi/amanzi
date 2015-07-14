@@ -38,7 +38,7 @@ class Unstructured_observations {
   };
 
   // constructor and destructor
-  Unstructured_observations(Teuchos::ParameterList obs_list,
+  Unstructured_observations(Teuchos::ParameterList& obs_list,
                             Amanzi::ObservationData& observation_data,
 			    Epetra_MpiComm* comm);
 

@@ -119,17 +119,6 @@ Richards_PK::~Richards_PK()
 
   if (src_sink != NULL) delete src_sink;
   if (vo_ != NULL) delete vo_;
-
-#ifdef ENABLE_NATIVE_XML_OUTPUT
-  /*
-  if (glist_->sublist("Analysis").get<bool>("print unused parameters", false)) {
-    std::cout << "\n***** Unused XML parameters *****" << std::endl;
-    Teuchos::Amanzi_XMLParameterListWriter out; 
-    out.unused(*rp_list_, std::cout);
-    std::cout << std::endl;
-  }
-  */
-#endif
 }
 
 

@@ -25,7 +25,7 @@ class PrimaryVariableFieldEvaluator : public FieldEvaluator {
   // Constructors
   // ---------------------------------------------------------------------------
   explicit
-  PrimaryVariableFieldEvaluator(Teuchos::ParameterList plist);
+  PrimaryVariableFieldEvaluator(Teuchos::ParameterList& plist);
   PrimaryVariableFieldEvaluator(const PrimaryVariableFieldEvaluator& other);
 
   // virtual destructor

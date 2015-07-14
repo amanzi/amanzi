@@ -1,5 +1,5 @@
 <amanzi_input version="2.1.0" type="unstructured">
-
+  <echo_translated_input format="v1" file_name="oldspec.xml"/>
   <model_description name="SR Test Problem">
 
     <comments>Confind aquifer transient drawdown (Theis 1935)</comments>
@@ -71,7 +71,7 @@
 
   -->
   <execution_controls>
-    <verbosity level="high"/>
+    <verbosity level="extreme"/>
     <execution_control_defaults init_dt= "3.64" increase_factor="1.5" max_dt="1.e9" method="bdf1"/>
     <execution_control start="0.0" end="1.e9" init_dt="3.64" mode="transient"/>
   </execution_controls>
@@ -83,10 +83,15 @@
   -->
   <numerical_controls>
     <unstructured_controls>
-      <linear_solver>
+      <unstr_steady-state_controls>
+	<unstr_initialization>
+	  <method>darcy_solver</method>
+	</unstr_initialization>
+      </unstr_steady-state_controls>
+      <unstr_linear_solver>
 	<max_iterations>1000</max_iterations>
-	<tolerance>1.0e-16</tolerance>
-      </linear_solver>
+	<tolerance>1.0e-18</tolerance>
+      </unstr_linear_solver>
     </unstructured_controls>
   </numerical_controls>
   

@@ -14,7 +14,7 @@ namespace AmanziInput {
 /* ******************************************************************
 * Collects default preconditioners
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreatePreconditionersList_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreatePreconditionersList_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Teuchos::ParameterList prec_list;
   prec_list.sublist("Trilinos ML") = CreateDPC_List_(plist);
@@ -27,7 +27,7 @@ Teuchos::ParameterList InputParserIS::CreatePreconditionersList_(Teuchos::Parame
 /* ******************************************************************
 * Collects linear solvers
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreateSolversList_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreateSolversList_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Teuchos::ParameterList solver_list;
   Teuchos::ParameterList& aztecoo_list = solver_list.sublist("AztecOO");
@@ -98,11 +98,15 @@ Teuchos::ParameterList InputParserIS::CreateSolversList_(Teuchos::ParameterList*
 /* ******************************************************************
 * ML preconditioner sublist
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreateDPC_List_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreateDPC_List_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Teuchos::ParameterList dpc_list;
-
   dpc_list.set<std::string>("preconditioner type", "ml");
+
+  Teuchos::RCP<Teuchos::ParameterList> exe_list = Teuchos::sublist(plist, "Execution Control", true);
+  Teuchos::RCP<Teuchos::ParameterList> ncp_list = Teuchos::sublist(exe_list, "Numerical Control Parameters", false);
+  Teuchos::RCP<Teuchos::ParameterList> ua_list = Teuchos::sublist(ncp_list, "Unstructured Algorithm", false);
+  Teuchos::RCP<Teuchos::ParameterList> pc_list = Teuchos::sublist(ua_list, "Preconditioners", false);
 
   double aggthr(ML_AGG_THR);
   std::string smthtyp(ML_SMOOTHER);
@@ -110,39 +114,30 @@ Teuchos::ParameterList InputParserIS::CreateDPC_List_(Teuchos::ParameterList* pl
   int nsmooth(ML_NSMOOTH);
   std::string nonlinear_solver("NKA");
 
-  if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
-    Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters");
-    if (ncp_list.isSublist("Unstructured Algorithm")) {
-      Teuchos::ParameterList& ncpu_list = ncp_list.sublist("Unstructured Algorithm");
-      if (ncpu_list.isSublist("Preconditioners")) {
-        Teuchos::ParameterList& ncpup_list = ncpu_list.sublist("Preconditioners");
-        if (ncpup_list.isSublist("Trilinos ML")) {
-          Teuchos::ParameterList& ml_list = ncpup_list.sublist("Trilinos ML");
-          if (ml_list.isParameter("ML aggregation threshold")) {
-            aggthr = ml_list.get<double>("ML aggregation threshold");
-          }
-          if (ml_list.isParameter("ML smoother type")) {
-            smthtyp = ml_list.get<std::string>("ML smoother type");
-          }
-          if (ml_list.isParameter("ML cycle applications")) {
-            ncycles = ml_list.get<int>("ML cycle applications");
-          }
-          if (ml_list.isParameter("ML smoother sweeps")) {
-            nsmooth = ml_list.get<int>("ML smoother sweeps");
-          }
-        }
-      }
-      Teuchos::ParameterList& solver_list = ncpu_list.sublist("Nonlinear Solver");
-      if (solver_list.isParameter("Nonlinear Solver Type")) {
-	nonlinear_solver = solver_list.get<std::string>("Nonlinear Solver Type");
-      }
-      if (nonlinear_solver == std::string("Newton")) {
-	dpc_list.set<std::string>("discretization method", "fv: default");
-      }
-      else{
-	dpc_list.set<std::string>("discretization method", "mfd: optimized for sparsity");
-      }
+  if (pc_list->isSublist("Trilinos ML")) {
+    Teuchos::ParameterList& ml_list = pc_list->sublist("Trilinos ML");
+    if (ml_list.isParameter("ML aggregation threshold")) {
+      aggthr = ml_list.get<double>("ML aggregation threshold");
     }
+    if (ml_list.isParameter("ML smoother type")) {
+      smthtyp = ml_list.get<std::string>("ML smoother type");
+    }
+    if (ml_list.isParameter("ML cycle applications")) {
+      ncycles = ml_list.get<int>("ML cycle applications");
+    }
+    if (ml_list.isParameter("ML smoother sweeps")) {
+      nsmooth = ml_list.get<int>("ML smoother sweeps");
+    }
+  }
+
+  Teuchos::RCP<Teuchos::ParameterList> solver_list = Teuchos::sublist(ua_list, "Nonlinear Solver", false);
+  if (solver_list->isParameter("Nonlinear Solver Type")) {
+    nonlinear_solver = solver_list->get<std::string>("Nonlinear Solver Type");
+  }
+  if (nonlinear_solver == std::string("Newton")) {
+    dpc_list.set<std::string>("discretization method", "fv: default");
+  } else {
+    dpc_list.set<std::string>("discretization method", "mfd: optimized for sparsity");
   }
 
   Teuchos::ParameterList& ml_list = dpc_list.sublist("ml parameters");
@@ -170,11 +165,15 @@ Teuchos::ParameterList InputParserIS::CreateDPC_List_(Teuchos::ParameterList* pl
 /* ******************************************************************
 * Block ILU preconditioner sublist
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreateBILU_List_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreateBILU_List_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Teuchos::ParameterList bilu_list;
-
   bilu_list.set<std::string>("preconditioner type", "block ilu");
+
+  Teuchos::RCP<Teuchos::ParameterList> exe_list = Teuchos::sublist(plist, "Execution Control", true);
+  Teuchos::RCP<Teuchos::ParameterList> ncp_list = Teuchos::sublist(exe_list, "Numerical Control Parameters", false);
+  Teuchos::RCP<Teuchos::ParameterList> ua_list = Teuchos::sublist(ncp_list, "Unstructured Algorithm", false);
+  Teuchos::RCP<Teuchos::ParameterList> pc_list = Teuchos::sublist(ua_list, "Preconditioners", false);
 
   double bilu_relax_value(ILU_RLXVAL);
   double bilu_abs_thresh(ILU_ABSTHR);
@@ -183,51 +182,42 @@ Teuchos::ParameterList InputParserIS::CreateBILU_List_(Teuchos::ParameterList* p
   int bilu_overlap(ILU_OLV);
   std::string nonlinear_solver("NKA");
 
-  if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
-    Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters");
-    if (ncp_list.isSublist("Unstructured Algorithm")) {
-      Teuchos::ParameterList& ncpu_list = ncp_list.sublist("Unstructured Algorithm");
-      if (ncpu_list.isSublist("Preconditioners")) {
-        Teuchos::ParameterList& ncpup_list = ncpu_list.sublist("Preconditioners");
-        if (ncpup_list.isSublist("Block ILU")) {
-          Teuchos::ParameterList& ilu_list = ncpup_list.sublist("Block ILU");
-          if (ilu_list.isParameter("Block ILU relax value")) {
-            bilu_relax_value = ilu_list.get<double>("Block ILU relax value");
-          }
-          if (ilu_list.isParameter("Block ILU relative threshold")) {
-            bilu_rel_thresh = ilu_list.get<double>("Block ILU relative threshold");
-          }
-          if (ilu_list.isParameter("Block ILU absolute threshold")) {
-            bilu_abs_thresh = ilu_list.get<double>("Block ILU absolute threshold");
-          }
-          if (ilu_list.isParameter("Block ILU level of fill")) {
-            bilu_level_of_fill = ilu_list.get<int>("Block ILU level of fill");
-          }
-          if (ilu_list.isParameter("Block ILU overlap")) {
-            bilu_overlap = ilu_list.get<int>("Block ILU overlap");
-          }
-        }
-      }
-      Teuchos::ParameterList& solver_list = ncpu_list.sublist("Nonlinear Solver");
-      if (solver_list.isParameter("Nonlinear Solver Type")) {
-	nonlinear_solver = solver_list.get<std::string>("Nonlinear Solver Type");
-      }
-      if (nonlinear_solver == std::string("Newton")) {
-	bilu_list.set<std::string>("discretization method", "fv: default");
-      }
-      else{
-	bilu_list.set<std::string>("discretization method", "mfd: optimized for sparsity");
-      }
+  if (pc_list->isSublist("Block ILU")) {
+    Teuchos::ParameterList& ilu_list = pc_list->sublist("Block ILU");
+    if (ilu_list.isParameter("Block ILU relax value")) {
+      bilu_relax_value = ilu_list.get<double>("Block ILU relax value");
+    }
+    if (ilu_list.isParameter("Block ILU relative threshold")) {
+      bilu_rel_thresh = ilu_list.get<double>("Block ILU relative threshold");
+    }
+    if (ilu_list.isParameter("Block ILU absolute threshold")) {
+      bilu_abs_thresh = ilu_list.get<double>("Block ILU absolute threshold");
+    }
+    if (ilu_list.isParameter("Block ILU level of fill")) {
+      bilu_level_of_fill = ilu_list.get<int>("Block ILU level of fill");
+    }
+    if (ilu_list.isParameter("Block ILU overlap")) {
+      bilu_overlap = ilu_list.get<int>("Block ILU overlap");
     }
   }
 
+  Teuchos::RCP<Teuchos::ParameterList> solver_list = Teuchos::sublist(ua_list, "Nonlinear Solver", false);
+  if (solver_list->isParameter("Nonlinear Solver Type")) {
+    nonlinear_solver = solver_list->get<std::string>("Nonlinear Solver Type");
+  }
+  if (nonlinear_solver == std::string("Newton")) {
+    bilu_list.set<std::string>("discretization method", "fv: default");
+  } else {
+    bilu_list.set<std::string>("discretization method", "mfd: optimized for sparsity");
+  }
+
   Teuchos::ParameterList& p_list = bilu_list.sublist("block ilu parameters");
-  p_list.set<double>("fact: relax value",bilu_relax_value);
-  p_list.set<double>("fact: absolute threshold",bilu_abs_thresh);
-  p_list.set<double>("fact: relative threshold",bilu_rel_thresh);
-  p_list.set<int>("fact: level-of-fill",bilu_level_of_fill);
-  p_list.set<int>("overlap",bilu_overlap);
-  p_list.set<std::string>("schwarz: combine mode","Add");
+  p_list.set<double>("fact: relax value", bilu_relax_value);
+  p_list.set<double>("fact: absolute threshold", bilu_abs_thresh);
+  p_list.set<double>("fact: relative threshold", bilu_rel_thresh);
+  p_list.set<int>("fact: level-of-fill", bilu_level_of_fill);
+  p_list.set<int>("overlap", bilu_overlap);
+  p_list.set<std::string>("schwarz: combine mode", "Add");
 
   return bilu_list;
 }
@@ -236,10 +226,15 @@ Teuchos::ParameterList InputParserIS::CreateBILU_List_(Teuchos::ParameterList* p
 /* ******************************************************************
 * HypreBoomerAMG preconditioner sublist
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreateHypreAMG_List_(Teuchos::ParameterList* plist)
+Teuchos::ParameterList InputParserIS::CreateHypreAMG_List_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Teuchos::ParameterList dpc_list;
   dpc_list.set<std::string>("preconditioner type", "boomer amg");
+
+  Teuchos::RCP<Teuchos::ParameterList> exe_list = Teuchos::sublist(plist, "Execution Control", true);
+  Teuchos::RCP<Teuchos::ParameterList> ncp_list = Teuchos::sublist(exe_list, "Numerical Control Parameters", false);
+  Teuchos::RCP<Teuchos::ParameterList> ua_list = Teuchos::sublist(ncp_list, "Unstructured Algorithm", false);
+  Teuchos::RCP<Teuchos::ParameterList> pc_list = Teuchos::sublist(ua_list, "Preconditioners", false);
 
   double tol(AMG_TOL);
   int ncycles(AMG_NCYC);
@@ -247,39 +242,30 @@ Teuchos::ParameterList InputParserIS::CreateHypreAMG_List_(Teuchos::ParameterLis
   double strong_threshold(AMG_STR_THR);
   std::string nonlinear_solver("NKA");
 
-  if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
-    Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters");
-    if (ncp_list.isSublist("Unstructured Algorithm")) {
-      Teuchos::ParameterList& ncpu_list = ncp_list.sublist("Unstructured Algorithm");
-      if (ncpu_list.isSublist("Preconditioners")) {
-        Teuchos::ParameterList& ncpup_list = ncpu_list.sublist("Preconditioners");
-        if (ncpup_list.isSublist("Hypre AMG")) {
-          Teuchos::ParameterList& hypre_list = ncpup_list.sublist("Hypre AMG");
-          if (hypre_list.isParameter("Hypre AMG cycle applications")) {
-            ncycles = hypre_list.get<int>("Hypre AMG cycle applications");
-          }
-          if (hypre_list.isParameter("Hypre AMG smoother sweeps")) {
-            nsmooth = hypre_list.get<int>("Hypre AMG smoother sweeps");
-          }
-          if (hypre_list.isParameter("Hypre AMG tolerance")) {
-            tol = hypre_list.get<double>("Hypre AMG tolerance");
-          }
-          if (hypre_list.isParameter("Hypre AMG strong threshold")) {
-            strong_threshold = hypre_list.get<double>("Hypre AMG strong threshold");
-          }
-        }
-      }
-      Teuchos::ParameterList& solver_list = ncpu_list.sublist("Nonlinear Solver");
-      if (solver_list.isParameter("Nonlinear Solver Type")) {
-	nonlinear_solver = solver_list.get<std::string>("Nonlinear Solver Type");
-      }
-      if (nonlinear_solver == std::string("Newton")) {
-	dpc_list.set<std::string>("discretization method", "fv: default");
-      }
-      else{
-	dpc_list.set<std::string>("discretization method", "mfd: optimized for sparsity");
-      }
+  if (pc_list->isSublist("Hypre AMG")) {
+    Teuchos::ParameterList& hypre_list = pc_list->sublist("Hypre AMG");
+    if (hypre_list.isParameter("Hypre AMG cycle applications")) {
+      ncycles = hypre_list.get<int>("Hypre AMG cycle applications");
     }
+    if (hypre_list.isParameter("Hypre AMG smoother sweeps")) {
+      nsmooth = hypre_list.get<int>("Hypre AMG smoother sweeps");
+    }
+    if (hypre_list.isParameter("Hypre AMG tolerance")) {
+      tol = hypre_list.get<double>("Hypre AMG tolerance");
+    }
+    if (hypre_list.isParameter("Hypre AMG strong threshold")) {
+      strong_threshold = hypre_list.get<double>("Hypre AMG strong threshold");
+    }
+  }
+
+  Teuchos::RCP<Teuchos::ParameterList> solver_list = Teuchos::sublist(ua_list, "Nonlinear Solver", false);
+  if (solver_list->isParameter("Nonlinear Solver Type")) {
+    nonlinear_solver = solver_list->get<std::string>("Nonlinear Solver Type");
+  }
+  if (nonlinear_solver == std::string("Newton")) {
+    dpc_list.set<std::string>("discretization method", "fv: default");
+  } else {
+    dpc_list.set<std::string>("discretization method", "mfd: optimized for sparsity");
   }
 
   Teuchos::ParameterList& amg_list = dpc_list.sublist("boomer amg parameters");

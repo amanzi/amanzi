@@ -908,6 +908,8 @@ void CycleDriver::Go() {
 #endif
   }
   
+  // finalizing simulation
+  S_->WriteStatistics(vo_);
   ReportMemory();
   // Finalize();
 } 
