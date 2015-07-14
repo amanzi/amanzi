@@ -428,8 +428,14 @@ std::string get_amanzi_version(DOMDocument* xmlDoc, Teuchos::ParameterList def_l
     }
     else {
       std::stringstream ver;
-      ver << AMANZI_INPUT_VERSION_MAJOR << "." << AMANZI_INPUT_VERSION_MINOR << "." << AMANZI_INPUT_VERSION_MICRO;      
-      Exceptions::amanzi_throw(Errors::Message("The input version " + version + " specified in the input file is not supported. This version of amanzi supports version "+ ver.str() + "."));
+      ver << AMANZI_INPUT_VERSION_MAJOR << "." << AMANZI_INPUT_VERSION_MINOR << "." << AMANZI_INPUT_VERSION_MICRO;
+      Errors::Message msg;
+      msg << "The input version " << version << " specified in the input file is not supported. This version of amanzi supports version "<< ver.str() << ".\n";
+      if ((major == 2) && (minor == 1) && (micro == 0)) {
+        msg << "  The python script UpdateSpec_210-211.py will update a 2.1.0 input file to 2.1.1.";
+	msg <<"   The script is located in the source tree in tools/input and is installed in $INSTALL/bin";
+      }
+      Exceptions::amanzi_throw(msg);
     }
   }
   else {
