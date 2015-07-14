@@ -639,6 +639,8 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
       uw_rel_perm_f.Export(rel_perm_bf, vandelay, Insert);
     }
+
+    uw_rel_perm->ScatterMasterToGhosted("face");
   }
 
   // debugging
@@ -680,6 +682,7 @@ bool Richards::UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<State>& S) {
 
     //   //duw_rel_perm_f.Export(drel_perm_bf, vandelay, Insert);
     // }
+    duw_rel_perm->ScatterMasterToGhosted("face");
   }
 
   // debugging

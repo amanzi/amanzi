@@ -216,6 +216,7 @@ bool SnowDistribution::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
     // Then upwind.  This overwrites the boundary if upwinding says so.
     upwinding_->Update(S);
+    uw_cond->ScatterMasterToGhosted("face");
   }
 
   return update_perm;

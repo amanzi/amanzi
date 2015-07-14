@@ -396,6 +396,9 @@ bool EnergyBase::UpdateConductivityData_(const Teuchos::Ptr<State>& S) {
   bool update = S->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S, name_);
   if (update) {
     upwinding_->Update(S);
+    if (Krel_method_ != Operators::UPWIND_METHOD_CENTERED)
+      S->GetFieldData(uw_conductivity_key_)->ScatterMasterToGhosted("face");
+    
   }
   return update;
 }
