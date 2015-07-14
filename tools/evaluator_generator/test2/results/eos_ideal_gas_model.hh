@@ -2,20 +2,7 @@
   The ideal gas equation of state model is an algebraic model with dependencies.
 
   Generated via evaluator_generator with:
-    modelInitializeParamsList =   cv_ = plist.get<double>("heat capacity");
-    namespaceCaps = GENERAL
-    evalNameString = ideal gas equation of state
-    myMethodArgs = temp_v[0][i], pres_v[0][i]
-    myMethodDeclarationArgs = double temp, double pres
-    myKey = density
-    myKeyFirst = density
-    namespace = General
-    evalClassName = EosIdealGas
-    paramDeclarationList =   double cv_;
-    modelMethodDeclaration =   double Density(double temp, double pres) const;
-    evalNameCaps = EOS_IDEAL_GAS
-    myKeyMethod = Density
-    evalName = eos_ideal_gas
+
     
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
@@ -44,6 +31,7 @@ class EosIdealGasModel {
  protected:
 
   double cv_;
+  double T0_;
 
 };
 

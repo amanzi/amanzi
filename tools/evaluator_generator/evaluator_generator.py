@@ -1,4 +1,5 @@
 import sys,os
+from sympy.printing import ccode
 
 _template_directory = os.path.dirname(os.path.abspath(__file__))
 _templates = {}
@@ -18,7 +19,8 @@ def render(tname, d):
     return template.format(**d)
     
 class EvalGen(object):
-    def __init__(self, name, namespace, descriptor, my_key=None, **kwargs):
+    def __init__(self, name, namespace, descriptor, my_key=None, expression=None,
+                 doc=None, **kwargs):
         self.d = {}
         self.setName(name, **kwargs)
         self.setNamespace(namespace, **kwargs)
@@ -33,6 +35,11 @@ class EvalGen(object):
         self.pars = []
         self.par_names = []
         self.par_defaults = []
+        self.expression = expression
+        if doc is not None:
+            self.d['docDict'] = doc
+        else:
+            self.d['docDict'] = ""
 
     def setName(self, name, **kwargs):
         self._name = name
@@ -136,15 +143,30 @@ class EvalGen(object):
                                       myMethodDeclarationArgs=self.d['myMethodDeclarationArgs'])) for arg in self.args])
 
     def renderModelMethodImplementation(self):
+        if self.expression is not None:
+            implementation = ccode(self.expression)
+        else:
+            implementation = "ASSERT(False)"
         return render('model_methodImplementation.cc', dict(evalClassName=self.d['evalClassName'],
                                                             myMethod=self.d['myKeyMethod'],
-                                                            myMethodDeclarationArgs=self.d['myMethodDeclarationArgs']))
+                                                            myMethodDeclarationArgs=self.d['myMethodDeclarationArgs'],
+                                                            myMethodImplementation=implementation))
 
     def renderModelDerivImplementations(self):
-        return '\n\n'.join([render('model_methodImplementation.cc',
-                                 dict(evalClassName=self.d['evalClassName'],
-                                      myMethod="D%sD%s"%(self.d['myKeyMethod'],''.join([word[0].upper()+word[1:] for word in arg.split("_")])),
-                                      myMethodDeclarationArgs=self.d['myMethodDeclarationArgs'])) for arg in self.args])
+        impls = []
+
+        for arg,var in zip(self.args,self.vars):
+            if self.expression is not None:
+                print "differentiation of", self.expression, "with respect to", var
+                implementation = ccode(self.expression.diff(var))
+            else:
+                implementation = "ASSERT(False)"
+            impls.append(render('model_methodImplementation.cc',
+                                dict(evalClassName=self.d['evalClassName'],
+                                     myMethod="D%sD%s"%(self.d['myKeyMethod'],''.join([word[0].upper()+word[1:] for word in arg.split("_")])),
+                                     myMethodDeclarationArgs=self.d['myMethodDeclarationArgs'],
+                                     myMethodImplementation=implementation)))
+        return '\n\n'.join(impls)
     
     def renderModelParamDeclarations(self):
         return '\n'.join(['  %s %s;'%p for p in self.pars])
@@ -178,13 +200,6 @@ class EvalGen(object):
         self.d['modelMethodImplementation'] = self.renderModelMethodImplementation()
         self.d['modelDerivImplementationList'] = self.renderModelDerivImplementations()
         self.d['modelInitializeParamsList'] = self.renderModelParamInitializations()
-
-        # doc string includes info used to re-generate
-        docDict = '\n'.join(["    %s = %s"%it for it in self.d.items() if '\n' not in it[1]])
-        self.d['docDict'] = docDict
-
-        # copy constructor keys
-
 
 def generate_evaluator(name, namespace, descriptor, my_key, dependencies, parameters, **kwargs):
     """Generates an evaluator whose class is [name]Evaluator and model is [name]Model.
