@@ -50,7 +50,7 @@ struct RSdata
   virtual Array<int>& rinflowBCHi() = 0;
 
   virtual void SetDensity() = 0;
-  virtual void SetGravity() = 0;
+  virtual void SetGravity();
   virtual void SetViscosity() = 0;
   virtual void SetIsSaturated() = 0;
 
@@ -96,7 +96,7 @@ struct RSdata
   PArray<MFTower> KappaEC, DarcyVelocity, RichardCoefs;
 
   const Array<Real>& GetDensity() const {return density;}
-  const Array<Real>& GetGravity() const {return gravity;}
+  const Array<Real>& GetGravity();
   const Array<Real>& GetViscosity() const {return viscosity;}
   bool IsSaturated() const {return is_saturated;}
   bool IsSteady() const {return is_steady;}

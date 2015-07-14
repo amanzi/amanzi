@@ -1541,7 +1541,7 @@ RichardSolver::CalcResidual(MFTower& residual,
 	  const FArrayBox& ss = GetSpecificStorage()[lev][mfi];
 	  st.resize(vbox,1);
 	  st.copy(ss);
-	  st.mult(gInv);
+	  st.mult(gInv); // Note this is dividing ss by (g/101325), since g was scaled that way on input
 	  FORT_RS_SATURATEDRES(Res.dataPtr(),   ARLIM(Res.loVect()),   ARLIM(Res.hiVect()),
 			       p_n.dataPtr(),   ARLIM(p_n.loVect()),   ARLIM(p_n.hiVect()),
 			       p_np1.dataPtr(), ARLIM(p_np1.loVect()), ARLIM(p_np1.hiVect()),

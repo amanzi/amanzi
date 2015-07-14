@@ -2771,7 +2771,7 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
     richard_solver->SetRecordFile(steady_record_file);
   }
 
-  // Solve for the update using PETSc
+  // Solve for the update using the RichardSolver
   int retCode = richard_solver->Solve(t_flow, t_flow+dt_flow, 1, *richard_solver_control);
   if (retCode > 0) {
     ret = NLSstatus::NLS_SUCCESS;
@@ -7328,7 +7328,7 @@ PorousMedia::derive_Hydraulic_Head(Real      time,
        || (model == PM_STEADY_SATURATED)
        || (model == PM_SATURATED) ) {
     if (gravity==0) {
-      BoxLib::Abort("PorousMedia::derive_Hydraulic_Head: cannot derived hydraulic head since gravity = 0");
+      BoxLib::Abort("PorousMedia::derive_Hydraulic_Head: cannot derive hydraulic head since gravity = 0");
     }
     AmrLevel::derive("pressure",time,mf,dcomp);
     mf.plus(-atmospheric_pressure_atm,dcomp,ncomps,ngrow);
