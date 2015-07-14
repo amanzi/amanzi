@@ -3,23 +3,25 @@
 
   Generated via evaluator_generator with:
     modelInitializeParamsList =   cv_ = plist.get<double>("heat capacity");
-    namespaceCaps = GENERAL
-    evalNameString = ideal gas equation of state
-    myMethodArgs = temp_v[0][i], pres_v[0][i]
-    myMethodDeclarationArgs = double temp, double pres
-    myKey = density
-    myKeyFirst = density
-    namespace = General
-    evalClassName = EosIdealGas
-    paramDeclarationList =   double cv_;
-    modelMethodDeclaration =   double Density(double temp, double pres) const;
-    evalNameCaps = EOS_IDEAL_GAS
-    myKeyMethod = Density
     evalName = eos_ideal_gas
+    modelMethodDeclaration =   double Density(double temp, double pres) const;
+    namespaceCaps = GENERAL
+    namespace = General
+    paramDeclarationList =   double cv_;
+    evalNameCaps = EOS_IDEAL_GAS
+    myMethodArgs = temp_v[0][i], pres_v[0][i]
+    myKeyMethod = Density
+    myKeyFirst = density
+    evalNameString = ideal gas equation of state
+    myMethodDeclarationArgs = double temp, double pres
+    evalClassName = EosIdealGas
+    myKey = density
     
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
+#include "Teuchos_ParameterList.hpp"
+#include "dbc.hh"
 #include "eos_ideal_gas_model.hh"
 
 namespace Amanzi {
@@ -35,7 +37,7 @@ EosIdealGasModel::EosIdealGasModel(Teuchos::ParameterList& plist)
 
 // Initialize parameters
 void
-EosIdealGasModel::InitializeFromPlist_()
+EosIdealGasModel::InitializeFromPlist_(Teuchos::ParameterList& plist)
 {
   cv_ = plist.get<double>("heat capacity");
 }
@@ -43,21 +45,21 @@ EosIdealGasModel::InitializeFromPlist_()
 
 // main method
 double
-EosIdealGasModel::Density(double temp, double pres)
+EosIdealGasModel::Density(double temp, double pres) const
 {
-  ASSERT(0);
+  return ASSERT(False);
 }
 
 double
-EosIdealGasModel::DDensityDTemperature(double temp, double pres)
+EosIdealGasModel::DDensityDTemperature(double temp, double pres) const
 {
-  ASSERT(0);
+  return ASSERT(False);
 }
 
 double
-EosIdealGasModel::DDensityDPressure(double temp, double pres)
+EosIdealGasModel::DDensityDPressure(double temp, double pres) const
 {
-  ASSERT(0);
+  return ASSERT(False);
 }
 
 } //namespace

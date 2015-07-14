@@ -1,23 +1,7 @@
 /*
   The ideal gas equation of state evaluator is an algebraic evaluator of a given model.
-
-  Generated via evaluator_generator with:
-    modelInitializeParamsList =   cv_ = plist.get<double>("heat capacity");
-    namespaceCaps = GENERAL
-    evalNameString = ideal gas equation of state
-    myMethodArgs = temp_v[0][i], pres_v[0][i]
-    myMethodDeclarationArgs = double temp, double pres
-    myKey = density
-    myKeyFirst = density
-    namespace = General
-    evalClassName = EosIdealGas
-    paramDeclarationList =   double cv_;
-    modelMethodDeclaration =   double Density(double temp, double pres) const;
-    evalNameCaps = EOS_IDEAL_GAS
-    myKeyMethod = Density
-    evalName = eos_ideal_gas  
   
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Generated via evaluator_generator.
 */
 
 #include "eos_ideal_gas_evaluator.hh"
@@ -59,25 +43,17 @@ EosIdealGasEvaluator::InitializeFromPlist_()
 {
   // Set up my dependencies
   // - defaults to prefixed via domain
-  std::size_t end = my_key_.find_first_of("_");
-  std::string domain_name = my_key_.substr(0,end);
-
-  std::string my_key_first("density");
-  if (domain_name == my_key_first) {
-    domain_name = std::string("");
-  } else {
-    domain_name = domain_name+std::string("_");
-  }
+  Key domain_name = getDomainPrefix(my_key_);
 
   // - pull Keys from plist
   // dependency: temperature
   temp_key_ = plist_.get<std::string>("temperature key",
-          domain_name+std::string(temperature));
+          domain_name+"temperature");
   dependencies_.insert(temp_key_);
 
   // dependency: pressure
   pres_key_ = plist_.get<std::string>("pressure key",
-          domain_name+std::string(pressure));
+          domain_name+"pressure");
   dependencies_.insert(pres_key_);
 }
 
@@ -86,8 +62,8 @@ void
 EosIdealGasEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 {
-  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
-  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
+Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
+Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
 
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
@@ -107,10 +83,10 @@ void
 EosIdealGasEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
-  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
-  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
+Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
+Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
 
-  if (wrt_key == temperature) {
+  if (wrt_key == temp_key_) {
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp, false);
@@ -123,7 +99,7 @@ EosIdealGasEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>&
       }
     }
 
-  } else if (wrt_key == pressure) {
+  } else if (wrt_key == pres_key_) {
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp, false);

@@ -3,19 +3,19 @@
 
   Generated via evaluator_generator with:
     modelInitializeParamsList =   cv_ = plist.get<double>("heat capacity");
-    namespaceCaps = GENERAL
-    evalNameString = ideal gas equation of state
-    myMethodArgs = temp_v[0][i], pres_v[0][i]
-    myMethodDeclarationArgs = double temp, double pres
-    myKey = density
-    myKeyFirst = density
-    namespace = General
-    evalClassName = EosIdealGas
-    paramDeclarationList =   double cv_;
-    modelMethodDeclaration =   double Density(double temp, double pres) const;
-    evalNameCaps = EOS_IDEAL_GAS
-    myKeyMethod = Density
     evalName = eos_ideal_gas
+    modelMethodDeclaration =   double Density(double temp, double pres) const;
+    namespaceCaps = GENERAL
+    namespace = General
+    paramDeclarationList =   double cv_;
+    evalNameCaps = EOS_IDEAL_GAS
+    myMethodArgs = temp_v[0][i], pres_v[0][i]
+    myKeyMethod = Density
+    myKeyFirst = density
+    evalNameString = ideal gas equation of state
+    myMethodDeclarationArgs = double temp, double pres
+    evalClassName = EosIdealGas
+    myKey = density
     
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
