@@ -23,6 +23,7 @@ This is simply the conserved quantity in the energy equation.
 
 #include "Teuchos_ParameterList.hpp"
 
+#include "factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
@@ -43,6 +44,9 @@ public:
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
+ private:
+  static Utils::RegisteredFactory<FieldEvaluator,ThreePhaseEnergyEvaluator> reg_;
+  
 };
 
 } // namespace

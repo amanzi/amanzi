@@ -23,6 +23,7 @@ This is simply the conserved quantity in the energy equation.
 
 #include "Teuchos_ParameterList.hpp"
 
+#include "factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
@@ -44,6 +45,9 @@ public:
 
  protected:
   double beta_;
+
+ private:
+  static Utils::RegisteredFactory<FieldEvaluator,InterfrostEnergyEvaluator> reg_;
   
 };
 

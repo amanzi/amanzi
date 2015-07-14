@@ -61,7 +61,7 @@ void Richards::Functional(double t_old,
   // update boundary conditions
   bc_pressure_->Compute(t_new);
   bc_flux_->Compute(t_new);
-  UpdateBoundaryConditions_();
+  UpdateBoundaryConditions_(S_next_.ptr());
 
   // zero out residual
   Teuchos::RCP<CompositeVector> res = g->Data();
@@ -78,22 +78,22 @@ void Richards::Functional(double t_old,
 #if DEBUG_FLAG
   // dump s_old, s_new
   vnames[0] = "sl_old"; vnames[1] = "sl_new";
-  vecs[0] = S_inter_->GetFieldData("saturation_liquid").ptr();
-  vecs[1] = S_next_->GetFieldData("saturation_liquid").ptr();
+  vecs[0] = S_inter_->GetFieldData(getKey(domain_,"saturation_liquid")).ptr();
+  vecs[1] = S_next_->GetFieldData(getKey(domain_,"saturation_liquid")).ptr();
 
   if (S_next_->HasField("saturation_ice")) {
     vnames.push_back("si_old");
     vnames.push_back("si_new");
-    vecs.push_back(S_inter_->GetFieldData("saturation_ice").ptr());
-    vecs.push_back(S_next_->GetFieldData("saturation_ice").ptr());
+    vecs.push_back(S_inter_->GetFieldData(getKey(domain_,"saturation_ice")).ptr());
+    vecs.push_back(S_next_->GetFieldData(getKey(domain_,"saturation_ice")).ptr());
   }
 
   vnames.push_back("k_rel");
-  vecs.push_back(S_next_->GetFieldData("relative_permeability").ptr());
+  vecs.push_back(S_next_->GetFieldData(coef_key_).ptr());
   vnames.push_back("wind");
-  vecs.push_back(S_next_->GetFieldData("darcy_flux_direction").ptr());
+  vecs.push_back(S_next_->GetFieldData(flux_dir_key_).ptr());
   vnames.push_back("uw_k_rel");
-  vecs.push_back(S_next_->GetFieldData("numerical_rel_perm").ptr());
+  vecs.push_back(S_next_->GetFieldData(uw_coef_key_).ptr());
   db_->WriteVectors(vnames,vecs,true);
 
   db_->WriteVector("res (diff)", res.ptr(), true);
@@ -142,13 +142,6 @@ int Richards::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
 #if DEBUG_FLAG
   db_->WriteVector("PC*p_res", Pu->Data().ptr(), true);
 #endif
-
-//   if (precon_wc_) {
-//     PreconWC_(u, Pu);
-// #if DEBUG_FLAG
-//     db_->WriteVector("PC_WC*p_res", Pu->Data().ptr(), true);
-// #endif
-//   }
   
   return (ierr > 0) ? 0 : 1;
 };
@@ -180,10 +173,10 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
-  UpdateBoundaryConditions_();
+  UpdateBoundaryConditions_(S_next_.ptr());
 
   Teuchos::RCP<const CompositeVector> rel_perm =
-      S_next_->GetFieldData("numerical_rel_perm");
+      S_next_->GetFieldData(uw_coef_key_);
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     const Epetra_MultiVector& kr = *rel_perm->ViewComponent("face",false);
@@ -223,16 +216,15 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   // Update the preconditioner with darcy and gravity fluxes
   preconditioner_->Init();
 
-  S_next_->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S_next_.ptr(), name_);
-  Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData("mass_density_liquid");
+  S_next_->GetFieldEvaluator(mass_dens_key_)->HasFieldChanged(S_next_.ptr(), name_);
+  Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData(mass_dens_key_);
   preconditioner_diff_->SetDensity(rho);
-  
-  Teuchos::RCP<const CompositeVector> dkrdp = S_next_->GetFieldData("dnumerical_rel_perm_dpressure");
-  preconditioner_diff_->Setup(rel_perm_modified, dkrdp);
-  // Teuchos::RCP<const CompositeVector> flux = S_next_->GetFieldData("darcy_flux");
-  // preconditioner_diff_->UpdateMatrices(flux.ptr(), up->Data().ptr());
+
+  Key dkrdp_key = getDerivKey(uw_coef_key_, key_);
+  Teuchos::RCP<const CompositeVector> dkrdp = S_next_->GetFieldData(dkrdp_key);
+   preconditioner_diff_->Setup(rel_perm_modified, dkrdp);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData("darcy_flux", name_);
+  Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData(flux_key_, name_);
   preconditioner_diff_->UpdateFlux(*up->Data(), *flux);
   preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
   
@@ -251,17 +243,18 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   // Update the preconditioner with accumulation terms.
   // -- update the accumulation derivatives
-  S_next_->GetFieldEvaluator("water_content")
+  S_next_->GetFieldEvaluator(conserved_key_)
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
 
   // -- get the accumulation deriv
+  Key dwc_dp_key = getDerivKey(conserved_key_, key_);
   const Epetra_MultiVector& dwc_dp =
-      *S_next_->GetFieldData("dwater_content_d"+key_)->ViewComponent("cell",false);
+      *S_next_->GetFieldData(dwc_dp_key)->ViewComponent("cell",false);
   const Epetra_MultiVector& pres =
       *S_next_->GetFieldData(key_)->ViewComponent("cell",false);
 
 #if DEBUG_FLAG
-  db_->WriteVector("    dwc_dp", S_next_->GetFieldData("dwater_content_d"+key_).ptr());
+  db_->WriteVector("    dwc_dp", S_next_->GetFieldData(dwc_dp_key).ptr());
 #endif
 
   // -- update the cell-cell block

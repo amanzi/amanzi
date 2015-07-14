@@ -27,16 +27,21 @@ void PKPhysicalBDFBase::setup(const Teuchos::Ptr<State>& S) {
   PKBDFBase::setup(S);
 
   // convergence criteria
-  if (conserved_key_ == std::string()) {
-    conserved_key_ = plist_->get<std::string>("conserved quantity key");//, key_);
+  if (conserved_key_.empty()) {
+    if (plist_->isParameter("conserved quantity suffix")) {
+      Key conserved_default = getKey(domain_, plist_->get<std::string>("conserved quantity suffix"));
+      conserved_key_ = plist_->get<std::string>("conserved quantity key", conserved_default);
+    } else {
+      conserved_key_ = plist_->get<std::string>("conserved quantity key");
+    }
   }
   S->RequireField(conserved_key_)->SetMesh(mesh_)
       ->AddComponent("cell",AmanziMesh::CELL,true);
   S->RequireFieldEvaluator(conserved_key_);
 
-  if (cell_vol_key_ == std::string()) {
+  if (cell_vol_key_.empty()) {
     cell_vol_key_ = plist_->get<std::string>("cell volume key",
-            domain_prefix_+std::string("cell_volume"));
+            getKey(domain_, "cell_volume"));
   }
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
       ->AddComponent("cell",AmanziMesh::CELL,true);
@@ -121,9 +126,9 @@ double PKPhysicalBDFBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       }
 
     } else {
-      Errors::Message msg;
-      msg << "Unused error component \"" << *comp << "\" in conserved quantity error norm.";
-      Exceptions::amanzi_throw(msg);      
+      double norm;
+      dvec_v.Norm2(&norm);
+      ASSERT(norm < 1.e-15);
     }
 
     // Write out Inf norms too.

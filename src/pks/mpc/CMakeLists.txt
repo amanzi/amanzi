@@ -14,9 +14,13 @@ include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/eos)
 include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/ewc)
 include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/generic_evaluators)
 include_directories(${ATS_SOURCE_DIR}/src/pks)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/porosity)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/elevation)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm)
-include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm/models)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/overland_conductivity)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/water_content)
+
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/richards)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/permafrost)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/overland)
@@ -111,7 +115,7 @@ if ( BUILD_TESTS )
                                             pk_bases
                                             energy_relations_thermal_conductivity energy_relations_internal_energy
                                             energy_relations_enthalpy energy_relations_source_terms
-                                            flow_relations_wrm flow_relations_wrm_models flow_relations_porosity
+                                            flow_relations
                                             generic_evaluators relations_eos relations_ewc bc_factory divgrad
                                             amanzi_solvers amanzi_time_integration amanzi_operators
                                             amanzi_state amanzi_whetstone amanzi_mesh amanzi_geometry amanzi_mesh_functions amanzi_mesh_factory
