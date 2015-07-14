@@ -17,20 +17,14 @@ PKPhysicalBase::PKPhysicalBase(const Teuchos::RCP<Teuchos::ParameterList>& plist
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution) :
     PKDefaultBase(plist,FElist,solution) {
-  // process the PList
-  // domain
-  if (domain_ == std::string("")) {
+
+  // domain -- default is the entire mesh, no prefix
+  if (domain_.empty()) {
     domain_ = plist_->get<std::string>("domain name", std::string("domain"));
   }
-  if (key_ == std::string("")) {
+  
+  if (key_.empty()) {
     key_ = plist_->get<std::string>("primary variable");
-  }
-
-  // derive the prefix
-  if (domain_ == std::string("domain")) {
-    domain_prefix_ = std::string("");
-  } else {
-    domain_prefix_ = domain_ + std::string("_");
   }
 
   // set up the primary variable solution, and its evaluator

@@ -47,13 +47,17 @@ void WRMEvaluator::InitializeFromPlist_() {
   // my keys are for saturation
   my_keys_.push_back(plist_.get<std::string>("saturation key", "saturation_liquid"));
 
+  Key domain_name = getDomain(my_keys_[0]);
+
   calc_other_sat_ = plist_.get<bool>("calculate minor saturation", true);
   if (calc_other_sat_) {
-    my_keys_.push_back(plist_.get<std::string>("other saturation key", "saturation_gas"));
+    my_keys_.push_back(plist_.get<std::string>("other saturation key",
+            getKey(domain_name, "saturation_gas")));
   }
 
   // my dependencies are capillary pressure.
-  cap_pres_key_ = plist_.get<std::string>("capillary pressure key", "capillary_pressure_gas_liq");
+  cap_pres_key_ = plist_.get<std::string>("capillary pressure key",
+          getKey(domain_name, "capillary_pressure_gas_liq"));
   dependencies_.insert(cap_pres_key_);
 }
 

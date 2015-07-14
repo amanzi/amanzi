@@ -33,14 +33,14 @@ void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const Tree
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
-  UpdateBoundaryConditions_();
+  UpdateBoundaryConditions_(S_next_.ptr());
 
   // update the rel perm according to the scheme of choice
   UpdatePermeabilityData_(S_next_.ptr());
 
   // Create the preconditioner
   Teuchos::RCP<const CompositeVector> rel_perm =
-      S_next_->GetFieldData("numerical_rel_perm");
+      S_next_->GetFieldData(uw_coef_key_);
   preconditioner_->Init();
   preconditioner_diff_->Setup(rel_perm, Teuchos::null);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -167,7 +167,7 @@ void RichardsSteadyState::Functional(double t_old, double t_new, Teuchos::RCP<Tr
   // update boundary conditions
   bc_pressure_->Compute(t_new);
   bc_flux_->Compute(t_new);
-  UpdateBoundaryConditions_();
+  UpdateBoundaryConditions_(S_next_.ptr());
 
   // zero out residual
   Teuchos::RCP<CompositeVector> res = g->Data();

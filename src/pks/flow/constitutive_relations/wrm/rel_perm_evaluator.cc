@@ -57,15 +57,21 @@ void RelPermEvaluator::InitializeFromPlist_() {
   }
 
   // dependencies
-  sat_key_ = plist_.get<std::string>("saturation key", "saturation_liquid");
+  Key domain_name = getDomain(my_key_);
+  
+  // -- saturation liquid
+  sat_key_ = plist_.get<std::string>("saturation key",
+          getKey(domain_name, "saturation_liquid"));
   dependencies_.insert(sat_key_);
 
   is_dens_visc_ = plist_.get<bool>("use density on viscosity in rel perm", true);
   if (is_dens_visc_) {
-    dens_key_ = plist_.get<std::string>("density key", "molar_density_liquid");
+    dens_key_ = plist_.get<std::string>("density key",
+            getKey(domain_name, "molar_density_liquid"));
     dependencies_.insert(dens_key_);
 
-    visc_key_ = plist_.get<std::string>("viscosity key", "viscosity_liquid");
+    visc_key_ = plist_.get<std::string>("viscosity key",
+            getKey(domain_name, "viscosity_liquid"));
     dependencies_.insert(visc_key_);
   }
 

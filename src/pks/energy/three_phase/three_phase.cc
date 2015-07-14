@@ -25,18 +25,8 @@ void ThreePhase::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- energy, the conserved quantity
   S->RequireField(energy_key_)->SetMesh(mesh_)->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList ee_plist = plist_->sublist("energy evaluator");
-  ee_plist.set("energy key", energy_key_);
-  if (ee_plist.get<bool>("interfrost water content", false)) {
-    Teuchos::RCP<InterfrostEnergyEvaluator> ee =
-        Teuchos::rcp(new InterfrostEnergyEvaluator(ee_plist));
-    S->SetFieldEvaluator(energy_key_, ee);
-  } else {
-    Teuchos::RCP<ThreePhaseEnergyEvaluator> ee =
-        Teuchos::rcp(new ThreePhaseEnergyEvaluator(ee_plist));
-    S->SetFieldEvaluator(energy_key_, ee);
-  }    
-
+  S->RequireFieldEvaluator(energy_key_);
+  
   // -- advection of enthalpy
   S->RequireField(enthalpy_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);

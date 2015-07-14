@@ -51,14 +51,12 @@ class PKPhysicalBase : public virtual PKDefaultBase {
   Teuchos::RCP<Debugger> debugger() { return db_; }
 
  protected: // methods
-  std::string Key_(std::string suffix) { return domain_prefix_+suffix; }
   void DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<CompositeVector>& cv);
 
  protected: // data
   // name of domain, associated mesh
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   std::string domain_;
-  std::string domain_prefix_;
 
   // solution and evaluator
   std::string key_;

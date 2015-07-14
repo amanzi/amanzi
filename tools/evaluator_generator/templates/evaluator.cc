@@ -1,10 +1,7 @@
 /*
   The {evalNameString} evaluator is an algebraic evaluator of a given model.
-
-  Generated via evaluator_generator with:
 {docDict}  
-  
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Generated via evaluator_generator.
 */
 
 #include "{evalName}_evaluator.hh"
@@ -45,15 +42,7 @@ void
 {{
   // Set up my dependencies
   // - defaults to prefixed via domain
-  std::size_t end = my_key_.find_first_of("_");
-  std::string domain_name = my_key_.substr(0,end);
-
-  std::string my_key_first("{myKeyFirst}");
-  if (domain_name == my_key_first) {{
-    domain_name = std::string("");
-  }} else {{
-    domain_name = domain_name+std::string("_");
-  }}
+  Key domain_name = getDomainPrefix(my_key_);
 
   // - pull Keys from plist
 {keyInitializeList}

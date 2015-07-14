@@ -70,47 +70,47 @@ void EnergyBase::setup(const Teuchos::Ptr<State>& S) {
 
 void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   // Set up keys if they were not already set.
-  if (energy_key_ == std::string()) {
+  if (energy_key_.empty()) {
     energy_key_ = plist_->get<std::string>("energy key",
-            domain_prefix_+std::string("energy"));
+            getKey(domain_, "energy"));
   }
-  if (enthalpy_key_ == std::string()) {
+  if (enthalpy_key_.empty()) {
     enthalpy_key_ = plist_->get<std::string>("enthalpy key",
-            domain_prefix_+std::string("enthalpy"));
+            getKey(domain_, "enthalpy"));
   }
-  if (denthalpy_key_ == std::string()) {
+  if (denthalpy_key_.empty()) {
     denthalpy_key_ = plist_->get<std::string>("enthalpy derivative key",
             std::string("d")+enthalpy_key_+std::string("_d")+key_);
   }
-  if (flux_key_ == std::string()) {
+  if (flux_key_.empty()) {
     flux_key_ = plist_->get<std::string>("flux key",
-            domain_prefix_+std::string("flux"));
+            getKey(domain_, "flux"));
   }
-  if (energy_flux_key_ == std::string()) {
+  if (energy_flux_key_.empty()) {
     energy_flux_key_ = plist_->get<std::string>("energy flux key",
-            domain_prefix_+std::string("energy_flux"));
+            getKey(domain_, "energy_flux"));
   }
-  if (adv_energy_flux_key_ == std::string()) {
+  if (adv_energy_flux_key_.empty()) {
     adv_energy_flux_key_ = plist_->get<std::string>("advected energy flux key",
-            domain_prefix_+std::string("advected_energy_flux"));
+            getKey(domain_, "advected_energy_flux"));
   }
-  if (conductivity_key_ == std::string()) {
+  if (conductivity_key_.empty()) {
     conductivity_key_ = plist_->get<std::string>("conductivity key",
-            domain_prefix_+std::string("thermal_conductivity"));
+            getKey(domain_, "thermal_conductivity"));
   }
-  if (uw_conductivity_key_ == std::string()) {
+  if (uw_conductivity_key_.empty()) {
     uw_conductivity_key_ = plist_->get<std::string>("upwind conductivity key",
-            domain_prefix_+std::string("numerical_thermal_conductivity"));
+            getKey(domain_, "numerical_thermal_conductivity"));
   }
-  if (de_dT_key_ == std::string()) {
+  if (de_dT_key_.empty()) {
     de_dT_key_ = plist_->get<std::string>("de/dT key",
             std::string("d")+energy_key_+std::string("_d")+key_);
   }
-  if (source_key_ == std::string()) {
+  if (source_key_.empty()) {
     source_key_ = plist_->get<std::string>("source key",
-            domain_prefix_+std::string("total_energy_source"));
+            getKey(domain_, "total_energy_source"));
   }
-  if (dsource_dT_key_ == std::string()) {
+  if (dsource_dT_key_.empty()) {
     dsource_dT_key_ = std::string("d")+source_key_+std::string("_d")+key_;
   }
 
