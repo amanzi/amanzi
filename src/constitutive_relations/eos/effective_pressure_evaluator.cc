@@ -19,17 +19,11 @@ EffectivePressureEvaluator::EffectivePressureEvaluator(Teuchos::ParameterList& p
     my_key_ = ep_plist_.get<std::string>("effective pressure key", "effective_pressure");
   }
 
-  std::size_t end = my_key_.find_first_of("_");
-  std::string domain_name = my_key_.substr(0,end);
-  if (domain_name == std::string("effective")) {
-    domain_name = std::string("");
-  } else {
-    domain_name = domain_name+std::string("_");
-  }
+  Key domain_name = getDomain(my_key_);
 
   // -- pressure
   pres_key_ = plist_.get<std::string>("pressure key",
-          domain_name+std::string("pressure"));
+          getKey(domain_name, "pressure"));
   dependencies_.insert(pres_key_);
 
   // -- logging

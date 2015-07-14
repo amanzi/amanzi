@@ -78,7 +78,7 @@ protected:
   virtual void SetupRichardsFlow_(const Teuchos::Ptr<State>& S);
 
   // boundary condition members
-  virtual void UpdateBoundaryConditions_(bool kr=true);
+  virtual void UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr=true);
   virtual void ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& pres);
 
   // -- builds tensor K, along with faced-based Krel if needed by the rel-perm method
@@ -207,6 +207,17 @@ protected:
 
   // scale for perm
   double perm_scale_;
+
+  // keys
+  Key mass_dens_key_;
+  Key molar_dens_key_;
+  Key perm_key_;
+  Key coef_key_;
+  Key uw_coef_key_;
+  Key flux_key_;
+  Key flux_dir_key_;
+  Key velocity_key_;
+  Key source_key_;
 
  private:
   // factory registration

@@ -27,12 +27,12 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   // update the matrix
   matrix_->Init();
 
-  S_next_->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S_next_.ptr(), name_);
-  Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
+  S_next_->GetFieldEvaluator(mass_dens_key_)->HasFieldChanged(S_next_.ptr(), name_);
+  Teuchos::RCP<const CompositeVector> rho = S->GetFieldData(mass_dens_key_);
   matrix_diff_->SetDensity(rho);
 
   Teuchos::RCP<const CompositeVector> rel_perm =
-    S->GetFieldData("numerical_rel_perm");
+    S->GetFieldData(uw_coef_key_);
   matrix_diff_->Setup(rel_perm, Teuchos::null);
 
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -43,7 +43,7 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   //  if (update_flux_ == UPDATE_FLUX_ITERATION) {
     // update the flux
     Teuchos::RCP<CompositeVector> flux =
-        S->GetFieldData("darcy_flux", name_);
+        S->GetFieldData(flux_key_, name_);
     matrix_diff_->UpdateFlux(*pres, *flux);
     //  }
 
@@ -61,12 +61,12 @@ void Richards::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   double dt = S_next_->time() - S_inter_->time();
 
   // update the water content at both the old and new times.
-  S_next_->GetFieldEvaluator("water_content")->HasFieldChanged(S_next_.ptr(), name_);
-  S_inter_->GetFieldEvaluator("water_content")->HasFieldChanged(S_inter_.ptr(), name_);
+  S_next_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_next_.ptr(), name_);
+  S_inter_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_inter_.ptr(), name_);
 
   // get these fields
-  Teuchos::RCP<const CompositeVector> wc1 = S_next_->GetFieldData("water_content");
-  Teuchos::RCP<const CompositeVector> wc0 = S_inter_->GetFieldData("water_content");
+  Teuchos::RCP<const CompositeVector> wc1 = S_next_->GetFieldData(conserved_key_);
+  Teuchos::RCP<const CompositeVector> wc0 = S_inter_->GetFieldData(conserved_key_);
 
   // Water content only has cells, while the residual has cells and faces.
   g->ViewComponent("cell",false)->Update(1.0/dt, *wc1->ViewComponent("cell",false),
@@ -88,9 +88,9 @@ void Richards::AddSources_(const Teuchos::Ptr<State>& S,
     Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
 
     // Update the source term
-    S->GetFieldEvaluator("mass_source")->HasFieldChanged(S, name_);
+    S->GetFieldEvaluator(source_key_)->HasFieldChanged(S, name_);
     const Epetra_MultiVector& source1 =
-        *S->GetFieldData("mass_source")->ViewComponent("cell",false);
+        *S->GetFieldData(source_key_)->ViewComponent("cell",false);
 
     const Epetra_MultiVector& cv =
         *S->GetFieldData("cell_volume")->ViewComponent("cell",false);
@@ -103,7 +103,7 @@ void Richards::AddSources_(const Teuchos::Ptr<State>& S,
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
       *vo_->os() << "Adding external source term" << std::endl;
-      db_->WriteVector("  Q_ext", S->GetFieldData("mass_source").ptr(), false);
+      db_->WriteVector("  Q_ext", S->GetFieldData(source_key_).ptr(), false);
     }  
     db_->WriteVector("res (src)", g, false);
   }
@@ -113,12 +113,13 @@ void Richards::AddSources_(const Teuchos::Ptr<State>& S,
 void Richards::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
   // external sources of energy (temperature dependent source)
   if (is_source_term_ && !explicit_source_ && source_term_is_differentiable_ &&
-      S->GetFieldEvaluator("mass_source")->IsDependency(S, key_)) {
+      S->GetFieldEvaluator(source_key_)->IsDependency(S, key_)) {
     std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
 
-    S->GetFieldEvaluator("mass_source")->HasFieldDerivativeChanged(S, name_, key_);
+    S->GetFieldEvaluator(source_key_)->HasFieldDerivativeChanged(S, name_, key_);
+    Key dsource_dp_key = getDerivKey(source_key_, key_);
     const Epetra_MultiVector& dsource_dp =
-        *S->GetFieldData("dmass_source_dpressure")->ViewComponent("cell",false);
+        *S->GetFieldData(dsource_dp_key)->ViewComponent("cell",false);
     unsigned int ncells = dsource_dp.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
       Acc_cells[c] -= dsource_dp[0][c];
@@ -132,8 +133,8 @@ void Richards::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
 // -------------------------------------------------------------
 void Richards::SetAbsolutePermeabilityTensor_(const Teuchos::Ptr<State>& S) {
   // currently assumes isotropic perm, should be updated
-  S->GetFieldEvaluator("permeability")->HasFieldChanged(S.ptr(), name_);
-  const Epetra_MultiVector& perm = *S->GetFieldData("permeability")
+  S->GetFieldEvaluator(perm_key_)->HasFieldChanged(S.ptr(), name_);
+  const Epetra_MultiVector& perm = *S->GetFieldData(perm_key_)
       ->ViewComponent("cell",false);
   unsigned int ncells = perm.MyLength();
   unsigned int ndofs = perm.NumVectors();

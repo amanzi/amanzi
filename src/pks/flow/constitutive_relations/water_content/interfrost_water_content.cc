@@ -17,6 +17,7 @@ it needs a special evaluator.
 
 namespace Amanzi {
 namespace Flow {
+namespace Relations {
 
 InterfrostWaterContent::InterfrostWaterContent(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
@@ -118,5 +119,6 @@ void InterfrostWaterContent::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<
 };
 
 
+} //namespace
 } //namespace
 } //namespace

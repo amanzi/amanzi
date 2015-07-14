@@ -23,10 +23,7 @@
 #include "constitutive_relations_surface_subsurface_fluxes_registration.hh"
 #include "constitutive_relations_generic_evaluators_registration.hh"
 
-#include "flow_constitutive_relations_overland_conductivity_registration.hh"
-#include "flow_constitutive_relations_porosity_registration.hh"
-#include "flow_constitutive_relations_wrm_models_registration.hh"
-#include "flow_constitutive_relations_wrm_registration.hh"
+#include "flow_relations_registration.hh"
 #include "flow_icy_overland_registration.hh"
 #include "flow_overland_head_registration.hh"
 // #include "flow_overland_registration.hh"

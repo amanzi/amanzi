@@ -41,24 +41,16 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& plist) :
   }
 
   // Set up my dependencies.
-  std::size_t end = key.find_first_of("_");
-  std::string domain_name = key.substr(0,end);
-  if (domain_name == std::string("density") ||
-      domain_name == std::string("molar") ||
-      domain_name == std::string("mass")) {
-    domain_name = std::string("");
-  } else {
-    domain_name = domain_name+std::string("_");
-  }
+  Key domain_name = getDomain(key);
 
   // -- temperature
   temp_key_ = plist_.get<std::string>("temperature key",
-          domain_name+std::string("temperature"));
+          getKey(domain_name, "temperature"));
   dependencies_.insert(temp_key_);
 
   // -- pressure
   pres_key_ = plist_.get<std::string>("pressure key",
-          domain_name+std::string("effective_pressure"));
+          getKey(domain_name, "effective_pressure"));
   dependencies_.insert(pres_key_);
 
   // -- logging

@@ -20,6 +20,7 @@ This is simply the conserved quantity in permafrost-Richards equation.
 
 namespace Amanzi {
 namespace Flow {
+namespace Relations {
 
 PermafrostWaterContent::PermafrostWaterContent(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
@@ -135,5 +136,6 @@ void PermafrostWaterContent::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<
 };
 
 
+} //namespace
 } //namespace
 } //namespace
