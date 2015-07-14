@@ -140,7 +140,6 @@
     <ParameterList name="Initial Condition">
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
       <ParameterList name="IC: Linear Pressure">
-        <Parameter name="Phase"           type="string"        value="Aqueous"/>
         <Parameter name="Reference Value" type="double"        value="0"/>
         <Parameter name="Reference Point" type="Array(double)" value="{100, 4}"/>
         <Parameter name="Gradient Value"  type="Array(double)" value="{-97.893474, -9789.3474}"/>
@@ -154,14 +153,14 @@
   <ParameterList name="Boundary Conditions">
     <ParameterList name="LHead">
       <Parameter name="Assigned Regions" type="Array(string)" value="{XLOBC}"/>
-      <ParameterList name="BC: Uniform Pressure Head">
+      <ParameterList name="BC: Uniform Hydraulic Head">
         <Parameter name="Values" type="Array(double)" value="{20}"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="RHead">
       <Parameter name="Assigned Regions" type="Array(string)" value="{XHIBC}"/>
-      <ParameterList name="BC: Uniform Pressure Head">
+      <ParameterList name="BC: Uniform Hydraulic Head">
         <Parameter name="Values" type="Array(double)" value="{19}"/>
       </ParameterList>
     </ParameterList>
@@ -190,43 +189,43 @@
         <Parameter name="Region" type="string" value="LeftBoundary"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Cycle Macro" type="string" value="Every step"/>
+	<Parameter name="Cycle Macros" type="Array(string)" value="{Every step}"/>
       </ParameterList>
       <ParameterList name="Pressure 2">
         <Parameter name="Region" type="string" value="RightBoundary"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Cycle Macro" type="string" value="Every step"/>
+	<Parameter name="Cycle Macros" type="Array(string)" value="{Every step}"/>
       </ParameterList>
       <ParameterList name="Pressure 3">
         <Parameter name="Region" type="string" value="Midpoint"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Cycle Macro" type="string" value="Every step"/>
+	<Parameter name="Cycle Macros" type="Array(string)" value="{Every step}"/>
       </ParameterList>
       <ParameterList name="Pressure 4">
         <Parameter name="Region" type="string" value="LeftmostCell"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Cycle Macro" type="string" value="Every step"/>
+	<Parameter name="Cycle Macros" type="Array(string)" value="{Every step}"/>
       </ParameterList>
       <ParameterList name="Pressure 5">
         <Parameter name="Region" type="string" value="RightmostCell"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Cycle Macro" type="string" value="Every step"/>
+	<Parameter name="Cycle Macros" type="Array(string)" value="{Every step}"/>
       </ParameterList>
       <ParameterList name="Pressure 6">
         <Parameter name="Region" type="string" value="LeftMidpointCell"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Cycle Macro" type="string" value="Every step"/>
+	<Parameter name="Cycle Macros" type="Array(string)" value="{Every step}"/>
       </ParameterList>
       <ParameterList name="Pressure 7">
         <Parameter name="Region" type="string" value="RightMidpointCell"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Cycle Macro" type="string" value="Every step"/>
+	<Parameter name="Cycle Macros" type="Array(string)" value="{Every step}"/>
       </ParameterList>
     </ParameterList>
 

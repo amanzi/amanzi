@@ -159,19 +159,19 @@
 	<Parameter name="Region" type="string" value="Obs_r10"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Hydraulic Head"/>
-	<Parameter name="Time Macro" type="string" value="Observation Times"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Pressure 02">
 	<Parameter name="Region" type="string" value="Obs_r30"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Hydraulic Head"/>
-	<Parameter name="Time Macro" type="string" value="Observation Times"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Pressure 03">
 	<Parameter name="Region" type="string" value="Obs_r50"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Hydraulic Head"/>
-	<Parameter name="Time Macro" type="string" value="Observation Times"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

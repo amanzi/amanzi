@@ -156,7 +156,6 @@
     <ParameterList name="Initial Condition">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Aquifer}"/>
       <ParameterList name="IC: Uniform Pressure">
-        <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Value" type="double" value="101325.0"/>
       </ParameterList>
     </ParameterList>
@@ -196,134 +195,134 @@
         <Parameter name="Region" type="string" value="Point0"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Output2">
         <Parameter name="Region" type="string" value="Point10"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Output3">
         <Parameter name="Region" type="string" value="Point20"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Output4">
         <Parameter name="Region" type="string" value="Point30"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Output5">
         <Parameter name="Region" type="string" value="Point40"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Output6">
         <Parameter name="Region" type="string" value="Point50"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Output7">
         <Parameter name="Region" type="string" value="Point60"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Output8">
         <Parameter name="Region" type="string" value="Point70"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Output9">
         <Parameter name="Region" type="string" value="Point80"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Output10">
         <Parameter name="Region" type="string" value="Point90"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Output11">
         <Parameter name="Region" type="string" value="Point100"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
 
       <ParameterList name="Output1P">
         <Parameter name="Region" type="string" value="Point0"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Output2P">
         <Parameter name="Region" type="string" value="Point10"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Output3P">
         <Parameter name="Region" type="string" value="Point20"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Output4P">
         <Parameter name="Region" type="string" value="Point30"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Output5P">
         <Parameter name="Region" type="string" value="Point40"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Output6P">
         <Parameter name="Region" type="string" value="Point50"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Output7P">
         <Parameter name="Region" type="string" value="Point60"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Output8P">
         <Parameter name="Region" type="string" value="Point70"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Output9P">
         <Parameter name="Region" type="string" value="Point80"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Output10P">
         <Parameter name="Region" type="string" value="Point90"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
       <ParameterList name="Output11P">
         <Parameter name="Region" type="string" value="Point100"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macro" type="string" value="Steady State"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
       </ParameterList>
     </ParameterList>
 
