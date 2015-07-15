@@ -78,7 +78,25 @@ def v210_update(tree):
     # continue to updating format
 
     # check for hydrostatic BCs and add submodel option -> didn't exist before, can't update
-    # check for dispersion_tensor and update -> didn't exist before, can't translate
+    # check for dispersion_tensor and update 
+    mats = root.find('./materials')
+    for child in mats:
+	disp = child.find('mechanical_properties/dispersion_tensor')
+	if (disp is not None):
+	    type = disp.get("type")
+	    if (type is None):
+		print >> sys.stdout, "    Adding attribute 'type' for dispersion_tensor, material ",child.get("name")
+		type = "uniform_isotropic"
+	        alpha = disp.get("alpha_lh")
+	        if (alpha is not None):
+		    type = "burnett_frind"
+	        alpha = disp.get("alpha_th")
+	        if (alpha is not None):
+		    type = "burnett_frind"
+	        alpha = disp.get("alpha_lh")
+	        if (alpha is not None):
+		    type = "lichtner_kelkar_robinson"
+		disp.set("type",type)
 
     ### Process Kernel numerical conrtols
 
@@ -89,7 +107,7 @@ def v210_update(tree):
     # check subelements for unstr_/str_ 
     if (type == "unstructured"):
         numctrls = root.find('./numerical_controls')
-        unstr = root.find('./numerical_controls/unstructured_controls')
+        unstr = root.find('numerical_controls/unstructured_controls')
         if (unstr is None):
             # add unstructured_controls elements
 	    print >> sys.stdout, "    Grouping unstructured numerical controls under 'unstructured_controls' element tag"
@@ -332,13 +350,14 @@ def v210_update(tree):
     bdf1 =  root.find('./numerical_controls/unstructured_controls/unstr_transient_controls/bdf1_integration_method')
     moved_list = []
     if (bdf1 is not None):
-	print >> sys.stdout, "    Updating 'bdf1_integration_method' options from attributes to elements"
         for attr in bdf1.attrib:
             name = attr
             value = bdf1.get(attr)
             new_elem = ET.SubElement(bdf1,name)
             new_elem.text = value
             moved_list.append(name)
+	if (len(moved_list) > 0):
+	    print >> sys.stdout, "    Updating 'bdf1_integration_method' options from attributes to elements"
         for name in moved_list:
             del bdf1.attrib[name]
 
