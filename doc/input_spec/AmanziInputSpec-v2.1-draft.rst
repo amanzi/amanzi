@@ -729,6 +729,15 @@ A point region region is defined by a point coordinates.
 
   <point name="point name" coordinate = "x,y,z" />
 
+Plane
+-----
+
+A plane region is defined by a point on the plane and the normal direction of the plane
+
+.. code-block:: xml
+
+  <plane name="plane name" location="x,y,z" normal="dx,dy,dz" /> 
+
 Region
 ------
 
