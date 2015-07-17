@@ -60,6 +60,7 @@
           </unstr_initialization>
         </unstr_steady-state_controls>
         <unstr_linear_solver>
+          <method>pcg</method>
           <max_iterations>1000</max_iterations>
           <tolerance>1.0e-18</tolerance>
         </unstr_linear_solver>

@@ -37,6 +37,11 @@
     </execution_controls>
     <numerical_controls>
       <unstructured_controls>
+        <unstr_steady-state_controls>
+          <unstr_initialization>
+            <method>darcy_solver</method>
+          </unstr_initialization>
+        </unstr_steady-state_controls>
         <unstr_linear_solver>
           <max_iterations>100</max_iterations>
           <tolerance>1.0e-18</tolerance>

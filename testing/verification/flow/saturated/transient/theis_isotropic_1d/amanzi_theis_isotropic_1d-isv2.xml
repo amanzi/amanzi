@@ -48,6 +48,7 @@
         <unstr_linear_solver>
           <max_iterations>1000</max_iterations>
           <tolerance>1.0e-16</tolerance>
+          <method>pcg</method>
         </unstr_linear_solver>
         <unstr_transport_controls>
           <algorithm>none</algorithm>
