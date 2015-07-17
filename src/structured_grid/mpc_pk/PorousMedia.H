@@ -1078,6 +1078,7 @@ protected:
   static Real        atmospheric_pressure_atm;
   static std::map<std::string,bool> use_gauge_pressure; // On bc_tag string
   static Real        z_location;
+  static Real        domain_thickness;
   //
   // Chemistry/solute/tracer parameters 
   //

@@ -172,6 +172,7 @@ Real PorousMedia::dt_cutoff;
 Real PorousMedia::gravity;
 int  PorousMedia::gravity_dir;
 Real PorousMedia::z_location;
+Real PorousMedia::domain_thickness;
 int  PorousMedia::initial_step;
 int  PorousMedia::initial_iter;
 int  PorousMedia::sum_interval;
@@ -557,6 +558,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::gravity      = 9.807 / BL_ONEATM;
   PorousMedia::gravity_dir  = BL_SPACEDIM-1;
   PorousMedia::z_location   = 0;
+  PorousMedia::domain_thickness = 1.0; // Not used in 3D
   PorousMedia::initial_step = false;
   PorousMedia::initial_iter = false;
   PorousMedia::sum_interval = 1;
@@ -1110,6 +1112,12 @@ void PorousMedia::read_prob()
   BL_ASSERT(gravity_dir>=0 && gravity_dir<3); // Note: can set this to 2 for a 2D problem
   if (BL_SPACEDIM<3 && gravity_dir>BL_SPACEDIM-1) {
     pb.query("z_location",z_location);
+  }
+  if (BL_SPACEDIM<3) {
+    pb.query("domain_thickness",domain_thickness);
+    if (domain_thickness <= 0) {
+      BoxLib::Abort("domain_thickness, if specified, must be > 0");
+    }
   }
   if (pb.countval("atmospheric_pressure_atm")) {
     pp.get("atmospheric_pressure_atm",atmospheric_pressure_atm);

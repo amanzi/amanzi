@@ -31,6 +31,7 @@
 	  <!-- NOTE: This allows g vector out of plane, and specifies calc plane location for computing head -->
           <Parameter name="gravity_dir" type="int" value="2"/> 
           <Parameter name="z_location" type="double" value="2.5"/> 
+          <Parameter name="domain_thickness" type="double" value="10"/> 
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -132,7 +133,7 @@
     <ParameterList name="Pumping Well">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Well}"/>
       <ParameterList name="Source: Volume Weighted">
-        <Parameter name="Values" type="Array(double)" value="{-.0248}"/>
+        <Parameter name="Values" type="Array(double)" value="{-4.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

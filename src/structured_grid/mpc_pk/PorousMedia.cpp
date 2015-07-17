@@ -6177,11 +6177,13 @@ PorousMedia::getForce (MultiFab& force,
       ParallelDescriptor::ReduceRealSum(num_cells);
 
       total_volume_this_level = num_cells * cellVol;
+      if (BL_SPACEDIM < 3) {
+	total_volume_this_level *= domain_thickness;
+      }
 
-      // Scale all values set by this source function so they sum to 
-      // user specified value
+      // Scale all values set by this source function
       if (stype == "volume_weighted" || stype == "point") {
-        mask.mult(cellVol/total_volume_this_level,0,1,0);
+        mask.mult(1./total_volume_this_level,0,1,0);
       }
       else {
 	if (stype != "uniform") {
