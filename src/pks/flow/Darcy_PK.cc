@@ -366,7 +366,8 @@ void Darcy_PK::Initialize()
     *vo_->os() << "TI:\"" << ti_method_name.c_str() << "\""
                << " dt:" << dt_method_name << " Src:" << src_sink_distribution
                << " LS:\"" << solver_name_.c_str() << "\""
-               << " PC:\"" << preconditioner_name_.c_str() << "\"" << std::endl;
+               << " PC:\"" << preconditioner_name_.c_str() << "\"" << std::endl
+               << "matrix: " << op_->PrintDiagnostics() << std::endl;
     *vo_->os() << "constant viscosity model, mu=" << mu << std::endl;
 
     if (init_darcy) {
