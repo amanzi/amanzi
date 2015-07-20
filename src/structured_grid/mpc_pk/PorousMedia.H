@@ -872,6 +872,8 @@ protected:
   static void InitializeStaticVariables();
 
   void setup_bound_desc();
+  void ComputeSourceVolume ();
+  MultiFab& SourceCellVolume() {return source_cell_volume;}
 
   static RichardSolver* richard_solver;
   static NLScontrol* richard_solver_control;
@@ -895,7 +897,8 @@ protected:
   static PArray<RegionData> bc_array;
   static PArray<RegionData> source_array;
   static Array<Real> muval;
-  static Array<std::string> user_derive_list;;
+  static Array<std::string> user_derive_list;
+  static Array<Real> source_volume;
   
   // Tracers
   static Array<std::string> qNames;
@@ -1010,6 +1013,7 @@ protected:
   //
   MultiFab volume;
   MultiFab area[BL_SPACEDIM];
+  MultiFab source_cell_volume;
   //
   // Scalar sync update storage
   //

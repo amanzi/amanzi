@@ -147,6 +147,7 @@ PorousMedia::CleanupStatics ()
     delete Amanzi::AmanziChemistry::chem_out;
 #endif
     physics_events_registered = false;
+    source_volume.resize(0);
 }
 
 void
@@ -1636,11 +1637,13 @@ PorousMedia::init (AmrLevel& old)
   //Get best state data: from old. 
   int nGrow = 0;
   get_fillpatched_rhosat(cur_time,S_new,nGrow);
-  for (PMFillPatchIterator fpi(old,S_new,nGrow,cur_time,State_Type,ncomps,ntracers);
-       fpi.isValid();
-       ++fpi) 
-  {
-    S_new[fpi.index()].copy(fpi(),0,ncomps,ntracers);
+  if (ntracers>0) {
+    for (PMFillPatchIterator fpi(old,S_new,nGrow,cur_time,State_Type,ncomps,ntracers);
+	 fpi.isValid();
+	 ++fpi) 
+    {
+      S_new[fpi.index()].copy(fpi(),0,ncomps,ntracers);
+    }
   }
   for (PMFillPatchIterator fpi(old,P_new,0,cur_time,Press_Type,0,1);
        fpi.isValid();
@@ -5152,6 +5155,9 @@ PorousMedia::post_regrid (int lbase,
     richard_solver = new RichardSolver(*richard_solver_data,*richard_solver_control);
 
   }
+
+  // invalidate source volumes
+  source_volume.clear();
 }
 
 void 
@@ -6130,6 +6136,107 @@ PorousMedia::pullFluxes (int        i,
 }
 
 void
+PorousMedia::ComputeSourceVolume ()
+{
+  // Note: Currently source terms are defined on volumes that do not vary over time
+  //       but the volumes must be computed across AMR levels, and must be recomputed 
+  //       after regrids. 
+  // TODO: Optimize to recompute only on regridded levels
+  source_volume.clear();
+  source_volume.resize(source_array.size(), 0);
+
+  if (do_source_term) {
+
+    int  finest_level = parent->finestLevel();
+    for (int lev=finest_level; lev>=0;lev--) {
+      PorousMedia* pm = dynamic_cast<PorousMedia*>(&(getLevel(lev)));
+      BL_ASSERT(pm != 0);
+
+      const BoxArray& ba = pm->boxArray();
+      const Geometry& g = pm->Geom();
+      const Real* dx = pm->Geom().CellSize();
+
+      MultiFab mask(ba,source_array.size(),0); mask.setVal(0);
+      for (int i=0; i<source_array.size(); ++i) {
+	for (MFIter mfi(mask); mfi.isValid(); ++mfi) {
+	  FArrayBox& m = mask[mfi];
+	  const Array<const Region*>& regions = source_array[i].Regions();
+	  for (int j=0; j<regions.size(); ++j) {
+	    regions[j]->setVal(m,1,i,dx,0);
+	  }
+	}
+
+	if (lev < finest_level) {
+	  BoxArray bafc = parent->boxArray(lev+1);
+	  bafc.coarsen(fine_ratio);
+	  for (MFIter mfi(mask); mfi.isValid(); ++mfi) {
+	    const Box& box = mfi.validbox();
+	    std::vector< std::pair<int,Box> > isects = bafc.intersections(box);
+	    for (int ii = 0, N = isects.size(); ii < N; ii++) {
+	      mask[mfi].setVal(0,isects[ii].second,i,1);
+	    }
+	  }
+	}
+
+	MultiFab::Multiply(mask,pm->volume,0,i,1,0);
+	if (BL_SPACEDIM < 3 && domain_thickness != 1.0) {
+	  mask.mult(domain_thickness,i,1,0);
+	}
+
+	Real volume_this_level = 0;
+	for (MFIter mfi(mask); mfi.isValid(); ++mfi) {
+	  volume_this_level += mask[mfi].sum(mfi.validbox(),i,1);
+	}
+	ParallelDescriptor::ReduceRealSum(volume_this_level);
+
+	source_volume[i] += volume_this_level;
+      }
+
+      MultiFab& cell_volume = pm->SourceCellVolume();
+      if (!cell_volume.ok() || cell_volume.boxArray() != ba) {
+	cell_volume.clear();
+	cell_volume.define(ba,source_array.size(),0,Fab_allocate);
+      }
+      BL_ASSERT(cell_volume.nComp() == source_array.size());
+      MultiFab::Copy(cell_volume,mask,0,0,cell_volume.nComp(),0); // Zero on covered cells
+
+      if (lev < finest_level) {
+	PorousMedia* pmf = dynamic_cast<PorousMedia*>(&(getLevel(lev+1)));
+	BL_ASSERT(pmf != 0);
+
+	const BoxArray& baf = pmf->boxArray();
+	MultiFab& cell_volume_fine = pmf->SourceCellVolume();
+
+	// Send 1 to volume-weighted avgDown function
+	//  in order to get sums of fine cells into crse
+	MultiFab mcrse(ba,1,0);  mcrse.setVal(1);
+	MultiFab mfine(baf,1,0); mfine.setVal(1);
+	
+	avgDown(ba,baf,cell_volume,cell_volume_fine,mcrse,mfine,
+		lev,lev+1,0,cell_volume.nComp(),pm->fine_ratio);
+
+      }
+    }
+
+
+    for (int lev=finest_level; lev>=0;lev--) {
+      PorousMedia* pm = dynamic_cast<PorousMedia*>(&(getLevel(lev)));
+      BL_ASSERT(pm != 0);
+
+      // Get fraction of cells within source regions
+      MultiFab& cell_volume = pm->SourceCellVolume();
+      for (int i=0; i<source_array.size(); ++i) {
+	MultiFab::Divide(cell_volume,pm->volume,0,i,1,0);
+	if (BL_SPACEDIM < 3 && domain_thickness != 1.0) {
+	  cell_volume.mult(1.0/domain_thickness,i,1,0);
+	}
+      }
+    }
+
+  }
+}
+
+void
 PorousMedia::getForce (MultiFab& force,
 		       int       nGrow,
 		       int       strt_comp,
@@ -6145,106 +6252,90 @@ PorousMedia::getForce (MultiFab& force,
 
   force.setVal(0);
   if (do_source_term) {
+
+    // Lazily compute multi-level source volumes
+    if (source_volume.size() == 0) {
+      ComputeSourceVolume();
+    }
+
     const Real* dx = geom.CellSize();
     MultiFab mask(grids,num_comp,0);
-    MultiFab tmp(grids,num_comp,0); tmp.setVal(0);
 
-    for (int i=0; i<source_array.size(); ++i) {
-      mask.setVal(0);
-      int snum_comp = std::min(num_comp-strt_comp,ncomps);
-      for (MFIter mfi(force); mfi.isValid(); ++mfi) {
-	source_array[i].apply(tmp[mfi],dx,0,snum_comp,time);	
-	const Array<const Region*>& regions = source_array[i].Regions();
-	for (int j=0; j<regions.size(); ++j) {
-	  if (snum_comp > 0) {
-	    source_array[i].apply(tmp[mfi],dx,0,snum_comp,time);
+    int snum_comp = std::min(num_comp-strt_comp,ncomps);
+    if (snum_comp > 0) {
+
+      MultiFab::Copy(force,SourceCellVolume(),0,0,snum_comp,0);
+
+      for (int i=0; i<source_array.size(); ++i) {
+	Array<Real> src_val = source_array[i](time);
+	const std::string& stype = source_array[i].Type();
+
+	Real weighted_src_val = src_val[0];
+	if (stype == "volume_weighted" || stype == "point") {
+	  weighted_src_val *= 1/source_volume[i]; // Scale source strength by total source volume (across all levels)
+	}
+	else {
+	  if (stype != "uniform") {
+	    BoxLib::Abort(std::string("Unsupported Source function type: \""+stype+"\"").c_str());
 	  }
-	  regions[j]->setVal(mask[mfi],1,0,dx,0);
 	}
-      }
 
-      const std::string& stype = source_array[i].Type();
-      Real total_volume_this_level = 1;
+	force.mult(weighted_src_val,i,1);
 
-      Real cellVol = 1;
-      for (int d=0; d<BL_SPACEDIM; ++d) {
-        cellVol *= dx[d];
-      }
-      Real num_cells=0;
-      for (MFIter mfi(mask); mfi.isValid(); ++mfi) {
-        num_cells += mask[mfi].sum(mfi.validbox(),0,1);
-      }
-      ParallelDescriptor::ReduceRealSum(num_cells);
+	if (strt_comp+num_comp > ncomps) {
 
-      total_volume_this_level = num_cells * cellVol;
-      if (BL_SPACEDIM < 3) {
-	total_volume_this_level *= domain_thickness;
-      }
+	  int tstrt_comp = std::max(ncomps,strt_comp);
+	  if (strt_comp >= ncomps) {
+	    BoxLib::Abort("Tracer source specified without flow source....please clarify problem setup");
+	  }
+	  int tnum_comp = num_comp - snum_comp;
+	  MultiFab tmp(grids,tnum_comp,0);
 
-      // Scale all values set by this source function
-      if (stype == "volume_weighted" || stype == "point") {
-        mask.mult(1./total_volume_this_level,0,1,0);
-      }
-      else {
-	if (stype != "uniform") {
-	  BoxLib::Abort(std::string("Unsupported Source function type: \""+stype+"\"").c_str());
-	}
-      }
+	  for (int it=0; it<tnum_comp; ++it) {
+	    const RegionData& tsource = tsource_array[i][it];
+	    if (tsource.Type()=="uniform" || tsource.Type()=="point") {
+	      for (MFIter mfi(force); mfi.isValid(); ++mfi) {
+		tsource.apply(tmp[mfi],dx,it,1,time);
+	      }
+	    }
+	    else if (tsource.Type()=="diffusion_dominated_release_model") {
 
-      if (strt_comp+num_comp > ncomps) {
-	int tstrt_comp = std::max(ncomps,strt_comp);
-	int tnum_comp = num_comp - snum_comp;
+	      const DiffDomRelSrc* tp = dynamic_cast<const DiffDomRelSrc*>(&tsource);
+	      if (tp == 0) {
+		BoxLib::Abort("Error in set up of diffusion dominated release model");
+	      }
+	      else {
+		for (MFIter mfi(force); mfi.isValid(); ++mfi) {
+		  tp->apply(tmp[mfi],dx,it,1,time,time+dt);
+		}
+	      }
+	    }
+	    else {
+	      BoxLib::Abort(std::string("Tracer source type \""+tsource.Type()+"\" not yet implemented").c_str());
+	    }
 
-	for (int it=0; it<tnum_comp; ++it) {
-	  const RegionData& tsource = tsource_array[i][it];
-	  if (tsource.Type()=="uniform" || tsource.Type()=="point") {
-	    for (MFIter mfi(force); mfi.isValid(); ++mfi) {
-	      tsource.apply(tmp[mfi],dx,it+snum_comp,1,time);
+	    // Form final source expression based on volume fraction of the source term
+	    // for the component that contains the tracers
+	    MultiFab::Copy(force,SourceCellVolume(),i,tstrt_comp+it,1,0);
+
+	    for (MFIter mfi(tmp); mfi.isValid(); ++mfi) {
+	      force[mfi].mult(tmp[mfi],it,tstrt_comp+it,1);
 	    }
 	  }
-	  else if (tsource.Type()=="diffusion_dominated_release_model") {
-
-            const DiffDomRelSrc* tp = dynamic_cast<const DiffDomRelSrc*>(&tsource);
-            if (tp == 0) {
-              BoxLib::Abort("Error in set up of diffusion dominated release model");
-            }
-            else {
-              for (MFIter mfi(force); mfi.isValid(); ++mfi) {
-                tp->apply(tmp[mfi],dx,it+snum_comp,1,time,time+dt);
-              }
-	    }
-	  }
-	  else {
-	    BoxLib::Abort(std::string("Tracer source type \""+tsource.Type()+"\" not yet implemented").c_str());
-	  }
-	}
-      }
-
-      for (MFIter mfi(mask); mfi.isValid(); ++mfi) {
-	const FArrayBox& maskfab = mask[mfi];
-	FArrayBox& f = force[mfi];
-	const FArrayBox& t = tmp[mfi];
-	const Box& box = mfi.validbox();
-	for (IntVect iv=box.smallEnd(), End=box.bigEnd(); iv<=End; box.next(iv)) {
-	  Real m = maskfab(iv,0);
-	  if (m > 0) {
-	    for (int n=0; n<num_comp; ++n) {
-	      f(iv,n) = m * t(iv,n); // NOTE: volume-weighting of component source impacts solute sources
-	    }
-	  }
-	}
-      }
-
-      force.FillBoundary(0,num_comp);
-      geom.FillPeriodicBoundary(force,0,num_comp);
-	
-      if (do_rho_scale) {
-	for (int i=0; i<snum_comp; ++i) {
-	  force.mult(density[strt_comp+i],i,1);
 	}
       }
     }
+
+    force.FillBoundary(0,num_comp);
+    geom.FillPeriodicBoundary(force,0,num_comp);
+	
+    if (do_rho_scale) {
+      for (int i=0; i<snum_comp; ++i) {
+	force.mult(density[strt_comp+i],i,1);
+      }
+    }
   }
+
 }
 
 //
