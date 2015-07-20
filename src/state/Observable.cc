@@ -194,7 +194,7 @@ void Observable::Update_(const State& S,
       local[0] = value; local[1] = volume;
       S.GetMesh()->get_comm()->SumAll(local, global, 2);
 
-      if (volume > 0) {
+      if (global[1] > 0) {
         if (functional_ == "Observation Data: Point") {
           data.value = global[0] / global[1];
           data.is_valid = true;
