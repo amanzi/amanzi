@@ -119,17 +119,6 @@ Richards_PK::~Richards_PK()
 
   if (src_sink != NULL) delete src_sink;
   if (vo_ != NULL) delete vo_;
-
-#ifdef ENABLE_NATIVE_XML_OUTPUT
-  /*
-  if (glist_->sublist("Analysis").get<bool>("print unused parameters", false)) {
-    std::cout << "\n***** Unused XML parameters *****" << std::endl;
-    Teuchos::Amanzi_XMLParameterListWriter out; 
-    out.unused(*rp_list_, std::cout);
-    std::cout << std::endl;
-  }
-  */
-#endif
 }
 
 
@@ -453,6 +442,7 @@ void Richards_PK::Initialize()
   // Other quantatities: injected water mass
   mass_bc = 0.0;
   seepage_mass_ = 0.0;
+  mass_initial = 0.0;
   initialize_with_darcy_ = true;
   num_itrs_ = 0;
   
@@ -626,23 +616,24 @@ void Richards_PK::Initialize()
   }
 
   // subspace entering: re-initialize lambdas.
-  if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face")
-      && S_->position() == Amanzi::TIME_PERIOD_START) {
+  if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face")) {
     solver_name_constraint_ = ti_list_->sublist("pressure-lambda constraints").get<std::string>("linear solver");
 
-    EnforceConstraints(t_new, solution);
-    pressure_eval_->SetFieldAsChanged(S_.ptr());
+    if (S_->position() == Amanzi::TIME_PERIOD_START) {
+      EnforceConstraints(t_new, solution);
+      pressure_eval_->SetFieldAsChanged(S_.ptr());
 
-    // update mass flux
-    op_matrix_->Init();
-    op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
-    op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
+      // update mass flux
+      op_matrix_->Init();
+      op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
+      op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
 
-    // normalize to Darcy flux, m/s
-    Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face", true);
-    for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
+      // normalize to Darcy flux, m/s
+      Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face", true);
+      for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
 
-    InitializeUpwind_();
+      InitializeUpwind_();
+    }
   }
 
   // verbose output

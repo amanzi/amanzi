@@ -18,8 +18,6 @@ RSdata::RSdata(int slev, int nlevs, Layout& _layout, NLScontrol& nlsc, const Roc
   pressure_maxorder = pressure_maxorder_DEF;
   max_num_Jacobian_reuses = max_num_Jacobian_reuses_DEF;
 
-  // FIXME: Should we set default values for g and rho?
-
   nlsc.rs_data = this;
   ResetJacobianCounter();
 
@@ -55,6 +53,18 @@ RSdata::RSdata(int slev, int nlevs, Layout& _layout, NLScontrol& nlsc, const Roc
   MFTower *KrParams;
   MFTower *Alpha;
   MFTower *CoeffCC;
+}
+
+const Array<Real>&
+RSdata::GetGravity()
+{
+  SetGravity();
+  return gravity;
+}
+
+void
+RSdata::SetGravity(){
+  BoxLib::Abort("SHOULD NOT BE HERE");
 }
 
 void RSdata::SetMaxJacobianReuse(int max_num_reuse) {max_num_Jacobian_reuses=max_num_reuse;}

@@ -162,8 +162,7 @@ void CycleDriver::Setup() {
 
   // vis successful steps
   bool surface_done = false;
-  for (State::mesh_iterator mesh=S_->mesh_begin();
-       mesh!=S_->mesh_end(); ++mesh) {
+  for (State::mesh_iterator mesh=S_->mesh_begin(); mesh!=S_->mesh_end(); ++mesh) {
     if (mesh->first == "surface_3d") {
       // pass
     } else if ((mesh->first == "surface") && surface_done) {
@@ -777,11 +776,10 @@ void CycleDriver::Go() {
   int position = 0;
   double restart_time = 0.;
 
-
   double dt;
   double restart_dT(1.0e99);
 
-  if (!restart_requested_){     /// No restart
+  if (!restart_requested_) {     /// No restart
     Init_PK(time_period_id_);
     // start at time t = t0 and initialize the state.
     S_->set_time(tp_start_[time_period_id_]);
@@ -842,7 +840,6 @@ void CycleDriver::Go() {
     S_->set_initial_time(S_->time());
     dt = tsm_->TimeStep(S_->time(), restart_dT);
     pk_->set_dt(dt);
-
   }
 
   *S_->GetScalarData("dt", "coordinator") = dt;
@@ -854,6 +851,7 @@ void CycleDriver::Go() {
   Visualize();
   WriteCheckpoint(dt);
   Observations();
+  S_->WriteStatistics(vo_);
   //Amanzi::timer_manager.stop("I/O");
  
   // iterate process kernels
@@ -910,6 +908,8 @@ void CycleDriver::Go() {
 #endif
   }
   
+  // finalizing simulation
+  S_->WriteStatistics(vo_);
   ReportMemory();
   // Finalize();
 } 
@@ -921,8 +921,8 @@ void CycleDriver::Go() {
 void CycleDriver::ResetDriver(int time_pr_id) {
 
   if (vo_->os_OK(Teuchos::VERB_LOW)) {
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "Reseting CD: TP " << time_pr_id - 1 << " -> TP " << time_pr_id << "." << std::endl;
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Reseting CD: TP " << time_pr_id - 1 << " -> TP " << time_pr_id << "." << std::endl;
   }
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(S_->GetMesh("domain"));
@@ -948,7 +948,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   // create the global solution vector
   soln_ = Teuchos::rcp(new TreeVector());
   
-  // create new pk;
+  // create new pk
   Init_PK(time_pr_id);
 
   // register observation times with the time step manager
@@ -956,7 +956,6 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   // Setup
   pk_->Setup();
-
 
   S_->RequireScalar("dt", "coordinator");
   S_->Setup();
@@ -979,16 +978,15 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   S_->GetMeshPartition("materials");
 
-
   pk_->CalculateDiagnostics();
-  // // Visualize();
-  // // WriteCheckpoint(dt);
+  // Visualize();
+  // WriteCheckpoint(dt);
   Observations();
+  S_->WriteStatistics(vo_);
 
   pk_->set_dt(tp_dt_[time_pr_id]);
 
   S_old_ = Teuchos::null;
-
 }
 
 }  // namespace Amanzi

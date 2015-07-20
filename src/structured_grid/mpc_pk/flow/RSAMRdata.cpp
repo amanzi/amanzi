@@ -28,9 +28,9 @@ RSAMRdata::SetDensity()
 void
 RSAMRdata::SetGravity()
 {
-  gravity.resize(BL_SPACEDIM,0);
+  gravity.resize(3,0); // Not necessarily BL_SPACEDIM
   int gravity_dir = PorousMedia::getGravityDir();
-  if (gravity_dir < BL_SPACEDIM) {
+  if (gravity_dir < gravity.size()) {
     gravity[gravity_dir] = PorousMedia::getGravity();
   }
 }

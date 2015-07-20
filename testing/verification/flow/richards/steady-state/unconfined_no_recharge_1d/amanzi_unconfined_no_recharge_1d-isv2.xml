@@ -1,4 +1,4 @@
-  <amanzi_input type="unstructured" version="2.1.0">
+<amanzi_input type="unstructured" version="2.1.0">
     <model_description name="unconfined_head_head_no_recharge_2d">
       <comments>Steady-State Richards: unconfined_head_head_no_recharge_2d</comments>
       <model_id>1SSUncFlow1/PORFLOW 4.2.1</model_id>
@@ -19,9 +19,9 @@
     </definitions>
     <process_kernels>
       <comments>Variably saturated flow</comments>
-      <flow model="richards" state="on"/>
-      <transport algorithm="none" state="off"/>
-      <chemistry engine="none" process_model="none" state="off"/>
+      <flow model="richards" state="on" />
+      <transport state="off" />
+      <chemistry engine="none" process_model="none" state="off" />
     </process_kernels>
     <phases>
       <liquid_phase name="water">
@@ -31,61 +31,74 @@
       </liquid_phase>
     </phases>
     <execution_controls>
-      <verbosity level="high"/>
-      <execution_control_defaults method="bdf1" mode="steady" init_dt="0.01" max_dt="1000 y"/>
-      <execution_control end="3.0e+9" init_dt="0.01" method="bdf1" mode="steady" start="0.0"/>
+      <verbosity level="high" />
+      <execution_control_defaults init_dt="0.01" max_dt="1000 y" method="bdf1" mode="steady" />
+      <execution_control end="3.0e+9" init_dt="0.01" method="bdf1" mode="steady" start="0.0" />
     </execution_controls>
     <numerical_controls>
       <unstructured_controls>
+        <unstr_steady-state_controls>
+          <unstr_initialization>
+            <method>darcy_solver</method>
+          </unstr_initialization>
+        </unstr_steady-state_controls>
         <unstr_linear_solver>
           <max_iterations>100</max_iterations>
           <tolerance>1.0e-18</tolerance>
         </unstr_linear_solver>
+        <unstr_transport_controls>
+          <algorithm>none</algorithm>
+        </unstr_transport_controls>
+        <unstr_preconditioners>
+          <hypre_amg />
+          <trilinos_ml />
+          <block_ilu />
+        </unstr_preconditioners>
       </unstructured_controls>
     </numerical_controls>
     <mesh framework="mstk">
       <comments>Two-dimensional box 30.48m x 18.288m (100ft x 60ft)</comments>
       <dimension>2</dimension>
       <generate>
-        <number_of_cells nx="100" ny="60"/>
-        <box high_coordinates="30.48, 18.288" low_coordinates="0.0, 0.0"/>
+        <number_of_cells nx="100" ny="60" />
+        <box high_coordinates="30.48, 18.288" low_coordinates="0.0, 0.0" />
       </generate>
     </mesh>
     <regions>
-      <comments/>
+      <comments />
       <region name="Aquifer">
         <comments>One region comprising the entire domain</comments>
-        <box high_coordinates="30.48, 18.288" low_coordinates="0.0, 0.0"/>
+        <box high_coordinates="30.48, 18.288" low_coordinates="0.0, 0.0" />
       </region>
       <region name="Left">
         <comments>Left boundary</comments>
-        <plane location="0.0, 0.0" normal="-1.0, 0.0"/>
+        <plane location="0.0, 0.0" normal="-1.0, 0.0" />
       </region>
       <region name="Right">
         <comments>Right boundary</comments>
-        <plane location="30.48, 0.0" normal="1.0, 0.0"/>
+        <plane location="30.48, 0.0" normal="1.0, 0.0" />
       </region>
-      <point coordinate=" 0.1524, 0.1524" name="Point0"/>
-      <point coordinate=" 3.2004, 0.1524" name="Point10"/>
-      <point coordinate=" 6.2484, 0.1524" name="Point20"/>
-      <point coordinate=" 9.2964, 0.1524" name="Point30"/>
-      <point coordinate="12.3444, 0.1524" name="Point40"/>
-      <point coordinate="15.3924, 0.1524" name="Point50"/>
-      <point coordinate="18.4404, 0.1524" name="Point60"/>
-      <point coordinate="21.4884, 0.1524" name="Point70"/>
-      <point coordinate="24.5364, 0.1524" name="Point80"/>
-      <point coordinate="27.5844, 0.1524" name="Point90"/>
-      <point coordinate="30.3276, 0.1524" name="Point100"/>
+      <point coordinate=" 0.1524, 0.1524" name="Point0" />
+      <point coordinate=" 3.2004, 0.1524" name="Point10" />
+      <point coordinate=" 6.2484, 0.1524" name="Point20" />
+      <point coordinate=" 9.2964, 0.1524" name="Point30" />
+      <point coordinate="12.3444, 0.1524" name="Point40" />
+      <point coordinate="15.3924, 0.1524" name="Point50" />
+      <point coordinate="18.4404, 0.1524" name="Point60" />
+      <point coordinate="21.4884, 0.1524" name="Point70" />
+      <point coordinate="24.5364, 0.1524" name="Point80" />
+      <point coordinate="27.5844, 0.1524" name="Point90" />
+      <point coordinate="30.3276, 0.1524" name="Point100" />
     </regions>
     <materials>
       <material name="Aquifer">
         <comments>Aquifer</comments>
         <mechanical_properties>
-          <porosity value="0.43"/>
+          <porosity value="0.43" />
         </mechanical_properties>
-        <permeability x="3.1198e-11" y="3.1198e-10"/>
+        <permeability x="3.1198e-11" y="3.1198e-10" />
         <cap_pressure model="van_genuchten">
-          <parameters alpha="1.46e-3" m="0.314" sr="0.052"/>
+          <parameters alpha="1.46e-3" m="0.314" sr="0.052" />
         </cap_pressure>
         <rel_perm model="mualem">
 			</rel_perm>
@@ -98,19 +111,19 @@
         <assigned_regions>Aquifer</assigned_regions>
         <liquid_phase name="water">
           <liquid_component name="water">
-            <pressure function="uniform" value="101325.0"/>
+            <pressure function="uniform" value="101325.0" />
           </liquid_component>
         </liquid_phase>
       </initial_condition>
     </initial_conditions>
     <boundary_conditions>
-      <comments/>
+      <comments />
       <boundary_condition name="LeftBC">
         <comments>Boundary condition at x=0</comments>
         <assigned_regions>Left</assigned_regions>
         <liquid_phase name="water">
           <liquid_component name="water">
-            <hydrostatic function="constant" start="0.0" value="12.192"/>
+            <hydrostatic function="constant" start="0.0" value="12.192" />
           </liquid_component>
         </liquid_phase>
       </boundary_condition>
@@ -119,7 +132,7 @@
         <assigned_regions>Right</assigned_regions>
         <liquid_phase name="water">
           <liquid_component name="water">
-            <hydrostatic function="constant" start="0.0" value="6.096"/>
+            <hydrostatic function="constant" start="0.0" value="6.096" />
           </liquid_component>
         </liquid_phase>
       </boundary_condition>
@@ -247,3 +260,4 @@
       </vis>
     </output>
   </amanzi_input>
+  

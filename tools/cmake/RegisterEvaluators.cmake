@@ -112,6 +112,20 @@ macro(register_evaluator_with_factory)
   set_property(GLOBAL PROPERTY "${LOCAL_LISTNAME}" ${VAR_TMP})
 endmacro(register_evaluator_with_factory)
 
+macro(register_abs_evaluator_with_factory)
+  set(singleValueArgs HEADERFILE LISTNAME)
+  set(multiValueArgs "")
+  set(options "")
+  
+  cmake_parse_arguments(LOCAL "${options}" "${singleValueArgs}" "${multiValueArgs}" ${ARGN})  
+
+  get_property(VAR_TMP GLOBAL PROPERTY "${LOCAL_LISTNAME}")
+  set(VAR_TMP ${VAR_TMP} ${LOCAL_HEADERFILE})
+  list(REMOVE_DUPLICATES VAR_TMP)
+
+  set_property(GLOBAL PROPERTY "${LOCAL_LISTNAME}" ${VAR_TMP})
+endmacro(register_abs_evaluator_with_factory)
+
 
 
 

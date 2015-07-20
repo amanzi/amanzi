@@ -340,6 +340,66 @@ int BlockVector::Norm2(double* norm) const {
 };
 
 
+int BlockVector::MinValue(double* value) const {
+  if (value == NULL) return 1;
+  if (data_.size() == 0) return 1;
+
+  int ierr = 0;
+  double value_loc[1];
+
+  *value = 1e+50;
+  for (int i = 0; i != num_components_; ++i) {
+    for (int lcv_vector = 0; lcv_vector != data_[i]->NumVectors(); ++lcv_vector) {
+      ierr = (*data_[i])(lcv_vector)->MinValue(value_loc);
+      if (ierr) return ierr;
+      *value = std::min(*value, value_loc[0]);
+    }
+  }
+  return ierr;
+};
+
+
+int BlockVector::MaxValue(double* value) const {
+  if (value == NULL) return 1;
+  if (data_.size() == 0) return 1;
+
+  int ierr = 0;
+  double value_loc[1];
+
+  *value = -1e+50;
+  for (int i = 0; i != num_components_; ++i) {
+    for (int lcv_vector = 0; lcv_vector != data_[i]->NumVectors(); ++lcv_vector) {
+      ierr = (*data_[i])(lcv_vector)->MaxValue(value_loc);
+      if (ierr) return ierr;
+      *value = std::max(*value, value_loc[0]);
+    }
+  }
+  return ierr;
+};
+
+
+int BlockVector::MeanValue(double* value) const {
+  if (value == NULL) return 1;
+  if (data_.size() == 0) return 1;
+
+  int ierr(0), n(0), n_loc;
+  double value_loc[1];
+
+  *value = 0.0;
+  for (int i = 0; i != num_components_; ++i) {
+    n_loc = data_[i]->GlobalLength(); 
+    for (int lcv_vector = 0; lcv_vector != data_[i]->NumVectors(); ++lcv_vector) {
+      ierr = (*data_[i])(lcv_vector)->MeanValue(value_loc);
+      if (ierr) return ierr;
+      *value += value_loc[0] * n_loc;
+      n += n_loc;
+    }
+  }
+  *value /= n;
+  return ierr;
+};
+
+
 // Debugging?
 void BlockVector::Print(std::ostream& os, bool data_io) const {
   os << "Block Vector" << std::endl;

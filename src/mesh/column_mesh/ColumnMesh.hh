@@ -21,62 +21,61 @@ namespace Amanzi {
 
 namespace AmanziMesh {
 
-  // This is a mesh with a vertical column of prismatic cells (the
-  // horizontal faces can be polygonal). Users of this class must note
-  // several important assumptions and simplifications made in its
-  // implementation.
-  //
-  // 1. A prerequisite of instantiation of this mesh class is that
-  // columns should have been built in the base class
-  //
-  // 2. The base face of a column is considered to be perfectly
-  // horizontal 
-  //
-  // 3. All cells in the column are assumed to have the
-  // same prismatic topology (horizontal faces can have polygonal
-  // topology, lateral faces are all quads)
-  //
-  // 4. The X-Y coordinates of nodes above the base face are adjusted
-  // (only in the column mesh not the full 3D mesh) so that they are
-  // perfectly stacked on top of the nodes of the base face.  The
-  // Z-coordinates of the nodes of a face are adjusted so that they
-  // match the Z-coordinate of the centroid of the original face
-  //
-  // 5. Adjustment of the node coordinates in the column results in
-  // the face centroids and cell centroids of the column to line up
-  // vertically; however, it will also result in small changes to the
-  // cell volumes and face areas
-  // 
-  // 6. The lateral faces of the cells are ignored - so each cell is
-  // considered to have only two faces, a bottom face and a top face.
-  //
-  // 7. The normals of the faces are pointing vertically down or up.
-  //
+// This is a mesh with a vertical column of prismatic cells (the
+// horizontal faces can be polygonal). Users of this class must note
+// several important assumptions and simplifications made in its
+// implementation.
+//
+// 1. A prerequisite of instantiation of this mesh class is that
+// columns should have been built in the base class
+//
+// 2. The base face of a column is considered to be perfectly
+// horizontal 
+//
+// 3. All cells in the column are assumed to have the
+// same prismatic topology (horizontal faces can have polygonal
+// topology, lateral faces are all quads)
+//
+// 4. The X-Y coordinates of nodes above the base face are adjusted
+// (only in the column mesh not the full 3D mesh) so that they are
+// perfectly stacked on top of the nodes of the base face.  The
+// Z-coordinates of the nodes of a face are adjusted so that they
+// match the Z-coordinate of the centroid of the original face
+//
+// 5. Adjustment of the node coordinates in the column results in
+// the face centroids and cell centroids of the column to line up
+// vertically; however, it will also result in small changes to the
+// cell volumes and face areas
+// 
+// 6. The lateral faces of the cells are ignored - so each cell is
+// considered to have only two faces, a bottom face and a top face.
+//
+// 7. The normals of the faces are pointing vertically down or up.
+//
 
-class Column_mesh : public virtual Mesh
-{
+class ColumnMesh : public virtual Mesh {
       
-public:
+ public:
       
-  Column_mesh (Mesh& inmesh,
-	       const int column_id, 
-	       const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
+  ColumnMesh(const Mesh& inmesh,
+             const int column_id, 
+             const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
 
-  ~Column_mesh () {};
+  ~ColumnMesh () {};
   
 
   // Get parallel type of entity - does not make sense to have 
   // GHOST entities in columns
     
   Parallel_type entity_get_ptype(const Entity_kind kind, 
-				 const Entity_ID entid) const {
+          const Entity_ID entid) const {
     return OWNED; 
   }
 
   // Get parent entity 
 
   Entity_ID entity_get_parent(const Entity_kind kind,
-                              const Entity_ID entid) const;
+          const Entity_ID entid) const;
 
   // Get cell type
     
@@ -96,21 +95,24 @@ public:
   // Does not make sense to have GHOST entities in columns
     
   unsigned int num_entities (const Entity_kind kind,
-			     const Parallel_type ptype) const {
+                             const Parallel_type ptype) const {
     switch (kind) {
-    case NODE: {
-      int nfaces = column_faces_.size();
-      return nfaces*nfnodes_;
-    }
+      case NODE: {
+        int nfaces = column_faces_.size();
+        return nfaces*nfnodes_;
+      }
 
-    case EDGE:
-      return 0;
+      case EDGE:
+        return 0;
 
-    case FACE:
-      return (ptype == GHOST) ? 0 : column_faces_.size(); 
+      case FACE:
+        return (ptype == GHOST) ? 0 : column_faces_.size(); 
 
-    case CELL:
-      return (ptype == GHOST) ? 0 : column_cells_.size();
+      case CELL:
+        return (ptype == GHOST) ? 0 : column_cells_.size();
+
+      case BOUNDARY_FACE:
+        return 2;
     }
   }
     
@@ -163,21 +165,21 @@ public:
 
 
   void cell_get_faces_and_dirs (const Entity_ID cellid,
-                                Entity_ID_List *faceids,
-                                std::vector<int> *facedirs,
-                                const bool ordered=false) const {
+          Entity_ID_List *faceids,
+          std::vector<int> *facedirs,
+          const bool ordered=false) const {
 
     // We don't want the base Mesh class to cache this data so we have
     // an direct call to cell_get_faces_and_dirs_internal instead of
     // letting the Mesh class call it
 
     cell_get_faces_and_dirs_internal(cellid, faceids, facedirs, ordered);
-   }
+  }
 
   // Edges of a cell
 
   void cell_get_edges (const Entity_ID cellid,
-                                Entity_ID_List *edgeids) const 
+                       Entity_ID_List *edgeids) const 
   { 
     Errors::Message mesg("Not implemented");
     Exceptions::amanzi_throw(mesg);
@@ -187,8 +189,8 @@ public:
   // Edges of a cell
 
   void cell_2D_get_edges_and_dirs (const Entity_ID cellid,
-                                   Entity_ID_List *edgeids,
-                                   std::vector<int> *edgedirs) const 
+          Entity_ID_List *edgeids,
+          std::vector<int> *edgedirs) const 
   { 
     Errors::Message mesg("Not implemented");
     Exceptions::amanzi_throw(mesg);
@@ -207,7 +209,7 @@ public:
   // consistent with the face normal
     
   void cell_get_nodes (const Entity_ID cellid, 
-		       std::vector<Entity_ID> *nodeids) const {
+                       std::vector<Entity_ID> *nodeids) const {
 
     // Cell i is bound by face i and face i+1
     // Each face has nfnodes_ nodes 
@@ -226,9 +228,9 @@ public:
   // Get edges of a face and directions in which the face uses the edges 
 
   void face_get_edges_and_dirs (const Entity_ID faceid,
-				Entity_ID_List *edgeids,
-				std::vector<int> *edge_dirs,
-				const bool ordered=false) const {
+          Entity_ID_List *edgeids,
+          std::vector<int> *edge_dirs,
+          const bool ordered=false) const {
     Errors::Message mesg("Not implemented");
     amanzi_throw(mesg);
   }
@@ -237,7 +239,7 @@ public:
   // Get the local index of a face edge in a cell edge list
 
   void face_to_cell_edge_map(const Entity_ID faceid, const Entity_ID cellid,
-			     std::vector<int> *map) const {
+                             std::vector<int> *map) const {
     Errors::Message mesg("Not implemented");
     amanzi_throw(mesg);
   }
@@ -251,7 +253,7 @@ public:
   // In 2D, nfnodes is 2
     
   void face_get_nodes (const Entity_ID faceid, 
-		       std::vector<Entity_ID> *nodeids) const {
+                       std::vector<Entity_ID> *nodeids) const {
     nodeids->resize(nfnodes_);
     for (int i = 0; i < nfnodes_; ++i)
       (*nodeids)[i] = faceid*nfnodes_ + i;
@@ -261,7 +263,7 @@ public:
   // Get nodes of edge
 
   void edge_get_nodes (const Entity_ID edgeid, Entity_ID *nodeid0,
-		       Entity_ID *nodeid1) const {
+                       Entity_ID *nodeid1) const {
     Errors::Message mesg("Not implemented");
     amanzi_throw(mesg);
   }
@@ -273,8 +275,8 @@ public:
   // Since all cells of a column are on processor, ptype can be ignored
     
   void node_get_cells (const Entity_ID nodeid, 
-		       const Parallel_type ptype,
-		       std::vector<Entity_ID> *cellids) const {
+                       const Parallel_type ptype,
+                       std::vector<Entity_ID> *cellids) const {
 
     // get faceid from nodeid first
 
@@ -287,8 +289,8 @@ public:
   // Since all faces of a column are on processor, ptype can be ignored
     
   void node_get_faces (const Entity_ID nodeid, 
-		       const Parallel_type ptype,
-		       std::vector<Entity_ID> *faceids) const {
+                       const Parallel_type ptype,
+                       std::vector<Entity_ID> *faceids) const {
 
     faceids->resize(1);
     (*faceids)[0] = nodeid%nfnodes_;
@@ -299,9 +301,9 @@ public:
   // given node
     
   void node_get_cell_faces (const Entity_ID nodeid, 
-			    const Entity_ID cellid,
-			    const Parallel_type ptype,
-			    std::vector<Entity_ID> *faceids) const {    
+                            const Entity_ID cellid,
+                            const Parallel_type ptype,
+                            std::vector<Entity_ID> *faceids) const {    
 
     faceids->resize(1);
     (*faceids)[0] = nodeid%nfnodes_;
@@ -333,8 +335,8 @@ public:
   // Since column meshes are all on processor, ptype is irrelevant
 
   void cell_get_face_adj_cells(const Entity_ID cellid,
-			       const Parallel_type ptype,
-			       std::vector<Entity_ID> *fadj_cellids) const {
+          const Parallel_type ptype,
+          std::vector<Entity_ID> *fadj_cellids) const {
     
     assert(cellid > 0 && cellid < column_cells_.size());
 
@@ -360,8 +362,8 @@ public:
   // Since column meshes are all on processor, ptype is irrelevant
 
   void cell_get_node_adj_cells(const Entity_ID cellid,
-			       const Parallel_type ptype,
-			       std::vector<Entity_ID> *nadj_cellids) const {
+          const Parallel_type ptype,
+          std::vector<Entity_ID> *nadj_cellids) const {
 
     // since its a column mesh face adjacent and node adjacent cell
     // list is the same
@@ -375,11 +377,11 @@ public:
   // Since this a column mesh these just return the mesh information
 
   Entity_ID_List const & cells_of_column(const int columnID) const {
-    amanzi_throw(Errors::Message("Meaningless to ask for column cells in a Column_mesh. Cell IDs go from 0 to ncells-1"));
+    amanzi_throw(Errors::Message("Meaningless to ask for column cells in a ColumnMesh. Cell IDs go from 0 to ncells-1"));
   }
 
   Entity_ID_List const & faces_of_column(const int columnID) const {
-    amanzi_throw(Errors::Message("Meaningless to ask for column faces in special Column_mesh. Face IDs go from 0 to nfaces-1"));
+    amanzi_throw(Errors::Message("Meaningless to ask for column faces in special ColumnMesh. Face IDs go from 0 to nfaces-1"));
   }
 
   // Given a cell get its column ID
@@ -420,7 +422,7 @@ public:
   // Node coordinates - 3 in 3D and 2 in 2D
     
   void node_get_coordinates (const Entity_ID nodeid, 
-			     AmanziGeometry::Point *ncoord) const {
+                             AmanziGeometry::Point *ncoord) const {
     *ncoord = node_coordinates_[nodeid];
   }
     
@@ -429,7 +431,7 @@ public:
   // Number of nodes is the vector size divided by number of spatial dimensions
     
   void face_get_coordinates (const Entity_ID faceid, 
-			     std::vector<AmanziGeometry::Point> *fcoords) const {
+                             std::vector<AmanziGeometry::Point> *fcoords) const {
     fcoords->clear();
     for (int i = 0; i < nfnodes_; ++i)
       fcoords->push_back(node_coordinates_[faceid*nfnodes_+i]);
@@ -442,7 +444,7 @@ public:
   // Number of nodes is vector size divided by number of spatial dimensions
     
   void cell_get_coordinates (const Entity_ID cellid, 
-			     std::vector<AmanziGeometry::Point> *ccoords) const {
+                             std::vector<AmanziGeometry::Point> *ccoords) const {
     ccoords->clear();
     for (int i = 0; i < nfnodes_; ++i)
       ccoords->push_back(node_coordinates_[cellid*nfnodes_+i]);
@@ -488,7 +490,6 @@ public:
   // Epetra importer that will allow apps to import values from a
   // Epetra vector defined on all owned faces into an Epetra vector
   // defined only on exterior faces
-  
   const Epetra_Import& exterior_face_importer (void) const {
     Errors::Message mesg("Not implemented");
     amanzi_throw(mesg);
@@ -504,53 +505,56 @@ public:
   // Get number of entities of type 'category' in set
 
   unsigned int get_set_size (const Set_ID setid, 
-			     const Entity_kind kind,
-			     const Parallel_type ptype) const {
+                             const Entity_kind kind,
+                             const Parallel_type ptype) const {
     Errors::Message mesg("Not implemented");
     amanzi_throw(mesg);
+    return 0;
   }
 
 
 
   unsigned int get_set_size (const Set_Name setname, 
-			     const Entity_kind kind,
-			     const Parallel_type ptype) const {
+                             const Entity_kind kind,
+                             const Parallel_type ptype) const {
     Errors::Message mesg("Not implemented");
     amanzi_throw(mesg);
+    return 0;
   }
 
 
   unsigned int get_set_size (const char *setname, 
-			     const Entity_kind kind,
-			     const Parallel_type ptype) const {
+                             const Entity_kind kind,
+                             const Parallel_type ptype) const {
     Errors::Message mesg("Not implemented");
     amanzi_throw(mesg);
+    return 0;
   }
 
 
   // Get list of entities of type 'category' in set
 
   void get_set_entities (const Set_ID setid, 
-			 const Entity_kind kind, 
-			 const Parallel_type ptype, 
-			 Entity_ID_List *entids) const {
+                         const Entity_kind kind, 
+                         const Parallel_type ptype, 
+                         Entity_ID_List *entids) const {
     Errors::Message mesg("Not implemented");
     amanzi_throw(mesg);
   }
 
   void get_set_entities (const Set_Name setname, 
-			 const Entity_kind kind, 
-			 const Parallel_type ptype, 
-			 Entity_ID_List *entids) const {
+                         const Entity_kind kind, 
+                         const Parallel_type ptype, 
+                         Entity_ID_List *entids) const {
     Errors::Message mesg("Not implemented");
     amanzi_throw(mesg);
   }
 
 
   void get_set_entities (const char *setname, 
-			 const Entity_kind kind, 
-			 const Parallel_type ptype, 
-			 Entity_ID_List *entids) const {
+                         const Entity_kind kind, 
+                         const Parallel_type ptype, 
+                         Entity_ID_List *entids) const {
     Errors::Message mesg("Not implemented");
     amanzi_throw(mesg);
   }
@@ -568,7 +572,7 @@ public:
   // this should be used with extreme caution:
   // modify coordinates
   void set_coordinate(Entity_ID local_node_id,
-		      double* source_begin, double* source_end) {
+                      double* source_begin, double* source_end) {
     Errors::Message mesg("Not implemented");
     amanzi_throw(mesg);
   }
@@ -585,10 +589,11 @@ public:
              const bool move_vertical) {
     Errors::Message mesg("Not implemented");
     amanzi_throw(mesg);
+    return -1;
   }
   
 
-private:
+ private:
   Mesh const& parent_mesh_;
   int nfnodes_;
   int column_id_;
@@ -605,9 +610,9 @@ private:
   // cell_get_faces_and_dirs method of this class
 
   void cell_get_faces_and_dirs_internal (const Entity_ID cellid,
-                                         Entity_ID_List *faceids,
-                                         std::vector<int> *facedirs,
-                                         const bool ordered=false) const {
+          Entity_ID_List *faceids,
+          std::vector<int> *facedirs,
+          const bool ordered=false) const {
     faceids->resize(2);
     facedirs->resize(2);
     
@@ -630,8 +635,8 @@ private:
   
 
   void face_get_cells_internal (const Entity_ID faceid,
-                                const Parallel_type ptype,
-                                Entity_ID_List *cellids) const {
+          const Parallel_type ptype,
+          Entity_ID_List *cellids) const {
 
     if (faceid == 0) { // bottom face
       cellids->resize(1);
@@ -650,20 +655,20 @@ private:
   }
 
   void face_get_edges_and_dirs_internal (const Entity_ID faceid,
-					 Entity_ID_List *edgeids,
-					 std::vector<int> *edge_dirs,
-					 const bool ordered=true) const {
+          Entity_ID_List *edgeids,
+          std::vector<int> *edge_dirs,
+          const bool ordered=true) const {
     amanzi_throw(Errors::Message("Not implemented"));
   }
 
   void cell_get_edges_internal (const Entity_ID cellid,
-				Entity_ID_List *edgeids) const {
+          Entity_ID_List *edgeids) const {
     amanzi_throw(Errors::Message("Not implemented"));
   }
 
   void cell_2D_get_edges_and_dirs_internal (const Entity_ID cellid,
-                                            Entity_ID_List *edgeids,
-                                            std::vector<int> *edgedirs) const {
+          Entity_ID_List *edgeids,
+          std::vector<int> *edgedirs) const {
     amanzi_throw(Errors::Message("Not implemented"));
   }
 

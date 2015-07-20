@@ -11,6 +11,7 @@
 
 #include "FieldMaps.hh"
 #include "LinearOperatorFactory.hh"
+// #include "OperatorAudit.hh"
 #include "OperatorDefs.hh"
 #include "OperatorDiffusion.hh"
 #include "OperatorDiffusionFactory.hh"
@@ -51,6 +52,8 @@ void Richards_PK::SolveFullySaturatedProblem(
   op_preconditioner_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
   op_preconditioner_diff_->ApplyBCs(true, true);
   op_preconditioner_->AssembleMatrix();
+  // Operators::CheckMatrixSymmetry(op_preconditioner_->A());
+  // Operators::CheckMatrixCoercivity(op_preconditioner_->A());
   op_preconditioner_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 
   AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
@@ -73,6 +76,9 @@ void Richards_PK::SolveFullySaturatedProblem(
     *vo_->os() << "saturated solver (" << solver->name() 
                << "): ||p,lambda||=" << pnorm << " itr=" << num_itrs 
                << " code=" << code << std::endl;
+
+    double residual = solver->TrueResidual(rhs, *solution);
+    *vo_->os() << "true l2 residual: ||r||=" << residual << std::endl;
   }
 
   // catastrophic failure
@@ -117,6 +123,7 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
 
   // modify relative permeability coefficient for influx faces
   UpwindInflowBoundary(u);
+  // UpwindInflowBoundary_New(u);
 
   // calculate diffusion operator
   op_matrix_->Init();

@@ -1,5 +1,4 @@
 #include "InputTranslator.hh"
-#include "InputParserIS.hh"
 #include "InputParserIS_Defs.hh"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -429,8 +428,14 @@ std::string get_amanzi_version(DOMDocument* xmlDoc, Teuchos::ParameterList def_l
     }
     else {
       std::stringstream ver;
-      ver << AMANZI_INPUT_VERSION_MAJOR << "." << AMANZI_INPUT_VERSION_MINOR << "." << AMANZI_INPUT_VERSION_MICRO;      
-      Exceptions::amanzi_throw(Errors::Message("The input version " + version + " specified in the input file is not supported. This version of amanzi supports version "+ ver.str() + "."));
+      ver << AMANZI_INPUT_VERSION_MAJOR << "." << AMANZI_INPUT_VERSION_MINOR << "." << AMANZI_INPUT_VERSION_MICRO;
+      Errors::Message msg;
+      msg << "The input version " << version << " specified in the input file is not supported. This version of amanzi supports version "<< ver.str() << ".\n";
+      if ((major == 2) && (minor == 1) && (micro == 0)) {
+        msg << "  The python script UpdateSpec_210-211.py will update a 2.1.0 input file to 2.1.1.";
+	msg <<"   The script is located in the source tree in tools/input and is installed in $INSTALL/bin";
+      }
+      Exceptions::amanzi_throw(msg);
     }
   }
   else {
@@ -1953,7 +1958,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     else if (textValue == "explicit second-order") {
                       algo = "Explicit Second-Order";
                     }
-                    else if (strcmp(textContent,"none")==0) {
+                    else if (textValue == "none") {
                       algo = "None";
                     }
                     tpkPL.set<std::string>("Transport Integration Algorithm",algo.c_str());
@@ -2267,7 +2272,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                         if (bdf1_tagname != "comments") {
                           // warn about unrecognized element
                           std::stringstream elem_name;
-                          elem_name << nodeName <<  "->"  << tagname;
+                          elem_name << nodeName <<  "->"  << bdf1_tagname;
                           throw_warning_skip(elem_name.str());
                         }
                       }

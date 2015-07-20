@@ -164,8 +164,11 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
     v.Dot(p, &alpha);
 
     if (alpha < 0.0) {
-      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-	*vo_->os() << "Failed: non-SPD Apply: alpha = " << alpha << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        double pnorm;
+        p.Norm2(&pnorm);
+	*vo_->os() << "Failed: non-SPD Apply: alpha=" << alpha << " ||p||=" << pnorm << std::endl;
+      }
       return LIN_SOLVER_NON_SPD_APPLY;
     }
     alpha = gamma0 / alpha;
@@ -178,7 +181,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
     v.Dot(r, &gamma1);
     if (gamma1 < 0.0) {  // residual could be zero, so we use strict inequality
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-        *vo_->os() << "Failed: non-SPD ApplyInverse: gamma1 = " << gamma1 << std::endl;
+        *vo_->os() << "Failed: non-SPD ApplyInverse: gamma1=" << gamma1 << std::endl;
       return LIN_SOLVER_NON_SPD_APPLY_INVERSE;
     }
 

@@ -2,13 +2,15 @@
 #include <string>
 #include <algorithm>
 
+#include "Teuchos_XMLParameterListHelpers.hpp"
+
 #include "errors.hh"
 #include "exceptions.hh"
 #include "dbc.hh"
 
 #include "InputParserIS.hh"
 #include "InputParserIS_Defs.hh"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "XMLParameterListWriter.hh"
 
 namespace Amanzi {
 namespace AmanziInput {
@@ -16,7 +18,9 @@ namespace AmanziInput {
 /* ******************************************************************
 * Empty
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::Translate(Teuchos::ParameterList* plist, int numproc) {
+Teuchos::ParameterList InputParserIS::Translate(Teuchos::ParameterList* input_plist, int numproc)
+{
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::rcp(input_plist, false);
   numproc_ = numproc;
 
   // first make sure the version is correct
@@ -81,6 +85,11 @@ Teuchos::ParameterList InputParserIS::Translate(Teuchos::ParameterList* plist, i
   new_list.sublist("PKs").sublist("Transport")
           .set<Teuchos::Array<std::string> >("runtime diagnostics: regions", transport_diagnostics_);
 
+  // output unused parameters (experimental)
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    PrintUnused_(plist->sublist("Execution Control").sublist("Numerical Control Parameters"), vo_);
+  }
+
   return new_list;
 }
 
@@ -88,7 +97,7 @@ Teuchos::ParameterList InputParserIS::Translate(Teuchos::ParameterList* plist, i
 /* ******************************************************************
 * Verify that we use XML file with the correct amanzi version.
 ****************************************************************** */
-void InputParserIS::CheckAmanziInputVersion_(Teuchos::ParameterList* plist)
+void InputParserIS::CheckAmanziInputVersion_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   std::string version = plist->get<std::string>("Amanzi Input Format Version", "FAIL");
   if (version == "FAIL") {
@@ -131,7 +140,7 @@ void InputParserIS::CheckAmanziInputVersion_(Teuchos::ParameterList* plist)
 /* ******************************************************************
 * Initizialize some global information.
 ****************************************************************** */
-void InputParserIS::InitGlobalInfo_(Teuchos::ParameterList* plist)
+void InputParserIS::InitGlobalInfo_(Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   Errors::Message msg;
 
@@ -358,6 +367,31 @@ Teuchos::ParameterList InputParserIS::CreateAnalysisList_()
   alist.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
 
   return alist;
+}
+
+
+/* ******************************************************************
+* Analysis of unused parameters
+****************************************************************** */
+void InputParserIS::PrintUnused_(const Teuchos::ParameterList& p, VerboseObject* vo) const
+{
+  Teuchos::OSTab tab = vo_->getOSTab();
+  // print parameters first
+  for (Teuchos::ParameterList::ConstIterator i = p.begin(); i != p.end(); ++i) {
+    if (!(p.entry(i).isUsed())) {
+      *vo->os() << vo_->color("yellow") << "Unused: \"" << p.name(i) << "\"" << vo_->reset() << std::endl;
+    }
+  }
+  
+  // print sublists second
+  for (Teuchos::ParameterList::ConstIterator i = p.begin(); i != p.end(); ++i) {
+    const Teuchos::ParameterEntry& entry_i = p.entry(i);
+    if (!entry_i.isList()) continue;
+
+    const std::string& docString = entry_i.docString();
+    const std::string& name_i = p.name(i);
+    PrintUnused_(Teuchos::getValue<Teuchos::ParameterList>(entry_i), vo);
+  }
 }
 
 }  // namespace AmanziInput

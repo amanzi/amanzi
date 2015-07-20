@@ -174,7 +174,7 @@ void Observable::Update_(const State& S,
           sign = dirs[i];
         }
 
-        value = (*function_)(value, subvec[0][*id], vol);
+        value = (*function_)(value, sign*subvec[0][*id], vol);
         volume += std::abs(vol);
       }
     } else if (entity == AmanziMesh::NODE) {
@@ -194,7 +194,7 @@ void Observable::Update_(const State& S,
       local[0] = value; local[1] = volume;
       S.GetMesh()->get_comm()->SumAll(local, global, 2);
 
-      if (volume > 0) {
+      if (global[1] > 0) {
         if (functional_ == "Observation Data: Point") {
           data.value = global[0] / global[1];
           data.is_valid = true;

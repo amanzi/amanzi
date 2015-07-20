@@ -80,6 +80,54 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
     return op;
   }
 }
+  
+Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(Teuchos::ParameterList& oplist,
+                                       Teuchos::RCP<const AmanziMesh::Mesh> mesh) {
+  std::string name = oplist.get<std::string>("discretization primary");
+  bool flag = oplist.get<bool>("gravity", false);
+  
+  // FV methods
+  if (name == "fv: default" && !flag) {
+    Teuchos::RCP<OperatorDiffusionFV> op = Teuchos::rcp(new OperatorDiffusionFV(oplist, mesh));
+    return op;
+  } else if (name == "fv: default" && flag) {
+    Teuchos::RCP<OperatorDiffusionFVwithGravity> op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh));
+    return op;
+    
+  // MFD methods
+  } else if (!flag) {
+    Teuchos::RCP<OperatorDiffusionMFD> op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, mesh));
+    return op;
+  } else {
+    Teuchos::RCP<OperatorDiffusionMFDwithGravity> op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, mesh));
+    return op;
+  }
+}
+  
+Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(Teuchos::ParameterList& oplist,
+                                       const Teuchos::RCP<Operator>& global_op) {
+  std::string name = oplist.get<std::string>("discretization primary");
+  bool flag = oplist.get<bool>("gravity", false);
+  
+  // FV methods
+  if (name == "fv: default" && !flag) {
+    Teuchos::RCP<OperatorDiffusionFV> op = Teuchos::rcp(new OperatorDiffusionFV(oplist, global_op));
+    return op;
+  } else if (name == "fv: default" && flag) {
+    Teuchos::RCP<OperatorDiffusionFVwithGravity> op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, global_op));
+    return op;
+    
+  // MFD methods
+  } else if (!flag) {
+    Teuchos::RCP<OperatorDiffusionMFD> op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, global_op));
+    return op;
+  } else {
+    Teuchos::RCP<OperatorDiffusionMFDwithGravity> op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, global_op));
+    return op;
+  }
+}
+
+  
 }  // namespace Operators
 }  // namespace Amanzi
 

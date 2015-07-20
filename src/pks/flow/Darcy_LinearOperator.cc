@@ -49,8 +49,11 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u)
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "pressure solver (" << solver->name() 
-               << "): ||r||=" << residual << " itr=" << num_itrs
+               << "): ||r||_H=" << residual << " itr=" << num_itrs
                << " code=" << code << std::endl;
+
+    residual = solver->TrueResidual(rhs, *solution);
+    *vo_->os() << "true l2 residual: ||r||=" << residual << std::endl;
   }
 
   // catastrophic failure.

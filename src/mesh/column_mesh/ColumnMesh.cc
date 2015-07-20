@@ -4,79 +4,69 @@
 
 #include <Teuchos_RCP.hpp>
 
-#include "Column_mesh.hh"
+#include "ColumnMesh.hh"
 #include "dbc.hh"
 #include "errors.hh"
 
-namespace Amanzi
-{
+namespace Amanzi {
+namespace AmanziMesh {
 
-namespace AmanziMesh
-{
-
-Column_mesh::Column_mesh (Mesh& inmesh,
-                          const int column_id, 
-                          const VerboseObject *verbosity_obj) :
-  parent_mesh_(inmesh),
-  column_id_(column_id),
-  column_cells_(inmesh.cells_of_column(column_id)),
-  column_faces_(inmesh.faces_of_column(column_id)) {
+ColumnMesh::ColumnMesh (const Mesh& inmesh,
+                        const int column_id, 
+                        const VerboseObject *verbosity_obj) :
+    parent_mesh_(inmesh),
+    column_id_(column_id),
+    column_cells_(inmesh.cells_of_column(column_id)),
+    column_faces_(inmesh.faces_of_column(column_id)) {
 
   // sanity check
-  
   ASSERT(column_id_ >= 0 && column_id_ < inmesh.num_columns());
   
   // Figure out how many nodes each "horizontal" face has in the
   // column
-  
   Entity_ID_List fnodes;
   parent_mesh_.face_get_nodes(column_faces_[0],&fnodes);
   nfnodes_ = fnodes.size(); 
   
   // compute special geometric quantities for column entities (node
   // coordinates, face centroids, cell centroids, face areas)
-  
   compute_special_node_coordinates_();
   
   // build epetra maps
-  
   build_epetra_maps_();
-  
 }
 
 // Parent of entity
 
-Entity_ID Column_mesh::entity_get_parent(const Entity_kind kind,
-                                         const Entity_ID entid) const {
+Entity_ID ColumnMesh::entity_get_parent(const Entity_kind kind,
+        const Entity_ID entid) const {
   
   switch (kind) {
-  case CELL:
-    return column_cells_[entid];
+    case CELL:
+      return column_cells_[entid];
 
-  case FACE:
-    return column_faces_[entid];
+    case FACE:
+      return column_faces_[entid];
 
-  case EDGE:
-    return -1;
+    case EDGE:
+      return -1;
 
-  case NODE: {
-    int faceid = entid%nfnodes_;
-    int parent_face = column_faces_[faceid];
-    std::vector<Entity_ID> fnodes;
-    parent_mesh_.face_get_nodes(parent_face,&fnodes);
-    return fnodes[entid - faceid*nfnodes_];
+    case NODE: {
+      int faceid = entid%nfnodes_;
+      int parent_face = column_faces_[faceid];
+      std::vector<Entity_ID> fnodes;
+      parent_mesh_.face_get_nodes(parent_face,&fnodes);
+      return fnodes[entid - faceid*nfnodes_];
+    }
+
+    default:
+      amanzi_throw(Errors::Message("Unknown entity kind"));
   }
-  default:
-    amanzi_throw(Errors::Message("Unknown entity kind"));
-  }
-  
 }
 
 // Compute special coordinates for the nodes - all the other 
 // quantities will follow suit
-
-void Column_mesh::compute_special_node_coordinates_() {
-
+void ColumnMesh::compute_special_node_coordinates_() {
   // Assume that the column is vertical - nodes are stacked vertically
   // above each other. Assume that the base face is perfectly horizontal
   //
@@ -89,9 +79,7 @@ void Column_mesh::compute_special_node_coordinates_() {
   // sides are vertical the error will be zero. In 3D, if the sides
   // are vertical and the face is symmetrical about the centroid, the
   // error will be zero.
-
   int spacedim = space_dimension(); // from parent mesh
-
   int nfaces = column_faces_.size();
   int nnodes = nfaces*nfnodes_;
 
@@ -100,31 +88,25 @@ void Column_mesh::compute_special_node_coordinates_() {
   parent_mesh_.face_get_coordinates(parent_face,&node_coordinates_);
 
   for (int j = 1; j < nfaces; ++j) {
-    AmanziGeometry::Point fcen(spacedim);
-
-    parent_mesh_.face_centroid(column_faces_[j],&fcen);
+    AmanziGeometry::Point fcen = parent_mesh_.face_centroid(column_faces_[j]);
     
     for (int i = 0; i < nfnodes_; ++i) {
       AmanziGeometry::Point coords(spacedim);
 
       // node id
-
       int k = j*nfnodes_ + i;
 
       // last coordinate is z-coordinate of face centroid
-
       coords[spacedim-1] = fcen[spacedim-1];
 
       // remain coordinates are coordinates of the corresponding node on
       // the bottom face
-
       for (int d = 0; d < spacedim-1; ++d)
         coords[d] = (node_coordinates_[i])[d]; // node_coordinates_[i][d] ?
         
       node_coordinates_.push_back(coords);
     }
   }
-  
 }
 
 
@@ -134,9 +116,7 @@ void Column_mesh::compute_special_node_coordinates_() {
 // In this case since the columns are all on one processor, the map is
 // just a contiguous sequence of numbers and the communicator is a serial
 // communicator
-
-
-void Column_mesh::build_epetra_maps_() {
+void ColumnMesh::build_epetra_maps_() {
   Epetra_SerialComm epcomm;
   int indexBase = 0;
 

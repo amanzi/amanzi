@@ -356,8 +356,6 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [U] `"steady preconditioner`" [string] select the preconditioner to be used in the nonlinear solver for the steady state problem, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`". (default: `"Hypre AMG`")
 
-     * [U] `"steady initialize with darcy`" [bool] Initialize the flow field using a Darcy solve. (default `"true`")  
-
      * [U] `"steady nonlinear iteration initial guess extrapolation order`" [int] defines how the initial guess (predictor) for a new time step is calculated. If set to zero, the previous solution is used as the initial guess. (default: 1)  
 
    * [U] `"Transient Implicit Time Integration`" [list] Parameters for BDF1 transient time integration 
@@ -392,14 +390,12 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [U] `"transient preconditioner`" [string] select the preconditioner to be used in the nonlinear solver for the steady state problem, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`". (default: `"Hypre AMG`")
 
-     * [U] `"transient initialize with darcy`" [bool] Initialize the flow field using a Darcy solve. (default `"false`") 
-
      * [U] `"transient nonlinear iteration initial guess extrapolation order`" [int] defines how the initial guess (predictor) for a new time step is calculated. If set to zero, the previous solution is used as the initial guess. (default: 1)  
 
 
    * [U] `"Initialization`" [list] Parameters for solution initialization at the beginning of time period
 
-     * [U] `"time integration method`" [string] select the initialization method (currently only Picard is supported). (options `"Picard`", `"Darcy Solver`" (default))
+     * [U] `"time integration method`" [string] select the initialization method. (options `"Picard`", `"Darcy Solver`" (default))
 
      * [U] `"clipping saturation value`" [double] (default: 0.9, suggested range: 0.7 ... 0.95)
 
@@ -1001,7 +997,7 @@ the following set of physical properties using the supported models described be
 
   Additional ''Material Properties'' related to flow are:
 
-  * [SU] Porosity [list] Parameterized model for porosity.  Choose exactly one of the following: `"Porosity: Uniform`" (see below)
+  * [SU] Porosity [list] Parameterized model for porosity.  Choose exactly one of the following: `"Porosity: Uniform`" or `"Porosity: Compressible`" (see below)
 
   * [SU] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" or `"Brooks Corey`" (see below)
 
@@ -1047,11 +1043,17 @@ the following set of physical properties using the supported models described be
 
   * [SU] `"Assigned Regions`" (Array(string)) a set of labels corresponding to volumetric regions defined above.  If any regions specified here are not three-dimensional, an error is thrown. (NOTE: [S] if layers in this list overlap spatially, this list implies the precedence ordering, right to left)
 
-The following models can be specified for porosity (only `"Porosity: Uniform`" is supported at the moment):
+The following models can be specified for porosity `"Porosity: Uniform`" or `"Porosity:Complessible`":
 
 * [SU] `"Porosity: Uniform`" [list] requires 
  
  * [SU] `"Value`" [double] to specify the constant value of porosity.
+
+* [U] `"Porosity: Compressible`" [list] requires 
+ 
+ * [U] `"Reference Value`" [double] to specify the constant value of underformed porosity.
+ * [U] `"Reference Pressure`" [double] to specify the constant value of reference pressure (sefault is 101325.0 [Pa]).
+ * [U] `"Pore Compressibility`" [double] to specify rock compressibility ([Pa^{-1}]. 
 
 The following models can be specified for the intrinsic permeability of the material:
 

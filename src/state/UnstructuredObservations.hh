@@ -28,7 +28,7 @@ namespace Amanzi {
 class UnstructuredObservations {
 
  public:
-  UnstructuredObservations(Teuchos::ParameterList observations_plist,
+  UnstructuredObservations(Teuchos::ParameterList& observations_plist,
                            const Teuchos::RCP<ObservationData>& observation_data,
                            Epetra_MpiComm* comm);
 

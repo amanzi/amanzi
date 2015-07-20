@@ -1,4 +1,4 @@
-<amanzi_input version="2.1.0" type="unstructured | structured">
+<amanzi_input version="2.1.1" type="unstructured | structured">
 
 	<echo_translated_input file_name="string"/>
 

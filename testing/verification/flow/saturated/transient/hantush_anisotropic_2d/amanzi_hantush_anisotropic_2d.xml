@@ -23,7 +23,7 @@
       </ParameterList>
     </ParameterList>
 
-    <Parameter name="Verbosity" type="string" value="High"/>
+    <Parameter name="Verbosity" type="string" value="Extreme"/>
 
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
@@ -34,6 +34,9 @@
         <ParameterList name="Transient Implicit Time Integration">
           <Parameter name="Transient Time Step Increase Factor" type="double" value="1.1"/>
         </ParameterList>
+	<ParameterList name="Initialization">
+	  <Parameter name="time integration method" type="string" value="Darcy Solver"/>
+	</ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>

@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     try:
         path_to_amanziS = "."
-        root_amanziS = "case_2c_plot00001"
+        root_amanziS = "case_2a_plot00001"
         compS = "Aqueous_Pressure"
         x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,compS)
         struct = len(x_amanziS)
@@ -70,10 +70,10 @@ if __name__ == "__main__":
     fig, ax = plt.subplots() 
         
     try:
-        time = '357'
+        time = '428'
         comp = 'pressure.cell.0'
         path_to_amanziU = "."
-        root_amanziU = 'case_2c_plot'
+        root_amanziU = 'case_2a_plot'
         x_amanziU, c_amanziU = GetXY_AmanziU(path_to_amanziU,root_amanziU,time,comp)
         unstruct = len(x_amanziU)
      

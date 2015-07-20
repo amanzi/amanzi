@@ -40,7 +40,7 @@ fields for `"name`" [string], `"type`" [string] and `"value`" [TYPE], where "TYP
 be any of the following: double, int, bool, string, Array(double), Array(int), 
 Array(bool), Array(string).  
 The value of the parameter is given in quotes (e.g. "2.7e3").  
-Array data is specified as a single comma-deliminated string bounded by {}'s (e.g. "{2.4, 2.1, 5.7}").
+Array data is specified as a single comma-delimited string bounded by {}'s (e.g. "{2.4, 2.1, 5.7}").
 
 .. code-block:: xml
 
@@ -100,7 +100,7 @@ Each part of the spec is illustrated by an example followed by optional comments
      </ParameterList>   
    </ParameterList>   
  
-This defines soil properties in region TOP_DOMAIN usign the
+This defines soil properties in region TOP_DOMAIN using the
 Brocks-Corey model with parameters `"lambda=0.7`" and `"alpha=1e-3`".
 
 Additional conventions:
@@ -125,7 +125,7 @@ Cycle driver
 
 New multiprocessor cycle driver which provides more flexibility
 to handle multiphysics process kernels. Either old MPC list or new
-Cycly Driver list has to be defined. To work with new Cycle Driver 
+Cycle Driver list has to be defined. To work with new Cycle Driver 
 parameter `"new mpc driver`" has to be set to true.
 
 * `"components names`" [Array(string)] list of components involved in simulation.
@@ -276,7 +276,7 @@ The evaluator has the following fields.
     * `"regions`" [Array(string)] alternative to option *region*, domain on the function consists
       of many regions.
 
-    * `"component`" [string] speficies geometric object associated with the mesh function.
+    * `"component`" [string] specifies geometric object associated with the mesh function.
       Available options are `"cell`", `"face`", and `"node`".
 
     * `"function`" [sublist] defines an analytic function for calculation. Its structure
@@ -306,7 +306,7 @@ The evaluator has the following fields.
     </ParameterList>
   </ParameterList>
 
-The independet variable *SATURATION_LIQUID* is defined as a cell-based variable with
+The independent variable *SATURATION_LIQUID* is defined as a cell-based variable with
 constant value 0.8. 
 Note that the user-defined name for this field cannot have spaces.
 
@@ -317,7 +317,7 @@ Primary field evaluator
 The primary field evaluator has no dependencies solved for by a PK.
 Examples of independent field evaluators are primary variable of PDEs, such as
 pressure and temperature.
-Typically this avaluator is used to inform the dependency tree about new state
+Typically this evaluator is used to inform the dependency tree about new state
 of the primary variable.
 
 
@@ -362,7 +362,7 @@ One can also create a secondary field evaluator using the following parameters
 In this example the molar density of liquid is evaluated using an EOS evaluator.
 The field name in the dependency tree is `"molar_density_liquid`". 
 The secondary field that is evaluated simultaneously is `"mass_density_liquid`".
-The EOS evaluator knows that these fields dependes on `"temperature`" and `"pressure`";
+The EOS evaluator knows that these fields depend on `"temperature`" and `"pressure`";
 hence, this information is not provided in the input list.
 The EOS requires one-parameter list to select the proper model for evaluation.
 
@@ -468,7 +468,7 @@ checkpoints of vis files. Default values are true.
 
 In this example, the discrete field `"pressure`" has constant value 90000 [Pa] in 
 each mesh cell of region `"DOMAIN 1``". The second mesh block will define
-ppressure in the second mesh regions and so on.
+pressure in the second mesh regions and so on.
 
 
 A vector or tensor field
@@ -694,7 +694,7 @@ The conceptual PDE model for the fully saturated flow is
 
 where 
 :math:`\phi` is porosity,
-:math:`s_s` and :math:`s_y` are specific strorage and specific yeild, respectively,
+:math:`s_s` and :math:`s_y` are specific storage and specific yield, respectively,
 :math:`\rho_l` is fluid density,
 :math:`Q` is source or sink term,
 :math:`\boldsymbol{q}_l` is the Darcy velocity,
@@ -868,8 +868,8 @@ includes a few mandatory parameters: region name, model name, and parameters for
 * `"porosity model`" [string] specifies a model for the soil.
   The available models are `"compressible`" and `"constant`". 
 
-  * The model `"compressible`" requires `"undeformed soil porosity"`" [double],
-    `"reference pressure`" [double], and `"pore compressibility`" [string].
+  * The model `"compressible`" requires `"underformed soil porosity"`" [double],
+    `"reference pressure`" [double], and `"pore compressibility`" [string] [Pa^-1].
     Default value for `"reference pressure`" is 101325.0 [Pa].
 
   * The model `"constant`" requires `"value`" [double].
@@ -887,7 +887,7 @@ includes a few mandatory parameters: region name, model name, and parameters for
        <ParameterList name="SOIL_2">
          <Parameter name="region" type="string" value="BOTTOM HALF"/>
          <Parameter name="porosity model" type="string" value="compressible"/>
-         <Parameter name="undeformed soil porosity" type="double" value="0.2"/>
+         <Parameter name="underformed soil porosity" type="double" value="0.2"/>
          <Parameter name="reference pressure" type="double" value="101325.0"/>
          <Parameter name="pore compressibility" type="double" value="1e-8"/>
        </ParameterList>
@@ -1175,7 +1175,7 @@ The first part controls preliminary steps in the time integrator.
 
 * `"preconditioner`" [string] specifies preconditioner for linear and nonlinear solvers.
 
-* `"preconditioner enhancement`" [string] speficies a linear solver that binds 
+* `"preconditioner enhancement`" [string] specifies a linear solver that binds 
   the above preconditioner to improve spectral properties. Default is `"none`".
 
 * `"initialization`" [list] defines parameters for calculating initial pressure guess.
@@ -1287,11 +1287,15 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
 
   * `"min time step`" [double] is the minimum allowed time step.
 
-* `"solver type`" [string] defines nonlinear solver used on each time step for
+  * `"solver type`" [string] defines nonlinear solver used on each time step for
   a nonlinear algebraic system :math:`F(x) = 0`. 
-  The available options `"nka`" and `"Newton`".
+  The available options `"aa`", `"nka`" and `"Newton`".
 
-  * `"nka parameters`" [list] internal parameters for the nonlinear solver NKA.
+  * `"nka parameters`" [list] internal parameters for the nonlinear
+    solver NKA.
+
+  * `"aa parameters`" [list] internal parameters for the nonlinear
+    solver AA(Anderson acceleration).
 
 .. code-block:: xml
 
@@ -1329,6 +1333,23 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
            <Parameter name="Verbosity Level" type="string" value="high"/>
            </ParameterList>
          </ParameterList>
+
+         <ParameterList name="aa parameters">
+           <Parameter name="nonlinear tolerance" type="double" value="1e-5"/>
+           <Parameter name="limit iterations" type="int" value="30"/>
+           <Parameter name="diverged tolerance" type="double" value="1e+10"/>
+           <Parameter name="diverged l2 tolerance" type="double" value="1e+10"/>
+           <Parameter name="diverged pc tolerance" type="double" value="1e+10"/>
+           <Parameter name="max du growth factor" type="double" value="1e+5"/>
+           <Parameter name="max divergent iterations" type="int" value="3"/>
+           <Parameter name="max aa vectors" type="int" value="10"/>
+           <Parameter name="modify correction" type="bool" value="false"/>
+           <Parameter name="relaxation parameter" type="double" value="0.75"/>
+           <ParameterList name="VerboseObject">
+           <Parameter name="Verbosity Level" type="string" value="high"/>
+           </ParameterList>
+         </ParameterList>
+
        </ParameterList>
      </ParameterList>
    </ParameterList>
@@ -1395,17 +1416,17 @@ The remaining `"Flow`" parameters are
 Verbose output
 ..............
 
-When verbosity is set to *high*, this PK reports infomation about 
+When verbosity is set to *high*, this PK reports information about 
 current status of the simulation.
-Here after keyword *global* referes to the whole simulation including
-all time periods, keyword *local* refers to the currect time period.
+Here after keyword *global* refers to the whole simulation including
+all time periods, keyword *local* refers to the current time period.
 The incomplete list is
 
  * [global] cycle number, time T, and time step dT
  * [global] T and dT inside the time integrator (in seconds)
- * frequence of preconditioner updates
- * number of performed nonlinear steps and value of the nonlinear resodual
- * [local] total number of succesful time steps (TS), failed time steps (FS),
+ * frequency of preconditioner updates
+ * number of performed nonlinear steps and value of the nonlinear residual
+ * [local] total number of successful time steps (TS), failed time steps (FS),
    preconditioner updates (PC/1) and preconditioner applies (PC/2),
    linear solves insides preconditioner (LS)
  * amount of liquid (water) in the reservoir and amount of water entering
@@ -1444,7 +1465,7 @@ where
 :math:`\boldsymbol{M}_l` is diffusion coefficient,
 and :math:`\tau` is tortuosity.
 For an isotropic medium with no preferred axis of symmetry the dispersion 
-tensor has the folowing form:
+tensor has the following form:
 
 .. math::
   \boldsymbol{D}_l 
@@ -1477,7 +1498,7 @@ and temporal accuracy, and verbosity:
 
 * `"cfl`" [double] Time step limiter, a number less than 1. Default value is 1.
    
-* `"spatial discretization order`" [int] defines accuracy of spartial dscretization.
+* `"spatial discretization order`" [int] defines accuracy of spatial discretization.
   It allows values 1 or 2. Default value is 1. 
   
 * `"temporal discretization order`" [int] defines accuracy of temporal discretization.
@@ -1532,7 +1553,7 @@ The diffusivity is defined independently for each solute.
 * SOIL [list] Defines material properties.
   
   * `"region`" [Array(string)] Defines geometric regions for material SOIL.
-  * `"model`" [string] Defines dispersivity model, choose eactly one of the following: `"scalar`", `"Bear`",
+  * `"model`" [string] Defines dispersivity model, choose exactly one of the following: `"scalar`", `"Bear`",
     `"Burnett-Frind`", or `"Lichtner-Kelkar-Robinson`".
   * `"parameters for MODEL`" [sublist] where `"MODEL`" is the model name.
     For model `"scalar`", the following options must be specified:
@@ -1637,7 +1658,7 @@ allows us to define spatially variable boundary conditions.
       * `"boundary concentration`" [list] Define a function for calculating boundary conditions.
         The function specification is described in subsection Functions.
 
-The example below sets constant boundary condtion 1e-5 for the duration of transient simulation.
+The example below sets constant boundary condition 1e-5 for the duration of transient simulation.
 
 .. code-block:: xml
 
@@ -1692,7 +1713,7 @@ Note that the source values are set up separately for each component.
 
 * `"concentration`" [list] This is a reserved keyword.
 
- * "COMP" [list] Contains a few sublists (e.g. SRC_1, SRC_2) for multile sources and sinks.
+ * "COMP" [list] Contains a few sublists (e.g. SRC_1, SRC_2) for multiple sources and sinks.
 
   * "SRC_1" [list] Defines a source using arrays of domain regions, a function, and 
     a distribution method.
@@ -1756,7 +1777,7 @@ This example defines one well and one sink.
 Developer parameters
 ....................
 
-The remaining parameters that can be used by a developes include
+The remaining parameters that can be used by a developer include
 
 * `"enable internal tests`" [string] various internal tests will be executed during
   the run time. The default value is `"no`".
@@ -1846,7 +1867,7 @@ Data fields are separated by semicolumns.
    "30 A(aq) + 2 B(aq) <-> C(aq) + .3 D(aq) +- 4 E(aq)"
    where number (stoichiometires) is followed by species name. 
    The second and fourth fields contain information about reactanct and products.
-   The fouth and fifth columns contain rate constants.
+   The fourth and fifth columns contain rate constants.
 
    .. code-block:: txt
 
@@ -1901,7 +1922,7 @@ Data fields are separated by semicolumns.
    species name and density.
 
  * Section `"Surface Complexes`". Each line in this section has three fields
-   for secondary species. The first field has format "name = coefficient primary_name coeffiient exchanger site".
+   for secondary species. The first field has format "name = coefficient primary_name coefficient exchanger site".
    The second field is Keq. The third field is charge.
 
  * Section `"Isotherms`". Each line in this section has three fields: primary species name, 
@@ -2033,7 +2054,7 @@ in a variety of regimes, e.g. with or without gas phase.
 * `"evaluator type`" [string] changes the evaluator for internal energy.
   Available options are `"generic`" and `"constant liquid density`" (default).
 
-* `"vapor diffusion`" [bool] specifies presense of a gas phase.
+* `"vapor diffusion`" [bool] specifies presence of a gas phase.
   The default value is `"true`".
 
 * `"VerboseObject`" [sublist] is the standard verbosity object.
@@ -2130,7 +2151,7 @@ and a few additional parameters.
          <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
          <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
          <Parameter name="reference temperature" type="double" value="298.15"/>
-         <Parameter name="polinomial expansion" type="Array(double)" value="{-1.48445, 4.12292, -1.63866}"/>
+         <Parameter name="polynomial expansion" type="Array(double)" value="{-1.48445, 4.12292, -1.63866}"/>
        </ParameterList>
      </ParameterList>
    </ParameterList>
@@ -2139,7 +2160,7 @@ and a few additional parameters.
 Operators
 .........
 
-This section contains sublist for diffsuion and advection opeartors.
+This section contains sublist for diffusion and advection operators.
 It also has one global parameters.
 
 * `"operators`" [sublist] 
@@ -2343,7 +2364,7 @@ Diffusion operator
   * `"nonlinear coefficient`" [string] specifies a method for treating nonlinear diffusion
     coefficient, if any. Available options are `"upwind: face`", `"divk: cell-face`" (default),
     `"divk: face`", `"standard: cell`", `"divk: cell-face-twin`" and `"divk: cell-grad-face-twin`".
-    Symmetry preserving methods are the divk-family of methods and the classical cell-centred
+    Symmetry preserving methods are the divk-family of methods and the classical cell-centered
     method (`"standard: cell`"). The first part of the name indicates the base scheme.
     The second part (after the semi-column) indicates required components of the composite vector
     that must be provided by a physical PK.
@@ -2365,7 +2386,7 @@ Diffusion operator
 
   * `"newton correction`" [string] specifies a model for non-physical terms 
     that must be added to the matrix. These terms represent Jacobian and are needed 
-    for the preconditoner. Available options are `"true jacobian`" and `"approximate jacobian`".
+    for the preconditioner. Available options are `"true jacobian`" and `"approximate jacobian`".
 
   * `"consistent faces`" [sublist] may contain a `"preconditioner`" and
     `"linear operator`" list (see sections Preconditioners_ and LinearSolvers_
@@ -2401,7 +2422,7 @@ Diffusion operator
 This example creates a p-lambda system, i.e. the pressure is
 discretized in mesh cells and on mesh faces. 
 The preconditioner is defined on faces only, i.e. cell-based unknowns
-are elliminated explicitly and the preconditioner is applied to the
+are eliminated explicitly and the preconditioner is applied to the
 Schur complement.
 
 
@@ -2412,7 +2433,7 @@ This section is under construction.
 
 * `"OPERATOR_NAME`" [sublist] a PK specific name for the advection operator.
 
-  * [WIP] `"discretization primary`" defines a discretization method. The only aiavalble option is `"upwind`".
+  * [WIP] `"discretization primary`" defines a discretization method. The only available option is `"upwind`".
 
   * [WIP] `"reconstruction order`" defines accuracy of this discrete operator.
 
@@ -2596,7 +2617,7 @@ A generic polynomial function is given by the following expression:
 
 where :math:`c_j` are coefficients of monomials,
 :math:`p_j` are integer exponents, and :math:`x_0` is the reference point.
-Here i san example of a quartic polynomial:
+Here is an example of a quartic polynomial:
 
 .. code-block:: xml
 
@@ -2658,12 +2679,12 @@ Standard math functions
 
 Amanzi supports a set of standard functions `f(x) = f(x[0])`. 
 In Amanzi, the first index of vector `x` corresponds to time.
-These functions allow to set up non-trivial time-depedent boundary conditions 
+These functions allow to set up non-trivial time-dependent boundary conditions 
 which increases a set of analytic solutions that can be used in convergence 
 analysis tests.
 
 * `"operator`" [string] specifies the name of a standard mathematical function.
-  Avaivable options are `"cos`", `"sin`", `"tan`", `"acos`", `"asin`", `"atan`", 
+  Available options are `"cos`", `"sin`", `"tan`", `"acos`", `"asin`", `"atan`", 
   `"cosh`", `"sinh`", `"tanh`", `"exp`", `"log`", `"log10`", `"sqrt`", `"ceil`",
   `"fabs`", `"floor`", `"mod`", and `"pow`".
 
@@ -2979,7 +3000,7 @@ Newton-Krylov acceleration (NKA)
 
 * `"max divergent iterations`" [int] defines another way to identify divergence
   pattern on earlier iterations. If the maximum norm of the solution increment grows 
-  on too many consequtive iterations, the solver is terminated. Default is 3.
+  on too many consecutive iterations, the solver is terminated. Default is 3.
 
 * `"modify correction`" [bool] allows a PK to modify the solution increment.
   One example is a physics-based clipping of extreme solution values. Default is *false*.
@@ -3025,7 +3046,7 @@ Newton
 ......
 
 The classical Newton method works well for cases where Jacobian is available and
-corersponds to a stable (e.g. upwind) discretization.
+corresponds to a stable (e.g. upwind) discretization.
 
 * `"nonlinear tolerance`" [double] defines the required error tolerance. 
   The error is calculated by a PK. Default is 1e-6. 
@@ -3050,13 +3071,13 @@ corersponds to a stable (e.g. upwind) discretization.
 
 * `"max divergent iterations`" [int] defines another way to identify divergence
   pattern on earlier iterations. If the maximum norm of the solution increment grows 
-  on too many consequtive iterations, the solver is terminated. Default is 3.
+  on too many consecutive iterations, the solver is terminated. Default is 3.
 
 * `"modify correction`" [bool] allows a PK to modify the solution increment.
   One example is a physics-based clipping of extreme solution values. Default is *true*.
 
 * `"stagnation iteration check`" determines the number of iterations before the
-  stagnation check is turned on. The stangnation happens when the current L2-error
+  stagnation check is turned on. The stagnation happens when the current L2-error
   exceeds the initial L2-error. Default is 8.
 
 .. code-block:: xml
@@ -3137,7 +3158,7 @@ preconditioner, and identity preconditioner.
 .. code-block:: xml
 
    <ParameterList>  <!-- parent list -->
-     <ParameterList name="Preconditoners">
+     <ParameterList name="Preconditioners">
        <ParameterList name="TRILINOS ML">
           <Parameter name="type" type="string" value="ml"/>
           <ParameterList name="ml parameters">
@@ -3302,7 +3323,7 @@ The internal parameters for block ILU are as follows:
    </ParameterList>
 
 
-Indentity
+Identity
 .........
 
 The identity preconditioner is instantiated if either no preconditioner is
