@@ -98,6 +98,8 @@ std::string      PorousMedia::surf_file;
 // Source.
 //
 bool          PorousMedia::do_source_term;
+Array<Real>   PorousMedia::source_volume;
+
 //
 // Phases and components.
 //
