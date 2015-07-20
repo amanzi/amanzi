@@ -85,14 +85,14 @@
           <Parameter name="Value" type="double" value="0.43" units="fraction"/>
         </ParameterList>
         <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-          <Parameter name="x" type="double" value="1.18472e-11"  units="m/s"/>
-          <Parameter name="y" type="double" value="1.18472e-11" units="m/s"/>
+          <Parameter name="x" type="double" value="1.18e-11"  units="m/s"/>
+          <Parameter name="y" type="double" value="1.18e-11" units="m/s"/>
         </ParameterList>
         <ParameterList name="Capillary Pressure: van Genuchten">
-          <Parameter name="alpha" type="double" value="1.532333e-3" units="Pa^-1"/>
-          <Parameter name="Sr" type="double" value="0.104651" units="fraction"/>
+          <Parameter name="alpha" type="double" value="1.53e-3" units="Pa^-1"/>
+          <Parameter name="Sr" type="double" value="0.104" units="fraction"/>
 			<!-- changed from residual water content of 0.045 to residual saturation of 0.104651 -->
-          <Parameter name="m" type="double" value="0.6666667"/>
+          <Parameter name="m" type="double" value="0.6666"/>
           <Parameter name="Relative Permeability" type="string" value="Mualem"/>
         </ParameterList>
         <Parameter name="Assigned Regions" type="Array(string)" value="{Region between Plane Surface 0 and Plane Surface 1}"/>
@@ -119,7 +119,6 @@
       <ParameterList name="All">
         <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
         <ParameterList name="IC: Uniform Pressure">
-         <Parameter name="Phase" type="string" value="Aqueous"/>
          <Parameter name="Value" type="double" value="81747."  units="Pa"/>
 			<!-- -2 m water initial condition based on 9.80665 m/s^2 gravity -->
         </ParameterList>
@@ -146,8 +145,8 @@
       <ParameterList name="BC For Top Surface">
         <Parameter name="Assigned Regions" type="Array(string)" value="{Top Surface}"/>
         <ParameterList name="BC: Flux">
-          <Parameter name="Inward Mass Flux" type="Array(double)" value="{5.776620e-5}"/>
-			<!-- 0.5 cm/d * (1 m/100 cm)(1 d/24 h)(1 h/3600 s) (998.2 kg/m3) -->
+          <Parameter name="Inward Volumetric Flux" type="Array(double)" value="{5.787e-8}"/>
+			<!-- 0.5 cm/d * (1 m/100 cm)(1 d/24 h)(1 h/3600 s) -->
         </ParameterList>
       </ParameterList>
     </ParameterList>

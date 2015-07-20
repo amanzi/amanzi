@@ -1287,11 +1287,15 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
 
   * `"min time step`" [double] is the minimum allowed time step.
 
-* `"solver type`" [string] defines nonlinear solver used on each time step for
+  * `"solver type`" [string] defines nonlinear solver used on each time step for
   a nonlinear algebraic system :math:`F(x) = 0`. 
-  The available options `"nka`" and `"Newton`".
+  The available options `"aa`", `"nka`" and `"Newton`".
 
-  * `"nka parameters`" [list] internal parameters for the nonlinear solver NKA.
+  * `"nka parameters`" [list] internal parameters for the nonlinear
+    solver NKA.
+
+  * `"aa parameters`" [list] internal parameters for the nonlinear
+    solver AA(Anderson acceleration).
 
 .. code-block:: xml
 
@@ -1329,6 +1333,23 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
            <Parameter name="Verbosity Level" type="string" value="high"/>
            </ParameterList>
          </ParameterList>
+
+         <ParameterList name="aa parameters">
+           <Parameter name="nonlinear tolerance" type="double" value="1e-5"/>
+           <Parameter name="limit iterations" type="int" value="30"/>
+           <Parameter name="diverged tolerance" type="double" value="1e+10"/>
+           <Parameter name="diverged l2 tolerance" type="double" value="1e+10"/>
+           <Parameter name="diverged pc tolerance" type="double" value="1e+10"/>
+           <Parameter name="max du growth factor" type="double" value="1e+5"/>
+           <Parameter name="max divergent iterations" type="int" value="3"/>
+           <Parameter name="max aa vectors" type="int" value="10"/>
+           <Parameter name="modify correction" type="bool" value="false"/>
+           <Parameter name="relaxation parameter" type="double" value="0.75"/>
+           <ParameterList name="VerboseObject">
+           <Parameter name="Verbosity Level" type="string" value="high"/>
+           </ParameterList>
+         </ParameterList>
+
        </ParameterList>
      </ParameterList>
    </ParameterList>

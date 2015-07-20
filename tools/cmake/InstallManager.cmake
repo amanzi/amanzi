@@ -372,6 +372,9 @@ install(EXPORT AmanziTargets
 # XML schema 
 install(FILES ${AMANZI_SOURCE_DIR}/doc/input_spec/schema/amanzi.xsd DESTINATION bin)
 
+# Python update scripts
+install(FILES ${AMANZI_SOURCE_DIR}/tools/input/UpdateSpec_210-211.py DESTINATION bin)
+
 # If MSTK utilities were found (this processing is in FindMSTK.cmake), install them in bin
 if (MSTK_UTILITIES)
    install(PROGRAMS ${MSTK_UTILITIES} DESTINATION bin)

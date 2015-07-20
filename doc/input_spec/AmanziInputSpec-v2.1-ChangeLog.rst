@@ -9,6 +9,45 @@ Overview
 
 The Amanzi simulator will continue to expand the available features and enhance current functionality.  This progress will result in modifications and additions to the XML input specificition.  Specific versions of the XML input specification will only work with the corresponding Amanzi release version.  The following is a description of the changes made to the XML input specification and the Amanzi release version(s) that accept the input version.
 
+.. Version 2.1.1 (Amanzi Release - devel - ####)
+.. ==================================================
+
+.. Changeset ####
+
+.. NERSC build on  July ##, 2015.
+
+.. Edison build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.18/default-1507##
+
+.. Hopper build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.18/default-1507##
+
+.. * The version number of the schema has been updated and coisides with the 0.84 release of amanzi.  Note that a new link has been created on the NERSC machines called 'release-0.84'.  The new 'devel' link will continue to be updated as new builds are created and the input schema is updated.  The new version number of the schema for 'devel' will be 2.2.0.
+
+Version 2.1.1 (Amanzi Release - devel - ####)
+==================================================
+
+Changeset ####
+
+NERSC build on  July ##, 2015.  
+
+Edison build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.18/default-150618  
+
+Hopper build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.18/default-150618
+
+Build
+-----
+
+* The new python script UpdateSpec_210-211.py is now installed along with the executable and schema file in $INSTALL/bin.  This was added for convenience of users to update their input files as the schema continues to evolve.
+
+Tools
+-----
+
+* Added the python script UpdateSpec_210-211.py to the repository in tools/install.  This script reads in an existing 2.1.0 input file and writes out an updated version consistent with the latest 2.1.0 spec (which will be updated to 2.1.1 soon).
+
+Output
+------
+
+* Added `"vis`" element option `"write_regions`" to documentation.  This has been available for awhile but was not included in the documentation.
+
 Version 2.1.0 (Amanzi Release - devel - 8061/8064)
 ==================================================
 
