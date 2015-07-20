@@ -183,7 +183,7 @@ void OperatorAdvection::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
   const std::vector<int>& bc_model = bc->bc_model();
   const std::vector<double>& bc_value = bc->bc_value();
 
-  for (int f = 0; f < nfaces_wghost; f++) {
+  for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
       int c1 = (*upwind_cell_)[f];
       int c2 = (*downwind_cell_)[f];
