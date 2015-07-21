@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.1.0">
+<amanzi_input type="unstructured" version="2.1.1">
     <model_description name="Richards-1D-infiltration_loam_sand" />
     <definitions>
       <macros>
@@ -55,6 +55,11 @@
         <unstr_transport_controls>
           <algorithm>explicit first-order</algorithm>
         </unstr_transport_controls>
+        <unstr_preconditioners>
+          <hypre_amg />
+          <trilinos_ml />
+          <block_ilu />
+        </unstr_preconditioners>
         <unstr_preconditioners>
           <hypre_amg />
           <trilinos_ml />

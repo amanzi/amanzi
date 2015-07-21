@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.1.0">
+<amanzi_input type="unstructured" version="2.1.1">
     <model_description name="Dispersion Example Problem">
       <comments>Example input file</comments>
       <model_id>Single-Phase Saturated</model_id>
@@ -65,6 +65,11 @@
           <trilinos_ml />
           <block_ilu />
         </unstr_preconditioners>
+        <unstr_preconditioners>
+          <hypre_amg />
+          <trilinos_ml />
+          <block_ilu />
+        </unstr_preconditioners>
       </unstructured_controls>
     </numerical_controls>
     <mesh framework="mstk">
@@ -124,7 +129,7 @@
       <material name="Aquifers">
         <mechanical_properties>
           <porosity value="0.35" />
-          <dispersion_tensor alpha_l="21.3" alpha_t="4.3" />
+          <dispersion_tensor alpha_l="21.3" alpha_t="4.3" type="uniform_isotropic" />
           <molecular_diffusion value="0.0" />
           <tortuosity value="0.0" />
         </mechanical_properties>

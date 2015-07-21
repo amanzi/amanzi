@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.1.0">
+<amanzi_input type="unstructured" version="2.1.1">
     <echo_translated_input file_name="oldspec.xml" format="v1" />
     <model_description name="SR Test Problem">
       <comments>Confind aquifer transient drawdown (Theis 1935)</comments>
@@ -60,13 +60,17 @@
           </unstr_initialization>
         </unstr_steady-state_controls>
         <unstr_linear_solver>
-          <method>pcg</method>
           <max_iterations>1000</max_iterations>
           <tolerance>1.0e-18</tolerance>
         </unstr_linear_solver>
         <unstr_transport_controls>
           <algorithm>none</algorithm>
         </unstr_transport_controls>
+        <unstr_preconditioners>
+          <hypre_amg />
+          <trilinos_ml />
+          <block_ilu />
+        </unstr_preconditioners>
         <unstr_preconditioners>
           <hypre_amg />
           <trilinos_ml />

@@ -10,7 +10,7 @@ namespace AmanziNewInput {
 
 #define AMANZI_INPUT_VERSION_MAJOR 2
 #define AMANZI_INPUT_VERSION_MINOR 1
-#define AMANZI_INPUT_VERSION_MICRO 0
+#define AMANZI_INPUT_VERSION_MICRO 1
 
 // validate sets
 const Teuchos::Array<std::string> verbosityStrings = Teuchos::tuple<std::string>("None", "Low", "Medium", "High", "Extreme");
