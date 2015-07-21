@@ -392,7 +392,7 @@ double OverlandHeadFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       int nfaces = dvec->size(*comp, false);
       bool scaled_constraint = plist_->sublist("Diffusion").get<bool>("scaled constraint equation", false);
       const Epetra_MultiVector& kr_f = *S_next_->GetFieldData("upwind_overland_conductivity")
-      ->ViewComponent("face",false);
+        ->ViewComponent("face",false);
       
       for (unsigned int f=0; f!=nfaces; ++f) {
         AmanziMesh::Entity_ID_List cells;

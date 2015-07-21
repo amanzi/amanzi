@@ -19,7 +19,6 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "independent_variable_field_evaluator.hh"
 
 #include "upwind_potential_difference.hh"
-#include "upwind_total_flux.hh"
 #include "upwind_cell_centered.hh"
 #include "pres_elev_evaluator.hh"
 #include "elevation_evaluator.hh"
@@ -32,6 +31,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "height_evaluator.hh"
 #include "overland_source_from_subsurface_flux_evaluator.hh"
 
+#include "UpwindFluxFactory.hh"
 #include "OperatorDiffusionFactory.hh"
 
 #include "overland_head.hh"
@@ -172,15 +172,17 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
       ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
   S->GetField("dupwind_overland_conductivity_dponded_depth",name_)->set_io_vis(false);
 
-  upwind_method_ = Operators::UPWIND_METHOD_TOTAL_FLUX;
-  upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-          "overland_conductivity", "upwind_overland_conductivity",
-          "surface_flux_direction", 1.e-8));
-    
-  upwinding_dkdp_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-          "doverland_conductivity_dponded_depth",
-          "dupwind_overland_conductivity_dponded_depth",
-          "surface_flux_direction", 1.e-8));
+  Operators::UpwindFluxFactory upwfactory;
+  Teuchos::ParameterList cond_plist = plist_->sublist("overland conductivity evaluator");
+  
+  upwinding_ = upwfactory.Create(cond_plist, name_,
+                                 "overland_conductivity", "upwind_overland_conductivity",
+                                 "surface_flux_direction", 1.e-8);
+  
+  upwinding_dkdp_ = upwfactory.Create(cond_plist, name_,
+                                      "doverland_conductivity_dponded_depth",
+                                      "dupwind_overland_conductivity_dponded_depth",
+                                      "surface_flux_direction", 1.e-8);
 
   // -- owned secondary variables, no evaluator used
   S->RequireField("surface_flux_direction", name_)->SetMesh(mesh_)->SetGhosted()

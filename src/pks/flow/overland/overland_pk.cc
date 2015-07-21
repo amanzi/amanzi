@@ -28,6 +28,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "overland_conductivity_evaluator.hh"
 #include "overland_conductivity_model.hh"
 
+#include "UpwindFluxFactory.hh"
 #include "OperatorDiffusionFactory.hh"
 
 #include "overland.hh"
@@ -87,7 +88,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   // Create the upwinding method.
   S->RequireField("upwind_overland_conductivity", name_)->SetMesh(mesh_)
-      ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
+    ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
   S->GetField("upwind_overland_conductivity",name_)->set_io_vis(false);
 
   S->RequireField("dupwind_overland_conductivity_dponded_depth", name_)
@@ -95,15 +96,17 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
       ->SetComponent("face", AmanziMesh::FACE, 1);
   S->GetField("dupwind_overland_conductivity_dponded_depth",name_)->set_io_vis(false);
 
-  upwind_method_ = Operators::UPWIND_METHOD_TOTAL_FLUX;
-  upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
+  Operators::UpwindFluxFactory upwfactory;
+  Teuchos::ParameterList cond_plist = plist_->sublist("overland conductivity evaluator");
+  
+  upwinding_ = upwfactory.Create(cond_plist, name_,
           "overland_conductivity", "upwind_overland_conductivity",
-          "surface_flux_direction", 1.e-8));
+          "surface_flux_direction", 1.e-8);
     
-  upwinding_dkdp_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
+  upwinding_dkdp_ = upwfactory.Create(cond_plist, name_,
           "doverland_conductivity_dponded_depth",
           "dupwind_overland_conductivity_dponded_depth",
-          "surface_flux_direction", 1.e-8));
+          "surface_flux_direction", 1.e-8);
 
   // -- owned secondary variables, no evaluator used
   S->RequireField("surface_flux_direction", name_)->SetMesh(mesh_)->SetGhosted()
