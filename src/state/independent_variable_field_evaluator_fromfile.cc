@@ -190,6 +190,10 @@ void IndependentVariableFieldEvaluatorFromFile::UpdateField_(const Teuchos::Ptr<
     }
   }
 
+  if (locname_ == "cell" &&
+      (cv->HasComponent("boundary_face") || cv->HasComponent("face"))) 
+    DeriveFaceValuesFromCellValues(*cv);
+
 }
 
 

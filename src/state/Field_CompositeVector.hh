@@ -21,6 +21,9 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 
 namespace Amanzi {
 
+void DeriveFaceValuesFromCellValues(CompositeVector& cv);
+
+
 class Field_CompositeVector : public Field {
 
 public:
@@ -70,7 +73,6 @@ protected:
   void ReadAttributeFromExodusII_(Teuchos::ParameterList& plist); 
   void ReadVariableFromExodusII_(Teuchos::ParameterList& plist); 
   void InitializeFromColumn_(Teuchos::ParameterList& plist);
-  void DeriveFaceValuesFromCellValues_();
 
   Teuchos::RCP<CompositeVector> data_;
   std::vector<std::vector<std::string> > subfield_names_;

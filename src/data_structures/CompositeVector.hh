@@ -535,6 +535,8 @@ CompositeVector::Random() {
   return mastervec_->Random();
 }
 
+void DeriveFaceValuesFromCellValues(CompositeVector&);
+
 } // namespace
 
 #endif
