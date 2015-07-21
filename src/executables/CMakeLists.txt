@@ -23,6 +23,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/mpc)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
+include_directories(${ATS_SOURCE_DIR}/src/operators/deformation)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
 
 include_directories(${ATS_SOURCE_DIR}/src/coordinator)
@@ -50,6 +51,7 @@ include_evaluators_directories(LISTNAME FLOW_OVERLAND_EVAL_FAC_INCLUDES)
 include_evaluators_directories(LISTNAME RICHARDS_EVAL_FAC_INCLUDES)
 include_evaluators_directories(LISTNAME PERMAFROST_EVAL_FAC_INCLUDES)
 include_evaluators_directories(LISTNAME PRESCRIBED_DEFORMATION_EVAL_INCLUDES)
+include_evaluators_directories(LISTNAME VOLUMETRIC_DEFORMATION_EVAL_INCLUDES)
 include_evaluators_directories(LISTNAME ENERGY_ADVECTION_DIFFUSION_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ENERGY_CONSTANT_TEMPERATURE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ENERGY_CONST_REL_INTERNAL_ENERGY_REG_INCLUDES)
@@ -63,7 +65,7 @@ include_evaluators_directories(LISTNAME BGC_REG_INCLUDES)
 include_evaluators_directories(LISTNAME TEST_PKS_REG_INCLUDES)
 include_evaluators_directories(LISTNAME MPC_PK_FAC_INCLUDES)
 #include_evaluators_directories(LISTNAME TRANSPORT_PASSIVE_TRACER_REG_INCLUDES)
-
+  
 
 
 add_executable(ats amanzi_unstructured_grid_simulation_driver.cc main.cc )

@@ -26,6 +26,7 @@ void ThreePhase::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField(energy_key_)->SetMesh(mesh_)->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(energy_key_);
+
   
   // -- advection of enthalpy
   S->RequireField(enthalpy_key_)->SetMesh(mesh_)
