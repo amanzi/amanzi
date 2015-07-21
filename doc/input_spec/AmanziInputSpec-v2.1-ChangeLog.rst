@@ -9,18 +9,18 @@ Overview
 
 The Amanzi simulator will continue to expand the available features and enhance current functionality.  This progress will result in modifications and additions to the XML input specificition.  Specific versions of the XML input specification will only work with the corresponding Amanzi release version.  The following is a description of the changes made to the XML input specification and the Amanzi release version(s) that accept the input version.
 
-.. Version 2.1.1 (Amanzi Release - devel - ####)
-.. ==================================================
+Version 2.1.1 (Amanzi Release - devel - ####)
+==================================================
 
-.. Changeset ####
+Changeset ####
 
-.. NERSC build on  July ##, 2015.
+NERSC build on  July ##, 2015.
 
-.. Edison build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.18/default-1507##
+Edison build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.18/default-1507##
 
-.. Hopper build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.18/default-1507##
+Hopper build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.18/default-1507##
 
-.. * The version number of the schema has been updated and coisides with the 0.84 release of amanzi.  Note that a new link has been created on the NERSC machines called 'release-0.84'.  The new 'devel' link will continue to be updated as new builds are created and the input schema is updated.  The new version number of the schema for 'devel' will be 2.2.0.
+* The version number of the schema has been updated and coisides with the 0.84 release of amanzi.  Note that a new link has been created on the NERSC machines called 'release-0.84'.  The new 'devel' link will continue to be updated as new builds are created and the input schema is updated.  The new version number of the schema for 'devel' will be 2.2.0.
 
 Version 2.1.1 (Amanzi Release - devel - ####)
 ==================================================
