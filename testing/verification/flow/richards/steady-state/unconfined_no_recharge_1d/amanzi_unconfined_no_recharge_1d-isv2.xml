@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.1.0">
+<amanzi_input type="unstructured" version="2.1.1">
     <model_description name="unconfined_head_head_no_recharge_2d">
       <comments>Steady-State Richards: unconfined_head_head_no_recharge_2d</comments>
       <model_id>1SSUncFlow1/PORFLOW 4.2.1</model_id>
@@ -37,11 +37,6 @@
     </execution_controls>
     <numerical_controls>
       <unstructured_controls>
-        <unstr_steady-state_controls>
-          <unstr_initialization>
-            <method>darcy_solver</method>
-          </unstr_initialization>
-        </unstr_steady-state_controls>
         <unstr_linear_solver>
           <max_iterations>100</max_iterations>
           <tolerance>1.0e-18</tolerance>
@@ -49,6 +44,11 @@
         <unstr_transport_controls>
           <algorithm>none</algorithm>
         </unstr_transport_controls>
+        <unstr_preconditioners>
+          <hypre_amg />
+          <trilinos_ml />
+          <block_ilu />
+        </unstr_preconditioners>
         <unstr_preconditioners>
           <hypre_amg />
           <trilinos_ml />

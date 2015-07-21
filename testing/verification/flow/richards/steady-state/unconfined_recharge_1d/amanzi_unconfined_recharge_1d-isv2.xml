@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.1.0">
+<amanzi_input type="unstructured" version="2.1.1">
     <echo_translated_input file_name="oldspec.xml" format="v1" />
     <model_description name="unconfined_head_head_no_recharge_2d">
       <comments>Steady-State Richards: no_recharge_2d</comments>
@@ -85,6 +85,11 @@
           <algorithm>none</algorithm>
           <cfl>1</cfl>
         </unstr_transport_controls>
+        <unstr_preconditioners>
+          <hypre_amg />
+          <trilinos_ml />
+          <block_ilu />
+        </unstr_preconditioners>
         <unstr_preconditioners>
           <hypre_amg />
           <trilinos_ml />

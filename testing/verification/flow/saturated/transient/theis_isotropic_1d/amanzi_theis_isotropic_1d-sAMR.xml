@@ -1,6 +1,6 @@
 <ParameterList name="Main">
   <Parameter name="Amanzi Input Format Version" type="string" value="1.2.3"/>
-  <Parameter name="Petsc Options File" type="string" value=".petsc_hypre"/>
+  <Parameter name="Petsc Options File" type="string" value=".petsc_slu"/>
 
   <!--
      Confined Aquifer Transient Drawdown (Theis 1935)
@@ -29,12 +29,40 @@
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Structured Algorithm">
         <ParameterList name="Expert Settings">
-          <Parameter name="do_richard_init_to_steady" type="int" value="0"/> 
           <Parameter name="gravity_dir" type="int" value="2"/> 
           <Parameter name="z_location" type="double" value="5"/> 
           <Parameter name="domain_thickness" type="double" value="10"/> 
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="Adaptive Mesh Refinement Control">
+        <Parameter name="Number Of AMR Levels" type="int" value="3"/>
+        <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4}"/>
+        <Parameter name="Regrid Interval" type="Array(int)" value="{4}"/>
+        <Parameter name="Blocking Factor" type="Array(int)" value="{4, 4, 4}"/>
+        <Parameter name="Maximum Grid Size" type="Array(int)" value="{96, 96, 96}"/>
+        <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{4, 2}"/>
+	<Parameter name="Refinement Indicators" type="Array(string)" value="{Well ref, Head ref}"/>
+
+        <ParameterList name="Well ref">
+          <Parameter name="Regions" type="Array(string)" value="{Well}"/>
+          <Parameter name="Inside Region" type="bool" value="TRUE"/>
+          <Parameter name="Maximum Refinement Level" type="int" value="2"/>
+        </ParameterList>
+
+        <ParameterList name="Head ref">
+          <Parameter name="Regions" type="Array(string)" value="{All}"/>
+          <Parameter name="Maximum Refinement Level" type="int" value="4"/>
+          <Parameter name="Field Name" type="string" value="Hydraulic Head"/>
+          <Parameter name="Adjacent Difference Greater" type="double" value=".05"/>
+        </ParameterList>
+
+        <ParameterList name="Expert Settings">
+          <Parameter name="v" type="int" value="3"/>
+        </ParameterList>
+      </ParameterList>
+
+
     </ParameterList>
     
   </ParameterList>
@@ -47,15 +75,15 @@
     <ParameterList name="Structured">
       <Parameter name="Domain Low Coordinate"  type="Array(double)" value="{-1200,-1200}"/>
       <Parameter name="Domain High Coordinate" type="Array(double)" value="{ 1200, 1200}"/>
-      <Parameter name="Number of Cells"    type="Array(int)"    value="{  600,  600}"/>
+      <Parameter name="Number of Cells"    type="Array(int)"    value="{  300,  300}"/>
     </ParameterList>
   </ParameterList>
 
   <ParameterList name="Regions">
     <ParameterList name="Well">
       <ParameterList name="Region: Box">
-	<Parameter name="Low Coordinate" type="Array(double)" value="{-2,-2}"/>
-	<Parameter name="High Coordinate" type="Array(double)" value="{2,2}"/>
+	<Parameter name="Low Coordinate" type="Array(double)" value="{-.5,-.5}"/>
+	<Parameter name="High Coordinate" type="Array(double)" value="{.5,.5}"/>
       </ParameterList>
     </ParameterList>
 
@@ -151,6 +179,8 @@
     </ParameterList>
 
     <ParameterList name="Visualization Data">
+      <Parameter name="File Name Base" type="string" value="plt"/>
+      <Parameter name="Cycle Macros" type="Array(string)" value="{Every Cycle}"/>
     </ParameterList>
 
     <ParameterList name="Observation Data">
