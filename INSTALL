@@ -46,7 +46,3 @@ Amanzi comes with a number of tests that are used to generate the User
 Guide.  These are in testing/verification and testing/benchmarking
 users are encouraged to play around with them.  These tests include
 python scripts that run Amanzi, and plot the results.
-
-
-
-

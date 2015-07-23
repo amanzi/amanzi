@@ -2,6 +2,11 @@
     <model_description name="Richards-1D-infiltration_sand_loam" />
     <definitions>
       <macros>
+	<time_macro name="Observation Times">
+          <start>0</start>
+          <timestep_interval>10000 y</timestep_interval>
+          <stop>-1</stop>
+        </time_macro>
         <cycle_macro name="Every_100">
           <start>0</start>
           <timestep_interval>100</timestep_interval>
@@ -80,6 +85,18 @@
       <box high_coordinates="(1.0, 1.0, 0.0)" low_coordinates="(0.0, 0.0, 0.0)" name="Bottom Surface" />
       <box high_coordinates="(1.0, 1.0, 2.0)" low_coordinates="(0.0, 0.0, 1.5)" name="Top Region" />
       <box high_coordinates="(1.0, 1.0, 1.5)" low_coordinates="(0.0, 0.0, 0.0)" name="Bottom Region" />
+      <point coordinate="(0.5,0.5,0.0)" name="Obs_0" />
+      <point coordinate="(0.5,0.5,1.50)" name="Obs_150" />
+      <point coordinate="(0.5,0.5,1.55)" name="Obs_155" />
+      <point coordinate="(0.5,0.5,1.60)" name="Obs_160" />
+      <point coordinate="(0.5,0.5,1.65)" name="Obs_165" />
+      <point coordinate="(0.5,0.5,1.70)" name="Obs_170" />
+      <point coordinate="(0.5,0.5,1.75)" name="Obs_175" />
+      <point coordinate="(0.5,0.5,1.80)" name="Obs_180" />
+      <point coordinate="(0.5,0.5,1.85)" name="Obs_185" />
+      <point coordinate="(0.5,0.5,1.90)" name="Obs_190" />
+      <point coordinate="(0.5,0.5,1.95)" name="Obs_195" />
+      <point coordinate="(0.5,0.5,2.0)" name="Obs_200" />
     </regions>
     <materials>
       <material name="loam">
@@ -148,6 +165,71 @@
       </boundary_condition>
     </boundary_conditions>
     <output>
+      <observations>
+        <filename>observations.out</filename>
+        <liquid_phase name="water">
+          <aqueous_pressure>
+            <assigned_regions>Obs_0</assigned_regions>
+            <functional>point</functional>
+            <time_macros>Observation Times</time_macros>
+          </aqueous_pressure>
+          <aqueous_pressure>
+            <assigned_regions>Obs_150</assigned_regions>
+            <functional>point</functional>
+            <time_macros>Observation Times</time_macros>
+          </aqueous_pressure>
+          <aqueous_pressure>
+            <assigned_regions>Obs_155</assigned_regions>
+            <functional>point</functional>
+            <time_macros>Observation Times</time_macros>
+          </aqueous_pressure>
+          <aqueous_pressure>
+            <assigned_regions>Obs_160</assigned_regions>
+            <functional>point</functional>
+            <time_macros>Observation Times</time_macros>
+          </aqueous_pressure>
+          <aqueous_pressure>
+            <assigned_regions>Obs_165</assigned_regions>
+            <functional>point</functional>
+            <time_macros>Observation Times</time_macros>
+          </aqueous_pressure>
+          <aqueous_pressure>
+            <assigned_regions>Obs_170</assigned_regions>
+            <functional>point</functional>
+            <time_macros>Observation Times</time_macros>
+          </aqueous_pressure>
+          <aqueous_pressure>
+            <assigned_regions>Obs_175</assigned_regions>
+            <functional>point</functional>
+            <time_macros>Observation Times</time_macros>
+          </aqueous_pressure>
+          <aqueous_pressure>
+            <assigned_regions>Obs_180</assigned_regions>
+            <functional>point</functional>
+            <time_macros>Observation Times</time_macros>
+          </aqueous_pressure>
+          <aqueous_pressure>
+            <assigned_regions>Obs_185</assigned_regions>
+            <functional>point</functional>
+            <time_macros>Observation Times</time_macros>
+          </aqueous_pressure>
+          <aqueous_pressure>
+            <assigned_regions>Obs_190</assigned_regions>
+            <functional>point</functional>
+            <time_macros>Observation Times</time_macros>
+          </aqueous_pressure>
+          <aqueous_pressure>
+            <assigned_regions>Obs_195</assigned_regions>
+            <functional>point</functional>
+            <time_macros>Observation Times</time_macros>
+          </aqueous_pressure>
+          <aqueous_pressure>
+            <assigned_regions>Obs_200</assigned_regions>
+            <functional>point</functional>
+            <time_macros>Observation Times</time_macros>
+          </aqueous_pressure>
+        </liquid_phase>
+      </observations>
       <vis>
         <base_filename>case_2b_plot</base_filename>
         <num_digits>5</num_digits>
