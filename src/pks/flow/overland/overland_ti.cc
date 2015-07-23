@@ -243,6 +243,7 @@ double OverlandFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     } else if (*comp == std::string("face")) {
       // error in flux -- relative to cell's extensive conserved quantity
       int nfaces = dvec->size(*comp, false);
+
       bool scaled_constraint = plist_->sublist("Diffusion").get<bool>("scaled constraint equation", false);
       const Epetra_MultiVector& kr_f = *S_next_->GetFieldData("upwind_overland_conductivity")
         ->ViewComponent("face",false);
@@ -260,6 +261,7 @@ double OverlandFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
         kf_hmean = nval / kf_hmean;
       }
 */
+
       for (unsigned int f=0; f!=nfaces; ++f) {
         AmanziMesh::Entity_ID_List cells;
         mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
@@ -268,10 +270,10 @@ double OverlandFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
         double conserved_min = cells.size() == 1 ? pd[0][cells[0]]
             : std::min(pd[0][cells[0]],pd[0][cells[1]]);
       
-        double enorm_f = fluxtol_ * h * std::abs(dvec_v[0][f])
-            / ((atol_ + rtol_*std::abs(conserved_min))*cv_min);
-//        if (scaled_constraint && ((kr_f[0][f] < 1.0) || (kr_f[0][f] > kf_hmean))) enorm_f *= kr_f[0][f];
+        double enorm_f = fluxtol_ * h * std::abs(dvec_v[0][f]) 
+                / ((atol_ + rtol_*std::abs(conserved_min))*cv_min);
         if (scaled_constraint && (kr_f[0][f] < 1.0)) enorm_f *= kr_f[0][f];
+
         if (enorm_f > enorm_comp) {
           enorm_comp = enorm_f;
           enorm_loc = f;
