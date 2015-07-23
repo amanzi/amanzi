@@ -169,6 +169,10 @@ register_evaluator_with_factory(
   LISTNAME   ENERGY_THREE_PHASE_REG
   )
 register_evaluator_with_factory(
+  HEADERFILE three_phase/interfrost_energy_reg.hh
+  LISTNAME   ENERGY_THREE_PHASE_REG
+  )
+register_evaluator_with_factory(
   HEADERFILE three_phase/interfrost_energy_evaluator_reg.hh
   LISTNAME   ENERGY_THREE_PHASE_REG
   )
