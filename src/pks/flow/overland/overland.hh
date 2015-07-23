@@ -101,7 +101,7 @@ protected:
 
   // control switches
   bool standalone_mode_; // domain mesh == surface mesh
-  Operators::UpwindMethod upwind_method_;
+//  Operators::UpwindMethod upwind_method_;
   bool is_source_term_;
 
   // coupling term
