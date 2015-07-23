@@ -893,12 +893,6 @@ void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
     double v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] / kf[0][f] : 0.0;
     double vmod = std::abs(v) * dkdp_f[0][f];
 
-    if (scalar_rho_) {
-      vmod *= rho_;
-    } else {
-      ASSERT(false);
-    }
-
     // interior face
     int i, dir, c1, c2;
     c1 = cells[0];
@@ -1233,6 +1227,7 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
   scaled_constraint_ = plist.get<bool>("scaled constraint equation", false);
 
   // little-k options
+  ASSERT(!plist.isParameter("upwind method"));
   std::string name = plist.get<std::string>("nonlinear coefficient", "standard: cell");
   if (name == "none") {
     little_k_ = OPERATOR_LITTLE_K_NONE;
@@ -1277,8 +1272,6 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
   nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
   // default parameters for Newton correction
-  scalar_rho_ = true;
-  rho_ = 1.0;
   mass_matrices_initialized_ = false;
   K_ = Teuchos::null;
   k_ = Teuchos::null;
