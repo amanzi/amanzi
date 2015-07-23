@@ -86,6 +86,8 @@ protected:
   virtual bool UpdatePermeabilityData_(const Teuchos::Ptr<State>& S);
   virtual bool UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<State>& S);
 
+  virtual void UpdateVelocity_(const Teuchos::Ptr<State>& S);
+
   // physical methods
   // -- diffusion term
   virtual void ApplyDiffusion_(const Teuchos::Ptr<State>& S,

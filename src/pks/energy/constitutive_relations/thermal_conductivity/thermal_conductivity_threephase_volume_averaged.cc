@@ -10,6 +10,7 @@ Linear interpolant of thermal conductivity.
 ------------------------------------------------------------------------- */
 
 #include <cmath>
+#include "dbc.hh"
 #include "thermal_conductivity_threephase_volume_averaged.hh"
 
 namespace Amanzi {
@@ -23,6 +24,7 @@ ThermalConductivityThreePhaseVolumeAveraged::ThermalConductivityThreePhaseVolume
 
 double ThermalConductivityThreePhaseVolumeAveraged::ThermalConductivity(double poro,
         double sat_liq, double sat_ice, double temp) {
+  ASSERT(std::abs(1-sat_liq-sat_ice) < 1.e-10);
   return (1-poro)*k_soil_ + poro*sat_liq*k_liquid_
       + poro*sat_ice*k_ice_ + poro*(1-sat_liq-sat_ice)*k_gas_;
 };

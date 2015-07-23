@@ -13,8 +13,8 @@ include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 
-add_library(pk_energy_three_phase three_phase_energy_evaluator.cc interfrost_energy_evaluator.cc
-  three_phase.cc)
+add_library(pk_energy_three_phase three_phase_energy_evaluator.cc interfrost_energy_evaluator.cc 
+  three_phase.cc interfrost_energy.cc)
 
 install(TARGETS pk_energy_three_phase DESTINATION lib)
 
