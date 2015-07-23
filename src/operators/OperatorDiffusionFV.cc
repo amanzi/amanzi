@@ -335,7 +335,10 @@ void OperatorDiffusionFV::AnalyticJacobian_(const CompositeVector& u)
   double k_rel[2], dkdp[2], pres[2], dist;
 
   const Epetra_MultiVector& dKdP_cell = *dkdp_->ViewComponent("cell");
-  const Epetra_MultiVector& dKdP_face = *dkdp_->ViewComponent("face", true);
+  Teuchos::RCP<const Epetra_MultiVector> dKdP_face;
+  if (dkdp_->HasComponent("face")) {
+    dKdP_face = dkdp_->ViewComponent("face", true);
+  }
 
   std::vector<int> flag(nfaces_owned, 0);
   for (int c = 0; c != ncells_owned; ++c) {
@@ -363,7 +366,7 @@ void OperatorDiffusionFV::AnalyticJacobian_(const CompositeVector& u)
         }
 
         if (mcells == 1) {
-          dkdp[0] = dKdP_face[0][f];
+          dkdp[1] = dKdP_face.get() ? (*dKdP_face)[0][f] : 0.;
         }
 
         ComputeJacobianLocal_(mcells, f, face_dir, little_k_,
