@@ -65,7 +65,7 @@ endfunction(_ADD_TEST_KIND_LABEL)
 #         set to the main Amanzi binary.
 #
 # KEYWORD AMANZI_INPUT is required if keyword KIND is set to AMANZI. This
-#         key word defines the Amanzi XML input file.
+#         keyword defines the Amanzi XML input file.
 #
 # Option PARALLEL signifies that this is a parallel job. This is also
 # implied by an NPROCS value > 1
@@ -277,6 +277,76 @@ endfunction(ADD_AMANZI_TEST)
 
 # Usage:
 #
+# ADD_AMANZI_SMOKE_TEST(<test_name> 
+#                       INPUT file.xml
+#                       [FILES file1;file2;...;fileN]
+#                       [PARALLEL] 
+#                       [NPROCS procs1 ... ]
+#                       [MPI_EXEC_ARGS arg1 ... ])
+
+#
+# Arguments:
+#  test_name: the name given to the comparison test 
+#
+# KEYWORD INPUT is required. This keyword defines the Amanzi XML input file or 
+#         observation file.
+#
+# Option FILES lists any additional files that the test needs to run in its 
+# directory/environment. These files will be copied from the source directory
+# to the run directory.
+#
+# Option PARALLEL signifies that this is a parallel job. This is also
+# implied by an NPROCS value > 1
+#
+# Optional NPROCS keyword starts a list of the number of processors to
+# run the test on. Defaults to 1.
+#
+# Optional MPI_EXEC_ARGS keyword denotes extra arguments to give to
+# mpi. It is ignored for serial tests.
+
+function(ADD_AMANZI_SMOKE_TEST test_name)
+  # Check test_name
+  if ( NOT test_name )
+    message(FATAL_ERROR "Must define a test name.")
+  endif()
+
+  # Parse through the remaining options
+  set(options PARALLEL)
+  set(oneValueArgs INPUT FILES)
+  set(multiValueArgs NPROCS MPI_EXEC_ARGS)
+  cmake_parse_arguments(AMANZI_COMPARISON_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+  # Set up the Amanzi input.
+  if ( NOT AMANZI_COMPARISON_TEST_INPUT )
+    message(FATAL_ERROR "Smoke tests require an Amanzi input file")
+  endif()
+
+  # Assemble the arguments we will pass to add_amanzi_test.
+  set(amanzi_test_args "")
+  if (AMANZI_COMPARISON_TEST_PARALLEL)
+    set(amanzi_test_args ${amanzi_test_args} PARALLEL)
+  endif()
+  if (AMANZI_COMPARISON_TEST_NPROCS)
+    set(amanzi_test_args ${amanzi_test_args} NPROCS ${AMANZI_COMPARISON_TEST_NPROCS})
+  endif()
+  if (AMANZI_COMPARISON_TEST_MPI_EXEC_ARGS)
+    set(amanzi_test_args ${amanzi_test_args} MPI_EXEC_ARGS ${AMANZI_COMPARISON_TEST_MPI_EXEC_ARGS})
+  endif()
+
+  # Copy input and files into place.
+  file(COPY ${PROJECT_SOURCE_DIR}/${AMANZI_COMPARISON_TEST_INPUT} DESTINATION .)
+  foreach(f ${AMANZI_COMPARISON_TEST_FILES})
+    file(COPY ${PROJECT_SOURCE_DIR}/${f} DESTINATION .)
+  endforeach()
+
+  # Call add_test
+  add_amanzi_test(run_${test_name}_smoke_test KIND AMANZI AMANZI_INPUT ${AMANZI_COMPARISON_TEST_INPUT} ${amanzi_test_args})
+  _append_test_label(run_${test_name}_smoke_test REG)
+
+endfunction(ADD_AMANZI_SMOKE_TEST)
+
+# Usage:
+#
 # ADD_AMANZI_COMPARISON_TEST(<test_name> 
 #                            INPUT file.xml
 #                            NORM L1 | L2 | Linf  <--- not supported yet.
@@ -294,10 +364,8 @@ endfunction(ADD_AMANZI_TEST)
 #
 # One of keyword FIELD or OBSERVATION is required and should refer, respectively, to 
 #         a field or observation in the given INPUT.
-#         AMANZI is a special case where the test executable is
-#         set to the main Amanzi binary.
 #
-# KEYWORD INPUT is required. This key word defines the Amanzi XML input file or 
+# KEYWORD INPUT is required. This keyword defines the Amanzi XML input file or 
 #         observation file.
 #
 # Option FILES lists any additional files that the test needs to run in its 
