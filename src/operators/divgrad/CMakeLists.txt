@@ -25,7 +25,8 @@ add_library(divgrad
                     upwind_scheme/upwind_arithmetic_mean.cc
                     upwind_scheme/UpwindFluxFactory.cc
                     upwind_scheme/upwind_flux_split_denominator.cc  
-                    upwind_scheme/upwind_flux_fo_cont.cc                  
+                    upwind_scheme/upwind_flux_fo_cont.cc 
+                    upwind_scheme/upwind_flux_harmonic_mean.cc
                     upwind_scheme/upwind_total_flux.cc
                     upwind_scheme/upwind_potential_difference.cc
                     upwind_scheme/upwind_gravity_flux.cc)

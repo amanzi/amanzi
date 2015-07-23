@@ -101,12 +101,12 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   
   upwinding_ = upwfactory.Create(cond_plist, name_,
           "overland_conductivity", "upwind_overland_conductivity",
-          "surface_flux_direction", 1.e-8);
+          "surface_flux_direction");
     
   upwinding_dkdp_ = upwfactory.Create(cond_plist, name_,
           "doverland_conductivity_dponded_depth",
           "dupwind_overland_conductivity_dponded_depth",
-          "surface_flux_direction", 1.e-8);
+          "surface_flux_direction");
 
   // -- owned secondary variables, no evaluator used
   S->RequireField("surface_flux_direction", name_)->SetMesh(mesh_)->SetGhosted()
