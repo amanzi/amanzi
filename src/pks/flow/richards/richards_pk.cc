@@ -59,9 +59,11 @@ Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
     vapor_diffusion_(false),
     perm_scale_(1.)
 {
-  // set a few parameters before setup
-  plist_->set("primary variable key", "pressure");
-  plist_->set("conserved quantity suffix", "water_content");
+  if (!plist_->isParameter("primary variable key"))
+    plist_->set("primary variable key", "pressure");
+
+  if (!plist_->isParameter("conserved quantity suffix"))
+    plist_->set("conserved quantity suffix", "water_content");
 
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))
@@ -567,23 +569,9 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
     matrix_diff_->UpdateFlux(*pres, *flux);
   }
 
-  // if (update_flux_ != UPDATE_FLUX_NEVER) {
-  //   Teuchos::RCP<CompositeVector> darcy_velocity = S->GetFieldData(velocity_key_, name_);
-  //   Teuchos::RCP<const CompositeVector> flux = S->GetFieldData(flux_key_);
-  //   matrix_->DeriveCellVelocity(*flux, darcy_velocity.ptr());
-
-  //   S->GetFieldEvaluator(molar_dens_key_)->HasFieldChanged(S.ptr(), name_);
-  //   const Epetra_MultiVector& nliq_c = *S->GetFieldData(molar_dens_key_)
-  //       ->ViewComponent("cell",false);
-
-  //   Epetra_MultiVector& vel_c = *darcy_velocity->ViewComponent("cell",false);
-  //   unsigned int ncells = vel_c.MyLength();
-  //   for (unsigned int c=0; c!=ncells; ++c) {
-  //     for (int n=0; n!=vel_c.NumVectors(); ++n) {
-  //       vel_c[n][c] /= nliq_c[0][c];
-  //     }
-  //   }
-  // }
+  if (update_flux_ != UPDATE_FLUX_NEVER) {
+    UpdateVelocity_(S.ptr());
+  }
 };
 
 
