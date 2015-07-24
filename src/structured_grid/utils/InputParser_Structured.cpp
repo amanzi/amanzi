@@ -49,8 +49,12 @@ namespace Amanzi {
       }
     }
 
-    double atmToMKS = 101325;
-    double gravity_mag_DEF = 9.8;
+    static double atmToMKS = 101325;
+    static double gravity_mag_DEF = 9.807;
+    static int gravity_dir_DEF = BL_SPACEDIM - 1;
+#if BL_SPACEDIM == 2
+    static double z_location_DEF = 0;
+#endif
 
     std::string underscore(const std::string& instring)
     {
@@ -473,7 +477,7 @@ namespace Amanzi {
         }
                 
         if (dt_max > 0) {
-          prob_out_list.set<double>("steady_max_dt", dt_max);
+          prob_out_list.set<double>("transient_max_dt", dt_max);
         }
       }
       else if (t_list.isSublist(init_to_steady_str))
@@ -702,7 +706,7 @@ namespace Amanzi {
         prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2;  diffuse_v = 0; io_v = 0; fab_v = 0;
       }
       else if (lc(v_val) == "high") {
-        prob_v = 2; mg_v = 1; cg_v = 1; amr_v = 3;  diffuse_v = 0; io_v = 0; fab_v = 0;
+        prob_v = 2; mg_v = 0; cg_v = 0; amr_v = 3;  diffuse_v = 0; io_v = 0; fab_v = 0;
       }
       else if (lc(v_val) == "extreme") {
         prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3;  diffuse_v = 1; io_v = 1; fab_v = 1;
@@ -1851,6 +1855,54 @@ namespace Amanzi {
       return gravity_magnitude(parameter_list) != 0;
     }
 
+    static int gravity_dir(const ParameterList& parameter_list)
+    {
+      int gravity_dir = gravity_dir_DEF;
+      if (parameter_list.isSublist("Execution Control")) {
+        const ParameterList& ec_list = parameter_list.sublist("Execution Control");
+        if (ec_list.isSublist("Numerical Control Parameters")) {
+          const ParameterList& ncp_list = ec_list.sublist("Numerical Control Parameters");
+          //if (ncp_list.isSublist("Basic Algorithm Control")) {
+            //const ParameterList& bac_list = ncp_list.sublist("Basic Algorithm Control");
+          if (ncp_list.isSublist("Structured Algorithm")) {
+            const ParameterList& bac_list = ncp_list.sublist("Structured Algorithm");
+            if (bac_list.isSublist("Expert Settings")) {
+              const ParameterList& es_list = bac_list.sublist("Expert Settings");
+              if (es_list.isParameter("gravity_dir")) {
+                gravity_dir = es_list.get<int>("gravity_dir");
+              }
+            }
+          }
+        }
+      }
+      return gravity_dir;
+    }
+
+#if BL_SPACEDIM == 2
+    static double z_location(const ParameterList& parameter_list)
+    {
+      double z_loc = z_location_DEF;
+      if (parameter_list.isSublist("Execution Control")) {
+        const ParameterList& ec_list = parameter_list.sublist("Execution Control");
+        if (ec_list.isSublist("Numerical Control Parameters")) {
+          const ParameterList& ncp_list = ec_list.sublist("Numerical Control Parameters");
+          //if (ncp_list.isSublist("Basic Algorithm Control")) {
+            //const ParameterList& bac_list = ncp_list.sublist("Basic Algorithm Control");
+          if (ncp_list.isSublist("Structured Algorithm")) {
+            const ParameterList& bac_list = ncp_list.sublist("Structured Algorithm");
+            if (bac_list.isSublist("Expert Settings")) {
+              const ParameterList& es_list = bac_list.sublist("Expert Settings");
+              if (es_list.isParameter("z_location")) {
+                z_loc = es_list.get<double>("z_location");
+              }
+            }
+          }
+        }
+      }
+      return z_loc;
+    }
+#endif
+
     //
     // convert material to structured format
     //
@@ -2798,14 +2850,42 @@ namespace Amanzi {
 
     void convert_ICHydrostatic(const ParameterList& fPLin,
                                const std::string&   Amanzi_type,
-                               ParameterList&       fPLout)
+                               ParameterList&       fPLout,
+			       const ParameterList& entire_PL,
+			       StateDef&            stateDef)
     {
+      int gdir = gravity_dir(entire_PL);
+
       Array<std::string> reqP, nullList;
-      const std::string ref_name="Water Table Height"; reqP.push_back(ref_name);
+      const std::string wth_name="Water Table Height";reqP.push_back(wth_name);
       PLoptions opt(fPLin,nullList,reqP,true,true);  
-            
-      fPLout.set<double>("water_table_height",fPLin.get<double>(ref_name));
-      fPLout.set<std::string>("type","hydrostatic");
+      double wth = fPLin.get<double>(wth_name);
+
+      Array<double> pgrad(BL_SPACEDIM,0);
+
+      if (gdir < 0 || gdir > 2) {
+	MyAbort("gravity_dir cannot be < 0 or > 2");
+      }
+
+      double gval = gravity_magnitude(entire_PL);
+      double density = stateDef.getPhases()["Aqueous"].Density();
+
+      Array<double> ref_coord(BL_SPACEDIM,0);
+      if (gdir < BL_SPACEDIM) {
+	pgrad[gdir] = density * gval;
+	ref_coord[gdir] = wth;
+      }
+
+      double val = atmToMKS; // Value at water table = 1atm
+      if (gdir >= BL_SPACEDIM) {
+	double z_loc = z_location(entire_PL);
+	val += (wth - z_loc) * density * gval;
+      }
+
+      fPLout.set<std::string>("type","linear_pressure");
+      fPLout.set<double>("val",val);
+      fPLout.set<Array<double> >("grad",pgrad);
+      fPLout.set<Array<double> >("ref_coord",ref_coord);
     }
 
     void convert_ICVel(const ParameterList& fPLin,
@@ -2914,7 +2994,7 @@ namespace Amanzi {
           }
           else if ( Amanzi_type == "IC: Hydrostatic" )
           {
-            convert_ICHydrostatic(fPLin,Amanzi_type,fPLout);
+            convert_ICHydrostatic(fPLin,Amanzi_type,fPLout,parameter_list,stateDef);
           }
           else if ( Amanzi_type == "IC: Flow" )
           {
@@ -4533,6 +4613,9 @@ namespace Amanzi {
       ParameterList& prob_out_list = struc_list.sublist("prob");
       prob_out_list.set("do_tracer_advection",do_tracer_advection);
       prob_out_list.set("do_tracer_diffusion",do_tracer_diffusion);
+      prob_out_list.set("gravity",gravity_magnitude(parameter_list));
+      prob_out_list.set("gravity_dir",gravity_dir(parameter_list));
+      prob_out_list.set("z_location",z_location(parameter_list));
 
       std::string dump_str = "Structured Native Input File";
       if (parameter_list.isParameter(dump_str)) {
