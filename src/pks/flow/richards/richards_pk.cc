@@ -628,7 +628,8 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       uw_rel_perm_f.Export(rel_perm_bf, vandelay, Insert);
     }
 
-    uw_rel_perm->ScatterMasterToGhosted("face");
+    if (uw_rel_perm->HasComponent("face"))
+      uw_rel_perm->ScatterMasterToGhosted("face");
   }
 
   // debugging
@@ -670,7 +671,8 @@ bool Richards::UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<State>& S) {
 
     //   //duw_rel_perm_f.Export(drel_perm_bf, vandelay, Insert);
     // }
-    duw_rel_perm->ScatterMasterToGhosted("face");
+    if (duw_rel_perm->HasComponent("face"))
+      duw_rel_perm->ScatterMasterToGhosted("face");
   }
 
   // debugging
