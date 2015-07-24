@@ -170,7 +170,7 @@ void OverlandFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
   preconditioner_diff_->Setup(cond, dcond);
   Teuchos::RCP<const CompositeVector> pres_elev = S_next_->GetFieldData("pres_elev");
   preconditioner_diff_->UpdateMatrices(Teuchos::null, pres_elev.ptr());
-  Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData("surface_flux", name_);
+  Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData("surface-flux", name_);
   preconditioner_diff_->UpdateFlux(*up->Data(), *flux);
   preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
 
@@ -186,7 +186,7 @@ void OverlandFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
 
   // -- update the accumulation derivatives
   const Epetra_MultiVector& cv =
-      *S_next_->GetFieldData("surface_cell_volume")->ViewComponent("cell",false);
+      *S_next_->GetFieldData("surface-cell_volume")->ViewComponent("cell",false);
 
   std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
   unsigned int ncells = Acc_cells.size();

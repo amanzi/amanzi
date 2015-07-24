@@ -19,7 +19,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "unfrozen_fraction_model.hh"
 #include "unfrozen_fraction_evaluator.hh"
 
-#include "overland_head_water_content_evaluator.hh"
+#include "overland_pressure_water_content_evaluator.hh"
 #include "icy_overland.hh"
 
 namespace Amanzi {
@@ -34,7 +34,7 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   ASSERT(plist_->sublist("overland conductivity evaluator").get<std::string>("height key") != "ponded_depth");
 
   // Now continue as usual for overland head
-  OverlandHeadFlow::SetupPhysicalEvaluators_(S);
+  OverlandPressureFlow::SetupPhysicalEvaluators_(S);
 }
 
 } // namespace

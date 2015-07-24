@@ -32,7 +32,7 @@ SurfaceRelPermEvaluator::SurfaceRelPermEvaluator(Teuchos::ParameterList& plist) 
 
   // set up my key
   if (my_key_ == std::string("")) {
-    my_key_ = "surface_relative_permeability";
+    my_key_ = "surface-relative_permeability";
   }
 }
 

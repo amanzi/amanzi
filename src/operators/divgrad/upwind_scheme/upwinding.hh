@@ -53,6 +53,10 @@ class Upwinding {
     ASSERT(0);
   }
 
+  virtual std::string
+  CoefficientLocation() = 0;
+  
+
 };
 
 } // namespace

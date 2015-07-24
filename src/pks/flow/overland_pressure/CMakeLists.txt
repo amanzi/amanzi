@@ -10,10 +10,10 @@ include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 include_directories(${Amanzi_TPL_MSTK_INCLUDE_DIRS})
 
-add_library(pk_flow_overland_head
-        overland_head_pk.cc overland_head_ti.cc overland_head_physics.cc
+add_library(pk_flow_overland_pressure
+        overland_pressure_pk.cc overland_pressure_ti.cc overland_pressure_physics.cc
         height_evaluator.cc
         effective_height_evaluator.cc
-        overland_head_water_content_evaluator.cc)
+        overland_pressure_water_content_evaluator.cc)
 
-install(TARGETS pk_flow_overland_head DESTINATION lib)
+install(TARGETS pk_flow_overland_pressure DESTINATION lib)
