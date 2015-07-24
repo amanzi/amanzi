@@ -27,6 +27,7 @@ UpwindFluxFOCont::UpwindFluxFOCont(std::string pkname,
                                    std::string flux,
                                    std::string slope,
                                    std::string manning_coef,
+                                   std::string elevation,
                                    double slope_regularization,
                                    double manning_exp) :
   pkname_(pkname),
@@ -35,6 +36,7 @@ UpwindFluxFOCont::UpwindFluxFOCont(std::string pkname,
   flux_(flux),
   slope_(slope),
   manning_coef_(manning_coef),
+  elevation_(elevation),
   slope_regularization_(slope_regularization),
   manning_exp_(manning_exp) {};
   
@@ -48,8 +50,9 @@ void UpwindFluxFOCont::Update(const Teuchos::Ptr<State>& S,
   
   Teuchos::RCP<const CompositeVector> slope = S->GetFieldData(slope_);
   Teuchos::RCP<const CompositeVector> manning_coef = S->GetFieldData(manning_coef_);
+  Teuchos::RCP<const CompositeVector> elevation = S->GetFieldData(elevation_);
   
-  CalculateCoefficientsOnFaces(*cell, *flux, *slope, *manning_coef, face.ptr(), db);
+  CalculateCoefficientsOnFaces(*cell, *flux, *slope, *manning_coef, *elevation, face.ptr(), db);
 
 };
   
@@ -59,6 +62,7 @@ void UpwindFluxFOCont::CalculateCoefficientsOnFaces(
                                                     const CompositeVector& flux,
                                                     const CompositeVector& slope,
                                                     const CompositeVector& manning_coef,
+                                                    const CompositeVector& elevation,
                                                     const Teuchos::Ptr<CompositeVector>& face_coef,
                                                     const Teuchos::Ptr<Debugger>& db) {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = face_coef->Mesh();
@@ -70,6 +74,9 @@ void UpwindFluxFOCont::CalculateCoefficientsOnFaces(
   
   // communicate needed ghost values
   cell_coef.ScatterMasterToGhosted("cell");
+  slope.ScatterMasterToGhosted("cell");
+  manning_coef.ScatterMasterToGhosted("cell");
+  elevation.ScatterMasterToGhosted("cell");
   
   // pull out vectors
   const Epetra_MultiVector& flux_v = *flux.ViewComponent("face",false);
@@ -77,6 +84,7 @@ void UpwindFluxFOCont::CalculateCoefficientsOnFaces(
   const Epetra_MultiVector& pd_cells = *cell_coef.ViewComponent("cell",true);
   const Epetra_MultiVector& slope_v = *slope.ViewComponent("cell",false);
   const Epetra_MultiVector& manning_coef_v = *manning_coef.ViewComponent("cell",false);
+  const Epetra_MultiVector& elevation_v = *elevation.ViewComponent("cell",false);
   double slope_regularization = slope_regularization_;
   
   // Identify upwind/downwind cells for each local face.  Note upwind/downwind
@@ -159,11 +167,7 @@ void UpwindFluxFOCont::CalculateCoefficientsOnFaces(
     // Determine the coefficient
     if (dw == -1) pdf = pds[1];
     else if (uw == -1) pdf = pds[0];
-    else {
-      double zcuw = mesh->cell_centroid(uw).z();
-      double zcdw = mesh->cell_centroid(dw).z();
-      pdf = pds[0] + zcuw - std::max(zcuw, zcdw);
-    }
+    else pdf = pds[0] + elevation_v[0][uw] - std::max(elevation_v[0][uw], elevation_v[0][dw]);
     
     double exponent = manning_exp_ + 1.0;
     coef_faces[0][f] = std::pow(std::max(pdf, 0.), exponent) / denominator;
