@@ -654,6 +654,8 @@ private:
     case NODE:
       ment = (MEntity_ptr) vtx_id_to_handle[entid];
       break;
+    default:
+      ment = NULL;
     }
       
     if (MEnt_PType(ment) == PGHOST)

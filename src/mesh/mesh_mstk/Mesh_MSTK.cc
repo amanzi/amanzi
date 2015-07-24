@@ -3029,6 +3029,9 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
     }
       
     break;
+
+  default:
+    break;
   }
 
 
@@ -4591,17 +4594,17 @@ void Mesh_MSTK::init_set_info() {
             break;
           case MFACE:
             MFace_ptr face;
-            while (face = List_Next_Entry(deleted_faces,&idx))
+            while ((face = List_Next_Entry(deleted_faces,&idx)))
               MSet_Rem(mset,face);
             break;
           case MEDGE:
             MEdge_ptr edge;
-            while (edge = List_Next_Entry(deleted_edges,&idx))
+            while ((edge = List_Next_Entry(deleted_edges,&idx)))
               MSet_Rem(mset,edge);
             break;
           case MVERTEX:
             MVertex_ptr vertex;
-            while (vertex = List_Next_Entry(deleted_vertices,&idx))
+            while ((vertex = List_Next_Entry(deleted_vertices,&idx)))
               MSet_Rem(mset,vertex);
             break;
           }
