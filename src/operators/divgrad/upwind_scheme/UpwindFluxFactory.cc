@@ -43,7 +43,7 @@ Teuchos::RCP<Upwinding> UpwindFluxFactory::Create(Teuchos::ParameterList& oplist
     std::string manning_coef = oplist.get<std::string>("coefficient key", "manning_coefficient");
     double slope_regularization = sublist.get<double>("slope regularization epsilon", 1.e-8);
     double manning_exp = sublist.get<double>("Manning exponent");
-    return Teuchos::rcp(new UpwindFluxFOCont(pkname, cell_coef, face_coef, flux, slope, manning_coef, slope_regularization, manning_exp));
+    return Teuchos::rcp(new UpwindFluxFOCont(pkname, cell_coef, face_coef, flux, slope, manning_coef, "elevation", slope_regularization, manning_exp));
   } else if (model_type == "manning cell centered") {
     return Teuchos::rcp(new UpwindCellCentered(pkname, cell_coef, face_coef));
   } else {

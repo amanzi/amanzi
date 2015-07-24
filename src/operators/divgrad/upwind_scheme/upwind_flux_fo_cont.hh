@@ -31,6 +31,7 @@ public:
                              std::string flux,
                              std::string slope,
                              std::string manning_coef,
+                             std::string elevation,
                              double slope_regularization,
                              double manning_exp);
 
@@ -43,6 +44,7 @@ public:
         const CompositeVector& flux,
         const CompositeVector& slope,
         const CompositeVector& manning_coef,
+        const CompositeVector& elevation,
         const Teuchos::Ptr<CompositeVector>& face_coef,
         const Teuchos::Ptr<Debugger>& db);
 
@@ -65,6 +67,7 @@ private:
   std::string flux_;
   std::string slope_;
   std::string manning_coef_;
+  std::string elevation_;
   double slope_regularization_;
   double manning_exp_;
 };

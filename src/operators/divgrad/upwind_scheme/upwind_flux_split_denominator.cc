@@ -73,6 +73,9 @@ void UpwindFluxSplitDenominator::CalculateCoefficientsOnFaces(
 
   // communicate needed ghost values
   cell_coef.ScatterMasterToGhosted("cell");
+  slope.ScatterMasterToGhosted("cell");
+  manning_coef.ScatterMasterToGhosted("cell");
+  ponded_depth.ScatterMasterToGhosted("cell");
   
   // pull out vectors
   const Epetra_MultiVector& flux_v = *flux.ViewComponent("face",false);
