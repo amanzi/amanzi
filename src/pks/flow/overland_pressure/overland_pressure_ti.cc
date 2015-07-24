@@ -352,19 +352,20 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
 // Default enorm that uses an abs and rel tolerance to monitor convergence.
 // -----------------------------------------------------------------------------
 double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                               Teuchos::RCP<const TreeVector> du) {
+                               Teuchos::RCP<const TreeVector> res) {
+
   S_next_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& conserved = *S_next_->GetFieldData(conserved_key_)
-  ->ViewComponent("cell",true);
+      ->ViewComponent("cell",true);
   const Epetra_MultiVector& cv = *S_next_->GetFieldData(cell_vol_key_)
-  ->ViewComponent("cell",true);
+      ->ViewComponent("cell",true);
   
   // VerboseObject stuff.
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_MEDIUM))
     *vo_->os() << "ENorm (Infnorm) of: " << conserved_key_ << ": " << std::endl;
   
-  Teuchos::RCP<const CompositeVector> dvec = du->Data();
+  Teuchos::RCP<const CompositeVector> dvec = res->Data();
   double h = S_next_->time() - S_inter_->time();
   
   double enorm_val = 0.0;
@@ -390,7 +391,7 @@ double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     } else if (*comp == std::string("face")) {
       // error in flux -- relative to cell's extensive conserved quantity
       int nfaces = dvec->size(*comp, false);
-      bool scaled_constraint = plist_->sublist("Diffusion").get<bool>("scaled constraint equation", false);
+      bool scaled_constraint = plist_->sublist("Diffusion").get<bool>("scaled constraint equation", true);
       const Epetra_MultiVector& kr_f = *S_next_->GetFieldData("upwind_overland_conductivity")
         ->ViewComponent("face",false);
       
@@ -398,12 +399,12 @@ double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
         AmanziMesh::Entity_ID_List cells;
         mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
         double cv_min = cells.size() == 1 ? cv[0][cells[0]]
-        : std::min(cv[0][cells[0]],cv[0][cells[1]]);
+            : std::min(cv[0][cells[0]],cv[0][cells[1]]);
         double conserved_min = cells.size() == 1 ? conserved[0][cells[0]]
-        : std::min(conserved[0][cells[0]],conserved[0][cells[1]]);
+            : std::min(conserved[0][cells[0]],conserved[0][cells[1]]);
         
         double enorm_f = fluxtol_ * h * std::abs(dvec_v[0][f])
-        / (atol_*cv_min + rtol_*std::abs(conserved_min));
+            / (atol_*cv_min + rtol_*std::abs(conserved_min));
         if (scaled_constraint && (kr_f[0][f] < 1.0)) enorm_f *= kr_f[0][f];
         if (enorm_f > enorm_comp) {
           enorm_comp = enorm_f;

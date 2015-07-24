@@ -206,7 +206,7 @@ void OverlandFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
 // Default enorm that uses an abs and rel tolerance to monitor convergence.
 // -----------------------------------------------------------------------------
 double OverlandFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-        Teuchos::RCP<const TreeVector> du) {
+        Teuchos::RCP<const TreeVector> res) {
   const Epetra_MultiVector& pd = *S_next_->GetFieldData(key_)
       ->ViewComponent("cell",true);
   const Epetra_MultiVector& cv = *S_next_->GetFieldData(cell_vol_key_)
@@ -217,7 +217,7 @@ double OverlandFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   if (vo_->os_OK(Teuchos::VERB_MEDIUM))
     *vo_->os() << "ENorm (Infnorm) of: " << key_ << ": " << std::endl;
 
-  Teuchos::RCP<const CompositeVector> dvec = du->Data();
+  Teuchos::RCP<const CompositeVector> dvec = res->Data();
   double h = S_next_->time() - S_inter_->time();
 
   double enorm_val = 0.0;
@@ -232,7 +232,7 @@ double OverlandFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       int ncells = dvec->size(*comp,false);
       for (unsigned int c=0; c!=ncells; ++c) {
         double enorm_c = std::abs(h * dvec_v[0][c])
-            / ((atol_ + rtol_*std::abs(pd[0][c]))*cv[0][c]);
+            / ((atol_*cv[0][c] + rtol_*std::abs(pd[0][c]))*cv[0][c]);
 
         if (enorm_c > enorm_comp) {
           enorm_comp = enorm_c;
@@ -243,35 +243,20 @@ double OverlandFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     } else if (*comp == std::string("face")) {
       // error in flux -- relative to cell's extensive conserved quantity
       int nfaces = dvec->size(*comp, false);
-
-      bool scaled_constraint = plist_->sublist("Diffusion").get<bool>("scaled constraint equation", false);
+      bool scaled_constraint = plist_->sublist("Diffusion").get<bool>("scaled constraint equation", true);
       const Epetra_MultiVector& kr_f = *S_next_->GetFieldData("upwind_overland_conductivity")
         ->ViewComponent("face",false);
-/*
-      double kf_hmean = 0;
-      if (scaled_constraint) {
-        int nfaces = kr_f.GlobalLength();
-        int nval = 0;
-        for (int f = 0; f < nfaces; f++) {
-          if (kr_f[0][f] > 1.0) {
-            kf_hmean += 1 / kr_f[0][f];
-            nval++;
-          }
-        }
-        kf_hmean = nval / kf_hmean;
-      }
-*/
 
       for (unsigned int f=0; f!=nfaces; ++f) {
         AmanziMesh::Entity_ID_List cells;
         mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
         double cv_min = cells.size() == 1 ? cv[0][cells[0]]
             : std::min(cv[0][cells[0]],cv[0][cells[1]]);
-        double conserved_min = cells.size() == 1 ? pd[0][cells[0]]
-            : std::min(pd[0][cells[0]],pd[0][cells[1]]);
+        double conserved_min = cells.size() == 1 ? pd[0][cells[0]] * cv[0][cells[0]]
+            : std::min(pd[0][cells[0]]*cv[0][cells[0]], pd[0][cells[1]]*cv[0][cells[1]]);
       
         double enorm_f = fluxtol_ * h * std::abs(dvec_v[0][f]) 
-                / ((atol_ + rtol_*std::abs(conserved_min))*cv_min);
+            / (atol_*cv_min + rtol_*std::abs(conserved_min));
         if (scaled_constraint && (kr_f[0][f] < 1.0)) enorm_f *= kr_f[0][f];
 
         if (enorm_f > enorm_comp) {

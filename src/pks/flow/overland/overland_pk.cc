@@ -53,7 +53,7 @@ OverlandFlow::OverlandFlow(const Teuchos::RCP<Teuchos::ParameterList>& plist,
   
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))
-    plist_->set("absolute error tolerance", .01); // h * nl
+    plist_->set("absolute error tolerance", .01); // h
 
 }
 
