@@ -48,11 +48,12 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterL
   ASSERT(plist_.isSublist("overland conductivity model"));
   Teuchos::ParameterList sublist = plist_.sublist("overland conductivity model");
   std::string model_type = sublist.get<std::string>("overland conductivity type", "manning");
-  if ((model_type == "manning") || (model_type == "harmonic mean manning")){
+  if ((model_type == "manning") || (model_type == "manning harmonic mean") ||
+      (model_type == "manning cell centered")){
     model_ = Teuchos::rcp(new ManningConductivityModel(sublist));
-  } else if (model_type == "split denominator") {
+  } else if (model_type == "manning split denominator") {
     model_ = Teuchos::rcp(new SplitDenominatorConductivityModel(sublist));
-  } else if (model_type == "ponded depth passthrough") {
+  } else if (model_type == "manning ponded depth passthrough") {
     model_ = Teuchos::rcp(new PondedDepthPassthroughConductivityModel(sublist));
   } else {
     ASSERT(0);

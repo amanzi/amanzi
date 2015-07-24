@@ -32,7 +32,6 @@ public:
                              std::string slope,
                              std::string manning_coef,
                              double slope_regularization,
-                             std::string ponded_depth,
                              double manning_exp);
 
   virtual void Update(const Teuchos::Ptr<State>& S,
@@ -44,7 +43,6 @@ public:
         const CompositeVector& flux,
         const CompositeVector& slope,
         const CompositeVector& manning_coef,
-        const CompositeVector& ponded_depth,
         const Teuchos::Ptr<CompositeVector>& face_coef,
         const Teuchos::Ptr<Debugger>& db);
 
@@ -65,7 +63,6 @@ private:
   std::string slope_;
   std::string manning_coef_;
   double slope_regularization_;
-  std::string ponded_depth_;
   double manning_exp_;
 };
 
