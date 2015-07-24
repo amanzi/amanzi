@@ -35,31 +35,52 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
     const AmanziGeometry::Point& g,
     int upwind_method)
 {
+  Teuchos::RCP<OperatorDiffusion> op = Teuchos::null;
+
   std::string name = oplist.get<std::string>("discretization primary");
   bool flag = oplist.get<bool>("gravity", false);
 
   // FV methods
   if (name == "fv: default" && !flag) {
-    Teuchos::RCP<OperatorDiffusionFV> op = Teuchos::rcp(new OperatorDiffusionFV(oplist, mesh));
+    if (!oplist.isParameter("schema")) {
+      Teuchos::Array<std::string> schema(1);
+      schema[0] = "cell";
+      oplist.set("schema",  schema);
+    }
+    op = Teuchos::rcp(new OperatorDiffusionFV(oplist, mesh));
     op->SetBCs(bc, bc);
-    return op;
+
   } else if (name == "fv: default" && flag) {
-    Teuchos::RCP<OperatorDiffusionFVwithGravity> op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh));
+    if (!oplist.isParameter("schema")) {
+      Teuchos::Array<std::string> schema(1);
+      schema[0] = "cell";
+      oplist.set("schema",  schema);
+    }
+    op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh));
     op->SetGravity(g);
     op->SetBCs(bc, bc);
-    return op;
 
   // MFD methods
   } else if (!flag) {
-    Teuchos::RCP<OperatorDiffusionMFD> op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, mesh));
+    if (!oplist.isParameter("schema")) {
+      Teuchos::Array<std::string> schema(2);
+      schema[0] = "cell"; schema[1] = "face";
+      oplist.set("schema",  schema);
+    }
+    op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, mesh));
     op->SetBCs(bc, bc);
-    return op;
+
   } else {
-    Teuchos::RCP<OperatorDiffusionMFDwithGravity> op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, mesh));
+    if (!oplist.isParameter("schema")) {
+      Teuchos::Array<std::string> schema(2);
+      schema[0] = "cell"; schema[1] = "face";
+      oplist.set("schema",  schema);
+    }
+    op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, mesh));
     op->SetGravity(g);
     op->SetBCs(bc, bc);
-    return op;
   }
+  return op;
 }
 
 
@@ -68,63 +89,82 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
     Teuchos::RCP<BCs> bc,
     Teuchos::ParameterList& oplist)
 {
+  Teuchos::RCP<OperatorDiffusion> op = Teuchos::null;
+
   std::string name = oplist.get<std::string>("discretization primary");
 
   if (name == "fv: default") {
-    Teuchos::RCP<OperatorDiffusionFV> op = Teuchos::rcp(new OperatorDiffusionFV(oplist, mesh));
+    if (!oplist.isParameter("schema")) {
+      Teuchos::Array<std::string> schema(1);
+      schema[0] = "cell";
+      oplist.set("schema",  schema);
+    }
+    op = Teuchos::rcp(new OperatorDiffusionFV(oplist, mesh));
     op->SetBCs(bc, bc);
-    return op;
+
   } else {
-    Teuchos::RCP<OperatorDiffusionMFD> op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, mesh));
+    if (!oplist.isParameter("schema")) {
+      Teuchos::Array<std::string> schema(2);
+      schema[0] = "cell"; schema[1] = "face";
+      oplist.set("schema",  schema);
+    }
+    op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, mesh));
     op->SetBCs(bc, bc);
-    return op;
   }
+  return op;
 }
   
 Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(Teuchos::ParameterList& oplist,
                                        Teuchos::RCP<const AmanziMesh::Mesh> mesh) {
+  Teuchos::RCP<OperatorDiffusion> op = Teuchos::null;
   std::string name = oplist.get<std::string>("discretization primary");
   bool flag = oplist.get<bool>("gravity", false);
   
   // FV methods
   if (name == "fv: default" && !flag) {
-    Teuchos::RCP<OperatorDiffusionFV> op = Teuchos::rcp(new OperatorDiffusionFV(oplist, mesh));
-    return op;
+    if (!oplist.isParameter("schema")) {
+      Teuchos::Array<std::string> schema(1);
+      schema[0] = "cell";
+      oplist.set("schema",  schema);
+    }
+    op = Teuchos::rcp(new OperatorDiffusionFV(oplist, mesh));
+
   } else if (name == "fv: default" && flag) {
-    Teuchos::RCP<OperatorDiffusionFVwithGravity> op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh));
-    return op;
+    if (!oplist.isParameter("schema")) {
+      Teuchos::Array<std::string> schema(1);
+      schema[0] = "cell";
+      oplist.set("schema",  schema);
+    }
+    op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh));
     
   // MFD methods
   } else if (!flag) {
-    Teuchos::RCP<OperatorDiffusionMFD> op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, mesh));
-    return op;
+    op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, mesh));
   } else {
-    Teuchos::RCP<OperatorDiffusionMFDwithGravity> op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, mesh));
-    return op;
+    op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, mesh));
   }
+  return op;
 }
   
 Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(Teuchos::ParameterList& oplist,
                                        const Teuchos::RCP<Operator>& global_op) {
+  Teuchos::RCP<OperatorDiffusion> op = Teuchos::null;
   std::string name = oplist.get<std::string>("discretization primary");
   bool flag = oplist.get<bool>("gravity", false);
   
   // FV methods
   if (name == "fv: default" && !flag) {
-    Teuchos::RCP<OperatorDiffusionFV> op = Teuchos::rcp(new OperatorDiffusionFV(oplist, global_op));
-    return op;
+    op = Teuchos::rcp(new OperatorDiffusionFV(oplist, global_op));
   } else if (name == "fv: default" && flag) {
-    Teuchos::RCP<OperatorDiffusionFVwithGravity> op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, global_op));
-    return op;
+    op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, global_op));
     
   // MFD methods
   } else if (!flag) {
-    Teuchos::RCP<OperatorDiffusionMFD> op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, global_op));
-    return op;
+    op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, global_op));
   } else {
-    Teuchos::RCP<OperatorDiffusionMFDwithGravity> op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, global_op));
-    return op;
+    op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, global_op));
   }
+  return op;
 }
 
   
