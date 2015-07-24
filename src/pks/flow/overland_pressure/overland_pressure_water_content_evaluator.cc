@@ -6,32 +6,34 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#include "overland_head_water_content_evaluator.hh"
+#include "overland_pressure_water_content_evaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
 
-OverlandHeadWaterContentEvaluator::OverlandHeadWaterContentEvaluator(Teuchos::ParameterList& plist) :
+OverlandPressureWaterContentEvaluator::OverlandPressureWaterContentEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   M_ = plist_.get<double>("molar mass", 0.0180153);
   bar_ = plist_.get<bool>("water content bar", false);
   rollover_ = plist_.get<double>("water content rollover", 0.);
-  
-  my_key_ = "surface_water_content";
-  if (bar_) my_key_ += std::string("_bar");
-  my_key_ = plist_.get<std::string>("water content key", my_key_);
+
+  if (my_key_.empty()) {
+    my_key_ = "surface-water_content";
+    if (bar_) my_key_ += std::string("_bar");
+    my_key_ = plist_.get<std::string>("water content key", my_key_);
+  }
 
   // my dependencies
-  pres_key_ = plist_.get<std::string>("pressure key", "surface_pressure");
+  pres_key_ = plist_.get<std::string>("pressure key", "surface-pressure");
   dependencies_.insert(pres_key_);
 
-  //  dependencies_.insert(std::string("surface_cell_volume"));
+  //  dependencies_.insert(std::string("surface-cell_volume"));
 }
 
 
-OverlandHeadWaterContentEvaluator::OverlandHeadWaterContentEvaluator(const OverlandHeadWaterContentEvaluator& other) :
+OverlandPressureWaterContentEvaluator::OverlandPressureWaterContentEvaluator(const OverlandPressureWaterContentEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     pres_key_(other.pres_key_),
     M_(other.M_),
@@ -41,18 +43,18 @@ OverlandHeadWaterContentEvaluator::OverlandHeadWaterContentEvaluator(const Overl
 
 
 Teuchos::RCP<FieldEvaluator>
-OverlandHeadWaterContentEvaluator::Clone() const {
-  return Teuchos::rcp(new OverlandHeadWaterContentEvaluator(*this));
+OverlandPressureWaterContentEvaluator::Clone() const {
+  return Teuchos::rcp(new OverlandPressureWaterContentEvaluator(*this));
 }
 
 
-void OverlandHeadWaterContentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+void OverlandPressureWaterContentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
 
   Epetra_MultiVector& res = *result->ViewComponent("cell",false);
   const Epetra_MultiVector& pres = *S->GetFieldData(pres_key_)
       ->ViewComponent("cell",false);
-  const Epetra_MultiVector& cv = *S->GetFieldData("surface_cell_volume")
+  const Epetra_MultiVector& cv = *S->GetFieldData("surface-cell_volume")
       ->ViewComponent("cell",false);
 
   const double& p_atm = *S->GetScalarData("atmospheric_pressure");
@@ -82,14 +84,14 @@ void OverlandHeadWaterContentEvaluator::EvaluateField_(const Teuchos::Ptr<State>
 }
 
 
-void OverlandHeadWaterContentEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+void OverlandPressureWaterContentEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
   ASSERT(wrt_key == pres_key_);
 
   Epetra_MultiVector& res = *result->ViewComponent("cell",false);
   const Epetra_MultiVector& pres = *S->GetFieldData(pres_key_)
       ->ViewComponent("cell",false);
-  const Epetra_MultiVector& cv = *S->GetFieldData("surface_cell_volume")
+  const Epetra_MultiVector& cv = *S->GetFieldData("surface-cell_volume")
       ->ViewComponent("cell",false);
 
   const double& p_atm = *S->GetScalarData("atmospheric_pressure");

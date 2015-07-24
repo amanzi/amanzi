@@ -16,13 +16,13 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-class OverlandHeadWaterContentEvaluator : public SecondaryVariableFieldEvaluator {
+class OverlandPressureWaterContentEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
   // constructor format for all derived classes
   explicit
-  OverlandHeadWaterContentEvaluator(Teuchos::ParameterList& plist);
-  OverlandHeadWaterContentEvaluator(const OverlandHeadWaterContentEvaluator& other);
+  OverlandPressureWaterContentEvaluator(Teuchos::ParameterList& plist);
+  OverlandPressureWaterContentEvaluator(const OverlandPressureWaterContentEvaluator& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
@@ -43,7 +43,7 @@ class OverlandHeadWaterContentEvaluator : public SecondaryVariableFieldEvaluator
   double rollover_;
   
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,OverlandHeadWaterContentEvaluator> reg_;
+  static Utils::RegisteredFactory<FieldEvaluator,OverlandPressureWaterContentEvaluator> reg_;
 
 };
 

@@ -10,7 +10,7 @@ add_subdirectory(richards)
 add_subdirectory(permafrost)
 add_subdirectory(overland)
 add_subdirectory(icy_overland)
-add_subdirectory(overland_head)
+add_subdirectory(overland_pressure)
 add_subdirectory(snow_distribution)
 
 #=========================================================================================
@@ -44,29 +44,29 @@ register_evaluator_with_factory(
   )
 
 
-# overland_head/
+# overland_pressure/
 register_evaluator_with_factory(
-  HEADERFILE overland_head/height_evaluator_reg.hh
+  HEADERFILE overland_pressure/height_evaluator_reg.hh
   LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
   )
 
 register_evaluator_with_factory(
-  HEADERFILE overland_head/effective_height_evaluator_reg.hh
+  HEADERFILE overland_pressure/effective_height_evaluator_reg.hh
   LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
   )
 
 register_evaluator_with_factory(
-  HEADERFILE overland_head/overland_head_pk_reg.hh
+  HEADERFILE overland_pressure/overland_pressure_pk_reg.hh
   LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
   )
 
 register_evaluator_with_factory(
-  HEADERFILE overland_head/overland_head_water_content_evaluator_reg.hh
+  HEADERFILE overland_pressure/overland_pressure_water_content_evaluator_reg.hh
   LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
   )
 
 generate_evaluators_registration_header(
-  HEADERFILE flow_overland_head_registration.hh
+  HEADERFILE flow_overland_pressure_registration.hh
   LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
   INSTALL    True
   )

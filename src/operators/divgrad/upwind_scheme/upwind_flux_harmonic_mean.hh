@@ -49,6 +49,9 @@ public:
                     const std::vector<double>& bc_values,
                     std::vector<Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > >* Jpp_faces) const;
 
+  virtual std::string
+  CoefficientLocation() { return "upwind: face"; }
+  
 private:
 
   std::string pkname_;

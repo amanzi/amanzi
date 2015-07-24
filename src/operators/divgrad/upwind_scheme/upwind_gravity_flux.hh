@@ -43,6 +43,9 @@ public:
         const Epetra_Vector& gravity,
         const Teuchos::Ptr<CompositeVector>& face_coef);
 
+  virtual std::string
+  CoefficientLocation() { return "upwind: face"; }
+
 private:
 
   std::string pkname_;

@@ -16,7 +16,7 @@ namespace FlowRelations {
 UnfrozenFractionEvaluator::UnfrozenFractionEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
 
-  temp_key_ = plist_.get<std::string>("temperature key", "surface_temperature");
+  temp_key_ = plist_.get<std::string>("temperature key", "surface-temperature");
   dependencies_.insert(temp_key_);
 
   if (my_key_ == std::string("")) {

@@ -10,7 +10,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "EpetraExt_RowMatrixOut.h"
 #include "boost/math/special_functions/fpclassify.hpp"
 
-#include "overland_head.hh"
+#include "overland_pressure.hh"
 #include "Op.hh"
 
 namespace Amanzi {
@@ -25,7 +25,7 @@ namespace Flow {
 // -----------------------------------------------------------------------------
 // computes the non-linear functional g = g(t,u,udot)
 // -----------------------------------------------------------------------------
-void OverlandHeadFlow::Functional( double t_old,
+void OverlandPressureFlow::Functional( double t_old,
                         double t_new,
                         Teuchos::RCP<TreeVector> u_old,
                         Teuchos::RCP<TreeVector> u_new,
@@ -136,7 +136,7 @@ void OverlandHeadFlow::Functional( double t_old,
 // -----------------------------------------------------------------------------
 // Apply the preconditioner to u and return the result in Pu.
 // -----------------------------------------------------------------------------
-int OverlandHeadFlow::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+int OverlandPressureFlow::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "Precon application:" << std::endl;
@@ -171,7 +171,7 @@ int OverlandHeadFlow::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuc
 // -----------------------------------------------------------------------------
 // Update the preconditioner at time t and u = up
 // -----------------------------------------------------------------------------
-void OverlandHeadFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
+void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -203,7 +203,7 @@ void OverlandHeadFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   preconditioner_diff_->Setup(cond, Teuchos::null);
   Teuchos::RCP<const CompositeVector> pres_elev = S_next_->GetFieldData("pres_elev");
   preconditioner_diff_->UpdateMatrices(Teuchos::null, pres_elev.ptr());
-  Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData("surface_flux", name_);
+  Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData("surface-flux", name_);
   preconditioner_diff_->UpdateFlux(*up->Data(), *flux);
   preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
 
@@ -224,14 +224,14 @@ void OverlandHeadFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   const double& p_atm = *S_next_->GetScalarData("atmospheric_pressure");
 
   // -- update the accumulation derivatives
-  S_next_->GetFieldEvaluator("surface_water_content_bar")
+  S_next_->GetFieldEvaluator("surface-water_content_bar")
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
   const Epetra_MultiVector& dwc_dp =
-      *S_next_->GetFieldData("dsurface_water_content_bar_d"+key_)
+      *S_next_->GetFieldData("dsurface-water_content_bar_d"+key_)
       ->ViewComponent("cell",false);
 
-  db_->WriteVector("    dwc_dp", S_next_->GetFieldData("dsurface_water_content_bar_dsurface_pressure").ptr());
-  db_->WriteVector("    dh_dp", S_next_->GetFieldData("dponded_depth_bar_dsurface_pressure").ptr());
+  db_->WriteVector("    dwc_dp", S_next_->GetFieldData("dsurface-water_content_bar_dsurface-pressure").ptr());
+  db_->WriteVector("    dh_dp", S_next_->GetFieldData("dponded_depth_bar_dsurface-pressure").ptr());
 
   // -- pull out other needed data
   std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
@@ -249,20 +249,20 @@ void OverlandHeadFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   //       ->ViewComponent("cell",false);
 
   //   const Epetra_MultiVector& cv =
-  //       *S_next_->GetFieldData("surface_cell_volume")->ViewComponent("cell",false);
+  //       *S_next_->GetFieldData("surface-cell_volume")->ViewComponent("cell",false);
     
   //   if (source_in_meters_) {
   //     // External source term is in [m water / s], not in [mols / s], so a
   //     // density is required.  This density should be upwinded.
-  //     S_next_->GetFieldEvaluator("surface_molar_density_liquid")
+  //     S_next_->GetFieldEvaluator("surface-molar_density_liquid")
   //         ->HasFieldChanged(S_next_.ptr(), name_);
-  //     S_next_->GetFieldEvaluator("surface_source_molar_density")
+  //     S_next_->GetFieldEvaluator("surface-source_molar_density")
   //         ->HasFieldChanged(S_next_.ptr(), name_);
   //     const Epetra_MultiVector& nliq1 =
-  //         *S_next_->GetFieldData("surface_molar_density_liquid")
+  //         *S_next_->GetFieldData("surface-molar_density_liquid")
   //         ->ViewComponent("cell",false);
   //     const Epetra_MultiVector& nliq1_s =
-  //       *S_next_->GetFieldData("surface_source_molar_density")
+  //       *S_next_->GetFieldData("surface-source_molar_density")
   //         ->ViewComponent("cell",false);
   //     const Epetra_MultiVector& q = *S_next_->GetFieldData(mass_source_key_)
   //         ->ViewComponent("cell",false);
@@ -351,7 +351,7 @@ void OverlandHeadFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
 // -----------------------------------------------------------------------------
 // Default enorm that uses an abs and rel tolerance to monitor convergence.
 // -----------------------------------------------------------------------------
-double OverlandHeadFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
+double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
                                Teuchos::RCP<const TreeVector> du) {
   S_next_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& conserved = *S_next_->GetFieldData(conserved_key_)
