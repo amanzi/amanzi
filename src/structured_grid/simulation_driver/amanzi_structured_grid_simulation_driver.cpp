@@ -113,21 +113,23 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     // NOTE: Delay checking input version until we have started parallel so that we can guarantee
     //       a single error message
 
+    bool petsc_file_exists = false;
+    bool petsc_file_specified = false;
+
 #ifdef BL_USE_PETSC
     std::string petsc_help = "Amanzi-S passthrough access to PETSc help option\n";
     std::string petsc_file_str = "Petsc Options File";
     std::string petsc_options_file;
-    if (input_parameter_list.isParameter(petsc_file_str))
-    {
+
+    petsc_file_specified = input_parameter_list.isParameter(petsc_file_str);
+    if (petsc_file_specified) {
       petsc_options_file = Teuchos::getParameter<std::string>(input_parameter_list, petsc_file_str);
-      if (ConfirmFileExists(petsc_options_file)) {
-	std::cout << "Initializing PETSc with parameter file: \""
-		  << petsc_options_file << "\"" << std::endl;
+      petsc_file_exists = ConfirmFileExists(petsc_options_file);
+      if (petsc_file_exists) {
 	PetscInitialize(&argc,&argv,petsc_options_file.c_str(),petsc_help.c_str());
       }
-      else {
-	std::cout << "\nWARNING: Couldn't open PETSc parameter file: \""
-		  << petsc_options_file << "\" ... continuing anyway\n" << std::endl;
+      else
+      {
 	PetscInitializeNoArguments();
       }
     }
@@ -137,6 +139,20 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
 #endif
 
     BoxLib::Initialize(argc,argv,false,mpi_comm);
+
+    // Now its ok to write message
+    if (petsc_file_specified) {
+      if (petsc_file_exists) {
+	if (ParallelDescriptor::IOProcessor()) {
+	  std::cout << "Initializing PETSc with parameter file: \""
+		    << petsc_options_file << "\"" << std::endl;
+	}
+      }
+      else {
+	std::cout << "\nWARNING: Couldn't open PETSc parameter file: \""
+		  << petsc_options_file << "\" ... continuing anyway\n" << std::endl;
+      }
+    }
 
     BL_PROFILE_VAR("main()", pmain);
 

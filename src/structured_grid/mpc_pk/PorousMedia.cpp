@@ -1582,7 +1582,7 @@ PorousMedia::richard_init_to_steady()
       ParallelDescriptor::Barrier();
       Real time_after_init = p->StopTime();
       for (int lev = finest_level; lev >= 0; lev--) {
-        if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
+        if (lev>0 && richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
           std::cout << tag << " Averaging down level " << lev << std::endl;
         }
         getLevel(lev).avgDown();
@@ -2870,7 +2870,7 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
 
   if (step_ok) {
     for (int lev = finest_level; lev >= 0; lev--) {
-      if (richard_solver_verbose && ParallelDescriptor::IOProcessor()) {
+      if (lev>0 && richard_solver_verbose && ParallelDescriptor::IOProcessor()) {
         std::cout << tag << " Averaging down level " << lev << std::endl;
       }
       getLevel(lev).avgDown();
@@ -6218,7 +6218,6 @@ PorousMedia::ComputeSourceVolume ()
       }
     }
 
-
     for (int lev=finest_level; lev>=0;lev--) {
       PorousMedia* pm = dynamic_cast<PorousMedia*>(&(getLevel(lev)));
       BL_ASSERT(pm != 0);
@@ -6233,6 +6232,13 @@ PorousMedia::ComputeSourceVolume ()
       }
     }
 
+    for (int i=0; i<source_array.size(); ++i) {
+      if (source_volume[i] == 0) {
+	std::string str = "Source term \"" + source_array[i].Label() + "\" has no volume on the discrete grid."
+	  + "  Grow source region or refine the grid.";
+	  BoxLib::Abort(str.c_str());
+      }
+    }
   }
 }
 
