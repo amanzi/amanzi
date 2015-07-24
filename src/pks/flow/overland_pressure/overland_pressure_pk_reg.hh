@@ -6,12 +6,12 @@ License: BSD
 Author: Ethan Coon (ecoon@lanl.gov)
 ----------------------------------------------------------------------------- */
 
-#include "overland_head.hh"
+#include "overland_pressure.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-RegisteredPKFactory<OverlandHeadFlow> OverlandHeadFlow::reg_("overland flow, head basis");
+RegisteredPKFactory<OverlandPressureFlow> OverlandPressureFlow::reg_("overland flow, head basis");
 
 
 } // namespace

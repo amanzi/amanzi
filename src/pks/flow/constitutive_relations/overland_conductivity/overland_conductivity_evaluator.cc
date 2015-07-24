@@ -35,7 +35,7 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterL
   dens_ = plist_.get<bool>("include density factor", true);
 
   if (dens_) {
-    dens_key_ = plist_.get<std::string>("density key", "surface_molar_density_liquid");
+    dens_key_ = plist_.get<std::string>("density key", "surface-molar_density_liquid");
     dependencies_.insert(dens_key_);
   }
   

@@ -10,7 +10,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm/mo
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/porosity)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/internal_energy)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/overland_conductivity)
-include_directories(${ATS_SOURCE_DIR}/src/pks/flow/overland_head)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/overland_pressure)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/icy_overland)
 
 add_library(relations_ewc
