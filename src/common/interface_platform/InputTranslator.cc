@@ -3039,13 +3039,13 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     amrPL.set<Teuchos::Array<int> >("refinement_ratio",factors);
                     //XMLString::release(&textContent);
                   }
-                  else if (strcmp(tagname,"do_amr_cubcycling")==0) {
+                  else if (strcmp(tagname,"do_amr_subcycling")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
                     if (strcmp(textContent,"true")==0) {
-                      expertPL.set<bool>("do_amr_cubcycling",true);
+                      expertPL.set<bool>("do_amr_subcycling",true);
                     }
                     else  {
-                      expertPL.set<bool>("do_amr_cubcycling",false);
+                      expertPL.set<bool>("do_amr_subcycling",false);
                     }
                     XMLString::release(&textContent);
                   }
