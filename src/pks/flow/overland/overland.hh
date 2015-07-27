@@ -106,7 +106,7 @@ protected:
 
   // coupling term
   Key source_key_;
-  bool full_jacobian_;
+  bool jacobian_;
 
   // work data space
   Teuchos::RCP<Operators::Upwinding> upwinding_;

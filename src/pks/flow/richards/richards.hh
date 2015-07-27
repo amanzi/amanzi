@@ -181,6 +181,7 @@ protected:
   Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
   Teuchos::RCP<Operators::OperatorDiffusion> face_matrix_diff_;
   Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
+  Teuchos::RCP<Operators::Operator> lin_solver_;
 
   // residual vector for vapor diffusion
   Teuchos::RCP<CompositeVector> res_vapor;
@@ -214,12 +215,13 @@ protected:
   Key mass_dens_key_;
   Key molar_dens_key_;
   Key perm_key_;
-  Key coef_key_;
-  Key uw_coef_key_;
+  Key coef_key_, dcoef_key_;
+  Key uw_coef_key_, duw_coef_key_;
   Key flux_key_;
   Key flux_dir_key_;
   Key velocity_key_;
   Key source_key_;
+  Key ss_flux_key_;
 
  private:
   // factory registration

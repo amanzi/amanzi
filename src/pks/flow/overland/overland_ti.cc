@@ -153,16 +153,18 @@ void OverlandFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
   // -- update the rel perm according to the boundary info and upwinding
   // -- scheme of choice
   UpdatePermeabilityData_(S_next_.ptr());
-  UpdatePermeabilityDerivativeData_(S_next_.ptr());
+  if (jacobian_) UpdatePermeabilityDerivativeData_(S_next_.ptr());
 
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_overland_conductivity");
-  Teuchos::RCP<const CompositeVector> dcond;
+  Teuchos::RCP<const CompositeVector> dcond = Teuchos::null;
 
-  if (preconditioner_->RangeMap().HasComponent("face")) {
-    dcond = S_next_->GetFieldData("dupwind_overland_conductivity_dponded_depth");
-  } else {
-    dcond = S_next_->GetFieldData("doverland_conductivity_dponded_depth");
+  if (jacobian_) {
+    if (preconditioner_->RangeMap().HasComponent("face")) {
+      dcond = S_next_->GetFieldData("dupwind_overland_conductivity_dponded_depth");
+    } else {
+      dcond = S_next_->GetFieldData("doverland_conductivity_dponded_depth");
+    }
   }
 
   // 1.b: Create all local matrices.

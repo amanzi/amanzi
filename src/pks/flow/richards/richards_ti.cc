@@ -168,7 +168,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   // update the rel perm according to the scheme of choice, also upwind derivatives of rel perm
   UpdatePermeabilityData_(S_next_.ptr());
-  UpdatePermeabilityDerivativeData_(S_next_.ptr());
+  if (!duw_coef_key_.empty()) UpdatePermeabilityDerivativeData_(S_next_.ptr());
 
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
@@ -220,15 +220,15 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData(mass_dens_key_);
   preconditioner_diff_->SetDensity(rho);
 
-  Key dkrdp_key = getDerivKey(uw_coef_key_, key_);
-  Teuchos::RCP<const CompositeVector> dkrdp = S_next_->GetFieldData(dkrdp_key);
-   preconditioner_diff_->Setup(rel_perm_modified, dkrdp);
+
+  Teuchos::RCP<const CompositeVector> dkrdp = Teuchos::null;
+  if (!duw_coef_key_.empty()) dkrdp = S_next_->GetFieldData(duw_coef_key_);
+  preconditioner_diff_->Setup(rel_perm_modified, dkrdp);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData(flux_key_, name_);
   preconditioner_diff_->UpdateFlux(*up->Data(), *flux);
   preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
   
-
   // if (vapor_diffusion_){
   //   Teuchos::RCP<CompositeVector> vapor_diff_pres = S_next_->GetFieldData("vapor_diffusion_pressure", name_);
   //   ComputeVaporDiffusionCoef(S_next_.ptr(), vapor_diff_pres, "pressure");   

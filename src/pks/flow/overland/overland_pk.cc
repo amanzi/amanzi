@@ -162,21 +162,24 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   //    If using approximate Jacobian for the preconditioner, we also need derivative information.
   //    For now this means upwinding the derivative.
-  if (coef_location == "upwind: face") {  
-    S->RequireField("dupwind_overland_conductivity_dponded_depth", name_)
-        ->SetMesh(mesh_)->SetGhosted()
-        ->SetComponent("face", AmanziMesh::FACE, 1);
-  } else if (coef_location == "standard: cell") {
-    S->RequireField("dupwind_overland_conductivity_dponded_depth", name_)
-        ->SetMesh(mesh_)->SetGhosted()
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-  S->GetField("dupwind_overland_conductivity_dponded_depth",name_)->set_io_vis(false);
+  jacobian_ = mfd_pc_plist.get<std::string>("newton correction", "none") == "none";
+  if (jacobian_) {
+    if (coef_location == "upwind: face") {  
+      S->RequireField("dupwind_overland_conductivity_dponded_depth", name_)
+          ->SetMesh(mesh_)->SetGhosted()
+          ->SetComponent("face", AmanziMesh::FACE, 1);
+    } else if (coef_location == "standard: cell") {
+      S->RequireField("dupwind_overland_conductivity_dponded_depth", name_)
+          ->SetMesh(mesh_)->SetGhosted()
+          ->SetComponent("cell", AmanziMesh::CELL, 1);
+    }
+    S->GetField("dupwind_overland_conductivity_dponded_depth",name_)->set_io_vis(false);
     
-  upwinding_dkdp_ = upwfactory.Create(cond_plist, name_,
-          "doverland_conductivity_dponded_depth",
-          "dupwind_overland_conductivity_dponded_depth",
-          "surface-flux_direction");
+    upwinding_dkdp_ = upwfactory.Create(cond_plist, name_,
+            "doverland_conductivity_dponded_depth",
+            "dupwind_overland_conductivity_dponded_depth",
+            "surface-flux_direction");
+  }
   
   //    accumulation
   Teuchos::ParameterList& acc_pc_plist = plist_->sublist("Accumulation PC");
