@@ -120,21 +120,27 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
             getKey(domain_, "darcy_velocity"));
   }
   
-
-  // -- secondary variables, no evaluator used
-  S->RequireField(flux_dir_key_, name_)->SetMesh(mesh_)->SetGhosted()
-      ->SetComponent("face", AmanziMesh::FACE, 1);
-  S->RequireField(flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
-                                ->SetComponent("face", AmanziMesh::FACE, 1);
-  S->RequireField(velocity_key_, name_)->SetMesh(mesh_)->SetGhosted()
-                                ->SetComponent("cell", AmanziMesh::CELL, 3);
-
   // Get data for non-field quanitites.
   S->RequireFieldEvaluator(cell_vol_key_);
   S->RequireGravity();
   S->RequireScalar("atmospheric_pressure");
 
-  // Create the absolute permeability tensor.
+  // Set up Operators
+  // -- boundary conditions
+  Teuchos::ParameterList bc_plist = plist_->sublist("boundary conditions", true);
+  FlowBCFactory bc_factory(mesh_, bc_plist);
+  bc_pressure_ = bc_factory.CreatePressure();
+  bc_flux_ = bc_factory.CreateMassFlux();
+  bc_seepage_ = bc_factory.CreateSeepageFacePressure();
+  bc_seepage_->Compute(0.); // compute at t=0 to set up
+
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
+  bc_values_.resize(nfaces, 0.0);
+  std::vector<double> mixed;
+  bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_markers_, bc_values_, mixed));
+
+  // -- linear tensor coefficients
   unsigned int c_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   K_ = Teuchos::rcp(new std::vector<WhetStone::Tensor>(c_owned));
   for (unsigned int c=0; c!=c_owned; ++c) {
@@ -142,7 +148,141 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   }
   // scaling for permeability
   perm_scale_ = plist_->get<double>("permeability rescaling", 1.0);
+  
+  // -- nonlinear coefficients/upwinding
+  Teuchos::ParameterList wrm_plist = plist_->sublist("water retention evaluator");
+  clobber_surf_kr_ = plist_->get<bool>("clobber surface rel perm", false);
+  std::string method_name = plist_->get<std::string>("relative permeability method", "upwind with Darcy flux");
 
+  if (method_name == "upwind with gravity") {
+    upwinding_ = Teuchos::rcp(new Operators::UpwindGravityFlux(name_,
+            coef_key_, uw_coef_key_, K_));
+    Krel_method_ = Operators::UPWIND_METHOD_GRAVITY;
+  } else if (method_name == "cell centered") {
+    upwinding_ = Teuchos::rcp(new Operators::UpwindCellCentered(name_,
+            coef_key_, uw_coef_key_));
+    Krel_method_ = Operators::UPWIND_METHOD_CENTERED;
+  } else if (method_name == "upwind with Darcy flux") {
+    upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
+            coef_key_, uw_coef_key_, flux_dir_key_, 1.e-8));
+    Krel_method_ = Operators::UPWIND_METHOD_TOTAL_FLUX;
+  } else if (method_name == "arithmetic mean") {
+    upwinding_ = Teuchos::rcp(new Operators::UpwindArithmeticMean(name_,
+            coef_key_, uw_coef_key_));
+    Krel_method_ = Operators::UPWIND_METHOD_ARITHMETIC_MEAN;
+  } else {
+    std::stringstream messagestream;
+    messagestream << "Richards Flow PK has no upwinding method named: " << method_name;
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+
+  // -- require the data on appropriate locations
+  std::string coef_location = upwinding_->CoefficientLocation();
+  if (coef_location == "upwind: face") {  
+    S->RequireField(uw_coef_key_, name_)->SetMesh(mesh_)
+        ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
+  } else if (coef_location == "standard: cell") {
+    S->RequireField(uw_coef_key_, name_)->SetMesh(mesh_)
+        ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
+  } else {
+    Errors::Message message("Unknown upwind coefficient location in Richards flow.");
+    Exceptions::amanzi_throw(message);
+  }
+  S->GetField(uw_coef_key_,name_)->set_io_vis(false);
+
+  // -- create the forward operator for the diffusion term
+  Teuchos::ParameterList& mfd_plist = plist_->sublist("Diffusion");
+  mfd_plist.set("nonlinear coefficient", coef_location);
+  mfd_plist.set("gravity", true);
+  
+  Operators::OperatorDiffusionFactory opfactory;
+  matrix_diff_ = opfactory.Create(mesh_, bc_, mfd_plist);
+  matrix_diff_->Setup(Teuchos::null);
+  matrix_ = matrix_diff_->global_operator();
+
+  // -- create the operator, data for flux directions
+  Teuchos::ParameterList face_diff_list(mfd_plist);
+  face_diff_list.set("nonlinear coefficient", "none");
+  face_matrix_diff_ = opfactory.Create(mesh_, bc_, face_diff_list);
+  face_matrix_diff_->Setup(Teuchos::null);
+  face_matrix_diff_->Setup(Teuchos::null, Teuchos::null);
+  face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  S->RequireField(flux_dir_key_, name_)->SetMesh(mesh_)->SetGhosted()
+      ->SetComponent("face", AmanziMesh::FACE, 1);
+
+  // -- create the operators for the preconditioner
+  //    diffusion
+  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("Diffusion PC");
+  mfd_pc_plist.set("nonlinear coefficient", coef_location);
+  mfd_pc_plist.set("gravity", true);
+  if (!mfd_pc_plist.isParameter("discretization primary"))
+    mfd_pc_plist.set("discretization primary", mfd_plist.get<std::string>("discretization primary"));
+  if (!mfd_pc_plist.isParameter("discretization secondary") && mfd_plist.isParameter("discretization secondary"))
+    mfd_pc_plist.set("discretization secondary", mfd_plist.get<std::string>("discretization secondary"));
+  if (!mfd_pc_plist.isParameter("schema"))
+    mfd_pc_plist.set("schema", mfd_plist.get<Teuchos::Array<std::string> >("schema"));
+
+  preconditioner_diff_ = opfactory.Create(mesh_, bc_, mfd_pc_plist);
+  preconditioner_diff_->Setup(Teuchos::null);
+  preconditioner_ = preconditioner_diff_->global_operator();
+  
+  //    If using approximate Jacobian for the preconditioner, we also need derivative information.
+  //    For now this means upwinding the derivative.
+  std::string jacobian = mfd_pc_plist.get<std::string>("newton correction", "none");
+  if (jacobian != "none" && Krel_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX) {
+    dcoef_key_ = getDerivKey(coef_key_, key_);
+    duw_coef_key_ = getDerivKey(uw_coef_key_, key_);
+        
+    S->RequireField(duw_coef_key_, name_)
+        ->SetMesh(mesh_)->SetGhosted()
+        ->SetComponent("face", AmanziMesh::FACE, 1);
+    S->GetField(duw_coef_key_,name_)->set_io_vis(false);
+
+    upwinding_deriv_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
+            dcoef_key_, duw_coef_key_, flux_dir_key_, 1.e-8));
+  }
+  
+  // -- accumulation terms
+  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("Accumulation PC");
+  acc_pc_plist.set("entity kind", "cell");
+  preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, preconditioner_));
+
+  // // -- vapor diffusion terms
+  // vapor_diffusion_ = plist_->get<bool>("include vapor diffusion", false);
+  // if (vapor_diffusion_){
+  //   ASSERT(0); // untested!
+    
+  //   // Create the vapor diffusion vectors
+  //   S->RequireField("vapor_diffusion_pressure", name_)->SetMesh(mesh_)->SetGhosted()
+  //       ->SetComponent("cell", AmanziMesh::CELL, 1);
+  //   S->GetField("vapor_diffusion_pressure",name_)->set_io_vis(true);
+
+  //   S->RequireField("vapor_diffusion_temperature", name_)->SetMesh(mesh_)->SetGhosted()
+  //     ->SetComponent("cell", AmanziMesh::CELL, 1);
+  //   S->GetField("vapor_diffusion_temperature",name_)->set_io_vis(true);
+
+  //   // operator for the vapor diffusion terms
+  //   matrix_vapor_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
+  // }
+
+  //    symbolic assemble
+  preconditioner_->SymbolicAssembleMatrix();
+  
+  // -- PC control
+  precon_used_ = plist_->isSublist("preconditioner");
+  precon_wc_ = plist_->get<bool>("precondition using WC", false);
+
+  //    Potentially create a linear solver
+  if (plist_->isSublist("linear solver")) {
+    Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
+    AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
+    lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);
+  } else {
+    lin_solver_ = preconditioner_;
+  }
+  
   // source terms
   is_source_term_ = plist_->get<bool>("source term", false);
   if (is_source_term_) {
@@ -158,42 +298,17 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
         ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(source_key_);
   }
-  
-  // Create the boundary condition data structures.
-  Teuchos::ParameterList bc_plist = plist_->sublist("boundary conditions", true);
-  FlowBCFactory bc_factory(mesh_, bc_plist);
-  bc_pressure_ = bc_factory.CreatePressure();
-  bc_flux_ = bc_factory.CreateMassFlux();
-  infiltrate_only_if_unfrozen_ = bc_plist.get<bool>("infiltrate only if unfrozen",false);
-  bc_seepage_ = bc_factory.CreateSeepageFacePressure();
-  bc_seepage_->Compute(0.); // compute at t=0 to set up
-
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
-  bc_values_.resize(nfaces, 0.0);
-  std::vector<double> mixed;
-  bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_markers_, bc_values_, mixed));
-  
-  // how often to update the fluxes?
-  std::string updatestring = plist_->get<std::string>("update flux mode", "iteration");
-  if (updatestring == "iteration") {
-    update_flux_ = UPDATE_FLUX_ITERATION;
-  } else if (updatestring == "timestep") {
-    update_flux_ = UPDATE_FLUX_TIMESTEP;
-  } else if (updatestring == "vis") {
-    update_flux_ = UPDATE_FLUX_VIS;
-  } else if (updatestring == "never") {
-    update_flux_ = UPDATE_FLUX_NEVER;
-  } else {
-    Errors::Message message(std::string("Unknown frequence for updating the overland flux: ")+updatestring);
-    Exceptions::amanzi_throw(message);
-  }
 
   // coupling
   // -- coupling done by a Neumann condition
   coupled_to_surface_via_flux_ = plist_->get<bool>("coupled to surface via flux", false);
   if (coupled_to_surface_via_flux_) {
-    S->RequireField("surface_subsurface_flux")
+    if (ss_flux_key_.empty()) {
+      ss_flux_key_ = plist_->get<std::string>("surface-subsurface flux key",
+              getKey(domain_, "surface_subsurface_flux"));
+    }
+
+    S->RequireField(ss_flux_key_)
         ->SetMesh(S->GetMesh("surface"))
         ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
@@ -202,112 +317,13 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   coupled_to_surface_via_head_ = plist_->get<bool>("coupled to surface via head", false);
   if (coupled_to_surface_via_head_) {
     S->RequireField("surface_pressure");
-    // override the flux update -- must happen every iteration
-    update_flux_ = UPDATE_FLUX_ITERATION;
   }
 
   // -- Make sure coupling isn't flagged multiple ways.
-  ASSERT(!(coupled_to_surface_via_flux_ && coupled_to_surface_via_head_));
-
-  // Create the upwinding method
-  std::vector<AmanziMesh::Entity_kind> locations2(2);
-  std::vector<std::string> names2(2);
-  std::vector<int> num_dofs2(2,1);
-  locations2[0] = AmanziMesh::CELL;
-  locations2[1] = AmanziMesh::FACE;
-  names2[0] = "cell";
-  names2[1] = "face";
-  
-  S->RequireField(uw_coef_key_, name_)->SetMesh(mesh_)->SetGhosted()
-                    ->SetComponents(names2, locations2, num_dofs2);
-  S->GetField(uw_coef_key_,name_)->set_io_vis(false);
-
-  Key dkruw_dp_key = getDerivKey(uw_coef_key_, key_);
-  S->RequireField(dkruw_dp_key, name_)->SetMesh(mesh_)->SetGhosted()
-                    ->SetComponents(names2, locations2, num_dofs2);
-  S->GetField(dkruw_dp_key,name_)->set_io_vis(false);
-
-  clobber_surf_kr_ = plist_->get<bool>("clobber surface rel perm", false);
-  std::string method_name = plist_->get<std::string>("relative permeability method", "upwind with gravity");
-  symmetric_ = false;
-  if (method_name == "upwind with gravity") {
-    upwinding_ = Teuchos::rcp(new Operators::UpwindGravityFlux(name_,
-            coef_key_, uw_coef_key_, K_));
-    Krel_method_ = Operators::UPWIND_METHOD_GRAVITY;
-  } else if (method_name == "cell centered") {
-    upwinding_ = Teuchos::rcp(new Operators::UpwindCellCentered(name_,
-            coef_key_, uw_coef_key_));
-    symmetric_ = true;
-    Krel_method_ = Operators::UPWIND_METHOD_CENTERED;
-  } else if (method_name == "upwind with Darcy flux") {
-    upwind_from_prev_flux_ = plist_->get<bool>("upwind flux from previous iteration", false);
-    if (upwind_from_prev_flux_) {
-      upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-                    coef_key_, uw_coef_key_, flux_key_, 1.e-8));
-    } else {
-      upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-                    coef_key_, uw_coef_key_, flux_dir_key_, 1.e-8));
-      Key dkr_dp_key = getDerivKey(coef_key_, key_);
-      upwinding_deriv_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-                    dkr_dp_key, dkruw_dp_key, flux_dir_key_, 1.e-8));
-    }
-    Krel_method_ = Operators::UPWIND_METHOD_TOTAL_FLUX;
-  } else if (method_name == "arithmetic mean") {
-    upwinding_ = Teuchos::rcp(new Operators::UpwindArithmeticMean(name_,
-            coef_key_, uw_coef_key_));
-    Krel_method_ = Operators::UPWIND_METHOD_ARITHMETIC_MEAN;
-  } else {
-    std::stringstream messagestream;
-    messagestream << "Richards Flow PK has no upwinding method named: " << method_name;
-    Errors::Message message(messagestream.str());
+  if (coupled_to_surface_via_flux_ && coupled_to_surface_via_head_) {
+    Errors::Message message("Richards PK requested both flux and head coupling -- choose one.");
     Exceptions::amanzi_throw(message);
   }
-
-
-  vapor_diffusion_ = false;
-  //  vapor_diffusion_ = plist_->get<bool>("include vapor diffusion", false);
-  // if (vapor_diffusion_){
-  //   // Create the vapor diffusion vectors
-  //   S->RequireField("vapor_diffusion_pressure", name_)->SetMesh(mesh_)->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
-  //   S->GetField("vapor_diffusion_pressure",name_)->set_io_vis(true);
-
-
-  //   S->RequireField("vapor_diffusion_temperature", name_)->SetMesh(mesh_)->SetGhosted()
-  //     ->SetComponent("cell", AmanziMesh::CELL, 1);
-  //   S->GetField("vapor_diffusion_temperature",name_)->set_io_vis(true);
-  // }
-
-  // operators for the diffusion terms
-  Teuchos::ParameterList& mfd_plist = plist_->sublist("Diffusion");
-  mfd_plist.set("gravity", true);
-  Operators::OperatorDiffusionFactory opfactory;
-  matrix_diff_ = opfactory.Create(mfd_plist, mesh_);
-  matrix_ = matrix_diff_->global_operator();
-
-  // if (vapor_diffusion_){
-  //   // operator for the vapor diffusion terms
-  //   matrix_vapor_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
-  //   symmetric_ = false;
-  //   matrix_vapor_ ->set_symmetric(symmetric_);
-  //   matrix_vapor_ ->SymbolicAssembleGlobalMatrices();
-  //   matrix_vapor_ ->InitPreconditioner();
-  // }
-
-  // operator with no krel for flux direction, consistent faces
-  Teuchos::ParameterList face_diff_list(mfd_plist);
-  face_diff_list.set("nonlinear coefficient", "none");
-  face_matrix_diff_ = opfactory.Create(face_diff_list, mesh_);
-
-  // preconditioner for the NKA system
-  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("Diffusion PC");
-  mfd_pc_plist.set("gravity", true);
-  preconditioner_diff_ = opfactory.Create(mfd_pc_plist, mesh_);
-  preconditioner_ = preconditioner_diff_->global_operator();
-  preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, preconditioner_));
-
-  // wc preconditioner
-  precon_used_ = plist_->isSublist("preconditioner");
-  precon_wc_ = plist_->get<bool>("precondition using WC", false);
 
   // predictors for time integration
   modify_predictor_with_consistent_faces_ =
@@ -319,11 +335,16 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   modify_predictor_wc_ =
     plist_->get<bool>("modify predictor via water content", false);
 
-  // require primary variable
-  
-
   // Require fields and evaluators for those fields.
+  // -- primary variables
   S->RequireField(key_, name_)->Update(matrix_->RangeMap())->SetGhosted();
+
+  // -- secondary variables, with no evaluator used
+  S->RequireField(flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
+                                ->SetComponent("face", AmanziMesh::FACE, 1);
+  S->RequireField(velocity_key_, name_)->SetMesh(mesh_)->SetGhosted()
+                                ->SetComponent("cell", AmanziMesh::CELL, 3);
+
 }
 
 
@@ -413,9 +434,11 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   // and will be initialized in the call to commit_state()
   S->GetFieldData(uw_coef_key_,name_)->PutScalar(1.0);
   S->GetField(uw_coef_key_,name_)->set_initialized();
-  Key dkruw_dp_key = getDerivKey(uw_coef_key_, key_);
-  S->GetFieldData(dkruw_dp_key,name_)->PutScalar(1.0);
-  S->GetField(dkruw_dp_key,name_)->set_initialized();
+
+  if (!duw_coef_key_.empty()) {
+    S->GetFieldData(duw_coef_key_,name_)->PutScalar(1.0);
+    S->GetField(duw_coef_key_,name_)->set_initialized();
+  }
 
   // if (vapor_diffusion_){
   //   S->GetFieldData("vapor_diffusion_pressure",name_)->PutScalar(1.0);
@@ -423,7 +446,6 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   //   S->GetFieldData("vapor_diffusion_temperature",name_)->PutScalar(1.0);
   //   S->GetField("vapor_diffusion_temperature",name_)->set_initialized();
   // }
-
 
   S->GetFieldData(flux_key_, name_)->PutScalar(0.0);
   S->GetField(flux_key_, name_)->set_initialized();
