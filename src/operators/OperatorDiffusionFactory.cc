@@ -90,10 +90,11 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
     Teuchos::ParameterList& oplist)
 {
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::null;
-
   std::string name = oplist.get<std::string>("discretization primary");
-
-  if (name == "fv: default") {
+  bool flag = oplist.get<bool>("gravity", false);
+  
+  // FV methods
+  if (name == "fv: default" && !flag) {
     if (!oplist.isParameter("schema")) {
       Teuchos::Array<std::string> schema(1);
       schema[0] = "cell";
@@ -102,13 +103,32 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
     op = Teuchos::rcp(new OperatorDiffusionFV(oplist, mesh));
     op->SetBCs(bc, bc);
 
-  } else {
+  } else if (name == "fv: default" && flag) {
+    if (!oplist.isParameter("schema")) {
+      Teuchos::Array<std::string> schema(1);
+      schema[0] = "cell";
+      oplist.set("schema",  schema);
+    }
+    op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh));
+    op->SetBCs(bc, bc);
+
+  // MFD methods
+  } else if (!flag) {
     if (!oplist.isParameter("schema")) {
       Teuchos::Array<std::string> schema(2);
       schema[0] = "cell"; schema[1] = "face";
       oplist.set("schema",  schema);
     }
     op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, mesh));
+    op->SetBCs(bc, bc);
+
+  } else {
+    if (!oplist.isParameter("schema")) {
+      Teuchos::Array<std::string> schema(2);
+      schema[0] = "cell"; schema[1] = "face";
+      oplist.set("schema",  schema);
+    }
+    op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, mesh));
     op->SetBCs(bc, bc);
   }
   return op;
