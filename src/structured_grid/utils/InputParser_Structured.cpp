@@ -794,7 +794,6 @@ namespace Amanzi {
         }
         else if (optL[i] == num_str)
         {
-	  Array<std::string> sL, sP;
 	  const ParameterList& num_list = ec_list.sublist(num_str);
           Array<std::string> nL, nP;
           PLoptions NUMopt(num_list,nL,nP,false,true); 
