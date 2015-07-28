@@ -4353,7 +4353,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
                     else if (std::string(textContent2) == "lichtner_kelkar_robinson") {
                       if (dispElem->hasAttribute(XMLString::transcode("alpha_lh"))) {
                         textContent3 = XMLString::transcode(dispElem->getAttribute(XMLString::transcode("alpha_lh")));
-                        matlist.sublist("Dispersion Tensor: Burnett-Frind").set<double>("alphaLH",get_double_constant(textContent3,def_list));
+                        matlist.sublist("Dispersion Tensor: Lichtner-Kelkar-Robinson").set<double>("alphaLH",get_double_constant(textContent3,def_list));
                         XMLString::release(&textContent3);
                       }
                       else {
@@ -4361,7 +4361,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
                       }
                       if (dispElem->hasAttribute(XMLString::transcode("alpha_lv"))) {
                         textContent3 = XMLString::transcode(dispElem->getAttribute(XMLString::transcode("alpha_lv")));
-                        matlist.sublist("Dispersion Tensor: Burnett-Frind").set<double>("alphaLV",get_double_constant(textContent3,def_list));
+                        matlist.sublist("Dispersion Tensor: Lichtner-Kelkar-Robinson").set<double>("alphaLV",get_double_constant(textContent3,def_list));
                         XMLString::release(&textContent3);
                       }
                       else {
@@ -5007,32 +5007,32 @@ Teuchos::ParameterList get_initial_conditions(DOMDocument* xmlDoc, Teuchos::Para
                     nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
 		    if (nodeAttr) {
                       attrValue = XMLString::transcode(nodeAttr->getNodeValue());
+                      pressureList.set<double>("Reference Value",get_double_constant(attrValue,def_list));
+                      XMLString::release(&attrValue);
 	            } else {
                       throw_error_missattr("initial_conditions", "attribute", "value", "linear_pressure or linear_saturation");
 	            }
 
-		    pressureList.set<double>("Reference Value",get_double_constant(attrValue,def_list));
-	            XMLString::release(&attrValue);
 		    //reference_coord
                     nodeAttr = attrMap->getNamedItem(XMLString::transcode("reference_coord"));
 		    if (nodeAttr) {
                       attrValue = XMLString::transcode(nodeAttr->getNodeValue());
+                      Teuchos::Array<double> coord = make_coordinates(attrValue, def_list);
+                      pressureList.set<Teuchos::Array<double> >("Reference Point",coord);
+                      XMLString::release(&attrValue);
 	            } else {
                       throw_error_missattr("initial_conditions", "attribute", "reference_coord", "linear_pressure or linear_saturation");
 	            }
-	            Teuchos::Array<double> coord = make_coordinates(attrValue, def_list);
-		    pressureList.set<Teuchos::Array<double> >("Reference Point",coord);
-	            XMLString::release(&attrValue);
 		    //gradient
                     nodeAttr = attrMap->getNamedItem(XMLString::transcode("gradient"));
 		    if (nodeAttr) {
                       attrValue = XMLString::transcode(nodeAttr->getNodeValue());
+                      Teuchos::Array<double> grad = make_coordinates(attrValue, def_list);
+                      pressureList.set<Teuchos::Array<double> >("Gradient Value",grad);
+                      XMLString::release(&attrValue);
 	            } else {
                       throw_error_missattr("initial_conditions", "attribute", "gradient", "linear_pressure or linear_saturation");
 	            }
-	            Teuchos::Array<double> grad = make_coordinates(attrValue, def_list);
-		    pressureList.set<Teuchos::Array<double> >("Gradient Value",grad);
-                    XMLString::release(&attrValue);
                     if (strcmp(pressName,"linear_pressure")==0 ) {
 		      iclist.sublist("IC: Linear Pressure") = pressureList;
 		    } else {
@@ -5424,8 +5424,8 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
                         XMLString::release(&textContent2);
                       }
                     }
-                    else if (strcmp(bcChildName,"linear_pressue")==0) {
-                      xmlBCName = "linear_pressue";
+                    else if (strcmp(bcChildName,"linear_pressure")==0) {
+                      xmlBCName = "linear_pressure";
                       bcname = "BC: Linear Pressure";
                       DOMElement* bcElem = static_cast<DOMElement*>(bcChildNode);
                       if (bcElem->hasAttribute(XMLString::transcode("gradient_value"))) {
@@ -5436,13 +5436,13 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
                         }
                         else {
                           success = false;
-                          errmsg << "  Ill-formed 'gradient_value' for BC linear_pressue " << std::endl ;
+                          errmsg << "  Ill-formed 'gradient_value' for BC linear_pressure " << std::endl ;
                         }
                         XMLString::release(&textContent2);
                       }
                       else {
                         success = false;
-                        errmsg << "  Missing 'gradient_value' for BC linear_pressue " << std::endl ;
+                        errmsg << "  Missing 'gradient_value' for BC linear_pressure " << std::endl ;
                       }
                       if (bcElem->hasAttribute(XMLString::transcode("reference_point"))) {
                         textContent2 = XMLString::transcode(bcElem->getAttribute(XMLString::transcode("reference_point")));
@@ -5452,13 +5452,13 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
                         }
                         else {
                           success = false;
-                          errmsg << "  Ill-formed 'reference_point' for BC linear_pressue " << std::endl ;
+                          errmsg << "  Ill-formed 'reference_point' for BC linear_pressure " << std::endl ;
                         }
                         XMLString::release(&textContent2);
                       }
                       else {
                         success = false;
-                        errmsg << "  Missing 'reference_point' for BC linear_pressue " << std::endl ;
+                        errmsg << "  Missing 'reference_point' for BC linear_pressure " << std::endl ;
                       }
                       if (bcElem->hasAttribute(XMLString::transcode("reference_value"))) {
                         textContent2 = XMLString::transcode(bcElem->getAttribute(XMLString::transcode("reference_value")));
@@ -5467,13 +5467,13 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
                         }
                         else {
                           success = false;
-                          errmsg << "  Ill-formed 'reference_value' for BC linear_pressue " << std::endl ;
+                          errmsg << "  Ill-formed 'reference_value' for BC linear_pressure " << std::endl ;
                         }
                         XMLString::release(&textContent2);
                       }
                       else {
                         success = false;
-                        errmsg << "  Missing 'reference_value' for BC linear_pressue " << std::endl ;
+                        errmsg << "  Missing 'reference_value' for BC linear_pressure " << std::endl ;
                       }
                     }
                     else {
@@ -5966,7 +5966,8 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
 		    if (strcmp(scChildName,"volume_weighted")==0){
 		     scname = "Source: Volume Weighted";
 		    }
-                    else if (strcmp(scChildName,"permeability_weighted")==0){
+                    //else if (strcmp(scChildName,"permeability_weighted")==0){
+                    else if (strcmp(scChildName,"perm_weighted")==0){
 		     scname = "Source: Permeability Weighted";
 		    }
 		    // loop over any attributes that may exist

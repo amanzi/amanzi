@@ -1278,7 +1278,7 @@ ____________
 
 The ``observations`` element defines the file for writing observations to and specifies individual observations to be made.  At this time, all observations are written to a single file defined in the ``filename`` element.  See the about NOTE about specifying a file location other than the current working directory. Also, observations are only available for the liquid phases.  Therefore individual observations are defined in subelements under the ``liquid_phase`` tag.  The ``liquid_phase`` tag takes an attribute ``name`` to identify which phase the observations are associated with.
 
-The element name of individual observations indicate the quantity being observed.  Below is a list of currently available observations.  Individual observations require the subelements ``assigned_regions``, ``functional``, and ``time_macros``.  ``aqueous_conc`` observations also take an attribute ``name`` which indicates the name of the solute being observed.
+The element name of individual observations indicate the quantity being observed.  Below is a list of currently available observations.  Individual observations require the subelements ``assigned_regions``, ``functional``, and ``time_macros``.  ``aqueous_conc`` and ``solute_volumetric_flow_rate`` observations also require the name of the solute.  This is specified with an extra subelement ``solute``. 
 
 Available Observations:
 
@@ -1295,6 +1295,7 @@ Available Observations:
 - aqueous_volumetric_flow_rate
 - aqueous_conc
 - drawdown
+- solute_volumetric_flow_rate
 
 An example ``observations`` element looks like the following.
 

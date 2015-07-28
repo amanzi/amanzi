@@ -1389,7 +1389,8 @@ The *liquid_phase* element requires that the name of the phase be specified as a
        Required Elements: NONE 
        Optional Elements: integrated_mass, volumetric_water_content, gravimetric_water_content, aqueous_pressure, 
                           x_aqueous_volumetric_flux, y_aqueous_volumetric_flux, z_aqueous_volumetric_flux, material_id, 
-                          hydraulic_head, aqueous_mass_flow_rate, aqueous_volumetric_flow_rate, aqueous_conc, drawdown
+                          hydraulic_head, aqueous_mass_flow_rate, aqueous_volumetric_flow_rate, aqueous_conc, drawdown,
+                          solute_volumetric_flow_rate
      </liquid_phase>
 
 The observation element identifies the field quantity to be observed.  Subelements identify the elements for a region, a model (functional) with which it will extract its source data, and a list of discrete times for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of Amanzi arguments. The elements for each observation type are as follows:
@@ -1401,7 +1402,7 @@ The observation element identifies the field quantity to be observed.  Subelemen
      Optional Elements: NONE
    </observation_type>
 
-The only exception is aqueous_conc requires an attribute Name="Solute Name".
+The only exceptions are aqueous_conc and solute_volumetric_flow_rate which both require a solute to be specified.  An additional subelement "solute" gives the name of the solute to calculate the aqueous concentration or volumetric flow rate for.  Be sure the name of given for the solute matches a defined solute elsewhere in the input file.  
 
 NOTE: Previously individual observation elements had the subelement ''cycle_macro'' or ''time_macro''.  All output is moving away from only allowing a single macro to be specified to allowing multiple macros as a comma separated list.  To ease the transition for users both singular and plural are currently accepted.  However, the singular option will go away in the future.  Please update existing input files to use ''cycle_macros'' or ''time_macros''.
 
