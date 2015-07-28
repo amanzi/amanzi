@@ -2230,6 +2230,12 @@ namespace Amanzi {
                   throw std::exception();
                 }
               }
+              else if (rlabel=="Capillary Pressure: None") {
+                ParameterList cpl_pl;
+		cpl_pl.set("type","None");
+                rsublist.set("cpl",cpl_pl);
+                mtest["Capillary_Pressure"] = true;
+              }
               else if (rlabel==mineralogy_str) {
 
                 add_chemistry_properties = true;
