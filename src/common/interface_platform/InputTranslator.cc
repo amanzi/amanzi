@@ -3744,6 +3744,7 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
          // if attribute 'num_points' exists, get it
         int num_points(-1);
         int pt_cnt(0);
+        attrMap = cur->getAttributes();
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("num_points"));
         if (regElem->hasAttribute(XMLString::transcode("num_points"))) {
           textContent2 = XMLString::transcode(regElem->getAttribute(XMLString::transcode("num_points")));
