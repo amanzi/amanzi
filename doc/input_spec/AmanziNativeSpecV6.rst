@@ -3434,26 +3434,25 @@ User-defined regions are constructed using the following syntax
 
 Amanzi supports parameterized forms for a number of analytic shapes, as well as more complex definitions based on triangulated surface files.  
 
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-|  shape functional name         | parameters                              | type(s)                      | Comment                                                                |
-+================================+=========================================+==============================+========================================================================+
-| `"Region: Point"`  [SU]        | `"Coordinate`"                          | Array(double)                | Location of point in space                                             |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Box"` [SU]           | `"Low Coordinate`", `"High Coordinate`" | Array(double), Array(double) | Location of boundary points of box                                     |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Plane"`  [SU]        | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Polygon"`  [U]       | `"Number of points`", `"Points`"        | int, Array double            | Number of polygon points and point coordinates in linear array         |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Labeled Set"`        | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
-|                                | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Color Function"` [S] | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Layer"`              | `"File#`", `"Label#`"                   | (#=1,2) string, string       | Region between two surfaces                                            |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Surface"`            | `"File`" `"Label`"                      | string, string               | Labeled triangulated face set in file                                  |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
++------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+|  shape functional name       | parameters                              | type(s)                      | Comment                                                                |
++==============================+=========================================+==============================+========================================================================+
+| `"Region: Point"`            | `"Coordinate`"                          | Array(double)                | Location of point in space                                             |
++------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Box"`              | `"Low Coordinate`", `"High Coordinate`" | Array(double), Array(double) | Location of boundary points of box                                     |
++------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Plane"`            | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
++------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Polygonal Surface"`| `"Number of points`", `"Points`"        | int, Array(double)           | Number of polygon points and point coordinates in linear array. This   |
+|                              |                                         |                              | provides a set of faces with a normal for computing flux               |    
++------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Logical"`          | `"Operation`", `"RegionList`"           | string, Array(string)        | Operation can be Union, Intersection, Subtraction, Complement          |
++------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Labeled Set"`      | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
+|                              | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
++------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Color Function"`   | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |
++------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 
 Notes
 
@@ -3501,17 +3500,36 @@ Notes
   strongly recommended that regions be defined using a single color
   function file. 
 
-* `"Region: Polygon`" defines a polygonal region on which mesh faces and
-  nodes can be queried. NOTE that one cannot ask for cells in a polygonal
-  region.In 2D, the "polygonal" region is a line and is specified by 2 points
-  In 3D, the "polygonal" region is specified by an arbitrary number of points.
+* `"Region: Polygonal Surface`" defines a polygonal region on which mesh faces and
+  nodes can be queried. NOTE that one cannot ask for cells in a polygonal surface
+  region. In 2D, the "polygonal surface" region is a line and is specified by 2 points.
+  In 3D, the "polygonal surface" region is specified by an arbitrary number of points.
   In both cases the point coordinates are given as a linear array. The polygon
   can be non-convex.
 
-  The polygonal region can be queried for a normal. In 2D, the normal is
+  The polygonal surface region can be queried for a normal. In 2D, the normal is
   defined as [Vy,-Vx] where [Vx,Vy] is the vector from point 1 to point 2.
   In 3D, the normal of the polygon is defined by the order in which points 
   are specified.
+
+* `"Region: Logical`" Logical operations on regions allow for more
+  advanced region definitions. At this time the Logical Region allows
+  for logical operations on a list of regions.  In the case of Union
+  the result is obvious, it is the union of all regions.  Similarly
+  for Intersection. In the case of Subtraction, subtraction is
+  performed from the first region in the list.  The Complement is a
+  special case in that it is the only case that operates on single
+  region, and returns the complement to it within the domain 'Entire
+  Domain'.  Currently, multi-region booleans are not supported in the same expression.
+
+.. code-block:: xml
+
+  <ParameterList name="Lower Layers">
+    <ParameterList name="Region: Logical">
+      <Parameter name="Operation" type="string" value="Union"/>
+      <Parameter name="RegionList" type="Array(string)" value="{Middle1, Middle2, Bottom}"/>
+    </ParameterList>
+  </ParameterList>
 
 * Surface files contain labeled triangulated face sets.  The user is
   responsible for ensuring that the intersections with other surfaces
@@ -3530,25 +3548,25 @@ Notes
 
    <ParameterList>  <!-- parent list -->
      <ParameterList name="Regions">
-       <ParameterList name="Top Section">
+       <ParameterList name="TOP SECTION">
          <ParameterList name="Region: Box">
            <Parameter name="Low Coordinate" type="Array(double)" value="{2, 3, 5}"/>
            <Parameter name="High Coordinate" type="Array(double)" value="{4, 5, 8}"/>
          </ParameterList>
        </ParameterList>
-       <ParameterList name="Middle Section">
+       <ParameterList name="MIDDLE SECTION">
          <ParameterList name="Region: Box">
            <Parameter name="Low Coordinate" type="Array(double)" value="{2, 3, 3}"/>
            <Parameter name="High Coordinate" type="Array(double)" value="{4, 5, 5}"/>
          </ParameterList>
        </ParameterList>
-       <ParameterList name="Bottom Section">
+       <ParameterList name="BOTTOM SECTION">
          <ParameterList name="Region: Box">
            <Parameter name="Low Coordinate" type="Array(double)" value="{2, 3, 0}"/>
            <Parameter name="High Coordinate" type="Array(double)" value="{4, 5, 3}"/>
          </ParameterList>
        </ParameterList>
-       <ParameterList name="Inflow Surface">
+       <ParameterList name="INFLOW SURFACE">
          <ParameterList name="Region: Labeled Set">
            <Parameter name="Label"  type="string" value="sideset_2"/>
            <Parameter name="File"   type="string" value="F_area_mesh.exo"/>
@@ -3556,25 +3574,35 @@ Notes
            <Parameter name="Entity" type="string" value="Face"/>
          </ParameterList>
        </ParameterList>
-       <ParameterList name="Outflow plane">
+       <ParameterList name="OUTFLOW PLANE">
          <ParameterList name="Region: Plane">
            <Parameter name="Location" type="Array(double)" value="{0.5, 0.5, 0.5}"/>
            <Parameter name="Direction" type="Array(double)" value="{0, 0, 1}"/>
          </ParameterList>
        </ParameterList>
-       <ParameterList name="Sand">
+       <ParameterList name="BLOODY SAND">
          <ParameterList name="Region: Color Function">
            <Parameter name="File" type="string" value="F_area_col.txt"/>
            <Parameter name="Value" type="int" value="25"/>
          </ParameterList>
        </ParameterList>
+       <ParameterList name="FLUX PLANE">
+         <ParameterList name="Region: Polygon">
+           <Parameter name="Number of points" type="int" value="5"/>
+           <Parameter name="Points" type="Array(double)" value="{-0.5, -0.5, -0.5, 
+                                                                  0.5, -0.5, -0.5,
+                                                                  0.8, 0.0, 0.0,
+                                                                  0.5,  0.5, 0.5,
+                                                                 -0.5, 0.5, 0.5}"/>
+          </ParameterList>
+       </ParameterList>
      </ParameterList>
    </ParameterList>
 
-In this example, "Top Section", "Middle Section" and "Bottom Section"
-are three box-shaped volumetric regions. "Inflow Surface" is a
+In this example, "TOP SESCTION", "MIDDLE SECTION" and "BOTTOM SECTION"
+are three box-shaped volumetric regions. "INFLOW SURFACE" is a
 surface region defined in an Exodus II-formatted labeled set
-file and "Outflow plane" is a planar region. "Sand" is a volumetric
+file and "OUTFLOW PLANE" is a planar region. "BLOODY SAND" is a volumetric
 region defined by the value 25 in color function file.
 
 

@@ -10,12 +10,10 @@ PY_STY = --stylesheet=$(CBpath)/pygments-default.sty
 SRC = \
 	AmanziNativeSpecV6.rst \
 	AmanziChemistryInputSpec.rst \
-	AmanziInputSpec-v1.2-draft.rst \
-	AmanziInputSpec-v1.2.1.rst \
-	AmanziInputSpec-v1.2.2.rst \
-	AmanziInputSpec-v1.2.3-draft.rst \
-	AmanziInputSpec-v2.0-draft.rst \
-	AmanziInputSpec-v2.1-draft.rst \
+	AmanziInputSpec-v1.2.3.rst \
+	AmanziInputSpec-v1.2.4-draft.rst \
+	AmanziInputSpec-v2.1.rst \
+	AmanziInputSpec-v2.2-draft.rst \
         AmanziInputSpec-v2.1-ChangeLog.rst
 
 HTML = $(SRC:%.rst=%.html)
