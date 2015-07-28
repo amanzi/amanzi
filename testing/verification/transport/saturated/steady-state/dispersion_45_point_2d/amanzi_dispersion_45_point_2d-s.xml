@@ -1,5 +1,9 @@
 <ParameterList name="Main">
   <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
+  <ParameterList name="Echo Translated Input">
+    <Parameter name="File Name" type="string" value=".ppfile"/>
+    <Parameter name="Format" type="string" value="native"/>
+  </ParameterList>
 
   <ParameterList name="Execution Control">
     <Parameter name="Flow Model" type="string" value="Single Phase"/>
@@ -12,7 +16,6 @@
         <Parameter name="End" type="double" value="1.2096e+8"/>
         <Parameter name="Maximum Time Step Grow" type="double" value="1"/>
         <Parameter name="Maximum Cycle Number" type="int" value="100000"/>
-        <Parameter name="Initial Time Step Multiplier" type="double" value="1"/>
       </ParameterList>
     </ParameterList>
 
@@ -20,7 +23,8 @@
       <ParameterList name="Structured Algorithm">
         <ParameterList name="Expert Settings">
 	  <Parameter name="cfl" type="double" value="1.0"/>
-	  <Parameter name="be_cn_theta_trac" type="double" value="0.5"/>
+	  <Parameter name="be_cn_theta_trac" type="double" value="1.0"/>
+	  <Parameter name="max_n_subcycle_transport" type="int" value="1"/>
 	</ParameterList>
 	<ParameterList name="Iterative Linear Solver Control">
 	  <ParameterList name="Multigrid Algorithm">
@@ -31,12 +35,12 @@
 	  </ParameterList>
 	</ParameterList>
 	<ParameterList name="Adaptive Mesh Refinement Control">
-	  <Parameter name="Number Of AMR Levels" type="int" value="4"/>
-	  <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 2, 2, 4, 4}"/>
+	  <Parameter name="Number Of AMR Levels" type="int" value="3"/>
+	  <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4}"/>
 	  <Parameter name="Regrid Interval" type="Array(int)" value="{2000}"/>
-	  <Parameter name="Blocking Factor" type="Array(int)" value="{16, 16, 16, 16, 16}"/>
-	  <Parameter name="Maximum Grid Size" type="Array(int)" value="{128, 128, 128, 128}"/>
-	  <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{6, 4, 4, 4, 4}"/>
+	  <Parameter name="Blocking Factor" type="Array(int)" value="{16, 16, 16}"/>
+	  <Parameter name="Maximum Grid Size" type="Array(int)" value="{128, 128, 128}"/>
+	  <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{6, 4}"/>
 	  <Parameter name="Refinement Indicators" type="Array(string)" value="{Well ref}"/>
 
 	  <ParameterList name="Well ref">
@@ -72,10 +76,6 @@
       <ParameterList name="Region: Point">
         <Parameter name="Coordinate" type="Array(double)" value="{0,0}"/>
       </ParameterList>
-      <!-- <ParameterList name="Region: Box"> -->
-      <!--   <Parameter name="Low Coordinate" type="Array(double)" value="{-5,-5}"/> -->
-      <!--   <Parameter name="High Coordinate" type="Array(double)" value="{5, 5}"/> -->
-      <!-- </ParameterList> -->
     </ParameterList>
 
     <ParameterList name="Upstrm210">
@@ -283,6 +283,10 @@
         <Parameter name="alphaL" type="double" value="21.3"/>
         <Parameter name="alphaT" type="double" value="4.3"/>
       </ParameterList>
+      <ParameterList name="Tortuosity: Uniform">
+        <Parameter name="Value" type="double" value="0.0"/>
+      </ParameterList>
+      <ParameterList name="Capillary Pressure: None"/>
     </ParameterList>
   </ParameterList>
 
@@ -365,14 +369,14 @@
   <ParameterList name="Sources">
     <ParameterList name="Pumping Well">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Well}"/>
-      <ParameterList name="Source: Point">
+      <ParameterList name="Source: Volume Weighted">
         <Parameter name="Values" type="Array(double)" value="{0}"/>
       </ParameterList>
       <ParameterList name="Solute SOURCE">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="Tc-99">
-              <ParameterList name="Source: Point">
+              <ParameterList name="Source: Flow Weighted Concentration">
                 <Parameter name="Values" type="Array(double)" value="{8.1483e-08}"/>
               </ParameterList>
             </ParameterList>
@@ -395,9 +399,12 @@
     </ParameterList>
 
     <ParameterList name="Visualization Data">
+      <Parameter name="File Name Base" type="string" value="run_data/plt"/>
+      <Parameter name="Cycle Macros" type="Array(string)" value="{Every 1}"/>
     </ParameterList>
 
     <ParameterList name="Checkpoint Data">
+      <Parameter name="File Name Base" type="string" value="run_data/chk"/>
     </ParameterList>
 
     <ParameterList name="Observation Data">
