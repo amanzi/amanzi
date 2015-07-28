@@ -27,38 +27,36 @@
           <Parameter name="gravity" type="double" value="0"/>
           <Parameter name="max_n_subcycle_transport" type="int" value="1"/>
         </ParameterList>
+
+	<ParameterList name="Adaptive Mesh Refinement Control">
+	  <Parameter name="Number Of AMR Levels" type="int" value="2"/>
+	  <Parameter name="Refinement Ratio" type="Array(int)" value="{2, 2}"/>
+	  <Parameter name="Regrid Interval" type="Array(int)" value="{2}"/>
+	  <Parameter name="Blocking Factor" type="Array(int)" value="{2, 2}"/>
+	  <Parameter name="Maximum Grid Size" type="Array(int)" value="{32, 32}"/>
+	  <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{1, 1}"/>
+	  <Parameter name="Refinement Indicators" type="Array(string)" value="{tracer ref, tracer 2 ref}"/>
+
+	  <ParameterList name="tracer ref">
+	    <Parameter name="Regions" type="Array(string)" value="{All}"/>
+	    <Parameter name="Maximum Refinement Level" type="int" value="2"/>
+	    <Parameter name="Field Name" type="string" value="Tracer Aqueous Concentration"/>
+	    <Parameter name="Adjacent Difference Greater" type="double" value="1.e-4"/>
+	  </ParameterList>
+
+	  <ParameterList name="tracer 2 ref">
+	    <Parameter name="Regions" type="Array(string)" value="{All}"/>
+	    <Parameter name="Maximum Refinement Level" type="int" value="2"/>
+	    <Parameter name="Field Name" type="string" value="Tracer2 Aqueous Concentration"/>
+	    <Parameter name="Adjacent Difference Greater" type="double" value="5.e-5"/>
+	  </ParameterList>
+
+
+	  <ParameterList name="Expert Settings">
+	    <Parameter name="v" type="int" value="3"/>
+	  </ParameterList>
+	</ParameterList>
       </ParameterList>
-
-<!-- AMR starts here -->
-      <ParameterList name="Adaptive Mesh Refinement Control">
-        <Parameter name="Number Of AMR Levels" type="int" value="2"/>
-        <Parameter name="Refinement Ratio" type="Array(int)" value="{2, 2}"/>
-        <Parameter name="Regrid Interval" type="Array(int)" value="{2}"/>
-        <Parameter name="Blocking Factor" type="Array(int)" value="{2, 2}"/>
-        <Parameter name="Maximum Grid Size" type="Array(int)" value="{32, 32}"/>
-        <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{1, 1}"/>
-	<Parameter name="Refinement Indicators" type="Array(string)" value="{tracer ref, tracer 2 ref}"/>
-
-        <ParameterList name="tracer ref">
-          <Parameter name="Regions" type="Array(string)" value="{All}"/>
-          <Parameter name="Maximum Refinement Level" type="int" value="2"/>
-          <Parameter name="Field Name" type="string" value="Tracer Aqueous Concentration"/>
-          <Parameter name="Adjacent Difference Greater" type="double" value="1.e-4"/>
-        </ParameterList>
-
-        <ParameterList name="tracer 2 ref">
-          <Parameter name="Regions" type="Array(string)" value="{All}"/>
-          <Parameter name="Maximum Refinement Level" type="int" value="2"/>
-          <Parameter name="Field Name" type="string" value="Tracer2 Aqueous Concentration"/>
-          <Parameter name="Adjacent Difference Greater" type="double" value="5.e-5"/>
-        </ParameterList>
-
-
-        <ParameterList name="Expert Settings">
-          <Parameter name="v" type="int" value="3"/>
-        </ParameterList>
-      </ParameterList>
-<!-- end here -->
 
     </ParameterList>
 

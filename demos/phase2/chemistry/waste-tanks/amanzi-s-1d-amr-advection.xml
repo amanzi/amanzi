@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input format version" type="string" value="1.0.0"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.3"/>
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="1D linear advection with AMR."/>
     <Parameter name="Author" type="string" value="Marc Day"/>
@@ -9,30 +9,32 @@
     <Parameter name="Transport Model" type="string" value="On"/>
     <Parameter name="Chemistry Model" type="string" value="Off"/>
     <ParameterList name="Time Integration Mode">
-      <ParameterList name="Transient">
+      <ParameterList name="Transient with Static Flow">
         <Parameter name="Start" type="double" value="0.0"/>
         <Parameter name="End" type="double" value="1.0e11"/>
       	<Parameter name="Maximum Cycle Number" type="int" value="20"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Numerical Control Parameters">
+      <ParameterList name="Structured Algorithm">
 
-      <ParameterList name="Adaptive Mesh Refinement Control">
-        <Parameter name="Number Of AMR Levels" type="int" value="3"/>
-        <Parameter name="Refinement Ratio" type="Array(int)" value="{2, 2, 4}"/>
-        <Parameter name="Regrid Interval" type="Array(int)" value="{1}"/>
-        <Parameter name="Blocking Factor" type="Array(int)" value="{2, 2, 2, 2}"/>
-        <Parameter name="Maximum Grid Size" type="Array(int)" value="{32, 32, 32, 32}"/>
-        <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{2, 2, 2, 2}"/>
-        <Parameter name="Refinement Indicators" type="Array(string)" value="{Tc-99 Gradient Ref}"/>
-        <Parameter name="Do AMR Subcycling" type="bool" value="True"/>
+	<ParameterList name="Adaptive Mesh Refinement Control">
+	  <Parameter name="Number Of AMR Levels" type="int" value="3"/>
+	  <Parameter name="Refinement Ratio" type="Array(int)" value="{2, 2, 4}"/>
+	  <Parameter name="Regrid Interval" type="Array(int)" value="{1}"/>
+	  <Parameter name="Blocking Factor" type="Array(int)" value="{2, 2, 2, 2}"/>
+	  <Parameter name="Maximum Grid Size" type="Array(int)" value="{32, 32, 32, 32}"/>
+	  <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{2, 2, 2, 2}"/>
+	  <Parameter name="Refinement Indicators" type="Array(string)" value="{Tc-99 Gradient Ref}"/>
+	  <Parameter name="Do AMR Subcycling" type="bool" value="True"/>
 
-        <ParameterList name="Tc-99 Gradient Ref">
-          <Parameter name="Adjacent Difference Greater" type="double" value="0.1"/>
-          <Parameter name="Field Name" type="string" value="Tc_99_Aqueous_Concentration"/>
-          <Parameter name="Regions" type="Array(string)" value="{All}"/>
-          <Parameter name="Maximum Refinement Level" type="int" value="3"/>
-        </ParameterList>
+	  <ParameterList name="Tc-99 Gradient Ref">
+	    <Parameter name="Adjacent Difference Greater" type="double" value="0.1"/>
+	    <Parameter name="Field Name" type="string" value="Tc_99_Aqueous_Concentration"/>
+	    <Parameter name="Regions" type="Array(string)" value="{All}"/>
+	    <Parameter name="Maximum Refinement Level" type="int" value="3"/>
+	  </ParameterList>
+	</ParameterList>
       </ParameterList>
 
     </ParameterList>
@@ -278,109 +280,109 @@
 	<Parameter name="Region" type="string" value="West Well"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Pu_238 Aqueous Concentration"/>
-	<Parameter name="Time Macro" type="string" value="Every year"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Every year}"/>
       </ParameterList>
       <ParameterList name="Pu 238 Center Well">
 	<Parameter name="Region" type="string" value="Center Well"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Pu_238 Aqueous Concentration"/>
-	<Parameter name="Time Macro" type="string" value="Every year"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Every year}"/>
       </ParameterList>
       <ParameterList name="Pu 238 East Well">
 	<Parameter name="Region" type="string" value="East Well"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Pu_238 Aqueous Concentration"/>
-	<Parameter name="Time Macro" type="string" value="Every year"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Every year}"/>
       </ParameterList>
       <ParameterList name="U 234 West Well">
 	<Parameter name="Region" type="string" value="West Well"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="U_234 Aqueous Concentration"/>
-	<Parameter name="Time Macro" type="string" value="Every year"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Every year}"/>
       </ParameterList>
       <ParameterList name="U 234 Center Well">
 	<Parameter name="Region" type="string" value="Center Well"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="U_234 Aqueous Concentration"/>
-	<Parameter name="Time Macro" type="string" value="Every year"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Every year}"/>
       </ParameterList>
       <ParameterList name="U 234 East Well">
 	<Parameter name="Region" type="string" value="East Well"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="U_234 Aqueous Concentration"/>
-	<Parameter name="Time Macro" type="string" value="Every year"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Every year}"/>
       </ParameterList>
       <ParameterList name="Th 230 West Well">
 	<Parameter name="Region" type="string" value="West Well"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Th_230 Aqueous Concentration"/>
-	<Parameter name="Time Macro" type="string" value="Every year"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Every year}"/>
       </ParameterList>
       <ParameterList name="Th 230 Center Well">
 	<Parameter name="Region" type="string" value="Center Well"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Th_230 Aqueous Concentration"/>
-	<Parameter name="Time Macro" type="string" value="Every year"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Every year}"/>
       </ParameterList>
       <ParameterList name="Th 230 East Well">
 	<Parameter name="Region" type="string" value="East Well"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Th_230 Aqueous Concentration"/>
-	<Parameter name="Time Macro" type="string" value="Every year"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Every year}"/>
       </ParameterList>
       <ParameterList name="Ra 226 West Well">
 	<Parameter name="Region" type="string" value="West Well"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Ra_226 Aqueous Concentration"/>
-	<Parameter name="Time Macro" type="string" value="Every year"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Every year}"/>
       </ParameterList>
       <ParameterList name="Ra 226 Center Well">
 	<Parameter name="Region" type="string" value="Center Well"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Ra_226 Aqueous Concentration"/>
-	<Parameter name="Time Macro" type="string" value="Every year"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Every year}"/>
       </ParameterList>
       <ParameterList name="Ra 226 East Well">
 	<Parameter name="Region" type="string" value="East Well"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Ra_226 Aqueous Concentration"/>
-	<Parameter name="Time Macro" type="string" value="Every year"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Every year}"/>
       </ParameterList>
       <ParameterList name="Pb 210 West Well">
 	<Parameter name="Region" type="string" value="West Well"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Pb_210 Aqueous Concentration"/>
-	<Parameter name="Time Macro" type="string" value="Every year"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Every year}"/>
       </ParameterList>
       <ParameterList name="Pb 210 Center Well">
 	<Parameter name="Region" type="string" value="Center Well"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Pb_210 Aqueous Concentration"/>
-	<Parameter name="Time Macro" type="string" value="Every year"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Every year}"/>
       </ParameterList>
       <ParameterList name="Pb 210 East Well">
 	<Parameter name="Region" type="string" value="East Well"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Pb_210 Aqueous Concentration"/>
-	<Parameter name="Time Macro" type="string" value="Every year"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Every year}"/>
       </ParameterList>
       <ParameterList name="Tc 99 West Well">
 	<Parameter name="Region" type="string" value="West Well"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Tc_99 Aqueous Concentration"/>
-	<Parameter name="Time Macro" type="string" value="Every year"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Every year}"/>
       </ParameterList>
       <ParameterList name="Tc 99 Center Well">
 	<Parameter name="Region" type="string" value="Center Well"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Tc_99 Aqueous Concentration"/>
-	<Parameter name="Time Macro" type="string" value="Every year"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Every year}"/>
       </ParameterList>
       <ParameterList name="Tc 99 East Well">
 	<Parameter name="Region" type="string" value="East Well"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Tc_99 Aqueous Concentration"/>
-	<Parameter name="Time Macro" type="string" value="Every year"/>
+	<Parameter name="Time Macros" type="Array(string)" value="{Every year}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi input format version" type="string" value="1.2.2"/>       
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
   <Parameter name="Dump ParmParse Table" type="string" value="ppfile"/>
   <Parameter name="Echo Inputs" type="bool" value="TRUE"/>
   <ParameterList name="General Description">
@@ -36,47 +36,25 @@
     <Parameter name="Flow Model" type="string" value="Richards"/>
 
     <ParameterList name="Numerical Control Parameters">
-
-      <ParameterList name="Adaptive Mesh Refinement Control">
-        <Parameter name="Number Of AMR Levels" type="int" value="3"/>
-        <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4}"/>
-        <Parameter name="Regrid Interval" type="Array(int)" value="{2}"/>
-        <Parameter name="Blocking Factor" type="Array(int)" value="{8, 8, 8}"/>
-        <Parameter name="Maximum Grid Size" type="Array(int)" value="{16, 16, 16}"/>
-        <Parameter name="Numbers Error Buffer Cells" type="Array(int)" value="{2, 1}"/>
-
-        <Parameter name="Refinement Indicators" type="Array(string)" value="{Region ref}"/>
-<!--
-        <Parameter name="Refinement Indicators" type="Array(string)" value="{Pc ref, Region ref}"/>
-        <ParameterList name="Pc ref">
-          <Parameter name="Maximum Refinement Level" type="int" value="1"/>
-          <Parameter name="Field Name" type="string" value="Capillary Pressure"/>
-          <Parameter name="Regions" type="Array(string)" value="{CCugr}"/>
-          <Parameter name="Value Greater" type="double" value="1.e6"/>
-        </ParameterList>
--->
-        <ParameterList name="Region ref">
-          <Parameter name="Regions" type="Array(string)" value="{Hgr, CCugr}"/>
-          <Parameter name="Inside Region" type="bool" value="TRUE"/>
-        </ParameterList>
-      </ParameterList>
-
       <ParameterList name="Structured Algorithm">
-        <Parameter name="Maximum Time Step Size" type="double" value="1.e6"/>
-        <Parameter name="Maximum Time Step Change" type="double" value="1.e8"/>
-        <Parameter name="Maximum Cycle Number" type="int" value="2"/>
+
+	<ParameterList name="Adaptive Mesh Refinement Control">
+	  <Parameter name="Number Of AMR Levels" type="int" value="3"/>
+	  <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4}"/>
+	  <Parameter name="Regrid Interval" type="Array(int)" value="{2}"/>
+	  <Parameter name="Blocking Factor" type="Array(int)" value="{8, 8, 8}"/>
+	  <Parameter name="Maximum Grid Size" type="Array(int)" value="{16, 16, 16}"/>
+	  <Parameter name="Numbers Error Buffer Cells" type="Array(int)" value="{2, 1}"/>
+	  <Parameter name="Refinement Indicators" type="Array(string)" value="{Region ref}"/>
+
+	  <ParameterList name="Region ref">
+	    <Parameter name="Regions" type="Array(string)" value="{Hgr, CCugr}"/>
+	    <Parameter name="Inside Region" type="bool" value="TRUE"/>
+	  </ParameterList>
+
+	</ParameterList>
       </ParameterList>
 
-      <ParameterList name="Multigrid Algorithm">
-        <Parameter name="cg_solver" type="int" value="1"/>
-        <Parameter name="maxiter" type="int" value="100"/>
-        <Parameter name="nu_0" type="int" value="4"/>
-        <Parameter name="nu_1" type="int" value="8"/>
-        <Parameter name="nu_2" type="int" value="16"/>
-        <Parameter name="nu_f" type="int" value="32"/>
-        <Parameter name="rtol_b" type="double" value="1.e-4"/>
-        <Parameter name="smooth_on_cg_unstable" type="int" value="1"/>
-      </ParameterList>
     </ParameterList>
   </ParameterList>
 
@@ -253,8 +231,8 @@
         <Parameter name="Value" type="double" value="0.158"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="6.096e-13"/> <!-- m^2 -->
-        <Parameter name="Vertical" type="double" value="6.096e-13"/>
+        <Parameter name="x" type="double" value="6.096e-13"/> <!-- m^2 -->
+        <Parameter name="y" type="double" value="6.096e-13"/>
       </ParameterList>
       <!-- GEH: Pressure-saturation function: van Genuchten-->
       <ParameterList name="Capillary Pressure: van Genuchten">
@@ -272,8 +250,8 @@
         <Parameter name="Value" type="double" value="0.237"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="3.364e-13"/>
-        <Parameter name="Vertical" type="double" value="3.364e-13"/>
+        <Parameter name="x" type="double" value="3.364e-13"/>
+        <Parameter name="y" type="double" value="3.364e-13"/>
       </ParameterList>
       <!-- GEH: Pressure-saturation function: van Genuchten-->
       <ParameterList name="Capillary Pressure: van Genuchten">
@@ -291,8 +269,8 @@
         <Parameter name="Value" type="double" value="0.360"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="5.678e-14"/>
-        <Parameter name="Vertical" type="double" value="5.678e-14"/>
+        <Parameter name="x" type="double" value="5.678e-14"/>
+        <Parameter name="y" type="double" value="5.678e-14"/>
       </ParameterList>
       <!-- GEH: Pressure-saturation function: van Genuchten-->
       <ParameterList name="Capillary Pressure: van Genuchten">
@@ -310,8 +288,8 @@
         <Parameter name="Value" type="double" value="0.364"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="5.423e-12"/>
-        <Parameter name="Vertical" type="double" value="5.423e-12"/>
+        <Parameter name="x" type="double" value="5.423e-12"/>
+        <Parameter name="y" type="double" value="5.423e-12"/>
       </ParameterList>
       <!-- GEH: Pressure-saturation function: van Genuchten-->
       <ParameterList name="Capillary Pressure: van Genuchten">
@@ -329,8 +307,8 @@
         <Parameter name="Value" type="double" value="0.388"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="2.294e-12"/>
-        <Parameter name="Vertical" type="double" value="2.294e-12"/>
+        <Parameter name="x" type="double" value="2.294e-12"/>
+        <Parameter name="y" type="double" value="2.294e-12"/>
       </ParameterList>
       <!-- GEH: Pressure-saturation function: van Genuchten-->
       <ParameterList name="Capillary Pressure: van Genuchten">
@@ -348,8 +326,8 @@
         <Parameter name="Value" type="double" value="0.237"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="3.364e-13"/>
-        <Parameter name="Vertical" type="double" value="3.364e-13"/>
+        <Parameter name="x" type="double" value="3.364e-13"/>
+        <Parameter name="y" type="double" value="3.364e-13"/>
       </ParameterList>
       <!-- GEH: Pressure-saturation function: van Genuchten-->
       <ParameterList name="Capillary Pressure: van Genuchten">
@@ -367,8 +345,8 @@
         <Parameter name="Value" type="double" value="0.360"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="5.678e-14"/>
-        <Parameter name="Vertical" type="double" value="5.678e-14"/>
+        <Parameter name="x" type="double" value="5.678e-14"/>
+        <Parameter name="y" type="double" value="5.678e-14"/>
       </ParameterList>
       <!-- GEH: Pressure-saturation function: van Genuchten-->
       <ParameterList name="Capillary Pressure: van Genuchten">
@@ -386,8 +364,8 @@
         <Parameter name="Value" type="double" value="0.267"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="4.21e-12"/>
-        <Parameter name="Vertical" type="double" value="4.21e-12"/>
+        <Parameter name="x" type="double" value="4.21e-12"/>
+        <Parameter name="y" type="double" value="4.21e-12"/>
       </ParameterList>
       <!-- GEH: Pressure-saturation function: van Genuchten-->
       <ParameterList name="Capillary Pressure: van Genuchten">
@@ -425,7 +403,7 @@
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
       <ParameterList name="IC: Linear Pressure">
         <Parameter name="Reference Value" type="double" value="101325."/>
-        <Parameter name="Reference Coordinate" type="Array(double)" value="{0., 0.}"/>
+        <Parameter name="Reference Point" type="Array(double)" value="{0., 0.}"/>
         <!-- GEH: Units of gradient are Pa/m = rho*g = 998.32 kg/m^3 * 9.81 m/s^2-->
         <Parameter name="Gradient Value" type="Array(double)" value="{0., -9793.5192}"/>
       </ParameterList>
@@ -436,7 +414,6 @@
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="0.0"/>
               </ParameterList>
-        	     <Parameter name="Concentration Units" type="string" value="Specific Concentration"/>
             </ParameterList>     
           </ParameterList>
         </ParameterList>
@@ -449,8 +426,6 @@
     <ParameterList name="BC For Inflow">
       <Parameter name="Assigned Regions" type="Array(string)" value="{YHIBC}"/>
       <ParameterList name="BC: Flux">
-        <Parameter name="Times" type="Array(double)" value="{0.}"/>
-        <Parameter name="Time Functions" type="Array(string)" value="{}"/>
         <Parameter name="Inward Volumetric Flux" type="Array(double)" value="{1.1091e-10}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
@@ -459,11 +434,8 @@
             <ParameterList name="Tc-99">
               <ParameterList name="BC: Uniform Concentration">
                   <!-- GEH: Throughout entire simulation, no solute enters through top surface -->
-                <Parameter name="Times" type="Array(double)" value="{0.}"/>
-                <Parameter name="Time Functions" type="Array(string)" value="{}"/>
                 <Parameter name="Values" type="Array(double)" value="{0.}"/>
               </ParameterList>
-        	     <Parameter name="Concentration Units" type="string" value="Specific Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -473,8 +445,6 @@
     <ParameterList name="BC For Scalar">
       <Parameter name="Assigned Regions" type="Array(string)" value="{YLOBC}"/>
       <ParameterList name="BC: Uniform Pressure">
-        <Parameter name="Times" type="Array(double)" value="{0.}"/>
-        <Parameter name="Time Functions" type="Array(string)" value="{}"/>
         <Parameter name="Values" type="Array(double)" value="{101325.}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
@@ -483,7 +453,6 @@
             <ParameterList name="Tc-99">
               <ParameterList name="BC: Outflow">
               </ParameterList>
-        	     <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -500,7 +469,6 @@
             <ParameterList name="Tc-99">
               <ParameterList name="BC: No Flow">
               </ParameterList>
-        	     <Parameter name="Concentration Units" type="string" value="Specific Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -527,10 +495,10 @@
     <!-- define some handy time macros -->
     <ParameterList name="Time Macros">
       <ParameterList name="Long">
-        <Parameter name="Times" type="Array(double)" value="{1e8}"/>
+        <Parameter name="Values" type="Array(double)" value="{1e8}"/>
       </ParameterList>
       <ParameterList name="Near-end">
-        <Parameter name="Times" type="Array(double)" value="{98000000, 98100000}"/>
+        <Parameter name="Values" type="Array(double)" value="{98000000, 98100000}"/>
       </ParameterList>
     </ParameterList>
 
@@ -540,140 +508,140 @@
       <ParameterList name="output01">
         <Parameter name="Region" type="string" value="pt_Bfr_c"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output10">
         <Parameter name="Region" type="string" value="pt_Hgr_c"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output11">
         <Parameter name="Region" type="string" value="pt_Hgr_b"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output12">
         <Parameter name="Region" type="string" value="pt_CCuzr_t"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output13">
         <Parameter name="Region" type="string" value="pt_CCuzr_c"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output14">
         <Parameter name="Region" type="string" value="pt_CCuzr_b"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output15">
         <Parameter name="Region" type="string" value="pt_CCugr_t"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output16">
         <Parameter name="Region" type="string" value="pt_CCugr_c"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output17">
         <Parameter name="Region" type="string" value="pt_CCugr_b"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output18">
         <Parameter name="Region" type="string" value="pt_Rlmr_t"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output19">
         <Parameter name="Region" type="string" value="pt_Rlmr_c"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output02">
         <Parameter name="Region" type="string" value="pt_Bfr_b"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output20">
         <Parameter name="Region" type="string" value="pt_Rlmr_b"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output21">
         <Parameter name="Region" type="string" value="pt_Rwiar_t"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output22">
         <Parameter name="Region" type="string" value="pt_Rwiar_c"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output23">
         <Parameter name="Region" type="string" value="pt_Rwiar_b"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output03">
         <Parameter name="Region" type="string" value="pt_Hcsr_t"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output04">
         <Parameter name="Region" type="string" value="pt_Hcsr_c"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output05">
         <Parameter name="Region" type="string" value="pt_Hcsr_b"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output06">
         <Parameter name="Region" type="string" value="pt_Hfsr_t"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output07">
         <Parameter name="Region" type="string" value="pt_Hfsr_c"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output08">
         <Parameter name="Region" type="string" value="pt_Hfsr_b"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
       <ParameterList name="output09">
         <Parameter name="Region" type="string" value="pt_Hgr_t"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variables" type="Array(string)" value="{Volumetric Water Content}"/>
-        <Parameter name="Time Macro" type="string" value="Long"/>
+        <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Long}"/>
       </ParameterList>
     </ParameterList>
 
@@ -681,7 +649,6 @@
       <Parameter name="File Name Base" type="string" value="viz-"/>
       <Parameter name="Cycle Macro" type="string" value="Every-1-step"/>
       <Parameter name="Time Macro" type="string" value="Near-end"/>
-      <Parameter name="Variables" type="Array(string)" value="{Capillary Pressure, Material ID, Volumetric Water Content}"/>
     </ParameterList>
 
     <ParameterList name="Checkpoint Data">

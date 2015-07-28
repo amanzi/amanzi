@@ -219,7 +219,8 @@ namespace Amanzi {
       //std::string amr_str = "Adaptive Mesh Refinement";
       //EIB: change due to 1.2.2 update
       //std::string prob_str = "Basic Algorithm Control";
-      std::string prob_str = "Structured Algorithm";
+      std::string str_str = "Structured Algorithm";
+      std::string exp_str = "Expert Settings";
       std::string io_str = "IO Control";
       std::string it_str = "Iterative Linear Solver Control";
       std::string cg_str = "Conjugate Gradient Algorithm";
@@ -594,7 +595,7 @@ namespace Amanzi {
         std::string Max_Time_Step_Size_str = "Maximum Time Step Size";     optPd[Max_Time_Step_Size_str] = -1; // <0 means inactive
         std::string Time_Step_Grow_Max_str = "Maximum Time Step Grow";     optPd[Time_Step_Grow_Max_str] = -1; // <0 means inactive
         std::string Time_Step_Shrink_Max_str = "Maximum Time Step Shrink"; optPd[Time_Step_Shrink_Max_str] = -1; // <0 means inactive
-                                                                           optPd[Init_Time_Step_str] = -1; // <0 means inactive
+	optPd[Init_Time_Step_str] = -1; // <0 means inactive
 
         // Extract optional parameters
         const Array<std::string> SoptP = Sopt.OptParms();
@@ -793,224 +794,259 @@ namespace Amanzi {
         }
         else if (optL[i] == num_str)
         {
-          const ParameterList& num_list = ec_list.sublist(num_str);
+	  Array<std::string> sL, sP;
+	  const ParameterList& num_list = ec_list.sublist(num_str);
           Array<std::string> nL, nP;
           PLoptions NUMopt(num_list,nL,nP,false,true); 
           const Array<std::string> NUMoptL = NUMopt.OptLists();
 
+	  std::set<std::string> ncp_allowed_lists;
+	  ncp_allowed_lists.insert(str_str);
           for (int j=0; j<NUMoptL.size(); ++j)
           {
-            if (NUMoptL[j] == amr_str)
-            {
-              //
-              // AMR Options
-              //
-              const ParameterList& amr_list = num_list.sublist(amr_str);
-              std::string amr_subcycling_str = "Do AMR Subcycling";
-              if (amr_list.isParameter(amr_subcycling_str)) {
-                do_amr_subcycling = amr_list.get<bool>(amr_subcycling_str);
-              }
+	    if (ncp_allowed_lists.find(NUMoptL[j]) == ncp_allowed_lists.end()) {
+	      std::string str = "Unrecognized parameter list to \"" + num_str + "\" list: \"" + NUMoptL[j] + "\".\n";
+	      str += "Acceptable lists:\n";
+	      for (std::set<std::string>::const_iterator it=ncp_allowed_lists.begin(); it!=ncp_allowed_lists.end(); ++it) {
+		str += "\t\"" + (*it) + "\"\n";
+	      }
+	      MyAbort(str);
+	    }
 
-              std::string num_level_str = "Number Of AMR Levels";
-              if (amr_list.isParameter(num_level_str)) {
-                num_levels = amr_list.get<int>(num_level_str);
-              }
-              if (num_levels < 1) {
-                MyAbort("Must have at least 1 AMR level");
-              }
-              max_level = num_levels - 1;
+	    if (NUMoptL[j] == str_str) {
 
-              std::string ref_ratio_str = "Refinement Ratio";
-              ref_ratio.resize(max_level,2);
-              if (amr_list.isParameter(ref_ratio_str)) {
-                ref_ratio = amr_list.get<Array<int> >(ref_ratio_str);
-              }
-              if (ref_ratio.size() < max_level) {
-                MyAbort("Must provide a refinement ratio for each refined level");
-              }
+	      Array<std::string> sL, sP;
+	      const ParameterList& str_list = num_list.sublist(str_str);
+	      PLoptions STRopt(str_list,sL,sP,false,true); 
+		
+	      std::set<std::string> str_allowed_lists;
+	      str_allowed_lists.insert(amr_str);
+	      str_allowed_lists.insert(it_str);
+	      str_allowed_lists.insert(diffuse_str);
+	      str_allowed_lists.insert(exp_str);
 
-              for (int k=0; k<max_level; ++k) {
-                if (ref_ratio[k] != 2 && ref_ratio[k]!=4) {
-                  MyAbort("\"Refinement Ratio\" values must be 2 or 4");
-                }
-              }
+	      const Array<std::string> STRoptL = STRopt.OptLists();
 
-              std::string regrid_int_str = "Regrid Interval";
-              regrid_int.resize(max_level,2);
-              if (amr_list.isParameter(regrid_int_str)) {
-                regrid_int = amr_list.get<Array<int> >(regrid_int_str);
-              }
-              if (max_level > 0) {
-                if (do_amr_subcycling) {
-                  if (regrid_int.size() != max_level && regrid_int.size() != 1) {
-                    MyAbort("Must provide either a single regridding interval for all refinement levels, or one for each");
-                  }
-                }
-                else {
-                  if (regrid_int.size() != 1) {
-                    MyAbort("Subcycling is disabled, only a single regridding interval is supported");
-                  }                                
-                }
+	      for (int k=0; k<STRoptL.size(); ++k)
+	      {
+		if (str_allowed_lists.find(STRoptL[k]) == str_allowed_lists.end()) {
+		  std::string str = "Unrecognized parameter list to \"" + str_str + "\" list: \"" + STRoptL[k] + "\".\n";
+		  str += "Acceptable lists:\n";
+		  for (std::set<std::string>::const_iterator it=str_allowed_lists.begin(); it!=str_allowed_lists.end(); ++it) {
+		    str += "\t\"" + (*it) + "\"\n";
+		  }
+		  MyAbort(str);
+		}
+		//
+		// AMR Options
+		//
+		if (STRoptL[k] == amr_str)
+		{
+		  const ParameterList& amr_list = str_list.sublist(amr_str);
+		  std::string amr_subcycling_str = "Do AMR Subcycling";
+		  if (amr_list.isParameter(amr_subcycling_str)) {
+		    do_amr_subcycling = amr_list.get<bool>(amr_subcycling_str);
+		  }
 
-                for (int k=0; k<regrid_int.size(); ++k) {
-                  if (regrid_int[k] <= 0) {
-                    MyAbort("Each value in \"" + regrid_int_str
-                            + "\" must be values must be a postive integer");
-                  }
-                }
-              }
+		  std::string num_level_str = "Number Of AMR Levels";
+		  if (amr_list.isParameter(num_level_str)) {
+		    num_levels = amr_list.get<int>(num_level_str);
+		  }
+		  if (num_levels < 1) {
+		    MyAbort("Must have at least 1 AMR level");
+		  }
+		  max_level = num_levels - 1;
+
+		  std::string ref_ratio_str = "Refinement Ratio";
+		  ref_ratio.resize(max_level,2);
+		  if (amr_list.isParameter(ref_ratio_str)) {
+		    ref_ratio = amr_list.get<Array<int> >(ref_ratio_str);
+		  }
+		  if (ref_ratio.size() < max_level) {
+		    MyAbort("Must provide a refinement ratio for each refined level");
+		  }
+
+		  for (int k=0; k<max_level; ++k) {
+		    if (ref_ratio[k] != 2 && ref_ratio[k]!=4) {
+		      MyAbort("\"Refinement Ratio\" values must be 2 or 4");
+		    }
+		  }
+
+		  std::string regrid_int_str = "Regrid Interval";
+		  regrid_int.resize(max_level,2);
+		  if (amr_list.isParameter(regrid_int_str)) {
+		    regrid_int = amr_list.get<Array<int> >(regrid_int_str);
+		  }
+		  if (max_level > 0) {
+		    if (do_amr_subcycling) {
+		      if (regrid_int.size() != max_level && regrid_int.size() != 1) {
+			MyAbort("Must provide either a single regridding interval for all refinement levels, or one for each");
+		      }
+		    }
+		    else {
+		      if (regrid_int.size() != 1) {
+			MyAbort("Subcycling is disabled, only a single regridding interval is supported");
+		      }                                
+		    }
+
+		    for (int k=0; k<regrid_int.size(); ++k) {
+		      if (regrid_int[k] <= 0) {
+			MyAbort("Each value in \"" + regrid_int_str
+				+ "\" must be values must be a postive integer");
+		      }
+		    }
+		  }
 
                             
-              std::string blocking_factor_str = "Blocking Factor";
-              blocking_factor.resize(max_level+1,blocking_factor_DEF);
-              if (amr_list.isParameter(blocking_factor_str)) {
-                blocking_factor = amr_list.get<Array<int> >(blocking_factor_str);
-              }
-              if (blocking_factor.size() < max_level+1) {
-                MyAbort("If provided, value of \"" + blocking_factor_str
-                        + "\" required for each level");
-              }
-              for (int k=0; k<blocking_factor.size(); ++k) {
-                double twoPower = std::log(blocking_factor[k])/std::log(2);
-                if (twoPower != (int)(twoPower)) {
-                  MyAbort("\"" + blocking_factor_str + "\" must be a power of two");
-                }
-              }
+		  std::string blocking_factor_str = "Blocking Factor";
+		  blocking_factor.resize(max_level+1,blocking_factor_DEF);
+		  if (amr_list.isParameter(blocking_factor_str)) {
+		    blocking_factor = amr_list.get<Array<int> >(blocking_factor_str);
+		  }
+		  if (blocking_factor.size() < max_level+1) {
+		    MyAbort("If provided, value of \"" + blocking_factor_str
+			    + "\" required for each level");
+		  }
+		  for (int k=0; k<blocking_factor.size(); ++k) {
+		    double twoPower = std::log(blocking_factor[k])/std::log(2);
+		    if (twoPower != (int)(twoPower)) {
+		      MyAbort("\"" + blocking_factor_str + "\" must be a power of two");
+		    }
+		  }
 
-              std::string n_err_buf_str = "Number Error Buffer Cells";
-              int n_err_buf_DEF = 1;
-              n_err_buf.resize(max_level+1,n_err_buf_DEF);
-              if (amr_list.isParameter(n_err_buf_str)) {
-                n_err_buf = amr_list.get<Array<int> >(n_err_buf_str);
-              }
-              if (n_err_buf.size() < max_level) {
-                MyAbort("If provided, value of \"" + n_err_buf_str
-                        + "\" required for each refined level");
-              }
-              for (int k=0; k<n_err_buf.size(); ++k) {
-                if (n_err_buf[k] < 0) {
-                  MyAbort("\"" + n_err_buf_str + "\" must be > 0");
-                }
-              }
+		  std::string n_err_buf_str = "Number Error Buffer Cells";
+		  int n_err_buf_DEF = 1;
+		  n_err_buf.resize(max_level+1,n_err_buf_DEF);
+		  if (amr_list.isParameter(n_err_buf_str)) {
+		    n_err_buf = amr_list.get<Array<int> >(n_err_buf_str);
+		  }
+		  if (n_err_buf.size() < max_level) {
+		    MyAbort("If provided, value of \"" + n_err_buf_str
+			    + "\" required for each refined level");
+		  }
+		  for (int k=0; k<n_err_buf.size(); ++k) {
+		    if (n_err_buf[k] < 0) {
+		      MyAbort("\"" + n_err_buf_str + "\" must be > 0");
+		    }
+		  }
 
                             
-              std::string max_grid_str = "Maximum Grid Size";
-              max_grid.resize(max_level+1,max_grid_DEF);
-              if (amr_list.isParameter(max_grid_str)) {
-                max_grid = amr_list.get<Array<int> >(max_grid_str);
-              }
-              if (max_grid.size() < max_level+1) {
-                MyAbort("If provided, value of \"" + max_grid_str
-                        + "\" required for each level");
-              }
-              for (int k=0; k<max_grid.size(); ++k) {
-                if (max_grid[k] < blocking_factor[k]) {
-                  MyAbort("\"" + max_grid_str + "\" must be > \"" + blocking_factor_str + "\"");
-                }
-              }
+		  std::string max_grid_str = "Maximum Grid Size";
+		  max_grid.resize(max_level+1,max_grid_DEF);
+		  if (amr_list.isParameter(max_grid_str)) {
+		    max_grid = amr_list.get<Array<int> >(max_grid_str);
+		  }
+		  if (max_grid.size() < max_level+1) {
+		    MyAbort("If provided, value of \"" + max_grid_str
+			    + "\" required for each level");
+		  }
+		  for (int k=0; k<max_grid.size(); ++k) {
+		    if (max_grid[k] < blocking_factor[k]) {
+		      MyAbort("\"" + max_grid_str + "\" must be > \"" + blocking_factor_str + "\"");
+		    }
+		  }
 
 
-              std::string refineNames_str = "Refinement Indicators";
-              if (amr_list.isParameter(refineNames_str)) {
-                const Array<std::string>& refineNames = 
-                  amr_list.get<Array<std::string> >(refineNames_str);
-                Array<std::string> names(refineNames.size());
-                for (int k=0; k<refineNames.size(); ++k) {
-                  names[k] = underscore(refineNames[k]);
-                  const ParameterList& ref_list = amr_list.sublist(refineNames[k]);
+		  std::string refineNames_str = "Refinement Indicators";
+		  if (amr_list.isParameter(refineNames_str)) {
+		    const Array<std::string>& refineNames = 
+		      amr_list.get<Array<std::string> >(refineNames_str);
+		    Array<std::string> names(refineNames.size());
+		    for (int k=0; k<refineNames.size(); ++k) {
+		      names[k] = underscore(refineNames[k]);
+		      const ParameterList& ref_list = amr_list.sublist(refineNames[k]);
 
-                  std::string val_greater_str = "Value Greater";
-                  std::string val_less_str = "Value Less";
-                  std::string diff_greater_str = "Adjacent Difference Greater";
-                  std::string in_region_str = "Inside Region";
+		      std::string val_greater_str = "Value Greater";
+		      std::string val_less_str = "Value Less";
+		      std::string diff_greater_str = "Adjacent Difference Greater";
+		      std::string in_region_str = "Inside Region";
 
-                  bool do_greater = false;
-                  bool do_less    = false;
-                  bool do_diff    = false;
-                  bool do_region  = false;
-                  std::map<std::string,bool> pick_one;
-                  if (ref_list.isParameter(val_greater_str)) {
-                    pick_one["do_greater"] = true;
-                  }
-                  if (ref_list.isParameter(val_less_str)) {
-                    pick_one["do_less"] = true;
-                  }
-                  if (ref_list.isParameter(diff_greater_str)) {
-                    pick_one["do_diff"] = true;
-                  }
-                  if (ref_list.isParameter(in_region_str)) {
-                    pick_one["do_region"] = true;
-                  }
+		      bool do_greater = false;
+		      bool do_less    = false;
+		      bool do_diff    = false;
+		      bool do_region  = false;
+		      std::map<std::string,bool> pick_one;
+		      if (ref_list.isParameter(val_greater_str)) {
+			pick_one["do_greater"] = true;
+		      }
+		      if (ref_list.isParameter(val_less_str)) {
+			pick_one["do_less"] = true;
+		      }
+		      if (ref_list.isParameter(diff_greater_str)) {
+			pick_one["do_diff"] = true;
+		      }
+		      if (ref_list.isParameter(in_region_str)) {
+			pick_one["do_region"] = true;
+		      }
 
-                  std::pair<std::string,bool> ch = one_picked(pick_one);
-                  if (! ch.second)
-                  {
-                    MyAbort("Refinement indicator \"" + refineNames[k]
-                            + "\" must specify one condition from the list: "
-                            + "\"" + val_greater_str + "\", "
-                            + "\"" + val_less_str + "\", "
-                            + "\"" + diff_greater_str + "\", "
-                            + "\"" + in_region_str + "\"" );
-                  }
+		      std::pair<std::string,bool> ch = one_picked(pick_one);
+		      if (! ch.second)
+		      {
+			MyAbort("Refinement indicator \"" + refineNames[k]
+				+ "\" must specify one condition from the list: "
+				+ "\"" + val_greater_str + "\", "
+				+ "\"" + val_less_str + "\", "
+				+ "\"" + diff_greater_str + "\", "
+				+ "\"" + in_region_str + "\"" );
+		      }
                                     
-                  std::string fieldName_str = "Field Name";
-                  std::string regName_str = "Regions";
+		      std::string fieldName_str = "Field Name";
+		      std::string regName_str = "Regions";
 
-                  std::string ref_type = ch.first;
-                  ParameterList ref_out_list;
-                  if (ref_type != "do_region") {
-                    ref_out_list.set<std::string>
-                      ("field",underscore(ref_list.get<std::string>(fieldName_str)));
+		      std::string ref_type = ch.first;
+		      ParameterList ref_out_list;
+		      if (ref_type != "do_region") {
+			ref_out_list.set<std::string>
+			  ("field",underscore(ref_list.get<std::string>(fieldName_str)));
 
-                    if (ref_type == "do_greater") {
-                      ref_out_list.set<double>(
-                        "val_greater_than",ref_list.get<double>(val_greater_str));
-                    }
-                    else if (ref_type == "do_less") {
-                      ref_out_list.set<double>(
-                        "val_less_than",ref_list.get<double>(val_less_str));
-                    }
-                    else if (ref_type == "do_diff") {
-                      ref_out_list.set<double>(
-                        "diff_greater_than",ref_list.get<double>(diff_greater_str));
-                    }
-                  }
-                  else {
-                    ref_out_list.set<bool>("in_region","TRUE");
-                  }
+			if (ref_type == "do_greater") {
+			  ref_out_list.set<double>(
+			    "val_greater_than",ref_list.get<double>(val_greater_str));
+			}
+			else if (ref_type == "do_less") {
+			  ref_out_list.set<double>(
+			    "val_less_than",ref_list.get<double>(val_less_str));
+			}
+			else if (ref_type == "do_diff") {
+			  ref_out_list.set<double>(
+			    "diff_greater_than",ref_list.get<double>(diff_greater_str));
+			}
+		      }
+		      else {
+			ref_out_list.set<bool>("in_region","TRUE");
+		      }
 
-                  std::string maxLev_str = "Maximum Refinement Level";
-                  int this_max_level = max_level;
-                  if (ref_list.isParameter(maxLev_str)) {
-                    this_max_level = ref_list.get<int>(maxLev_str);
-                  }
-                  ref_out_list.set<int>("max_level",this_max_level);
+		      std::string maxLev_str = "Maximum Refinement Level";
+		      int this_max_level = max_level;
+		      if (ref_list.isParameter(maxLev_str)) {
+			this_max_level = ref_list.get<int>(maxLev_str);
+		      }
+		      ref_out_list.set<int>("max_level",this_max_level);
 
-                  ref_out_list.set<Array<std::string> >(
-                    "regions",underscore(ref_list.get<Array<std::string> >(regName_str)));
+		      ref_out_list.set<Array<std::string> >(
+			"regions",underscore(ref_list.get<Array<std::string> >(regName_str)));
                                     
-                  std::string start_str = "Start Time";
-                  std::string end_str = "End Time";
-                  if (ref_list.isParameter(start_str)) {
-                    ref_out_list.set<double>("start_time",ref_list.get<double>(start_str));
-                  }
-                  if (ref_list.isParameter(end_str)) {
-                    ref_out_list.set<double>("end_time",ref_list.get<double>(end_str));
-                  }
+		      std::string start_str = "Start Time";
+		      std::string end_str = "End Time";
+		      if (ref_list.isParameter(start_str)) {
+			ref_out_list.set<double>("start_time",ref_list.get<double>(start_str));
+		      }
+		      if (ref_list.isParameter(end_str)) {
+			ref_out_list.set<double>("end_time",ref_list.get<double>(end_str));
+		      }
 
-                  amr_out_list.set(names[k],ref_out_list);
-                }
+		      amr_out_list.set(names[k],ref_out_list);
+		    }
 
-                amr_out_list.set<Array<std::string> >("refinement_indicators",names);
-              }
-            }
-          }
-        }
-	else {
-	  MyAbort("\""+optL[i]+"\" unrecognized parameter/list of ParameterList: \""+ec_str+"\"");
-	}
-      }
-                    
+		    amr_out_list.set<Array<std::string> >("refinement_indicators",names);
+		  }
+		} // End of AMR option processing
+	      } // End of Structured Options optional lists processing
+	    } // End of Structured Options processing
+	  } // End of Numerical Control Parameters optional lists processing
+	} // End of Numerical Control Parameters processing
+      } // End of Execution Controls optional lists processing
+
       Array<int> n_cell = amr_out_list.get<Array<int> >("n_cell");
 
       if (blocking_factor.size() > 0) {
@@ -1051,50 +1087,96 @@ namespace Amanzi {
           PLoptions NUMopt(num_list,nL,nP,false,true); 
           const Array<std::string> NUMoptL = NUMopt.OptLists();
 
+	  std::set<std::string> ncp_allowed_lists;
+	  ncp_allowed_lists.insert(str_str);
           //
           // Now process expert lists to overwrite any settings directly
           //
           for (int j=0; j<NUMoptL.size(); ++j)
           {
-            if (NUMoptL[j] == amr_str)
-            {
-              process_expert_options(num_list.sublist(amr_str),amr_out_list);
-            }
-            else if (NUMoptL[j] == it_str)
-            {
-              const ParameterList& it_list = num_list.sublist(it_str);
-              for (ParameterList::ConstIterator k=it_list.begin(); k!=it_list.end(); ++k) 
-              {
-                const std::string& itname = it_list.name(k);
-                if (itname == mg_str)
-                {
-                  process_expert_options(it_list.sublist(mg_str),mg_out_list);
-                }
-                else if (itname == cg_str)
-                {
-                  process_expert_options(it_list.sublist(cg_str),cg_out_list);
-                }
-                else
-                {
-                  MyAbort("Unrecognized optional parameter to \"" + it_str + "\" list: \"" + itname + "\"");
-                }
-              }
-            }
-            else if (NUMoptL[j] == prob_str)
-            {
-              process_expert_options(num_list.sublist(prob_str),prob_out_list);
-            }
-            else if (NUMoptL[j] == diffuse_str)
-            {
-              process_expert_options(num_list.sublist(diffuse_str),diffuse_out_list);
-            }
-            else
-            {
-              MyAbort("Unrecognized optional parameter to \"" + num_str + "\" list: \"" + NUMoptL[j] + "\"");
-            }
-          }
-        }
-      }
+	    if (ncp_allowed_lists.find(NUMoptL[j]) == ncp_allowed_lists.end()) {
+	      std::string str = "Unrecognized parameter list to \"" + num_str + "\" list: \"" + NUMoptL[j] + "\".\n";
+	      str += "Acceptable lists:\n";
+	      for (std::set<std::string>::const_iterator it=ncp_allowed_lists.begin(); it!=ncp_allowed_lists.end(); ++it) {
+		str += "\t\"" + (*it) + "\"\n";
+	      }
+	      MyAbort(str);
+	    }
+
+	    if (NUMoptL[j] == str_str) {
+
+	      Array<std::string> sL, sP;
+	      const ParameterList& str_list = num_list.sublist(str_str);
+	      PLoptions STRopt(str_list,sL,sP,false,true); 
+		
+	      std::set<std::string> str_allowed_lists;
+	      str_allowed_lists.insert(amr_str);
+	      str_allowed_lists.insert(it_str);
+	      str_allowed_lists.insert(diffuse_str);
+	      str_allowed_lists.insert(exp_str);
+
+	      const Array<std::string> STRoptL = STRopt.OptLists();
+
+	      for (int k=0; k<STRoptL.size(); ++k)
+	      {
+		if (str_allowed_lists.find(STRoptL[k]) == str_allowed_lists.end()) {
+		  std::string str = "Unrecognized parameter list to \"" + str_str + "\" list: \"" + STRoptL[k] + "\".\n";
+		  str += "Acceptable lists:\n";
+		  for (std::set<std::string>::const_iterator it=str_allowed_lists.begin(); it!=str_allowed_lists.end(); ++it) {
+		    str += "\t\"" + (*it) + "\"\n";
+		  }
+		  MyAbort(str);
+		}
+
+		if (STRoptL[k] == exp_str)
+		{
+		  ParameterList p1_out_list;
+		  process_expert_options(str_list,p1_out_list);
+		  prob_out_list.setParameters(p1_out_list);
+		}
+		else if (STRoptL[k] == amr_str)
+		{
+		  process_expert_options(str_list.sublist(amr_str),amr_out_list);
+		}
+		else if (STRoptL[k] == it_str)
+		{
+		  const ParameterList& it_list = str_list.sublist(it_str);
+		  Array<std::string> iL, iP;
+		  PLoptions ITopt(it_list,iL,iP,false,true); 
+		
+		  std::set<std::string> it_allowed_lists;
+		  it_allowed_lists.insert(mg_str);
+		  it_allowed_lists.insert(cg_str);
+
+		  const Array<std::string> IToptL = ITopt.OptLists();
+
+		  for (int L=0; L<IToptL.size(); ++L)
+		  {
+		    if (it_allowed_lists.find(IToptL[L]) == it_allowed_lists.end()) {
+		      std::string str = "Unrecognized parameter list to \"" + it_str + "\" list: \"" + IToptL[L] + "\".\n";
+		      str += "Acceptable lists:\n";
+		      for (std::set<std::string>::const_iterator it=it_allowed_lists.begin(); it!=it_allowed_lists.end(); ++it) {
+			str += "\t\"" + (*it) + "\"\n";
+		      }
+		      MyAbort(str);
+		    }
+		    else {
+		      if (IToptL[L] == mg_str)
+		      {
+			process_expert_options(it_list.sublist(mg_str),mg_out_list);
+		      }
+		      else if (IToptL[L] == cg_str)
+		      {
+			process_expert_options(it_list.sublist(cg_str),cg_out_list);
+		      }
+		    }
+		  } // End processing IT optional lists
+		} // End processing IT parameter list
+	      } // End processing Structured Algorithm optional lists
+	    } // End processing Structured Algorithm parameter list
+	  } // End processing Numerical Control Parameters optional lists
+	} // End processing Numerical Control Parameters parameter list
+      } // End of Execution Controls optional lists processing
     }
       
     static std::string dirStr[6] = {"-X", "-Y", "-Z", "+X", "+Y", "+Z"};

@@ -102,51 +102,44 @@
 
           <Parameter name="verbose" type="double" value="2"/>
         </ParameterList>
-      </ParameterList>
-      <ParameterList name="Iterative Linear Solver Control">
-        <ParameterList name="Multigrid Algorithm">
-          <ParameterList name="Expert Settings">
-            <Parameter name="v" type="int" value="0"/>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
 
-      <ParameterList name="Adaptive Mesh Refinement Control">
-        <Parameter name="Number Of AMR Levels" type="int" value="2"/>
-        <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4, 4}"/>
-        <Parameter name="Regrid Interval" type="Array(int)" value="{200000}"/>
-        <Parameter name="Blocking Factor" type="Array(int)" value="{2, 2, 2, 2}"/>
-        <Parameter name="Maximum Grid Size" type="Array(int)" value="{64, 64, 64, 64}"/>
-        <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{1, 1, 1}"/>        
-        <Parameter name="Refinement Indicators" type="Array(string)" value="{Soil ref, wasteFF ref, Conc ref, Liner ref, Grout ref}"/>
-        <ParameterList name="Soil ref">
-          <Parameter name="Regions" type="Array(string)" value="{SoilLower}"/>
-          <Parameter name="Inside Region" type="bool" value="TRUE"/>
-          <Parameter name="Maximum Refinement Level" type="int" value="1"/>
-        </ParameterList>
-        <ParameterList name="wasteFF ref">
-          <Parameter name="Regions" type="Array(string)" value="{TankWaste, TankFFfloor, TankFFwall}"/>
-          <Parameter name="Inside Region" type="bool" value="TRUE"/>
-          <Parameter name="Maximum Refinement Level" type="int" value="4"/>
-        </ParameterList>
-        <ParameterList name="Conc ref">
-          <Parameter name="Regions" type="Array(string)" value="{TankConcFloor, TankConcWall, TankConcRoof1, TankConcRoof2}"/>
-          <Parameter name="Inside Region" type="bool" value="TRUE"/>
-          <Parameter name="Maximum Refinement Level" type="int" value="3"/>
-        </ParameterList>
-        <ParameterList name="Liner ref">
-          <Parameter name="Regions" type="Array(string)" value="{TankLinerFloor, TankLinerWall, TankLinerRoof}"/>
-          <Parameter name="Inside Region" type="bool" value="TRUE"/>
-          <Parameter name="Maximum Refinement Level" type="int" value="4"/>
-        </ParameterList>
-        <ParameterList name="Grout ref">
-          <Parameter name="Regions" type="Array(string)" value="{TankGrout}"/>
-          <Parameter name="Inside Region" type="bool" value="TRUE"/>
-          <Parameter name="Maximum Refinement Level" type="int" value="2"/>
-        </ParameterList>
-        <ParameterList name="Expert Settings">
-          <Parameter name="v" type="int" value="3"/>
-        </ParameterList>
+	<ParameterList name="Adaptive Mesh Refinement Control">
+	  <Parameter name="Number Of AMR Levels" type="int" value="2"/>
+	  <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4, 4}"/>
+	  <Parameter name="Regrid Interval" type="Array(int)" value="{200000}"/>
+	  <Parameter name="Blocking Factor" type="Array(int)" value="{2, 2, 2, 2}"/>
+	  <Parameter name="Maximum Grid Size" type="Array(int)" value="{64, 64, 64, 64}"/>
+	  <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{1, 1, 1}"/>        
+	  <Parameter name="Refinement Indicators" type="Array(string)" value="{Soil ref, wasteFF ref, Conc ref, Liner ref, Grout ref}"/>
+	  <ParameterList name="Soil ref">
+	    <Parameter name="Regions" type="Array(string)" value="{SoilLower}"/>
+	    <Parameter name="Inside Region" type="bool" value="TRUE"/>
+	    <Parameter name="Maximum Refinement Level" type="int" value="1"/>
+	  </ParameterList>
+	  <ParameterList name="wasteFF ref">
+	    <Parameter name="Regions" type="Array(string)" value="{TankWaste, TankFFfloor, TankFFwall}"/>
+	    <Parameter name="Inside Region" type="bool" value="TRUE"/>
+	    <Parameter name="Maximum Refinement Level" type="int" value="4"/>
+	  </ParameterList>
+	  <ParameterList name="Conc ref">
+	    <Parameter name="Regions" type="Array(string)" value="{TankConcFloor, TankConcWall, TankConcRoof1, TankConcRoof2}"/>
+	    <Parameter name="Inside Region" type="bool" value="TRUE"/>
+	    <Parameter name="Maximum Refinement Level" type="int" value="3"/>
+	  </ParameterList>
+	  <ParameterList name="Liner ref">
+	    <Parameter name="Regions" type="Array(string)" value="{TankLinerFloor, TankLinerWall, TankLinerRoof}"/>
+	    <Parameter name="Inside Region" type="bool" value="TRUE"/>
+	    <Parameter name="Maximum Refinement Level" type="int" value="4"/>
+	  </ParameterList>
+	  <ParameterList name="Grout ref">
+	    <Parameter name="Regions" type="Array(string)" value="{TankGrout}"/>
+	    <Parameter name="Inside Region" type="bool" value="TRUE"/>
+	    <Parameter name="Maximum Refinement Level" type="int" value="2"/>
+	  </ParameterList>
+	  <ParameterList name="Expert Settings">
+	    <Parameter name="v" type="int" value="3"/>
+	  </ParameterList>
+	</ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -364,7 +357,6 @@
     <ParameterList name="All">
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
       <ParameterList name="IC: Linear Pressure">
-        <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Reference Value" type="double" value="101325"/>
         <Parameter name="Reference Point" type="Array(double)" value="{0,0}"/>
         <Parameter name="Gradient Value" type="Array(double)" value="{0,-9789.3474 }"/>

@@ -37,7 +37,7 @@
       <Parameter name="Initial Time Step" type="Array(double)" value="{10, 10, 10}"/>
     </ParameterList>
 
-    <Parameter name="Verbosity" type="string" value="Medium"/>
+    <Parameter name="Verbosity" type="string" value="High"/>
 
     <ParameterList name="Numerical Control Parameters">
 
@@ -50,12 +50,9 @@
           <Parameter name="do_richard_init_to_steady" type="int" value="0"/>
           <Parameter name="richard_init_to_steady_verbose" type="int" value="2"/>
           <Parameter name="steady_limit_iterations" type="int" value="20"/>
-          <Parameter name="steady_max_iterations" type="int" value="15"/>
           <Parameter name="steady_max_iterations" type="int" value="10"/>
           <Parameter name="steady_time_step_reduction_factor" type="double" value="0.8"/>
-          <Parameter name="steady_min_iterations" type="int" value="10"/>
           <Parameter name="steady_min_iterations" type="int" value="5"/>
-          <Parameter name="steady_time_step_increase_factor" type="double" value="1.5"/>
           <Parameter name="steady_time_step_increase_factor" type="double" value="1.25"/>
           <Parameter name="steady_min_iterations_2" type="int" value="0"/>
           <Parameter name="steady_time_step_increase_factor_2" type="double" value="10"/>
@@ -79,7 +76,6 @@
           <Parameter name="richard_solver_verbose" type="int" value="3"/>
           <Parameter name="richard_max_ls_iterations" type="int" value="10"/>
           <Parameter name="richard_min_ls_factor" type="double" value="1.e-8"/>
-          <Parameter name="richard_ls_acceptance_factor" type="double" value="1.4"/>
           <Parameter name="richard_ls_acceptance_factor" type="double" value="5"/>
           <Parameter name="richard_ls_reduction_factor" type="double" value="0.1"/>
           <Parameter name="richard_monitor_linear_solve" type="int" value="0"/>
@@ -91,38 +87,20 @@
           <Parameter name="richard_upwind_krel" type="int" value="1"/>
           <Parameter name="richard_pressure_maxorder" type="int" value="3"/>
           <Parameter name="richard_scale_solution_before_solve" type="bool" value="true"/>
-          <Parameter name="richard_semi_analytic_J" type="bool" value="true"/>
           <Parameter name="richard_semi_analytic_J" type="bool" value="false"/>
           <Parameter name="richard_variable_switch_saturation_threshold" type="double" value="0.9996"/>
 
           <Parameter name="verbose" type="int" value="2"/>
 
         </ParameterList>
-      </ParameterList>
       
-      <ParameterList name="Iterative Linear Solver Control">
-	<ParameterList name="Multigrid Algorithm">
-	  <ParameterList name="Expert Settings">
-	    <Parameter name="cg_solver" type="int" value="1"/>
-	    <Parameter name="maxiter" type="int" value="1000"/>
-	    <Parameter name="nu_0" type="int" value="2"/>
-	    <Parameter name="nu_1" type="int" value="2"/>
-	    <Parameter name="nu_2" type="int" value="16"/>
-	    <Parameter name="nu_f" type="int" value="2"/>
-	    <Parameter name="rtol_b" type="double" value="1.e-4"/>
-	    <Parameter name="smooth_on_cg_unstable" type="int" value="1"/>
-	    <Parameter name="v" type="int" value="0"/>
-            <Parameter name="max_L0_growth" type="double" value="10"/>
-	  </ParameterList>
+	<ParameterList name="Adaptive Mesh Refinement Control">
+	  <Parameter name="Number Of AMR Levels" type="int" value="1"/>
+	  <Parameter name="Blocking Factor" type="Array(int)" value="{32, 32, 32, 32}"/>
+	  <Parameter name="Maximum Grid Size" type="Array(int)" value="{64, 64, 64, 64}"/>
 	</ParameterList>
-      </ParameterList>
       
-      <ParameterList name="Adaptive Mesh Refinement Control">
-        <Parameter name="Number Of AMR Levels" type="int" value="1"/>
-        <Parameter name="Blocking Factor" type="Array(int)" value="{32, 32, 32, 32}"/>
-        <Parameter name="Maximum Grid Size" type="Array(int)" value="{64, 64, 64, 64}"/>
       </ParameterList>
-      
     </ParameterList>
   </ParameterList>
 
@@ -189,15 +167,13 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Material Properties">
-    <Parameter name="Permeability Output File" type="string" value="run_data/kp"/>
-    <Parameter name="Porosity Output File" type="string" value="run_data/pp"/>
     <ParameterList name="Facies_1">
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.4082"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="1.9976E-12"/>
-        <Parameter name="Vertical" type="double" value="1.9976E-13"/>
+        <Parameter name="x" type="double" value="1.9976E-12"/>
+        <Parameter name="y" type="double" value="1.9976E-13"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
         <Parameter name="alpha" type="double" value="1.9467E-04"/>
@@ -212,8 +188,8 @@
         <Parameter name="Value" type="double" value="0.2206"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="6.9365E-11"/>
-        <Parameter name="Vertical" type="double" value="6.9365E-12"/>
+        <Parameter name="x" type="double" value="6.9365E-11"/>
+        <Parameter name="y" type="double" value="6.9365E-12"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
         <Parameter name="alpha" type="double" value="2.0260E-03"/>
@@ -228,8 +204,8 @@
         <Parameter name="Value" type="double" value="0.2340"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="2.0706E-09"/>
-        <Parameter name="Vertical" type="double" value="2.0706E-10"/>
+        <Parameter name="x" type="double" value="2.0706E-09"/>
+        <Parameter name="y" type="double" value="2.0706E-10"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
         <Parameter name="alpha" type="double" value="2.0674E-03"/>
@@ -244,8 +220,8 @@
         <Parameter name="Value" type="double" value="0.422"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="2.36863E-09"/>
-        <Parameter name="Vertical" type="double" value="2.36863E-09"/>
+        <Parameter name="x" type="double" value="2.36863E-09"/>
+        <Parameter name="y" type="double" value="2.36863E-09"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
         <Parameter name="alpha" type="double" value="0.1430"/>
@@ -261,8 +237,8 @@
         <Parameter name="Value" type="double" value="0.234"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="2.0607E-09"/>
-        <Parameter name="Vertical" type="double" value="2.06073E-09"/>
+        <Parameter name="x" type="double" value="2.0607E-09"/>
+        <Parameter name="y" type="double" value="2.06073E-09"/>
       </ParameterList>
      <ParameterList name="Capillary Pressure: van Genuchten">
         <Parameter name="alpha" type="double" value="2.0674E-03"/>
@@ -296,9 +272,8 @@
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
 
       <ParameterList name="IC: Linear Pressure">
-        <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Reference Value" type="double" value="101325 "/>
-        <Parameter name="Reference Coordinate" type="Array(double)" value="{0,0}"/>
+        <Parameter name="Reference Point" type="Array(double)" value="{0,0}"/>
         <Parameter name="Gradient Value" type="Array(double)" value="{0,-9793.5192 }"/>
       </ParameterList>
 
