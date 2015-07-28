@@ -69,7 +69,7 @@ def v210_update(tree):
 
     # update version number
     ### EIB >> update this
-    root.set('version','2.1.0')
+    root.set('version','2.1.1')
 
     print >> sys.stdout, ""
     print >> sys.stdout, "  Begining update from old 2.1.0 to 2.1.1"
