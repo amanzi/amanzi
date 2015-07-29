@@ -25,10 +25,11 @@ namespace AmanziGeometry {
 PolygonRegion::PolygonRegion(const std::string name, const unsigned int id,
                              const unsigned int num_points, 
                              const std::vector<Point>& points,
+                             const double tolerance,
                              const LifeCycleType lifecycle,
                              const VerboseObject *verbobj)
   : Region(name,id,points[0].dim(),lifecycle,verbobj), num_points_(num_points), 
-    points_(points),normal_(points[0].dim()),elim_dir_(0)
+    points_(points),tolerance_(tolerance),normal_(points[0].dim()),elim_dir_(0)
 {
   init();
 }
@@ -36,17 +37,18 @@ PolygonRegion::PolygonRegion(const std::string name, const unsigned int id,
 PolygonRegion::PolygonRegion(const char *name, const unsigned int id,
                              const unsigned int num_points,
                              const std::vector<Point>& points,
+                             const double tolerance,
                              const LifeCycleType lifecycle,
                              const VerboseObject *verbobj)
   : Region(name,id,points[0].dim(),lifecycle), num_points_(num_points), 
-    points_(points),normal_(points[0].dim()),elim_dir_(0)
+    points_(points),tolerance_(tolerance),normal_(points[0].dim()),elim_dir_(0)
 {
   init();
 }
 
 PolygonRegion::PolygonRegion(const PolygonRegion& old)
   : Region(old), num_points_(old.num_points_), points_(old.points_),
-    normal_(old.normal_), elim_dir_(old.elim_dir_)
+    tolerance_(old.tolerance_),normal_(old.normal_), elim_dir_(old.elim_dir_)
 {
   // empty
 }
@@ -179,7 +181,7 @@ PolygonRegion::inside(const Point& p) const
   }
   res -= d;
 
-  if (fabs(res) > 1.0e-12)
+  if (fabs(res) > tolerance_)
     return false;
 
 
@@ -212,7 +214,7 @@ PolygonRegion::inside(const Point& p) const
       double d_sqr = L22(dvec);
       
       // Is the distance 0? Point is inside segment
-      if (d_sqr < 1.0e-16)
+      if (d_sqr < tolerance_*tolerance_)
         result = true;
     }
   }
@@ -296,7 +298,7 @@ PolygonRegion::inside(const Point& p) const
         double d_sqr = L22(dvec);
       
         // Is the distance 0? Point is inside segment
-        if (d_sqr < 1.0e-16) {
+        if (d_sqr < tolerance_*tolerance_) {
           result = true;
           break;
         }

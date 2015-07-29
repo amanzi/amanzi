@@ -30,12 +30,14 @@ public:
   PolygonRegion(const std::string name, const unsigned int id, 
                 const unsigned int npolypoints, 
                 const std::vector<Point>& polypoints, 
+                const double tolerance=1.0e-8,
                 const LifeCycleType lifecycle=PERMANENT,
                 const VerboseObject *verbobj=NULL);
 
   PolygonRegion(const char *name, const unsigned int id, 
                 const unsigned int npolypoints, 
                 const std::vector<Point>& polypoints, 
+                const double tolerance=1.0e-8,
                 const LifeCycleType lifecycle=PERMANENT,
                 const VerboseObject *verbobj=NULL);
 
@@ -67,6 +69,7 @@ protected:
   
   const unsigned int num_points_;    /* Number of points defining polygon */
   const std::vector<Point> points_;  /* Points of the polygon */
+  const double tolerance_;           /* Tolerance for checking containment */
   Point normal_;                     /* Normal to the polygon */
   unsigned int elim_dir_;            /* Coord dir to eliminate while projecting
                                         polygon for in/out tests 
