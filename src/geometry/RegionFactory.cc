@@ -181,9 +181,15 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
           }
         }
 
+      double tolerance = 1.0e-8;
+      if (plane_params.isSublist("Expert Parameters")) {
+        Teuchos::ParameterList expert_params = plane_params.sublist("Expert Parameters");
+        tolerance = expert_params.get<double>("Tolerance");
+      }
+
       try {
-        RegionPtr regptr = new PlaneRegion(reg_name, reg_id, p, n, lifecycle,
-                                           verbobj);
+        RegionPtr regptr = new PlaneRegion(reg_name, reg_id, p, n, tolerance,
+                                           lifecycle, verbobj);
         return regptr;
       }
       catch (Errors::Message mesg) {
@@ -243,9 +249,16 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         points.push_back(pnt);
       }
 
+      double tolerance = 1.0e-8;
+      if (poly_params.isSublist("Expert Parameters")) {
+        Teuchos::ParameterList expert_params = poly_params.sublist("Expert Parameters");
+        tolerance = expert_params.get<double>("Tolerance");
+      }
+
       try {
         RegionPtr regptr = new PolygonRegion(reg_name, reg_id, num_points, 
-                                             points, lifecycle, verbobj);
+                                             points, tolerance, lifecycle, 
+                                             verbobj);
         return regptr;
       }
       catch (Errors::Message mesg) {
