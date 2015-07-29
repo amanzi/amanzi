@@ -146,5 +146,5 @@ TEST(FLOW_2D_RICHARDS) {
   }
 
   // verify positive impact of newton correction in the preconditioner.
-  CHECK(itrs[1] < itrs[0]);
+  CHECK(itrs[1] < 0.7 * itrs[0]);
 }

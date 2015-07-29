@@ -168,7 +168,7 @@ class OperatorDiffusion {
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
 
   // physics
-  bool scalar_rho_;
+  bool constant_rho_;
   double rho_;
   Teuchos::RCP<const CompositeVector> rho_cv_;
 

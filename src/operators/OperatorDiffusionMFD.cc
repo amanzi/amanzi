@@ -893,6 +893,17 @@ void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
     double v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] / kf[0][f] : 0.0;
     double vmod = std::abs(v) * dkdp_f[0][f];
 
+    if (constant_rho_) {
+      vmod *= rho_;
+    } else {
+      int c1 = cells[0];
+      int c2 = cells[ncells - 1];
+      if (rho_cv_.get()) {
+        const Epetra_MultiVector& rho_cv = *rho_cv_->ViewComponent("cell", true); 
+        vmod *= (rho_cv[0][c1] + rho_cv[0][c2]) / 2;
+      }
+    }
+
     // interior face
     int i, dir, c1, c2;
     c1 = cells[0];
@@ -1272,6 +1283,9 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
   nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
   // default parameters for Newton correction
+  constant_rho_ = true;
+  rho_ = 1.0;
+
   mass_matrices_initialized_ = false;
   K_ = Teuchos::null;
   k_ = Teuchos::null;
