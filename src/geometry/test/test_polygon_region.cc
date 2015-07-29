@@ -59,10 +59,15 @@ TEST(POLYGON_REGION2)
   CHECK_EQUAL(reg_spec.isSublist(reg_spec.name(i)),true);
 
   Teuchos::ParameterList::ConstIterator j = reg_params.begin();
-  Teuchos::ParameterList plane_params = reg_params.sublist(reg_params.name(j));
-  numpoints = plane_params.get<int>("Number of points");
-  in_xyz = plane_params.get< Teuchos::Array<double> >("Points");
+  Teuchos::ParameterList poly_params = reg_params.sublist(reg_params.name(j));
+  numpoints = poly_params.get<int>("Number of points");
+  in_xyz = poly_params.get< Teuchos::Array<double> >("Points");
 
+  double tolerance = 1.0e-08;
+  if (poly_params.isSublist("Expert Parameters")) {
+    Teuchos::ParameterList expert_params = poly_params.sublist("Expert Parameters");
+    tolerance = expert_params.get<double>("Tolerance");
+  }
   
  
   // Make sure that the region type is a Plane
@@ -109,6 +114,9 @@ TEST(POLYGON_REGION2)
   testp.set(0.9,0.9);
   CHECK(!poly->inside(testp));
 
+  // Check a point we know to be very close to the plane (within tolerance)
+  testp.set(0.0,tolerance/2.0);
+  CHECK(poly->inside(testp));
 }  
 
 TEST(POLYGON_REGION3)
@@ -149,10 +157,15 @@ TEST(POLYGON_REGION3)
   CHECK_EQUAL(reg_spec.isSublist(reg_spec.name(i)),true);
 
   Teuchos::ParameterList::ConstIterator j = reg_params.begin();
-  Teuchos::ParameterList plane_params = reg_params.sublist(reg_params.name(j));
-  numpoints = plane_params.get<int>("Number of points");
-  in_xyz = plane_params.get< Teuchos::Array<double> >("Points");
+  Teuchos::ParameterList poly_params = reg_params.sublist(reg_params.name(j));
+  numpoints = poly_params.get<int>("Number of points");
+  in_xyz = poly_params.get< Teuchos::Array<double> >("Points");
 
+  double tolerance=1.0e-08;
+  if (poly_params.isSublist("Expert Parameters")) {
+    Teuchos::ParameterList expert_parameters = poly_params.sublist("Expert Parameters");
+    tolerance = expert_parameters.get<double>("Tolerance");
+  }
   
  
   // Make sure that the region type is a Plane
@@ -211,6 +224,11 @@ TEST(POLYGON_REGION3)
   // Check a point we know to be on the plane but outside the polygon
   testp.set(1.0,0.0,0.0);
   CHECK(!poly->inside(testp));
+
+  // Check a point that is close to the plane - assume tolerance has been
+  // set to something greater than 1.0e-4 in the XML file
+  testp.set(0.1,0.1,0.1001);
+  CHECK(poly->inside(testp));
 
 }  
 

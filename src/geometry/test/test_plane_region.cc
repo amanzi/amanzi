@@ -62,7 +62,11 @@ TEST(PLANE_REGION)
   in_xyz = plane_params.get< Teuchos::Array<double> >("Location");
   in_nrm = plane_params.get< Teuchos::Array<double> >("Direction");
 
-  
+  double tolerance=1.0e-08;
+  if (plane_params.isSublist("Expert Parameters")) {
+    Teuchos::ParameterList expert_params = plane_params.sublist("Expert Parameters");
+    tolerance = expert_params.get<double>("Tolerance");
+  }
  
   // Make sure that the region type is a Plane
 
@@ -77,14 +81,38 @@ TEST(PLANE_REGION)
   p = plane->point();
   n = plane->normal();
 
- 
+  double len = sqrt(in_nrm[0]+in_nrm[1]+in_nrm[2]);
   CHECK_EQUAL(p.x(),in_xyz[0]);
   CHECK_EQUAL(p.y(),in_xyz[1]);
   CHECK_EQUAL(p.z(),in_xyz[2]);
-  CHECK_EQUAL(n.x(),in_nrm[0]);
-  CHECK_EQUAL(n.y(),in_nrm[1]);
-  CHECK_EQUAL(n.z(),in_nrm[2]);
- 
+  CHECK_EQUAL(n.x(),in_nrm[0]/len);
+  CHECK_EQUAL(n.y(),in_nrm[1]/len);
+  CHECK_EQUAL(n.z(),in_nrm[2]/len);
+
+  int dim = p.dim();
+  Amanzi::AmanziGeometry::Point p2(dim),testp(dim);
+
+  // See if a point we know to be on the plane is considered to be "inside"
+
+  p2.set(p.x()+0.1,p.y()+0.2,p.z()+0.3);  // create a point p2 that will probably
+                                      // be off the plane
+  Amanzi::AmanziGeometry::Point ppvec(dim);
+  ppvec = p-p2;
+  double dp = ppvec*n;
+  testp = p2 + dp*n;
+  CHECK(plane->inside(testp));
+
+  // Perturb the point on the plane by a small amount (smaller than
+  // the comparison tolerance) and see if it is considered to be inside
+
+  testp = p2 + (1-(tolerance/5))*dp*n;
+  CHECK(plane->inside(testp));
+
+  // Perturb the point by a large amount and see if its considered to be outside
+
+  testp = p2 + 1.1*dp*n;
+  CHECK(!plane->inside(testp));
+  
 }  
 
 
