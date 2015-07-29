@@ -81,7 +81,7 @@ TEST(PLANE_REGION)
   p = plane->point();
   n = plane->normal();
 
-  double len = sqrt(in_nrm[0]+in_nrm[1]+in_nrm[2]);
+  double len = sqrt(in_nrm[0]*in_nrm[0]+in_nrm[1]*in_nrm[1]+in_nrm[2]*in_nrm[2]);
   CHECK_EQUAL(p.x(),in_xyz[0]);
   CHECK_EQUAL(p.y(),in_xyz[1]);
   CHECK_EQUAL(p.z(),in_xyz[2]);
