@@ -230,7 +230,7 @@ Usage:
 
    * [S] `"Maximum Cycle Number`" [double]: The maximum allowed cycle number.
 
-  * [U] `"Initialize To Steady`" [list] - Amanzi is run in steady mode with `"Chemistry Model`" = `"Transport Model`" = `"Off`" until a steady solution is obtained.  Any solutes defined below are ignored.  When the solution is steady, the transport and chemistry models are set to user input and the transient integration mode is employed.  Integration continues forward in time.  Method for detection of a steady solution is specified.
+  * [SU] `"Initialize To Steady`" [list] - Amanzi is run in steady mode with `"Chemistry Model`" = `"Transport Model`" = `"Off`" until a steady solution is obtained.  Any solutes defined below are ignored.  When the solution is steady, the transport and chemistry models are set to user input and the transient integration mode is employed.  Integration continues forward in time.  Method for detection of a steady solution is specified.
 
    * [SU] `"Start`" [double]: Initial value for time to generate a steady solution
 
@@ -252,7 +252,7 @@ Usage:
   * [S] `"Initial Time Step Multiplier`" [Array double]: (Optional) If internally computed time step used, it will be 
     scaled by this factor (default value: 1)
   * [S] `"Maximum Time Step`"[Array double]: (Optional) The maximum time step for each time period. 
-  * [U] `"Default Initial Time Step`" [double]: (Optional) set the default initial time step, this is used for time integrator restarts that are required by boundary conditions and sources, but are not specified in this list under Start Times, the default value is 1.0. 
+  * [SU] `"Default Initial Time Step`" [double]: (Optional) set the default initial time step, this is used for time integrator restarts that are required by boundary conditions and sources, but are not specified in this list under Start Times, the default value is 1.0. 
 
  * [SU] `"Verbosity`" [string]: (default: `"Medium`") Choose one of `"None"`, `"Low"`, `"Medium"`, `"High`", or `"Extreme`".
 
@@ -739,7 +739,7 @@ using the following labels: `"XLOBC`", `"XHIBC`", `"YLOBC`", `"YHIBC`", `"ZLOBC`
 
 User-defined regions are constructed using the following syntax
 
- * [U][S] "Regions" [list] can accept a number of lists for named regions (REGION)
+ * [SU] "Regions" [list] can accept a number of lists for named regions (REGION)
 
    * Shape [list] Geometric model primitive, choose exactly one of the
      following [see table below]: `"Region: Point`", `"Region: Box`",
@@ -756,12 +756,12 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 +---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Plane"`  [SU]         | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
 +---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Polygon"`  [U]        | `"Number of points`", `"Points`"        | int, Array(double)           | Number of polygon points and point coordinates in linear array. This   |
+| `"Region: Polygon"`  [SU]        | `"Number of points`", `"Points`"        | int, Array(double)           | Number of polygon points and point coordinates in linear array. This   |
 |                                 |                                         |                              | provides a set of faces with a normal for computing flux               |    
 +---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Logical"` [U]         | `"Operation`", `"RegionList`"           | string, Array(string)        | Operation can be Union, Intersection, Subtraction, Complement          |
+| `"Region: Logical"` [SU]         | `"Operation`", `"RegionList`"           | string, Array(string)        | Operation can be Union, Intersection, Subtraction, Complement          |
 +---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Labeled Set"` [U]     | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
+| `"Region: Labeled Set"` [SU]     | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
 |                                 | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
 +---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Color Function"` [SU] | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |
@@ -935,13 +935,13 @@ the following set of physical properties using the supported models described be
 
   * [SU] Porosity [list] Parameterized model for porosity.  Choose exactly one of the following: `"Porosity: Uniform`" (see below)
 
-  * [SU] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" or [U only] `"Brooks Corey`" (see below)
+  * [SU] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" or `"Brooks Corey`" (see below)
 
-  * [U] Particle Density [list] Choose exatly one of the following: `"Particle Density: Uniform`". 
+  * [SU] Particle Density [list] Choose exatly one of the following: `"Particle Density: Uniform`". 
 
-  * [U] Specific Storage [list] Parameterized model for Specific Storage [L^-1]. Choose exactly one of the following: `"Specific Storage: Uniform`".
+  * [SU] Specific Storage [list] Parameterized model for Specific Storage [L^-1]. Choose exactly one of the following: `"Specific Storage: Uniform`".
 
-  * [U] Specific Yield [list] Parameterized model for Specific Yield [-]. Choose exactly one of the following: `"Specific Yield: Uniform`".
+  * [SU] Specific Yield [list] Parameterized model for Specific Yield [-]. Choose exactly one of the following: `"Specific Yield: Uniform`".
 
   Material properties related to transport (dispersion and diffusion):
 
@@ -1042,56 +1042,56 @@ The following models are currently supported for capillary pressure (Section 3.3
 
  * [SU] `"m`" [double] to specify m in Equation 3.7.
 
- * [U] `"ell`" [double] ''l'' in Equation 3.11 (default = 0.5)
+ * [SU] `"ell`" [double] ''l'' in Equation 3.11 (default = 0.5)
 
  * [SU] `"Relative Permeability`" [string] (either (0) [U] `"Burdine`", or (2) [SU] `"Mualem`") determines n
    in Equation 3.10, and the form of relative permeability (either Equation 3.12, or Equation 3.11, respectively).
 
- * [U] `"krel smoothing interval`" [double] If this parameter is positive, a cubic hermite interpolant in used in place of the van Genuchten relative permeability function when the capillary pressure is in the interval [0.0, krel smoothing interval]. The default for this parameter is 0.0, such that there is no relative premeability smoothing.  Note that running Amanzi under the Structured Grid option, an alternative comparable feature is available as a global option (see `"Saturation Threshold For Kr`" discussed above).
+ * [SU] `"krel smoothing interval`" [double] If this parameter is positive, a cubic hermite interpolant in used in place of the van Genuchten relative permeability function when the capillary pressure is in the interval [0.0, krel smoothing interval]. The default for this parameter is 0.0, such that there is no relative premeability smoothing.  Note that running Amanzi under the Structured Grid option, an alternative comparable feature is available as a global option (see `"Saturation Threshold For Kr`" discussed above).
 
- * [] `"WRM Plot File`" [string] (Optional) name of ASCII text file to write 3-column, space-delimited data for water saturation, capillary pressure and relative permeability.  If not give, no file is created.  Also, if file exists, it will be overwritten.
+ * [S] `"WRM Plot File`" [string] (Optional) name of ASCII text file to write 3-column, space-delimited data for water saturation, capillary pressure and relative permeability.  If not give, no file is created.  Also, if file exists, it will be overwritten.
 
- * [] `"WRM Plot File Number Of Points`" [int] (Optional, defaults to 1000) Number of evaluation points used to create the WRM Plot File, spaced uniformly in saturation between Sr+epsilon and 1.
+ * [S] `"WRM Plot File Number Of Points`" [int] (Optional, defaults to 1000) Number of evaluation points used to create the WRM Plot File, spaced uniformly in saturation between Sr+epsilon and 1.
 
-* [U] `"Capillary Pressure: Brooks Corey`" [list] requires
+* [SU] `"Capillary Pressure: Brooks Corey`" [list] requires
 
- * [U] `"lambda`" [double] to specify lambda in Equation 3.9
+ * [SU] `"lambda`" [double] to specify lambda in Equation 3.9
 
- * [U] `"alpha`" [double]  to specify alpha in Equation 3.9 
+ * [SU] `"alpha`" [double]  to specify alpha in Equation 3.9 
 
- * [U] `"ell`" [double] to specify ''l'' in Equation 3.12 (default is 2.0)
+ * [SU] `"ell`" [double] to specify ''l'' in Equation 3.12 (default is 2.0)
 
- * [U] `"Sr`" [double] to specify residual saturation, s^r_l, in Equation 3.5
+ * [SU] `"Sr`" [double] to specify residual saturation, s^r_l, in Equation 3.5
 
- * [U] `"Relative Permeability`" [string] (either (0) `"Burdine`", or (2) `"Mualem`") chooses the form of the
+ * [SU] `"Relative Permeability`" [string] (either (0) `"Burdine`", or (2) `"Mualem`") chooses the form of the
    relative permeability (either Equation 3.15, or Equation 3.14, respectively)
 
- * [U] `"krel smoothing interval`" [double] (default value gives no relative permeability smoothing).
+ * [SU] `"krel smoothing interval`" [double] (default value gives no relative permeability smoothing).
 
- * [] `"WRM Plot File`" [string] (Optional) name of ASCII text file to write 3-column, space-delimited data for water saturation, capillary pressure and relative permeability.  If not give, no file is created.  Also, if file exists, it will be overwritten.
+ * [S] `"WRM Plot File`" [string] (Optional) name of ASCII text file to write 3-column, space-delimited data for water saturation, capillary pressure and relative permeability.  If not give, no file is created.  Also, if file exists, it will be overwritten.
 
- * [] `"WRM Plot File Number Of Points`" [int] (Optional, defaults to 1000) Number of evaluation points used to create the WRM Plot File, spaced uniformly in saturation between Sr+epsilon and 1.
+ * [S] `"WRM Plot File Number Of Points`" [int] (Optional, defaults to 1000) Number of evaluation points used to create the WRM Plot File, spaced uniformly in saturation between Sr+epsilon and 1.
 
 
 The following models can be specified for particle density (only `"Particle Density: Uniform`" is supported at the moment):
 
-* [U] `"Particle Density: Uniform`" [list] requires 
+* [SU] `"Particle Density: Uniform`" [list] requires 
  
- * [U] `"Value`" [double] to specify the constant value of rock density.
+ * [SU] `"Value`" [double] to specify the constant value of rock density.
 
 
 The following models are currently supported for Specific Yield.
 
-* [U] `"Specific Yield: Uniform`" [list] requires
+* [SU] `"Specific Yield: Uniform`" [list] requires
 
- * [U] `"Value`" [double] to specify specific yield.
+ * [SU] `"Value`" [double] to specify specific yield.
 
 
 The following models are currently supported for Specific Storage.
 
-* [U] `"Specific Storage: Uniform`" [list] requires
+* [SU] `"Specific Storage: Uniform`" [list] requires
 
- * [U] `"Value`" [double] to specify specific storage.
+ * [SU] `"Value`" [double] to specify specific storage.
 
 The following models are currently supported for the dispersion tensor
 in transport
@@ -1295,13 +1295,13 @@ Next, we specify boundary conditions.  Again, support is provided for specifying
 
 Finally, we specify sources.  Support is provided for specifying sources on the aqueous phase (flow), and for the solutes (total component concentration of primary species in reactive transport).
 
-* [U] `"Sources"` [list] accepts labels, SOURCE, of named source specifications
+* [SU] `"Sources"` [list] accepts labels, SOURCE, of named source specifications
 
- * [U] SOURCE [list] label for a source term, accepts source function names, and parameters to specify assigned regions and solute source conditions.
+ * [SU] SOURCE [list] label for a source term, accepts source function names, and parameters to specify assigned regions and solute source conditions.
 
-  * [U] Function [list] Parameterized model to specify source. Choose exactly one of the following: `"Source: Uniform`", `"Source: Volume Weighted`", `"Source: Permeability Weighted`" (see below).
+  * [SU] Function [list] Parameterized model to specify source. Choose exactly one of the following: `"Source: Uniform`", `"Source: Volume Weighted`", `"Source: Permeability Weighted`" (see below).
   
-  * [U] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned
+  * [SU] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned
 
   * `"Solute SOURCE`" can accept PHASE (labels of phases defined above)
 
@@ -1319,11 +1319,11 @@ The following initial condition parameterizations are supported:
 
 * [U] `"IC: Linear Saturation`" requires `"Reference Coordinate`" (Array double), `"Reference Value`" [double], and  `"Gradient Value`" (Array double) 
 
-* [U] `"IC: Uniform Pressure`" requires `"Value`" [double]
+* [SU] `"IC: Uniform Pressure`" requires `"Value`" [double]
 
 * [SU] `"IC: Linear Pressure`" requires `"Reference Coordinate`" (Array double), `"Reference Value`" [double], and  `"Gradient Value`" (Array double) 
 
-* [U] `"IC: Uniform Velocity`" requires `"Velocity Vector`" (Array double).
+* [SU] `"IC: Uniform Velocity`" requires `"Velocity Vector`" (Array double).
 
 * [SU] `"IC: Uniform Concentration`" [list] 
 
@@ -1376,15 +1376,15 @@ The following boundary condition parameterizations are supported:
 
 The following source parameterizations are supported.
 
-* [U] `"Source: Uniform`" [kg/s/m^3] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [SU] `"Source: Uniform`" [kg/s/m^3] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* [U] `"Source: Volume Weighted`" [kg/s] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [SU] `"Source: Volume Weighted`" [kg/s] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
 * [U] `"Source: Permeability Weighted`" [kg/s] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
 * [U] `"Source: Uniform Concentration`" uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* [U] `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [SU] `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
 Time Functions
 ~~~~~~~~~~~~~~
@@ -1642,7 +1642,7 @@ by machine round errors and randomness due to execution in a parallel computing 
 
   * [SU] `"File Name Base`" [string]
 
-  * [U] `"File Name Digits`" [int] specify the number of digits that should be appended to the file name for the cycle number.
+  * [SU] `"File Name Digits`" [int] specify the number of digits that should be appended to the file name for the cycle number.
 
   * [SU] `"Cycle Macro`" [string] can accept label of user-defined Cycle Macro (see above)
 

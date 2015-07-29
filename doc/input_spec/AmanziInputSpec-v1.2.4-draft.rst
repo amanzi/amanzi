@@ -263,7 +263,7 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
   * [SU] `"Start Times`" [Array(double)]: List of times at which the current time-integrator will be reinitialized.
   * [SU] `"Initial Time Step`"[Array(double)]: The initial time step for each time period. If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
   * [SU] `"Maximum Time Step`"[Array(double)]: (Optional) The maximum time step for each time period. 
-  * [U] `"Default Initial Time Step`" [double]: (Optional) set the default initial time step, this is used for time integrator restarts that are required by boundary conditions and sources, but are not specified in this list under Start Times, the default value is 1.0. 
+  * [SU] `"Default Initial Time Step`" [double]: (Optional) set the default initial time step, this is used for time integrator restarts that are required by boundary conditions and sources, but are not specified in this list under Start Times, the default value is 1.0. 
 
  * [SU] `"Verbosity`" [string]: (default: `"Medium`") Choose one of `"None"`, `"Low"`, `"Medium"`, `"High`", or `"Extreme`".
 
@@ -804,7 +804,7 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 +----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Plane"`  [SU]          | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
 +----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Polygonal Surface"` [U]| `"Number of points`", `"Points`"        | int, Array(double)           | Number of polygon points and point coordinates in linear array. This   |
+| `"Region: Polygonal Surface"` [SU]| `"Number of points`", `"Points`"        | int, Array(double)           | Number of polygon points and point coordinates in linear array. This   |
 |                                  |                                         |                              | provides a set of faces with a normal for computing flux               |    
 +----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Polygon"`  [S]         |                                         | Array(double), Array(double) | V1=(x1,x2,...) and V2=(y1,y2,...) coordinates of an ordered sequence of|
@@ -825,9 +825,9 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 |                                  |                                         |                              | (`"XY`", `"YZ`", `"XZ`"), and swept over the extent, (min, max) in the |
 |                                  |                                         |                              | direction normal to the plane                                          |
 +----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Logical"` [U]          | `"Operation`", `"RegionList`"           | string, Array(string)        | Operation can be Union, Intersection, Subtraction, Complement          |
+| `"Region: Logical"` [SU]          | `"Operation`", `"RegionList`"           | string, Array(string)        | Operation can be Union, Intersection, Subtraction, Complement          |
 +----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Labeled Set"` [U]      | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
+| `"Region: Labeled Set"` [SU]      | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
 |                                  | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
 +----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Color Function"` [SU]  | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |
@@ -1109,49 +1109,49 @@ The following models are currently supported for capillary pressure (Section 3.3
 
  * [SU] `"m`" [double] to specify m in Equation 3.7.
 
- * [U] `"ell`" [double] ''l'' in Equation 3.11 (default = 0.5)
+ * [SU] `"ell`" [double] ''l'' in Equation 3.11 (default = 0.5)
 
  * [SU] `"Relative Permeability`" [string] (either (0) [U] `"Burdine`", or (2) [SU] `"Mualem`") determines n
    in Equation 3.10, and the form of relative permeability (either Equation 3.12, or Equation 3.11, respectively).
 
- * [U] `"krel smoothing interval`" [double] If this parameter is positive, a cubic hermite interpolant in used in place of the van Genuchten relative permeability function when the capillary pressure is in the interval [0.0, krel smoothing interval]. The default for this parameter is 0.0, such that there is no relative permeability smoothing.  
+ * [SU] `"krel smoothing interval`" [double] If this parameter is positive, a cubic hermite interpolant in used in place of the van Genuchten relative permeability function when the capillary pressure is in the interval [0.0, krel smoothing interval]. The default for this parameter is 0.0, such that there is no relative permeability smoothing.  
 
- * [] `"WRM Plot File`" [string] (Optional) name of ASCII text file to write 3-column, space-delimited data for water saturation, capillary pressure and relative permeability.  If not give, no file is created.  Also, if file exists, it will be overwritten.
+ * [S] `"WRM Plot File`" [string] (Optional) name of ASCII text file to write 3-column, space-delimited data for water saturation, capillary pressure and relative permeability.  If not give, no file is created.  Also, if file exists, it will be overwritten.
 
- * [] `"WRM Plot File Number Of Points`" [int] (Optional, defaults to 1000) Number of evaluation points used to create the WRM Plot File, spaced uniformly in saturation between Sr+epsilon and 1.
+ * [S] `"WRM Plot File Number Of Points`" [int] (Optional, defaults to 1000) Number of evaluation points used to create the WRM Plot File, spaced uniformly in saturation between Sr+epsilon and 1.
 
-* [U] `"Capillary Pressure: Brooks Corey`" [list] requires
+* [SU] `"Capillary Pressure: Brooks Corey`" [list] requires
 
- * [U] `"lambda`" [double] to specify lambda in Equation 3.9
+ * [SU] `"lambda`" [double] to specify lambda in Equation 3.9
 
- * [U] `"alpha`" [double]  to specify alpha in Equation 3.9 
+ * [SU] `"alpha`" [double]  to specify alpha in Equation 3.9 
 
- * [U] `"ell`" [double] to specify ''l'' in Equation 3.12 (default is 2.0)
+ * [SU] `"ell`" [double] to specify ''l'' in Equation 3.12 (default is 2.0)
 
- * [U] `"Sr`" [double] to specify residual saturation, s^r_l, in Equation 3.5
+ * [SU] `"Sr`" [double] to specify residual saturation, s^r_l, in Equation 3.5
 
- * [U] `"Relative Permeability`" [string] (either (0) `"Burdine`", or (2) `"Mualem`") chooses the form of the
+ * [SU] `"Relative Permeability`" [string] (either (0) `"Burdine`", or (2) `"Mualem`") chooses the form of the
    relative permeability (either Equation 3.15, or Equation 3.14, respectively)
 
- * [U] `"krel smoothing interval`" [double] (default value gives no relative permeability smoothing).
+ * [SU] `"krel smoothing interval`" [double] (default value gives no relative permeability smoothing).
 
- * [] `"WRM Plot File`" [string] (Optional) name of ASCII text file to write 3-column, space-delimited data for water saturation, capillary pressure and relative permeability.  If not give, no file is created.  Also, if file exists, it will be overwritten.
+ * [S] `"WRM Plot File`" [string] (Optional) name of ASCII text file to write 3-column, space-delimited data for water saturation, capillary pressure and relative permeability.  If not give, no file is created.  Also, if file exists, it will be overwritten.
 
- * [] `"WRM Plot File Number Of Points`" [int] (Optional, defaults to 1000) Number of evaluation points used to create the WRM Plot File, spaced uniformly in saturation between Sr+epsilon and 1.
+ * [S] `"WRM Plot File Number Of Points`" [int] (Optional, defaults to 1000) Number of evaluation points used to create the WRM Plot File, spaced uniformly in saturation between Sr+epsilon and 1.
 
 
 The following models can be specified for particle density (only `"Particle Density: Uniform`" is supported at the moment):
 
-* [U] `"Particle Density: Uniform`" [list] requires 
+* [SU] `"Particle Density: Uniform`" [list] requires 
  
- * [U] `"Value`" [double] to specify the constant value of rock density.
+ * [SU] `"Value`" [double] to specify the constant value of rock density.
 
 
 The following models are currently supported for Specific Yield.
 
-* [U] `"Specific Yield: Uniform`" [list] requires
+* [SU] `"Specific Yield: Uniform`" [list] requires
 
- * [U] `"Value`" [double] to specify specific yield.
+ * [SU] `"Value`" [double] to specify specific yield.
 
 
 The following models are currently supported for Specific Storage.
@@ -1394,13 +1394,13 @@ Next, we specify boundary conditions.  Again, support is provided for specifying
 
 Finally, we specify sources.  Support is provided for specifying sources on the aqueous phase (flow), and for the solutes (total component concentration of primary species in reactive transport).
 
-* [U] `"Sources"` [list] accepts labels, SOURCE, of named source specifications
+* [SU] `"Sources"` [list] accepts labels, SOURCE, of named source specifications
 
- * [U] SOURCE [list] label for a source term, accepts source function names, and parameters to specify assigned regions and solute source conditions.
+ * [SU] SOURCE [list] label for a source term, accepts source function names, and parameters to specify assigned regions and solute source conditions.
 
-  * [U] Function [list] Parameterized model to specify source. Choose exactly one of the following: `"Source: Uniform`", `"Source: Volume Weighted`", `"Source: Permeability Weighted`" (see below).
+  * [SU] Function [list] Parameterized model to specify source. Choose exactly one of the following: `"Source: Uniform`", `"Source: Volume Weighted`", `"Source: Permeability Weighted`" (see below).
   
-  * [U] `"Assigned Regions`" [Array(string)] list of regions to which this condition is assigned
+  * [SU] `"Assigned Regions`" [Array(string)] list of regions to which this condition is assigned
 
   * `"Solute SOURCE`" can accept PHASE (labels of phases defined above)
 
@@ -1416,11 +1416,11 @@ The following initial condition parameterizations are supported:
 
 * [U] `"IC: Linear Saturation`" requires `"Reference Point`" (Array(double)), `"Reference Value`" [double], and  `"Gradient Value`" (Array(double)) 
 
-* [U] `"IC: Uniform Pressure`" requires `"Value`" [double]
+* [SU] `"IC: Uniform Pressure`" requires `"Value`" [double]
 
 * [SU] `"IC: Linear Pressure`" requires `"Reference Point`" (Array(double)), `"Reference Value`" [double], and  `"Gradient Value`" (Array(double)) 
 
-* [U] `"IC: Uniform Velocity`" requires `"Velocity Vector`" (Array(double)).
+* [SU] `"IC: Uniform Velocity`" requires `"Velocity Vector`" (Array(double)).
 
 * [SU] `"IC: Uniform Concentration`" [list] requires `"Value`" and `"Free Ion Guess`", OR `"Geochemical Condition`"
 
@@ -1433,11 +1433,11 @@ The following boundary condition parameterizations are supported:
 * [SU] `"BC: Flux`" requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] 
   (see the note below) and one of the following: 
 
-    * [U]  `"Inward Volumetric Flux`" [Array(double)], 
+    * [SU]  `"Inward Volumetric Flux`" [Array(double)], 
 
     * [SU] `"Inward Mass Flux`" [Array(double)], 
 
-    * [U]  `"Outward Volumetric Flux`" [Array(double)], or
+    * [SU]  `"Outward Volumetric Flux`" [Array(double)], or
 
     * [SU] `"Outward Mass Flux`" [Array(double)]. 
 
@@ -1488,27 +1488,27 @@ The following boundary condition parameterizations are supported:
 
 The following source parameterizations are supported.
 
-* [U] `"Source: Uniform`" [kg/s/m^3] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
+* [SU] `"Source: Uniform`" [kg/s/m^3] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* [U] `"Source: Volume Weighted`" [kg/s] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
+* [SU] `"Source: Volume Weighted`" [kg/s] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
 * [U] `"Source: Permeability Weighted`" [kg/s] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* [U] `"Source: Uniform Concentration`" [mol/s/m^3] uses a volume weighting to distribute the source uniformly over the specified region(s).  Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)],  and `"Values`" [Array(double)] OR `"Geochemical Condition`"
+* [SU] `"Source: Uniform Concentration`" [mol/s/m^3] uses a volume weighting to distribute the source uniformly over the specified region(s).  Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)],  and `"Values`" [Array(double)] OR `"Geochemical Condition`"
 
   * `"Times`" [Array(double)], list of times used by the time function.
   * `"Time Functions`" [Array(string)], list of functions for the time intervals listed in `"Times`"
   * `"Values`" [Array(double)], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
   * `"Geochemical Condition`" [String], name of a geochemical condition defined in Alquimia's chemistry engine input file or in the Chemistry block.
 
-* [U] `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], and `"Values`" [Array(double)] OR `"Geochemical Condition`". Units are either [mol/m^3/s] or [mol/s] depending on definition of the flow source.
+* [SU] `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], and `"Values`" [Array(double)] OR `"Geochemical Condition`". Units are either [mol/m^3/s] or [mol/s] depending on definition of the flow source.
 
   * `"Times`" [Array(double)], list of times used by the time function.
   * `"Time Functions`" [Array(string)], list of functions for the time intervals listed in `"Times`"
   * `"Values`" [Array(double)], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
   * `"Geochemical Condition`" [String], name of a geochemical condition defined in Alquimia's chemistry engine input file or in the Chemistry block.
  
-* [U] `"Source: Diffusion Dominated Release Model`" uses a volume weighting to distribute the source uniformly over the specified region(s). Requires `"Total Inventory`" [double], `"Mixing Length`" [double], `"Effective Diffusion Coefficient`" [double], and `"Times`" [Array(double)]. 
+* [SU] `"Source: Diffusion Dominated Release Model`" uses a volume weighting to distribute the source uniformly over the specified region(s). Requires `"Total Inventory`" [double], `"Mixing Length`" [double], `"Effective Diffusion Coefficient`" [double], and `"Times`" [Array(double)]. 
 
   * `"Times`" [Array(double)], release start and end times. 
 

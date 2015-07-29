@@ -262,7 +262,7 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
   * [SU] `"Start Times`" [Array(double)]: List of times at which the current time-integrator will be reinitialized.
   * [SU] `"Initial Time Step`"[Array(double)]: The initial time step for each time period. If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
   * [SU] `"Maximum Time Step`"[Array(double)]: (Optional) The maximum time step for each time period. 
-  * [U] `"Default Initial Time Step`" [double]: (Optional) set the default initial time step, this is used for time integrator restarts that are required by boundary conditions and sources, but are not specified in this list under Start Times, the default value is 1.0. 
+  * [SU] `"Default Initial Time Step`" [double]: (Optional) set the default initial time step, this is used for time integrator restarts that are required by boundary conditions and sources, but are not specified in this list under Start Times, the default value is 1.0. 
 
  * [SU] `"Verbosity`" [string]: (default: `"Medium`") Choose one of `"None"`, `"Low"`, `"Medium"`, `"High`", or `"Extreme`".
 
@@ -819,7 +819,7 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 +-----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Logical"` [SU]          | `"Operation`", `"RegionList`"           | string, Array(string)        | Operation can be Union, Intersection, Subtraction, Complement          |
 +-----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Labeled Set"` [U]       | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
+| `"Region: Labeled Set"` [SU]       | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
 |                                   | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
 +-----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Color Function"` [SU]   | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |
@@ -1441,7 +1441,7 @@ The following source parameterizations are supported.
 
 * [SU] `"Source: Uniform Concentration`" [mol/s/m^3] uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires a TIME FUNCTION (see below), where VALUE_NAME is `"Geochemical Condition`" [Array(string)] (if using Alquimia, names of geochemical conditions defined in Alquimia's chemistry engine input file), or `"Values`" [Array(double)] otherwise.  
 
-* [U] `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires a TIME FUNCTION (see below), where VALUE_NAME is `"Geochemical Condition`" [Array(string)] (if using Alquimia, names of geochemical conditions defined in Alquimia's chemistry engine input file), or `"Values`" [Array(double)] otherwise.
+* [SU] `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires a TIME FUNCTION (see below), where VALUE_NAME is `"Geochemical Condition`" [Array(string)] (if using Alquimia, names of geochemical conditions defined in Alquimia's chemistry engine input file), or `"Values`" [Array(double)] otherwise.
 
 
 

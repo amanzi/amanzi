@@ -115,7 +115,7 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
   transmissibility_ = Teuchos::rcp(new CompositeVector(cvs, true));
 
   // default parameters for Newton correction
-  scalar_rho_ = true;
+  constant_rho_ = true;
   rho_ = 1.0;
   transmissibility_initialized_ = false;
 }

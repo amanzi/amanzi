@@ -2502,6 +2502,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 	  getAdvFluxReg(level+1).setVal(0);
 	}
 	bool do_reflux_this_call = true;
+
 	tracer_advection(u_macG_trac,do_reflux_this_call,use_cached_sat,&Fext);
       }
 
@@ -2537,9 +2538,10 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
         tracer_diffusion (reflux_on_this_call,use_cached_sat,Fext);
       }
       else {
-	// Explicit source advance
-	Fext.mult(dt_subtr,0,ntracers);
-	MultiFab::Add(get_new_data(State_Type),Fext,0,ncomps,ntracers,0);
+
+	// Time-explicit source update
+	Fext.mult(dt_subtr,ncomps,ntracers);
+	MultiFab::Add(get_new_data(State_Type),Fext,ncomps,ncomps,ntracers,0);
       }
 
       bool step_ok_chem = true;
@@ -3362,6 +3364,7 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
 	SrcPtr = &((*F)[C_old_fpi]);
         SRCidx = ncomps; // If passed in, this source term will contain component sources as well
       }
+
       state_bc = getBCArray(State_Type,i,ncomps,ntracers);
 
       // FIXME: Need 3D version of BDS to replace old Godunov integrator
@@ -3371,11 +3374,20 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
         Area.clear(d); Area.set(d, &(area[d][i]));
       }
 
+      // Remove source term from Godunov prediction in order to keep solution strictly positive.
+      // FIXME: This should be done more carefully, e.g., but putting a bound on the strength of the 
+      //        source that will generate issues.
+      FArrayBox TMP(SrcPtr->box(),SrcPtr->nComp());
+      TMP.copy(*SrcPtr);
+      SrcPtr->setVal(0);
+
       Advection::FluxDivergence(C_old_fpi(), C_new_fpi(), Cidx, NGROWHYP,
                                 sat_old[C_old_fpi], sat_new[C_old_fpi], Sidx, sat_old.nGrow(),
                                 U, Uidx,Ung, (*aofs)[i], Aidx, Ang, Flux, FLidx, Flng, 
                                 *SrcPtr, SRCidx, Sng, *SrcPtr, 0, Sng, volume[i], Area, (*rock_phi)[i],
                                 box, dx, dt, state_bc.dataPtr(), ntracers, is_conservative);
+
+      SrcPtr->copy(TMP);
 
       Advection::AdvUpdate(C_old_fpi(),C_new_fpi(),Cidx,NGROWHYP,
                            sat_old[C_old_fpi], sat_new[C_old_fpi], Sidx, sat_old.nGrow(),
@@ -6145,7 +6157,7 @@ PorousMedia::ComputeSourceVolume ()
   source_volume.clear();
   source_volume.resize(source_array.size(), 0);
 
-  if (do_source_term) {
+  if (do_source_term && source_array.size() > 0) {
 
     int  finest_level = parent->finestLevel();
     for (int lev=finest_level; lev>=0;lev--) {
@@ -6257,7 +6269,7 @@ PorousMedia::getForce (MultiFab& force,
   BL_ASSERT(force.boxArray()==grids);
 
   force.setVal(0);
-  if (do_source_term) {
+  if (do_source_term && source_array.size() > 0) {
 
     // Lazily compute multi-level source volumes
     if (source_volume.size() == 0) {
@@ -6315,6 +6327,11 @@ PorousMedia::getForce (MultiFab& force,
 		  tp->apply(tmp[mfi],dx,it,1,time,time+dt);
 		}
 	      }
+	    }
+	    else if (tsource.Type()=="flow_weighted")
+	    {
+	      Array<Real> src_val = tsource(time);
+	      tmp.setVal(src_val[0],it,1,0);
 	    }
 	    else {
 	      BoxLib::Abort(std::string("Tracer source type \""+tsource.Type()+"\" not yet implemented").c_str());

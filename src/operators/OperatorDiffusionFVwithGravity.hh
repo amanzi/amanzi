@@ -67,11 +67,11 @@ class OperatorDiffusionFVwithGravity : public OperatorDiffusionFV {
     g_ = g;
   }
   virtual void SetDensity(double rho) {
-    scalar_rho_ = true;
+    constant_rho_ = true;
     rho_ = rho;
   }
   virtual void SetDensity(const Teuchos::RCP<const CompositeVector>& rho) {
-    scalar_rho_ = false;
+    constant_rho_ = false;
     rho_cv_ = rho;
   }
 
