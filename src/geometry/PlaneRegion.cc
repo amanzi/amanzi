@@ -25,9 +25,11 @@ namespace AmanziGeometry {
 PlaneRegion::PlaneRegion(const std::string name, 
 			 const unsigned int id,
 			 const Point& p, const Point& normal,
+                         const double tolerance,
                          const LifeCycleType lifecycle,
                          const VerboseObject *verbobj)
-  : Region(name,id,p.dim()-1,lifecycle,verbobj), p_(p), n_(normal)
+    : Region(name,id,p.dim()-1,lifecycle,verbobj), p_(p), n_(normal/norm(normal)),
+      tolerance_(tolerance)
 {
 
   if (p_.dim() != n_.dim()) {
@@ -45,9 +47,11 @@ PlaneRegion::PlaneRegion(const std::string name,
 
 PlaneRegion::PlaneRegion(const char *name, const unsigned int id,
 			 const Point& p, const Point& normal,
+                         const double tolerance,
                          const LifeCycleType lifecycle,
                          const VerboseObject *verbobj)
-  : Region(name,id,p.dim()-1,lifecycle,verbobj), p_(p), n_(normal)
+    : Region(name,id,p.dim()-1,lifecycle,verbobj), p_(p), n_(normal/norm(normal)),
+      tolerance_(tolerance)
 {
 
   if (p_.dim() != n_.dim()) {
@@ -64,7 +68,7 @@ PlaneRegion::PlaneRegion(const char *name, const unsigned int id,
 }
 
 PlaneRegion::PlaneRegion(const PlaneRegion& old)
-  : Region(old), p_(old.p_), n_(old.n_)
+    : Region(old), p_(old.p_), n_(old.n_), tolerance_(old.tolerance_)
 {
   // empty
 }
@@ -105,7 +109,7 @@ PlaneRegion::inside(const Point& p) const
     }
   res -= d;
 
-  if (fabs(res) <= 1.0e-12)
+  if (fabs(res) <= tolerance_)
     result = true;
   else
     result = false;
