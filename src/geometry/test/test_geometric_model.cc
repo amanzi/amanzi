@@ -94,10 +94,13 @@ TEST(GEOMETRIC_MODEL)
       CHECK_EQUAL(p.y(),in_xyz[1]);
       if (p.dim() == 3)
 	CHECK_EQUAL(p.z(),in_xyz[2]);
-      CHECK_EQUAL(n.x(),in_nrm[0]);
-      CHECK_EQUAL(n.y(),in_nrm[1]);
+      double len = in_nrm[0]*in_nrm[0]+in_nrm[1]*in_nrm[1];
+      if (p.dim() == 3) len += in_nrm[2]*in_nrm[2];
+      len = sqrt(len);
+      CHECK_EQUAL(n.x(),in_nrm[0]/len);
+      CHECK_EQUAL(n.y(),in_nrm[1]/len);
       if (p.dim() == 3)
-	CHECK_EQUAL(n.z(),in_nrm[2]);
+	CHECK_EQUAL(n.z(),in_nrm[2]/len);
       
     }
     else if (shape == "Region: Box") {
