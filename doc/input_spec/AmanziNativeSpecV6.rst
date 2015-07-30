@@ -30,7 +30,7 @@ at the beginning and end by the following statements:
 .. code-block:: xml
 
   <ParameterList name="Main">
-    various sublists
+    various lists and sublists
   </ParameterList>
 
 The value in the "name" can be anything ("Main" in this example).  
@@ -49,13 +49,13 @@ Array data is specified as a single comma-delimited string bounded by {}'s (e.g.
     <Parameter name="ratio" type="Array(int)" value="{2, 1, 4}"/>
   </ParameterList>
 
-In this example, the sublist "Main" has a parameter named "cfl" that is a "double" and has 
+In this example, the list "Main" has a parameter named "cfl" that is a "double" and has 
 the value of 0.9, and a Array(int) parameter named "ratio" such that ratio[0] = 2, 
 ratio[1]=1, and ratio[2]=4.
 
 
 Syntax of the specification
-===========================
+---------------------------
 
 Input specification for each ParameterList entry consists of two parts.  
 First, a bulleted list defines the usage syntax and available options.  
@@ -69,11 +69,11 @@ Where Amanzi supports a number of parameterized models for quantity `"model`", t
 models will be listed by name, and then will be described in the subsequent section.  
 In the manufactured example below, the specification looks as follows:
 
-* SOIL [sublist] accepts parameters that describes properties of this soil.
+* SOIL [list] accepts parameters that describes properties of this soil.
 
   * `"region`" [string] defines a subdomain of the computational domain.
 
-  * `"model`" [sublist] specifies a model for the soil. Available options are `"van Genuchten`" 
+  * `"model`" [list] specifies a model for the soil. Available options are `"van Genuchten`" 
     and `"Brooks-Corey`".
 
 Here SOIL is defined by a `"region`" and a `"model`".  
@@ -81,7 +81,7 @@ The `"region`" is a string parameter but the `"model`" is given by a sublist wit
 The parameter for `"model`" can be described in the same section or in a separate section
 of this document. For instance, the local description may look like:
 
-* `"model`" [sublist] specifies a model for the soil. Available options are `"van Genuchten`"
+* `"model`" [list] specifies a model for the soil. Available options are `"van Genuchten`"
   and `"Brooks-Corey`".
   The option `"van Genuchten`" requires `"m`" [double].
   The option `"Brooks-Corey`" requires `"lambda`" [double] and `"alpha`" [double].
@@ -112,7 +112,7 @@ Additional conventions:
   These names are usually defined to serve best the organization of the user input data.
 
 * For developers: we are gradually migrating to low-case naming convention for parameters.
-  However, parameters of XML sublists that were simply copies from the mid-level spec 
+  However, parameters of XML lists that were simply copies from the mid-level spec 
   may violate this convention. This will go away together with the mid-level spec.
 
 * Sublist with too many parameters will be described using multiple sections and multiple examples.
@@ -124,9 +124,7 @@ Cycle driver
 ============
 
 New multiprocessor cycle driver which provides more flexibility
-to handle multiphysics process kernels. Either old MPC list or new
-Cycle Driver list has to be defined. To work with new Cycle Driver 
-parameter `"new mpc driver`" has to be set to true.
+to handle multiphysics process kernels. 
 
 * `"components names`" [Array(string)] list of components involved in simulation.
 
@@ -134,14 +132,14 @@ parameter `"new mpc driver`" has to be set to true.
 
   <Parameter name="component names" type="Array(string)" value="{H+, Na+, NO3-, Zn++}"/>
 
-* `"time periods`"  [sublist] defines list of time periods involved in simulation
+* `"time periods`"  [list] defines list of time periods involved in simulation
 
-  * `"TP #`" [sublist]  defines a particular time period. The numbering
+  * `"TP #`" [list]  defines a particular time period. The numbering
     should be sequential  starting with 0.
 
-    * `"PK tree`" [sublist] describes a structure of process kernels 
+    * `"PK tree`" [list] describes a structure of process kernels 
 
-      * `"PKNAME`"  [sublist] name of PK which is used in the
+      * `"PKNAME`"  [list] name of PK which is used in the
         simulation. Name can be arbitrary but the sublist with the same name
         should exist in the list of PKs (see below).
 
@@ -266,10 +264,10 @@ The evaluator has the following fields.
   of evaluators. The available option are `"independent variable`", `"primary variable`",
   `"secondary variable`", `"CUSTOM_EVALUATOR`".
 
-* `"function`" [sublist] defines a piecewise function for calculating the independent variable.
+* `"function`" [list] defines a piecewise function for calculating the independent variable.
   In may contain multiple sublists *DOMAIN* with identical structure.
   
-  * `"DOMAIN`" [sublist] defines region and function for calculating the independent variable.
+  * `"DOMAIN`" [list] defines region and function for calculating the independent variable.
 
     * `"region`" [string] specifies domain on the function, a single region.
 
@@ -279,10 +277,10 @@ The evaluator has the following fields.
     * `"component`" [string] specifies geometric object associated with the mesh function.
       Available options are `"cell`", `"face`", and `"node`".
 
-    * `"function`" [sublist] defines an analytic function for calculation. Its structure
+    * `"function`" [list] defines an analytic function for calculation. Its structure
       is described in the separate section below.
 
-* `"VerboseObject`" [sublist] defines the standard verbosity object
+* `"VerboseObject`" [list] defines the standard verbosity object
 
 .. code-block:: xml
 
@@ -903,7 +901,7 @@ Upwind
 This section discusses interface treatment of cell-centered fields such as 
 relative permeability, density and viscosity.
 
-* `"upwind`" [sublist] collects information required for treatment of
+* `"upwind`" [list] collects information required for treatment of
   relative permeability, density and viscosity on mesh faces.
 
   * `"relative permeability`" [string] defines a method for calculating the *upwinded* 
@@ -921,7 +919,7 @@ relative permeability, density and viscosity.
   * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
     Available options are `"standard`", `"divk`" (default), and `"second-order`" (experimental). 
 
-  * `"upwind NAME parameters`" [sublist] defines parameters for upwind method `"NAME`".
+  * `"upwind NAME parameters`" [list] defines parameters for upwind method `"NAME`".
 
     * `"tolerance`" [double] specifies relative tolerance for almost zero local flux. In such
       a case the flow is assumed to be parallel to a mesh face. Default value is 1e-12.
@@ -951,16 +949,16 @@ Diffusion operators
 Operators sublist describes the PDE structure of the flow, specifies a discretization
 scheme, and selects assembling schemas for matrices and preconditioners.
 
-* `"operators`" [sublist] 
+* `"operators`" [list] 
 
-  * `"diffusion operator`" [sublist] defines parameters for generating and assembling diffusion matrix.
+  * `"diffusion operator`" [list] defines parameters for generating and assembling diffusion matrix.
 
-    * `"matrix`" [sublist] defines parameters for generating and assembling diffusion matrix. See section
+    * `"matrix`" [list] defines parameters for generating and assembling diffusion matrix. See section
       describing operators. 
       When `"Richards problem`" is selected, Flow PK sets up proper value for parameter `"upwind method`" of 
       this sublist.
 
-    * `"preconditioner`" [sublist] defines parameters for generating and assembling diffusion 
+    * `"preconditioner`" [list] defines parameters for generating and assembling diffusion 
       matrix that is used to create preconditioner. 
       This sublist is ignored inside sublist `"Darcy problem`".
       Since update of preconditioner can be lagged, we need two objects called `"matrix`" and `"preconditioner`".
@@ -1187,7 +1185,7 @@ The first part controls preliminary steps in the time integrator.
     a Darcy problem. The former option uses sublist `"picard parameters`".
     *Picard works better if a bounded initial pressure guess is provided.* 
 
-  * `"picard parameters`" [sublist] defines control parameters for the Picard solver.
+  * `"picard parameters`" [list] defines control parameters for the Picard solver.
 
     * `"convergence tolerance`" [double] specifies nonlinear convergence tolerance. 
       Default is 1e-8.
@@ -1288,14 +1286,14 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
   * `"min time step`" [double] is the minimum allowed time step.
 
   * `"solver type`" [string] defines nonlinear solver used on each time step for
-  a nonlinear algebraic system :math:`F(x) = 0`. 
-  The available options `"aa`", `"nka`" and `"Newton`".
+    a nonlinear algebraic system :math:`F(x) = 0`. 
+    The available options `"aa`", `"nka`" and `"Newton`".
 
   * `"nka parameters`" [list] internal parameters for the nonlinear
     solver NKA.
 
   * `"aa parameters`" [list] internal parameters for the nonlinear
-    solver AA(Anderson acceleration).
+    solver AA (Anderson acceleration).
 
 .. code-block:: xml
 
@@ -1330,10 +1328,12 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
            <Parameter name="max nka vectors" type="int" value="10"/>
            <Parameter name="modify correction" type="bool" value="false"/>
            <ParameterList name="VerboseObject">
-           <Parameter name="Verbosity Level" type="string" value="high"/>
+             <Parameter name="Verbosity Level" type="string" value="high"/>
            </ParameterList>
          </ParameterList>
 
+         <!-- alternative solver 
+         <Parameter name="solver type" type="string" value="aa"/>
          <ParameterList name="aa parameters">
            <Parameter name="nonlinear tolerance" type="double" value="1e-5"/>
            <Parameter name="limit iterations" type="int" value="30"/>
@@ -1345,10 +1345,7 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
            <Parameter name="max aa vectors" type="int" value="10"/>
            <Parameter name="modify correction" type="bool" value="false"/>
            <Parameter name="relaxation parameter" type="double" value="0.75"/>
-           <ParameterList name="VerboseObject">
-           <Parameter name="Verbosity Level" type="string" value="high"/>
-           </ParameterList>
-         </ParameterList>
+         </ParameterList-->
 
        </ParameterList>
      </ParameterList>
@@ -1504,7 +1501,7 @@ and temporal accuracy, and verbosity:
 * `"temporal discretization order`" [int] defines accuracy of temporal discretization.
   It allows values 1 or 2. Default value is 1.
 
-* `"reconstruction`" [sublist] collects reconstruction parameters. The available options are
+* `"reconstruction`" [list] collects reconstruction parameters. The available options are
   describe in the separate section below.
 
 * `"solver`" [string] Specifies the dispersion/diffusion solver.
@@ -1555,7 +1552,7 @@ The diffusivity is defined independently for each solute.
   * `"region`" [Array(string)] Defines geometric regions for material SOIL.
   * `"model`" [string] Defines dispersivity model, choose exactly one of the following: `"scalar`", `"Bear`",
     `"Burnett-Frind`", or `"Lichtner-Kelkar-Robinson`".
-  * `"parameters for MODEL`" [sublist] where `"MODEL`" is the model name.
+  * `"parameters for MODEL`" [list] where `"MODEL`" is the model name.
     For model `"scalar`", the following options must be specified:
 
       * `"alpha`" [double] defines dispersion in all directions. 
@@ -2057,7 +2054,7 @@ in a variety of regimes, e.g. with or without gas phase.
 * `"vapor diffusion`" [bool] specifies presence of a gas phase.
   The default value is `"true`".
 
-* `"VerboseObject`" [sublist] is the standard verbosity object.
+* `"VerboseObject`" [list] is the standard verbosity object.
 
 .. code-block:: xml
 
@@ -2100,7 +2097,7 @@ The structure of the thermal conductivity list resembles that of a field
 evaluator list in state. 
 The two-phase model accepts the following parameters.
 
-* `"thermal conductivity parameters`" [sublist] defines a model and its parameters.
+* `"thermal conductivity parameters`" [list] defines a model and its parameters.
 
 * `"thermal conductivity type`" [string] is the name of a conductivity model in the
   list of registered models. Available two-phase models are `"two-phase Peters-Lidard`",
@@ -2163,7 +2160,7 @@ Operators
 This section contains sublist for diffusion and advection operators.
 It also has one global parameters.
 
-* `"operators`" [sublist] 
+* `"operators`" [list] 
   
   * `"include enthalpy in preconditioner`" [bool] allows us to study impact (usually positive) 
     of including enthalpy term in the preconditioner. Default value is *true*.
@@ -2175,14 +2172,14 @@ Diffusion operator
 Operators sublist describes the PDE structure of the flow, specifies a discretization
 scheme, and selects assembling schemas for matrices and preconditioners.
 
-* `"diffusion operator`" [sublist] defines parameters for generating and assembling diffusion matrix.
+* `"diffusion operator`" [list] defines parameters for generating and assembling diffusion matrix.
 
-  * `"matrix`" [sublist] defines parameters for generating and assembling diffusion matrix. See section
+  * `"matrix`" [list] defines parameters for generating and assembling diffusion matrix. See section
     describing operators. 
     When `"Richards problem`" is selected, Flow PK sets up proper value for parameter `"upwind method`" of 
     this sublist.
 
-  * `"preconditioner`" [sublist] defines parameters for generating and assembling diffusion 
+  * `"preconditioner`" [list] defines parameters for generating and assembling diffusion 
     matrix that is used to create preconditioner. 
     This sublist is ignored inside sublist `"Darcy problem`".
     Since update of preconditioner can be lagged, we need two objects called `"matrix`" and `"preconditioner`".
@@ -2347,7 +2344,7 @@ The list includes reconstruction and limiting algorithms.
 Diffusion operator
 ..................
 
-* `"OPERATOR_NAME`" [sublist] a PK specific name for the diffusion operator.
+* `"OPERATOR_NAME`" [list] a PK specific name for the diffusion operator.
 
   * `"discretization primary`" [string] specifies an advanced discretization method that
     has useful properties under some a priori conditions on the mesh and/or permeability tensor.
@@ -2388,7 +2385,7 @@ Diffusion operator
     that must be added to the matrix. These terms represent Jacobian and are needed 
     for the preconditioner. Available options are `"true jacobian`" and `"approximate jacobian`".
 
-  * `"consistent faces`" [sublist] may contain a `"preconditioner`" and
+  * `"consistent faces`" [list] may contain a `"preconditioner`" and
     `"linear operator`" list (see sections Preconditioners_ and LinearSolvers_
     respectively).  If these lists are provided, and the `"discretization
     primary`" is of type `"mfd: *`", then the diffusion method
@@ -2431,7 +2428,7 @@ Advection operator
 
 This section is under construction.
 
-* `"OPERATOR_NAME`" [sublist] a PK specific name for the advection operator.
+* `"OPERATOR_NAME`" [list] a PK specific name for the advection operator.
 
   * [WIP] `"discretization primary`" defines a discretization method. The only available option is `"upwind`".
 
@@ -2453,7 +2450,7 @@ The reconstruction can be either unconstrained or limited.
 Amanzi supports a variety of state-of-the-art reconstruction and limiting algorithms 
 and their extensions for various PKs.
 
-* `"reconstruction`" [sublist] describes parameters used by reconstruction algorithms.
+* `"reconstruction`" [list] describes parameters used by reconstruction algorithms.
 
  * [WIP] `"method`" [string] specifies a reconstruction method. Available option is
    `"cell-based`" (default).
@@ -2809,7 +2806,7 @@ This list contains sublists for various linear solvers such as PCG, GMRES, and N
 * `"iterative method`" [string] defines a Krylov-based method. The available options
   include `"pcg`" and `"gmres`".
 
-* `"xxx parameters`" [sublist] provides parameters for the iterative method specified 
+* `"xxx parameters`" [list] provides parameters for the iterative method specified 
   by variable `"iterative method`".
  
 .. code-block:: xml
@@ -2911,7 +2908,8 @@ Internal parameters for PCG include
 Newton-Krylov acceleration (NKA)
 ................................
 
-This is a variation of the GMRES solver. Internal parameters for NKA include
+This is a variation of the GMRES solver for nonlinear problems. 
+Internal parameters for NKA include
 
 * `"error tolerance`" [double] is used in the convergence test. The default value is 1e-6.
 
@@ -3015,7 +3013,7 @@ Newton-Krylov acceleration (NKA)
   the local space. If a new vector does not satisfy this requirement, the space is modified. 
   Default is 0.05.
 
-* `"VerboseObject`" [sublist] defines the standard verbosity object. Default is the global verbosity.
+* `"VerboseObject`" [list] defines the standard verbosity object. Default is the global verbosity.
 
 .. code-block:: xml
 
@@ -3040,6 +3038,65 @@ Newton-Krylov acceleration (NKA)
        <Parameter name="Verbosity Level" type="string" value="high"/>
      </ParameterList>
    </ParameterList>
+
+
+Anderson acceleration (AA)
+..........................
+
+This is a variation of the GMRES solver for nonlinear problems. 
+Internal parameters for AA include
+
+* `"nonlinear tolerance`" [double] defines the required error tolerance. 
+  The error is calculated by a PK. Default is 1e-6. 
+
+* `"limit iterations`" [int] defines the maximum allowed number of iterations.
+  Default is 20.
+
+* `"diverged tolerance`" [double] defines the error level indicating divergence 
+  of the solver. The error is calculated by a PK. Default is 1e+10.
+
+* `"diverged l2 tolerance`" [double] defines another way to identify divergence
+  of the solver. If the relative L2 norm of the solution increment is above this
+  value, the solver is terminated. Default is 1e+10.
+
+* `"diverged pc tolerance`" [double] defines another way to identify divergence
+  of the solver. If the relative maximum norm of the solution increment (with respect
+  to the initial increment) is above this value, the solver is terminated.
+  Default is 1e+10.
+
+* `"max du growth factor`" [double] allows the solver to identify divergence 
+  pattern on earlier iterations. If the maximum norm of the solution increment
+  changes drastically on two consecutive iterations, the solver is terminated.
+  Default is 1e+5.
+
+* `"max divergent iterations`" [int] defines another way to identify divergence
+  pattern on earlier iterations. If the maximum norm of the solution increment grows 
+  on too many consecutive iterations, the solver is terminated. Default is 3.
+
+* `"max aa vectors`" [int] defines the maximum number of consecutive vectors used for 
+  a local space. Default is 10.
+
+* `"modify correction`" [bool] allows a PK to modify the solution increment.
+  One example is a physics-based clipping of extreme solution values. Default is *false*.
+
+* `"relaxation parameter`" [double] damping factor for increment. Default is 1.
+
+.. code-block:: xml
+
+  <ParameterList name="AA">  <!-- parent list -->
+    <ParameterList name="aa parameters">
+      <Parameter name="nonlinear tolerance" type="double" value="1e-5"/>
+      <Parameter name="limit iterations" type="int" value="30"/>
+      <Parameter name="diverged tolerance" type="double" value="1e+10"/>
+      <Parameter name="diverged l2 tolerance" type="double" value="1e+10"/>
+      <Parameter name="diverged pc tolerance" type="double" value="1e+10"/>
+      <Parameter name="max du growth factor" type="double" value="1e+5"/>
+      <Parameter name="max divergent iterations" type="int" value="3"/>
+      <Parameter name="max aa vectors" type="int" value="10"/>
+      <Parameter name="modify correction" type="bool" value="false"/>
+      <Parameter name="relaxation parameter" type="double" value="0.75"/>
+    </ParameterList>
+  </ParameterList>
 
 
 Newton
@@ -3103,9 +3160,9 @@ We describe parameters of the second sublist only.
 
 * `"typical solution value`" [double] Default is 1.
 
-* `"nonlinear solver`" [sublist] specifies the base nonlinear solvers.
+* `"nonlinear solver`" [list] specifies the base nonlinear solvers.
 
-* `"linear operator`" [sublist] specifies the linear solver for inverting 
+* `"linear operator`" [list] specifies the linear solver for inverting 
   the approximate Jacobian.
 
 * `"finite difference epsilon`" [double] defines the base finite difference epsilon.
@@ -3152,7 +3209,7 @@ preconditioner, and identity preconditioner.
 
 * `"type`" [string] defines preconditioner name.
 
-* `"xxx parameters`" [sublist] provides parameters for the preconditioner specified 
+* `"xxx parameters`" [list] provides parameters for the preconditioner specified 
   by variable `"type`".
  
 .. code-block:: xml
@@ -3428,7 +3485,7 @@ using the following labels: `"XLOBC`", `"XHIBC`", `"YLOBC`", `"YHIBC`", `"ZLOBC`
 
 User-defined regions are constructed using the following syntax
 
- * [U][S] "Regions" [list] can accept a number of lists for named regions (REGION)
+ * "Regions" [list] can accept a number of lists for named regions (REGION)
 
    * Shape [list] Geometric model primitive, choose exactly one of the following [see table below]: `"Region: Point`", `"Region: Box`", `"Region: Plane`", `"Region: Labeled Set`", `"Region: Layer`", `"Region: Surface`"
 
@@ -3900,7 +3957,7 @@ This list contains data collected by the input parser of a higher-level spec.
   for analysis. The simulator will print number of faces(or cells) and the total area 
   (or volume) of these regions if verbosity level is equal to or above *high*.
 
-* `"VerboseObject`" [sublist] is the standard verbosity list.
+* `"VerboseObject`" [list] is the standard verbosity list.
 
 .. code-block:: xml
 
@@ -3948,7 +4005,7 @@ For the uniform rectilinear grids, the remaining records are as follows.  Severa
 
 7. **DATACOL**:  An integer (N) giving the number of "columns" in the data.  This is the number of values per grid cell/point.  N=1 for a scalar valued function; N>1 for a N-vector valued function.
 
-  * [U] only a single column is currently supported.
+  * only a single column is currently supported.
 
 8. **DATAVAL**: The values of the function on the cells/points of the grid.  The values should appear in Fortran array order were the values stored in the Fortran array A(N,NX,NY,NZ) (A(N,0:NX,0:NY,0:NZ) for point-based data).  That is, the column index varies fastest, x grid index next fastest, etc.
     
