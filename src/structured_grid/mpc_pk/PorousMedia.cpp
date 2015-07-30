@@ -7355,17 +7355,22 @@ PorousMedia::derive_Volumetric_Water_Content(Real      time,
     int ngrow = mf.nGrow();
     BL_ASSERT(mf.nGrow()<=rock_phi->nGrow());
 
-    int ncomp = 1; // Just water
-    PMFillPatchIterator fpi(*this,mf,ngrow,time,State_Type,scomp,ncomp);
-    for ( ; fpi.isValid(); ++fpi) {
-      mf[fpi].copy(fpi(),0,dcomp,ncomp);
-      mf[fpi].mult((*rock_phi)[fpi],0,dcomp,ncomp);
-      mf[fpi].mult(1/density[scomp],dcomp,ncomp);
+    MultiFab TMP;
+    if (dcomp != 0) { // FIXME: b/c func below assumes dcomp == 0
+      TMP.define(mf.boxArray(), 1, mf.nGrow(), Fab_allocate);
+    }
+    MultiFab& MF = (dcomp == 0 ? mf : TMP);
+    derive_Aqueous_Saturation(time,MF,0);
+    if (dcomp != 0) {
+      MultiFab::Copy(mf,TMP,0,dcomp,1,mf.nGrow());
+    }
+    for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
+      mf[mfi].mult((*rock_phi)[mfi],0,dcomp,1);
     }
 
     if (ntrac >= 0) {
       BL_ASSERT(ntrac < ntracers);
-      int ncompt = 1;
+      int ncompt = 1; // FIXME: Must be, since only 1 comp loaded above
       int scompt = ncomps + ntrac;
       PMFillPatchIterator fpi(*this,mf,ngrow,time,State_Type,scompt,ncompt);
       for ( ; fpi.isValid(); ++fpi) {
@@ -7395,17 +7400,20 @@ PorousMedia::derive_Aqueous_Saturation(Real      time,
   }
 
   if (naq==1) {
-    const BoxArray& BA = mf.boxArray();
-    int ngrow = mf.nGrow();
-    BL_ASSERT(mf.nGrow()<=1); // state only has this many
-    int ncomp = 1; // Just aqueous
-    PMFillPatchIterator fpi(*this,mf,ngrow,time,State_Type,scomp,ncomp);
-    for ( ; fpi.isValid(); ++fpi)
-    {
-      mf[fpi].copy(fpi(),0,dcomp,ncomp);
-      mf[fpi].mult(1/density[scomp],dcomp,ncomp);
+    MultiFab TMP;
+    if (dcomp != 0) { // FIXME: b/c func below assumes dcomp == 0
+      TMP.define(mf.boxArray(), 1, mf.nGrow(), Fab_allocate);
     }
-    BL_ASSERT(scomp>=0 && scomp<ncomps);        }            
+    MultiFab& MF = (dcomp == 0 ? mf : TMP);
+    get_fillpatched_rhosat(time,MF,MF.nGrow());
+    if (dcomp != 0) {
+      MultiFab::Copy(mf,TMP,0,dcomp,1,mf.nGrow());
+    }
+
+    for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
+      mf[mfi].mult(1/density[scomp],0,1);
+    }
+  }
   else {
     BoxLib::Abort("PorousMedia:: no support for more than one Aqueous component");
   }
@@ -7516,8 +7524,8 @@ PorousMedia::derive_Intrinsic_Permeability(Real      time,
   if (!ret) BoxLib::Abort("Failed to build permeability");
 
   MultiFab::Copy(mf,kappatmp,dir,dcomp,1,0);
-  // Return values in mks
 
+  // Return values in mks
   mf.mult(1/BL_ONEATM,dcomp,1,0);
 }
 
