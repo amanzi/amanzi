@@ -1327,6 +1327,8 @@ The *base_filename* element contains the text component of the how the visualiza
 
 The presence of the ''vis'' element means that visualization files will be written out after cycle 0 and the final cycle of the simulation.  The optional elements *time_macros* or *cycle_macros* indicate additional points during the simulation at which visualization files are to be written out.  Both elements allow one or more of the appropriate type of macro to be listed.  These macros will be determine the appropriate times or cycles to write out visualization files.  See the `Definitions`_ section for defining individual macros.
 
+The ``vis`` element also includes an optional subelement ``write_regions``.  This was primarily implemented for debugging purposes but is also useful for visualizing fields only on specific regions.  The subelement accepts a comma separated list of region names.  These regions are then included in the visualization file as fields.
+
 (*EIB NOTE* - there should be a comment here about how the output is controlled, i.e. for each PK where do you go to turn on and off fields.  This will probably get filled in as the other sections fill out.)
 
 Example:
@@ -1337,6 +1339,7 @@ Example:
      <base_filename>plot</base_filename>
      <num_digits>5</num_digits>
      <time_macros>Macro 1</time_macros>
+     <write_regions>region1, region2</write_regions>
   </vis>
 
 
