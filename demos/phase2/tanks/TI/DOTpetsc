@@ -26,10 +26,8 @@
 #-ksp_monitor_true_residual
 -ksp_norm_type PRECONDITIONED 
 
--ksp_rtol 1.e-16
--ksp_atol 1.e-16
--ksp_rtol 1.e-20
--ksp_atol 1.e-20
+-ksp_rtol 1.e-12
+-ksp_atol 1.e-12
 -ksp_divtol 1000
 #-ksp_diagonal_scale
 #-ksp_monitor_true_residual
