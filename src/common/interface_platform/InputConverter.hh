@@ -32,32 +32,56 @@
 namespace Amanzi {
 namespace AmanziInput {
 
-typedef std::pair<std::string, Teuchos::RCP<Teuchos::ParameterList> > PK;
-typedef std::pair<std::string, std::vector<std::string> > Solutes;
+/*
+  A simple wrapper that delegates transcode to Xercecs and deallocates 
+  automatically memory.
+*/
+/*
+class XChar {
+ public:
+  XChar();
+  XMLCh* transcode(const char* name) {
+    str_ = xercesc::XMLString::transcode(name);
+    return str_;
+  } 
+  ~XChar() { xercesc::XMLString::release(&str_); }
+
+ private:
+  XMLCh* str_;
+};
+*/
 
 class InputConverter {
  public:
-  InputConverter() : vo_(NULL) {};
-  ~InputConverter() { if (vo_ != NULL) delete vo_; }
+  InputConverter() : vo_(NULL) {
+    xercesc::XMLPlatformUtils::Initialize();
+  }
 
-  // main members
-  Teuchos::ParameterList Translate(const std::string& xmlfilename);
+  ~InputConverter() {
+    if (vo_ != NULL) delete vo_;
+    xercesc::XMLPlatformUtils::Terminate();
+  }
 
- private:
-  Teuchos::ParameterList TranslateMesh_(xercesc::DOMDocument* doc);
+  // main member: creates xerces document using the file name
+  void Init(const std::string& xmlfilename);
 
-  Teuchos::ParameterList GetVerbosity_(xercesc::DOMDocument* doc);
+ protected:
+  // verbosity XML
+  Teuchos::ParameterList GetVerbosity_();
 
+  // data streaming/trimming/converting
   Teuchos::Array<double> MakeCoordinates_(char* char_array);
   std::string TrimString_(char* tmp);
 
+  // error messages
   void ThrowErrorIllformed_(std::string section, std::string element_type, std::string ill_formed);
-
- private:
-  int dim_;
-  std::vector<Solutes> solutes_;
+  void ThrowErrorIllformed_(std::string section, std::string element_type, std::string ill_formed, std::string options);
+  void ThrowErrorMissattr_(std::string section, std::string att_elem_type, std::string missing, std::string elem_name);
 
  protected:
+  xercesc::DOMDocument* doc_;
+
+  Teuchos::ParameterList verb_list_;
   VerboseObject* vo_;
 };
 
