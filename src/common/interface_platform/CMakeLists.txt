@@ -42,6 +42,7 @@ add_amanzi_library(interface
                            InputParserIS_State.cc InputParserIS_MPC.cc
                            InputParserIS_Flow.cc InputParserIS_Transport.cc InputParserIS_Chemistry.cc
                            InputParserIS_Solvers.cc InputParserIS_Mesh.cc InputParserIS_Output.cc
+                           InputConverter.cc
 			   InputTranslator.cc
                       HEADERS ${interface_inc_files}
                       LINK_LIBS error_handling geometry ${Teuchos_LIBRARIES})
