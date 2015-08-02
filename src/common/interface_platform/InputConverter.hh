@@ -32,25 +32,6 @@
 namespace Amanzi {
 namespace AmanziInput {
 
-/*
-  A simple wrapper that delegates transcode to Xercecs and deallocates 
-  automatically memory.
-*/
-/*
-class XChar {
- public:
-  XChar();
-  XMLCh* transcode(const char* name) {
-    str_ = xercesc::XMLString::transcode(name);
-    return str_;
-  } 
-  ~XChar() { xercesc::XMLString::release(&str_); }
-
- private:
-  XMLCh* str_;
-};
-*/
-
 class InputConverter {
  public:
   InputConverter() : vo_(NULL) {
@@ -66,8 +47,21 @@ class InputConverter {
   void Init(const std::string& xmlfilename);
 
  protected:
+  // DOM useful tool
+  // -- generalization of getElementsByTagNames(): returns node
+  //    tag1->tag2 or tag1->tag2-tag3 where all tags are unique 
+  //    leaves of the tree.
+  xercesc::DOMNode* getUniqueElementsByTagNames_(
+      const std::string& tag1, const std::string& tag2, bool& flag);
+  xercesc::DOMNode* getUniqueElementsByTagNames_(
+      const std::string& tag1, const std::string& tag2, const std::string& tag3, bool& flag);
+
   // verbosity XML
   Teuchos::ParameterList GetVerbosity_();
+
+  // times
+  double GetTimeValue_(std::string time_value);
+  double ConvertTimeValue_(char* time_value);
 
   // data streaming/trimming/converting
   Teuchos::Array<double> MakeCoordinates_(char* char_array);

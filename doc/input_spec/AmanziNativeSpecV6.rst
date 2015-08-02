@@ -3764,9 +3764,9 @@ The following Observation Data functionals are currently supported.  All of them
        <Parameter name="Observation Output Filename" type="string" value="obs_output.out"/>
        <Parameter name="precision" type="int" value="10"/>
        <ParameterList name="some observation name">
-         <Parameter name="Region" type="string" value="some point region name"/>
-         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-         <Parameter name="Variable" type="string" value="Volumetric water content"/>
+         <Parameter name="region" type="string" value="some point region name"/>
+         <Parameter name="functional" type="string" value="Observation Data: Point"/>
+         <Parameter name="variable" type="string" value="Volumetric water content"/>
          <Parameter name="times" type="Array(double)" value="{100000.0, 200000.0}"/>
 
          <Parameter name="cycles" type="Array(int)" value="{100000, 200000, 400000, 500000}"/>

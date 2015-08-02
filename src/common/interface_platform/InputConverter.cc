@@ -92,6 +92,86 @@ void InputConverter::Init(const std::string& xmlfilename)
 
 
 /* ******************************************************************
+* Returns node tag1->tag2 where both tag1 and tag2 are unique leaves
+* of the tree.
+****************************************************************** */
+DOMNode* InputConverter::getUniqueElementsByTagNames_(
+    const std::string& tag1, const std::string& tag2, bool& flag)
+{
+  flag = false;
+  DOMNode* node;
+  DOMNodeList* node_list = doc_->getElementsByTagName(XMLString::transcode(tag1.c_str()));
+  if (node_list->getLength() != 1) return node;
+
+  int ntag2(0);
+  DOMNodeList* children = node_list->item(0)->getChildNodes();
+
+  for (int i = 0; i < children->getLength(); i++) {
+    DOMNode* inode = children->item(i);
+    if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
+      char* tagname = XMLString::transcode(inode->getNodeName());   
+      if (strcmp(tagname, tag2.c_str()) == 0) {
+        node = inode;
+        ntag2++;
+      }
+      XMLString::release(&tagname);
+    }
+  }
+
+  if (ntag2 == 1) flag = true;
+  return node;
+}
+
+
+/* ******************************************************************
+* Returns node tag1->tag2->tag3 where tag1, tag2 iand tag3 are unique
+* leaves of the tree.
+****************************************************************** */
+DOMNode* InputConverter::getUniqueElementsByTagNames_(
+    const std::string& tag1, const std::string& tag2, const std::string& tag3, bool& flag)
+{
+  int ntag2(0), ntag3(0);
+  DOMNode* node;
+
+  flag = false;
+  DOMNodeList* node_list = doc_->getElementsByTagName(XMLString::transcode(tag1.c_str()));
+  if (node_list->getLength() != 1) return node;
+
+  // first leaf
+  DOMNodeList* children = node_list->item(0)->getChildNodes();
+  for (int i = 0; i < children->getLength(); i++) {
+    DOMNode* inode = children->item(i);
+    if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
+      char* tagname = XMLString::transcode(inode->getNodeName());   
+      if (strcmp(tagname, tag2.c_str()) == 0) {
+        node = inode;
+        ntag2++;
+      }
+      XMLString::release(&tagname);
+    }
+  }
+  if (ntag2 != 1) return node;
+
+  // second leaf
+  children = node->getChildNodes();
+  for (int i = 0; i < children->getLength(); i++) {
+    DOMNode* inode = children->item(i);
+    if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
+      char* tagname = XMLString::transcode(inode->getNodeName());   
+      if (strcmp(tagname, tag3.c_str()) == 0) {
+        node = inode;
+        ntag3++;
+      }
+      XMLString::release(&tagname);
+    }
+  }
+  if (ntag3 == 1) flag = true;
+
+  return node;
+}
+
+
+/* ******************************************************************
 * Extract generic verbosity object for all sublists.
 ****************************************************************** */
 Teuchos::ParameterList InputConverter::GetVerbosity_()
@@ -154,6 +234,46 @@ Teuchos::Array<double> InputConverter::MakeCoordinates_(char* char_array)
   }
 
   return coords;
+}
+
+
+/* ******************************************************************
+* Empty
+****************************************************************** */
+double InputConverter::GetTimeValue_(std::string time_value)
+{
+  double time;
+  char* tmp = strcpy(new char[time_value.size() + 1], time_value.c_str());
+  time = ConvertTimeValue_(tmp);
+  delete[] tmp;
+
+  return time;
+}
+
+
+/* ******************************************************************
+* Get default time unit from units, convert plain time values if not seconds.
+****************************************************************** */
+double InputConverter::ConvertTimeValue_(char* time_value)
+{
+  double time;
+  char* char_array;
+  
+  char_array = strtok(time_value, ";, ");
+  time = atof(char_array);
+  char_array = strtok(NULL, ";,");
+
+  if (char_array != NULL) {
+    if (strcmp(char_array, "y") == 0) { 
+      time *= 365.25 * 24.0 * 60.0 * 60.0;
+    } else if (strcmp(char_array, "d") == 0) {
+      time *= 24.0*60.0*60.0;
+    } else if (strcmp(char_array, "h") == 0) {
+      time *= 60.0*60.0;
+    }
+  }
+  
+  return time;
 }
 
 

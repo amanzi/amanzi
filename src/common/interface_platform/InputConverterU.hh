@@ -12,15 +12,6 @@
 #ifndef AMANZI_INPUT_CONVERTER_UNSTRUCTURED_HH_
 #define AMANZI_INPUT_CONVERTER_UNSTRUCTURED_HH_
 
-#include "boost/lambda/lambda.hpp"
-#include "boost/bind.hpp"
-#include "boost/lexical_cast.hpp"
-
-#define  BOOST_FILESYTEM_NO_DEPRECATED
-#include "boost/filesystem/operations.hpp"
-#include "boost/filesystem/path.hpp"
-#include "boost/format.hpp"
-
 // TPLs
 #include "xercesc/dom/DOM.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -38,7 +29,7 @@ typedef std::map<std::string, std::vector<std::string> > Tree;
 
 class InputConverterU : public InputConverter {
  public:
-  InputConverterU() {};
+  InputConverterU() : flow_single_phase(false) {};
   ~InputConverterU() {};
 
   // main members
@@ -47,10 +38,23 @@ class InputConverterU : public InputConverter {
  private:
   Teuchos::ParameterList TranslateMesh_();
   Teuchos::ParameterList TranslateRegions_();
+  Teuchos::ParameterList TranslateOutput_();
+  Teuchos::ParameterList TranslatePreconditioners_();
+  Teuchos::ParameterList TranslateTrilinosML_();
+  Teuchos::ParameterList TranslateHypreAMG_();
+  Teuchos::ParameterList TranslateBILU_();
+  Teuchos::ParameterList TranslateSolvers_();
+
+  Teuchos::Array<std::string> MakeRegionsList_(char* char_array);
+
+  void ProcessMacros_(const std::string& prefix, char* text_content,
+                      Teuchos::ParameterList& mPL, Teuchos::ParameterList& outPL);
 
  private:
   int dim_;
   Tree tree_;
+
+  bool flow_single_phase;
 };
 
 }  // namespace AmanziInput
