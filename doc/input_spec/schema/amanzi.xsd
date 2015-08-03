@@ -353,6 +353,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:complexContent>
 		<xs:extension base="typedef_plane">
 			<xs:attribute name="name" type="xs:string"/>
+			<xs:attribute name="tolerance" type="typedef_exponential"/> <!-- optional -->
 		</xs:extension>
 	</xs:complexContent>
 </xs:complexType>
@@ -1021,6 +1022,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
   </xs:sequence>
   <xs:attribute name="name" type="xs:string"/>
   <xs:attribute name="num_points" type="xs:integer"/> <!-- optional -->
+  <xs:attribute name="tolerance" type="typedef_exponential"/> <!-- optional -->
 </xs:complexType>
   
 <xs:complexType name="typedef_logical">

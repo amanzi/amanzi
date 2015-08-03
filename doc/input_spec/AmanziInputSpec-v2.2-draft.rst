@@ -736,7 +736,9 @@ A plane region is defined by a point on the plane and the normal direction of th
 
 .. code-block:: xml
 
-  <plane name="plane name" location="x,y,z" normal="dx,dy,dz" /> 
+  <plane name="plane name" location="x,y,z" normal="dx,dy,dz" tolerance="optional exp"/> 
+
+The attribute ``tolerance`` is optional.  This value prescribes a tolerance for determining the cell face centroids that lie on the defined plane.
 
 Region
 ------
@@ -759,19 +761,20 @@ A region is define as describe above.  A file is define as follows.
 
 Currently color functions and labeled sets can only be read from Exodus II files.  This will likely be the same file specified in the `"mesh`" element.  PLEASE NOTE the values listed within [] for attributes above are CASE SENSITIVE.  For many attributes within the Amanzi Input Schema the value is tested against a limited set of specific strings.  Therefore an user generated input file may generate errors due to a mismatch in cases.  Note that all specified names within this schema use lower case.
 
-Polygon
--------
+Polygonal_Surface
+-----------------
 
-A polygon region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the unstructured algorithm.
+A polygonal_surface region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the unstructured algorithm.
 
 .. code-block:: xml
 
-    <polygon name="polygon name" num_points="3">
+    <polygonal_surface name="polygon name" num_points="3" tolerance="optional exp">
       <point> (X, Y, Z) </point>
       <point> (X, Y, Z) </point>
       <point> (X, Y, Z) </point>
-    </polygon>
+    </polygonal_surface
 
+The attribute ``tolerance`` is optional.  This value prescribes a tolerance for determining the cell face centroids that lie on the defined plane.
 
 Logical
 -------
