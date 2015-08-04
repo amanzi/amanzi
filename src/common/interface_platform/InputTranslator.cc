@@ -3755,7 +3755,7 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
         }
         if (regElem->hasAttribute(XMLString::transcode("tolerance"))) {
           textContent2 = XMLString::transcode(regElem->getAttribute(XMLString::transcode("tolerance")));
-          list.sublist(regName).sublist("Region: Polygon").set<int>("Tolerance",get_double_constant(textContent2,*def_list));
+          list.sublist(regName).sublist("Region: Polygon").sublist("Expert Parameters").set<double>("Tolerance",get_double_constant(textContent2,*def_list));
           XMLString::release(&textContent2);
         }
         // get verticies (add count them)
