@@ -85,7 +85,7 @@ MPCCoupledWater::initialize(const Teuchos::Ptr<State>& S) {
   MPC<PKPhysicalBDFBase>::initialize(S);
 
   // ensure continuity of ICs... surface takes precedence.
-  CopySurfaceToSubsurface(*S->GetFieldData("surface_pressure", sub_pks_[1]->name()),
+  CopySurfaceToSubsurface(*S->GetFieldData("surface-pressure", sub_pks_[1]->name()),
                           S->GetFieldData("pressure", sub_pks_[0]->name()).ptr());
 
   // Initialize my timestepper.
@@ -198,7 +198,7 @@ MPCCoupledWater::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
 
   // Merge surface cells with subsurface faces
   if (modified) {
-    S_next_->GetFieldEvaluator("surface_relative_permeability")->HasFieldChanged(S_next_.ptr(),name_);
+    S_next_->GetFieldEvaluator("surface-relative_permeability")->HasFieldChanged(S_next_.ptr(),name_);
     Teuchos::RCP<const CompositeVector> h_prev = S_inter_->GetFieldData("ponded_depth");
     MergeSubsurfaceAndSurfacePressure(*h_prev, u->SubVector(0)->Data().ptr(),
             u->SubVector(1)->Data().ptr());
@@ -325,7 +325,7 @@ MPCCoupledWater::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
 
 //   // new ponded depth
 //   Teuchos::RCP<TreeVector> tv_p = Teuchos::rcp(new TreeVector());
-//   Teuchos::RCP<CompositeVector> cv_p = S_next_->GetFieldData("surface_pressure", sub_pks_[1]->name());
+//   Teuchos::RCP<CompositeVector> cv_p = S_next_->GetFieldData("surface-pressure", sub_pks_[1]->name());
 //   cv_p->ViewComponent("cell",false)->Update(-1., surf_Pp_c, 1.);
 //   tv_p->SetData(cv_p);
 
@@ -358,7 +358,7 @@ MPCCoupledWater::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
 //   }
 
 //   // revert solution so we don't break things
-//   S_next_->GetFieldData("surface_pressure",sub_pks_[1]->name())
+//   S_next_->GetFieldData("surface-pressure",sub_pks_[1]->name())
 //       ->ViewComponent("cell",false)->Update(1., surf_Pp_c, 1.);
 //   sub_pks_[1]->ChangedSolution();
 // }

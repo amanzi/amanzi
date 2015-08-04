@@ -37,19 +37,16 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> rel_perm =
     S->GetFieldData(uw_coef_key_);
   matrix_diff_->Setup(rel_perm, Teuchos::null);
-
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // derive fluxes
   Teuchos::RCP<const CompositeVector> pres =
       S->GetFieldData(key_, name_);
-  //  if (update_flux_ == UPDATE_FLUX_ITERATION) {
-    // update the flux
-    Teuchos::RCP<CompositeVector> flux =
-        S->GetFieldData(flux_key_, name_);
-    matrix_diff_->UpdateFlux(*pres, *flux);
-    //  }
+  Teuchos::RCP<CompositeVector> flux =
+      S->GetFieldData(flux_key_, name_);
+  matrix_diff_->UpdateFlux(*pres, *flux);
 
+  // apply boundary conditions
   matrix_diff_->ApplyBCs(true, true);
 
   // calculate the residual

@@ -23,24 +23,26 @@ namespace Energy {
 
 SurfaceIceEnergyEvaluator::SurfaceIceEnergyEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
-  my_key_ = plist_.get<std::string>("energy key", "surface_energy");
+  my_key_ = plist_.get<std::string>("energy key", "surface-energy");
 
+  std::string domain = getDomain(my_key_);
+  
   // densities
   dens_key_ = plist.get<std::string>("molar density liquid key",
-          "surface_molar_density_liquid");
+          getKey(domain, "molar_density_liquid"));
   dependencies_.insert(dens_key_);
 
   dens_ice_key_ = plist.get<std::string>("molar density ice key",
-          "surface_molar_density_ice");
+          getKey(domain, "molar_density_ice"));
   dependencies_.insert(dens_ice_key_);
 
   // internal energies
   ie_key_ = plist.get<std::string>("internal energy liquid key",
-          "surface_internal_energy_liquid");
+          getKey(domain, "internal_energy_liquid"));
   dependencies_.insert(ie_key_);
 
   ie_ice_key_ = plist.get<std::string>("internal energy ice key",
-          "surface_internal_energy_ice");
+          getKey(domain, "internal_energy_ice"));
   dependencies_.insert(ie_ice_key_);
 
   // unfrozen fraction
@@ -51,7 +53,9 @@ SurfaceIceEnergyEvaluator::SurfaceIceEnergyEvaluator(Teuchos::ParameterList& pli
   height_key_ = plist.get<std::string>("height key", "ponded_depth");
   dependencies_.insert(height_key_);
 
-  //  dependencies_.insert(std::string("cell_volume"));
+  cv_key_ = plist.get<std::string>("cell volume key",
+          getKey(domain, "cell_volume"));
+
 };
 
 SurfaceIceEnergyEvaluator::SurfaceIceEnergyEvaluator(const SurfaceIceEnergyEvaluator& other) :
@@ -61,7 +65,8 @@ SurfaceIceEnergyEvaluator::SurfaceIceEnergyEvaluator(const SurfaceIceEnergyEvalu
     ie_key_(other.ie_key_),
     ie_ice_key_(other.ie_ice_key_),
     uf_key_(other.uf_key_),
-    height_key_(other.height_key_) {};
+    height_key_(other.height_key_),
+    cv_key_(other.cv_key_) {};
 
 Teuchos::RCP<FieldEvaluator>
 SurfaceIceEnergyEvaluator::Clone() const {
@@ -86,7 +91,7 @@ void SurfaceIceEnergyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const Epetra_MultiVector& height = *S->GetFieldData(height_key_)
       ->ViewComponent("cell",false);
 
-  const Epetra_MultiVector& cv = *S->GetFieldData("surface_cell_volume")
+  const Epetra_MultiVector& cv = *S->GetFieldData("surface-cell_volume")
       ->ViewComponent("cell",false);
 
   Epetra_MultiVector& result_v = *result->ViewComponent("cell",false);
@@ -119,7 +124,7 @@ void SurfaceIceEnergyEvaluator::EvaluateFieldPartialDerivative_(
   const Epetra_MultiVector& height = *S->GetFieldData(height_key_)
       ->ViewComponent("cell",false);
 
-  const Epetra_MultiVector& cv = *S->GetFieldData("surface_cell_volume")
+  const Epetra_MultiVector& cv = *S->GetFieldData("surface-cell_volume")
       ->ViewComponent("cell",false);
 
   Epetra_MultiVector& result_v = *result->ViewComponent("cell",false);

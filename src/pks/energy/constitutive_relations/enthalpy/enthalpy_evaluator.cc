@@ -16,34 +16,27 @@ namespace Energy {
 
 EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
-  if (my_key_ == std::string("")) {
+  if (my_key_.empty()) {
     my_key_ = plist_.get<std::string>("enthalpy key", "enthalpy_liquid");
   }
 
   // Set up my dependencies.
-  std::size_t end = my_key_.find_first_of("_");
-  std::string domain_name = my_key_.substr(0,end);
-  if (domain_name == std::string("enthalpy")) {
-    domain_name = std::string("");
-  } else {
-    domain_name = domain_name+std::string("_");
-  }
-
+  std::string domain_name = getDomain(my_key_);
   include_work_ = plist_.get<bool>("include work term", true);
 
   // -- pressure
   if (include_work_) {
     pres_key_ = plist_.get<std::string>("pressure key",
-            domain_name+std::string("pressure"));
+            getKey(domain_name, "pressure"));
     dependencies_.insert(pres_key_);
 
     dens_key_ = plist_.get<std::string>("molar density key",
-            domain_name+std::string("molar_density_liquid"));
+            getKey(domain_name, "molar_density_liquid"));
     dependencies_.insert(dens_key_);
   }
 
   ie_key_ = plist_.get<std::string>("internal energy key",
-          domain_name+std::string("internal_energy_liquid"));
+          getKey(domain_name, "internal_energy_liquid"));
   dependencies_.insert(ie_key_);
 
 };

@@ -137,15 +137,7 @@ protected:
   virtual double BoundaryValue(Teuchos::RCP<const Amanzi::CompositeVector> solution, int face_id);
 
 protected:
-  enum FluxUpdateMode {
-    UPDATE_FLUX_ITERATION = 0,
-    UPDATE_FLUX_TIMESTEP = 1,
-    UPDATE_FLUX_VIS = 2,
-    UPDATE_FLUX_NEVER = 3
-  };
-
   // control switches
-  FluxUpdateMode update_flux_;
   Operators::UpwindMethod Krel_method_;
   int niter_;
   bool infiltrate_only_if_unfrozen_;

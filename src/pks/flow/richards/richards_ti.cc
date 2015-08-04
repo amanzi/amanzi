@@ -178,41 +178,6 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   Teuchos::RCP<const CompositeVector> rel_perm =
       S_next_->GetFieldData(uw_coef_key_);
 
-  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-    const Epetra_MultiVector& kr = *rel_perm->ViewComponent("face",false);
-    double min_kr = 1.e6;
-    int min_kr_lid = -1;
-    for (int f=0; f!=kr.MyLength(); ++f) {
-      if (kr[0][f] < min_kr) {
-        min_kr = kr[0][f];
-        min_kr_lid = f;
-      }
-    }
-    ASSERT(min_kr_lid >= 0);
-
-    ENorm_t global_min_kr;
-    ENorm_t local_min_kr;
-    local_min_kr.value = min_kr;
-    local_min_kr.gid = kr.Map().GID(min_kr_lid);
-    ASSERT(local_min_kr.gid >= 0);
-
-    MPI_Allreduce(&local_min_kr, &global_min_kr, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
-
-    *vo_->os() << "Min Kr[face=" << global_min_kr.gid << "] = " << global_min_kr.value << std::endl;
-  }
-
-  Teuchos::RCP<CompositeVector> rel_perm_modified =
-      Teuchos::rcp(new CompositeVector(*rel_perm));
-  *rel_perm_modified = *rel_perm;
-
-  {
-    Epetra_MultiVector& rel_perm_mod_f = *rel_perm_modified->ViewComponent("face",false);
-    unsigned int nfaces = rel_perm_mod_f.MyLength();
-    for (unsigned int f=0; f!=nfaces; ++f) {
-      rel_perm_mod_f[0][f] = std::max(rel_perm_mod_f[0][f], 1.e-18);
-    }
-  }      
-  
   // Update the preconditioner with darcy and gravity fluxes
   preconditioner_->Init();
 
@@ -223,7 +188,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   Teuchos::RCP<const CompositeVector> dkrdp = Teuchos::null;
   if (!duw_coef_key_.empty()) dkrdp = S_next_->GetFieldData(duw_coef_key_);
-  preconditioner_diff_->Setup(rel_perm_modified, dkrdp);
+  preconditioner_diff_->Setup(rel_perm, dkrdp);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData(flux_key_, name_);
   preconditioner_diff_->UpdateFlux(*up->Data(), *flux);

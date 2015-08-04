@@ -20,6 +20,7 @@ This is simply the conserved quantity in the energy equation.
 #ifndef AMANZI_SURFACE_ICE_ENERGY_EVALUATOR_HH_
 #define AMANZI_SURFACE_ICE_ENERGY_EVALUATOR_HH_
 
+#include "factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
@@ -47,7 +48,11 @@ class SurfaceIceEnergyEvaluator : public SecondaryVariableFieldEvaluator {
   Key ie_ice_key_;
   Key uf_key_;
   Key height_key_;
+  Key cv_key_;
 
+ private:
+  static Utils::RegisteredFactory<FieldEvaluator,SurfaceIceEnergyEvaluator> reg_;
+  
 };
 
 } // namespace

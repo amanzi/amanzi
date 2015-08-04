@@ -18,7 +18,7 @@ namespace FlowRelations {
 IcyHeightEvaluator::IcyHeightEvaluator(Teuchos::ParameterList& plist) :
     HeightEvaluator(plist) {
   // my extra dependencies
-  dens_ice_key_ = plist_.get<std::string>("ice mass density key", "surface_mass_density_ice");
+  dens_ice_key_ = plist_.get<std::string>("ice mass density key", "surface-mass_density_ice");
   dependencies_.insert(dens_ice_key_);
 
   unfrozen_frac_key_ = plist_.get<std::string>("unfrozen fraction key", "unfrozen_fraction");

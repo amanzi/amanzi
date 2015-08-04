@@ -100,7 +100,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   }
   if (uw_conductivity_key_.empty()) {
     uw_conductivity_key_ = plist_->get<std::string>("upwind conductivity key",
-            getKey(domain_, "numerical_thermal_conductivity"));
+            getKey(domain_, "upwind_thermal_conductivity"));
   }
   if (de_dT_key_.empty()) {
     de_dT_key_ = plist_->get<std::string>("de/dT key",
@@ -114,123 +114,14 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     dsource_dT_key_ = std::string("d")+source_key_+std::string("_d")+key_;
   }
 
-  // Require fields and evaluators for those fields.
-  // primary variable: temperature on both cells and faces, ghosted, with 1 dof
-  Teuchos::ParameterList& mfd_plist = plist_->sublist("Diffusion");
-  S->RequireField(key_, name_)->SetMesh(mesh_)->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-  if (mfd_plist.get<std::string>("discretization primary") != "fv: default") {
-    S->RequireField(key_, name_)->AddComponent("face", AmanziMesh::FACE, 1);
-  }
-
-  std::vector<AmanziMesh::Entity_kind> locations2(2);
-  std::vector<std::string> names2(2);
-  std::vector<int> num_dofs2(2,1); // = [1, 1]
-  locations2[0] = AmanziMesh::CELL;
-  locations2[1] = AmanziMesh::FACE;
-  names2[0] = "cell";
-  names2[1] = "face";
-
-// #if MORE_DEBUG_FLAG
-//   for (int i=1; i!=23; ++i) {
-//     std::stringstream namestream;
-//     namestream << domain_prefix_ << "energy_residual_" << i;
-//     std::stringstream solnstream;
-//     solnstream << domain_prefix_ << "energy_solution_" << i;
-//     S->RequireField(namestream.str(), name_)->SetMesh(mesh_)
-//                     ->SetComponents(names2, locations2, num_dofs2);
-//     S->RequireField(solnstream.str(), name_)->SetMesh(mesh_)
-//                     ->SetComponents(names2, locations2, num_dofs2);
-//   }
-// #endif
-
-  // Require a field and evaluator for cell volume.
+  // Get data for special-case entities.
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(cell_vol_key_);
   S->RequireScalar("atmospheric_pressure");
 
-  // Require a field for the mass flux for advection.
-  flux_exists_ = S->HasField(flux_key_);
-  if (flux_exists_) {
-    S->RequireField(flux_key_)->SetMesh(mesh_)->SetGhosted()
-        ->AddComponent("face", AmanziMesh::FACE, 1);
-  } else {
-    // no flow pk to make/initialize flux field, so we need a darcy flux.
-    //S->RequireFieldEvaluator(flux_key_);
-    // cannot do this currently because of dot_with_normal not supported in
-    // independent variable evaluator.  TERRIBLE!  Fix me --etc
-
-    S->RequireField(flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
-        ->AddComponent("face", AmanziMesh::FACE, 1);
-  }
-
-  // Require a field for the (conducted) energy flux.
-  std::string updatestring = plist_->get<std::string>("update flux mode", "vis");
-  if (updatestring == "iteration") {
-    update_flux_ = UPDATE_FLUX_ITERATION;
-  } else if (updatestring == "timestep") {
-    update_flux_ = UPDATE_FLUX_TIMESTEP;
-  } else if (updatestring == "vis") {
-    update_flux_ = UPDATE_FLUX_VIS;
-  } else if (updatestring == "never") {
-    update_flux_ = UPDATE_FLUX_NEVER;
-  } else {
-    Errors::Message message(std::string("Unknown frequence for updating the overland flux: ")+updatestring);
-    Exceptions::amanzi_throw(message);
-  }
-  S->RequireField(energy_flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
-      ->SetComponent("face", AmanziMesh::FACE, 1);
-  S->RequireField(adv_energy_flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
-      ->SetComponent("face", AmanziMesh::FACE, 1);
-
-  // Require an upwinding strategy
-  S->RequireField(uw_conductivity_key_, name_)->SetMesh(mesh_)->SetGhosted()
-                    ->SetComponents(names2, locations2, num_dofs2);
-  S->GetField(uw_conductivity_key_,name_)->set_io_vis(false);
-  std::string method_name = plist_->get<std::string>("upwind conductivity method", "cell centered");
-  if (method_name == "cell centered") {
-    upwinding_ = Teuchos::rcp(new Operators::UpwindCellCentered(name_,
-            conductivity_key_, uw_conductivity_key_));
-    Krel_method_ = Operators::UPWIND_METHOD_CENTERED;
-  } else if (method_name == "arithmetic mean") {
-    upwinding_ = Teuchos::rcp(new Operators::UpwindArithmeticMean(name_,
-            conductivity_key_, uw_conductivity_key_));
-    Krel_method_ = Operators::UPWIND_METHOD_ARITHMETIC_MEAN;
-  } else {
-    std::stringstream messagestream;
-    messagestream << "Energy PK has no upwinding method named: " << method_name;
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
-  }
-
-
-  // coupling terms
-  // -- subsurface PK, coupled to the surface
-  coupled_to_surface_via_flux_ = plist_->get<bool>("coupled to surface via flux", false);
-  if (coupled_to_surface_via_flux_) {
-    S->RequireField("surface_subsurface_energy_flux")
-        ->SetMesh(S->GetMesh("surface"))
-        ->AddComponent("cell", AmanziMesh::CELL, 1);
-  }
-
-  coupled_to_surface_via_temp_ =
-      plist_->get<bool>("coupled to surface via temperature", false);
-  if (coupled_to_surface_via_temp_) {
-    // surface temperature used for BCs
-    S->RequireField("surface_temperature");
-    update_flux_ = UPDATE_FLUX_ITERATION;
-  }
-
-  // source terms
-  is_source_term_ = plist_->get<bool>("source term");
-  if (is_source_term_) {
-    S->RequireField(source_key_)->SetMesh(mesh_)
-        ->AddComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator(source_key_);
-  }
-
-  // boundary conditions
+  // Set up Operators
+  // -- boundary conditions
   Teuchos::ParameterList bc_plist = plist_->sublist("boundary conditions", true);
   EnergyBCFactory bc_factory(mesh_, bc_plist);
   bc_temperature_ = bc_factory.CreateTemperature();
@@ -248,52 +139,155 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   bc_adv_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE,
           bc_markers_adv_, bc_values_adv_, mixed));
 
-  // Operator:
-  //  -- operator for the diffusion terms
-  Operators::OperatorDiffusionFactory fac;
-  AmanziGeometry::Point g;
-  matrix_diff_ = fac.Create(mesh_, bc_, mfd_plist, g, 0);
-  matrix_diff_mfd_ = Teuchos::rcp_dynamic_cast<Operators::OperatorDiffusionMFD>(matrix_diff_);
+  // -- nonlinear coefficient
+  std::string method_name = plist_->get<std::string>("upwind conductivity method",
+          "cell centered");
+  if (method_name == "cell centered") {
+    upwinding_ = Teuchos::rcp(new Operators::UpwindCellCentered(name_,
+            conductivity_key_, uw_conductivity_key_));
+  } else if (method_name == "arithmetic mean") {
+    upwinding_ = Teuchos::rcp(new Operators::UpwindArithmeticMean(name_,
+            conductivity_key_, uw_conductivity_key_));
+  } else {
+    std::stringstream messagestream;
+    messagestream << "Energy PK has no upwinding method named: " << method_name;
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+
+  std::string coef_location = upwinding_->CoefficientLocation();
+  if (coef_location == "upwind: face") {  
+    S->RequireField(uw_conductivity_key_, name_)->SetMesh(mesh_)
+        ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
+  } else if (coef_location == "standard: cell") {
+    S->RequireField(uw_conductivity_key_, name_)->SetMesh(mesh_)
+        ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
+  } else {
+    Errors::Message message("Unknown upwind coefficient location in energy.");
+    Exceptions::amanzi_throw(message);
+  }
+  S->GetField(uw_conductivity_key_,name_)->set_io_vis(false);
+  
+  // -- create the forward operator for the diffusion term
+  Teuchos::ParameterList& mfd_plist = plist_->sublist("Diffusion");
+  mfd_plist.set("nonlinear coefficient", coef_location);
+  Operators::OperatorDiffusionFactory opfactory;
+  matrix_diff_ = opfactory.Create(mesh_, bc_, mfd_plist);
   matrix_diff_->Setup(Teuchos::null);
+  matrix_ = matrix_diff_->global_operator();
 
-  //  -- for advection terms
-  implicit_advection_ = !plist_->get<bool>("explicit advection", false);
-  if (implicit_advection_)
-    implicit_advection_in_pc_ = !plist_->get<bool>("supress advective terms in preconditioner", false);
-
+  // -- create the forward operator for the advection term
   Operators::AdvectionFactory advection_factory;
   Teuchos::ParameterList advect_plist = plist_->sublist("Advection");
   matrix_adv_ = Teuchos::rcp(new Operators::OperatorAdvection(advect_plist, mesh_));
+  
+  // -- create the operators for the preconditioner
+  //    diffusion
+  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("Diffusion PC");
+  mfd_pc_plist.set("nonlinear coefficient", coef_location);
+  if (!mfd_pc_plist.isParameter("discretization primary"))
+    mfd_pc_plist.set("discretization primary", mfd_plist.get<std::string>("discretization primary"));
+  if (!mfd_pc_plist.isParameter("discretization secondary") && mfd_plist.isParameter("discretization secondary"))
+    mfd_pc_plist.set("discretization secondary", mfd_plist.get<std::string>("discretization secondary"));
+  if (!mfd_pc_plist.isParameter("schema"))
+    mfd_pc_plist.set("schema", mfd_plist.get<Teuchos::Array<std::string> >("schema"));
 
-  // Preconditioner
-  // -- for the diffusive terms
-  Teuchos::ParameterList mfd_pc_plist = plist_->sublist("Diffusion PC");
-  preconditioner_diff_ = fac.Create(mesh_, bc_, mfd_pc_plist, g, 0);
+  preconditioner_diff_ = opfactory.Create(mesh_, bc_, mfd_pc_plist);
   preconditioner_diff_->Setup(Teuchos::null);
   preconditioner_ = preconditioner_diff_->global_operator();
-
-  // -- for the accumulation terms
+  
+  // -- accumulation terms
   Teuchos::ParameterList& acc_pc_plist = plist_->sublist("Accumulation PC");
   acc_pc_plist.set("entity kind", "cell");
   preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, preconditioner_));
 
-  if (implicit_advection_ && implicit_advection_in_pc_) {
-    Teuchos::ParameterList advect_plist = plist_->sublist("Advection PC");
-    preconditioner_adv_ = Teuchos::rcp(new Operators::OperatorAdvection(advect_plist, preconditioner_));
+  //  -- advection terms
+  implicit_advection_ = !plist_->get<bool>("explicit advection", false);
+  if (implicit_advection_) {
+    implicit_advection_in_pc_ = !plist_->get<bool>("supress advective terms in preconditioner", false);
+
+    if (implicit_advection_in_pc_) {
+      Teuchos::ParameterList advect_plist = plist_->sublist("Advection PC");
+      preconditioner_adv_ = Teuchos::rcp(new Operators::OperatorAdvection(advect_plist, preconditioner_));
+    }
   }
 
+  //    symbolic assemble
   precon_used_ = plist_->isSublist("preconditioner");
   if (precon_used_) {
     preconditioner_->SymbolicAssembleMatrix();
+
+    //    Potentially create a linear solver
+    if (plist_->isSublist("linear solver")) {
+      Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
+      AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
+      lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);
+    } else {
+      lin_solver_ = preconditioner_;
+    }
+  }  
+
+  // source terms
+  is_source_term_ = plist_->get<bool>("source term");
+  if (is_source_term_) {
+    S->RequireField(source_key_)->SetMesh(mesh_)
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator(source_key_);
   }
 
-  // constraint on max delta T, which kicks us out of bad iterates faster?
+  // coupling terms
+  // -- subsurface PK, coupled to the surface
+  coupled_to_surface_via_flux_ =
+      plist_->get<bool>("coupled to surface via flux", false);
+  if (coupled_to_surface_via_flux_) {
+    if (ss_flux_key_.empty()) {
+      ss_flux_key_ = plist_->get<std::string>("surface-subsurface energy flux key",
+              getKey(domain_, "surface_subsurface_energy_flux"));
+    }
+    S->RequireField(ss_flux_key_)
+        ->SetMesh(S->GetMesh("surface"))
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  coupled_to_surface_via_temp_ =
+      plist_->get<bool>("coupled to surface via temperature", false);
+  if (coupled_to_surface_via_temp_) {
+    // surface temperature used for BCs
+    S->RequireField("surface_temperature")
+        ->SetMesh(S->GetMesh("surface"))
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  // -- Make sure coupling isn't flagged multiple ways.
+  if (coupled_to_surface_via_flux_ && coupled_to_surface_via_temp_) {
+    Errors::Message message("Energy PK requested both flux and temperature coupling -- choose one.");
+    Exceptions::amanzi_throw(message);
+  }
+
+  // -- primary variable
+  S->RequireField(key_, name_)->Update(matrix_->RangeMap())->SetGhosted();
+  
+  // Require a field for the mass flux for advection.
+  flux_exists_ = S->HasField(flux_key_); // this bool is needed to know if PK
+                                         // makes flux or we need an
+                                         // independent variable evaluator
+  S->RequireField(flux_key_)->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("face", AmanziMesh::FACE, 1);
+
+  // Require a field for the energy fluxes.
+  S->RequireField(energy_flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
+      ->SetComponent("face", AmanziMesh::FACE, 1);
+  S->RequireField(adv_energy_flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
+      ->SetComponent("face", AmanziMesh::FACE, 1);
+
+  // Controls on PCs, predictors
+  // -- constraint on max delta T, which kicks us out of bad iterates faster?
   dT_max_ = plist_->get<double>("maximum temperature change", 10.);
 
-  // simply limit to close to 0
+  // -- simply limit to close to 0
   modify_predictor_for_freezing_ =
       plist_->get<bool>("modify predictor for freezing", false);
-  // ewc and other predictors can result in odd face values
+  // -- ewc and other predictors can result in odd face values
   modify_predictor_with_consistent_faces_ =
       plist_->get<bool>("modify predictor with consistent faces", false);
 };
@@ -321,16 +315,13 @@ void EnergyBase::initialize(const Teuchos::Ptr<State>& S) {
 
 #endif
 
-  // Set extra fields as initialized -- these don't currently have evaluators,
-  // and will be initialized in the call to commit_state()
-  S->GetFieldData(uw_conductivity_key_,name_)->PutScalar(1.0);
-  S->GetField(uw_conductivity_key_,name_)->set_initialized();
-
   // initialize energy flux
   S->GetFieldData(energy_flux_key_, name_)->PutScalar(0.0);
   S->GetField(energy_flux_key_, name_)->set_initialized();
   S->GetFieldData(adv_energy_flux_key_, name_)->PutScalar(0.0);
   S->GetField(adv_energy_flux_key_, name_)->set_initialized();
+  S->GetFieldData(uw_conductivity_key_, name_)->PutScalar(0.0);
+  S->GetField(uw_conductivity_key_, name_)->set_initialized();
 
   // potentially initialize mass flux
   if (!flux_exists_) {
@@ -396,11 +387,12 @@ bool EnergyBase::UpdateConductivityData_(const Teuchos::Ptr<State>& S) {
   bool update = S->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S, name_);
   if (update) {
     upwinding_->Update(S);
-    if (Krel_method_ != Operators::UPWIND_METHOD_CENTERED)
-      S->GetFieldData(uw_conductivity_key_)->ScatterMasterToGhosted("face");
-    
+
+    Teuchos::RCP<CompositeVector> uw_cond =
+        S->GetFieldData(uw_conductivity_key_, name_);
+    if (uw_cond->HasComponent("face"))
+      uw_cond->ScatterMasterToGhosted("face");
   }
-  return update;
 }
 
 // -----------------------------------------------------------------------------
@@ -651,7 +643,7 @@ bool EnergyBase::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
     }
   }
 
-  if (modify_predictor_with_consistent_faces_ && (matrix_diff_mfd_ != Teuchos::null)) {
+  if (modify_predictor_with_consistent_faces_) {
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
       *vo_->os() << "  modifications for consistent face temperatures." << std::endl;
     CalculateConsistentFaces(u->Data().ptr());
@@ -681,13 +673,13 @@ void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u
       S_next_->GetFieldData(uw_conductivity_key_);
 
   // Update the preconditioner
-  matrix_diff_mfd_->global_operator()->Init();
-  matrix_diff_mfd_->Setup(conductivity, Teuchos::null);
-  matrix_diff_mfd_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  matrix_diff_mfd_->ApplyBCs(true, true);
+  matrix_diff_->global_operator()->Init();
+  matrix_diff_->Setup(conductivity, Teuchos::null);
+  matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  matrix_diff_->ApplyBCs(true, true);
 
   // derive the consistent faces, involves a solve
-  matrix_diff_mfd_->UpdateConsistentFaces(*u);
+  matrix_diff_->UpdateConsistentFaces(*u);
 }
 
 
