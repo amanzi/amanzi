@@ -34,9 +34,6 @@ static std::map<std::string,std::string>& AMR_to_Amanzi_label_map = Amanzi::Aman
 #include "simple_thermo_database.hh"
 #include "chemistry_verbosity.hh"
 #include "chemistry_exception.hh"
-//#include "chemistry_output.hh"
-//extern Amanzi::AmanziChemistry::ChemistryOutput* Amanzi::AmanziChemistry::chem_out;
-extern Amanzi::VerboseObject* Amanzi::AmanziChemistry::chem_out;
 #endif
 
 Teuchos::ParameterList PorousMedia::input_parameter_list;
@@ -142,10 +139,6 @@ PorousMedia::CleanupStatics ()
     tic_array.clear();
     tbc_array.clear();
     initialized = false;
-#ifdef ALQUIMIA_ENABLED
-#else
-    delete Amanzi::AmanziChemistry::chem_out;
-#endif
     physics_events_registered = false;
     source_volume.resize(0);
 }
