@@ -2902,8 +2902,17 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
       }
     }
     else {
-      Errors::Message mesg("Region type not applicable/supported for cell sets");
-      amanzi_throw(mesg);
+      std::stringstream tempstr;
+      tempstr << "Requested CELLS on region " << region->name() << 
+          " of type " << region->type() << 
+          " and dimension " << region->dimension() << ".\n" << 
+          "This request will result in an empty set";
+    
+      const VerboseObject *verbobj = Mesh::verbosity_obj();
+      if (verbobj && verbobj->os_OK(Teuchos::VERB_HIGH)) {
+        Teuchos::OSTab tab = verbobj->getOSTab();
+        *(verbobj->os()) << tempstr;
+      }
     }
       
     break;
@@ -2974,8 +2983,17 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
       // Will handle it later in the routine
     }
     else {
-      Errors::Message mesg("Region type not applicable/supported for face sets");
-      amanzi_throw(mesg);
+      std::stringstream tempstr;
+      tempstr << "Requested FACES on region " << region->name() << 
+          " of type " << region->type() << " and dimension " << 
+          region->dimension() << ".\n" << 
+          "This request will result in an empty set";
+    
+      const VerboseObject *verbobj = Mesh::verbosity_obj();
+      if (verbobj && verbobj->os_OK(Teuchos::VERB_HIGH)) {
+        Teuchos::OSTab tab = verbobj->getOSTab();
+        *(verbobj->os()) << tempstr;
+      }
     }
     break;
 
@@ -3024,8 +3042,17 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
       // We will handle it later in the routine
     }
     else {
-      Errors::Message mesg("Region type not applicable/supported for node sets");
-      amanzi_throw(mesg);
+      std::stringstream tempstr;
+      tempstr << "Requested POINTS on region " << region->name() << 
+          " of type " << region->type() << " and dimension " << 
+          region->dimension() << ".\n" << 
+          "This request will result in an empty set";
+    
+      const VerboseObject *verbobj = Mesh::verbosity_obj();
+      if (verbobj && verbobj->os_OK(Teuchos::VERB_HIGH)) {
+        Teuchos::OSTab tab = verbobj->getOSTab();
+        *(verbobj->os()) << tempstr;
+      }
     }
       
     break;
