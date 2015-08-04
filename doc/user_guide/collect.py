@@ -68,8 +68,8 @@ verification['confined_flow']={'index_entry' : 'confined_flow/index.rst',
                                 'index_file' : 'doc/user_guide/verification/confined_flow/index.rst',
                                 'index_list' : ['linear_head_head', 'linear_flux_head',
                                                 'linear_materials_serial','linear_materials_parallel',
-                                                'theis_isotropic', 'hantush_anisotropic','butler_strip_2d', 'butler_pod_2d',
-                                                'boundedDomain_2d',
+                                                #'theis_isotropic', 'hantush_anisotropic','butler_strip_2d', 'butler_pod_2d',
+                                                #'boundedDomain_2d',
                                                 ],
                                 },
                                'linear_head_head' :
@@ -119,6 +119,39 @@ verification['confined_flow']={'index_entry' : 'confined_flow/index.rst',
                                #     },
                                }
 
+verification['confined_flow_parallel']={'index' : 
+                                        {'index_title' : 'Confined Flow Tests',
+                                         'index_file' : 'doc/user_guide/verification/confined_flow/index.rst',
+                                         'index_list' : ['theis_isotropic', 'hantush_anisotropic',
+                                                         'butler_strip_2d', 'butler_pod_2d','boundedDomain_2d', 
+                                                     ],
+                                     },
+                                        'theis_isotropic' :
+                                        {'from_dir' : 'testing/verification/flow/saturated/transient/theis_isotropic_1d',
+                                         'dest_dir' : 'doc/user_guide/verification/confined_flow/theis_isotropic',
+                                         'index_entry' : 'theis_isotropic/amanzi_theis_isotropic_1d.rst',
+                                     },
+                                        'hantush_anisotropic' :
+                                        {'from_dir' : 'testing/verification/flow/saturated/transient/hantush_anisotropic_2d',
+                                         'dest_dir' : 'doc/user_guide/verification/confined_flow/hantush_anisotropic_2d',
+                                         'index_entry' : 'hantush_anisotropic_2d/amanzi_hantush_anisotropic_2d.rst',
+                                     },
+                                        'butler_strip_2d' :
+                                        {'from_dir' : 'testing/verification/flow/saturated/transient/butler_strip_2d',
+                                         'dest_dir' : 'doc/user_guide/verification/confined_flow/butler_strip_2d',
+                                         'index_entry' : 'butler_strip_2d/amanzi_butler_strip_2d.rst',
+                                     },
+                                        'butler_pod_2d' :
+                                        {'from_dir' : 'testing/verification/flow/saturated/transient/butler_pod_2d',
+                                         'dest_dir' : 'doc/user_guide/verification/confined_flow/butler_pod_2d',
+                                         'index_entry' : 'butler_pod_2d/amanzi_butler_pod_2d.rst',
+                                     },
+                                        'boundedDomain_2d' :
+                                        {'from_dir' : 'testing/verification/flow/saturated/transient/boundedDomain_2d',
+                                         'dest_dir' : 'doc/user_guide/verification/confined_flow/boundedDomain_2d',
+                                         'index_entry' : 'boundedDomain_2d/amanzi_boundedDomain_2d.rst',
+                                     },
+}
 
 verification['unconfined_flow']={'index_entry': 'unconfined_flow/index.rst',
                                  'index' : 
@@ -251,6 +284,7 @@ p.add_option('--mycase', help='Build the "mycase" test', default=False, dest='my
 p.add_option('--install', default=False, dest='install', action='store_true')
 p.add_option('--tutorial', default=False, dest='tutorial', action='store_true')
 p.add_option('--verification', default=False, dest='verification', action='store_true')
+p.add_option('--parallel', default=False, dest='parallel', action='store_true')
 p.add_option('--benchmarking', default=False, dest='benchmarking', action='store_true')
 
 (opts,args) = p.parse_args()
@@ -284,6 +318,11 @@ if ( opts.verification or opts.full_guide ):
     toc_user_guide['index_list'].append('verification')
     toc_user_guide['verification'] = { 'index_entry' : 'verification/index.rst' }
     sections['verification'] = verification
+    if ( opts.parallel or opts.full_guide ):
+        verification['confined_flow']['index']['index_list'].extend(verification['confined_flow_parallel']['index']['index_list'])
+        for key in verification['confined_flow_parallel']['index']['index_list']:
+            verification['confined_flow'][key]=verification['confined_flow_parallel'][key]
+        print verification['confined_flow']
 
 if ( opts.benchmarking or opts.full_guide ):
     toc_user_guide['index_list'].append('benchmarking')
