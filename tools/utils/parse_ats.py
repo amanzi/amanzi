@@ -61,7 +61,7 @@ def readATS(directory='.', base="visdump_data.h5", inds=None, time_range=None,
     return keys, times, dat
 
 def getSurfaceData(keys, dat, name):
-    if not name.endswith(".cell.0"):
+    if not len(name.split(".")) == 3:
         name = name + ".cell.0"
     res = np.array([dat[name][key][0] for key in keys])
     if len(res.shape) == 2 and res.shape[1] == 1:

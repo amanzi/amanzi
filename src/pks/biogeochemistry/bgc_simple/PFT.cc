@@ -91,6 +91,11 @@ void PFT::Init(Teuchos::ParameterList& plist,double col_area)
   Emax25 = plist.get<double>("Emax25", 10.);
   SLA = plist.get<double>("SLA", 16);
   evergreen = plist.get<bool>("evergreen", false);
+  if (evergreen) Bleafmemory = 0.;
+
+  leaflongevity = plist.get<double>("leaf longevity", 4.0);
+  rootlongevity = plist.get<double>("root longevity", 4.0);
+  stemlongevity = plist.get<double>("stem longevity", 10.0);
 
 }
 

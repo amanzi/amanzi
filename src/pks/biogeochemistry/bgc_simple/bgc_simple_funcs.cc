@@ -58,6 +58,12 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
   if (doy == 0) doy = 365;
   double daylen = DayLength(met.lat, doy) * dt_days;
 
+  if (t_days > 3650 && doy > 190) {
+    std::cout << "we are here!" << std::endl;
+  }
+  
+  
+
   double PAR = met.qSWin * 2.3 * 24.0 *60.0 / daylen; // convert to PAR at the daytime
 
   // determine the thaw depth
