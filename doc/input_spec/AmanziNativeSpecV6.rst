@@ -3519,7 +3519,19 @@ Notes
   planes. Boxes are allowed to be of zero thickness in only one
   direction in which case they are equivalent to planes.
 
-* Currently, `"Region: Plane`" is constrained to be coordinate-aligned.
+* Currently, `"Region: Plane`" is defined by a point and normal.
+
+.. code-block:: xml
+
+   <ParameterList name="Top Section"> <!-- parent list -->
+     <ParameterList name="Region: Plane">
+       <Parameter name="Location" type="Array(double)" value="{2, 3, 5}"/>
+       <Parameter name="Direction" type="Array(double)" value="{1, 1, 0}"/>
+       <ParameterList name="Expert Parameters">
+         <Parameter name="Tolerance" type="double" value="1.0e-05"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
 
 * The `"Region: Labeled Set`" region defines a named set of mesh entities
   existing in an input mesh file. This is the same file that contains
@@ -3557,7 +3569,7 @@ Notes
   strongly recommended that regions be defined using a single color
   function file. 
 
-* `"Region: Polygonal Surface`" defines a polygonal region on which mesh faces and
+* `"Region: Polygon`" defines a polygonal region on which mesh faces and
   nodes can be queried. NOTE that one cannot ask for cells in a polygonal surface
   region. In 2D, the "polygonal surface" region is a line and is specified by 2 points.
   In 3D, the "polygonal surface" region is specified by an arbitrary number of points.
@@ -3568,6 +3580,22 @@ Notes
   defined as [Vy,-Vx] where [Vx,Vy] is the vector from point 1 to point 2.
   In 3D, the normal of the polygon is defined by the order in which points 
   are specified.
+
+.. code-block:: xml
+
+   <ParameterList name="XY pentagon">
+     <ParameterList name="Region: Polygon">
+       <Parameter name="Number of points" type="int" value="5"/>
+       <Parameter name="Points" type="Array(double)" value="{-0.5, -0.5, -0.5, 
+                                                              0.5, -0.5, -0.5,
+                                                              0.8, 0.0, 0.0,
+                                                              0.5,  0.5, 0.5,
+                                                             -0.5, 0.5, 0.5}"/>
+       <ParameterList name="Expert Parameters">
+         <Parameter name="Tolerance" type="double" value="1.0e-3"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
 
 * `"Region: Logical`" Logical operations on regions allow for more
   advanced region definitions. At this time the Logical Region allows
