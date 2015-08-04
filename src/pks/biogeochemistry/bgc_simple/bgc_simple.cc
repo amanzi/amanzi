@@ -115,6 +115,7 @@ void BGCSimple::setup(const Teuchos::Ptr<State>& S) {
   // requirement: diagnostics
   S->RequireField("co2_decomposition", name_)->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
   S->RequireField("total_biomass", name_)->SetMesh(surf_mesh_)->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
+  S->RequireField("leaf_biomass", name_)->SetMesh(surf_mesh_)->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
 
   // requirement: temp of each cell
   S->RequireFieldEvaluator("temperature");
@@ -166,6 +167,8 @@ void BGCSimple::initialize(const Teuchos::Ptr<State>& S) {
   S->GetField("co2_decomposition", name_)->set_initialized();
   S->GetFieldData("total_biomass", name_)->PutScalar(0.);
   S->GetField("total_biomass", name_)->set_initialized();
+  S->GetFieldData("leaf_biomass", name_)->PutScalar(0.);
+  S->GetField("leaf_biomass", name_)->set_initialized();
 
   // init root carbon
   Teuchos::RCP<Epetra_SerialDenseVector> col_temp =
@@ -230,6 +233,8 @@ bool BGCSimple::advance(double dt) {
   Epetra_MultiVector& co2_decomp = *S_next_->GetFieldData("co2_decomposition", name_)
       ->ViewComponent("cell",false);
   Epetra_MultiVector& biomass = *S_next_->GetFieldData("total_biomass", name_)
+      ->ViewComponent("cell",false);
+  Epetra_MultiVector& leafbiomass = *S_next_->GetFieldData("leaf_biomass", name_)
       ->ViewComponent("cell",false);
 
   S_next_->GetFieldEvaluator("temperature")->HasFieldChanged(S_next_.ptr(), name_);
@@ -330,6 +335,7 @@ bool BGCSimple::advance(double dt) {
 
     for (int lcv_pft=0; lcv_pft!=pfts_[col].size(); ++lcv_pft) {
       biomass[lcv_pft][col] = pfts_[col][lcv_pft]->totalBiomass;
+      leafbiomass[lcv_pft][col] = pfts_[col][lcv_pft]->Bleaf;
     }
 
   } // end loop over columns
