@@ -77,7 +77,7 @@ class PFT {
   double GPP;//gross primary proeduction; kg C/m2 leaf /day
   double NPP;//net primary proeduction; kg C/m2 leaf /day
   int leafstatus; //1=off; 2==on
-  int evergreen;  //1=yes; 0=no
+  bool evergreen;  //1=yes; 0=no
   double LUE; //light use efficiency
   double LER; //light exptinction rate
   double mp; //the slope between stamta conductance and photosynthetic rate

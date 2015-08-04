@@ -70,7 +70,7 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
     pft.GPP = 0.0;
 
     if (pft.totalBiomass > 0.0) {
-      if (pft.evergreen != 1) {
+      if (!pft.evergreen) {
         //---------------------------------------------------------------------------------
         //calculate plant phenology
         if (pft.leafstatus == 1) {
@@ -521,7 +521,7 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
         double rootstoragecratio = pft.storagecroot2sw*stemstoragecratio;
 
         // AFFECTED BY DT! --etc
-        double turnoverLeaf = pft.evergreen == 0 ? 0. : dt_days / (pft.leaflongevity * 365.25);
+        double turnoverLeaf = (!pft.evergreen) ? 0. : dt_days / (pft.leaflongevity * 365.25);
         double carbondrawnLeaf = turnoverLeaf*pft.Bleaf;
         ASSERT(turnoverLeaf <= 0.9);
 
@@ -586,7 +586,7 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
         pft.Bleaf = pft.seedrainlai*gridarea / pft.SLA;
         pft.Bstem = pft.Bleaf / pft.leaf2stemratio;
         pft.Broot = pft.Bleaf / pft.leaf2rootratio;
-        if (pft.evergreen != 1) {
+        if (!pft.evergreen) {
           pft.Bleafmemory = pft.Bleaf;
           pft.Bleaf = 0.0;
           pft.GDD = 0.0;
