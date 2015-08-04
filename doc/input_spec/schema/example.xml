@@ -362,11 +362,11 @@
 
 		<box name="string" low_coordinates="coordinate" high_coordinates="coordinate"/>
 		<point name="string" coordinate="coordinate"/>
-		<plane name="string" location="coordinate" normal="normal"/>
+		<plane name="string" location="coordinate" normal="normal" tolerane="optional exp"/>
 
 		<!-- only available for unstructured -->
 
-		<polygonal_surface name="string" num_points="int">
+		<polygonal_surface name="string" num_points="int" tolerane="optional exp">
 		    	<point>coordinate</point>
 		</polygonal_surface>
 		<logical name="string">
