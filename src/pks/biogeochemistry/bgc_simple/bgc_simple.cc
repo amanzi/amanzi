@@ -116,6 +116,8 @@ void BGCSimple::setup(const Teuchos::Ptr<State>& S) {
   S->RequireField("co2_decomposition", name_)->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
   S->RequireField("total_biomass", name_)->SetMesh(surf_mesh_)->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
   S->RequireField("leaf_biomass", name_)->SetMesh(surf_mesh_)->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
+  S->RequireField("c_sink_limit", name_)->SetMesh(surf_mesh_)->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
+  S->RequireField("lai", name_)->SetMesh(surf_mesh_)->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
 
   // requirement: temp of each cell
   S->RequireFieldEvaluator("temperature");
@@ -169,6 +171,10 @@ void BGCSimple::initialize(const Teuchos::Ptr<State>& S) {
   S->GetField("total_biomass", name_)->set_initialized();
   S->GetFieldData("leaf_biomass", name_)->PutScalar(0.);
   S->GetField("leaf_biomass", name_)->set_initialized();
+  S->GetFieldData("c_sink_limit", name_)->PutScalar(0.);
+  S->GetField("c_sink_limit", name_)->set_initialized();
+  S->GetFieldData("lai", name_)->PutScalar(0.);
+  S->GetField("lai", name_)->set_initialized();
 
   // init root carbon
   Teuchos::RCP<Epetra_SerialDenseVector> col_temp =
@@ -235,6 +241,10 @@ bool BGCSimple::advance(double dt) {
   Epetra_MultiVector& biomass = *S_next_->GetFieldData("total_biomass", name_)
       ->ViewComponent("cell",false);
   Epetra_MultiVector& leafbiomass = *S_next_->GetFieldData("leaf_biomass", name_)
+      ->ViewComponent("cell",false);
+  Epetra_MultiVector& csink = *S_next_->GetFieldData("c_sink_limit", name_)
+      ->ViewComponent("cell",false);
+  Epetra_MultiVector& lai = *S_next_->GetFieldData("lai", name_)
       ->ViewComponent("cell",false);
 
   S_next_->GetFieldEvaluator("temperature")->HasFieldChanged(S_next_.ptr(), name_);
@@ -336,6 +346,8 @@ bool BGCSimple::advance(double dt) {
     for (int lcv_pft=0; lcv_pft!=pfts_[col].size(); ++lcv_pft) {
       biomass[lcv_pft][col] = pfts_[col][lcv_pft]->totalBiomass;
       leafbiomass[lcv_pft][col] = pfts_[col][lcv_pft]->Bleaf;
+      csink[lcv_pft][col] = pfts_[col][lcv_pft]->CSinkLimit;
+      lai[lcv_pft][col] = pfts_[col][lcv_pft]->lai;
     }
 
   } // end loop over columns
