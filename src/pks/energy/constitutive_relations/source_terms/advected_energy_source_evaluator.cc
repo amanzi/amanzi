@@ -21,7 +21,6 @@ AdvectedEnergySourceEvaluator::AdvectedEnergySourceEvaluator(Teuchos::ParameterL
 
 AdvectedEnergySourceEvaluator::AdvectedEnergySourceEvaluator(const AdvectedEnergySourceEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
-    domain_(other.domain_),
     internal_enthalpy_key_(other.internal_enthalpy_key_),
     external_enthalpy_key_(other.external_enthalpy_key_),
     mass_source_key_(other.mass_source_key_),
@@ -89,19 +88,28 @@ AdvectedEnergySourceEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Pt
 
 void
 AdvectedEnergySourceEvaluator::InitializeFromPlist_() {
-  domain_ = plist_.get<std::string>("domain", "");
-  std::string domain_prefix = domain_ == std::string("") ? domain_ : domain_+std::string("_");
 
+  if (my_key_.empty()) {
+    if (include_conduction_) {
+      my_key_ = plist_.get<std::string>("energy source key",
+              "total_energy_source");
+    } else {
+      my_key_ = plist_.get<std::string>("energy source key",
+              "advected_energy_source");
+    }
+  }
+  std::string domain = getDomain(my_key_);
+  
   internal_enthalpy_key_ = plist_.get<std::string>("internal enthalpy key",
-          domain_prefix+std::string("enthalpy"));
+          getKey(domain, "enthalpy"));
   external_enthalpy_key_ = plist_.get<std::string>("external enthalpy key",
-          domain_prefix+std::string("mass_source_enthalpy"));
+          getKey(domain, "mass_source_enthalpy"));
   mass_source_key_ = plist_.get<std::string>("mass source key",
-          domain_prefix+std::string("mass_source"));
+          getKey(domain, "mass_source"));
   internal_density_key_ = plist_.get<std::string>("internal density key",
-          domain_prefix+std::string("molar_density_liquid"));
+          getKey(domain, "molar_density_liquid"));
   external_density_key_ = plist_.get<std::string>("external density key",
-          domain_prefix+std::string("source_molar_density"));
+          getKey(domain, "source_molar_density"));
 
   dependencies_.insert(internal_enthalpy_key_);
   dependencies_.insert(external_enthalpy_key_);
@@ -112,23 +120,13 @@ AdvectedEnergySourceEvaluator::InitializeFromPlist_() {
   include_conduction_ = plist_.get<bool>("include conduction");
   if (include_conduction_) {
     conducted_source_key_ = plist_.get<std::string>("conducted energy source key",
-            domain_prefix+std::string("conducted_energy_source"));
+            getKey(domain, "conducted_energy_source"));
     dependencies_.insert(conducted_source_key_);
   }
 
   cell_vol_key_ = plist_.get<std::string>("cell volume key",
-          domain_prefix+std::string("cell_volume"));
+          getKey(domain, "cell_volume"));
 
-
-  if (my_key_ == std::string("")) {
-    if (include_conduction_) {
-      my_key_ = plist_.get<std::string>("energy source key",
-              domain_prefix+std::string("total_energy_source"));
-    } else {
-      my_key_ = plist_.get<std::string>("energy source key",
-              domain_prefix+std::string("advected_energy_source"));
-    }
-  }
 }
 
 

@@ -120,7 +120,9 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
             getKey(domain_, "darcy_velocity"));
   }
   
-  // Get data for non-field quanitites.
+  // Get data for special-case entities.
+  S->RequireField(cell_vol_key_)->SetMesh(mesh_)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(cell_vol_key_);
   S->RequireGravity();
   S->RequireScalar("atmospheric_pressure");
@@ -150,7 +152,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   perm_scale_ = plist_->get<double>("permeability rescaling", 1.0);
   
   // -- nonlinear coefficients/upwinding
-  Teuchos::ParameterList wrm_plist = plist_->sublist("water retention evaluator");
+  Teuchos::ParameterList& wrm_plist = plist_->sublist("water retention evaluator");
   clobber_surf_kr_ = plist_->get<bool>("clobber surface rel perm", false);
   std::string method_name = plist_->get<std::string>("relative permeability method", "upwind with Darcy flux");
 
@@ -198,16 +200,12 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   
   Operators::OperatorDiffusionFactory opfactory;
   matrix_diff_ = opfactory.Create(mesh_, bc_, mfd_plist);
-  matrix_diff_->Setup(Teuchos::null);
   matrix_ = matrix_diff_->global_operator();
 
   // -- create the operator, data for flux directions
   Teuchos::ParameterList face_diff_list(mfd_plist);
   face_diff_list.set("nonlinear coefficient", "none");
   face_matrix_diff_ = opfactory.Create(mesh_, bc_, face_diff_list);
-  face_matrix_diff_->Setup(Teuchos::null);
-  face_matrix_diff_->Setup(Teuchos::null, Teuchos::null);
-  face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   S->RequireField(flux_dir_key_, name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("face", AmanziMesh::FACE, 1);
@@ -225,7 +223,6 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     mfd_pc_plist.set("schema", mfd_plist.get<Teuchos::Array<std::string> >("schema"));
 
   preconditioner_diff_ = opfactory.Create(mesh_, bc_, mfd_pc_plist);
-  preconditioner_diff_->Setup(Teuchos::null);
   preconditioner_ = preconditioner_diff_->global_operator();
   
   //    If using approximate Jacobian for the preconditioner, we also need derivative information.
@@ -268,20 +265,22 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // }
 
   //    symbolic assemble
-  preconditioner_->SymbolicAssembleMatrix();
-  
-  // -- PC control
   precon_used_ = plist_->isSublist("preconditioner");
-  precon_wc_ = plist_->get<bool>("precondition using WC", false);
-
-  //    Potentially create a linear solver
-  if (plist_->isSublist("linear solver")) {
-    Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
-    AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
-    lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);
-  } else {
-    lin_solver_ = preconditioner_;
+  if (precon_used_) {
+    preconditioner_->SymbolicAssembleMatrix();
+  
+    //    Potentially create a linear solver
+    if (plist_->isSublist("linear solver")) {
+      Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
+      AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
+      lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);
+    } else {
+      lin_solver_ = preconditioner_;
+    }
   }
+
+  // -- PC control
+  precon_wc_ = plist_->get<bool>("precondition using WC", false);
   
   // source terms
   is_source_term_ = plist_->get<bool>("source term", false);
@@ -366,7 +365,7 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   // -- Water retention evaluators
   // -- saturation
-  Teuchos::ParameterList wrm_plist = plist_->sublist("water retention evaluator");
+  Teuchos::ParameterList& wrm_plist = plist_->sublist("water retention evaluator");
   Teuchos::RCP<FlowRelations::WRMEvaluator> wrm =
       Teuchos::rcp(new FlowRelations::WRMEvaluator(wrm_plist));
   S->SetFieldEvaluator(getKey(domain_,"saturation_liquid"), wrm);
@@ -516,8 +515,7 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
   update |= S->GetFieldEvaluator(key_)->HasFieldChanged(S.ptr(), name_);
   update |= S->GetFieldEvaluator(mass_dens_key_)->HasFieldChanged(S.ptr(), name_);
 
-  if (update_flux_ == UPDATE_FLUX_TIMESTEP ||
-      (update_flux_ == UPDATE_FLUX_ITERATION && update)) {
+  if (update) {
     // update the stiffness matrix
     Teuchos::RCP<const CompositeVector> rel_perm =
       S->GetFieldData(uw_coef_key_);
@@ -572,28 +570,23 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
     *vo_->os() << "Calculating diagnostic variables." << std::endl;
 
   // update the cell velocities
-  if (update_flux_ == UPDATE_FLUX_VIS) {
-    // update BCs
-    UpdateBoundaryConditions_(S.ptr());
+  UpdateBoundaryConditions_(S.ptr());
 
-    Teuchos::RCP<const CompositeVector> rel_perm =
+  Teuchos::RCP<const CompositeVector> rel_perm =
       S->GetFieldData(uw_coef_key_);
-    Teuchos::RCP<const CompositeVector> rho =
-        S->GetFieldData(mass_dens_key_);
-    // update the stiffness matrix
-    matrix_diff_->SetDensity(rho);
-    matrix_diff_->Setup(rel_perm, Teuchos::null);
-    matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  Teuchos::RCP<const CompositeVector> rho =
+      S->GetFieldData(mass_dens_key_);
+  // update the stiffness matrix
+  matrix_diff_->SetDensity(rho);
+  matrix_diff_->Setup(rel_perm, Teuchos::null);
+  matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-    // derive fluxes
-    Teuchos::RCP<CompositeVector> flux = S->GetFieldData(flux_key_, name_);
-    Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
-    matrix_diff_->UpdateFlux(*pres, *flux);
-  }
+  // derive fluxes
+  Teuchos::RCP<CompositeVector> flux = S->GetFieldData(flux_key_, name_);
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
+  matrix_diff_->UpdateFlux(*pres, *flux);
 
-  if (update_flux_ != UPDATE_FLUX_NEVER) {
-    UpdateVelocity_(S.ptr());
-  }
+  UpdateVelocity_(S.ptr());
 };
 
 

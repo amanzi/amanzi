@@ -86,11 +86,13 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
     // -- derivatives of kr with respect to temperature
     if (!plist_->get<bool>("supress Jacobian terms: d div q / dT", false)) {
       // need to upwind dkr/dT
-      S->RequireField("dnumerical_rel_perm_dtemperature", name_)
+      Key dkrdT_key = getDerivKey("upwind_relative_permeability", "temperature");
+      S->RequireField(dkrdT_key, name_)
           ->SetMesh(mesh_)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
-      S->GetField("dnumerical_rel_perm_dtemperature",name_)->set_io_vis(false);
-      uw_dkrdT_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_, "drelative_permeability_dtemperature",
-              "dnumerical_rel_perm_dtemperature", "darcy_flux_direction", 1.e-8));
+      S->GetField(dkrdT_key,name_)->set_io_vis(false);
+      uw_dkrdT_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
+              getDerivKey("relative_permeability", "temperature"),
+              dkrdT_key, "darcy_flux_direction", 1.e-8));
 
       // set up the operator
       Teuchos::ParameterList divq_plist(plist_->sublist("PKs").sublist(pk_order[0]).sublist("Diffusion PC"));
@@ -247,8 +249,9 @@ void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
   ASSERT(richards_pk_ != Teuchos::null);
 
   if (ddivq_dT_ != Teuchos::null) {
-    S->GetFieldData("dnumerical_rel_perm_dtemperature",name_)->PutScalar(1.0);
-    S->GetField("dnumerical_rel_perm_dtemperature",name_)->set_initialized();
+    Key dkrdT_key = getDerivKey("upwind_relative_permeability", "temperature");
+    S->GetFieldData(dkrdT_key,name_)->PutScalar(1.0);
+    S->GetField(dkrdT_key,name_)->set_initialized();
 
     Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
     AmanziGeometry::Point g(3);
@@ -332,8 +335,9 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       // -- update and upwind d kr / dT
       S_next_->GetFieldEvaluator("relative_permeability")
           ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "temperature");
+      Key dkrdT_key = getDerivKey("upwind_relative_permeability", "temperature");
       Teuchos::RCP<CompositeVector> dkrdT_uw =
-          S_next_->GetFieldData("dnumerical_rel_perm_dtemperature", name_);
+          S_next_->GetFieldData(dkrdT_key, name_);
       dkrdT_uw->PutScalar(0.);
       uw_dkrdT_->Update(S_next_.ptr());
       double min,max;
@@ -342,7 +346,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       //      std::cout << "Min/Max dkrdT = " << min << ", " << max << std::endl;
 
       // form the operator
-      Teuchos::RCP<const CompositeVector> kr_uw = S_next_->GetFieldData("numerical_rel_perm");
+      Teuchos::RCP<const CompositeVector> kr_uw = S_next_->GetFieldData("upwind_relative_permeability");
       Teuchos::RCP<const CompositeVector> flux = S_next_->GetFieldData("darcy_flux");
       Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData("mass_density_liquid");
 

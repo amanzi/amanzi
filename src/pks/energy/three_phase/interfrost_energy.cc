@@ -80,7 +80,7 @@ InterfrostEnergy::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> 
   // div K_e grad u
   UpdateConductivityData_(S_next_.ptr());
   Teuchos::RCP<const CompositeVector> conductivity =
-      S_next_->GetFieldData(uw_conductivity_key_);
+      S_next_->GetFieldData(conductivity_key_);
 
   preconditioner_->Init();
   preconditioner_diff_->Setup(conductivity, Teuchos::null);

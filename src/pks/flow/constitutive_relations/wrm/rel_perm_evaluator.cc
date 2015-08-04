@@ -78,7 +78,8 @@ void RelPermEvaluator::InitializeFromPlist_() {
   // surface alterations
   is_surf_ = plist_.get<bool>("use surface rel perm", false);
   if (is_surf_) {
-    surf_rel_perm_key_ = plist_.get<std::string>("surface rel perm key", "surface_relative_permeability");
+    surf_rel_perm_key_ = plist_.get<std::string>("surface rel perm key",
+            "surface-relative_permeability");
     dependencies_.insert(surf_rel_perm_key_);
 
     surf_mesh_key_ = plist_.get<std::string>("surface mesh key", "surface");

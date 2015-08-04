@@ -32,14 +32,14 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(
   // set up additional primary variables -- this is very hacky...
   // -- surface energy source
   Teuchos::ParameterList& esource_sublist =
-      FElist.sublist("surface_conducted_energy_source");
-  esource_sublist.set("evaluator name", "surface_conducted_energy_source");
+      FElist.sublist("surface-conducted_energy_source");
+  esource_sublist.set("evaluator name", "surface-conducted_energy_source");
   esource_sublist.set("field evaluator type", "primary variable");
 
   // -- surface mass source
   Teuchos::ParameterList& wsource_sublist =
-      FElist.sublist("surface_mass_source");
-  wsource_sublist.set("evaluator name", "surface_mass_source");
+      FElist.sublist("surface-mass_source");
+  wsource_sublist.set("evaluator name", "surface-mass_source");
   wsource_sublist.set("field evaluator type", "primary variable");
 
   // -- subsurface mass source for VaporFlux at cell center
@@ -50,8 +50,8 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(
 
   // -- surface energy temperature
   Teuchos::ParameterList& wtemp_sublist =
-      FElist.sublist("surface_mass_source_temperature");
-  wtemp_sublist.set("evaluator name", "surface_mass_source_temperature");
+      FElist.sublist("surface-mass_source_temperature");
+  wtemp_sublist.set("evaluator name", "surface-mass_source_temperature");
   wtemp_sublist.set("field evaluator type", "primary variable");
 
   // Derivatives for PC
@@ -94,20 +94,20 @@ SurfaceBalanceImplicit::setup(const Teuchos::Ptr<State>& S) {
 
   // requirements: other primary variables
   Teuchos::RCP<FieldEvaluator> fm;
-  S->RequireField("surface_conducted_energy_source", name_)->SetMesh(mesh_)
+  S->RequireField("surface-conducted_energy_source", name_)->SetMesh(mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator("surface_conducted_energy_source");
-  fm = S->GetFieldEvaluator("surface_conducted_energy_source");
+  S->RequireFieldEvaluator("surface-conducted_energy_source");
+  fm = S->GetFieldEvaluator("surface-conducted_energy_source");
   pvfe_esource_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   if (pvfe_esource_ == Teuchos::null) {
     Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
     Exceptions::amanzi_throw(message);
   }
 
-  S->RequireField("surface_mass_source", name_)->SetMesh(mesh_)
+  S->RequireField("surface-mass_source", name_)->SetMesh(mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator("surface_mass_source");
-  fm = S->GetFieldEvaluator("surface_mass_source");
+  S->RequireFieldEvaluator("surface-mass_source");
+  fm = S->GetFieldEvaluator("surface-mass_source");
   pvfe_wsource_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   if (pvfe_wsource_ == Teuchos::null) {
     Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
@@ -124,10 +124,10 @@ SurfaceBalanceImplicit::setup(const Teuchos::Ptr<State>& S) {
     Exceptions::amanzi_throw(message);
   }
 
-  S->RequireField("surface_mass_source_temperature", name_)->SetMesh(mesh_)
+  S->RequireField("surface-mass_source_temperature", name_)->SetMesh(mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator("surface_mass_source_temperature");
-  fm = S->GetFieldEvaluator("surface_mass_source_temperature");
+  S->RequireFieldEvaluator("surface-mass_source_temperature");
+  fm = S->GetFieldEvaluator("surface-mass_source_temperature");
   pvfe_wtemp_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   if (pvfe_wtemp_ == Teuchos::null) {
     Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
@@ -136,7 +136,7 @@ SurfaceBalanceImplicit::setup(const Teuchos::Ptr<State>& S) {
 
   // requirements: source derivatives
   if (eval_derivatives_) {
-    S->RequireField("dsurface_conducted_energy_source_dsurface_temperature", name_)->SetMesh(mesh_)
+    S->RequireField("dsurface-conducted_energy_source_dsurface-temperature", name_)->SetMesh(mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
@@ -201,12 +201,12 @@ SurfaceBalanceImplicit::setup(const Teuchos::Ptr<State>& S) {
   S->RequireField("stored_SWE", name_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator("surface_temperature");
-  S->RequireField("surface_temperature")->SetMesh(mesh_)
+  S->RequireFieldEvaluator("surface-temperature");
+  S->RequireField("surface-temperature")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator("surface_pressure");
-  S->RequireField("surface_pressure")->SetMesh(mesh_)
+  S->RequireFieldEvaluator("surface-pressure");
+  S->RequireField("surface-pressure")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   S->RequireFieldEvaluator("ponded_depth");
@@ -221,8 +221,8 @@ SurfaceBalanceImplicit::setup(const Teuchos::Ptr<State>& S) {
   S->RequireField("unfrozen_fraction")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator("surface_porosity");
-  S->RequireField("surface_porosity")->SetMesh(mesh_)
+  S->RequireFieldEvaluator("surface-porosity");
+  S->RequireField("surface-porosity")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
 }
@@ -267,22 +267,22 @@ SurfaceBalanceImplicit::initialize(const Teuchos::Ptr<State>& S) {
   S->GetField("snow_temperature", name_)->set_initialized();
 
   // initialize sources, temps
-  S->GetFieldData("surface_conducted_energy_source",name_)->PutScalar(0.);
-  S->GetField("surface_conducted_energy_source",name_)->set_initialized();
+  S->GetFieldData("surface-conducted_energy_source",name_)->PutScalar(0.);
+  S->GetField("surface-conducted_energy_source",name_)->set_initialized();
 
   if (eval_derivatives_) {
-    S->GetFieldData("dsurface_conducted_energy_source_dsurface_temperature",name_)->PutScalar(0.);
-    S->GetField("dsurface_conducted_energy_source_dsurface_temperature",name_)->set_initialized();
+    S->GetFieldData("dsurface-conducted_energy_source_dsurface-temperature",name_)->PutScalar(0.);
+    S->GetField("dsurface-conducted_energy_source_dsurface-temperature",name_)->set_initialized();
   }
 
-  S->GetFieldData("surface_mass_source",name_)->PutScalar(0.);
-  S->GetField("surface_mass_source",name_)->set_initialized();
+  S->GetFieldData("surface-mass_source",name_)->PutScalar(0.);
+  S->GetField("surface-mass_source",name_)->set_initialized();
 
   S->GetFieldData("mass_source",name_)->PutScalar(0.);
   S->GetField("mass_source",name_)->set_initialized();
 
-  S->GetFieldData("surface_mass_source_temperature",name_)->PutScalar(273.15);
-  S->GetField("surface_mass_source_temperature",name_)->set_initialized();
+  S->GetFieldData("surface-mass_source_temperature",name_)->PutScalar(273.15);
+  S->GetField("surface-mass_source_temperature",name_)->set_initialized();
 
   // initialize diagnostics
   S->GetField("albedo",name_)->set_initialized();
@@ -352,13 +352,13 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       ->ViewComponent("cell",false);
 
   // pull ATS data
-  S_next_->GetFieldEvaluator("surface_temperature")->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator("surface-temperature")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& surf_temp =
-      *S_next_->GetFieldData("surface_temperature")->ViewComponent("cell", false);
+      *S_next_->GetFieldData("surface-temperature")->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator("surface_pressure")->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator("surface-pressure")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& surf_pres =
-      *S_next_->GetFieldData("surface_pressure")->ViewComponent("cell", false);
+      *S_next_->GetFieldData("surface-pressure")->ViewComponent("cell", false);
 
   S_next_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& ponded_depth =
@@ -372,9 +372,9 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
   const Epetra_MultiVector& unfrozen_fraction =
       *S_next_->GetFieldData("unfrozen_fraction")->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator("surface_porosity")->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator("surface-porosity")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& surf_porosity =
-      *S_next_->GetFieldData("surface_porosity")->ViewComponent("cell", false);
+      *S_next_->GetFieldData("surface-porosity")->ViewComponent("cell", false);
 
 
   // pull Met data
@@ -417,22 +417,22 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
 
   // pull additional primary variable data
   Epetra_MultiVector& surf_energy_flux =
-      *S_next_->GetFieldData("surface_conducted_energy_source", name_)->ViewComponent("cell", false);
+      *S_next_->GetFieldData("surface-conducted_energy_source", name_)->ViewComponent("cell", false);
   Teuchos::RCP<Epetra_MultiVector> dsurf_energy_flux_dT;
   if (eval_derivatives_) {
-    dsurf_energy_flux_dT = S_next_->GetFieldData("dsurface_conducted_energy_source_dsurface_temperature", name_)
+    dsurf_energy_flux_dT = S_next_->GetFieldData("dsurface-conducted_energy_source_dsurface-temperature", name_)
       ->ViewComponent("cell", false);
   }
 
   Epetra_MultiVector& surf_water_flux =
-      *S_next_->GetFieldData("surface_mass_source", name_)->ViewComponent("cell", false);
+      *S_next_->GetFieldData("surface-mass_source", name_)->ViewComponent("cell", false);
 
   Epetra_MultiVector& vapor_flux =
       *S_next_->GetFieldData("mass_source", name_)->ViewComponent("cell", false);
   vapor_flux.PutScalar(0.);
 
   Epetra_MultiVector& surf_water_flux_temp =
-      *S_next_->GetFieldData("surface_mass_source_temperature", name_)->ViewComponent("cell", false);
+      *S_next_->GetFieldData("surface-mass_source_temperature", name_)->ViewComponent("cell", false);
 
 
   unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -724,8 +724,8 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
     vnames.push_back("Qsw_in"); vecs.push_back(S_next_->GetFieldData("incoming_shortwave_radiation").ptr());
     vnames.push_back("precip_rain"); vecs.push_back(S_next_->GetFieldData("precipitation_rain").ptr());
     vnames.push_back("precip_snow"); vecs.push_back(S_next_->GetFieldData("precipitation_snow").ptr());
-    vnames.push_back("T_ground"); vecs.push_back(S_next_->GetFieldData("surface_temperature").ptr());
-    vnames.push_back("p_ground"); vecs.push_back(S_next_->GetFieldData("surface_pressure").ptr());
+    vnames.push_back("T_ground"); vecs.push_back(S_next_->GetFieldData("surface-temperature").ptr());
+    vnames.push_back("p_ground"); vecs.push_back(S_next_->GetFieldData("surface-pressure").ptr());
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
 
@@ -738,10 +738,10 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
 
     vnames.clear();
     vecs.clear();
-    vnames.push_back("energy_source"); vecs.push_back(S_next_->GetFieldData("surface_conducted_energy_source").ptr());
-    vnames.push_back("water_source"); vecs.push_back(S_next_->GetFieldData("surface_mass_source").ptr());
-    //    vnames.push_back("surface_vapor_source"); vecs.push_back(S_next_->GetFieldData("mass_source").ptr());
-    vnames.push_back("T_water_source"); vecs.push_back(S_next_->GetFieldData("surface_mass_source_temperature").ptr());
+    vnames.push_back("energy_source"); vecs.push_back(S_next_->GetFieldData("surface-conducted_energy_source").ptr());
+    vnames.push_back("water_source"); vecs.push_back(S_next_->GetFieldData("surface-mass_source").ptr());
+    //    vnames.push_back("surface-vapor_source"); vecs.push_back(S_next_->GetFieldData("mass_source").ptr());
+    vnames.push_back("T_water_source"); vecs.push_back(S_next_->GetFieldData("surface-mass_source_temperature").ptr());
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
 

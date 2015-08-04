@@ -52,10 +52,10 @@ void EnergyBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector>
   vecs.push_back(S_inter_->GetFieldData(key_).ptr()); vecs.push_back(u.ptr());
   db_->WriteVectors(vnames, vecs, true);
 
-  vnames[0] = "sl"; vnames[1] = "si";
-  vecs[0] = S_next_->GetFieldData("saturation_liquid").ptr();
-  vecs[1] = S_next_->GetFieldData("saturation_ice").ptr();
-  db_->WriteVectors(vnames, vecs, false);
+  // vnames[0] = "sl"; vnames[1] = "si";
+  // vecs[0] = S_next_->GetFieldData("saturation_liquid").ptr();
+  // vecs[1] = S_next_->GetFieldData("saturation_ice").ptr();
+  // db_->WriteVectors(vnames, vecs, false);
 #endif
 
   // update boundary conditions
@@ -71,12 +71,7 @@ void EnergyBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector>
   // diffusion term, implicit
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 #if DEBUG_FLAG
-  vnames[0] = "K";
-  vecs[0] = S_next_->GetFieldData(conductivity_key_).ptr();
-  vnames[1] = "uw_K";
-  vecs[1] = S_next_->GetFieldData(uw_conductivity_key_).ptr();
-  db_->WriteVectors(vnames,vecs,true);
-
+  db_->WriteVector("K",S_next_->GetFieldData(conductivity_key_).ptr(),true);
   db_->WriteVector("res (diff)", res.ptr(), true);
 #endif
 
@@ -192,7 +187,7 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_) {
     // do not add in de/dT if the height is 0
-    const Epetra_MultiVector& pres = *S_next_->GetFieldData("surface_pressure")
+    const Epetra_MultiVector& pres = *S_next_->GetFieldData("surface-pressure")
         ->ViewComponent("cell",false);
     const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
     for (unsigned int c=0; c!=ncells; ++c) {
@@ -210,12 +205,12 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 
   // update with advection terms
   if (implicit_advection_ && implicit_advection_in_pc_) {
-    Teuchos::RCP<const CompositeVector> darcy_flux = S_next_->GetFieldData("darcy_flux");
+    Teuchos::RCP<const CompositeVector> mass_flux = S_next_->GetFieldData(flux_key_);
     S_next_->GetFieldEvaluator(enthalpy_key_)
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
     Teuchos::RCP<const CompositeVector> dhdT = S_next_->GetFieldData(denthalpy_key_);
-    preconditioner_adv_->Setup(*darcy_flux);
-    preconditioner_adv_->UpdateMatrices(*darcy_flux, *dhdT);
+    preconditioner_adv_->Setup(*mass_flux);
+    preconditioner_adv_->UpdateMatrices(*mass_flux, *dhdT);
     ApplyDirichletBCsToEnthalpy_(S_next_.ptr());
     preconditioner_adv_->ApplyBCs(bc_adv_, true);
   }

@@ -23,7 +23,7 @@ bool PredictorDelegateBCFlux::ModifyPredictor(const Teuchos::Ptr<CompositeVector
   int nfaces = bc_values_->size();
   for (int f=0; f!=nfaces; ++f) {
     if ((*bc_markers_)[f] == Operators::OPERATOR_BC_NEUMANN) {
-      double lambda = (*u)("face",f);
+      double lambda = u_f[0][f];
       // only do if below saturated
       if (lambda < 101325.) {
         int ierr = CalculateLambdaToms_(f, u, lambda);
@@ -60,7 +60,8 @@ PredictorDelegateBCFlux::CreateFunctor_(int f,
   lambda->resize(faces.size());
 
   // unscale the Aff for my cell with the rel perm that was used to calculate it
-  double Krel = (*S_next_->GetFieldData("numerical_rel_perm"))("face",f);
+  double Krel = (*S_next_->GetFieldData("upwind_relative_permeability")
+                 ->ViewComponent("face",false))[0][f];
 
   // fill the arrays
   for (unsigned int i=0; i!=faces.size(); ++i) {
