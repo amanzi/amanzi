@@ -758,6 +758,11 @@ Layout::MFTowerToVec(Vec&           V,
                 ifab.copy(nodeIds[lev][mfi]);
                 BL_ASSERT(ifab.min()>=0);
 
+		// Note: For debugging:
+		//    int jj = n/box.length(0) + box.smallEnd(1);
+		//    int ii = n - (jj-box.smallEnd(1))*box.length(0) + box.smallEnd(0);
+		//    idx = ifab(IntVect(ii,jj),0)
+
                 const int* ix = ifab.dataPtr();
                 
                 fab.resize(box,1);

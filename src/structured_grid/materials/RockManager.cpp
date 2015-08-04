@@ -324,6 +324,7 @@ RockManager::FillBoundary(Real      time,
   const Geometry& geom = materialFiller->Geom(level);
 
   if (nGrow>0) {
+    BL_ASSERT(mf.nGrow() >= nGrow);
     const Box& domain = geom.Domain();
     for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
       FArrayBox& fab = mf[mfi];
@@ -1105,16 +1106,34 @@ RockManager::GetProperty(Real               time,
     if (gslib_prop != 0) {
       const AmrData* this_const_amrData = gslib_prop->GetAmrData();
       AmrData* this_amrData = const_cast<AmrData*>(this_const_amrData);
+      const Geometry& geom = materialFiller->Geom(level);
 
       Array<int> destFillComps(nComp);
       for (int n=0; n<nComp; ++n) {
 	destFillComps[n] = n;
       }
 
-      iMultiFab id(mf.boxArray(),1,0);
-      materialFiller->SetMaterialID(level,id,0,ignore_mixed);
-      MultiFab vals(mf.boxArray(),nComp,0);
-      this_amrData->FillVar(vals,level,gslib_prop->PlotfileVars(),destFillComps);
+      // Build a boxarray that includes grow cells, except where they extend out the domain
+      BoxArray bavals = BoxArray(mf.boxArray()).grow(nGrow);
+      for (int j=0; j<bavals.size(); ++j) {
+	bavals.set(j,Box(bavals[j]) & geom.Domain());
+      }
+      MultiFab valstmp(bavals,nComp,0);
+      this_amrData->FillVar(valstmp,level,gslib_prop->PlotfileVars(),destFillComps);
+
+      MultiFab vals(mf.boxArray(),nComp,nGrow);
+      vals.setVal(-1); // Put something computable outside domain, touchup later
+
+      // Copy filled property over default
+      for (MFIter mfi(vals); mfi.isValid(); ++mfi) {
+	Box bx = valstmp[mfi].box() & vals[mfi].box();
+	vals[mfi].copy(valstmp[mfi],bx,0,bx,0,nComp);
+      }
+      valstmp.clear(); // No longer needed
+
+      // Set id mask in order to pull out the cells of vals in this material
+      iMultiFab id(mf.boxArray(),1,nGrow);
+      materialFiller->SetMaterialID(level,id,nGrow,ignore_mixed);
 
       for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
         Box bx = Box(mfi.validbox()).grow(nGrow);
@@ -1125,14 +1144,16 @@ RockManager::GetProperty(Real               time,
                        idfab.dataPtr(), ARLIM(idfab.loVect()), ARLIM(idfab.hiVect()),
                        vfab.dataPtr(),  ARLIM(vfab.loVect()),  ARLIM(idfab.hiVect()),
                        &i, bx.loVect(), bx.hiVect(), &nComp);
-	ret = true;
 	do_touchup = true;
       }
     }
   }
+  ret = true;
+  ParallelDescriptor::ReduceBoolOr(do_touchup);
   if (do_touchup) {
     FillBoundary(time,level,mf,dComp,nComp,nGrow);
   }
+
   return ret;
 }
 

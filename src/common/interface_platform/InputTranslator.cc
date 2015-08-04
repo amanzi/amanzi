@@ -3226,7 +3226,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
       }
     }
     list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Expert Settings") = expertPL;
-    list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Adaptive Mesh Refinement") = amrPL;
+    list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Adaptive Mesh Refinement Control") = amrPL;
   }
   
   if (!isUnstr_ && !found) {
