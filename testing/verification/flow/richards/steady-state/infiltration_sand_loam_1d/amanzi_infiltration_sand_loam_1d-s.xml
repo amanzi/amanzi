@@ -113,7 +113,6 @@
       <ParameterList name="All">
         <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
         <ParameterList name="IC: Uniform Pressure">
-         <Parameter name="Phase" type="string" value="Aqueous"/>
          <Parameter name="Value" type="double" value="81747."/>
 			<!-- -2 m water initial condition based on 9.80665 m/s^2 gravity -->
         </ParameterList>

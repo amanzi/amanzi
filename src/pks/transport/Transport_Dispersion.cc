@@ -108,35 +108,46 @@ void Transport_PK::CalculateDispersionTensor_(
           double vel_norm = norm(velocity);
           if (vel_norm == 0.0) continue;
 
-          int k = axi_symmetry_[*c];
-          double theta = velocity[k] / vel_norm;  // cosine of angle theta
-          double theta2 = theta * theta; 
-
-          // define direction orthogonal to symmetry axis
-          omega = velocity * (-theta / vel_norm);
-          omega[k] += 1.0;
-
           double a1, a2, a3;
           if (spec->model == TRANSPORT_DISPERSIVITY_MODEL_BURNETT_FRIND) {
-            double alphaT = spec->alphaTH + theta2 * (spec->alphaTV - spec->alphaTH);
-            double alphaL = spec->alphaLH;  // use it for code readibility.
+            a1 = spec->alphaTV * vel_norm;
+            a2 = (spec->alphaLH - spec->alphaTV) / vel_norm;
+            a3 = (spec->alphaTH - spec->alphaTV) / vel_norm;
 
-            a1 = alphaT * vel_norm;
-            a2 = (alphaL - alphaT) / vel_norm;
-            a3 = (spec->alphaTH - alphaT) * vel_norm / (1.0 - theta2);
+            for (int i = 0; i < dim; i++) {
+              D[*c](i, i) = a1;
+              for (int j = i; j < dim; j++) {
+                D[*c](i, j) += a2 * velocity[i] * velocity[j];
+                D[*c](j, i) = D[*c](i, j);
+              }
+            }
+            D[*c](0, 0) += a3 * velocity[1] * velocity[1];
+            D[*c](1, 1) += a3 * velocity[0] * velocity[0];
+
+            D[*c](0, 1) -= a3 * velocity[0] * velocity[1];
+            D[*c](1, 0) -= a3 * velocity[0] * velocity[1];
+
           } else if (spec->model == TRANSPORT_DISPERSIVITY_MODEL_LICHTNER_KELKAR_ROBINSON) {
+            int k = axi_symmetry_[*c];
+            double theta = velocity[k] / vel_norm;  // cosine of angle theta
+            double theta2 = theta * theta; 
+
+            // define direction orthogonal to symmetry axis
+            omega = velocity * (-theta / vel_norm);
+            omega[k] += 1.0;
+
+            // we use formula (46) of Lichtner, Water Res. Research, 38 (2002)
             double alphaL = spec->alphaLH + theta2 * (spec->alphaLV - spec->alphaLH);  
-            double alphaT = spec->alphaTV + theta2 * (spec->alphaTH - spec->alphaTV);  
             a1 = spec->alphaTH * vel_norm;
             a2 = (alphaL - spec->alphaTH) / vel_norm;
-            a3 = (alphaT - spec->alphaTH) * vel_norm / (1.0 - theta2);
-          }
+            a3 = (spec->alphaTV - spec->alphaTH) * vel_norm;
 
-          for (int i = 0; i < dim; i++) {
-            D[*c](i, i) = a1;
-            for (int j = i; j < dim; j++) {
-              D[*c](i, j) += a2 * velocity[i] * velocity[j] + a3 * omega[i] * omega[j];
-              D[*c](j, i) = D[*c](i, j);
+            for (int i = 0; i < dim; i++) {
+              D[*c](i, i) = a1;
+              for (int j = i; j < dim; j++) {
+                D[*c](i, j) += a2 * velocity[i] * velocity[j] + a3 * omega[i] * omega[j];
+                D[*c](j, i) = D[*c](i, j);
+              }
             }
           }
 

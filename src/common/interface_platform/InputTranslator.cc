@@ -3744,18 +3744,17 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
          // if attribute 'num_points' exists, get it
         int num_points(-1);
         int pt_cnt(0);
-        attrMap = cur->getAttributes();
-        nodeAttr = attrMap->getNamedItem(XMLString::transcode("num_points"));
         if (regElem->hasAttribute(XMLString::transcode("num_points"))) {
           textContent2 = XMLString::transcode(regElem->getAttribute(XMLString::transcode("num_points")));
           std::string str(textContent2);
           boost::algorithm::trim(str);
           num_points = atoi(textContent2);
-          list.sublist(regName).sublist("Region: Polygonal Surface").set<int>("Number of points",num_points);
+          //list.sublist(regName).sublist("Region: Polygonal Surface").set<int>("Number of points",num_points);
+          list.sublist(regName).sublist("Region: Polygon").set<int>("Number of points",num_points);
           XMLString::release(&textContent2);
         }
         // get verticies (add count them)
-        Teuchos::Array<Teuchos::Array<double> > points;
+        Teuchos::Array<double> points;
         DOMNodeList* gkids = regElem->getChildNodes();
         for (int j=0; j<gkids->getLength(); j++) {
           DOMNode* curGKid = gkids->item(j) ;
@@ -3764,16 +3763,22 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
             if  (strcmp(nodeName,"point") == 0){
               textContent2 = XMLString::transcode(curGKid->getTextContent());
               Teuchos::Array<double> point = make_coordinates(textContent2, *def_list);
-              points.append(point);
+              for (Teuchos::Array<double>::iterator pt=point.begin(); pt!=point.end(); ++pt) {
+                points.append(*pt);
+              }
               pt_cnt++;
               XMLString::release(&textContent2);
             }
           }
         }
-        list.sublist(regName).sublist("Region: Polygonal Surface").set<Teuchos::Array<Teuchos::Array<double> > >("Points",points);
+        //list.sublist(regName).sublist("Region: Polygonal Surface").set<Teuchos::Array<double> >("Points",points);
+        list.sublist(regName).sublist("Region: Polygon").set<Teuchos::Array<double> >("Points",points);
         // check that 'num_points' with current count
-        if (!list.sublist(regName).sublist("Region: Polygonal Surface").isParameter("Number of points")) {
-          list.sublist(regName).sublist("Region: Polygonal Surface").set<int>("Number of points",pt_cnt);
+        //if (!list.sublist(regName).sublist("Region: Polygonal Surface").isParameter("Number of points")) {
+        //  list.sublist(regName).sublist("Region: Polygonal Surface").set<int>("Number of points",pt_cnt);
+        //}
+        if (!list.sublist(regName).sublist("Region: Polygon").isParameter("Number of points")) {
+          list.sublist(regName).sublist("Region: Polygon").set<int>("Number of points",pt_cnt);
         }
       }
       else if  (strcmp(nodeName,"logical") == 0){
@@ -6922,7 +6927,7 @@ Teuchos::Array<double> make_coordinates(char* char_array, Teuchos::ParameterList
 {
   Teuchos::Array<double> coords;
   char* tmp;
-  tmp = strtok(char_array,"(,");
+  tmp = strtok(char_array,"(, ");
   while(tmp!=NULL){
     std::string str(tmp);
     boost::algorithm::trim(str);

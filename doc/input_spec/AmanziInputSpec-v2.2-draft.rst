@@ -736,7 +736,9 @@ A plane region is defined by a point on the plane and the normal direction of th
 
 .. code-block:: xml
 
-  <plane name="plane name" location="x,y,z" normal="dx,dy,dz" /> 
+  <plane name="plane name" location="x,y,z" normal="dx,dy,dz" tolerance="optional exp"/> 
+
+The attribute ``tolerance`` is optional.  This value prescribes a tolerance for determining the cell face centroids that lie on the defined plane.
 
 Region
 ------
@@ -759,19 +761,20 @@ A region is define as describe above.  A file is define as follows.
 
 Currently color functions and labeled sets can only be read from Exodus II files.  This will likely be the same file specified in the `"mesh`" element.  PLEASE NOTE the values listed within [] for attributes above are CASE SENSITIVE.  For many attributes within the Amanzi Input Schema the value is tested against a limited set of specific strings.  Therefore an user generated input file may generate errors due to a mismatch in cases.  Note that all specified names within this schema use lower case.
 
-Polygon
--------
+Polygonal_Surface
+-----------------
 
-A polygon region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the unstructured algorithm.
+A polygonal_surface region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the unstructured algorithm.
 
 .. code-block:: xml
 
-    <polygon name="polygon name" num_points="3">
+    <polygonal_surface name="polygon name" num_points="3" tolerance="optional exp">
       <point> (X, Y, Z) </point>
       <point> (X, Y, Z) </point>
       <point> (X, Y, Z) </point>
-    </polygon>
+    </polygonal_surface
 
+The attribute ``tolerance`` is optional.  This value prescribes a tolerance for determining the cell face centroids that lie on the defined plane.
 
 Logical
 -------
@@ -1327,6 +1330,8 @@ The *base_filename* element contains the text component of the how the visualiza
 
 The presence of the ''vis'' element means that visualization files will be written out after cycle 0 and the final cycle of the simulation.  The optional elements *time_macros* or *cycle_macros* indicate additional points during the simulation at which visualization files are to be written out.  Both elements allow one or more of the appropriate type of macro to be listed.  These macros will be determine the appropriate times or cycles to write out visualization files.  See the `Definitions`_ section for defining individual macros.
 
+The ``vis`` element also includes an optional subelement ``write_regions``.  This was primarily implemented for debugging purposes but is also useful for visualizing fields only on specific regions.  The subelement accepts a comma separated list of region names.  These regions are then included in the visualization file as fields.
+
 (*EIB NOTE* - there should be a comment here about how the output is controlled, i.e. for each PK where do you go to turn on and off fields.  This will probably get filled in as the other sections fill out.)
 
 Example:
@@ -1337,6 +1342,7 @@ Example:
      <base_filename>plot</base_filename>
      <num_digits>5</num_digits>
      <time_macros>Macro 1</time_macros>
+     <write_regions>region1, region2</write_regions>
   </vis>
 
 
