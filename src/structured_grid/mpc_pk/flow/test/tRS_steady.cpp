@@ -1,3 +1,7 @@
+// This is needed to define some external symbols for linking. 
+// It's kind of silly to do things this way. -JNJ
+#include <VerboseObject_objs.hh> 
+
 #include <RichardSolver.H>
 #include <RStdata.H>
 
