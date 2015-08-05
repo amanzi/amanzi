@@ -239,8 +239,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             }
             else if (strcmp(text_content, "write_regions") == 0) {
               text_content2 = XMLString::transcode(jnode->getTextContent());
-              Teuchos::Array<std::string> regs = MakeRegionsList_(text_content2);
-              visPL.set<Teuchos::Array<std::string> >("write regions", regs);
+              visPL.set<Teuchos::Array<std::string> >("write regions", CharToStrings_(text_content2));
               XMLString::release(&text_content2);
             }
             XMLString::release(&text_content);
@@ -486,7 +485,7 @@ void InputConverterU::ProcessMacros_(
     const std::string& prefix, char* text_content,
     Teuchos::ParameterList& mPL, Teuchos::ParameterList& outPL)
 {
-  Teuchos::Array<std::string> macro = MakeRegionsList_(text_content);
+  std::vector<std::string> macro = CharToStrings_(text_content);
   Teuchos::Array<int> cycles;
   Teuchos::Array<double> times;
 

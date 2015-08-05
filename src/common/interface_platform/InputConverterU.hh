@@ -29,8 +29,11 @@ typedef std::map<std::string, std::vector<std::string> > Tree;
 
 class InputConverterU : public InputConverter {
  public:
-  InputConverterU() : flow_single_phase(false) {};
-  ~InputConverterU() {};
+  InputConverterU() :
+      vo_(NULL),
+      flow_single_phase(false),
+      compressibility_(false) {};
+  ~InputConverterU() { if (vo_ != NULL) delete vo_; }
 
   // main members
   Teuchos::ParameterList Translate();
@@ -44,17 +47,24 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateHypreAMG_();
   Teuchos::ParameterList TranslateBILU_();
   Teuchos::ParameterList TranslateSolvers_();
-
-  Teuchos::Array<std::string> MakeRegionsList_(char* char_array);
+  Teuchos::ParameterList TranslateState_();
+  Teuchos::ParameterList TranslateMaterialsPartition_();
 
   void ProcessMacros_(const std::string& prefix, char* text_content,
                       Teuchos::ParameterList& mPL, Teuchos::ParameterList& outPL);
+
+  Teuchos::ParameterList GetVerbosity_();
+  Teuchos::Array<double> MakeCoordinates_(char* char_array);
 
  private:
   int dim_;
   Tree tree_;
 
   bool flow_single_phase;
+  bool compressibility_;
+
+  Teuchos::ParameterList verb_list_;
+  VerboseObject* vo_;
 };
 
 }  // namespace AmanziInput

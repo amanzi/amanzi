@@ -13,6 +13,8 @@
 #include <fstream>
 #include <string>
 #include <algorithm>
+
+// TPLs
 #include <boost/lambda/lambda.hpp>
 #include <boost/bind.hpp>
 #include <boost/algorithm/string.hpp>
@@ -27,7 +29,6 @@
 #include "boost/format.hpp"
 #include "boost/lexical_cast.hpp"
 
-// TPLs
 #include <xercesc/dom/DOM.hpp>
 #include <xercesc/util/XMLString.hpp>
 #include <xercesc/util/PlatformUtils.hpp>
@@ -82,11 +83,6 @@ void InputConverter::Init(const std::string& xmlfilename)
 
   doc_ = parser->getDocument();
 
-  // grab verbosity early
-  verb_list_ = GetVerbosity_();
-  vo_ = new VerboseObject("InputTranslator", verb_list_);
-  Teuchos::OSTab tab = vo_->getOSTab();
-  
   delete errorHandler;
 }
 
@@ -172,68 +168,95 @@ DOMNode* InputConverter::getUniqueElementsByTagNames_(
 
 
 /* ******************************************************************
-* Extract generic verbosity object for all sublists.
+* Returns node tag1->tag2 where both tag1 and tag2 are unique leaves
+* of the tree.
 ****************************************************************** */
-Teuchos::ParameterList InputConverter::GetVerbosity_()
+DOMNode* InputConverter::getUniqueElementsByTagNames_(
+    const DOMNode* node1, const std::string& tag2, bool& flag)
 {
-  Teuchos::ParameterList vlist;
+  flag = false;
+  int ntag2(0);
+  DOMNode* node;
+  DOMNodeList* children = node1->getChildNodes();
 
-  DOMNodeList* node_list;
-  DOMNode* node_attr;
-  DOMNamedNodeMap* attr_map;
-  char* text_content;
-    
-  // get execution contorls node
-  node_list = doc_->getElementsByTagName(XMLString::transcode("execution_controls"));
-  
-  for (int i = 0; i < node_list->getLength(); i++) {
-    DOMNode* inode = node_list->item(i);
-
+  for (int i = 0; i < children->getLength(); i++) {
+    DOMNode* inode = children->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-      DOMNodeList* children = inode->getChildNodes();
-
-      for (int j = 0; j < children->getLength(); j++) {
-        DOMNode* jnode = children->item(j);
-
-        if (DOMNode::ELEMENT_NODE == jnode->getNodeType()) {
-          char* tagname = XMLString::transcode(jnode->getNodeName());
-          if (std::string(tagname) == "verbosity") {
-            attr_map = jnode->getAttributes();
-            node_attr = attr_map->getNamedItem(XMLString::transcode("level"));
-            if (node_attr) {
-              text_content = XMLString::transcode(node_attr->getNodeValue());
-              vlist.sublist("VerboseObject").set<std::string>("Verbosity Level", TrimString_(text_content));
-              vlist.set<std::string>("verbosity", TrimString_(text_content));
-            } else {
-              ThrowErrorIllformed_("verbosity", "value", "level");
-            }
-            XMLString::release(&text_content);
-          }
-        }
+      char* tagname = XMLString::transcode(inode->getNodeName());   
+      if (strcmp(tagname, tag2.c_str()) == 0) {
+        node = inode;
+        ntag2++;
       }
+      XMLString::release(&tagname);
     }
   }
-  return vlist;
+
+  if (ntag2 == 1) flag = true;
+  return node;
 }
-    
+
 
 /* ******************************************************************
-* Empty
+* Returns node tag1->tag2 where both tag1 and tag2 are unique leaves
+* of the tree.
 ****************************************************************** */
-Teuchos::Array<double> InputConverter::MakeCoordinates_(char* char_array)
+DOMNode* InputConverter::getUniqueElementsByTagNames_(
+    const DOMNode* node1, const std::string& tag2, const std::string& tag3, bool& flag)
 {
-  Teuchos::Array<double> coords;
+  flag = false;
+  int ntag2(0), ntag3(0);
+  DOMNode* node;
+  DOMNodeList* children = node1->getChildNodes();
+
+  for (int i = 0; i < children->getLength(); i++) {
+    DOMNode* inode = children->item(i);
+    if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
+      char* tagname = XMLString::transcode(inode->getNodeName());   
+      if (strcmp(tagname, tag2.c_str()) == 0) {
+        node = inode;
+        ntag2++;
+      }
+      XMLString::release(&tagname);
+    }
+  }
+  if (ntag2 == 1) flag = true;
+
+  // second leaf
+  children = node->getChildNodes();
+  for (int i = 0; i < children->getLength(); i++) {
+    DOMNode* inode = children->item(i);
+    if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
+      char* tagname = XMLString::transcode(inode->getNodeName());   
+      if (strcmp(tagname, tag3.c_str()) == 0) {
+        node = inode;
+        ntag3++;
+      }
+      XMLString::release(&tagname);
+    }
+  }
+  if (ntag3 == 1) flag = true;
+
+  return node;
+}
+
+
+/* ******************************************************************
+* Converts string of names separated by comma to array of strings.
+****************************************************************** */
+std::vector<std::string> InputConverter::CharToStrings_(char* namelist)
+{
+  std::vector<std::string> regs;
   char* tmp;
-  tmp = strtok(char_array, "(, ");
+  tmp = strtok(namelist, ",");
 
   while (tmp != NULL) {
     std::string str(tmp);
     boost::algorithm::trim(str);
-    coords.append(atof(str.c_str()));
+    regs.push_back(str);
     tmp = strtok(NULL, ",");
   }
 
-  return coords;
+  return regs;
 }
 
 
