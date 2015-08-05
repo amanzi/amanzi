@@ -77,6 +77,12 @@ class InputConverter {
 
  protected:
   xercesc::DOMDocument* doc_;
+
+ private:
+
+  // Disallowed deep-copy-related methods.
+  InputConverter(const InputConverter&);
+  InputConverter& operator=(const InputConverter&);
 };
 
 }  // namespace AmanziInput

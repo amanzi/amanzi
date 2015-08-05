@@ -45,6 +45,7 @@ add_amanzi_library(interface
                            InputConverter.cc 
                            InputConverterU.cc InputConverterU_Mesh.cc InputConverterU_Output.cc
                            InputConverterU_Solvers.cc InputConverterU_State.cc
-			   InputTranslator.cc
+                           InputConverterS.cc
+                           InputTranslator.cc
                       HEADERS ${interface_inc_files}
                       LINK_LIBS error_handling geometry ${Teuchos_LIBRARIES})
