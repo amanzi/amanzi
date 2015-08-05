@@ -294,7 +294,7 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
     source_in_meters_ = plist_->get<bool>("mass source in meters", true);
     
     // source term itself [m/s]
-    mass_source_key_ = plist_->get<std::string>("mass source key", "surface-mass_source");
+    mass_source_key_ = plist_->get<std::string>("source key", "surface-mass_source");
     S->RequireField(mass_source_key_)->SetMesh(mesh_)
         ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(mass_source_key_);
