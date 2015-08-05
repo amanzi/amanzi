@@ -49,15 +49,15 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
   // --- viscosity
   bool flag;
-  DOMNode* node = getUniqueElementsByTagNames_("phases", "liquid_phase", "viscosity", flag);
+  DOMNode* node = getUniqueElementByTagNames_("phases", "liquid_phase", "viscosity", flag);
   char* text_content = XMLString::transcode(node->getTextContent());
-  out_ic.sublist("fluid_viscosity").set<double>("value", atof(text_content));
+  out_ic.sublist("fluid_viscosity").set<double>("value", std::strtod(text_content, NULL));
   XMLString::release(&text_content);
 
   // --- density
-  node = getUniqueElementsByTagNames_("phases", "liquid_phase", "density", flag);
+  node = getUniqueElementByTagNames_("phases", "liquid_phase", "density", flag);
   text_content = XMLString::transcode(node->getTextContent());
-  double density = atof(text_content);
+  double density = std::strtod(text_content, NULL);
   out_ic.sublist("fluid_density").set<double>("value", density);
   XMLString::release(&text_content);
 
@@ -83,7 +83,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         ThrowErrorMissattr_("materials", "attribute", "name", "material");
       }
 
-      node = getUniqueElementsByTagNames_(inode, "assigned_regions", flag);
+      node = getUniqueElementByTagNames_(inode, "assigned_regions", flag);
       char* text_content = XMLString::transcode(node->getTextContent());
       std::vector<std::string> regions = CharToStrings_(text_content);
       XMLString::release(&text_content);
@@ -108,13 +108,13 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- porosity: skip if compressibility model was already provided.
       if (!compressibility_) {
         double porosity;
-        node = getUniqueElementsByTagNames_(inode, "mechanical_properties", "porosity", flag);
+        node = getUniqueElementByTagNames_(inode, "mechanical_properties", "porosity", flag);
         if (flag) {
           DOMNamedNodeMap* attr_map = node->getAttributes();
           node_attr = attr_map->getNamedItem(XMLString::transcode("value"));
           if (node_attr) {
             text_content = XMLString::transcode(node_attr->getNodeValue());
-            porosity = atof(text_content);
+            porosity = std::strtod(text_content, NULL);
             XMLString::release(&text_content);
           } else {
             ThrowErrorMissattr_("mechanical_properties", "attribute", "value", "porosity");
@@ -535,7 +535,7 @@ Teuchos::ParameterList InputConverterU::TranslateMaterialsPartition_()
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       DOMNamedNodeMap* attr_map = inode->getAttributes();
 
-      DOMNode* node = getUniqueElementsByTagNames_(inode, "assigned_regions", flag);
+      DOMNode* node = getUniqueElementByTagNames_(inode, "assigned_regions", flag);
       if (flag) {
         char* text_content = XMLString::transcode(node->getTextContent());
         std::vector<std::string> names = CharToStrings_(text_content);

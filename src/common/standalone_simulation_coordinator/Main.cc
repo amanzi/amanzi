@@ -265,9 +265,11 @@ int main(int argc, char *argv[]) {
       if (strcmp(temp2, "amanzi_input") == 0) {
 	driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName);
 
-// Amanzi::AmanziInput::InputConverterU converter;
-// converter.Init(xmlInFileName);
-// std::cout << converter.Translate() << std::endl;
+        // if (rank == 0) {
+        //   Amanzi::AmanziInput::InputConverterU converter;
+        //   converter.Init(xmlInFileName);
+        //   std::cout << converter.Translate() << std::endl;
+        // }
 	
 	//driver_parameter_list.print(std::cout,true,false);
 	const Teuchos::ParameterList& echo_list = driver_parameter_list.sublist("Echo Translated Input");
@@ -390,7 +392,7 @@ int main(int argc, char *argv[]) {
   }
   catch (int& ierr) {
     if (rank == 0) {
-      std::cout << "Catched unknown exception with code " << ierr 
+      std::cout << "Caught unknown exception with integer code " << ierr 
                 << ". Known sources: Epetra_MultiVector::AllocateForCopy" << std::endl;
       std::cout << "Amanzi::SIMULATION_FAILED\n";
     }

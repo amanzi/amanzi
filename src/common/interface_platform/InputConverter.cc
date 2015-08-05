@@ -91,7 +91,7 @@ void InputConverter::Init(const std::string& xmlfilename)
 * Returns node tag1->tag2 where both tag1 and tag2 are unique leaves
 * of the tree.
 ****************************************************************** */
-DOMNode* InputConverter::getUniqueElementsByTagNames_(
+DOMNode* InputConverter::getUniqueElementByTagNames_(
     const std::string& tag1, const std::string& tag2, bool& flag)
 {
   flag = false;
@@ -123,7 +123,7 @@ DOMNode* InputConverter::getUniqueElementsByTagNames_(
 * Returns node tag1->tag2->tag3 where tag1, tag2 iand tag3 are unique
 * leaves of the tree.
 ****************************************************************** */
-DOMNode* InputConverter::getUniqueElementsByTagNames_(
+DOMNode* InputConverter::getUniqueElementByTagNames_(
     const std::string& tag1, const std::string& tag2, const std::string& tag3, bool& flag)
 {
   int ntag2(0), ntag3(0);
@@ -168,10 +168,49 @@ DOMNode* InputConverter::getUniqueElementsByTagNames_(
 
 
 /* ******************************************************************
+* Return node described by the list of consequtive names tags 
+* separated by commas. It 
+****************************************************************** */
+DOMNode* InputConverter::getUniqueElementByTagNames_(
+    const std::string& tags, bool& flag)
+{
+  DOMNode* node;
+
+  flag = false;
+  std::vector<std::string> tag_names = CharToStrings_(tags.c_str());
+  if (tag_names.size() == 0) return node;
+
+  // get the first node
+  DOMNodeList* node_list = doc_->getElementsByTagName(XMLString::transcode(tag_names[0].c_str()));
+  if (node_list->getLength() != 1) return node;
+
+  for (int n = 1; n < tag_names.size(); ++n) {
+    DOMNodeList* children = node->getChildNodes();
+    int ntag(0);
+    for (int i = 0; i < children->getLength(); i++) {
+      DOMNode* inode = children->item(i);
+      if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
+        char* tagname = XMLString::transcode(inode->getNodeName());   
+        if (strcmp(tagname, tag_names[n].c_str()) == 0) {
+          node = inode;
+          ntag++;
+        }
+        XMLString::release(&tagname);
+      }
+    }
+    if (ntag != 1) return node;
+  }
+
+  flag = true;
+  return node;
+}
+
+
+/* ******************************************************************
 * Returns node tag1->tag2 where both tag1 and tag2 are unique leaves
 * of the tree.
 ****************************************************************** */
-DOMNode* InputConverter::getUniqueElementsByTagNames_(
+DOMNode* InputConverter::getUniqueElementByTagNames_(
     const DOMNode* node1, const std::string& tag2, bool& flag)
 {
   flag = false;
@@ -200,7 +239,7 @@ DOMNode* InputConverter::getUniqueElementsByTagNames_(
 * Returns node tag1->tag2 where both tag1 and tag2 are unique leaves
 * of the tree.
 ****************************************************************** */
-DOMNode* InputConverter::getUniqueElementsByTagNames_(
+DOMNode* InputConverter::getUniqueElementByTagNames_(
     const DOMNode* node1, const std::string& tag2, const std::string& tag3, bool& flag)
 {
   flag = false;
@@ -243,19 +282,23 @@ DOMNode* InputConverter::getUniqueElementsByTagNames_(
 /* ******************************************************************
 * Converts string of names separated by comma to array of strings.
 ****************************************************************** */
-std::vector<std::string> InputConverter::CharToStrings_(char* namelist)
+std::vector<std::string> InputConverter::CharToStrings_(const char* namelist)
 {
-  std::vector<std::string> regs;
-  char* tmp;
-  tmp = strtok(namelist, ",");
+  char* tmp1 = new char[strlen(namelist)];
+  strcpy(tmp1, namelist);
 
-  while (tmp != NULL) {
-    std::string str(tmp);
+  char* tmp2;
+  tmp2 = strtok(tmp1, ",");
+
+  std::vector<std::string> regs;
+  while (tmp2 != NULL) {
+    std::string str(tmp2);
     boost::algorithm::trim(str);
     regs.push_back(str);
-    tmp = strtok(NULL, ",");
+    tmp2 = strtok(NULL, ",");
   }
 
+  delete tmp1;
   return regs;
 }
 
@@ -283,7 +326,7 @@ double InputConverter::ConvertTimeValue_(char* time_value)
   char* char_array;
   
   char_array = strtok(time_value, ";, ");
-  time = atof(char_array);
+  time = std::strtod(char_array, NULL);
   char_array = strtok(NULL, ";,");
 
   if (char_array != NULL) {
