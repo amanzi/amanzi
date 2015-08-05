@@ -206,7 +206,6 @@ void CycleDriver::Setup() {
   S_->RequireScalar("dt", "coordinator");
   S_->Setup();
 
-
   // create the time step manager
   tsm_ = Teuchos::ptr(new TimeStepManager(parameter_list_->sublist("Cycle Driver")));
   //tsm_ = Teuchos::ptr(new TimeStepManager(vo_));
@@ -779,7 +778,7 @@ void CycleDriver::Go() {
   double dt;
   double restart_dT(1.0e99);
 
-  if (!restart_requested_) {     /// No restart
+  if (!restart_requested_) {  // No restart
     Init_PK(time_period_id_);
     // start at time t = t0 and initialize the state.
     S_->set_time(tp_start_[time_period_id_]);
@@ -792,13 +791,11 @@ void CycleDriver::Go() {
     dt = tp_dt_[time_period_id_];
     dt = tsm_->TimeStep(S_->time(), dt);
     pk_->set_dt(dt);
-
-  }
-  else {                        /// Read restart
-
+  } else {
+    // Read restart file
     restart_time = ReadCheckpointInitialTime(comm_, restart_filename_);
-    position     = ReadCheckpointPosition(comm_, restart_filename_);
-    for (int i=0;i<num_time_periods_;i++) {
+    position = ReadCheckpointPosition(comm_, restart_filename_);
+    for (int i = 0; i < num_time_periods_; i++) {
       if (restart_time - tp_end_[i] > -1e-10) 
 	time_period_id_++;
     }    
@@ -813,7 +810,6 @@ void CycleDriver::Go() {
     S_->InitializeFields();
     S_->InitializeEvaluators();
     
-
     // re-initialize the state object
     restart_dT = ReadCheckpoint(comm_, Teuchos::ptr(&*S_), restart_filename_);
     cycle0_ = S_->cycle();
@@ -885,9 +881,7 @@ void CycleDriver::Go() {
         ResetDriver(time_period_id_); 
         dt = get_dt(false);
       }      
-
     }
-
 #if !DEBUG_MODE
   }
 

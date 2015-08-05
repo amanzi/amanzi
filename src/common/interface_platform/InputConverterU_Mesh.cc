@@ -100,7 +100,7 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
         if (strcmp(tagname, "dimension") == 0) {
           char* tmp = XMLString::transcode(inode->getTextContent());
           if (strlen(tmp) > 0) {
-            dim_ = atoi(tmp);
+            dim_ = std::strtol(tmp, NULL, 10);
             all_good = true;
           }
           XMLString::release(&tmp);
@@ -148,7 +148,7 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
               if (attr_name) {
                 tmp = XMLString::transcode(node_attr->getNodeValue());
                 if (strlen(tmp) > 0) {
-                  ncells.append(atoi(tmp));
+                  ncells.append(std::strtol(tmp, NULL, 10));
                 } else {
                   all_good = false;
                   helper << "number_of_cells " << attr_name;
@@ -423,7 +423,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
           } else {
             ThrowErrorMissattr_("Regions","attribute","label","color");
           }
-          rfPL.set<int>("Value", atoi(value));
+          rfPL.set<int>("Value", std::strtol(value, NULL, 10));
           out_list.sublist(reg_name).sublist("Region: Color Function") = rfPL;
           XMLString::release(&value);
         }
@@ -485,7 +485,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
           text_content2 = XMLString::transcode(reg_elem->getAttribute(XMLString::transcode("num_points")));
           std::string str(text_content2);
           boost::algorithm::trim(str);
-          num_points = atoi(text_content2);
+          num_points = std::strtol(text_content2, NULL, 10);
           out_list.sublist(reg_name).sublist("Region: Polygon").set<int>("Number of points", num_points);
           XMLString::release(&text_content2);
         }

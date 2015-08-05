@@ -105,7 +105,7 @@ Teuchos::Array<double> InputConverterU::MakeCoordinates_(char* char_array)
   while (tmp != NULL) {
     std::string str(tmp);
     boost::algorithm::trim(str);
-    coords.append(atof(str.c_str()));
+    coords.append(std::strtod(str.c_str(), NULL));
     tmp = strtok(NULL, ",");
   }
 

@@ -58,8 +58,6 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
     *vo_->os() << "Translating solvers" << std::endl;
   }
 
-  char* text_content;
-
   // define defaults...
   double tol = LINEAR_SOLVER_TOL;
   int maxiter = LINEAR_SOLVER_MAXITER;
@@ -76,27 +74,19 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
       DOMNode* inode = children->item(i);
       if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
         char* tagname = XMLString::transcode(inode->getNodeName());
+        char* text_content = XMLString::transcode(inode->getTextContent());
 
         if (strcmp(tagname, "tolerance") == 0) {
-          text_content = XMLString::transcode(inode->getTextContent());
-          tol = atof(text_content);
-          XMLString::release(&text_content);
-        } 
-        else if (strcmp(tagname, "max_iterations") == 0) {
-          text_content = XMLString::transcode(inode->getTextContent());
-          maxiter = atoi(text_content);
-          XMLString::release(&text_content);
-        }
-        else if (strcmp(tagname, "method") == 0) {
-          text_content = XMLString::transcode(inode->getTextContent());
+          tol = std::strtod(text_content, NULL);
+        } else if (strcmp(tagname, "max_iterations") == 0) {
+          maxiter = std::strtol(text_content, NULL, 10);
+        } else if (strcmp(tagname, "method") == 0) {
           method = text_content;
-          XMLString::release(&text_content);
-        }
-        else if (strcmp(tagname, "preconditioner") == 0) {
-          text_content = XMLString::transcode(inode->getTextContent());
+        } else if (strcmp(tagname, "preconditioner") == 0) {
           prec = text_content;
-          XMLString::release(&text_content);
         }
+        XMLString::release(&text_content);
+        XMLString::release(&tagname);
       }
     }
   }
@@ -157,27 +147,26 @@ Teuchos::ParameterList InputConverterU::TranslateTrilinosML_()
   int nsmooth(TRILINOS_ML_NSMOOTH);
 
   bool flag;
-  DOMNode* node = getUniqueElementsByTagNames_("unstr_linear_solver", "linear_solvers", "preconditioner", flag);
-  DOMNodeList* children = node->getChildNodes();
+  DOMNode* node = getUniqueElementByTagNames_("unstr_linear_solver", "linear_solvers", "preconditioner", flag);
+  if (flag) {
+    DOMNodeList* children = node->getChildNodes();
 
-  for (int i = 0; i < children->getLength(); i++) {
-    DOMNode* inode = children->item(i);
-    char* tagname = XMLString::transcode(inode->getNodeName());
-    char* text_content = XMLString::transcode(inode->getTextContent());
+    for (int i = 0; i < children->getLength(); i++) {
+      DOMNode* inode = children->item(i);
+      char* tagname = XMLString::transcode(inode->getNodeName());
+      char* text_content = XMLString::transcode(inode->getTextContent());
 
-    if (strcmp(tagname, "trilinos_smoother_type") == 0) {
-      smthtyp = TrimString_(text_content);
-    } 
-    else if (strcmp(tagname, "trilinos_threshold") == 0) {
-      aggthr = atof(text_content);
+      if (strcmp(tagname, "trilinos_smoother_type") == 0) {
+        smthtyp = TrimString_(text_content);
+      } else if (strcmp(tagname, "trilinos_threshold") == 0) {
+        aggthr = std::strtod(text_content, NULL);
+      } else if (strcmp(tagname, "trilinos_smoother_sweeps") == 0) {
+        nsmooth = std::strtol(text_content, NULL, 10);
+      } else if (strcmp(tagname, "trilinos_cycle_applications") == 0) {
+        ncycles = std::strtol(text_content, NULL, 10);
+      }
+      XMLString::release(&text_content);
     }
-    else if (strcmp(tagname, "trilinos_smoother_sweeps") == 0) {
-      nsmooth = atoi(text_content);
-    }
-    else if (strcmp(tagname, "trilinos_cycle_applications") == 0) {
-      ncycles = atoi(text_content);
-    }
-    XMLString::release(&text_content);
   }
 
   Teuchos::ParameterList& ml_list = out_list.sublist("ml parameters");
@@ -218,29 +207,28 @@ Teuchos::ParameterList InputConverterU::TranslateBILU_()
   int bilu_overlap(TRILINOS_ILU_OLV);
 
   bool flag;
-  DOMNode* node = getUniqueElementsByTagNames_("unstr_linear_solver", "linear_solvers", "preconditioner", flag);
-  DOMNodeList* children = node->getChildNodes();
+  DOMNode* node = getUniqueElementByTagNames_("unstr_linear_solver", "linear_solvers", "preconditioner", flag);
 
-  for (int i = 0; i < children->getLength(); i++) {
-    DOMNode* inode = children->item(i);
-    char* tagname = XMLString::transcode(inode->getNodeName());
-    char* text_content = XMLString::transcode(inode->getTextContent());
+  if (flag) {
+    DOMNodeList* children = node->getChildNodes();
 
-    if (strcmp(tagname, "ilu_overlap") == 0) {
-      bilu_overlap = atoi(text_content);
-    } 
-    else if (strcmp(tagname, "ilu_relax") == 0) {
-      bilu_relax_value = atof(text_content);
-    } 
-    else if (strcmp(tagname, "ilu_rel_threshold") == 0) {
-      bilu_rel_thresh = atof(text_content);
-    } 
-    else if (strcmp(tagname, "ilu_abs_threshold") == 0) {
-      bilu_abs_thresh = atof(text_content);
-    } 
-    else if (strcmp(tagname, "ilu_level_of_fill") == 0) {
-      bilu_level_of_fill = atoi(text_content);
-    } 
+    for (int i = 0; i < children->getLength(); i++) {
+      DOMNode* inode = children->item(i);
+      char* tagname = XMLString::transcode(inode->getNodeName());
+      char* text_content = XMLString::transcode(inode->getTextContent());
+
+      if (strcmp(tagname, "ilu_overlap") == 0) {
+        bilu_overlap = std::strtol(text_content, NULL, 10);
+      } else if (strcmp(tagname, "ilu_relax") == 0) {
+        bilu_relax_value = std::strtod(text_content, NULL);
+      } else if (strcmp(tagname, "ilu_rel_threshold") == 0) {
+        bilu_rel_thresh = std::strtod(text_content, NULL);
+      } else if (strcmp(tagname, "ilu_abs_threshold") == 0) {
+        bilu_abs_thresh = std::strtod(text_content, NULL);
+      } else if (strcmp(tagname, "ilu_level_of_fill") == 0) {
+        bilu_level_of_fill = std::strtol(text_content, NULL, 10);
+      } 
+    }
   }
 
   Teuchos::ParameterList& p_list = out_list.sublist("block ilu parameters");
@@ -270,27 +258,27 @@ Teuchos::ParameterList InputConverterU::TranslateHypreAMG_()
   double strong_threshold(HYPRE_AMG_STR_THR);
 
   bool flag;
-  DOMNode* node = getUniqueElementsByTagNames_("unstr_linear_solver", "linear_solvers", "preconditioner", flag);
-  DOMNodeList* children = node->getChildNodes();
+  DOMNode* node = getUniqueElementByTagNames_("unstr_linear_solver", "linear_solvers", "preconditioner", flag);
 
-  for (int i = 0; i < children->getLength(); i++) {
-    DOMNode* inode = children->item(i);
-    char* tagname = XMLString::transcode(inode->getNodeName());
-    char* text_content = XMLString::transcode(inode->getTextContent());
+  if (flag) {
+    DOMNodeList* children = node->getChildNodes();
 
-    if (strcmp(tagname, "hypre_cycle_applications") == 0) {
-      ncycles = atoi(text_content);
-    } 
-    else if (strcmp(tagname, "hypre_smoother_sweeps") == 0) {
-      nsmooth = atoi(text_content);
+    for (int i = 0; i < children->getLength(); i++) {
+      DOMNode* inode = children->item(i);
+      char* tagname = XMLString::transcode(inode->getNodeName());
+      char* text_content = XMLString::transcode(inode->getTextContent());
+
+      if (strcmp(tagname, "hypre_cycle_applications") == 0) {
+        ncycles = std::strtol(text_content, NULL, 10);
+      } else if (strcmp(tagname, "hypre_smoother_sweeps") == 0) {
+        nsmooth = std::strtol(text_content, NULL, 10);
+      } else if (strcmp(tagname, "hypre_tolerance") == 0) {
+        tol = std::strtod(text_content, NULL);
+      } else if (strcmp(tagname, "hypre_strong_threshold") == 0) {
+        strong_threshold = std::strtod(text_content, NULL);
+      }
+      XMLString::release(&text_content);
     }
-    else if (strcmp(tagname, "hypre_tolerance") == 0) {
-      tol = atof(text_content);
-    }
-    else if (strcmp(tagname, "hypre_strong_threshold") == 0) {
-      strong_threshold = atof(text_content);
-    }
-    XMLString::release(&text_content);
   }
 
   Teuchos::ParameterList& amg_list = out_list.sublist("boomer amg parameters");

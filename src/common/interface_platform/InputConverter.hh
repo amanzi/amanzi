@@ -50,16 +50,20 @@ class InputConverter {
   // -- generalization of getElementsByTagNames(): returns node
   //    tag1->tag2 or tag1->tag2-tag3 where all tags are unique 
   //    leaves of the tree.
-  xercesc::DOMNode* getUniqueElementsByTagNames_(
+  xercesc::DOMNode* getUniqueElementByTagNames_(
       const std::string& tag1, const std::string& tag2, bool& flag);
-  xercesc::DOMNode* getUniqueElementsByTagNames_(
+  xercesc::DOMNode* getUniqueElementByTagNames_(
       const std::string& tag1, const std::string& tag2, const std::string& tag3, bool& flag);
+  // -- tags contains list of names separated by commas. It 
+  //    will replace eventually the previous routine.
+  xercesc::DOMNode* getUniqueElementByTagNames_(
+      const std::string& tags, bool& flag);
 
   // -- modification of the previous routines where the first tag 
-  //    is replaced by a pointer 
-  xercesc::DOMNode* getUniqueElementsByTagNames_(
+  //    is replaced by a pointer to document's element
+  xercesc::DOMNode* getUniqueElementByTagNames_(
       const xercesc::DOMNode* node1, const std::string& tag2, bool& flag);
-  xercesc::DOMNode* getUniqueElementsByTagNames_(
+  xercesc::DOMNode* getUniqueElementByTagNames_(
       const xercesc::DOMNode* node1, const std::string& tag2, const std::string& tag3, bool& flag);
 
   // times
@@ -67,7 +71,7 @@ class InputConverter {
   double ConvertTimeValue_(char* time_value);
 
   // data streaming/trimming/converting
-  std::vector<std::string> CharToStrings_(char* namelist);
+  std::vector<std::string> CharToStrings_(const char* namelist);
   std::string TrimString_(char* tmp);
 
   // error messages
