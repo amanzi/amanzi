@@ -549,7 +549,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
             // deal with region list
             else if (strcmp(node_name, "region_list") == 0) {
               text_content2 = XMLString::transcode(jnode->getTextContent());
-              Teuchos::Array<std::string> regs = MakeRegionsList_(text_content2);
+              Teuchos::Array<std::string> regs = CharToStrings_(text_content2);
               out_list.sublist(reg_name).sublist("Region: Logical").set<Teuchos::Array<std::string> >("Regions", regs);
               haveRL = true;
               XMLString::release(&text_content2);
@@ -571,26 +571,6 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
   }
 
   return out_list;
-}
-
-
-/* ******************************************************************
-* Converts string of names separated by comma to array of strings.
-****************************************************************** */
-Teuchos::Array<std::string> InputConverterU::MakeRegionsList_(char* char_array)
-{
-  Teuchos::Array<std::string> regs;
-  char* tmp;
-  tmp = strtok(char_array, ",");
-
-  while (tmp != NULL) {
-    std::string str(tmp);
-    boost::algorithm::trim(str);
-    regs.append(str);
-    tmp = strtok(NULL, ",");
-  }
-
-  return regs;
 }
 
 }  // namespace AmanziInput

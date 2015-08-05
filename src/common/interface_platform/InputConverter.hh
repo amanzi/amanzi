@@ -34,12 +34,11 @@ namespace AmanziInput {
 
 class InputConverter {
  public:
-  InputConverter() : vo_(NULL) {
+  InputConverter() {
     xercesc::XMLPlatformUtils::Initialize();
   }
 
   ~InputConverter() {
-    if (vo_ != NULL) delete vo_;
     xercesc::XMLPlatformUtils::Terminate();
   }
 
@@ -56,15 +55,19 @@ class InputConverter {
   xercesc::DOMNode* getUniqueElementsByTagNames_(
       const std::string& tag1, const std::string& tag2, const std::string& tag3, bool& flag);
 
-  // verbosity XML
-  Teuchos::ParameterList GetVerbosity_();
+  // -- modification of the previous routines where the first tag 
+  //    is replaced by a pointer 
+  xercesc::DOMNode* getUniqueElementsByTagNames_(
+      const xercesc::DOMNode* node1, const std::string& tag2, bool& flag);
+  xercesc::DOMNode* getUniqueElementsByTagNames_(
+      const xercesc::DOMNode* node1, const std::string& tag2, const std::string& tag3, bool& flag);
 
   // times
   double GetTimeValue_(std::string time_value);
   double ConvertTimeValue_(char* time_value);
 
   // data streaming/trimming/converting
-  Teuchos::Array<double> MakeCoordinates_(char* char_array);
+  std::vector<std::string> CharToStrings_(char* namelist);
   std::string TrimString_(char* tmp);
 
   // error messages
@@ -74,9 +77,6 @@ class InputConverter {
 
  protected:
   xercesc::DOMDocument* doc_;
-
-  Teuchos::ParameterList verb_list_;
-  VerboseObject* vo_;
 };
 
 }  // namespace AmanziInput
