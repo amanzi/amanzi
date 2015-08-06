@@ -236,10 +236,11 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   // -- pull out other needed data
   std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
   unsigned int ncells = Acc_cells.size();
+
   for (unsigned int c=0; c!=ncells; ++c) {
     Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] / h;
   }
-
+  
   // // -- update the source term derivatives
   // if (S_next_->GetFieldEvaluator(mass_source_key_)->IsDependency(S_next_.ptr(), key_)) {
   //   S_next_->GetFieldEvaluator(mass_source_key_)
@@ -392,6 +393,7 @@ double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       // error in flux -- relative to cell's extensive conserved quantity
       int nfaces = dvec->size(*comp, false);
       bool scaled_constraint = plist_->sublist("Diffusion").get<bool>("scaled constraint equation", true);
+      double constraint_scaling_cutoff = plist_->sublist("Diffusion").get<double>("constraint equation scaling cutoff", 1.0);
       const Epetra_MultiVector& kr_f = *S_next_->GetFieldData("upwind_overland_conductivity")
         ->ViewComponent("face",false);
       
@@ -405,7 +407,7 @@ double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
         
         double enorm_f = fluxtol_ * h * std::abs(dvec_v[0][f])
             / (atol_*cv_min + rtol_*std::abs(conserved_min));
-        if (scaled_constraint && (kr_f[0][f] < 1.0)) enorm_f *= kr_f[0][f];
+        if (scaled_constraint && (kr_f[0][f] < constraint_scaling_cutoff)) enorm_f *= kr_f[0][f];
         if (enorm_f > enorm_comp) {
           enorm_comp = enorm_f;
           enorm_loc = f;
