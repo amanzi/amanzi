@@ -29,15 +29,12 @@
 #include "boost/format.hpp"
 #include "boost/lexical_cast.hpp"
 
-#include <xercesc/dom/DOM.hpp>
-#include <xercesc/util/XMLString.hpp>
-#include <xercesc/util/PlatformUtils.hpp>
-#include <xercesc/parsers/DOMLSParserImpl.hpp>
-#include <xercesc/framework/StdOutFormatTarget.hpp>
-#include <xercesc/util/OutOfMemoryException.hpp>
-
-#include "Teuchos_StandardParameterEntryValidators.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "xercesc/dom/DOM.hpp"
+#include "xercesc/util/XMLString.hpp"
+#include "xercesc/util/PlatformUtils.hpp"
+#include "xercesc/parsers/DOMLSParserImpl.hpp"
+#include "xercesc/framework/StdOutFormatTarget.hpp"
+#include "xercesc/util/OutOfMemoryException.hpp"
 
 // Amanzi's
 #include "ErrorHandler.hpp"
@@ -171,7 +168,7 @@ DOMNode* InputConverter::getUniqueElementByTagNames_(
 * Return node described by the list of consequtive names tags 
 * separated by commas. It 
 ****************************************************************** */
-DOMNode* InputConverter::getUniqueElementByTagNames_(
+DOMNode* InputConverter::getUniqueElementByTagsString_(
     const std::string& tags, bool& flag)
 {
   DOMNode* node;
@@ -258,7 +255,7 @@ DOMNode* InputConverter::getUniqueElementByTagNames_(
       XMLString::release(&tagname);
     }
   }
-  if (ntag2 == 1) flag = true;
+  if (ntag2 != 1) return node;
 
   // second leaf
   children = node->getChildNodes();
@@ -280,11 +277,104 @@ DOMNode* InputConverter::getUniqueElementByTagNames_(
 
 
 /* ******************************************************************
+* Return node described by the list of consequtive names tags 
+* separated by commas.
+****************************************************************** */
+DOMNode* InputConverter::getUniqueElementByTagsString_(
+    const DOMNode* node1, const std::string& tags, bool& flag)
+{
+  DOMNode* node;
+
+std::cout << tags << std::endl;
+  flag = false;
+  std::vector<std::string> tag_names = CharToStrings_(tags.c_str());
+  if (tag_names.size() == 0) return node;
+
+  // get the first node
+  node = const_cast<DOMNode*>(node1);
+
+  for (int n = 0; n < tag_names.size(); ++n) {
+    DOMNodeList* children = node->getChildNodes();
+    int ntag(0);
+    for (int i = 0; i < children->getLength(); i++) {
+      DOMNode* inode = children->item(i);
+      if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
+        char* tagname = XMLString::transcode(inode->getNodeName());   
+        if (strcmp(tagname, tag_names[n].c_str()) == 0) {
+          node = inode;
+          ntag++;
+        }
+        XMLString::release(&tagname);
+      }
+    }
+    if (ntag != 1) return node;
+  }
+
+  flag = true;
+  return node;
+}
+
+
+/* ******************************************************************
+* Converts string of names separated by comma to array of strings.
+****************************************************************** */
+double InputConverter::GetAttributeValueD_(DOMElement* elem, const char* attr_name)
+{
+  double val;
+  if (elem->hasAttribute(XMLString::transcode(attr_name))) {
+    char* text_content = XMLString::transcode(elem->getAttribute(XMLString::transcode(attr_name)));
+    val = std::strtod(text_content, NULL);
+    XMLString::release(&text_content);
+  } else {
+    char* tagname = XMLString::transcode(elem->getNodeName());
+    ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
+  }
+  return val;
+}
+
+
+/* ******************************************************************
+* Converts string of names separated by comma to array of strings.
+****************************************************************** */
+int InputConverter::GetAttributeValueL_(DOMElement* elem, const char* attr_name)
+{
+  int val;
+  if (elem->hasAttribute(XMLString::transcode(attr_name))) {
+    char* text_content = XMLString::transcode(elem->getAttribute(XMLString::transcode(attr_name)));
+    val = std::strtol(text_content, NULL, 10);
+    XMLString::release(&text_content);
+  } else {
+    char* tagname = XMLString::transcode(elem->getNodeName());
+    ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
+  }
+  return val;
+}
+
+
+/* ******************************************************************
+* Converts string of names separated by comma to array of strings.
+****************************************************************** */
+std::vector<double> InputConverter::GetAttributeVector_(DOMElement* elem, const char* attr_name)
+{
+  std::vector<double> val;
+  if (elem->hasAttribute(XMLString::transcode(attr_name))) {
+    char* text_content = XMLString::transcode(elem->getAttribute(XMLString::transcode(attr_name)));
+    val = MakeCoordinates_(text_content);
+    XMLString::release(&text_content);
+  } else {
+    char* tagname = XMLString::transcode(elem->getNodeName());
+    ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
+  }
+  return val;
+}
+
+
+/* ******************************************************************
 * Converts string of names separated by comma to array of strings.
 ****************************************************************** */
 std::vector<std::string> InputConverter::CharToStrings_(const char* namelist)
 {
-  char* tmp1 = new char[strlen(namelist)];
+  char* tmp1 = new char[strlen(namelist) + 1];
   strcpy(tmp1, namelist);
 
   char* tmp2;
@@ -344,6 +434,26 @@ double InputConverter::ConvertTimeValue_(char* time_value)
 
 
 /* ******************************************************************
+* Converts coordinate string to an array of doubles.
+****************************************************************** */
+std::vector<double> InputConverter::MakeCoordinates_(char* char_array)
+{
+  std::vector<double> coords;
+  char* tmp;
+  tmp = strtok(char_array, "(, ");
+
+  while (tmp != NULL) {
+    std::string str(tmp);
+    boost::algorithm::trim(str);
+    coords.push_back(std::strtod(str.c_str(), NULL));
+    tmp = strtok(NULL, ",");
+  }
+
+  return coords;
+}
+
+
+/* ******************************************************************
 * Empty
 ****************************************************************** */
 std::string InputConverter::TrimString_(char* tmp)
@@ -358,12 +468,12 @@ std::string InputConverter::TrimString_(char* tmp)
 * Generate unified error message for ill-formed element
 ******************************************************************* */
 void InputConverter::ThrowErrorIllformed_(
-    std::string section, std::string element_type, std::string ill_formed)
+    const std::string& section, const std::string& type, const std::string& ill_formed)
 {
   Errors::Message msg;
-  msg << "Amanzi::InputConverter: An error occurred during parsing " << section << "- ";
-  msg << "  Missing or Ill-formed '" << element_type << "' for '" << ill_formed << "'. \n";
-  msg << "  Please correct and try again \n";
+  msg << "Amanzi::InputConverter: an error occurred during parsing node \"" << section << "\"\n";
+  msg << "  Missing or ill-formed " << type << " for \"" << ill_formed << "\".\n";
+  msg << "  Please correct and try again.\n";
   Exceptions::amanzi_throw(msg);
 }
 
@@ -372,12 +482,13 @@ void InputConverter::ThrowErrorIllformed_(
 * Generate unified error message for ill-formed element with options provided
 ***************************************************************************** */
 void InputConverter::ThrowErrorIllformed_(
-    std::string section, std::string element_type, std::string ill_formed, std::string options)
+    const std::string& section, const std::string& type, const std::string& ill_formed, const std::string& options)
 {
   Errors::Message msg;
-  msg << "Amanzi::InputTranslator: An error occurred during parsing " << section << " - " ;
-  msg << "  Missing or Ill-formed '" << element_type << "' for '" << ill_formed << "'. Valid options are: " << options << "\n" ;
-  msg << "  Please correct and try again \n" ;
+  msg << "Amanzi::InputTranslator: an error occurred during parsing node \"" << section << "\"\n";
+  msg << "  Missing or ill-formed " << type << " for \"" << ill_formed << "\"\n";
+  msg << "  Valid options are: " << options << "\n";
+  msg << "  Please correct and try again.\n" ;
   Exceptions::amanzi_throw(msg);
 }
 
@@ -386,11 +497,11 @@ void InputConverter::ThrowErrorIllformed_(
 * Generate unified error message for missing item
 ******************************************************************* */
 void InputConverter::ThrowErrorMissattr_(
-    std::string section, std::string att_elem_type, std::string missing, std::string elem_name)
+    const std::string& section, const std::string& type, const std::string& missing, const std::string& name)
 {
   Errors::Message msg;
-  msg << "Amanzi::InputConverter: An error occurred during parsing " << section << " - \n";
-  msg << "  No " << att_elem_type << " " << missing << " found for " << elem_name << ". \n";
+  msg << "Amanzi::InputConverter: an error occurred during parsing node \"" << section << "\"\n";
+  msg << "  No " << type << " \"" << missing << "\" found for \"" << name << "\".\n";
   msg << "  Please correct and try again \n";
   Exceptions::amanzi_throw(msg);
 }

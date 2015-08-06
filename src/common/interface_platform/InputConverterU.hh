@@ -54,14 +54,15 @@ class InputConverterU : public InputConverter {
                       Teuchos::ParameterList& mPL, Teuchos::ParameterList& outPL);
 
   Teuchos::ParameterList GetVerbosity_();
-  Teuchos::Array<double> MakeCoordinates_(char* char_array);
 
  private:
   int dim_;
   Tree tree_;
+  Tree phases_;
 
   bool flow_single_phase;
   bool compressibility_;
+  std::vector<std::string> comp_names_all_;
 
   Teuchos::ParameterList verb_list_;
   VerboseObject* vo_;

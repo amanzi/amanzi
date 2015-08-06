@@ -35,11 +35,18 @@ XERCES_CPP_NAMESPACE_USE
 Teuchos::ParameterList InputConverterU::TranslateState_()
 {
   Teuchos::ParameterList out_list;
-  Errors::Message msg;
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    *vo_->os() << "Translating state" << std::endl;
+  }
 
   // first we write initial conditions for scalars and vectors, not region-specific
   Teuchos::ParameterList& out_ev = out_list.sublist("field evaluators");
   Teuchos::ParameterList& out_ic = out_list.sublist("initial conditions");
+
+  Errors::Message msg;
+  char* tagname;
+  char* text_content;
   
   // --- gravity
   Teuchos::Array<double> gravity(dim_);
@@ -50,8 +57,9 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   // --- viscosity
   bool flag;
   DOMNode* node = getUniqueElementByTagNames_("phases", "liquid_phase", "viscosity", flag);
-  char* text_content = XMLString::transcode(node->getTextContent());
-  out_ic.sublist("fluid_viscosity").set<double>("value", std::strtod(text_content, NULL));
+  text_content = XMLString::transcode(node->getTextContent());
+  double viscosity = std::strtod(text_content, NULL);
+  out_ic.sublist("fluid_viscosity").set<double>("value", viscosity);
   XMLString::release(&text_content);
 
   // --- density
@@ -78,23 +86,23 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
     DOMNode* inode = childern->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       DOMNamedNodeMap* attr_map = inode->getAttributes();
-      DOMNode* node_attr = attr_map->getNamedItem(XMLString::transcode("name"));
-      if (!node_attr) {
+      DOMNode* node = attr_map->getNamedItem(XMLString::transcode("name"));
+      if (!node) {
         ThrowErrorMissattr_("materials", "attribute", "name", "material");
       }
 
       node = getUniqueElementByTagNames_(inode, "assigned_regions", flag);
-      char* text_content = XMLString::transcode(node->getTextContent());
+      text_content = XMLString::transcode(node->getTextContent());
       std::vector<std::string> regions = CharToStrings_(text_content);
       XMLString::release(&text_content);
 
       // record the material ID for each region that this material occupies
-      for (int ii = 0; ii < regions.size(); ii++) {
-        if (reg2mat.find(regions[ii]) == reg2mat.end()) {
-          reg2mat[regions[ii]] = mat++;
+      for (int k = 0; k < regions.size(); k++) {
+        if (reg2mat.find(regions[k]) == reg2mat.end()) {
+          reg2mat[regions[k]] = mat++;
         } else {
           std::stringstream ss;
-          ss << "There is more than one material assinged to region " << regions[ii] << ".";
+          ss << "There is more than one material assinged to region " << regions[k] << ".";
           Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
         }
       }
@@ -111,9 +119,9 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         node = getUniqueElementByTagNames_(inode, "mechanical_properties", "porosity", flag);
         if (flag) {
           DOMNamedNodeMap* attr_map = node->getAttributes();
-          node_attr = attr_map->getNamedItem(XMLString::transcode("value"));
-          if (node_attr) {
-            text_content = XMLString::transcode(node_attr->getNodeValue());
+          DOMNode* node_tmp = attr_map->getNamedItem(XMLString::transcode("value"));
+          if (node_tmp) {
+            text_content = XMLString::transcode(node_tmp->getNodeValue());
             porosity = std::strtod(text_content, NULL);
             XMLString::release(&text_content);
           } else {
@@ -131,382 +139,277 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<double>("value", porosity);
         porosity_ev.set<std::string>("field evaluator type", "independent variable");
       }
-    }
-    /*
 
-    // permeability...
-    double perm_x, perm_y, perm_z;
-    std::string perm_file, perm_attribute, perm_format;
-    bool perm_init_from_file = false;
-    Teuchos::ParameterList& mplist = matprop_list.sublist(matprop_list.name(i));
-    if ((mplist.isSublist("Intrinsic Permeability: Uniform") || 
-	 mplist.isSublist("Intrinsic Permeability: Anisotropic Uniform")) && 
-	(mplist.isSublist("Hydraulic Conductivity: Uniform") || 
-	 mplist.isSublist("Hydraulic Conductivity: Anisotropic Uniform"))) {
-      msg << "Permeability can only be specified either \"Intrinsic Permeability\"" 
-          << " or \"Hydraulic Conductivity\", but not both.";
-      Exceptions::amanzi_throw(msg);
-    }
+      // -- permeability.
+      double perm_x, perm_y, perm_z;
+      bool perm_init_from_file(false), conductivity(false);
+      std::string perm_file, perm_attribute, perm_format;
 
-    if (mplist.isSublist("Intrinsic Permeability: Uniform")) {
-      perm_x = perm_y = perm_z = mplist.sublist("Intrinsic Permeability: Uniform").get<double>("Value");
-    } else if (mplist.isSublist("Intrinsic Permeability: Anisotropic Uniform")) {
-      perm_x = mplist.sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("x");
-      perm_y = mplist.sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("y");
-      if (mplist.sublist("Intrinsic Permeability: Anisotropic Uniform").isParameter("z")) {
-        if (spatial_dimension_ == 3) {
-          perm_z = mplist.sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("z");
-        } else {
-          msg << "Intrinsic Permeability: Anisotropic Uniform defines a value for z,"
-              << " while the spatial dimension of the problem not 3.";
-          Exceptions::amanzi_throw(msg);
+      node = getUniqueElementByTagNames_(inode, "permeability", flag);
+      if (!flag) {
+        conductivity = true;
+        node = getUniqueElementByTagNames_(inode, "hydraulic_conductivity", flag);
+      }
+
+      // first we get eilter permeability values or the file name
+      int file(0);
+      char* file_name;
+      char* attr_name;
+      double kx, ky, kz;
+
+      DOMNamedNodeMap* attr_tmp = node->getAttributes();
+      for (int k=0; k < attr_tmp->getLength(); k++) {
+        DOMNode* knode = attr_tmp->item(k);
+
+        if (DOMNode::ATTRIBUTE_NODE == knode->getNodeType()) {
+          tagname = XMLString::transcode(knode->getNodeName());
+          text_content = XMLString::transcode(knode->getNodeValue());
+
+          if (strcmp(tagname, "x") == 0) {
+            kx = std::strtod(text_content, NULL);
+          } else if (strcmp(tagname, "y") == 0) {
+            ky = std::strtod(text_content, NULL);
+          } else if (strcmp(tagname, "z") == 0) {
+            kz = std::strtod(text_content, NULL);
+          } else if (strcmp(tagname, "type") == 0) {
+            file++;
+          } else if (strcmp(tagname, "filename") == 0) {
+            file++;
+            file_name = new char[std::strlen(text_content)];
+            std::strcpy(attr_name, text_content);
+          } else if (strcmp(tagname, "attribute") == 0) {
+            file++;
+            attr_name = new char[std::strlen(text_content)];
+            std::strcpy(attr_name, text_content);
+          }
+          XMLString::release(&text_content);
+          XMLString::release(&tagname);
         }
       }
-    } else if (mplist.isSublist("Hydraulic Conductivity: Uniform")) {
-      perm_x = perm_y = perm_z = mplist.sublist("Hydraulic Conductivity: Uniform").get<double>("Value");
-      // now scale with rho, g and mu to get correct permeability values
-      perm_x *= viscosity/(density*GRAVITY_MAGNITUDE);
-      perm_y *= viscosity/(density*GRAVITY_MAGNITUDE);
-      perm_z *= viscosity/(density*GRAVITY_MAGNITUDE);
-    } else if (mplist.isSublist("Hydraulic Conductivity: Anisotropic Uniform")) {
-      perm_x = mplist.sublist("Hydraulic Conductivity: Anisotropic Uniform").get<double>("x");
-      perm_y = mplist.sublist("Hydraulic Conductivity: Anisotropic Uniform").get<double>("y");
-      if (mplist.sublist("Hydraulic Conductivity: Anisotropic Uniform").isParameter("z")) {
-        if (spatial_dimension_ == 3) {
-          perm_z = mplist.sublist("Hydraulic Conductivity: Anisotropic Uniform").get<double>("z");
-        } else {
-          msg << "Hydraulic Conductivity: Anisotropic Uniform defines a value for z,"
-              << " while the spatial dimension of the problem not 3.";
-          Exceptions::amanzi_throw(msg);
-        }
-      }
-      // now scale with rho, g and mu to get correct permeablity values
-      perm_x *= viscosity/(density*GRAVITY_MAGNITUDE);
-      perm_y *= viscosity/(density*GRAVITY_MAGNITUDE);
-      perm_z *= viscosity/(density*GRAVITY_MAGNITUDE);
-    } else if (mplist.isSublist("Intrinsic Permeability: File")) {
-      Teuchos::ParameterList &aux_list = mplist.sublist("Intrinsic Permeability: File");
-      bool input_error = false;
-      if (aux_list.isParameter("File")) {
-        perm_file = aux_list.get<std::string>("File");
-      } else {
-        input_error = true;
-      }
-      if (aux_list.isParameter("Attribute")) {
-        perm_attribute = aux_list.get<std::string>("Attribute");
-      } else {
-        input_error = true;
-      }
-      if (aux_list.isParameter("Format")) {
-        perm_format = mplist.sublist("Intrinsic Permeability: File").get<std::string>("Format");
-      } else {
-        input_error = true;
-      }
-      if (input_error) {
-        Exceptions::amanzi_throw(Errors::Message("The list 'Input Permeability: File' could not be parsed, a required parameter is missing. Check the input specification."));
-      }
-      perm_init_from_file = true;
-    } else {
-      Exceptions::amanzi_throw(Errors::Message("Permeability can only be specified as 'Intrinsic Permeability: Uniform', 'Intrinsic Permeability: Anisotropic Uniform', 'Hydraulic Conductivity: Uniform', 'Hydraulic Conductivity: Anisotropic Uniform', or 'Intrinsic Permeability: File'"));
-    }
 
-    Teuchos::ParameterList &permeability_ic = out_ic.sublist("permeability");
-    // For now permeability is not dumped into checkpoint files
-    permeability_ic.set<bool>("write checkpoint", false);
-    if (perm_init_from_file) {
-      if (perm_format == std::string("Exodus II")) {
-        // first make sure the file actually exists
+      if (conductivity) {
+        kx *= viscosity / (density * GRAVITY_MAGNITUDE);
+        ky *= viscosity / (density * GRAVITY_MAGNITUDE);
+        kz *= viscosity / (density * GRAVITY_MAGNITUDE);
+      }
 
-        boost::filesystem::path p;
-        if (numproc_>1) {
-          // attach the right extensions as required by Nemesis file naming conventions
-          // in which files are named as mymesh.par.N.r where N = numproc and r is rank
-          // and check if files exist
-          std::string perm_file_par = perm_file.substr(0,perm_file.size()-4) + std::string(".par");
-          int rank = numproc_-1;
-          int ndigits = static_cast<int>(floor(log10(numproc_))) + 1;
-          std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
-          std::string par_file_w_ext = boost::str(boost::format(fmt) % perm_file_par % numproc_ % rank);
-          p = par_file_w_ext;
-          if (!boost::filesystem::exists(p)) {
-            msg << "Permeability initialization from file: not all the partitioned files \"" 
-                << perm_file_par << ".<numranks>.<rank>\" exist, and possibly none of them exist.";
-            Exceptions::amanzi_throw(msg);
-          }
-          perm_file = perm_file_par;
-        } else { // numproc_ == 1
-          std::string suffix = perm_file.substr(perm_file.size()-4);
-          if (suffix != std::string(".exo")) {          
-            msg << "Permeability initialization from file: in serial the exodus mesh file"
-                << " must have the suffix .exo";
-            Exceptions::amanzi_throw(msg);
-          }
-          p = perm_file;
-          if (!boost::filesystem::exists(p)) {
-            msg << "Permeability initialization from file: the file \"" << perm_file << "\" does not exist.";
-            Exceptions::amanzi_throw(msg);
-          }
-        }
+      // Second, we copy collected data to XML file.
+      // For now permeability is not dumped into checkpoint files.
+      Teuchos::ParameterList& permeability_ic = out_ic.sublist("permeability");
+      permeability_ic.set<bool>("write checkpoint", false);
+
+      if (file == 3) {
         permeability_ic.sublist("exodus file initialization")
-            .set<std::string>("file",perm_file)
-            .set<std::string>("attribute",perm_attribute);
+            .set<std::string>("file", file_name)
+            .set<std::string>("attribute", attr_name);
+        delete file_name;
+        delete attr_name;
+      } else if (file == 0) {
+        Teuchos::ParameterList& aux_list = permeability_ic.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions",regions)
+            .set<std::string>("component","cell")
+            .sublist("function");
+        aux_list.set<int>("Number of DoFs", dim_)
+            .set<std::string>("Function type","composite function");
+        aux_list.sublist("DoF 1 Function").sublist("function-constant").set<double>("value", kx);
+        aux_list.sublist("DoF 2 Function").sublist("function-constant").set<double>("value", ky);
+        if (dim_ == 3) {
+          aux_list.sublist("DoF 3 Function").sublist("function-constant").set<double>("value", kz);
+        }
       } else {
-        msg << "Permeability initialization from file, incompatible format specified: \"" 
-            << perm_format << "\", only \"Exodus II\" is supported.";
-        Exceptions::amanzi_throw(msg);
+        ThrowErrorIllformed_("materials", "element", "file/filename/attribute");
       }
-     
-    } else {
-      Teuchos::ParameterList& aux_list =
-        permeability_ic.sublist("function").sublist(reg_str)
-        .set<Teuchos::Array<std::string> >("regions",regions)
-        .set<std::string>("component","cell")
-        .sublist("function");
-      aux_list.set<int>("Number of DoFs",spatial_dimension_)
-        .set<std::string>("Function type","composite function");
-      aux_list.sublist("DoF 1 Function").sublist("function-constant")
-        .set<double>("value", perm_x);
-      if (spatial_dimension_ >= 2) {
-        aux_list.sublist("DoF 2 Function").sublist("function-constant")
-          .set<double>("value", perm_y);
+
+      // -- specific_yield
+      node = getUniqueElementByTagNames_(inode, "mechanical_properties", "specific_yield", flag);
+      if (flag) {
+        double specific_yield = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+
+        Teuchos::ParameterList& spec_yield_ic = out_ic.sublist("specific_yield");
+        spec_yield_ic.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions",regions)
+            .set<std::string>("component","cell")
+            .sublist("function").sublist("function-constant")
+            .set<double>("value", specific_yield);
       }
-      if (spatial_dimension_ == 3) {
-        aux_list.sublist("DoF 3 Function").sublist("function-constant")
-          .set<double>("value", perm_z);
+
+      // -- specific storage
+      node = getUniqueElementByTagNames_(inode, "mechanical_properties", "specific_storage", flag);
+      if (flag) {
+        double specific_storage = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+
+        Teuchos::ParameterList& spec_yield_ic = out_ic.sublist("specific_storage");
+        spec_yield_ic.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions",regions)
+            .set<std::string>("component","cell")
+            .sublist("function").sublist("function-constant")
+            .set<double>("value", specific_storage);
       }
-    }
 
-    // specific_yield...
-    if (matprop_list.sublist(matprop_list.name(i)).isSublist("Specific Yield: Uniform")) {
-      Teuchos::ParameterList& spec_yield_ic = out_ic.sublist("specific_yield");
-      double specific_yield = matprop_list.sublist(matprop_list.name(i))
-                                          .sublist("Specific Yield: Uniform").get<double>("Value");
-      spec_yield_ic.sublist("function").sublist(reg_str)
-          .set<Teuchos::Array<std::string> >("regions",regions)
-          .set<std::string>("component","cell")
-          .sublist("function").sublist("function-constant")
-          .set<double>("value", specific_yield);
-    }
+      // -- particle density
+      node = getUniqueElementByTagNames_(inode, "particle_density", flag);
+      if (flag) {
+        double particle_density = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
 
-    // specific_storage...
-    if (matprop_list.sublist(matprop_list.name(i)).isSublist("Specific Storage: Uniform")) {
-      Teuchos::ParameterList& spec_stor_ic = out_ic.sublist("specific_storage");
-      double specific_storage = matprop_list.sublist(matprop_list.name(i))
-                                            .sublist("Specific Storage: Uniform").get<double>("Value");
-      spec_stor_ic.sublist("function").sublist(reg_str)
-          .set<Teuchos::Array<std::string> >("regions",regions)
-          .set<std::string>("component","cell")
-          .sublist("function").sublist("function-constant")
-          .set<double>("value", specific_storage);
-    }
-
-    // particle_density...
-    if (matprop_list.sublist(matprop_list.name(i)).isSublist("Particle Density: Uniform")) {
-      Teuchos::ParameterList& part_dens_ic = out_ic.sublist("particle_density");
-      double particle_density = matprop_list.sublist(matprop_list.name(i))
-                                            .sublist("Particle Density: Uniform").get<double>("Value");
-      part_dens_ic.sublist("function").sublist(reg_str)
-          .set<Teuchos::Array<std::string> >("regions",regions)
-          .set<std::string>("component","cell")
-          .sublist("function").sublist("function-constant")
-          .set<double>("value", particle_density);
+        Teuchos::ParameterList& part_dens_ic = out_ic.sublist("particle_density");
+        part_dens_ic.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions",regions)
+            .set<std::string>("component","cell")
+            .sublist("function").sublist("function-constant")
+            .set<double>("value", particle_density);
+      }
     }
   }
 
-  // and now the initialization of fields that are initialized via an Initial Condition in the Akuna spec
+  // initialization of fields via the initial_conditions list
+  node_list = doc_->getElementsByTagName(XMLString::transcode("initial_conditions"));
+  childern = node_list->item(0)->getChildNodes();
 
-  // loop over the initial conditions
-  Teuchos::ParameterList& ic_list = plist->sublist("Initial Conditions");
-
-  if (! ic_list.isParameter("Init from Checkpoint File")) {
-    // only process initial conditions if we are not initializing from
-    // a checkpoint file
-    for (Teuchos::ParameterList::ConstIterator iic = ic_list.begin(); iic != ic_list.end(); ++iic) {
-      Teuchos::Array<std::string> regions = ic_list.sublist(ic_list.name(iic)).get<Teuchos::Array<std::string> >("Assigned Regions");
-      Teuchos::ParameterList* ic_for_region = &ic_list.sublist(ic_list.name(iic));
+  for (int i = 0; i < childern->getLength(); i++) {
+    DOMNode* inode = childern->item(i);
+    if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
+      node = getUniqueElementByTagNames_(inode, "assigned_regions", flag);
+      text_content = XMLString::transcode(node->getTextContent());
+      std::vector<std::string> regions = CharToStrings_(text_content);
+      XMLString::release(&text_content);
 
       // create regions string
       std::string reg_str;
-      for (Teuchos::Array<std::string>::const_iterator ireg=regions.begin(); ireg!=regions.end(); ++ireg) {
-        reg_str = reg_str + *ireg;
+      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
+        reg_str = reg_str + *it;
       }
 
-      // pressure...
-      if (ic_for_region->isSublist("IC: Uniform Pressure") || ic_for_region->isSublist("IC: Linear Pressure")) {
+      // -- uniform pressure
+      node = getUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, uniform_pressure", flag);
+      if (flag) {
+        double p = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+
         Teuchos::ParameterList& pressure_ic = out_ic.sublist("pressure");
-
-        if (ic_for_region->isSublist("IC: Uniform Pressure")) {
-          double p = ic_for_region->sublist("IC: Uniform Pressure").get<double>("Value");
-
-          pressure_ic.sublist("function").sublist(reg_str)
-              .set<Teuchos::Array<std::string> >("regions",regions)
-              .set<std::string>("component","cell")
-              .sublist("function").sublist("function-constant")
-              .set<double>("value", p);
-
-        } else if (ic_for_region->isSublist("IC: Linear Pressure")) {
-          Teuchos::Array<double> grad = ic_for_region->sublist("IC: Linear Pressure").get<Teuchos::Array<double> >("Gradient Value");
-          Teuchos::Array<double> refcoord = ic_for_region->sublist("IC: Linear Pressure").get<Teuchos::Array<double> >("Reference Point");
-          double refval = ic_for_region->sublist("IC: Linear Pressure").get<double>("Reference Value");
-
-          Teuchos::Array<double> grad_with_time(grad.size()+1);
-          grad_with_time[0] = 0.0;
-          for (int j = 0; j != grad.size(); ++j) {
-            grad_with_time[j + 1] = grad[j];
-          }
-
-          Teuchos::Array<double> refcoord_with_time(refcoord.size() + 1);
-          refcoord_with_time[0] = 0.0;
-          for (int j = 0; j != refcoord.size(); ++j) {
-            refcoord_with_time[j + 1] = refcoord[j];
-          }
-
-          pressure_ic.sublist("function").sublist(reg_str)
-              .set<Teuchos::Array<std::string> >("regions",regions)
-              .set<std::string>("component","cell")
-              .sublist("function").sublist("function-linear")
-              .set<double>("y0", refval)
-              .set<Teuchos::Array<double> >("x0",refcoord_with_time)
-              .set<Teuchos::Array<double> >("gradient",grad_with_time);
-
-        } else if (ic_for_region->isSublist("IC: File Pressure")) {
-          msg << "IC: File Pressure cannot currently be used to initialize pressure in a region.";
-          Exceptions::amanzi_throw(msg);
-        }
+        pressure_ic.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions",regions)
+            .set<std::string>("component","cell")
+            .sublist("function").sublist("function-constant")
+            .set<double>("value", p);
       }
 
-      // saturation...
-      if (ic_for_region->isSublist("IC: Uniform Saturation") || ic_for_region->isSublist("IC: Linear Saturation")) {
+      // -- linear pressure
+      node = getUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, linear_pressure", flag);
+      if (flag) {
+        double p = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+        std::vector<double> grad = GetAttributeVector_(static_cast<DOMElement*>(node), "gradient");
+        std::vector<double> refc = GetAttributeVector_(static_cast<DOMElement*>(node), "reference_coord");
+
+        Teuchos::Array<double> grad_with_time(grad.size() + 1);
+        Teuchos::Array<double> refc_with_time(grad.size() + 1);
+
+        grad_with_time[0] = 0.0;
+        refc_with_time[0] = 0.0;
+
+        for (int j = 0; j != grad.size(); ++j) {
+          grad_with_time[j + 1] = grad[j];
+          refc_with_time[j + 1] = refc[j];
+        }
+
+        Teuchos::ParameterList& pressure_ic = out_ic.sublist("pressure");
+        pressure_ic.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
+            .sublist("function").sublist("function-linear")
+            .set<double>("y0", p)
+            .set<Teuchos::Array<double> >("x0", refc_with_time)
+            .set<Teuchos::Array<double> >("gradient", grad_with_time);
+      }
+
+      // -- uniform saturation
+      node = getUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, uniform_saturation", flag);
+      if (flag) {
+        double s = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+
         Teuchos::ParameterList& saturation_ic = out_ic.sublist("saturation_liquid");
-
-        if (ic_for_region->isSublist("IC: Uniform Saturation")) {
-          double s = ic_for_region->sublist("IC: Uniform Saturation").get<double>("Value");
-          saturation_ic.sublist("function").sublist(reg_str)
-              .set<Teuchos::Array<std::string> >("regions",regions)
-              .set<std::string>("component","cell")
-              .sublist("function").sublist("function-constant")
-              .set<double>("value", s);
-        } else if (ic_for_region->isSublist("IC: Linear Saturation")) {
-          Teuchos::ParameterList& inp_ic = ic_for_region->sublist("IC: Linear Saturation");
-          Teuchos::Array<double> grad = inp_ic.get<Teuchos::Array<double> >("Gradient Value");
-          Teuchos::Array<double> refcoord = inp_ic.get<Teuchos::Array<double> >("Reference Point");
-          double refval = inp_ic.get<double>("Reference Value");
-
-          Teuchos::Array<double> grad_with_time(grad.size() + 1);
-          grad_with_time[0] = 0.0;
-          for (int j = 0; j != grad.size(); ++j) {
-            grad_with_time[j + 1] = grad[j];
-          }
-
-          Teuchos::Array<double> refcoord_with_time(refcoord.size()+1);
-          refcoord_with_time[0] = 0.0;
-          for (int j = 0; j != refcoord.size(); ++j) {
-            refcoord_with_time[j + 1] = refcoord[j];
-          }
-
-          saturation_ic.sublist("function").sublist(reg_str)
-              .set<Teuchos::Array<std::string> >("regions",regions)
-              .set<std::string>("component","cell")
-              .sublist("function").sublist("function-linear")
-              .set<double>("y0", refval)
-              .set<Teuchos::Array<double> >("x0",refcoord_with_time)
-              .set<Teuchos::Array<double> >("gradient",grad_with_time);
-        } else if (ic_for_region->isSublist("IC: File Saturation")) {
-          msg << "IC: File Saturation cannot currently be used to initialize saturation in a region.";
-          Exceptions::amanzi_throw(msg);
-        }
+        saturation_ic.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
+            .sublist("function").sublist("function-constant")
+            .set<double>("value", s);
       }
 
-      // darcy_flux...
-      if (ic_for_region->isSublist("IC: Uniform Velocity")) {
-        Teuchos::ParameterList &darcy_flux_ic = out_ic.sublist("darcy_flux");
-        Teuchos::Array<double> vel_vec = ic_for_region->sublist("IC: Uniform Velocity").get<Teuchos::Array<double> >("Velocity Vector");
+      // -- linear saturation
+      node = getUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, linear_saturation", flag);
+      if (flag) {
+        double s = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+        std::vector<double> grad = GetAttributeVector_(static_cast<DOMElement*>(node), "gradient");
+        std::vector<double> refc = GetAttributeVector_(static_cast<DOMElement*>(node), "reference_coord");
 
-        if (vel_vec.size() != spatial_dimension_) {
-          msg << "The velocity vector defined in in the IC: Uniform Velocity list"
-              << " does not match the spatial dimension of the problem.";
-          Exceptions::amanzi_throw(msg);
+        Teuchos::Array<double> grad_with_time(grad.size() + 1);
+        Teuchos::Array<double> refc_with_time(grad.size() + 1);
+
+        grad_with_time[0] = 0.0;
+        refc_with_time[0] = 0.0;
+
+        for (int j = 0; j != grad.size(); ++j) {
+          grad_with_time[j + 1] = grad[j];
+          refc_with_time[j + 1] = refc[j];
         }
 
-        Teuchos::ParameterList& d_list =
+        Teuchos::ParameterList& saturation_ic = out_ic.sublist("saturation_liquid");
+        saturation_ic.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
+            .sublist("function").sublist("function-linear")
+            .set<double>("y0", s)
+            .set<Teuchos::Array<double> >("x0", refc_with_time)
+            .set<Teuchos::Array<double> >("gradient", grad_with_time);
+      }
+
+      // -- darcy_flux
+      node = getUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, velocity", flag);
+      if (flag) {
+        std::vector<double> velocity;
+        velocity.push_back(GetAttributeValueD_(static_cast<DOMElement*>(node), "x"));
+        velocity.push_back(GetAttributeValueD_(static_cast<DOMElement*>(node), "y"));
+        if (dim_ == 3) velocity.push_back(GetAttributeValueD_(static_cast<DOMElement*>(node), "z"));
+
+        Teuchos::ParameterList& darcy_flux_ic = out_ic.sublist("darcy_flux");
+        Teuchos::ParameterList& tmp_list =
             darcy_flux_ic.set<bool>("dot with normal", true)
             .sublist("function").sublist(reg_str)
-            .set<Teuchos::Array<std::string> >("regions",regions)
-            .set<std::string>("component","face")
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "face")
             .sublist("function")
-            .set<int>("Number of DoFs", vel_vec.size())
+            .set<int>("Number of DoFs", dim_)
             .set<std::string>("Function type", "composite function");
 
-        for (int ii = 0; ii != vel_vec.size(); ++ii) {
+        for (int k = 0; k != dim_; ++k) {
           std::stringstream dof_str;
-          dof_str << "DoF " << ii+1 << " Function";
-
-          d_list.sublist(dof_str.str())
-              .sublist("function-constant")
-              .set<double>("value", vel_vec[ii]);
+          dof_str << "DoF " << k+1 << " Function";
+          tmp_list.sublist(dof_str.str()).sublist("function-constant")
+                                         .set<double>("value", velocity[k]);
         }
       }
 
-      // total_component_concentration...
-      if (ic_for_region->isSublist("Solute IC")) {
+      // -- total_component_concentration...
+      node = getUniqueElementByTagsString_(inode, "liquid_phase, solute_component", flag);
+      if (flag) {
         Teuchos::ParameterList& tcc_ic = out_ic.sublist("total_component_concentration");
+        Teuchos::ParameterList& dof_list = tcc_ic.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component","cell")
+            .sublist("function")
+            .set<int>("Number of DoFs", comp_names_all_.size())
+            .set<std::string>("Function type", "composite function");
 
-        if (plist->sublist("Execution Control").get<std::string>("Transport Model") != std::string("Off")  ||
-            plist->sublist("Execution Control").get<std::string>("Chemistry Model") != std::string("Off")) {
-          // write the initial conditions for the solutes, note that we hardcode for there 
-          // only being one phase, with one phase component.
+        int m(0);
+        int ncomp = phases_["water"].size();
+        for (int k = 0; k < ncomp; k++, m++) {
+          std::string name = phases_["water"][k];
+          double conc = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+          std::stringstream dof_str;
 
-          Teuchos::ParameterList& dof_list = tcc_ic.sublist("function").sublist(reg_str)
-              .set<Teuchos::Array<std::string> >("regions",regions)
-              .set<std::string>("component","cell")
-              .sublist("function")
-              .set<int>("Number of DoFs", comp_names_all_.size())
-              .set<std::string>("Function type", "composite function");
-
-          int ii = 0;
-          for (int n = 0; n < 2; n++) { 
-            Teuchos::ParameterList& phase_list = ic_for_region->sublist("Solute IC")
-                .sublist(phases_[n].name).sublist(phases_[n].solute_name);
-            int ncomp = phases_[n].solute_comp_names.size();
-
-            for (int k = 0; k < ncomp; k++, ii++) {
-              std::string name = phases_[n].solute_comp_names[k];
-              if (phase_list.isSublist(name)) {
-                Teuchos::ParameterList& conc_ic = phase_list.sublist(name).sublist("IC: Uniform Concentration");
-
-                if (conc_ic.isParameter("Geochemical Condition")) { // Geochemical condition?
-                  // Add an entry to State->initial conditions->geochemical conditions.
-                  Teuchos::ParameterList& geochem_cond_list = out_ic.sublist("geochemical conditions");
-                  std::string geochem_cond_name = conc_ic.get<std::string>("Geochemical Condition");
-                  Teuchos::ParameterList& geochem_cond = geochem_cond_list.sublist(geochem_cond_name);
-                  geochem_cond.set<Teuchos::Array<std::string> >("regions", regions);
-
-                  // Now add fake initial concentrations, since the State requires entries 
-                  // of this sort to initialize fields. The chemistry PK will simply 
-                  // overwrite these values when it initializes its data.
-                  std::stringstream dof_str;
-                  dof_str << "DoF " << ii + 1 << " Function";
-
-                  dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", 0.0);
-                }   
-                else {  // ordinary initial concentration value.
-                  double conc = conc_ic.get<double>("Value");
-                  std::stringstream dof_str;
-
-                  dof_str << "DoF " << ii + 1 << " Function";
-                  dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", conc);
-                }
-              }
-              else {
-                msg << "An initial value has to be specified for solute \"" << name << "\"";
-                Exceptions::amanzi_throw(msg);
-              }
-            }
-          }
+          dof_str << "DoF " << m + 1 << " Function";
+          dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", conc);
         }
       }
     }
-  */
   }
 
   // add mesh partitions to the state list

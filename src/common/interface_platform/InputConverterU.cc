@@ -34,6 +34,9 @@ Teuchos::ParameterList InputConverterU::Translate()
   verb_list_ = GetVerbosity_();
   vo_ = new VerboseObject("InputTranslator", verb_list_);
   Teuchos::OSTab tab = vo_->getOSTab();
+
+  // temporal hack
+  phases_["water"].push_back("Tc-99");
   
   out_list.sublist("Mesh") = TranslateMesh_();
   out_list.sublist("Domain").set<int>("Spatial Dimension", dim_);
@@ -90,26 +93,6 @@ Teuchos::ParameterList InputConverterU::GetVerbosity_()
     }
   }
   return vlist;
-}
-
-
-/* ******************************************************************
-* Empty
-****************************************************************** */
-Teuchos::Array<double> InputConverterU::MakeCoordinates_(char* char_array)
-{
-  Teuchos::Array<double> coords;
-  char* tmp;
-  tmp = strtok(char_array, "(, ");
-
-  while (tmp != NULL) {
-    std::string str(tmp);
-    boost::algorithm::trim(str);
-    coords.append(std::strtod(str.c_str(), NULL));
-    tmp = strtok(NULL, ",");
-  }
-
-  return coords;
 }
 
 }  // namespace AmanziInput

@@ -23,8 +23,6 @@
 
 // TPLs
 #include "xercesc/dom/DOM.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_Array.hpp"
 
 // Amanzi's
 #include "VerboseObject.hh"
@@ -56,7 +54,7 @@ class InputConverter {
       const std::string& tag1, const std::string& tag2, const std::string& tag3, bool& flag);
   // -- tags contains list of names separated by commas. It 
   //    will replace eventually the previous routine.
-  xercesc::DOMNode* getUniqueElementByTagNames_(
+  xercesc::DOMNode* getUniqueElementByTagsString_(
       const std::string& tags, bool& flag);
 
   // -- modification of the previous routines where the first tag 
@@ -65,19 +63,34 @@ class InputConverter {
       const xercesc::DOMNode* node1, const std::string& tag2, bool& flag);
   xercesc::DOMNode* getUniqueElementByTagNames_(
       const xercesc::DOMNode* node1, const std::string& tag2, const std::string& tag3, bool& flag);
+  // -- tags contains list of names separated by commas. It 
+  //    will replace eventually the previous routine.
+  xercesc::DOMNode* getUniqueElementByTagsString_(
+      const xercesc::DOMNode* node1, const std::string& tags, bool& flag);
 
-  // times
+  int GetAttributeValueL_(xercesc::DOMElement* elem, const char* attr_name);
+  double GetAttributeValueD_(xercesc::DOMElement* elem, const char* attr_name);
+  std::vector<double> GetAttributeVector_(xercesc::DOMElement* elem, const char* attr_name);
+
+  // data streaming/trimming/converting
+  // -- times
   double GetTimeValue_(std::string time_value);
   double ConvertTimeValue_(char* time_value);
 
-  // data streaming/trimming/converting
+  // -- coordinates
+  std::vector<double> MakeCoordinates_(char* char_array);
+
+  // -- string modifications
   std::vector<std::string> CharToStrings_(const char* namelist);
   std::string TrimString_(char* tmp);
 
   // error messages
-  void ThrowErrorIllformed_(std::string section, std::string element_type, std::string ill_formed);
-  void ThrowErrorIllformed_(std::string section, std::string element_type, std::string ill_formed, std::string options);
-  void ThrowErrorMissattr_(std::string section, std::string att_elem_type, std::string missing, std::string elem_name);
+  void ThrowErrorIllformed_(
+      const std::string& section, const std::string& type, const std::string& ill_formed);
+  void ThrowErrorIllformed_(
+      const std::string& section, const std::string& type, const std::string& ill_formed, const std::string& options);
+  void ThrowErrorMissattr_(
+      const std::string& section, const std::string& type, const std::string& missing, const std::string& name);
 
  protected:
   xercesc::DOMDocument* doc_;

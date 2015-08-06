@@ -174,9 +174,9 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
 
           if (strlen(tmp) > 0) {
             // translate to array
-            Teuchos::Array<double> low = MakeCoordinates_(tmp);
+            std::vector<double> low = MakeCoordinates_(tmp);
             mesh_list.set<Teuchos::Array<double> >("Domain Low Coordinate", low);
-            if (low.length() != dim_) {
+            if (low.size() != dim_) {
               helper << "low_coordinates";
               all_good = false;
             }
@@ -189,9 +189,9 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
           tmp = XMLString::transcode(element_node->getAttribute( XMLString::transcode("high_coordinates")));
           if (strlen(tmp) > 0) {
             // translate to array
-            Teuchos::Array<double> high = MakeCoordinates_(tmp);
+            std::vector<double> high = MakeCoordinates_(tmp);
             mesh_list.set<Teuchos::Array<double> >("Domain High Coordinate", high);
-            if (high.length() != dim_) {
+            if (high.size() != dim_) {
               helper << "high_coordinates";
               all_good = false;
             }
@@ -251,8 +251,8 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
       } else if (strcmp(framework,"stk::mesh") == 0) {
         out_list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","stk::mesh");
       } else {
-        msg << "Amanzi::InputConverter: An error occurred during parsing mesh - "
-            << "unknown framework=" << framework << ". See the schema for acceptable types.\n";
+        msg << "Amanzi::InputConverter: an error occurred during parsing mesh.\n"
+            << "  Unknown framework \"" << framework << "\".\n";
         Exceptions::amanzi_throw(msg); 
       }
     }
@@ -262,12 +262,10 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
     } else if (read) {
       out_list.sublist("Unstructured").sublist("Read Mesh File") = mesh_list;
     } else {
-      // bad mesh, again if validated shouldn't need this
-      msg << "Amanzi::InputConverter: An error occurred during parsing mesh.\n";
+      msg << "Amanzi::InputConverter: an error occurred during parsing mesh.\n";
       Exceptions::amanzi_throw(msg);
     }
   } else {
-    // no mesh sub-elements
     ThrowErrorIllformed_("mesh", "element", "framework");
   }
 
@@ -363,7 +361,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         } else {
           ThrowErrorMissattr_("Regions", "attribute", "low_coordinates", "box");
         }
-        Teuchos::Array<double> low = MakeCoordinates_(text_content2);
+        std::vector<double> low = MakeCoordinates_(text_content2);
         out_list.sublist(reg_name).sublist("Region: Box").set<Teuchos::Array<double> >("Low Coordinate", low);
         XMLString::release(&text_content2);
         
@@ -372,7 +370,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         } else {
           ThrowErrorMissattr_("Regions","attribute","high_coordinates","box");
         }
-        Teuchos::Array<double> high = MakeCoordinates_(text_content2);
+        std::vector<double> high = MakeCoordinates_(text_content2);
         out_list.sublist(reg_name).sublist("Region: Box").set<Teuchos::Array<double> >("High Coordinate", high);
         XMLString::release(&text_content2);
       }
@@ -385,7 +383,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         } else {
           ThrowErrorMissattr_("Regions", "attribute", "location", "plane");
         }
-        Teuchos::Array<double> loc = MakeCoordinates_(text_content2);
+        std::vector<double> loc = MakeCoordinates_(text_content2);
         out_list.sublist(reg_name).sublist("Region: Plane").set<Teuchos::Array<double> >("Location", loc);
         
         if (reg_elem->hasAttribute(XMLString::transcode("normal"))) {
@@ -393,7 +391,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         } else {
           ThrowErrorMissattr_("Regions", "attribute", "normal", "plane");
         }
-        Teuchos::Array<double> dir = MakeCoordinates_(text_content2);
+        std::vector<double> dir = MakeCoordinates_(text_content2);
         out_list.sublist(reg_name).sublist("Region: Plane").set<Teuchos::Array<double> >("Direction", dir);
         XMLString::release(&text_content2);
       }
@@ -470,7 +468,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
           ThrowErrorMissattr_("Regions", "attribute", "coordinate", "point");
         }
         
-        Teuchos::Array<double> coord = MakeCoordinates_(text_content2);
+        std::vector<double> coord = MakeCoordinates_(text_content2);
         out_list.sublist(reg_name).sublist("Region: Point").set<Teuchos::Array<double> >("Coordinate", coord);
         XMLString::release(&text_content2);
       }
@@ -490,7 +488,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
           XMLString::release(&text_content2);
         }
         // get verticies (add count them)
-        Teuchos::Array<double> points;
+        std::vector<double> points;
         DOMNodeList* gkids = reg_elem->getChildNodes();
         for (int j = 0; j < gkids->getLength(); j++) {
           DOMNode* jnode = gkids->item(j);
@@ -498,9 +496,9 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
             node_name = XMLString::transcode(jnode->getNodeName());
             if (strcmp(node_name, "point") == 0) {
               text_content2 = XMLString::transcode(jnode->getTextContent());
-              Teuchos::Array<double> point = MakeCoordinates_(text_content2);
-              for (Teuchos::Array<double>::iterator pt = point.begin(); pt != point.end(); ++pt) {
-                points.append(*pt);
+              std::vector<double> point = MakeCoordinates_(text_content2);
+              for (std::vector<double>::iterator pt = point.begin(); pt != point.end(); ++pt) {
+                points.push_back(*pt);
               }
               pt_cnt++;
               XMLString::release(&text_content2);
@@ -540,8 +538,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
                 out_list.sublist(reg_name).sublist("Region: Logical").set<std::string>("Operation", "Complement");
               }
               else {
-                // error about missing or unsupported operation
-                ThrowErrorIllformed_("Regions", "element", "operation", "union, intersection, subtraction, or complement");
+                ThrowErrorIllformed_("regions", "element", "operation", "union, intersection, subtraction, or complement");
               }
               haveOp = true;
               XMLString::release(&text_content2);
