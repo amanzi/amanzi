@@ -171,6 +171,12 @@ void Transport_PK::Setup()
   }
 
   // require state variables when Transport is on
+  if (component_names_.size() == 0) {
+    Errors::Message msg;
+    msg << "Transport PK: list of solutes is empty.\n";
+    Exceptions::amanzi_throw(msg);  
+  }
+
   if (!S_->HasField("total_component_concentration")) {
     std::vector<std::vector<std::string> > subfield_names(1);
     int ncomponents = component_names_.size();

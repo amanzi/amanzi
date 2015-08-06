@@ -3511,73 +3511,128 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 | `"Region: Color Function"`   | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |
 +------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 
-Notes
 
-* `"Region: Point`" defines a point in space. Using this definition, cell sets encompassing this point are retrieved inside Amanzi.
+Point
+-----
 
-* `"Region: Box`" defines a region bounded by coordinate-aligned
-  planes. Boxes are allowed to be of zero thickness in only one
-  direction in which case they are equivalent to planes.
+`"Region: Point`" defines a point in space. 
+Using this definition, cell sets encompassing this point are retrieved inside Amanzi.
 
-* Currently, `"Region: Plane`" is constrained to be coordinate-aligned.
 
-* The `"Region: Labeled Set`" region defines a named set of mesh entities
-  existing in an input mesh file. This is the same file that contains
-  the computational mesh. The name of the entity set is given
-  by `"Label`".  For example, a mesh file in the Exodus II
-  format can be processed to tag cells, faces and/or nodes with
-  specific labels, using a variety of external tools.  Regions based
-  on such sets are assigned a user-defined label for Amanzi, which may
-  or may not correspond to the original label in the exodus file.
-  Note that the file used to express this labeled set may be in any
-  Amanzi-supported mesh format (the mesh format is specified in the
-  parameters for this option).  The `"entity`" parameter may be
-  necessary to specify a unique set.  For example, an Exodus file
-  requires `"Cell`", `"Face`" or `"Node`" as well as a label (which is
-  an integer).  The resulting region will have the dimensionality 
-  associated with the entities in the indicated set. 
+Box
+---
 
-  By definition, "Labeled Set" region is applicable only to the
-  unstructured version of Amanzi. 
+`"Region: Box`" defines a region bounded by coordinate-aligned
+planes. Boxes are allowed to be of zero thickness in only one
+direction in which case they are equivalent to planes.
 
-  Currently, Amanzi-U only supports mesh files in the Exodus II format.
 
-* `"Region: Color Function`" defines a region based a specified
-  integer color, `"Value`", in a structured color function file,
-  `"File`". The format of the color function file is given below in
-  the "Tabulated function file format" section. As
-  shown in the file, the color values may be specified at the nodes or
-  cells of the color function grid. A computational cell is assigned
-  the 'color' of the data grid cell containing its cell centroid
-  (cell-based colors) or the data grid nearest its cell-centroid
-  (node-based colors). Computational cells sets are then built from
-  all cells with the specified color `"Value`".
+Plane
+-----
 
-  In order to avoid, gaps and overlaps in specifying materials, it is
-  strongly recommended that regions be defined using a single color
-  function file. 
+`"Region: Plane`" is defined by a point and normal.
 
-* `"Region: Polygonal Surface`" defines a polygonal region on which mesh faces and
-  nodes can be queried. NOTE that one cannot ask for cells in a polygonal surface
-  region. In 2D, the "polygonal surface" region is a line and is specified by 2 points.
-  In 3D, the "polygonal surface" region is specified by an arbitrary number of points.
-  In both cases the point coordinates are given as a linear array. The polygon
-  can be non-convex.
+.. code-block:: xml
 
-  The polygonal surface region can be queried for a normal. In 2D, the normal is
-  defined as [Vy,-Vx] where [Vx,Vy] is the vector from point 1 to point 2.
-  In 3D, the normal of the polygon is defined by the order in which points 
-  are specified.
+   <ParameterList name="Top Section"> <!-- parent list -->
+     <ParameterList name="Region: Plane">
+       <Parameter name="Location" type="Array(double)" value="{2, 3, 5}"/>
+       <Parameter name="Direction" type="Array(double)" value="{1, 1, 0}"/>
+       <ParameterList name="Expert Parameters">
+         <Parameter name="Tolerance" type="double" value="1.0e-05"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
 
-* `"Region: Logical`" Logical operations on regions allow for more
-  advanced region definitions. At this time the Logical Region allows
-  for logical operations on a list of regions.  In the case of Union
-  the result is obvious, it is the union of all regions.  Similarly
-  for Intersection. In the case of Subtraction, subtraction is
-  performed from the first region in the list.  The Complement is a
-  special case in that it is the only case that operates on single
-  region, and returns the complement to it within the domain 'Entire
-  Domain'.  Currently, multi-region booleans are not supported in the same expression.
+
+Labeled Set
+-----------
+
+The `"Region: Labeled Set`" region defines a named set of mesh entities
+existing in an input mesh file. This is the same file that contains
+the computational mesh. The name of the entity set is given
+by `"Label`".  For example, a mesh file in the Exodus II
+format can be processed to tag cells, faces and/or nodes with
+specific labels, using a variety of external tools.  Regions based
+on such sets are assigned a user-defined label for Amanzi, which may
+or may not correspond to the original label in the exodus file.
+Note that the file used to express this labeled set may be in any
+Amanzi-supported mesh format (the mesh format is specified in the
+parameters for this option).  The `"entity`" parameter may be
+necessary to specify a unique set.  For example, an Exodus file
+requires `"Cell`", `"Face`" or `"Node`" as well as a label (which is
+an integer).  The resulting region will have the dimensionality 
+associated with the entities in the indicated set. 
+
+By definition, "Labeled Set" region is applicable only to the
+unstructured version of Amanzi. 
+
+Currently, Amanzi-U only supports mesh files in the Exodus II format.
+
+
+Color Function
+--------------
+
+`"Region: Color Function`" defines a region based a specified
+integer color, `"Value`", in a structured color function file,
+`"File`". The format of the color function file is given below in
+the "Tabulated function file format" section. As
+shown in the file, the color values may be specified at the nodes or
+cells of the color function grid. A computational cell is assigned
+the 'color' of the data grid cell containing its cell centroid
+(cell-based colors) or the data grid nearest its cell-centroid
+(node-based colors). Computational cells sets are then built from
+all cells with the specified color `"Value`".
+
+In order to avoid, gaps and overlaps in specifying materials, it is
+strongly recommended that regions be defined using a single color
+function file. 
+
+
+Polygon
+-------
+
+`"Region: Polygon`" defines a polygonal region on which mesh faces and
+nodes can be queried. NOTE that one cannot ask for cells in a polygonal surface
+region. In 2D, the "polygonal surface" region is a line and is specified by 2 points.
+In 3D, the "polygonal surface" region is specified by an arbitrary number of points.
+In both cases the point coordinates are given as a linear array. The polygon
+can be non-convex.
+
+The polygonal surface region can be queried for a normal. In 2D, the normal is
+defined as [Vy,-Vx] where [Vx,Vy] is the vector from point 1 to point 2.
+In 3D, the normal of the polygon is defined by the order in which points 
+are specified.
+
+.. code-block:: xml
+
+   <ParameterList name="XY pentagon">
+     <ParameterList name="Region: Polygon">
+       <Parameter name="Number of points" type="int" value="5"/>
+       <Parameter name="Points" type="Array(double)" value="{-0.5, -0.5, -0.5, 
+                                                              0.5, -0.5, -0.5,
+                                                              0.8, 0.0, 0.0,
+                                                              0.5,  0.5, 0.5,
+                                                             -0.5, 0.5, 0.5}"/>
+       <ParameterList name="Expert Parameters">
+         <Parameter name="Tolerance" type="double" value="1.0e-3"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
+
+Logical
+-------
+
+`"Region: Logical`" Logical operations on regions allow for more
+advanced region definitions. At this time the Logical Region allows
+for logical operations on a list of regions.  In the case of Union
+the result is obvious, it is the union of all regions.  Similarly
+for Intersection. In the case of Subtraction, subtraction is
+performed from the first region in the list.  The Complement is a
+special case in that it is the only case that operates on single
+region, and returns the complement to it within the domain 'Entire
+Domain'.  Currently, multi-region booleans are not supported in the same expression.
 
 .. code-block:: xml
 
@@ -3587,6 +3642,10 @@ Notes
       <Parameter name="RegionList" type="Array(string)" value="{Middle1, Middle2, Bottom}"/>
     </ParameterList>
   </ParameterList>
+
+
+Notes and example
+-----------------
 
 * Surface files contain labeled triangulated face sets.  The user is
   responsible for ensuring that the intersections with other surfaces
@@ -3764,9 +3823,9 @@ The following Observation Data functionals are currently supported.  All of them
        <Parameter name="Observation Output Filename" type="string" value="obs_output.out"/>
        <Parameter name="precision" type="int" value="10"/>
        <ParameterList name="some observation name">
-         <Parameter name="Region" type="string" value="some point region name"/>
-         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-         <Parameter name="Variable" type="string" value="Volumetric water content"/>
+         <Parameter name="region" type="string" value="some point region name"/>
+         <Parameter name="functional" type="string" value="Observation Data: Point"/>
+         <Parameter name="variable" type="string" value="Volumetric water content"/>
          <Parameter name="times" type="Array(double)" value="{100000.0, 200000.0}"/>
 
          <Parameter name="cycles" type="Array(int)" value="{100000, 200000, 400000, 500000}"/>

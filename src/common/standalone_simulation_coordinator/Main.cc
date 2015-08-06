@@ -27,6 +27,7 @@
 #include "DOMTreeErrorReporter.hpp"
 #include "ErrorHandler.hpp"
 #include "InputTranslator.hh"
+#include "InputConverterU.hh"
 //#include "DOMPrintErrorHandler.hpp"
 #include "XMLParameterListWriter.hh"
 
@@ -262,9 +263,13 @@ int main(int argc, char *argv[]) {
       //DOMImplementation* impl =  DOMImplementationRegistry::getDOMImplementation(X("Core"));
 
       if (strcmp(temp2, "amanzi_input") == 0) {
-	
-	//amanzi_throw(Errors::Message("Translation for new input spec is not yet complete, please use old input spec"));
 	driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName);
+
+        // if (rank == 0) {
+        //   Amanzi::AmanziInput::InputConverterU converter;
+        //   converter.Init(xmlInFileName);
+        //   std::cout << converter.Translate() << std::endl;
+        // }
 	
 	//driver_parameter_list.print(std::cout,true,false);
 	const Teuchos::ParameterList& echo_list = driver_parameter_list.sublist("Echo Translated Input");
@@ -387,7 +392,7 @@ int main(int argc, char *argv[]) {
   }
   catch (int& ierr) {
     if (rank == 0) {
-      std::cout << "Catched unknown exception with code " << ierr 
+      std::cout << "Caught unknown exception with integer code " << ierr 
                 << ". Known sources: Epetra_MultiVector::AllocateForCopy" << std::endl;
       std::cout << "Amanzi::SIMULATION_FAILED\n";
     }

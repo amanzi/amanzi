@@ -28,7 +28,7 @@ PolygonRegion::PolygonRegion(const std::string name, const unsigned int id,
                              const double tolerance,
                              const LifeCycleType lifecycle,
                              const VerboseObject *verbobj)
-  : Region(name,id,points[0].dim(),lifecycle,verbobj), num_points_(num_points), 
+  : Region(name,id,points[0].dim()-1,lifecycle,verbobj), num_points_(num_points), 
     points_(points),tolerance_(tolerance),normal_(points[0].dim()),elim_dir_(0)
 {
   init();
@@ -40,7 +40,7 @@ PolygonRegion::PolygonRegion(const char *name, const unsigned int id,
                              const double tolerance,
                              const LifeCycleType lifecycle,
                              const VerboseObject *verbobj)
-  : Region(name,id,points[0].dim(),lifecycle), num_points_(num_points), 
+  : Region(name,id,points[0].dim()-1,lifecycle), num_points_(num_points), 
     points_(points),tolerance_(tolerance),normal_(points[0].dim()),elim_dir_(0)
 {
   init();
@@ -59,7 +59,6 @@ PolygonRegion::~PolygonRegion(void)
 }
 
 void PolygonRegion::init() {
-
   if (num_points_ < dimension()) {
     std::stringstream tempstr;
     tempstr << "\nDimension " << dimension() << 
@@ -75,24 +74,26 @@ void PolygonRegion::init() {
     Exceptions::amanzi_throw(mesg);
   }
 
-  if (dimension() == 2 && num_points_ > 2) {
+  if (num_points_ > dimension()+1) {
     const VerboseObject *verbobj = Region::verbosity_obj();
     if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
       Teuchos::OSTab tag = verbobj->getOSTab();
       *(verbobj->os()) << "\nDimension " << dimension() << 
         " regions specified by more points (" << num_points_ << ") " <<
-        "than needed\n" << "Using only the first two\n";
+          "than needed\n" << "Using only the first " << dimension()+1 << "points.\n";
     }
   }
   
-  if (dimension() == 2) {
+  int space_dimension = points_[0].dim();
+
+  if (space_dimension == 2) {
     Point vec = points_[1] - points_[0];
     vec /= norm(vec);
     normal_.set(vec[1],-vec[0]);
 
     elim_dir_ = (vec[0] < vec[1]) ? 0 : 1;
   }
-  else if (dimension() == 3) {
+  else if (space_dimension == 3) {
     Point vec0 = points_[2]-points_[1];
     Point vec1 = points_[0]-points_[1];
     normal_ = vec0^vec1;
@@ -137,7 +138,7 @@ void PolygonRegion::init() {
   }
   else {
     std::stringstream tempstr;
-    tempstr << "Cannot handle regions of dimension " << dimension() << "\n";
+    tempstr << "Cannot handle polygon regions with points of dimension " << space_dimension << "\n";
     
     const VerboseObject *verbobj = Region::verbosity_obj();
     if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
@@ -186,7 +187,7 @@ PolygonRegion::inside(const Point& p) const
 
 
   bool result(false);
-  if (dimension() == 2) {
+  if (points_[0].dim() == 2) {
     // Now check if it lies in the line segment 
 
     // vector from start of segment to point 

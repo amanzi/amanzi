@@ -3787,6 +3787,11 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
           list.sublist(regName).sublist("Region: Polygon").set<int>("Number of points",num_points);
           XMLString::release(&textContent2);
         }
+        if (regElem->hasAttribute(XMLString::transcode("tolerance"))) {
+          textContent2 = XMLString::transcode(regElem->getAttribute(XMLString::transcode("tolerance")));
+          list.sublist(regName).sublist("Region: Polygon").sublist("Expert Parameters").set<double>("Tolerance",get_double_constant(textContent2,*def_list));
+          XMLString::release(&textContent2);
+        }
         // get verticies (add count them)
         Teuchos::Array<double> points;
         DOMNodeList* gkids = regElem->getChildNodes();
@@ -5631,7 +5636,7 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 		    if (times.length() == 0) {               // if first time through
                       times.append(time);
 		      funcs.append(function);
-		      vals.append(value);
+                      vals.append(value);
 		    }
                     else {
 		      if (time >= times[times.length()-1]) { // if already sorted
@@ -5640,36 +5645,28 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 		        vals.append(value);
 		      }
                       else {                              // otherwise, sort
-		        int idx = times.length()-1;
-		        Teuchos::Array<double> hold_times;
-		        Teuchos::Array<double> hold_vals;
-		        Teuchos::Array<std::string> hold_funcs;
-		        hold_times.append(times[idx]);
-		        hold_vals.append(vals[idx]);
-		        hold_funcs.append(funcs[idx]);
-		        times.remove(idx);
-		        vals.remove(idx);
-		        funcs.remove(idx);
-		        idx--;
-		        while (time < times[idx]) {
-		          hold_times.append(times[idx]);
-		          hold_vals.append(vals[idx]);
-		          hold_funcs.append(funcs[idx]);
-		          times.remove(idx);
-		          vals.remove(idx);
-		          funcs.remove(idx);
-		          idx--;
-		        }
-		        times.append(time);
-		        vals.append(value);
-		        funcs.append(function);
-		        for (int i=0; i<hold_times.length(); i++) {
-		          idx = hold_times.length()-1-i;
-		          times.append(hold_times[hold_times.length()-idx]);
-		          vals.append(hold_vals[hold_times.length()-idx]);
-		          funcs.append(hold_funcs[hold_times.length()-idx]);
-		        }
-		      }
+                        int here(0);
+                        int idx(0);
+                        // figure out the correct position (times already in order from previous steps)
+                        while (times[idx] < time) {
+                          idx++;
+                          here = idx;
+                        }
+                        // append last values to end
+                        times.append(times[times.length()-1]);
+                        vals.append(vals[vals.length()-1]);
+                        funcs.append(funcs[funcs.length()-1]);
+                        // copy entries over one
+                        for (int i=times.length()-1; i>here; i--) {
+                          times[i] = times[i-1];
+                          vals[i] = vals[i-1];
+                          funcs[i] = funcs[i-1];
+                        }
+                        // add new entries "here"
+                        times[here] = time;
+                        vals[here] = value;
+                        funcs[here] = function;
+                      }
 		    }
 		  }
 	        }
@@ -5817,35 +5814,29 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
                         sort_vals.append(values[j]);
                       }
                       else {                                            // otherwise sort
-                        int idx = times.length()-1;
-                        Teuchos::Array<double> hold_times;
-                        Teuchos::Array<double> hold_vals;
-                        Teuchos::Array<std::string> hold_funcs;
-                        hold_times.append(sort_times[idx]);
-                        hold_vals.append(sort_vals[idx]);
-                        hold_funcs.append(sort_func[idx]);
-                        sort_times.remove(idx);
-                        sort_vals.remove(idx);
-                        sort_func.remove(idx);
-                        idx--;
-                        while (times[j] < sort_times[idx]) {
-                          hold_times.append(sort_times[idx]);
-                          hold_vals.append(sort_vals[idx]);
-                          hold_funcs.append(sort_func[idx]);
-                          sort_times.remove(idx);
-                          sort_vals.remove(idx);
-                          sort_func.remove(idx);
-                          idx--;
+                        // otherwise, sort
+                        int here(0);
+                        int idx(0);
+                        // figure out the correct position (times already in order from previous steps)
+                        while (sort_times[idx] < times[j]) {
+                          idx++;
+                          here = idx;
                         }
-                        sort_times.append(times[j]);
-                        sort_vals.append(values[j]);
-                        sort_func.append(funcs[j]);
-                        for (int i=0; i<hold_times.length(); i++) {
-                          idx = hold_times.length()-1-i;
-                          sort_times.append(hold_times[hold_times.length()-idx]);
-                          sort_vals.append(hold_vals[hold_times.length()-idx]);
-                          sort_func.append(hold_funcs[hold_times.length()-idx]);
+                        // append last values to end
+                        sort_times.append(sort_times[sort_times.length()-1]);
+                        sort_vals.append(sort_vals[sort_vals.length()-1]);
+                        sort_func.append(sort_func[sort_func.length()-1]);
+                        // copy entries over one
+                        for (int i=sort_times.length()-1; i>here; i--) {
+                          sort_times[i] = sort_times[i-1];
+                          sort_vals[i] = sort_vals[i-1];
+                          sort_func[i] = sort_func[i-1];
                         }
+                        // add new entries "here"
+                        sort_times[here] = times[j];
+                        sort_vals[here] = values[j];
+                        sort_func[here] = funcs[j];
+
                       }
                     }
 		  }
@@ -6010,32 +6001,76 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
                     else if (strcmp(scChildName,"perm_weighted")==0){
 		     scname = "Source: Permeability Weighted";
 		    }
+                    
 		    // loop over any attributes that may exist
                     DOMNamedNodeMap* attrMap2 = scChildNode->getAttributes();
+                    std::string function;
+                    double value;
+                    double time;
                     for (int l=0; l<attrMap2->getLength(); l++) {
                       DOMNode* attrNode = attrMap2->item(l) ;
                       if (DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
+                        
                         char* attrName = XMLString::transcode(attrNode->getNodeName());
                         char* attrValue = XMLString::transcode(attrNode->getNodeValue());
-			if (strcmp(attrName,"function")==0) {
+                        if (strcmp(attrName,"function")==0) {
 		          if (strcmp(attrValue,"linear")==0) {
-		            funcs.append("Linear");
+		            function = "Linear";
 		          }
                           else if (strcmp(attrValue,"constant")==0) {
-		            funcs.append("Constant");
+		            function = "Constant";
 		          }
                           else if (strcmp(attrValue,"uniform")==0) {
-		            funcs.append("Uniform");
+		            function = "Uniform";
 		          }
 			}
                         else if (strcmp(attrName,"start")==0) {
-		          times.append(get_time_value(attrValue, def_list));
+		          time = get_time_value(attrValue, def_list);
 			}
                         else if (strcmp(attrName,"value")==0) {
-		          vals.append(get_time_value(attrValue, def_list));
-			}
-		      }
+		          value = get_double_constant(attrValue, def_list);
+                        }
+                        XMLString::release(&attrName);
+                        XMLString::release(&attrValue);
+                      }
 		    }
+                    
+                    // put time, function, value in sorted order
+                    if (times.length() == 0) {               // if first time through
+                      times.append(time);
+                      funcs.append(function);
+                      vals.append(value);
+                    }
+                    else {
+                      if (time >= times[times.length()-1]) { // if already sorted
+                        times.append(time);
+                        funcs.append(function);
+                        vals.append(value);
+                      }
+                      else {                              // otherwise, sort
+                        int here(0);
+                        int idx(0);
+                        // figure out the correct position (times already in order from previous steps)
+                        while (times[idx] < time) {
+                          idx++;
+                          here = idx;
+                        }
+                        // append last values to end
+                        times.append(times[times.length()-1]);
+                        vals.append(vals[vals.length()-1]);
+                        funcs.append(funcs[funcs.length()-1]);
+                        // copy entries over one
+                        for (int m=times.length()-1; m>here; m--) {
+                          times[m] = times[m-1];
+                          vals[m] = vals[m-1];
+                          funcs[m] = funcs[m-1];
+                        }
+                        // add new entries "here"
+                        times[here] = time;
+                        vals[here] = value;
+                        funcs[here] = function;
+                      }
+                    }
 		  }
 		}
 	        if (times.length()==1 ){
@@ -6081,8 +6116,12 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
                       scname = "Source: Diffusion Dominated Release Model";
                       isReleaseModel = true;
                     }
-		    // loop over any attributes that may exist
+		    
+                    // loop over any attributes that may exist
                     DOMNamedNodeMap* attrMap2 = scChildNode->getAttributes();
+                    std::string function;
+                    double value;
+                    double time;
                     for (int l=0; l<attrMap2->getLength(); l++) {
                       DOMNode* attrNode = attrMap2->item(l) ;
                       if (DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
@@ -6090,20 +6129,20 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
                         char* attrValue = XMLString::transcode(attrNode->getNodeValue());
 			if (strcmp(attrName,"function")==0) {
 		          if (strcmp(attrValue,"linear")==0) {
-		            funcs.append("Linear");
+		            function = "Linear";
 		          }
                           else if (strcmp(attrValue,"constant")==0) {
-		            funcs.append("Constant");
+		            function = "Constant";
 		          }
                           else if (strcmp(attrValue,"uniform")==0) {
-		            funcs.append("Uniform");
+		            function = "Uniform";
 		          }
 			}
                         else if (strcmp(attrName,"start")==0) {
-		          times.append(get_time_value(attrValue, def_list));
+		          time = get_time_value(attrValue, def_list);
 			}
                         else if (strcmp(attrName,"value")==0) {
-		          vals.append(get_time_value(attrValue, def_list));
+		          value = get_double_constant(attrValue, def_list);
 			}
                         else if (strcmp(attrName,"name")==0) {
 		          soluteName = attrValue;
@@ -6120,7 +6159,44 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
                         XMLString::release(&attrName);
                         XMLString::release(&attrValue);
 		      }
-		    }
+                    }
+                    
+                    // put time, function, value in sorted order
+                    if (times.length() == 0) {               // if first time through
+                      times.append(time);
+                      funcs.append(function);
+                      vals.append(value);
+                    }
+                    else {
+                      if (time >= times[times.length()-1]) { // if already sorted
+                        times.append(time);
+                        funcs.append(function);
+                        vals.append(value);
+                      }
+                      else {                              // otherwise, sort
+                        int here(0);
+                        int idx(0);
+                        // figure out the correct position (times already in order from previous steps)
+                        while (times[idx] < time) {
+                          idx++;
+                          here = idx;
+                        }
+                        // append last values to end
+                        times.append(times[times.length()-1]);
+                        vals.append(vals[vals.length()-1]);
+                        funcs.append(funcs[funcs.length()-1]);
+                        // copy entries over one
+                        for (int m=times.length()-1; m>here; m--) {
+                          times[m] = times[m-1];
+                          vals[m] = vals[m-1];
+                          funcs[m] = funcs[m-1];
+                        }
+                        // add new entries "here"
+                        times[here] = time;
+                        vals[here] = value;
+                        funcs[here] = function;
+                      }
+                    }
 		  }
 		}
 	        if (times.length()==1 ){

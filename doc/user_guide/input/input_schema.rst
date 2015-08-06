@@ -701,11 +701,13 @@ A point region is defined by a point coordinates.
 Plane
 _____
 
-A plane region is defined by a point on the plane and the normal direction of the plane
+A plane region is defined by a point on the plane and the normal direction of the plane.
 
 .. code-block:: xml
 
-  <plane name="plane name" location="x,y,z" normal="dx,dy,dz" />
+  <plane name="plane name" location="x,y,z" normal="dx,dy,dz" tolerance="optional exp"/>
+
+The attribute ``tolerance`` is optional.  This value prescribes a tolerance for determining the cell face centroids that lie on the defined plane.
 
 Labeled Set
 ___________
@@ -731,22 +733,23 @@ A color function region defines a region based on a specified integer color in a
   </region>
 
 
-Polygonal_Surface
-_________________
+Polygonal_Surface (unstructured only)
+_____________________________________
 
 A polygonal_surface region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the unstructured algorithm.
 
 .. code-block:: xml
 
-    <polygonal_surface name="polygon name" num_points="3">
+    <polygonal_surface name="polygon name" num_points="3" tolerance="optional exp">
       <point> (X, Y, Z) </point>
       <point> (X, Y, Z) </point>
       <point> (X, Y, Z) </point>
     </polygonal_surface>
 
+The attribute ``tolerance`` is optional.  This value prescribes a tolerance for determining the cell face centroids that lie on the defined plane.
 
-Logical
-_______
+Logical (unstructured only)
+___________________________
 
 Logical regions are compound regions formed from other primitive type regions using boolean operations. Supported operators are union, intersection, subtraction and complement.  This region type is only valid for the unstructured algorithm.
 
@@ -755,8 +758,8 @@ Logical regions are compound regions formed from other primitive type regions us
 
     <logical  name="logical name" operation = "union | intersection | subtraction | complement" region_list = "region1, region2, region3"/>
 
-Polygon
-_______
+Polygon (structured 2D only)
+____________________________
 
 A polygon region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the structured algorithm in 2D.
 
@@ -768,8 +771,8 @@ A polygon region is used to define a bounded planar region and is specified by t
       <point> (X, Y) </point>
     </polygon>
 
-Ellipse
-_______
+Ellipse (structured 2D only)
+____________________________
 
 An ellipse region is used to define a bounded planar region and is specified by a center and X and Y radii.  This region type is only valid for the structured algorithm in 2D.
 
@@ -780,8 +783,8 @@ An ellipse region is used to define a bounded planar region and is specified by 
       <radius> (radiusX, radiusY) </radius>
     </ellipse>
 
-Rotated Polygon
-_______________
+Rotated Polygon (structured 3D only)
+____________________________________
 
 A rotated_polygon region is defined by a list of points defining the polygon, the plane in which the points exist, the axis about which to rotate the polygon, and a reference point for the rotation axis.  The points listed for the polygon must be in order and the ordering will be maintained during input translation. This region type is only valid for the structured algorithm in 3D.
 
@@ -796,8 +799,8 @@ A rotated_polygon region is defined by a list of points defining the polygon, th
       <reference_point> (X, Y) </reference_point>
     </rotated_polygon>
 
-Swept Polygon
-_____________
+Swept Polygon (structured 3D only)
+__________________________________
 
 A swept_polygon region is defined by a list of points defining the polygon, the plane in which the points exist, the extents (min,max) to sweep the polygon normal to the plane.  The points listed for the polygon must be in order and the ordering will be maintained during input translation. This region type is only valid for the structured algorithm in 3D.
 
