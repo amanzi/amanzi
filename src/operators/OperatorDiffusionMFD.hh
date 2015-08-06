@@ -138,6 +138,7 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   double factor_;
   bool exclude_primary_terms_;
   bool scaled_constraint_;
+  double constraint_scaling_cutoff_;
 
   int mfd_primary_, mfd_secondary_, mfd_pc_primary_, mfd_pc_secondary_;
   int nfailed_primary_;
