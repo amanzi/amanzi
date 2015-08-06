@@ -35,8 +35,8 @@ Teuchos::ParameterList InputConverterU::Translate()
   vo_ = new VerboseObject("InputTranslator", verb_list_);
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  // temporal hack
-  phases_["water"].push_back("Tc-99");
+  // parsing of miscalleneous lists
+  ParseSolutes_();
   
   out_list.sublist("Mesh") = TranslateMesh_();
   out_list.sublist("Domain").set<int>("Spatial Dimension", dim_);
@@ -45,8 +45,37 @@ Teuchos::ParameterList InputConverterU::Translate()
   out_list.sublist("Solvers") = TranslateSolvers_();
   out_list.sublist("Preconditioners") = TranslatePreconditioners_();
   out_list.sublist("State") = TranslateState_();
+  out_list.sublist("Cycle Driver") = TranslateCycleDriver_();
   
   return out_list;
+}
+
+
+/* ******************************************************************
+* Extract information of solute components.
+****************************************************************** */
+void InputConverterU::ParseSolutes_()
+{
+  bool flag;
+  char* tagname;
+  char* text_content;
+
+  DOMNode* inode = doc_->getElementsByTagName(XMLString::transcode("phases"))->item(0);
+  DOMNode* node = getUniqueElementByTagsString_(inode, "liquid_phase, dissolved_components, solutes", flag);
+
+  DOMNodeList* children = node->getChildNodes();
+  for (int i = 0; i < children->getLength(); ++i) {
+    inode = children->item(i);
+    tagname = XMLString::transcode(inode->getNodeName());
+    text_content = XMLString::transcode(inode->getTextContent());
+
+    if (strcmp(tagname, "solute") == 0) {
+      phases_["water"].push_back(TrimString_(text_content));
+    }
+
+    XMLString::release(&text_content);
+    XMLString::release(&tagname);
+  }
 }
 
 

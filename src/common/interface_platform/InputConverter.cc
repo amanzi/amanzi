@@ -285,7 +285,6 @@ DOMNode* InputConverter::getUniqueElementByTagsString_(
 {
   DOMNode* node;
 
-std::cout << tags << std::endl;
   flag = false;
   std::vector<std::string> tag_names = CharToStrings_(tags.c_str());
   if (tag_names.size() == 0) return node;
@@ -316,7 +315,7 @@ std::cout << tags << std::endl;
 
 
 /* ******************************************************************
-* Converts string of names separated by comma to array of strings.
+* Extract atribute of type double.
 ****************************************************************** */
 double InputConverter::GetAttributeValueD_(DOMElement* elem, const char* attr_name)
 {
@@ -334,7 +333,7 @@ double InputConverter::GetAttributeValueD_(DOMElement* elem, const char* attr_na
 
 
 /* ******************************************************************
-* Converts string of names separated by comma to array of strings.
+* Extract atribute of type int.
 ****************************************************************** */
 int InputConverter::GetAttributeValueL_(DOMElement* elem, const char* attr_name)
 {
@@ -352,7 +351,24 @@ int InputConverter::GetAttributeValueL_(DOMElement* elem, const char* attr_name)
 
 
 /* ******************************************************************
-* Converts string of names separated by comma to array of strings.
+* Extract atribute of type char*.
+* The returned memory should be freeded using XMLString::release.
+****************************************************************** */
+char* InputConverter::GetAttributeValueC_(DOMElement* elem, const char* attr_name)
+{
+  char* val;
+  if (elem->hasAttribute(XMLString::transcode(attr_name))) {
+    val = XMLString::transcode(elem->getAttribute(XMLString::transcode(attr_name)));
+  } else {
+    char* tagname = XMLString::transcode(elem->getNodeName());
+    ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
+  }
+  return val;
+}
+
+
+/* ******************************************************************
+* Extract attribute of type vector.
 ****************************************************************** */
 std::vector<double> InputConverter::GetAttributeVector_(DOMElement* elem, const char* attr_name)
 {
@@ -368,6 +384,23 @@ std::vector<double> InputConverter::GetAttributeVector_(DOMElement* elem, const 
   return val;
 }
 
+
+/* ******************************************************************
+* Find positing in the array.
+****************************************************************** */
+int InputConverter::GetPosition_(const std::vector<std::string>& names, char* name)
+{
+  for (int i = 0; i < names.size(); ++i) {
+    if (strcmp(names[i].c_str(), name) == 0) return i;
+  }
+
+  Errors::Message msg;
+  msg << "Amanzi::InputConverter: vector of names (e.g. solutes) has no \"" << name << "\".\n";
+  msg << "  Please correct and try again.\n";
+  Exceptions::amanzi_throw(msg);
+
+  return -1;
+}
 
 /* ******************************************************************
 * Converts string of names separated by comma to array of strings.

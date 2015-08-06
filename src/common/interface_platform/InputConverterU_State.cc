@@ -387,26 +387,71 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         }
       }
 
-      // -- total_component_concentration...
-      node = getUniqueElementByTagsString_(inode, "liquid_phase, solute_component", flag);
+      // -- total_component_concentration (liquid phase)
+      int ncomp_l = phases_["water"].size();
+      int ncomp_g = phases_["gas"].size();
+      int ncomp_all = ncomp_l + ncomp_g;
+
+      node = getUniqueElementByTagsString_(inode, "liquid_phase", flag);
       if (flag) {
+        std::vector<double> vals(ncomp_l, 0.0);
+
+        DOMNodeList* children = node->getChildNodes();
+        for (int j = 0; j < children->getLength(); ++j) {
+          DOMNode* jnode = children->item(j);
+          tagname = XMLString::transcode(jnode->getNodeName());
+
+          if (strcmp(tagname, "solute_component") == 0) {
+             text_content = GetAttributeValueC_(static_cast<DOMElement*>(jnode), "name");
+            int m = GetPosition_(phases_["water"], text_content);
+            vals[m] = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "value");
+            XMLString::release(&text_content);
+          }
+          XMLString::release(&tagname);
+        }
+
         Teuchos::ParameterList& tcc_ic = out_ic.sublist("total_component_concentration");
         Teuchos::ParameterList& dof_list = tcc_ic.sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions", regions)
             .set<std::string>("component","cell")
             .sublist("function")
-            .set<int>("Number of DoFs", comp_names_all_.size())
+            .set<int>("Number of DoFs", ncomp_all)
             .set<std::string>("Function type", "composite function");
 
-        int m(0);
-        int ncomp = phases_["water"].size();
-        for (int k = 0; k < ncomp; k++, m++) {
+        for (int k = 0; k < ncomp_l; k++) {
           std::string name = phases_["water"][k];
-          double conc = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
           std::stringstream dof_str;
+          dof_str << "DoF " << k + 1 << " Function";
+          dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", vals[k]);
+        }
+      }
 
-          dof_str << "DoF " << m + 1 << " Function";
-          dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", conc);
+      // -- total_component_concentration (gas phase)
+      node = getUniqueElementByTagsString_(inode, "gas_phase", flag);
+      if (flag) {
+        std::vector<double> vals(ncomp_g, 0.0);
+
+        DOMNodeList* children = node->getChildNodes();
+        for (int j = 0; j < children->getLength(); ++j) {
+          DOMNode* jnode = children->item(j);
+          tagname = XMLString::transcode(jnode->getNodeName());
+
+          if (strcmp(tagname, "solute_component") == 0) {
+             text_content = GetAttributeValueC_(static_cast<DOMElement*>(jnode), "name");
+            int m = GetPosition_(phases_["gas"], text_content);
+            vals[m] = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "value");
+            XMLString::release(&text_content);
+          }
+          XMLString::release(&tagname);
+        }
+
+        Teuchos::ParameterList& tcc_ic = out_ic.sublist("total_component_concentration");
+        Teuchos::ParameterList& dof_list = tcc_ic.sublist("function").sublist(reg_str);
+        for (int k = 0; k < ncomp_g; k++) {
+          std::string name = phases_["gas"][k];
+          std::stringstream dof_str;
+          dof_str << "DoF " << ncomp_l + k + 1 << " Function";
+          dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", vals[k]);
         }
       }
     }

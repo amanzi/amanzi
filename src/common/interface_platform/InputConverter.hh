@@ -70,6 +70,7 @@ class InputConverter {
 
   int GetAttributeValueL_(xercesc::DOMElement* elem, const char* attr_name);
   double GetAttributeValueD_(xercesc::DOMElement* elem, const char* attr_name);
+  char* GetAttributeValueC_(xercesc::DOMElement* elem, const char* attr_name);
   std::vector<double> GetAttributeVector_(xercesc::DOMElement* elem, const char* attr_name);
 
   // data streaming/trimming/converting
@@ -83,6 +84,9 @@ class InputConverter {
   // -- string modifications
   std::vector<std::string> CharToStrings_(const char* namelist);
   std::string TrimString_(char* tmp);
+
+  // -- vector parsing
+  int GetPosition_(const std::vector<std::string>& names, char* name);
 
   // error messages
   void ThrowErrorIllformed_(

@@ -39,6 +39,8 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList Translate();
 
  private:
+  void ParseSolutes_();
+
   Teuchos::ParameterList TranslateMesh_();
   Teuchos::ParameterList TranslateRegions_();
   Teuchos::ParameterList TranslateOutput_();
@@ -49,6 +51,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateSolvers_();
   Teuchos::ParameterList TranslateState_();
   Teuchos::ParameterList TranslateMaterialsPartition_();
+  Teuchos::ParameterList TranslateCycleDriver_();
 
   void ProcessMacros_(const std::string& prefix, char* text_content,
                       Teuchos::ParameterList& mPL, Teuchos::ParameterList& outPL);
