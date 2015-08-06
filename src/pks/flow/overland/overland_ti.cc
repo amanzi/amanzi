@@ -246,6 +246,7 @@ double OverlandFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       // error in flux -- relative to cell's extensive conserved quantity
       int nfaces = dvec->size(*comp, false);
       bool scaled_constraint = plist_->sublist("Diffusion").get<bool>("scaled constraint equation", true);
+      double constraint_scaling_cutoff = plist_->sublist("Diffusion").get<double>("constraint equation scaling cutoff", 1.0);
       const Epetra_MultiVector& kr_f = *S_next_->GetFieldData("upwind_overland_conductivity")
         ->ViewComponent("face",false);
 
@@ -259,7 +260,7 @@ double OverlandFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       
         double enorm_f = fluxtol_ * h * std::abs(dvec_v[0][f]) 
             / (atol_*cv_min + rtol_*std::abs(conserved_min));
-        if (scaled_constraint && (kr_f[0][f] < 1.0)) enorm_f *= kr_f[0][f];
+        if (scaled_constraint && (kr_f[0][f] < constraint_scaling_cutoff)) enorm_f *= kr_f[0][f];
 
         if (enorm_f > enorm_comp) {
           enorm_comp = enorm_f;
