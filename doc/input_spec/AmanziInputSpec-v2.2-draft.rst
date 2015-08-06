@@ -599,24 +599,16 @@ Structured_controls
   
     * `"amr_levels`" = "integer"
   
-    * `"refinement_ratio`" takes a sequence of integer values as subelements
-
-        * `"int`" = "integer"
+    * `"refinement_ratio`" takes a space separated list of integer values
   
     * `"do_amr_cubcycling`" = "bool"
   
-    * `"regrid_interval`" takes a sequence of integer values as subelements
-
-        * `"int`" = "integer"
+    * `"regrid_interval`" takes a space separated list of integer values
   
-    * `"blocking_factor`" takes a sequence of integer values as subelements
+    * `"blocking_factor`" takes space separated list of integer values
 
-        * `"int`" = "integer"
-  
-    * `"number_error_buffer_cells`" takes a sequence of integer values as subelements
+    * `"number_error_buffer_cells`" takes space separated list of integer values
 
-        * `"int`" = "integer"
-  
     * `"max_grid_size`" = "integer"
   
     * `"refinement_indicators`" takes the following subelements

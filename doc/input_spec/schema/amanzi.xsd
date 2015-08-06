@@ -159,6 +159,17 @@ Changes by TDS June 2013:
   </xs:restriction>
 </xs:simpleType>
 
+<xs:simpleType name="typedef_int_list">
+  <xs:annotation>
+    <xs:documentation xml:lang="en">
+      Integer lists are space separated lists of integer values.
+    </xs:documentation>
+  </xs:annotation>
+  <xs:restriction base="xs:token">
+    <xs:pattern value="([0-9]+ *)+?"/>
+  </xs:restriction>
+</xs:simpleType>
+
 <!-- Numerical Control Options -->
 
 <xs:simpleType name="typedef_discretization_method">
@@ -368,7 +379,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_property_file">
 	<xs:attribute name="filename" type="xs:string"/>
-        <xs:attribute name="type" type="typedef_property_file_formats"/>
+        <xs:attribute name="type" use="required" type="typedef_property_file_formats"/>
         <xs:attribute name="attribute" type="xs:string"/>
 </xs:complexType>
 
@@ -653,8 +664,6 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
     <xs:element name="chem_max_newton_iterations" type="xs:integer"/>
     <xs:element name="chem_max_time_step" type="typedef_exponential"/>
     <xs:element name="max_chemistry_transport_timestep_ratio" type="typedef_exponential"/>
-    <xs:assert  test="@process_model = ('implicit operator split','none')"/>	
-    <xs:assert  test="@log_formulation = ('on','off')"/>
     
     
     <!-- for pflotran chemistry -->
@@ -663,6 +672,9 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
     <xs:element name="read_chemistry_engine_inputfile" type="xs:string"/>
     
   </xs:all>
+
+    <xs:assert  test="@process_model = ('implicit operator split','none')"/>	
+    <xs:assert  test="@log_formulation = ('on','off')"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_unstr_steady-state_controls">
@@ -736,6 +748,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 </xs:complexType>
 
 <xs:complexType name="typedef_unstr_bdf1_integration_method">
+    <xs:all minOccurs="0" maxOccurs="1">
 	<xs:element name="min_iterations" type="xs:integer" default="10" minOccurs="0" maxOccurs="1"/>   
         <xs:element name="max_iterations" type="xs:integer" default="15" minOccurs="0" maxOccurs="1"/>
         <xs:element name="limit_iterations" type="xs:integer" default="20" minOccurs="0" maxOccurs="1"/>
@@ -746,16 +759,19 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:element name="nonlinear_iteration_divergence_factor" type="typedef_exponential" default="1000.0" minOccurs="0" maxOccurs="1"/>
 	<xs:element name="restart_tolerance_relaxation_factor" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
 	<xs:element name="restart_tolerance_relaxation_factor_damping" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
-        <xs:element name="error_control_options" type="xs:string" default="'pressure,redidual" minOccurs="0" maxOccurs="1"/>
-        <xs:assert  test="not(exists(error_control_options)) or error_control_options = ('pressure,redidual')"/>
+        <xs:element name="error_control_options" type="xs:string" default="'pressure,residual'" minOccurs="0" maxOccurs="1"/>
+    </xs:all>	
+    <xs:assert test="not(exists(error_control_options)) or error_control_options = ('pressure,residual')" />
 </xs:complexType>
 
 <xs:complexType name="typedef_unstr_nonlinear_solver">
-	<xs:element name="modify_correction" type="xs:boolean" default="false"/>   
-	<xs:element name="update_upwind_frequency" type="xs:string" default="every_timestep"/>   
+	<xs:all minOccurs="0" maxOccurs="1">
+	    <xs:element name="modify_correction" type="xs:boolean" default="false"/>   
+	    <xs:element name="update_upwind_frequency" type="xs:string" default="every_timestep"/>   
+	</xs:all>	
 	<xs:attribute name="name" type="xs:string"/>
-	<xs:assert  test="@name = ('nka','newton', 'jfnk', 'newton_picard)"/>	 
-        <xs:assert  test="not(exists(update_upwind_frequency)) or update_upwind_frequency = ('every_timestep','every_nonlinear_iteration')"/>
+	<xs:assert test="@name = ('nka','newton','jfnk','newton_picard')"/>	 
+        <xs:assert test="not(exists(update_upwind_frequency)) or update_upwind_frequency = ('every_timestep','every_nonlinear_iteration')"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_unstr_linear_solver">
@@ -874,20 +890,14 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
   <xs:all minOccurs = "0" maxOccurs = "1">
     <xs:element name="comments" minOccurs = "0" maxOccurs = "1"/>
     <xs:element name="amr_levels" type="xs:integer" minOccurs = "0" maxOccurs = "1"/>
-    <xs:element name="refinement_ratio" type="typedef_amr_array_ints" minOccurs = "0" maxOccurs = "1"/>
+    <xs:element name="refinement_ratio" type="typedef_int_list" minOccurs = "0" maxOccurs = "1"/>
     <xs:element name="do_amr_cubcycling" type="xs:boolean" minOccurs = "0" maxOccurs = "1"/>
-    <xs:element name="regrid_interval" type="typedef_amr_array_ints" minOccurs = "0" maxOccurs = "1"/>
-    <xs:element name="blocking_factor" type="typedef_amr_array_ints" minOccurs = "0" maxOccurs = "1"/>
-    <xs:element name="number_error_buffer_cells" type="typedef_amr_array_ints" minOccurs = "0" maxOccurs = "1"/>
-    <xs:element name="max_grid_size" type="typedef_amr_array_ints" minOccurs = "0" maxOccurs = "1"/>
+    <xs:element name="regrid_interval" type="typedef_int_list" minOccurs = "0" maxOccurs = "1"/>
+    <xs:element name="blocking_factor" type="typedef_int_list" minOccurs = "0" maxOccurs = "1"/>
+    <xs:element name="number_error_buffer_cells" type="typedef_int_list" minOccurs = "0" maxOccurs = "1"/>
+    <xs:element name="max_grid_size" type="typedef_int_list" minOccurs = "0" maxOccurs = "1"/>
     <xs:element name="refinement_indicator" type="typedef_refinement_indicator" minOccurs = "0" maxOccurs = "unbounded"/>
   </xs:all>
-</xs:complexType>
-
-<xs:complexType name="typedef_amr_array_ints">
-  <xs:sequence>
-    <xs:element name="int" type="xs:integer" minOccurs="0" maxOccurs="unbounded"/>
-  </xs:sequence>
 </xs:complexType>
 
 <xs:complexType name="typedef_refinement_indicator">
@@ -1269,17 +1279,20 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:complexType name="typedef_dispersion_tensor_uniform_isotropic">
 	<xs:attribute name="alpha_l" use="required" type="typedef_exponential"/>
 	<xs:attribute name="alpha_t" use="required" type="typedef_exponential"/>
+	<xs:attribute name="type" use="required" type="xs:string" />
 </xs:complexType>
 <xs:complexType name="typedef_dispersion_tensor_burnett_frind">
         <xs:attribute name="alpha_l" use="required" type="typedef_exponential"/>
         <xs:attribute name="alpha_th" use="required" type="typedef_exponential"/>
         <xs:attribute name="alpha_tv" use="required" type="typedef_exponential"/>
+	<xs:attribute name="type" use="required" type="xs:string" />
 </xs:complexType>
 <xs:complexType name="typedef_dispersion_tensor_lichtner_kelkar_robinson">
         <xs:attribute name="alpha_lh" use="required" type="typedef_exponential"/>
         <xs:attribute name="alpha_lv" use="required" type="typedef_exponential"/>
         <xs:attribute name="alpha_th" use="required" type="typedef_exponential"/>
         <xs:attribute name="alpha_tv" use="required" type="typedef_exponential"/>
+	<xs:attribute name="type" use="required" type="xs:string" />
 </xs:complexType>
 
 <xs:complexType name="typedef_tortuosity">

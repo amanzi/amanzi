@@ -3044,17 +3044,10 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   }
                   else if (strcmp(tagname,"refinement_ratio")==0) {
                     Teuchos::Array<int> factors;
-                    DOMNodeList* intChildren = currentNode->getChildNodes();
-                    for (int l=0; l<intChildren->getLength(); l++) {
-                      DOMNode* currentIntKid = intChildren->item(l) ;
-                      if (DOMNode::ELEMENT_NODE == currentIntKid->getNodeType()) {
-                        char* intString = XMLString::transcode(currentIntKid->getTextContent());
-                        factors.append(atoi(intString));
-                        XMLString::release(&intString);
-                      }
-                    }
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    factors = make_int_list(textContent);
                     amrPL.set<Teuchos::Array<int> >("Refinement Ratio",factors);
-                    //XMLString::release(&textContent);
+                    XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"do_amr_subcycling")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
@@ -3068,59 +3061,31 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   }
                   else if (strcmp(tagname,"regrid_interval")==0) {
                     Teuchos::Array<int> factors;
-                    DOMNodeList* intChildren = currentNode->getChildNodes();
-                    for (int l=0; l<intChildren->getLength(); l++) {
-                      DOMNode* currentIntKid = intChildren->item(l) ;
-                      if (DOMNode::ELEMENT_NODE == currentIntKid->getNodeType()) {
-                        char* intString = XMLString::transcode(currentIntKid->getTextContent());
-                        factors.append(atoi(intString));
-                        XMLString::release(&intString);
-                      }
-                    }
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    factors = make_int_list(textContent);
                     amrPL.set<Teuchos::Array<int> >("Regrid Interval",factors);
-                    //XMLString::release(&textContent);
+                    XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"blocking_factor")==0) {
                     Teuchos::Array<int> factors;
-                    DOMNodeList* intChildren = currentNode->getChildNodes();
-                    for (int l=0; l<intChildren->getLength(); l++) {
-                      DOMNode* currentIntKid = intChildren->item(l) ;
-                      if (DOMNode::ELEMENT_NODE == currentIntKid->getNodeType()) {
-                        char* intString = XMLString::transcode(currentIntKid->getTextContent());
-                        factors.append(atoi(intString));
-                        XMLString::release(&intString);
-                      }
-                    }
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    factors = make_int_list(textContent);
                     amrPL.set<Teuchos::Array<int> >("Blocking Factor",factors);
-                    //XMLString::release(&textContent);
+                    XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"number_error_buffer_cells")==0) {
                     Teuchos::Array<int> factors;
-                    DOMNodeList* intChildren = currentNode->getChildNodes();
-                    for (int l=0; l<intChildren->getLength(); l++) {
-                      DOMNode* currentIntKid = intChildren->item(l) ;
-                      if (DOMNode::ELEMENT_NODE == currentIntKid->getNodeType()) {
-                        char* intString = XMLString::transcode(currentIntKid->getTextContent());
-                        factors.append(atoi(intString));
-                        XMLString::release(&intString);
-                      }
-                    }
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    factors = make_int_list(textContent);
                     amrPL.set<Teuchos::Array<int> >("Number Error Buffer Cells",factors);
-                    //XMLString::release(&textContent);
+                    XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"max_grid_size")==0) {
                     Teuchos::Array<int> factors;
-                    DOMNodeList* intChildren = currentNode->getChildNodes();
-                    for (int l=0; l<intChildren->getLength(); l++) {
-                      DOMNode* currentIntKid = intChildren->item(l) ;
-                      if (DOMNode::ELEMENT_NODE == currentIntKid->getNodeType()) {
-                        char* intString = XMLString::transcode(currentIntKid->getTextContent());
-                        factors.append(atoi(intString));
-                        XMLString::release(&intString);
-                      }
-                    }
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    factors = make_int_list(textContent);
                     amrPL.set<Teuchos::Array<int> >("Maximum Grid Size",factors);
-                    //XMLString::release(&textContent);
+                    XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"refinement_indicator")==0) {
                     char* nameRefinement;
@@ -6971,6 +6936,25 @@ int get_int_constant(std::string pos_name, Teuchos::ParameterList def_list)
   return value;
 }
 
+/*
+******************************************************************
+* Empty
+******************************************************************
+*/
+  Teuchos::Array<int> make_int_list(char* char_array)
+  {
+    Teuchos::Array<int> int_list;
+    char* tmp;
+    tmp = strtok(char_array,", ");
+    while(tmp!=NULL){
+      std::string str(tmp);
+      boost::algorithm::trim(str);
+      int_list.append(atoi(str.c_str()));
+      tmp = strtok(NULL,", ");
+    }
+    
+    return int_list;
+  }
 /* 
  ******************************************************************
  * Empty
