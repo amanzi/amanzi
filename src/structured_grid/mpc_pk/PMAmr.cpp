@@ -102,13 +102,29 @@ PMAmr::~PMAmr()
   }
 }
 
+static std::string visit_plotfile_list_name = "movie.visit";
+void
+PMAmr::UpdateVisitPlotfileList() const
+{
+  std::ofstream ofs(visit_plotfile_list_name.c_str());
+  for (int i=0; i<plotfiles_written.size(); ++i) {
+    ofs << plotfiles_written[i] << "/Header" << '\n';
+  }
+  ofs.close();
+}
+
 void 
 PMAmr::writePlotFile ()
 {
   int file_name_digits_tmp = file_name_digits;
   file_name_digits = plot_file_digits;
   Amr::writePlotFile();
+
+  // Not exactly following C++ encapsulation here, but it gets the job done
+  plotfiles_written.push_back(BoxLib::Concatenate(plot_file_root,level_steps[0],file_name_digits));
   file_name_digits = file_name_digits_tmp;
+
+  UpdateVisitPlotfileList();
 }
 
 void 
