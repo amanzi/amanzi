@@ -78,7 +78,7 @@ main (int   argc,
   int nGrowRM = 3;
   RegionManager rm;
   RockManager rockManager(&rm);
-  rockManager.FinalizeBuild(geomArray,refRatio,nGrowRM);
+  rockManager.FinalizeBuild(geomArray,refRatio,nGrowRM,false);
 
   Real time = 0.2;
   int level = 0;
