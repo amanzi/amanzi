@@ -180,6 +180,7 @@ DOMNode* InputConverter::getUniqueElementByTagsString_(
   // get the first node
   DOMNodeList* node_list = doc_->getElementsByTagName(XMLString::transcode(tag_names[0].c_str()));
   if (node_list->getLength() != 1) return node;
+  node = node_list->item(0);
 
   for (int n = 1; n < tag_names.size(); ++n) {
     DOMNodeList* children = node->getChildNodes();
@@ -321,8 +322,10 @@ double InputConverter::GetAttributeValueD_(
     DOMElement* elem, const char* attr_name, bool exception, double default_val)
 {
   double val;
-  if (elem->hasAttribute(XMLString::transcode(attr_name))) {
-    char* text_content = XMLString::transcode(elem->getAttribute(XMLString::transcode(attr_name)));
+  XMLCh* xstr = XMLString::transcode(attr_name);
+
+  if (elem->hasAttribute(xstr)) {
+    char* text_content = XMLString::transcode(elem->getAttribute(xstr));
     val = std::strtod(text_content, NULL);
     XMLString::release(&text_content);
   } else if (!exception) {
@@ -331,6 +334,8 @@ double InputConverter::GetAttributeValueD_(
     char* tagname = XMLString::transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
   }
+
+  XMLString::release(&xstr);
   return val;
 }
 
@@ -342,8 +347,10 @@ int InputConverter::GetAttributeValueL_(
     DOMElement* elem, const char* attr_name, bool exception, int default_val)
 {
   int val;
-  if (elem->hasAttribute(XMLString::transcode(attr_name))) {
-    char* text_content = XMLString::transcode(elem->getAttribute(XMLString::transcode(attr_name)));
+  XMLCh* xstr = XMLString::transcode(attr_name);
+
+  if (elem->hasAttribute(xstr)) {
+    char* text_content = XMLString::transcode(elem->getAttribute(xstr));
     val = std::strtol(text_content, NULL, 10);
     XMLString::release(&text_content);
   } else if (! exception) {
@@ -352,6 +359,8 @@ int InputConverter::GetAttributeValueL_(
     char* tagname = XMLString::transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
   }
+
+  XMLString::release(&xstr);
   return val;
 }
 
@@ -364,14 +373,18 @@ char* InputConverter::GetAttributeValueC_(
     DOMElement* elem, const char* attr_name, bool exception, char* default_val)
 {
   char* val;
-  if (elem->hasAttribute(XMLString::transcode(attr_name))) {
-    val = XMLString::transcode(elem->getAttribute(XMLString::transcode(attr_name)));
+  XMLCh* xstr = XMLString::transcode(attr_name);
+
+  if (elem->hasAttribute(xstr)) {
+    val = XMLString::transcode(elem->getAttribute(xstr));
   } else if (!exception) {
     val = default_val;
   } else {
     char* tagname = XMLString::transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
   }
+
+  XMLString::release(&xstr);
   return val;
 }
 
@@ -391,6 +404,18 @@ std::vector<double> InputConverter::GetAttributeVector_(DOMElement* elem, const 
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
   }
   return val;
+}
+
+
+/* ******************************************************************
+* Extract element value.
+****************************************************************** */
+std::vector<std::string> InputConverter::GetElementVectorS_(DOMElement* elem)
+{
+  char* text_content = XMLString::transcode(elem->getTextContent());
+  std::vector<std::string> names = CharToStrings_(text_content);
+  XMLString::release(&text_content);
+  return names;
 }
 
 

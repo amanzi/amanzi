@@ -69,10 +69,17 @@ class InputConverter {
       const xercesc::DOMNode* node1, const std::string& tags, bool& flag);
 
   // -- extract existing atrribute values
-  int GetAttributeValueL_(xercesc::DOMElement* elem, const char* attr_name, bool exception = false, int val = 0);
-  double GetAttributeValueD_(xercesc::DOMElement* elem, const char* attr_name, bool exception = false, double val = 0.0);
-  char* GetAttributeValueC_(xercesc::DOMElement* elem, const char* attr_name, bool exception = false, char* val = NULL);
-  std::vector<double> GetAttributeVector_(xercesc::DOMElement* elem, const char* attr_name);
+  int GetAttributeValueL_(
+      xercesc::DOMElement* elem, const char* attr_name, bool exception = false, int val = 0);
+  double GetAttributeValueD_(
+      xercesc::DOMElement* elem, const char* attr_name, bool exception = false, double val = 0.0);
+  char* GetAttributeValueC_(
+      xercesc::DOMElement* elem, const char* attr_name, bool exception = false, char* val = NULL);
+  std::vector<double> GetAttributeVector_(
+      xercesc::DOMElement* elem, const char* attr_name);
+
+  // -- extract existing element values
+  std::vector<std::string> GetElementVectorS_(xercesc::DOMElement* elem);
 
   // data streaming/trimming/converting
   // -- times

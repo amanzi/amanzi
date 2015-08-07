@@ -18,8 +18,10 @@
 #include "Teuchos_Array.hpp"
 
 // Amanzi's
-#include "InputConverter.hh"
 #include "VerboseObject.hh"
+
+#include "InputConverter.hh"
+#include "InputConverterU_Defs.hh"
 
 namespace Amanzi {
 namespace AmanziInput {
@@ -41,6 +43,7 @@ class InputConverterU : public InputConverter {
  private:
   void ParseSolutes_();
 
+  Teuchos::ParameterList TranslateVerbosity_();
   Teuchos::ParameterList TranslateMesh_();
   Teuchos::ParameterList TranslateRegions_();
   Teuchos::ParameterList TranslateOutput_();
@@ -53,11 +56,16 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateMaterialsPartition_();
   Teuchos::ParameterList TranslateCycleDriver_();
   Teuchos::ParameterList TranslateTimePeriodControls_();
+  Teuchos::ParameterList TranslatePKs_(const Teuchos::ParameterList& cd_list);
+  Teuchos::ParameterList TranslateFlow_(int regime = FLOW_BOTH_REGIMES);
+  Teuchos::ParameterList TranslateTransport_();
+  Teuchos::ParameterList TranslateChemistry_();
+  Teuchos::ParameterList TranslateEnergy_();
 
   void ProcessMacros_(const std::string& prefix, char* text_content,
                       Teuchos::ParameterList& mPL, Teuchos::ParameterList& outPL);
 
-  Teuchos::ParameterList GetVerbosity_();
+  void RegisterPKsList_(Teuchos::ParameterList& pk_tree, Teuchos::ParameterList& pks_list);
 
  private:
   int dim_;

@@ -60,4 +60,10 @@
 #define MAXIMUM_TIME_STEP               4.3234e+17
 #define RESTART_TIME_STEP               1.0
 
+// other constants
+#define FLOW_STEADY_REGIME              1
+#define FLOW_TRANSIENT_REGIME           2
+#define FLOW_BOTH_REGIMES               3
+#define TRANSPORT_SUBCYCLING            true
+
 #endif

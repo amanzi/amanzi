@@ -31,8 +31,9 @@ Teuchos::ParameterList InputConverterU::Translate()
   Teuchos::ParameterList out_list;
   
   // grab verbosity early
-  verb_list_ = GetVerbosity_();
-  vo_ = new VerboseObject("InputConverter", verb_list_);
+  verb_list_ = TranslateVerbosity_();
+  Teuchos::ParameterList tmp_list(verb_list_);
+  vo_ = new VerboseObject("InputConverter", tmp_list);
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // parsing of miscalleneous lists
@@ -46,6 +47,9 @@ Teuchos::ParameterList InputConverterU::Translate()
   out_list.sublist("Preconditioners") = TranslatePreconditioners_();
   out_list.sublist("State") = TranslateState_();
   out_list.sublist("Cycle Driver") = TranslateCycleDriver_();
+
+  Teuchos::ParameterList& cd_list = out_list.sublist("Cycle Driver");
+  out_list.sublist("PKs") = TranslatePKs_(cd_list);
   
   return out_list;
 }
@@ -82,7 +86,7 @@ void InputConverterU::ParseSolutes_()
 /* ******************************************************************
 * Extract generic verbosity object for all sublists.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::GetVerbosity_()
+Teuchos::ParameterList InputConverterU::TranslateVerbosity_()
 {
   Teuchos::ParameterList vlist;
 
@@ -110,7 +114,7 @@ Teuchos::ParameterList InputConverterU::GetVerbosity_()
             node_attr = attr_map->getNamedItem(XMLString::transcode("level"));
             if (node_attr) {
               text_content = XMLString::transcode(node_attr->getNodeValue());
-              vlist.set<std::string>("Verbosity Level", TrimString_(text_content));
+              vlist.sublist("VerboseObject").set<std::string>("Verbosity Level", TrimString_(text_content));
               XMLString::release(&text_content);
               break;
             } else {
