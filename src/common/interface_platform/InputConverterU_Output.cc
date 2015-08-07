@@ -77,13 +77,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
         // process time macros
         if (strcmp(tagname, "time_macro") == 0) {
           Teuchos::ParameterList tm_parameter;
-          attr_map = inode->getAttributes();
-          node_attr = attr_map->getNamedItem(XMLString::transcode("name"));
-          if (node_attr) {
-            text_content = XMLString::transcode(node_attr->getNodeValue());
-          } else {
-            ThrowErrorMissattr_("definitions", "attribute", "name", "time_macro");
-          }
+          text_content = GetAttributeValueC_(static_cast<DOMElement*>(inode), "name");
 
           // deal differently if "times" or "start-inter-stop"
           DOMNodeList* children = inode->getChildNodes();
@@ -92,7 +86,9 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           for (int j = 0; j < children->getLength(); j++) {
             DOMNode* time_node = children->item(j) ;
             if (DOMNode::ELEMENT_NODE == time_node->getNodeType()) {
-              if (strcmp(XMLString::transcode(time_node->getNodeName()), "time") == 0) isTime = true;
+              char* tmp = XMLString::transcode(time_node->getNodeName());
+              if (strcmp(tmp, "time") == 0) isTime = true;
+              XMLString::release(&tmp);
             }   
           }
 
@@ -117,7 +113,10 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             Teuchos::Array<double> sps;
             sps.append(TimeCharToValue_(node_txt));
             XMLString::release(&node_txt);
-            list = element->getElementsByTagName(XMLString::transcode("timestep_interval"));
+
+            XMLCh* xstr = XMLString::transcode("timestep_interval");
+            list = element->getElementsByTagName(xstr);
+            XMLString::release(&xstr);
 
             if (list->getLength() > 0) {
               tmp_node = list->item(0);
@@ -147,15 +146,9 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
         // process cycle macros
         else if (strcmp(tagname,"cycle_macro") == 0) {
           Teuchos::ParameterList cm_parameter;
-          attr_map = inode->getAttributes();
-          node_attr = attr_map->getNamedItem(XMLString::transcode("name"));
-          if (node_attr) {
-            text_content = XMLString::transcode(node_attr->getNodeValue());
-          } else {
-            ThrowErrorMissattr_("definitions", "attribute", "name", "cycle_macro");
-          }
-
           DOMElement* element = static_cast<DOMElement*>(inode);
+          text_content = GetAttributeValueC_(element, "name");      
+
           DOMNodeList* list = element->getElementsByTagName(XMLString::transcode("start"));
           DOMNode* tmp_node = list->item(0);
 
@@ -164,7 +157,10 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           sps.append(std::strtol(node_txt, NULL, 10));
           XMLString::release(&node_txt);
 
-          list = element->getElementsByTagName(XMLString::transcode("timestep_interval"));
+          XMLCh* xstr = XMLString::transcode("timestep_interval");
+          list = element->getElementsByTagName(xstr);
+          XMLString::release(&xstr);
+
           if (list->getLength() > 0) {
             tmp_node = list->item(0);
             node_txt = XMLString::transcode(tmp_node->getTextContent());
@@ -327,62 +323,48 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             Teuchos::ParameterList obPL;
             DOMNode* jnode = children->item(j);
             if (DOMNode::ELEMENT_NODE == jnode->getNodeType()) {
-              char* obsType = XMLString::transcode(jnode->getNodeName());
-              if (strcmp(obsType, "aqueous_pressure") == 0) {
-                obPL.set<std::string>("variable", "Aqueous pressure");
-              } else if (strcmp(obsType, "integrated_mass") == 0) {
-                // TODO: can't find matching version
-              } else if (strcmp(obsType, "volumetric_water_content") == 0) {
-                obPL.set<std::string>("variable", "Volumetric water content");
-              } else if (strcmp(obsType, "gravimetric_water_content") == 0) {
-                obPL.set<std::string>("variable", "Gravimetric water content");
-              } else if (strcmp(obsType, "x_aqueous_volumetric_flux") == 0) {
-                obPL.set<std::string>("variable", "X-Aqueous volumetric flux");
-              } else if (strcmp(obsType, "y_aqueous_volumetric_flux") == 0) {
-                obPL.set<std::string>("variable", "Y-Aqueous volumetric flux");
-              } else if (strcmp(obsType, "z_aqueous_volumetric_flux") == 0) {
-                obPL.set<std::string>("variable", "Z-Aqueous volumetric flux");
-              } else if (strcmp(obsType, "material_id") == 0) {
-                obPL.set<std::string>("variable", "MaterialID");
-              } else if (strcmp(obsType, "hydraulic_head") == 0) {
-                obPL.set<std::string>("variable", "Hydraulic Head");
-              } else if (strcmp(obsType, "aqueous_mass_flow_rate") == 0) {
-                obPL.set<std::string>("variable", "Aqueous mass flow rate");
-              } else if (strcmp(obsType, "aqueous_volumetric_flow_rate") == 0) {
-                obPL.set<std::string>("variable", "Aqueous volumetric flow rate");
-              } else if (strcmp(obsType, "aqueous_saturation") == 0) {
-                obPL.set<std::string>("variable", "Aqueous saturation");
-              } else if (strcmp(obsType, "aqueous_conc") == 0) {
-                // get solute name
-                attr_map = jnode->getAttributes();
-                node_attr = attr_map->getNamedItem(XMLString::transcode("solute"));
-                char* soluteName;
-                if (node_attr) {
-                  soluteName = XMLString::transcode(node_attr->getNodeValue());
-                } else {
-                  ThrowErrorMissattr_("observations", "attribute", "solute", "aqueous_conc");
-                }
+              char* obs_type = XMLString::transcode(jnode->getNodeName());
 
+              if (strcmp(obs_type, "aqueous_pressure") == 0) {
+                obPL.set<std::string>("variable", "Aqueous pressure");
+              } else if (strcmp(obs_type, "integrated_mass") == 0) {
+                // TODO: can't find matching version
+              } else if (strcmp(obs_type, "volumetric_water_content") == 0) {
+                obPL.set<std::string>("variable", "Volumetric water content");
+              } else if (strcmp(obs_type, "gravimetric_water_content") == 0) {
+                obPL.set<std::string>("variable", "Gravimetric water content");
+              } else if (strcmp(obs_type, "x_aqueous_volumetric_flux") == 0) {
+                obPL.set<std::string>("variable", "X-Aqueous volumetric flux");
+              } else if (strcmp(obs_type, "y_aqueous_volumetric_flux") == 0) {
+                obPL.set<std::string>("variable", "Y-Aqueous volumetric flux");
+              } else if (strcmp(obs_type, "z_aqueous_volumetric_flux") == 0) {
+                obPL.set<std::string>("variable", "Z-Aqueous volumetric flux");
+              } else if (strcmp(obs_type, "material_id") == 0) {
+                obPL.set<std::string>("variable", "MaterialID");
+              } else if (strcmp(obs_type, "hydraulic_head") == 0) {
+                obPL.set<std::string>("variable", "Hydraulic Head");
+              } else if (strcmp(obs_type, "aqueous_mass_flow_rate") == 0) {
+                obPL.set<std::string>("variable", "Aqueous mass flow rate");
+              } else if (strcmp(obs_type, "aqueous_volumetric_flow_rate") == 0) {
+                obPL.set<std::string>("variable", "Aqueous volumetric flow rate");
+              } else if (strcmp(obs_type, "aqueous_saturation") == 0) {
+                obPL.set<std::string>("variable", "Aqueous saturation");
+              } else if (strcmp(obs_type, "aqueous_conc") == 0) {
+                char* solute_name = GetAttributeValueC_(static_cast<DOMElement*>(jnode), "solute");
                 std::stringstream name;
-                name<< soluteName << " Aqueous concentration";
+                name<< solute_name << " Aqueous concentration";
                 obPL.set<std::string>("variable", name.str());
-              } else if (strcmp(obsType, "drawdown") == 0) {
+                XMLString::release(&solute_name);
+              } else if (strcmp(obs_type, "drawdown") == 0) {
                 obPL.set<std::string>("variable", "Drawdown");
-              } else if (strcmp(obsType, "solute_volumetric_flow_rate") == 0) {
-                // get solute name
-                attr_map = jnode->getAttributes();
-                node_attr = attr_map->getNamedItem(XMLString::transcode("solute"));
-                char* soluteName;
-                if (node_attr) {
-                  soluteName = XMLString::transcode(node_attr->getNodeValue());
-                } else {
-                  ThrowErrorMissattr_("observations", "attribute", "solute", "solute_volumetric_flow_rate");
-                }
-                      
+              } else if (strcmp(obs_type, "solute_volumetric_flow_rate") == 0) {
+                char* solute_name = GetAttributeValueC_(static_cast<DOMElement*>(jnode), "solute");
                 std::stringstream name;
-                name<< soluteName << " volumetric flow rate";
+                name << solute_name << " volumetric flow rate";
                 obPL.set<std::string>("variable", name.str());
+                XMLString::release(&solute_name);
               }
+              XMLString::release(&obs_type);
 
               DOMNodeList* kidList = jnode->getChildNodes();
               for (int k = 0; k < kidList->getLength(); k++) {

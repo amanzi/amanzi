@@ -87,6 +87,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   } else {
     ThrowErrorMissattr_("unstructured_controls", "element", "explicit first-order", "unstr_transport_controls");
   }
+  XMLString::release(&text_content);
 
   Teuchos::ParameterList& trp_lift = out_list.sublist("reconstruction");
   trp_lift.set<int>("polynomial order", poly_order);

@@ -96,7 +96,9 @@ Teuchos::ParameterList InputConverterU::TranslateVerbosity_()
   char* text_content;
     
   // get execution contorls node
-  node_list = doc_->getElementsByTagName(XMLString::transcode("execution_controls"));
+  XMLCh* xstr = XMLString::transcode("execution_controls");
+  node_list = doc_->getElementsByTagName(xstr);
+  XMLString::release(&xstr);
   
   for (int i = 0; i < node_list->getLength(); i++) {
     DOMNode* inode = node_list->item(i);

@@ -79,7 +79,10 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   std::map<std::string, int> reg2mat;
   int mat(0);
 
-  DOMNodeList* node_list = doc_->getElementsByTagName(XMLString::transcode("materials"));
+  XMLCh* xstr = XMLString::transcode("materials");
+  DOMNodeList* node_list = doc_->getElementsByTagName(xstr);
+  XMLString::release(&xstr);
+
   DOMNodeList* childern = node_list->item(0)->getChildNodes();
 
   for (int i = 0; i < childern->getLength(); i++) {
@@ -262,7 +265,10 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   }
 
   // initialization of fields via the initial_conditions list
-  node_list = doc_->getElementsByTagName(XMLString::transcode("initial_conditions"));
+  xstr = XMLString::transcode("initial_conditions");
+  node_list = doc_->getElementsByTagName(xstr);
+  XMLString::release(&xstr);
+
   childern = node_list->item(0)->getChildNodes();
 
   for (int i = 0; i < childern->getLength(); i++) {
@@ -472,12 +478,14 @@ Teuchos::ParameterList InputConverterU::TranslateMaterialsPartition_()
   Teuchos::ParameterList out_list;
   Teuchos::ParameterList& tmp_list = out_list.sublist("materials");
 
-  DOMNodeList* node_list = doc_->getElementsByTagName(XMLString::transcode("materials"));
-  DOMNodeList* childern = node_list->item(0)->getChildNodes();
+  XMLCh* xstr = XMLString::transcode("materials");
+  DOMNodeList* node_list = doc_->getElementsByTagName(xstr);
+  XMLString::release(&xstr);
 
   bool flag;
   std::vector<std::string> regions;
 
+  DOMNodeList* childern = node_list->item(0)->getChildNodes();
   for (int i = 0; i < childern->getLength(); i++) {
     DOMNode* inode = childern->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {

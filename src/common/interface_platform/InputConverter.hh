@@ -23,6 +23,7 @@
 
 // TPLs
 #include "xercesc/dom/DOM.hpp"
+#include "xercesc/parsers/XercesDOMParser.hpp"
 
 // Amanzi's
 #include "VerboseObject.hh"
@@ -37,6 +38,7 @@ class InputConverter {
   }
 
   ~InputConverter() {
+    delete parser;
     xercesc::XMLPlatformUtils::Terminate();
   }
 
@@ -105,6 +107,7 @@ class InputConverter {
       const std::string& section, const std::string& type, const std::string& missing, const std::string& name);
 
  protected:
+  xercesc::XercesDOMParser* parser;
   xercesc::DOMDocument* doc_;
 };
 

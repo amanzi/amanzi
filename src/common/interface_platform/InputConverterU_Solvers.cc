@@ -65,7 +65,9 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
   std::string prec = LINEAR_SOLVER_PC;
 
   // get values from Execution control list if they exist
-  DOMNodeList* node_list = doc_->getElementsByTagName(XMLString::transcode("unstructured_linear_solver"));
+  XMLCh* xstr = XMLString::transcode("unstructured_linear_solver");
+  DOMNodeList* node_list = doc_->getElementsByTagName(xstr);
+  XMLString::release(&xstr);
 
   if (node_list->getLength() > 0) {
     DOMNodeList* children = node_list->item(0)->getChildNodes();

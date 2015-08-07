@@ -53,7 +53,7 @@ void InputConverter::Init(const std::string& xmlfilename)
 {
   Teuchos::ParameterList out_list;
   
-  XercesDOMParser *parser = new XercesDOMParser();
+  parser = new XercesDOMParser();
   parser->setExitOnFirstFatalError(true);
   parser->setValidationConstraintFatal(true);
   parser->setValidationScheme(XercesDOMParser::Val_Never);
@@ -93,7 +93,10 @@ DOMNode* InputConverter::getUniqueElementByTagNames_(
 {
   flag = false;
   DOMNode* node;
-  DOMNodeList* node_list = doc_->getElementsByTagName(XMLString::transcode(tag1.c_str()));
+
+  XMLCh* xstr = XMLString::transcode(tag1.c_str()); 
+  DOMNodeList* node_list = doc_->getElementsByTagName(xstr);
+  XMLString::release(&xstr);
   if (node_list->getLength() != 1) return node;
 
   int ntag2(0);
@@ -123,11 +126,14 @@ DOMNode* InputConverter::getUniqueElementByTagNames_(
 DOMNode* InputConverter::getUniqueElementByTagNames_(
     const std::string& tag1, const std::string& tag2, const std::string& tag3, bool& flag)
 {
+  flag = false;
+
   int ntag2(0), ntag3(0);
   DOMNode* node;
 
-  flag = false;
-  DOMNodeList* node_list = doc_->getElementsByTagName(XMLString::transcode(tag1.c_str()));
+  XMLCh* xstr = XMLString::transcode(tag1.c_str());
+  DOMNodeList* node_list = doc_->getElementsByTagName(xstr);
+  XMLString::release(&xstr);
   if (node_list->getLength() != 1) return node;
 
   // first leaf
@@ -178,7 +184,10 @@ DOMNode* InputConverter::getUniqueElementByTagsString_(
   if (tag_names.size() == 0) return node;
 
   // get the first node
-  DOMNodeList* node_list = doc_->getElementsByTagName(XMLString::transcode(tag_names[0].c_str()));
+  XMLCh* xstr = XMLString::transcode(tag_names[0].c_str());
+  DOMNodeList* node_list = doc_->getElementsByTagName(xstr);
+  XMLString::release(&xstr);
+
   if (node_list->getLength() != 1) return node;
   node = node_list->item(0);
 
@@ -395,14 +404,18 @@ char* InputConverter::GetAttributeValueC_(
 std::vector<double> InputConverter::GetAttributeVector_(DOMElement* elem, const char* attr_name)
 {
   std::vector<double> val;
-  if (elem->hasAttribute(XMLString::transcode(attr_name))) {
-    char* text_content = XMLString::transcode(elem->getAttribute(XMLString::transcode(attr_name)));
+  XMLCh* xstr = XMLString::transcode(attr_name);
+
+  if (elem->hasAttribute(xstr)) {
+    char* text_content = XMLString::transcode(elem->getAttribute(xstr));
     val = MakeCoordinates_(text_content);
     XMLString::release(&text_content);
   } else {
     char* tagname = XMLString::transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
   }
+
+  XMLString::release(&xstr);
   return val;
 }
 

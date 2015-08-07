@@ -48,7 +48,10 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   int transient_model(0);
   char* tagname;
 
-  DOMNodeList* node_list = doc_->getElementsByTagName(XMLString::transcode("process_kernels"));
+  XMLCh* xstr = XMLString::transcode("process_kernels");
+  DOMNodeList* node_list = doc_->getElementsByTagName(xstr);
+  XMLString::release(&xstr);
+
   DOMNode* node = node_list->item(0);
   DOMNodeList* children = node->getChildNodes();
 
@@ -82,8 +85,11 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   }
 
   // parse defaults of execution_controls 
+  xstr = XMLString::transcode("execution_controls");
+  node_list = doc_->getElementsByTagName(xstr);
+  XMLString::release(&xstr);
+
   bool flag;
-  node_list = doc_->getElementsByTagName(XMLString::transcode("execution_controls"));
   node = getUniqueElementByTagNames_(node_list->item(0), "execution_control_defaults", flag);
 
   double t0;
@@ -103,23 +109,25 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
     tagname = XMLString::transcode(inode->getNodeName());
-    if (strcmp(tagname, "execution_control") != 0) continue;
+    if (strcmp(tagname, "execution_control") == 0) {
+      // generate fake name (will be created later)
+      std::stringstream ss;
+      ss << "TP " << i;
+      std::string name = ss.str();
 
-    // generate fake name (will be created later)
-    std::stringstream ss;
-    ss << "TP " << i;
-    std::string name = ss.str();
+      t0 = TimeCharToValue_(GetAttributeValueC_(static_cast<DOMElement*>(inode), "start"));
 
-    t0 = TimeCharToValue_(GetAttributeValueC_(static_cast<DOMElement*>(inode), "start"));
+      tp_mode[t0] = GetAttributeValueC_(static_cast<DOMElement*>(inode), "mode");
+      tp_t1[t0] = TimeCharToValue_(GetAttributeValueC_(static_cast<DOMElement*>(inode), "end"));
+      tp_method[t0] = GetAttributeValueC_(static_cast<DOMElement*>(inode), "method", false, method_d);
+      tp_dt0[t0] = TimeCharToValue_(GetAttributeValueC_(static_cast<DOMElement*>(inode), "init_dt", false, dt0_d));
+      tp_max_cycles[t0] = GetAttributeValueD_(static_cast<DOMElement*>(inode), "max_cycles", false, 10000000);
 
-    tp_mode[t0] = GetAttributeValueC_(static_cast<DOMElement*>(inode), "mode");
-    tp_t1[t0] = TimeCharToValue_(GetAttributeValueC_(static_cast<DOMElement*>(inode), "end"));
-    tp_method[t0] = GetAttributeValueC_(static_cast<DOMElement*>(inode), "method", false, method_d);
-    tp_dt0[t0] = TimeCharToValue_(GetAttributeValueC_(static_cast<DOMElement*>(inode), "init_dt", false, dt0_d));
-    tp_max_cycles[t0] = GetAttributeValueD_(static_cast<DOMElement*>(inode), "max_cycles", false, 10000000);
-
-    filename = GetAttributeValueC_(static_cast<DOMElement*>(inode), "restart", false, NULL);
+      filename = GetAttributeValueC_(static_cast<DOMElement*>(inode), "restart", false, NULL);
+    }
+    XMLString::release(&tagname);
   }
+  XMLString::release(&method_d);
 
   // sort time periods
   // std::sort(tp_t1.begin(), tp_t1.end());
@@ -246,7 +254,10 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   Teuchos::Array<double> time_init, dt_init, dt_max;
   std::map<double, double> time_map, dt_max_map;
 
-  DOMNodeList* children = doc_->getElementsByTagName(XMLString::transcode("hydrostatic"));
+  XMLCh* xstr = XMLString::transcode("hydrostatic");
+  DOMNodeList* children = doc_->getElementsByTagName(xstr);
+  XMLString::release(&xstr);
+
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
@@ -257,7 +268,10 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   }
 
   // add these last so that the default initial time steps get overwritten
-  children = doc_->getElementsByTagName(XMLString::transcode("execution_control"));
+  xstr = XMLString::transcode("execution_control");
+  children = doc_->getElementsByTagName(xstr);
+  XMLString::release(&xstr);
+
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
