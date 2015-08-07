@@ -861,6 +861,10 @@ public:
                            int       dcomp,
                            int       dir);
 
+  void derive_WriteRegion(Real                      time,
+			  MultiFab&                 mf,
+			  int                       dcomp,
+			  const Array<std::string>& region_set);
 
   void BuildNLScontrol(NLScontrol&        nlsc,
 		       const std::string& IDstring);
@@ -951,6 +955,8 @@ protected:
 
   // observation processing
   static int verbose_observation_processing;
+
+  static std::map<std::string,Array<std::string> > write_region_sets;
 
 #ifdef AMANZI
 

@@ -148,6 +148,7 @@ PorousMedia::CleanupStatics ()
 #endif
     physics_events_registered = false;
     source_volume.resize(0);
+    write_region_sets.clear();
 }
 
 void
@@ -7614,6 +7615,24 @@ PorousMedia::derive_CationExchangeCapacity(Real      time,
   }
 }
 
+void
+PorousMedia::derive_WriteRegion(Real                      time,
+				MultiFab&                 mf,
+				int                       dcomp,
+				const Array<std::string>& region_set)
+{
+  Array<const Region*> r = region_manager->RegionPtrArray(region_set);
+  const Real* dx = geom.CellSize();
+  mf.setVal(0,dcomp,1,mf.nGrow());
+  for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
+    FArrayBox& fab = mf[mfi];
+    for (int i=0; i<r.size(); ++i) {
+      Real val = Real(i+1);
+      r[i]->setVal(fab,val,dcomp,dx,mf.nGrow());
+    }
+  }
+}
+
 MultiFab*
 PorousMedia::derive (const std::string& name,
                      Real               time,
@@ -7746,6 +7765,13 @@ PorousMedia::derive (const std::string& name,
         not_found_yet = false;        
       }
     }
+  }
+
+  // Check for write_region types
+  std::map<std::string,Array<std::string> >::const_iterator writ = write_region_sets.find(name);
+  if (writ != write_region_sets.end()) {
+    derive_WriteRegion(time,mf,dcomp,writ->second);
+    not_found_yet = false;
   }
 
   if (not_found_yet) {

@@ -6397,21 +6397,51 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
               XMLString::release(&textContent2);
 	    }
             else if (strcmp(textContent,"write_regions")==0) {
-              textContent2 = XMLString::transcode(curKid->getTextContent());
-              Teuchos::Array<std::string> regs = make_regions_list(textContent2);
-              visPL.set<Teuchos::Array<std::string> >("Write Regions",regs);
-              XMLString::release(&textContent2);
-              if (!compare_region_names(regs, def_list)) {
-                Errors::Message msg;
-                msg << "Amanzi::InputTranslator: ERROR - invalid region in Vis Section - " ;
-                msg << "valid regions are: \n" ;
-                for (int r=0; r<regionNames_string_.size(); r++) {
-                  msg << "    " << regionNames_string_[r] << "\n";
-                }
-                msg << "  Please correct and try again \n" ;
-                Exceptions::amanzi_throw(msg);
-              }
-            }
+
+	      DOMNodeList* wrChildList = curKid->getChildNodes();
+	      int numChild = wrChildList->getLength();
+	      if (numChild > 0) {
+		Teuchos::ParameterList wrPL;
+		for (int L=0; L<numChild; L++) {
+		  DOMNode* wrChildNode = wrChildList->item(L);
+		  char* name = XMLString::transcode(wrChildNode->getNodeName());
+		  if (strcmp(name,"field")==0) {
+		    DOMElement* wrElem = static_cast<DOMElement*>(wrChildNode);
+		    char *nameStr, *regStr;
+		    if (wrElem->hasAttribute(XMLString::transcode("name"))) {
+		      nameStr = XMLString::transcode(wrElem->getAttribute(XMLString::transcode("name")));
+		    } else {
+		      Exceptions::amanzi_throw("write_regions elements each require a \"name\" attribute");
+		    }
+		    if (wrElem->hasAttribute(XMLString::transcode("regions"))) {
+		      regStr = XMLString::transcode(wrElem->getAttribute(XMLString::transcode("regions")));
+		    } else {
+		      Exceptions::amanzi_throw("write_regions elements each require a \"regions\" attribute");
+		    }
+
+		    Teuchos::Array<std::string> region_list = make_regions_list(regStr);
+		    if (!compare_region_names(region_list, def_list)) {
+		      Errors::Message msg;
+		      msg << "Amanzi::InputTranslator: ERROR - invalid region in write_regions Section - " ;
+		      msg << "valid regions are: \n" ;
+		      for (int r=0; r<regionNames_string_.size(); r++) {
+			msg << "    " << regionNames_string_[r] << "\n";
+		      }
+		      msg << "specified regions: \n" ;
+		      for (int r=0; r<region_list.size(); r++) {
+			msg << "    " << region_list[r] << "\n";
+		      }
+		      msg << "  Please correct and try again \n" ;
+		      Exceptions::amanzi_throw(msg);
+		    }
+		    wrPL.set<Teuchos::Array<std::string> >(nameStr,region_list);
+		    XMLString::release(&nameStr);
+		    XMLString::release(&regStr);
+		  }
+		}
+		visPL.sublist("Write Regions") = wrPL;
+	      }
+	    }
             XMLString::release(&textContent);
           }
           list.sublist("Visualization Data") = visPL;

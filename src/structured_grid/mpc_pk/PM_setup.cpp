@@ -159,6 +159,9 @@ Real  PorousMedia::temperature;
 // Observations
 //
 int PorousMedia::verbose_observation_processing;
+
+std::map<std::string,Array<std::string> > PorousMedia::write_region_sets;
+
 //
 // Flow.
 //
@@ -910,12 +913,31 @@ PorousMedia::variableSetUp ()
   std::string amr_prefix = "amr";
   ParmParse pp(amr_prefix);
   int num_user_derives = pp.countval("user_derive_list");
-  Array<std::string> user_derive_list(num_user_derives);
   pp.getarr("user_derive_list",user_derive_list,0,num_user_derives);
   for (int i=0; i<num_user_derives; ++i) {
     int nCompThis = (user_derive_list[i] == "Dispersivity" ? 2 : 1);
     derive_lst.add(user_derive_list[i], regionIDtype, nCompThis);
   }
+
+  int nwr = pp.countval("write_regions");
+  if (nwr > 0) {
+    Array<std::string> wrNames;
+    pp.getarr("write_regions",wrNames,0,nwr);
+    std::string prefix("amr.write_region");
+    ParmParse ppwr(prefix.c_str());
+    
+    for (int i = 0; i<nwr; i++) {
+      const std::string& wrname = wrNames[i];
+      int nwrst = ppwr.countval(wrname.c_str());
+      if (nwrst == 0) {
+	BoxLib::Abort(std::string(prefix+"."+wrname+" = <region names> required").c_str());
+      }
+      Array<std::string> wrRegions;
+      ppwr.getarr(wrname.c_str(),wrRegions,0,nwrst);
+      write_region_sets[wrname] = wrRegions;
+    }
+  }
+
 
   //
   // **************  DEFINE ERROR ESTIMATION QUANTITIES  *************

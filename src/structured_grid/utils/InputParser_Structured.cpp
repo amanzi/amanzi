@@ -4202,8 +4202,6 @@ namespace Amanzi {
         }
       }
 
-      amr_list.set<Array<std::string> >("user_derive_list",user_derive_list);
-
       std::string output_str = "Output";
       if (!parameter_list.isSublist(output_str)) {
         MyAbort("Must have an \""+output_str+"\" section in the XML input file");
@@ -4346,11 +4344,13 @@ namespace Amanzi {
       const std::string vis_times_str = "Time Macros";
       const std::string vis_time_str = "Time Macro";
       const std::string vis_digits_str = "File Name Digits";
+      const std::string vis_write_regions_str = "Write Regions";
       bool vis_vars_set = false;
-      Array<std::string> visNames, vis_cMacroNames, vis_tMacroNames;
+      Array<std::string> visNames, vis_cMacroNames, vis_tMacroNames, wrNames;
       std::string vis_file = "plt";
       int vis_digits = 5;
-      if (rlist.isSublist(vis_data_str)) {                
+      ParameterList wrPL;
+      if (rlist.isSublist(vis_data_str)) {
         const ParameterList& vlist = rlist.sublist(vis_data_str);
         for (ParameterList::ConstIterator i=vlist.begin(); i!=vlist.end(); ++i)
         {
@@ -4453,6 +4453,21 @@ namespace Amanzi {
               MyAbort("Output -> \""+vis_digits_str+"\" must be > 0");
             }
           }
+	  else if (name == vis_write_regions_str) {
+	    const ParameterList& wrlist = vlist.sublist(vis_write_regions_str);
+	    for (ParameterList::ConstIterator i=wrlist.begin(); i!=wrlist.end(); ++i) {
+	      const std::string& label = wrlist.name(i);
+	      if (!wrlist.isSublist(label)) {
+		Array<std::string> _regions = underscore(wrlist.get<Array<std::string> >(label));
+		std::string _label = underscore(label);
+		wrPL.set<Array<std::string> >(_label, _regions);
+		wrNames.push_back(_label);
+	      }
+	      else {
+		MyAbort("The \"Write Regions\" parameter list cannot take a sublist");
+	      }
+	    }
+	  }
           else {
             MyAbort("Unrecognized entry in \""+vis_data_str+"\" parameter list: \""+name+"\"");
           }
@@ -4460,19 +4475,23 @@ namespace Amanzi {
       }
 
       //
-      // Set default to dump all known fields
+      amr_list.set<Array<std::string> >("vis_cycle_macros",vis_cMacroNames);
+      amr_list.set<Array<std::string> >("vis_time_macros",vis_tMacroNames);
+      amr_list.set<std::string>("plot_file",vis_file);
+      amr_list.set<int>("plot_file_digits",vis_digits);
+      if (wrNames.size() > 0) {
+	amr_list.set<Array<std::string> >("write_regions",wrNames);
+	amr_list.sublist("write_region") = wrPL;
+	user_derive_list.insert(user_derive_list.end(),wrNames.begin(),wrNames.end());
+      }
+
+      amr_list.set<Array<std::string> >("user_derive_list",user_derive_list);
       if (!vis_vars_set) {
         for (int j=0; j<user_derive_list.size(); ++j) {
           visNames.push_back(underscore(user_derive_list[j])); 
         }
       }
-
       amr_list.set<Array<std::string> >("derive_plot_vars",visNames);
-      amr_list.set<Array<std::string> >("vis_cycle_macros",vis_cMacroNames);
-      amr_list.set<Array<std::string> >("vis_time_macros",vis_tMacroNames);
-      amr_list.set<std::string>("plot_file",vis_file);
-      amr_list.set<int>("plot_file_digits",vis_digits);
-
 
       // chk data
       const std::string chk_data_str = "Checkpoint Data";
