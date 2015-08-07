@@ -207,7 +207,7 @@ main (int   argc,
 
     int nGrow = 0;
     RockManager rockManager(&rm);
-    rockManager.FinalizeBuild(geom_array,refRatio_array,nGrow);
+    rockManager.FinalizeBuild(geom_array,refRatio_array,nGrow,false);
 
     RStdata rs_data(0,nLevs,layout,nlsc,inputs,&rockManager);
     rs_data.upwind_krel = do_upwind;

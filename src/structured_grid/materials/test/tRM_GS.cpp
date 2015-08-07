@@ -57,7 +57,7 @@ main (int   argc,
   int nGrow = 3;
   RegionManager rm;
   RockManager rockManager(&rm);
-  rockManager.FinalizeBuild(geomArray,refRatio,nGrow);
+  rockManager.FinalizeBuild(geomArray,refRatio,nGrow,false);
 
   int maxSize=32;  pp.query("maxSize",maxSize);
   Real time = 0;
