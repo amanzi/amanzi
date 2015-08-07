@@ -77,9 +77,11 @@ GSLibProperty::BuildGSLibFile(Real                   avg,
                               const Array<IntVect>&  ref_ratio,
                               int                    num_grow,
                               int                    max_grid_size_fine_gen,
-                              Property::CoarsenRule  crule,
-                              const std::string&     varname)
+                              Property::CoarsenRule  crule)
 {
+  BL_ASSERT(num_comps > 0);
+  BL_ASSERT(varnames.size() == num_comps);
+
   int nLev = geom_array.size();
   int finest_level = nLev - 1;
   const Geometry& geom = geom_array[finest_level];
@@ -110,7 +112,6 @@ GSLibProperty::BuildGSLibFile(Real                   avg,
   BoxArray stat_ba(stat_box);
   stat_ba.maxSize(max_grid_size_fine_gen);
   int ng_cum = num_grow * twoexp;
-  num_comps = (crule == ComponentHarmonic  ?  BL_SPACEDIM : 1);
   stat.set(finest_level, new MultiFab(stat_ba,num_comps,ng_cum));
 
   const Array<Real> prob_lo(geom0.ProbLo(),BL_SPACEDIM);
@@ -177,10 +178,6 @@ GSLibProperty::BuildGSLibFile(Real                   avg,
   bool verbose=false;
   Array<Real> vfeps(BL_SPACEDIM,0);
   Array<int> level_steps(nLev,0);
-  varnames.resize(num_comps);
-  for (int n=0; n<num_comps; ++n) {
-    varnames[n] = BoxLib::Concatenate(varname+"_",n,1);
-  }
   bool is_cart_grid = false;
   WritePlotfile(MaterialPlotFileVersion,data,time,geom0.ProbLo(),geom0.ProbHi(),int_ref,prob_domain,
                 dx_level,geom0.Coord(),gslib_data_file,varnames,verbose,is_cart_grid,vfeps.dataPtr(),
@@ -194,11 +191,42 @@ GSLibProperty::BuildDataFile(const Array<Geometry>& geom_array,
                              int                    num_grow,
                              int                    max_grid_size_fine_gen,
                              Property::CoarsenRule  crule,
-                             const std::string&     varname)
+                             const std::string&     varname,
+			     bool                   restart)
 {
-  BuildGSLibFile(avg, param_file, data_file,
-                 geom_array, ref_ratio, num_grow,
-                 max_grid_fine_gen, crule, varname);
+  if (restart)
+  {
+    if (ParallelDescriptor::IOProcessor()) {
+      std::cout << "\n*************** NOTE ***********************************\n"
+		<< " reading gslib-generated file for property \""
+		<< varname
+		<< "\"\n from: \""
+		<< data_file
+		<< "\n********************************************************\n\n";
+    }
+  }
+  else
+  {
+    num_comps = (crule == ComponentHarmonic  ?  BL_SPACEDIM : 1);
+    varnames.resize(num_comps);
+    for (int n=0; n<num_comps; ++n) {
+      varnames[n] = BoxLib::Concatenate(varname+"_",n,1);
+    }
+    
+    BuildGSLibFile(avg, param_file, data_file,
+		   geom_array, ref_ratio, num_grow,
+		   max_grid_fine_gen, crule);
+
+    if (ParallelDescriptor::IOProcessor()) {
+      std::cout << "\n*************** NOTE ***********************************\n"
+		<< " gslib-generated file for property \""
+		<< varname
+		<< "\"\n written to: \""
+		<< data_file
+		<< "\"\n THIS FILE MUST BE PRESENT ON ANY SUBSEQUENT RESTART!\n"
+		<< "********************************************************\n\n";
+    }
+  }
 
   DataServices::SetBatchMode();
   Amrvis::FileType fileType(Amrvis::NEWPLT);
@@ -207,6 +235,23 @@ GSLibProperty::BuildDataFile(const Array<Geometry>& geom_array,
   if (!dataServices->AmrDataOk()) {
     DataServices::Dispatch(DataServices::ExitRequest, NULL);
   }
+
+  // If restarting, try to ensure that the datafile is compatible
+  if (restart) {
+
+    // This check can be loosened up, but for now we assume the match is exact
+    const AmrData* amr_data = GetAmrData();
+    num_comps = amr_data->NComp();
+    int num_comps_check = (crule == ComponentHarmonic  ?  BL_SPACEDIM : 1);
+    BL_ASSERT(num_comps == num_comps_check);
+    varnames.resize(num_comps);
+    const Array<string>& plotVarNames = amr_data->PlotVarNames();
+    for (int n=0; n<num_comps; ++n) {
+      varnames[n] = BoxLib::Concatenate(varname+"_",n,1);
+      BL_ASSERT(varnames[n] == plotVarNames[n]);
+    }
+  }
+
 }
 
 const AmrData*

@@ -366,7 +366,8 @@ RockManager::FillBoundary(Real      time,
 void
 RockManager::FinalizeBuild(const Array<Geometry>& geomArray,
                            const Array<IntVect>&  refRatio,
-                           int                    nGrow)
+                           int                    nGrow,
+			   bool                   restart)
 {
   BL_PROFILE("RockManager::FinalizeBuild()");
 
@@ -376,11 +377,11 @@ RockManager::FinalizeBuild(const Array<Geometry>& geomArray,
       const Property* p = rock[i].Prop(propNames[j]);
       GSLibProperty* t = dynamic_cast<GSLibProperty*>(const_cast<Property*>(p));
       if (t!=0) {
-	if (ParallelDescriptor::IOProcessor()) {
+	if (!restart && ParallelDescriptor::IOProcessor()) {
 	  std::cout << "WARNING: Building GSLib file with ngrow_fine_gen: " << ngrow_fine_gen << std::endl;
 	  std::cout << "   It is up to you to ensure that this is consistent with the search radii!" << std::endl;
 	}
-        t->BuildDataFile(geomArray,refRatio,ngrow_fine_gen,max_grid_size_fine_gen,p->coarsenRule(),propNames[j]);
+        t->BuildDataFile(geomArray,refRatio,ngrow_fine_gen,max_grid_size_fine_gen,p->coarsenRule(),propNames[j],restart);
       }
     }
   }

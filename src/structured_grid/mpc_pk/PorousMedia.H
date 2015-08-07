@@ -146,6 +146,7 @@ public:
 
   static void CleanupStatics ();
   void RegisterPhysicsBasedEvents();
+  void FinalizeRockManager(bool restart);
   //
   // Define data descriptors.
   //
@@ -376,7 +377,7 @@ public:
 
   DistributionMapping getFuncCountDM (const BoxArray& bxba, int ngrow = 0);
 
-  void init_rock_properties (); // Initialize the rock properties
+  void init_rock_properties (bool restart); // Initialize the rock properties
   void buildMetrics ();         // 1-D metric arrays for RZ
   static void setup_list ();
   static void read_params ();   // Read input file
