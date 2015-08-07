@@ -2,8 +2,7 @@
                   ********************
 
 START OF PARAMETERS:
-2
-cluster1.dat           -file with data
+cluster.dat           -file with data
 1  2  0  3  5  0              -  columns for X,Y,Z,vr,wt,sec.var.
 -1.0e21       1.0e21             -  trimming limits
 0                             -transform the data (0=no, 1=yes)
