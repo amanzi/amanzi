@@ -266,9 +266,9 @@ int main(int argc, char *argv[]) {
 	driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName);
 
         // if (rank == 0) {
-        //   Amanzi::AmanziInput::InputConverterU converter;
-        //   converter.Init(xmlInFileName);
-        //   std::cout << converter.Translate() << std::endl;
+        //  Amanzi::AmanziInput::InputConverterU converter;
+        //  converter.Init(xmlInFileName);
+        //  std::cout << converter.Translate() << std::endl;
         // }
 	
 	//driver_parameter_list.print(std::cout,true,false);

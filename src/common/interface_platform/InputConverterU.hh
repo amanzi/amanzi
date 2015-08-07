@@ -52,6 +52,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateState_();
   Teuchos::ParameterList TranslateMaterialsPartition_();
   Teuchos::ParameterList TranslateCycleDriver_();
+  Teuchos::ParameterList TranslateTimePeriodControls_();
 
   void ProcessMacros_(const std::string& prefix, char* text_content,
                       Teuchos::ParameterList& mPL, Teuchos::ParameterList& outPL);

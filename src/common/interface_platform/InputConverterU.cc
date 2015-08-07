@@ -32,7 +32,7 @@ Teuchos::ParameterList InputConverterU::Translate()
   
   // grab verbosity early
   verb_list_ = GetVerbosity_();
-  vo_ = new VerboseObject("InputTranslator", verb_list_);
+  vo_ = new VerboseObject("InputConverter", verb_list_);
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // parsing of miscalleneous lists
@@ -110,8 +110,9 @@ Teuchos::ParameterList InputConverterU::GetVerbosity_()
             node_attr = attr_map->getNamedItem(XMLString::transcode("level"));
             if (node_attr) {
               text_content = XMLString::transcode(node_attr->getNodeValue());
-              vlist.sublist("VerboseObject").set<std::string>("Verbosity Level", TrimString_(text_content));
-              vlist.set<std::string>("verbosity", TrimString_(text_content));
+              vlist.set<std::string>("Verbosity Level", TrimString_(text_content));
+              XMLString::release(&text_content);
+              break;
             } else {
               ThrowErrorIllformed_("verbosity", "value", "level");
             }

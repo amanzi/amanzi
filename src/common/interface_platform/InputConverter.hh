@@ -68,15 +68,16 @@ class InputConverter {
   xercesc::DOMNode* getUniqueElementByTagsString_(
       const xercesc::DOMNode* node1, const std::string& tags, bool& flag);
 
-  int GetAttributeValueL_(xercesc::DOMElement* elem, const char* attr_name);
-  double GetAttributeValueD_(xercesc::DOMElement* elem, const char* attr_name);
-  char* GetAttributeValueC_(xercesc::DOMElement* elem, const char* attr_name);
+  // -- extract existing atrribute values
+  int GetAttributeValueL_(xercesc::DOMElement* elem, const char* attr_name, bool exception = false, int val = 0);
+  double GetAttributeValueD_(xercesc::DOMElement* elem, const char* attr_name, bool exception = false, double val = 0.0);
+  char* GetAttributeValueC_(xercesc::DOMElement* elem, const char* attr_name, bool exception = false, char* val = NULL);
   std::vector<double> GetAttributeVector_(xercesc::DOMElement* elem, const char* attr_name);
 
   // data streaming/trimming/converting
   // -- times
-  double GetTimeValue_(std::string time_value);
-  double ConvertTimeValue_(char* time_value);
+  double TimeStringToValue_(std::string& time_value);
+  double TimeCharToValue_(char* time_value);
 
   // -- coordinates
   std::vector<double> MakeCoordinates_(char* char_array);

@@ -56,4 +56,8 @@
 #define TRILINOS_ILU_ABSTHR             0.0
 #define TRILINOS_ILU_LVLFILL            0
 
+// default physical constants
+#define MAXIMUM_TIME_STEP               4.3234e+17
+#define RESTART_TIME_STEP               1.0
+
 #endif

@@ -317,13 +317,16 @@ DOMNode* InputConverter::getUniqueElementByTagsString_(
 /* ******************************************************************
 * Extract atribute of type double.
 ****************************************************************** */
-double InputConverter::GetAttributeValueD_(DOMElement* elem, const char* attr_name)
+double InputConverter::GetAttributeValueD_(
+    DOMElement* elem, const char* attr_name, bool exception, double default_val)
 {
   double val;
   if (elem->hasAttribute(XMLString::transcode(attr_name))) {
     char* text_content = XMLString::transcode(elem->getAttribute(XMLString::transcode(attr_name)));
     val = std::strtod(text_content, NULL);
     XMLString::release(&text_content);
+  } else if (!exception) {
+    val = default_val;
   } else {
     char* tagname = XMLString::transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
@@ -335,13 +338,16 @@ double InputConverter::GetAttributeValueD_(DOMElement* elem, const char* attr_na
 /* ******************************************************************
 * Extract atribute of type int.
 ****************************************************************** */
-int InputConverter::GetAttributeValueL_(DOMElement* elem, const char* attr_name)
+int InputConverter::GetAttributeValueL_(
+    DOMElement* elem, const char* attr_name, bool exception, int default_val)
 {
   int val;
   if (elem->hasAttribute(XMLString::transcode(attr_name))) {
     char* text_content = XMLString::transcode(elem->getAttribute(XMLString::transcode(attr_name)));
     val = std::strtol(text_content, NULL, 10);
     XMLString::release(&text_content);
+  } else if (! exception) {
+    val = default_val;
   } else {
     char* tagname = XMLString::transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
@@ -354,11 +360,14 @@ int InputConverter::GetAttributeValueL_(DOMElement* elem, const char* attr_name)
 * Extract atribute of type char*.
 * The returned memory should be freeded using XMLString::release.
 ****************************************************************** */
-char* InputConverter::GetAttributeValueC_(DOMElement* elem, const char* attr_name)
+char* InputConverter::GetAttributeValueC_(
+    DOMElement* elem, const char* attr_name, bool exception, char* default_val)
 {
   char* val;
   if (elem->hasAttribute(XMLString::transcode(attr_name))) {
     val = XMLString::transcode(elem->getAttribute(XMLString::transcode(attr_name)));
+  } else if (!exception) {
+    val = default_val;
   } else {
     char* tagname = XMLString::transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
@@ -421,7 +430,7 @@ std::vector<std::string> InputConverter::CharToStrings_(const char* namelist)
     tmp2 = strtok(NULL, ",");
   }
 
-  delete tmp1;
+  delete[] tmp1;
   return regs;
 }
 
@@ -429,11 +438,11 @@ std::vector<std::string> InputConverter::CharToStrings_(const char* namelist)
 /* ******************************************************************
 * Empty
 ****************************************************************** */
-double InputConverter::GetTimeValue_(std::string time_value)
+double InputConverter::TimeStringToValue_(std::string& time_value)
 {
   double time;
   char* tmp = strcpy(new char[time_value.size() + 1], time_value.c_str());
-  time = ConvertTimeValue_(tmp);
+  time = TimeCharToValue_(tmp);
   delete[] tmp;
 
   return time;
@@ -443,7 +452,7 @@ double InputConverter::GetTimeValue_(std::string time_value)
 /* ******************************************************************
 * Get default time unit from units, convert plain time values if not seconds.
 ****************************************************************** */
-double InputConverter::ConvertTimeValue_(char* time_value)
+double InputConverter::TimeCharToValue_(char* time_value)
 {
   double time;
   char* char_array;

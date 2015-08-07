@@ -102,7 +102,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
               DOMNode* time_node = children->item(j) ;
               if (DOMNode::ELEMENT_NODE == time_node->getNodeType()) {
                 char* node_txt = XMLString::transcode(time_node->getTextContent());
-                times.append(GetTimeValue_(node_txt));
+                times.append(TimeCharToValue_(node_txt));
                 XMLString::release(&node_txt);
               }
             }
@@ -115,21 +115,21 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
 
             char* node_txt = XMLString::transcode(tmp_node->getTextContent());
             Teuchos::Array<double> sps;
-            sps.append(GetTimeValue_(node_txt));
+            sps.append(TimeCharToValue_(node_txt));
             XMLString::release(&node_txt);
             list = element->getElementsByTagName(XMLString::transcode("timestep_interval"));
 
             if (list->getLength() > 0) {
               tmp_node = list->item(0);
               node_txt = XMLString::transcode(tmp_node->getTextContent());
-              sps.append(GetTimeValue_(node_txt));
+              sps.append(TimeCharToValue_(node_txt));
               XMLString::release(&node_txt);
 
               list = element->getElementsByTagName(XMLString::transcode("stop"));
               if (list->getLength() > 0) {
                 tmp_node = list->item(0);
                 node_txt = XMLString::transcode(tmp_node->getTextContent());
-                sps.append(GetTimeValue_(node_txt));
+                sps.append(TimeCharToValue_(node_txt));
                 XMLString::release(&node_txt);
               } else {
                 sps.append(-1.0);
