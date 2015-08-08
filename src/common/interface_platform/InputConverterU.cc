@@ -38,6 +38,7 @@ Teuchos::ParameterList InputConverterU::Translate()
 
   // parsing of miscalleneous lists
   ParseSolutes_();
+  ParseConstants_();
   
   out_list.sublist("Mesh") = TranslateMesh_();
   out_list.sublist("Domain").set<int>("Spatial Dimension", dim_);

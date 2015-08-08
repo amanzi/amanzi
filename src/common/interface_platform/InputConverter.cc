@@ -85,6 +85,59 @@ void InputConverter::Init(const std::string& xmlfilename)
 
 
 /* ******************************************************************
+* Populates protected std::map constants_.
+****************************************************************** */
+void InputConverter::ParseConstants_()
+{
+  XString mm;
+
+  char *tagname, *text;
+  DOMNodeList *node_list, *children;
+
+  // process constants: we ignore type of generic constants.
+  node_list = doc_->getElementsByTagName(mm.transcode("constants"));
+  children = node_list->item(0)->getChildNodes();
+
+  for (int i = 0; i < children->getLength(); ++i) {
+    DOMNode* inode = children->item(i);
+    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+    
+    std::string name, type, value;
+    char* tagname = mm.transcode(inode->getNodeName());   
+    if (strcmp(tagname, "constant") == 0 ||
+        strcmp(tagname, "time_constant") == 0 ||
+        strcmp(tagname, "numerical_constant") == 0 ||
+        strcmp(tagname, "area_mass_flux_constant") == 0) {
+      DOMElement* element = static_cast<DOMElement*>(inode);
+      if (element->hasAttribute(mm.transcode("name"))) {
+        text = mm.transcode(element->getAttribute(mm.transcode("name")));
+        name = text;
+      } else {
+        ThrowErrorMissattr_("constants", "attribute", "name", "constant");
+      }
+
+      if (element->hasAttribute(mm.transcode("value"))) {
+        text = mm.transcode(element->getAttribute(mm.transcode("value")));
+        value = text;
+      } else {
+        ThrowErrorMissattr_("constants", "attribute", "value", "constant");
+      }
+
+      if (constants_.find(name) != constants_.end()) {
+        Errors::Message msg;
+        msg << "Amanzi::InputConverter: an error occurred during parsing node \"constants\"\n";
+        msg << "  Name \"" << name << "\" is repeated.\n";
+        msg << "  Please correct and try again \n";
+        Exceptions::amanzi_throw(msg);
+      } 
+
+      constants_[name] = value;
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Returns node tag1->tag2 where both tag1 and tag2 are unique leaves
 * of the tree.
 ****************************************************************** */
@@ -245,6 +298,7 @@ DOMNode* InputConverter::getUniqueElementByTagNames_(
     const DOMNode* node1, const std::string& tag2, const std::string& tag3, bool& flag)
 {
   flag = false;
+
   int ntag2(0), ntag3(0);
   DOMNode* node;
   DOMNodeList* children = node1->getChildNodes();
@@ -320,6 +374,50 @@ DOMNode* InputConverter::getUniqueElementByTagsString_(
 
 
 /* ******************************************************************
+* Extracts childs and verifies that their have the common names.
+* Ignores comments... I do not know how to filter them.
+****************************************************************** */
+std::vector<DOMNode*> InputConverter::getSameChildNodes_(
+    DOMNode* node, std::string& name, bool& flag, bool exception)
+{
+  flag = false;
+
+  XString mm;
+  int n(0), m(0);
+  std::vector<DOMNode*> same;
+
+  DOMNodeList* children = node->getChildNodes();
+  for (int i = 0; i < children->getLength(); ++i) {
+    DOMNode* inode = children->item(i);
+    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+
+    char* text = mm.transcode(inode->getNodeName());
+    if (strcmp(text, "comments") != 0) {
+      if (n == 0) name = text;
+      if (strcmp(name.c_str(), text) == 0) {
+        same.push_back(inode);
+        n++;
+      } 
+      m++;
+    }
+  }
+  if (n == m) flag = true;
+
+  // exception
+  if (!flag) {
+    char* tagname = mm.transcode(node->getNodeName());
+    Errors::Message msg;
+    msg << "Amanzi::InputConverter: node \"" << tagname << "\" must have same elements\n";
+    if (n) msg << "  The first element is \"" << name << "\".\n";
+    msg << "  Please correct and try again.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return same;
+}
+
+
+/* ******************************************************************
 * Extract atribute of type double.
 ****************************************************************** */
 double InputConverter::GetAttributeValueD_(
@@ -329,8 +427,12 @@ double InputConverter::GetAttributeValueD_(
   XString mm;
 
   if (elem->hasAttribute(mm.transcode(attr_name))) {
-    char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
-    val = std::strtod(text_content, NULL);
+    char* text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+    if (constants_.find(text) != constants_.end()) {  // check constants list
+      val = std::strtod(constants_[text].c_str(), NULL);
+    } else {
+      val = std::strtod(text, NULL);
+    }
   } else if (!exception) {
     val = default_val;
   } else {

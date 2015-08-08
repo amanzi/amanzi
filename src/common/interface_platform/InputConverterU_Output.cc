@@ -28,10 +28,9 @@
 #include "boost/lexical_cast.hpp"
 
 // TPLs
-#include <xercesc/dom/DOM.hpp>
-#include <xercesc/parsers/DOMLSParserImpl.hpp>
-
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "xercesc/dom/DOM.hpp"
+#include "xercesc/parsers/DOMLSParserImpl.hpp"
 
 // Amanzi's
 #include "ErrorHandler.hpp"
@@ -50,248 +49,238 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
 {
   Teuchos::ParameterList out_list;
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "Translating output" << std::endl;
-  }
 
   XString mm;
+
+  char *tagname, *text;
   DOMNamedNodeMap* attr_map;
-  DOMNode* node_attr;
-  char* tagname;
-  char* text_content;
+  DOMNodeList *node_list, *children;
+  DOMNode* node;
 
   // get definitions node - this node MAY exist ONCE
   // this contains any time macros and cycle macros
   // they are stored in the outputs of the old format
   Teuchos::ParameterList tmPL, cmPL;
-  DOMNodeList* macro_list = doc_->getElementsByTagName(mm.transcode("macros"));
+  node_list = doc_->getElementsByTagName(mm.transcode("macros"));
+  children = node_list->item(0)->getChildNodes();
 
-  if (macro_list->getLength() > 0) {
-    DOMNodeList* children = macro_list->item(0)->getChildNodes();
+  for (int i = 0; i < children->getLength(); ++i) {
+    DOMNode* inode = children->item(i);
+    if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
+      tagname = mm.transcode(inode->getNodeName());
 
-    for (int i = 0; i < children->getLength(); i++) {
-      DOMNode* inode = children->item(i) ;
-      if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-        tagname = mm.transcode(inode->getNodeName());
+      // process time macros
+      if (strcmp(tagname, "time_macro") == 0) {
+        Teuchos::ParameterList tm_parameter;
+        std::string text = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
 
-        // process time macros
-        if (strcmp(tagname, "time_macro") == 0) {
-          Teuchos::ParameterList tm_parameter;
-          std::string text = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
+        // deal differently if "times" or "start-inter-stop"
+        DOMNodeList* multi_list = inode->getChildNodes();
+        bool isTime(false);
 
-          // deal differently if "times" or "start-inter-stop"
-          DOMNodeList* children = inode->getChildNodes();
-          bool isTime(false);
-
-          for (int j = 0; j < children->getLength(); j++) {
-            DOMNode* time_node = children->item(j) ;
-            if (DOMNode::ELEMENT_NODE == time_node->getNodeType()) {
-              char* tmp = mm.transcode(time_node->getNodeName());
-              if (strcmp(tmp, "time") == 0) isTime = true;
-            }   
-          }
-
-          if (isTime) {
-            Teuchos::Array<double> times;
-            for (int j = 0; j < children->getLength(); j++) {
-              DOMNode* time_node = children->item(j) ;
-              if (DOMNode::ELEMENT_NODE == time_node->getNodeType()) {
-                char* node_txt = mm.transcode(time_node->getTextContent());
-                times.append(TimeCharToValue_(node_txt));
-              }
-            }
-            tm_parameter.set<Teuchos::Array<double> >("values", times);
-
-          } else {
-            DOMElement* element = static_cast<DOMElement*>(inode);
-            DOMNodeList* list = element->getElementsByTagName(mm.transcode("start"));
-            DOMNode* tmp_node = list->item(0);
-
-            char* node_txt = mm.transcode(tmp_node->getTextContent());
-            Teuchos::Array<double> sps;
-            sps.append(TimeCharToValue_(node_txt));
-
-            XMLCh* xstr = mm.transcode("timestep_interval");
-            list = element->getElementsByTagName(xstr);
-
-            if (list->getLength() > 0) {
-              tmp_node = list->item(0);
-              node_txt = mm.transcode(tmp_node->getTextContent());
-              sps.append(TimeCharToValue_(node_txt));
-
-              list = element->getElementsByTagName(mm.transcode("stop"));
-              if (list->getLength() > 0) {
-                tmp_node = list->item(0);
-                node_txt = mm.transcode(tmp_node->getTextContent());
-                sps.append(TimeCharToValue_(node_txt));
-              } else {
-                sps.append(-1.0);
-              }
-
-              tm_parameter.set<Teuchos::Array<double> >("sps", sps);
-            } else {
-              tm_parameter.set<Teuchos::Array<double> >("values", sps);
-            }
-          }
-          tmPL.sublist(text) = tm_parameter;
+        for (int j = 0; j < multi_list->getLength(); ++j) {
+          DOMNode* jnode = multi_list->item(j);
+          if (DOMNode::ELEMENT_NODE == jnode->getNodeType()) {
+            char* text = mm.transcode(jnode->getNodeName());
+            if (strcmp(text, "time") == 0) isTime = true;
+          }   
         }
 
-        // process cycle macros
-        else if (strcmp(tagname,"cycle_macro") == 0) {
-          Teuchos::ParameterList cm_parameter;
+        if (isTime) {
+          Teuchos::Array<double> times;
+          for (int j = 0; j < multi_list->getLength(); j++) {
+            DOMNode* jnode = multi_list->item(j);
+            if (DOMNode::ELEMENT_NODE == jnode->getNodeType()) {
+              char* text = mm.transcode(jnode->getTextContent());
+              times.append(TimeCharToValue_(text));
+            }
+          }
+          tm_parameter.set<Teuchos::Array<double> >("values", times);
+        } else {
           DOMElement* element = static_cast<DOMElement*>(inode);
-          std::string text = GetAttributeValueS_(element, "name");      
-
           DOMNodeList* list = element->getElementsByTagName(mm.transcode("start"));
-          DOMNode* tmp_node = list->item(0);
+          node = list->item(0);
 
-          char* node_txt = mm.transcode(tmp_node->getTextContent());
-          Teuchos::Array<int> sps;
-          sps.append(std::strtol(node_txt, NULL, 10));
+          char* text = mm.transcode(node->getTextContent());
+          Teuchos::Array<double> sps;
+          sps.append(TimeCharToValue_(text));
 
           list = element->getElementsByTagName(mm.transcode("timestep_interval"));
           if (list->getLength() > 0) {
-            tmp_node = list->item(0);
-            node_txt = mm.transcode(tmp_node->getTextContent());
-            sps.append(std::strtol(node_txt, NULL, 10));
+            text = mm.transcode(list->item(0)->getTextContent());
+            sps.append(TimeCharToValue_(text));
 
             list = element->getElementsByTagName(mm.transcode("stop"));
             if (list->getLength() > 0) {
-              tmp_node = list->item(0);
-              node_txt = mm.transcode(tmp_node->getTextContent());
-              sps.append(std::strtol(node_txt, NULL, 10));
+              text = mm.transcode(list->item(0)->getTextContent());
+              sps.append(TimeCharToValue_(text));
             } else {
-              sps.append(-1);
+              sps.append(-1.0);
             }
-            cm_parameter.set<Teuchos::Array<int> >("sps", sps);
+
+            tm_parameter.set<Teuchos::Array<double> >("sps", sps);
           } else {
-            cm_parameter.set<Teuchos::Array<int> >("values", sps);
+            tm_parameter.set<Teuchos::Array<double> >("values", sps);
           }
-          cmPL.sublist(text) = cm_parameter;
         }
+        tmPL.sublist(text) = tm_parameter;
+      }
+
+      // process cycle macros
+      else if (strcmp(tagname,"cycle_macro") == 0) {
+        Teuchos::ParameterList cm_parameter;
+        std::string str = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");      
+
+        DOMElement* element = static_cast<DOMElement*>(inode);
+        DOMNodeList* list = element->getElementsByTagName(mm.transcode("start"));
+        node = list->item(0);
+
+        text = mm.transcode(node->getTextContent());
+        Teuchos::Array<int> sps;
+        sps.append(std::strtol(text, NULL, 10));
+
+        list = element->getElementsByTagName(mm.transcode("timestep_interval"));
+        if (list->getLength() > 0) {
+          text = mm.transcode(list->item(0)->getTextContent());
+          sps.append(std::strtol(text, NULL, 10));
+
+          list = element->getElementsByTagName(mm.transcode("stop"));
+          if (list->getLength() > 0) {
+            text = mm.transcode(list->item(0)->getTextContent());
+            sps.append(std::strtol(text, NULL, 10));
+          } else {
+            sps.append(-1);
+          }
+          cm_parameter.set<Teuchos::Array<int> >("sps", sps);
+        } else {
+          cm_parameter.set<Teuchos::Array<int> >("values", sps);
+        }
+        cmPL.sublist(text) = cm_parameter;
       }
     }
   }
 
   // get output->vis node - this node must exist ONCE
   bool flag;
-  DOMNode* mnode = getUniqueElementByTagNames_("output", "vis", flag);
+  node = getUniqueElementByTagNames_("output", "vis", flag);
 
-  if (flag && mnode->getNodeType() == DOMNode::ELEMENT_NODE) {
+  if (flag && node->getNodeType() == DOMNode::ELEMENT_NODE) {
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "Translating output: visualization" << std::endl;
     }
 
-    DOMNodeList* children = mnode->getChildNodes();
+    DOMNodeList* children = node->getChildNodes();
     Teuchos::ParameterList visPL;
     for (int j = 0; j < children->getLength(); j++) {
       DOMNode* jnode = children->item(j);
       tagname = mm.transcode(jnode->getNodeName());
-      text_content = mm.transcode(jnode->getTextContent());
+      text = mm.transcode(jnode->getTextContent());
 
       if (strcmp(tagname, "base_filename") == 0) {
-        visPL.set<std::string>("file name base", TrimString_(text_content));
+        visPL.set<std::string>("file name base", TrimString_(text));
       } else if (strcmp(tagname, "num_digits") == 0) {
-        visPL.set<int>("file name digits", std::strtol(text_content, NULL, 10));
+        visPL.set<int>("file name digits", std::strtol(text, NULL, 10));
       } else if (strcmp(tagname, "cycle_macros") == 0 ||
                  strcmp(tagname, "cycle_macro") == 0) {
-        ProcessMacros_("cycles", text_content, cmPL, visPL);
+        ProcessMacros_("cycles", text, cmPL, visPL);
       } else if (strcmp(tagname, "time_macros") == 0 ||
                  strcmp(tagname, "time_macro") == 0) {
-       ProcessMacros_("times", text_content, tmPL, visPL);
+       ProcessMacros_("times", text, tmPL, visPL);
       } else if (strcmp(tagname, "write_regions") == 0) {
-        visPL.set<Teuchos::Array<std::string> >("write regions", CharToStrings_(text_content));
+        visPL.set<Teuchos::Array<std::string> >("write regions", CharToStrings_(text));
       }
     }
     out_list.sublist("Visualization Data") = visPL;
   }
 
   // get output->checkpoint node - this node must exist ONCE
-  mnode = getUniqueElementByTagNames_("output", "checkpoint", flag);
+  node = getUniqueElementByTagNames_("output", "checkpoint", flag);
 
-  if (flag && mnode->getNodeType() == DOMNode::ELEMENT_NODE) {
+  if (flag && node->getNodeType() == DOMNode::ELEMENT_NODE) {
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "Translating output: checkpoint" << std::endl;
     }
 
     Teuchos::ParameterList chkPL;
-    DOMNodeList* children = mnode->getChildNodes();
+    DOMNodeList* children = node->getChildNodes();
     for (int j = 0; j < children->getLength(); j++) {
       DOMNode* jnode = children->item(j) ;
       tagname = mm.transcode(jnode->getNodeName());
-      text_content = mm.transcode(jnode->getTextContent());
+      text = mm.transcode(jnode->getTextContent());
 
       if (strcmp(tagname, "base_filename") == 0) {
-        chkPL.set<std::string>("file name base", TrimString_(text_content));
+        chkPL.set<std::string>("file name base", TrimString_(text));
       }
       else if (strcmp(tagname, "num_digits") == 0) {
-        chkPL.set<int>("file name digits", std::strtol(text_content, NULL, 10));
+        chkPL.set<int>("file name digits", std::strtol(text, NULL, 10));
       } else if (strcmp(tagname, "cycle_macros") == 0 ||
                  strcmp(tagname, "cycle_macro") == 0) {
-        ProcessMacros_("cycles", text_content, cmPL, chkPL);
+        ProcessMacros_("cycles", text, cmPL, chkPL);
       }
     }
     out_list.sublist("Checkpoint Data") = chkPL;
   }
 
   // get output->walkabout node - this node must exist ONCE
-  mnode = getUniqueElementByTagNames_("output", "walkabout", flag);
+  node = getUniqueElementByTagNames_("output", "walkabout", flag);
 
-  if (flag && mnode->getNodeType() == DOMNode::ELEMENT_NODE) {
+  if (flag && node->getNodeType() == DOMNode::ELEMENT_NODE) {
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "Translating output: walkabout" << std::endl;
     }
 
     Teuchos::ParameterList chkPL;
-    DOMNodeList* children = mnode->getChildNodes();
+    DOMNodeList* children = node->getChildNodes();
     for (int j = 0; j < children->getLength(); j++) {
       DOMNode* jnode = children->item(j);
       tagname = mm.transcode(jnode->getNodeName());
-      text_content = mm.transcode(jnode->getTextContent());
+      text = mm.transcode(jnode->getTextContent());
 
       if (strcmp(tagname, "base_filename") == 0) {
-        chkPL.set<std::string>("file name base", TrimString_(text_content));
+        chkPL.set<std::string>("file name base", TrimString_(text));
       } else if (strcmp(tagname, "num_digits") == 0) {
-        chkPL.set<int>("file name digits", std::strtol(text_content, NULL, 10));
+        chkPL.set<int>("file name digits", std::strtol(text, NULL, 10));
       } else if (strcmp(tagname, "cycle_macros") == 0 ||
                  strcmp(tagname, "cycle_macro") == 0) {
-        ProcessMacros_("cycles", text_content, cmPL, chkPL);
+        ProcessMacros_("cycles", text, cmPL, chkPL);
       }
     }
     out_list.sublist("Walkabout Data") = chkPL;
   }
 
   // get output->observations node - this node must exist ONCE
-  mnode = getUniqueElementByTagNames_("output", "observations", flag);
+  node = getUniqueElementByTagNames_("output", "observations", flag);
 
-  if (flag && mnode->getNodeType() == DOMNode::ELEMENT_NODE) {
+  if (flag && node->getNodeType() == DOMNode::ELEMENT_NODE) {
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "Translating output: observations" << std::endl;
     }
 
     Teuchos::ParameterList obsPL;
-    DOMNodeList* OBList = mnode->getChildNodes();
+    DOMNodeList* OBList = node->getChildNodes();
 
     for (int i = 0; i < OBList->getLength(); i++) {
       DOMNode* inode = OBList->item(i) ;
       if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
         tagname = mm.transcode(inode->getNodeName());
-        text_content = mm.transcode(inode->getTextContent());
+        text = mm.transcode(inode->getTextContent());
 
         if (strcmp(tagname, "filename") == 0) {
-          obsPL.set<std::string>("Observation Output Filename", TrimString_(text_content));
+          obsPL.set<std::string>("Observation Output Filename", TrimString_(text));
         } else if (strcmp(tagname, "liquid_phase") == 0) {
           attr_map = inode->getAttributes();
-          node_attr = attr_map->getNamedItem(mm.transcode("name"));
+          node = attr_map->getNamedItem(mm.transcode("name"));
           std::string phaseName;
 
-          if (node_attr) {
-            char* text_content2 = mm.transcode(node_attr->getNodeValue());
-            phaseName = std::string(text_content2);
+          if (node) {
+            char* text_content = mm.transcode(node->getNodeValue());
+            phaseName = std::string(text_content);
             if (phaseName=="water") {
               phaseName = "Water";
             }

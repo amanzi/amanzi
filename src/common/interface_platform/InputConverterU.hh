@@ -59,6 +59,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslatePKs_(const Teuchos::ParameterList& cd_list);
   Teuchos::ParameterList TranslateFlow_(int regime = FLOW_BOTH_REGIMES);
   Teuchos::ParameterList TranslateTransport_();
+  Teuchos::ParameterList TranslateTransportBCs_();
   Teuchos::ParameterList TranslateTransportSources_();
   Teuchos::ParameterList TranslateChemistry_();
   Teuchos::ParameterList TranslateEnergy_();
@@ -76,6 +77,9 @@ class InputConverterU : public InputConverter {
   bool flow_single_phase;
   bool compressibility_;
   std::vector<std::string> comp_names_all_;
+
+  // for analysis
+  std::vector<std::string> vv_bc_regions_;
 
   Teuchos::ParameterList verb_list_;
   VerboseObject* vo_;

@@ -80,8 +80,11 @@ class InputConverter {
   // main member: creates xerces document using the file name
   void Init(const std::string& xmlfilename);
 
+  // parse various nodes
+  void ParseConstants_();
+
  protected:
-  // DOM useful tool
+  // Useful tools wrapping low-level DOM commands
   // -- generalization of getElementsByTagNames(): returns node
   //    tag1->tag2 or tag1->tag2-tag3 where all tags are unique 
   //    leaves of the tree.
@@ -115,6 +118,10 @@ class InputConverter {
   std::vector<double> GetAttributeVector_(
       xercesc::DOMElement* elem, const char* attr_name);
 
+  // -- extract and verify children
+  std::vector<xercesc::DOMNode*> getSameChildNodes_(
+      xercesc::DOMNode* node, std::string& name, bool& flag, bool exception = false);
+
   // data streaming/trimming/converting
   // -- times
   double TimeStringToValue_(const std::string& time_value);
@@ -139,6 +146,9 @@ class InputConverter {
       const std::string& section, const std::string& type, const std::string& missing, const std::string& name);
 
  protected:
+  // variois constants defined by the users
+  std::map<std::string, std::string> constants_; 
+
   xercesc::XercesDOMParser* parser;
   xercesc::DOMDocument* doc_;
 };
