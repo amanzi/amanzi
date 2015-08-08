@@ -59,6 +59,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslatePKs_(const Teuchos::ParameterList& cd_list);
   Teuchos::ParameterList TranslateFlow_(int regime = FLOW_BOTH_REGIMES);
   Teuchos::ParameterList TranslateTransport_();
+  Teuchos::ParameterList TranslateTransportSources_();
   Teuchos::ParameterList TranslateChemistry_();
   Teuchos::ParameterList TranslateEnergy_();
 

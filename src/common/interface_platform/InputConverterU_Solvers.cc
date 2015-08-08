@@ -14,7 +14,6 @@
 
 //TPLs
 #include <xercesc/dom/DOM.hpp>
-#include <xercesc/util/XMLString.hpp>
 
 // Amanzi's
 #include "errors.hh"
@@ -58,6 +57,8 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
     *vo_->os() << "Translating solvers" << std::endl;
   }
 
+  XString mm;
+
   // define defaults...
   double tol = LINEAR_SOLVER_TOL;
   int maxiter = LINEAR_SOLVER_MAXITER;
@@ -65,18 +66,15 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
   std::string prec = LINEAR_SOLVER_PC;
 
   // get values from Execution control list if they exist
-  XMLCh* xstr = XMLString::transcode("unstructured_linear_solver");
-  DOMNodeList* node_list = doc_->getElementsByTagName(xstr);
-  XMLString::release(&xstr);
-
+  DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("unstructured_linear_solver"));
   if (node_list->getLength() > 0) {
     DOMNodeList* children = node_list->item(0)->getChildNodes();
 
     for (int i = 0; i < children->getLength(); i++) {
       DOMNode* inode = children->item(i);
       if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-        char* tagname = XMLString::transcode(inode->getNodeName());
-        char* text_content = XMLString::transcode(inode->getTextContent());
+        char* tagname = mm.transcode(inode->getNodeName());
+        char* text_content = mm.transcode(inode->getTextContent());
 
         if (strcmp(tagname, "tolerance") == 0) {
           tol = std::strtod(text_content, NULL);
@@ -87,8 +85,6 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
         } else if (strcmp(tagname, "preconditioner") == 0) {
           prec = text_content;
         }
-        XMLString::release(&text_content);
-        XMLString::release(&tagname);
       }
     }
   }
@@ -142,6 +138,8 @@ Teuchos::ParameterList InputConverterU::TranslateTrilinosML_()
   Teuchos::ParameterList out_list;
   out_list.set<std::string>("preconditioner type", "ml");
 
+  XString mm;
+
   // default parameters that we try to override
   double aggthr(TRILINOS_ML_AGG_THR);
   std::string smthtyp(TRILINOS_ML_SMOOTHER);
@@ -155,8 +153,8 @@ Teuchos::ParameterList InputConverterU::TranslateTrilinosML_()
 
     for (int i = 0; i < children->getLength(); i++) {
       DOMNode* inode = children->item(i);
-      char* tagname = XMLString::transcode(inode->getNodeName());
-      char* text_content = XMLString::transcode(inode->getTextContent());
+      char* tagname = mm.transcode(inode->getNodeName());
+      char* text_content = mm.transcode(inode->getTextContent());
 
       if (strcmp(tagname, "trilinos_smoother_type") == 0) {
         smthtyp = TrimString_(text_content);
@@ -167,7 +165,6 @@ Teuchos::ParameterList InputConverterU::TranslateTrilinosML_()
       } else if (strcmp(tagname, "trilinos_cycle_applications") == 0) {
         ncycles = std::strtol(text_content, NULL, 10);
       }
-      XMLString::release(&text_content);
     }
   }
 
@@ -201,6 +198,8 @@ Teuchos::ParameterList InputConverterU::TranslateBILU_()
   Teuchos::ParameterList out_list;
   out_list.set<std::string>("preconditioner type", "block ilu");
 
+  XString mm;
+
   // default parameters that we try to override
   double bilu_relax_value(TRILINOS_ILU_RLXVAL);
   double bilu_abs_thresh(TRILINOS_ILU_ABSTHR);
@@ -216,8 +215,8 @@ Teuchos::ParameterList InputConverterU::TranslateBILU_()
 
     for (int i = 0; i < children->getLength(); i++) {
       DOMNode* inode = children->item(i);
-      char* tagname = XMLString::transcode(inode->getNodeName());
-      char* text_content = XMLString::transcode(inode->getTextContent());
+      char* tagname = mm.transcode(inode->getNodeName());
+      char* text_content = mm.transcode(inode->getTextContent());
 
       if (strcmp(tagname, "ilu_overlap") == 0) {
         bilu_overlap = std::strtol(text_content, NULL, 10);
@@ -253,6 +252,8 @@ Teuchos::ParameterList InputConverterU::TranslateHypreAMG_()
   Teuchos::ParameterList out_list;
   out_list.set<std::string>("preconditioner type", "boomer amg");
 
+  XString mm;
+
   // default parameters that we try to override
   double tol(HYPRE_AMG_TOL);
   int ncycles(HYPRE_AMG_NCYC);
@@ -267,8 +268,8 @@ Teuchos::ParameterList InputConverterU::TranslateHypreAMG_()
 
     for (int i = 0; i < children->getLength(); i++) {
       DOMNode* inode = children->item(i);
-      char* tagname = XMLString::transcode(inode->getNodeName());
-      char* text_content = XMLString::transcode(inode->getTextContent());
+      char* tagname = mm.transcode(inode->getNodeName());
+      char* text_content = mm.transcode(inode->getTextContent());
 
       if (strcmp(tagname, "hypre_cycle_applications") == 0) {
         ncycles = std::strtol(text_content, NULL, 10);
@@ -279,7 +280,6 @@ Teuchos::ParameterList InputConverterU::TranslateHypreAMG_()
       } else if (strcmp(tagname, "hypre_strong_threshold") == 0) {
         strong_threshold = std::strtod(text_content, NULL);
       }
-      XMLString::release(&text_content);
     }
   }
 

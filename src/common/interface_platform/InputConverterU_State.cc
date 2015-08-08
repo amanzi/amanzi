@@ -14,7 +14,6 @@
 
 // TPLs
 #include <xercesc/dom/DOM.hpp>
-#include <xercesc/util/XMLString.hpp>
 
 // Amanzi's
 #include "errors.hh"
@@ -44,6 +43,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   Teuchos::ParameterList& out_ev = out_list.sublist("field evaluators");
   Teuchos::ParameterList& out_ic = out_list.sublist("initial conditions");
 
+  XString mm;
   Errors::Message msg;
   char* tagname;
   char* text_content;
@@ -57,17 +57,15 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   // --- viscosity
   bool flag;
   DOMNode* node = getUniqueElementByTagNames_("phases", "liquid_phase", "viscosity", flag);
-  text_content = XMLString::transcode(node->getTextContent());
+  text_content = mm.transcode(node->getTextContent());
   double viscosity = std::strtod(text_content, NULL);
   out_ic.sublist("fluid_viscosity").set<double>("value", viscosity);
-  XMLString::release(&text_content);
 
   // --- density
   node = getUniqueElementByTagNames_("phases", "liquid_phase", "density", flag);
-  text_content = XMLString::transcode(node->getTextContent());
+  text_content = mm.transcode(node->getTextContent());
   double density = std::strtod(text_content, NULL);
   out_ic.sublist("fluid_density").set<double>("value", density);
-  XMLString::release(&text_content);
 
   out_ic.sublist("water_density").sublist("function").sublist("All")
       .set<std::string>("region","All")
@@ -79,25 +77,21 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   std::map<std::string, int> reg2mat;
   int mat(0);
 
-  XMLCh* xstr = XMLString::transcode("materials");
-  DOMNodeList* node_list = doc_->getElementsByTagName(xstr);
-  XMLString::release(&xstr);
-
+  DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("materials"));
   DOMNodeList* childern = node_list->item(0)->getChildNodes();
 
   for (int i = 0; i < childern->getLength(); i++) {
     DOMNode* inode = childern->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       DOMNamedNodeMap* attr_map = inode->getAttributes();
-      DOMNode* node = attr_map->getNamedItem(XMLString::transcode("name"));
+      DOMNode* node = attr_map->getNamedItem(mm.transcode("name"));
       if (!node) {
         ThrowErrorMissattr_("materials", "attribute", "name", "material");
       }
 
       node = getUniqueElementByTagNames_(inode, "assigned_regions", flag);
-      text_content = XMLString::transcode(node->getTextContent());
+      text_content = mm.transcode(node->getTextContent());
       std::vector<std::string> regions = CharToStrings_(text_content);
-      XMLString::release(&text_content);
 
       // record the material ID for each region that this material occupies
       for (int k = 0; k < regions.size(); k++) {
@@ -121,15 +115,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         double porosity;
         node = getUniqueElementByTagNames_(inode, "mechanical_properties", "porosity", flag);
         if (flag) {
-          DOMNamedNodeMap* attr_map = node->getAttributes();
-          DOMNode* node_tmp = attr_map->getNamedItem(XMLString::transcode("value"));
-          if (node_tmp) {
-            text_content = XMLString::transcode(node_tmp->getNodeValue());
-            porosity = std::strtod(text_content, NULL);
-            XMLString::release(&text_content);
-          } else {
-            ThrowErrorMissattr_("mechanical_properties", "attribute", "value", "porosity");
-          }
+          porosity = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
         } else {
           msg << "Porosity element must be specified under mechanical_properties";
           Exceptions::amanzi_throw(msg);
@@ -158,15 +144,15 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       int file(0);
       char* file_name;
       char* attr_name;
-      double kx, ky, kz;
+      double kx, ky(-1.0), kz;
 
       DOMNamedNodeMap* attr_tmp = node->getAttributes();
       for (int k=0; k < attr_tmp->getLength(); k++) {
         DOMNode* knode = attr_tmp->item(k);
 
         if (DOMNode::ATTRIBUTE_NODE == knode->getNodeType()) {
-          tagname = XMLString::transcode(knode->getNodeName());
-          text_content = XMLString::transcode(knode->getNodeValue());
+          tagname = mm.transcode(knode->getNodeName());
+          text_content = mm.transcode(knode->getNodeValue());
 
           if (strcmp(tagname, "x") == 0) {
             kx = std::strtod(text_content, NULL);
@@ -185,8 +171,6 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             attr_name = new char[std::strlen(text_content)];
             std::strcpy(attr_name, text_content);
           }
-          XMLString::release(&text_content);
-          XMLString::release(&tagname);
         }
       }
 
@@ -208,6 +192,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         delete file_name;
         delete attr_name;
       } else if (file == 0) {
+        if (ky < 0) ky = kz;  // x-z system was defined
         Teuchos::ParameterList& aux_list = permeability_ic.sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions",regions)
             .set<std::string>("component","cell")
@@ -265,19 +250,15 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   }
 
   // initialization of fields via the initial_conditions list
-  xstr = XMLString::transcode("initial_conditions");
-  node_list = doc_->getElementsByTagName(xstr);
-  XMLString::release(&xstr);
-
+  node_list = doc_->getElementsByTagName(mm.transcode("initial_conditions"));
   childern = node_list->item(0)->getChildNodes();
 
   for (int i = 0; i < childern->getLength(); i++) {
     DOMNode* inode = childern->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       node = getUniqueElementByTagNames_(inode, "assigned_regions", flag);
-      text_content = XMLString::transcode(node->getTextContent());
+      text_content = mm.transcode(node->getTextContent());
       std::vector<std::string> regions = CharToStrings_(text_content);
-      XMLString::release(&text_content);
 
       // create regions string
       std::string reg_str;
@@ -405,15 +386,13 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         DOMNodeList* children = node->getChildNodes();
         for (int j = 0; j < children->getLength(); ++j) {
           DOMNode* jnode = children->item(j);
-          tagname = XMLString::transcode(jnode->getNodeName());
+          tagname = mm.transcode(jnode->getNodeName());
 
           if (strcmp(tagname, "solute_component") == 0) {
-             text_content = GetAttributeValueC_(static_cast<DOMElement*>(jnode), "name");
-            int m = GetPosition_(phases_["water"], text_content);
+            std::string text = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
+            int m = GetPosition_(phases_["water"], text);
             vals[m] = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "value");
-            XMLString::release(&text_content);
           }
-          XMLString::release(&tagname);
         }
 
         Teuchos::ParameterList& tcc_ic = out_ic.sublist("total_component_concentration");
@@ -440,15 +419,13 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         DOMNodeList* children = node->getChildNodes();
         for (int j = 0; j < children->getLength(); ++j) {
           DOMNode* jnode = children->item(j);
-          tagname = XMLString::transcode(jnode->getNodeName());
+          tagname = mm.transcode(jnode->getNodeName());
 
           if (strcmp(tagname, "solute_component") == 0) {
-             text_content = GetAttributeValueC_(static_cast<DOMElement*>(jnode), "name");
-            int m = GetPosition_(phases_["gas"], text_content);
+            std::string text = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
+            int m = GetPosition_(phases_["gas"], text);
             vals[m] = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "value");
-            XMLString::release(&text_content);
           }
-          XMLString::release(&tagname);
         }
 
         Teuchos::ParameterList& tcc_ic = out_ic.sublist("total_component_concentration");
@@ -478,14 +455,13 @@ Teuchos::ParameterList InputConverterU::TranslateMaterialsPartition_()
   Teuchos::ParameterList out_list;
   Teuchos::ParameterList& tmp_list = out_list.sublist("materials");
 
-  XMLCh* xstr = XMLString::transcode("materials");
-  DOMNodeList* node_list = doc_->getElementsByTagName(xstr);
-  XMLString::release(&xstr);
-
+  XString mm;
   bool flag;
   std::vector<std::string> regions;
 
+  DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("materials"));
   DOMNodeList* childern = node_list->item(0)->getChildNodes();
+
   for (int i = 0; i < childern->getLength(); i++) {
     DOMNode* inode = childern->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
@@ -493,9 +469,8 @@ Teuchos::ParameterList InputConverterU::TranslateMaterialsPartition_()
 
       DOMNode* node = getUniqueElementByTagNames_(inode, "assigned_regions", flag);
       if (flag) {
-        char* text_content = XMLString::transcode(node->getTextContent());
+        char* text_content = mm.transcode(node->getTextContent());
         std::vector<std::string> names = CharToStrings_(text_content);
-        XMLString::release(&text_content);
 
         for (int i = 0; i < names.size(); i++) {
           regions.push_back(names[i]);

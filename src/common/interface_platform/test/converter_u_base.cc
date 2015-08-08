@@ -20,6 +20,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "UnitTest++.h"
+#include "XMLParameterListWriter.hh"
 
 // Amanzi
 #include "InputConverterU.hh"
@@ -36,9 +37,18 @@ TEST(CONVERTER_BASE) {
 
   // read parameter list
   std::string xmlFileName = "test/converter_u_base.xml";
+  // std::string xmlFileName = "test/porflow.xml";
 
   Amanzi::AmanziInput::InputConverterU converter;
   converter.Init(xmlFileName);
-  std::cout << converter.Translate() << std::endl;
+  Teuchos::ParameterList new_xml = converter.Translate();
+  // std::cout << new_xml << std::endl;
+
+  Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
+  Teuchos::XMLObject XMLobj = XMLWriter.toXML(new_xml);
+
+  std::ofstream xmlfile;
+  xmlfile.open("native_v6.xml");
+  xmlfile << XMLobj;
 }
 	

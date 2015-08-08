@@ -31,6 +31,41 @@
 namespace Amanzi {
 namespace AmanziInput {
 
+/* 
+* A simple wrapper for XMLString class. It collects memory pointers
+* and destroys them later. The focus is on simplicity of its using,
+* so that release is never called.
+*/
+class XString {
+ public:
+  XString() {};
+  ~XString() { Destroy_(); }
+
+  XMLCh* transcode(const char* str) {
+    XMLCh* xstr = xercesc::XMLString::transcode(str);
+    xchar.push_back(xstr);
+    return xstr;
+  }
+
+  char* transcode(const XMLCh* xstr) {
+    char* str = xercesc::XMLString::transcode(xstr);
+    pchar.push_back(str);
+    return str;
+  }
+
+ private:
+  void Destroy_() {
+    for (std::vector<char*>::iterator it = pchar.begin(); it != pchar.end(); ++it)
+      xercesc::XMLString::release(&*it);
+    for (std::vector<XMLCh*>::iterator it = xchar.begin(); it != xchar.end(); ++it)
+      xercesc::XMLString::release(&*it);
+  }
+
+ private:
+  std::vector<char*> pchar;
+  std::vector<XMLCh*> xchar;
+};
+
 class InputConverter {
  public:
   InputConverter() {
@@ -75,28 +110,25 @@ class InputConverter {
       xercesc::DOMElement* elem, const char* attr_name, bool exception = false, int val = 0);
   double GetAttributeValueD_(
       xercesc::DOMElement* elem, const char* attr_name, bool exception = false, double val = 0.0);
-  char* GetAttributeValueC_(
-      xercesc::DOMElement* elem, const char* attr_name, bool exception = false, char* val = NULL);
+  std::string GetAttributeValueS_(
+      xercesc::DOMElement* elem, const char* attr_name, bool exception = false, std::string val = "");
   std::vector<double> GetAttributeVector_(
       xercesc::DOMElement* elem, const char* attr_name);
 
-  // -- extract existing element values
-  std::vector<std::string> GetElementVectorS_(xercesc::DOMElement* elem);
-
   // data streaming/trimming/converting
   // -- times
-  double TimeStringToValue_(std::string& time_value);
-  double TimeCharToValue_(char* time_value);
+  double TimeStringToValue_(const std::string& time_value);
+  double TimeCharToValue_(const char* time_value);
 
   // -- coordinates
-  std::vector<double> MakeCoordinates_(char* char_array);
+  std::vector<double> MakeCoordinates_(const std::string& array);
 
   // -- string modifications
   std::vector<std::string> CharToStrings_(const char* namelist);
   std::string TrimString_(char* tmp);
 
   // -- vector parsing
-  int GetPosition_(const std::vector<std::string>& names, char* name);
+  int GetPosition_(const std::vector<std::string>& names, const std::string& name);
 
   // error messages
   void ThrowErrorIllformed_(

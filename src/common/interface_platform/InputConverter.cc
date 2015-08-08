@@ -92,11 +92,11 @@ DOMNode* InputConverter::getUniqueElementByTagNames_(
     const std::string& tag1, const std::string& tag2, bool& flag)
 {
   flag = false;
+
+  XString mm;
   DOMNode* node;
 
-  XMLCh* xstr = XMLString::transcode(tag1.c_str()); 
-  DOMNodeList* node_list = doc_->getElementsByTagName(xstr);
-  XMLString::release(&xstr);
+  DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode(tag1.c_str()));
   if (node_list->getLength() != 1) return node;
 
   int ntag2(0);
@@ -105,12 +105,11 @@ DOMNode* InputConverter::getUniqueElementByTagNames_(
   for (int i = 0; i < children->getLength(); i++) {
     DOMNode* inode = children->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-      char* tagname = XMLString::transcode(inode->getNodeName());   
+      char* tagname = mm.transcode(inode->getNodeName());   
       if (strcmp(tagname, tag2.c_str()) == 0) {
         node = inode;
         ntag2++;
       }
-      XMLString::release(&tagname);
     }
   }
 
@@ -128,12 +127,11 @@ DOMNode* InputConverter::getUniqueElementByTagNames_(
 {
   flag = false;
 
+  XString mm;
   int ntag2(0), ntag3(0);
   DOMNode* node;
 
-  XMLCh* xstr = XMLString::transcode(tag1.c_str());
-  DOMNodeList* node_list = doc_->getElementsByTagName(xstr);
-  XMLString::release(&xstr);
+  DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode(tag1.c_str()));
   if (node_list->getLength() != 1) return node;
 
   // first leaf
@@ -141,12 +139,11 @@ DOMNode* InputConverter::getUniqueElementByTagNames_(
   for (int i = 0; i < children->getLength(); i++) {
     DOMNode* inode = children->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-      char* tagname = XMLString::transcode(inode->getNodeName());   
+      char* tagname = mm.transcode(inode->getNodeName());   
       if (strcmp(tagname, tag2.c_str()) == 0) {
         node = inode;
         ntag2++;
       }
-      XMLString::release(&tagname);
     }
   }
   if (ntag2 != 1) return node;
@@ -156,12 +153,11 @@ DOMNode* InputConverter::getUniqueElementByTagNames_(
   for (int i = 0; i < children->getLength(); i++) {
     DOMNode* inode = children->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-      char* tagname = XMLString::transcode(inode->getNodeName());   
+      char* tagname = mm.transcode(inode->getNodeName());   
       if (strcmp(tagname, tag3.c_str()) == 0) {
         node = inode;
         ntag3++;
       }
-      XMLString::release(&tagname);
     }
   }
   if (ntag3 == 1) flag = true;
@@ -177,17 +173,16 @@ DOMNode* InputConverter::getUniqueElementByTagNames_(
 DOMNode* InputConverter::getUniqueElementByTagsString_(
     const std::string& tags, bool& flag)
 {
+  flag = false;
+
+  XString mm;
   DOMNode* node;
 
-  flag = false;
   std::vector<std::string> tag_names = CharToStrings_(tags.c_str());
   if (tag_names.size() == 0) return node;
 
   // get the first node
-  XMLCh* xstr = XMLString::transcode(tag_names[0].c_str());
-  DOMNodeList* node_list = doc_->getElementsByTagName(xstr);
-  XMLString::release(&xstr);
-
+  DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode(tag_names[0].c_str()));
   if (node_list->getLength() != 1) return node;
   node = node_list->item(0);
 
@@ -197,12 +192,11 @@ DOMNode* InputConverter::getUniqueElementByTagsString_(
     for (int i = 0; i < children->getLength(); i++) {
       DOMNode* inode = children->item(i);
       if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-        char* tagname = XMLString::transcode(inode->getNodeName());   
+        char* tagname = mm.transcode(inode->getNodeName());   
         if (strcmp(tagname, tag_names[n].c_str()) == 0) {
           node = inode;
           ntag++;
         }
-        XMLString::release(&tagname);
       }
     }
     if (ntag != 1) return node;
@@ -221,6 +215,7 @@ DOMNode* InputConverter::getUniqueElementByTagNames_(
     const DOMNode* node1, const std::string& tag2, bool& flag)
 {
   flag = false;
+
   int ntag2(0);
   DOMNode* node;
   DOMNodeList* children = node1->getChildNodes();
@@ -331,20 +326,18 @@ double InputConverter::GetAttributeValueD_(
     DOMElement* elem, const char* attr_name, bool exception, double default_val)
 {
   double val;
-  XMLCh* xstr = XMLString::transcode(attr_name);
+  XString mm;
 
-  if (elem->hasAttribute(xstr)) {
-    char* text_content = XMLString::transcode(elem->getAttribute(xstr));
+  if (elem->hasAttribute(mm.transcode(attr_name))) {
+    char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
     val = std::strtod(text_content, NULL);
-    XMLString::release(&text_content);
   } else if (!exception) {
     val = default_val;
   } else {
-    char* tagname = XMLString::transcode(elem->getNodeName());
+    char* tagname = mm.transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
   }
 
-  XMLString::release(&xstr);
   return val;
 }
 
@@ -356,44 +349,41 @@ int InputConverter::GetAttributeValueL_(
     DOMElement* elem, const char* attr_name, bool exception, int default_val)
 {
   int val;
-  XMLCh* xstr = XMLString::transcode(attr_name);
+  XString mm;
 
-  if (elem->hasAttribute(xstr)) {
-    char* text_content = XMLString::transcode(elem->getAttribute(xstr));
+  if (elem->hasAttribute(mm.transcode(attr_name))) {
+    char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
     val = std::strtol(text_content, NULL, 10);
-    XMLString::release(&text_content);
   } else if (! exception) {
     val = default_val;
   } else {
-    char* tagname = XMLString::transcode(elem->getNodeName());
+    char* tagname = mm.transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
   }
 
-  XMLString::release(&xstr);
   return val;
 }
 
 
 /* ******************************************************************
-* Extract atribute of type char*.
-* The returned memory should be freeded using XMLString::release.
+* Extract atribute of type std::string.
 ****************************************************************** */
-char* InputConverter::GetAttributeValueC_(
-    DOMElement* elem, const char* attr_name, bool exception, char* default_val)
+std::string InputConverter::GetAttributeValueS_(
+    DOMElement* elem, const char* attr_name, bool exception, std::string default_val)
 {
-  char* val;
-  XMLCh* xstr = XMLString::transcode(attr_name);
+  std::string val;
+  XString mm;
 
-  if (elem->hasAttribute(xstr)) {
-    val = XMLString::transcode(elem->getAttribute(xstr));
+  if (elem->hasAttribute(mm.transcode(attr_name))) {
+    val = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+    boost::algorithm::trim(val);
   } else if (!exception) {
     val = default_val;
   } else {
-    char* tagname = XMLString::transcode(elem->getNodeName());
+    char* tagname = mm.transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
   }
 
-  XMLString::release(&xstr);
   return val;
 }
 
@@ -404,41 +394,27 @@ char* InputConverter::GetAttributeValueC_(
 std::vector<double> InputConverter::GetAttributeVector_(DOMElement* elem, const char* attr_name)
 {
   std::vector<double> val;
-  XMLCh* xstr = XMLString::transcode(attr_name);
+  XString mm;
 
-  if (elem->hasAttribute(xstr)) {
-    char* text_content = XMLString::transcode(elem->getAttribute(xstr));
+  if (elem->hasAttribute(mm.transcode(attr_name))) {
+    char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
     val = MakeCoordinates_(text_content);
-    XMLString::release(&text_content);
   } else {
-    char* tagname = XMLString::transcode(elem->getNodeName());
+    char* tagname = mm.transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
   }
 
-  XMLString::release(&xstr);
   return val;
-}
-
-
-/* ******************************************************************
-* Extract element value.
-****************************************************************** */
-std::vector<std::string> InputConverter::GetElementVectorS_(DOMElement* elem)
-{
-  char* text_content = XMLString::transcode(elem->getTextContent());
-  std::vector<std::string> names = CharToStrings_(text_content);
-  XMLString::release(&text_content);
-  return names;
 }
 
 
 /* ******************************************************************
 * Find positing in the array.
 ****************************************************************** */
-int InputConverter::GetPosition_(const std::vector<std::string>& names, char* name)
+int InputConverter::GetPosition_(const std::vector<std::string>& names, const std::string& name)
 {
   for (int i = 0; i < names.size(); ++i) {
-    if (strcmp(names[i].c_str(), name) == 0) return i;
+    if (strcmp(names[i].c_str(), name.c_str()) == 0) return i;
   }
 
   Errors::Message msg;
@@ -448,6 +424,7 @@ int InputConverter::GetPosition_(const std::vector<std::string>& names, char* na
 
   return -1;
 }
+
 
 /* ******************************************************************
 * Converts string of names separated by comma to array of strings.
@@ -476,7 +453,7 @@ std::vector<std::string> InputConverter::CharToStrings_(const char* namelist)
 /* ******************************************************************
 * Empty
 ****************************************************************** */
-double InputConverter::TimeStringToValue_(std::string& time_value)
+double InputConverter::TimeStringToValue_(const std::string& time_value)
 {
   double time;
   char* tmp = strcpy(new char[time_value.size() + 1], time_value.c_str());
@@ -490,25 +467,26 @@ double InputConverter::TimeStringToValue_(std::string& time_value)
 /* ******************************************************************
 * Get default time unit from units, convert plain time values if not seconds.
 ****************************************************************** */
-double InputConverter::TimeCharToValue_(char* time_value)
+double InputConverter::TimeCharToValue_(const char* time_value)
 {
   double time;
-  char* char_array;
-  
-  char_array = strtok(time_value, ";, ");
-  time = std::strtod(char_array, NULL);
-  char_array = strtok(NULL, ";,");
+  char* tmp1 = strcpy(new char[strlen(time_value) + 1], time_value);
+  char* tmp2 = strtok(tmp1, ";, ");
 
-  if (char_array != NULL) {
-    if (strcmp(char_array, "y") == 0) { 
+  time = std::strtod(tmp2, NULL);
+  tmp2 = strtok(NULL, ";,");
+
+  if (tmp2 != NULL) {
+    if (strcmp(tmp2, "y") == 0) { 
       time *= 365.25 * 24.0 * 60.0 * 60.0;
-    } else if (strcmp(char_array, "d") == 0) {
+    } else if (strcmp(tmp2, "d") == 0) {
       time *= 24.0*60.0*60.0;
-    } else if (strcmp(char_array, "h") == 0) {
+    } else if (strcmp(tmp2, "h") == 0) {
       time *= 60.0*60.0;
     }
   }
   
+  delete[] tmp1;
   return time;
 }
 
@@ -516,19 +494,20 @@ double InputConverter::TimeCharToValue_(char* time_value)
 /* ******************************************************************
 * Converts coordinate string to an array of doubles.
 ****************************************************************** */
-std::vector<double> InputConverter::MakeCoordinates_(char* char_array)
+std::vector<double> InputConverter::MakeCoordinates_(const std::string& array)
 {
   std::vector<double> coords;
-  char* tmp;
-  tmp = strtok(char_array, "(, ");
+  char* tmp1 = strcpy(new char[array.size() + 1], array.c_str());
+  char* tmp2 = strtok(tmp1, "(, ");
 
-  while (tmp != NULL) {
-    std::string str(tmp);
+  while (tmp2 != NULL) {
+    std::string str(tmp2);
     boost::algorithm::trim(str);
     coords.push_back(std::strtod(str.c_str(), NULL));
-    tmp = strtok(NULL, ",");
+    tmp2 = strtok(NULL, ",");
   }
 
+  delete[] tmp1;
   return coords;
 }
 

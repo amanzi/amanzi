@@ -15,7 +15,6 @@
 
 //TPLs
 #include <xercesc/dom/DOM.hpp>
-#include <xercesc/util/XMLString.hpp>
 
 // Amanzi's
 #include "errors.hh"
@@ -41,6 +40,8 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     *vo_->os() << "Translating cycle driver" << std::endl;
   }
 
+  XString mm;
+
   // parse available PKs
   std::map<std::string, bool> pk_state;
   std::map<std::string, std::string> pk_model;
@@ -48,10 +49,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   int transient_model(0);
   char* tagname;
 
-  XMLCh* xstr = XMLString::transcode("process_kernels");
-  DOMNodeList* node_list = doc_->getElementsByTagName(xstr);
-  XMLString::release(&xstr);
-
+  DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("process_kernels"));
   DOMNode* node = node_list->item(0);
   DOMNodeList* children = node->getChildNodes();
 
@@ -59,44 +57,36 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
-    tagname = XMLString::transcode(inode->getNodeName());
+    tagname = mm.transcode(inode->getNodeName());
     if (strcmp(tagname, "comments") == 0) continue;
 
-    char* state = GetAttributeValueC_(static_cast<DOMElement*>(inode), "state");
-    pk_state[tagname] = (strcmp(state, "on") == 0);
+    std::string state = GetAttributeValueS_(static_cast<DOMElement*>(inode), "state");
+    pk_state[tagname] = (strcmp(state.c_str(), "on") == 0);
 
     if (strcmp(tagname, "flow") == 0) {
-      char* model = GetAttributeValueC_(static_cast<DOMElement*>(inode), "model");
-      pk_model["flow"] = TrimString_(model);
-      XMLString::release(&model);
-
+      std::string model = GetAttributeValueS_(static_cast<DOMElement*>(inode), "model");
+      pk_model["flow"] = model;
       transient_model += 4 * pk_state[tagname];
     } else if (strcmp(tagname, "chemistry") == 0) {
-      char* model = GetAttributeValueC_(static_cast<DOMElement*>(inode), "engine");
-      pk_model["chemistry"] = TrimString_(model);
-      XMLString::release(&model);
-
+      std::string model = GetAttributeValueS_(static_cast<DOMElement*>(inode), "engine");
+      pk_model["chemistry"] = model;
       transient_model += pk_state[tagname];
     } else if (strcmp(tagname, "transport") == 0) {
       transient_model += 2 * pk_state[tagname];
     }
-    XMLString::release(&state);
-    XMLString::release(&tagname);
   }
 
   // parse defaults of execution_controls 
-  xstr = XMLString::transcode("execution_controls");
-  node_list = doc_->getElementsByTagName(xstr);
-  XMLString::release(&xstr);
-
   bool flag;
+  node_list = doc_->getElementsByTagName(mm.transcode("execution_controls"));
   node = getUniqueElementByTagNames_(node_list->item(0), "execution_control_defaults", flag);
 
   double t0;
-  char *method, *method_d, *dt0_d, *filename;
+  char *method;
+  std::string method_d, dt0_d, filename;
 
-  method_d = GetAttributeValueC_(static_cast<DOMElement*>(node), "method");
-  dt0_d = GetAttributeValueC_(static_cast<DOMElement*>(node), "init_dt");
+  method_d = GetAttributeValueS_(static_cast<DOMElement*>(node), "method");
+  dt0_d = GetAttributeValueS_(static_cast<DOMElement*>(node), "init_dt");
 
   // parse execution_control
   std::map<double, std::string> tp_method, tp_mode;
@@ -108,26 +98,24 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
-    tagname = XMLString::transcode(inode->getNodeName());
+    tagname = mm.transcode(inode->getNodeName());
     if (strcmp(tagname, "execution_control") == 0) {
       // generate fake name (will be created later)
       std::stringstream ss;
       ss << "TP " << i;
       std::string name = ss.str();
 
-      t0 = TimeCharToValue_(GetAttributeValueC_(static_cast<DOMElement*>(inode), "start"));
+      t0 = TimeCharToValue_(GetAttributeValueS_(static_cast<DOMElement*>(inode), "start").c_str());
 
-      tp_mode[t0] = GetAttributeValueC_(static_cast<DOMElement*>(inode), "mode");
-      tp_t1[t0] = TimeCharToValue_(GetAttributeValueC_(static_cast<DOMElement*>(inode), "end"));
-      tp_method[t0] = GetAttributeValueC_(static_cast<DOMElement*>(inode), "method", false, method_d);
-      tp_dt0[t0] = TimeCharToValue_(GetAttributeValueC_(static_cast<DOMElement*>(inode), "init_dt", false, dt0_d));
+      tp_mode[t0] = GetAttributeValueS_(static_cast<DOMElement*>(inode), "mode");
+      tp_t1[t0] = TimeStringToValue_(GetAttributeValueS_(static_cast<DOMElement*>(inode), "end"));
+      tp_method[t0] = GetAttributeValueS_(static_cast<DOMElement*>(inode), "method", false, method_d);
+      tp_dt0[t0] = TimeStringToValue_(GetAttributeValueS_(static_cast<DOMElement*>(inode), "init_dt", false, dt0_d));
       tp_max_cycles[t0] = GetAttributeValueD_(static_cast<DOMElement*>(inode), "max_cycles", false, 10000000);
 
-      filename = GetAttributeValueC_(static_cast<DOMElement*>(inode), "restart", false, NULL);
+      filename = GetAttributeValueS_(static_cast<DOMElement*>(inode), "restart", false, "");
     }
-    XMLString::release(&tagname);
   }
-  XMLString::release(&method_d);
 
   // sort time periods
   // std::sort(tp_t1.begin(), tp_t1.end());
@@ -222,7 +210,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   }
 
   out_list.sublist("Time Period Control") = TranslateTimePeriodControls_();
-  if (filename != NULL) {
+  if (filename.size() > 0) {
     out_list.sublist("Restart").set<std::string>("File Name", filename);
   }
   out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
@@ -239,11 +227,13 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   Teuchos::ParameterList out_list;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Translating time period controls" << std::endl;
   }
 
   // get the default time steps
   bool flag;
+  XString mm;
   DOMNode* node = getUniqueElementByTagNames_("execution_controls", "execution_control_defaults", flag);
 
   double dt_init_d, dt_max_d;
@@ -254,10 +244,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   Teuchos::Array<double> time_init, dt_init, dt_max;
   std::map<double, double> time_map, dt_max_map;
 
-  XMLCh* xstr = XMLString::transcode("hydrostatic");
-  DOMNodeList* children = doc_->getElementsByTagName(xstr);
-  XMLString::release(&xstr);
-
+  DOMNodeList* children = doc_->getElementsByTagName(mm.transcode("hydrostatic"));
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
@@ -268,10 +255,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   }
 
   // add these last so that the default initial time steps get overwritten
-  xstr = XMLString::transcode("execution_control");
-  children = doc_->getElementsByTagName(xstr);
-  XMLString::release(&xstr);
-
+  children = doc_->getElementsByTagName(mm.transcode("execution_control"));
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;

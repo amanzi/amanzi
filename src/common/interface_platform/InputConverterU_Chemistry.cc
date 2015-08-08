@@ -15,7 +15,6 @@
 
 //TPLs
 #include <xercesc/dom/DOM.hpp>
-#include <xercesc/util/XMLString.hpp>
 
 // Amanzi's
 #include "errors.hh"

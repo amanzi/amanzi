@@ -15,7 +15,6 @@
 
 //TPLs
 #include <xercesc/dom/DOM.hpp>
-#include <xercesc/util/XMLString.hpp>
 
 // Amanzi's
 #include "errors.hh"
@@ -31,7 +30,7 @@ namespace AmanziInput {
 XERCES_CPP_NAMESPACE_USE
 
 /* ******************************************************************
-* Create flow list.
+* Create transport list.
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateTransport_()
 {
@@ -42,9 +41,10 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   }
 
   char *text_content, *tagname;
-  XMLCh* xstr;
   DOMNodeList *node_list, *children;
   DOMNode* node;
+
+  XString mm;
 
   // process CFL number
   bool flag;
@@ -52,9 +52,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
 
   node = getUniqueElementByTagNames_("unstructured_controls", "unstr_transport_controls", "cfl", flag);
   if (flag) {
-    text_content = XMLString::transcode(node->getTextContent());
+    text_content = mm.transcode(node->getTextContent());
     cfl = strtod(text_content, NULL);
-    XMLString::release(&text_content);
   }
 
   // set defaults for transport
@@ -69,14 +68,14 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
 
   // overwrite data from expert parameters  
   node = getUniqueElementByTagNames_("unstructured_controls", "unstr_transport_controls", "sub_cycling", flag);
-  text_content = XMLString::transcode(node->getTextContent());
+  text_content = mm.transcode(node->getTextContent());
   if (flag) {
     out_list.set<bool>("transport subcycling", (strcmp(text_content, "on") == 0));
   }
 
   int poly_order(0);
   node = getUniqueElementByTagNames_("unstructured_controls", "unstr_transport_controls", "algorithm", flag);
-  text_content = XMLString::transcode(node->getTextContent());
+  text_content = mm.transcode(node->getTextContent());
   if (strcmp(text_content, "explicit first-order") == 0) {
     out_list.set<int>("spatial discretization order", 1);
     out_list.set<int>("temporal discretization order", 1);
@@ -87,7 +86,6 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   } else {
     ThrowErrorMissattr_("unstructured_controls", "element", "explicit first-order", "unstr_transport_controls");
   }
-  XMLString::release(&text_content);
 
   Teuchos::ParameterList& trp_lift = out_list.sublist("reconstruction");
   trp_lift.set<int>("polynomial order", poly_order);
@@ -95,21 +93,15 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   trp_lift.set<bool>("limiter extension for transport", true);
 
   // check if we need to write a dispersivity sublist
-  xstr = XMLString::transcode("dispersion_tensor");
-  bool dispersion = doc_->getElementsByTagName(xstr)->getLength() > 0;
-  XMLString::release(&xstr);
+  bool dispersion = doc_->getElementsByTagName(mm.transcode("dispersion_tensor"))->getLength() > 0;
 
   if (!dispersion) {
-    xstr = XMLString::transcode("tortuosity");
-    dispersion = doc_->getElementsByTagName(xstr)->getLength() > 0;
-    XMLString::release(&xstr);
+    dispersion = doc_->getElementsByTagName(mm.transcode("tortuosity"))->getLength() > 0;
   }
 
   // create dispersion list
   if (dispersion) {
-    xstr = XMLString::transcode("materials");
-    node_list = doc_->getElementsByTagName(xstr);
-    XMLString::release(&xstr);
+    node_list = doc_->getElementsByTagName(mm.transcode("materials"));
 
     Teuchos::ParameterList& mat_list = out_list.sublist("material properties");
     mat_list.set<std::string>("numerical method", "two-point flux approximation");
@@ -119,12 +111,12 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       DOMNode* inode = children->item(i);
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
-      tagname = XMLString::transcode(inode->getNodeName());
+      tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "material") != 0) continue;
 
       // -- regions
       node = getUniqueElementByTagNames_(inode, "assigned_regions", flag);
-      std::vector<std::string> regions = GetElementVectorS_(static_cast<DOMElement*>(node));
+      std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
       Teuchos::ParameterList& tmp_list = mat_list.sublist(tagname);
       tmp_list.set<Teuchos::Array<std::string> >("regions", regions);
@@ -133,8 +125,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       node = getUniqueElementByTagNames_(inode, "mechanical_properties", "dispersion_tensor", flag);
       if (flag) {
         double al, alh, alv, at, ath, atv;
-        char* model = GetAttributeValueC_(static_cast<DOMElement*>(node), "type");
-        if (strcmp(model, "uniform_isotropic") == 0) { 
+        std::string model = GetAttributeValueS_(static_cast<DOMElement*>(node), "type");
+        if (strcmp(model.c_str(), "uniform_isotropic") == 0) { 
           tmp_list.set<std::string>("model", "Bear");
 
           al = GetAttributeValueD_(static_cast<DOMElement*>(node), "alpha_l");
@@ -142,7 +134,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
 
           tmp_list.sublist("parameters for Bear").set<double>("alphaL", al)
                                                  .set<double>("alphaT", at);
-        } else if (strcmp(model, "burnett_frind") == 0) {
+        } else if (strcmp(model.c_str(), "burnett_frind") == 0) {
           tmp_list.set<std::string>("model", "Burnett-Frind");
 
           al = GetAttributeValueD_(static_cast<DOMElement*>(node), "alpha_l");
@@ -152,7 +144,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
           tmp_list.sublist("parameters for Burnett-Frind")
               .set<double>("alphaL", al).set<double>("alphaTH", ath)
               .set<double>("alphaTH", atv);
-        } else if (strcmp(model, "lichtner_kelkar_robinson") == 0) {
+        } else if (strcmp(model.c_str(), "lichtner_kelkar_robinson") == 0) {
           tmp_list.set<std::string>("model", "Lichtner-Kelkar-Robinson");
 
           alh = GetAttributeValueD_(static_cast<DOMElement*>(node), "alpha_lh");
@@ -164,7 +156,6 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
               .set<double>("alphaLH", alh).set<double>("alphaLV", alv)
               .set<double>("alphaTH", ath).set<double>("alphaTH", atv);
         } 
-        XMLString::release(&model);
       }
 
       // -- tortousity
@@ -173,8 +164,6 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
         double val = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
         tmp_list.set<double>("aqueous tortuosity", val);
       }
-
-      XMLString::release(&tagname);
     }
   }
 
@@ -191,17 +180,14 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       DOMNode* inode = children->item(i);
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
-      tagname = XMLString::transcode(inode->getNodeName());
+      tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "solute") != 0) continue;
 
       double val = GetAttributeValueD_(static_cast<DOMElement*>(inode), "coefficient_of_diffusion");
-      text_content = XMLString::transcode(inode->getTextContent());
+      text_content = mm.transcode(inode->getTextContent());
 
       aqueous_names.push_back(TrimString_(text_content));
       aqueous_values.push_back(val);
-
-      XMLString::release(&text_content);
-      XMLString::release(&tagname);
     }
 
     diff_list.set<Teuchos::Array<std::string> >("aqueous names", aqueous_names);
@@ -221,26 +207,24 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       DOMNode* inode = children->item(i);
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
-      tagname = XMLString::transcode(inode->getNodeName());
+      tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "solute") != 0) continue;
 
       double val = GetAttributeValueD_(static_cast<DOMElement*>(inode), "coefficient_of_diffusion");
-      text_content = XMLString::transcode(inode->getTextContent());
+      text_content = mm.transcode(inode->getTextContent());
 
       gaseous_names.push_back(TrimString_(text_content));
       gaseous_values.push_back(val);
-
-      XMLString::release(&text_content);
-      XMLString::release(&tagname);
     }
 
     diff_list.set<Teuchos::Array<std::string> >("gaseous names", gaseous_names);
     diff_list.set<Teuchos::Array<double> >("gaseous values", gaseous_values);
   }
 
+  // now generate the source lists
+  Teuchos::ParameterList src_list = TranslateTransportSources_();
+
     /*
-      // now generate the source lists
-      Teuchos::ParameterList src_list = CreateTransportSrcList_(plist);
       if (src_list.begin() != src_list.end()) { // the source lists are not empty
         out_list.sublist("source terms") = src_list;
       }
@@ -346,6 +330,17 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   out_list.set<int>("number of gaseous components", phases_["gas"].size());
 
   out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
+  return out_list;
+}
+
+
+/* ******************************************************************
+* Create list of transport sources.
+****************************************************************** */
+Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
+{
+  Teuchos::ParameterList out_list;
+
   return out_list;
 }
 

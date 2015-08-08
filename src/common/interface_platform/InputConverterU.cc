@@ -64,21 +64,20 @@ void InputConverterU::ParseSolutes_()
   char* tagname;
   char* text_content;
 
-  DOMNode* inode = doc_->getElementsByTagName(XMLString::transcode("phases"))->item(0);
+  XString mm;
+
+  DOMNode* inode = doc_->getElementsByTagName(mm.transcode("phases"))->item(0);
   DOMNode* node = getUniqueElementByTagsString_(inode, "liquid_phase, dissolved_components, solutes", flag);
 
   DOMNodeList* children = node->getChildNodes();
   for (int i = 0; i < children->getLength(); ++i) {
     inode = children->item(i);
-    tagname = XMLString::transcode(inode->getNodeName());
-    text_content = XMLString::transcode(inode->getTextContent());
+    tagname = mm.transcode(inode->getNodeName());
+    text_content = mm.transcode(inode->getTextContent());
 
     if (strcmp(tagname, "solute") == 0) {
       phases_["water"].push_back(TrimString_(text_content));
     }
-
-    XMLString::release(&text_content);
-    XMLString::release(&tagname);
   }
 }
 
@@ -94,11 +93,11 @@ Teuchos::ParameterList InputConverterU::TranslateVerbosity_()
   DOMNode* node_attr;
   DOMNamedNodeMap* attr_map;
   char* text_content;
+
+  XString mm;
     
   // get execution contorls node
-  XMLCh* xstr = XMLString::transcode("execution_controls");
-  node_list = doc_->getElementsByTagName(xstr);
-  XMLString::release(&xstr);
+  node_list = doc_->getElementsByTagName(mm.transcode("execution_controls"));
   
   for (int i = 0; i < node_list->getLength(); i++) {
     DOMNode* inode = node_list->item(i);
@@ -110,19 +109,17 @@ Teuchos::ParameterList InputConverterU::TranslateVerbosity_()
         DOMNode* jnode = children->item(j);
 
         if (DOMNode::ELEMENT_NODE == jnode->getNodeType()) {
-          char* tagname = XMLString::transcode(jnode->getNodeName());
+          char* tagname = mm.transcode(jnode->getNodeName());
           if (std::string(tagname) == "verbosity") {
             attr_map = jnode->getAttributes();
-            node_attr = attr_map->getNamedItem(XMLString::transcode("level"));
+            node_attr = attr_map->getNamedItem(mm.transcode("level"));
             if (node_attr) {
-              text_content = XMLString::transcode(node_attr->getNodeValue());
+              text_content = mm.transcode(node_attr->getNodeValue());
               vlist.sublist("VerboseObject").set<std::string>("Verbosity Level", TrimString_(text_content));
-              XMLString::release(&text_content);
               break;
             } else {
               ThrowErrorIllformed_("verbosity", "value", "level");
             }
-            XMLString::release(&text_content);
           }
         }
       }
