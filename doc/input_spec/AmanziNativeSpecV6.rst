@@ -1718,6 +1718,9 @@ but require special treatment.
     <ParameterList name="boundary conditions">
       <ParameterList name="geochemical conditions">
         <ParameterList name="EAST CRIB">   <!-- user defined name -->
+          <Parameter name="Times" type="Array(double)" value="{0.0, 100.0}"/>
+          <Parameter name="Geochemical Conditions" type="Array(string)" value="{cond1, cond2}"/>
+          <Parameter name="Time Functions" type="Array(string)" value="{constant, constant}"/>
           <Parameter name="regions" type="Array(string)" value="{CRIB1}"/>
         </ParameterList>
       </ParameterList>

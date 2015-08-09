@@ -110,15 +110,16 @@ class InputConverter {
 
   // -- extract existing atrribute values
   int GetAttributeValueL_(
-      xercesc::DOMElement* elem, const char* attr_name, bool exception = false, int val = 0);
+      xercesc::DOMElement* elem, const char* attr_name, bool exception = true, int val = 0);
   double GetAttributeValueD_(
-      xercesc::DOMElement* elem, const char* attr_name, bool exception = false, double val = 0.0);
+      xercesc::DOMElement* elem, const char* attr_name, bool exception = true, double val = 0.0);
   std::string GetAttributeValueS_(
-      xercesc::DOMElement* elem, const char* attr_name, bool exception = false, std::string val = "");
+      xercesc::DOMElement* elem, const char* attr_name, bool exception = true, std::string val = "");
   std::vector<double> GetAttributeVector_(
       xercesc::DOMElement* elem, const char* attr_name);
 
   // -- extract and verify children
+  //    the name of identical nodes will be extracted too
   std::vector<xercesc::DOMNode*> getSameChildNodes_(
       xercesc::DOMNode* node, std::string& name, bool& flag, bool exception = false);
 

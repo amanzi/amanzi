@@ -374,7 +374,7 @@ DOMNode* InputConverter::getUniqueElementByTagsString_(
 
 
 /* ******************************************************************
-* Extracts childs and verifies that their have the common names.
+* Extracts childs and verifies that their have the common tagname.
 * Ignores comments... I do not know how to filter them.
 ****************************************************************** */
 std::vector<DOMNode*> InputConverter::getSameChildNodes_(

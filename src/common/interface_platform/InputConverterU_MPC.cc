@@ -260,9 +260,9 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
-    double t = GetAttributeValueD_(static_cast<DOMElement*>(node), "start");
-    double dt = GetAttributeValueD_(static_cast<DOMElement*>(node), "init_dt");
-    double dt_max = GetAttributeValueD_(static_cast<DOMElement*>(node), "max_dt");
+    double t = GetAttributeValueD_(static_cast<DOMElement*>(inode), "start");
+    double dt = GetAttributeValueD_(static_cast<DOMElement*>(inode), "init_dt", false, dt_init_d);
+    double dt_max = GetAttributeValueD_(static_cast<DOMElement*>(inode), "max_dt", false, dt_max_d);
     time_map[t] = dt;
     dt_max_map[t] = dt_max;
   }

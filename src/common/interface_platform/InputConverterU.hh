@@ -80,6 +80,7 @@ class InputConverterU : public InputConverter {
 
   // for analysis
   std::vector<std::string> vv_bc_regions_;
+  std::vector<std::string> vv_src_regions_;
 
   Teuchos::ParameterList verb_list_;
   VerboseObject* vo_;
