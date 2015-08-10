@@ -36,8 +36,8 @@ TEST(CONVERTER_BASE) {
   if (MyPID == 0) std::cout << "Test: convert transport test" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/converter_u_base.xml";
-  // std::string xmlFileName = "test/porflow.xml";
+  // std::string xmlFileName = "test/converter_u_base.xml";
+  std::string xmlFileName = "test/porflow.xml";
 
   Amanzi::AmanziInput::InputConverterU converter;
   converter.Init(xmlFileName);

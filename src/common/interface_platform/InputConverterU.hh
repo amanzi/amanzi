@@ -80,6 +80,9 @@ class InputConverterU : public InputConverter {
 
   void RegisterPKsList_(Teuchos::ParameterList& pk_tree, Teuchos::ParameterList& pks_list);
 
+  Teuchos::ParameterList CreateAnalysis_();
+  Teuchos::ParameterList CreateRegionAll_();
+
  private:
   int dim_;
   Tree tree_;
@@ -98,6 +101,7 @@ class InputConverterU : public InputConverter {
   // for analysis
   std::vector<std::string> vv_bc_regions_;
   std::vector<std::string> vv_src_regions_;
+  std::vector<std::string> vv_obs_regions_;
 
   Teuchos::ParameterList verb_list_;
   VerboseObject* vo_;

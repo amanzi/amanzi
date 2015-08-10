@@ -96,8 +96,9 @@ void InputConverter::ParseConstants_()
 
   // process constants: we ignore type of generic constants.
   node_list = doc_->getElementsByTagName(mm.transcode("constants"));
-  children = node_list->item(0)->getChildNodes();
+  if (node_list->getLength() == 0) return;
 
+  children = node_list->item(0)->getChildNodes();
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
@@ -125,9 +126,9 @@ void InputConverter::ParseConstants_()
 
       if (constants_.find(name) != constants_.end()) {
         Errors::Message msg;
-        msg << "Amanzi::InputConverter: an error occurred during parsing node \"constants\"\n";
-        msg << "  Name \"" << name << "\" is repeated.\n";
-        msg << "  Please correct and try again \n";
+        msg << "An error occurred during parsing node \"constants\"\n";
+        msg << "Name \"" << name << "\" is repeated.\n";
+        msg << "Please correct and try again \n";
         Exceptions::amanzi_throw(msg);
       } 
 
@@ -407,9 +408,9 @@ std::vector<DOMNode*> InputConverter::getSameChildNodes_(
   if (!flag) {
     char* tagname = mm.transcode(node->getNodeName());
     Errors::Message msg;
-    msg << "Amanzi::InputConverter: node \"" << tagname << "\" must have same elements\n";
-    if (n) msg << "  The first element is \"" << name << "\".\n";
-    msg << "  Please correct and try again.\n";
+    msg << "Node \"" << tagname << "\" must have same elements\n";
+    if (n) msg << "The first element is \"" << name << "\".\n";
+    msg << "Please correct and try again.\n";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -426,7 +427,7 @@ double InputConverter::GetAttributeValueD_(
   double val;
   XString mm;
 
-  if (elem->hasAttribute(mm.transcode(attr_name))) {
+  if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
     char* text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
     if (constants_.find(text) != constants_.end()) {  // check constants list
       val = std::strtod(constants_[text].c_str(), NULL);
@@ -453,7 +454,7 @@ int InputConverter::GetAttributeValueL_(
   int val;
   XString mm;
 
-  if (elem->hasAttribute(mm.transcode(attr_name))) {
+  if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
     char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
     val = std::strtol(text_content, NULL, 10);
   } else if (! exception) {
@@ -476,7 +477,7 @@ std::string InputConverter::GetAttributeValueS_(
   std::string val;
   XString mm;
 
-  if (elem->hasAttribute(mm.transcode(attr_name))) {
+  if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
     val = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
     boost::algorithm::trim(val);
   } else if (!exception) {
@@ -498,7 +499,7 @@ std::vector<double> InputConverter::GetAttributeVector_(DOMElement* elem, const 
   std::vector<double> val;
   XString mm;
 
-  if (elem->hasAttribute(mm.transcode(attr_name))) {
+  if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
     char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
     val = MakeCoordinates_(text_content);
   } else {
@@ -527,10 +528,10 @@ std::string InputConverter::GetAttributeValueS_(
   XString mm;
   char* tagname = mm.transcode(elem->getNodeName());
   Errors::Message msg;
-  msg << "Amanzi::InputConverter: validation of attribute \"" << attr_name << "\""
+  msg << "Validation of attribute \"" << attr_name << "\""
       << " for element \"" << tagname << "\" failed.\n";
-  msg << "  Available options: \"" << options << "\".\n";
-  msg << "  Please correct and try again.\n";
+  msg << "Available options: \"" << options << "\".\n";
+  msg << "Please correct and try again.\n";
   Exceptions::amanzi_throw(msg);
 
   return val;
@@ -547,8 +548,8 @@ int InputConverter::GetPosition_(const std::vector<std::string>& names, const st
   }
 
   Errors::Message msg;
-  msg << "Amanzi::InputConverter: vector of names (e.g. solutes) has no \"" << name << "\".\n";
-  msg << "  Please correct and try again.\n";
+  msg << "Vector of names (e.g. solutes) has no \"" << name << "\".\n";
+  msg << "Please correct and try again.\n";
   Exceptions::amanzi_throw(msg);
 
   return -1;
@@ -659,9 +660,9 @@ void InputConverter::ThrowErrorIllformed_(
     const std::string& section, const std::string& type, const std::string& ill_formed)
 {
   Errors::Message msg;
-  msg << "Amanzi::InputConverter: an error occurred during parsing node \"" << section << "\"\n";
-  msg << "  Missing or ill-formed " << type << " for \"" << ill_formed << "\".\n";
-  msg << "  Please correct and try again.\n";
+  msg << "An error occurred during parsing node \"" << section << "\"\n";
+  msg << "Missing or ill-formed " << type << " for \"" << ill_formed << "\".\n";
+  msg << "Please correct and try again.\n";
   Exceptions::amanzi_throw(msg);
 }
 
@@ -673,10 +674,10 @@ void InputConverter::ThrowErrorIllformed_(
     const std::string& section, const std::string& type, const std::string& ill_formed, const std::string& options)
 {
   Errors::Message msg;
-  msg << "Amanzi::InputTranslator: an error occurred during parsing node \"" << section << "\"\n";
-  msg << "  Missing or ill-formed " << type << " for \"" << ill_formed << "\"\n";
-  msg << "  Valid options are: " << options << "\n";
-  msg << "  Please correct and try again.\n" ;
+  msg << "An error occurred during parsing node \"" << section << "\"\n";
+  msg << "Missing or ill-formed " << type << " for \"" << ill_formed << "\"\n";
+  msg << "Valid options are: " << options << "\n";
+  msg << "Please correct and try again.\n" ;
   Exceptions::amanzi_throw(msg);
 }
 
@@ -688,9 +689,9 @@ void InputConverter::ThrowErrorMissattr_(
     const std::string& section, const std::string& type, const std::string& missing, const std::string& name)
 {
   Errors::Message msg;
-  msg << "Amanzi::InputConverter: an error occurred during parsing node \"" << section << "\"\n";
-  msg << "  No " << type << " \"" << missing << "\" found for \"" << name << "\".\n";
-  msg << "  Please correct and try again \n";
+  msg << "An error occurred during parsing node \"" << section << "\"\n";
+  msg << "No " << type << " \"" << missing << "\" found for \"" << name << "\".\n";
+  msg << "Please correct and try again \n";
   Exceptions::amanzi_throw(msg);
 }
 

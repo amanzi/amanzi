@@ -244,7 +244,7 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
     }
 
     if (generate) {
-      out_list.sublist("Unstructured").sublist("Generate Mesh").sublist("Uniform Structured") = mesh_list;
+      out_list.sublist("Unstructured").sublist("Generate Mesh") = mesh_list;
     } else if (read) {
       out_list.sublist("Unstructured").sublist("Read Mesh File") = mesh_list;
     } else {
@@ -469,6 +469,29 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
       }
     }
   }
+
+  out_list.sublist("All") = CreateRegionAll_();
+  return out_list;
+}
+
+
+/* ******************************************************************
+* Create global region.
+****************************************************************** */
+Teuchos::ParameterList InputConverterU::CreateRegionAll_()
+{
+  Teuchos::ParameterList out_list;
+  Teuchos::ParameterList& all = out_list.sublist("Region: Box");
+
+  std::vector<double> low(2, -1e99), high(2, 1e99);
+
+  if (dim_ == 3) {
+    low.push_back(-1e99);
+    high.push_back(1e99);
+  }
+
+  all.set<Teuchos::Array<double> >("Low Coordinate", low);
+  all.set<Teuchos::Array<double> >("High Coordinate", high);
 
   return out_list;
 }

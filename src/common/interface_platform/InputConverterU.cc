@@ -39,6 +39,8 @@ Teuchos::ParameterList InputConverterU::Translate()
   // parsing of miscalleneous lists
   ParseSolutes_();
   ParseConstants_();
+
+  out_list.set<bool>("Native Unstructured Input", "true");
   
   out_list.sublist("Mesh") = TranslateMesh_();
   out_list.sublist("Domain").set<int>("Spatial Dimension", dim_);
@@ -51,6 +53,9 @@ Teuchos::ParameterList InputConverterU::Translate()
 
   Teuchos::ParameterList& cd_list = out_list.sublist("Cycle Driver");
   out_list.sublist("PKs") = TranslatePKs_(cd_list);
+
+  // analysis list
+  out_list.sublist("Analysis") = CreateAnalysis_();
   
   return out_list;
 }
@@ -127,6 +132,22 @@ Teuchos::ParameterList InputConverterU::TranslateVerbosity_()
     }
   }
   return vlist;
+}
+
+
+/* ******************************************************************
+* Analysis list can used by special tools.
+****************************************************************** */
+Teuchos::ParameterList InputConverterU::CreateAnalysis_()
+{
+  Teuchos::ParameterList out_list;
+  out_list.set<Teuchos::Array<std::string> >("used boundary condition regions", vv_bc_regions_);
+  out_list.set<Teuchos::Array<std::string> >("used source regions", vv_src_regions_);
+  out_list.set<Teuchos::Array<std::string> >("used observation regions", vv_obs_regions_);
+
+  out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
+
+  return out_list;
 }
 
 }  // namespace AmanziInput

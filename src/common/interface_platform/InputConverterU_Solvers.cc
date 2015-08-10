@@ -98,7 +98,7 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
     Teuchos::ParameterList& method_list = aztecoo_list.sublist(method);
     method_list.set<double>("error tolerance", tol);
     method_list.set<int>("maximum number of iterations", maxiter);
-    method_list.sublist("VerboseObject") = verb_list_;
+    method_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
   }
 
   // add default PCG solver
@@ -109,7 +109,7 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
     Teuchos::ParameterList& method_list = pcg_list.sublist("pcg parameters");
     method_list.set<double>("error tolerance", tol);
     method_list.set<int>("maximum number of iterations", maxiter);
-    method_list.sublist("VerboseObject") = verb_list_;
+    method_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
   }
 
   // add default "GMRES for Newton" solver
@@ -123,7 +123,7 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
     criteria.push_back("relative rhs");
     criteria.push_back("relative residual");
     method_list.set<Teuchos::Array<std::string> >("convergence criteria", criteria);
-    method_list.sublist("VerboseObject") = verb_list_;
+    method_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
   }
 
   return out_list;
