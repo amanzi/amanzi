@@ -16,11 +16,123 @@
 namespace Amanzi {
 namespace AmanziInput {
 
+// For saving a bit of typing.
+using namespace std;
+using namespace xercesc;
+
 // Internally-used stuff.
 namespace {
 
-typedef std::list<ParmParse::PP_entry>::iterator list_iterator;
-typedef std::list<ParmParse::PP_entry>::const_iterator const_list_iterator;
+typedef list<ParmParse::PP_entry>::iterator list_iterator;
+typedef list<ParmParse::PP_entry>::const_iterator const_list_iterator;
+
+// Construct a ParmParse prefix name from sets of strings.
+string MakePPPrefix(const string& s1)
+{
+  return s1;
+}
+
+string MakePPPrefix(const string& s1, const string& s2)
+{
+  return s1 + string(".") + s2;
+}
+
+string MakePPPrefix(const string& s1, const string& s2, const string& s3)
+{
+  return s1 + string(".") + s2 + string(".") + s3;
+}
+
+string MakePPPrefix(const string& s1, const string& s2, const string& s3, const string& s4)
+{
+  return s1 + string(".") + s2 + string(".") + s3 + string(".") + s4;
+}
+
+// Construct a ParmParse entry from sets of strings/values.
+list<string> MakePPEntry(const string& s1)
+{
+  list<string> pp;
+  pp.push_back(s1);
+  return pp;
+}
+
+list<string> MakePPEntry(double d)
+{
+  list<string> pp;
+  stringstream s;
+  s << d << '\0';
+  pp.push_back(s.str());
+  return pp;
+}
+
+list<string> MakePPEntry(int i)
+{
+  list<string> pp;
+  stringstream s;
+  s << i << '\0';
+  pp.push_back(s.str());
+  return pp;
+}
+
+list<string> MakePPEntry(long i)
+{
+  list<string> pp;
+  stringstream s;
+  s << i << '\0';
+  pp.push_back(s.str());
+  return pp;
+}
+
+list<string> MakePPEntry(const string& s1, const string& s2)
+{
+  list<string> pp;
+  pp.push_back(s1);
+  pp.push_back(s2);
+  return pp;
+}
+
+list<string> MakePPEntry(const vector<string>& ss)
+{
+  list<string> pp;
+  for (size_t i = 0; i < ss.size(); ++i)
+    pp.push_back(ss[i]);
+  return pp;
+}
+
+list<string> MakePPEntry(const vector<double>& ds)
+{
+  list<string> pp;
+  for (size_t i = 0; i < ds.size(); ++i)
+  {
+    stringstream s;
+    s << ds[i] << '\0';
+    pp.push_back(s.str());
+  }
+  return pp;
+}
+
+list<string> MakePPEntry(const vector<int>& is)
+{
+  list<string> pp;
+  for (size_t i = 0; i < is.size(); ++i)
+  {
+    stringstream s;
+    s << is[i] << '\0';
+    pp.push_back(s.str());
+  }
+  return pp;
+}
+
+list<string> MakePPEntry(const vector<long>& is)
+{
+  list<string> pp;
+  for (size_t i = 0; i < is.size(); ++i)
+  {
+    stringstream s;
+    s << is[i] << '\0';
+    pp.push_back(s.str());
+  }
+  return pp;
+}
 
 #if 0
 static std::stack<std::string> prefix;
@@ -154,14 +266,119 @@ InputConverterS::~InputConverterS()
 
 void InputConverterS::ParseUnits()
 {
-  std::list<ParmParse::PP_entry> table;
-  ParmParse::appendTable(table);
+  // Units are supposedly not supported yet. I guess we'll find out!
 }
 
 void InputConverterS::ParseDefinitions()
 {
   std::list<ParmParse::PP_entry> table;
-  ParmParse::appendTable(table);
+  bool found;
+  DOMNode* macros = getUniqueElementByTagNames_("definitions", "macros", found);
+  if (found)
+  {
+    bool found;
+    vector<DOMNode*> time_macros = getChildren_(macros, "time_macro", found);
+    if (found)
+    {
+      for (size_t i = 0; i < time_macros.size(); ++i)
+      {
+        DOMElement* time_macro = static_cast<DOMElement*>(time_macros[i]);
+        string macro_name = GetAttributeValueS_(time_macro, "name");
+        vector<string> times;
+
+        // Before we look for specific times, check for other stuff.
+        string start = GetAttributeValueS_(time_macro, "start");
+        if (!start.empty())
+        {
+          // We've got one of the interval-based time macros.
+          // Get the other required elements.
+          string timestep_interval = GetAttributeValueS_(time_macro, "timestep_interval", true);
+          string stop = GetAttributeValueS_(time_macro, "stop", true);
+          
+          char* endptr = const_cast<char*>(start.c_str());
+          double t1 = strtod(start.c_str(), &endptr);
+          if (endptr == start.c_str()) // Not parsed!
+            ThrowErrorIllformed_("definitions->macros", "start", "time_macro");
+          endptr = const_cast<char*>(stop.c_str());
+          double t2 = strtod(stop.c_str(), &endptr);
+          if (endptr == stop.c_str()) // Not parsed!
+            ThrowErrorIllformed_("definitions->macros", "stop", "time_macro");
+          endptr = const_cast<char*>(timestep_interval.c_str());
+          double interval = strtod(timestep_interval.c_str(), &endptr);
+          if (endptr == timestep_interval.c_str()) // Not parsed!
+            ThrowErrorIllformed_("definitions->macros", "timestep_interval", "time_macro");
+
+          // Shove this macro into our table.
+          table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "time_macros", macro_name, "type"),
+                                              MakePPEntry("period")));
+          table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "time_macros", macro_name, "start"),
+                                              MakePPEntry(start)));
+          table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "time_macros", macro_name, "stop"),
+                                              MakePPEntry(stop)));
+          table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "time_macros", macro_name, "period"),
+                                              MakePPEntry(interval)));
+        }
+        else
+        {
+          // We're just looking for times.
+          bool found;
+          vector<DOMNode*> time_nodes = getChildren_(time_macro, "time", found, true);
+          vector<string> times;
+          for (size_t j = 0; j < time_nodes.size(); ++j)
+            times.push_back(XMLString::transcode(time_nodes[j]->getTextContent()));
+
+          table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "time_macros", macro_name, "type"),
+                                              MakePPEntry("times")));
+          table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "time_macros", macro_name, "times"),
+                                              MakePPEntry(times)));
+        }
+      }
+    }
+
+    vector<DOMNode*> cycle_macros = getChildren_(macros, "cycle_macro", found);
+    if (found)
+    {
+      for (size_t i = 0; i < cycle_macros.size(); ++i)
+      {
+        DOMElement* cycle_macro = static_cast<DOMElement*>(cycle_macros[i]);
+        string macro_name = GetAttributeValueS_(cycle_macro, "name");
+        vector<string> cycles;
+
+        string start = GetAttributeValueS_(cycle_macro, "start", true);
+        string timestep_interval = GetAttributeValueS_(cycle_macro, "timestep_interval", true);
+        string stop = GetAttributeValueS_(cycle_macro, "stop", true);
+         
+        // Verify the entries.
+        char* endptr = const_cast<char*>(start.c_str());
+        long c1 = strtol(start.c_str(), &endptr, 10);
+        if (endptr == start.c_str()) // Not parsed!
+          ThrowErrorIllformed_("definitions->macros", "start", "cycle_macro");
+        endptr = const_cast<char*>(stop.c_str());
+        long c2 = strtol(stop.c_str(), &endptr, 10);
+        if (endptr == stop.c_str()) // Not parsed!
+          ThrowErrorIllformed_("definitions->macros", "stop", "cycle_macro");
+        endptr = const_cast<char*>(timestep_interval.c_str());
+        long interval = strtol(timestep_interval.c_str(), &endptr, 10);
+        if (endptr == timestep_interval.c_str()) // Not parsed!
+          ThrowErrorIllformed_("definitions->macros", "timestep_interval", "cycle_macro");
+
+        // Shove this macro into our table.
+        table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "cycle_macro", macro_name, "type"),
+                                            MakePPEntry("period")));
+        table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "cycle_macro", macro_name, "start"),
+                                            MakePPEntry(start)));
+        table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "cycle_macro", macro_name, "stop"),
+                                            MakePPEntry(stop)));
+        table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "cycle_macro", macro_name, "period"),
+                                            MakePPEntry(interval)));
+      }
+    }
+
+    // FIXME: variable_macro not yet supported.
+  }
+
+  if (!table.empty())
+    ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseExecutionControls()

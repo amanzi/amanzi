@@ -374,6 +374,42 @@ DOMNode* InputConverter::getUniqueElementByTagsString_(
 
 
 /* ******************************************************************
+* Extracts children of the given node with the given name,
+****************************************************************** */
+std::vector<xercesc::DOMNode*> InputConverter::getChildren_(
+    xercesc::DOMNode* node, const std::string& name, bool& flag, bool exception)
+{
+  flag = false;
+
+  XString mm;
+  int n(0), m(0);
+  std::vector<DOMNode*> namedChildren;
+
+  DOMNodeList* children = node->getChildNodes();
+  for (int i = 0; i < children->getLength(); ++i) {
+    DOMNode* inode = children->item(i);
+    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+
+    char* text = mm.transcode(inode->getNodeName());
+    if (name == text) {
+      namedChildren.push_back(inode);
+    }
+  }
+
+  // exception
+  if (!flag and exception) {
+    char* tagname = mm.transcode(node->getNodeName());
+    Errors::Message msg;
+    msg << "Amanzi::InputConverter: node \"" << tagname << "\" must have same elements\n";
+    if (n) msg << "  The first element is \"" << name << "\".\n";
+    msg << "  Please correct and try again.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return namedChildren;
+}
+
+/* ******************************************************************
 * Extracts children and verifies that their have the common tagname.
 * The first child is defined as the first element other than comment.
 ****************************************************************** */
@@ -508,7 +544,6 @@ std::vector<double> InputConverter::GetAttributeVector_(DOMElement* elem, const 
 
   return val;
 }
-
 
 /* ******************************************************************
 * Extract atribute of type std::string.

@@ -118,6 +118,10 @@ class InputConverter {
   std::vector<double> GetAttributeVector_(
       xercesc::DOMElement* elem, const char* attr_name);
  
+  // -- extract all children of the given node with the given name.
+  std::vector<xercesc::DOMNode*> getChildren_(
+      xercesc::DOMNode* node, const std::string& name, bool& flag, bool exception = false);
+
   // -- extract existing attribute value and verify it
   std::string GetAttributeValueS_(
       xercesc::DOMElement* elem, const char* attr_name, const char* options);
