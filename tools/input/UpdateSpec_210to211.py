@@ -192,219 +192,222 @@ def v210_update(tree):
         sys.exit("  exiting...")
 
     
-    # check for rel_perm_method, precondition_strategy, and discretization_method in old location and move
-    unstr_cntl = root.find('./numerical_controls/unstructured_controls')
-    flow = root.find('./process_kernels/flow')
+    # the following only apply to unstructured
+    if (type == "unstructured"):
 
-    fields = ['rel_perm_method', 'preconditioning_strategy', 'discretization_method','atmospheric_pressure']
-    moved_options = []
-    for option in fields:
-      if option in flow.keys():
-        value = flow.get(option)
-        if (unstr_cntl.find('unstr_flow_controls') == None):
-          fc = ET.SubElement(unstr_cntl,'unstr_flow_controls')
-        else:
-          fc = unstr_cntl.find('unstr_flow_controls')
-	moved_options.append(option)
-        newoption = ET.SubElement(fc,option)
-        newoption.text = value
-    for option in moved_options:
-	print >> sys.stdout, "    Moved flow option ",option," to new location un 'unstr_flow_controls'"
-        del flow.attrib[option]
+      # check for rel_perm_method, precondition_strategy, and discretization_method in old location and move
+      unstr_cntl = root.find('./numerical_controls/unstructured_controls')
+      flow = root.find('./process_kernels/flow')
 
-    # check for algorithm and sub_cycling in old location and move
-    trans = root.find('./process_kernels/transport')
+      fields = ['rel_perm_method', 'preconditioning_strategy', 'discretization_method','atmospheric_pressure']
+      moved_options = []
+      for option in fields:
+        if option in flow.keys():
+          value = flow.get(option)
+          if (unstr_cntl.find('unstr_flow_controls') == None):
+            fc = ET.SubElement(unstr_cntl,'unstr_flow_controls')
+          else:
+            fc = unstr_cntl.find('unstr_flow_controls')
+	  moved_options.append(option)
+          newoption = ET.SubElement(fc,option)
+          newoption.text = value
+      for option in moved_options:
+	  print >> sys.stdout, "    Moved flow option ",option," to new location un 'unstr_flow_controls'"
+          del flow.attrib[option]
+
+      # check for algorithm and sub_cycling in old location and move
+      trans = root.find('./process_kernels/transport')
   
-    fields = ['algorithm', 'sub_cycling']
-    moved_options = []
-    for option in fields:
-      if option in trans.keys():
-        value = trans.get(option)
-        if (unstr_cntl.find('unstr_transport_controls') == None):
-          tc = ET.SubElement(unstr_cntl,'unstr_transport_controls')
-        else:
-          tc = unstr_cntl.find('unstr_transport_controls')
-	moved_options.append(option)
-        newoption = ET.SubElement(tc,option)
-        newoption.text = value
-    for option in moved_options:
-	print >> sys.stdout, "    Moved transport option ",option," to new location in 'unstr_transport_controls'"
-        del trans.attrib[option]
+      fields = ['algorithm', 'sub_cycling']
+      moved_options = []
+      for option in fields:
+        if option in trans.keys():
+          value = trans.get(option)
+          if (unstr_cntl.find('unstr_transport_controls') == None):
+            tc = ET.SubElement(unstr_cntl,'unstr_transport_controls')
+          else:
+            tc = unstr_cntl.find('unstr_transport_controls')
+	  moved_options.append(option)
+          newoption = ET.SubElement(tc,option)
+          newoption.text = value
+      for option in moved_options:
+	  print >> sys.stdout, "    Moved transport option ",option," to new location in 'unstr_transport_controls'"
+          del trans.attrib[option]
 
-    # check for cfl in old location and move
-    trans = root.find('./numerical_controls/unstructured_controls/unstr_transport_controls')
-    linear = root.find('./numerical_controls/unstructured_controls/unstr_linear_solver')
-    if (linear is not None and trans is not None):
-        cfl_old = linear.find('cfl')
-        if (cfl_old is not None):
-            cfl = ET.SubElement(trans,'cfl')
-            cfl.text = cfl_old.text
-            linear.remove(cfl_old)
-	    print >> sys.stdout, "    Moved cfl to new location un 'unstr_transport_controls'"
-
-
-    ### Preconditioners
-
-    # check for preconditioner, check formating, saving any subelements, update formating
-    precon_names = ['hypre_amg','trilinos_ml','block_ilu']
-
-    old_precon = root.find('./numerical_controls/unstructured_controls/unstr_preconditioners')
-
-    precon = ET.SubElement(unstr_cntl,'unstr_preconditioners')
-    hypre = ET.SubElement(precon,'hypre_amg')
-    trilinos = ET.SubElement(precon,'trilinos_ml')
-    block = ET.SubElement(precon,'block_ilu')
-
-    if (old_precon is not None):
-        if ( old_precon.get('name') in precon_names):
-            name = old_precon.get('name')
-            # move any subelement options
-            if (name == 'hypre_amg'):
-              for op in list(old_precon):
-                hypre.append(op)
-            if (name == 'trilinos_ml'):
-              for op in list(old_precon):
-                trilinos.append(op)
-            if (name == 'block_ilu'):
-              for op in list(old_precon):
-                block.append(op)
-            # remove existing preconditioner element
-            unstr_cntl.remove(old_precon)
-	    print >> sys.stdout, "    Updating preconditioner formating/definition"
-
-    steady = root.find('./numerical_controls/unstructured_controls/unstr_steady-state_controls')
-    if (steady is not None):
-        pre = steady.find('preconditioner')
-        if (pre is not None):
-          if ( pre.get('name') in precon_names):
-	    print >> sys.stdout, "    Updating preconditioner formating/definition in 'unstr_steady-state_controls'"
-            name = pre.get('name')
-            # move any subelement options
-            if (name == 'hypre_amg'):
-              for op in list(pre):
-                hypre.append(op)
-            if (name == 'trilinos_ml'):
-              for op in list(pre):
-                trilinos.append(op)
-            if (name == 'block_ilu'):
-              for op in list(pre):
-                block.append(op)
-            # remove existing preconditioner element
-            steady.remove(pre)
-            # add new preconditioner element
-            new_pre = ET.SubElement(steady,'preconditioner')
-            new_pre.text = name
-
-    pseudo = root.find('./numerical_controls/unstructured_controls/unstr_steady-state_controls/unstr_pseudo_time_integrator')
-    # not everyone added the unstr_ prefix at this level, so let's catch it now
-    if (pseudo is None):
-        pseudo = root.find('./numerical_controls/unstructured_controls/unstr_steady-state_controls/pseudo_time_integrator')
-        if (pseudo is not None):
-            pseudo.tag = 'unstr_'+pseudo.tag
-    if (pseudo is not None):
-        pre = pseudo.find('preconditioner')
-        if (pre is not None):
-          if ( pre.get('name') in precon_names):
-	    print >> sys.stdout, "    Updating preconditioner formating/definition in 'pseudo_time_integrator'"
-            name = pre.get('name')
-            # move any subelement options
-            if (name == 'hypre_amg'):
-              for op in list(pre):
-                hypre.append(op)
-            if (name == 'trilinos_ml'):
-              for op in list(pre):
-                trilinos.append(op)
-            if (name == 'block_ilu'):
-              for op in list(pre):
-                block.append(op)
-            # remove existing preconditioner element
-            pseudo.remove(pre)
-            # add new preconditioner element
-            new_pre = ET.SubElement(pseudo,'preconditioner')
-            new_pre.text = name
-
-    trans  = root.find('./numerical_controls/unstructured_controls/unstr_transient_controls')
-    if (trans is not None):
-        pre = trans.find('preconditioner')
-        if (pre is not None):
-          if ( pre.get('name') in precon_names):
-            name = pre.get('name')
-	    print >> sys.stdout, "    Updating preconditioner formating/definition in 'unstr_transient_controls'"
-            # move any subelement options
-            if (name == 'hypre_amg'):
-              for op in list(pre):
-                hypre.append(op)
-            if (name == 'trilinos_ml'):
-              for op in list(pre):
-                trilinos.append(op)
-            if (name == 'block_ilu'):
-              for op in list(pre):
-                block.append(op)
-            # remove existing preconditioner element
-            trans.remove(pre)
-            # add new preconditioner element
-            new_pre = ET.SubElement(trans,'preconditioner')
-            new_pre.text = name
-
-    linear = root.find('./numerical_controls/unstructured_controls/unstr_linear_solver')
-    if (linear is not None):
-        pre = linear.find('preconditioner')
-        if (pre is not None):
-          if ( pre.get('name') in precon_names):
-            name = pre.get('name')
-	    print >> sys.stdout, "    Updating preconditioner formating/definition in 'unstr_linear_solver'"
-            # move any subelement options
-            if (name == 'hypre_amg'):
-              for op in list(pre):
-                hypre.append(op)
-            if (name == 'trilinos_ml'):
-              for op in list(pre):
-                trilinos.append(op)
-            if (name == 'block_ilu'):
-              for op in list(pre):
-                block.append(op)
-            # remove existing preconditioner element
-            linear.remove(pre)
-            # add new preconditioner element
-            new_pre = ET.SubElement(linear,'preconditioner')
-            new_pre.text = name
+      # check for cfl in old location and move
+      trans = root.find('./numerical_controls/unstructured_controls/unstr_transport_controls')
+      linear = root.find('./numerical_controls/unstructured_controls/unstr_linear_solver')
+      if (linear is not None and trans is not None):
+          cfl_old = linear.find('cfl')
+          if (cfl_old is not None):
+              cfl = ET.SubElement(trans,'cfl')
+              cfl.text = cfl_old.text
+              linear.remove(cfl_old)
+	      print >> sys.stdout, "    Moved cfl to new location un 'unstr_transport_controls'"
 
 
-    ### Rename pseudo_time_integrator to initialization
-    # added parameter clipping pressure, didn't exist so can't update
-    pseudo = root.find('./numerical_controls/unstructured_controls/unstr_steady-state_controls/unstr_pseudo_time_integrator')
-    if (pseudo is not None):
-        pseudo.tag = 'unstr_initialization'
-	print >> sys.stdout, "    Updating 'unstr_pseudo_time_integrator' to 'unstr_initialization'"
+      ### Preconditioners
 
-    ### Update BDF1 attributes to elements
-    bdf1 =  root.find('./numerical_controls/unstructured_controls/unstr_transient_controls/bdf1_integration_method')
-    moved_list = []
-    if (bdf1 is not None):
-        for attr in bdf1.attrib:
-            name = attr
-            value = bdf1.get(attr)
-            new_elem = ET.SubElement(bdf1,name)
-            new_elem.text = value
-            moved_list.append(name)
-	if (len(moved_list) > 0):
-	    print >> sys.stdout, "    Updating 'bdf1_integration_method' options from attributes to elements"
-        for name in moved_list:
-            del bdf1.attrib[name]
+      # check for preconditioner, check formating, saving any subelements, update formating
+      precon_names = ['hypre_amg','trilinos_ml','block_ilu']
 
-    ### Rename restart_tolerance_factor
-    steady = root.find('./numerical_controls/unstructured_controls/unstr_steady-state_controls')
-    if (steady is not None):
-	for child in steady:
-	    if child.tag == 'restart_tolerance_factor':
-		child.tag = 'restart_tolerance_relaxation_factor'
-		print >> sys.stdout, "    Renaming (steady) 'restart_tolerance_factor' to ",child.tag
-    bdf1 = root.find('./numerical_controls/unstructured_controls/unstr_transient_controls/bdf1_integration_method')
-    if (bdf1 is not None):
-	for child in bdf1:
-	    if child.tag == 'restart_tolerance_factor':
-		child.tag = 'restart_tolerance_relaxation_factor'
-		print >> sys.stdout, "    Renaming (transient) 'restart_tolerance_factor' to ",child.tag
+      old_precon = root.find('./numerical_controls/unstructured_controls/unstr_preconditioners')
+
+      precon = ET.SubElement(unstr_cntl,'unstr_preconditioners')
+      hypre = ET.SubElement(precon,'hypre_amg')
+      trilinos = ET.SubElement(precon,'trilinos_ml')
+      block = ET.SubElement(precon,'block_ilu')
+
+      if (old_precon is not None):
+          if ( old_precon.get('name') in precon_names):
+              name = old_precon.get('name')
+              # move any subelement options
+              if (name == 'hypre_amg'):
+                for op in list(old_precon):
+                  hypre.append(op)
+              if (name == 'trilinos_ml'):
+                for op in list(old_precon):
+                  trilinos.append(op)
+              if (name == 'block_ilu'):
+                for op in list(old_precon):
+                  block.append(op)
+              # remove existing preconditioner element
+              unstr_cntl.remove(old_precon)
+	      print >> sys.stdout, "    Updating preconditioner formating/definition"
+
+      steady = root.find('./numerical_controls/unstructured_controls/unstr_steady-state_controls')
+      if (steady is not None):
+          pre = steady.find('preconditioner')
+          if (pre is not None):
+            if ( pre.get('name') in precon_names):
+	      print >> sys.stdout, "    Updating preconditioner formating/definition in 'unstr_steady-state_controls'"
+              name = pre.get('name')
+              # move any subelement options
+              if (name == 'hypre_amg'):
+                for op in list(pre):
+                  hypre.append(op)
+              if (name == 'trilinos_ml'):
+                for op in list(pre):
+                  trilinos.append(op)
+              if (name == 'block_ilu'):
+                for op in list(pre):
+                  block.append(op)
+              # remove existing preconditioner element
+              steady.remove(pre)
+              # add new preconditioner element
+              new_pre = ET.SubElement(steady,'preconditioner')
+              new_pre.text = name
+
+      pseudo = root.find('./numerical_controls/unstructured_controls/unstr_steady-state_controls/unstr_pseudo_time_integrator')
+      # not everyone added the unstr_ prefix at this level, so let's catch it now
+      if (pseudo is None):
+          pseudo = root.find('./numerical_controls/unstructured_controls/unstr_steady-state_controls/pseudo_time_integrator')
+          if (pseudo is not None):
+              pseudo.tag = 'unstr_'+pseudo.tag
+      if (pseudo is not None):
+          pre = pseudo.find('preconditioner')
+          if (pre is not None):
+            if ( pre.get('name') in precon_names):
+	      print >> sys.stdout, "    Updating preconditioner formating/definition in 'pseudo_time_integrator'"
+              name = pre.get('name')
+              # move any subelement options
+              if (name == 'hypre_amg'):
+                for op in list(pre):
+                  hypre.append(op)
+              if (name == 'trilinos_ml'):
+                for op in list(pre):
+                  trilinos.append(op)
+              if (name == 'block_ilu'):
+                for op in list(pre):
+                  block.append(op)
+              # remove existing preconditioner element
+              pseudo.remove(pre)
+              # add new preconditioner element
+              new_pre = ET.SubElement(pseudo,'preconditioner')
+              new_pre.text = name
+
+      trans  = root.find('./numerical_controls/unstructured_controls/unstr_transient_controls')
+      if (trans is not None):
+          pre = trans.find('preconditioner')
+          if (pre is not None):
+            if ( pre.get('name') in precon_names):
+              name = pre.get('name')
+	      print >> sys.stdout, "    Updating preconditioner formating/definition in 'unstr_transient_controls'"
+              # move any subelement options
+              if (name == 'hypre_amg'):
+                for op in list(pre):
+                  hypre.append(op)
+              if (name == 'trilinos_ml'):
+                for op in list(pre):
+                  trilinos.append(op)
+              if (name == 'block_ilu'):
+                for op in list(pre):
+                  block.append(op)
+              # remove existing preconditioner element
+              trans.remove(pre)
+              # add new preconditioner element
+              new_pre = ET.SubElement(trans,'preconditioner')
+              new_pre.text = name
+
+      linear = root.find('./numerical_controls/unstructured_controls/unstr_linear_solver')
+      if (linear is not None):
+          pre = linear.find('preconditioner')
+          if (pre is not None):
+            if ( pre.get('name') in precon_names):
+              name = pre.get('name')
+	      print >> sys.stdout, "    Updating preconditioner formating/definition in 'unstr_linear_solver'"
+              # move any subelement options
+              if (name == 'hypre_amg'):
+                for op in list(pre):
+                  hypre.append(op)
+              if (name == 'trilinos_ml'):
+                for op in list(pre):
+                  trilinos.append(op)
+              if (name == 'block_ilu'):
+                for op in list(pre):
+                  block.append(op)
+              # remove existing preconditioner element
+              linear.remove(pre)
+              # add new preconditioner element
+              new_pre = ET.SubElement(linear,'preconditioner')
+              new_pre.text = name
+
+
+      ### Rename pseudo_time_integrator to initialization
+      # added parameter clipping pressure, didn't exist so can't update
+      pseudo = root.find('./numerical_controls/unstructured_controls/unstr_steady-state_controls/unstr_pseudo_time_integrator')
+      if (pseudo is not None):
+          pseudo.tag = 'unstr_initialization'
+	  print >> sys.stdout, "    Updating 'unstr_pseudo_time_integrator' to 'unstr_initialization'"
+
+      ### Update BDF1 attributes to elements
+      bdf1 =  root.find('./numerical_controls/unstructured_controls/unstr_transient_controls/bdf1_integration_method')
+      moved_list = []
+      if (bdf1 is not None):
+          for attr in bdf1.attrib:
+              name = attr
+              value = bdf1.get(attr)
+              new_elem = ET.SubElement(bdf1,name)
+              new_elem.text = value
+              moved_list.append(name)
+	  if (len(moved_list) > 0):
+	      print >> sys.stdout, "    Updating 'bdf1_integration_method' options from attributes to elements"
+          for name in moved_list:
+              del bdf1.attrib[name]
+
+      ### Rename restart_tolerance_factor
+      steady = root.find('./numerical_controls/unstructured_controls/unstr_steady-state_controls')
+      if (steady is not None):
+	  for child in steady:
+	      if child.tag == 'restart_tolerance_factor':
+		  child.tag = 'restart_tolerance_relaxation_factor'
+		  print >> sys.stdout, "    Renaming (steady) 'restart_tolerance_factor' to ",child.tag
+      bdf1 = root.find('./numerical_controls/unstructured_controls/unstr_transient_controls/bdf1_integration_method')
+      if (bdf1 is not None):
+	  for child in bdf1:
+	      if child.tag == 'restart_tolerance_factor':
+		  child.tag = 'restart_tolerance_relaxation_factor'
+		  print >> sys.stdout, "    Renaming (transient) 'restart_tolerance_factor' to ",child.tag
 
 
     ### Output
