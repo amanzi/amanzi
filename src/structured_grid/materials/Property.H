@@ -93,7 +93,8 @@ public:
                      int                    num_grow,
                      int                    max_grid_size_fine_gen,
                      Property::CoarsenRule  crule,
-                     const std::string&     varname);
+		     const std::string&     varname,
+		     bool                   restart);
 
   const Array<std::string>& PlotfileVars() const {return varnames;}
 
@@ -105,8 +106,7 @@ protected:
 		      const Array<IntVect>&  ref_ratio,
 		      int                    num_grow,
 		      int                    max_grid_size_fine_gen,
-		      Property::CoarsenRule  crule,
-		      const std::string&     varname);
+		      Property::CoarsenRule  crule);
 
   DataServices* dataServices;
   Real avg;

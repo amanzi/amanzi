@@ -555,19 +555,12 @@ The ``structured_controls`` sections is divided in the subsections: ``str_steady
 
     <str_transient_controls>
       <amr_levels> Integer </amr_levels>
-      <refinement_ratio>
-        <int> Integer </int>  <!-- one element for each AMR level -->
-      </refinement_ratio>
+      <refinement_ratio>Integer Integer</refinement_ratio> <!-- amr_levels-1 number of integers should be listed-->
       <do_amr_cubcycling> true | false </do_amr_cubcycling>
-      <regrid_interval>
-        <int> Integer </int>  <!-- one element for each AMR level -->
-      </regrid_interval>
-      <blocking_factor>
-        <int> Integer </int>  <!-- one element for each AMR level -->
-      </blocking_factor>
-      <number_error_buffer_cells>
-        <int> Integer </int>  <!-- one element for each AMR level -->
-      </number_error_buffer_cells>
+      <regrid_interval>Integer Integer</regrid_interval> <!-- amr_levels number of integers should be listed-->
+      <blocking_factor>Integer Integer</blocking_factor> <!-- amr_levels number of integers should be listed-->
+      <number_error_buffer_cells>Integer Integer</number_error_buffer_cells> <!-- amr_levels-1 number of integers should be listed-->
+      <max_grid_size>Integer Integer</max_grid_size> <!-- amr_levels number of integers should be listed-->
       <refinement_indicators> 
         <field_name> String </field_name>
         <regions> String </regions>

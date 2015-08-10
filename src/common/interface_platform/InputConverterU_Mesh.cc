@@ -25,7 +25,6 @@
 #include "boost/lexical_cast.hpp"
 
 #include <xercesc/dom/DOM.hpp>
-#include <xercesc/util/XMLString.hpp>
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/parsers/DOMLSParserImpl.hpp>
 #include <xercesc/framework/StdOutFormatTarget.hpp>
@@ -62,8 +61,13 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
     *vo_->os() << "Translating unstructured mesh" << std::endl;
   }
 
+  XString mm;
+  DOMNodeList *node_list, *children;
+  DOMNode* node;
+  DOMElement* element;
+
   bool generate(true), read(false), all_good(false);
-  char *framework;
+  std::string framework;
   std::stringstream helper;
   Errors::Message msg;
   Teuchos::ParameterList mesh_list;
@@ -71,41 +75,29 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
   Teuchos::RCP<Teuchos::StringValidator> meshfile_validator = Teuchos::rcp(new Teuchos::StringValidator(meshfile_strings));
   
   // read in new stuff
-  XMLCh* tag = XMLString::transcode("mesh");
-  DOMNodeList* node_list = doc_->getElementsByTagName(tag);
-  XMLString::release(&tag);
+  node_list = doc_->getElementsByTagName(mm.transcode("mesh"));
 
   // read the attribute to set the framework sublist
   if (node_list->getLength() > 0) {
-    DOMNode* node_mesh = node_list->item(0);
-    DOMElement* element_mesh = static_cast<DOMElement*>(node_mesh);
-
-    if (element_mesh->hasAttribute(XMLString::transcode("framework"))) {
-      framework = XMLString::transcode(element_mesh->getAttribute(XMLString::transcode("framework")));
-    } else { 
-      msg << "Amanzi::InputConverter: An error occurred during parsing mesh.\n"
-          << "Framework was missing or ill-formed.\n" 
-          << "Use default framework='mstk' if unsure.\n";
-      Exceptions::amanzi_throw(msg);
-    }
+    node = node_list->item(0);
+    element = static_cast<DOMElement*>(node);
+    framework = GetAttributeValueS_(element, "framework");
 
     // Define global parameter dim_ = the space dimension.
-    DOMNodeList* children = node_mesh->getChildNodes();
+    children = node->getChildNodes();
     all_good = false;
 
     for (int i = 0; i < children->getLength(); i++) {
       DOMNode* inode = children->item(i);
       if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-        char* tagname = XMLString::transcode(inode->getNodeName());
+        char* tagname = mm.transcode(inode->getNodeName());
         if (strcmp(tagname, "dimension") == 0) {
-          char* tmp = XMLString::transcode(inode->getTextContent());
+          char* tmp = mm.transcode(inode->getTextContent());
           if (strlen(tmp) > 0) {
             dim_ = std::strtol(tmp, NULL, 10);
             all_good = true;
           }
-          XMLString::release(&tmp);
         }
-        XMLString::release(&tagname);
       }
     }
 
@@ -118,7 +110,7 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
     for (int i = 0; i < children->getLength(); i++) {
       DOMNode* inode = children->item(i);
       if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-        char* tagname = XMLString::transcode(inode->getNodeName());   
+        char* tagname = mm.transcode(inode->getNodeName());   
 
         // A structured mesh is generated.
         if (strcmp(tagname,"generate") == 0) {
@@ -127,9 +119,8 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
           read = false;
           DOMElement* element_gen = static_cast<DOMElement*>(inode);
 
-          // get Number of Cells
-          DOMNodeList* node_list = element_gen->getElementsByTagName( XMLString::transcode("number_of_cells"));
-          DOMNode* node = node_list->item(0);
+          node_list = element_gen->getElementsByTagName(mm.transcode("number_of_cells"));
+          node = node_list->item(0);
           DOMElement* element_node = static_cast<DOMElement*>(node);
           DOMNamedNodeMap *attr_map = node->getAttributes();
 
@@ -143,22 +134,20 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
             // loop over attributes to get nx, ny, nz as needed
             for (int j = 0; j < attr_map->getLength(); j++) {
               node_attr = attr_map->item(j);
-              attr_name =XMLString::transcode(node_attr->getNodeName());
+              attr_name = mm.transcode(node_attr->getNodeName());
 
               if (attr_name) {
-                tmp = XMLString::transcode(node_attr->getNodeValue());
+                tmp = mm.transcode(node_attr->getNodeValue());
                 if (strlen(tmp) > 0) {
                   ncells.append(std::strtol(tmp, NULL, 10));
                 } else {
                   all_good = false;
                   helper << "number_of_cells " << attr_name;
                 }
-                XMLString::release(&tmp);
               } else {
                all_good = false;
                helper << "number_of_cells " << attr_name;
               }
-              XMLString::release(&attr_name);
             }
             mesh_list.set<Teuchos::Array<int> >("Number of Cells", ncells);
           } else {
@@ -167,16 +156,16 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
           }
 
           // get Box - generalize
-          node_list = element_gen->getElementsByTagName(XMLString::transcode("box"));
+          node_list = element_gen->getElementsByTagName(mm.transcode("box"));
           node = node_list->item(0);
           element_node = static_cast<DOMElement*>(node);
-          tmp = XMLString::transcode(element_node->getAttribute(XMLString::transcode("low_coordinates")));
 
+          tmp = mm.transcode(element_node->getAttribute(mm.transcode("low_coordinates")));
           if (strlen(tmp) > 0) {
             // translate to array
-            Teuchos::Array<double> low = MakeCoordinates_(tmp);
+            std::vector<double> low = MakeCoordinates_(tmp);
             mesh_list.set<Teuchos::Array<double> >("Domain Low Coordinate", low);
-            if (low.length() != dim_) {
+            if (low.size() != dim_) {
               helper << "low_coordinates";
               all_good = false;
             }
@@ -184,14 +173,13 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
             helper << "low_coordinates";
             all_good = false;
           }
-          XMLString::release(&tmp);
 
-          tmp = XMLString::transcode(element_node->getAttribute( XMLString::transcode("high_coordinates")));
+          tmp = mm.transcode(element_node->getAttribute(mm.transcode("high_coordinates")));
           if (strlen(tmp) > 0) {
             // translate to array
-            Teuchos::Array<double> high = MakeCoordinates_(tmp);
+            std::vector<double> high = MakeCoordinates_(tmp);
             mesh_list.set<Teuchos::Array<double> >("Domain High Coordinate", high);
-            if (high.length() != dim_) {
+            if (high.size() != dim_) {
               helper << "high_coordinates";
               all_good = false;
             }
@@ -199,7 +187,6 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
             helper << "high_coordinates";
             all_good = false;
           }
-          XMLString::release(&tmp);
         }
 
         // Un unstructured mesh will be read from a file.
@@ -210,8 +197,8 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
           bool goodname = false;
           DOMElement* elementRead = static_cast<DOMElement*>(inode);
 
-          char* value = XMLString::transcode(elementRead->getElementsByTagName(
-              XMLString::transcode("format"))->item(0)->getTextContent());
+          char* value = mm.transcode(elementRead->getElementsByTagName(
+              mm.transcode("format"))->item(0)->getTextContent());
           std::string format(TrimString_(value));
 
           if (boost::iequals(format, "exodus ii")) {
@@ -224,14 +211,12 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
             mesh_list.set<std::string>("Format", format, "Format of meshfile", meshfile_validator);
           }
 
-          char* filename = XMLString::transcode(elementRead->getElementsByTagName(
-              XMLString::transcode("file"))->item(0)->getTextContent());
+          char* filename = mm.transcode(elementRead->getElementsByTagName(
+              mm.transcode("file"))->item(0)->getTextContent());
           if (strlen(filename) > 0) {
             mesh_list.set<std::string>("File", TrimString_(filename));
             goodname = true;
           }
-          XMLString::release(&value);
-          XMLString::release(&filename);
           if (goodtype && goodname) all_good = true;
         }
       }
@@ -242,17 +227,18 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
     }
     
     if (generate || read) {
-      if (strcmp(framework,"mstk") == 0) {
-        out_list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","MSTK");
-      } else if (strcmp(framework,"moab") == 0) {
-        out_list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","MOAB");
-      } else if (strcmp(framework,"simple") == 0) {
-        out_list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","Simple");
-      } else if (strcmp(framework,"stk::mesh") == 0) {
-        out_list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","stk::mesh");
+      Teuchos::ParameterList& tmp_list = out_list.sublist("Unstructured").sublist("Expert");
+      if (strcmp(framework.c_str(), "mstk") == 0) {
+        tmp_list.set<std::string>("Framework", "MSTK");
+      } else if (strcmp(framework.c_str() ,"moab") == 0) {
+        tmp_list.set<std::string>("Framework", "MOAB");
+      } else if (strcmp(framework.c_str(), "simple") == 0) {
+        tmp_list.set<std::string>("Framework", "Simple");
+      } else if (strcmp(framework.c_str(), "stk::mesh") == 0) {
+        tmp_list.set<std::string>("Framework", "stk::mesh");
       } else {
-        msg << "Amanzi::InputConverter: An error occurred during parsing mesh - "
-            << "unknown framework=" << framework << ". See the schema for acceptable types.\n";
+        msg << "Amanzi::InputConverter: an error occurred during parsing mesh.\n"
+            << "  Unknown framework \"" << framework << "\".\n";
         Exceptions::amanzi_throw(msg); 
       }
     }
@@ -262,12 +248,10 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
     } else if (read) {
       out_list.sublist("Unstructured").sublist("Read Mesh File") = mesh_list;
     } else {
-      // bad mesh, again if validated shouldn't need this
-      msg << "Amanzi::InputConverter: An error occurred during parsing mesh.\n";
+      msg << "Amanzi::InputConverter: an error occurred during parsing mesh.\n";
       Exceptions::amanzi_throw(msg);
     }
   } else {
-    // no mesh sub-elements
     ThrowErrorIllformed_("mesh", "element", "framework");
   }
 
@@ -286,43 +270,35 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
     *vo_->os() << "Translating regions" << std::endl;
   }
 
+  XString mm;
   DOMNodeList* node_list;
-  DOMNode* nodeTmp;
-  DOMNode* node_attr;
+  DOMNode *node, *node_attr;
+  DOMElement* element;
   DOMNamedNodeMap* attr_map;
-  char* tag_name;
-  char* node_name;
-  char* reg_name;
-  char* text_content;
-  char* text_content2;
-  char* char_array;
+
+  char *tagname, *node_name;
+  char *text_content, *text_content2;
+  std::string reg_name, text;
 
   // get regions node
-  node_list = doc_->getElementsByTagName(XMLString::transcode("regions"));
-  DOMNode* node_rgn = node_list->item(0);
-  DOMElement* elementRgn = static_cast<DOMElement*>(node_rgn);
+  node_list = doc_->getElementsByTagName(mm.transcode("regions"));
+  node = node_list->item(0);
 
   // new options: comment, region, box, point
-  DOMNodeList* childern = node_rgn->getChildNodes();
+  DOMNodeList* childern = node->getChildNodes();
   for (int i = 0; i < childern->getLength(); i++) {
     DOMNode* inode = childern->item(i);
 
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-      tag_name = XMLString::transcode(inode->getNodeName());
-      bool have_name = false;
+      tagname = mm.transcode(inode->getNodeName());
+      bool have_name(false);
       
       DOMElement* reg_elem;
       // If region is under a region tag, get get the name
       // and set child element as region element.
-      if (strcmp(tag_name,"region") == 0) {
-        attr_map = inode->getAttributes();
-        node_attr = attr_map->getNamedItem(XMLString::transcode("name"));
-        if (node_attr) {
-          reg_name = XMLString::transcode(node_attr->getNodeValue());
-          have_name = true;
-        } else {
-          ThrowErrorMissattr_("Regions", "attribute", "name", "region");
-        }
+      if (strcmp(tagname, "region") == 0) {
+        reg_name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
+        have_name = true;
 
         // loop over children to get region element
         DOMNodeList* kids = inode->getChildNodes();
@@ -330,27 +306,23 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
           DOMNode* jnode = kids->item(j);
 
           if (DOMNode::ELEMENT_NODE == jnode->getNodeType()) {
-            node_name = XMLString::transcode(jnode->getNodeName());
+            node_name = mm.transcode(jnode->getNodeName());
             if (strcmp(node_name, "comments") != 0) 
-                reg_elem =static_cast<DOMElement*>(jnode);
-            XMLString::release(&node_name);
+              reg_elem = static_cast<DOMElement*>(jnode);
           }
         }
       } else {
         // else set the current element as region element
-        reg_elem =static_cast<DOMElement*>(inode);
+        reg_elem = static_cast<DOMElement*>(inode);
       }
       
       // get reg_elem type
-      node_name = XMLString::transcode(reg_elem->getNodeName());
+      node_name = mm.transcode(reg_elem->getNodeName());
       
       // get name if needed
       if (!have_name) {
-        if (reg_elem->hasAttribute(XMLString::transcode("name"))) {
-          reg_name = XMLString::transcode(reg_elem->getAttribute(XMLString::transcode("name")));
-        } else {
-          if (strcmp(node_name, "comments") != 0)
-              ThrowErrorMissattr_("Regions", "attribute", "name", node_name);
+        if (strcmp(node_name, "comments") != 0) {
+          reg_name = GetAttributeValueS_(reg_elem, "name");
         }
       }
       
@@ -358,121 +330,58 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
       if (strcmp(node_name, "box") == 0) {
         tree_["regions"].push_back(reg_name);
         
-        if (reg_elem->hasAttribute(XMLString::transcode("low_coordinates"))) {
-          text_content2 = XMLString::transcode(reg_elem->getAttribute(XMLString::transcode("low_coordinates")));
-        } else {
-          ThrowErrorMissattr_("Regions", "attribute", "low_coordinates", "box");
-        }
-        Teuchos::Array<double> low = MakeCoordinates_(text_content2);
+        std::vector<double> low = GetAttributeVector_(reg_elem, "low_coordinates");
         out_list.sublist(reg_name).sublist("Region: Box").set<Teuchos::Array<double> >("Low Coordinate", low);
-        XMLString::release(&text_content2);
         
-        if (reg_elem->hasAttribute(XMLString::transcode("high_coordinates"))) {
-          text_content2 = XMLString::transcode(reg_elem->getAttribute(XMLString::transcode("high_coordinates")));
-        } else {
-          ThrowErrorMissattr_("Regions","attribute","high_coordinates","box");
-        }
-        Teuchos::Array<double> high = MakeCoordinates_(text_content2);
+        std::vector<double> high = GetAttributeVector_(reg_elem, "high_coordinates");
         out_list.sublist(reg_name).sublist("Region: Box").set<Teuchos::Array<double> >("High Coordinate", high);
-        XMLString::release(&text_content2);
       }
 
       else if (strcmp(node_name, "plane") == 0) {
         tree_["regions"].push_back(reg_name);
         
-        if (reg_elem->hasAttribute(XMLString::transcode("location"))) {
-          text_content2 = XMLString::transcode(reg_elem->getAttribute(XMLString::transcode("location")));
-        } else {
-          ThrowErrorMissattr_("Regions", "attribute", "location", "plane");
-        }
-        Teuchos::Array<double> loc = MakeCoordinates_(text_content2);
+        text = GetAttributeValueS_(reg_elem, "location");
+        std::vector<double> loc = MakeCoordinates_(text);
         out_list.sublist(reg_name).sublist("Region: Plane").set<Teuchos::Array<double> >("Location", loc);
         
-        if (reg_elem->hasAttribute(XMLString::transcode("normal"))) {
-          text_content2 = XMLString::transcode(reg_elem->getAttribute(XMLString::transcode("normal")));
-        } else {
-          ThrowErrorMissattr_("Regions", "attribute", "normal", "plane");
-        }
-        Teuchos::Array<double> dir = MakeCoordinates_(text_content2);
+        text = GetAttributeValueS_(reg_elem, "normal");
+        std::vector<double> dir = MakeCoordinates_(text);
         out_list.sublist(reg_name).sublist("Region: Plane").set<Teuchos::Array<double> >("Direction", dir);
-        XMLString::release(&text_content2);
       }
 
       else if (strcmp(node_name,"region_file") == 0) {
         tree_["regions"].push_back(reg_name);
 
         Teuchos::ParameterList rfPL;
+        text = GetAttributeValueS_(reg_elem, "name");
+        rfPL.set<std::string>("File", text);
         
-        if (reg_elem->hasAttribute(XMLString::transcode("name"))) {
-          text_content2 = XMLString::transcode(reg_elem->getAttribute(XMLString::transcode("name")));
-        } else {
-          ThrowErrorMissattr_("Regions", "attribute", "name", "region_file");
-        }
-        rfPL.set<std::string>("File", TrimString_(text_content2));
-        XMLString::release(&text_content2);
-        
-        if (reg_elem->hasAttribute(XMLString::transcode("type"))) {
-          text_content2 = XMLString::transcode(reg_elem->getAttribute(XMLString::transcode("type")));
-        } else {
-          ThrowErrorMissattr_("Regions","attribute","type","region_file");
-        }
-        if (strcmp(text_content2, "color") == 0) {
-          char* value;
-          if (reg_elem->hasAttribute(XMLString::transcode("label"))) {
-            value = XMLString::transcode(reg_elem->getAttribute(XMLString::transcode("label")));
-          } else {
-            ThrowErrorMissattr_("Regions","attribute","label","color");
-          }
-          rfPL.set<int>("Value", std::strtol(value, NULL, 10));
+        text = GetAttributeValueS_(reg_elem, "type");
+        if (strcmp(text.c_str(), "color") == 0) {
+          int value = GetAttributeValueD_(reg_elem, "label");
+          rfPL.set<int>("Value", value);
           out_list.sublist(reg_name).sublist("Region: Color Function") = rfPL;
-          XMLString::release(&value);
         }
-
-        else if (strcmp(text_content2, "labeled set") == 0) {
-          char* value;
-          if (reg_elem->hasAttribute(XMLString::transcode("label"))) {
-            value = XMLString::transcode(reg_elem->getAttribute(XMLString::transcode("label")));
-          } else {
-            ThrowErrorMissattr_("Regions", "attribute", "label", "labeled set");
-          }
-          rfPL.set<std::string>("Label", TrimString_(value));
-          XMLString::release(&value);
+        else if (strcmp(text.c_str(), "labeled set") == 0) {
+          std::string value = GetAttributeValueS_(reg_elem, "labeled set");
+          rfPL.set<std::string>("Label", value);
           
-          if (reg_elem->hasAttribute(XMLString::transcode("format"))) {
-            value = XMLString::transcode(reg_elem->getAttribute(XMLString::transcode("format")));
-          } else {
-            ThrowErrorMissattr_("Regions", "attribute", "format", "labeled set");
-          }
-          if (strcmp(value, "exodus ii") == 0) {
+          value = GetAttributeValueS_(reg_elem, "format");
+          if (strcmp(value.c_str(), "exodus ii") == 0) {
             rfPL.set<std::string>("Format", "Exodus II");
           }
-          XMLString::release(&value);
           
-          if (reg_elem->hasAttribute(XMLString::transcode("entity"))) {
-            value = XMLString::transcode(reg_elem->getAttribute(XMLString::transcode("entity")));
-          } else {
-            ThrowErrorMissattr_("Regions", "attribute", "entity", "labeled set");
-          }
-          rfPL.set<std::string>("Entity", TrimString_(value));
-          XMLString::release(&value);
+          value = GetAttributeValueS_(reg_elem, "entity");
+          rfPL.set<std::string>("Entity", value);
           
           out_list.sublist(reg_name).sublist("Region: Labeled Set") = rfPL;
         }
-        XMLString::release(&text_content2);
       }
 
-      else if (strcmp(node_name,"point") == 0) {
+      else if (strcmp(node_name, "point") == 0) {
         tree_["regions"].push_back(reg_name);
-        
-        if (reg_elem->hasAttribute(XMLString::transcode("coordinate"))) {
-          text_content2 = XMLString::transcode(reg_elem->getAttribute(XMLString::transcode("coordinate")));
-        } else {
-          ThrowErrorMissattr_("Regions", "attribute", "coordinate", "point");
-        }
-        
-        Teuchos::Array<double> coord = MakeCoordinates_(text_content2);
+        std::vector<double> coord = GetAttributeVector_(reg_elem, "coordinate");
         out_list.sublist(reg_name).sublist("Region: Point").set<Teuchos::Array<double> >("Coordinate", coord);
-        XMLString::release(&text_content2);
       }
 
       else if (strcmp(node_name,"polygonal_surface") == 0) {
@@ -481,29 +390,27 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         // if attribute 'num_points' exists, get it
         int num_points(-1);
         int pt_cnt(0);
-        if (reg_elem->hasAttribute(XMLString::transcode("num_points"))) {
-          text_content2 = XMLString::transcode(reg_elem->getAttribute(XMLString::transcode("num_points")));
+        if (reg_elem->hasAttribute(mm.transcode("num_points"))) {
+          text_content2 = mm.transcode(reg_elem->getAttribute(mm.transcode("num_points")));
           std::string str(text_content2);
           boost::algorithm::trim(str);
           num_points = std::strtol(text_content2, NULL, 10);
           out_list.sublist(reg_name).sublist("Region: Polygon").set<int>("Number of points", num_points);
-          XMLString::release(&text_content2);
         }
         // get verticies (add count them)
-        Teuchos::Array<double> points;
+        std::vector<double> points;
         DOMNodeList* gkids = reg_elem->getChildNodes();
         for (int j = 0; j < gkids->getLength(); j++) {
           DOMNode* jnode = gkids->item(j);
           if (DOMNode::ELEMENT_NODE == jnode->getNodeType()) {
-            node_name = XMLString::transcode(jnode->getNodeName());
+            node_name = mm.transcode(jnode->getNodeName());
             if (strcmp(node_name, "point") == 0) {
-              text_content2 = XMLString::transcode(jnode->getTextContent());
-              Teuchos::Array<double> point = MakeCoordinates_(text_content2);
-              for (Teuchos::Array<double>::iterator pt = point.begin(); pt != point.end(); ++pt) {
-                points.append(*pt);
+              text_content2 = mm.transcode(jnode->getTextContent());
+              std::vector<double> point = MakeCoordinates_(text_content2);
+              for (std::vector<double>::iterator pt = point.begin(); pt != point.end(); ++pt) {
+                points.push_back(*pt);
               }
               pt_cnt++;
-              XMLString::release(&text_content2);
             }
           }
         }
@@ -523,10 +430,10 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         for (int j = 0; j < gkids->getLength(); j++) {
           DOMNode* jnode = gkids->item(j);
           if (DOMNode::ELEMENT_NODE == jnode->getNodeType()) {
-            node_name = XMLString::transcode(jnode->getNodeName());
+            node_name = mm.transcode(jnode->getNodeName());
             // deal with operation
             if (strcmp(node_name, "operation") == 0) {
-              text_content2 = XMLString::transcode(jnode->getTextContent());
+              text_content2 = mm.transcode(jnode->getTextContent());
               if (strcmp(text_content2,"union") == 0) {
                 out_list.sublist(reg_name).sublist("Region: Logical").set<std::string>("Operation", "Union");
               }
@@ -540,19 +447,16 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
                 out_list.sublist(reg_name).sublist("Region: Logical").set<std::string>("Operation", "Complement");
               }
               else {
-                // error about missing or unsupported operation
-                ThrowErrorIllformed_("Regions", "element", "operation", "union, intersection, subtraction, or complement");
+                ThrowErrorIllformed_("regions", "element", "operation", "union, intersection, subtraction, or complement");
               }
               haveOp = true;
-              XMLString::release(&text_content2);
             }
             // deal with region list
             else if (strcmp(node_name, "region_list") == 0) {
-              text_content2 = XMLString::transcode(jnode->getTextContent());
+              text_content2 = mm.transcode(jnode->getTextContent());
               Teuchos::Array<std::string> regs = CharToStrings_(text_content2);
               out_list.sublist(reg_name).sublist("Region: Logical").set<Teuchos::Array<std::string> >("Regions", regs);
               haveRL = true;
-              XMLString::release(&text_content2);
             }
           }
         }
@@ -563,10 +467,6 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
           ThrowErrorMissattr_("Regions", "element", "region_list", "logical");
         }
       }
-      
-      XMLString::release(&node_name);
-      XMLString::release(&tag_name);
-      if (have_name) XMLString::release(&reg_name);
     }
   }
 

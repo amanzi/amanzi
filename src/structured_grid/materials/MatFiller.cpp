@@ -282,65 +282,67 @@ MatFiller::FindMixedCells()
   const DistributionMapping& dm_red = junk_red.DistributionMap();
   int num_red = cba_red.size();
 
-  PArray<TagBoxArray> tbar;
-  if (nLevs>1) {
-    tbar.resize(nLevs-1, PArrayManage);
-    for (int lev=nLevs-2; lev>=0; --lev) {
-      BoxArray gba = BoxArray(cba_red).refine(cr[0]).coarsen(cr[lev]);
-      tbar.set(lev, new TagBoxArray(gba,tags_buffer)); 
-    }
-  }
-
-  IArrayBox finestFab, coarseFab;
-  const Real* dxFinest = geomArray[nLevs-1].CellSize();
-  for (int i=0; i<num_red; ++i) {
-    if (dm_red[i] == my_proc) {
-      const Box& box = cba_red[i];
-      for (IntVect civ=box.smallEnd(), CEnd=box.bigEnd(); civ<=CEnd; box.next(civ)) {
-        Box coarsestBox(civ,civ);
-        Box finestBox = Box(coarsestBox).refine(cr[0]);
-        finestFab.resize(finestBox,1); finestFab.setVal(-1);
-        for (int j=0; j<materials.size(); ++j) {
-          int matID = matIdx[materials[j].Name()];
-          materials[j].setVal(finestFab,matID,0,dxFinest);
-        }
-        
-        for (int lev=nLevs-2; lev>=0; --lev) {
-          Box thisBox = Box(finestBox).coarsen(cr[lev]);
-          IntVect rm1 = cr[lev] - IntVect::TheUnitVector();
-          TagBox& tb = tbar[lev][i];
-          
-          for (IntVect thisIv=thisBox.smallEnd(), TEnd=thisBox.bigEnd(); thisIv<=TEnd; thisBox.next(thisIv)) {      
-            IntVect thisFineIv = thisIv * cr[lev];
-            Box thisFineBox(thisFineIv,thisFineIv+rm1);      
-            if (finestFab.min(thisFineBox,0) != finestFab.max(thisFineBox,0)) {
-              tb.setVal(TagBox::SET,Box(thisIv,thisIv),0,1);
-            }
-          }
-        }
+  if (num_red) {
+    PArray<TagBoxArray> tbar;
+    if (nLevs>1) {
+      tbar.resize(nLevs-1, PArrayManage);
+      for (int lev=nLevs-2; lev>=0; --lev) {
+	BoxArray gba = BoxArray(cba_red).refine(cr[0]).coarsen(cr[lev]);
+	tbar.set(lev, new TagBoxArray(gba,tags_buffer)); 
       }
     }
-  }
 
-  for (int lev=nLevs-2; lev>=0; --lev) {
-    if (lev < nLevs-2) {
-      tbar[lev+1].coarsen(RefRatio(lev));
-      for (int i=0; i<num_red; ++i) {
-	if (dm_red[i] == my_proc) {
-	  tbar[lev][i].merge(tbar[lev+1][i]);
+    IArrayBox finestFab, coarseFab;
+    const Real* dxFinest = geomArray[nLevs-1].CellSize();
+    for (int i=0; i<num_red; ++i) {
+      if (dm_red[i] == my_proc) {
+	const Box& box = cba_red[i];
+	for (IntVect civ=box.smallEnd(), CEnd=box.bigEnd(); civ<=CEnd; box.next(civ)) {
+	  Box coarsestBox(civ,civ);
+	  Box finestBox = Box(coarsestBox).refine(cr[0]);
+	  finestFab.resize(finestBox,1); finestFab.setVal(-1);
+	  for (int j=0; j<materials.size(); ++j) {
+	    int matID = matIdx[materials[j].Name()];
+	    materials[j].setVal(finestFab,matID,0,dxFinest);
+	  }
+        
+	  for (int lev=nLevs-2; lev>=0; --lev) {
+	    Box thisBox = Box(finestBox).coarsen(cr[lev]);
+	    IntVect rm1 = cr[lev] - IntVect::TheUnitVector();
+	    TagBox& tb = tbar[lev][i];
+          
+	    for (IntVect thisIv=thisBox.smallEnd(), TEnd=thisBox.bigEnd(); thisIv<=TEnd; thisBox.next(thisIv)) {      
+	      IntVect thisFineIv = thisIv * cr[lev];
+	      Box thisFineBox(thisFineIv,thisFineIv+rm1);      
+	      if (finestFab.min(thisFineBox,0) != finestFab.max(thisFineBox,0)) {
+		tb.setVal(TagBox::SET,Box(thisIv,thisIv),0,1);
+	      }
+	    }
+	  }
 	}
       }
     }
-    tbar[lev].buffer(tags_buffer);
 
-    long int num_tags;
-    IntVect* tags = tbar[lev].collate(num_tags);
-    if (num_tags>0) {
-      ClusterList clist(tags, num_tags);
-      clist.chop(grid_eff);
-      BoxList bl = clist.boxList(); bl.simplify();
-      ba_array[lev] = BoxLib::intersect(BoxArray(bl),geomArray[lev].Domain());
-      ba_array[lev].maxSize(max_grid_size);
+    for (int lev=nLevs-2; lev>=0; --lev) {
+      if (lev < nLevs-2) {
+	tbar[lev+1].coarsen(RefRatio(lev));
+	for (int i=0; i<num_red; ++i) {
+	  if (dm_red[i] == my_proc) {
+	    tbar[lev][i].merge(tbar[lev+1][i]);
+	  }
+	}
+      }
+      tbar[lev].buffer(tags_buffer);
+
+      long int num_tags;
+      IntVect* tags = tbar[lev].collate(num_tags);
+      if (num_tags>0) {
+	ClusterList clist(tags, num_tags);
+	clist.chop(grid_eff);
+	BoxList bl = clist.boxList(); bl.simplify();
+	ba_array[lev] = BoxLib::intersect(BoxArray(bl),geomArray[lev].Domain());
+	ba_array[lev].maxSize(max_grid_size);
+      }
     }
   }
   return ba_array;
@@ -439,31 +441,29 @@ MatFiller::SetProperty(Real               t,
 
   // Here, unfilled split into baM(mixed)[treated above] and unfilled(nonmixed) 
   // Of the unfilled ones, first fill the ones we can at this level, then go to coarser
-
   if (unfilled.ok() && level<materialID.size()) {
-    ParallelDescriptor::Barrier();
     BL_ASSERT(materialID[level].boxArray().isDisjoint());
 
     // Find portion of unfilled that are fillable by non-mixed cells in the materialID struct at this level
     BoxList bl_fillable = BoxLib::intersect((BoxList)materialID[level].boxArray(),(BoxList)unfilled);
     BL_ASSERT( BoxLib::intersect((BoxArray)bl_fillable,baM).size()==0 );
-
     if (bl_fillable.size()>0) {
       bl_fillable.simplify();
-      BoxArray ba_fillable(bl_fillable);
+      BoxArray ba_fillable(bl_fillable); ba_fillable.removeOverlap();
       MultiFab fillData(ba_fillable,nComp,0);
-      iMultiFab fillID(ba_fillable,1,0); 
+      iMultiFab fillID(ba_fillable,1,0);
       fillID.copy(materialID[level]); // guaranteed to be filled completely
       for (MFIter mfi(fillData); mfi.isValid(); ++mfi) {
 	const Box& ovlp = mfi.validbox();
 	const IArrayBox& idfab = fillID[mfi];
 	FArrayBox& matfab = fillData[mfi];
-        for (int n=0; n<nComp; ++n) {
-          FORT_FILLP (matfab.dataPtr(n), ARLIM(matfab.loVect()), ARLIM(matfab.hiVect()),
-                      idfab.dataPtr(),   ARLIM(idfab.loVect()),  ARLIM(idfab.hiVect()),
-                      ovlp.loVect(), ovlp.hiVect(), values[n].dataPtr());
-        }
+	for (int n=0; n<nComp; ++n) {
+	  FORT_FILLP (matfab.dataPtr(n), ARLIM(matfab.loVect()), ARLIM(matfab.hiVect()),
+		      idfab.dataPtr(),   ARLIM(idfab.loVect()),  ARLIM(idfab.hiVect()),
+		      ovlp.loVect(), ovlp.hiVect(), values[n].dataPtr());
+	}
       }
+
       tmf.copy(fillData);
     }
 
@@ -537,8 +537,8 @@ MatFiller::SetProperty(Real               t,
     mf[mfi].copy(tmf[mfi],0,dComp,nComp);
   }
 
+  FillCellsOutsideDomain(t,level,mf,dComp,nComp,geomArray[level]);
   if (nGrow>0) {
-    FillCellsOutsideDomain(t,level,mf,pname,dComp,nComp,nGrow);
     mf.FillBoundary(dComp,nComp);
   }
 
@@ -549,22 +549,28 @@ void
 MatFiller::FillCellsOutsideDomain(Real               t,
                                   int                level,
                                   MultiFab&          mf,
-                                  const std::string& pname,
                                   int                dComp,
                                   int                nComp,
-                                  int                nGrow) const
+				  const Geometry&    geom)
 {
   const Array<int> bc(2*BL_SPACEDIM,FOEXTRAP);
-  const Geometry& geom = geomArray[level];
   const Box& domain = geom.Domain();
   const Real* dx = geom.CellSize();
   const Real* plo = geom.ProbLo();
-
   for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
     FArrayBox& fab = mf[mfi];
-    for (int n=0; n<nComp; ++n) {
-      FORT_FILCC(fab.dataPtr(dComp+n), ARLIM(fab.loVect()), ARLIM(fab.hiVect()),
-                 domain.loVect(), domain.hiVect(),dx,plo,bc.dataPtr());
+
+    Box bx = fab.box() & domain;
+    if (bx.ok()) {
+      for (int n=0; n<nComp; ++n) {
+	FORT_FILCC(fab.dataPtr(dComp+n), ARLIM(fab.loVect()), ARLIM(fab.hiVect()),
+		   domain.loVect(), domain.hiVect(),dx,plo,bc.dataPtr());
+      }
+    }
+    else {
+      std::cout << "no part of box inside domain: " << fab.box() << std::endl;
+      std::cout << "domain: " << domain << std::endl;
+      BoxLib::Abort();
     }
   }
 }

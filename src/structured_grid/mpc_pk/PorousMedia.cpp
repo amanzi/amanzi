@@ -130,6 +130,7 @@ namespace
 
 static bool initialized = false;
 static bool physics_events_registered = false;
+static bool rock_manager_finalized = false;
 
 void
 PorousMedia::CleanupStatics ()
@@ -140,7 +141,9 @@ PorousMedia::CleanupStatics ()
     tbc_array.clear();
     initialized = false;
     physics_events_registered = false;
+    rock_manager_finalized = false;
     source_volume.resize(0);
+    write_region_sets.clear();
 }
 
 void
@@ -165,69 +168,88 @@ PorousMedia::variableCleanUp ()
 }
 
 void
+PorousMedia::FinalizeRockManager(bool restart)
+{
+  BL_PROFILE("PorousMedia::FinalizeRockManager()");
+
+  if ( ! rock_manager_finalized)
+  {
+    // Finalize the rock_manager setup, now that the Amr has the required info
+    PMAmr& pmamr = *(PMParent());
+    int nlevels = pmamr.maxLevel() + 1;
+    Array<Geometry> geom_array(nlevels);
+    Array<IntVect> ref_array(nlevels-1);
+    IntVect cumRef(D_DECL(1,1,1));
+    for (int i=0; i<nlevels; ++i) {
+      geom_array[i] = pmamr.Geom(i);
+      if (i<nlevels-1) {
+	ref_array[i] = pmamr.refRatio(i);
+	cumRef *= ref_array[i];
+      }
+    }
+    if (ParallelDescriptor::IOProcessor()) {
+      std::cout << "Finalizing the RockManager on domain: " << geom_array[0].Domain();
+      if (ref_array.size()>0) {
+	std::cout << " with refinement ratios: ( ";
+	for (int i = 0; i<ref_array.size(); ++i) {
+	  std::cout << ref_array[i][0];
+	  if (i+1 < ref_array.size()) {
+	    std::cout << ", ";
+	  }
+	}
+	for (int d=0; d<BL_SPACEDIM; ++d) {
+	  cumRef[d] *= geom_array[0].Domain().length(d);
+	}
+	std::cout << " ) for effective resolution: " << cumRef;
+      }
+      std::cout << "" << std::endl;
+    }
+    rock_manager->FinalizeBuild(geom_array,ref_array,PorousMedia::NGrowHYP(),restart);
+    rock_manager_finalized = true;
+  }
+}
+
+void
 PorousMedia::RegisterPhysicsBasedEvents()
 {
   BL_PROFILE("PorousMedia::RegisterPhysicsBasedEvents()");
 
-  // Finalize the rock_manager setup, now that the Amr has the required info
-  PMAmr& pmamr = *(PMParent());
-  int nlevels = pmamr.maxLevel() + 1;
-  Array<Geometry> geom_array(nlevels);
-  Array<IntVect> ref_array(nlevels-1);
-  IntVect cumRef(D_DECL(1,1,1));
-  for (int i=0; i<nlevels; ++i) {
-    geom_array[i] = pmamr.Geom(i);
-    if (i<nlevels-1) {
-      ref_array[i] = pmamr.refRatio(i);
-      cumRef *= ref_array[i];
+  if ( ! physics_events_registered)
+  {
+    if (! parent) {
+      BoxLib::Abort("Cannot register physics-based events without parent");
     }
-  }
-  if (ParallelDescriptor::IOProcessor()) {
-    std::cout << "Finalizing the RockManager on domain: " << geom_array[0].Domain();
-    if (ref_array.size()>0) {
-      std::cout << " with refinement ratios: ( ";
-      for (int i = 0; i<ref_array.size(); ++i) {
-	std::cout << ref_array[i][0];
-	if (i+1 < ref_array.size()) {
-	  std::cout << ", ";
-	}
-      }
-      for (int d=0; d<BL_SPACEDIM; ++d) {
-	cumRef[d] *= geom_array[0].Domain().length(d);
-      }
-      std::cout << " ) for effective resolution: " << cumRef;
-    }
-    std::cout << "" << std::endl;
-  }
-  rock_manager->FinalizeBuild(geom_array,ref_array,PorousMedia::NGrowHYP());
 
-  if (execution_mode==INIT_TO_STEADY) {
-    std::string event_name = "Switch_Time";
-    if (ParallelDescriptor::IOProcessor()) {
-      std::cout << "Registering event: " << event_name << " to occur at t = " << switch_time << std::endl;
+    if (execution_mode==INIT_TO_STEADY) {
+      std::string event_name = "Switch_Time";
+      if (ParallelDescriptor::IOProcessor()) {
+	std::cout << "Registering event: " << event_name << " to occur at t = " << switch_time << std::endl;
+      }
+      PMParent()->RegisterEvent(event_name,new EventCoord::TimeEvent(Array<Real>(1,switch_time)));
     }
-    PMParent()->RegisterEvent(event_name,new EventCoord::TimeEvent(Array<Real>(1,switch_time)));
-  }
 
-  for (int i=0; i<bc_array.size(); ++i) {
-    const std::string& event_name = bc_array[i].Label();
-    if (ParallelDescriptor::IOProcessor()) {
+    for (int i=0; i<bc_array.size(); ++i) {
+      const std::string& event_name = bc_array[i].Label();
+      if (ParallelDescriptor::IOProcessor()) {
 	std::cout << "Registering event: " << event_name << " " << bc_array[i].time() << std::endl;
       }
-    PMParent()->RegisterEvent(event_name,new EventCoord::TimeEvent(bc_array[i].time()));
-  }
+      PMParent()->RegisterEvent(event_name,new EventCoord::TimeEvent(bc_array[i].time()));
+    }
 
-  for (int n=0; n<tbc_array.size(); ++n) {
-    for (int i=0; i<tbc_array[n].size(); ++i) {
-      BL_ASSERT(soluteNames().size()>n);
-      BL_ASSERT(tbc_array.size()>n);
-      BL_ASSERT(tbc_array[n].size()>i);
-      const std::string& event_name = tbc_array[n][i].Label() + "_" + soluteNames()[n];
-      if (ParallelDescriptor::IOProcessor()) {
+    for (int n=0; n<tbc_array.size(); ++n) {
+      for (int i=0; i<tbc_array[n].size(); ++i) {
+	BL_ASSERT(soluteNames().size()>n);
+	BL_ASSERT(tbc_array.size()>n);
+	BL_ASSERT(tbc_array[n].size()>i);
+	const std::string& event_name = tbc_array[n][i].Label() + "_" + soluteNames()[n];
+	if (ParallelDescriptor::IOProcessor()) {
 	  std::cout << "Registering event: " << event_name << " " << tbc_array[n][i].Time() << std::endl;
 	}
-      pmamr.RegisterEvent(event_name,new EventCoord::TimeEvent(tbc_array[n][i].Time()));
+	PMParent()->RegisterEvent(event_name,new EventCoord::TimeEvent(tbc_array[n][i].Time()));
+      }
     }
+
+    physics_events_registered = true;
   }
 }
 
@@ -268,11 +290,6 @@ PorousMedia::PorousMedia ()
   sat_new_cached = 0;
   t_sat_old_cached = -1;
   t_sat_new_cached = -1;
-
-  if (parent && !physics_events_registered) {
-    RegisterPhysicsBasedEvents();
-    physics_events_registered = true;
-  }
 }
 
 
@@ -553,11 +570,6 @@ PorousMedia::PorousMedia (Amr&            papa,
   // Must initialize to zero because we test on zero in estDt.
   dt_eig = 0;
 
-  if (parent && !physics_events_registered) {
-    RegisterPhysicsBasedEvents();
-    physics_events_registered = true;
-  }
-
   // Set up boundary condition work
   setup_bound_desc();
 }
@@ -788,11 +800,6 @@ PorousMedia::restart (Amr&          papa,
   if (grids == papa.getLevel(level).boxArray())
     is_grid_changed_after_regrid = false;
 
-  if (parent && !physics_events_registered) {
-    RegisterPhysicsBasedEvents();
-    physics_events_registered = true;
-  }
-
   // Set up boundary condition work
   setup_bound_desc();
 }
@@ -881,7 +888,7 @@ PorousMedia::initData ()
     // 
     // Initialize rock properties
     //
-    init_rock_properties();
+    init_rock_properties(false);
 
     //
     // Initialize the state and the pressure.
@@ -1609,7 +1616,7 @@ void
 PorousMedia::init (AmrLevel& old)
 {
   BL_PROFILE("PorousMedia::init(old)");
-  init_rock_properties();
+  init_rock_properties(false);
 
   PorousMedia*  oldns     = (PorousMedia*) &old;
   const Real    dt_new    = parent->dtLevel(level);
@@ -1706,7 +1713,7 @@ void
 PorousMedia::init ()
 {
   BL_PROFILE("PorousMedia::init()");
-  init_rock_properties();
+  init_rock_properties(false);
 
   BL_ASSERT(level > 0);
     
@@ -5087,7 +5094,10 @@ PorousMedia::PMParent() const
 void PorousMedia::post_restart()
 {
   BL_PROFILE("PorousMedia::post_restart()");
-  init_rock_properties();
+
+  RegisterPhysicsBasedEvents();
+
+  init_rock_properties(true);
 
   if (level == 0) {
 
@@ -5128,7 +5138,7 @@ PorousMedia::post_regrid (int lbase,
                           int new_finest)
 {
   BL_PROFILE("PorousMedia::post_regrid()");
-  init_rock_properties();
+  init_rock_properties(false);
 
   // NOTE: If grids change at any level, the layout (and RS) is no longer valid
   Layout& layout = PMParent()->GetLayout();
@@ -5166,9 +5176,13 @@ PorousMedia::post_regrid (int lbase,
 }
 
 void 
-PorousMedia::init_rock_properties ()
+PorousMedia::init_rock_properties (bool restart)
 {
   BL_PROFILE("PorousMedia::init_rock_properties()");
+
+  // Ensure RM is finalized before trying to use it
+  FinalizeRockManager(restart);
+
   int nGrow = materialID->nGrow();
   bool ignore_mixed = true;
   rock_manager->GetMaterialID(level,*materialID,nGrow,ignore_mixed);
@@ -5266,6 +5280,8 @@ void
 PorousMedia::post_init (Real stop_time)
 {
   BL_PROFILE("PorousMedia::post_init()");
+
+  RegisterPhysicsBasedEvents();
 
   if (level > 0)
     //
@@ -7607,6 +7623,24 @@ PorousMedia::derive_CationExchangeCapacity(Real      time,
   }
 }
 
+void
+PorousMedia::derive_WriteRegion(Real                      time,
+				MultiFab&                 mf,
+				int                       dcomp,
+				const Array<std::string>& region_set)
+{
+  Array<const Region*> r = region_manager->RegionPtrArray(region_set);
+  const Real* dx = geom.CellSize();
+  mf.setVal(0,dcomp,1,mf.nGrow());
+  for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
+    FArrayBox& fab = mf[mfi];
+    for (int i=0; i<r.size(); ++i) {
+      Real val = Real(i+1);
+      r[i]->setVal(fab,val,dcomp,dx,mf.nGrow());
+    }
+  }
+}
+
 MultiFab*
 PorousMedia::derive (const std::string& name,
                      Real               time,
@@ -7739,6 +7773,13 @@ PorousMedia::derive (const std::string& name,
         not_found_yet = false;        
       }
     }
+  }
+
+  // Check for write_region types
+  std::map<std::string,Array<std::string> >::const_iterator writ = write_region_sets.find(name);
+  if (writ != write_region_sets.end()) {
+    derive_WriteRegion(time,mf,dcomp,writ->second);
+    not_found_yet = false;
   }
 
   if (not_found_yet) {

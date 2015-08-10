@@ -2828,6 +2828,11 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     expertPL.set<double>("steady_time_step_increase_factor",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
+                  else if (strcmp(tagname,"time_step_reduction_factor")==0) {
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    expertPL.set<double>("steady_time_step_reduction_factor",get_double_constant(textContent,*def_list));
+                    XMLString::release(&textContent);
+                  }
                   else if (strcmp(tagname,"max_consecutive_failures_1")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
                     expertPL.set<int>("steady_max_consecutive_failures_1",get_int_constant(textContent,*def_list));
@@ -2892,19 +2897,25 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"grid_sequence_new_level_dt_factor")==0) {
-                    Teuchos::Array<int> factors;
+                    Teuchos::Array<double> factors;
                     DOMNodeList* intChildren = currentNode->getChildNodes();
                     for (int l=0; l<intChildren->getLength(); l++) {
                       DOMNode* currentIntKid = intChildren->item(l) ;
                       if (DOMNode::ELEMENT_NODE == currentIntKid->getNodeType()) {
-                        char* intString = XMLString::transcode(currentIntKid->getTextContent());
-                        factors.append(atoi(intString));
-                        XMLString::release(&intString);
+                        char* textContent = XMLString::transcode(currentIntKid->getTextContent());
+                        factors.append(get_double_constant(textContent,*def_list));
+                        XMLString::release(&textContent);
                       }
                     }
-                    expertPL.set<Teuchos::Array<int> >("steady_grid_sequence_new_level_dt_factor",factors);
+                    expertPL.set<Teuchos::Array<double> >("steady_grid_sequence_new_level_dt_factor",factors);
                     //XMLString::release(&textContent);
                   }
+                  else if (strcmp(tagname,"dt_thresh_pure_steady")==0) {
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    expertPL.set<double>("richard_dt_thresh_pure_steady",get_double_constant(textContent,*def_list));
+                    XMLString::release(&textContent);
+                  }
+		  XMLString::release(&tagname);
                 }
               }
             }
@@ -3010,11 +3021,17 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     expertPL.set<double>("cfl",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
+		  else if (strcmp(tagName,"max_n_subcycle_transport")==0) {
+		    textContent = XMLString::transcode(currentNode->getTextContent());
+		    expertPL.set<int>("max_n_subcycle_transport",get_int_constant(textContent,*def_list));
+		    XMLString::release(&textContent);
+		  }
                 }
               }
             }
             else if (strcmp(nodeName,"str_amr_controls")==0) {
               // loop through children and deal with them
+	      Teuchos::Array<std::string> refinement_indicator_names;
               DOMNodeList* children = tmpNode->getChildNodes();
               for (int k=0; k<children->getLength(); k++) {
                 DOMNode* currentNode = children->item(k) ;
@@ -3022,22 +3039,15 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   char* tagname = XMLString::transcode(currentNode->getNodeName());
                   if (strcmp(tagname,"amr_levels")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    amrPL.set<int>("amr_levels",get_int_constant(textContent,*def_list));
+                    amrPL.set<int>("Number Of AMR Levels",get_int_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"refinement_ratio")==0) {
                     Teuchos::Array<int> factors;
-                    DOMNodeList* intChildren = currentNode->getChildNodes();
-                    for (int l=0; l<intChildren->getLength(); l++) {
-                      DOMNode* currentIntKid = intChildren->item(l) ;
-                      if (DOMNode::ELEMENT_NODE == currentIntKid->getNodeType()) {
-                        char* intString = XMLString::transcode(currentIntKid->getTextContent());
-                        factors.append(atoi(intString));
-                        XMLString::release(&intString);
-                      }
-                    }
-                    amrPL.set<Teuchos::Array<int> >("refinement_ratio",factors);
-                    //XMLString::release(&textContent);
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    factors = make_int_list(textContent);
+                    amrPL.set<Teuchos::Array<int> >("Refinement Ratio",factors);
+                    XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"do_amr_subcycling")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
@@ -3051,49 +3061,30 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   }
                   else if (strcmp(tagname,"regrid_interval")==0) {
                     Teuchos::Array<int> factors;
-                    DOMNodeList* intChildren = currentNode->getChildNodes();
-                    for (int l=0; l<intChildren->getLength(); l++) {
-                      DOMNode* currentIntKid = intChildren->item(l) ;
-                      if (DOMNode::ELEMENT_NODE == currentIntKid->getNodeType()) {
-                        char* intString = XMLString::transcode(currentIntKid->getTextContent());
-                        factors.append(atoi(intString));
-                        XMLString::release(&intString);
-                      }
-                    }
-                    amrPL.set<Teuchos::Array<int> >("regrid_interval",factors);
-                    //XMLString::release(&textContent);
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    factors = make_int_list(textContent);
+                    amrPL.set<Teuchos::Array<int> >("Regrid Interval",factors);
+                    XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"blocking_factor")==0) {
                     Teuchos::Array<int> factors;
-                    DOMNodeList* intChildren = currentNode->getChildNodes();
-                    for (int l=0; l<intChildren->getLength(); l++) {
-                      DOMNode* currentIntKid = intChildren->item(l) ;
-                      if (DOMNode::ELEMENT_NODE == currentIntKid->getNodeType()) {
-                        char* intString = XMLString::transcode(currentIntKid->getTextContent());
-                        factors.append(atoi(intString));
-                        XMLString::release(&intString);
-                      }
-                    }
-                    amrPL.set<Teuchos::Array<int> >("blocking_factor",factors);
-                    //XMLString::release(&textContent);
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    factors = make_int_list(textContent);
+                    amrPL.set<Teuchos::Array<int> >("Blocking Factor",factors);
+                    XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"number_error_buffer_cells")==0) {
                     Teuchos::Array<int> factors;
-                    DOMNodeList* intChildren = currentNode->getChildNodes();
-                    for (int l=0; l<intChildren->getLength(); l++) {
-                      DOMNode* currentIntKid = intChildren->item(l) ;
-                      if (DOMNode::ELEMENT_NODE == currentIntKid->getNodeType()) {
-                        char* intString = XMLString::transcode(currentIntKid->getTextContent());
-                        factors.append(atoi(intString));
-                        XMLString::release(&intString);
-                      }
-                    }
-                    amrPL.set<Teuchos::Array<int> >("number_error_buffer_cells",factors);
-                    //XMLString::release(&textContent);
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    factors = make_int_list(textContent);
+                    amrPL.set<Teuchos::Array<int> >("Number Error Buffer Cells",factors);
+                    XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"max_grid_size")==0) {
+                    Teuchos::Array<int> factors;
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    amrPL.set<int>("max_grid_size",get_int_constant(textContent,*def_list));
+                    factors = make_int_list(textContent);
+                    amrPL.set<Teuchos::Array<int> >("Maximum Grid Size",factors);
                     XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"refinement_indicator")==0) {
@@ -3115,6 +3106,8 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     if (!foundName) {
                       //error message: refinement_indicators must have name
                     }
+		    refinement_indicator_names.push_back(std::string(nameRefinement));
+
                     // loop over children to get values
                     DOMNodeList* kids = currentNode->getChildNodes();
                     for (int l=0; l<kids->getLength(); l++) {
@@ -3122,19 +3115,19 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                       if (DOMNode::ELEMENT_NODE == currentKid->getNodeType()) {
                         char* tagname = XMLString::transcode(currentKid->getNodeName());
                         if (strcmp(tagname,"field_name")==0) {
-                          textContent = XMLString::transcode(currentKid->getNodeValue());
+                          textContent = XMLString::transcode(currentKid->getTextContent());
                           refinePL.set<std::string>("Field Name",trim_string(textContent));
                           XMLString::release(&textContent);
                         }
                         else if (strcmp(tagname,"regions")==0) {
-                          textContent = XMLString::transcode(currentKid->getNodeValue());
+                          textContent = XMLString::transcode(currentKid->getTextContent());
                           Teuchos::Array<std::string> regs = make_regions_list(textContent);
                           refinePL.set<Teuchos::Array<std::string> >("Regions",regs);
                           XMLString::release(&textContent);
                         }
-                        else if (strcmp(attrName,"max_refinement_level")==0) {
-                          textContent = XMLString::transcode(currentKid->getNodeValue());
-                          refinePL.set<std::string>("Maximum Refinement Level",trim_string(textContent));
+                        else if (strcmp(tagname,"max_refinement_level")==0) {
+                          textContent = XMLString::transcode(currentKid->getTextContent());
+                          refinePL.set<int>("Maximum Refinement Level",atoi(textContent));
                           XMLString::release(&textContent);
                         }
                         else if (strcmp(tagname,"start_time")==0) {
@@ -3200,6 +3193,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                           }
                           XMLString::release(&textContent);
                         }
+			XMLString::release(&tagname);
                       }
                     }
                     amrPL.sublist(nameRefinement) = refinePL;
@@ -3207,12 +3201,15 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   }
                 }
               }
+	      if (refinement_indicator_names.size() > 0) {
+		amrPL.set<Teuchos::Array<std::string> >("Refinement Indicators",refinement_indicator_names);
+	      }
             }
             else if (strcmp(nodeName,"max_n_subcycle_transport")==0) {
               textContent = XMLString::transcode(tmpNode->getTextContent());
               expertPL.set<int>("max_n_subcycle_transport",get_int_constant(textContent,*def_list));
               XMLString::release(&textContent);
-            }
+	    }
             else if (strcmp(nodeName,"petsc_options_file")==0) {
               // This specifies the name of the file containing petsc options
               // The default filename ".petsc" is found automatically
@@ -3221,12 +3218,13 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
               def_list->set<std::string>("petsc_options_file",trim_string(textContent));
               XMLString::release(&textContent);
             }
+	    XMLString::release(&nodeName);
           }
         }
       }
     }
     list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Expert Settings") = expertPL;
-    list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Adaptive Mesh Refinement") = amrPL;
+    list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Adaptive Mesh Refinement Control") = amrPL;
   }
   
   if (!isUnstr_ && !found) {
@@ -3516,6 +3514,7 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
     regionNames_string_.append("YHIBC");
     regionNames_string_.append("ZLOBC");
     regionNames_string_.append("ZHIBC");
+    regionNames_string_.append("All");
   }
   
   // get regions node
@@ -5602,7 +5601,7 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 		    if (times.length() == 0) {               // if first time through
                       times.append(time);
 		      funcs.append(function);
-		      vals.append(value);
+                      vals.append(value);
 		    }
                     else {
 		      if (time >= times[times.length()-1]) { // if already sorted
@@ -5611,36 +5610,28 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 		        vals.append(value);
 		      }
                       else {                              // otherwise, sort
-		        int idx = times.length()-1;
-		        Teuchos::Array<double> hold_times;
-		        Teuchos::Array<double> hold_vals;
-		        Teuchos::Array<std::string> hold_funcs;
-		        hold_times.append(times[idx]);
-		        hold_vals.append(vals[idx]);
-		        hold_funcs.append(funcs[idx]);
-		        times.remove(idx);
-		        vals.remove(idx);
-		        funcs.remove(idx);
-		        idx--;
-		        while (time < times[idx]) {
-		          hold_times.append(times[idx]);
-		          hold_vals.append(vals[idx]);
-		          hold_funcs.append(funcs[idx]);
-		          times.remove(idx);
-		          vals.remove(idx);
-		          funcs.remove(idx);
-		          idx--;
-		        }
-		        times.append(time);
-		        vals.append(value);
-		        funcs.append(function);
-		        for (int i=0; i<hold_times.length(); i++) {
-		          idx = hold_times.length()-1-i;
-		          times.append(hold_times[hold_times.length()-idx]);
-		          vals.append(hold_vals[hold_times.length()-idx]);
-		          funcs.append(hold_funcs[hold_times.length()-idx]);
-		        }
-		      }
+                        int here(0);
+                        int idx(0);
+                        // figure out the correct position (times already in order from previous steps)
+                        while (times[idx] < time) {
+                          idx++;
+                          here = idx;
+                        }
+                        // append last values to end
+                        times.append(times[times.length()-1]);
+                        vals.append(vals[vals.length()-1]);
+                        funcs.append(funcs[funcs.length()-1]);
+                        // copy entries over one
+                        for (int i=times.length()-1; i>here; i--) {
+                          times[i] = times[i-1];
+                          vals[i] = vals[i-1];
+                          funcs[i] = funcs[i-1];
+                        }
+                        // add new entries "here"
+                        times[here] = time;
+                        vals[here] = value;
+                        funcs[here] = function;
+                      }
 		    }
 		  }
 	        }
@@ -5788,35 +5779,29 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
                         sort_vals.append(values[j]);
                       }
                       else {                                            // otherwise sort
-                        int idx = times.length()-1;
-                        Teuchos::Array<double> hold_times;
-                        Teuchos::Array<double> hold_vals;
-                        Teuchos::Array<std::string> hold_funcs;
-                        hold_times.append(sort_times[idx]);
-                        hold_vals.append(sort_vals[idx]);
-                        hold_funcs.append(sort_func[idx]);
-                        sort_times.remove(idx);
-                        sort_vals.remove(idx);
-                        sort_func.remove(idx);
-                        idx--;
-                        while (times[j] < sort_times[idx]) {
-                          hold_times.append(sort_times[idx]);
-                          hold_vals.append(sort_vals[idx]);
-                          hold_funcs.append(sort_func[idx]);
-                          sort_times.remove(idx);
-                          sort_vals.remove(idx);
-                          sort_func.remove(idx);
-                          idx--;
+                        // otherwise, sort
+                        int here(0);
+                        int idx(0);
+                        // figure out the correct position (times already in order from previous steps)
+                        while (sort_times[idx] < times[j]) {
+                          idx++;
+                          here = idx;
                         }
-                        sort_times.append(times[j]);
-                        sort_vals.append(values[j]);
-                        sort_func.append(funcs[j]);
-                        for (int i=0; i<hold_times.length(); i++) {
-                          idx = hold_times.length()-1-i;
-                          sort_times.append(hold_times[hold_times.length()-idx]);
-                          sort_vals.append(hold_vals[hold_times.length()-idx]);
-                          sort_func.append(hold_funcs[hold_times.length()-idx]);
+                        // append last values to end
+                        sort_times.append(sort_times[sort_times.length()-1]);
+                        sort_vals.append(sort_vals[sort_vals.length()-1]);
+                        sort_func.append(sort_func[sort_func.length()-1]);
+                        // copy entries over one
+                        for (int i=sort_times.length()-1; i>here; i--) {
+                          sort_times[i] = sort_times[i-1];
+                          sort_vals[i] = sort_vals[i-1];
+                          sort_func[i] = sort_func[i-1];
                         }
+                        // add new entries "here"
+                        sort_times[here] = times[j];
+                        sort_vals[here] = values[j];
+                        sort_func[here] = funcs[j];
+
                       }
                     }
 		  }
@@ -5981,32 +5966,76 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
                     else if (strcmp(scChildName,"perm_weighted")==0){
 		     scname = "Source: Permeability Weighted";
 		    }
+                    
 		    // loop over any attributes that may exist
                     DOMNamedNodeMap* attrMap2 = scChildNode->getAttributes();
+                    std::string function;
+                    double value;
+                    double time;
                     for (int l=0; l<attrMap2->getLength(); l++) {
                       DOMNode* attrNode = attrMap2->item(l) ;
                       if (DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
+                        
                         char* attrName = XMLString::transcode(attrNode->getNodeName());
                         char* attrValue = XMLString::transcode(attrNode->getNodeValue());
-			if (strcmp(attrName,"function")==0) {
+                        if (strcmp(attrName,"function")==0) {
 		          if (strcmp(attrValue,"linear")==0) {
-		            funcs.append("Linear");
+		            function = "Linear";
 		          }
                           else if (strcmp(attrValue,"constant")==0) {
-		            funcs.append("Constant");
+		            function = "Constant";
 		          }
                           else if (strcmp(attrValue,"uniform")==0) {
-		            funcs.append("Uniform");
+		            function = "Uniform";
 		          }
 			}
                         else if (strcmp(attrName,"start")==0) {
-		          times.append(get_time_value(attrValue, def_list));
+		          time = get_time_value(attrValue, def_list);
 			}
                         else if (strcmp(attrName,"value")==0) {
-		          vals.append(get_time_value(attrValue, def_list));
-			}
-		      }
+		          value = get_double_constant(attrValue, def_list);
+                        }
+                        XMLString::release(&attrName);
+                        XMLString::release(&attrValue);
+                      }
 		    }
+                    
+                    // put time, function, value in sorted order
+                    if (times.length() == 0) {               // if first time through
+                      times.append(time);
+                      funcs.append(function);
+                      vals.append(value);
+                    }
+                    else {
+                      if (time >= times[times.length()-1]) { // if already sorted
+                        times.append(time);
+                        funcs.append(function);
+                        vals.append(value);
+                      }
+                      else {                              // otherwise, sort
+                        int here(0);
+                        int idx(0);
+                        // figure out the correct position (times already in order from previous steps)
+                        while (times[idx] < time) {
+                          idx++;
+                          here = idx;
+                        }
+                        // append last values to end
+                        times.append(times[times.length()-1]);
+                        vals.append(vals[vals.length()-1]);
+                        funcs.append(funcs[funcs.length()-1]);
+                        // copy entries over one
+                        for (int m=times.length()-1; m>here; m--) {
+                          times[m] = times[m-1];
+                          vals[m] = vals[m-1];
+                          funcs[m] = funcs[m-1];
+                        }
+                        // add new entries "here"
+                        times[here] = time;
+                        vals[here] = value;
+                        funcs[here] = function;
+                      }
+                    }
 		  }
 		}
 	        if (times.length()==1 ){
@@ -6052,8 +6081,12 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
                       scname = "Source: Diffusion Dominated Release Model";
                       isReleaseModel = true;
                     }
-		    // loop over any attributes that may exist
+		    
+                    // loop over any attributes that may exist
                     DOMNamedNodeMap* attrMap2 = scChildNode->getAttributes();
+                    std::string function;
+                    double value;
+                    double time;
                     for (int l=0; l<attrMap2->getLength(); l++) {
                       DOMNode* attrNode = attrMap2->item(l) ;
                       if (DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
@@ -6061,20 +6094,20 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
                         char* attrValue = XMLString::transcode(attrNode->getNodeValue());
 			if (strcmp(attrName,"function")==0) {
 		          if (strcmp(attrValue,"linear")==0) {
-		            funcs.append("Linear");
+		            function = "Linear";
 		          }
                           else if (strcmp(attrValue,"constant")==0) {
-		            funcs.append("Constant");
+		            function = "Constant";
 		          }
                           else if (strcmp(attrValue,"uniform")==0) {
-		            funcs.append("Uniform");
+		            function = "Uniform";
 		          }
 			}
                         else if (strcmp(attrName,"start")==0) {
-		          times.append(get_time_value(attrValue, def_list));
+		          time = get_time_value(attrValue, def_list);
 			}
                         else if (strcmp(attrName,"value")==0) {
-		          vals.append(get_time_value(attrValue, def_list));
+		          value = get_double_constant(attrValue, def_list);
 			}
                         else if (strcmp(attrName,"name")==0) {
 		          soluteName = attrValue;
@@ -6091,7 +6124,44 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
                         XMLString::release(&attrName);
                         XMLString::release(&attrValue);
 		      }
-		    }
+                    }
+                    
+                    // put time, function, value in sorted order
+                    if (times.length() == 0) {               // if first time through
+                      times.append(time);
+                      funcs.append(function);
+                      vals.append(value);
+                    }
+                    else {
+                      if (time >= times[times.length()-1]) { // if already sorted
+                        times.append(time);
+                        funcs.append(function);
+                        vals.append(value);
+                      }
+                      else {                              // otherwise, sort
+                        int here(0);
+                        int idx(0);
+                        // figure out the correct position (times already in order from previous steps)
+                        while (times[idx] < time) {
+                          idx++;
+                          here = idx;
+                        }
+                        // append last values to end
+                        times.append(times[times.length()-1]);
+                        vals.append(vals[vals.length()-1]);
+                        funcs.append(funcs[funcs.length()-1]);
+                        // copy entries over one
+                        for (int m=times.length()-1; m>here; m--) {
+                          times[m] = times[m-1];
+                          vals[m] = vals[m-1];
+                          funcs[m] = funcs[m-1];
+                        }
+                        // add new entries "here"
+                        times[here] = time;
+                        vals[here] = value;
+                        funcs[here] = function;
+                      }
+                    }
 		  }
 		}
 	        if (times.length()==1 ){
@@ -6327,21 +6397,51 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
               XMLString::release(&textContent2);
 	    }
             else if (strcmp(textContent,"write_regions")==0) {
-              textContent2 = XMLString::transcode(curKid->getTextContent());
-              Teuchos::Array<std::string> regs = make_regions_list(textContent2);
-              visPL.set<Teuchos::Array<std::string> >("Write Regions",regs);
-              XMLString::release(&textContent2);
-              if (!compare_region_names(regs, def_list)) {
-                Errors::Message msg;
-                msg << "Amanzi::InputTranslator: ERROR - invalid region in Vis Section - " ;
-                msg << "valid regions are: \n" ;
-                for (int r=0; r<regionNames_string_.size(); r++) {
-                  msg << "    " << regionNames_string_[r] << "\n";
-                }
-                msg << "  Please correct and try again \n" ;
-                Exceptions::amanzi_throw(msg);
-              }
-            }
+
+	      DOMNodeList* wrChildList = curKid->getChildNodes();
+	      int numChild = wrChildList->getLength();
+	      if (numChild > 0) {
+		Teuchos::ParameterList wrPL;
+		for (int L=0; L<numChild; L++) {
+		  DOMNode* wrChildNode = wrChildList->item(L);
+		  char* name = XMLString::transcode(wrChildNode->getNodeName());
+		  if (strcmp(name,"field")==0) {
+		    DOMElement* wrElem = static_cast<DOMElement*>(wrChildNode);
+		    char *nameStr, *regStr;
+		    if (wrElem->hasAttribute(XMLString::transcode("name"))) {
+		      nameStr = XMLString::transcode(wrElem->getAttribute(XMLString::transcode("name")));
+		    } else {
+		      Exceptions::amanzi_throw("write_regions elements each require a \"name\" attribute");
+		    }
+		    if (wrElem->hasAttribute(XMLString::transcode("regions"))) {
+		      regStr = XMLString::transcode(wrElem->getAttribute(XMLString::transcode("regions")));
+		    } else {
+		      Exceptions::amanzi_throw("write_regions elements each require a \"regions\" attribute");
+		    }
+
+		    Teuchos::Array<std::string> region_list = make_regions_list(regStr);
+		    if (!compare_region_names(region_list, def_list)) {
+		      Errors::Message msg;
+		      msg << "Amanzi::InputTranslator: ERROR - invalid region in write_regions Section - " ;
+		      msg << "valid regions are: \n" ;
+		      for (int r=0; r<regionNames_string_.size(); r++) {
+			msg << "    " << regionNames_string_[r] << "\n";
+		      }
+		      msg << "specified regions: \n" ;
+		      for (int r=0; r<region_list.size(); r++) {
+			msg << "    " << region_list[r] << "\n";
+		      }
+		      msg << "  Please correct and try again \n" ;
+		      Exceptions::amanzi_throw(msg);
+		    }
+		    wrPL.set<Teuchos::Array<std::string> >(nameStr,region_list);
+		    XMLString::release(&nameStr);
+		    XMLString::release(&regStr);
+		  }
+		}
+		visPL.sublist("Write Regions") = wrPL;
+	      }
+	    }
             XMLString::release(&textContent);
           }
           list.sublist("Visualization Data") = visPL;
@@ -6866,6 +6966,25 @@ int get_int_constant(std::string pos_name, Teuchos::ParameterList def_list)
   return value;
 }
 
+/*
+******************************************************************
+* Empty
+******************************************************************
+*/
+  Teuchos::Array<int> make_int_list(char* char_array)
+  {
+    Teuchos::Array<int> int_list;
+    char* tmp;
+    tmp = strtok(char_array,", ");
+    while(tmp!=NULL){
+      std::string str(tmp);
+      boost::algorithm::trim(str);
+      int_list.append(atoi(str.c_str()));
+      tmp = strtok(NULL,", ");
+    }
+    
+    return int_list;
+  }
 /* 
  ******************************************************************
  * Empty

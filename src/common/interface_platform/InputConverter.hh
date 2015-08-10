@@ -23,14 +23,48 @@
 
 // TPLs
 #include "xercesc/dom/DOM.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_Array.hpp"
+#include "xercesc/parsers/XercesDOMParser.hpp"
 
 // Amanzi's
 #include "VerboseObject.hh"
 
 namespace Amanzi {
 namespace AmanziInput {
+
+/* 
+* A simple wrapper for XMLString class. It collects memory pointers
+* and destroys them later. The focus is on simplicity of its using,
+* so that release is never called.
+*/
+class XString {
+ public:
+  XString() {};
+  ~XString() { Destroy_(); }
+
+  XMLCh* transcode(const char* str) {
+    XMLCh* xstr = xercesc::XMLString::transcode(str);
+    xchar.push_back(xstr);
+    return xstr;
+  }
+
+  char* transcode(const XMLCh* xstr) {
+    char* str = xercesc::XMLString::transcode(xstr);
+    pchar.push_back(str);
+    return str;
+  }
+
+ private:
+  void Destroy_() {
+    for (std::vector<char*>::iterator it = pchar.begin(); it != pchar.end(); ++it)
+      xercesc::XMLString::release(&*it);
+    for (std::vector<XMLCh*>::iterator it = xchar.begin(); it != xchar.end(); ++it)
+      xercesc::XMLString::release(&*it);
+  }
+
+ private:
+  std::vector<char*> pchar;
+  std::vector<XMLCh*> xchar;
+};
 
 class InputConverter {
  public:
@@ -39,14 +73,18 @@ class InputConverter {
   }
 
   ~InputConverter() {
+    delete parser;
     xercesc::XMLPlatformUtils::Terminate();
   }
 
   // main member: creates xerces document using the file name
   void Init(const std::string& xmlfilename);
 
+  // parse various nodes
+  void ParseConstants_();
+
  protected:
-  // DOM useful tool
+  // Useful tools wrapping low-level DOM commands
   // -- generalization of getElementsByTagNames(): returns node
   //    tag1->tag2 or tag1->tag2-tag3 where all tags are unique 
   //    leaves of the tree.
@@ -56,7 +94,7 @@ class InputConverter {
       const std::string& tag1, const std::string& tag2, const std::string& tag3, bool& flag);
   // -- tags contains list of names separated by commas. It 
   //    will replace eventually the previous routine.
-  xercesc::DOMNode* getUniqueElementByTagNames_(
+  xercesc::DOMNode* getUniqueElementByTagsString_(
       const std::string& tags, bool& flag);
 
   // -- modification of the previous routines where the first tag 
@@ -65,21 +103,58 @@ class InputConverter {
       const xercesc::DOMNode* node1, const std::string& tag2, bool& flag);
   xercesc::DOMNode* getUniqueElementByTagNames_(
       const xercesc::DOMNode* node1, const std::string& tag2, const std::string& tag3, bool& flag);
+  // -- tags contains list of names separated by commas. It 
+  //    will replace eventually the previous routine.
+  xercesc::DOMNode* getUniqueElementByTagsString_(
+      const xercesc::DOMNode* node1, const std::string& tags, bool& flag);
 
-  // times
-  double GetTimeValue_(std::string time_value);
-  double ConvertTimeValue_(char* time_value);
+  // -- extract existing attribute value
+  int GetAttributeValueL_(
+      xercesc::DOMElement* elem, const char* attr_name, bool exception = true, int val = 0);
+  double GetAttributeValueD_(
+      xercesc::DOMElement* elem, const char* attr_name, bool exception = true, double val = 0.0);
+  std::string GetAttributeValueS_(
+      xercesc::DOMElement* elem, const char* attr_name, bool exception = true, std::string val = "");
+  std::vector<double> GetAttributeVector_(
+      xercesc::DOMElement* elem, const char* attr_name);
+ 
+  // -- extract existing attribute value and verify it
+  std::string GetAttributeValueS_(
+      xercesc::DOMElement* elem, const char* attr_name, const char* options);
+
+  // -- extract and verify children
+  //    the name of identical nodes will be extracted too
+  std::vector<xercesc::DOMNode*> getSameChildNodes_(
+      xercesc::DOMNode* node, std::string& name, bool& flag, bool exception = false);
 
   // data streaming/trimming/converting
+  // -- times
+  double TimeStringToValue_(const std::string& time_value);
+  double TimeCharToValue_(const char* time_value);
+
+  // -- coordinates
+  std::vector<double> MakeCoordinates_(const std::string& array);
+
+  // -- string modifications
   std::vector<std::string> CharToStrings_(const char* namelist);
   std::string TrimString_(char* tmp);
 
+  // -- vector parsing
+  int GetPosition_(const std::vector<std::string>& names, const std::string& name);
+
   // error messages
-  void ThrowErrorIllformed_(std::string section, std::string element_type, std::string ill_formed);
-  void ThrowErrorIllformed_(std::string section, std::string element_type, std::string ill_formed, std::string options);
-  void ThrowErrorMissattr_(std::string section, std::string att_elem_type, std::string missing, std::string elem_name);
+  void ThrowErrorIllformed_(
+      const std::string& section, const std::string& type, const std::string& ill_formed);
+  void ThrowErrorIllformed_(
+      const std::string& section, const std::string& type, const std::string& ill_formed, const std::string& options);
+  void ThrowErrorMissattr_(
+      const std::string& section, const std::string& type, const std::string& missing, const std::string& name);
 
  protected:
+  // variois constants defined by the users
+  std::map<std::string, std::string> constants_; 
+
+  xercesc::XercesDOMParser* parser;
   xercesc::DOMDocument* doc_;
 
  private:

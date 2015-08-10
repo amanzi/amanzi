@@ -42,10 +42,35 @@ add_amanzi_library(interface
                            InputParserIS_State.cc InputParserIS_MPC.cc
                            InputParserIS_Flow.cc InputParserIS_Transport.cc InputParserIS_Chemistry.cc
                            InputParserIS_Solvers.cc InputParserIS_Mesh.cc InputParserIS_Output.cc
-                           InputConverter.cc 
-                           InputConverterU.cc InputConverterU_Mesh.cc InputConverterU_Output.cc
-                           InputConverterU_Solvers.cc InputConverterU_State.cc
+                           InputConverter.cc InputConverterU.cc
+                           InputConverterU_State.cc InputConverterU_MPC.cc InputConverterU_PK.cc
+                           InputConverterU_Flow.cc InputConverterU_Transport.cc InputConverterU_Chemistry.cc
+                           InputConverterU_Solvers.cc InputConverterU_Mesh.cc InputConverterU_Output.cc
                            InputConverterS.cc
-                           InputTranslator.cc
+			   InputTranslator.cc
                       HEADERS ${interface_inc_files}
                       LINK_LIBS error_handling geometry ${Teuchos_LIBRARIES})
+
+if (BUILD_TESTS) 
+    # Add UnitTest include directoy
+    include_directories(${UnitTest_INCLUDE_DIRS})
+    include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
+
+    # Copy test directory files if an out of source build
+    if (NOT (${PLATFORM_INTERFACE_SOURCE_DIR} EQUAL ${PLATFORM_INTERFACE_BINARY_DIR}) )
+        execute_process(COMMAND ${CMAKE_COMMAND} -E 
+          copy_directory ${PLATFORM_INTERFACE_SOURCE_DIR}/test ${PLATFORM_INTERFACE_BINARY_DIR}/test) 
+    endif()
+
+    set(amanzi_libs interface atk)
+
+    # Test: transient Darcy flow 
+    add_amanzi_test(converter_u_base converter_u_base
+                    KIND int
+                    SOURCE test/Main.cc test/converter_u_base.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${Boost_LIBRARIES}
+                                             ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
+ 
+endif()
+
+

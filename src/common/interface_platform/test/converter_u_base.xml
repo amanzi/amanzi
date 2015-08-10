@@ -1,0 +1,261 @@
+<amanzi_input type="unstructured" version="2.1.1">
+  <model_description name="Dispersion Example Problem">
+    <comments>Example input file</comments>
+    <model_id>Single-Phase Saturated</model_id>
+    <author>New input translation by VLF</author>
+
+    <units>
+      <length_unit>m</length_unit>
+      <time_unit>s</time_unit>
+      <mass_unit>kg</mass_unit>
+      <conc_unit>molar</conc_unit>
+    </units>
+  </model_description>
+
+  <definitions>
+    <constants>
+      <constant name="ctime" type="time" value="100,y"/>
+      <constant name="cnone" type="none" value="NAN"/>
+      <constant name="carea" type="area_mass_flux" value="998.0"/>
+      <constant name="zero" type="none" value="10.0"/>
+      <time_constant name="stime" value="100,s"/>
+      <time_constant name="dtime" value="100,d"/>
+      <time_constant name="ytime" value="100,y"/>
+      <numerical_constant name="future_recharge" value="3.14159"/>
+      <numerical_constant name="cnum2" value="INF"/>
+      <area_mass_flux_constant name="cflux" value="1e-10"/>
+    </constants>
+
+    <macros>
+      <time_macro name="Observation Times">
+        <time>1.2096E+08</time>
+      </time_macro>
+      <time_macro name="EveryYear">
+        <start>0.0</start>
+        <timestep_interval>1.0E+07</timestep_interval>
+        <stop>1.0E+09</stop>
+      </time_macro>
+      <cycle_macro name="EveryCycle">
+        <start>0</start>
+        <timestep_interval>1</timestep_interval>
+      </cycle_macro>
+    </macros>
+  </definitions>
+
+  <process_kernels>
+    <comments>Single phase flow only</comments>
+    <flow model="richards" state="on" />
+    <transport state="on" />
+    <chemistry engine="amanzi" process_model="none" state="on" />
+  </process_kernels>
+
+  <phases>
+    <liquid_phase name="water">
+      <eos>false</eos>
+      <viscosity>1.002E-03</viscosity>
+      <density>998.2</density>
+      <dissolved_components>
+        <solutes>
+          <solute coefficient_of_diffusion="1.0e-9" molecular_diffusion="0.0">Tc-99</solute>
+        </solutes>
+      </dissolved_components>
+    </liquid_phase>
+    <solid_phase> 
+      <minerals>
+        <mineral>Calcite</mineral>
+      </minerals>
+    </solid_phase> 
+  </phases>
+
+  <execution_controls>
+    <verbosity level="extreme" />
+    <execution_control_defaults init_dt="1.0" method="picard" mode="steady" />
+     <execution_control end="1.2096e+8" mode="transient" start="0.0" />
+  </execution_controls>
+
+  <boundary_conditions>
+    <boundary_condition name="BC1">
+      <assigned_regions>Left</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component>
+          <inward_mass_flux start="0.0"      function= "constant" value="0.0"/>
+          <inward_mass_flux start="1956.0,y" function= "constant" value="1.0e-8"/>
+          <inward_mass_flux start="2012.0,y" function= "constant" value="future_recharge"/>
+          <inward_mass_flux start="3000.0,y" function= "constant" value="future_recharge"/>
+        </liquid_component>
+        <solute_component name="solute">
+          <aqueous_conc name="Tc-99" start="0.0"      function="constant" value="zero"/>
+          <aqueous_conc name="Tc-99" start="2012.0,y" function="constant" value="zero"/>
+          <aqueous_conc name="Tc-99" start="1956.0,y" function="constant" value="zero"/>
+          <aqueous_conc name="Tc-99" start="3000.0,y" function="constant" value="zero"/>
+        </solute_component>
+        <solute_component name="solute">
+          <aqueous_conc name="Blvgari" start="0.0" function="constant" value="1.0"/>
+        </solute_component>
+      </liquid_phase>
+    </boundary_condition>
+
+    <boundary_condition name="BC2">
+      <assigned_regions>Bottom</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component>
+          <hydrostatic start="0.0" function="constant" coordinate_system="absolute" value="10.0"/>
+        </liquid_component>
+        <geochemistry name="solute">
+          <geochemistry_conc name="Tc-99" start="0.0" function="constant" value="Calcite"/>
+        </geochemistry>
+      </liquid_phase>
+    </boundary_condition>
+  </boundary_conditions>
+
+  <sources>
+    <source name="Pumping well">
+      <assigned_regions>Well</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <solute_component name="solute">
+            <perm_weighted name="Tc-99" start="0.0" function="constant" value="-4.0"/>
+          </solute_component>
+          <solute_component name="solute">
+            <diffusion_dominated_release name="Bvlgari" start="0.0" end="1.0" 
+                                                        inventory="100.0" mixing_length="0.5"
+                                                        diffusion_coeff="1e-12"/>
+          </solute_component>
+        </liquid_component>
+      </liquid_phase>
+    </source>
+  </sources>
+
+  <numerical_controls>
+    <unstructured_controls>
+      <unstr_transport_controls>
+        <algorithm>explicit first-order</algorithm>
+        <sub_cycling>off</sub_cycling>
+        <cfl>1</cfl>
+      </unstr_transport_controls>
+
+      <unstr_linear_solver>
+        <max_iterations>100</max_iterations>
+        <tolerance>1e-20</tolerance>
+      </unstr_linear_solver>
+      <unstr_preconditioners>
+        <hypre_amg>hypre_amg </hypre_amg>
+        <trilinos_ml />
+        <block_ilu />
+      </unstr_preconditioners>
+
+      <unstr_transient_controls>
+        <max_iterations>21</max_iterations>
+      </unstr_transient_controls>
+    </unstructured_controls>
+  </numerical_controls>
+
+  <mesh framework="mstk">
+    <comments>no comment</comments>
+    <dimension>2</dimension>
+    <generate>
+      <number_of_cells nx="84" nz="37" />
+      <box high_coordinates="960.0,270.0" low_coordinates="-271.0,-270.0" />
+    </generate>
+  </mesh>
+
+  <regions>
+    <region name="All">
+      <box high_coordinates="971.25,  281.25" low_coordinates="-273.75, -273.75" />
+    </region>
+    <region name="Well">
+      <box high_coordinates="0.1, 0.1" low_coordinates="-0.1,-0.1" />
+    </region>
+    <plane name="Left" location="-273.75, -273.75" normal="0.0, -1.0" />
+    <point coordinate="-210.0,0.0" name="Upwind210" />
+    <point coordinate="-150.0,0.0" name="Upwind150" />
+    <point coordinate="30.0,0.0" name="Dnwind030" />
+  </regions>
+
+  <materials>
+    <material name="Aquifers">
+      <mechanical_properties>
+        <porosity value="0.35" compressibility="1e-9"/>
+        <dispersion_tensor alpha_l="21.3" alpha_t="4.3" type="uniform_isotropic" />
+        <tortuosity value="0.0" />
+      </mechanical_properties>
+      <permeability x="1.0e-10" z="1.0e-10" />
+      <cap_pressure model="van_genuchten">
+        <parameters m="0.2" alpha="1e-5" sr="0.1" optional_krel_smoothing_interval="500"/>
+      </cap_pressure>
+      <rel_perm model="burdine">
+        <exp value="0.5"/>
+      </rel_perm>
+      <sorption_isotherms>
+        <solute name="Tc-99" >
+          <kd_model model="linear" kd ="0.01" />
+          <molecular_diffusion value="1e-10" />
+        </solute>
+        <solute name="Bvlgari" >
+          <kd_model model="langmuir" kd="0.01" b="2.0"/>
+        </solute>
+        <solute name="NaCl++" >
+          <kd_model model="freundlich" kd="0.01" n="3.0" />
+        </solute>
+      </sorption_isotherms>
+      <assigned_regions>All</assigned_regions>
+    </material>
+  </materials>
+
+  <initial_conditions>
+    <initial_condition name="All">
+      <assigned_regions>All</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <velocity function="uniform" x="1.8634e-06" y="0.0" />
+          <uniform_pressure value="101325" />
+        </liquid_component>
+        <solute_component function="uniform" name="Tc-99" value="0.0" />
+      </liquid_phase>
+    </initial_condition>
+  </initial_conditions>
+
+  <output>
+    <vis>
+      <base_filename>plot</base_filename>
+      <num_digits>5</num_digits>
+      <time_macros>EveryYear</time_macros>
+    </vis>
+    <observations>
+      <filename>obs5_2_1.out</filename>
+      <liquid_phase name="water">
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Origin</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Upwind210</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Upwind150</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Upwind090</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Upwind030</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Dnwind030</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+      </liquid_phase>
+    </observations>
+  </output>
+</amanzi_input>
+  

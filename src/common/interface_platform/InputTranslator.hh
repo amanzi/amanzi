@@ -42,6 +42,7 @@ double get_time_value(std::string time_value, Teuchos::ParameterList def_list);
 double convert_time_value(char* time_value);
 double get_double_constant(std::string pos_name, Teuchos::ParameterList def_list);
 int get_int_constant(std::string pos_name, Teuchos::ParameterList def_list);
+Teuchos::Array<int> make_int_list(char* char_array);
 Teuchos::Array<std::string> make_regions_list(char* char_array);
 bool compare_region_names(Teuchos::Array<std::string> regions, Teuchos::ParameterList def_list);
 std::string trim_string(char* tmp);

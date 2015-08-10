@@ -297,31 +297,18 @@
 			<str_amr_controls>
 				<comments>string</comments>
 				<amr_levels>int</amr_levels>
-				<refinement_ratio>
-				        <!-- min entries = #levels -1; additional will be ignored -->
-					<!-- must be entered/read in order -->
-				    	<int>int</int>
-				</refinement_ratio>
+				<refinement_ratio>int int</refinement_ratio> 
+                                <!-- min entries = #levels-1; additional will be ignored -->
 				<do_amr_cubcycling>true | false</do_amr_cubcycling>
-				<regrid_interval>
-				    	<int>int</int>
-				</regrid_interval>
-				<blocking_factor>
-				        <!-- min entries = #levels; additional will be ignored -->
-					<!-- must be entered/read in order -->
-					<!-- include if using a multi-grid solver -->
-				    	<int>int</int>
-				</blocking_factor>
-				<number_error_buffer_cells>
-				        <!-- min entries = #levels -1; additional will be ignored -->
-					<!-- must be entered/read in order -->
-				    	<int>int</int>
-				</number_error_buffer_cells>
-				<max_grid_size>
-				        <!-- min entries = #levels; additional will be ignored -->
-					<!-- must be entered/read in order -->
-				    	<int>int</int>
-				</max_grid_size>
+				<regrid_interval>int int</regrid_interval> 
+                                <!-- min entries = #levels; additional will be ignored -->
+				<blocking_factor>int int</blocking_factor> 
+				<!-- min entries = #levels; additional will be ignored -->
+                                <!-- include blocking_factor if using a multi-grid solver -->
+				<number_error_buffer_cells>int int</number_error_buffer_cells> 
+                                <!-- min entries = #levels-1; additional will be ignored -->
+				<max_grid_size>int int</max_grid_size> 
+                                <!-- min entries = #levels; additional will be ignored -->
 
 				<!-- may have unbounded number of refinement indicators -->
 				<refinement_indicator name="string">

@@ -59,7 +59,8 @@ public:
 
   void FinalizeBuild(const Array<Geometry>& geomArray,
                      const Array<IntVect>&  refRatio,
-                     int                    nGrow);
+                     int                    nGrow,
+		     bool                   restart);
 
   bool CanDerive(const std::string& property_name) const;
 

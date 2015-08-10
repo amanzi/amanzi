@@ -192,6 +192,31 @@ Note that the parent sublist is the global unnamed list.
   </ParameterList>
 
 
+Time period control
+-------------------
+
+A set of times that simulation hits exactly can be used to avoid problems with
+sudden change of boundary or source conditions.
+
+* `"Start Times`" [Array(double)] the list of times that we want to hit exactly.
+
+* `"Initial Time Step`" [Array(double)] the first time step after we hit a special
+  time specified above.
+
+* `"Maximum Time Step`" [Array(double)] allows the user to limit the time step for a 
+  particual simulation period.
+
+.. code-block:: xml
+
+   <ParameterList name="Cycle Driver">  <!-- parent list -->
+     <ParameterList name="Time Period Control">
+       <Parameter name="Start Times" type="Array(double)" value="{3.0e+10}"/>
+       <Parameter name="Initial Time Step" type="Array(double)" value="{1.0e+02}"/>
+       <Parameter name="Maximum Time Step" type="Array(double)" value="{4.3234e+17}"/>
+     </ParameterList>
+   </ParameterList>
+
+
 Restart from checkpoint data file
 ---------------------------------
 
@@ -1693,6 +1718,9 @@ but require special treatment.
     <ParameterList name="boundary conditions">
       <ParameterList name="geochemical conditions">
         <ParameterList name="EAST CRIB">   <!-- user defined name -->
+          <Parameter name="Times" type="Array(double)" value="{0.0, 100.0}"/>
+          <Parameter name="Geochemical Conditions" type="Array(string)" value="{cond1, cond2}"/>
+          <Parameter name="Time Functions" type="Array(string)" value="{constant, constant}"/>
           <Parameter name="regions" type="Array(string)" value="{CRIB1}"/>
         </ParameterList>
       </ParameterList>

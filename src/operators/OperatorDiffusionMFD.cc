@@ -232,21 +232,6 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
     if (k_->HasComponent("twin")) k_twin = k_->ViewComponent("twin", true);
   }
 
-/*
-  double kf_hmean = 0;
-  if (scaled_constraint_ && (k_face != Teuchos::null)) {
-    int nfaces = (*k_face).GlobalLength();
-    int nval = 0;
-    for (int f = 0; f < nfaces; f++) {
-      if ((*k_face)[0][f] > 1.0) {
-        kf_hmean += 1 / (*k_face)[0][f];
-        nval++;
-      }
-    }
-    kf_hmean = nval / kf_hmean;
-  }
-*/
-
   // update matrix blocks
   AmanziMesh::Entity_ID_List faces, cells;
   std::vector<int> dirs;
@@ -319,8 +304,7 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
         double matsum = 0.0;
         for (int n = 0; n < nfaces; n++) {
           double rowsum = 0.0;
-//        double cur_kf = (kf[n] < 1.0) || (kf[n] > kf_hmean) ? 1.0 : kf[n];
-          double cur_kf = (kf[n] < 1.0) ? 1.0 : kf[n];
+          double cur_kf = (kf[n] < constraint_scaling_cutoff_) ? 1.0 : kf[n];
           for (int m = 0; m < nfaces; m++) {
             double tmp = Wff(n, m) * cur_kf;
             rowsum += tmp;
@@ -574,21 +558,6 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
     if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
   }
 
-/*
-  double kf_hmean = 0;
-  if (scaled_constraint_ && (k_face != Teuchos::null)) {
-    int nfaces = (*k_face).GlobalLength();
-    int nval = 0;
-    for (int f = 0; f < nfaces; f++) {
-      if ((*k_face)[0][f] > 1.0) {
-        kf_hmean += 1 / (*k_face)[0][f];
-        nval++;
-      }
-    }
-    kf_hmean = nval / kf_hmean;
-  }
-*/
-
   for (int c = 0; c != ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
@@ -656,8 +625,7 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
           if (std::abs(kf[n]) < 1e-12) {
             ASSERT(value == 0.0);
             rhs_face[0][f] = 0.0;
-//        } else if ((kf[n] < 1.0) || (kf[n] > kf_hmean)) {
-          } else if (kf[n] < 1.0) {
+          } else if (kf[n] < constraint_scaling_cutoff_) {
             rhs_face[0][f] -= value * mesh_->face_area(f) / kf[n];
           } else {
             rhs_face[0][f] -= value * mesh_->face_area(f);
@@ -676,8 +644,7 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
           if (std::abs(kf[n]) < 1e-12) {
             ASSERT((value == 0.0) && (bc_mixed[f] == 0.0));
             rhs_face[0][f] = 0.0;
-          // } else if ((kf[n] < 1.0) || (kf[n] > kf_hmean)) {
-          } else if (kf[n] < 1.0) {
+          } else if (kf[n] < constraint_scaling_cutoff_) {
             rhs_face[0][f] -= value * area / kf[n];
             Acell(n, n) += bc_mixed[f] * area / kf[n];
           } else {
@@ -1236,6 +1203,7 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
   
   // scaled constraint -- enables zero value of k on a face
   scaled_constraint_ = plist.get<bool>("scaled constraint equation", false);
+  constraint_scaling_cutoff_ = plist.get<double>("constraint equation scaling cutoff", 1.0);
 
   // little-k options
   ASSERT(!plist.isParameter("upwind method"));

@@ -1,6 +1,37 @@
 import xml.etree.ElementTree as ET
 import sys
 
+#
+#  Update input files from 2.1.0 to 2.1.1
+#
+#  Transformations:
+#
+#  - Update the version number from 2.1.0 to 2.1.1
+#  - Materials: 
+#            Update dispersion model option: set type to uniform_isotropic, burnett_frind, or lichtner_kelkar_robinson
+#  - Numerical Controls: 
+#            Add subelement unstructured_controls or structured_controls and move options into subelemnt
+#            If unstructured: 
+#                  prepend subelement names with "unstr_"
+#                  move cfl from unstr_linear_solver to unstr_transport_controls
+#                  consolidate preconditioner options under unstr_preconditioners
+#                  rename pseudo_time_integrator to unstr_initialization, 
+#                        Note: empty element means use defaults, no element means do not use
+#                  update BDF1 options from attributes to subelements
+#                  rename restart_tolerance_factor to restart_tolerance_relaxation_factor
+#            If structured: prepend subelement names with "str_"
+#  - Process Kernel: 
+#            Flow: move options rel_perm_method, preconditioning_strategy, discretization_method, and atmospheric_pressure 
+#                  to numerical_controls->unstructured_controls->unstr_flow_controls
+#            Transport: move options algorithm and sub_cycling 
+#                  to numerical_controls->unstructured_controls->unstr_transport_controls
+#  - Output: 
+#            Vis: update time_macro to time_macros and cycle_macro to cycle_macros
+#            Observations: update time_macro to time_macros 
+#            Checkpoint: update cycle_macro to cycle_macros
+#            Walkabout: update cycle_macro to cycle_macros
+#
+
 
 def usage():
 
@@ -72,7 +103,7 @@ def v210_update(tree):
     root.set('version','2.1.1')
 
     print >> sys.stdout, ""
-    print >> sys.stdout, "  Begining update from old 2.1.0 to 2.1.1"
+    print >> sys.stdout, "  Beginning update from old 2.1.0 to 2.1.1"
     print >> sys.stdout, ""
 
     # continue to updating format
@@ -98,7 +129,7 @@ def v210_update(tree):
 		    type = "lichtner_kelkar_robinson"
 		disp.set("type",type)
 
-    ### Process Kernel numerical conrtols
+    ### Process Kernel numerical controls
 
     # get simulation type
     type =  root.get('type')

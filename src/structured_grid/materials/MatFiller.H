@@ -145,6 +145,17 @@ public:
                          const IntVect&     ref,
                          const Property::RefineRule& rule);
 
+  /* Fill all cells that are outside the "domain" as defined by
+     the Geometry objects passed into the ctr.  By default, this
+     is done by piecewise-constant extrapolation normal to the 
+     boundary interface. */
+  static void FillCellsOutsideDomain(Real               t,
+				     int                level,
+				     MultiFab&          mf,
+				     int                dComp,
+				     int                nComp,
+				     const Geometry&    geom);
+
 protected:
 
   /* Manage all actions necessary to define this structure */
@@ -167,18 +178,6 @@ protected:
 			       int                dComp,
 			       int                nComp,
 			       void*              ctx = 0) const;
-
-  /* Fill all cells that are outside the "domain" as defined by
-     the Geometry objects passed into the ctr.  By default, this
-     is done by piecewise-constant extrapolation normal to the 
-     boundary interface. */
-  virtual void FillCellsOutsideDomain(Real               t,
-				      int                level,
-				      MultiFab&          mf,
-				      const std::string& pname,
-				      int                dComp,
-				      int                nComp,
-				      int                nGrow) const;
 
   /* Ensure that the properties passed in for all materials are consistent,
      e.g. that they return a consistent number of components, and have 

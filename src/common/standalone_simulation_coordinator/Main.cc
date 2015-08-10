@@ -27,7 +27,6 @@
 #include "DOMTreeErrorReporter.hpp"
 #include "ErrorHandler.hpp"
 #include "InputTranslator.hh"
-#include "InputConverterU.hh"
 //#include "DOMPrintErrorHandler.hpp"
 #include "XMLParameterListWriter.hh"
 
@@ -265,12 +264,6 @@ int main(int argc, char *argv[]) {
       if (strcmp(temp2, "amanzi_input") == 0) {
 	driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName);
 
-        // if (rank == 0) {
-        //   Amanzi::AmanziInput::InputConverterU converter;
-        //   converter.Init(xmlInFileName);
-        //   std::cout << converter.Translate() << std::endl;
-        // }
-	
 	//driver_parameter_list.print(std::cout,true,false);
 	const Teuchos::ParameterList& echo_list = driver_parameter_list.sublist("Echo Translated Input");
 	if (echo_list.isParameter("Format")) {

@@ -81,6 +81,7 @@ public:
 protected:
     void restart (const std::string& filename); // Note: this should be a virtual, but it is not
     void InitializeControlEvents();
+    void UpdateVisitPlotfileList() const;
 
     Layout layout;
     PArray<Observation> observations;
@@ -116,6 +117,9 @@ private:
     Real dt0_from_previous_advance;
     static bool do_output_time_in_years;
     static bool attempt_to_recover_failed_step;
+
+    // Array of pltfiles written in this run so far
+    Array<std::string> plotfiles_written;
 };
 
 #endif /*_PMAmr_H_*/
