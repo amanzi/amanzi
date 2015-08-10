@@ -3210,6 +3210,175 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
               expertPL.set<int>("max_n_subcycle_transport",get_int_constant(textContent,*def_list));
               XMLString::release(&textContent);
 	    }
+            else if (strcmp(nodeName,"str_chemistry_controls")==0) {
+              Teuchos::ParameterList chemistryPL;
+              // chemistry options are difference based on engine
+              // deal with common items
+              if (voI_->getVerbLevel() == Teuchos::VERB_EXTREME) {
+                  chemistryPL.set<std::string>("Verbosity","error");
+              }
+              else if (voI_->getVerbLevel() == Teuchos::VERB_HIGH) {
+                  chemistryPL.set<std::string>("Verbosity","warning");
+              }
+              else if (voI_->getVerbLevel() == Teuchos::VERB_MEDIUM) {
+                  chemistryPL.set<std::string>("Verbosity","verbose");
+              }
+              else if (voI_->getVerbLevel() == Teuchos::VERB_LOW ) {
+                  chemistryPL.set<std::string>("Verbosity","terse");
+              }
+              else {
+                  chemistryPL.set<std::string>("Verbosity","silent");
+              }
+              
+              // determine engine and proceed accordingly
+              if (def_list->isParameter("chemistry_engine")) {
+                if (def_list->get<std::string>("chemistry_engine") == "amanzi") {
+                  // go ahead and add bdg file to PL
+                  // build bgd filename
+                  std::string bgdfilename;
+                  if (def_list->isParameter("xmlfilename") ) {
+                    bgdfilename = def_list->get<std::string>("xmlfilename") ;
+                    std::string new_extension(".bgd");
+                    size_t pos = bgdfilename.find(".xml");
+                    bgdfilename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)4);
+                  }
+                  else {
+                    // defaulting to hardcoded name
+                    bgdfilename = "isotherms.bgd" ;
+                  }
+                  // add bgd file and parameters to list
+                  Teuchos::ParameterList bgdPL;
+                  bgdPL.set<std::string>("Format","simple");
+                  bgdPL.set<std::string>("File",bgdfilename);
+                  chemistryPL.sublist("Thermodynamic Database") = bgdPL;
+                  chemistryPL.set<std::string>("Activity Model","unit");
+                  
+                  // loop over chemistry controls to get other options to add to PL
+                  DOMNodeList* children = tmpNode->getChildNodes();
+                  for (int k=0; k<children->getLength(); k++) {
+                    DOMNode* currentNode = children->item(k) ;
+                    if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
+                      std::string tagname(std::string(XMLString::transcode(currentNode->getNodeName())));
+                      if (tagname == "chem_tolerance") {
+                        if (currentNode) {
+                          textContent = XMLString::transcode(currentNode->getTextContent());
+                          chemistryPL.set<double>("Tolerance",get_double_constant(textContent,*def_list));
+                          XMLString::release(&textContent);
+                        }
+                        else {
+                          throw_error_illformed(algo_str_name, "chem_tolerance", nodeName);
+                        }
+                      }
+                      else if (tagname == "chem_max_newton_iterations") {
+                        if (currentNode) {
+                          textContent = XMLString::transcode(currentNode->getTextContent());
+                          chemistryPL.set<int>("Maximum Newton Iterations",get_int_constant(textContent,*def_list));
+                          XMLString::release(&textContent);
+                        }
+                        else {
+                          throw_error_illformed(algo_str_name, "chem_max_newton_iterations", nodeName);
+                        }
+                        // TODO:: EIB - this need to be added to schema!!
+                      }
+                      else if (tagname == "chem_max_time_step") {
+                        if (currentNode) {
+                          textContent = XMLString::transcode(currentNode->getTextContent());
+                          chemistryPL.set<double>("Max Time Step (s)",get_double_constant(textContent,*def_list));
+                          XMLString::release(&textContent);
+                        }
+                        else {
+                          throw_error_illformed(algo_str_name, "chem_max_time_step", nodeName);
+                        }
+                      }
+                      else if (tagname == "max_chemistry_transport_timestep_ratio") {
+                        if (currentNode) {
+                          textContent = XMLString::transcode(currentNode->getTextContent());
+                          chemistryPL.set<double>("max chemistry to transport timestep ratio",get_double_constant(textContent,*def_list));
+                          XMLString::release(&textContent);
+                        }
+                        else {
+                          throw_error_illformed(algo_str_name, "max_chemistry_transport_timestep_ratio", nodeName);
+                        }
+                      }
+                      else if (tagname == "process_model") {
+                        // TODO: EIB - not sure where this goes anymore
+                        if (currentNode) {
+                          textContent = XMLString::transcode(currentNode->getTextContent());
+                          chemistryPL.set<double>("Tolerance",get_double_constant(textContent,*def_list));
+                          XMLString::release(&textContent);
+                        }
+                        // TODO: EIB - removed error message until I figure out where this went
+                        /*
+                         else {
+                         throw_error_illformed(algo_str_name, "process_model", nodeName);
+                         }
+                         */
+                      }
+                      else if (tagname != "comments") {
+                        // warn about unrecognized element
+                        std::stringstream elem_name;
+                        elem_name << nodeName <<  "->"  << tagname;
+                        throw_warning_skip(elem_name.str());
+                      }
+                    }
+                  }
+                }
+                else if (def_list->get<std::string>("chemistry_engine") == "pflotran") {
+                  chemistryPL.set<std::string>("Engine","PFloTran");
+                  
+                  // check file *.in filename in def_list
+                  if (def_list->isSublist("chemistry_PL")) {
+                    if (def_list->sublist("chemistry_PL").isParameter("Engine Input File")) {
+                      chemistryPL.set<std::string>("Engine Input File",def_list->sublist("chemistry_PL").get<std::string>("Engine Input File"));
+                    }
+                  }
+                  
+                  // loop over children
+                  DOMNodeList* children = tmpNode->getChildNodes();
+                  for (int k=0; k<children->getLength(); k++) {
+                    DOMNode* currentNode = children->item(k) ;
+                    if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
+                      std::string tagname(std::string(XMLString::transcode(currentNode->getNodeName())));
+                      if (tagname == "chem_max_time_step") {
+                        if (currentNode) {
+                          textContent = XMLString::transcode(currentNode->getTextContent());
+                          chemistryPL.set<double>("Max Time Step (s)",get_double_constant(textContent,*def_list));
+                          XMLString::release(&textContent);
+                        }
+                        else {
+                          throw_error_illformed(algo_str_name, "chem_max_time_step", nodeName);
+                        }
+                      }
+                      else if (tagname == "generate_chemistry_engine_inputfile") {
+                        if (currentNode) {
+                          textContent = XMLString::transcode(currentNode->getTextContent());
+                          chemistryPL.set<std::string>("Engine Input File",textContent);
+                          XMLString::release(&textContent);
+                        }
+                      }
+                      else if (tagname == "read_chemistry_engine_inputfile") {
+                        // TODO: EIB - not sure where this goes anymore
+                        if (currentNode) {
+                          textContent = XMLString::transcode(currentNode->getTextContent());
+                          chemistryPL.set<std::string>("Engine Input File",textContent);
+                          XMLString::release(&textContent);
+                        }
+                      }
+                      else if (tagname != "comments") {
+                        // warn about unrecognized element
+                        std::stringstream elem_name;
+                        elem_name << nodeName <<  "->"  << tagname;
+                        throw_warning_skip(elem_name.str());
+                      }
+                    }
+                  }
+                }
+              }
+            
+              
+              // now add chemistry list
+              def_list->sublist("Chemistry") = chemistryPL;
+            }
             else if (strcmp(nodeName,"petsc_options_file")==0) {
               // This specifies the name of the file containing petsc options
               // The default filename ".petsc" is found automatically
@@ -3786,10 +3955,6 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
         }
       }
       else if  (strcmp(nodeName,"logical") == 0){
-        if (!isUnstr_) {
-          throw_error_str_ustr("Regions", tagName, "Unstructured");
-        }
-        
         // add region name to array of region names
         if (reg_names.isParameter(regName)) {
           // warn, region of this name already exists, overwriting
