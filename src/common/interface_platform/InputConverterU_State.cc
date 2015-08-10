@@ -61,17 +61,17 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   double viscosity = std::strtod(text_content, NULL);
   out_ic.sublist("fluid_viscosity").set<double>("value", viscosity);
 
-  // --- density
+  // --- constant density
   node = getUniqueElementByTagNames_("phases", "liquid_phase", "density", flag);
   text_content = mm.transcode(node->getTextContent());
-  double density = std::strtod(text_content, NULL);
-  out_ic.sublist("fluid_density").set<double>("value", density);
+  rho_ = std::strtod(text_content, NULL);
+  out_ic.sublist("fluid_density").set<double>("value", rho_);
 
   out_ic.sublist("water_density").sublist("function").sublist("All")
       .set<std::string>("region","All")
       .set<std::string>("component","cell")
       .sublist("function").sublist("function-constant")
-      .set<double>("value", density);
+      .set<double>("value", rho_);
 
   // --- region specific initial conditions from material properties
   std::map<std::string, int> reg2mat;
@@ -175,9 +175,9 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       }
 
       if (conductivity) {
-        kx *= viscosity / (density * GRAVITY_MAGNITUDE);
-        ky *= viscosity / (density * GRAVITY_MAGNITUDE);
-        kz *= viscosity / (density * GRAVITY_MAGNITUDE);
+        kx *= viscosity / (rho_ * GRAVITY_MAGNITUDE);
+        ky *= viscosity / (rho_ * GRAVITY_MAGNITUDE);
+        kz *= viscosity / (rho_ * GRAVITY_MAGNITUDE);
       }
 
       // Second, we copy collected data to XML file.

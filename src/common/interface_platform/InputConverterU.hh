@@ -33,7 +33,7 @@ class InputConverterU : public InputConverter {
  public:
   InputConverterU() :
       vo_(NULL),
-      flow_single_phase(false),
+      flow_single_phase_(false),
       compressibility_(false) {};
   ~InputConverterU() { if (vo_ != NULL) delete vo_; }
 
@@ -57,7 +57,18 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateCycleDriver_();
   Teuchos::ParameterList TranslateTimePeriodControls_();
   Teuchos::ParameterList TranslatePKs_(const Teuchos::ParameterList& cd_list);
+  Teuchos::ParameterList TranslateDiffusionOperator_(
+      const std::string& disc_method, const std::string& pc_method,
+      const std::string& nonlinear_solver, const std::string& rel_perm);
+  Teuchos::ParameterList TranslateTimeIntegrator_(
+      const std::string& err_options, const std::string& nonlinear_solver,
+      bool modify_correction, const std::string& unstr_colntrols);
+  Teuchos::ParameterList TranslateInitialization_(
+      const std::string& unstr_controls);
   Teuchos::ParameterList TranslateFlow_(int regime = FLOW_BOTH_REGIMES);
+  Teuchos::ParameterList TranslateWRM_();
+  Teuchos::ParameterList TranslatePOM_();
+  Teuchos::ParameterList TranslateFlowBCs_();
   Teuchos::ParameterList TranslateTransport_();
   Teuchos::ParameterList TranslateTransportBCs_();
   Teuchos::ParameterList TranslateTransportSources_();
@@ -74,8 +85,14 @@ class InputConverterU : public InputConverter {
   Tree tree_;
   Tree phases_;
 
-  bool flow_single_phase;
+  std::map<std::string, std::string> pk_model_;
+
+  // global flow constants
+  bool flow_single_phase_;
   bool compressibility_;
+  double rho_;
+
+  // global transport and chemistry constants
   std::vector<std::string> comp_names_all_;
 
   // for analysis

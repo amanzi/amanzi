@@ -374,8 +374,8 @@ DOMNode* InputConverter::getUniqueElementByTagsString_(
 
 
 /* ******************************************************************
-* Extracts childs and verifies that their have the common tagname.
-* Ignores comments... I do not know how to filter them.
+* Extracts children and verifies that their have the common tagname.
+* The first child is defined as the first element other than comment.
 ****************************************************************** */
 std::vector<DOMNode*> InputConverter::getSameChildNodes_(
     DOMNode* node, std::string& name, bool& flag, bool exception)
@@ -505,6 +505,33 @@ std::vector<double> InputConverter::GetAttributeVector_(DOMElement* elem, const 
     char* tagname = mm.transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
   }
+
+  return val;
+}
+
+
+/* ******************************************************************
+* Extract atribute of type std::string.
+****************************************************************** */
+std::string InputConverter::GetAttributeValueS_(
+    DOMElement* elem, const char* attr_name, const char* options)
+{
+  std::string val;
+  val = GetAttributeValueS_(elem, attr_name);
+
+  std::vector<std::string> names = CharToStrings_(options);
+  for (std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it) {
+    if (val == *it) return val;
+  }
+
+  XString mm;
+  char* tagname = mm.transcode(elem->getNodeName());
+  Errors::Message msg;
+  msg << "Amanzi::InputConverter: validation of attribute \"" << attr_name << "\""
+      << " for element \"" << tagname << "\" failed.\n";
+  msg << "  Available options: \"" << options << "\".\n";
+  msg << "  Please correct and try again.\n";
+  Exceptions::amanzi_throw(msg);
 
   return val;
 }

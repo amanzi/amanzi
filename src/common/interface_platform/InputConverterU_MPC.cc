@@ -44,8 +44,6 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
 
   // parse available PKs
   std::map<std::string, bool> pk_state;
-  std::map<std::string, std::string> pk_model;
-
   int transient_model(0);
   char* tagname;
 
@@ -65,11 +63,11 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
 
     if (strcmp(tagname, "flow") == 0) {
       std::string model = GetAttributeValueS_(static_cast<DOMElement*>(inode), "model");
-      pk_model["flow"] = model;
+      pk_model_["flow"] = model;
       transient_model += 4 * pk_state[tagname];
     } else if (strcmp(tagname, "chemistry") == 0) {
       std::string model = GetAttributeValueS_(static_cast<DOMElement*>(inode), "engine");
-      pk_model["chemistry"] = model;
+      pk_model_["chemistry"] = model;
       transient_model += pk_state[tagname];
     } else if (strcmp(tagname, "transport") == 0) {
       transient_model += 2 * pk_state[tagname];
@@ -131,7 +129,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     ss << "TP " << tp_id;
 
     Teuchos::ParameterList& tmp_list = out_list.sublist("time periods").sublist(ss.str());
-    tmp_list.sublist("PK Tree").sublist("Flow Steady").set<std::string>("PK type", pk_model["flow"]);
+    tmp_list.sublist("PK Tree").sublist("Flow Steady").set<std::string>("PK type", pk_model_["flow"]);
     tmp_list.set<double>("start period time", t0);
     tmp_list.set<double>("end period time", tp_t1.begin()->second);
     tmp_list.set<int>("maximum cycle number", tp_max_cycles.begin()->second);
@@ -159,14 +157,14 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
         break;
       }
     case 4:
-      pk_tree_list.sublist("Flow").set<std::string>("PK type", pk_model["flow"]);    
+      pk_tree_list.sublist("Flow").set<std::string>("PK type", pk_model_["flow"]);    
       break;
     case 5:
       {
         Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("Flow and Chemistry");
         tmp_list.set<std::string>("PK type", "flow reactive transport");
         tmp_list.sublist("Chemistry").set<std::string>("PK type", "chemistry");
-        tmp_list.sublist("Flow").set<std::string>("PK type", pk_model["flow"]); 
+        tmp_list.sublist("Flow").set<std::string>("PK type", pk_model_["flow"]); 
         break;
       }
     case 6:
@@ -174,7 +172,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
         Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("Flow and Transport");
         tmp_list.set<std::string>("PK type", "flow reactive transport");
         tmp_list.sublist("Transport").set<std::string>("PK type", "transport");
-        tmp_list.sublist("Flow").set<std::string>("PK type", pk_model["flow"]);
+        tmp_list.sublist("Flow").set<std::string>("PK type", pk_model_["flow"]);
         break;
       }
     case 7:
@@ -184,7 +182,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
         tmp_list.sublist("Reactive Transport").set<std::string>("PK type", "reactive transport");
         tmp_list.sublist("Reactive Transport").sublist("Transport").set<std::string>("PK type", "transport");
         tmp_list.sublist("Reactive Transport").sublist("Chemistry").set<std::string>("PK type", "chemistry");
-        tmp_list.sublist("Flow").set<std::string>("PK type", pk_model["flow"]);
+        tmp_list.sublist("Flow").set<std::string>("PK type", pk_model_["flow"]);
         break;
       }
     default:
@@ -234,24 +232,37 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   // get the default time steps
   bool flag;
   XString mm;
-  DOMNode* node = getUniqueElementByTagNames_("execution_controls", "execution_control_defaults", flag);
+  DOMNodeList *node_list, *children;
+  DOMNode* node;
+
+  node = getUniqueElementByTagNames_("execution_controls", "execution_control_defaults", flag);
 
   double dt_init_d, dt_max_d;
-  dt_init_d = GetAttributeValueD_(static_cast<DOMElement*>(node), "init_dt", false, RESTART_TIME_STEP);
-  dt_max_d = GetAttributeValueD_(static_cast<DOMElement*>(node), "max_dt", false, MAXIMUM_TIME_STEP);
+  dt_init_d = GetAttributeValueD_(static_cast<DOMElement*>(node), "init_dt", false, RESTART_TIMESTEP);
+  dt_max_d = GetAttributeValueD_(static_cast<DOMElement*>(node), "max_dt", false, MAXIMUM_TIMESTEP);
 
   // add start times of all boundary conditions and all sources to the list
   Teuchos::Array<double> time_init, dt_init, dt_max;
   std::map<double, double> time_map, dt_max_map;
 
-  DOMNodeList* children = doc_->getElementsByTagName(mm.transcode("hydrostatic"));
-  for (int i = 0; i < children->getLength(); ++i) {
-    DOMNode* inode = children->item(i);
-    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+  std::vector<std::string> bc_names;
+  bc_names.push_back("hydrostatic");
+  bc_names.push_back("uniform_pressure");
+  bc_names.push_back("inward_mass_flux");
 
-    double t = GetAttributeValueD_(static_cast<DOMElement*>(node), "start");
-    time_map[t] = dt_init_d;
-    dt_max_map[t] = -1.0;
+  node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
+  node = node_list->item(0);
+
+  for (int n = 0; n < bc_names.size(); ++n) {
+    children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode(bc_names[n].c_str()));
+    for (int i = 0; i < children->getLength(); ++i) {
+      DOMNode* inode = children->item(i);
+      if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+
+      double t = GetAttributeValueD_(static_cast<DOMElement*>(inode), "start");
+      time_map[t] = dt_init_d;
+      dt_max_map[t] = -1.0;
+    }
   }
 
   // add these last so that the default initial time steps get overwritten

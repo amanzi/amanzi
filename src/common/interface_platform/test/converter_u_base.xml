@@ -21,7 +21,7 @@
       <time_constant name="stime" value="100,s"/>
       <time_constant name="dtime" value="100,d"/>
       <time_constant name="ytime" value="100,y"/>
-      <numerical_constant name="cnum1" value="3.14159"/>
+      <numerical_constant name="future_recharge" value="3.14159"/>
       <numerical_constant name="cnum2" value="INF"/>
       <area_mass_flux_constant name="cflux" value="1e-10"/>
     </constants>
@@ -44,7 +44,7 @@
 
   <process_kernels>
     <comments>Single phase flow only</comments>
-    <flow model="constant" state="on" />
+    <flow model="richards" state="on" />
     <transport state="on" />
     <chemistry engine="amanzi" process_model="none" state="on" />
   </process_kernels>
@@ -77,6 +77,12 @@
     <boundary_condition name="BC1">
       <assigned_regions>Left</assigned_regions>
       <liquid_phase name="water">
+        <liquid_component>
+          <inward_mass_flux start="0.0"      function= "constant" value="0.0"/>
+          <inward_mass_flux start="1956.0,y" function= "constant" value="1.0e-8"/>
+          <inward_mass_flux start="2012.0,y" function= "constant" value="future_recharge"/>
+          <inward_mass_flux start="3000.0,y" function= "constant" value="future_recharge"/>
+        </liquid_component>
         <solute_component name="solute">
           <aqueous_conc name="Tc-99" start="0.0"      function="constant" value="zero"/>
           <aqueous_conc name="Tc-99" start="2012.0,y" function="constant" value="zero"/>
@@ -88,9 +94,13 @@
         </solute_component>
       </liquid_phase>
     </boundary_condition>
+
     <boundary_condition name="BC2">
       <assigned_regions>Bottom</assigned_regions>
       <liquid_phase name="water">
+        <liquid_component>
+          <hydrostatic start="0.0" function="constant" coordinate_system="absolute" value="10.0"/>
+        </liquid_component>
         <geochemistry name="solute">
           <geochemistry_conc name="Tc-99" start="0.0" function="constant" value="Calcite"/>
         </geochemistry>
@@ -118,25 +128,25 @@
 
   <numerical_controls>
     <unstructured_controls>
-      <unstr_linear_solver>
-        <max_iterations>100</max_iterations>
-        <tolerance>1e-20</tolerance>
-      </unstr_linear_solver>
       <unstr_transport_controls>
         <algorithm>explicit first-order</algorithm>
         <sub_cycling>off</sub_cycling>
         <cfl>1</cfl>
       </unstr_transport_controls>
+
+      <unstr_linear_solver>
+        <max_iterations>100</max_iterations>
+        <tolerance>1e-20</tolerance>
+      </unstr_linear_solver>
       <unstr_preconditioners>
-        <hypre_amg />
+        <hypre_amg>hypre_amg </hypre_amg>
         <trilinos_ml />
         <block_ilu />
       </unstr_preconditioners>
-      <unstr_preconditioners>
-        <hypre_amg />
-        <trilinos_ml />
-        <block_ilu />
-      </unstr_preconditioners>
+
+      <unstr_transient_controls>
+        <max_iterations>21</max_iterations>
+      </unstr_transient_controls>
     </unstructured_controls>
   </numerical_controls>
 
@@ -165,11 +175,17 @@
   <materials>
     <material name="Aquifers">
       <mechanical_properties>
-        <porosity value="0.35" />
+        <porosity value="0.35" compressibility="1e-9"/>
         <dispersion_tensor alpha_l="21.3" alpha_t="4.3" type="uniform_isotropic" />
         <tortuosity value="0.0" />
       </mechanical_properties>
       <permeability x="1.0e-10" z="1.0e-10" />
+      <cap_pressure model="van_genuchten">
+        <parameters m="0.2" alpha="1e-5" sr="0.1" optional_krel_smoothing_interval="500"/>
+      </cap_pressure>
+      <rel_perm model="burdine">
+        <exp value="0.5"/>
+      </rel_perm>
       <sorption_isotherms>
         <solute name="Tc-99" >
           <kd_model model="linear" kd ="0.01" />

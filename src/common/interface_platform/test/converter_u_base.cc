@@ -41,14 +41,18 @@ TEST(CONVERTER_BASE) {
 
   Amanzi::AmanziInput::InputConverterU converter;
   converter.Init(xmlFileName);
-  Teuchos::ParameterList new_xml = converter.Translate();
-  // std::cout << new_xml << std::endl;
+  try {
+    Teuchos::ParameterList new_xml = converter.Translate();
+    // std::cout << new_xml << std::endl;
 
-  Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
-  Teuchos::XMLObject XMLobj = XMLWriter.toXML(new_xml);
+    Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
+    Teuchos::XMLObject XMLobj = XMLWriter.toXML(new_xml);
 
-  std::ofstream xmlfile;
-  xmlfile.open("native_v6.xml");
-  xmlfile << XMLobj;
+    std::ofstream xmlfile;
+    xmlfile.open("native_v6.xml");
+    xmlfile << XMLobj;
+  } catch (std::exception& e) {
+    std::cout << e.what() << std::endl;
+  }
 }
 	

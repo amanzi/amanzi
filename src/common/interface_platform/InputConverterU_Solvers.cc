@@ -291,7 +291,7 @@ Teuchos::ParameterList InputConverterU::TranslateHypreAMG_()
   amg_list.set<int>("cycle type", 1);
   amg_list.set<int>("coarsen type", 0);
   amg_list.set<int>("verbosity", 0);
-  if (flow_single_phase) {
+  if (flow_single_phase_) {
     amg_list.set<int>("relaxation type down", 3);
     amg_list.set<int>("relaxation type up", 4);
   } else {

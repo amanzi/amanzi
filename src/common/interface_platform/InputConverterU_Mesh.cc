@@ -62,9 +62,12 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
   }
 
   XString mm;
+  DOMNodeList *node_list, *children;
+  DOMNode* node;
+  DOMElement* element;
 
   bool generate(true), read(false), all_good(false);
-  char *framework;
+  std::string framework;
   std::stringstream helper;
   Errors::Message msg;
   Teuchos::ParameterList mesh_list;
@@ -72,24 +75,16 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
   Teuchos::RCP<Teuchos::StringValidator> meshfile_validator = Teuchos::rcp(new Teuchos::StringValidator(meshfile_strings));
   
   // read in new stuff
-  DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("mesh"));
+  node_list = doc_->getElementsByTagName(mm.transcode("mesh"));
 
   // read the attribute to set the framework sublist
   if (node_list->getLength() > 0) {
-    DOMNode* node_mesh = node_list->item(0);
-    DOMElement* element_mesh = static_cast<DOMElement*>(node_mesh);
-
-    if (element_mesh->hasAttribute(mm.transcode("framework"))) {
-      framework = mm.transcode(element_mesh->getAttribute(mm.transcode("framework")));
-    } else { 
-      msg << "Amanzi::InputConverter: An error occurred during parsing mesh.\n"
-          << "Framework was missing or ill-formed.\n" 
-          << "Use default framework='mstk' if unsure.\n";
-      Exceptions::amanzi_throw(msg);
-    }
+    node = node_list->item(0);
+    element = static_cast<DOMElement*>(node);
+    framework = GetAttributeValueS_(element, "framework");
 
     // Define global parameter dim_ = the space dimension.
-    DOMNodeList* children = node_mesh->getChildNodes();
+    children = node->getChildNodes();
     all_good = false;
 
     for (int i = 0; i < children->getLength(); i++) {
@@ -124,8 +119,8 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
           read = false;
           DOMElement* element_gen = static_cast<DOMElement*>(inode);
 
-          DOMNodeList* node_list = element_gen->getElementsByTagName(mm.transcode("number_of_cells"));
-          DOMNode* node = node_list->item(0);
+          node_list = element_gen->getElementsByTagName(mm.transcode("number_of_cells"));
+          node = node_list->item(0);
           DOMElement* element_node = static_cast<DOMElement*>(node);
           DOMNamedNodeMap *attr_map = node->getAttributes();
 
@@ -232,14 +227,15 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
     }
     
     if (generate || read) {
-      if (strcmp(framework,"mstk") == 0) {
-        out_list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","MSTK");
-      } else if (strcmp(framework,"moab") == 0) {
-        out_list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","MOAB");
-      } else if (strcmp(framework,"simple") == 0) {
-        out_list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","Simple");
-      } else if (strcmp(framework,"stk::mesh") == 0) {
-        out_list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","stk::mesh");
+      Teuchos::ParameterList& tmp_list = out_list.sublist("Unstructured").sublist("Expert");
+      if (strcmp(framework.c_str(), "mstk") == 0) {
+        tmp_list.set<std::string>("Framework", "MSTK");
+      } else if (strcmp(framework.c_str() ,"moab") == 0) {
+        tmp_list.set<std::string>("Framework", "MOAB");
+      } else if (strcmp(framework.c_str(), "simple") == 0) {
+        tmp_list.set<std::string>("Framework", "Simple");
+      } else if (strcmp(framework.c_str(), "stk::mesh") == 0) {
+        tmp_list.set<std::string>("Framework", "stk::mesh");
       } else {
         msg << "Amanzi::InputConverter: an error occurred during parsing mesh.\n"
             << "  Unknown framework \"" << framework << "\".\n";
@@ -275,22 +271,21 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
   }
 
   XString mm;
-
   DOMNodeList* node_list;
-  DOMNode* nodeTmp;
-  DOMNode* node_attr;
+  DOMNode *node, *node_attr;
+  DOMElement* element;
   DOMNamedNodeMap* attr_map;
+
   char *tagname, *node_name;
   char *text_content, *text_content2;
   std::string reg_name, text;
 
   // get regions node
   node_list = doc_->getElementsByTagName(mm.transcode("regions"));
-  DOMNode* node_rgn = node_list->item(0);
-  DOMElement* elementRgn = static_cast<DOMElement*>(node_rgn);
+  node = node_list->item(0);
 
   // new options: comment, region, box, point
-  DOMNodeList* childern = node_rgn->getChildNodes();
+  DOMNodeList* childern = node->getChildNodes();
   for (int i = 0; i < childern->getLength(); i++) {
     DOMNode* inode = childern->item(i);
 
@@ -313,7 +308,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
           if (DOMNode::ELEMENT_NODE == jnode->getNodeType()) {
             node_name = mm.transcode(jnode->getNodeName());
             if (strcmp(node_name, "comments") != 0) 
-                reg_elem = static_cast<DOMElement*>(jnode);
+              reg_elem = static_cast<DOMElement*>(jnode);
           }
         }
       } else {

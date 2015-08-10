@@ -245,6 +245,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
   char *text, *tagname;
   DOMNodeList *node_list, *children;
   DOMNode *node, *phase;
+  DOMElement* element;
 
   node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
   if (!node_list) return out_list;
@@ -272,7 +273,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
     // -- Dirichlet BCs for concentration
     std::string bctype, solute_name;
 
-    DOMElement* element = static_cast<DOMElement*>(phase);
+    element = static_cast<DOMElement*>(phase);
     DOMNodeList* solutes = element->getElementsByTagName(mm.transcode("solute_component"));
 
     if (solutes->getLength() > 0) {
@@ -286,11 +287,10 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
         std::map<double, std::string> tp_forms;
 
         for (int j = 0; j < same_list.size(); ++j) {
-          DOMNode* jnode = same_list[j];
-          double t0 = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "start");
-
-          tp_forms[t0] = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "function");
-          tp_values[t0] = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "value");
+          element = static_cast<DOMElement*>(same_list[j]);
+          double t0 = GetAttributeValueD_(element, "start");
+          tp_forms[t0] = GetAttributeValueS_(element, "function");
+          tp_values[t0] = GetAttributeValueD_(element, "value");
         }
 
         // create vectors of values and forms
@@ -322,11 +322,10 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
       std::map<double, std::string> tp_forms, tp_values;
 
       for (int j = 0; j < same_list.size(); ++j) {
-        DOMNode* jnode = same_list[j];
-        double t0 = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "start");
-
-        tp_forms[t0] = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "function");
-        tp_values[t0] = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "value");
+        element = static_cast<DOMElement*>(same_list[j]);
+        double t0 = GetAttributeValueD_(element, "start");
+        tp_forms[t0] = GetAttributeValueS_(element, "function");
+        tp_values[t0] = GetAttributeValueS_(element, "value");
       }
 
       // create vectors of values and forms
@@ -364,6 +363,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
   char *text, *tagname;
   DOMNodeList *node_list, *children;
   DOMNode *node, *phase;
+  DOMElement* element;
 
   node_list = doc_->getElementsByTagName(mm.transcode("sources"));
   if (!node_list) return out_list;
@@ -391,7 +391,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
     // -- Dirichlet BCs for concentration
     std::string bctype, solute_name;
 
-    DOMElement* element = static_cast<DOMElement*>(phase);
+    element = static_cast<DOMElement*>(phase);
     DOMNodeList* solutes = element->getElementsByTagName(mm.transcode("solute_component"));
 
     if (solutes->getLength() > 0) {
@@ -420,11 +420,10 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
           std::map<double, std::string> tp_forms;
 
           for (int j = 0; j < same_list.size(); ++j) {
-            DOMNode* jnode = same_list[j];
-            double t0 = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "start");
-
-            tp_forms[t0] = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "function");
-            tp_values[t0] = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "value");
+            element = static_cast<DOMElement*>(same_list[j]);
+            double t0 = GetAttributeValueD_(element, "start");
+            tp_forms[t0] = GetAttributeValueS_(element, "function");
+            tp_values[t0] = GetAttributeValueD_(element, "value");
           }
 
           // create vectors of values and forms
@@ -448,7 +447,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
               .set<Teuchos::Array<double> >("y values", values)
               .set<Teuchos::Array<std::string> >("forms", forms);
         } else {
-          DOMElement* element = static_cast<DOMElement*>(same_list[0]);
+          element = static_cast<DOMElement*>(same_list[0]);
           double total = GetAttributeValueD_(element, "inventory");
           double diff = GetAttributeValueD_(element, "diffusion_coeff");
           double length = GetAttributeValueD_(element, "mixing_length");
