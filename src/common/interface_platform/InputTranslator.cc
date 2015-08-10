@@ -139,6 +139,7 @@ Teuchos::ParameterList translate(const std::string& xmlfilename) {
   }
   
   if (def_list.isParameter("petsc_options_file")) {
+    new_list.set<std::string>("Petsc Options File",def_list.get<std::string>("petsc_options_file"));
   }
 
   delete errorHandler;
@@ -3416,7 +3417,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
  * Empty
  ******************************************************************
  */
-Teuchos::ParameterList get_phases(DOMDocument* xmlDoc, Teuchos::ParameterList def_list) {
+Teuchos::ParameterList get_phases(DOMDocument* xmlDoc, Teuchos::ParameterList& def_list) {
 
   Teuchos::ParameterList list;
 
@@ -3602,6 +3603,7 @@ Teuchos::ParameterList get_phases(DOMDocument* xmlDoc, Teuchos::ParameterList de
                 }
                 dcPL.set<Teuchos::Array<std::string> >("Component Solutes",solutes);
                 list.sublist("Aqueous").sublist("Phase Components").sublist(phaseName ) = dcPL;
+		def_list.set<Teuchos::Array<std::string> >("solutes",solutes);
                 foundPC = true;
               }
             }
@@ -5279,13 +5281,12 @@ Teuchos::ParameterList get_initial_conditions(DOMDocument* xmlDoc, Teuchos::Para
                 nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
 		if (nodeAttr) {
                   textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
+		  sclist.sublist("IC: Uniform Concentration").set<double>("Value",get_double_constant(textContent2,def_list));
+		  XMLString::release(&textContent2);
 	        }
                 else {
                   throw_error_missattr("initial_conditions", "attribute", "value", "solute_component");
 	        }
-
-		sclist.sublist("IC: Uniform Concentration").set<double>("Value",get_double_constant(textContent2,def_list));
-	        XMLString::release(&textContent2);
 	      }
               else if (strcmp(funcType,"linear")==0){
 		// TODO: EIB - currently can't handle this
@@ -5296,10 +5297,46 @@ Teuchos::ParameterList get_initial_conditions(DOMDocument* xmlDoc, Teuchos::Para
 	      XMLString::release(&funcType);
 	    }
 	    else if (strcmp(compName,"geochemistry")==0) {
-              //TODO: EIB - deal with geochemisty later
+
+	      const Teuchos::Array<std::string>& soluteNames = def_list.get<Teuchos::Array<std::string> >("solutes");
+
+    	      if (soluteNames.size() > 0) {
+    	    	char* funcType;
+    	    	Teuchos::ParameterList sclist;
+    	    	attrMap = compNode->getAttributes();
+    	    	nodeAttr = attrMap->getNamedItem(XMLString::transcode("function"));
+    	    	if (nodeAttr) {
+    	    	  funcType = XMLString::transcode(nodeAttr->getNodeValue());
+    	    	}
+    	    	else {
+    	    	  throw_error_missattr("initial_conditions", "attribute", "function", "geochemistry");
+    	    	}
+    	    	if (strcmp(funcType,"uniform")==0) {
+    	    	  nodeAttr = attrMap->getNamedItem(XMLString::transcode("constraint"));
+    	    	  if (nodeAttr) {
+    	    	    textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
+    	    	    for (int i=0; i<soluteNames.size(); ++i) {
+    	    	      Teuchos::ParameterList sic, sic1;
+		      sic.set<std::string>("Geochemical Condition",trim_string(textContent2));
+    	    	      sic1.sublist("IC: Uniform Concentration") = sic;
+    	    	      sclist.sublist(soluteNames[i]) = sic1;
+    	    	    }
+    	    	    XMLString::release(&textContent2);
+    	    	  }
+    	    	  else {
+    	    	    throw_error_missattr("initial_conditions", "attribute", "value", "solute_component");
+    	    	  }
+    	    	}
+    	    	else if (strcmp(funcType,"linear")==0) {
+    	    	  // TODO: EIB - currently can't handle this
+    	    	}
+    	    	//TODO: EIB - not added concerntation units, confused by what to add. grab from units?
+    	    	iclist.sublist("Solute IC").sublist("Aqueous").sublist(phaseName) = sclist;
+    	    	XMLString::release(&funcType);
+    	      }
 	    }
 	  }
-        }
+	}
         else if (strcmp(tagName,"solid_phase")==0) {
           //TODO: EIB - deal with solid phase -> mineral, geochemisty
         }
@@ -5372,7 +5409,7 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
           tagName  = XMLString::transcode(BCNode->getNodeName());
           //NOTE: EIB - ignoring comments for now
           if (strcmp(tagName,"assigned_regions")==0) {
-	    //TODO: EIB - if this is more than 1 region -> assuming comma seperated list of strings????
+        //TODO: EIB - if this is more than 1 region -> assuming comma seperated list of strings????
             textContent2 = XMLString::transcode(BCNode->getTextContent());
 	    Teuchos::Array<std::string> regs = make_regions_list(textContent2);
 	    bclist.set<Teuchos::Array<std::string> >("Assigned Regions",regs);
@@ -6000,8 +6037,44 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
                 }
 	        XMLString::release(&solName);
 	      }
-              if (strcmp(compName,"geochemistry")==0) {
-                //TODO: EIB - deal with geochemisty later
+              else if (strcmp(compName,"geochemistry")==0) {
+
+		const Teuchos::Array<std::string>& soluteNames = def_list.get<Teuchos::Array<std::string> >("solutes");
+
+		if (soluteNames.size() > 0) {
+		  char* funcType;
+		  Teuchos::ParameterList sbclist;
+		  attrMap = compNode->getAttributes();
+		  nodeAttr = attrMap->getNamedItem(XMLString::transcode("function"));
+		  if (nodeAttr) {
+		    funcType = XMLString::transcode(nodeAttr->getNodeValue());
+		  }
+		  else {
+		    throw_error_missattr("boundary_conditions", "attribute", "function", "geochemistry");
+		  }
+		  if (strcmp(funcType,"uniform")==0) {
+		    nodeAttr = attrMap->getNamedItem(XMLString::transcode("constraint"));
+		    if (nodeAttr) {
+		      textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
+		      for (int i=0; i<soluteNames.size(); ++i) {
+			Teuchos::ParameterList sbc, sbc1;
+			sbc.set<std::string>("Geochemical Condition",trim_string(textContent2));
+			sbc1.sublist("BC: Uniform Concentration") = sbc;
+			sbclist.sublist(soluteNames[i]) = sbc1;
+		      }
+		      XMLString::release(&textContent2);
+		    }
+		    else {
+		      throw_error_missattr("boundary_conditions", "attribute", "value", "solute_component");
+		    }
+		  }
+		  else if (strcmp(funcType,"linear")==0) {
+		    // TODO: EIB - currently can't handle this
+		  }
+		  //TODO: EIB - not added concerntation units, confused by what to add. grab from units?
+		  bclist.sublist("Solute BC").sublist("Aqueous").sublist(phaseName) = sbclist;
+		  XMLString::release(&funcType);
+		}
 	      }
 	    }
           } else if (strcmp(tagName,"solid_phase")==0) {

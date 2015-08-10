@@ -1,7 +1,7 @@
 <ParameterList name="Main">
 
   <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
-  <Parameter name="Dump ParmParse Table" type="string" value="run_data/ppfile"/>
+  <Parameter name="Dump ParmParse Table" type="string" value="run_data_v1/ppfile"/>
   <Parameter name="Petsc Options File" type="string" value="DOTpetsc_hypre"/>
 
   <ParameterList name="General Description">
@@ -29,7 +29,7 @@
     <Parameter name="Chemistry Model" type="string" value="Alquimia"/>
 
     <!-- <ParameterList name="Restart"> -->
-    <!--   <Parameter name="File Name" type="string" value="run_data/chk00004"/> -->
+    <!--   <Parameter name="File Name" type="string" value="run_data_v1/chk00004"/> -->
     <!-- </ParameterList> -->
 
     <ParameterList name="Time Integration Mode">
@@ -51,26 +51,9 @@
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Structured Algorithm">
         <ParameterList name="Expert Settings">
-          <Parameter name="do_richard_init_to_steady" type="int" value="1"/>
-          <Parameter name="richard_init_to_steady_verbose" type="int" value="2"/>
-          <Parameter name="steady_do_grid_sequence" type="bool" value="false"/>
-          <Parameter name="steady_max_psuedo_time" type="double" value="1.e30"/>
           <Parameter name="richard_semi_analytic_J" type="bool" value="false"/>
-          <Parameter name="richard_dt_thresh_pure_steady" type="double" value="1.e18"/>
           <Parameter name="max_n_subcycle_transport" type="int" value="4"/>
         </ParameterList>
-	<ParameterList name="Iterative Linear Solver Control">
-	  <ParameterList name="Multigrid Algorithm">
-	    <ParameterList name="Expert Settings">
-	      <Parameter name="v" type="int" value="0"/>
-	    </ParameterList>
-	  </ParameterList>
-	  <ParameterList name="Conjugate Gradient Algorithm">
-	    <ParameterList name="Expert Settings">
-	      <Parameter name="v" type="int" value="0"/>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
 
 	<ParameterList name="Adaptive Mesh Refinement Control">
 	  <Parameter name="Number Of AMR Levels" type="int" value="4"/>
@@ -339,22 +322,18 @@
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value="1.e-11"/>
       </ParameterList>
-      <ParameterList name="Tortuosity: Uniform">
+      <ParameterList name="Tortuosity Aqueous: Uniform">
         <Parameter name="Value" type="double" value="1."/>
       </ParameterList>
       <ParameterList name="Sorption Isotherms">
-        <ParameterList name="Aqueous">
-          <ParameterList name="Water">
-	    <ParameterList name="Tracer">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Sr90">
-	      <Parameter name="Kd" type="double" value="29946"/>
-	    </ParameterList>
-	    <ParameterList name="Cs137">
-	      <Parameter name="Kd" type="double" value="3993"/>
-	    </ParameterList>
-	  </ParameterList>
+	<ParameterList name="Tracer">
+	  <Parameter name="Kd" type="double" value="1.e-6"/>
+	</ParameterList>
+	<ParameterList name="Sr90">
+	  <Parameter name="Kd" type="double" value="29946"/>
+	</ParameterList>
+	<ParameterList name="Cs137">
+	  <Parameter name="Kd" type="double" value="3993"/>
 	</ParameterList>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Wall}"/>
@@ -367,22 +346,18 @@
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value="1.e-11"/>
       </ParameterList>
-      <ParameterList name="Tortuosity: Uniform">
+      <ParameterList name="Tortuosity Aqueous: Uniform">
         <Parameter name="Value" type="double" value="1."/>
       </ParameterList>
       <ParameterList name="Sorption Isotherms">
-        <ParameterList name="Aqueous">
-          <ParameterList name="Water">
-	    <ParameterList name="Tracer">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Sr90">
-	      <Parameter name="Kd" type="double" value="29946"/>
-	    </ParameterList>
-	    <ParameterList name="Cs137">
-	      <Parameter name="Kd" type="double" value="3993"/>
-	    </ParameterList>
-	  </ParameterList>
+	<ParameterList name="Tracer">
+	  <Parameter name="Kd" type="double" value="1.e-6"/>
+	</ParameterList>
+	<ParameterList name="Sr90">
+	  <Parameter name="Kd" type="double" value="29946"/>
+	</ParameterList>
+	<ParameterList name="Cs137">
+	  <Parameter name="Kd" type="double" value="3993"/>
 	</ParameterList>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Grout}"/>
@@ -395,22 +370,18 @@
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value="1.e-6"/>
       </ParameterList>
-      <ParameterList name="Tortuosity: Uniform">
+      <ParameterList name="Tortuosity Aqueous: Uniform">
         <Parameter name="Value" type="double" value="1."/>
       </ParameterList>
       <ParameterList name="Sorption Isotherms">
-        <ParameterList name="Aqueous">
-          <ParameterList name="Water">
-	    <ParameterList name="Tracer">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Sr90">
-	      <Parameter name="Kd" type="double" value="8597"/>
-	    </ParameterList>
-	    <ParameterList name="Cs137">
-	      <Parameter name="Kd" type="double" value="17194"/>
-	    </ParameterList>
-	  </ParameterList>
+	<ParameterList name="Tracer">
+	  <Parameter name="Kd" type="double" value="1.e-6"/>
+	</ParameterList>
+	<ParameterList name="Sr90">
+	  <Parameter name="Kd" type="double" value="8597"/>
+	</ParameterList>
+	<ParameterList name="Cs137">
+	  <Parameter name="Kd" type="double" value="17194"/>
 	</ParameterList>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Soil}"/>
@@ -423,22 +394,18 @@
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value=".15e-2"/>
       </ParameterList>
-      <ParameterList name="Tortuosity: Uniform">
+      <ParameterList name="Tortuosity Aqueous: Uniform">
         <Parameter name="Value" type="double" value="1."/>
       </ParameterList>
       <ParameterList name="Sorption Isotherms">
-        <ParameterList name="Aqueous">
-          <ParameterList name="Water">
-	    <ParameterList name="Tracer">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Sr90">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Cs137">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	  </ParameterList>
+	<ParameterList name="Tracer">
+	  <Parameter name="Kd" type="double" value="1.e-6"/>
+	</ParameterList>
+	<ParameterList name="Sr90">
+	  <Parameter name="Kd" type="double" value="1.e-6"/>
+	</ParameterList>
+	<ParameterList name="Cs137">
+	  <Parameter name="Kd" type="double" value="1.e-6"/>
 	</ParameterList>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{FF}"/>
@@ -451,22 +418,18 @@
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value=".15e-2"/>
       </ParameterList>
-      <ParameterList name="Tortuosity: Uniform">
+      <ParameterList name="Tortuosity Aqueous: Uniform">
         <Parameter name="Value" type="double" value="1."/>
       </ParameterList>
       <ParameterList name="Sorption Isotherms">
-        <ParameterList name="Aqueous">
-          <ParameterList name="Water">
-	    <ParameterList name="Tracer">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Sr90">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Cs137">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	  </ParameterList>
+	<ParameterList name="Tracer">
+	  <Parameter name="Kd" type="double" value="1.e-6"/>
+	</ParameterList>
+	<ParameterList name="Sr90">
+	  <Parameter name="Kd" type="double" value="1.e-6"/>
+	</ParameterList>
+	<ParameterList name="Cs137">
+	  <Parameter name="Kd" type="double" value="1.e-6"/>
 	</ParameterList>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Sand}"/>
@@ -479,22 +442,18 @@
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value=".15e-2"/>
       </ParameterList>
-      <ParameterList name="Tortuosity: Uniform">
+      <ParameterList name="Tortuosity Aqueous: Uniform">
         <Parameter name="Value" type="double" value="1."/>
       </ParameterList>
       <ParameterList name="Sorption Isotherms">
-        <ParameterList name="Aqueous">
-          <ParameterList name="Water">
-	    <ParameterList name="Tracer">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Sr90">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Cs137">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	  </ParameterList>
+	<ParameterList name="Tracer">
+	  <Parameter name="Kd" type="double" value="1.e-6"/>
+	</ParameterList>
+	<ParameterList name="Sr90">
+	  <Parameter name="Kd" type="double" value="1.e-6"/>
+	</ParameterList>
+	<ParameterList name="Cs137">
+	  <Parameter name="Kd" type="double" value="1.e-6"/>
 	</ParameterList>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Waste Floor}"/>
@@ -507,22 +466,18 @@
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value=".15e-2"/>
       </ParameterList>
-      <ParameterList name="Tortuosity: Uniform">
+      <ParameterList name="Tortuosity Aqueous: Uniform">
         <Parameter name="Value" type="double" value="1."/>
       </ParameterList>
       <ParameterList name="Sorption Isotherms">
-        <ParameterList name="Aqueous">
-          <ParameterList name="Water">
-	    <ParameterList name="Tracer">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Sr90">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Cs137">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	  </ParameterList>
+	<ParameterList name="Tracer">
+	  <Parameter name="Kd" type="double" value="1.e-6"/>
+	</ParameterList>
+	<ParameterList name="Sr90">
+	  <Parameter name="Kd" type="double" value="1.e-6"/>
+	</ParameterList>
+	<ParameterList name="Cs137">
+	  <Parameter name="Kd" type="double" value="1.e-6"/>
 	</ParameterList>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Waste Left, Waste Right}"/>
@@ -535,22 +490,18 @@
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value="1.e-14"/>
       </ParameterList>
-      <ParameterList name="Tortuosity: Uniform">
+      <ParameterList name="Tortuosity Aqueous: Uniform">
         <Parameter name="Value" type="double" value="1."/>
       </ParameterList>
       <ParameterList name="Sorption Isotherms">
-        <ParameterList name="Aqueous">
-          <ParameterList name="Water">
-	    <ParameterList name="Tracer">
-	      <Parameter name="Kd" type="double" value="1.e-6"/>
-	    </ParameterList>
-	    <ParameterList name="Sr90">
-	      <Parameter name="Kd" type="double" value="0."/>
-	    </ParameterList>
-	    <ParameterList name="Cs137">
-	      <Parameter name="Kd" type="double" value="0."/>
-	    </ParameterList>
-	  </ParameterList>
+	<ParameterList name="Tracer">
+	  <Parameter name="Kd" type="double" value="1.e-6"/>
+	</ParameterList>
+	<ParameterList name="Sr90">
+	  <Parameter name="Kd" type="double" value="0."/>
+	</ParameterList>
+	<ParameterList name="Cs137">
+	  <Parameter name="Kd" type="double" value="0."/>
 	</ParameterList>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Liners}"/>
@@ -564,7 +515,7 @@
           <Parameter name="Density" type="double" value="998.2"/>
         </ParameterList>
         <ParameterList name="Viscosity: Uniform">
-          <Parameter name="Viscosity" type="double" value="0.001005"/>
+          <Parameter name="Viscosity" type="double" value="0.001002"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Phase Components">
@@ -808,12 +759,12 @@
     </ParameterList>
 
     <ParameterList name="Visualization Data">
-      <Parameter name="File Name Base" type="string" value="run_data/plt"/>
+      <Parameter name="File Name Base" type="string" value="run_data_v1/plt"/>
       <Parameter name="Cycle Macros" type="Array(string)" value="{Every_1_steps}"/>
     </ParameterList>
 
     <ParameterList name="Checkpoint Data">
-      <Parameter name="File Name Base" type="string" value="run_data/chk"/>
+      <Parameter name="File Name Base" type="string" value="run_data_v1/chk"/>
       <Parameter name="Cycle Macros" type="Array(string)" value="{Every_10_steps}"/>
     </ParameterList>
 <!--
