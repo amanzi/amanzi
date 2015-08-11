@@ -62,9 +62,10 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     pk_state[tagname] = (strcmp(state.c_str(), "on") == 0);
 
     if (strcmp(tagname, "flow") == 0) {
-      std::string model = GetAttributeValueS_(static_cast<DOMElement*>(inode), "model");
+      std::string model = GetAttributeValueS_(
+          static_cast<DOMElement*>(inode), "model", "richards, saturated, constant");
       pk_model_["flow"] = model;
-      transient_model += 4 * pk_state[tagname];
+      if (model != "constant") transient_model += 4 * pk_state[tagname];
     } else if (strcmp(tagname, "chemistry") == 0) {
       std::string model = GetAttributeValueS_(static_cast<DOMElement*>(inode), "engine");
       pk_model_["chemistry"] = model;
@@ -103,7 +104,12 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
       ss << "TP " << i;
       std::string name = ss.str();
 
-      t0 = TimeCharToValue_(GetAttributeValueS_(static_cast<DOMElement*>(inode), "start").c_str());
+      t0 = TimeStringToValue_(GetAttributeValueS_(static_cast<DOMElement*>(inode), "start"));
+      if (tp_mode.find(t0) != tp_mode.end()) {
+        Errors::Message msg;
+        msg << "\"execution_controls\" cannot have the same start time.\n";
+        Exceptions::amanzi_throw(msg);
+      } 
 
       tp_mode[t0] = GetAttributeValueS_(static_cast<DOMElement*>(inode), "mode");
       tp_t1[t0] = TimeStringToValue_(GetAttributeValueS_(static_cast<DOMElement*>(inode), "end"));
@@ -251,6 +257,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   bc_names.push_back("inward_mass_flux");
 
   node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
+  if (node_list->getLength() == 0) return out_list;
   node = node_list->item(0);
 
   for (int n = 0; n < bc_names.size(); ++n) {

@@ -69,6 +69,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateWRM_();
   Teuchos::ParameterList TranslatePOM_();
   Teuchos::ParameterList TranslateFlowBCs_();
+  Teuchos::ParameterList TranslateFlowSources_();
   Teuchos::ParameterList TranslateTransport_();
   Teuchos::ParameterList TranslateTransportBCs_();
   Teuchos::ParameterList TranslateTransportSources_();
