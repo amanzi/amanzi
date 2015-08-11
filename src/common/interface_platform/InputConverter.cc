@@ -500,7 +500,8 @@ std::string InputConverter::GetAttributeValueS_(
 /* ******************************************************************
 * Extract attribute of type vector.
 ****************************************************************** */
-std::vector<double> InputConverter::GetAttributeVector_(DOMElement* elem, const char* attr_name)
+std::vector<double> InputConverter::GetAttributeVector_(
+    DOMElement* elem, const char* attr_name)
 {
   std::vector<double> val;
   XString mm;

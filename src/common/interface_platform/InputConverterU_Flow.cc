@@ -135,6 +135,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
 
   // insert boundary conditions and source terms
   flow_list->sublist("boundary conditions") = TranslateFlowBCs_();
+  flow_list->sublist("source terms") = TranslateFlowSources_();
 
   flow_list->sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
   return out_list;
@@ -445,6 +446,98 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
       std::string tmp = GetAttributeValueS_(
           static_cast<DOMElement*>(same_list[0]), "coordinate_system", false, "absolute");
       bc.set<bool>("relative to top", (tmp == "relative to mesh top"));
+    }
+  }
+
+  return out_list;
+}
+
+
+/* ******************************************************************
+* Create list of flow sources.
+****************************************************************** */
+Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
+{
+  Teuchos::ParameterList out_list;
+
+  XString mm;
+
+  char *text, *tagname;
+  DOMNodeList *node_list, *children;
+  DOMNode *node, *phase;
+  DOMElement* element;
+
+  node_list = doc_->getElementsByTagName(mm.transcode("sources"));
+  if (node_list->getLength() == 0) return out_list;
+
+  children = node_list->item(0)->getChildNodes();
+
+  for (int i = 0; i < children->getLength(); ++i) {
+    DOMNode* inode = children->item(i);
+    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+    tagname = mm.transcode(inode->getNodeName());
+    std::string srcname = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
+
+    // read the assigned regions
+    bool flag;
+    node = getUniqueElementByTagsString_(inode, "assigned_regions", flag);
+    text = mm.transcode(node->getTextContent());
+    std::vector<std::string> regions = CharToStrings_(text);
+
+    vv_src_regions_.insert(vv_src_regions_.end(), regions.begin(), regions.end());
+
+    // process flow sources for liquid saturation
+    phase = getUniqueElementByTagNames_(inode, "liquid_phase", "liquid_component", flag);
+    if (!flag) continue;
+
+    // process a group of similar elements defined by the first element
+    std::string srctype;
+    std::vector<DOMNode*> same_list = getSameChildNodes_(phase, srctype, flag, true);
+
+    std::map<double, double> tp_values;
+    std::map<double, std::string> tp_forms;
+ 
+    for (int j = 0; j < same_list.size(); ++j) {
+       element = static_cast<DOMElement*>(same_list[j]);
+       double t0 = GetAttributeValueD_(element, "start");
+       tp_forms[t0] = GetAttributeValueS_(element, "function");
+       tp_values[t0] = GetAttributeValueD_(element, "value");
+    }
+
+    std::string weight;
+    if (srctype == "volume_weighted") {
+      weight = "volume";
+    } else if (srctype == "perm_weighted") {
+      weight = "permeability";
+    } else if (srctype == "uniform") {
+      weight = "none";
+    } else {
+      ThrowErrorIllformed_("sources", "element", srctype);
+    } 
+
+    // create vectors of values and forms
+    std::vector<double> times, values;
+    std::vector<std::string> forms;
+    for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
+      times.push_back(it->first);
+      values.push_back(it->second);
+      forms.push_back(tp_forms[it->first]);
+    }
+    forms.pop_back();
+     
+    // save in the XML files  
+    Teuchos::ParameterList& src = out_list.sublist(srcname);
+    src.set<Teuchos::Array<std::string> >("regions", regions);
+    src.set<std::string>("spatial distribution method", weight);
+
+    Teuchos::ParameterList& srcfn = src.sublist("sink");
+    if (times.size() == 1) {
+      srcfn.sublist("function-constant").set<double>("value", values[0]);
+    } else {
+      srcfn.sublist("function-tabular")
+          .set<Teuchos::Array<double> >("x values", times)
+          .set<Teuchos::Array<double> >("y values", values)
+          .set<Teuchos::Array<std::string> >("forms", forms);
     }
   }
 

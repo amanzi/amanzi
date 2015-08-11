@@ -113,11 +113,13 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "material") != 0) continue;
 
+      std::string mat_name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
+
       // -- regions
       node = getUniqueElementByTagNames_(inode, "assigned_regions", flag);
       std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
-      Teuchos::ParameterList& tmp_list = mat_list.sublist(tagname);
+      Teuchos::ParameterList& tmp_list = mat_list.sublist(mat_name);
       tmp_list.set<Teuchos::Array<std::string> >("regions", regions);
 
       // -- dispersion tensor
@@ -248,7 +250,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
   DOMElement* element;
 
   node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
-  if (!node_list) return out_list;
+  if (node_list->getLength() == 0) return out_list;
 
   children = node_list->item(0)->getChildNodes();
 
@@ -269,8 +271,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
     phase = getUniqueElementByTagNames_(inode, "liquid_phase", flag);
     if (!flag) continue;
 
-    // process solute elements
-    // -- Dirichlet BCs for concentration
+    // process solute sources for concentration
     std::string bctype, solute_name;
 
     element = static_cast<DOMElement*>(phase);
@@ -308,10 +309,15 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
         Teuchos::ParameterList& bc = tbc_list.sublist(solute_name).sublist(bcname);
         bc.set<Teuchos::Array<std::string> >("regions", regions);
 
-        Teuchos::ParameterList& bcfn = bc.sublist("boundary concentration").sublist("function-tabular");
-        bcfn.set<Teuchos::Array<double> >("x values", times);
-        bcfn.set<Teuchos::Array<double> >("y values", values);
-        bcfn.set<Teuchos::Array<std::string> >("forms", forms);
+        Teuchos::ParameterList& bcfn = bc.sublist("boundary concentration");
+        if (times.size() == 1) {
+          bcfn.sublist("function-constant").set<double>("value", values[0]);
+        } else {
+          bcfn.sublist("function-tabular")
+              .set<Teuchos::Array<double> >("x values", times)
+              .set<Teuchos::Array<double> >("y values", values)
+              .set<Teuchos::Array<std::string> >("forms", forms);
+        }
       }
     }
 
@@ -366,7 +372,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
   DOMElement* element;
 
   node_list = doc_->getElementsByTagName(mm.transcode("sources"));
-  if (!node_list) return out_list;
+  if (node_list->getLength() == 0) return out_list;
 
   children = node_list->item(0)->getChildNodes();
 
@@ -442,10 +448,15 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
           src.set<Teuchos::Array<std::string> >("regions", regions);
           src.set<std::string>("spatial distribution method", weight);
 
-          src.sublist("boundary concentration").sublist("function-tabular")
-              .set<Teuchos::Array<double> >("x values", times)
-              .set<Teuchos::Array<double> >("y values", values)
-              .set<Teuchos::Array<std::string> >("forms", forms);
+          Teuchos::ParameterList& srcfn = src.sublist("sink");
+          if (times.size() == 1) {
+            srcfn.sublist("function-constant").set<double>("value", values[0]);
+          } else {
+            srcfn.sublist("function-tabular")
+                .set<Teuchos::Array<double> >("x values", times)
+                .set<Teuchos::Array<double> >("y values", values)
+                .set<Teuchos::Array<std::string> >("forms", forms);
+          }
         } else {
           element = static_cast<DOMElement*>(same_list[0]);
           double total = GetAttributeValueD_(element, "inventory");
