@@ -380,7 +380,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       int ncomp_all = ncomp_l + ncomp_g;
 
       node = getUniqueElementByTagsString_(inode, "liquid_phase", flag);
-      if (flag) {
+      if (flag && ncomp_all > 0) {
         std::vector<double> vals(ncomp_l, 0.0);
 
         DOMNodeList* children = node->getChildNodes();

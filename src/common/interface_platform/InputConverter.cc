@@ -430,9 +430,9 @@ double InputConverter::GetAttributeValueD_(
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
     char* text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
     if (constants_.find(text) != constants_.end()) {  // check constants list
-      val = std::strtod(constants_[text].c_str(), NULL);
+      val = TimeStringToValue_(constants_[text]);
     } else {
-      val = std::strtod(text, NULL);
+      val = TimeCharToValue_(text);
     }
   } else if (!exception) {
     val = default_val;
@@ -455,8 +455,12 @@ int InputConverter::GetAttributeValueL_(
   XString mm;
 
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
-    char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
-    val = std::strtol(text_content, NULL, 10);
+    char* text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+    if (constants_.find(text) != constants_.end()) {  // check constants list
+      val = std::strtol(constants_[text].c_str(), NULL, 10);
+    } else {
+      val = std::strtol(text, NULL, 10);
+    }
   } else if (! exception) {
     val = default_val;
   } else {
@@ -480,6 +484,8 @@ std::string InputConverter::GetAttributeValueS_(
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
     val = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
     boost::algorithm::trim(val);
+    // check the list of global constants
+    if (constants_.find(val) != constants_.end()) val = constants_[val];
   } else if (!exception) {
     val = default_val;
   } else {
@@ -608,11 +614,11 @@ double InputConverter::TimeCharToValue_(const char* time_value)
 
   if (tmp2 != NULL) {
     if (strcmp(tmp2, "y") == 0) { 
-      time *= 365.25 * 24.0 * 60.0 * 60.0;
+      time *= 365.25 * 24.0 * 3600.0;
     } else if (strcmp(tmp2, "d") == 0) {
-      time *= 24.0*60.0*60.0;
+      time *= 24.0 * 3600.0;
     } else if (strcmp(tmp2, "h") == 0) {
-      time *= 60.0*60.0;
+      time *= 3600.0;
     }
   }
   

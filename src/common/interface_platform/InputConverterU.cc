@@ -45,14 +45,18 @@ Teuchos::ParameterList InputConverterU::Translate()
   out_list.sublist("Mesh") = TranslateMesh_();
   out_list.sublist("Domain").set<int>("Spatial Dimension", dim_);
   out_list.sublist("Regions") = TranslateRegions_();
-  out_list.sublist("Output") = TranslateOutput_();
-  out_list.sublist("Solvers") = TranslateSolvers_();
-  out_list.sublist("Preconditioners") = TranslatePreconditioners_();
+
+  const Teuchos::ParameterList& tmp = TranslateOutput_();
+  for (Teuchos::ParameterList::ConstIterator it = tmp.begin(); it != tmp.end(); ++it)
+    out_list.sublist(it->first) = tmp.sublist(it->first);
+
   out_list.sublist("State") = TranslateState_();
   out_list.sublist("Cycle Driver") = TranslateCycleDriver_();
-
   Teuchos::ParameterList& cd_list = out_list.sublist("Cycle Driver");
   out_list.sublist("PKs") = TranslatePKs_(cd_list);
+
+  out_list.sublist("Solvers") = TranslateSolvers_();
+  out_list.sublist("Preconditioners") = TranslatePreconditioners_();
 
   // analysis list
   out_list.sublist("Analysis") = CreateAnalysis_();

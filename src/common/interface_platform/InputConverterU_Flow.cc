@@ -54,7 +54,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
   if (flag) rel_perm = mm.transcode(node->getNodeName());
 
   // create flow header
-  if (pk_model_["flow"] == "darcy") {
+  if (pk_model_["flow"] == "saturated") {
     Teuchos::ParameterList& darcy_list = out_list.sublist("Darcy problem");
     darcy_list.set<double>("atmospheric pressure", atm_pres);
 
@@ -345,6 +345,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
   node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
   if (!node_list) return out_list;
 
+  int ibc(0);
   children = node_list->item(0)->getChildNodes();
 
   for (int i = 0; i < children->getLength(); ++i) {
@@ -420,7 +421,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
       for (int k = 0; k < values.size(); k++) values[k] *= -1;
     }
     std::stringstream ss;
-    ss << "BC " << ++i;
+    ss << "BC " << ibc++;
 
     // save in the XML files  
     Teuchos::ParameterList& tbc_list = out_list.sublist(bctype);
@@ -441,9 +442,9 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
     if (bctype == "mass flux") {
       bc.set<bool>("rainfall", false);
     } else if (bctype == "static head") {
-      std::string tmp = GetAttributeValueS_(static_cast<DOMElement*>(same_list[0]), "coordinate_system");
+      std::string tmp = GetAttributeValueS_(
+          static_cast<DOMElement*>(same_list[0]), "coordinate_system", false, "absolute");
       bc.set<bool>("relative to top", (tmp == "relative to mesh top"));
-      bc.set<bool>("no flow above water table", false);
     }
   }
 
