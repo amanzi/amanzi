@@ -6,7 +6,7 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Jeffrey Johnson (jnjohnson@lbl.gov)
 */
 
 #include <cstdlib>
@@ -32,7 +32,7 @@ TEST(CONVERTER_S) {
   if (rank == 0) std::cout << "Test: convert v2.x -> ParmParse test" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/test_converter_s.xml";
+  std::string xmlFileName = "test/converter_s_input.xml";
 
   Amanzi::AmanziInput::InputConverterS converter;
   converter.Init(xmlFileName);
@@ -43,7 +43,7 @@ TEST(CONVERTER_S) {
 
     // Dump the guy to stdout.
     ParmParse pp;
-    std::ofstream dumpy("parmparse.dump");
+    std::ofstream dumpy("converter_s_test_output.dump");
     pp.dumpTable(dumpy);
 
     std::cout << "Successful translation. Validating the result...\n\n";
