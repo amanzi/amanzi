@@ -527,9 +527,9 @@ std::string InputConverter::GetAttributeValueS_(
 
 
 /* ******************************************************************
-* Extract attribute of type vector.
+* Extract attribute of type vector<double>.
 ****************************************************************** */
-std::vector<double> InputConverter::GetAttributeVector_(DOMElement* elem, const char* attr_name)
+std::vector<double> InputConverter::GetAttributeVector_(DOMElement* elem, const char* attr_name, bool exception)
 {
   std::vector<double> val;
   XString mm;
@@ -537,9 +537,88 @@ std::vector<double> InputConverter::GetAttributeVector_(DOMElement* elem, const 
   if (elem->hasAttribute(mm.transcode(attr_name))) {
     char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
     val = MakeCoordinates_(text_content);
-  } else {
+  } else if (exception) {
     char* tagname = mm.transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
+  }
+
+  return val;
+}
+
+/* ******************************************************************
+* Extract attribute of type vector<string>.
+****************************************************************** */
+std::vector<std::string> InputConverter::GetAttributeVectorS_(DOMElement* elem, const char* attr_name, bool exception)
+{
+  std::vector<std::string> val;
+  XString mm;
+
+  if (elem->hasAttribute(mm.transcode(attr_name))) {
+    char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+    val = CharToStrings_(text_content);
+  } else if (exception) {
+    char* tagname = mm.transcode(elem->getNodeName());
+    ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
+  }
+
+  return val;
+}
+
+std::string InputConverter::GetChildValueS_(
+    xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception)
+{
+  XString mm;
+
+  std::string val;
+  flag = false;
+
+  DOMNodeList* children = node->getChildNodes();
+  for (int i = 0; i < children->getLength(); ++i) 
+  {
+    DOMNode* inode = children->item(i);
+    char* tagname = mm.transcode(inode->getNodeName());   
+    if (childName == tagname)
+    {
+      val = mm.transcode(inode->getTextContent());
+      flag = true;
+      break;
+    }
+  }
+
+  if (!flag and exception)
+  {
+    char* nodeName = mm.transcode(node->getNodeName());
+    ThrowErrorMisschild_(nodeName, childName, nodeName);
+  }
+
+  return val;
+}
+
+std::vector<std::string> InputConverter::GetChildVectorS_(
+    xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception)
+{
+  XString mm;
+
+  std::vector<std::string> val;
+  flag = false;
+
+  DOMNodeList* children = node->getChildNodes();
+  for (int i = 0; i < children->getLength(); ++i) 
+  {
+    DOMNode* inode = children->item(i);
+    char* tagname = mm.transcode(inode->getNodeName());   
+    if (childName == tagname)
+    {
+      val = CharToStrings_(mm.transcode(inode->getTextContent()));
+      flag = true;
+      break;
+    }
+  }
+
+  if (!flag and exception)
+  {
+    char* nodeName = mm.transcode(node->getNodeName());
+    ThrowErrorMisschild_(nodeName, childName, nodeName);
   }
 
   return val;
@@ -675,7 +754,6 @@ std::vector<double> InputConverter::MakeCoordinates_(const std::string& array)
   return coords;
 }
 
-
 /* ******************************************************************
 * Empty
 ****************************************************************** */
@@ -685,7 +763,6 @@ std::string InputConverter::TrimString_(char* tmp)
   boost::algorithm::trim(str);
   return str;
 }
-
 
 /* *******************************************************************
 * Generate unified error message for ill-formed element
@@ -725,6 +802,19 @@ void InputConverter::ThrowErrorMissattr_(
   Errors::Message msg;
   msg << "Amanzi::InputConverter: an error occurred during parsing node \"" << section << "\"\n";
   msg << "  No " << type << " \"" << missing << "\" found for \"" << name << "\".\n";
+  msg << "  Please correct and try again \n";
+  Exceptions::amanzi_throw(msg);
+}
+
+/* *******************************************************************
+* Generate unified error message for missing child
+******************************************************************* */
+void InputConverter::ThrowErrorMisschild_(
+    const std::string& section, const std::string& missing, const std::string& name)
+{
+  Errors::Message msg;
+  msg << "Amanzi::InputConverter: an error occurred during parsing node \"" << section << "\"\n";
+  msg << "  No child \"" << missing << "\" found for \"" << name << "\".\n";
   msg << "  Please correct and try again \n";
   Exceptions::amanzi_throw(msg);
 }

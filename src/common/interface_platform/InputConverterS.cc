@@ -287,13 +287,14 @@ void InputConverterS::ParseDefinitions()
         vector<string> times;
 
         // Before we look for specific times, check for other stuff.
-        string start = GetAttributeValueS_(time_macro, "start");
-        if (!start.empty())
+        bool found;
+        string start = GetChildValueS_(time_macro, "start", found);
+        if (found)
         {
           // We've got one of the interval-based time macros.
           // Get the other required elements.
-          string timestep_interval = GetAttributeValueS_(time_macro, "timestep_interval", true);
-          string stop = GetAttributeValueS_(time_macro, "stop", true);
+          string timestep_interval = GetChildValueS_(time_macro, "timestep_interval", found, true);
+          string stop = GetChildValueS_(time_macro, "stop", found, true);
           
           char* endptr = const_cast<char*>(start.c_str());
           double t1 = strtod(start.c_str(), &endptr);
@@ -344,9 +345,10 @@ void InputConverterS::ParseDefinitions()
         string macro_name = GetAttributeValueS_(cycle_macro, "name");
         vector<string> cycles;
 
-        string start = GetAttributeValueS_(cycle_macro, "start", true);
-        string timestep_interval = GetAttributeValueS_(cycle_macro, "timestep_interval", true);
-        string stop = GetAttributeValueS_(cycle_macro, "stop", true);
+        bool found;
+        string start = GetChildValueS_(cycle_macro, "start", found, true);
+        string timestep_interval = GetChildValueS_(cycle_macro, "timestep_interval", found, true);
+        string stop = GetChildValueS_(cycle_macro, "stop", found, true);
          
         // Verify the entries.
         char* endptr = const_cast<char*>(start.c_str());
@@ -438,19 +440,104 @@ void InputConverterS::ParseInitialConditions()
 void InputConverterS::ParseBoundaryConditions()
 {
   std::list<ParmParse::PP_entry> table;
-  ParmParse::appendTable(table);
+  bool found;
+  DOMNode* boundary_conditions = getUniqueElementByTagNames_(doc_, "boundary_conditions", found);
+  if (found)
+  {
+    bool found;
+    vector<DOMNode*> bcs = getChildren_(boundary_conditions, "boundary_condition", found);
+    if (found)
+    {
+      for (size_t i = 0; i < bcs.size(); ++i)
+      {
+        DOMElement* bc = static_cast<DOMElement*>(bcs[i]);
+        string bc_name = GetAttributeValueS_(bc, "name");
+        vector<string> times;
+      }
+    }
+  }
+  if (!table.empty())
+    ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseOutput()
 {
   std::list<ParmParse::PP_entry> table;
-  ParmParse::appendTable(table);
+  bool found;
+
+  // Visualization files.
+  DOMNode* vis = getUniqueElementByTagNames_("output", "vis", found);
+  if (found)
+  {
+    bool found;
+    string base_filename = GetChildValueS_(vis, "base_filename", found, true);
+    string num_digits = GetChildValueS_(vis, "num_digits", found, true);
+    vector<string> cycle_macros = GetChildVectorS_(vis, "cycle_macros", found, false);
+    vector<string> time_macros = GetChildVectorS_(vis, "time_macros", found, false);
+
+    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "plot_file"),
+                                        MakePPEntry(base_filename)));
+    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "plot_file_digits"),
+                                        MakePPEntry(num_digits)));
+    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "viz_cycle_macros"),
+                                        MakePPEntry(cycle_macros)));
+    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "viz_time_macros"),
+                                        MakePPEntry(time_macros)));
+  }
+
+  // Checkpoint files.
+  DOMNode* checkpoint = getUniqueElementByTagNames_("output", "checkpoint", found);
+  if (found)
+  {
+    bool found;
+    string base_filename = GetChildValueS_(checkpoint, "base_filename", found, true);
+    string num_digits = GetChildValueS_(checkpoint, "num_digits", found, true);
+    vector<string> cycle_macros = GetChildVectorS_(checkpoint, "cycle_macros", found, true);
+
+    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "check_file"),
+                                        MakePPEntry(base_filename)));
+    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "chk_file_digits"),
+                                        MakePPEntry(num_digits)));
+    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "chk_cycle_macros"),
+                                        MakePPEntry(cycle_macros)));
+  }
+
+  // Observations.
+  DOMNode* observations = getUniqueElementByTagNames_("output", "observations", found);
+  if (found)
+  {
+    bool found;
+    string filename = GetChildValueS_(checkpoint, "filename", found, true);
+//    string num_digits = GetChildValueS_(checkpoint, "liquid_phase", found, true);
+
+    // FIXME
+  }
+
+  // Walkabouts. 
+  DOMNode* walkabout = getUniqueElementByTagNames_("output", "walkabout", found);
+  if (found)
+  {
+    bool found;
+    string base_filename = GetChildValueS_(walkabout, "base_filename", found, true);
+    string num_digits = GetChildValueS_(walkabout, "num_digits", found, true);
+    vector<string> cycle_macros = GetChildVectorS_(walkabout, "cycle_macros", found, true);
+
+// FIXME
+//    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "check_file"),
+//                                        MakePPEntry(base_filename)));
+//    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "chk_file_digits"),
+//                                        MakePPEntry(num_digits)));
+//    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "chk_cycle_macros"),
+//                                        MakePPEntry(cycle_macros)));
+  }
+
+  if (!table.empty())
+    ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseMisc()
 {
-  std::list<ParmParse::PP_entry> table;
-  ParmParse::appendTable(table);
+  // FIXME: Not yet supported.
 }
 
 void InputConverterS::Translate() 

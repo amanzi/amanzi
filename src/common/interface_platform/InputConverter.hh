@@ -116,11 +116,19 @@ class InputConverter {
   std::string GetAttributeValueS_(
       xercesc::DOMElement* elem, const char* attr_name, bool exception = true, std::string val = "");
   std::vector<double> GetAttributeVector_(
-      xercesc::DOMElement* elem, const char* attr_name);
+      xercesc::DOMElement* elem, const char* attr_name, bool exception = true);
+  std::vector<std::string> GetAttributeVectorS_(
+      xercesc::DOMElement* elem, const char* attr_name, bool exception = true);
  
-  // -- extract all children of the given node with the given name.
+  // -- extract all children of the given node that share the given common name.
   std::vector<xercesc::DOMNode*> getChildren_(
-      xercesc::DOMNode* node, const std::string& name, bool& flag, bool exception = false);
+      xercesc::DOMNode* node, const std::string& childrenName, bool& flag, bool exception = false);
+
+  // -- extract the text content of the child of the given node with the given name.
+  std::string GetChildValueS_(
+      xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception = false);
+  std::vector<std::string> GetChildVectorS_(
+      xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception = false);
 
   // -- extract existing attribute value and verify it
   std::string GetAttributeValueS_(
@@ -153,6 +161,8 @@ class InputConverter {
       const std::string& section, const std::string& type, const std::string& ill_formed, const std::string& options);
   void ThrowErrorMissattr_(
       const std::string& section, const std::string& type, const std::string& missing, const std::string& name);
+  void ThrowErrorMisschild_(
+      const std::string& section, const std::string& missing, const std::string& name);
 
  protected:
   // variois constants defined by the users
