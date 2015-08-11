@@ -493,6 +493,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
     // process a group of similar elements defined by the first element
     std::string srctype;
     std::vector<DOMNode*> same_list = getSameChildNodes_(phase, srctype, flag, true);
+    if (!flag || same_list.size() == 0) continue;
 
     std::map<double, double> tp_values;
     std::map<double, std::string> tp_forms;

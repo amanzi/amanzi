@@ -44,6 +44,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   char* text;
   DOMNodeList *node_list, *children;
   DOMNode* node;
+  DOMElement* element;
 
   bool flag;
   node = getUniqueElementByTagNames_("process_kernels", "chemistry", flag);
@@ -80,12 +81,15 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   // region specific initial conditions
   Teuchos::ParameterList& ic_list = out_list.sublist("initial conditions");
 
-/*
-    Teuchos::ParameterList& matprop_list = plist->sublist("Material Properties");
-    DOMNode* inode = children->item(i);
+  node_list = doc_->getElementsByTagName(mm.transcode("materials"));
+  element = static_cast<DOMElement*>(node_list->item(0));
+  children = element->getElementsByTagName(mm.transcode("material"));
 
-    for (Teuchos::ParameterList::ConstIterator i = matprop_list.begin(); i != matprop_list.end(); i++) {
-      // get the regions
+  for (int i = 0; i < children->getLength(); ++i) {
+    DOMNode* inode = children->item(i);
+  }
+
+/*
       Teuchos::Array<std::string> regions = matprop_list.sublist(matprop_list.name(i)).get<Teuchos::Array<std::string> >("Assigned Regions");
 
       if (minerals.size() > 0) {
