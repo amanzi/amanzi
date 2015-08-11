@@ -431,7 +431,7 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
 
     * `"comments`" = "string" - SKIPPED 
       
-    * `"bdf1_integration_method`" has the following attributes
+    * `"bdf1_integration_method`" has the following elements
 
         * `"min_iterations`" = "integer"
 

@@ -74,7 +74,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
       // process time macros
       if (strcmp(tagname, "time_macro") == 0) {
         Teuchos::ParameterList tm_parameter;
-        std::string text = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
+        std::string name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
 
         // deal differently if "times" or "start-inter-stop"
         DOMNodeList* multi_list = inode->getChildNodes();
@@ -125,13 +125,13 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             tm_parameter.set<Teuchos::Array<double> >("values", sps);
           }
         }
-        tmPL.sublist(text) = tm_parameter;
+        tmPL.sublist(name) = tm_parameter;
       }
 
       // process cycle macros
       else if (strcmp(tagname,"cycle_macro") == 0) {
         Teuchos::ParameterList cm_parameter;
-        std::string str = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");      
+        std::string name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");      
 
         DOMElement* element = static_cast<DOMElement*>(inode);
         DOMNodeList* list = element->getElementsByTagName(mm.transcode("start"));
@@ -157,7 +157,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
         } else {
           cm_parameter.set<Teuchos::Array<int> >("values", sps);
         }
-        cmPL.sublist(text) = cm_parameter;
+        cmPL.sublist(name) = cm_parameter;
       }
     }
   }
@@ -181,8 +181,6 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
 
       if (strcmp(tagname, "base_filename") == 0) {
         visPL.set<std::string>("file name base", TrimString_(text));
-      } else if (strcmp(tagname, "num_digits") == 0) {
-        visPL.set<int>("file name digits", std::strtol(text, NULL, 10));
       } else if (strcmp(tagname, "cycle_macros") == 0 ||
                  strcmp(tagname, "cycle_macro") == 0) {
         ProcessMacros_("cycles", text, cmPL, visPL);
@@ -438,7 +436,7 @@ void InputConverterU::ProcessMacros_(
       for (std::list<double>::iterator it = tm_list.begin(); it != tm_list.end(); ++it) 
           times.push_back(*it);
 
-      outPL.set<Teuchos::Array<double> >("values", times);
+      outPL.set<Teuchos::Array<double> >("times", times);
     }
   }
 }

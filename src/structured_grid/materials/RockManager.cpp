@@ -906,7 +906,7 @@ RockManager::Initialize(const Array<std::string>* solute_names)
         const std::string& str = it->first;
         bool found = false;
         for (int i=0; i<nrock; ++i) {
-          const std::string prefix("rock."+r_names[i]+".Sorption_Isotherms."+known_solutes[k]);
+          const std::string prefix("rock."+r_names[i]+".sorption_isotherms."+known_solutes[k]);
           ParmParse pprs(prefix.c_str());
           if (pprs.countval(str.c_str())) {
             pprs.get(str.c_str(),sorption_isotherm_ics[r_names[i]][known_solutes[k]][str]);

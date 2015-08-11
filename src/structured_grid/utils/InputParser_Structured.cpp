@@ -1302,13 +1302,19 @@ namespace Amanzi {
       }
       const std::string& op = rsslist.get<std::string>(Op_str);
       if (op==Comp_str) {
-        if (!rsslist.isParameter(CompReg_str)) {
-          MyAbort("\""+CompReg_str+"\" required with "+"\""+Op_str+"\" = \"" + Comp_str + "\" "
+        if (!rsslist.isParameter(CompReg_str) && !rsslist.isParameter(Regs_str)) {
+          MyAbort("\""+CompReg_str+"\" or \""+Regs_str+"\"required with "+"\""+Op_str+"\" = \"" + Comp_str + "\" "
                   "for \"" + rlabel + "\"");
         }
-        const std::string& comp_reg = rsslist.get<std::string>(CompReg_str);
-        rsublist.set("operation","complement");
-        rsublist.set("region",underscore(comp_reg));
+	if (rsslist.isParameter(CompReg_str)) {
+	  const std::string& comp_reg = rsslist.get<std::string>(CompReg_str);
+	  rsublist.set("operation","complement");
+	  rsublist.set("region",underscore(comp_reg));
+	} else {
+	  const std::string& comp_reg = rsslist.get<Array<std::string> >(Regs_str)[0];
+	  rsublist.set("operation","complement");
+	  rsublist.set("region",underscore(comp_reg));
+	}
       }
       else if (op==Union_str) {
         if (!rsslist.isParameter(Regs_str)) {
@@ -2019,7 +2025,7 @@ namespace Amanzi {
       const std::string perm_uniform_str = "Intrinsic Permeability: Uniform";
       const std::string perm_anisotropic_uniform_str = "Intrinsic Permeability: Anisotropic Uniform";
       const std::string perm_gslib_str = "Intrinsic Permeability: GSLib";
-      const std::string tortuosity_str = "Tortuosity: Uniform";
+      const std::string tortuosity_str = "Tortuosity Aqueous: Uniform";
       const std::string dispersivity_str = "Dispersion Tensor: Uniform Isotropic";
       const std::string specific_storage_uniform_str = "Specific Storage: Uniform";
       const std::string specific_yield_uniform_str = "Specific Yield: Uniform";
@@ -2303,8 +2309,11 @@ namespace Amanzi {
 
                 add_chemistry_properties = true;
 
-                PLoptions sipP(rsslist,nullList,nullList,false,true); // each optional list is a phase
-                const Array<std::string>& sipLabels = sipP.OptLists();
+		// FIXME: Short-circuit all this stuff, since the powers that
+		//        be decided to special-case all this for Aqueous Water 
+                //PLoptions sipP(rsslist,nullList,nullList,false,true); // each optional list is a phase
+                //const Array<std::string>& sipLabels = sipP.OptLists();
+		Array<std::string> sipLabels; sipLabels.push_back("Aqueous");
                 for (int k=0; k<sipLabels.size(); ++k) {
                   const std::string& sipLabel = sipLabels[k];
                   std::string _sipLabel = underscore(sipLabel);
@@ -2314,10 +2323,13 @@ namespace Amanzi {
                     std::cerr << "Unknown phase " << sipLabel << " in " << rlabel << " for " << label << std::endl;
                     throw std::exception();                                                
                   }
+                  //const ParameterList& sipSL = rsslist.sublist(sipLabel);
 
-                  const ParameterList& sipSL = rsslist.sublist(sipLabel);
-                  PLoptions sipcP(sipSL,nullList,nullList,false,true); // each optional list is a component
-                  const Array<std::string>& sipcLabels = sipcP.OptLists();
+		  // FIXME: Short-circuit all this stuff, since the powers that
+		  //        be decided to special-case all this for Aqueous Water 
+                  //PLoptions sipcP(sipSL,nullList,nullList,false,true); // each optional list is a component
+                  //const Array<std::string>& sipcLabels = sipcP.OptLists();
+		  Array<std::string> sipcLabels; sipcLabels.push_back("Water");
                   for (int L=0; L<sipcLabels.size(); ++L) {
                     const std::string& sipcLabel = sipcLabels[L];
                     std::string _sipcLabel = underscore(sipcLabel);
@@ -2330,13 +2342,19 @@ namespace Amanzi {
                       throw std::exception();                                                
                     }
                                         
-                    const ParameterList& sipcSL = sipSL.sublist(sipcLabel);
-                    PLoptions sipcsP(sipcSL,nullList,nullList,false,true); // each optional list is a solute
+		    // FIXME: Short-circuit all this stuff, since the powers that
+		    //        be decided to special-case all this for Aqueous Water 
+                    //PLoptions sipcsP(sipcSL,nullList,nullList,false,true); // each optional list is a solute
+                    //const ParameterList& sipcSL = sipSL.sublist(sipcLabel);
+
+		    PLoptions sipcsP(rsslist,nullList,nullList,false,true); // each optional list is a solute
+
                     const Array<std::string>& sipcsLabels = sipcsP.OptLists();
                     for (int M=0; M<sipcsLabels.size(); ++M) {
                       const std::string& sipcsLabel = sipcsLabels[M];
                       std::string _sipcsLabel = underscore(sipcsLabel);
-                      const ParameterList& sipcsSL = sipcSL.sublist(sipcsLabel);
+                      //const ParameterList& sipcsSL = sipcSL.sublist(sipcsLabel);
+                      const ParameterList& sipcsSL = rsslist.sublist(sipcsLabel);
                                             
                       if ( !(c_map[sipcLabel].HasTracer(sipcsLabel)) ) {
                         std::cerr << "Unknown solute " << sipcsLabel << " in component "
@@ -2523,7 +2541,7 @@ namespace Amanzi {
             }
           }
           if (solutes_with_isotherms.size()>0) {
-            rsublist.set(underscore(isotherm_str),siPL);
+            rsublist.set("sorption_isotherms",siPL);
             state.getSolid().sorption_isotherm_names.resize(solutes_with_isotherms.size());
             for (std::set<std::string>::const_iterator it=solutes_with_isotherms.begin(),                                    
                    End=solutes_with_isotherms.end(); it!=End; ++it) {

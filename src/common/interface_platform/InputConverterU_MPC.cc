@@ -83,8 +83,8 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   char *method;
   std::string method_d, dt0_d, filename;
 
-  method_d = GetAttributeValueS_(static_cast<DOMElement*>(node), "method");
-  dt0_d = GetAttributeValueS_(static_cast<DOMElement*>(node), "init_dt");
+  method_d = GetAttributeValueS_(static_cast<DOMElement*>(node), "method", false, "");
+  dt0_d = GetAttributeValueS_(static_cast<DOMElement*>(node), "init_dt", false, "0.0");
 
   // parse execution_control
   std::map<double, std::string> tp_method, tp_mode;

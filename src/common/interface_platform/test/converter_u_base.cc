@@ -37,13 +37,13 @@ TEST(CONVERTER_BASE) {
 
   // read parameter list
   std::string xmlFileName = "test/converter_u_base.xml";
-  // std::string xmlFileName = "test/porflow.xml";
+  // std::string xmlFileName = "test/infiltration.xml";
 
   Amanzi::AmanziInput::InputConverterU converter;
   converter.Init(xmlFileName);
+  Teuchos::ParameterList new_xml;
   try {
-    Teuchos::ParameterList new_xml = converter.Translate();
-    // std::cout << new_xml << std::endl;
+    new_xml = converter.Translate();
 
     Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
     Teuchos::XMLObject XMLobj = XMLWriter.toXML(new_xml);
@@ -54,5 +54,11 @@ TEST(CONVERTER_BASE) {
   } catch (std::exception& e) {
     std::cout << e.what() << std::endl;
   }
+  std::cout << "SUCCESS\n";
+
+  // development
+  // Teuchos::RCP<Teuchos::ParameterList> old_xml;
+  // old_xml = Teuchos::getParametersFromXmlFile("test/validate.xml");
+  // new_xml.validateParameters(*old_xml);
 }
 	
