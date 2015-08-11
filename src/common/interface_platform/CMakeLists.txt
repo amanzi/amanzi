@@ -71,6 +71,13 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${Boost_LIBRARIES}
                                              ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
  
+    # Test: translate Amanzi-S input
+    add_amanzi_test(converter_s converter_s
+                    KIND int
+                    SOURCE test/Main.cc test/converter_s.cc
+                    LINK_LIBS ${amanzi_libs} ${CCSE_LIBRARIES} ${UnitTest_LIBRARIES} ${Boost_LIBRARIES}
+                                             ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
+ 
 endif()
 
 

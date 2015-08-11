@@ -537,7 +537,7 @@ std::string InputConverter::GetAttributeValueS_(
 * Extract attribute of type vector<double>.
 ****************************************************************** */
 std::vector<double> InputConverter::GetAttributeVector_(
-    DOMElement* elem, const char* attr_name)
+    DOMElement* elem, const char* attr_name, bool exception)
 {
   std::vector<double> val;
   XString mm;
@@ -545,7 +545,7 @@ std::vector<double> InputConverter::GetAttributeVector_(
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
     char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
     val = MakeCoordinates_(text_content);
-  } else {
+  } else if (exception) {
     char* tagname = mm.transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
   }
