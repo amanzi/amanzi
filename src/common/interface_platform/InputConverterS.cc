@@ -9,6 +9,8 @@
   Authors: Jeffrey Johnson (jnjohnson@lbl.gov)
 */
 
+#include <boost/algorithm/string.hpp>  // For string trimming
+
 #include "BoxLib.H"
 #include "ParmParse.H"
 #include "InputConverterS.hh"
@@ -18,6 +20,7 @@ namespace AmanziInput {
 
 // For saving a bit of typing.
 using namespace std;
+using namespace boost::algorithm;
 using namespace xercesc;
 
 // Internally-used stuff.
@@ -26,32 +29,51 @@ namespace {
 typedef list<ParmParse::PP_entry>::iterator list_iterator;
 typedef list<ParmParse::PP_entry>::const_iterator const_list_iterator;
 
+// Trims whitespace off of strings.
+string TrimString(const string& s)
+{
+
+}
+
+// Trims strings and replaces spaces with underscores in a string.
+string MangleString(const string& s)
+{
+  string s1 = s;
+  trim(s1);
+  for (int i = 0; i < s.length(); ++i)
+  {
+    if (s1[i] == ' ')
+      s1[i] = '_';
+  }
+  return s1;
+}
+
 // Construct a ParmParse prefix name from sets of strings.
 string MakePPPrefix(const string& s1)
 {
-  return s1;
+  return MangleString(s1);
 }
 
 string MakePPPrefix(const string& s1, const string& s2)
 {
-  return s1 + string(".") + s2;
+  return MangleString(s1) + string(".") + MangleString(s2);
 }
 
 string MakePPPrefix(const string& s1, const string& s2, const string& s3)
 {
-  return s1 + string(".") + s2 + string(".") + s3;
+  return MangleString(s1) + string(".") + MangleString(s2) + string(".") + MangleString(s3);
 }
 
 string MakePPPrefix(const string& s1, const string& s2, const string& s3, const string& s4)
 {
-  return s1 + string(".") + s2 + string(".") + s3 + string(".") + s4;
+  return MangleString(s1) + string(".") + MangleString(s2) + string(".") + MangleString(s3) + string(".") + MangleString(s4);
 }
 
 // Construct a ParmParse entry from sets of strings/values.
 list<string> MakePPEntry(const string& s1)
 {
   list<string> pp;
-  pp.push_back(s1);
+  pp.push_back(MangleString(s1));
   return pp;
 }
 
@@ -85,8 +107,8 @@ list<string> MakePPEntry(long i)
 list<string> MakePPEntry(const string& s1, const string& s2)
 {
   list<string> pp;
-  pp.push_back(s1);
-  pp.push_back(s2);
+  pp.push_back(MangleString(s1));
+  pp.push_back(MangleString(s2));
   return pp;
 }
 
@@ -94,7 +116,7 @@ list<string> MakePPEntry(const vector<string>& ss)
 {
   list<string> pp;
   for (size_t i = 0; i < ss.size(); ++i)
-    pp.push_back(ss[i]);
+    pp.push_back(MangleString(ss[i]));
   return pp;
 }
 
@@ -159,12 +181,14 @@ void InputConverterS::ParseDefinitions()
   {
     bool found;
     vector<DOMNode*> time_macros = getChildren_(macros, "time_macro", found);
+    vector<string> time_macro_names;
     if (found)
     {
       for (size_t i = 0; i < time_macros.size(); ++i)
       {
         DOMElement* time_macro = static_cast<DOMElement*>(time_macros[i]);
         string macro_name = GetAttributeValueS_(time_macro, "name");
+        time_macro_names.push_back(macro_name);
         vector<string> times;
 
         // Before we look for specific times, check for other stuff.
@@ -198,7 +222,7 @@ void InputConverterS::ParseDefinitions()
           table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "time_macros", macro_name, "stop"),
                                               MakePPEntry(stop)));
           table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "time_macros", macro_name, "period"),
-                                              MakePPEntry(interval)));
+                                              MakePPEntry(timestep_interval)));
         }
         else
         {
@@ -209,6 +233,7 @@ void InputConverterS::ParseDefinitions()
           for (size_t j = 0; j < time_nodes.size(); ++j)
             times.push_back(XMLString::transcode(time_nodes[j]->getTextContent()));
 
+          string macro_name = MangleString(macro_name);
           table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "time_macros", macro_name, "type"),
                                               MakePPEntry("times")));
           table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "time_macros", macro_name, "times"),
@@ -216,14 +241,19 @@ void InputConverterS::ParseDefinitions()
         }
       }
     }
+    // List of all time macro names.
+    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "time_macros"), 
+                                            MakePPEntry(time_macro_names)));
 
     vector<DOMNode*> cycle_macros = getChildren_(macros, "cycle_macro", found);
+    vector<string> cycle_macro_names;
     if (found)
     {
       for (size_t i = 0; i < cycle_macros.size(); ++i)
       {
         DOMElement* cycle_macro = static_cast<DOMElement*>(cycle_macros[i]);
         string macro_name = GetAttributeValueS_(cycle_macro, "name");
+        cycle_macro_names.push_back(macro_name);
         vector<string> cycles;
 
         bool found;
@@ -253,9 +283,12 @@ void InputConverterS::ParseDefinitions()
         table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "cycle_macro", macro_name, "stop"),
                                             MakePPEntry(stop)));
         table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "cycle_macro", macro_name, "period"),
-                                            MakePPEntry(interval)));
+                                            MakePPEntry(timestep_interval)));
       }
     }
+    // List of all cycle macro names.
+    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "cycle_macros"), 
+                                            MakePPEntry(cycle_macro_names)));
 
     // FIXME: variable_macro not yet supported.
   }
@@ -374,6 +407,8 @@ void InputConverterS::ParseOutput()
     string base_filename = GetChildValueS_(checkpoint, "base_filename", found, true);
     string num_digits = GetChildValueS_(checkpoint, "num_digits", found, true);
     vector<string> cycle_macros = GetChildVectorS_(checkpoint, "cycle_macros", found, true);
+    for (size_t i = 0; i < cycle_macros.size(); ++i)
+      cycle_macros[i] = MangleString(cycle_macros[i]);
 
     table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "check_file"),
                                         MakePPEntry(base_filename)));

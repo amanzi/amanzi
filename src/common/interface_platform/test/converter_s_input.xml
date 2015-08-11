@@ -569,12 +569,12 @@
     <vis>
       <base_filename>run_data/plt</base_filename>
       <num_digits>5</num_digits>
-      <cycle_macro>Every 1</cycle_macro>
+      <cycle_macros>Every 1</cycle_macros>
     </vis>
     <checkpoint>
       <base_filename>run_data/chk</base_filename>
       <num_digits>5</num_digits>
-      <cycle_macro>Every 1</cycle_macro>
+      <cycle_macros>Every 1</cycle_macros>
     </checkpoint>
   </output>
 </amanzi_input>

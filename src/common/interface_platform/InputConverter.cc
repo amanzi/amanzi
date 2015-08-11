@@ -394,6 +394,7 @@ std::vector<xercesc::DOMNode*> InputConverter::getChildren_(
     char* text = mm.transcode(inode->getNodeName());
     if (name == text) {
       namedChildren.push_back(inode);
+      flag = true;
     }
   }
 
