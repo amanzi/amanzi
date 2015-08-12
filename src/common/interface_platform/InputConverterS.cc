@@ -30,12 +30,6 @@ namespace {
 typedef list<ParmParse::PP_entry>::iterator list_iterator;
 typedef list<ParmParse::PP_entry>::const_iterator const_list_iterator;
 
-// Trims whitespace off of strings.
-string TrimString(const string& s)
-{
-
-}
-
 // Trims strings and replaces spaces with underscores in a string.
 string MangleString(const string& s)
 {
@@ -162,6 +156,14 @@ list<string> MakePPEntry(const vector<long>& is)
   return pp;
 }
 
+// Shortcut for putting entries into tables.
+void AddToTable(list<ParmParse::PP_entry>& table,
+                const string& entry_name,
+                list<string> entry)
+{
+  table.push_back(ParmParse::PP_entry(entry_name, entry));
+}
+
 } // end anonymous namespace
 
 // Helper for parsing a mechanical property.
@@ -182,22 +184,22 @@ void InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node,
       {
         string alpha_l = GetAttributeValueS_(property, "alpha_l", true);
         string alpha_t = GetAttributeValueS_(property, "alpha_t", true);
-        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "alpha_l"),
-              MakePPEntry(alpha_l)));
-        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "alpha_t"),
-              MakePPEntry(alpha_t)));
+        AddToTable(table, MakePPPrefix("rock", material_name, property_name, "alpha_l"),
+                   MakePPEntry(alpha_l));
+        AddToTable(table, MakePPPrefix("rock", material_name, property_name, "alpha_t"),
+                   MakePPEntry(alpha_t));
       }
       else if (type == "burnett_frind")
       {
         string alpha_l = GetAttributeValueS_(property, "alpha_l", true);
         string alpha_th = GetAttributeValueS_(property, "alpha_th", true);
         string alpha_tv = GetAttributeValueS_(property, "alpha_tv", true);
-        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "alpha_l"),
-              MakePPEntry(alpha_l)));
-        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "alpha_th"),
-              MakePPEntry(alpha_th)));
-        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "alpha_tv"),
-              MakePPEntry(alpha_tv)));
+        AddToTable(table, MakePPPrefix("rock", material_name, property_name, "alpha_l"),
+                   MakePPEntry(alpha_l));
+        AddToTable(table, MakePPPrefix("rock", material_name, property_name, "alpha_th"),
+                   MakePPEntry(alpha_th));
+        AddToTable(table, MakePPPrefix("rock", material_name, property_name, "alpha_tv"),
+                   MakePPEntry(alpha_tv));
       }
       else if (type == "lichtner_kelkar_robinson")
       {
@@ -205,25 +207,25 @@ void InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node,
         string alpha_lv = GetAttributeValueS_(property, "alpha_lv", true);
         string alpha_th = GetAttributeValueS_(property, "alpha_th", true);
         string alpha_tv = GetAttributeValueS_(property, "alpha_tv", true);
-        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "alpha_lh"),
-              MakePPEntry(alpha_lh)));
-        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "alpha_lv"),
-              MakePPEntry(alpha_lv)));
-        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "alpha_th"),
-              MakePPEntry(alpha_th)));
-        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "alpha_tv"),
-              MakePPEntry(alpha_tv)));
+        AddToTable(table, MakePPPrefix("rock", material_name, property_name, "alpha_lh"),
+                   MakePPEntry(alpha_lh));
+        AddToTable(table, MakePPPrefix("rock", material_name, property_name, "alpha_lv"),
+                   MakePPEntry(alpha_lv));
+        AddToTable(table, MakePPPrefix("rock", material_name, property_name, "alpha_th"),
+                   MakePPEntry(alpha_th));
+        AddToTable(table, MakePPPrefix("rock", material_name, property_name, "alpha_tv"),
+                   MakePPEntry(alpha_tv));
       }
       else if (type == "file")
       {
         string filename = GetAttributeValueS_(property, "filename", true);
-        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "filename"),
-              MakePPEntry(filename)));
+        AddToTable(table, MakePPPrefix("rock", material_name, property_name, "filename"),
+                   MakePPEntry(filename));
       }
       else
         ThrowErrorIllformed_("materials->mechanical_properties", "type", property_name);
-      table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "type"),
-            MakePPEntry(type)));
+      AddToTable(table, MakePPPrefix("rock", material_name, property_name, "type"),
+                 MakePPEntry(type));
     }
     else
     {
@@ -231,10 +233,10 @@ void InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node,
       string type = GetAttributeValueS_(property, "type", false);
       if (!value.empty() && ((property_name != "porosity") || (type != "gslib")))
       {
-        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "vals"),
-              MakePPEntry(value)));
-        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "distribution_type"),
-              MakePPEntry("uniform")));
+        AddToTable(table, MakePPPrefix("rock", material_name, property_name, "vals"),
+                   MakePPEntry(value));
+        AddToTable(table, MakePPPrefix("rock", material_name, property_name, "distribution_type"),
+                   MakePPEntry("uniform"));
       }
       else
       {
@@ -243,24 +245,24 @@ void InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node,
           if (type == "file")
           {
             string filename = GetAttributeValueS_(property, "filename");
-            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "filename"),
-                  MakePPEntry(filename)));
-            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "type"),
-                  MakePPEntry("file")));
+            AddToTable(table, MakePPPrefix("rock", material_name, property_name, "filename"),
+                       MakePPEntry(filename));
+            AddToTable(table, MakePPPrefix("rock", material_name, property_name, "type"),
+                       MakePPEntry("file"));
           }
           else if ((property_name == "porosity") && (type == "gslib")) // special considerations!
           {
             string parameter_file = GetAttributeValueS_(property, "parameter_file");
-            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "parameter_file"),
-                  MakePPEntry(parameter_file)));
-            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "type"),
-                  MakePPEntry("gslib")));
+            AddToTable(table, MakePPPrefix("rock", material_name, property_name, "parameter_file"),
+                       MakePPEntry(parameter_file));
+            AddToTable(table, MakePPPrefix("rock", material_name, property_name, "type"),
+                       MakePPEntry("gslib"));
 
             string data_file = GetAttributeValueS_(property, "data_file", false);
             if (!data_file.empty())
             {
-              table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "data_file"),
-                    MakePPEntry(data_file)));
+              AddToTable(table, MakePPPrefix("rock", material_name, property_name, "data_file"),
+                         MakePPEntry(data_file));
             }
           }
         }
@@ -326,14 +328,14 @@ void InputConverterS::ParseDefinitions()
             ThrowErrorIllformed_("definitions->macros", "timestep_interval", "time_macro");
 
           // Shove this macro into our table.
-          table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "time_macros", macro_name, "type"),
-                                              MakePPEntry("period")));
-          table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "time_macros", macro_name, "start"),
-                                              MakePPEntry(start)));
-          table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "time_macros", macro_name, "stop"),
-                                              MakePPEntry(stop)));
-          table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "time_macros", macro_name, "period"),
-                                              MakePPEntry(timestep_interval)));
+          AddToTable(table, MakePPPrefix("amr", "time_macros", macro_name, "type"),
+                                         MakePPEntry("period"));
+          AddToTable(table, MakePPPrefix("amr", "time_macros", macro_name, "start"),
+                                         MakePPEntry(start));
+          AddToTable(table, MakePPPrefix("amr", "time_macros", macro_name, "stop"),
+                                         MakePPEntry(stop));
+          AddToTable(table, MakePPPrefix("amr", "time_macros", macro_name, "period"),
+                                         MakePPEntry(timestep_interval));
         }
         else
         {
@@ -345,16 +347,16 @@ void InputConverterS::ParseDefinitions()
             times.push_back(XMLString::transcode(time_nodes[j]->getTextContent()));
 
           string macro_name = MangleString(macro_name);
-          table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "time_macros", macro_name, "type"),
-                                              MakePPEntry("times")));
-          table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "time_macros", macro_name, "times"),
-                                              MakePPEntry(times)));
+          AddToTable(table, MakePPPrefix("amr", "time_macros", macro_name, "type"),
+                                         MakePPEntry("times"));
+          AddToTable(table, MakePPPrefix("amr", "time_macros", macro_name, "times"),
+                                         MakePPEntry(times));
         }
       }
     }
     // List of all time macro names.
-    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "time_macros"), 
-                                            MakePPEntry(time_macro_names)));
+    AddToTable(table, MakePPPrefix("amr", "time_macros"), 
+                                   MakePPEntry(time_macro_names));
 
     vector<DOMNode*> cycle_macros = getChildren_(macros, "cycle_macro", found);
     vector<string> cycle_macro_names;
@@ -387,19 +389,19 @@ void InputConverterS::ParseDefinitions()
           ThrowErrorIllformed_("definitions->macros", "timestep_interval", "cycle_macro");
 
         // Shove this macro into our table.
-        table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "cycle_macro", macro_name, "type"),
-                                            MakePPEntry("period")));
-        table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "cycle_macro", macro_name, "start"),
-                                            MakePPEntry(start)));
-        table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "cycle_macro", macro_name, "stop"),
-                                            MakePPEntry(stop)));
-        table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "cycle_macro", macro_name, "period"),
-                                            MakePPEntry(timestep_interval)));
+        AddToTable(table, MakePPPrefix("amr", "cycle_macro", macro_name, "type"),
+                                       MakePPEntry("period"));
+        AddToTable(table, MakePPPrefix("amr", "cycle_macro", macro_name, "start"),
+                                       MakePPEntry(start));
+        AddToTable(table, MakePPPrefix("amr", "cycle_macro", macro_name, "stop"),
+                                       MakePPEntry(stop));
+        AddToTable(table, MakePPPrefix("amr", "cycle_macro", macro_name, "period"),
+                                       MakePPEntry(timestep_interval));
       }
     }
     // List of all cycle macro names.
-    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "cycle_macros"), 
-                                        MakePPEntry(cycle_macro_names)));
+    AddToTable(table, MakePPPrefix("amr", "cycle_macros"), 
+                                   MakePPEntry(cycle_macro_names));
 
     // FIXME: variable_macro not yet supported.
   }
@@ -440,13 +442,13 @@ void InputConverterS::ParseExecutionControls()
       prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3;  diffuse_v = 1; io_v = 1; fab_v = 1;
     }
 
-    table.push_back(ParmParse::PP_entry(MakePPPrefix("prob", "v"), MakePPEntry(prob_v)));
-    table.push_back(ParmParse::PP_entry(MakePPPrefix("mg", "v"), MakePPEntry(mg_v)));
-    table.push_back(ParmParse::PP_entry(MakePPPrefix("cg", "v"), MakePPEntry(cg_v)));
-    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "v"), MakePPEntry(amr_v)));
-    table.push_back(ParmParse::PP_entry(MakePPPrefix("diffuse", "v"), MakePPEntry(diffuse_v)));
-    table.push_back(ParmParse::PP_entry(MakePPPrefix("io", "v"), MakePPEntry(io_v)));
-    table.push_back(ParmParse::PP_entry(MakePPPrefix("fab", "v"), MakePPEntry(fab_v)));
+    AddToTable(table, MakePPPrefix("prob", "v"), MakePPEntry(prob_v));
+    AddToTable(table, MakePPPrefix("mg", "v"), MakePPEntry(mg_v));
+    AddToTable(table, MakePPPrefix("cg", "v"), MakePPEntry(cg_v));
+    AddToTable(table, MakePPPrefix("amr", "v"), MakePPEntry(amr_v));
+    AddToTable(table, MakePPPrefix("diffuse", "v"), MakePPEntry(diffuse_v));
+    AddToTable(table, MakePPPrefix("io", "v"), MakePPEntry(io_v));
+    AddToTable(table, MakePPPrefix("fab", "v"), MakePPEntry(fab_v));
   }
 
   if (!table.empty())
@@ -531,8 +533,8 @@ void InputConverterS::ParseMaterials()
 
       // Assigned regions.
       vector<string> assigned_regions = GetChildVectorS_(mat, "assigned_regions", found, true);
-      table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "regions"), 
-                                          MakePPEntry(assigned_regions)));
+      AddToTable(table, MakePPPrefix("rock", mat_name, "regions"), 
+                                     MakePPEntry(assigned_regions));
 
       // Permeability OR hydraulic conductivity.
       bool k_found, K_found;
@@ -559,44 +561,44 @@ void InputConverterS::ParseMaterials()
         {
           string y = GetAttributeValueS_(permeability, "y", true);
           string z = GetAttributeValueS_(permeability, "z", true);
-          table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability", "horizontal", "vals"),
-                                              MakePPEntry(x)));
-          table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability", "horizontal1", "vals"),
-                                              MakePPEntry(y)));
-          table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability", "vertical", "vals"),
-                                              MakePPEntry(z)));
+          AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "horizontal", "vals"),
+                     MakePPEntry(x));
+          AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "horizontal1", "vals"),
+                     MakePPEntry(y));
+          AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "vertical", "vals"),
+                     MakePPEntry(z));
 
           // FIXME: Are these two guys needed? When?
-          table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability", "distribution_type"),
-                                              MakePPEntry("uniform")));
-          table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability_dist"),
-                                              MakePPEntry("uniform")));
+          AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "distribution_type"),
+                     MakePPEntry("uniform"));
+          AddToTable(table, MakePPPrefix("rock", mat_name, "permeability_dist"),
+                     MakePPEntry("uniform"));
         }
         else
         {
           string type = GetAttributeValueS_(permeability, "type", true);
-          table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability", "type"),
-                                              MakePPEntry(type)));
+          AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "type"),
+                     MakePPEntry(type));
           if (type == "file")
           {
             string filename = GetAttributeValueS_(permeability, "filename", true);
             string attribute = GetAttributeValueS_(permeability, "attribute", true);
-            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability", "filename"),
-                                                MakePPEntry(filename)));
-            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability", "attribute"),
-                                                MakePPEntry(attribute)));
+            AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "filename"),
+                       MakePPEntry(filename));
+            AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "attribute"),
+                                           MakePPEntry(attribute));
           }
           else if (type == "gslib")
           {
             string parameter_file = GetAttributeValueS_(permeability, "parameter_file", true);
             string value = GetAttributeValueS_(permeability, "value", true);
             string data_file = GetAttributeValueS_(permeability, "data_file", true);
-            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability", "parameter_file"),
-                                                MakePPEntry(parameter_file)));
-            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability", "value"),
-                                                MakePPEntry(value)));
-            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability", "data_file"),
-                                                MakePPEntry(data_file)));
+            AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "parameter_file"),
+                       MakePPEntry(parameter_file));
+            AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "value"),
+                       MakePPEntry(value));
+            AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "data_file"),
+                       MakePPEntry(data_file));
           }
           else
             ThrowErrorIllformed_("materials", "type", "permeability");
@@ -609,29 +611,29 @@ void InputConverterS::ParseMaterials()
         {
           string y = GetAttributeValueS_(conductivity, "y", true);
           string z = GetAttributeValueS_(conductivity, "z", true);
-          table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "horizontal", "vals"),
-                                              MakePPEntry(x)));
-          table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "horizontal1", "vals"),
-                                              MakePPEntry(y)));
-          table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "vertical", "vals"),
-                                              MakePPEntry(z)));
+          AddToTable(table, MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "horizontal", "vals"),
+                     MakePPEntry(x));
+          AddToTable(table, MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "horizontal1", "vals"),
+                     MakePPEntry(y));
+          AddToTable(table, MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "vertical", "vals"),
+                     MakePPEntry(z));
         }
         else
         {
           string type = GetAttributeValueS_(permeability, "type", true);
-          table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "type"),
-                                              MakePPEntry(type)));
+          AddToTable(table, MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "type"),
+                     MakePPEntry(type));
           if (type == "gslib")
           {
             string parameter_file = GetAttributeValueS_(conductivity, "parameter_file", true);
             string value = GetAttributeValueS_(conductivity, "value", true);
             string data_file = GetAttributeValueS_(conductivity, "data_file", true);
-            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "parameter_file"),
-                                                MakePPEntry(parameter_file)));
-            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "value"),
-                                                MakePPEntry(value)));
-            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "data_file"),
-                                                MakePPEntry(data_file)));
+            AddToTable(table, MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "parameter_file"),
+                       MakePPEntry(parameter_file));
+            AddToTable(table, MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "value"),
+                       MakePPEntry(value));
+            AddToTable(table, MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "data_file"),
+                       MakePPEntry(data_file));
           }
           else
             ThrowErrorIllformed_("materials", "type", "hydraulic_conductivity");
@@ -640,9 +642,122 @@ void InputConverterS::ParseMaterials()
 
       // Capillary pressure model.
       DOMElement* cap_pressure = GetChildWithName_(mat, "cap_pressure", found, false);
+      if (found)
+      {
+        bool found;
+        string model = GetAttributeValueS_(cap_pressure, "model", true);
+        if (model == "van_genuchten")
+          AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "type"), MakePPEntry("VanGenuchten"));
+        else if (model == "brooks_corey")
+          AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "type"), MakePPEntry("BrooksCorey"));
+        else if (model != "none")
+          ThrowErrorIllformed_("materials", "type", "cap_pressure");
+
+        if ((model == "van_genuchten") || (model == "brooks_corey"))
+        {
+          string alpha = GetChildValueS_(cap_pressure, "alpha", found, true);
+          string sr = GetChildValueS_(cap_pressure, "sr", found, true);
+          string m = GetChildValueS_(cap_pressure, "m", found, true);
+          AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "alpha"), MakePPEntry(alpha));
+          AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "sr"), MakePPEntry(sr));
+          AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "m"), MakePPEntry(m));
+          string optional_krel_smoothing_interval = GetChildValueS_(cap_pressure, "optional_krel_smoothing_interval", found, false);
+          if (found)
+          {
+            AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "Kr_smoothing_max_pcap"),
+                       MakePPEntry(optional_krel_smoothing_interval));
+          }
+        }
+        // FIXME: Is this correct?
+        AddToTable(table, MakePPPrefix("rock", mat_name, "cpl_type"), MakePPEntry(0));
+
+        // FIXME: Something about a WRM plot file??
+      }
+
+      // Relative permeability.
+      DOMElement* rel_perm = GetChildWithName_(mat, "rel_perm", found, false);
+      if (found)
+      {
+        bool found;
+        string model = GetAttributeValueS_(rel_perm, "model", true);
+        if (model == "mualem")
+          AddToTable(table, MakePPPrefix("rock", mat_name, "Kr_model"), MakePPEntry("mualem"));
+        else if (model == "burdine")
+          AddToTable(table, MakePPPrefix("rock", mat_name, "Kr_model"), MakePPEntry("burdine"));
+        else if (model != "none")
+          ThrowErrorIllformed_("materials", "type", "rel_perm");
+
+        if ((model == "mualem")
+        {
+          // We stick in a default "ell" value, since ell doesn't appear 
+          // in the v2.x input spec.
+          double Kr_ell = 0.5;
+          AddToTable(table, MakePPPrefix("rock", mat_name, "Kr_ell"), MakePPEntry(Kr_ell));
+        }
+        else if ((model == "burdine")
+        {
+          // We stick in a default "ell" value, since ell doesn't appear 
+          // in the v2.x input spec.
+          double Kr_ell = 2.0;
+          AddToTable(table, MakePPPrefix("rock", mat_name, "Kr_ell"), MakePPEntry(Kr_ell));
+
+          // There's also an "exp" parameter.
+          string Kr_exp = GetChildValueS_(cap_pressure, "exp", found, true);
+          AddToTable(table, MakePPPrefix("rock", mat_name, "Kr_exp"), MakePPEntry(Kr_exp));
+        }
+
+        // FIXME: Is this correct?
+        AddToTable(table, MakePPPrefix("rock", mat_name, "kr_type"), MakePPEntry(0));
+      }
+
+      // Sorption isotherms.
+      DOMElement* sorption_isotherms = GetChildWithName_(mat, "sorption_isotherms", found, false);
+      if (found)
+      {
+        // Look for solutes.
+        bool found;
+        vector<DOMNode*> solutes = getChildren_(sorption_isotherms, "solute", found, true);
+        for (size_t i = 0; i < bcs.size(); ++i)
+        {
+          DOMElement* solute = static_cast<DOMElement*>(solutes[i]);
+          string solute_name = GetAttributeValueS_(solute, "name");
+
+          bool found;
+          DOMElement* kd_model = GetChildWithName_(solute, "kd_model", found, false);
+          if (found)
+          {
+            // Search for kd, b, or n.
+            string kd = GetAttributeValueS_(kd_model, "kd", false);
+            if (!kd.empty())
+            {
+              AddToTable(table, MakePPPrefix("rock", mat_name, "sorption_isotherms", solute_name, "Kd"), 
+                         MakePPEntry(kd));
+            }
+            else
+            {
+              string b = GetAttributeValueS_(kd_model, "b", false);
+              if (!b.empty())
+              {
+                AddToTable(table, MakePPPrefix("rock", mat_name, "sorption_isotherms", solute_name, "Langmuir b"), 
+                           MakePPEntry(b));
+              }
+              else
+              {
+                string n = GetAttributeValueS_(kd_model, "n", false);
+                if (!n.empty())
+                {
+                  AddToTable(table, MakePPPrefix("rock", mat_name, "sorption_isotherms", solute_name, "Freundlich n"), 
+                             MakePPEntry(n));
+                }
+                else
+                  ThrowErrorIllformed_("materials->sorption_isotherms", "kd_model", solute_name);
+              }
+            }
+          }
+        }
+      }
     }
-    table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", "rock"), 
-                                        MakePPEntry(material_names)));
+    AddToTable(table, MakePPPrefix("rock", "rock"), MakePPEntry(material_names));
   }
 
   if (!table.empty())
@@ -705,14 +820,10 @@ void InputConverterS::ParseOutput()
     vector<string> cycle_macros = GetChildVectorS_(vis, "cycle_macros", found, false);
     vector<string> time_macros = GetChildVectorS_(vis, "time_macros", found, false);
 
-    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "plot_file"),
-                                        MakePPEntry(base_filename)));
-    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "plot_file_digits"),
-                                        MakePPEntry(num_digits)));
-    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "viz_cycle_macros"),
-                                        MakePPEntry(cycle_macros)));
-    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "viz_time_macros"),
-                                        MakePPEntry(time_macros)));
+    AddToTable(table, MakePPPrefix("amr", "plot_file"), MakePPEntry(base_filename));
+    AddToTable(table, MakePPPrefix("amr", "plot_file_digits"), MakePPEntry(num_digits));
+    AddToTable(table, MakePPPrefix("amr", "viz_cycle_macros"), MakePPEntry(cycle_macros));
+    AddToTable(table, MakePPPrefix("amr", "viz_time_macros"), MakePPEntry(time_macros));
   }
 
   // Checkpoint files.
@@ -726,12 +837,9 @@ void InputConverterS::ParseOutput()
     for (size_t i = 0; i < cycle_macros.size(); ++i)
       cycle_macros[i] = MangleString(cycle_macros[i]);
 
-    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "check_file"),
-                                        MakePPEntry(base_filename)));
-    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "chk_file_digits"),
-                                        MakePPEntry(num_digits)));
-    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "chk_cycle_macros"),
-                                        MakePPEntry(cycle_macros)));
+    AddToTable(table, MakePPPrefix("amr", "check_file"), MakePPEntry(base_filename));
+    AddToTable(table, MakePPPrefix("amr", "chk_file_digits"), MakePPEntry(num_digits));
+    AddToTable(table, MakePPPrefix("amr", "chk_cycle_macros"), MakePPEntry(cycle_macros));
   }
 
   // Observations.
@@ -755,12 +863,9 @@ void InputConverterS::ParseOutput()
     vector<string> cycle_macros = GetChildVectorS_(walkabout, "cycle_macros", found, true);
 
 // FIXME
-//    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "check_file"),
-//                                        MakePPEntry(base_filename)));
-//    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "chk_file_digits"),
-//                                        MakePPEntry(num_digits)));
-//    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "chk_cycle_macros"),
-//                                        MakePPEntry(cycle_macros)));
+//    AddToTable(table, MakePPPrefix("amr", "check_file"), MakePPEntry(base_filename));
+//    AddToTable(table, MakePPPrefix("amr", "chk_file_digits"), MakePPEntry(num_digits));
+//    AddToTable(table, MakePPPrefix("amr", "chk_cycle_macros"), MakePPEntry(cycle_macros));
   }
 
   if (!table.empty())
