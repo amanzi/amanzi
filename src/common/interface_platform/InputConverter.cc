@@ -58,6 +58,7 @@ void InputConverter::Init(const std::string& xmlfilename)
   parser->setValidationConstraintFatal(true);
   parser->setValidationScheme(XercesDOMParser::Val_Never);
   parser->setDoNamespaces(true);
+  parser->setCreateCommentNodes(false);
 
   AmanziErrorHandler* errorHandler = new AmanziErrorHandler();
   parser->setErrorHandler(errorHandler);
@@ -371,6 +372,48 @@ DOMNode* InputConverter::getUniqueElementByTagsString_(
 
   flag = true;
   return node;
+}
+
+
+/* ******************************************************************
+* Returns the child with the given attribute name and value.
+****************************************************************** */
+DOMElement* InputConverter::getUniqueChildByAttribute_(
+    xercesc::DOMNode* node, const char* attr_name, const std::string& attr_value,
+    bool& flag, bool exception)
+{
+  flag = false;
+
+  XString mm;
+  int n(0);
+  DOMElement* child = NULL;
+	
+  DOMNodeList* children = node->getChildNodes();
+  for (int i = 0; i < children->getLength(); ++i) {
+    DOMNode* inode = children->item(i);
+    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+
+    DOMElement* element = static_cast<DOMElement*>(inode);
+    if (element->hasAttribute(mm.transcode(attr_name))) {
+      char* text = mm.transcode(element->getAttribute(mm.transcode(attr_name)));
+      if (strcmp(text, attr_value.c_str()) == 0) {
+        child = element;
+        n++;
+      }
+    }
+  }
+  if (n == 1) flag = true;
+
+  // exception
+  if (!flag && exception) {
+    Errors::Message msg;
+    char* node_name = mm.transcode(node->getNodeName());
+    msg << "Node \"" << node_name << "\" has no unique child with attribute \""
+        << attr_name << "\" = \"" << attr_value << "\"\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return child;
 }
 
 

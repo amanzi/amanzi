@@ -67,23 +67,25 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
 
   // overwrite data from expert parameters  
   node = getUniqueElementByTagNames_("unstructured_controls", "unstr_transport_controls", "sub_cycling", flag);
-  text = mm.transcode(node->getTextContent());
   if (flag) {
+    text = mm.transcode(node->getTextContent());
     out_list.set<bool>("transport subcycling", (strcmp(text, "on") == 0));
   }
 
   int poly_order(0);
   node = getUniqueElementByTagNames_("unstructured_controls", "unstr_transport_controls", "algorithm", flag);
-  text = mm.transcode(node->getTextContent());
-  if (strcmp(text, "explicit first-order") == 0) {
-    out_list.set<int>("spatial discretization order", 1);
-    out_list.set<int>("temporal discretization order", 1);
-  } else if (strcmp(text, "explicit second-order") == 0) {
-    out_list.set<int>("spatial discretization order", 2);
-    out_list.set<int>("temporal discretization order", 2);
-    poly_order = 1;
-  } else {
-    ThrowErrorMissattr_("unstructured_controls", "element", "explicit first-order", "unstr_transport_controls");
+  if (flag) {
+    text = mm.transcode(node->getTextContent());
+    if (strcmp(text, "explicit first-order") == 0) {
+      out_list.set<int>("spatial discretization order", 1);
+      out_list.set<int>("temporal discretization order", 1);
+    } else if (strcmp(text, "explicit second-order") == 0) {
+      out_list.set<int>("spatial discretization order", 2);
+      out_list.set<int>("temporal discretization order", 2);
+      poly_order = 1;
+    } else {
+      ThrowErrorMissattr_("unstructured_controls", "element", "explicit first-order", "unstr_transport_controls");
+    }
   }
 
   Teuchos::ParameterList& trp_lift = out_list.sublist("reconstruction");

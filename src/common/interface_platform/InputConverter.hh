@@ -108,6 +108,12 @@ class InputConverter {
   xercesc::DOMNode* getUniqueElementByTagsString_(
       const xercesc::DOMNode* node1, const std::string& tags, bool& flag);
 
+  // -- extract child with the given attribute
+  xercesc::DOMElement* getUniqueChildByAttribute_(
+      xercesc::DOMNode* node, const char* attr_name, const std::string& attr_value,
+      bool& flag, bool exception = false);
+
+  // -- extract and verify children
   // -- extract existing attribute value
   int GetAttributeValueL_(
       xercesc::DOMElement* elem, const char* attr_name, bool exception = true, int val = 0);
@@ -122,7 +128,6 @@ class InputConverter {
   std::string GetAttributeValueS_(
       xercesc::DOMElement* elem, const char* attr_name, const char* options);
 
-  // -- extract and verify children
   //    the name of identical nodes will be extracted too
   std::vector<xercesc::DOMNode*> getSameChildNodes_(
       xercesc::DOMNode* node, std::string& name, bool& flag, bool exception = false);
