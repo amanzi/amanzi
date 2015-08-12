@@ -83,15 +83,10 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   for (int i = 0; i < childern->getLength(); i++) {
     DOMNode* inode = childern->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-      DOMNamedNodeMap* attr_map = inode->getAttributes();
-      DOMNode* node = attr_map->getNamedItem(mm.transcode("name"));
-      if (!node) {
-        ThrowErrorMissattr_("materials", "attribute", "name", "material");
-      }
+      std::string mat_name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
 
       node = getUniqueElementByTagNames_(inode, "assigned_regions", flag);
-      text_content = mm.transcode(node->getTextContent());
-      std::vector<std::string> regions = CharToStrings_(text_content);
+      std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
       // record the material ID for each region that this material occupies
       for (int k = 0; k < regions.size(); k++) {
@@ -194,11 +189,11 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       } else if (file == 0) {
         if (ky < 0) ky = kz;  // x-z system was defined
         Teuchos::ParameterList& aux_list = permeability_ic.sublist("function").sublist(reg_str)
-            .set<Teuchos::Array<std::string> >("regions",regions)
-            .set<std::string>("component","cell")
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
             .sublist("function");
         aux_list.set<int>("Number of DoFs", dim_)
-            .set<std::string>("Function type","composite function");
+            .set<std::string>("Function type", "composite function");
         aux_list.sublist("DoF 1 Function").sublist("function-constant").set<double>("value", kx);
         aux_list.sublist("DoF 2 Function").sublist("function-constant").set<double>("value", ky);
         if (dim_ == 3) {

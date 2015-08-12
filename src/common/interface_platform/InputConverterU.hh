@@ -83,6 +83,7 @@ class InputConverterU : public InputConverter {
 
   Teuchos::ParameterList CreateAnalysis_();
   Teuchos::ParameterList CreateRegionAll_();
+  void CreateBDGFile(Teuchos::ParameterList sorption_list, Teuchos::ParameterList def_list);
 
  private:
   int dim_;
