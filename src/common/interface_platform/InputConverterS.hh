@@ -49,6 +49,11 @@ class InputConverterS : public InputConverter {
                           const std::string& property_name,
                           std::list<ParmParse::PP_entry>& table,
                           bool required);
+
+  // Private data.
+  int dim_;
+  int nx_, ny_, nz_;
+  double xmin_, xmax_, ymin_, ymax_, zmin_, zmax_;
 };
 
 }  // namespace AmanziInput

@@ -464,13 +464,264 @@ void InputConverterS::ParseNumericalControls()
 void InputConverterS::ParseMesh()
 {
   list<ParmParse::PP_entry> table;
-  ParmParse::appendTable(table);
+  bool found;
+
+  DOMElement* dimension = static_cast<DOMElement*>(getUniqueElementByTagNames_("mesh", "dimension", found));
+  {
+    XString mm;
+    string dim = XMLString::transcode(dimension->getTextContent());
+    if (dim == "2")
+      dim_ = 2;
+    else if (dim == "3")
+      dim_ = 3;
+    else
+      ThrowErrorIllformed_("mesh->generate", "integer (2 or 3)", "dimension");
+  }
+  DOMElement* generate = static_cast<DOMElement*>(getUniqueElementByTagNames_("mesh", "generate", found));
+  if (found)
+  {
+    bool found;
+    DOMElement* number_of_cells = GetChildWithName_(generate, "number_of_cells", found, true);
+    nx_ = GetAttributeValueL_(number_of_cells, "nx", true);
+    ny_ = GetAttributeValueL_(number_of_cells, "ny", true);
+    vector<int> n(dim_);
+    n[0] = nx_;
+    n[1] = ny_;
+    if (dim_ == 3)
+    {
+      nz_ = GetAttributeValueL_(number_of_cells, "nz", true);
+      n[2] = nz_;
+    }
+    AddToTable(table, MakePPPrefix("amr", "n_cell"), MakePPEntry(n));
+
+    // Stash min/max coordinates for our own porpoises.
+    DOMElement* box = GetChildWithName_(generate, "box", found, true);
+    vector<double> lo_coords = GetAttributeVector_(box, "low_coordinates", true);
+    if (lo_coords.size() != dim_)
+      ThrowErrorIllformed_("mesh->generate->box", "coordinate array", "low_coordinates");
+    vector<double> hi_coords = GetAttributeVector_(box, "high_coordinates", true);
+    if (hi_coords.size() != dim_)
+      ThrowErrorIllformed_("mesh->generate->box", "coordinate array", "high_coordinates");
+    xmin_ = lo_coords[0]; xmax_ = hi_coords[0];
+    ymin_ = lo_coords[1]; ymax_ = hi_coords[1];
+    if (dim_ == 3)
+      zmin_ = lo_coords[2]; zmax_ = hi_coords[2];
+
+    AddToTable(table, MakePPPrefix("geometry", "prob_lo"), MakePPEntry(lo_coords));
+    AddToTable(table, MakePPPrefix("geometry", "prob_hi"), MakePPEntry(hi_coords));
+
+    // Periodic boundaries are not supported.
+    vector<int> is_periodic(dim_, 0);
+    AddToTable(table, MakePPPrefix("geometry", "is_periodic"), MakePPEntry(is_periodic));
+
+    // Coordinate system is 0, which is probably "Cartesian."
+    AddToTable(table, MakePPPrefix("geometry", "coord_sys"), MakePPEntry(0));
+  }
+  else
+    ThrowErrorMisschild_("mesh", "generate", "mesh");
+
+  // This one comes for free.
+  AddToTable(table, MakePPPrefix("Mesh", "Framework"), MakePPEntry("Structured"));
+
+  // FIXME: Anything else?
+
+  if (!table.empty())
+    ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseRegions()
 {
   list<ParmParse::PP_entry> table;
-  ParmParse::appendTable(table);
+  bool found = false;
+  
+  XString mm;
+  DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("regions"));
+  DOMNode* regions;
+  if (node_list->getLength() == 1)
+  {
+    found = true;
+    regions = node_list->item(0);
+  }
+  if (found)
+  {
+    bool found;
+
+    // box
+    vector<DOMNode*> boxes = getChildren_(regions, "box", found);
+    for (size_t i = 0; i < boxes.size(); ++i)
+    {
+      bool found;
+      DOMElement* box = static_cast<DOMElement*>(boxes[i]);
+      string region_name = GetAttributeValueS_(box, "name", true);
+      vector<double> lo_coords = GetAttributeVector_(box, "low_coordinates", found);
+      vector<double> hi_coords = GetAttributeVector_(box, "high_coordinates", found);
+      AddToTable(table, MakePPPrefix("geometry", region_name, "lo_coordinate"), 
+                                     MakePPEntry(lo_coords));
+      AddToTable(table, MakePPPrefix("geometry", region_name, "hi_coordinate"), 
+                                     MakePPEntry(hi_coords));
+
+      // Determine the geometry tolerance geometry_eps. dim_, {x,y,z}{min/max}_
+      // should all be available because they are computed in ParseMesh(), 
+      // which should precede this method.
+      double max_size = max(xmax_-xmin_, ymax_-ymin_);
+      if (dim_ == 3)
+        max_size = max(max_size, zmax_-zmin_);
+      double geometry_eps = 1e-6 * max_size; // FIXME: This factor is fixed.
+      AddToTable(table, MakePPPrefix("geometry", region_name, "geometry_eps"), 
+                                     MakePPEntry(geometry_eps));
+
+      // Is this region a surface?
+      string type = "box";
+      for (int d = 0; d < dim_; ++d)
+      {
+        if (std::abs(hi_coords[d] - lo_coords[d]) < geometry_eps)
+          type = "surface";
+      }
+      AddToTable(table, MakePPPrefix("geometry", region_name, "type"), 
+                                     MakePPEntry(type));
+
+      // FIXME: As to the "purpose" of this region: Marc, help!
+      string purpose = "all";
+      AddToTable(table, MakePPPrefix("geometry", region_name, "purpose"), 
+                                     MakePPEntry(purpose));
+    }
+
+    // FIXME: color functions (what files do we read from?)
+    vector<DOMNode*> colors = getChildren_(regions, "color", found);
+    for (size_t i = 0; i < colors.size(); ++i)
+    {
+    }
+
+    // point
+    vector<DOMNode*> points = getChildren_(regions, "point", found);
+    for (size_t i = 0; i < points.size(); ++i)
+    {
+      bool found;
+      DOMElement* point = static_cast<DOMElement*>(points[i]);
+      string region_name = GetAttributeValueS_(point, "name", true);
+      vector<double> coords = GetAttributeVector_(point, "coordinate", found);
+      AddToTable(table, MakePPPrefix("geometry", region_name, "coordinate"), MakePPEntry(coords));
+      AddToTable(table, MakePPPrefix("geometry", region_name, "type"), MakePPEntry("point"));
+      AddToTable(table, MakePPPrefix("geometry", region_name, "purpose"), MakePPEntry("all"));
+    }
+
+    // plane
+    vector<DOMNode*> planes = getChildren_(regions, "plane", found);
+    for (size_t i = 0; i < planes.size(); ++i)
+    {
+      bool found;
+      DOMElement* plane = static_cast<DOMElement*>(planes[i]);
+      string region_name = GetAttributeValueS_(plane, "name", true);
+      vector<double> location = GetAttributeVector_(plane, "location", found);
+      vector<double> normal = GetAttributeVector_(plane, "normal", found);
+
+      // FIXME: We need to redo the orientation logic.
+      vector<double> lo_coords;
+      vector<double> hi_coords;
+      
+      AddToTable(table, MakePPPrefix("geometry", region_name, "lo_coordinate"), MakePPEntry(lo_coords));
+      AddToTable(table, MakePPPrefix("geometry", region_name, "hi_coordinate"), MakePPEntry(hi_coords));
+      AddToTable(table, MakePPPrefix("geometry", region_name, "type"), MakePPEntry("surface"));
+
+      // FIXME: purpose here also needs work.
+      string purpose;
+      AddToTable(table, MakePPPrefix("geometry", region_name, "purpose"), MakePPEntry(purpose));
+
+      // Optional tolerance.
+      string tolerance = GetAttributeValueS_(plane, "tolerance", found);
+      if (found)
+        AddToTable(table, MakePPPrefix("geometry", region_name, "tolerance"), MakePPEntry("all"));
+
+    }
+
+    // region (?!)
+    vector<DOMNode*> my_regions = getChildren_(regions, "region", found);
+    for (size_t i = 0; i < my_regions.size(); ++i)
+    {
+    }
+
+    // Regions only available in 2D
+    if (dim_ == 2)
+    {
+      // polygon 
+      vector<DOMNode*> polygons = getChildren_(regions, "polygon", found);
+      for (size_t i = 0; i < polygons.size(); ++i)
+      {
+        bool found;
+        DOMElement* polygon = static_cast<DOMElement*>(polygons[i]);
+        string region_name = GetAttributeValueS_(polygon, "name", true);
+        int num_points = GetAttributeValueL_(polygon, "num_points", true);
+        vector<DOMNode*> points = getChildren_(regions, "points", found);
+        vector<double> v1, v2, v3;
+        for (size_t j = 0; j < points.size(); ++j)
+        {
+          DOMElement* point = static_cast<DOMElement*>(points[i]);
+          string coord_string = XMLString::transcode(point->getTextContent());
+          vector<double> coords = MakeCoordinates_(coord_string);
+          v1.push_back(coords[0]);
+          v2.push_back(coords[1]);
+          if (dim_ == 3)
+            v3.push_back(coords[2]);
+        }
+        AddToTable(table, MakePPPrefix("geometry", region_name, "v1"), MakePPEntry(v1));
+        AddToTable(table, MakePPPrefix("geometry", region_name, "v2"), MakePPEntry(v2));
+        if (!v3.empty())
+          AddToTable(table, MakePPPrefix("geometry", region_name, "v3"), MakePPEntry(v3));
+
+        AddToTable(table, MakePPPrefix("geometry", region_name, "type"), MakePPEntry("polygon"));
+        AddToTable(table, MakePPPrefix("geometry", region_name, "purpose"), MakePPEntry("all"));
+      }
+
+      // ellipse 
+      vector<DOMNode*> ellipses = getChildren_(regions, "ellipse", found);
+      for (size_t i = 0; i < ellipses.size(); ++i)
+      {
+        bool found;
+        DOMElement* ellipse = static_cast<DOMElement*>(ellipses[i]);
+        string region_name = GetAttributeValueS_(ellipse, "name", true);
+
+        string center_string = GetAttributeValueS_(ellipse, "center", true);
+        vector<double> center = MakeCoordinates_(center_string);
+        AddToTable(table, MakePPPrefix("geometry", region_name, "center"), MakePPEntry(center));
+
+        string radius_string = GetAttributeValueS_(ellipse, "radius", true);
+        vector<double> radius = MakeCoordinates_(radius_string);
+        AddToTable(table, MakePPPrefix("geometry", region_name, "radius"), MakePPEntry(radius));
+
+        AddToTable(table, MakePPPrefix("geometry", region_name, "type"), MakePPEntry("ellipse"));
+        // FIXME: A sense of purpose, please.
+        AddToTable(table, MakePPPrefix("geometry", region_name, "purpose"), MakePPEntry("6"));
+      }
+    }
+
+    // 3D-only region types.
+    else if (dim_ == 3)
+    {
+      // rotated_polygon 
+      // FIXME
+      vector<DOMNode*> rotated_polygons = getChildren_(regions, "rotated_polygon", found);
+      for (size_t i = 0; i < rotated_polygons.size(); ++i)
+      {
+      }
+
+      // swept_polygon
+      // FIXME
+      vector<DOMNode*> swept_polygons = getChildren_(regions, "swept_polygon", found);
+      for (size_t i = 0; i < swept_polygons.size(); ++i)
+      {
+      }
+    }
+
+    // logical
+    vector<DOMNode*> logicals = getChildren_(regions, "logical", found);
+    for (size_t i = 0; i < logicals.size(); ++i)
+    {
+      // FIXME: Not done yet. v2.x spec claims this isn't supported for structured, BTW.
+    }
+  }
+
+  if (!table.empty())
+    ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseGeochemistry()
@@ -510,7 +761,7 @@ void InputConverterS::ParseMaterials()
   }
   if (found)
   {
-      bool found;
+    bool found;
     vector<DOMNode*> mats = getChildren_(materials, "material", found);
     for (size_t i = 0; i < mats.size(); ++i)
     {
