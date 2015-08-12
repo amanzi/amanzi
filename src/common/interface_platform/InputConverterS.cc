@@ -10,9 +10,10 @@
 */
 
 #include <boost/algorithm/string.hpp>  // For string trimming
-
 #include "BoxLib.H"
-#include "ParmParse.H"
+
+#include "errors.hh"
+#include "exceptions.hh"
 #include "InputConverterS.hh"
 
 namespace Amanzi {
@@ -69,6 +70,11 @@ string MakePPPrefix(const string& s1, const string& s2, const string& s3, const 
   return MangleString(s1) + string(".") + MangleString(s2) + string(".") + MangleString(s3) + string(".") + MangleString(s4);
 }
 
+string MakePPPrefix(const string& s1, const string& s2, const string& s3, const string& s4, const string& s5)
+{
+  return MangleString(s1) + string(".") + MangleString(s2) + string(".") + MangleString(s3) + string(".") + MangleString(s4) + string(".") + MangleString(s5);
+}
+
 // Construct a ParmParse entry from sets of strings/values.
 list<string> MakePPEntry(const string& s1)
 {
@@ -81,7 +87,7 @@ list<string> MakePPEntry(double d)
 {
   list<string> pp;
   stringstream s;
-  s << d << '\0';
+  s << d;
   pp.push_back(s.str());
   return pp;
 }
@@ -90,7 +96,7 @@ list<string> MakePPEntry(int i)
 {
   list<string> pp;
   stringstream s;
-  s << i << '\0';
+  s << i;
   pp.push_back(s.str());
   return pp;
 }
@@ -99,7 +105,7 @@ list<string> MakePPEntry(long i)
 {
   list<string> pp;
   stringstream s;
-  s << i << '\0';
+  s << i;
   pp.push_back(s.str());
   return pp;
 }
@@ -126,7 +132,7 @@ list<string> MakePPEntry(const vector<double>& ds)
   for (size_t i = 0; i < ds.size(); ++i)
   {
     stringstream s;
-    s << ds[i] << '\0';
+    s << ds[i];
     pp.push_back(s.str());
   }
   return pp;
@@ -138,7 +144,7 @@ list<string> MakePPEntry(const vector<int>& is)
   for (size_t i = 0; i < is.size(); ++i)
   {
     stringstream s;
-    s << is[i] << '\0';
+    s << is[i];
     pp.push_back(s.str());
   }
   return pp;
@@ -150,12 +156,117 @@ list<string> MakePPEntry(const vector<long>& is)
   for (size_t i = 0; i < is.size(); ++i)
   {
     stringstream s;
-    s << is[i] << '\0';
+    s << is[i];
     pp.push_back(s.str());
   }
   return pp;
 }
 
+} // end anonymous namespace
+
+// Helper for parsing a mechanical property.
+void InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node, 
+                                         const string& material_name, 
+                                         const string& property_name,
+                                         list<ParmParse::PP_entry>& table,
+                                         bool required)
+{
+  bool found;
+  DOMElement* property = GetChildWithName_(mech_prop_node, property_name, found, required);
+  if (found)
+  {
+    if (property_name == "dispersion_tensor") // Weirdo!
+    {
+      string type = GetAttributeValueS_(property, "type");
+      if (type == "uniform_isotropic")
+      {
+        string alpha_l = GetAttributeValueS_(property, "alpha_l", true);
+        string alpha_t = GetAttributeValueS_(property, "alpha_t", true);
+        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "alpha_l"),
+              MakePPEntry(alpha_l)));
+        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "alpha_t"),
+              MakePPEntry(alpha_t)));
+      }
+      else if (type == "burnett_frind")
+      {
+        string alpha_l = GetAttributeValueS_(property, "alpha_l", true);
+        string alpha_th = GetAttributeValueS_(property, "alpha_th", true);
+        string alpha_tv = GetAttributeValueS_(property, "alpha_tv", true);
+        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "alpha_l"),
+              MakePPEntry(alpha_l)));
+        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "alpha_th"),
+              MakePPEntry(alpha_th)));
+        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "alpha_tv"),
+              MakePPEntry(alpha_tv)));
+      }
+      else if (type == "lichtner_kelkar_robinson")
+      {
+        string alpha_lh = GetAttributeValueS_(property, "alpha_lh", true);
+        string alpha_lv = GetAttributeValueS_(property, "alpha_lv", true);
+        string alpha_th = GetAttributeValueS_(property, "alpha_th", true);
+        string alpha_tv = GetAttributeValueS_(property, "alpha_tv", true);
+        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "alpha_lh"),
+              MakePPEntry(alpha_lh)));
+        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "alpha_lv"),
+              MakePPEntry(alpha_lv)));
+        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "alpha_th"),
+              MakePPEntry(alpha_th)));
+        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "alpha_tv"),
+              MakePPEntry(alpha_tv)));
+      }
+      else if (type == "file")
+      {
+        string filename = GetAttributeValueS_(property, "filename", true);
+        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "filename"),
+              MakePPEntry(filename)));
+      }
+      else
+        ThrowErrorIllformed_("materials->mechanical_properties", "type", property_name);
+      table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "type"),
+            MakePPEntry(type)));
+    }
+    else
+    {
+      string value = GetAttributeValueS_(property, "value", false);
+      string type = GetAttributeValueS_(property, "type", false);
+      if (!value.empty() && ((property_name != "porosity") || (type != "gslib")))
+      {
+        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "vals"),
+              MakePPEntry(value)));
+        table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "distribution_type"),
+              MakePPEntry("uniform")));
+      }
+      else
+      {
+        if (!type.empty())
+        {
+          if (type == "file")
+          {
+            string filename = GetAttributeValueS_(property, "filename");
+            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "filename"),
+                  MakePPEntry(filename)));
+            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "type"),
+                  MakePPEntry("file")));
+          }
+          else if ((property_name == "porosity") && (type == "gslib")) // special considerations!
+          {
+            string parameter_file = GetAttributeValueS_(property, "parameter_file");
+            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "parameter_file"),
+                  MakePPEntry(parameter_file)));
+            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "type"),
+                  MakePPEntry("gslib")));
+
+            string data_file = GetAttributeValueS_(property, "data_file", false);
+            if (!data_file.empty())
+            {
+              table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", material_name, property_name, "data_file"),
+                    MakePPEntry(data_file)));
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 InputConverterS::InputConverterS():
@@ -174,7 +285,7 @@ void InputConverterS::ParseUnits()
 
 void InputConverterS::ParseDefinitions()
 {
-  std::list<ParmParse::PP_entry> table;
+  list<ParmParse::PP_entry> table;
   bool found;
   DOMNode* macros = getUniqueElementByTagNames_("definitions", "macros", found);
   if (found)
@@ -288,7 +399,7 @@ void InputConverterS::ParseDefinitions()
     }
     // List of all cycle macro names.
     table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "cycle_macros"), 
-                                            MakePPEntry(cycle_macro_names)));
+                                        MakePPEntry(cycle_macro_names)));
 
     // FIXME: variable_macro not yet supported.
   }
@@ -299,61 +410,266 @@ void InputConverterS::ParseDefinitions()
 
 void InputConverterS::ParseExecutionControls()
 {
-  std::list<ParmParse::PP_entry> table;
-  ParmParse::appendTable(table);
+  list<ParmParse::PP_entry> table;
+  bool found;
+
+  // Verbosity level(s).
+  DOMNode* verbosity = getUniqueElementByTagNames_("execution_controls", "verbosity", found);
+  if (found)
+  {
+    DOMElement* verb = static_cast<DOMElement*>(verbosity);
+    string level = GetAttributeValueS_(verb, "level");
+    transform(level.begin(), level.end(), level.begin(), ::tolower);
+
+    // Each level of verbosity corresponds to several verbosity parameters 
+    // for Amanzi-S.
+    int prob_v, mg_v, cg_v, amr_v, diffuse_v, io_v, fab_v;
+    if (level == "none") {
+      prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; diffuse_v = 0; io_v = 0; fab_v = 0;
+    }
+    else if (level == "low") {
+      prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1;  diffuse_v = 0; io_v = 0; fab_v = 0;
+    }
+    else if (level == "medium") {
+      prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2;  diffuse_v = 0; io_v = 0; fab_v = 0;
+    }
+    else if (level == "high") {
+      prob_v = 2; mg_v = 0; cg_v = 0; amr_v = 3;  diffuse_v = 0; io_v = 0; fab_v = 0;
+    }
+    else if (level == "extreme") {
+      prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3;  diffuse_v = 1; io_v = 1; fab_v = 1;
+    }
+
+    table.push_back(ParmParse::PP_entry(MakePPPrefix("prob", "v"), MakePPEntry(prob_v)));
+    table.push_back(ParmParse::PP_entry(MakePPPrefix("mg", "v"), MakePPEntry(mg_v)));
+    table.push_back(ParmParse::PP_entry(MakePPPrefix("cg", "v"), MakePPEntry(cg_v)));
+    table.push_back(ParmParse::PP_entry(MakePPPrefix("amr", "v"), MakePPEntry(amr_v)));
+    table.push_back(ParmParse::PP_entry(MakePPPrefix("diffuse", "v"), MakePPEntry(diffuse_v)));
+    table.push_back(ParmParse::PP_entry(MakePPPrefix("io", "v"), MakePPEntry(io_v)));
+    table.push_back(ParmParse::PP_entry(MakePPPrefix("fab", "v"), MakePPEntry(fab_v)));
+  }
+
+  if (!table.empty())
+    ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseNumericalControls()
 {
-  std::list<ParmParse::PP_entry> table;
+  list<ParmParse::PP_entry> table;
   ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseMesh()
 {
-  std::list<ParmParse::PP_entry> table;
+  list<ParmParse::PP_entry> table;
   ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseRegions()
 {
-  std::list<ParmParse::PP_entry> table;
+  list<ParmParse::PP_entry> table;
   ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseGeochemistry()
 {
-  std::list<ParmParse::PP_entry> table;
-  ParmParse::appendTable(table);
+#if 0
+  list<ParmParse::PP_entry> table;
+  bool found;
+
+  DOMNode* geochem = getUniqueElementByTagNames_(doc_, "geochemistry", found);
+  if (found)
+  {
+    DOMElement* rxn_network = GetChildWithName_(geochem, "reaction_network", found, true);
+    string file = GetAttributeValueS_(rxn_network, "file", found, true);
+    string format = GetAttributeValueS_(rxn_network, "format", found, true);
+    vector<DOMNode*> constraints = getChildren_(materials, "constraint", found);
+
+  }
+
+  if (!table.empty())
+    ParmParse::appendTable(table);
+#endif
 }
 
 void InputConverterS::ParseMaterials()
 {
-  std::list<ParmParse::PP_entry> table;
-  ParmParse::appendTable(table);
+  list<ParmParse::PP_entry> table;
+  bool found;
+  vector<string> material_names;
+
+  XString mm;
+  DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("materials"));
+  DOMNode* materials;
+  if (node_list->getLength() == 1)
+  {
+    found = true;
+    materials = node_list->item(0);
+  }
+  if (found)
+  {
+      bool found;
+    vector<DOMNode*> mats = getChildren_(materials, "material", found);
+    for (size_t i = 0; i < mats.size(); ++i)
+    {
+      DOMElement* mat = static_cast<DOMElement*>(mats[i]);
+      string mat_name = GetAttributeValueS_(mat, "name");
+      material_names.push_back(mat_name);
+      bool found;
+
+      // Mechanical properties.
+      DOMElement* mech_prop = GetChildWithName_(mat, "mechanical_properties", found);
+      if (found)
+      {
+        ParseMechProperty_(mech_prop, mat_name, "porosity", table, true);
+        ParseMechProperty_(mech_prop, mat_name, "particle_density", table, false); // FIXME: Should be true for required!
+        ParseMechProperty_(mech_prop, mat_name, "specific_storage", table, false); 
+        ParseMechProperty_(mech_prop, mat_name, "specific_yield", table, false); 
+        ParseMechProperty_(mech_prop, mat_name, "dispersion_tensor", table, false);
+        ParseMechProperty_(mech_prop, mat_name, "tortuosity", table, false); 
+      }
+
+      // Assigned regions.
+      vector<string> assigned_regions = GetChildVectorS_(mat, "assigned_regions", found, true);
+      table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "regions"), 
+                                          MakePPEntry(assigned_regions)));
+
+      // Permeability OR hydraulic conductivity.
+      bool k_found, K_found;
+      DOMElement* permeability = GetChildWithName_(mat, "permeability", k_found, false);
+      DOMElement* conductivity = GetChildWithName_(mat, "hydraulic_conductivity", K_found, false);
+      if (!k_found && !K_found)
+      {
+        Errors::Message msg;
+        msg << "Neither permeability nor hydraulic_conductivity was found for material \"" << mat_name << "\".\n";
+        msg << "Please correct and try again.\n";
+        Exceptions::amanzi_throw(msg);
+      }
+      else if (k_found && K_found)
+      {
+        Errors::Message msg;
+        msg << "Both permeability AND hydraulic_conductivity were found for material \"" << mat_name << "\".\n";
+        msg << "Only one of these is allowed. Please correct and try again.\n";
+        Exceptions::amanzi_throw(msg);
+      }
+      else if (k_found)
+      {
+        string x = GetAttributeValueS_(permeability, "x", false);
+        if (!x.empty())
+        {
+          string y = GetAttributeValueS_(permeability, "y", true);
+          string z = GetAttributeValueS_(permeability, "z", true);
+          table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability", "horizontal", "vals"),
+                                              MakePPEntry(x)));
+          table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability", "horizontal1", "vals"),
+                                              MakePPEntry(y)));
+          table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability", "vertical", "vals"),
+                                              MakePPEntry(z)));
+
+          // FIXME: Are these two guys needed? When?
+          table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability", "distribution_type"),
+                                              MakePPEntry("uniform")));
+          table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability_dist"),
+                                              MakePPEntry("uniform")));
+        }
+        else
+        {
+          string type = GetAttributeValueS_(permeability, "type", true);
+          table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability", "type"),
+                                              MakePPEntry(type)));
+          if (type == "file")
+          {
+            string filename = GetAttributeValueS_(permeability, "filename", true);
+            string attribute = GetAttributeValueS_(permeability, "attribute", true);
+            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability", "filename"),
+                                                MakePPEntry(filename)));
+            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability", "attribute"),
+                                                MakePPEntry(attribute)));
+          }
+          else if (type == "gslib")
+          {
+            string parameter_file = GetAttributeValueS_(permeability, "parameter_file", true);
+            string value = GetAttributeValueS_(permeability, "value", true);
+            string data_file = GetAttributeValueS_(permeability, "data_file", true);
+            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability", "parameter_file"),
+                                                MakePPEntry(parameter_file)));
+            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability", "value"),
+                                                MakePPEntry(value)));
+            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "permeability", "data_file"),
+                                                MakePPEntry(data_file)));
+          }
+          else
+            ThrowErrorIllformed_("materials", "type", "permeability");
+        }
+      }
+      else
+      {
+        string x = GetAttributeValueS_(conductivity, "x", false);
+        if (!x.empty())
+        {
+          string y = GetAttributeValueS_(conductivity, "y", true);
+          string z = GetAttributeValueS_(conductivity, "z", true);
+          table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "horizontal", "vals"),
+                                              MakePPEntry(x)));
+          table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "horizontal1", "vals"),
+                                              MakePPEntry(y)));
+          table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "vertical", "vals"),
+                                              MakePPEntry(z)));
+        }
+        else
+        {
+          string type = GetAttributeValueS_(permeability, "type", true);
+          table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "type"),
+                                              MakePPEntry(type)));
+          if (type == "gslib")
+          {
+            string parameter_file = GetAttributeValueS_(conductivity, "parameter_file", true);
+            string value = GetAttributeValueS_(conductivity, "value", true);
+            string data_file = GetAttributeValueS_(conductivity, "data_file", true);
+            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "parameter_file"),
+                                                MakePPEntry(parameter_file)));
+            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "value"),
+                                                MakePPEntry(value)));
+            table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "data_file"),
+                                                MakePPEntry(data_file)));
+          }
+          else
+            ThrowErrorIllformed_("materials", "type", "hydraulic_conductivity");
+        }
+      }
+
+      // Capillary pressure model.
+      DOMElement* cap_pressure = GetChildWithName_(mat, "cap_pressure", found, false);
+    }
+    table.push_back(ParmParse::PP_entry(MakePPPrefix("rock", "rock"), 
+                                        MakePPEntry(material_names)));
+  }
+
+  if (!table.empty())
+    ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseProcessKernels()
 {
-  std::list<ParmParse::PP_entry> table;
+  list<ParmParse::PP_entry> table;
   ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParsePhases()
 {
-  std::list<ParmParse::PP_entry> table;
+  list<ParmParse::PP_entry> table;
   ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseInitialConditions()
 {
-  std::list<ParmParse::PP_entry> table;
+  list<ParmParse::PP_entry> table;
   ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseBoundaryConditions()
 {
-  std::list<ParmParse::PP_entry> table;
+  list<ParmParse::PP_entry> table;
   bool found;
   DOMNode* boundary_conditions = getUniqueElementByTagNames_(doc_, "boundary_conditions", found);
   if (found)
@@ -376,7 +692,7 @@ void InputConverterS::ParseBoundaryConditions()
 
 void InputConverterS::ParseOutput()
 {
-  std::list<ParmParse::PP_entry> table;
+  list<ParmParse::PP_entry> table;
   bool found;
 
   // Visualization files.

@@ -139,8 +139,7 @@ void InputConverter::ParseConstants_()
 
 
 /* ******************************************************************
-* Returns node tag1->tag2 where both tag1 and tag2 are unique leaves
-* of the tree.
+* Returns node tag1 where tag1 is a unique leaf of the tree.
 ****************************************************************** */
 DOMNode* InputConverter::getUniqueElementByTagNames_(
     const std::string& tag1, const std::string& tag2, bool& flag)
@@ -148,14 +147,14 @@ DOMNode* InputConverter::getUniqueElementByTagNames_(
   flag = false;
 
   XString mm;
+  int ntag2(0), ntag3(0);
   DOMNode* node;
 
   DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode(tag1.c_str()));
   if (node_list->getLength() != 1) return node;
 
-  int ntag2(0);
+  // first leaf
   DOMNodeList* children = node_list->item(0)->getChildNodes();
-
   for (int i = 0; i < children->getLength(); i++) {
     DOMNode* inode = children->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
@@ -166,7 +165,6 @@ DOMNode* InputConverter::getUniqueElementByTagNames_(
       }
     }
   }
-
   if (ntag2 == 1) flag = true;
   return node;
 }
@@ -277,7 +275,7 @@ DOMNode* InputConverter::getUniqueElementByTagNames_(
   for (int i = 0; i < children->getLength(); i++) {
     DOMNode* inode = children->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-      char* tagname = XMLString::transcode(inode->getNodeName());   
+      char* tagname = XMLString::transcode(inode->getNodeName()); 
       if (strcmp(tagname, tag2.c_str()) == 0) {
         node = inode;
         ntag2++;
@@ -409,6 +407,40 @@ std::vector<xercesc::DOMNode*> InputConverter::getChildren_(
   }
 
   return namedChildren;
+}
+
+xercesc::DOMElement* InputConverter::GetChildWithName_(
+    xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception)
+{
+  flag = false;
+
+  XString mm;
+  int n(0), m(0);
+  DOMNode* child = NULL;
+
+  DOMNodeList* children = node->getChildNodes();
+  for (int i = 0; i < children->getLength(); ++i) {
+    DOMNode* inode = children->item(i);
+    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+
+    char* text = mm.transcode(inode->getNodeName());
+    if (childName == text) {
+      child = inode;
+      flag = true;
+      break;
+    }
+  }
+
+  // exception
+  if (!flag and exception) {
+    Errors::Message msg;
+    char* nodeName = mm.transcode(node->getNodeName());
+    msg << "Amanzi::InputConverter: child node \"" << childName << "\" was not found for node \"" << nodeName << "\".\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return static_cast<DOMElement*>(child);
+
 }
 
 /* ******************************************************************

@@ -124,6 +124,10 @@ class InputConverter {
   std::vector<xercesc::DOMNode*> getChildren_(
       xercesc::DOMNode* node, const std::string& childrenName, bool& flag, bool exception = false);
 
+  // -- Returns the element node corresponding to the child of the given node with the given name.
+  xercesc::DOMElement* GetChildWithName_(
+      xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception = false);
+
   // -- extract the text content of the child of the given node with the given name.
   std::string GetChildValueS_(
       xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception = false);

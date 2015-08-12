@@ -12,6 +12,7 @@
 #ifndef AMANZI_INPUT_CONVERTER_STRUCTURED_HH_
 #define AMANZI_INPUT_CONVERTER_STRUCTURED_HH_
 
+#include "ParmParse.H"
 #include "InputConverter.hh"
 
 namespace Amanzi {
@@ -42,6 +43,12 @@ class InputConverterS : public InputConverter {
   void ParseBoundaryConditions();
   void ParseOutput();
   void ParseMisc();
+
+  void ParseMechProperty_(xercesc::DOMElement* mech_prop_node, 
+                          const std::string& material_name, 
+                          const std::string& property_name,
+                          std::list<ParmParse::PP_entry>& table,
+                          bool required);
 };
 
 }  // namespace AmanziInput
