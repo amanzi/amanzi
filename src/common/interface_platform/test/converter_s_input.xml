@@ -324,7 +324,7 @@
 	<porosity value="0.2"/>
 	<tortuosity value="1"/>
       </mechanical_properties>
-      <hydraulic_conductivity x="1.e-11" y="1.e-11"/>
+      <hydraulic_conductivity x="1.e-11" y="1.e-11" z="1.e-11"/>
       <cap_pressure model="none"/>
       <sorption_isotherms>
       	<solute name="Tracer">
@@ -345,7 +345,7 @@
 	<porosity value="0.2"/>
 	<tortuosity value="1"/>
       </mechanical_properties>
-      <hydraulic_conductivity x="1.e-11" y="1.e-11"/>
+      <hydraulic_conductivity x="1.e-11" y="1.e-11" z="1.e-11"/>
       <cap_pressure model="none"/>
       <sorption_isotherms>
       	<solute name="Tracer">
@@ -366,7 +366,7 @@
 	<porosity value="0.35"/>
 	<tortuosity value="1"/>
       </mechanical_properties>
-      <hydraulic_conductivity x="1.e-6" y="1.e-6"/>
+      <hydraulic_conductivity x="1.e-6" y="1.e-6" z="1.e-6"/>
       <cap_pressure model="none"/>
       <sorption_isotherms>
       	<solute name="Tracer">
@@ -387,7 +387,7 @@
 	<porosity value="0.3"/>
 	<tortuosity value="1"/>
       </mechanical_properties>
-      <hydraulic_conductivity x=".15e-2" y=".15e-2"/>
+      <hydraulic_conductivity x=".15e-2" y=".15e-2" z=".15e-2"/>
       <cap_pressure model="none"/>
       <sorption_isotherms>
       	<solute name="Tracer">
@@ -408,7 +408,7 @@
 	<porosity value="0.3"/>
 	<tortuosity value="1"/>
       </mechanical_properties>
-      <hydraulic_conductivity x=".15e-2" y=".15e-2"/>
+      <hydraulic_conductivity x=".15e-2" y=".15e-2" z=".15e-2"/>
       <cap_pressure model="none"/>
       <sorption_isotherms>
       	<solute name="Tracer">
@@ -429,7 +429,7 @@
 	<porosity value="0.3"/>
 	<tortuosity value="1"/>
       </mechanical_properties>
-      <hydraulic_conductivity x=".15e-2" y=".15e-2"/>
+      <hydraulic_conductivity x=".15e-2" y=".15e-2" z=".15e-2"/>
       <cap_pressure model="none"/>
       <sorption_isotherms>
       	<solute name="Tracer">
@@ -450,7 +450,7 @@
 	<porosity value="0.3"/>
 	<tortuosity value="1"/>
       </mechanical_properties>
-      <hydraulic_conductivity x=".15e-2" y=".15e-2"/>
+      <hydraulic_conductivity x=".15e-2" y=".15e-2" z=".15e-2"/>
       <cap_pressure model="none"/>
       <sorption_isotherms>
       	<solute name="Tracer">
@@ -471,7 +471,7 @@
 	<porosity value="0.2"/>
 	<tortuosity value="1"/>
       </mechanical_properties>
-      <hydraulic_conductivity x="1.e-14" y="1.e-14"/>
+      <hydraulic_conductivity x="1.e-14" y="1.e-14" z=".15e-2"/>
       <cap_pressure model="none"/>
       <sorption_isotherms>
       	<solute name="Tracer">

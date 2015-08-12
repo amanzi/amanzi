@@ -668,11 +668,11 @@ void InputConverterS::ParseMaterials()
                        MakePPEntry(optional_krel_smoothing_interval));
           }
         }
-        // FIXME: Is this correct?
-        AddToTable(table, MakePPPrefix("rock", mat_name, "cpl_type"), MakePPEntry(0));
 
         // FIXME: Something about a WRM plot file??
       }
+      // FIXME: Is this correct?
+      AddToTable(table, MakePPPrefix("rock", mat_name, "cpl_type"), MakePPEntry(0));
 
       // Relative permeability.
       DOMElement* rel_perm = GetChildWithName_(mat, "rel_perm", found, false);
@@ -687,14 +687,14 @@ void InputConverterS::ParseMaterials()
         else if (model != "none")
           ThrowErrorIllformed_("materials", "type", "rel_perm");
 
-        if ((model == "mualem")
+        if (model == "mualem")
         {
           // We stick in a default "ell" value, since ell doesn't appear 
           // in the v2.x input spec.
           double Kr_ell = 0.5;
           AddToTable(table, MakePPPrefix("rock", mat_name, "Kr_ell"), MakePPEntry(Kr_ell));
         }
-        else if ((model == "burdine")
+        else if (model == "burdine")
         {
           // We stick in a default "ell" value, since ell doesn't appear 
           // in the v2.x input spec.
@@ -706,9 +706,9 @@ void InputConverterS::ParseMaterials()
           AddToTable(table, MakePPPrefix("rock", mat_name, "Kr_exp"), MakePPEntry(Kr_exp));
         }
 
-        // FIXME: Is this correct?
-        AddToTable(table, MakePPPrefix("rock", mat_name, "kr_type"), MakePPEntry(0));
       }
+      // FIXME: Is this correct?
+      AddToTable(table, MakePPPrefix("rock", mat_name, "kr_type"), MakePPEntry(0));
 
       // Sorption isotherms.
       DOMElement* sorption_isotherms = GetChildWithName_(mat, "sorption_isotherms", found, false);
@@ -717,7 +717,7 @@ void InputConverterS::ParseMaterials()
         // Look for solutes.
         bool found;
         vector<DOMNode*> solutes = getChildren_(sorption_isotherms, "solute", found, true);
-        for (size_t i = 0; i < bcs.size(); ++i)
+        for (size_t i = 0; i < solutes.size(); ++i)
         {
           DOMElement* solute = static_cast<DOMElement*>(solutes[i]);
           string solute_name = GetAttributeValueS_(solute, "name");
@@ -769,8 +769,18 @@ void InputConverterS::ParseProcessKernels()
   list<ParmParse::PP_entry> table;
   bool found;
 
+  // Flow, transport, and chemistry must all be present.
+  DOMElement* flow = static_cast<DOMElement*>(getUniqueElementByTagNames_("process_kernels", "flow", found));
+  if (!found)
+    ThrowErrorMisschild_("process_kernels", "flow", "process_kernels");
+  DOMElement* transport = static_cast<DOMElement*>(getUniqueElementByTagNames_("process_kernels", "transport", found));
+  if (!found)
+    ThrowErrorMisschild_("process_kernels", "transport", "process_kernels");
+  DOMElement* chemistry = static_cast<DOMElement*>(getUniqueElementByTagNames_("process_kernels", "chemistry", found));
+  if (!found)
+    ThrowErrorMisschild_("process_kernels", "chemistry", "process_kernels");
+
   // Flow model.
-  DOMNode* flow = static_cast<DOMElement*>(getUniqueElementByTagNames_("process_kernels", "flow", found, true));
   string flow_state = GetAttributeValueS_(flow, "state");
   if (flow_state == "on")
   {
@@ -783,7 +793,6 @@ void InputConverterS::ParseProcessKernels()
   AddToTable(table, MakePPPrefix("prob", "cfl"), MakePPEntry(-1));
     
   // Transport model.
-  DOMNode* transport = static_cast<DOMElement*>(getUniqueElementByTagNames_("process_kernels", "transport", found, true));
   string transport_state = GetAttributeValueS_(transport, "state");
   if (transport_state == "on")
   {
@@ -800,7 +809,6 @@ void InputConverterS::ParseProcessKernels()
   // FIXME: What else here?
 
   // Chemistry model.
-  DOMNode* chemistry = static_cast<DOMElement*>(getUniqueElementByTagNames_("process_kernels", "chemistry", found, true));
   string chemistry_state = GetAttributeValueS_(chemistry, "state");
   if (chemistry_state == "on")
   {
