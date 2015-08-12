@@ -74,10 +74,6 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     minerals.push_back(text);
   }
 
-  if (minerals.size() > 0) {
-    out_list.set<Teuchos::Array<std::string> >("Minerals", minerals);
-  }
-
   // region specific initial conditions
   Teuchos::ParameterList& ic_list = out_list.sublist("initial conditions");
 
@@ -87,63 +83,51 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
-  }
+    if (minerals.size() > 0) {
+      out_list.set<Teuchos::Array<std::string> >("Minerals", minerals);
 
-/*
-      Teuchos::Array<std::string> regions = matprop_list.sublist(matprop_list.name(i)).get<Teuchos::Array<std::string> >("Assigned Regions");
+      node = getUniqueElementByTagNames_(inode, "assigned_regions", flag);
+      text = mm.transcode(node->getTextContent());
+      std::vector<std::string> regions = CharToStrings_(text);
 
-      if (minerals.size() > 0) {
-        double mvf(0.0), msa(0.0);
+      Teuchos::ParameterList &volfrac = ic_list.sublist("mineral_volume_fractions");
+      Teuchos::ParameterList &surfarea = ic_list.sublist("mineral_specific_surface_area");
 
-        // mineral volume fractions
-        Teuchos::ParameterList &mineral_volfrac_ic = ic_list.sublist("mineral_volume_fractions");
-        // mineral specific surface area
-        Teuchos::ParameterList &mineral_surfarea_ic = ic_list.sublist("mineral_specific_surface_area");
+      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); it++) {
+        Teuchos::ParameterList& aux1_list = volfrac.sublist("function").sublist(*it)
+            .set<std::string>("region", *it)
+            .set<std::string>("component", "cell")
+            .sublist("function");
+        aux1_list.set<int>("Number of DoFs", minerals.size())
+            .set("Function type", "composite function");
 
-        for (Teuchos::Array<std::string>::const_iterator ir=regions.begin(); ir!=regions.end(); ir++) {
+        Teuchos::ParameterList& aux2_list = surfarea.sublist("function").sublist(*it)
+            .set<std::string>("region", *it)
+            .set<std::string>("component", "cell")
+            .sublist("function");
+        aux2_list.set<int>("Number of DoFs", minerals.size())
+            .set("Function type", "composite function");
 
-          // mineral volume fractions and specific surface area
+        for (int j = 0; j < minerals.size(); ++j) {
+          std::stringstream ss;
+          ss << "DoF " << j + 1 << " Function";
 
-          Teuchos::ParameterList& aux1_list =
-              mineral_volfrac_ic.sublist("function").sublist(*ir)
-              .set<std::string>("region",*ir)
-              .set<std::string>("component","cell")
-              .sublist("function");
+          node = getUniqueElementByTagNames_(inode, "minerals", "mineral", flag);  // FIX ME
+          if (flag) {
+            element = static_cast<DOMElement*>(node);
+            double mvf = GetAttributeValueD_(element, "volume_fraction", false, 0.0);
+            double msa = GetAttributeValueD_(element, "specific_surface_area", false, 0.0);
 
-          Teuchos::ParameterList& aux2_list =
-              mineral_surfarea_ic.sublist("function").sublist(*ir)
-              .set<std::string>("region",*ir)
-              .set<std::string>("component","cell")
-              .sublist("function");
-
-          aux1_list.set<int>("Number of DoFs", minerals.size())
-              .set("Function type", "composite function");
-
-          aux2_list.set<int>("Number of DoFs", minerals.size())
-              .set("Function type", "composite function");
-
-          for (int j = 0; j<minerals.size(); ++j) {
-            std::stringstream ss;
-            ss << "DoF " << j + 1 << " Function";
-
-            mvf = matprop_list.sublist(matprop_list.name(i)).sublist("Mineralogy").sublist(minerals[j])
-                .get<double>("Volume Fraction");
-
-            msa = matprop_list.sublist(matprop_list.name(i)).sublist("Mineralogy").sublist(minerals[j])
-                .get<double>("Specific Surface Area");
-
-            aux1_list.sublist(ss.str()).sublist("function-constant")
-                .set<double>("value", mvf);
-
-            aux2_list.sublist(ss.str()).sublist("function-constant")
-                .set<double>("value", msa);
+            aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", mvf);
+            aux2_list.sublist(ss.str()).sublist("function-constant").set<double>("value", msa);
           }
         }
       }
+    }
+  }
 
-
+/*
       if (matprop_list.sublist(matprop_list.name(i)).isParameter("Cation Exchange Capacity")) {
-
         double cec = matprop_list.sublist(matprop_list.name(i)).get<double>("Cation Exchange Capacity");
 
         Teuchos::ParameterList &ion_exchange_sites_ic = ic_list.sublist("ion_exchange_sites");
@@ -180,7 +164,6 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
       }
 
       if (matprop_list.sublist(matprop_list.name(i)).isSublist("Sorption Isotherms")) {
-
         Teuchos::ParameterList& isotherm_kd_ic = ic_list.sublist("isotherm_kd");
         Teuchos::ParameterList& isotherm_langmuir_b_ic = ic_list.sublist("isotherm_langmuir_b");
         Teuchos::ParameterList& isotherm_freundlich_n_ic = ic_list.sublist("isotherm_freundlich_n");
@@ -188,9 +171,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
         Teuchos::ParameterList& sorption_isotherms_list = matprop_list.sublist(matprop_list.name(i)).sublist("Sorption Isotherms");
 
         for (Teuchos::Array<std::string>::const_iterator ir=regions.begin(); ir!=regions.end(); ir++) {
-
           // Kd
-
           {
             Teuchos::ParameterList& aux1_list =
                 isotherm_kd_ic.sublist("function").sublist(*ir)
@@ -213,7 +194,6 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
               aux1_list.sublist(ss.str()).sublist("function-constant")
                   .set<double>("value", kd);
-
             }
           }
 
@@ -240,7 +220,6 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
               aux2_list.sublist(ss.str()).sublist("function-constant")
                   .set<double>("value", langmuir_b);
-
             }
           }
 
@@ -309,7 +288,6 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
     for (Teuchos::ParameterList::ConstIterator ic = ic_list.begin(); ic != ic_list.end(); ++ic) {
       if (ic_list.isSublist(ic->first)) {
-
         Teuchos::ParameterList& ics = ic_list.sublist(ic->first);
 
         Teuchos::Array<std::string> ass_regions = ics.get<Teuchos::Array<std::string> >("Assigned Regions");
@@ -317,7 +295,6 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
         Teuchos::ParameterList &free_ion_species_ic = ic_list.sublist("free_ion_species");
 
         for (Teuchos::Array<std::string>::const_iterator ir=ass_regions.begin(); ir!=ass_regions.end(); ir++) {
-
           Teuchos::ParameterList& aux1_list =
               free_ion_species_ic.sublist("function").sublist(*ir)
               .set<std::string>("region",*ir)
@@ -347,6 +324,57 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
   out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
   return out_list;
+}
+
+
+/* ******************************************************************
+* Empty
+****************************************************************** */
+void InputConverterU::CreateBDGFile(Teuchos::ParameterList sorption_list, Teuchos::ParameterList def_list)
+{
+
+  std::ofstream bgd_file;
+  std::stringstream species_string;
+  std::stringstream isotherms_string;
+
+  // build streams
+  for (Teuchos::ParameterList::ConstIterator i = sorption_list.begin(); i != sorption_list.end(); i++) {
+    Teuchos::ParameterList& tmpList = sorption_list.sublist(sorption_list.name(i)) ;
+    species_string << sorption_list.name(i) << " ;   0.00 ;   0.00 ;   1.00 \n";
+    if (tmpList.isParameter("Langmuir b")) {
+      isotherms_string << sorption_list.name(i) << " ; langmuir ; " << tmpList.get<double>("Kd")<< " " <<tmpList.get<double>("Langmuir b") << std::endl;
+    } else if (tmpList.isParameter("Freundlich n")) {
+      isotherms_string << sorption_list.name(i) << " ; freundlich ; " << tmpList.get<double>("Kd")<< " " <<tmpList.get<double>("Freundlich n") << std::endl;
+    } else {
+      isotherms_string << sorption_list.name(i) << " ; linear ; " << tmpList.get<double>("Kd")<< std::endl;
+    }
+  }
+  
+  // build bgd filename
+  std::string bgdfilename;
+  if (def_list.isParameter("xmlfilename") ) {
+    bgdfilename = def_list.get<std::string>("xmlfilename");
+    std::string new_extension(".bgd");
+    size_t pos = bgdfilename.find(".xml");
+    bgdfilename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)4);
+  } else {
+    bgdfilename = "isotherms.bgd";
+  }
+
+  // open output bgd file
+  bgd_file.open(bgdfilename.c_str());
+
+  // <Primary Species
+  bgd_file << "<Primary Species\n";
+  bgd_file << species_string.str();
+
+  //<Isotherms
+  bgd_file << "<Isotherms\n" ;
+  bgd_file << "# Note, these values will be overwritten by the xml file\n" ;
+  bgd_file << isotherms_string.str();
+
+  // close output bdg file
+  bgd_file.close();
 }
 
 }  // namespace AmanziInput
