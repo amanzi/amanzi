@@ -767,7 +767,68 @@ void InputConverterS::ParseMaterials()
 void InputConverterS::ParseProcessKernels()
 {
   list<ParmParse::PP_entry> table;
-  ParmParse::appendTable(table);
+  bool found;
+
+  // Flow model.
+  DOMNode* flow = static_cast<DOMElement*>(getUniqueElementByTagNames_("process_kernels", "flow", found, true));
+  string flow_state = GetAttributeValueS_(flow, "state");
+  if (flow_state == "on")
+  {
+    string flow_model = GetAttributeValueS_(flow, "model");
+    AddToTable(table, MakePPPrefix("prob", "model_name"), MakePPEntry(flow_model));
+  }
+  else
+    AddToTable(table, MakePPPrefix("prob", "model_name"), MakePPEntry("steady-saturated"));
+  AddToTable(table, MakePPPrefix("prob", "have_capillary"), MakePPEntry(0));
+  AddToTable(table, MakePPPrefix("prob", "cfl"), MakePPEntry(-1));
+    
+  // Transport model.
+  DOMNode* transport = static_cast<DOMElement*>(getUniqueElementByTagNames_("process_kernels", "transport", found, true));
+  string transport_state = GetAttributeValueS_(transport, "state");
+  if (transport_state == "on")
+  {
+    AddToTable(table, MakePPPrefix("prob", "do_tracer_advection"), MakePPEntry(1));
+  }
+  else
+  {
+    AddToTable(table, MakePPPrefix("prob", "do_tracer_advection"), MakePPEntry(0));
+  }
+  // FIXME: This is a hack for now. We need to inspect the dispersivity tensor
+  // FIXME: to determine whether to do tracer diffusion, but for now we assume
+  // FIXME: that diffusion settings use advection settings.
+  AddToTable(table, MakePPPrefix("prob", "do_tracer_diffusion"), MakePPEntry((transport_state == "on")));
+  // FIXME: What else here?
+
+  // Chemistry model.
+  DOMNode* chemistry = static_cast<DOMElement*>(getUniqueElementByTagNames_("process_kernels", "chemistry", found, true));
+  string chemistry_state = GetAttributeValueS_(chemistry, "state");
+  if (chemistry_state == "on")
+  {
+    string chemistry_engine = GetAttributeValueS_(chemistry, "engine");
+    if (chemistry_engine == "amanzi")
+    {
+      AddToTable(table, MakePPPrefix("prob", "chemistry_model"), MakePPEntry("Amanzi"));
+      // FIXME: What else here?
+    }
+    else if (chemistry_engine != "none") // Alquimia!
+    {
+      AddToTable(table, MakePPPrefix("prob", "chemistry_model"), MakePPEntry("Alquimia"));
+      if (chemistry_engine == "pflotran")
+        AddToTable(table, MakePPPrefix("Chemistry", "Engine"), MakePPEntry("PFloTran"));
+      // FIXME: What else here?
+    }
+    else
+    {
+      AddToTable(table, MakePPPrefix("prob", "chemistry_model"), MakePPEntry("Off"));
+    }
+
+    // FIXME: This parameter isn't really supported yet, since it only has 
+    // FIXME: one meaningful value.
+    string chemistry_model = GetAttributeValueS_(chemistry, "process_model");
+  }
+
+  if (!table.empty())
+    ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParsePhases()

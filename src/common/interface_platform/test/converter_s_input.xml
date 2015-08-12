@@ -25,8 +25,8 @@
   <process_kernels>
     <comments>Richards</comments>
     <flow model="saturated" state="on"/>
-    <transport algorithm="xxxx" state="on"/>
-    <chemistry engine="pflotran" process_model="alquimia" state="on"/>
+    <transport state="on"/>
+    <chemistry engine="pflotran" process_model="implicit operator split" state="on"/>
   </process_kernels>
 
   <phases>
