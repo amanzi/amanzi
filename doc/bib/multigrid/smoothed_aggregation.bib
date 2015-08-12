@@ -1,0 +1,214 @@
+@article{MBrezina_CTong_RBecker_2006a,
+  title       = {Parallel Algebraic Multigrids for Structural Mechanics},
+  author      = {M. Brezina and C. Tong and R. Becker},
+  journal     = SIAMJournalONScientificComputing,
+  volume      = 27,
+  number      = 5,
+  pages       = {1534--1554},
+  year        = 2006,
+  abstract    = {This paper presents the results of a comparison of three
+                 parallel algebraic multigrid (AMG) preconditioners
+                 for structural mechanics applications. In particular,
+                 we are interested in investigating both the
+                 scalability and robustness of the
+                 preconditioners. Numerical results are given for a
+                 range of structural mechanics problems with various
+                 degrees of difficulty, and they show that algebraic
+                 multigrid methods can be applied successfully even to
+                 difficult problems in structural mechanics.}
+}
+
+@article{MBrezina_RFalgout_SMaclachlan_TManteuffel_etal_2005b,
+  title       = {Adaptive smoothed aggregation ($\alpha${SA}) multigrid},
+  author      = {M. Brezina and R. Falgout and S. MacLachlan 
+                 and T. Manteuffel and S. McCormick and J. Ruge},
+  journal     = SIAMRev,
+  volume      = 47,
+  number      = 2,
+  pages       = {317 -- 346},
+  year        = 2005,
+  abstract    = {Substantial effort has been focused over the last two
+                 decades on developing multilevel iterative methods
+                 capable of solving the large linear systems
+                 encountered in engineering practice. These systems
+                 often arise from discretizing partial differential
+                 equations over unstructured meshes, and the
+                 particular parameters or geometry of the physical
+                 problem being discretized may be unavailable to the
+                 solver.  Algebraic multigrid (AMG) and multilevel
+                 domain decomposition methods of algebraic type have
+                 been of particular interest in this context because
+                 of their promises of optimal performance without the
+                 need for explicit knowledge of the problem
+                 geometry. These methods construct a hierarchy of
+                 coarse problems based on the linear system itself and
+                 on certain assumptions about the smooth components of
+                 the error. For smoothed aggregation (SA) multigrid
+                 methods applied to discretizations of elliptic
+                 problems, these assumptions typically consist of
+                 knowledge of the near-kernel or near-nullspace of the
+                 weak form. This paper introduces an extension of the
+                 SA method in which good convergence properties are
+                 achieved in situations where explicit knowledge of
+                 the near-kernel components is unavailable. This
+                 extension is accomplished in an adaptive process that
+                 uses the method itself to determine near-kernel
+                 components and adjusts the coarsening processes
+                 accordingly},
+  pdf         = {http://amath.colorado.edu/pub/multigrid/aSAm.pdf}
+}
+
+@article{MBrezina_RFalgout_SMaclachlan_TManteuffel_etal_2004a,
+  title       = {Adaptive smoothed aggregation ($\alpha${SA})},
+  author      = {M. Brezina and R. Falgout and S. MacLachlan 
+                 and T. Manteuffel and S. McCormick and J. Ruge},
+  journal     = SIAMJournalONScientificComputing,
+  volume      = 25,
+  number      = 6,
+  pages       = {1896 -- 1920},
+  year        = 2004,
+  abstract    = {Substantial effort has been focused over the last two
+                 decades on developing multi-level iterative methods
+                 capable of solving the large linear systems
+                 encountered in engineering practice. These systems
+                 often arise from discretizing partial differential
+                 equations over unstructured meshes, and the
+                 particular parameters or geometry of the physical
+                 problem being discretized may be unavailable to the
+                 solver.  Algebraic multigrid (AMG) and multilevel
+                 domain decomposition methods of algebraic type have
+                 been of particular interest in this context because
+                 of their promises of optimal performance without the
+                 need for explicit knowledge of the problem
+                 geometry. These methods construct a hierarchy of
+                 coarse problems based on the linear system itself and
+                 on certain assumptions about the smooth components of
+                 the error. For smoothed aggregation (SA) methods
+                 applied to discretizations of elliptic problems,
+                 these assumptions typically consist of knowledge of
+                 the near-nullspace of the weak form. This paper
+                 introduces an extension of the SA method in which
+                 good convergence properties are achieved in
+                 situations where explicit knowledge of the
+                 near-nullspace components is unavailable. This
+                 extension is accomplished by using the method itself
+                 to determine near-nullspace components and adjusting
+                 the coarsening processes accordingly.},
+  url         = {http://amath.colorado.edu/pub/multigrid/aSA.ps}
+}
+
+@article{PVanek_MBrezina_JMandel_2001a,
+  title        = {Convergence of Algebraic Multigrid Based on 
+                  Smoothed Aggregation.},
+  author       = {P. Vanek and M. Brezina and J. Mandel},
+  journal      = NumerishceMathematik,
+  volume       = 88,
+  number       = 3,
+  pages        = {559 -- 79},
+  year         = 2001,
+  publisher    = {Germany : Springer-Verlag, 2001},
+  abstract     = {We prove an abstract convergence estimate for the
+                  algebraic multigrid method with prolongator defined
+                  by a disaggregation followed by a smoothing. The
+                  method input is the problem matrix and a matrix of
+                  the zero energy modes of the same problem but with
+                  natural boundary conditions. The construction is
+                  described in the case of a general elliptic
+                  system. The condition number bound increases only as
+                  a polynomial of the number of levels, and requires
+                  only a uniform weak approximation property for the
+                  aggregation operators. This property can be a-priori
+                  verified computationally once the aggregates are
+                  known. For illustration, it is also verified here
+                  for a uniformly elliptic diffusion equations
+                  discretized by linear conforming quasiuniform finite
+                  elements. Only very weak and natural assumptions on
+                  the hierarchy of aggregates are needed.},
+  pdf          = {http://www.springerlink.com/media/2PW78AWWQH5JRWK3JMFK/Contributions/Y/G/W/6/YGW6KP2P2FEMQVJU.pdf}
+}
+
+@article{JMandel_MBrezina_PVanek_1999a,
+  title       = {Energy Optimization of Algebraic Multigrid Bases},
+  author      = {J. Mandel and M. Brezina and P. Vanek},
+  journal     = Computing,
+  volume      = 62,
+  number      = 3,
+  pages       = {205 -- 28},
+  year        = 1999,
+  abstract    = {We propose a fast iterative method to optimize coarse
+                 basis functions in algebraic multigrid by minimizing
+                 the sum of their energies, subject to the condition
+                 that linear combinations of the basis functions equal
+                 to given zero energy modes, and subject to
+                 restrictions on the supports of the coarse basis
+                 functions. For a particular selection of the
+                 supports, the first iteration gives exactly the same
+                 basis functions as our earlier method using smoothed
+                 aggregation. The convergence rate of the minimization
+                 algorithm is bounded independently of the mesh size
+                 under usual assumptions on finite elements. The
+                 construction is presented for scalar problems as well
+                 as for linear elasticity. Computational results on
+                 difficult industrial problems demonstrate that the
+                 use of energy minimal basis functions improves
+                 algebraic multigrid performance and yields a more
+                 robust multigrid algorithm than smoothed
+                 aggregation.},
+  pdf         = {http://www.springerlink.com/media/DLTEHE6A5G1XXM98BJ4P/Contributions/J/9/1/M/J91MXMH9P52BUBXK.pdf}
+}
+
+@article{JMandel_MBrezina_1996a,
+  title       = {Balancing Domain Decomposition for problems with 
+                 Large Jumps in Coefficients.},
+  author      = {J. Mandel and M. Brezina},
+  journal     = MathematicsOFComputation,
+  volume      = {65},
+  number      = {216},
+  pages       = {1387 -- 401},
+  year        = {1996},
+  abstract    = {The Balancing Domain Decomposition algorithm uses in
+                 each iteration solution of local problems on the
+                 subdomains coupled with a coarse problem that is used
+                 to propagate the error globally and to guarantee that
+                 the possibly singular local problems are
+                 consistent. The abstract theory introduced recently
+                 by the first-named author is used to develop
+                 condition number bounds for conforming linear
+                 elements in two and three dimensions. The bounds are
+                 independent of arbitrary coefficient jumps between
+                 subdomains and of the number of subdomains, and grow
+                 only as the squared logarithm of the mesh size h.
+                 Computational experiments for two- and
+                 three-dimensional problems confirm the theory.},
+  url         = {http://links.jstor.org/sici?sici=0025-5718(199610)65:216<1387:BDDFPW>2.0.CO;2-C}
+}
+
+@article{PVanek_JMandel_MBrezina_1996a,
+  title       = {Algebraic Multigrid by Smoothed Aggregation for 
+                 Second and Fourth Order Elliptic Problems},
+  author      = {P. Vanek and J. Mandel and M. Brezina},
+  journal     = Computing,
+  volume      = {56},
+  number      = {3},
+  pages       = {179 -- 96},
+  year        = {1996},
+  booktitle   = {International GAMM-Workshop on Multi-Level Methods, 
+                 26-28 Sept. 1994, Meisdorf/Harz, Germany},
+  publisher   = {Austria : Springer-Verlag, 1996},
+  abstract    = {An algebraic multigrid algorithm for symmetric, positive
+                 definite linear systems is developed based on the
+                 concept of prolongation by smoothed
+                 aggregation. Coarse levels are generated
+                 automatically. We present a set of requirements
+                 motivated heuristically by a convergence theory. The
+                 algorithm then attempts to satisfy the
+                 requirements. Input to the method are the coefficient
+                 matrix and zero energy modes, which are determined
+                 from nodal coordinates and knowledge of the
+                 differential equation. Efficiency of the resulting
+                 algorithm is demonstrated by computational results on
+                 real world problems from solid elasticity, plate
+                 bending, and shells.},
+   url        = {http://www-math.cudenver.edu/~jmandel/papers/meis.ps.gz}
+}
+

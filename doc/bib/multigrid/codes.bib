@@ -1,0 +1,345 @@
+% LAMG
+
+@Manual{WDJoubert_LAMG-users-guide_2005,
+  title        = {LAMG: Los Alamos Algebraic Multigrid Code User's Manual,
+                  A Parallel Software Library for the Solution of Systems 
+                  of Linear Equations Using Algebraic Multigrid Methods},
+  author       = {W. D. Joubert},
+  edition      = {{LA-UR} 05-4041},
+  month        = {June},
+  year         = 2005
+}
+
+% Trilinos
+
+@TechReport{MAHeroux_JMWillenbring_Trilinos-users-guide_2003,
+  author       = {M. A. Heroux and J. M. Willenbring},
+  title        = {Trilinos Users Guide},
+  institution  = {Computational Math and Algorithms Department},
+  address      = {Sandia National Laboratories, Albuquerque, NM},
+  year         = {August 2003 (last updated September 2007},
+  number       = {{SAND}2003-2952},
+  abstract     = {The Trilinos Project is an effort to facilitate the
+                  design, development, integration and ongoing support
+                  of mathematical software libraries. A new software
+                  capability is introduced into Trilinos as a
+                  package. A Trilinos package is an integral unit
+                  usually developed by a small team of experts in a
+                  particular algorithms area such as algebraic
+                  preconditioners, nonlinear solvers, etc.  The
+                  Trilinos Users Guide is a resource for new and
+                  existing Trilinos users.  Topics covered include how
+                  to configure and build Trilinos, what is required to
+                  integrate an existing package into Trilinos and
+                  examples of how those requirements can be met, as
+                  well as what tools and services are available to
+                  Trilinos packages. Also discussed are some common
+                  practices that are followed by many Trilinos package
+                  developers. Finally, a snapshot of current Trilinos
+                  packages and their interoperability status is
+                  provided, along with a list of supported computer
+                  platforms.},
+  pdf          = {http://trilinos.sandia.gov/TrilinosUserGuide.pdf}
+}
+
+% Trilinos/ML
+
+@TechReport{MSala_etal_ML-users-guide-4_2005,
+  author       = {M. Sala and M. W. Gee and J. J. Hu and R. S. Tuminaro},
+  title        = {{ML} 4.0 Smoothed Aggregation User's Guide},
+  institution  = {Computational Math \& Algorithms Department},
+  address      = {Sandia National Laboratories, Albuquerque, NM},
+  year         = {August 2005},
+  number       = {{SAND}2004-4819},
+  abstract     = {ML is a multigrid preconditioning package intended to
+                  solve linear systems of equations Ax = b where A is
+                  a user supplied n×n sparse matrix, b is a user
+                  supplied vector of length n and x is a vector of
+                  length n to be computed. ML should be used on large
+                  sparse linear systems arising from partial
+                  differential equation (PDE) discretizations. While
+                  technically any linear system can be considered, ML
+                  should be used on linear systems that correspond to
+                  things that work well with multigrid methods
+                  (e.g. elliptic PDEs). ML can be used as a
+                  stand-alone package or to generate preconditioners
+                  for a traditional iterative solver package
+                  (e.g. Krylov methods). We have supplied support for
+                  working with the Aztec 2.1 and AztecOO iterative
+                  packages [21]. However, other solvers can be used by
+                  supplying a few functions.  This document describes
+                  one specific algebraic multigrid approach: smoothed
+                  aggregation. This approach is used within several
+                  specialized multigrid methods: one for the eddy
+                  current formulation for Maxwell\u2019s equations,
+                  and a multilevel and domain decomposition method for
+                  symmetric and nonsymmetric systems of equations
+                  (like elliptic equations, or compressible and
+                  incompressible fluid dynamics problems). Other
+                  methods exist within ML but are not described in
+                  this document. Examples are given illustrating the
+                  problem definition and exercising multigrid options.},
+  pdf          = {http://software.sandia.gov/trilinos/packages/ml/mlguide4.pdf}
+}
+
+@TechReport{MWGee_etal_ML-users-guide-5_2006,
+  author       = {M.W. Gee and C.M. Siefert and J.J. Hu and R.S. Tuminaro 
+                  and M.G. Sala},
+  title        = {{ML} 5.0 Smoothed Aggregation User's Guide},
+  institution  = {Sandia National Laboratories},
+  year         = {2006},
+  number       = {{SAND}2006-2649},
+  abstract     = {ML is a multigrid preconditioning package intended to
+                  solve linear systems of equations Ax = b where A is
+                  a user supplied nÃn sparse matrix, b is a user
+                  supplied vector of length n and x is a vector of
+                  length n to be computed. ML should be used on large
+                  sparse linear systems arising from partial
+                  differential equation (PDE) discretizations. While
+                  technically any linear system can be considered, ML
+                  should be used on linear systems that correspond to
+                  things that work well with multigrid methods
+                  (e.g. elliptic PDEs). ML can be used as a
+                  stand-alone package or to generate preconditioners
+                  for a traditional iterative solver package
+                  (e.g. Krylov methods). We have supplied support for
+                  working with 3 the Aztec 2.1 and AztecOO iterative
+                  packages [19]. However, other solvers can be used by
+                  supplying a few functions.  This document describes
+                  one specific algebraic multigrid approach: smoothed
+                  aggregation. This approach is used within several
+                  specialized multigrid methods: one for the eddy
+                  current formulation for Maxwellâs equations, and a
+                  multilevel and domain decomposition method for
+                  symmetric and nonsymmetric systems of equations
+                  (like elliptic equations, or compressible and
+                  incompressible fluid dynamics problems). Other
+                  methods exist within ML but are not described in
+                  this document. Examples are given illustrating the
+                  problem definition and exercising multigrid options.
+                  },
+  pdf          = {http://software.sandia.gov/trilinos/packages/ml/mlguide5.pdf}
+}
+
+@article{MAHeroux_etal_trilinos-overview_ACMTOMS_2005,
+  title = {An overview of the Trilinos Project},
+  author       = {M. A. Heroux and R. A. Bartlett and V. E. Howle and 
+                  R. J. Hoekstra and J. J. Hu and T. G. Kolda and 
+                  R. B. Lehoucq and K. R. Long and R. P. Pawlowski and
+                  E. T. Phipps and  A. G. Salinger and H. K. Thornquist 
+                  and  R. S. Tuminaro and J. M. Willenbring and 
+                  A. Williams and K. S. Stanley},
+  journal      = ACMTOMS,
+  volume       = 31,
+  number       = 3,
+  pages        = {397--423},
+  year         = 2005,
+  abstract     = {The Trilinos Project is an effort to facilitate the
+                  design, development, integration, and ongoing
+                  support of mathematical software libraries within an
+                  object-oriented framework for the solution of
+                  large-scale, complex multiphysics engineering and
+                  scientific problems. Trilinos addresses two
+                  fundamental issues of developing software for these
+                  problems: (i) providing a streamlined process and
+                  set of tools for development of new algorithmic
+                  implementations and (ii) promoting interoperability
+                  of independently developed software. ; Trilinos uses
+                  a two-level software structure designed around
+                  collections of packages. A Trilinos package is an
+                  integral unit usually developed by a small team of
+                  experts in a particular algorithms area such as
+                  algebraic preconditioners, nonlinear solvers,
+                  etc. Packages exist underneath the Trilinos top
+                  level, which provides a common look-and-feel,
+                  including configuration, documentation, licensing,
+                  and bug-tracking. ; Here we present the overall
+                  Trilinos design, describing our use of abstract
+                  interfaces and default concrete implementations. We
+                  discuss the services that Trilinos provides to a
+                  prospective package and how these services are used
+                  by various packages. We also illustrate how packages
+                  can be combined to rapidly develop new
+                  algorithms. Finally, we discuss how Trilinos
+                  facilitates high-quality software engineering
+                  practices that are increasingly required from
+                  simulation software.}
+}
+
+
+
+
+
+% hypre/BOOMERAMG
+
+@Manual{HYPRE_users-manual_2008,
+  title = 	 {HYPRE high performance preconditioners User's Manual},
+  organization = {Center for Applied Scientific Computing (CASC), 
+                  Lawrence Livermore National Laboratory},
+  edition = 	 {Software version 2.4.0b},
+  month = 	 {August},
+  year = 	 {2008},
+}
+
+
+% hypre related papers
+
+@InCollection{RDFalgout_UMYang_hypre-library_LNCS_2002,
+  author     = {R. D. Falgout and  U. M. Yang},
+  title      = {\emph{hypre:} A Library of High Performance Preconditioners},
+  booktitle  = {Computational Science--ICCS 2002, 
+                International Conference, Amsterdam, The Netherlands, 
+                April 21-24, 2002. Proceedings, Part III},
+  pages      = {632--641},
+  series     = {Lecture Notes in Computer Science},
+  volume     = 2331,
+  publisher  = {Springer-Verlag},
+  year       = 2002,
+  editor     = {P. M. A. Sloot and C. J. K. Tan and J. J. Dongarra, J.J.
+                and A. G. Hoekstra},
+  abstract   = {\emph{hypre} is a software library for the solution of
+                large, sparse linear systems on massively parallel
+                computers. Its emphasis is on modern powerful and
+                scalable preconditioners. hypre provides various
+                conceptual interfaces to enable application users to
+                access the library in the way they naturally think
+                about their problems. This paper presents the
+                conceptual interfaces in hypre. An overview of the
+                preconditioners that are available in hypre is given,
+                including some numerical results that show the
+                efficiency of the library.}
+}
+
+
+@article{RDFalgout_etal_hypre-scalability_ACM-TOMS_2005,
+  title      = {Pursuing Scalability for \emph{hypre's} Conceptual Interfaces},
+  author     = {R. D. Falgout and J. E. Jones and U. M. Yang},
+  journal    = ACMTOMS,
+  volume     = 31,
+  number     = 3,
+  pages      = {326--350},
+  year       = 2005,
+  abstract   = {The software library hypre provides high-performance
+                preconditioners and solvers for the solution of large,
+                sparse linear systems on massively parallel computers
+                as well as conceptual interfaces that allow users to
+                access the library in the way they naturally think
+                about their problems. These interfaces include a
+                stencil-based structured interface (Struct); a
+                semistructured interface (semiStruct), which is
+                appropriate for applications that are mostly
+                structured, for example, block structured grids,
+                composite grids in structured adaptive mesh refinement
+                applications, and over-set grids; and a finite element
+                interface (FEI) for unstructured problems, as well as
+                a conventional linear-algebraic interface (IJ). It is
+                extremely important to provide an efficient, scalable
+                implementation of these interfaces in order to support
+                the scalable solvers of the library, especially when
+                using tens of thousands of processors. This article
+                describes the data structures, parallel
+                implementation, and resulting performance of the IJ,
+                Struct and semiStruct interfaces. It investigates
+                their scalability, presents successes as well as
+                pitfalls of some of the approaches and suggests ways
+                of dealing with them.}
+}
+
+
+@article{RDFalgout_etal_hypre-conceptual-interfaces_FGCS_2006,
+  title      = {Conceptual Interfaces in \emph{hypre}},
+  author     = {R. D. Falgout and J. E. Jones and U. M. Yang},
+  journal    = FutureGenerationComputerSystems,
+  volume     = 22,
+  number     = {1--2},
+  pages      = {239--251},
+  year       = 2006,
+  abstract   = {The hypre software library is being developed with the
+                aim of providing scalable solvers for the solution of
+                large, sparse linear systems oil massively parallel
+                computers. To this end, the notion of conceptual
+                interfaces was introduced. These interfaces give
+                applications users a more natural means for describing
+                their linear systems, and provide access to methods
+                Such as geometric multigrid which require additional
+                information beyond just the matrix. This paper
+                discusses the design of the Conceptual interfaces in
+                hypre and illustrates their use with various
+                examples. A brief overview of the solvers and
+                preconditioners available through these interfaces is
+                also given.}
+}
+
+
+@InCollection{RDFalgout_etal_hypre-design-chapter_2006,
+  author     = {R.D. Falgout and J.E. Jones and U.M. Yang},
+  title      = {The Design and Implementation of \emph{hypre}, a
+                Library of Parallel High Performance Preconditioners},
+  booktitle  = {Numerical Solution of Partial Differential Equations 
+                on Parallel Computers},
+  pages      = {267--294},
+  series     = {Lecture Notes in Computer Science and Engineering},
+  volume     = 51,
+  publisher  = {Springer-Verlag},
+  year       = 2006,
+  editor     = {A. M. Bruaset and A. Tveito}
+}
+
+
+% SAMG
+
+@TechReport{SAMG_KStuben_TClees_2003a,
+  author       = {K. St\"uben and T. Clees},
+  title        = {{SAMG} User's Manual},
+  institution  = {Fraunhofer Institute for Algorithms and 
+                  Scientific Computing (SCAI)},
+  year         = {December 2003},
+  number       = {Release 21c},
+  url          = {http://www.scai.fraunhofer.de/fileadmin/download/samg/user21c-12.pdf}
+}
+
+
+@TechReport{SAMGp_AKrechel_KStuben_2003a,
+  author       = {A. Krechel and K. St\"uben},
+  title        = {{SAMGp} User's Manual},
+  institution  = {Fraunhofer Institute for Algorithms and 
+                  Scientific Computing (SCAI)},
+  year         = {February 2003},
+  number       = {Release 20c},
+  url          = {http://www.scai.fraunhofer.de/fileadmin/download/samg/userp20c-18.pdf}
+}
+
+% PETSc
+
+@Misc{petsc-web-page,
+    Author     = {Satish Balay and Kris Buschelman and William D. Gropp
+                  and Dinesh Kaushik and Matthew G. Knepley and Lois
+                  Curfman McInnes and Barry F. Smith and Hong Zhang},
+    Title      = "{PETSc} {W}eb page",
+    Note       = "http://www.mcs.anl.gov/petsc",
+    Year       = "2001"}
+}
+
+@TechReport{petsc-user-ref,
+    Author     = "Satish Balay and Kris Buschelman and Victor Eijkhout
+                  and William D. Gropp and Dinesh Kaushik and Matthew
+                  G. Knepley and Lois Curfman McInnes and Barry
+                  F. Smith and Hong Zhang",
+   Title       = "{PETS}c Users Manual",
+   Number      = "ANL-95/11 - Revision 3.0.0",
+   Institution = "Argonne National Laboratory",
+   Year        = "2008"}
+
+@InProceedings{petsc-efficient,
+   Author      = "Satish Balay and William D. Gropp and Lois Curfman
+                  McInnes and Barry F. Smith",
+   Title       = "Efficient Management of Parallelism in Object
+                  Oriented Numerical Software Libraries",
+   Booktitle   = "Modern Software Tools in Scientific Computing",
+   Editor      = "E. Arge and A. M. Bruaset and H. P. Langtangen",
+   Pages       = "163--202",
+   Publisher   = "Birkh{\"{a}}user Press",
+   Year        = "1997"} 
+
+
+

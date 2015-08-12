@@ -1,0 +1,111 @@
+% ==========================================================================
+%
+%  ASCEM: Layout, configuration and macros
+%
+% ==========================================================================
+
+% ==========================================================================
+%
+%  Page Layout, Fonts etc. 
+%
+% --------------------------------------------------------------------------
+
+% ---------------------
+%  Handy stuff
+% ---------------------
+
+\usepackage{comment}
+\usepackage[normalem]{ulem}
+\usepackage{authblk}
+
+\usepackage{longtable}
+
+% ---------------------
+%  Paragraphs
+% ---------------------
+
+% Remove all indents for paragraphs
+%
+\setlength{\parindent}{0pt}
+
+% Add a blank line after paragraphs
+%
+\setlength{\parskip}{0.8ex}
+
+% ---------------------
+%  Pagestyle 
+% ---------------------
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+
+\lhead{}
+\chead{\emph{Amanzi: Theory Guide}}
+\rhead{}
+\lfoot{\hspace*{6pt}\emph{\thepage}}
+\cfoot{\emph{ascemdoe.org}}
+\rfoot{\emph{\today}\hspace*{6pt}}
+    
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% ---------------------
+%  Bibliography
+% ---------------------
+
+\usepackage[sort,round]{natbib}
+
+% ---------------------
+%  Layout (check)
+% ---------------------
+
+%\usepackage{layout}
+
+% ---------------------
+%  Text Positioning
+% ---------------------
+
+%  Absolute positioning of text boxes for
+%  the cover page
+%
+\usepackage[absolute,overlay]{textpos}
+
+% ==========================================================================
+
+%
+% Macros from Lichtner
+%
+
+\def\EQ#1\EN{\begin{equation}#1\end{equation}}
+\def\BA#1\EA{\begin{align}#1\end{align}}
+
+\newcommand{\arrows}{~\rightleftharpoons~} 
+\newcommand{\A}{{\mathcal A}}
+\renewcommand{\a}{{\alpha}}
+\renewcommand{\b}{{\beta}}
+\newcommand{\eq}{\ =\ }
+\newcommand{\p}{{\partial}}
+\newcommand{\bdot}{\boldsymbol{\cdot}}
+\newcommand{\bC}{\boldsymbol{C}}
+\newcommand{\bD}{\boldsymbol{D}}
+\newcommand{\bF}{\boldsymbol{F}}
+\newcommand{\bI}{\boldsymbol{I}}
+\newcommand{\bJ}{\boldsymbol{J}}
+\newcommand{\bOmega}{\boldsymbol{\Omega}}
+\newcommand{\M}{{\mathcal M}}
+\newcommand{\bn}{\boldsymbol{n}}
+\newcommand{\bnabla}{\boldsymbol{\nabla}}
+\newcommand{\bd}{\boldsymbol{d}}
+\newcommand{\bq}{\boldsymbol{q}}
+\newcommand{\br}{\boldsymbol{r}}
+\newcommand{\bv}{\boldsymbol{v}}
+\newcommand{\bg}{\boldsymbol{g}}
+\newcommand{\bk}{\boldsymbol{k}}
+\newcommand{\blambda}{\boldsymbol{\lambda}}
+\newcommand{\bsigma}{\boldsymbol{\sigma}}
+\newcommand{\bepsilon}{\boldsymbol{\epsilon}}
+
+\newcommand{\MarginPar}[1]{%
+  \hspace{1sp}\marginpar{\tiny\sffamily\raggedright%
+                         \hspace{1sp}\textcolor{red}{#1}}}
+

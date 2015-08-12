@@ -1,0 +1,115 @@
+% ==========================================================================
+%
+%  ASCEM: Theory Guide (Mathematical Modeling Requirements)
+%
+% ==========================================================================
+
+% --------------------------------------------------------------------------
+%  Options for typesetting:
+% --------------------------------
+% 
+%    final     - no watermark
+%    draft     - draft watermark
+%    sidenotes - adjusts margins and enables the todonotes package
+%
+%  For example, draft watermark with sidenotes is written
+%
+%  \documentclass[draft,sidenotes]{guides}
+%
+% --------------------------------
+
+%\documentclass[sidenotes]{../tex/latex/ascem/guides}
+\documentclass[draft]{../tex/latex/ascem/guides}
+%\documentclass{../tex/latex/ascem/guides}
+
+% ---------------------
+% Amanzi TeX:
+% ---------------------
+
+\newcommand{\AmanziTeXInputs}{..}
+
+% ---------------------
+%  ASCEM Theme:
+% ---------------------
+
+\usepackage{\AmanziTeXInputs/tex/latex/ascem/ASCEM_doc_theme}
+
+% --------------------------------
+%  Layout, fonts, macros etc. 
+% -------------------------------- 
+
+\usepackage{local}
+
+% ==========================================================================
+
+\begin{document}
+
+% -------------------------------------------
+% Title/Cover Page
+% -------------------------------------------
+%
+\input{cover}
+
+% -------------------------------------------
+% Table of Contents
+% -------------------------------------------
+%
+\clearpage
+\setcounter{tocdepth}{2}
+\tableofcontents
+
+% -------------------------------------------
+% List of Tables and Figures
+% -------------------------------------------
+
+\clearpage
+\listoftables
+\listoffigures
+
+% -------------------------------------------
+% Todo Notes list
+% -------------------------------------------
+
+\ifthenelse{\boolean{sidenotes}}{%
+  \clearpage
+  \listoftodos[ToDo List]
+}%else
+{}
+
+% -------------------------------------------
+% Content: 
+% -------------------------------------------
+
+% Sections:
+
+\clearpage
+\input{introduction}
+
+\clearpage
+\input{flow}
+
+\clearpage
+\input{transport}
+
+%\clearpage
+%\input{ChemicalReactions}
+
+%\clearpage
+%\input{sources}
+
+%\clearpage
+%\appendix
+%\input{nomenclature}
+
+% -------------------------------------------
+% Bibliography
+% -------------------------------------------
+
+\clearpage
+
+\bibliographystyle{chicago}
+\bibliography{\AmanziTeXInputs/bib/ascem}
+
+% ==========================================================================
+
+\end{document}
