@@ -53,7 +53,7 @@ class InputConverterS : public InputConverter {
   // Private data.
   int dim_;
   int nx_, ny_, nz_;
-  double xmin_, xmax_, ymin_, ymax_, zmin_, zmax_;
+  std::vector<double> lo_coords_, hi_coords_;
 };
 
 }  // namespace AmanziInput

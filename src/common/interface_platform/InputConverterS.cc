@@ -496,19 +496,14 @@ void InputConverterS::ParseMesh_()
 
     // Stash min/max coordinates for our own porpoises.
     DOMElement* box = GetChildByName_(generate, "box", found, true);
-    vector<double> lo_coords = GetAttributeVector_(box, "low_coordinates", true);
-    if (lo_coords.size() != dim_)
+    lo_coords_ = GetAttributeVector_(box, "low_coordinates", true);
+    if (lo_coords_.size() != dim_)
       ThrowErrorIllformed_("mesh->generate->box", "coordinate array", "low_coordinates");
-    vector<double> hi_coords = GetAttributeVector_(box, "high_coordinates", true);
-    if (hi_coords.size() != dim_)
+    hi_coords_ = GetAttributeVector_(box, "high_coordinates", true);
+    if (hi_coords_.size() != dim_)
       ThrowErrorIllformed_("mesh->generate->box", "coordinate array", "high_coordinates");
-    xmin_ = lo_coords[0]; xmax_ = hi_coords[0];
-    ymin_ = lo_coords[1]; ymax_ = hi_coords[1];
-    if (dim_ == 3)
-      zmin_ = lo_coords[2]; zmax_ = hi_coords[2];
-
-    AddToTable(table, MakePPPrefix("geometry", "prob_lo"), MakePPEntry(lo_coords));
-    AddToTable(table, MakePPPrefix("geometry", "prob_hi"), MakePPEntry(hi_coords));
+    AddToTable(table, MakePPPrefix("geometry", "prob_lo"), MakePPEntry(lo_coords_));
+    AddToTable(table, MakePPPrefix("geometry", "prob_hi"), MakePPEntry(hi_coords_));
 
     // Periodic boundaries are not supported.
     vector<int> is_periodic(dim_, 0);
@@ -534,11 +529,20 @@ void InputConverterS::ParseRegions_()
   list<ParmParse::PP_entry> table;
   bool found;
   
-printf("greppin regions\n");
   DOMNode* regions = GetUniqueElementByTagsString_("regions", found);
   if (found)
   {
     bool found;
+
+    // First, add an All region that encompasses the entire domain.
+    AddToTable(table, MakePPPrefix("geometry", "All", "lo_coordinate"), 
+                                   MakePPEntry(lo_coords_));
+    AddToTable(table, MakePPPrefix("geometry", "All", "hi_coordinate"), 
+                                   MakePPEntry(hi_coords_));
+    AddToTable(table, MakePPPrefix("geometry", "All", "type"), 
+                                   MakePPEntry("box"));
+    AddToTable(table, MakePPPrefix("geometry", "All", "purpose"), 
+                                   MakePPEntry("all"));
 
     // box
     vector<DOMNode*> boxes = GetChildren_(regions, "box", found);
@@ -557,9 +561,9 @@ printf("greppin regions\n");
       // Determine the geometry tolerance geometry_eps. dim_, {x,y,z}{min/max}_
       // should all be available because they are computed in ParseMesh(), 
       // which should precede this method.
-      double max_size = max(xmax_-xmin_, ymax_-ymin_);
-      if (dim_ == 3)
-        max_size = max(max_size, zmax_-zmin_);
+      double max_size = -FLT_MIN;
+      for (int d = 0; d < dim_; ++d)
+        max_size = max(max_size, hi_coords_[d] - lo_coords_[d]);
       double geometry_eps = 1e-6 * max_size; // FIXME: This factor is fixed.
       AddToTable(table, MakePPPrefix("geometry", region_name, "geometry_eps"), 
                                      MakePPEntry(geometry_eps));
