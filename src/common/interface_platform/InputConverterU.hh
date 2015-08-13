@@ -78,6 +78,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateTransportSources_();
   Teuchos::ParameterList TranslateChemistry_();
   Teuchos::ParameterList TranslateEnergy_();
+  Teuchos::ParameterList TranslateEnergyBCs_();
 
   void ProcessMacros_(const std::string& prefix, char* text_content,
                       Teuchos::ParameterList& mPL, Teuchos::ParameterList& outPL);
