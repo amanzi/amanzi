@@ -54,7 +54,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
   if (flag) rel_perm = mm.transcode(node->getNodeName());
 
   // create flow header
-  if (pk_model_["flow"] == "saturated") {
+  if (pk_model_["flow"] == "darcy") {
     Teuchos::ParameterList& darcy_list = out_list.sublist("Darcy problem");
     darcy_list.set<double>("atmospheric pressure", atm_pres);
 

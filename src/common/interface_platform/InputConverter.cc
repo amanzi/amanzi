@@ -49,7 +49,7 @@ XERCES_CPP_NAMESPACE_USE
 /* ******************************************************************
 * Initialization of xercecs document.
 ****************************************************************** */
-void InputConverter::Init(const std::string& xmlfilename)
+void InputConverter::Init(const std::string& xmlfilename, bool& found)
 {
   Teuchos::ParameterList out_list;
   
@@ -80,6 +80,11 @@ void InputConverter::Init(const std::string& xmlfilename)
   }
 
   doc_ = parser->getDocument();
+
+  // check that XML has version 2.x or version 1.x spec
+  XString mm;
+  DOMElement* element = doc_->getDocumentElement();
+  found = strcmp(mm.transcode(element->getTagName()), "amanzi_input") != 0;
 
   delete errorHandler;
 }

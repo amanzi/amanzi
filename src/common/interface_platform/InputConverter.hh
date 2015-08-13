@@ -78,7 +78,7 @@ class InputConverter {
   }
 
   // main member: creates xerces document using the file name
-  void Init(const std::string& xmlfilename);
+  void Init(const std::string& xmlfilename, bool& found);
 
   // parse various nodes
   void ParseConstants_();

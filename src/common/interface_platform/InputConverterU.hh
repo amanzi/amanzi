@@ -39,11 +39,14 @@ class InputConverterU : public InputConverter {
 
   // main members
   Teuchos::ParameterList Translate();
+  void SaveXMLFile(Teuchos::ParameterList& out_list, std::string& filename);
 
  private:
   void ParseSolutes_();
 
   Teuchos::ParameterList TranslateVerbosity_();
+  Teuchos::ParameterList TranslateMisc_();
+
   Teuchos::ParameterList TranslateMesh_();
   Teuchos::ParameterList TranslateRegions_();
   Teuchos::ParameterList TranslateOutput_();

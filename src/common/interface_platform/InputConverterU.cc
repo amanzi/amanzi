@@ -17,6 +17,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "InputConverterU.hh"
+#include "XMLParameterListWriter.hh"
 
 namespace Amanzi {
 namespace AmanziInput {
@@ -41,7 +42,8 @@ Teuchos::ParameterList InputConverterU::Translate()
   ParseConstants_();
 
   out_list.set<bool>("Native Unstructured Input", "true");
-  
+
+  out_list.sublist("Miscalleneous") = TranslateMisc_();  
   out_list.sublist("Mesh") = TranslateMesh_();
   out_list.sublist("Domain").set<int>("Spatial Dimension", dim_);
   out_list.sublist("Regions") = TranslateRegions_();
@@ -60,10 +62,10 @@ Teuchos::ParameterList InputConverterU::Translate()
 
   // analysis list
   out_list.sublist("Analysis") = CreateAnalysis_();
-  
+
   return out_list;
 }
-
+  
 
 /* ******************************************************************
 * Extract information of solute components.
@@ -140,6 +142,32 @@ Teuchos::ParameterList InputConverterU::TranslateVerbosity_()
 
 
 /* ******************************************************************
+* Miscalleneous commands
+****************************************************************** */
+Teuchos::ParameterList InputConverterU::TranslateMisc_()
+{
+  Teuchos::ParameterList out_list;
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+    *vo_->os() << "Translating miscalleneous commands" << std::endl;
+
+  XString mm;  
+  DOMNode* node;
+  DOMElement* element;
+
+  bool flag;
+  node = getUniqueElementByTagsString_("misc, echo_translated_input", flag);
+  if (flag) {
+    element = static_cast<DOMElement*>(node);
+    std::string filename = GetAttributeValueS_(element, "file_name", false, "native_v6.xml");
+
+    out_list.set<std::string>("File Name", filename);
+  }
+
+  return out_list;
+}
+
+
+/* ******************************************************************
 * Analysis list can used by special tools.
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::CreateAnalysis_()
@@ -152,6 +180,33 @@ Teuchos::ParameterList InputConverterU::CreateAnalysis_()
   out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
 
   return out_list;
+}
+
+
+/* ******************************************************************
+* Output of XML
+****************************************************************** */
+void InputConverterU::SaveXMLFile(
+    Teuchos::ParameterList& out_list, std::string& xmlfilename)
+{
+  std::string filename(xmlfilename);
+  std::string new_extension("_native_v6.xml");
+  size_t pos = filename.find(".xml");
+  filename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)14);
+
+  int precision = out_list.sublist("Miscalleneous").get<int>("output precision", 0);
+  if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Writing the translated XML to " << filename.c_str() << std::endl;;
+  }
+
+  Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
+  if (precision > 0) XMLWriter.set_precision(precision);
+  Teuchos::XMLObject XMLobj = XMLWriter.toXML(out_list);
+
+  std::ofstream xmlfile;
+  xmlfile.open(filename.c_str());
+  xmlfile << XMLobj;
 }
 
 }  // namespace AmanziInput
