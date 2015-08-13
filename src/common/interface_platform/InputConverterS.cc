@@ -458,7 +458,50 @@ void InputConverterS::ParseExecutionControls_()
 void InputConverterS::ParseNumericalControls_()
 {
   list<ParmParse::PP_entry> table;
-  ParmParse::appendTable(table);
+  bool found;
+
+  // Common controls -- currently empty.
+  DOMNode* common_controls = GetUniqueElementByTagsString_("numerical_controls, common_controls", found);
+  if (found)
+  {
+  }
+
+  // Structured controls.
+  DOMNode* structured_controls = GetUniqueElementByTagsString_("numerical_controls, structured_controls", found);
+  if (found)
+  {
+    bool found;
+
+    string petsc_options_file = GetChildValueS_(structured_controls, "petsc_options_file", found);
+    if (found) {} // Don't know where this goes!
+
+    // Steady-state controls.
+    DOMElement* steady = GetChildByName_(structured_controls, "str_steady-state_controls", found);
+    if (found)
+    {
+      bool found;
+
+      string max_pseudo_time = GetChildValueS_(steady, "max_pseudo_time", found);
+      if (found)
+        AddToTable(table, MakePPPrefix("prob", "steady_max_pseudo_time"), MakePPEntry(max_pseudo_time));
+    }
+
+    // Transient controls.
+    DOMElement* transient = GetChildByName_(structured_controls, "str_transient_controls", found);
+    if (found)
+    {
+    }
+
+    // AMR controls.
+    DOMElement* amr = GetChildByName_(structured_controls, "str_amr_controls", found);
+    if (found)
+    {
+      DOMElement* refinement = GetChildByName_(amr, "refinement_indicators", found);
+    }
+  }
+
+  if (!table.empty())
+    ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseMesh_()
