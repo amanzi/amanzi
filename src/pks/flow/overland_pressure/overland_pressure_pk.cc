@@ -70,7 +70,7 @@ OverlandPressureFlow::OverlandPressureFlow(const Teuchos::RCP<Teuchos::Parameter
 
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))
-    plist_->set("absolute error tolerance", .01 * 55000.); // h * nl
+    plist_->set("absolute error tolerance", 0.01 * 55500.0); // h * nl
 
 }
 
@@ -294,7 +294,7 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
     source_in_meters_ = plist_->get<bool>("mass source in meters", true);
     
     // source term itself [m/s]
-    mass_source_key_ = plist_->get<std::string>("mass source key", "surface-mass_source");
+    mass_source_key_ = plist_->get<std::string>("source key", "surface-mass_source");
     S->RequireField(mass_source_key_)->SetMesh(mesh_)
         ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(mass_source_key_);
@@ -324,7 +324,7 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
   S->RequireField("ponded_depth_bar")->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("ponded_depth_bar");
-
+  
   // -- effective accumulation ponded depth (smoothing of derivatives as h --> 0)
   smoothed_ponded_accumulation_ = plist_->get<bool>("smooth ponded accumulation",false);
   if (smoothed_ponded_accumulation_) {
