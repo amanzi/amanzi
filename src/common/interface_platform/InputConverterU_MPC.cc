@@ -136,7 +136,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
 
     Teuchos::ParameterList& tmp_list = out_list.sublist("time periods").sublist(ss.str());
     tmp_list.sublist("PK Tree").sublist("Flow Steady").set<std::string>("PK type", pk_model_["flow"]);
-    tmp_list.set<double>("start period time", t0);
+    tmp_list.set<double>("start period time", tp_t1.begin()->first);
     tmp_list.set<double>("end period time", tp_t1.begin()->second);
     tmp_list.set<int>("maximum cycle number", tp_max_cycles.begin()->second);
     tmp_list.set<double>("initial time step", tp_dt0.begin()->second);

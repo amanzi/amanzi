@@ -92,6 +92,8 @@ void InputConverterU::ParseSolutes_()
       phases_["water"].push_back(TrimString_(text_content));
     }
   }
+  
+  comp_names_all_ = phases_["water"];
 }
 
 

@@ -397,7 +397,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
 
     // process solute elements
     // -- Dirichlet BCs for concentration
-    std::string bctype, solute_name;
+    std::string bctype, bctype_flow, solute_name;
 
     element = static_cast<DOMElement*>(phase);
     DOMNodeList* solutes = element->getElementsByTagName(mm.transcode("solute_component"));
@@ -417,6 +417,10 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
           weight = "volume";
         } else if (strcmp(text, "perm_weighted") == 0) {
           weight = "permeability";
+        } else if (strcmp(text, "flow_weighted_conc") == 0) {
+          node_list = element->getElementsByTagName(mm.transcode("liquid_component")); 
+          GetSameChildNodes_(node_list->item(0), bctype_flow, flag, true);
+          weight = (bctype_flow == "volume_weighted") ? "volume" : "permeability";
         } else if (strcmp(text, "diffusion_dominated_release") == 0) {
           classical = false;
         } else {

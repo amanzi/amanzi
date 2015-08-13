@@ -207,7 +207,13 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
       CharToStrings_(mm.transcode(node->getTextContent())));
 
   node = GetUniqueElementByTagsString_(unstr_controls + ", preconditioner", flag); 
-  if (flag) out_list.set<std::string>("preconditioner", mm.transcode(node->getTextContent()));
+  if (flag) {
+    std::string text = mm.transcode(node->getTextContent());
+    if (text == "hypre_amg") text = "Hypre AMG";
+    if (text == "trilinos_ml") text = "Trilinos ML";
+    if (text == "block_ilu") text = "Block ILU";
+    out_list.set<std::string>("preconditioner", text);
+  }
 
   // special cases
   if (flow_single_phase_) {
