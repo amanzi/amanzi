@@ -40,14 +40,14 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "Translating chemistry" << std::endl;
 
-  XString mm;
+  MemoryManager mm;
   char* text;
   DOMNodeList *node_list, *children;
   DOMNode* node;
   DOMElement* element;
 
   bool flag;
-  node = getUniqueElementByTagNames_("process_kernels", "chemistry", flag);
+  node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
   std::string engine = GetAttributeValueS_(static_cast<DOMElement*>(node), "engine");
 
   // process engine
@@ -65,7 +65,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
   // minerals
   std::vector<std::string> minerals;
-  node = getUniqueElementByTagsString_("phases, solid_phase, minerals", flag);
+  node = GetUniqueElementByTagsString_("phases, solid_phase, minerals", flag);
   if (flag) {
     children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode("mineral"));
 
@@ -86,7 +86,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
 
-    node = getUniqueElementByTagNames_(inode, "assigned_regions", flag);
+    node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     text = mm.transcode(node->getTextContent());
     std::vector<std::string> regions = CharToStrings_(text);
 
@@ -116,10 +116,10 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
           std::stringstream ss;
           ss << "DoF " << j + 1 << " Function";
 
-          node = getUniqueElementByTagNames_(inode, "minerals", flag);
+          node = GetUniqueElementByTagsString_(inode, "minerals", flag);
           double mvf(0.0), msa(0.0);
           if (flag) {
-            element = getUniqueChildByAttribute_(node, "name", minerals[j], flag, true);
+            element = GetUniqueChildByAttribute_(node, "name", minerals[j], flag, true);
             mvf = GetAttributeValueD_(element, "volume_fraction", false, 0.0);
             msa = GetAttributeValueD_(element, "specific_surface_area", false, 0.0);
           }
@@ -130,7 +130,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     }
 
     // ion exchange
-    node = getUniqueElementByTagNames_(inode, "ion_exchange", "cec", flag);
+    node = GetUniqueElementByTagsString_(inode, "ion_exchange, cec", flag);
     if (flag) {
       Teuchos::ParameterList& sites = ic_list.sublist("ion_exchange_sites");
       double cec = std::strtod(mm.transcode(node->getTextContent()), NULL);
@@ -144,7 +144,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
       }
     }
 
-    node = getUniqueElementByTagNames_(inode, "ion_exchange", "cations", flag);
+    node = GetUniqueElementByTagsString_(inode, "ion_exchange, cations", flag);
     int nsolutes = phases_["water"].size();
     if (flag && nsolutes > 0) {
       Teuchos::ParameterList& cation = ic_list.sublist("ion_exchange_ref_cation_conc");
@@ -158,7 +158,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
         for (int j = 0; j < nsolutes; ++j) {
           std::string solute_name = phases_["water"][j];
-          element = getUniqueChildByAttribute_(node, "name", solute_name, flag, "true");
+          element = GetUniqueChildByAttribute_(node, "name", solute_name, flag, "true");
           double val = GetAttributeValueD_(element, "value", false, 0.0);
 
           std::stringstream ss;
@@ -169,7 +169,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     }
 
     // sorption 
-    node = getUniqueElementByTagNames_(inode, "sorption_isotherms", flag);
+    node = GetUniqueElementByTagsString_(inode, "sorption_isotherms", flag);
     if (flag && nsolutes > 0) {
       Teuchos::ParameterList& kd = ic_list.sublist("isotherm_kd");
       Teuchos::ParameterList& langmuir_b = ic_list.sublist("isotherm_langmuir_b");
@@ -196,7 +196,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
         for (int j = 0; j < nsolutes; ++j) {
           std::string solute_name = phases_["water"][j];
-          element = getUniqueChildByAttribute_(node, "name", solute_name, flag, "true");
+          element = GetUniqueChildByAttribute_(node, "name", solute_name, flag, "true");
 
           std::stringstream ss;
           ss << "DoF " << j + 1 << " Function";
@@ -214,7 +214,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     }
 
     // surface complexation
-    node = getUniqueElementByTagNames_(inode, "surface_complexation", flag);
+    node = GetUniqueElementByTagsString_(inode, "surface_complexation", flag);
     if (flag) {
       Teuchos::ParameterList& complexation = ic_list.sublist("surface_complexation");
 

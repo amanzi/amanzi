@@ -40,7 +40,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     *vo_->os() << "Translating cycle driver" << std::endl;
   }
 
-  XString mm;
+  MemoryManager mm;
 
   // parse available PKs
   std::map<std::string, bool> pk_state;
@@ -78,7 +78,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   // parse defaults of execution_controls 
   bool flag;
   node_list = doc_->getElementsByTagName(mm.transcode("execution_controls"));
-  node = getUniqueElementByTagNames_(node_list->item(0), "execution_control_defaults", flag);
+  node = GetUniqueElementByTagsString_(node_list->item(0), "execution_control_defaults", flag);
 
   double t0;
   char *method;
@@ -237,11 +237,11 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
 
   // get the default time steps
   bool flag;
-  XString mm;
+  MemoryManager mm;
   DOMNodeList *node_list, *children;
   DOMNode* node;
 
-  node = getUniqueElementByTagNames_("execution_controls", "execution_control_defaults", flag);
+  node = GetUniqueElementByTagsString_("execution_controls, execution_control_defaults", flag);
 
   double dt_init_d, dt_max_d;
   dt_init_d = GetAttributeValueD_(static_cast<DOMElement*>(node), "init_dt", false, RESTART_TIMESTEP);

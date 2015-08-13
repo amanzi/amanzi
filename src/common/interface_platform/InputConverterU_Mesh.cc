@@ -61,7 +61,7 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
     *vo_->os() << "Translating unstructured mesh" << std::endl;
   }
 
-  XString mm;
+  MemoryManager mm;
   DOMNodeList *node_list, *children;
   DOMNode* node;
   DOMElement* element;
@@ -270,7 +270,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
     *vo_->os() << "Translating regions" << std::endl;
   }
 
-  XString mm;
+  MemoryManager mm;
   DOMNodeList* node_list;
   DOMNode *node, *node_attr;
   DOMElement* element;

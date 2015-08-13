@@ -80,9 +80,10 @@ void InputConverter::Init(const std::string& xmlfilename, bool& found)
   }
 
   doc_ = parser->getDocument();
+  FilterNodes(doc_, "comments");
 
   // check that XML has version 2.x or version 1.x spec
-  XString mm;
+  MemoryManager mm;
   DOMElement* element = doc_->getDocumentElement();
   found = strcmp(mm.transcode(element->getTagName()), "amanzi_input") != 0;
 
@@ -95,7 +96,7 @@ void InputConverter::Init(const std::string& xmlfilename, bool& found)
 ****************************************************************** */
 void InputConverter::ParseConstants_()
 {
-  XString mm;
+  MemoryManager mm;
 
   char *tagname, *text;
   DOMNodeList *node_list, *children;
@@ -145,84 +146,24 @@ void InputConverter::ParseConstants_()
 
 
 /* ******************************************************************
-* Returns node tag1->tag2 where both tag1 and tag2 are unique leaves
-* of the tree.
+* Filters out all nodes named "filter" starting with node "parent".
 ****************************************************************** */
-DOMNode* InputConverter::getUniqueElementByTagNames_(
-    const std::string& tag1, const std::string& tag2, bool& flag)
+void InputConverter::FilterNodes(DOMNode* parent, const std::string& filter)
 {
-  flag = false;
-
-  XString mm;
-  DOMNode* node;
-
-  DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode(tag1.c_str()));
-  if (node_list->getLength() != 1) return node;
-
-  int ntag2(0);
-  DOMNodeList* children = node_list->item(0)->getChildNodes();
-
-  for (int i = 0; i < children->getLength(); i++) {
-    DOMNode* inode = children->item(i);
-    if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-      char* tagname = mm.transcode(inode->getNodeName());   
-      if (strcmp(tagname, tag2.c_str()) == 0) {
-        node = inode;
-        ntag2++;
+  DOMNodeList* children = parent->getChildNodes();
+  MemoryManager mm;
+  
+  for (int i = 0; i < children->getLength(); ++i) {
+    DOMNode* child = children->item(i);
+  
+    if (child->getNodeType() == DOMNode::ELEMENT_NODE) {
+      if (mm.transcode(child->getNodeName()) == filter) {
+        parent->removeChild(child);
+      } else {
+        FilterNodes(child, filter);
       }
     }
   }
-
-  if (ntag2 == 1) flag = true;
-  return node;
-}
-
-
-/* ******************************************************************
-* Returns node tag1->tag2->tag3 where tag1, tag2 iand tag3 are unique
-* leaves of the tree.
-****************************************************************** */
-DOMNode* InputConverter::getUniqueElementByTagNames_(
-    const std::string& tag1, const std::string& tag2, const std::string& tag3, bool& flag)
-{
-  flag = false;
-
-  XString mm;
-  int ntag2(0), ntag3(0);
-  DOMNode* node;
-
-  DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode(tag1.c_str()));
-  if (node_list->getLength() != 1) return node;
-
-  // first leaf
-  DOMNodeList* children = node_list->item(0)->getChildNodes();
-  for (int i = 0; i < children->getLength(); i++) {
-    DOMNode* inode = children->item(i);
-    if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-      char* tagname = mm.transcode(inode->getNodeName());   
-      if (strcmp(tagname, tag2.c_str()) == 0) {
-        node = inode;
-        ntag2++;
-      }
-    }
-  }
-  if (ntag2 != 1) return node;
-
-  // second leaf
-  children = node->getChildNodes();
-  for (int i = 0; i < children->getLength(); i++) {
-    DOMNode* inode = children->item(i);
-    if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-      char* tagname = mm.transcode(inode->getNodeName());   
-      if (strcmp(tagname, tag3.c_str()) == 0) {
-        node = inode;
-        ntag3++;
-      }
-    }
-  }
-  if (ntag3 == 1) flag = true;
-
-  return node;
 }
 
 
@@ -230,12 +171,12 @@ DOMNode* InputConverter::getUniqueElementByTagNames_(
 * Return node described by the list of consequtive names tags 
 * separated by commas. It 
 ****************************************************************** */
-DOMNode* InputConverter::getUniqueElementByTagsString_(
+DOMNode* InputConverter::GetUniqueElementByTagsString_(
     const std::string& tags, bool& flag)
 {
   flag = false;
 
-  XString mm;
+  MemoryManager mm;
   DOMNode* node;
 
   std::vector<std::string> tag_names = CharToStrings_(tags.c_str());
@@ -268,85 +209,10 @@ DOMNode* InputConverter::getUniqueElementByTagsString_(
 
 
 /* ******************************************************************
-* Returns node tag1->tag2 where both tag1 and tag2 are unique leaves
-* of the tree.
-****************************************************************** */
-DOMNode* InputConverter::getUniqueElementByTagNames_(
-    const DOMNode* node1, const std::string& tag2, bool& flag)
-{
-  flag = false;
-
-  int ntag2(0);
-  DOMNode* node;
-  DOMNodeList* children = node1->getChildNodes();
-
-  for (int i = 0; i < children->getLength(); i++) {
-    DOMNode* inode = children->item(i);
-    if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-      char* tagname = XMLString::transcode(inode->getNodeName());   
-      if (strcmp(tagname, tag2.c_str()) == 0) {
-        node = inode;
-        ntag2++;
-      }
-      XMLString::release(&tagname);
-    }
-  }
-
-  if (ntag2 == 1) flag = true;
-  return node;
-}
-
-
-/* ******************************************************************
-* Returns node tag1->tag2 where both tag1 and tag2 are unique leaves
-* of the tree.
-****************************************************************** */
-DOMNode* InputConverter::getUniqueElementByTagNames_(
-    const DOMNode* node1, const std::string& tag2, const std::string& tag3, bool& flag)
-{
-  flag = false;
-
-  int ntag2(0), ntag3(0);
-  DOMNode* node;
-  DOMNodeList* children = node1->getChildNodes();
-
-  for (int i = 0; i < children->getLength(); i++) {
-    DOMNode* inode = children->item(i);
-    if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-      char* tagname = XMLString::transcode(inode->getNodeName());   
-      if (strcmp(tagname, tag2.c_str()) == 0) {
-        node = inode;
-        ntag2++;
-      }
-      XMLString::release(&tagname);
-    }
-  }
-  if (ntag2 != 1) return node;
-
-  // second leaf
-  children = node->getChildNodes();
-  for (int i = 0; i < children->getLength(); i++) {
-    DOMNode* inode = children->item(i);
-    if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-      char* tagname = XMLString::transcode(inode->getNodeName());   
-      if (strcmp(tagname, tag3.c_str()) == 0) {
-        node = inode;
-        ntag3++;
-      }
-      XMLString::release(&tagname);
-    }
-  }
-  if (ntag3 == 1) flag = true;
-
-  return node;
-}
-
-
-/* ******************************************************************
 * Return node described by the list of consequtive names tags 
 * separated by commas.
 ****************************************************************** */
-DOMNode* InputConverter::getUniqueElementByTagsString_(
+DOMNode* InputConverter::GetUniqueElementByTagsString_(
     const DOMNode* node1, const std::string& tags, bool& flag)
 {
   DOMNode* node;
@@ -383,13 +249,13 @@ DOMNode* InputConverter::getUniqueElementByTagsString_(
 /* ******************************************************************
 * Returns the child with the given attribute name and value.
 ****************************************************************** */
-DOMElement* InputConverter::getUniqueChildByAttribute_(
+DOMElement* InputConverter::GetUniqueChildByAttribute_(
     xercesc::DOMNode* node, const char* attr_name, const std::string& attr_value,
     bool& flag, bool exception)
 {
   flag = false;
 
-  XString mm;
+  MemoryManager mm;
   int n(0);
   DOMElement* child = NULL;
 	
@@ -424,14 +290,14 @@ DOMElement* InputConverter::getUniqueChildByAttribute_(
 
 /* ******************************************************************
 * Extracts children and verifies that their have the common tagname.
-* The first child is defined as the first element other than comment.
+* The name is the name of the first element.
 ****************************************************************** */
-std::vector<DOMNode*> InputConverter::getSameChildNodes_(
+std::vector<DOMNode*> InputConverter::GetSameChildNodes_(
     DOMNode* node, std::string& name, bool& flag, bool exception)
 {
   flag = false;
 
-  XString mm;
+  MemoryManager mm;
   int n(0), m(0);
   std::vector<DOMNode*> same;
 
@@ -441,14 +307,12 @@ std::vector<DOMNode*> InputConverter::getSameChildNodes_(
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
     char* text = mm.transcode(inode->getNodeName());
-    if (strcmp(text, "comments") != 0) {
-      if (n == 0) name = text;
-      if (strcmp(name.c_str(), text) == 0) {
-        same.push_back(inode);
-        n++;
-      } 
-      m++;
-    }
+    if (n == 0) name = text;
+    if (strcmp(name.c_str(), text) == 0) {
+      same.push_back(inode);
+      n++;
+    } 
+    m++;
   }
   if (n == m) flag = true;
 
@@ -473,7 +337,7 @@ double InputConverter::GetAttributeValueD_(
     DOMElement* elem, const char* attr_name, bool exception, double default_val)
 {
   double val;
-  XString mm;
+  MemoryManager mm;
 
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
     char* text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
@@ -500,7 +364,7 @@ int InputConverter::GetAttributeValueL_(
     DOMElement* elem, const char* attr_name, bool exception, int default_val)
 {
   int val;
-  XString mm;
+  MemoryManager mm;
 
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
     char* text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
@@ -527,7 +391,7 @@ std::string InputConverter::GetAttributeValueS_(
     DOMElement* elem, const char* attr_name, bool exception, std::string default_val)
 {
   std::string val;
-  XString mm;
+  MemoryManager mm;
 
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
     val = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
@@ -552,7 +416,7 @@ std::vector<double> InputConverter::GetAttributeVector_(
     DOMElement* elem, const char* attr_name)
 {
   std::vector<double> val;
-  XString mm;
+  MemoryManager mm;
 
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
     char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
@@ -580,7 +444,7 @@ std::string InputConverter::GetAttributeValueS_(
     if (val == *it) return val;
   }
 
-  XString mm;
+  MemoryManager mm;
   char* tagname = mm.transcode(elem->getNodeName());
   Errors::Message msg;
   msg << "Validation of attribute \"" << attr_name << "\""

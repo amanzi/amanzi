@@ -52,7 +52,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "Translating output" << std::endl;
 
-  XString mm;
+  MemoryManager mm;
 
   char *tagname, *text;
   DOMNamedNodeMap* attr_map;
@@ -164,7 +164,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
 
   // get output->vis node - this node must exist ONCE
   bool flag;
-  node = getUniqueElementByTagNames_("output", "vis", flag);
+  node = GetUniqueElementByTagsString_("output, vis", flag);
 
   if (flag && node->getNodeType() == DOMNode::ELEMENT_NODE) {
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -195,7 +195,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
   }
 
   // get output->checkpoint node - this node must exist ONCE
-  node = getUniqueElementByTagNames_("output", "checkpoint", flag);
+  node = GetUniqueElementByTagsString_("output, checkpoint", flag);
 
   if (flag && node->getNodeType() == DOMNode::ELEMENT_NODE) {
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -224,7 +224,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
   }
 
   // get output->walkabout node - this node must exist ONCE
-  node = getUniqueElementByTagNames_("output", "walkabout", flag);
+  node = GetUniqueElementByTagsString_("output, walkabout", flag);
 
   if (flag && node->getNodeType() == DOMNode::ELEMENT_NODE) {
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -252,7 +252,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
   }
 
   // get output->observations node - this node must exist ONCE
-  node = getUniqueElementByTagNames_("output", "observations", flag);
+  node = GetUniqueElementByTagsString_("output, observations", flag);
 
   if (flag && node->getNodeType() == DOMNode::ELEMENT_NODE) {
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -340,8 +340,8 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
                   char* value = mm.transcode(knode->getTextContent());
 
                   if (strcmp(elem, "assigned_regions") == 0) {
-                    //TODO: EIB - really a note, REGION != ASSIGNED REGIONS, this isn't consistent!!!
                     obPL.set<std::string>("region", TrimString_(value));
+                    vv_obs_regions_.push_back(TrimString_(value));
                   } else if (strcmp(elem, "functional") == 0) {
                     if (strcmp(value, "point") == 0) {
                       obPL.set<std::string>("functional", "Observation Data: Point");

@@ -39,7 +39,7 @@ class InputConverterU : public InputConverter {
 
   // main members
   Teuchos::ParameterList Translate();
-  void SaveXMLFile(Teuchos::ParameterList& out_list, std::string& filename);
+  void SaveXMLFile(Teuchos::ParameterList& plist, std::string& filename);
 
  private:
   void ParseSolutes_();
@@ -87,6 +87,8 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList CreateAnalysis_();
   Teuchos::ParameterList CreateRegionAll_();
   void CreateBDGFile(Teuchos::ParameterList& sorption, std::string& filename);
+
+  void FilterEmptySublists_(Teuchos::ParameterList& plist);
 
  private:
   int dim_;

@@ -62,6 +62,7 @@ Teuchos::ParameterList InputConverterU::Translate()
 
   // analysis list
   out_list.sublist("Analysis") = CreateAnalysis_();
+  FilterEmptySublists_(out_list);
 
   return out_list;
 }
@@ -76,10 +77,10 @@ void InputConverterU::ParseSolutes_()
   char* tagname;
   char* text_content;
 
-  XString mm;
+  MemoryManager mm;
 
   DOMNode* inode = doc_->getElementsByTagName(mm.transcode("phases"))->item(0);
-  DOMNode* node = getUniqueElementByTagsString_(inode, "liquid_phase, dissolved_components, solutes", flag);
+  DOMNode* node = GetUniqueElementByTagsString_(inode, "liquid_phase, dissolved_components, solutes", flag);
 
   DOMNodeList* children = node->getChildNodes();
   for (int i = 0; i < children->getLength(); ++i) {
@@ -106,7 +107,7 @@ Teuchos::ParameterList InputConverterU::TranslateVerbosity_()
   DOMNamedNodeMap* attr_map;
   char* text_content;
 
-  XString mm;
+  MemoryManager mm;
     
   // get execution contorls node
   node_list = doc_->getElementsByTagName(mm.transcode("execution_controls"));
@@ -150,12 +151,12 @@ Teuchos::ParameterList InputConverterU::TranslateMisc_()
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "Translating miscalleneous commands" << std::endl;
 
-  XString mm;  
+  MemoryManager mm;  
   DOMNode* node;
   DOMElement* element;
 
   bool flag;
-  node = getUniqueElementByTagsString_("misc, echo_translated_input", flag);
+  node = GetUniqueElementByTagsString_("misc, echo_translated_input", flag);
   if (flag) {
     element = static_cast<DOMElement*>(node);
     std::string filename = GetAttributeValueS_(element, "file_name", false, "native_v6.xml");
@@ -181,6 +182,25 @@ Teuchos::ParameterList InputConverterU::CreateAnalysis_()
 
   return out_list;
 }
+
+
+/* ******************************************************************
+* Filters out empty sublists starting with node "parent".
+****************************************************************** */
+void InputConverterU::FilterEmptySublists_(Teuchos::ParameterList& plist)
+{
+  for (Teuchos::ParameterList::ConstIterator it = plist.begin(); it != plist.end(); ++it) {
+    if (plist.isSublist(it->first)) {
+      Teuchos::ParameterList& slist = plist.sublist(it->first);
+      if (slist.numParams() == 0) {
+        plist.remove(it->first);
+      } else {
+        FilterEmptySublists_(slist);
+      }
+    }
+  }
+}
+
 
 
 /* ******************************************************************

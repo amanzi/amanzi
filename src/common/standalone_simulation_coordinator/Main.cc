@@ -255,12 +255,14 @@ int main(int argc, char *argv[]) {
 	  }
 	}
         // optional unstructured converter
-        if (echo_list.get<std::string>("Format") == "native") {
-          bool found;
-          Amanzi::AmanziInput::InputConverterU converter;
-          converter.Init(xmlInFileName, found);
-          driver_parameter_list = converter.Translate();
-          if (rank == 0) converter.SaveXMLFile(driver_parameter_list, xmlInFileName);
+	if (echo_list.isParameter("Format")) {
+          if (echo_list.get<std::string>("Format") == "native") {
+            bool found;
+            Amanzi::AmanziInput::InputConverterU converter;
+            converter.Init(xmlInFileName, found);
+            driver_parameter_list = converter.Translate();
+            if (rank == 0) converter.SaveXMLFile(driver_parameter_list, xmlInFileName);
+          }
         }
       } else if(spec == "v1") {
         Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);

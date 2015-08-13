@@ -39,7 +39,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "Translating transport" << std::endl;
 
-  XString mm;
+  MemoryManager mm;
 
   char *text, *tagname;
   DOMNodeList *node_list, *children;
@@ -49,7 +49,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   bool flag;
   double cfl(1.0);
 
-  node = getUniqueElementByTagNames_("unstructured_controls", "unstr_transport_controls", "cfl", flag);
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, cfl", flag);
   if (flag) {
     text = mm.transcode(node->getTextContent());
     cfl = strtod(text, NULL);
@@ -66,14 +66,14 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   out_list.set<bool>("transport subcycling", TRANSPORT_SUBCYCLING);
 
   // overwrite data from expert parameters  
-  node = getUniqueElementByTagNames_("unstructured_controls", "unstr_transport_controls", "sub_cycling", flag);
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, sub_cycling", flag);
   if (flag) {
     text = mm.transcode(node->getTextContent());
     out_list.set<bool>("transport subcycling", (strcmp(text, "on") == 0));
   }
 
   int poly_order(0);
-  node = getUniqueElementByTagNames_("unstructured_controls", "unstr_transport_controls", "algorithm", flag);
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, algorithm", flag);
   if (flag) {
     text = mm.transcode(node->getTextContent());
     if (strcmp(text, "explicit first-order") == 0) {
@@ -118,14 +118,14 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       std::string mat_name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
 
       // -- regions
-      node = getUniqueElementByTagNames_(inode, "assigned_regions", flag);
+      node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
       Teuchos::ParameterList& tmp_list = mat_list.sublist(mat_name);
       tmp_list.set<Teuchos::Array<std::string> >("regions", regions);
 
       // -- dispersion tensor
-      node = getUniqueElementByTagNames_(inode, "mechanical_properties", "dispersion_tensor", flag);
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, dispersion_tensor", flag);
       if (flag) {
         double al, alh, alv, at, ath, atv;
         std::string model = GetAttributeValueS_(static_cast<DOMElement*>(node), "type");
@@ -162,7 +162,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       }
 
       // -- tortousity
-      node = getUniqueElementByTagNames_(inode, "mechanical_properties", "tortuosity", flag);
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, tortuosity", flag);
       if (flag) {
         double val = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
         tmp_list.set<double>("aqueous tortuosity", val);
@@ -172,7 +172,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
 
   // -- molecular diffusion
   //    check in phases->water list (other solutes are ignored)
-  node = getUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, solutes", flag);
+  node = GetUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, solutes", flag);
   if (flag) {
     Teuchos::ParameterList& diff_list = out_list.sublist("molecular diffusion");
     std::vector<std::string> aqueous_names;
@@ -199,7 +199,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
 
   // -- molecular diffusion
   //    check in phases->air list (other solutes are ignored)
-  node = getUniqueElementByTagsString_("phases, gas_phase, dissolved_components, solutes", flag);
+  node = GetUniqueElementByTagsString_("phases, gas_phase, dissolved_components, solutes", flag);
   if (flag) {
     Teuchos::ParameterList& diff_list = out_list.sublist("molecular diffusion");
     std::vector<std::string> gaseous_names;
@@ -244,7 +244,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
 {
   Teuchos::ParameterList out_list;
 
-  XString mm;
+  MemoryManager mm;
 
   char *text, *tagname;
   DOMNodeList *node_list, *children;
@@ -264,13 +264,13 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
 
     // read the assigned regions
     bool flag;
-    node = getUniqueElementByTagsString_(inode, "assigned_regions", flag);
+    node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     text = mm.transcode(node->getTextContent());
     std::vector<std::string> regions = CharToStrings_(text);
 
     vv_bc_regions_.insert(vv_bc_regions_.end(), regions.begin(), regions.end());
 
-    phase = getUniqueElementByTagNames_(inode, "liquid_phase", flag);
+    phase = GetUniqueElementByTagsString_(inode, "liquid_phase", flag);
     if (!flag) continue;
 
     // process solute sources for concentration
@@ -283,7 +283,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
       for (int n = 0; n < solutes->getLength(); ++n) {
         node = solutes->item(n);
         // process a group of similar elements defined by the first element
-        std::vector<DOMNode*> same_list = getSameChildNodes_(node, bctype, flag, true);
+        std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
         solute_name = GetAttributeValueS_(static_cast<DOMElement*>(same_list[0]), "name");
 
         std::map<double, double> tp_values;
@@ -324,9 +324,9 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
     }
 
     // -- geochemistry BCs 
-    node = getUniqueElementByTagNames_(phase, "geochemistry", flag);
+    node = GetUniqueElementByTagsString_(phase, "geochemistry", flag);
     if (flag) {
-      std::vector<DOMNode*> same_list = getSameChildNodes_(node, bctype, flag, true);
+      std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
       std::map<double, std::string> tp_forms, tp_values;
 
       for (int j = 0; j < same_list.size(); ++j) {
@@ -366,7 +366,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
 {
   Teuchos::ParameterList out_list;
 
-  XString mm;
+  MemoryManager mm;
 
   char *text, *tagname;
   DOMNodeList *node_list, *children;
@@ -386,13 +386,13 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
 
     // read the assigned regions
     bool flag;
-    node = getUniqueElementByTagsString_(inode, "assigned_regions", flag);
+    node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     text = mm.transcode(node->getTextContent());
     std::vector<std::string> regions = CharToStrings_(text);
 
     vv_src_regions_.insert(vv_src_regions_.end(), regions.begin(), regions.end());
 
-    phase = getUniqueElementByTagNames_(inode, "liquid_phase", flag);
+    phase = GetUniqueElementByTagsString_(inode, "liquid_phase", flag);
     if (!flag) continue;
 
     // process solute elements
@@ -406,7 +406,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
       for (int n = 0; n < solutes->getLength(); ++n) {
         node = solutes->item(n);
         // get a group of similar elements defined by the first element
-        std::vector<DOMNode*> same_list = getSameChildNodes_(node, bctype, flag, true);
+        std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
         solute_name = GetAttributeValueS_(static_cast<DOMElement*>(same_list[0]), "name");
 
         // weighting method
