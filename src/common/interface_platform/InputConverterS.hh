@@ -12,6 +12,8 @@
 #ifndef AMANZI_INPUT_CONVERTER_STRUCTURED_HH_
 #define AMANZI_INPUT_CONVERTER_STRUCTURED_HH_
 
+#ifdef ENABLE_Structured
+
 #include "ParmParse.H"
 #include "InputConverter.hh"
 
@@ -58,5 +60,7 @@ class InputConverterS : public InputConverter {
 
 }  // namespace AmanziInput
 }  // namespace Amanzi
+
+#endif
 
 #endif

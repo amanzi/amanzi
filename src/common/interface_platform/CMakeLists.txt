@@ -31,6 +31,10 @@ endif()
 
 include_directories(${Boost_INCLUDE_DIRS})
 
+if (ENABLE_Structured)
+  add_definitions("-DENABLE_Structured")
+endif()
+
 #
 # interface library
 #
@@ -72,11 +76,13 @@ if (BUILD_TESTS)
                                              ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
  
     # Test: translate Amanzi-S input
-    add_amanzi_test(converter_s converter_s
-                    KIND int
-                    SOURCE test/Main.cc test/converter_s.cc
-                    LINK_LIBS ${amanzi_libs} ${CCSE_LIBRARIES} ${UnitTest_LIBRARIES} ${Boost_LIBRARIES}
-                                             ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
+    if (ENABLE_Structured)
+      add_amanzi_test(converter_s converter_s
+                      KIND int
+                      SOURCE test/Main.cc test/converter_s.cc
+                      LINK_LIBS ${amanzi_libs} ${CCSE_LIBRARIES} ${UnitTest_LIBRARIES} ${Boost_LIBRARIES}
+                                               ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
+    endif()
  
 endif()
 

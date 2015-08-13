@@ -9,6 +9,8 @@
   Authors: Jeffrey Johnson (jnjohnson@lbl.gov)
 */
 
+#ifdef ENABLE_Structured
+
 #include <boost/algorithm/string.hpp>  // For string trimming
 #include "BoxLib.H"
 
@@ -1252,3 +1254,4 @@ void InputConverterS::Translate()
 }  // namespace AmanziInput
 }  // namespace Amanzi
 
+#endif
