@@ -199,7 +199,8 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
 
   node = GetUniqueElementByTagsString_(
       unstr_controls + ", nonlinear_iteration_divergence_factor", flag); 
-  solver->set<double>("max du growth factor", strtod(mm.transcode(node->getTextContent()), NULL));
+  if (flag) solver->set<double>("max du growth factor",
+       strtod(mm.transcode(node->getTextContent()), NULL));
 
   node = GetUniqueElementByTagsString_(unstr_controls + ", error_control_options", flag); 
   if (flag) out_list.set<Teuchos::Array<std::string> >("error control options",

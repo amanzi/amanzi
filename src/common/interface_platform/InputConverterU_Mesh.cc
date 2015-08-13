@@ -363,7 +363,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
           out_list.sublist(reg_name).sublist("Region: Color Function") = rfPL;
         }
         else if (strcmp(text.c_str(), "labeled set") == 0) {
-          std::string value = GetAttributeValueS_(reg_elem, "labeled set");
+          std::string value = GetAttributeValueS_(reg_elem, "label");
           rfPL.set<std::string>("Label", value);
           
           value = GetAttributeValueS_(reg_elem, "format");

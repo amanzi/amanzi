@@ -36,8 +36,8 @@ TEST(CONVERTER_BASE) {
   if (MyPID == 0) std::cout << "Test: convert transport test" << std::endl;
 
   // read parameter list
-  // std::string xmlFileName = "test/converter_u_base.xml";
-  std::string xmlFileName = "test/test.xml";
+  std::string xmlFileName = "test/converter_u_base.xml";
+  // std::string xmlFileName = "test/test.xml";
 
   bool found;
   Amanzi::AmanziInput::InputConverterU converter;
@@ -56,9 +56,9 @@ TEST(CONVERTER_BASE) {
     std::cout << "Successful translation. Validating the result...\n\n";
 
     // development
-    Teuchos::RCP<Teuchos::ParameterList> old_xml;
-    old_xml = Teuchos::getParametersFromXmlFile("test/validate.xml");
-    new_xml.validateParameters(*old_xml);
+    // Teuchos::RCP<Teuchos::ParameterList> old_xml;
+    // old_xml = Teuchos::getParametersFromXmlFile("test/validate.xml");
+    // new_xml.validateParametersAndSetDefaults(*old_xml);
   } catch (std::exception& e) {
     std::cout << e.what() << std::endl;
   }
