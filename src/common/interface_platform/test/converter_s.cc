@@ -35,7 +35,14 @@ TEST(CONVERTER_S) {
   std::string xmlFileName = "test/converter_s_input.xml";
 
   Amanzi::AmanziInput::InputConverterS converter;
-  converter.Init(xmlFileName);
+  bool valid;
+  converter.Init(xmlFileName, valid);
+  if (!valid)
+  {
+    std::cout << "Invalid Amanzi v2.1 XML input file: " << xmlFileName << std::endl;
+    exit(-1);
+  }
+
   try {
     // Translate the input. This produces a singleton instance of ParmParse that is 
     // populated with data.

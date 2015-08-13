@@ -29,20 +29,20 @@ class InputConverterS : public InputConverter {
 
  private:
 
-  void ParseUnits();
-  void ParseDefinitions();
-  void ParseExecutionControls();
-  void ParseNumericalControls();
-  void ParseMesh();
-  void ParseRegions();
-  void ParseGeochemistry();
-  void ParseMaterials();
-  void ParseProcessKernels();
-  void ParsePhases();
-  void ParseInitialConditions();
-  void ParseBoundaryConditions();
-  void ParseOutput();
-  void ParseMisc();
+  void ParseUnits_();
+  void ParseDefinitions_();
+  void ParseExecutionControls_();
+  void ParseNumericalControls_();
+  void ParseMesh_();
+  void ParseRegions_();
+  void ParseGeochemistry_();
+  void ParseMaterials_();
+  void ParseProcessKernels_();
+  void ParsePhases_();
+  void ParseInitialConditions_();
+  void ParseBoundaryConditions_();
+  void ParseOutput_();
+  void ParseMisc_();
 
   void ParseMechProperty_(xercesc::DOMElement* mech_prop_node, 
                           const std::string& material_name, 

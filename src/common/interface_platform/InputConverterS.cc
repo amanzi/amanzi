@@ -174,7 +174,7 @@ void InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node,
                                          bool required)
 {
   bool found;
-  DOMElement* property = GetChildWithName_(mech_prop_node, property_name, found, required);
+  DOMElement* property = GetChildByName_(mech_prop_node, property_name, found, required);
   if (found)
   {
     if (property_name == "dispersion_tensor") // Weirdo!
@@ -280,20 +280,20 @@ InputConverterS::~InputConverterS()
 {
 }
 
-void InputConverterS::ParseUnits()
+void InputConverterS::ParseUnits_()
 {
   // Units are supposedly not supported yet. I guess we'll find out!
 }
 
-void InputConverterS::ParseDefinitions()
+void InputConverterS::ParseDefinitions_()
 {
   list<ParmParse::PP_entry> table;
   bool found;
-  DOMNode* macros = getUniqueElementByTagNames_("definitions", "macros", found);
+  DOMNode* macros = GetUniqueElementByTagsString_("definitions, macros", found);
   if (found)
   {
     bool found;
-    vector<DOMNode*> time_macros = getChildren_(macros, "time_macro", found);
+    vector<DOMNode*> time_macros = GetChildren_(macros, "time_macro", found);
     vector<string> time_macro_names;
     if (found)
     {
@@ -341,7 +341,7 @@ void InputConverterS::ParseDefinitions()
         {
           // We're just looking for times.
           bool found;
-          vector<DOMNode*> time_nodes = getChildren_(time_macro, "time", found, true);
+          vector<DOMNode*> time_nodes = GetChildren_(time_macro, "time", found, true);
           vector<string> times;
           for (size_t j = 0; j < time_nodes.size(); ++j)
             times.push_back(XMLString::transcode(time_nodes[j]->getTextContent()));
@@ -358,7 +358,7 @@ void InputConverterS::ParseDefinitions()
     AddToTable(table, MakePPPrefix("amr", "time_macros"), 
                                    MakePPEntry(time_macro_names));
 
-    vector<DOMNode*> cycle_macros = getChildren_(macros, "cycle_macro", found);
+    vector<DOMNode*> cycle_macros = GetChildren_(macros, "cycle_macro", found);
     vector<string> cycle_macro_names;
     if (found)
     {
@@ -410,13 +410,13 @@ void InputConverterS::ParseDefinitions()
     ParmParse::appendTable(table);
 }
 
-void InputConverterS::ParseExecutionControls()
+void InputConverterS::ParseExecutionControls_()
 {
   list<ParmParse::PP_entry> table;
   bool found;
 
   // Verbosity level(s).
-  DOMNode* verbosity = getUniqueElementByTagNames_("execution_controls", "verbosity", found);
+  DOMNode* verbosity = GetUniqueElementByTagsString_("execution_controls, verbosity", found);
   if (found)
   {
     DOMElement* verb = static_cast<DOMElement*>(verbosity);
@@ -455,20 +455,20 @@ void InputConverterS::ParseExecutionControls()
     ParmParse::appendTable(table);
 }
 
-void InputConverterS::ParseNumericalControls()
+void InputConverterS::ParseNumericalControls_()
 {
   list<ParmParse::PP_entry> table;
   ParmParse::appendTable(table);
 }
 
-void InputConverterS::ParseMesh()
+void InputConverterS::ParseMesh_()
 {
   list<ParmParse::PP_entry> table;
   bool found;
 
-  DOMElement* dimension = static_cast<DOMElement*>(getUniqueElementByTagNames_("mesh", "dimension", found));
+  DOMElement* dimension = static_cast<DOMElement*>(GetUniqueElementByTagsString_("mesh, dimension", found));
   {
-    XString mm;
+    MemoryManager mm;
     string dim = XMLString::transcode(dimension->getTextContent());
     if (dim == "2")
       dim_ = 2;
@@ -477,11 +477,11 @@ void InputConverterS::ParseMesh()
     else
       ThrowErrorIllformed_("mesh->generate", "integer (2 or 3)", "dimension");
   }
-  DOMElement* generate = static_cast<DOMElement*>(getUniqueElementByTagNames_("mesh", "generate", found));
+  DOMElement* generate = static_cast<DOMElement*>(GetUniqueElementByTagsString_("mesh, generate", found));
   if (found)
   {
     bool found;
-    DOMElement* number_of_cells = GetChildWithName_(generate, "number_of_cells", found, true);
+    DOMElement* number_of_cells = GetChildByName_(generate, "number_of_cells", found, true);
     nx_ = GetAttributeValueL_(number_of_cells, "nx", true);
     ny_ = GetAttributeValueL_(number_of_cells, "ny", true);
     vector<int> n(dim_);
@@ -495,7 +495,7 @@ void InputConverterS::ParseMesh()
     AddToTable(table, MakePPPrefix("amr", "n_cell"), MakePPEntry(n));
 
     // Stash min/max coordinates for our own porpoises.
-    DOMElement* box = GetChildWithName_(generate, "box", found, true);
+    DOMElement* box = GetChildByName_(generate, "box", found, true);
     vector<double> lo_coords = GetAttributeVector_(box, "low_coordinates", true);
     if (lo_coords.size() != dim_)
       ThrowErrorIllformed_("mesh->generate->box", "coordinate array", "low_coordinates");
@@ -529,25 +529,19 @@ void InputConverterS::ParseMesh()
     ParmParse::appendTable(table);
 }
 
-void InputConverterS::ParseRegions()
+void InputConverterS::ParseRegions_()
 {
   list<ParmParse::PP_entry> table;
-  bool found = false;
+  bool found;
   
-  XString mm;
-  DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("regions"));
-  DOMNode* regions;
-  if (node_list->getLength() == 1)
-  {
-    found = true;
-    regions = node_list->item(0);
-  }
+printf("greppin regions\n");
+  DOMNode* regions = GetUniqueElementByTagsString_("regions", found);
   if (found)
   {
     bool found;
 
     // box
-    vector<DOMNode*> boxes = getChildren_(regions, "box", found);
+    vector<DOMNode*> boxes = GetChildren_(regions, "box", found);
     for (size_t i = 0; i < boxes.size(); ++i)
     {
       bool found;
@@ -587,13 +581,13 @@ void InputConverterS::ParseRegions()
     }
 
     // FIXME: color functions (what files do we read from?)
-    vector<DOMNode*> colors = getChildren_(regions, "color", found);
+    vector<DOMNode*> colors = GetChildren_(regions, "color", found);
     for (size_t i = 0; i < colors.size(); ++i)
     {
     }
 
     // point
-    vector<DOMNode*> points = getChildren_(regions, "point", found);
+    vector<DOMNode*> points = GetChildren_(regions, "point", found);
     for (size_t i = 0; i < points.size(); ++i)
     {
       bool found;
@@ -606,7 +600,7 @@ void InputConverterS::ParseRegions()
     }
 
     // plane
-    vector<DOMNode*> planes = getChildren_(regions, "plane", found);
+    vector<DOMNode*> planes = GetChildren_(regions, "plane", found);
     for (size_t i = 0; i < planes.size(); ++i)
     {
       bool found;
@@ -635,7 +629,7 @@ void InputConverterS::ParseRegions()
     }
 
     // region (?!)
-    vector<DOMNode*> my_regions = getChildren_(regions, "region", found);
+    vector<DOMNode*> my_regions = GetChildren_(regions, "region", found);
     for (size_t i = 0; i < my_regions.size(); ++i)
     {
     }
@@ -644,14 +638,14 @@ void InputConverterS::ParseRegions()
     if (dim_ == 2)
     {
       // polygon 
-      vector<DOMNode*> polygons = getChildren_(regions, "polygon", found);
+      vector<DOMNode*> polygons = GetChildren_(regions, "polygon", found);
       for (size_t i = 0; i < polygons.size(); ++i)
       {
         bool found;
         DOMElement* polygon = static_cast<DOMElement*>(polygons[i]);
         string region_name = GetAttributeValueS_(polygon, "name", true);
         int num_points = GetAttributeValueL_(polygon, "num_points", true);
-        vector<DOMNode*> points = getChildren_(regions, "points", found);
+        vector<DOMNode*> points = GetChildren_(regions, "points", found);
         vector<double> v1, v2, v3;
         for (size_t j = 0; j < points.size(); ++j)
         {
@@ -673,7 +667,7 @@ void InputConverterS::ParseRegions()
       }
 
       // ellipse 
-      vector<DOMNode*> ellipses = getChildren_(regions, "ellipse", found);
+      vector<DOMNode*> ellipses = GetChildren_(regions, "ellipse", found);
       for (size_t i = 0; i < ellipses.size(); ++i)
       {
         bool found;
@@ -699,21 +693,21 @@ void InputConverterS::ParseRegions()
     {
       // rotated_polygon 
       // FIXME
-      vector<DOMNode*> rotated_polygons = getChildren_(regions, "rotated_polygon", found);
+      vector<DOMNode*> rotated_polygons = GetChildren_(regions, "rotated_polygon", found);
       for (size_t i = 0; i < rotated_polygons.size(); ++i)
       {
       }
 
       // swept_polygon
       // FIXME
-      vector<DOMNode*> swept_polygons = getChildren_(regions, "swept_polygon", found);
+      vector<DOMNode*> swept_polygons = GetChildren_(regions, "swept_polygon", found);
       for (size_t i = 0; i < swept_polygons.size(); ++i)
       {
       }
     }
 
     // logical
-    vector<DOMNode*> logicals = getChildren_(regions, "logical", found);
+    vector<DOMNode*> logicals = GetChildren_(regions, "logical", found);
     for (size_t i = 0; i < logicals.size(); ++i)
     {
       // FIXME: Not done yet. v2.x spec claims this isn't supported for structured, BTW.
@@ -724,19 +718,19 @@ void InputConverterS::ParseRegions()
     ParmParse::appendTable(table);
 }
 
-void InputConverterS::ParseGeochemistry()
+void InputConverterS::ParseGeochemistry_()
 {
 #if 0
   list<ParmParse::PP_entry> table;
   bool found;
 
-  DOMNode* geochem = getUniqueElementByTagNames_(doc_, "geochemistry", found);
+  DOMNode* geochem = GetUniqueElementByTagsString_(doc_, "geochemistry", found);
   if (found)
   {
-    DOMElement* rxn_network = GetChildWithName_(geochem, "reaction_network", found, true);
+    DOMElement* rxn_network = GetChildByName_(geochem, "reaction_network", found, true);
     string file = GetAttributeValueS_(rxn_network, "file", found, true);
     string format = GetAttributeValueS_(rxn_network, "format", found, true);
-    vector<DOMNode*> constraints = getChildren_(materials, "constraint", found);
+    vector<DOMNode*> constraints = GetChildren_(materials, "constraint", found);
 
   }
 
@@ -745,24 +739,17 @@ void InputConverterS::ParseGeochemistry()
 #endif
 }
 
-void InputConverterS::ParseMaterials()
+void InputConverterS::ParseMaterials_()
 {
   list<ParmParse::PP_entry> table;
   bool found;
   vector<string> material_names;
 
-  XString mm;
-  DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("materials"));
-  DOMNode* materials;
-  if (node_list->getLength() == 1)
-  {
-    found = true;
-    materials = node_list->item(0);
-  }
+  DOMNode* materials = GetUniqueElementByTagsString_("materials", found);
   if (found)
   {
     bool found;
-    vector<DOMNode*> mats = getChildren_(materials, "material", found);
+    vector<DOMNode*> mats = GetChildren_(materials, "material", found);
     for (size_t i = 0; i < mats.size(); ++i)
     {
       DOMElement* mat = static_cast<DOMElement*>(mats[i]);
@@ -771,7 +758,7 @@ void InputConverterS::ParseMaterials()
       bool found;
 
       // Mechanical properties.
-      DOMElement* mech_prop = GetChildWithName_(mat, "mechanical_properties", found);
+      DOMElement* mech_prop = GetChildByName_(mat, "mechanical_properties", found);
       if (found)
       {
         ParseMechProperty_(mech_prop, mat_name, "porosity", table, true);
@@ -789,8 +776,8 @@ void InputConverterS::ParseMaterials()
 
       // Permeability OR hydraulic conductivity.
       bool k_found, K_found;
-      DOMElement* permeability = GetChildWithName_(mat, "permeability", k_found, false);
-      DOMElement* conductivity = GetChildWithName_(mat, "hydraulic_conductivity", K_found, false);
+      DOMElement* permeability = GetChildByName_(mat, "permeability", k_found, false);
+      DOMElement* conductivity = GetChildByName_(mat, "hydraulic_conductivity", K_found, false);
       if (!k_found && !K_found)
       {
         Errors::Message msg;
@@ -892,7 +879,7 @@ void InputConverterS::ParseMaterials()
       }
 
       // Capillary pressure model.
-      DOMElement* cap_pressure = GetChildWithName_(mat, "cap_pressure", found, false);
+      DOMElement* cap_pressure = GetChildByName_(mat, "cap_pressure", found, false);
       if (found)
       {
         bool found;
@@ -926,7 +913,7 @@ void InputConverterS::ParseMaterials()
       AddToTable(table, MakePPPrefix("rock", mat_name, "cpl_type"), MakePPEntry(0));
 
       // Relative permeability.
-      DOMElement* rel_perm = GetChildWithName_(mat, "rel_perm", found, false);
+      DOMElement* rel_perm = GetChildByName_(mat, "rel_perm", found, false);
       if (found)
       {
         bool found;
@@ -962,19 +949,19 @@ void InputConverterS::ParseMaterials()
       AddToTable(table, MakePPPrefix("rock", mat_name, "kr_type"), MakePPEntry(0));
 
       // Sorption isotherms.
-      DOMElement* sorption_isotherms = GetChildWithName_(mat, "sorption_isotherms", found, false);
+      DOMElement* sorption_isotherms = GetChildByName_(mat, "sorption_isotherms", found, false);
       if (found)
       {
         // Look for solutes.
         bool found;
-        vector<DOMNode*> solutes = getChildren_(sorption_isotherms, "solute", found, true);
+        vector<DOMNode*> solutes = GetChildren_(sorption_isotherms, "solute", found, true);
         for (size_t i = 0; i < solutes.size(); ++i)
         {
           DOMElement* solute = static_cast<DOMElement*>(solutes[i]);
           string solute_name = GetAttributeValueS_(solute, "name");
 
           bool found;
-          DOMElement* kd_model = GetChildWithName_(solute, "kd_model", found, false);
+          DOMElement* kd_model = GetChildByName_(solute, "kd_model", found, false);
           if (found)
           {
             // Search for kd, b, or n.
@@ -1015,19 +1002,19 @@ void InputConverterS::ParseMaterials()
     ParmParse::appendTable(table);
 }
 
-void InputConverterS::ParseProcessKernels()
+void InputConverterS::ParseProcessKernels_()
 {
   list<ParmParse::PP_entry> table;
   bool found;
 
   // Flow, transport, and chemistry must all be present.
-  DOMElement* flow = static_cast<DOMElement*>(getUniqueElementByTagNames_("process_kernels", "flow", found));
+  DOMElement* flow = static_cast<DOMElement*>(GetUniqueElementByTagsString_("process_kernels, flow", found));
   if (!found)
     ThrowErrorMisschild_("process_kernels", "flow", "process_kernels");
-  DOMElement* transport = static_cast<DOMElement*>(getUniqueElementByTagNames_("process_kernels", "transport", found));
+  DOMElement* transport = static_cast<DOMElement*>(GetUniqueElementByTagsString_("process_kernels, transport", found));
   if (!found)
     ThrowErrorMisschild_("process_kernels", "transport", "process_kernels");
-  DOMElement* chemistry = static_cast<DOMElement*>(getUniqueElementByTagNames_("process_kernels", "chemistry", found));
+  DOMElement* chemistry = static_cast<DOMElement*>(GetUniqueElementByTagsString_("process_kernels, chemistry", found));
   if (!found)
     ThrowErrorMisschild_("process_kernels", "chemistry", "process_kernels");
 
@@ -1090,27 +1077,27 @@ void InputConverterS::ParseProcessKernels()
     ParmParse::appendTable(table);
 }
 
-void InputConverterS::ParsePhases()
+void InputConverterS::ParsePhases_()
 {
   list<ParmParse::PP_entry> table;
   ParmParse::appendTable(table);
 }
 
-void InputConverterS::ParseInitialConditions()
+void InputConverterS::ParseInitialConditions_()
 {
   list<ParmParse::PP_entry> table;
   ParmParse::appendTable(table);
 }
 
-void InputConverterS::ParseBoundaryConditions()
+void InputConverterS::ParseBoundaryConditions_()
 {
   list<ParmParse::PP_entry> table;
   bool found;
-  DOMNode* boundary_conditions = getUniqueElementByTagNames_(doc_, "boundary_conditions", found);
+  DOMNode* boundary_conditions = GetUniqueElementByTagsString_("boundary_conditions", found);
   if (found)
   {
     bool found;
-    vector<DOMNode*> bcs = getChildren_(boundary_conditions, "boundary_condition", found);
+    vector<DOMNode*> bcs = GetChildren_(boundary_conditions, "boundary_condition", found);
     if (found)
     {
       for (size_t i = 0; i < bcs.size(); ++i)
@@ -1125,13 +1112,13 @@ void InputConverterS::ParseBoundaryConditions()
     ParmParse::appendTable(table);
 }
 
-void InputConverterS::ParseOutput()
+void InputConverterS::ParseOutput_()
 {
   list<ParmParse::PP_entry> table;
   bool found;
 
   // Visualization files.
-  DOMNode* vis = getUniqueElementByTagNames_("output", "vis", found);
+  DOMNode* vis = GetUniqueElementByTagsString_("output, vis", found);
   if (found)
   {
     bool found;
@@ -1147,7 +1134,7 @@ void InputConverterS::ParseOutput()
   }
 
   // Checkpoint files.
-  DOMNode* checkpoint = getUniqueElementByTagNames_("output", "checkpoint", found);
+  DOMNode* checkpoint = GetUniqueElementByTagsString_("output, checkpoint", found);
   if (found)
   {
     bool found;
@@ -1163,7 +1150,7 @@ void InputConverterS::ParseOutput()
   }
 
   // Observations.
-  DOMNode* observations = getUniqueElementByTagNames_("output", "observations", found);
+  DOMNode* observations = GetUniqueElementByTagsString_("output, observations", found);
   if (found)
   {
     bool found;
@@ -1174,7 +1161,7 @@ void InputConverterS::ParseOutput()
   }
 
   // Walkabouts. 
-  DOMNode* walkabout = getUniqueElementByTagNames_("output", "walkabout", found);
+  DOMNode* walkabout = GetUniqueElementByTagsString_("output, walkabout", found);
   if (found)
   {
     bool found;
@@ -1192,27 +1179,27 @@ void InputConverterS::ParseOutput()
     ParmParse::appendTable(table);
 }
 
-void InputConverterS::ParseMisc()
+void InputConverterS::ParseMisc_()
 {
   // FIXME: Not yet supported.
 }
 
 void InputConverterS::Translate() 
 {
-  ParseUnits();
-  ParseDefinitions();
-  ParseExecutionControls();
-  ParseNumericalControls();
-  ParseMesh();
-  ParseRegions();
-  ParseGeochemistry();
-  ParseMaterials();
-  ParseProcessKernels();
-  ParsePhases();
-  ParseInitialConditions();
-  ParseBoundaryConditions();
-  ParseOutput();
-  ParseMisc();
+  ParseUnits_();
+  ParseDefinitions_();
+  ParseExecutionControls_();
+  ParseNumericalControls_();
+  ParseMesh_();
+  ParseRegions_();
+  ParseGeochemistry_();
+  ParseMaterials_();
+  ParseProcessKernels_();
+  ParsePhases_();
+  ParseInitialConditions_();
+  ParseBoundaryConditions_();
+  ParseOutput_();
+  ParseMisc_();
 }
 
 }  // namespace AmanziInput

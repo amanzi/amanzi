@@ -49,7 +49,7 @@ XERCES_CPP_NAMESPACE_USE
 /* ******************************************************************
 * Initialization of xercecs document.
 ****************************************************************** */
-void InputConverter::Init(const std::string& xmlfilename, bool& found)
+void InputConverter::Init(const std::string& xmlfilename, bool& valid)
 {
   Teuchos::ParameterList out_list;
   
@@ -85,7 +85,7 @@ void InputConverter::Init(const std::string& xmlfilename, bool& found)
   // check that XML has version 2.x or version 1.x spec
   MemoryManager mm;
   DOMElement* element = doc_->getDocumentElement();
-  found = strcmp(mm.transcode(element->getTagName()), "amanzi_input") != 0;
+  valid = (strcmp(mm.transcode(element->getTagName()), "amanzi_input") == 0);
 
   delete errorHandler;
 }
@@ -177,10 +177,17 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
   flag = false;
 
   MemoryManager mm;
-  DOMNode* node;
+  DOMNode* node = NULL;
 
   std::vector<std::string> tag_names = CharToStrings_(tags.c_str());
   if (tag_names.size() == 0) return node;
+
+  if (tag_names.size() == 1)
+  {
+    // We only need the top-level (hopefully unique) tag.
+    DOMElement* root = doc_->getDocumentElement();
+    return GetChildByName_(root, tag_names[0], flag);
+  }
 
   // get the first node
   DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode(tag_names[0].c_str()));
@@ -296,7 +303,7 @@ std::vector<xercesc::DOMNode*> InputConverter::GetChildren_(
 {
   flag = false;
 
-  XString mm;
+  MemoryManager mm;
   int n(0), m(0);
   std::vector<DOMNode*> namedChildren;
 
@@ -330,7 +337,7 @@ xercesc::DOMElement* InputConverter::GetChildByName_(
 {
   flag = false;
 
-  XString mm;
+  MemoryManager mm;
   int n(0), m(0);
   DOMNode* child = NULL;
 
@@ -506,7 +513,7 @@ std::vector<double> InputConverter::GetAttributeVector_(
 std::vector<std::string> InputConverter::GetAttributeVectorS_(DOMElement* elem, const char* attr_name, bool exception)
 {
   std::vector<std::string> val;
-  XString mm;
+  MemoryManager mm;
 
   if (elem->hasAttribute(mm.transcode(attr_name))) {
     char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
@@ -522,7 +529,7 @@ std::vector<std::string> InputConverter::GetAttributeVectorS_(DOMElement* elem, 
 std::string InputConverter::GetChildValueS_(
     xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception)
 {
-  XString mm;
+  MemoryManager mm;
 
   std::string val;
   flag = false;
@@ -552,7 +559,7 @@ std::string InputConverter::GetChildValueS_(
 std::vector<std::string> InputConverter::GetChildVectorS_(
     xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception)
 {
-  XString mm;
+  MemoryManager mm;
 
   std::vector<std::string> val;
   flag = false;
@@ -632,10 +639,14 @@ std::vector<std::string> InputConverter::CharToStrings_(const char* namelist)
   char* tmp1 = new char[strlen(namelist) + 1];
   strcpy(tmp1, namelist);
 
+  std::vector<std::string> regs;
   char* tmp2;
   tmp2 = strtok(tmp1, ",");
+  if (tmp2 == NULL) {
+    // No commas in the string means that it's a single name.
+    regs.push_back(namelist);
+  }
 
-  std::vector<std::string> regs;
   while (tmp2 != NULL) {
     std::string str(tmp2);
     boost::algorithm::trim(str);
