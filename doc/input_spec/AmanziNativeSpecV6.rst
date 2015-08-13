@@ -3998,7 +3998,11 @@ at intervals corresponding to the numerical time step values or intervals corres
 
   * `"dynamic mesh`" [bool] (false) write mesh data for every visualization dump, this facilitates visualizing deforming meshes.
 
-  * `"Write Regions`" [Array(string)] (empty array) write an array into the visualization file that can be used to identify a region or regions. The first entry in the regions array is marked with the value 1.0 in the array, the second with the value 2.0, and so forth. The code ignores entries in the regions array that are not valid regions that contain cells.
+  * `"Write Regions`" [list] arrays of auxiliary fields with region ids to write into the visualization file.
+
+    * `"REGION_NAME`" [Arrat(string)] user defined field name and the list of regions. 
+      The first entry in the regions array is marked with the value 1.0 in the array, the second with the value 2.0, and so forth. 
+      The code ignores entries in the regions array that are not valid regions that contain cells.
 
   * `"Write Partitions`" [bool] (false) if this parameter is true, then write an array into the visualization file that contains the rank number of the processor that owns a mesh cell. 
 
@@ -4016,6 +4020,11 @@ at intervals corresponding to the numerical time step values or intervals corres
        <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
 
        <Parameter name="dynamic mesh" type="bool" value="false"/>
+
+       <ParameterList name="Write Regions">
+         <Parameter name="regions" type="Array(string)" value="{Obs_r1, Obs_r1, Obs_r3}"/>
+         <Parameter name="wells" type="Array(string)" value="{Obs_r1}"/>
+       </ParameterList>
      </ParameterList>
    </ParameterList>
 

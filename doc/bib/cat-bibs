@@ -1,0 +1,2 @@
+#/usr/bin/env bash
+cat abbreviations.bib */*.bib > ascem.bib

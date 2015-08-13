@@ -1,0 +1,150 @@
+%
+% Method of Manufactured Solutions
+%
+@TechReport{Salari2000,
+  author      =	 {K. Salari and P. Knupp},
+  title       =	 {Code Verification by the Method of Manufactured Solutions},
+  institution =  {Sandia National Laboratories},
+  year        =  2000,
+  number      = {SAND2000--1444},
+  url         =	{http://infoserve.sandia.gov/sand_doc/2000/001444.pdf}
+}
+
+
+%
+% NQA-1 and DOE Orders / Guidance
+%
+@Manual{ASME-NQA-1_2007,
+  title        = {Quality Assurance Requirements for Nuclear Facility 
+                  Applications (QA)},
+  author       = {ASME {NQA-1-2004} (including addenda 2005 and 2007)},
+  organization = {American Society of Mechanical Engineers},
+  year = 	 2007
+}
+
+@Manual{DOE-G-414-1-4_2005,
+  title        = {Safety Software Guide for Use with 10 CFR 830, 
+                  Subpart A, Quality Assurance Requirements, 
+                  and DOE O 414.1C, Quality Assurance},
+  author       = {DOE-G 414.1-4},
+  organization = {Office of Environment, Safety and Health},
+  address      = {United States Department of Energy, Washington, DC},
+  year         = 2005
+}
+
+@Manual{DOE-O-414-1D_2011,
+  title        = {Quality Assurance},
+  author       = {DOE-O 414.1D},
+  organization = {Office of Environmental Management},
+  address      = {United States Department of Energy, Washington, DC},
+  year         = 2011
+}
+
+@Misc{DOxygen,
+  title=	{Generate documentation from source code},
+  note= 	{http://www.doxygen.org}
+}
+
+@Misc{UnitTest,
+  title=	{Unit Testing for C++ toolkit},
+  note= 	{http://unittest-cpp.sourceforge.net}
+}
+
+@Misc{NumDiff,
+  title =	{Numdiff},
+  note = 	{http://www.nongnu.org/numdiff/}
+}
+
+@Manual{GCC_Manual-gcov,
+  title        = {Using the GNU Compiler Collection (For GCC version 4.6.1)},
+  author       = {R. M. Stallman and the GCC Developer Community},
+  organization = {GNU Press a division of the Free Software Foundation},
+  year         = 2010,
+  note         = {Chapter 10 : gcov -- a Test Coverage Program},
+  url          = {http://gcc.gnu.org/onlinedocs/}
+}
+
+
+%
+% IEEE Standards
+%
+
+@Misc{IEEE_Std_610.12-1990,
+  title        = {{IEEE} {S}tandard {G}lossary of {S}oftware 
+                  {E}ngineering {T}erminology},
+  author       = {{IEEE} {S}td 610.12-1990},
+  howpublished = {Institute of Electrical and Electronic Engineers, New York},
+  year         = 1990
+}
+
+@Misc{IEEE_Std_1012-1998,
+  title        = {{IEEE} for {S}oftware {V}erification and {V}alidation},
+  author       = {{IEEE} {S}td 1012-1998},
+  howpublished = {Institute of Electrical and Electronic Engineers, New York},
+  year         = 1998
+}
+
+@Misc{IEEE_Std_730-2002,
+  title        = {{IEEE} for {S}oftware {Q}uality {A}ssurance {P}lans}, 
+  author       = {{IEEE} {S}td 730-2002},
+  howpublished = {Institute of Electrical and Electronic Engineers, New York},
+  year         = 2002
+}
+
+%
+%  Nuclear Safety
+%
+@Misc{10CRF830,
+  key   = 	 {10 CFR830},
+  title = 	 {10 {CFR830}, {N}uclear {S}afety {M}anagement}
+}
+
+%
+% Verification 
+%
+@Article{JVanderborght_etal_2005,
+  author       = {Vanderborght, J. and Kasteel, R. and Herbst, M. and Javaux,
+                  M. and Thiery, D. and Vanclooster, M. and Mouvet, C. and
+                  Vereecken, H.},
+  title        = {A Set of Analytical Benchmarks to Test Numerical Models of
+                  Flow and Transport in Soils},
+  journal      = VadoseZoneJournal,
+  volume       = 4,
+  pages        = {206--221},
+  year         = 2005,
+  abstract     = {Accurate model predictions of water flow and solute
+                  transport in unsaturated soils require a correct
+                  representation of relevant mechanisms in a
+                  mathematical model, as well as correct solutions of
+                  the mathematical equations. Because of the
+                  complexity of boundary conditions and the
+                  nonlinearity of the processes considered, general
+                  solutions of the mathematical equations rely on
+                  numerical approximations. We evaluate a number of
+                  numerical models (WAVE, HYDRUS_1D, SWAP, MARTHE, and
+                  MACRO) that use different numerical methods to solve
+                  the flow and transport equations. Our purpose is to
+                  give an overview of analytical solutions that can be
+                  found for simple initial and boundary conditions and
+                  to define benchmark scenarios to check the accuracy
+                  of numerical solutions. Included are analytical
+                  solutions for coupled transport equations that
+                  describe flow and transport in dual-velocity
+                  media. The relevance of deviations observed in the
+                  analytical benchmarks for more realistic boundary
+                  conditions is illustrated an intercode comparison
+                  for natural boundary conditions. For the water flow
+                  scenarios, the largest deviations between numerical
+                  models and analytical solutions were observed for
+                  the case of soil limited evaporation. The intercode
+                  differences could be attributed to the
+                  implementation of the evaporation boundary
+                  condition: the spatial discretization and the
+                  internode averaging of the hydraulic conductivity in
+                  the surface grid layer. For solute transport,
+                  accurate modeling of solute dispersion poses the
+                  most problems. Nonlinear and nonequilibrium sorption
+                  and coupled transport in pore domains with different
+                  advection velocities are in general accurately
+                  simulated.}
+}

@@ -40,7 +40,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "Translating flow, regime=" << regime << std::endl;
 
-  XString mm;
+  MemoryManager mm;
   DOMNode* node;
 
   // set up default values for some expert parameters
@@ -50,11 +50,11 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
 
   // process expert parameters
   bool flag;
-  node = getUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, rel_perm_method", flag);
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, rel_perm_method", flag);
   if (flag) rel_perm = mm.transcode(node->getNodeName());
 
   // create flow header
-  if (pk_model_["flow"] == "saturated") {
+  if (pk_model_["flow"] == "darcy") {
     Teuchos::ParameterList& darcy_list = out_list.sublist("Darcy problem");
     darcy_list.set<double>("atmospheric pressure", atm_pres);
 
@@ -89,19 +89,19 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
 
   // insert operator sublist
   std::string disc_method("mfd-optimized_for_sparsity");
-  node = getUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, discretization_method", flag);
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, discretization_method", flag);
   if (flag) disc_method = mm.transcode(node->getNodeName());
 
   std::string pc_method("linearized_operator");
-  node = getUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, preconditioning_strategy", flag);
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, preconditioning_strategy", flag);
   if (flag) pc_method = mm.transcode(node->getNodeName()); 
 
   std::string nonlinear_solver("nka");
-  node = getUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver", flag);
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver", flag);
   if (flag) nonlinear_solver = GetAttributeValueS_(static_cast<DOMElement*>(node), "name", false, "nka"); 
 
   bool modify_correction(false);
-  node = getUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
 
   // Newton method requires to overwrite other parameters.
   if (nonlinear_solver == "newton") {
@@ -153,7 +153,7 @@ Teuchos::ParameterList InputConverterU::TranslateWRM_()
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "Translating water retension models" << std::endl;
 
-  XString mm;
+  MemoryManager mm;
   DOMNodeList *node_list, *children;
   DOMNode* node;
   DOMElement* element;
@@ -168,19 +168,19 @@ Teuchos::ParameterList InputConverterU::TranslateWRM_()
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i); 
 
-    node = getUniqueElementByTagNames_(inode, "cap_pressure", flag);
+    node = GetUniqueElementByTagsString_(inode, "cap_pressure", flag);
     model = GetAttributeValueS_(static_cast<DOMElement*>(node), "model", "van_genuchten, brooks_corey");
-    DOMNode* nnode = getUniqueElementByTagNames_(node, "parameters", flag);
+    DOMNode* nnode = GetUniqueElementByTagsString_(node, "parameters", flag);
     DOMElement* element_cp = static_cast<DOMElement*>(nnode);
 
-    node = getUniqueElementByTagNames_(inode, "rel_perm", flag);
+    node = GetUniqueElementByTagsString_(inode, "rel_perm", flag);
     rel_perm = GetAttributeValueS_(static_cast<DOMElement*>(node), "model", "mualem, burdine");
-    DOMNode* mnode = getUniqueElementByTagNames_(node, "exp", flag);
+    DOMNode* mnode = GetUniqueElementByTagsString_(node, "exp", flag);
     DOMElement* element_rp = (flag) ? static_cast<DOMElement*>(mnode) : NULL;
 
     // common stuff
     // -- assigned regions
-    node = getUniqueElementByTagNames_(inode, "assigned_regions", flag);
+    node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
     // -- smoothing
@@ -277,7 +277,7 @@ Teuchos::ParameterList InputConverterU::TranslatePOM_()
     *vo_->os() << "Translating porosity models" << std::endl;
   }
 
-  XString mm;
+  MemoryManager mm;
   DOMNodeList *node_list, *children;
   DOMNode* node;
   DOMElement* element;
@@ -293,11 +293,11 @@ Teuchos::ParameterList InputConverterU::TranslatePOM_()
  
     // get assigned regions
     bool flag;
-    node = getUniqueElementByTagNames_(inode, "assigned_regions", flag);
+    node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
     // get optional complessibility
-    node = getUniqueElementByTagNames_(inode, "mechanical_properties", "porosity", flag);
+    node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
     double phi = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
     double compres = GetAttributeValueD_(static_cast<DOMElement*>(node), "compressibility", false, 0.0);
 
@@ -337,7 +337,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
 {
   Teuchos::ParameterList out_list;
 
-  XString mm;
+  MemoryManager mm;
 
   char *text, *tagname;
   DOMNodeList *node_list, *children;
@@ -356,18 +356,18 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
 
     // read the assigned regions
     bool flag;
-    node = getUniqueElementByTagsString_(inode, "assigned_regions", flag);
+    node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     text = mm.transcode(node->getTextContent());
     std::vector<std::string> regions = CharToStrings_(text);
 
     vv_bc_regions_.insert(vv_bc_regions_.end(), regions.begin(), regions.end());
 
-    node = getUniqueElementByTagNames_(inode, "liquid_phase", "liquid_component", flag);
+    node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component", flag);
     if (!flag) continue;
 
     // process a group of similar elements defined by the first element
     std::string bctype;
-    std::vector<DOMNode*> same_list = getSameChildNodes_(node, bctype, flag, true);
+    std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
 
     std::map<double, double> tp_values, tp_fluxes;
     std::map<double, std::string> tp_forms;
@@ -387,7 +387,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
     for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
       times.push_back(it->first);
       values.push_back(it->second);
-      fluxes.push_back(it->second);
+      fluxes.push_back(tp_fluxes[it->second]);
       forms.push_back(tp_forms[it->first]);
     }
     forms.pop_back();
@@ -460,7 +460,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
 {
   Teuchos::ParameterList out_list;
 
-  XString mm;
+  MemoryManager mm;
 
   char *text, *tagname;
   DOMNodeList *node_list, *children;
@@ -480,19 +480,20 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
 
     // read the assigned regions
     bool flag;
-    node = getUniqueElementByTagsString_(inode, "assigned_regions", flag);
+    node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     text = mm.transcode(node->getTextContent());
     std::vector<std::string> regions = CharToStrings_(text);
 
     vv_src_regions_.insert(vv_src_regions_.end(), regions.begin(), regions.end());
 
     // process flow sources for liquid saturation
-    phase = getUniqueElementByTagNames_(inode, "liquid_phase", "liquid_component", flag);
+    phase = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component", flag);
     if (!flag) continue;
 
     // process a group of similar elements defined by the first element
     std::string srctype;
-    std::vector<DOMNode*> same_list = getSameChildNodes_(phase, srctype, flag, true);
+    std::vector<DOMNode*> same_list = GetSameChildNodes_(phase, srctype, flag, true);
+    if (!flag || same_list.size() == 0) continue;
 
     std::map<double, double> tp_values;
     std::map<double, std::string> tp_forms;

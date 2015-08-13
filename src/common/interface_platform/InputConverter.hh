@@ -36,10 +36,10 @@ namespace AmanziInput {
 * and destroys them later. The focus is on simplicity of its using,
 * so that release is never called.
 */
-class XString {
+class MemoryManager {
  public:
-  XString() {};
-  ~XString() { Destroy_(); }
+  MemoryManager() {};
+  ~MemoryManager() { Destroy_(); }
 
   XMLCh* transcode(const char* str) {
     XMLCh* xstr = xercesc::XMLString::transcode(str);
@@ -78,36 +78,36 @@ class InputConverter {
   }
 
   // main member: creates xerces document using the file name
-  void Init(const std::string& xmlfilename);
+  void Init(const std::string& xmlfilename, bool& found);
 
   // parse various nodes
   void ParseConstants_();
+  void FilterNodes(xercesc::DOMNode* parent, const std::string& filter);
 
  protected:
   // Useful tools wrapping low-level DOM commands
+
   // -- generalization of getElementsByTagNames(): returns node
-  //    tag1->tag2 or tag1->tag2-tag3 where all tags are unique 
+  //    where all tags (list of names in the given string) are unique 
   //    leaves of the tree.
-  xercesc::DOMNode* getUniqueElementByTagNames_(
-      const std::string& tag1, const std::string& tag2, bool& flag);
-  xercesc::DOMNode* getUniqueElementByTagNames_(
-      const std::string& tag1, const std::string& tag2, const std::string& tag3, bool& flag);
-  // -- tags contains list of names separated by commas. It 
-  //    will replace eventually the previous routine.
-  xercesc::DOMNode* getUniqueElementByTagsString_(
+  xercesc::DOMNode* GetUniqueElementByTagsString_(
       const std::string& tags, bool& flag);
 
-  // -- modification of the previous routines where the first tag 
+  // -- modification of the previous routine where the first tag 
   //    is replaced by a pointer to document's element
-  xercesc::DOMNode* getUniqueElementByTagNames_(
-      const xercesc::DOMNode* node1, const std::string& tag2, bool& flag);
-  xercesc::DOMNode* getUniqueElementByTagNames_(
-      const xercesc::DOMNode* node1, const std::string& tag2, const std::string& tag3, bool& flag);
-  // -- tags contains list of names separated by commas. It 
-  //    will replace eventually the previous routine.
-  xercesc::DOMNode* getUniqueElementByTagsString_(
+  xercesc::DOMNode* GetUniqueElementByTagsString_(
       const xercesc::DOMNode* node1, const std::string& tags, bool& flag);
 
+  // -- extract child with the given attribute
+  xercesc::DOMElement* GetUniqueChildByAttribute_(
+      xercesc::DOMNode* node, const char* attr_name, const std::string& attr_value,
+      bool& flag, bool exception = false);
+
+  // -- extracts the child of the given node with the given name.
+  xercesc::DOMElement* GetChildByName_(
+      xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception = false);
+
+  // -- extract and verify children
   // -- extract existing attribute value
   int GetAttributeValueL_(
       xercesc::DOMElement* elem, const char* attr_name, bool exception = true, int val = 0);
@@ -120,14 +120,6 @@ class InputConverter {
   std::vector<std::string> GetAttributeVectorS_(
       xercesc::DOMElement* elem, const char* attr_name, bool exception = true);
  
-  // -- extract all children of the given node that share the given common name.
-  std::vector<xercesc::DOMNode*> getChildren_(
-      xercesc::DOMNode* node, const std::string& childrenName, bool& flag, bool exception = false);
-
-  // -- Returns the element node corresponding to the child of the given node with the given name.
-  xercesc::DOMElement* GetChildWithName_(
-      xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception = false);
-
   // -- extract the text content of the child of the given node with the given name.
   std::string GetChildValueS_(
       xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception = false);
@@ -138,9 +130,12 @@ class InputConverter {
   std::string GetAttributeValueS_(
       xercesc::DOMElement* elem, const char* attr_name, const char* options);
 
-  // -- extract and verify children
+  // -- extract all children of the given node that share the given common name.
+  std::vector<xercesc::DOMNode*> GetChildren_(
+      xercesc::DOMNode* node, const std::string& childrenName, bool& flag, bool exception = false);
+
   //    the name of identical nodes will be extracted too
-  std::vector<xercesc::DOMNode*> getSameChildNodes_(
+  std::vector<xercesc::DOMNode*> GetSameChildNodes_(
       xercesc::DOMNode* node, std::string& name, bool& flag, bool exception = false);
 
   // data streaming/trimming/converting

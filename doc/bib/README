@@ -1,0 +1,31 @@
+= ASCEM bibTeX files =
+
+As a simple bookkeeping mechanism we divide the bibliography files
+by subject.  This isn't perfect by any stretch, and there may be
+better tools for managing bib files, but it's simple and it works.
+
+At the top level we have the abbreviations file:
+
+abbreviations.bib  
+
+Please put journal abbreviations here, and update entries that don't 
+use this central list.
+
+The *.bib files are then stored in a subject directory. This allows
+for several related files on a subject without making a very large
+flat list.  Here we maintain a record of the directories and information
+on the subject.  
+
+== Subject Directories ==
+
+ascem              - ASCEM supported publications, manuals, etc.
+discretizations    - Mimetic Finite Difference, Finite Volume etc.
+models             - flow, transport, biogechemical reaction modeling
+sites              - legacy waste sites
+software           - links to books, web sites, and repos
+solvers            - linear/nonlinear, krylov, direct, and multigrid
+
+
+The build system will put together the relevant files so you shouldn't
+need to have a long list of files.
+

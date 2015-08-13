@@ -1,0 +1,468 @@
+
+@Article{ABrandt_1986a,
+  author = 	 {A. Brandt},
+  title = 	 {Algebraic Multigrid Theory: Symmetric Case},
+  journal = 	 AppliedMathematicsANDComputation,
+  year = 	 1986,
+  volume =	 19,
+  pages =	 {23--56}
+}
+
+
+@incollection{ABrandt_SFMcCormick_JWRuge_1984a,
+  author =      "A. Brandt and S. F. McCormick and J. W. Ruge",
+  title =       "Algebraic multigrid ({AMG}) for sparse matrix equations",
+  booktitle =   "Sparsity and Its Applications",
+  editor =      "D. J. Evans",
+  publisher =   "Cambridge University Press",
+  address =     "Cambridge",
+  year =        "1984",
+  pages =       "",
+  }
+
+
+@article{MBrezina_AJCleary_RDFalgout_VEHenson_etal_2000a,
+  title     = {Algebraic multigrid based on element interpolation (AMGe)},
+  author    = {M. Brezina and A. J. Cleary and R. D. Falgout and 
+               V. E. Henson and J. E. Jones and T. A. Manteuffel and 
+               S. F. McCormick and J. W. Ruge},
+  journal   = SIAMJournalSC,
+  volume    = 22,
+  number    = 5,
+  pages     = {1570--1592},
+  year      = {2000; 2001},
+  abstract  = {We introduce AMGe, an algebraic multigrid method for
+               solving the discrete equations that arise in Ritz-type
+               finite element methods for partial differential
+               equations. Assuming access to the element stiffness
+               matrices, we have that AMGe is based on the use of two
+               local measures, which are derived from global measures
+               that appear in existing multigrid theory. These new
+               measures are used to determine local representations of
+               algebraically "smooth" error components that provide
+               the basis for constructing effective interpolation and,
+               hence, the coarsening process for AMG. Here, we focus
+               on the interpolation process; choice of the coarse
+               "grids" based on these measures is the subject of
+               current research. We develop a theoretical foundation
+               for AMGe and present numerical results that demonstrate
+               the efficacy of the method.}
+}
+
+@Article{MBrezina_AJCleary_RDFalgout_VEHenson_etal_2001a,
+  title       = {Algebraic Multigrid Based on Element Interpolation ({AMG}e).},
+  author      = {M. Brezina and A. J. Cleary and R. D. Falgout 
+                 and V. E. Henson and J. E. Jones and T. A. Manteuffel 
+                 and S. F. McCormick and J. W. Ruge},
+  journal     = SIAMJournalONScientificComputing,
+  volume      = {22},
+  number      = {5},
+  pages       = {1570 -- 92},
+  year        = {2001},
+  abstract    = {We introduce AMGe, an algebraic multigrid method for
+                 solving the discrete equations that arise in
+                 Ritz-type finite element methods for partial
+                 differential equations. Assuming access to the
+                 element stiffness matrices, we have that AMGe is
+                 based on the use of two local measures, which are
+                 derived from global measures that appear in existing
+                 multigrid theory. These new measures are used to
+                 determine local representations of algebraically
+                 "smooth" error components that provide the basis for
+                 constructing effective interpolation and, hence, the
+                 coarsening process for AMG. Here, we focus on the
+                 interpolation process; choice of the coarse "grids"
+                 based on these measures is the subject of current
+                 research. We develop a theoretical foundation for
+                 AMGe and present numerical results that demonstrate
+                 the efficacy of the method.},
+  url         = {http://amath.colorado.edu/pub/multigrid/amge.ps}
+}
+
+@article{MBrezina_RFalgout_SMaclachlan_TManteuffel_etal_2006a,
+  title       = {Adaptive Algebraic Multigrid},
+  author      = {M. Brezina and  R. Falgout and S. Maclachlan and T. Manteuffel 
+                 and  S. Mccormick and  J. Ruge},
+  journal     = SIAMJournalONScientificComputing,
+  volume      = 27,
+  number      = 4,
+  pages       = {1261--1286},
+  year        = 2006,
+  abstract    = {Efficient numerical simulation of physical processes is
+                 constrained by our ability to solve the resulting
+                 linear systems, prompting substantial research into
+                 the development of multiscale iterative methods
+                 capable of solving these linear systems with an
+                 optimal amount of effort. Overcoming the limitations
+                 of geometric multigrid methods to simple geometries
+                 and differential equations, algebraic multigrid
+                 methods construct the multigrid hierarchy based only
+                 on the given matrix. While this allows for efficient
+                 black-box solution of the linear systems associated
+                 with discretizations of many elliptic differential
+                 equations, it also results in a lack of robustness
+                 due to unsatisfied assumptions made on the near null
+                 spaces of these matrices. This paper introduces an
+                 extension to algebraic multigrid methods that removes
+                 the need to make such assumptions by utilizing an
+                 adaptive process. Emphasis is on the principles that
+                 guide the adaptivity and their application to
+                 algebraic multigrid solution of certain symmetric
+                 positive-definite linear systems.}
+}
+
+@PHDTHESIS{SPMacLachlan_2004a,
+  AUTHOR      = "S.P. MacLachlan",
+  TITLE       = "Improving Robustness in Multiscale Methods",
+  SCHOOL      = "Univerity of Colorado at Boulder",
+  ADDRESS     = "Boulder, Colorado",
+  YEAR        = "2004",
+  abstract    = {An important constraint on our ability to simulate
+                 physical processes numerically is our ability to
+                 solve the resulting linear systems.  Multiscale
+                 methods, such as multigrid, provide optimal or
+                 near-optimal order solution techniques for a wide
+                 range of problems.  Current multigrid methods (both
+                 geometric and algebraic) rely on the use of effective
+                 coarse-scale operators to achieve this efficiency.
+                 Classical geometric multigrid methods construct these
+                 operators based on the geometry of a given problem
+                 and are, thus, most effective when this geometry is
+                 known and simple.  Algebraic multigrid methods are
+                 free from most geometric constraints, instead relying
+                 on assumptions about the character of the matrix that
+                 limit the applicability of such methods to a
+                 relatively small class of problems.
+                 In this thesis, we first study the applicability of
+                 multigrid methods to the problem of flow through
+                 porous media, particularly motivated by the size of
+                 the linear systems resulting from discretization.
+                 For such problems, it is well known how to construct
+                 effective coarse-scale models for a correction-based
+                 multigrid method.  For these robust multigrid
+                 solvers, we consider whether sufficient information
+                 is contained in the multigrid hierarchy to allow for
+                 efficient approximation of solutions of these linear
+                 systems.  In particular, we examine important
+                 properties of the coarse-scale operators and the
+                 solutions to these coarse-scale equations and
+                 demonstrate their relevance to both the fine-scale
+                 and continuum-scale models.
+                 Additionally, we consider the question of
+                 improvements to multigrid algorithms in the form of
+                 adaptivity or self-correction.  By utilizing the
+                 multigrid method itself to expose slow-to-converge
+                 components, we may adapt the multigrid hierarchy in
+                 order to improve performance, resulting in enhanced
+                 efficiency for a new class of problems.  We present
+                 results for both the classical algebraic multigrid
+                 and smoothed aggregation frameworks illustrating
+                 typical multigrid efficiency with fewer assumptions
+                 on the given matrix systems.  We consider theoretical
+                 issues of this adaptive procedure in the
+                 reduction-based algebraic multigrid setting.  },
+  }
+
+
+
+@Article{AJCleary_RDFalgout_VEHenson_JEJones_etal_2000a,
+  title     = {Robustness and Scalability of Algebraic Multigrid},
+  author    = {A. J. Cleary and R. D. Falgout and V. E. Henson and 
+               J. E. Jones and T. A. Manteuffel and S. F. McCormick and 
+               G. N. Miranda and J. W. Ruge},
+  journal   = SIAMJournalSC,
+  volume    = {21},
+  number    = {5},
+  pages     = {1886 -- 908},
+  year      = {2000},
+  abstract  = {Algebraic multigrid (AMG) is currently undergoing a
+               resurgence in popularity, due in part to the dramatic
+               increase in the need to solve physical problems posed
+               on very large, unstructured grids. While AMG has proved
+               its usefulness on various problem types, it is not
+               commonly understood how wide a range of applicability
+               the method has.  In this study, we demonstrate that
+               range of applicability, while describing some of the
+               recent advances in AMG technology. Moreover, in light
+               of the imperatives of modern computer environments, we
+               also examine AMG in terms of algorithmic
+               scalability. Finally, we show some of the situations in
+               which standard AMG does not work well and indicate the
+               current directions taken by AMG researchers to
+               alleviate these difficulties.}
+}
+
+@article{VEHenson_UMYang_2002a,
+  title     = {{BoomerAMG}: A Parallel Algebraic Multigrid 
+               Solver and Preconditioner.},
+  author    = {V. E. Henson and U. M. Yang},
+  journal   = AppliedNumericalMathematics,
+  volume    = {41},
+  number    = {1},
+  pages     = {155--77},
+  year      = {2002},
+  booktitle = {Developments and Trends in Iterative Methods for Large
+                  Systems of Equations; Aug 21-25 2000; Lausanne,
+                  Switzerland},
+  howpublished = {16th IMACS World Congress , 2000 , LAUSANNE,
+                  SWITZERLAND ; 2002 ; 155-177}
+}
+
+@article{VEHenson_UMYang_2000a,
+  title     = {BoomerAMG: A Parallel Algebraic Multigrid 
+               Solver and Preconditioner.},
+  author    = {V. E. Henson and U. M. Yang},
+  journal   = {Applied Numerical Mathematics},
+  volume    = {41},
+  number    = {1},
+  pages     = {155 -- 77},
+  year      = {2000; 2002},
+  booktitle = {Developments and Trends in Iterative Methods for 
+               Large Systems of Equations; Aug 21-25 2000; 
+               Lausanne, Switzerland},
+  publisher = {Netherlands : Elsevier, 2000},
+  abstract  = {Driven by the need to solve linear systems arising from
+               problems posed on extremely large, unstructured grids,
+               there has been a recent resurgence of interest in
+               algebraic multigrid (AMG). AMG is attractive in that it
+               holds out the possibility of multigrid-like performance
+               on unstructured grids. The sheer size of many modem
+               physics and simulation problems has led to the
+               development of massively parallel computers, and has
+               sparked much research into developing algorithms for
+               them. Parallelizing AMG is a difficult task, however
+               While much of the AMG method parallelizes readily, the
+               process of coarse-grid selection, in particular, is
+               fundamentally sequential in nature. We have previously
+               introduced a parallel algorithm (1998) for the
+               selection of coarse-grid points, based on modifications
+               of certain parallel independent set algorithms and the
+               application of heuristics designed to insure the
+               quality of the coarse grids, and shown results from a
+               prototype serial version of the algorithm. In this
+               paper we describe an implementation of a parallel AMG
+               code, using the algorithm of A.J. Cleary et al. (1998)
+               as well as other approaches to parallelizing the
+               coarse-grid selection. We consider three basic
+               coarsening schemes and certain modifications to the
+               basic schemes, designed to address specific performance
+               issues. We present numerical results for a broad range
+               of problem sizes and descriptions, and draw conclusions
+               regarding the efficacy of the method. Finally, we
+               indicate the current directions of the research.}
+}
+
+
+@article{RDFalgout_PSVassilevski_LT_Zikatanov_2005a,
+  title     = {On Two-Grid Convergence Estimates},
+  author    = {R. D. Falgout and P. S. Vassilevski and L. T. Zikatanov},
+  journal   = NumericalLinearAlgebraWITHApplications,
+  volume    = {12},
+  number    = {5-6},
+  pages     = {471 -- 494},
+  year      = {2005},
+
+  abstract  = {We derive a new representation for the exact convergence
+               factor of classical two-level and two-grid
+               preconditioners. Based on this result, we establish
+               necessary and sufficient conditions for constructing an
+               the components of efficient algebraic multigrid (AMG)
+               methods. The relation of the sharp estimate to the
+               classical two-level hierarchical basis methods is
+               discussed as well. Lastly, as an application, we give
+               an optimal two-grid convergence proof of a purely
+               algebraic 'window'-AMG method.}
+}
+
+@article{RDFalgout_PSVassilevski_2004a,
+  title     = {On Generalizing the Algebraic Multigrid Framework},
+  author    = {R. D. Falgout and P. S. Vassilevski},
+  journal   = SIAMJournalNumericalAnalysis,
+  volume    = 42,
+  number    = 4,
+  pages     = {1669--1693},
+  year      = 2004,
+  abstract  = {We present a theory for algebraic multigrid (AMG)
+               methods that allows for general smoothing processes and
+               general coarsening approaches.  The goal of the theory
+               is to provide guidance in the development of new, more
+               robust, AMG algorithms. In particular, we introduce
+               several compatible relaxation methods and give
+               theoretical justification for their use as tools for
+               measuring the quality of coarse grids.}
+}
+
+@Article{AKrechel_KStuben_2001a,
+  title       = {Parallel Algebraic Multigrid Based on Subdomain Blocking},
+  author      = {A. Krechel and K. St\"uben},
+  journal     = ParallelComputing,
+  volume      = 27,
+  number      = 8,
+  pages       = {1009 -- 31},
+  year        = 2001,
+  abstract    = {The algebraic multigrid (AMG) approach provides a purely
+                 algebraic means to tackle the efficient solution of
+                 systems of equations posed on large unstructured
+                 grids, in 2D and 3D. While sequential AMG has been
+                 used for increasingly large problems (with several
+                 million unknowns), its application to even larger
+                 applications requires a parallel version. Since, in
+                 contrast to geometric multigrid, the hierarchy of
+                 coarser levels and the related operators develop
+                 dynamically during the setup phase of AMG, a direct
+                 parallelization is very complicated. Moreover, a
+                 "naive" parallelization would, in general, require
+                 unpredictable and highly complex communication
+                 patterns which seriously limit the achievable
+                 scalability, in particular of the costly setup
+                 phase. In this paper, we consider a classical AMG
+                 variant which has turned out be highly robust and
+                 efficient in solving large systems of equations
+                 corresponding to elliptic PDEs, discretized by finite
+                 differences or finite volumes.  Based on a
+                 straightforward partitioning of variables (using one
+                 of the available algebraic partitioning tools such as
+                 Metis), a parallelization approach is proposed which
+                 minimizes the communication without sacrificing
+                 convergence in complex situations.  Results will be
+                 presented for industrial CFD and oil-reservoir
+                 simulation applications on distributed memory
+                 machines, including PC-clusters.},
+   pdf        = {http://www.scai.fraunhofer.de/fileadmin/download/samg/AMG_Parallel.pdf},
+}
+
+@TechReport{WJoubert_JCullum_2005a,
+  author      = {W. Joubert and J. Cullum},
+  title       = {Scalable Algebraic Multigrid on 3500 Processors},
+  institution = {Continuum Dynamics Group},
+  year        = {2005},
+  number      = {{LA-UR} 05-4129},
+  address     = {Los Alamos National Laboratory, Los Alamos, NM},
+  abstract    = {A parallel algebraic multigrid linear solver method is
+                  presented which is scalable to thousands of
+                  processors on signi cant classes of two- and
+                  three-dimensional problems. The algorithm is
+                  entirely algebraic and does not require prior
+                  information on the physical problem. Scalability is
+                  achieved through the use of an innovative parallel
+                  coarsening technique in addition to aggressive
+                  coarsening and multipass interpolation
+                  techniques. Details of this algorithm are presented
+                  together with numerical results on up to several
+                  thousand processors.}
+}
+
+@Article{WJoubert_JCullum_2006a,
+  author      = {W. Joubert and J. Cullum},
+  title       = {Scalable Algebraic Multigrid on 3500 Processors},
+  journal     = ElectronicTransactionsONNumericalAnalysis,
+  volume      = 23,
+  pages       = {105--128},
+  year        = 2006,
+  abstract    = {A parallel algebraic multigrid linear solver method is
+                  presented which is scalable to thousands of
+                  processors on signi cant classes of two- and
+                  three-dimensional problems. The algorithm is
+                  entirely algebraic and does not require prior
+                  information on the physical problem. Scalability is
+                  achieved through the use of an innovative parallel
+                  coarsening technique in addition to aggressive
+                  coarsening and multipass interpolation
+                  techniques. Details of this algorithm are presented
+                  together with numerical results on up to several
+                  thousand processors.}
+}
+
+@Article{JMandel_SMcCormick_JRuge_1988a,
+  author = 	 {J. Mandel and S. McCormick and J. Ruge},
+  title = 	 {An Algebraic Theory for Multigrid Methods for 
+                  Variational Problems},
+  journal = 	 SIAMJournalNumericalAnalysis,
+  year = 	 1988,
+  volume =	 25,
+  number =	 1,
+  pages =	 {91--110}
+}
+
+@Article{KStuben_1983a,
+  author = 	 {K. St\"{u}ben},
+  title = 	 {Algebraic Multigrid ({AMG}): Experiences and Comparisons},
+  journal = 	 AppliedMathematicsANDComputation,
+  year = 	 1983,
+  volume =	 13,
+  pages =	 {419--451}
+}
+
+@InBook{KStuben_in_UTrottenberg_CWOosterlee_ASchuller_2001a,
+  author      = {U. Trottenberg and C.W. Oosterlee and A. Sch\"uller},
+  title       = {Multigrid},
+  chapter     = {(K. St\"uben),
+                 Introduction to the AMG Methodology for Scalar Applications, 
+                 Including Many Results and Performance Measurements},
+  publisher   = {Academic Press},
+  year        = 2001,
+  pages       = {413--532},
+  abstract    = {Since the early nineties there has been a strongly
+                 increasing demand for more efficient methods to solve
+                 large sparse and unstructured linear systems of
+                 equations.  For practically relevant problem sizes
+                 classical one-level methods had already
+                 reached their limits and new hierarchical algorithms
+                 had to be developed in order to allow an efficient
+                 solution of even larger problems.  The purpose of this
+                 paper is to give an elementary introduction to the
+                 first hierarchical and purely matrix-based
+                 approach, algebraic multigrid (AMG).  The main idea behind
+                 AMG is to extend the classical ideas of geometric
+                 multigrid (smoothing and coarse-grid correction) to
+                 certain classes of algebraic systems of equations.
+                 Besides its robustness and efficiency, the main practical
+                 advantage of AMG is that it can directly be applied,
+                 for instance, to solve various types of elliptic
+                 partial dierential equations discretized on
+                 unstructured meshes, both in 2D and 3D. Since AMG does
+                 not make use of any geometric information it is a
+                 "plug-in" solver which can even be applied to problems
+                 without any geometric background, provided that the
+                 underlying matrix satisfies certain properties.  Although
+                 the development of AMG goes back to the early
+                 eighties, it still provides one of the most efficient
+                 algebraic methods to solve corresponding problems.
+                 Compared to the original approach, however, several
+                 modications and extensions have been introduced.  In
+                 addition to the theoretical basics of AMG, we present
+                 a concrete algorithm in some detail and demonstrate
+                 its robustness and efficiency by means of a variety of
+                 typical applications.},
+  pdf         = {http://www.scai.fraunhofer.de/fileadmin/download/samg/AMG_Introduction.pdf} 
+}
+
+@article{KStuben_2001a,
+  title     = {A review of algebraic multigrid.},
+  author    = {K. St\"uben},
+  journal   = JournalOFComputationalANDAppliedMathematics,
+  volume    = {128},
+  number    = {1/2},
+  pages     = {281 -- 309},
+  year      = {2001},
+  abstract  = {Since the early 1990s, there has been a strongly
+               increasing demand for more efficient methods to solve
+               large sparse, unstructured linear systems of
+               equations. For practically relevant problem sizes,
+               classical one-level methods had already reached their
+               limits and new hierarchical algorithms had to be
+               developed in order to allow an efficient solution of
+               even larger problems. This paper gives a review of the
+               first hierarchical and purely matrix-based approach,
+               algebraic multigrid (AMG). AMG can directly be applied,
+               for instance, to efficiently solve various types of
+               elliptic partial differential equations discretized on
+               unstructured meshes, both in 2D and 3D.  Since AMG does
+               not make use of any geometric information, it is a
+               "plug-in" solver which can even be applied to problems
+               without any geometric background, provided that the
+               underlying matrix has certain properties.},
+  pdf       = {http://www.scai.fraunhofer.de/fileadmin/download/samg/AMG_Review.pdf}
+}
+
+

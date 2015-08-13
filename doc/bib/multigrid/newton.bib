@@ -1,0 +1,508 @@
+@article{LChacon_2008a,
+  title      = {An Optimal, Parallel, Fully Implicit Newton-Krylov Solver 
+                for Three-Dimensional Viscoresistive Magnetohydrodynamics},
+  author     = {L. Chacon},
+  journal    = PhysicsOFPlasmas,
+  volume     = 15,
+  number     = 5,
+  pages      = 056103,
+  year       = 2008,
+  abstract   = {The conceptual development and implementation of a
+                scalable nonlinear solver for the time-dependent
+                three-dimensional (3D) compressible resistive
+                magnetohydrodynamics model (MHD) is discussed. The
+                approach is based on Jacobian-free Newton-Krylov
+                technology, preconditioned with multigrid methods for
+                algorithmic scalability. The key to the approach is
+                the reformulation of the hyperbolic MHD system into a
+                parabolic one, which is amenable to multigrid
+                techniques. Such reformulation (parabolization) aims
+                to render the modified system block diagonally
+                dominant (unlike the original MHD system, which is
+                diagonally submissive for implicit time steps Delta t
+                larger than the explicit Courant-Friedrichs-Lewy time
+                step). The algorithm has been tested on a variety of
+                2D and 3D configurations which demonstrate its
+                excellent algorithmic scalability properties. In
+                particular, it is shown that, serially, the CPU time
+                for a given simulation scales linearly with the number
+                of unknowns, and that large CPU gains (similar to 30)
+                are attainable with respect to an explicit approach
+                even for moderate grids (256 x 256). In parallel, the
+                algorithm features excellent scalability properties up
+                to thousands of processors (4096) and millions of
+                unknowns (similar to 1.3x10(8)).}
+}
+
+@article{BPhilip_LChacon_MPernice_2008a,
+title = {Implicit adaptive mesh refinement for 2D reduced resistive magnetohydrodynamics},
+journal = JournalOFComputationalPhysics,
+volume  = 227,
+number  = 20,
+pages   = {8855 -- 8874},
+year    = 2008,
+doi     = {10.1016/j.jcp.2008.06.029},
+author  = {B. Philip and L. Chac\'{o}n and M. Pernice}
+}
+
+@article{JMReisner_VAMousseau_AAWyszogrodzki_DAKnoll_2004a,
+  title     = {An Implicitly Balanced Hurricane Model with Physics-Based 
+               Preconditioning},
+  author    = {J. M. Reisner and V. A. Mousseau and A. A. Wyszogrodzki 
+               and D. A. Knoll},
+  journal   = MonthlyWeatherReview,
+  volume    = {133},
+  number    = {4},
+  pages     = {1003--1022},
+  month     = {April},
+  year      = {2005},
+  abstract  = {A numerical framework for simulating hurricanes based
+               upon solving a nonlinear equation set with an
+               implicitly balanced solution procedure is described in
+               this paper. The physical model is the Navier-Stokes
+               equations plus a highly simplified and differentiable
+               microphysics parameterization package. Because the
+               method is fully implicit, the approach is able to
+               employ time steps that result in
+               Courant-Friedrichs-Lewy (CFL) numbers greater than one
+               for advection, gravity, and sound waves; however, the
+               dynamical time scale of the problem must still be
+               respected for accuracy. The physical model is solved
+               via the Jacobian-free Newton-Krylov (JFNK) method. The
+               JFNK approach typically requires the approximate
+               solution of a large linear system several times per
+               time step. To increase the efficiency of the linear
+               system solves, a physics-based preconditioner has been
+               employed. To quantify the accuracy and efficiency of
+               the new approach against traditional approaches, the
+               implicitly balanced solver was first compared against
+               semi-implicit approaches for the simulation of a
+               precipitating moist bubble. The moist-bubble
+               simulations demonstrated the ability of the implicitly
+               balanced approach to achieve a given level of accuracy
+               in a more efficient manner than either a first-order
+               semi-implicit approach or a traditional leapfrog
+               semi-implicit approach. This behavior is further
+               illustrated in first-of-a-kind three-dimensional
+               implicitly balanced hurricane simulations that reveal
+               the first-order-in-time semi-implicit algorithm needs
+               to take a time step at least 60 times smaller than the
+               implicitly balanced algorithm to produce a comparable
+               accuracy.}
+}
+
+@article{VAMousseau_DAKnoll_JMReisner_2002a,
+  title     = {An Implicit Nonlinearly Consistent Method for the
+               Two-Dimensional Shallow-Water Equations with 
+               Coriolis Force},
+  author    = {V. A. Mousseau and D. A. Knoll and J. M. Reisner},
+  journal   = MonthlyWeatherReview,
+  volume    = {130},
+  number    = {11},
+  pages     = {2611--2625},
+  year      = {2002},
+  abstract  = {An implicit and nonlinearly consistent (INC) solution
+               technique is presented for the two-dimensional
+               shallow-water equations. Since the method is implicit,
+               and therefore unconditionally stable, time steps may be
+               used that result in both gravity wave
+               Courant-Friedrichs-Lewy (CFL) numbers and advection CFL
+               numbers being larger than one. By nonlinearly
+               consistent it is meant that all of the unknown
+               variables appear at the same time level in the
+               equations and are solved for simultaneously in an
+               iterative manner (i.e. no splitting errors in
+               time). The INC method is compared to a more traditional
+               semi-implicit method for stepping over the gravity wave
+               stability constraint.  Results are presented that show
+               that the second-order-in-time INC method can maintain a
+               high level of accuracy if the dynamical timescale of
+               the system is resolved by the time step. To investigate
+               this difference in temporal integration accuracy
+               between the nonlinearly consistent method and the
+               semi-implicit method an approximate modified equation
+               analysis was performed. The INC solution technique
+               employed is the Jacobian-free Newton-Krylov (JFNK)
+               method. Preconditioning of the JFNK method is achieved
+               via a semi-implicit solution method. The height matrix
+               from the semi-implicit algorithm is solved using a
+               multigrid linear solver to provide efficiency and
+               scalability.}
+}
+
+@article{DAKnoll_DEKeyes_2004a,
+  title     = {Jacobian-Free {N}ewton-{K}rylov Methods: A Survey of Approaches 
+               and Applications},
+  author    = {D. A. Knoll and D. E. Keyes},
+  journal   = JournalOFComputationalPhysics,
+  volume    = {193},
+  number    = {2},
+  pages     = {357--397},
+  year      = {2004},
+  abstract  = {Jacobian-free Newton-Krylov (JFNK) methods are
+               synergistic combinations of Newton-type methods for
+               superlinearly convergent solution of nonlinear
+               equations and Krylov subspace methods for solving the
+               Newton correction equations. The link between the two
+               methods is the Jacobian-vector product, which may be
+               probed approximately without forming and storing the
+               elements of the true Jacobian, through a variety of
+               means. Various approximations to the Jacobian matrix
+               may still be required for preconditioning the resulting
+               Krylov iteration. As with Krylov methods for linear
+               problems, successful application of the JFNK method to
+               any given problem is dependent on adequate
+               preconditioning. JFNK has potential for application
+               throughout problems governed by nonlinear partial
+               differential equations and integro-differential
+               equations. In this survey paper, we place JFNK in
+               context with other nonlinear solution algorithms for
+               both boundary value problems (BVPs) and initial value
+               problems (IVPs). We provide an over-view of the
+               mechanics of JFNK and attempt to illustrate the wide
+               variety of preconditioning options available. It is
+               emphasized that JFNK can be wrapped (as an accelerator)
+               around another nonlinear fixed point method
+               (interpreted as a preconditioning process, potentially
+               with significant code reuse). The aim of this paper is
+               not to trace fully the evolution of JFNK, nor to
+               provide proofs of accuracy or optimal convergence for
+               all of the constituent methods, but rather to present
+               the reader with a perspective on how JFNK may be
+               applicable to applications of interest and to provide
+               sources of further practical information.}
+
+}
+
+@article{DAKnoll_WJRider_GLOlson_2001a,
+  title     = {Nonlinear Convergence, Accuracy, and Time Step Control in 
+               Nonequilibrium Radiation Diffusion},
+  author    = {D. A. Knoll and W. J. Rider and G. L. Olson},
+  journal   = JournalOFQuantitativeSpectroscopyANDRadiativeTransfer,
+  volume    = {70},
+  number    = {1},
+  pages     = {25--36},
+  year      = {2001},
+  abstract  = {We study the interaction between converging the
+               nonlinearities within a time step and time step
+               control, on the accuracy of nonequilibrium radiation
+               diffusion calculations. Typically, this type of
+               calculation is performed using operator-splitting where
+               the nonlinearities are lagged one time step. This
+               method of integrating the nonlinear system results in
+               an "effective" time-step constraint to obtain
+               accuracy. A time-step control that limits the change in
+               dependent variables (usually energy) per time step is
+               used. We investigate the possibility that converging
+               the nonlinearities within a time step may allow
+               significantly larger time-step sizes and improved
+               accuracy as well. The previously described
+               Jacobian-free Newton-Krylov method (JQSRT 63 (1999) 15)
+               is used to converge all nonlinearities within a time
+               step. In addition, a new time-step control method,
+               based on the hyperbolic model of a thermal wave
+               (J. Comput. Phys. 152 (1999) 790), is employed. The
+               benefits and cost of a second-order accurate time step
+               are considered. It is demonstrated that for a chosen
+               accuracy, significant increases in solution efficiency
+               can be obtained by converging nonlinearities within a
+               time step.}
+
+}
+
+@article{JWBates_DAKnoll_WJRider_RBLowrie_VAMousseau_2001a,
+  title     = {On Consistent Time-Integration Methods for Radiation
+               Hydrodynamics in the Equilibrium Diffusion Limit:
+               Low-Energy-Density Regime},
+  author    = {J. W. Bates and D. A. Knoll and W. J. Rider 
+               and R. B. Lowrie and V. A. Mousseau},
+  journal   = JournalOFComputationalPhysics,
+  volume    = {167},
+  number    = {1},
+  pages     = {99--130},
+  year      = {2001},
+  abstract  = {We compare the accuracy of three, mixed
+               explicit-implicit schemes for simulating
+               nonrelativistic, radiative hydrodynamic phenomena in
+               the equilibrium diffusion limit. Only the
+               "low-energy-density" regime is considered, where it is
+               possible to ignore the effects of radiation pressure
+               and energy density in comparison to the fluid pressure
+               and energy density. The governing equations are then
+               those of compressible Eulerian hydrodynamics with a
+               nonlinear, radiative heat-transfer term appearing in
+               the energy equation. All three finite-volume methods in
+               this study utilize an explicit Godunov method with an
+               approximate Riemann solver to integrate the Euler
+               equations, but differ in their iterative treatment of
+               the radiation diffusion term, which is handled in an
+               "operator-split" fashion. In the first method,
+               diffusive effects are computed with a linearized
+               implicit technique that does not converge
+               nonlinearities within a computational time step. In the
+               other two methods, a Jacobian-free Newton-Krylov
+               procedure is used to converge the nonlinearities, and
+               improved accuracy (but not always greater efficiency)
+               is achieved over the more traditional
+               linearized-implicit approach. The two Newton-Krylov
+               methods differ in their order of accuracy in time; one
+               is strictly first-order accurate, while the other
+               attempts to achieve second-order accuracy by making use
+               of a predictor-corrector architecture. Several examples
+               are considered to demonstrate the convergence
+               properties of the three schemes, but attention is
+               limited to spherically symmetric problems such as the
+               one-dimensional point explosion.}
+
+}
+
+@article{VAMousseau_DAKnoll_WJRider_2000a,
+  title     = {Physics-Based Preconditioning and the {N}ewton-{K}rylov Method
+               for Nonequilibrium Radiation Diffusion},
+  author    = {V. A. Mousseau and D. A. Knoll and W. J. Rider},
+  journal   = JournalOFComputationalPhysics,
+  volume    = {160},
+  number    = {2},
+  pages     = {743--765},
+  year      = {2000},
+  abstract  = {An algorithm is presented for the solution of the time
+               dependent reaction-diffusion systems which arise in
+               nonequilibrium radiation diffusion applications. This
+               system of nonlinear equations is solved by coupling
+               three numerical methods, Jacobian-free Newton-Krylov,
+               operator splitting, and multigrid linear solvers. An
+               inexact Newton's method is used to solve the system of
+               nonlinear equations. Since building the Jacobian matrix
+               for problems of interest can be challenging, we employ
+               a Jacobian-free implementation of Newton's method,
+               where the action of the Jacobian matrix on a vector is
+               approximated by a first order Taylor series
+               expansion. Preconditioned generalized minimal residual
+               (PGMRES) is the Krylov method used to solve the linear
+               systems that come from the iterations of Newton's
+               method. The preconditioner in this solution method is
+               constructed using a physics-based divide and conquer
+               approach, often referred to as operator splitting. This
+               solution procedure inverts the scalar elliptic systems
+               that make up the preconditioner using simple multigrid
+               methods. The preconditioner also addresses the strong
+               coupling between equations with local 2*2 block
+               solves. The intra-cell coupling is applied after the
+               inter-cell coupling has already been addressed by the
+               elliptic solves. Results are presented using this
+               solution procedure that demonstrate its efficiency
+               while incurring minimal memory requirements.}
+}
+
+@article{DAKnoll_WJRider_GOLlson_1999a,
+  title     = {An Efficient Nonlinear Solution Method for 
+               Non-Equilibrium Radiation Diffusion},
+  author    = {D. A. Knoll and W. J. Rider and G. L. Olson},
+  journal   = JournalOFQuantitativeSpectroscopyANDRadiativeTransfer,
+  volume    = {63},
+  number    = {1},
+  pages     = {15--29},
+  year      = {1999},
+  abstract  = {A new nonlinear solution method is developed and applied
+               to a non-equilibrium radiation diffusion problem. With
+               this new method, Newton-like super-linear convergence
+               is achieved in the nonlinear iteration, without the
+               complexity of forming or inverting the Jacobian from a
+               standard Newton method. The method is a unique
+               combination of an outer Newton-based iteration and and
+               inner conjugate gradient-like (Krylov) iteration. The
+               effects of the Jacobian are probed only through
+               approximate matrix-vector products required in the
+               conjugate gradient-like iteration. The methodology
+               behind the Jacobian-free Newton-Krylov method is given
+               in detail. It is demonstrated that a simple, successive
+               substitution, linearization produces an effective
+               preconditioning matrix for the Krylov method.  The
+               efficiencies of different methods are compared and the
+               benefits of converging the nonlinearities within a time
+               step are demonstrated.}
+}
+
+@article{WJRider_DAKnoll_1999a,
+  title     = {Time Step Size Selection for Radiation 
+               Diffusion Calculations},
+  author    = {W. J. Rider and D. A. Knoll},
+  journal   = JournalOFComputationalPhysics,
+  volume    = {152},
+  number    = {2},
+  pages     = {790--805},
+  year      = {1999},
+  abstract  = {The purpose of this note is to describe a time step
+               control technique as applied to radiation
+               diffusion. Standard practice only provides a heuristic
+               criteria related to the relative change in the
+               dependent variables. We propose an alternative based on
+               relatively simple physical principles. This time step
+               control applies to methods of solution that are
+               unconditionally stable and converges nonlinearities
+               within a time step in the governing
+               equations. Commonly, nonlinearities in the governing
+               equations are evaluated using existing (old time) data,
+               We refer to this as the semi-implicit method. When a
+               method converges nonlinearities within a time step, the
+               entire governing equation including all nonlinearities
+               is self-consistently evaluated using advance time data
+               (with appropriate time centring for accuracy). This
+               criteria grew out of our work using Newton-Krylov
+               methods to solve radiation diffusion problems. We
+               observed that standard time step control ideas were
+               poorly correlated to our results with regards to
+               efficiency and accuracy. Our results indicated that
+               using a method that converged nonlinearities allows
+               much larger time step sizes with acceptable accuracy.}
+}
+
+@article{WJRider_DAKnoll_GLOlson_1999a,
+  title     = {A Multigrid {N}ewton-{K}rylov Method for Multimaterial Equilibrium 
+               Radiation Diffusion},
+  author    = {W. J. Rider and D. A. Knoll and G. L. Olson},
+  journal   = JournalOFComputationalPhysics,
+  volume    = {152},
+  number    = {1},
+  pages     = {164--191},
+  year      = {1999},
+  abstract  = {We focus on a fully implicit, nonlinearly converged,
+               solution of multimaterial equilibrium radiation
+               diffusion problems. The nonlinear method of solution is
+               a Newton-Krylov (generalized minimum residual, GMRES)
+               method preconditioned by a multigrid method. The
+               multigrid iteration matrix results from a Picard-type
+               linearization of the governing equations, The governing
+               equation is highly nonlinear with the principal forms
+               of nonlinearity found in the fourth-order dependence of
+               the radiation energy on temperature, the temperature
+               dependence of the opacity, and flux limiting. The
+               efficiency of both the linear and nonlinear iterative
+               techniques is investigated. With the realistic time
+               step control the solution of the linear system does not
+               scale linearly with multigrid as might be expected from
+               theory. In contrast, we find that the use of multigrid
+               to precondition a Newton-Krylov (GMRES) method provides
+               a robust, scalable solution for the nonlinear
+               system. Also only through converging the nonlinearities
+               within a time step does the solution method achieve its
+               design accuracy.}
+}
+
+@article{DJMavriplis_2002a,
+  title       = {An Assessment of Linear Versus Nonlinear Multigrid 
+                 Methods for Unstructured Mesh Solvers},
+  author      = {D. J. Mavriplis},
+  journal     = JournalOFComputationalPhysics,
+  volume      = 175,
+  number      = 1,
+  pages       = {302 -- 25},
+  year        = 2002,
+  abstract    = {The relative performance of a nonlinear full
+                 approximation storage multigrid algorithm and an
+                 equivalent linear multigrid algorithm for solving two
+                 different nonlinear problems is investigated. The
+                 first case consists of a transient radiation
+                 diffusion problem for which an exact linearization is
+                 available, while the second problem involves the
+                 solution of the steady-state Navier-Stokes equations,
+                 where a first-order discrete Jacobian is employed as
+                 an approximation to the Jacobian of a
+                 second-order-accurate discretization. When an exact
+                 linearization is employed, the linear and nonlinear
+                 multigrid methods asymptotically converge at
+                 identical rates and the linear method is found to be
+                 more efficient due to its lower cost per cycle. When
+                 an approximate linearization is employed, as in the
+                 Navier-Stokes cases, the relative efficiency of the
+                 linear approach versus the nonlinear approach depends
+                 both on the degree to which the linear system
+                 approximates the full Jacobian as well as on the
+                 relative cost of linear versus nonlinear multigrid
+                 cycles. For cases where convergence is limited by a
+                 poor Jacobian approximation, substantial speedup can
+                 be obtained using either multigrid method as a
+                 preconditioner to a Newton-Krylov method.}
+}
+
+@article{DJMavriplis_2001a,
+  title       = {Multigrid Approaches to Non-Linear Diffusion Problems on 
+                 Unstructured Meshes},
+  author      = {D. J. Mavriplis},
+  journal     = NumericalLinearAlgebraWITHApplications,
+  volume      = 8,
+  pages       = {499 -- 512},
+  year        = 2001,
+  booktitle   = {Workshop on Solution Methods for Large-Scale Non-Linear 
+                 Problems; July 2000; PLEASANTON, CALIFORNIA},
+  abstract    = {The efficiency of three multigrid methods for solving
+                 highly non-linear diffusion problems on
+                 two-dimensional unstructured meshes is examined. The
+                 three multigrid methods differ mainly in the manner
+                 in which the non-linearities of the governing
+                 equations are handled.  These comprise a non-linear
+                 full approximation storage (FAS) multi-rid method
+                 which is used to solve the non-linear equations
+                 directly, a linear multigrid method which is used to
+                 solve the linear system arising from a Newton
+                 linearization of the non-linear system, and a hybrid
+                 scheme which is based on a non-linear FAS multigrid
+                 scheme, but employs a linear solver on each level as
+                 a smoother.  Results indicate that, ill the
+                 asymptotic convergence region, all methods are
+                 equally effective at converging the lion-linear
+                 residual in a given number of multigrid cycles, but
+                 that the linear solver is more efficient in cpu time
+                 due to the lower cost of linear versus non-linear
+                 grid sweeps.}
+}
+
+@article{JEJones_CSWoodward_2001a,
+  title     = {{N}ewton-{K}rylov-multigrid solvers for large-scale, highly 
+               heterogeneous, variably saturated flow problems},
+  author    = {J. E. Jones and C. S. Woodward},
+  journal   = AdvancesINWaterResources,
+  volume    = 24,
+  number    = 7,
+  pages     = {763 -- 774},
+  year      = 2001,
+  abstract  = {In this paper, we present a class of solvers developed
+               for the parallel solution of Richards' equation, a
+               model used in variably saturated flow
+               simulations. These solvers take advantage of the fast,
+               robust convergence of globalized Newton methods as well
+               as the parallel scalability of multigrid
+               preconditioners. We compare two multigrid methods. The
+               methods differ primarily in their handling of
+               discontinuous and anisotropic permeability fields, with
+               one method invoking a simple pointwise smoothing
+               technique and the other a more expensive plane
+               smoother. Computational results are presented to show
+               the effectiveness of the entire nonlinear solution
+               procedure, to demonstrate the effect of discontinuities
+               and anisotropies, and to explore parallel
+               efficiencies.}
+}
+
+@article{GEHammond_AJValocchi_PCLichtner_2005a,
+  author =      {G. E. Hammond and A. J. Valocchi and P. C. Lichtner},
+  title = 	{Application of {J}acobian-free {N}ewton-{K}rylov
+                 with Physics-Based Preconditioning to Biogeochemical
+                 Transport},
+  journal = 	 AdvancesINWaterResources,
+  year = 	 2005,
+  volume = 	 28,
+  pages = 	 {359--376}
+}
+
+
+@article{CISteefel_DJDePaolo_PCLichtner_2005a,
+  author = 	 {C. I. Steefel and D. J. De{P}aolo and P. C. Lichtner},
+  title = 	 {Reactive Transport Modeling: An Essential Tool and A 
+                  New Research Approach for the Earth Sciences},
+  journal = 	 EarthANDPlanetaryScienceLetters,
+  year = 	 2005,
+  volume = 	 240,
+  pages = 	 {539--558}
+}
+

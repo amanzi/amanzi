@@ -50,10 +50,10 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   MPI_Comm_rank(mpi_comm,&rank);
   MPI_Comm_size(mpi_comm,&size);
 
-  bool native = input_parameter_list.get<bool>("Native Unstructured Input", false);
-  
   Teuchos::ParameterList new_list; 
   Teuchos::ParameterList sub_list;
+  
+  bool native = input_parameter_list.get<bool>("Native Unstructured Input", false);
   
   if (!native) {
     Amanzi::AmanziInput::InputParserIS parser;
@@ -72,7 +72,6 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     } else if (verbosity == "Extreme") {
       verbLevel = Teuchos::VERB_EXTREME;
     } 
-
   } else {
     verbLevel = Teuchos::VERB_NONE;
     new_list = input_parameter_list;
