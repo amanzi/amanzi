@@ -4000,7 +4000,7 @@ at intervals corresponding to the numerical time step values or intervals corres
 
   * `"Write Regions`" [list] arrays of auxiliary fields with region ids to write into the visualization file.
 
-    * `"REGION_NAME`" [Arrat(string)] user defined field name and the list of regions. 
+    * `"REGION_NAME`" [Array(string)] user defined field name and the list of regions. 
       The first entry in the regions array is marked with the value 1.0 in the array, the second with the value 2.0, and so forth. 
       The code ignores entries in the regions array that are not valid regions that contain cells.
 

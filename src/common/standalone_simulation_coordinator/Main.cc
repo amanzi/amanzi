@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
 	}
         // optional unstructured converter
 	if (echo_list.isParameter("Format")) {
-          if (echo_list.get<std::string>("Format") == "native") {
+          if (echo_list.get<std::string>("Format") == "unstructured_native") {
             bool found;
             Amanzi::AmanziInput::InputConverterU converter;
             converter.Init(xmlInFileName, found);
