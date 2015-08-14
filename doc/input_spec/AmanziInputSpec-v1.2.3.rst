@@ -1805,7 +1805,12 @@ at intervals corresponding to the numerical time step values; writes are control
 
   * [S] `"Variables`" [Array(string)] can accept a list of field quantities to include in the file.  At present the unstructured code dumps all of the dependent variables in the system state.
 
-  * [U] `"Write Regions`" [Array(string)] (empty array) write an array into the visualization file that can be used to identify a region or regions. The first entry in the regions array is marked with the value 1.0 in the array, the second with the value 2.0, and so forth. The code ignores entries in the regions array that are not valid regions that contain cells.
+  * [U]   * `"Write Regions`" [list] arrays of auxiliary fields with region ids to write into the visualization file.
+
+    * `"Region_name`" [Array(string)] user defined field name and the list of regions. 
+      The first entry in the regions array is marked with the value 1.0 in the array, the second with the value 2.0, and so forth. 
+      The code ignores entries in the regions array that are not valid
+      regions that contain cells.
 
   * [U] `"Write Partitions`" [bool] (false) if this parameter is true, then write an array into the visualization file that contains the rank number of the processor that owns a mesh cell. 
 
@@ -1830,7 +1835,12 @@ Example:
   <ParameterList name="Visualization Data">
     <Parameter name="File Name Base" type="string" value="chk"/>
     <Parameter name="File Name Digits" type="int" value="5"/>
-    <Parameter name="Cycle Macros" type="Array(string)" value="Every-10">
+    <Parameter name="Cycle Macros" type="Array(string)"
+    value="Every-10">
+    <ParameterList name="Write Regions">
+       <Parameter name="regions" type="Array(string)" value="{Obs_r1, Obs_r1, Obs_r3}"/>
+       <Parameter name="wells" type="Array(string)" value="{Obs_r1}"/>
+    </ParameterList>
   </ParameterList>
 
 In this example, the liquid pressure and moisture content are written when the cycle number is evenly divisible by 5.
