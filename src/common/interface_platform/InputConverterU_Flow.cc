@@ -94,11 +94,11 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
   // insert operator sublist
   std::string disc_method("mfd-optimized_for_sparsity");
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, discretization_method", flag);
-  if (flag) disc_method = mm.transcode(node->getNodeName());
+  if (flag) disc_method = mm.transcode(node->getTextContent());
 
   std::string pc_method("linearized_operator");
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, preconditioning_strategy", flag);
-  if (flag) pc_method = mm.transcode(node->getNodeName()); 
+  if (flag) pc_method = mm.transcode(node->getTextContent()); 
 
   std::string nonlinear_solver("nka");
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver", flag);

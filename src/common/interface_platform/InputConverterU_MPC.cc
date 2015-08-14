@@ -45,8 +45,12 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   DOMNode* node;
   DOMElement* element;
 
-  // parse defaults of execution_controls 
+  // do we need to call new version of CD?
   bool flag;
+  // node = GetUniqueElementByTagsString_("process_kernel, pk", flag);
+  // if (flag) return TranslateCycleDriverNew_();
+
+  // parse defaults of execution_controls 
   node_list = doc_->getElementsByTagName(mm.transcode("execution_controls"));
   node = GetUniqueElementByTagsString_(node_list->item(0), "execution_control_defaults", flag);
 
