@@ -36,21 +36,27 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
 {
   Teuchos::ParameterList out_list;
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+  Errors::Message msg;
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "Translating cycle driver" << std::endl;
-  }
 
   MemoryManager mm;
   DOMNodeList *node_list, *children;
   DOMNode* node;
+  DOMElement* element;
+
+  // do we need to call new version of CD?
+  bool flag;
+  // node = GetUniqueElementByTagsString_("process_kernel, pk", flag);
+  // if (flag) return TranslateCycleDriverNew_();
 
   // parse defaults of execution_controls 
-  bool flag;
   node_list = doc_->getElementsByTagName(mm.transcode("execution_controls"));
   node = GetUniqueElementByTagsString_(node_list->item(0), "execution_control_defaults", flag);
 
-  double t0;
+  double t0, t1, dt0, t0_steady, t1_steady, dt0_steady;
   char *method, *tagname;
+  bool flag_steady(false); 
   std::string method_d, dt0_d, filename;
 
   method_d = GetAttributeValueS_(static_cast<DOMElement*>(node), "method", false, "");
@@ -65,35 +71,41 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+    element = static_cast<DOMElement*>(inode);
 
     tagname = mm.transcode(inode->getNodeName());
     if (strcmp(tagname, "execution_control") == 0) {
-      // generate fake name (will be created later)
-      std::stringstream ss;
-      ss << "TP " << i;
-      std::string name = ss.str();
-
       t0 = TimeStringToValue_(GetAttributeValueS_(static_cast<DOMElement*>(inode), "start"));
-      if (tp_mode.find(t0) != tp_mode.end()) {
-        Errors::Message msg;
-        msg << "\"execution_controls\" cannot have the same start time.\n";
-        Exceptions::amanzi_throw(msg);
-      } 
+      t1 = TimeStringToValue_(GetAttributeValueS_(static_cast<DOMElement*>(inode), "end"));
+      dt0 = TimeStringToValue_(GetAttributeValueS_(element, "init_dt", false, dt0_d));
+      std::string mode = GetAttributeValueS_(static_cast<DOMElement*>(inode), "mode");
 
-      tp_mode[t0] = GetAttributeValueS_(static_cast<DOMElement*>(inode), "mode");
-      tp_t1[t0] = TimeStringToValue_(GetAttributeValueS_(static_cast<DOMElement*>(inode), "end"));
-      tp_method[t0] = GetAttributeValueS_(static_cast<DOMElement*>(inode), "method", false, method_d);
-      tp_dt0[t0] = TimeStringToValue_(GetAttributeValueS_(static_cast<DOMElement*>(inode), "init_dt", false, dt0_d));
-      tp_max_cycles[t0] = GetAttributeValueD_(static_cast<DOMElement*>(inode), "max_cycles", false, 10000000);
+      if (mode == "steady") {
+        t0_steady = t0;
+        t1_steady = t1;
+        dt0_steady = dt0;
+        flag_steady = true;
+      } else {
+        if (tp_mode.find(t0) != tp_mode.end()) {
+          msg << "Transient \"execution_controls\" cannot have the same start time.\n";
+          Exceptions::amanzi_throw(msg);
+        }  
 
-      filename = GetAttributeValueS_(static_cast<DOMElement*>(inode), "restart", false, "");
+        tp_mode[t0] = mode;
+        tp_t1[t0] = t1;
+        tp_dt0[t0] = dt0;
+        tp_method[t0] = GetAttributeValueS_(element, "method", false, method_d);
+        tp_max_cycles[t0] = GetAttributeValueD_(element, "max_cycles", false, 10000000);
+
+        filename = GetAttributeValueS_(element, "restart", false, "");
+      }
     }
   }
 
   // old version 
   // -- parse available PKs
-  std::map<std::string, bool> pk_state;
   int transient_model(0);
+  std::map<std::string, bool> pk_state;
 
   node_list = doc_->getElementsByTagName(mm.transcode("process_kernels"));
   node = node_list->item(0);
@@ -110,10 +122,10 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     pk_state[tagname] = (strcmp(state.c_str(), "on") == 0);
 
     if (strcmp(tagname, "flow") == 0) {
-      std::string model = GetAttributeValueS_(
+      flow_model_ = GetAttributeValueS_(
           static_cast<DOMElement*>(inode), "model", "richards, saturated, constant");
-      pk_model_["flow"] = (model == "richards") ? "richards" : "darcy";
-      if (model != "constant") transient_model += 4 * pk_state[tagname];
+      pk_model_["flow"] = (flow_model_ == "richards") ? "richards" : "darcy";
+      if (flow_model_ != "constant") transient_model += 4 * pk_state[tagname];
     } else if (strcmp(tagname, "chemistry") == 0) {
       std::string model = GetAttributeValueS_(static_cast<DOMElement*>(inode), "engine");
       pk_model_["chemistry"] = model;
@@ -127,23 +139,31 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   int tp_id(0);
   Teuchos::ParameterList pk_tree_list;
 
-  std::map<double, std::string>::iterator it = tp_mode.begin();
-  if (it->second == "steady") {
-    std::ostringstream ss;
-    ss << "TP " << tp_id;
+  if (flag_steady && pk_state["flow"]) {
+    if (flow_model_ == "constant") {
+      if (t1_steady != t0_steady) {
+        msg << "Constant flow must have end time = start time.\n";
+        Exceptions::amanzi_throw(msg);
+      }
+      node = GetUniqueElementByTagsString_(
+          "unstructured_controls, unstr_steady-state_controls, unstr_initialization", flag);
+      if (!flag) {
+        msg << "Constant flow must have an initialization list, unless state=off.\n";
+        Exceptions::amanzi_throw(msg);
+      }
+    }
 
-    Teuchos::ParameterList& tmp_list = out_list.sublist("time periods").sublist(ss.str());
+    Teuchos::ParameterList& tmp_list = out_list.sublist("time periods").sublist("TP 0");
     tmp_list.sublist("PK Tree").sublist("Flow Steady").set<std::string>("PK type", pk_model_["flow"]);
-    tmp_list.set<double>("start period time", tp_t1.begin()->first);
-    tmp_list.set<double>("end period time", tp_t1.begin()->second);
-    tmp_list.set<int>("maximum cycle number", tp_max_cycles.begin()->second);
-    tmp_list.set<double>("initial time step", tp_dt0.begin()->second);
+    tmp_list.set<double>("start period time", t0_steady);
+    tmp_list.set<double>("end period time", t1_steady);
+    tmp_list.set<double>("initial time step", dt0_steady);
 
     tp_id++;
-    it++;
   }
 
   // -- create PK tree for transient TP
+  std::map<double, std::string>::iterator it = tp_mode.begin();
   while (it != tp_mode.end()) {
     switch (transient_model) {
     case 1:

@@ -99,7 +99,8 @@ class InputConverterU : public InputConverter {
   std::map<std::string, std::string> pk_model_;
 
   // global flow constants
-  bool flow_single_phase_;
+  std::string flow_model_;  // global value
+  bool flow_single_phase_;  // runtime value
   bool compressibility_;
   double rho_;
 

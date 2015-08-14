@@ -317,10 +317,10 @@ std::vector<DOMNode*> InputConverter::GetSameChildNodes_(
   if (n == m) flag = true;
 
   // exception
-  if (!flag) {
+  if (!flag && exception) {
     char* tagname = mm.transcode(node->getNodeName());
     Errors::Message msg;
-    msg << "Node \"" << tagname << "\" must have same elements\n";
+    msg << "Node \"" << tagname << "\" must have similar elements.\n";
     if (n) msg << "The first element is \"" << name << "\".\n";
     msg << "Please correct and try again.\n";
     Exceptions::amanzi_throw(msg);
