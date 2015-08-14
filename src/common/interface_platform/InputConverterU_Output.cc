@@ -79,7 +79,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
         // deal differently if "times" or "start-period-stop"
         bool flag;
         std::string child_name;
-        std::vector<DOMNode*> multi_list = GetSameChildNodes_(inode, child_name, flag);
+        std::vector<DOMNode*> multi_list = GetSameChildNodes_(inode, child_name, flag, false);
 
         if (child_name == "time") {
           std::vector<double> times;
