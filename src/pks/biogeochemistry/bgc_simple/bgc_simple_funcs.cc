@@ -41,7 +41,8 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
              const Epetra_SerialDenseVector& SoilThicknessArr,
              std::vector<Teuchos::RCP<PFT> >& pftarr,
              std::vector<Teuchos::RCP<SoilCarbon> >& soilcarr,
-             Epetra_SerialDenseVector& SoilCO2Arr)
+             Epetra_SerialDenseVector& SoilCO2Arr,
+             Epetra_SerialDenseVector& TransArr)
 {
   // required constants
   double p_atm = 101325.;

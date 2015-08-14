@@ -295,6 +295,7 @@ bool BGCSimple::advance(double dt) {
 
   // Create a workspace array for the result
   Epetra_SerialDenseVector co2_decomp_c(ncells_per_col_);
+  Epetra_SerialDenseVector trans_c(ncells_per_col_);
 
   // Grab the mesh partition to get soil properties
   Teuchos::RCP<const Functions::MeshPartition> mp = S_next_->GetMeshPartition(soil_part_name_);
@@ -330,7 +331,7 @@ bool BGCSimple::advance(double dt) {
     // call the model
     BGCAdvance(S_inter_->time(), dt, scv[0][col], cryoturbation_coef_, met,
                *temp_c, *pres_c, *depth_c, *dz_c,
-               pfts_[col], soil_carbon_pools_[col], co2_decomp_c);
+               pfts_[col], soil_carbon_pools_[col], co2_decomp_c, trans_c);
 
     // copy back
     // -- serious cache thrash... --etc
