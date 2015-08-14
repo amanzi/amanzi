@@ -104,6 +104,9 @@ class BGCSimple : public PKPhysicalBase {
   std::vector<std::vector<Teuchos::RCP<PFT> > > pfts_old_;   // need two copies for failed timesteps
   std::vector<std::vector<Teuchos::RCP<SoilCarbon> > > soil_carbon_pools_;
 
+  // evaluator for transpiration
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> trans_eval_;
+  
   // extras
   double lat_;
   double wind_speed_ref_ht_;
