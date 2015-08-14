@@ -85,6 +85,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
       flow_list->sublist("physical models and assumptions")
                 .set<std::string>("porosity model", "compressible: pressure function");
     }
+  } else {
+    Errors::Message msg;
+    msg << "Internal error for flow model \"" << pk_model_["flow"] << "\".\n";
+    Exceptions::amanzi_throw(msg);
   }
 
   // insert operator sublist

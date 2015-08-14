@@ -298,6 +298,12 @@ void Transport_PK::Initialize()
       break;
     }
   }
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << std::endl 
+        << vo_->color("green") << "Initalization of TI period is complete." << vo_->reset() << std::endl;
+  }
 }
 
 

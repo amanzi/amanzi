@@ -41,39 +41,8 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   }
 
   MemoryManager mm;
-
-  // parse available PKs
-  std::map<std::string, bool> pk_state;
-  int transient_model(0);
-  char* tagname;
-
-  DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("process_kernels"));
-  DOMNode* node = node_list->item(0);
-  DOMNodeList* children = node->getChildNodes();
-
-  for (int i = 0; i < children->getLength(); ++i) {
-    DOMNode* inode = children->item(i);
-    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
-
-    tagname = mm.transcode(inode->getNodeName());
-    if (strcmp(tagname, "comments") == 0) continue;
-
-    std::string state = GetAttributeValueS_(static_cast<DOMElement*>(inode), "state");
-    pk_state[tagname] = (strcmp(state.c_str(), "on") == 0);
-
-    if (strcmp(tagname, "flow") == 0) {
-      std::string model = GetAttributeValueS_(
-          static_cast<DOMElement*>(inode), "model", "richards, saturated, constant");
-      pk_model_["flow"] = (model == "saturated") ? "darcy" : model;
-      if (model != "constant") transient_model += 4 * pk_state[tagname];
-    } else if (strcmp(tagname, "chemistry") == 0) {
-      std::string model = GetAttributeValueS_(static_cast<DOMElement*>(inode), "engine");
-      pk_model_["chemistry"] = model;
-      transient_model += pk_state[tagname];
-    } else if (strcmp(tagname, "transport") == 0) {
-      transient_model += 2 * pk_state[tagname];
-    }
-  }
+  DOMNodeList *node_list, *children;
+  DOMNode* node;
 
   // parse defaults of execution_controls 
   bool flag;
@@ -81,7 +50,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   node = GetUniqueElementByTagsString_(node_list->item(0), "execution_control_defaults", flag);
 
   double t0;
-  char *method;
+  char *method, *tagname;
   std::string method_d, dt0_d, filename;
 
   method_d = GetAttributeValueS_(static_cast<DOMElement*>(node), "method", false, "");
@@ -121,11 +90,40 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     }
   }
 
-  // sort time periods
-  // std::sort(tp_t1.begin(), tp_t1.end());
-  // std::sort(tp_mode.begin(), tp_mode.end());
+  // old version 
+  // -- parse available PKs
+  std::map<std::string, bool> pk_state;
+  int transient_model(0);
 
-  // create steady-state TP
+  node_list = doc_->getElementsByTagName(mm.transcode("process_kernels"));
+  node = node_list->item(0);
+  children = node->getChildNodes();
+
+  for (int i = 0; i < children->getLength(); ++i) {
+    DOMNode* inode = children->item(i);
+    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+
+    tagname = mm.transcode(inode->getNodeName());
+    if (strcmp(tagname, "comments") == 0) continue;
+
+    std::string state = GetAttributeValueS_(static_cast<DOMElement*>(inode), "state");
+    pk_state[tagname] = (strcmp(state.c_str(), "on") == 0);
+
+    if (strcmp(tagname, "flow") == 0) {
+      std::string model = GetAttributeValueS_(
+          static_cast<DOMElement*>(inode), "model", "richards, saturated, constant");
+      pk_model_["flow"] = (model == "richards") ? "richards" : "darcy";
+      if (model != "constant") transient_model += 4 * pk_state[tagname];
+    } else if (strcmp(tagname, "chemistry") == 0) {
+      std::string model = GetAttributeValueS_(static_cast<DOMElement*>(inode), "engine");
+      pk_model_["chemistry"] = model;
+      transient_model += pk_state[tagname];
+    } else if (strcmp(tagname, "transport") == 0) {
+      transient_model += 2 * pk_state[tagname];
+    }
+  }
+
+  // -- create steady-state TP
   int tp_id(0);
   Teuchos::ParameterList pk_tree_list;
 
@@ -145,7 +143,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     it++;
   }
 
-  // old version 
+  // -- create PK tree for transient TP
   while (it != tp_mode.end()) {
     switch (transient_model) {
     case 1:
@@ -236,11 +234,11 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   }
 
   // get the default time steps
-  bool flag;
   MemoryManager mm;
   DOMNodeList *node_list, *children;
   DOMNode* node;
 
+  bool flag;
   node = GetUniqueElementByTagsString_("execution_controls, execution_control_defaults", flag);
 
   double dt_init_d, dt_max_d;
@@ -255,6 +253,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   bc_names.push_back("hydrostatic");
   bc_names.push_back("uniform_pressure");
   bc_names.push_back("inward_mass_flux");
+  bc_names.push_back("aqueous_conc");
 
   node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
   if (node_list->getLength() == 0) return out_list;
