@@ -46,6 +46,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   DOMNode* node;
   DOMElement* element;
 
+  // chemical engine
   bool flag;
   node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
   std::string engine = GetAttributeValueS_(static_cast<DOMElement*>(node), "engine");
@@ -54,15 +55,18 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   bool native(false);
   if (strcmp(engine.c_str(), "amanzi") == 0) {
     out_list.set<std::string>("chemistry model", "Amanzi");
+    std::string bgdfilename = CreateBGDFile(xmlfilename_);
     native = true;
+
+    Teuchos::ParameterList& bgd_list = out_list.sublist("Thermodynamic Database");
+    bgd_list.set<std::string>("Format", "simple");
+    bgd_list.set<std::string>("File", bgdfilename);
+
   } else if (strcmp(engine.c_str(), "pflotran") == 0) {
     out_list.set<std::string>("chemistry model", "Alquimia");
     out_list.set<std::string>("Engine", "PFloTran");
   }
   
-  // general parameters
-  out_list.set<int>("Number of component concentrations", comp_names_all_.size());
-
   // minerals
   std::vector<std::string> minerals;
   node = GetUniqueElementByTagsString_("phases, solid_phase, minerals", flag);
@@ -252,32 +256,53 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     }
   }
 
+  // general parameters
+  out_list.set<int>("Number of component concentrations", comp_names_all_.size());
+
   out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
   return out_list;
 }
 
 
 /* ******************************************************************
-* Empty
+* Adds kd values to a bgd file (using the first material).
+* Returns the name of this file.  
 ****************************************************************** */
-void InputConverterU::CreateBDGFile(Teuchos::ParameterList& sorption, std::string& filename)
+std::string InputConverterU::CreateBGDFile(std::string& filename)
 {
+  DOMNode* node;
+  DOMElement* element;
+
   std::ofstream bgd_file;
   std::stringstream species;
   std::stringstream isotherms;
 
-  // build streams
-  for (Teuchos::ParameterList::ConstIterator i = sorption.begin(); i != sorption.end(); i++) {
-    Teuchos::ParameterList& tmp = sorption.sublist(sorption.name(i));
-    species << sorption.name(i) << " ;   0.00 ;   0.00 ;   1.00 \n";
-    if (tmp.isParameter("Langmuir b")) {
-      isotherms << sorption.name(i) << " ; langmuir ; " 
-                << tmp.get<double>("Kd") << " " << tmp.get<double>("Langmuir b") << std::endl;
-    } else if (tmp.isParameter("Freundlich n")) {
-      isotherms << sorption.name(i) << " ; freundlich ; " 
-                << tmp.get<double>("Kd") << " " << tmp.get<double>("Freundlich n") << std::endl;
-    } else {
-      isotherms << sorption.name(i) << " ; linear ; " << tmp.get<double>("Kd") << std::endl;
+  bool flag;
+  node = GetUniqueElementByTagsString_("materials, material, sorption_isotherms", flag);
+  if (flag) {
+    std::string name;
+    std::vector<DOMNode*> children = GetSameChildNodes_(node, name, flag, false);
+    for (int i = 0; i < children.size(); ++i) {
+      DOMNode* inode = children[i];
+      element = static_cast<DOMElement*>(inode);
+      name = GetAttributeValueS_(element, "name");
+      species << name << " ;   0.00 ;   0.00 ;   1.00 \n";
+
+      DOMNode* knode = GetUniqueElementByTagsString_(inode, "kd_model", flag);
+      element = static_cast<DOMElement*>(knode);
+      if (flag) {
+        double kd = GetAttributeValueD_(element, "kd");
+        std::string model = GetAttributeValueS_(element, "model");
+        if (model == "langmuir") {
+          double b = GetAttributeValueD_(element, "b");
+          isotherms << name << " ; langmuir ; " << kd << " " << b << std::endl;
+        } else if (model == "freundlich") {
+          double n = GetAttributeValueD_(element, "n");
+          isotherms << name << " ; freundlich ; " << kd << " " << n << std::endl;
+        } else {
+          isotherms << name << " ; linear ; " << kd << std::endl;
+        }
+      }
     }
   }
   
@@ -301,6 +326,8 @@ void InputConverterU::CreateBDGFile(Teuchos::ParameterList& sorption, std::strin
 
   // close output bdg file
   bgd_file.close();
+
+  return bgdfilename;
 }
 
 }  // namespace AmanziInput

@@ -254,17 +254,18 @@ Teuchos::ParameterList InputConverterU::TranslateInitialization_(
   DOMNode* node;
 
   // set defaults
-  std::string method("saturated solver");
-  out_list.set<std::string>("method", method);
+  out_list.set<std::string>("method", "saturated solver");
   out_list.set<std::string>("linear solver", TI_SOLVER);
 
   // overwite defaults using numerical controls
   bool flag;
+  std::string method;
   std::string controls(unstr_controls + ", unstr_initialization");
 
   node = GetUniqueElementByTagsString_(controls + ", method", flag); 
   if (flag) {
-    method = mm.transcode(node->getTextContent());
+    method = GetTextContentS_(node, "picard, darcy_solver");
+    if (method == "darcy_solver") method = "saturated solver";
     out_list.set<std::string>("method", method);
   }
 
@@ -277,7 +278,11 @@ Teuchos::ParameterList InputConverterU::TranslateInitialization_(
       strtod(mm.transcode(node->getTextContent()), NULL));
 
   node = GetUniqueElementByTagsString_(controls + ", linear_solver", flag); 
-  if (flag) out_list.set<std::string>("linear solver", mm.transcode(node->getTextContent()));
+  if (flag) {
+    std::string text = mm.transcode(node->getTextContent());
+    if (text == "aztecoo") text = "AztecOO";
+    out_list.set<std::string>("linear solver", text);
+  }
 
   if (method == "picard") {
     Teuchos::ParameterList& pic_list = out_list.sublist("picard parameters");

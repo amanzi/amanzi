@@ -51,7 +51,7 @@ XERCES_CPP_NAMESPACE_USE
 ****************************************************************** */
 void InputConverter::Init(const std::string& xmlfilename, bool& found)
 {
-  Teuchos::ParameterList out_list;
+  xmlfilename_ = xmlfilename;
   
   parser = new XercesDOMParser();
   parser->setExitOnFirstFatalError(true);
@@ -454,6 +454,31 @@ std::string InputConverter::GetAttributeValueS_(
   Exceptions::amanzi_throw(msg);
 
   return val;
+}
+
+
+/* ******************************************************************
+* Extract text content and verify it .
+****************************************************************** */
+std::string InputConverter::GetTextContentS_(
+    DOMNode* node, const char* options, bool exception)
+{
+  std::string val;
+
+  MemoryManager mm;
+  val = mm.transcode(node->getTextContent());
+
+  std::vector<std::string> names = CharToStrings_(options);
+  for (std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it) {
+    if (val == *it) return val;
+  }
+
+  char* tagname = mm.transcode(node->getNodeName());
+  Errors::Message msg;
+  msg << "Validation of text content for node \"" << tagname << "\" failed.\n";
+  msg << "Available options: \"" << options << "\".\n";
+  msg << "Please correct and try again.\n";
+  Exceptions::amanzi_throw(msg);
 }
 
 
