@@ -21,12 +21,16 @@
 #include "TimerManager.hh"
 
 #include "dbc.hh"
+#include "energy_tcm_registration.hh"
+#include "energy_iem_registration.hh"
+#include "eos_registration.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 #include "mpc_pks_registration.hh"
 #include "pks_chemistry_registration.hh"
 #include "pks_flow_registration.hh"
 #include "pks_transport_registration.hh"
+#include "pks_energy_registration.hh"
 #include "wrm_flow_registration.hh"
 
 

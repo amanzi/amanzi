@@ -122,7 +122,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
   }
 
   flow_list->sublist("operators") = TranslateDiffusionOperator_(
-      disc_method, pc_method, nonlinear_solver, rel_perm);
+      disc_method, pc_method, nonlinear_solver, "vapor matrix");
   
   // insert time integrator
   std::string err_options, unstr_controls;
@@ -134,8 +134,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
     unstr_controls = "unstructured_controls, unstr_transient_controls";
   } 
   
-  flow_list->sublist("time integrator") = TranslateTimeIntegrator_(
-      err_options, nonlinear_solver, modify_correction, unstr_controls);
+  if (pk_master_.find("flow") != pk_master_.end()) {
+    flow_list->sublist("time integrator") = TranslateTimeIntegrator_(
+        err_options, nonlinear_solver, modify_correction, unstr_controls);
+  }
 
   // insert boundary conditions and source terms
   flow_list->sublist("boundary conditions") = TranslateFlowBCs_();
@@ -276,10 +278,9 @@ Teuchos::ParameterList InputConverterU::TranslatePOM_()
 {
   Teuchos::ParameterList out_list;
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Translating porosity models" << std::endl;
-  }
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+      *vo_->os() << "Translating porosity models" << std::endl;
 
   MemoryManager mm;
   DOMNodeList *node_list, *children;
@@ -325,6 +326,9 @@ Teuchos::ParameterList InputConverterU::TranslatePOM_()
       }
     }
   }
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+      *vo_->os() << "compessibility models: " << compressibility_ << std::endl;
 
   if (!compressibility_) {
     Teuchos::ParameterList empty;

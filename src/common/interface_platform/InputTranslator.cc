@@ -134,6 +134,16 @@ Teuchos::ParameterList translate(const std::string& xmlfilename, std::string& sp
 
   new_list.sublist("General Description") = get_model_description(doc, def_list);
   new_list.sublist("Echo Translated Input") = get_echo_translated(doc, def_list);
+  // check that we have to translate to spec 1.x
+  const Teuchos::ParameterList& echo_list = new_list.sublist("Echo Translated Input");
+  if (echo_list.isParameter("Format")) {
+    if (echo_list.get<std::string>("Format") == "unstructured_native") {
+      delete errorHandler;
+      XMLPlatformUtils::Terminate();
+      return new_list;
+    }
+  }
+
   new_list.sublist("Mesh") = get_Mesh(doc, def_list);
   new_list.sublist("Domain").set<int>("Spatial Dimension",dimension_);
   new_list.sublist("Execution Control") = get_execution_controls(doc, &def_list);

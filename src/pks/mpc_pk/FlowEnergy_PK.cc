@@ -43,10 +43,10 @@ void FlowEnergy_PK::Setup()
 
   // Fields for solids
   // -- rock
-  if (!S_->HasField("density_rock")) {
-    S_->RequireField("density_rock", "density_rock")->SetMesh(mesh_)->SetGhosted(true)
+  if (!S_->HasField("particle_density")) {
+    S_->RequireField("particle_density", "particle_density")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireFieldEvaluator("density_rock");
+    S_->RequireFieldEvaluator("particle_density");
   }
 
   if (!S_->HasField("internal_energy_rock")) {

@@ -14,62 +14,62 @@
   <ParameterList name="Regions">
     <ParameterList name="Bottom Surface">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{2.16000000000000000e+02, 0.00000000000000000e+00}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{2.160e+02, 0.0}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionBottom">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{2.16000000000000000e+02, 4.00000000000000000e+01}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{2.160e+02, 4.0e+01}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionMiddle">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{2.16000000000000000e+02, 8.00000000000000000e+01}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.00000000000000000e+00, 4.00000000000000000e+01}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{2.160e+02, 8.0e+01}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 4.0e+01}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionTop">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{2.16000000000000000e+02, 1.20000000000000000e+02}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.00000000000000000e+00, 8.00000000000000000e+01}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{2.160e+02, 1.2e+02}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 8.0e+01}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Recharge_Boundary_WestOfCribs">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.00000000000000000e+00, 1.20000000000000000e+02}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{7.20000000000000000e+01, 1.20000000000000000e+02}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 1.2e+02}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{7.2e+01, 1.2e+02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Crib_216-B-17">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{7.20000000000000000e+01, 1.20000000000000000e+02}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{8.00000000000000000e+01, 1.20000000000000000e+02}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{7.2e+01, 1.2e+02}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{8.0e+01, 1.2e+02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Recharge_Boundary_btwnCribs">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{8.00000000000000000e+01, 1.20000000000000000e+02}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.36000000000000000e+02, 1.20000000000000000e+02}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{8.0e+01, 1.2e+02}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{1.360e+02, 1.2e+02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Crib_216-B-18">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{1.36000000000000000e+02, 1.20000000000000000e+02}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.48000000000000000e+02, 1.20000000000000000e+02}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{1.360e+02, 1.2e+02}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{1.480e+02, 1.2e+02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Recharge_Boundary_EastOfCribs">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{1.48000000000000000e+02, 1.20000000000000000e+02}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{2.16000000000000000e+02, 1.20000000000000000e+02}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{1.480e+02, 1.2e+02}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{2.160e+02, 1.2e+02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Well">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{1.08000000000000000e+02, 4.00000000000000000e+01}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.12000000000000000e+02, 6.00000000000000000e+01}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{1.080e+02, 4.0e+01}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{1.120e+02, 6.0e+01}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="All">
@@ -83,8 +83,8 @@
     <ParameterList name="Unstructured">
       <ParameterList name="Generate Mesh">
         <Parameter name="Number of Cells" type="Array(int)" value="{54, 60}"/>
-        <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00}"/>
-        <Parameter name="Domain High Coordinate" type="Array(double)" value="{2.16000000000000000e+02, 1.20000000000000000e+02}"/>
+        <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="Domain High Coordinate" type="Array(double)" value="{2.160e+02, 1.2e+02}"/>
       </ParameterList>
       <ParameterList name="Expert">
         <Parameter name="Framework" type="string" value="MSTK"/>
@@ -102,10 +102,10 @@
             <Parameter name="PK type" type="string" value="richards"/>
           </ParameterList>
         </ParameterList>
-        <Parameter name="start period time" type="double" value="0.00000000000000000e+00"/>
-        <Parameter name="end period time" type="double" value="6.17266656000000000e+10"/>
+        <Parameter name="start period time" type="double" value="0.0"/>
+        <Parameter name="end period time" type="double" value="6.172666560e+10"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.00000000000000000e+03"/>
+        <Parameter name="initial time step" type="double" value="1.0e+03"/>
       </ParameterList>
       <ParameterList name="TP 1">
         <ParameterList name="PK Tree">
@@ -119,17 +119,17 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="start period time" type="double" value="6.17266656000000000e+10"/>
-        <Parameter name="end period time" type="double" value="9.46728000000000000e+10"/>
+        <Parameter name="start period time" type="double" value="6.172666560e+10"/>
+        <Parameter name="end period time" type="double" value="9.46728e+10"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.00000000000000000e+01"/>
+        <Parameter name="initial time step" type="double" value="1.0e+01"/>
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{Tc-99}"/>
     <ParameterList name="Time Period Control">
-      <Parameter name="Start Times" type="Array(double)" value="{6.17293440000000000e+10, 6.17317848100000000e+10, 6.17370552100000000e+10, 9.46727980000000000e+10}"/>
-      <Parameter name="Initial Time Step" type="Array(double)" value="{1.00000000000000000e+01, 1.00000000000000000e+01, 1.00000000000000000e+01, 1.00000000000000000e+00}"/>
-      <Parameter name="Maximum Time Step" type="Array(double)" value="{4.32340000000000000e+17, 4.32340000000000000e+17, 4.32340000000000000e+17, 4.32340000000000000e+17}"/>
+      <Parameter name="Start Times" type="Array(double)" value="{6.1729344e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
+      <Parameter name="Initial Time Step" type="Array(double)" value="{1.0e+01, 1.0e+01, 1.0e+01, 1.0}"/>
+      <Parameter name="Maximum Time Step" type="Array(double)" value="{4.32340e+17, 4.32340e+17, 4.32340e+17, 4.32340e+17}"/>
     </ParameterList>
     <ParameterList name="VerboseObject">
       <Parameter name="Verbosity Level" type="string" value="high"/>
@@ -144,7 +144,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="4.08200000000000007e-01"/>
+                <Parameter name="value" type="double" value="4.082e-01"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -153,7 +153,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.20599999999999991e-01"/>
+                <Parameter name="value" type="double" value="2.206e-01"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -162,7 +162,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.34000000000000014e-01"/>
+                <Parameter name="value" type="double" value="2.34e-01"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -170,15 +170,19 @@
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
       </ParameterList>
     </ParameterList>
+
     <ParameterList name="initial conditions">
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="1.01325e+05"/>
+      </ParameterList>
       <ParameterList name="gravity">
-        <Parameter name="value" type="Array(double)" value="{0.00000000000000000e+00, -9.80664999999999942e+00}"/>
+        <Parameter name="value" type="Array(double)" value="{0.0, -9.80665e+00}"/>
       </ParameterList>
       <ParameterList name="fluid_viscosity">
-        <Parameter name="value" type="double" value="1.00200000000000007e-03"/>
+        <Parameter name="value" type="double" value="1.002e-03"/>
       </ParameterList>
       <ParameterList name="fluid_density">
-        <Parameter name="value" type="double" value="9.98200000000000045e+02"/>
+        <Parameter name="value" type="double" value="9.982e+02"/>
       </ParameterList>
       <ParameterList name="water_density">
         <ParameterList name="function">
@@ -187,7 +191,20 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="9.98200000000000045e+02"/>
+                <Parameter name="value" type="double" value="9.982e+02"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="mass_density_liquid">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="9.982e+02"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -204,12 +221,12 @@
               <Parameter name="Function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.99759999999999989e-12"/>
+                  <Parameter name="value" type="double" value="1.9976e-12"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="DoF 2 Function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.99759999999999999e-13"/>
+                  <Parameter name="value" type="double" value="1.9976e-13"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -222,12 +239,12 @@
               <Parameter name="Function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="6.93649999999999978e-11"/>
+                  <Parameter name="value" type="double" value="6.9365e-11"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="DoF 2 Function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="6.93649999999999978e-12"/>
+                  <Parameter name="value" type="double" value="6.9365e-12"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -240,12 +257,12 @@
               <Parameter name="Function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="2.07059999999999986e-09"/>
+                  <Parameter name="value" type="double" value="2.0706e-09"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="DoF 2 Function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="2.07060000000000007e-10"/>
+                  <Parameter name="value" type="double" value="2.0706e-10"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -259,9 +276,9 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-linear">
-                <Parameter name="y0" type="double" value="1.01325000000000000e+05"/>
-                <Parameter name="x0" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00, 0.00000000000000000e+00}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00, -9.79351920000000064e+03}"/>
+                <Parameter name="y0" type="double" value="1.01325e+05"/>
+                <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, -9.7935192e+03}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -277,7 +294,7 @@
               <Parameter name="Function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.00000000000000000e+00"/>
+                  <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -301,12 +318,12 @@
         <Parameter name="prec type" type="string" value="MGV"/>
         <Parameter name="cycle applications" type="int" value="2"/>
         <Parameter name="aggregation: type" type="string" value="Uncoupled-MIS"/>
-        <Parameter name="aggregation: damping factor" type="double" value="1.33332999999999990e+00"/>
-        <Parameter name="aggregation: threshold" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="aggregation: damping factor" type="double" value="1.33333e+00"/>
+        <Parameter name="aggregation: threshold" type="double" value="0.0"/>
         <Parameter name="eigen-analysis: type" type="string" value="cg"/>
         <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
         <Parameter name="smoother: sweeps" type="int" value="3"/>
-        <Parameter name="smoother: damping factor" type="double" value="1.00000000000000000e+00"/>
+        <Parameter name="smoother: damping factor" type="double" value="1.0"/>
         <Parameter name="smoother: pre or post" type="string" value="both"/>
         <Parameter name="smoother: type" type="string" value="Jacobi"/>
         <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
@@ -317,10 +334,10 @@
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>
       <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
       <ParameterList name="boomer amg parameters">
-        <Parameter name="tolerance" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="tolerance" type="double" value="0.0"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
         <Parameter name="cycle applications" type="int" value="5"/>
-        <Parameter name="strong threshold" type="double" value="5.00000000000000000e-01"/>
+        <Parameter name="strong threshold" type="double" value="5.0e-01"/>
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>
         <Parameter name="verbosity" type="int" value="0"/>
@@ -331,9 +348,9 @@
       <Parameter name="preconditioner type" type="string" value="block ilu"/>
       <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
       <ParameterList name="block ilu parameters">
-        <Parameter name="fact: relax value" type="double" value="1.00000000000000000e+00"/>
-        <Parameter name="fact: absolute threshold" type="double" value="0.00000000000000000e+00"/>
-        <Parameter name="fact: relative threshold" type="double" value="1.00000000000000000e+00"/>
+        <Parameter name="fact: relax value" type="double" value="1.0"/>
+        <Parameter name="fact: absolute threshold" type="double" value="0.0"/>
+        <Parameter name="fact: relative threshold" type="double" value="1.0"/>
         <Parameter name="fact: level-of-fill" type="int" value="0"/>
         <Parameter name="overlap" type="int" value="0"/>
         <Parameter name="schwarz: combine mode" type="string" value="Add"/>
@@ -345,7 +362,7 @@
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
-        <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
+        <Parameter name="error tolerance" type="double" value="1.0e-16"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <ParameterList name="VerboseObject">
           <Parameter name="Verbosity Level" type="string" value="high"/>
@@ -356,7 +373,7 @@
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
-        <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
+        <Parameter name="error tolerance" type="double" value="1.0e-16"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <ParameterList name="VerboseObject">
           <Parameter name="Verbosity Level" type="string" value="high"/>
@@ -366,7 +383,7 @@
     <ParameterList name="GMRES for Newton">
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
-        <Parameter name="error tolerance" type="double" value="9.99999999999999955e-08"/>
+        <Parameter name="error tolerance" type="double" value="1.0e-07"/>
         <Parameter name="maximum number of iterations" type="int" value="50"/>
         <Parameter name="convergence criteria" type="Array(string)" value="{relative rhs, relative residual}"/>
         <ParameterList name="VerboseObject">
@@ -383,22 +400,22 @@
           <Parameter name="upwind update" type="string" value="every timestep"/>
           <Parameter name="upwind method" type="string" value="divk"/>
           <ParameterList name="upwind divk parameters">
-            <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
+            <Parameter name="tolerance" type="double" value="1.0e-12"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="VerboseObject">
           <Parameter name="Verbosity Level" type="string" value="high"/>
         </ParameterList>
-        <Parameter name="atmospheric pressure" type="double" value="1.01325000000000000e+05"/>
+        <Parameter name="atmospheric pressure" type="double" value="1.01325e+05"/>
         <ParameterList name="water retention models">
           <ParameterList name="WRM for RegionMiddle">
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
             <Parameter name="region" type="string" value="RegionMiddle"/>
-            <Parameter name="van Genuchten m" type="double" value="2.29399999999999993e-01"/>
-            <Parameter name="van Genuchten l" type="double" value="5.00000000000000000e-01"/>
-            <Parameter name="van Genuchten alpha" type="double" value="1.94670000000000005e-04"/>
-            <Parameter name="residual saturation" type="double" value="0.00000000000000000e+00"/>
-            <Parameter name="regularization interval" type="double" value="0.00000000000000000e+00"/>
+            <Parameter name="van Genuchten m" type="double" value="2.294e-01"/>
+            <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
+            <Parameter name="van Genuchten alpha" type="double" value="1.9467e-04"/>
+            <Parameter name="residual saturation" type="double" value="0.0"/>
+            <Parameter name="regularization interval" type="double" value="0.0"/>
             <Parameter name="relative permeability model" type="string" value="Mualem"/>
             <ParameterList name="output">
               <Parameter name="file" type="string" value="RegionMiddle.txt"/>
@@ -408,11 +425,11 @@
           <ParameterList name="WRM for RegionBottom">
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
             <Parameter name="region" type="string" value="RegionBottom"/>
-            <Parameter name="van Genuchten m" type="double" value="2.13600000000000012e-01"/>
-            <Parameter name="van Genuchten l" type="double" value="5.00000000000000000e-01"/>
-            <Parameter name="van Genuchten alpha" type="double" value="2.02600000000000002e-03"/>
-            <Parameter name="residual saturation" type="double" value="0.00000000000000000e+00"/>
-            <Parameter name="regularization interval" type="double" value="0.00000000000000000e+00"/>
+            <Parameter name="van Genuchten m" type="double" value="2.136e-01"/>
+            <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
+            <Parameter name="van Genuchten alpha" type="double" value="2.026e-03"/>
+            <Parameter name="residual saturation" type="double" value="0.0"/>
+            <Parameter name="regularization interval" type="double" value="0.0"/>
             <Parameter name="relative permeability model" type="string" value="Mualem"/>
             <ParameterList name="output">
               <Parameter name="file" type="string" value="RegionBottom.txt"/>
@@ -422,11 +439,11 @@
           <ParameterList name="WRM for RegionTop">
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
             <Parameter name="region" type="string" value="RegionTop"/>
-            <Parameter name="van Genuchten m" type="double" value="3.00599999999999978e-01"/>
-            <Parameter name="van Genuchten l" type="double" value="5.00000000000000000e-01"/>
-            <Parameter name="van Genuchten alpha" type="double" value="2.06740000000000005e-03"/>
-            <Parameter name="residual saturation" type="double" value="0.00000000000000000e+00"/>
-            <Parameter name="regularization interval" type="double" value="0.00000000000000000e+00"/>
+            <Parameter name="van Genuchten m" type="double" value="3.006e-01"/>
+            <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
+            <Parameter name="van Genuchten alpha" type="double" value="2.0674e-03"/>
+            <Parameter name="residual saturation" type="double" value="0.0"/>
+            <Parameter name="regularization interval" type="double" value="0.0"/>
             <Parameter name="relative permeability model" type="string" value="Mualem"/>
             <ParameterList name="output">
               <Parameter name="file" type="string" value="RegionTop.txt"/>
@@ -451,6 +468,17 @@
               <Parameter name="gravity" type="bool" value="true"/>
               <Parameter name="newton correction" type="string" value="approximate jacobian"/>
             </ParameterList>
+            <ParameterList name="vapor matrix">
+              <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+              <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+              <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+              <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+              <Parameter name="gravity" type="bool" value="true"/>
+              <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+              <Parameter name="exclude primary terms" type="bool" value="false"/>
+              <Parameter name="scaled constraint equation" type="bool" value="false"/>
+              <Parameter name="newton correction" type="string" value="none"/>
+            </ParameterList>
           </ParameterList>
         </ParameterList>
         <ParameterList name="boundary conditions">
@@ -460,7 +488,7 @@
               <Parameter name="relative to top" type="bool" value="false"/>
               <ParameterList name="water table elevation">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.00000000000000000e+00"/>
+                  <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -471,8 +499,8 @@
               <Parameter name="rainfall" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
-                  <Parameter name="x values" type="Array(double)" value="{0.00000000000000000e+00, 6.17266656000000000e+10, 6.17293440000000000e+10, 9.46727980000000000e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.10710000000000003e-07, -2.54022000000000015e-03, -1.48666000000000005e-06, -1.48666000000000005e-06}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 6.1729344e+10, 9.4672798e+10}"/>
+                  <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -2.54022e-03, -1.48666e-06, -1.48666e-06}"/>
                   <Parameter name="forms" type="Array(string)" value="{constant, constant, constant}"/>
                 </ParameterList>
               </ParameterList>
@@ -482,8 +510,8 @@
               <Parameter name="rainfall" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
-                  <Parameter name="x values" type="Array(double)" value="{0.00000000000000000e+00, 6.17266656000000000e+10, 6.17317848100000000e+10, 6.17370552100000000e+10, 9.46727980000000000e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.10710000000000003e-07, -1.48666000000000005e-06, -3.30423000000000001e-03, -1.48666000000000005e-06, -1.48666000000000005e-06}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
+                  <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -3.30423e-03, -1.48666e-06, -1.48666e-06}"/>
                   <Parameter name="forms" type="Array(string)" value="{constant, constant, constant, constant}"/>
                 </ParameterList>
               </ParameterList>
@@ -493,8 +521,8 @@
               <Parameter name="rainfall" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
-                  <Parameter name="x values" type="Array(double)" value="{0.00000000000000000e+00, 6.17266656000000000e+10, 9.46727980000000000e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.10710000000000003e-07, -1.48666000000000005e-06, -1.48666000000000005e-06}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10, 9.4672798e+10}"/>
+                  <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -1.48666e-06}"/>
                   <Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
                 </ParameterList>
               </ParameterList>
@@ -504,8 +532,8 @@
               <Parameter name="rainfall" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
-                  <Parameter name="x values" type="Array(double)" value="{0.00000000000000000e+00, 6.17266656000000000e+10, 9.46727980000000000e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.10710000000000003e-07, -1.48666000000000005e-06, -1.48666000000000005e-06}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 9.4672798e+10}"/>
+                  <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -1.48666e-06}"/>
                   <Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
                 </ParameterList>
               </ParameterList>
@@ -515,8 +543,8 @@
               <Parameter name="rainfall" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
-                  <Parameter name="x values" type="Array(double)" value="{0.00000000000000000e+00, 6.17266656000000000e+10, 9.46727980000000000e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.10710000000000003e-07, -1.48666000000000005e-06, -1.48666000000000005e-06}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 9.4672798e+10}"/>
+                  <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -1.48666e-06}"/>
                   <Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
                 </ParameterList>
               </ParameterList>
@@ -539,16 +567,16 @@
             <ParameterList name="timestep controller standard parameters">
               <Parameter name="max iterations" type="int" value="15"/>
               <Parameter name="min iterations" type="int" value="10"/>
-              <Parameter name="time step increase factor" type="double" value="1.25000000000000000e+00"/>
-              <Parameter name="time step reduction factor" type="double" value="8.00000000000000044e-01"/>
-              <Parameter name="max time step" type="double" value="4.32340000000000000e+17"/>
-              <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
+              <Parameter name="time step increase factor" type="double" value="1.250e+00"/>
+              <Parameter name="time step reduction factor" type="double" value="0.8"/>
+              <Parameter name="max time step" type="double" value="4.32340e+17"/>
+              <Parameter name="min time step" type="double" value="1.0e-20"/>
             </ParameterList>
             <Parameter name="solver type" type="string" value="nka"/>
             <ParameterList name="nka parameters">
-              <Parameter name="nonlinear tolerance" type="double" value="1.00000000000000008e-05"/>
-              <Parameter name="diverged tolerance" type="double" value="1.00000000000000000e+10"/>
-              <Parameter name="max du growth factor" type="double" value="1.00000000000000000e+03"/>
+              <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+              <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+              <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
               <Parameter name="max divergent iterations" type="int" value="3"/>
               <Parameter name="max nka vectors" type="int" value="10"/>
               <Parameter name="limit iterations" type="int" value="20"/>
@@ -556,10 +584,10 @@
             </ParameterList>
             <Parameter name="max preconditioner lag iterations" type="int" value="20"/>
             <Parameter name="extrapolate initial guess" type="bool" value="true"/>
-            <Parameter name="nonlinear iteration damping factor" type="double" value="1.00000000000000000e+00"/>
+            <Parameter name="nonlinear iteration damping factor" type="double" value="1.0"/>
             <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-            <Parameter name="restart tolerance relaxation factor" type="double" value="1.00000000000000000e+00"/>
-            <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.00000000000000000e+00"/>
+            <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
+            <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
           </ParameterList>
           <ParameterList name="initialization">
             <Parameter name="method" type="string" value="saturated solver"/>
@@ -575,7 +603,7 @@
     <ParameterList name="Transport">
       <Parameter name="spatial discretization order" type="int" value="1"/>
       <Parameter name="temporal discretization order" type="int" value="1"/>
-      <Parameter name="cfl" type="double" value="1.00000000000000000e+00"/>
+      <Parameter name="cfl" type="double" value="1.0"/>
       <Parameter name="flow mode" type="string" value="transient"/>
       <Parameter name="solver" type="string" value="PCG with Hypre AMG"/>
       <ParameterList name="VerboseObject">
@@ -599,8 +627,8 @@
               <Parameter name="regions" type="Array(string)" value="{Bottom Surface}"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-tabular">
-                  <Parameter name="y values" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00}"/>
-                  <Parameter name="x values" type="Array(double)" value="{0.00000000000000000e+00, 9.46727980000000000e+10}"/>
+                  <Parameter name="y values" type="Array(double)" value="{0.0, 0.0}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 9.4672798e+10}"/>
                   <Parameter name="forms" type="Array(string)" value="{constant}"/>
                 </ParameterList>
               </ParameterList>
@@ -609,8 +637,8 @@
               <Parameter name="regions" type="Array(string)" value="{Crib_216-B-17}"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-tabular">
-                  <Parameter name="y values" type="Array(double)" value="{0.00000000000000000e+00, 1.88138900000000001e-06, 0.00000000000000000e+00, 0.00000000000000000e+00}"/>
-                  <Parameter name="x values" type="Array(double)" value="{0.00000000000000000e+00, 6.17266656000000000e+10, 6.17293440000000000e+10, 9.46727980000000000e+10}"/>
+                  <Parameter name="y values" type="Array(double)" value="{0.0, 1.881389e-06, 0.0, 0.0}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 6.1729344e+10, 9.4672798e+10}"/>
                   <Parameter name="forms" type="Array(string)" value="{constant, constant, constant}"/>
                 </ParameterList>
               </ParameterList>
@@ -619,8 +647,8 @@
               <Parameter name="regions" type="Array(string)" value="{Crib_216-B-18}"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-tabular">
-                  <Parameter name="y values" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00, 2.26688500000000007e-06, 0.00000000000000000e+00, 0.00000000000000000e+00}"/>
-                  <Parameter name="x values" type="Array(double)" value="{0.00000000000000000e+00, 6.17266656000000000e+10, 6.17317848100000000e+10, 6.17370552100000000e+10, 9.46727980000000000e+10}"/>
+                  <Parameter name="y values" type="Array(double)" value="{0.0, 0.0, 2.266885e-06, 0.0, 0.0}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
                   <Parameter name="forms" type="Array(string)" value="{constant, constant, constant, constant}"/>
                 </ParameterList>
               </ParameterList>
@@ -629,7 +657,7 @@
               <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCribs,Recharge_Boundary_btwnCribs,Recharge_Boundary_EastOfCribs}"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.00000000000000000e+00"/>
+                  <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -647,22 +675,22 @@
           <Parameter name="upwind update" type="string" value="every timestep"/>
           <Parameter name="upwind method" type="string" value="divk"/>
           <ParameterList name="upwind divk parameters">
-            <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
+            <Parameter name="tolerance" type="double" value="1.0e-12"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="VerboseObject">
           <Parameter name="Verbosity Level" type="string" value="high"/>
         </ParameterList>
-        <Parameter name="atmospheric pressure" type="double" value="1.01325000000000000e+05"/>
+        <Parameter name="atmospheric pressure" type="double" value="1.01325e+05"/>
         <ParameterList name="water retention models">
           <ParameterList name="WRM for RegionMiddle">
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
             <Parameter name="region" type="string" value="RegionMiddle"/>
-            <Parameter name="van Genuchten m" type="double" value="2.29399999999999993e-01"/>
-            <Parameter name="van Genuchten l" type="double" value="5.00000000000000000e-01"/>
-            <Parameter name="van Genuchten alpha" type="double" value="1.94670000000000005e-04"/>
-            <Parameter name="residual saturation" type="double" value="0.00000000000000000e+00"/>
-            <Parameter name="regularization interval" type="double" value="0.00000000000000000e+00"/>
+            <Parameter name="van Genuchten m" type="double" value="2.294e-01"/>
+            <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
+            <Parameter name="van Genuchten alpha" type="double" value="1.9467e-04"/>
+            <Parameter name="residual saturation" type="double" value="0.0"/>
+            <Parameter name="regularization interval" type="double" value="0.0"/>
             <Parameter name="relative permeability model" type="string" value="Mualem"/>
             <ParameterList name="output">
               <Parameter name="file" type="string" value="RegionMiddle.txt"/>
@@ -672,11 +700,11 @@
           <ParameterList name="WRM for RegionBottom">
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
             <Parameter name="region" type="string" value="RegionBottom"/>
-            <Parameter name="van Genuchten m" type="double" value="2.13600000000000012e-01"/>
-            <Parameter name="van Genuchten l" type="double" value="5.00000000000000000e-01"/>
-            <Parameter name="van Genuchten alpha" type="double" value="2.02600000000000002e-03"/>
-            <Parameter name="residual saturation" type="double" value="0.00000000000000000e+00"/>
-            <Parameter name="regularization interval" type="double" value="0.00000000000000000e+00"/>
+            <Parameter name="van Genuchten m" type="double" value="2.136e-01"/>
+            <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
+            <Parameter name="van Genuchten alpha" type="double" value="2.026e-03"/>
+            <Parameter name="residual saturation" type="double" value="0.0"/>
+            <Parameter name="regularization interval" type="double" value="0.0"/>
             <Parameter name="relative permeability model" type="string" value="Mualem"/>
             <ParameterList name="output">
               <Parameter name="file" type="string" value="RegionBottom.txt"/>
@@ -686,11 +714,11 @@
           <ParameterList name="WRM for RegionTop">
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
             <Parameter name="region" type="string" value="RegionTop"/>
-            <Parameter name="van Genuchten m" type="double" value="3.00599999999999978e-01"/>
-            <Parameter name="van Genuchten l" type="double" value="5.00000000000000000e-01"/>
-            <Parameter name="van Genuchten alpha" type="double" value="2.06740000000000005e-03"/>
-            <Parameter name="residual saturation" type="double" value="0.00000000000000000e+00"/>
-            <Parameter name="regularization interval" type="double" value="0.00000000000000000e+00"/>
+            <Parameter name="van Genuchten m" type="double" value="3.006e-01"/>
+            <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
+            <Parameter name="van Genuchten alpha" type="double" value="2.0674e-03"/>
+            <Parameter name="residual saturation" type="double" value="0.0"/>
+            <Parameter name="regularization interval" type="double" value="0.0"/>
             <Parameter name="relative permeability model" type="string" value="Mualem"/>
             <ParameterList name="output">
               <Parameter name="file" type="string" value="RegionTop.txt"/>
@@ -715,6 +743,17 @@
               <Parameter name="gravity" type="bool" value="true"/>
               <Parameter name="newton correction" type="string" value="approximate jacobian"/>
             </ParameterList>
+            <ParameterList name="vapor matrix">
+              <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+              <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+              <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+              <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+              <Parameter name="gravity" type="bool" value="true"/>
+              <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+              <Parameter name="exclude primary terms" type="bool" value="false"/>
+              <Parameter name="scaled constraint equation" type="bool" value="false"/>
+              <Parameter name="newton correction" type="string" value="none"/>
+            </ParameterList>
           </ParameterList>
         </ParameterList>
         <ParameterList name="boundary conditions">
@@ -724,7 +763,7 @@
               <Parameter name="relative to top" type="bool" value="false"/>
               <ParameterList name="water table elevation">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.00000000000000000e+00"/>
+                  <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -735,8 +774,8 @@
               <Parameter name="rainfall" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
-                  <Parameter name="x values" type="Array(double)" value="{0.00000000000000000e+00, 6.17266656000000000e+10, 6.17293440000000000e+10, 9.46727980000000000e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.10710000000000003e-07, -2.54022000000000015e-03, -1.48666000000000005e-06, -1.48666000000000005e-06}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 6.1729344e+10, 9.4672798e+10}"/>
+                  <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -2.54022e-03, -1.48666e-06, -1.48666e-06}"/>
                   <Parameter name="forms" type="Array(string)" value="{constant, constant, constant}"/>
                 </ParameterList>
               </ParameterList>
@@ -746,8 +785,8 @@
               <Parameter name="rainfall" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
-                  <Parameter name="x values" type="Array(double)" value="{0.00000000000000000e+00, 6.17266656000000000e+10, 6.17317848100000000e+10, 6.17370552100000000e+10, 9.46727980000000000e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.10710000000000003e-07, -1.48666000000000005e-06, -3.30423000000000001e-03, -1.48666000000000005e-06, -1.48666000000000005e-06}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
+                  <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -3.30423e-03, -1.48666e-06, -1.48666e-06}"/>
                   <Parameter name="forms" type="Array(string)" value="{constant, constant, constant, constant}"/>
                 </ParameterList>
               </ParameterList>
@@ -757,8 +796,8 @@
               <Parameter name="rainfall" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
-                  <Parameter name="x values" type="Array(double)" value="{0.00000000000000000e+00, 6.17266656000000000e+10, 9.46727980000000000e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.10710000000000003e-07, -1.48666000000000005e-06, -1.48666000000000005e-06}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 9.4672798e+10}"/>
+                  <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -1.48666e-06}"/>
                   <Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
                 </ParameterList>
               </ParameterList>
@@ -768,8 +807,8 @@
               <Parameter name="rainfall" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
-                  <Parameter name="x values" type="Array(double)" value="{0.00000000000000000e+00, 6.17266656000000000e+10, 9.46727980000000000e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.10710000000000003e-07, -1.48666000000000005e-06, -1.48666000000000005e-06}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 9.4672798e+10}"/>
+                  <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -1.48666e-06}"/>
                   <Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
                 </ParameterList>
               </ParameterList>
@@ -779,8 +818,8 @@
               <Parameter name="rainfall" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
-                  <Parameter name="x values" type="Array(double)" value="{0.00000000000000000e+00, 6.17266656000000000e+10, 9.46727980000000000e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.10710000000000003e-07, -1.48666000000000005e-06, -1.48666000000000005e-06}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10, 9.4672798e+10}"/>
+                  <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -1.48666e-06}"/>
                   <Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
                 </ParameterList>
               </ParameterList>
@@ -803,16 +842,16 @@
             <ParameterList name="timestep controller standard parameters">
               <Parameter name="max iterations" type="int" value="15"/>
               <Parameter name="min iterations" type="int" value="10"/>
-              <Parameter name="time step increase factor" type="double" value="1.25000000000000000e+00"/>
-              <Parameter name="time step reduction factor" type="double" value="8.00000000000000044e-01"/>
-              <Parameter name="max time step" type="double" value="4.32340000000000000e+17"/>
-              <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
+              <Parameter name="time step increase factor" type="double" value="1.25"/>
+              <Parameter name="time step reduction factor" type="double" value="0.8"/>
+              <Parameter name="max time step" type="double" value="4.32340e+17"/>
+              <Parameter name="min time step" type="double" value="1.0e-20"/>
             </ParameterList>
             <Parameter name="solver type" type="string" value="nka"/>
             <ParameterList name="nka parameters">
-              <Parameter name="nonlinear tolerance" type="double" value="1.00000000000000008e-05"/>
-              <Parameter name="diverged tolerance" type="double" value="1.00000000000000000e+10"/>
-              <Parameter name="max du growth factor" type="double" value="1.00000000000000000e+03"/>
+              <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+              <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+              <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
               <Parameter name="max divergent iterations" type="int" value="3"/>
               <Parameter name="max nka vectors" type="int" value="10"/>
               <Parameter name="limit iterations" type="int" value="20"/>
@@ -820,10 +859,10 @@
             </ParameterList>
             <Parameter name="max preconditioner lag iterations" type="int" value="20"/>
             <Parameter name="extrapolate initial guess" type="bool" value="true"/>
-            <Parameter name="nonlinear iteration damping factor" type="double" value="1.00000000000000000e+00"/>
+            <Parameter name="nonlinear iteration damping factor" type="double" value="1.0"/>
             <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-            <Parameter name="restart tolerance relaxation factor" type="double" value="1.00000000000000000e+00"/>
-            <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.00000000000000000e+00"/>
+            <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
+            <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
           </ParameterList>
           <ParameterList name="VerboseObject">
             <Parameter name="Verbosity Level" type="string" value="high"/>

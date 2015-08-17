@@ -84,7 +84,7 @@
       <ParameterList name="TP 0">
         <ParameterList name="PK Tree">
           <ParameterList name="Flow and Energy">
-            <Parameter name="PK type" type="string" value="flow energy"/>
+            <Parameter name="PK type" type="string" value="thermal richards"/>
             <ParameterList name="Flow">
               <Parameter name="PK type" type="string" value="richards"/>
             </ParameterList>
@@ -112,7 +112,7 @@
 
   <ParameterList name="State">
     <ParameterList name="field evaluators">
-      <ParameterList name="density_rock">
+      <ParameterList name="particle_density">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">

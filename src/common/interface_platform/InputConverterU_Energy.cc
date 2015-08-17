@@ -30,12 +30,12 @@ namespace AmanziInput {
 XERCES_CPP_NAMESPACE_USE
 
 /* ******************************************************************
-* Create flow list.
+* Create energy list.
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateEnergy_()
 {
   Teuchos::ParameterList out_list;
-  Teuchos::ParameterList* flow_list;
+  Teuchos::ParameterList* energy_list;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "Translating energy" << std::endl;
@@ -47,9 +47,8 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_()
   bool flag;
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_energy_controls", flag);
 
-  // create flow header
-  Teuchos::ParameterList* energy_list;
-  if (pk_model_["flow"] == "two_phase") {
+  // create energy header
+  if (pk_model_["energy"] == "two-phase energy") {
     Teuchos::ParameterList& tmp = out_list.sublist("Two-phase problem");
     energy_list = &tmp;
   }
@@ -70,18 +69,35 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_()
   bool modify_correction(false);
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
 
-  std::string rel_perm;
   energy_list->sublist("operators") = TranslateDiffusionOperator_(
-      disc_method, pc_method, nonlinear_solver, rel_perm);
-  
+      disc_method, pc_method, nonlinear_solver, "");
+
+  // insert thermal conductivity evaluator with the default values (no 2.2 support yet)
+  Teuchos::ParameterList& thermal = energy_list->sublist("thermal conductivity evaluator")
+                                                .sublist("thermal conductivity parameters");
+  thermal.set<std::string>("thermal conductivity type", "two-phase Peters-Lidard");
+  thermal.set<double>("thermal conductivity of rock", 0.2);
+  thermal.set<double>("thermal conductivity of liquid", 0.1);
+  thermal.set<double>("thermal conductivity of gas", 0.02);
+  thermal.set<double>("unsaturated alpha", 1.0);
+  thermal.set<double>("epsilon", 1.0e-10);
+
   // insert time integrator
   std::string err_options("energy"), unstr_controls("unstructured_controls, unstr_energy_controls");
   
-  energy_list->sublist("time integrator") = TranslateTimeIntegrator_(
-      err_options, nonlinear_solver, modify_correction, unstr_controls);
+  if (pk_master_.find("energy") != pk_master_.end()) {
+    energy_list->sublist("time integrator") = TranslateTimeIntegrator_(
+        err_options, nonlinear_solver, modify_correction, unstr_controls);
+  }
 
   // insert boundary conditions and source terms
   energy_list->sublist("boundary conditions") = TranslateEnergyBCs_();
+
+  // insert internal evaluators
+  energy_list->sublist("energy evaluator")
+              .sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
+  energy_list->sublist("enthalpy evaluator")
+              .sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
 
   energy_list->sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
   return out_list;
@@ -89,7 +105,7 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_()
 
 
 /* ******************************************************************
-* Create list of flow BCs.
+* Create list of energy BCs.
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateEnergyBCs_()
 {
@@ -120,7 +136,7 @@ Teuchos::ParameterList InputConverterU::TranslateEnergyBCs_()
 
     vv_bc_regions_.insert(vv_bc_regions_.end(), regions.begin(), regions.end());
 
-    node = GetUniqueElementByTagsString_(inode, "liquid_phase, thermal_component", flag);
+    node = GetUniqueElementByTagsString_(inode, "thermal_component", flag);
     if (!flag) continue;
 
     // process a group of similar elements defined by the first element

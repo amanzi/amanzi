@@ -67,9 +67,15 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   rho_ = std::strtod(text_content, NULL);
   out_ic.sublist("fluid_density").set<double>("value", rho_);
 
-  out_ic.sublist("water_density").sublist("function").sublist("All")
-      .set<std::string>("region","All")
-      .set<std::string>("component","cell")
+  // out_ic.sublist("water_density").sublist("function").sublist("All")
+  //     .set<std::string>("region", "All")
+  //     .set<std::string>("component", "cell")
+  //     .sublist("function").sublist("function-constant")
+  //     .set<double>("value", rho_);
+
+  out_ic.sublist("mass_density_liquid").sublist("function").sublist("All")
+      .set<std::string>("region", "All")
+      .set<std::string>("component", "cell")
       .sublist("function").sublist("function-constant")
       .set<double>("value", rho_);
 
@@ -117,8 +123,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         }
         Teuchos::ParameterList& porosity_ev = out_ev.sublist("porosity");
         porosity_ev.sublist("function").sublist(reg_str)
-            .set<Teuchos::Array<std::string> >("regions",regions)
-            .set<std::string>("component","cell")
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
             .sublist("function").sublist("function-constant")
             .set<double>("value", porosity);
         porosity_ev.set<std::string>("field evaluator type", "independent variable");
@@ -211,7 +217,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         Teuchos::ParameterList& spec_yield_ic = out_ic.sublist("specific_yield");
         spec_yield_ic.sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions",regions)
-            .set<std::string>("component","cell")
+            .set<std::string>("component", "cell")
             .sublist("function").sublist("function-constant")
             .set<double>("value", specific_yield);
       }
@@ -224,22 +230,23 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         Teuchos::ParameterList& spec_yield_ic = out_ic.sublist("specific_storage");
         spec_yield_ic.sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions",regions)
-            .set<std::string>("component","cell")
+            .set<std::string>("component", "cell")
             .sublist("function").sublist("function-constant")
             .set<double>("value", specific_storage);
       }
 
       // -- particle density
-      node = GetUniqueElementByTagsString_(inode, "particle_density", flag);
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, particle_density", flag);
       if (flag) {
         double particle_density = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
 
-        Teuchos::ParameterList& part_dens_ic = out_ic.sublist("particle_density");
-        part_dens_ic.sublist("function").sublist(reg_str)
-            .set<Teuchos::Array<std::string> >("regions",regions)
-            .set<std::string>("component","cell")
+        Teuchos::ParameterList& part_dens_ev = out_ev.sublist("particle_density");
+        part_dens_ev.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
             .sublist("function").sublist("function-constant")
             .set<double>("value", particle_density);
+        part_dens_ev.set<std::string>("field evaluator type", "independent variable");
       }
     }
   }
@@ -268,8 +275,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
         Teuchos::ParameterList& pressure_ic = out_ic.sublist("pressure");
         pressure_ic.sublist("function").sublist(reg_str)
-            .set<Teuchos::Array<std::string> >("regions",regions)
-            .set<std::string>("component","cell")
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
             .sublist("function").sublist("function-constant")
             .set<double>("value", p);
       }
@@ -393,7 +400,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         Teuchos::ParameterList& tcc_ic = out_ic.sublist("total_component_concentration");
         Teuchos::ParameterList& dof_list = tcc_ic.sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions", regions)
-            .set<std::string>("component","cell")
+            .set<std::string>("component", "cell")
             .sublist("function")
             .set<int>("Number of DoFs", ncomp_all)
             .set<std::string>("Function type", "composite function");
@@ -432,6 +439,22 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", vals[k]);
         }
       }
+
+      // -- uniform temperature
+      node = GetUniqueElementByTagsString_(inode, "uniform_temperature", flag);
+      if (flag) {
+        double val = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+
+        Teuchos::ParameterList& temperature_ic = out_ic.sublist("temperature");
+        temperature_ic.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
+            .sublist("function").sublist("function-constant")
+            .set<double>("value", val);
+      }
+
+      // atmospheric pressure
+      out_ic.sublist("atmospheric_pressure").set<double>("value", ATMOSPHERIC_PRESSURE);
     }
   }
 

@@ -89,7 +89,7 @@ endif()
 # Binary: amanzi-demo-driver
 #
 if ( ENABLE_Unstructured )
-  set(ssc_unstructured_grid_libs udriv mpc state pks transport flow operators whetstone chemistry_pk)
+  set(ssc_unstructured_grid_libs udriv mpc state transport flow energy pks eos operators whetstone chemistry_pk)
 else()
   set(ssc_unstructured_grid_libs)
 endif()

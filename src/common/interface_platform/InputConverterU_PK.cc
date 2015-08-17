@@ -238,6 +238,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
     out_list.set<std::string>("preconditioner enhancement", "GMRES for Newton");
   }
 
+  bdf1.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
   return out_list;
 }
 
@@ -308,7 +309,7 @@ Teuchos::ParameterList InputConverterU::TranslateInitialization_(
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
     const std::string& disc_method, const std::string& pc_method,
-    const std::string& nonlinear_solver, const std::string& rel_perm)
+    const std::string& nonlinear_solver, const std::string& extensions)
 {
   Teuchos::ParameterList out_list;
   Teuchos::ParameterList tmp_list;
@@ -342,6 +343,18 @@ Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
   out_list.sublist("diffusion operator").sublist("matrix") = tmp_list;
   out_list.sublist("diffusion operator").sublist("preconditioner") = tmp_list;
 
+  // extensions
+  if (extensions == "vapor matrix") {
+    Teuchos::ParameterList& vapor = out_list.sublist("diffusion operator").sublist("vapor matrix");
+    vapor = tmp_list;
+    vapor.set<std::string>("nonlinear coefficient", "standard: cell");
+    vapor.set<bool>("exclude primary terms", false);
+    vapor.set<bool>("scaled constraint equation", false);
+    vapor.set<bool>("gravity", "false");
+    vapor.set<std::string>("newton correction", "none");
+  }
+
+  // fixing miscalleneous scenarious
   if (pc_method == "linearized_operator") {
     out_list.sublist("diffusion operator").sublist("preconditioner")
         .set<std::string>("newton correction", "approximate jacobian");

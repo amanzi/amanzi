@@ -58,11 +58,12 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateState_();
   Teuchos::ParameterList TranslateMaterialsPartition_();
   Teuchos::ParameterList TranslateCycleDriver_();
+  Teuchos::ParameterList TranslateCycleDriverNew_();
   Teuchos::ParameterList TranslateTimePeriodControls_();
   Teuchos::ParameterList TranslatePKs_(const Teuchos::ParameterList& cd_list);
   Teuchos::ParameterList TranslateDiffusionOperator_(
       const std::string& disc_method, const std::string& pc_method,
-      const std::string& nonlinear_solver, const std::string& rel_perm);
+      const std::string& nonlinear_solver, const std::string& extensions);
   Teuchos::ParameterList TranslateTimeIntegrator_(
       const std::string& err_options, const std::string& nonlinear_solver,
       bool modify_correction, const std::string& unstr_colntrols);
@@ -97,6 +98,7 @@ class InputConverterU : public InputConverter {
   Tree phases_;
 
   std::map<std::string, std::string> pk_model_;
+  std::map<std::string, bool> pk_master_;
 
   // global flow constants
   std::string flow_model_;  // global value
