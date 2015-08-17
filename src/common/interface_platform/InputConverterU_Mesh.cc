@@ -61,7 +61,7 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
     *vo_->os() << "Translating unstructured mesh" << std::endl;
   }
 
-  XString mm;
+  MemoryManager mm;
   DOMNodeList *node_list, *children;
   DOMNode* node;
   DOMElement* element;
@@ -270,7 +270,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
     *vo_->os() << "Translating regions" << std::endl;
   }
 
-  XString mm;
+  MemoryManager mm;
   DOMNodeList* node_list;
   DOMNode *node, *node_attr;
   DOMElement* element;
@@ -363,7 +363,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
           out_list.sublist(reg_name).sublist("Region: Color Function") = rfPL;
         }
         else if (strcmp(text.c_str(), "labeled set") == 0) {
-          std::string value = GetAttributeValueS_(reg_elem, "labeled set");
+          std::string value = GetAttributeValueS_(reg_elem, "label");
           rfPL.set<std::string>("Label", value);
           
           value = GetAttributeValueS_(reg_elem, "format");

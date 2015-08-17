@@ -248,8 +248,9 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::RCP<Teucho
     Exceptions::amanzi_throw(Errors::Message("The parameter Transport Model must be specified."));
   }
 
+  bool darcy_vel_given = false;
+
   if (exe_list->isParameter("Flow Model")) {
-    bool darcy_vel_given = false;
     if (plist->isSublist("Initial Conditions"))
       if (plist->sublist("Initial Conditions").isSublist("All"))
         if (plist->sublist("Initial Conditions").sublist("All").isSublist("IC: Uniform Velocity"))
@@ -258,6 +259,7 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::RCP<Teucho
     if (exe_list->get<std::string>("Flow Model") == "Off" ||
         exe_list->get<std::string>("Flow Model") == "off") {
       flow_on = false;
+      flow_pk = "";
     } else if (exe_list->get<std::string>("Flow Model") == "Richards") {
       flow_pk = "richards";
       flow_on = true;
@@ -291,7 +293,6 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::RCP<Teucho
     Exceptions::amanzi_throw(Errors::Message("The parameter \'Chemistry Model\' must be specified."));
   }
 
-  model = chemistry_on + 2*transport_on + 4*flow_on;
 
   Teuchos::RCP<Teuchos::ParameterList> tim_list = Teuchos::sublist(exe_list, "Time Integration Mode", true);
 
@@ -328,14 +329,18 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::RCP<Teucho
   if (tim_list->isSublist("Transient with Static Flow")) {
     start_time = tim_list->sublist("Transient with Static Flow").get<double>("Start");
     end_time = tim_list->sublist("Transient with Static Flow").get<double>("End");
-    switch_time = start_time;
     dt_tran = tim_list->sublist("Transient with Static Flow").get<double>("Initial Time Step", 1);
-    flow_name = "Flow";
+    //flow_name = "Flow";
+    model_pre = 4*flow_on;
+    flow_on = false;
+    switch_time = start_time +  dt_steady;
 
     /* EIB: proposed v1.2.2 update - Add Maximum Cycle Number for Transient modes */
     if (tim_list->sublist("Transient with Static Flow").isParameter("Maximum Cycle Number"))
       max_cycle_number = tim_list->sublist("Transient with Static Flow").get<double>("Maximum Cycle Number");
   }      
+
+  model = chemistry_on + 2*transport_on + 4*flow_on;
 
   int time_pr_id = 0;
   std::string tp_list_name;

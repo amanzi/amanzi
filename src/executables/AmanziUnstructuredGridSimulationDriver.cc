@@ -21,12 +21,16 @@
 #include "TimerManager.hh"
 
 #include "dbc.hh"
+#include "energy_tcm_registration.hh"
+#include "energy_iem_registration.hh"
+#include "eos_registration.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 #include "mpc_pks_registration.hh"
 #include "pks_chemistry_registration.hh"
 #include "pks_flow_registration.hh"
 #include "pks_transport_registration.hh"
+#include "pks_energy_registration.hh"
 #include "wrm_flow_registration.hh"
 
 
@@ -50,10 +54,10 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   MPI_Comm_rank(mpi_comm,&rank);
   MPI_Comm_size(mpi_comm,&size);
 
-  bool native = input_parameter_list.get<bool>("Native Unstructured Input", false);
-  
   Teuchos::ParameterList new_list; 
   Teuchos::ParameterList sub_list;
+  
+  bool native = input_parameter_list.get<bool>("Native Unstructured Input", false);
   
   if (!native) {
     Amanzi::AmanziInput::InputParserIS parser;
@@ -72,7 +76,6 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     } else if (verbosity == "Extreme") {
       verbLevel = Teuchos::VERB_EXTREME;
     } 
-
   } else {
     verbLevel = Teuchos::VERB_NONE;
     new_list = input_parameter_list;

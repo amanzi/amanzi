@@ -17,7 +17,7 @@ const Teuchos::Array<std::string> verbosityStrings = Teuchos::tuple<std::string>
 const Teuchos::Array<std::string> meshfileStrings = Teuchos::tuple<std::string>("exodus ii", "exodus II", "Exodus II", "Exodus ii", "H5M", "h5m");
   
 //Teuchos::ParameterList translate (const std::string& xmlfilename, const std::string& xmlSchemafile);
-Teuchos::ParameterList translate (const std::string& xmlfilename);
+Teuchos::ParameterList translate (const std::string& xmlfilename, std::string& spec);
 
 Teuchos::ParameterList get_verbosity(xercesc::DOMDocument* xmlDoc);
 Teuchos::ParameterList get_constants(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);

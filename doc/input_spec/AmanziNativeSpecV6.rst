@@ -1871,105 +1871,147 @@ The rest are only used by the native chemistry kernel.
 
 
 Format of chemistry database (.bgd) file
-````````````````````````````````````````
+........................................
 
 A section header starts with token `"<`". 
 A comment line starts with token `"#`". 
 Data fields are separated by semicolumns.
 
- * Section `"Primary Species`". Each line in this section has four data fields: 
-   name of a primary component, ion size parameter, charge, and atomic mass [u].
+Primary Species
+```````````````
 
-   .. code-block:: txt
+Section `"Primary Species`". Each line in this section has four data fields: 
+name of a primary component, ion size parameter, charge, and atomic mass [u].
 
-    <Primary Species
-    H+  ;   9.00 ;   1.00 ;   1.01
-    Al+++  ;   9.00 ;   3.00 ;  26.98
-    Ca++  ;   6.00 ;   2.00 ;  40.08
+.. code-block:: txt
 
- * Section `"General Kinetics`". Each line in this section has five data fields.
-   The first field is the reaction string that has format 
-   "30 A(aq) + 2 B(aq) <-> C(aq) + .3 D(aq) +- 4 E(aq)"
-   where number (stoichiometires) is followed by species name. 
-   The second and fourth fields contain information about reactanct and products.
-   The fourth and fifth columns contain rate constants.
-
-   .. code-block:: txt
-
-    <General Kinetics
-    1.00 Tritium <->  ;   1.00 Tritium ;  1.78577E-09 ; ; 
-
- * Section `"Ion Exchange Sites`". Each line in this section has three fields: 
-   exchanger name, exchanger change, and exchanger location. 
-   The location is the mineral where the exchanger is located, i.e. kaolinite.
-
-   .. code-block:: txt
-
-    <Ion Exchange Sites
-    X- ; -1.0 ; Bulk
-
- * Section `"Aqueous Equilibrium Complexes`". Each line in this section has five 
-   fields for secondary species: name = coeff reactant, log Keq, size parameter, charge, and 
-   gram molecular weight.
-
-   .. code-block:: txt
-
-    <Aqueous Equilibrium Complexes
-    OH- =   1.00 H2O  -1.00 H+  ;   13.99510 ;    3.50000 ;   -1.00000 ;   17.00730
-    HCO3- =   1.00 H2O  -1.00 H+   1.00 CO2(aq)  ;    6.34470 ;    4.00000 ;   -1.00000 ;   61.01710
-
- * Section `"Minerals`". Each line in this section has five fields for secondary species:
-   Name = coeff reactant, log Keq, gram molecular weight [g/mole], molar volume [cm^3/mole],
-   and specific surface area [cm^2 mineral / cm^3 bulk].
-
-   .. code-block:: txt
-
-    <Minerals
-    Quartz = 1.00 SiO2(aq) ; -3.75010E+00 ; 6.00843E+01 ;  2.26880E+01 ;  1.00000E+00
-    Kaolinite =  5.00 H2O  -6.00 H+  2.00 Al+++  2.00 SiO2(aq)  ; 7.57000E+00 ; 2.58160E+02 ; 9.95200E+01 ; 1.0
+   <Primary Species
+   H+  ;   9.00 ;   1.00 ;   1.01
+   Al+++  ;   9.00 ;   3.00 ;  26.98
+   Ca++  ;   6.00 ;   2.00 ;  40.08
 
 
- * Section `"Mineral Kinetics`". Each line in this section has four fields.
-   The first field contains mineral name that is assumed to have the same stoichiometry 
-   as the mineral definition.
-   The second field is the rate name.
+Isotherms
+`````````
 
- * Section `"Ion Exchange Complexes`". Each line in this section has two fields.
-   The first field has format "name = coeffient and primary name followed by coefficient 
-   and exchanger name. the second field is Keq.
-   The following assumptions are made:
+Section `"Isotherms`". Each line in this section has three fields: primary species name, 
+adsorption isotherm model, and parameters. The adsorption model is one of: linear, langmuir, or freundlich.
+The parameters is a space delimited list of numbers. The number of  parameters and 
+their meaning depends on the model; although the first one is always *kd*.
+
+.. code-block:: txt
+
+   <Isotherm
+   A ; linear ; 10
+   B ; langmuir ; 30 0.1
+   C ; freundlich ; 1.5 1.25
+
+
+General Kinetics
+````````````````
+
+Section `"General Kinetics`". Each line in this section has five data fields.
+The first field is the reaction string that has format 
+"30 A(aq) + 2 B(aq) <-> C(aq) + .3 D(aq) +- 4 E(aq)"
+where number (stoichiometires) is followed by species name. 
+The second and fourth fields contain information about reactanct and products.
+The fourth and fifth columns contain rate constants.
+
+.. code-block:: txt
+
+   <Primary Species
+   Tritium  ;   9.00 ;   0.00 ;   1.01
+
+   <General Kinetics
+   1.00 Tritium <->  ;   1.00 Tritium ;  1.78577E-09 ; ; 
+
+
+Ion Exchange Sites
+``````````````````
+
+Section `"Ion Exchange Sites`". Each line in this section has three fields: 
+exchanger name, exchanger change, and exchanger location. 
+The location is the mineral where the exchanger is located, i.e. kaolinite.
+
+.. code-block:: txt
+
+   <Ion Exchange Sites
+   X- ; -1.0 ; Bulk
+
+
+Aqueous Equilibrium Complexes
+`````````````````````````````
+
+Section `"Aqueous Equilibrium Complexes`". Each line in this section has five 
+fields for secondary species: name = coeff reactant, log Keq, size parameter, charge, and 
+gram molecular weight.
+
+.. code-block:: txt
+
+   <Aqueous Equilibrium Complexes
+   OH- =   1.00 H2O  -1.00 H+  ;   13.99510 ;    3.50000 ;   -1.00000 ;   17.00730
+   HCO3- =   1.00 H2O  -1.00 H+   1.00 CO2(aq)  ;    6.34470 ;    4.00000 ;   -1.00000 ;   61.01710
+
+
+Minerals
+````````
+
+Section `"Minerals`". Each line in this section has five fields for secondary species:
+Name = coeff reactant, log Keq, gram molecular weight [g/mole], molar volume [cm^3/mole],
+and specific surface area [cm^2 mineral / cm^3 bulk].
+
+.. code-block:: txt
+
+   <Minerals
+   Quartz = 1.00 SiO2(aq) ; -3.75010E+00 ; 6.00843E+01 ;  2.26880E+01 ;  1.00000E+00
+   Kaolinite =  5.00 H2O  -6.00 H+  2.00 Al+++  2.00 SiO2(aq)  ; 7.57000E+00 ; 2.58160E+02 ; 9.95200E+01 ; 1.0
+
+
+Mineral Kinetics
+````````````````
+
+Section `"Mineral Kinetics`". Each line in this section has four fields.
+The first field contains mineral name that is assumed to have the same stoichiometry 
+as the mineral definition.
+The second field is the rate name.
+
+
+Ion Exchange Complexes
+``````````````````````
+
+Section `"Ion Exchange Complexes`". Each line in this section has two fields.
+The first field has format "name = coeffient and primary name followed by coefficient 
+and exchanger name. the second field is Keq.
+The following assumptions are made:
 
    - The coefficient of the ion exchange complex is one.
    - Each complexation reaction is written between a single
      primary species and a single exchange site.
 
- * Section `"Surface Complex Sites`". Each line in this section has two fields:
-   species name and density.
 
- * Section `"Surface Complexes`". Each line in this section has three fields
-   for secondary species. The first field has format "name = coefficient primary_name coefficient exchanger site".
-   The second field is Keq. The third field is charge.
+Surface Complex Sites
+`````````````````````
 
- * Section `"Isotherms`". Each line in this section has three fields: primary species name, 
-   type, and parameters. The type is one of: linear, langmuir, or freundlich.
-   The parameters is a space delimited list of numbers. The number of  parameters and 
-   their meaning depends on the isotherm type.
+Section `"Surface Complex Sites`". Each line in this section has two fields:
+species name and density.
 
- * Section `"Radiactive Decay`". Each line in this section has two fields.
-   The first field has format "parent name --> stoichiometric coefficient and species name.
-   The second fields is half-life time with units.
-   The stoichiometric coefficient of the parent should always be one.
-   The units is one of the following: years, days, hours, minutes, or seconds.
 
-The simplest example is below.
+Surface Complexes
+`````````````````
 
-.. code-block:: text
+Section `"Surface Complexes`". Each line in this section has three fields
+for secondary species. The first field has format "name = coefficient primary_name coefficient exchanger site".
+The second field is Keq. The third field is charge.
 
-  <Primary Species
-  Tritium  ;   9.00 ;   0.00 ;   1.01
 
-  <General Kinetics
-    1.00 Tritium <->  ;   1.00 Tritium ;  1.78577E-09 ; ; 
+Radiactive Decay
+````````````````
+
+Section `"Radiactive Decay`". Each line in this section has two fields.
+The first field has format "parent name --> stoichiometric coefficient and species name.
+The second fields is half-life time with units.
+The stoichiometric coefficient of the parent should always be one.
+The units is one of the following: years, days, hours, minutes, or seconds.
 
 
 Initial conditions
@@ -3998,7 +4040,11 @@ at intervals corresponding to the numerical time step values or intervals corres
 
   * `"dynamic mesh`" [bool] (false) write mesh data for every visualization dump, this facilitates visualizing deforming meshes.
 
-  * `"Write Regions`" [Array(string)] (empty array) write an array into the visualization file that can be used to identify a region or regions. The first entry in the regions array is marked with the value 1.0 in the array, the second with the value 2.0, and so forth. The code ignores entries in the regions array that are not valid regions that contain cells.
+  * `"Write Regions`" [list] contains auxiliary fields with region ids to write into the visualization file.
+
+    * `"REGION_NAME`" [Array(string)] the user-defined field name and the list of assigned regions. 
+      The first entry in the regions array is marked with the value 1.0 in the array, the second with the value 2.0, and so forth. 
+      The code ignores entries in the regions array that are not valid regions that contain cells.
 
   * `"Write Partitions`" [bool] (false) if this parameter is true, then write an array into the visualization file that contains the rank number of the processor that owns a mesh cell. 
 
@@ -4016,6 +4062,11 @@ at intervals corresponding to the numerical time step values or intervals corres
        <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
 
        <Parameter name="dynamic mesh" type="bool" value="false"/>
+
+       <ParameterList name="Write Regions">
+         <Parameter name="regions" type="Array(string)" value="{Obs_r1, Obs_r1, Obs_r3}"/>
+         <Parameter name="wells" type="Array(string)" value="{Obs_r1}"/>
+       </ParameterList>
      </ParameterList>
    </ParameterList>
 

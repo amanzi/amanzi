@@ -39,11 +39,14 @@ class InputConverterU : public InputConverter {
 
   // main members
   Teuchos::ParameterList Translate();
+  void SaveXMLFile(Teuchos::ParameterList& plist, std::string& filename);
 
  private:
   void ParseSolutes_();
 
   Teuchos::ParameterList TranslateVerbosity_();
+  Teuchos::ParameterList TranslateMisc_();
+
   Teuchos::ParameterList TranslateMesh_();
   Teuchos::ParameterList TranslateRegions_();
   Teuchos::ParameterList TranslateOutput_();
@@ -55,11 +58,12 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateState_();
   Teuchos::ParameterList TranslateMaterialsPartition_();
   Teuchos::ParameterList TranslateCycleDriver_();
+  Teuchos::ParameterList TranslateCycleDriverNew_();
   Teuchos::ParameterList TranslateTimePeriodControls_();
   Teuchos::ParameterList TranslatePKs_(const Teuchos::ParameterList& cd_list);
   Teuchos::ParameterList TranslateDiffusionOperator_(
       const std::string& disc_method, const std::string& pc_method,
-      const std::string& nonlinear_solver, const std::string& rel_perm);
+      const std::string& nonlinear_solver, const std::string& extensions);
   Teuchos::ParameterList TranslateTimeIntegrator_(
       const std::string& err_options, const std::string& nonlinear_solver,
       bool modify_correction, const std::string& unstr_colntrols);
@@ -75,6 +79,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateTransportSources_();
   Teuchos::ParameterList TranslateChemistry_();
   Teuchos::ParameterList TranslateEnergy_();
+  Teuchos::ParameterList TranslateEnergyBCs_();
 
   void ProcessMacros_(const std::string& prefix, char* text_content,
                       Teuchos::ParameterList& mPL, Teuchos::ParameterList& outPL);
@@ -83,7 +88,9 @@ class InputConverterU : public InputConverter {
 
   Teuchos::ParameterList CreateAnalysis_();
   Teuchos::ParameterList CreateRegionAll_();
-  void CreateBDGFile(Teuchos::ParameterList sorption_list, Teuchos::ParameterList def_list);
+  std::string CreateBGDFile(std::string& filename);
+
+  void FilterEmptySublists_(Teuchos::ParameterList& plist);
 
  private:
   int dim_;
@@ -91,9 +98,11 @@ class InputConverterU : public InputConverter {
   Tree phases_;
 
   std::map<std::string, std::string> pk_model_;
+  std::map<std::string, bool> pk_master_;
 
   // global flow constants
-  bool flow_single_phase_;
+  std::string flow_model_;  // global value
+  bool flow_single_phase_;  // runtime value
   bool compressibility_;
   double rho_;
 

@@ -51,7 +51,7 @@ class Visualization : public IOEvent {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<Amanzi::HDF5_MPI> visualization_output_;
 
-  Teuchos::Array<std::string> regions_;
+  std::map<std::string, Teuchos::Array<std::string> > regions_;
   bool dynamic_mesh_;
   bool write_partition_;
 }; // Visualization class

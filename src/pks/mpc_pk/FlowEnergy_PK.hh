@@ -42,7 +42,7 @@ class FlowEnergy_PK : public MPCStrong<FnTimeIntegratorPK> {
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
   // virtual void CommitStep(double t_old, double t_new);
 
-  std::string name() { return "flow energy"; } 
+  std::string name() { return "thermal richards"; } 
 
   // virtual void CalculateDiagnostics() {};
 
@@ -50,7 +50,7 @@ class FlowEnergy_PK : public MPCStrong<FnTimeIntegratorPK> {
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
-  Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> density_rock_eval;
+  Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> particle_density_eval;
   Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> porosity_eval;
   Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> saturation_liquid_eval;
 

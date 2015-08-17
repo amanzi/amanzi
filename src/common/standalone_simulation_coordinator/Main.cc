@@ -18,15 +18,10 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
-#include <xercesc/dom/DOM.hpp>
-#include <xercesc/util/XMLString.hpp>
-#include <xercesc/util/PlatformUtils.hpp>
-#include <xercesc/parsers/XercesDOMParser.hpp>
-#include <xercesc/framework/StdOutFormatTarget.hpp>
-#include <xercesc/util/OutOfMemoryException.hpp>
 #include "DOMTreeErrorReporter.hpp"
 #include "ErrorHandler.hpp"
 #include "InputTranslator.hh"
+#include "InputConverterU.hh"
 //#include "DOMPrintErrorHandler.hpp"
 #include "XMLParameterListWriter.hh"
 
@@ -238,33 +233,13 @@ int main(int argc, char *argv[]) {
       throw std::string("amanzi not run");
     }
 
-
-    // EIB - this is the new piece which reads either the new or old input
-    /***************************************/
+    // Translate 2.x to 1.2.x or read directly 1.2.x
     MPI_Comm mpi_comm(MPI_COMM_WORLD);
     Teuchos::ParameterList driver_parameter_list;
     try {
-      xercesc::XMLPlatformUtils::Initialize();
-      xercesc::XercesDOMParser *parser = new xercesc::XercesDOMParser;
-      parser->setValidationScheme(xercesc::XercesDOMParser::Val_Never);
-      bool errorsOccured = false;
-      try{
-        parser->parse(xmlInFileName.c_str());
-      }
-      catch (const xercesc::OutOfMemoryException&)
-      {
-	std::cerr << "OutOfMemoryException" << std::endl;
-        errorsOccured = true;
-      }
-      xercesc::DOMDocument *doc = parser->getDocument();
-      xercesc::DOMElement *root = doc->getDocumentElement();
-      char* temp2 = xercesc::XMLString::transcode(root->getTagName());
-      //DOMImplementation* impl =  DOMImplementationRegistry::getDOMImplementation(X("Core"));
-
-      if (strcmp(temp2, "amanzi_input") == 0) {
-	driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName);
-
-	//driver_parameter_list.print(std::cout,true,false);
+      std::string spec;
+      driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName, spec);
+      if (spec == "v2") {
 	const Teuchos::ParameterList& echo_list = driver_parameter_list.sublist("Echo Translated Input");
 	if (echo_list.isParameter("Format")) {
 	  if (echo_list.get<std::string>("Format") == "v1") {
@@ -279,42 +254,30 @@ int main(int argc, char *argv[]) {
 	    }
 	  }
 	}
-      } else if(strcmp(temp2, "ParameterList") == 0) {
-	// Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
-        // driver_parameter_list = xmlreader.getParameters();
-        // new initialization verifies the XML input
+        // optional unstructured converter
+	if (echo_list.isParameter("Format")) {
+          if (echo_list.get<std::string>("Format") == "unstructured_native") {
+            bool found;
+            Amanzi::AmanziInput::InputConverterU converter;
+            converter.Init(xmlInFileName, found);
+            driver_parameter_list = converter.Translate();
+            if (rank == 0) converter.SaveXMLFile(driver_parameter_list, xmlInFileName);
+          }
+        }
+      } else if(spec == "v1") {
         Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
         driver_parameter_list = *plist;
-      }
-      else {
+      } else {
 	amanzi_throw(Errors::Message("Unexpected Error reading input file"));
       }
-
-      // check root tag 
-      // if ParameterList - do old and pass thru
-      // if amanzi_input  - validate, convert to old
-
-      xercesc::XMLString::release(&temp2) ;
-      delete parser;
-      xercesc::XMLPlatformUtils::Terminate();
     }
-    catch (std::exception& e)
-    {
+    catch (std::exception& e) {
       if (rank == 0) {
         std::cout << e.what() << std::endl;
         std::cout << "Amanzi::XERCES-INPUT_FAILED\n";
       }
       amanzi_throw(Errors::Message("Amanzi::Input - reading and translation of input file failed. ABORTING!"));
     }
-    /***************************************/
-    // EIB - this is the old stuff I'm replacing
-    // *************************************//
-    //// read the main parameter list
-    //Teuchos::ParameterList driver_parameter_list;
-    //// DEPRECATED    Teuchos::updateParametersFromXmlFile(xmlInFileName,&driver_parameter_list);
-    //Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
-    //driver_parameter_list = xmlreader.getParameters();
-    // *************************************//
 
     const Teuchos::ParameterList& mesh_parameter_list = driver_parameter_list.sublist("Mesh");
     driver_parameter_list.set<std::string>("input file name", xmlInFileName);

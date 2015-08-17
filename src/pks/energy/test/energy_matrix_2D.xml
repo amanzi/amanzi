@@ -177,7 +177,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="density_rock">
+      <ParameterList name="particle_density">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">

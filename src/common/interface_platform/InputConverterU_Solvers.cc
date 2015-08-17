@@ -57,7 +57,7 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
     *vo_->os() << "Translating solvers" << std::endl;
   }
 
-  XString mm;
+  MemoryManager mm;
 
   // define defaults...
   double tol = LINEAR_SOLVER_TOL;
@@ -66,7 +66,7 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
   std::string prec = LINEAR_SOLVER_PC;
 
   // get values from Execution control list if they exist
-  DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("unstructured_linear_solver"));
+  DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("unstr_linear_solver"));
   if (node_list->getLength() > 0) {
     DOMNodeList* children = node_list->item(0)->getChildNodes();
 
@@ -138,7 +138,7 @@ Teuchos::ParameterList InputConverterU::TranslateTrilinosML_()
   Teuchos::ParameterList out_list;
   out_list.set<std::string>("preconditioner type", "ml");
 
-  XString mm;
+  MemoryManager mm;
 
   // default parameters that we try to override
   double aggthr(TRILINOS_ML_AGG_THR);
@@ -147,7 +147,7 @@ Teuchos::ParameterList InputConverterU::TranslateTrilinosML_()
   int nsmooth(TRILINOS_ML_NSMOOTH);
 
   bool flag;
-  DOMNode* node = getUniqueElementByTagNames_("unstr_linear_solver", "linear_solvers", "preconditioner", flag);
+  DOMNode* node = GetUniqueElementByTagsString_("unstr_linear_solver, linear_solvers, preconditioner", flag);
   if (flag) {
     DOMNodeList* children = node->getChildNodes();
 
@@ -198,7 +198,7 @@ Teuchos::ParameterList InputConverterU::TranslateBILU_()
   Teuchos::ParameterList out_list;
   out_list.set<std::string>("preconditioner type", "block ilu");
 
-  XString mm;
+  MemoryManager mm;
 
   // default parameters that we try to override
   double bilu_relax_value(TRILINOS_ILU_RLXVAL);
@@ -208,7 +208,7 @@ Teuchos::ParameterList InputConverterU::TranslateBILU_()
   int bilu_overlap(TRILINOS_ILU_OLV);
 
   bool flag;
-  DOMNode* node = getUniqueElementByTagNames_("unstr_linear_solver", "linear_solvers", "preconditioner", flag);
+  DOMNode* node = GetUniqueElementByTagsString_("unstr_linear_solver, linear_solvers, preconditioner", flag);
 
   if (flag) {
     DOMNodeList* children = node->getChildNodes();
@@ -252,7 +252,7 @@ Teuchos::ParameterList InputConverterU::TranslateHypreAMG_()
   Teuchos::ParameterList out_list;
   out_list.set<std::string>("preconditioner type", "boomer amg");
 
-  XString mm;
+  MemoryManager mm;
 
   // default parameters that we try to override
   double tol(HYPRE_AMG_TOL);
@@ -261,7 +261,7 @@ Teuchos::ParameterList InputConverterU::TranslateHypreAMG_()
   double strong_threshold(HYPRE_AMG_STR_THR);
 
   bool flag;
-  DOMNode* node = getUniqueElementByTagNames_("unstr_linear_solver", "linear_solvers", "preconditioner", flag);
+  DOMNode* node = GetUniqueElementByTagsString_("unstr_linear_solver, linear_solvers, preconditioner", flag);
 
   if (flag) {
     DOMNodeList* children = node->getChildNodes();
