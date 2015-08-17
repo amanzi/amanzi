@@ -38,7 +38,7 @@ class InputConverterU : public InputConverter {
   ~InputConverterU() { if (vo_ != NULL) delete vo_; }
 
   // main members
-  Teuchos::ParameterList Translate();
+  Teuchos::ParameterList Translate(int rank, int num_proc);
   void SaveXMLFile(Teuchos::ParameterList& plist, std::string& filename);
 
  private:
@@ -94,6 +94,7 @@ class InputConverterU : public InputConverter {
 
  private:
   int dim_;
+  int rank_, num_proc_;
   Tree tree_;
   Tree phases_;
 

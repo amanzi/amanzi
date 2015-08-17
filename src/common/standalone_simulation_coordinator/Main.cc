@@ -73,6 +73,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,0);
   int rank = mpiSession.getRank();
+  int num_proc = mpiSession.getNProc();
 
   try {
     Teuchos::CommandLineProcessor CLP;
@@ -260,7 +261,7 @@ int main(int argc, char *argv[]) {
             bool found;
             Amanzi::AmanziInput::InputConverterU converter;
             converter.Init(xmlInFileName, found);
-            driver_parameter_list = converter.Translate();
+            driver_parameter_list = converter.Translate(rank, num_proc);
             if (rank == 0) converter.SaveXMLFile(driver_parameter_list, xmlInFileName);
           }
         }

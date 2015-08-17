@@ -465,12 +465,14 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
           }
         } else {
           element = static_cast<DOMElement*>(same_list[0]);
-          double total = GetAttributeValueD_(element, "inventory");
-          double diff = GetAttributeValueD_(element, "diffusion_coeff");
+          double total = GetAttributeValueD_(element, "total_inventory");
+          double diff = GetAttributeValueD_(element, "effective_diffusion_coefficient");
           double length = GetAttributeValueD_(element, "mixing_length");
           std::vector<double> times;
           times.push_back(GetAttributeValueD_(element, "start"));
-          times.push_back(GetAttributeValueD_(element, "end"));
+
+          element = static_cast<DOMElement*>(same_list[1]);
+          times.push_back(GetAttributeValueD_(element, "start"));
 
           // save data in the XML
           Teuchos::ParameterList& src_list = out_list.sublist("concentration");
@@ -481,7 +483,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
           std::vector<std::string> forms(1, "SQRT");
           double amplitude = 2 * total / length * std::pow(diff / M_PI, 0.5); 
 
-          Teuchos::ParameterList& srcfn = src.sublist("boundary concentration").sublist("function-tabular");
+          Teuchos::ParameterList& srcfn = src.sublist("sink").sublist("function-tabular");
           srcfn.set<Teuchos::Array<double> >("x values", times)
                .set<Teuchos::Array<double> >("y values", values)
                .set<Teuchos::Array<std::string> >("forms", forms);

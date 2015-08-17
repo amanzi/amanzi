@@ -6,7 +6,8 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Erin Barker (original version)
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <sstream>
@@ -211,10 +212,23 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
             mesh_list.set<std::string>("Format", format, "Format of meshfile", meshfile_validator);
           }
 
-          char* filename = mm.transcode(elementRead->getElementsByTagName(
+          std::string filename = mm.transcode(elementRead->getElementsByTagName(
               mm.transcode("file"))->item(0)->getTextContent());
-          if (strlen(filename) > 0) {
-            mesh_list.set<std::string>("File", TrimString_(filename));
+          if (filename.size() > 0) {
+            if (num_proc_ > 1) {
+              std::string par_filename(filename);
+              par_filename.replace(par_filename.size() - 4, 4, ".par");
+
+              // attach the right extensions as required by Nemesis file naming conventions
+              // in which files are named as mymesh.par.N.r where N = numproc and r is rank
+              int ndigits = (int)floor(log10(num_proc_)) + 1;
+              std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
+              std::string tmp = boost::str(boost::format(fmt) % par_filename % num_proc_ % rank_);
+              boost::filesystem::path p(tmp);
+
+             if (boost::filesystem::exists(p)) filename = par_filename;
+            }
+            mesh_list.set<std::string>("File", filename);
             goodname = true;
           }
           if (goodtype && goodname) all_good = true;

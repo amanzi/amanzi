@@ -3484,12 +3484,15 @@ This specification format uses and describes the unstructured mesh only.
   * `"Read Mesh File`" [list] accepts name, format of pre-generated mesh file
 
    * `"File`" [string] name of pre-generated mesh file. Note that in the case of an
-     Exodus II mesh file, the suffix of the serial mesh file must be .exo.
-     When running in serial the code will read this file directly.
-     When running in parallel, the code will instead read the partitioned files,
-     that have been generated with a Nemesis tool.
-     There is no need to change the file name in this case as the code will automatically load the proper files. 
-
+     Exodus II mesh file, the suffix of the serial mesh file must be .exo and 
+     the suffix of the parallel mesh file must be .par.
+     When running in serial the code will read this the indicated file directly.
+     When running in parallel and the suffix is .par, the code will instead read
+     the partitioned files, that have been generated with a Nemesis tool and
+     named as filename.par.N.r where N is the number of processors and r is the rank.
+     When running in parallel and the suffix is .exo, the code will partition automatically
+     the serial file.
+     
    * `"Format`" [string] format of pre-generated mesh file (`"MSTK`", `"MOAB`", or `"Exodus II`")
 
   * `"Generate Mesh`" [list] accepts parameters of generated mesh (currently only `"Uniform`" supported)

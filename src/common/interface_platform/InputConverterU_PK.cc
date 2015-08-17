@@ -314,10 +314,10 @@ Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
   Teuchos::ParameterList out_list;
   Teuchos::ParameterList tmp_list;
 
-  // std::string tmp(disc_method);
-  // std::replace(tmp.begin(), tmp.end(), '-', ':');
   std::string tmp = boost::replace_all_copy(disc_method, "-", ": ");
   replace(tmp.begin(), tmp.end(), '_', ' ');
+  if (tmp == "mfd: two point flux approximation") tmp = "mfd: two-point flux approximation";
+
   tmp_list.set<std::string>("discretization primary", boost::to_lower_copy(tmp));
   tmp_list.set<std::string>("discretization secondary", "mfd: optimized for sparsity");
 

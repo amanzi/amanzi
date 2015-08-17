@@ -588,6 +588,9 @@
             <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
             <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
             <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
+            <ParameterList name="VerboseObject">
+              <Parameter name="Verbosity Level" type="string" value="high"/>
+            </ParameterList>
           </ParameterList>
           <ParameterList name="initialization">
             <Parameter name="method" type="string" value="saturated solver"/>

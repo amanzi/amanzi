@@ -6,7 +6,8 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Daniil Svyatskiy (original version)
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <algorithm>
@@ -500,6 +501,8 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   bc_names.push_back("seepage_face");
   bc_names.push_back("aqueous_conc");
   bc_names.push_back("constraint");
+  bc_names.push_back("diffusion_dominated_release");
+  bc_names.push_back("uniform_temperature");
 
   node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
   if (node_list->getLength() == 0) return out_list;

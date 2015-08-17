@@ -45,7 +45,7 @@ TEST(CONVERTER_BASE) {
     converter.Init(xmlFileName.str(), found);
     Teuchos::ParameterList new_xml;
     try {
-      new_xml = converter.Translate();
+      new_xml = converter.Translate(0, 1);
 
       Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
       Teuchos::XMLObject XMLobj = XMLWriter.toXML(new_xml);

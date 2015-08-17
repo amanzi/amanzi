@@ -313,19 +313,20 @@ std::string InputConverterU::CreateBGDFile(std::string& filename)
   bgdfilename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)4);
 
   // open output bgd file
-  bgd_file.open(bgdfilename.c_str());
+  if (rank_ == 0) {
+    bgd_file.open(bgdfilename.c_str());
 
-  // <Primary Species
-  bgd_file << "<Primary Species\n";
-  bgd_file << species.str();
+    // <Primary Species
+    bgd_file << "<Primary Species\n";
+    bgd_file << species.str();
 
-  //<Isotherms
-  bgd_file << "<Isotherms\n";
-  bgd_file << "# Note, these values will be overwritten by the xml file\n";
-  bgd_file << isotherms.str();
+    //<Isotherms
+    bgd_file << "<Isotherms\n";
+    bgd_file << "# Note, these values will be overwritten by the xml file\n";
+    bgd_file << isotherms.str();
 
-  // close output bdg file
-  bgd_file.close();
+    bgd_file.close();
+  }
 
   return bgdfilename;
 }
