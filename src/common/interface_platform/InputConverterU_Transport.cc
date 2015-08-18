@@ -6,7 +6,9 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Markus Berndt
+           Jeffrey Johnson
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <algorithm>
