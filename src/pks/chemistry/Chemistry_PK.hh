@@ -9,7 +9,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "beaker.hh"
-#include "chemistry_pk_base.hh"
+#include "Chemistry_PK_Base.hh"
 #include "chemistry_exception.hh"
 #include "chemistry_verbosity.hh"
 

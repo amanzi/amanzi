@@ -34,8 +34,17 @@ include_directories(${Boost_INCLUDE_DIRS})
 #
 # interface library
 #
-file(GLOB _hh_inc_files "*.hh")
-set(interface_inc_files  ${_hh_inc_files} )
+# file(GLOB _hh_inc_files "*.hh")
+set(interface_inc_files
+  Simulator.hh
+  ObservationData.hh
+  InputConverter.hh
+  InputConverterU.hh
+  InputConverterU_Defs.hh
+  InputParserIS.hh
+  InputParserIS_Defs.hh
+  InputTranslator.hh)
+
 add_amanzi_library(interface
                       SOURCE 
                            InputParserIS.cc

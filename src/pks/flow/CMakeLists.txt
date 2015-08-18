@@ -126,7 +126,6 @@ add_amanzi_library(flow SOURCE ${flow_src_files}
 #
 # Install Targets
 #
-#file(GLOB flow_inc_files "*.hh")
 set(flow_inc_files 
   Darcy_PK.hh
   Flow_BC_Factory.hh
@@ -157,10 +156,13 @@ if (BUILD_TESTS)
     include_directories(${UnitTest_INCLUDE_DIRS})
     include_directories(${MESH_FACTORY_SOURCE_DIR})
 
-    # Copy test directory files if an out of source build
+    # Copy test directory files if any out of source build
     if (NOT (${FLOW_SOURCE_DIR} EQUAL ${FLOW_BINARY_DIR}) )
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${FLOW_SOURCE_DIR}/test ${FLOW_BINARY_DIR}/test) 
+        # execute_process(COMMAND ${CMAKE_COMMAND} -E 
+        #   copy_directory ${FLOW_SOURCE_DIR}/test ${FLOW_BINARY_DIR}/test) 
+        file(GLOB DataFiles "${FLOW_SOURCE_DIR}/test/*.xml"
+                            "${FLOW_SOURCE_DIR}/test/*.exo")
+        file(COPY ${DataFiles} DESTINATION ${FLOW_BINARY_DIR}/test/)
     endif()
 
     # Add the flow directory to the include paths

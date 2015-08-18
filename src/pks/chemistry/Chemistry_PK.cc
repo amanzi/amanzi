@@ -1,6 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
-#include "chemistry_pk.hh"
+#include "Chemistry_PK.hh"
 
 #include <string>
 #include <algorithm>
