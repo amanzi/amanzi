@@ -95,6 +95,19 @@ def v211_update(tree):
     # get simulation type
     type =  root.get('type')
 
+    ### Output Updates ###
+    
+    vis = root.find('./output/vis')
+    if (vis is not None):
+	wr = vis.find('write_regions')
+	if (wr is not None):
+	    print >> sys.stdout, "    Update form of write_regions"
+	    regs = wr.text
+	    wr.clear()
+	    field = ET.SubElement(wr,'field')
+	    field.set("name","regions")
+	    field.set("regions",regs)
+
     ### Structured Updates ###
 
     if (type == "structured"):

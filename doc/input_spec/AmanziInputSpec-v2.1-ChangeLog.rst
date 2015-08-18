@@ -9,6 +9,24 @@ Overview
 
 The Amanzi simulator will continue to expand the available features and enhance current functionality.  This progress will result in modifications and additions to the XML input specification.  Specific versions of the XML input specification will only work with the corresponding Amanzi release version.  The following is a description of the changes made to the XML input specification and the Amanzi release version(s) that accept the input version.
 
+
+Version 2.1.1 (Amanzi Release - devel - 8326 )
+==================================================
+
+Changeset 8326
+
+NERSC build on  Aug 18, 2015.
+
+Edison build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.19/default-150818
+
+Hopper build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.19/default-150818
+
+viz
+---
+
+* Modification to the write_regions element.  To make this field more useful for production the user can now specify a list of "field" subelements.  The name given to the field will appear in the list of available fields to visualize.  Each region listed for the given field will be assigned and colored by an integer id.
+
+
 Version 2.1.1 (Amanzi Release - devel - 8245 )
 ==================================================
 
@@ -16,9 +34,9 @@ Changeset 8245
 
 NERSC build on  Aug 6, 2015.
 
-Edison build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.18/default-150806
+Edison build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.19/default-150806
 
-Hopper build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.18/default-150806
+Hopper build path /project/projectdirs/m1012/amanzi/install/hopper/mpich-7.1.1-gnu-4.9.2/Release-TPLs-0.92.19/default-150806
 
 str_amr_controls
 ----------------
