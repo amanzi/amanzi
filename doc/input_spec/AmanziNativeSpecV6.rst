@@ -1504,7 +1504,20 @@ and :math:`\boldsymbol{v}` is average pore velocity.
 Physical models and assumptions
 ...............................
 
-To be written.
+This list is used to summarize physical models and assumptions, such as
+coupling with other PKs.
+This list is often generated or extended by a high-level MPC PK.
+
+* `"permeability field is required`" [bool] indicate if some transport features
+  require absolute permeability. Default is *false*.
+
+.. code-block:: xml
+
+   <ParameterList name="Transport">  <!-- parent list -->
+     <ParameterList name="physical models and assumptions">
+       <Parameter name="permeability field is required" type="bool" value="false"/>
+     </ParameterList>
+   </ParameterList>
 
 
 Global parameters

@@ -14,6 +14,12 @@
 #include "TCMFactory_TwoPhase.hh"
 
 // explicity instantitate the static data of Factory<TCM_TwoPhase>
-template<> Amanzi::Utils::Factory<Amanzi::Energy::TCM_TwoPhase>::map_type* 
-    Amanzi::Utils::Factory<Amanzi::Energy::TCM_TwoPhase>::map_;
+namespace Amanzi {
+namespace Utils {
+
+template<> 
+Factory<Energy::TCM_TwoPhase>::map_type* Factory<Energy::TCM_TwoPhase>::map_;
+
+}  // namespace Utils
+}  // namespace Amanzi
 

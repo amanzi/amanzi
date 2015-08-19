@@ -67,7 +67,7 @@ class Darcy_PK : public Flow_PK {
   void update_norm(double rtol, double atol) {};
 
   // -- preconditioner management
-  int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) {};
+  int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) { return 0; }
   void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt) {};
  
   // -- check the admissibility of a solution

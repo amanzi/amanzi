@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <sstream>
 #include <string>
+#include <sys/stat.h>
 
 //TPLs
 #include "Teuchos_ParameterList.hpp"
@@ -314,18 +315,28 @@ std::string InputConverterU::CreateBGDFile(std::string& filename)
 
   // open output bgd file
   if (rank_ == 0) {
-    bgd_file.open(bgdfilename.c_str());
+    struct stat buffer;
+    int status = stat(bgdfilename.c_str(), &buffer);
+    if (!status) {
+      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "File \"" << bgdfilename.c_str() 
+                   << "\" exists, skipping its creation." << std::endl;
+      }
+    } else {
+      bgd_file.open(bgdfilename.c_str());
 
-    // <Primary Species
-    bgd_file << "<Primary Species\n";
-    bgd_file << species.str();
+      // <Primary Species
+      bgd_file << "<Primary Species\n";
+      bgd_file << species.str();
 
-    //<Isotherms
-    bgd_file << "<Isotherms\n";
-    bgd_file << "# Note, these values will be overwritten by the xml file\n";
-    bgd_file << isotherms.str();
+      //<Isotherms
+      bgd_file << "<Isotherms\n";
+      bgd_file << "# Note, these values will be overwritten by the xml file\n";
+      bgd_file << isotherms.str();
 
-    bgd_file.close();
+      bgd_file.close();
+    }
   }
 
   return bgdfilename;

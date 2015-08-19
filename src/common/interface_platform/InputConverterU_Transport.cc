@@ -149,6 +149,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
           tmp_list.sublist("parameters for Burnett-Frind")
               .set<double>("alphaL", al).set<double>("alphaTH", ath)
               .set<double>("alphaTH", atv);
+
+          transport_permeability_ = true;
         } else if (strcmp(model.c_str(), "lichtner_kelkar_robinson") == 0) {
           tmp_list.set<std::string>("model", "Lichtner-Kelkar-Robinson");
 
@@ -160,6 +162,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
           tmp_list.sublist("parameters for Lichtner-Kelkar-Robinson")
               .set<double>("alphaLH", alh).set<double>("alphaLV", alv)
               .set<double>("alphaTH", ath).set<double>("alphaTH", atv);
+
+          transport_permeability_ = true;
         } 
       }
 
@@ -233,6 +237,10 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   // remaining global parameters
   out_list.set<int>("number of aqueous components", phases_["water"].size());
   out_list.set<int>("number of gaseous components", phases_["gas"].size());
+
+  // cross coupling of PKs
+  out_list.sublist("physical models and assumptions")
+      .set<bool>("permeability field is required", transport_permeability_);
 
   out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
   return out_list;
@@ -428,6 +436,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
         } else {
           ThrowErrorIllformed_("sources", "element", text);
         } 
+        if (weight == "permeability") transport_permeability_ = true;
 
         if (classical) {
           std::map<double, double> tp_values;
