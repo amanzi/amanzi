@@ -408,8 +408,7 @@ void InputConverterS::ParseDefinitions_()
     // FIXME: variable_macro not yet supported.
   }
 
-  if (!table.empty())
-    ParmParse::appendTable(table);
+  ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseExecutionControls_()
@@ -453,8 +452,7 @@ void InputConverterS::ParseExecutionControls_()
     AddToTable(table, MakePPPrefix("fab", "v"), MakePPEntry(fab_v));
   }
 
-  if (!table.empty())
-    ParmParse::appendTable(table);
+  ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseNumericalControls_()
@@ -502,8 +500,7 @@ void InputConverterS::ParseNumericalControls_()
     }
   }
 
-  if (!table.empty())
-    ParmParse::appendTable(table);
+  ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseMesh_()
@@ -565,8 +562,7 @@ void InputConverterS::ParseMesh_()
 
   // FIXME: Anything else?
 
-  if (!table.empty())
-    ParmParse::appendTable(table);
+  ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseRegions_()
@@ -763,29 +759,84 @@ void InputConverterS::ParseRegions_()
     }
   }
 
-  if (!table.empty())
-    ParmParse::appendTable(table);
+  ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseGeochemistry_()
 {
-#if 0
   list<ParmParse::PP_entry> table;
   bool found;
 
-  DOMNode* geochem = GetUniqueElementByTagsString_(doc_, "geochemistry", found);
+  DOMNode* geochem = GetUniqueElementByTagsString_("geochemistry`", found);
   if (found)
   {
-    DOMElement* rxn_network = GetChildByName_(geochem, "reaction_network", found, true);
-    string file = GetAttributeValueS_(rxn_network, "file", found, true);
-    string format = GetAttributeValueS_(rxn_network, "format", found, true);
-    vector<DOMNode*> constraints = GetChildren_(materials, "constraint", found);
+    bool found;
 
+    // Reaction database.
+    DOMElement* database = GetChildByName_(geochem, "database", found, true);
+    string db_file = GetAttributeValueS_(database, "name", true);
+
+    // Radioactive decay.
+    DOMElement* decay = GetChildByName_(geochem, "radioactive_decay", found, false);
+    if (found)
+    {
+      bool found;
+      vector<DOMNode*> solutes = GetChildren_(decay, "solute", found, true);
+      for (size_t i = 0; i < solutes.size(); ++i)
+      {
+        DOMElement* solute = static_cast<DOMElement*>(solutes[i]);
+        string name = GetAttributeValueS_(solute, "name", true);
+
+        // FIXME: What are the required attributes of the solute here?
+//        string forward_rate = GetAttributeValueS_(solute, "forward_rate", true);
+      }
+    }
+
+    // Constraints.
+    DOMElement* constraints = GetChildByName_(geochem, "constraints", found, true);
+    vector<DOMNode*> all_constraints = GetChildren_(constraints, "constraint", found);
+    for (size_t i = 0; i < all_constraints.size(); ++i)
+    {
+      DOMElement* constraint = static_cast<DOMElement*>(all_constraints[i]);
+      string name = GetAttributeValueS_(constraint, "name", true);
+
+      // Is the constraints defined in an external file?
+      string filename = GetAttributeValueS_(constraint, "filename", false);
+      if (!filename.empty())
+      {
+      }
+      else
+      {
+        // Data is given by XML stuff.
+        bool found;
+        vector<DOMNode*> primaries = GetChildren_(constraint, "primary", found, true);
+        for (size_t i = 0; i < primaries.size(); ++i)
+        {
+          DOMElement* primary = static_cast<DOMElement*>(primaries[i]);
+          string name = GetAttributeValueS_(primary, "name", true);
+          string initial_guess = GetAttributeValueS_(primary, "initial_guess", true);
+          string type = GetAttributeValueS_(primary, "type", true);
+        }
+      }
+    }
+
+    // Mineral kinetics.
+    DOMElement* kinetics = GetChildByName_(geochem, "mineral_kinetics", found, false);
+    if (found)
+    {
+      vector<DOMNode*> minerals = GetChildren_(kinetics, "mineral", found);
+      for (size_t i = 0; i < minerals.size(); ++i)
+      {
+        DOMElement* mineral = static_cast<DOMElement*>(minerals[i]);
+        string name = GetAttributeValueS_(mineral, "name", true);
+        string rate_constant = GetAttributeValueS_(mineral, "rate_constant", true);
+        string rate_dependence = GetAttributeValueS_(mineral, "rate_dependence", false);
+        string alpha = GetAttributeValueS_(mineral, "alpha", false);
+      }
+    }
   }
 
-  if (!table.empty())
-    ParmParse::appendTable(table);
-#endif
+  ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseMaterials_()
@@ -1047,8 +1098,7 @@ void InputConverterS::ParseMaterials_()
     AddToTable(table, MakePPPrefix("rock", "rock"), MakePPEntry(material_names));
   }
 
-  if (!table.empty())
-    ParmParse::appendTable(table);
+  ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseProcessKernels_()
@@ -1122,8 +1172,7 @@ void InputConverterS::ParseProcessKernels_()
     string chemistry_model = GetAttributeValueS_(chemistry, "process_model");
   }
 
-  if (!table.empty())
-    ParmParse::appendTable(table);
+  ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParsePhases_()
@@ -1157,8 +1206,7 @@ void InputConverterS::ParseBoundaryConditions_()
       }
     }
   }
-  if (!table.empty())
-    ParmParse::appendTable(table);
+  ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseOutput_()
@@ -1224,8 +1272,7 @@ void InputConverterS::ParseOutput_()
 //    AddToTable(table, MakePPPrefix("amr", "chk_cycle_macros"), MakePPEntry(cycle_macros));
   }
 
-  if (!table.empty())
-    ParmParse::appendTable(table);
+  ParmParse::appendTable(table);
 }
 
 void InputConverterS::ParseMisc_()
