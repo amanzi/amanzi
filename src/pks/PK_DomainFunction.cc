@@ -2,17 +2,16 @@
 #include "errors.hh"
 
 #include "Domain.hh"
-#include "FlowDomainFunction.hh"
+#include "PK_DomainFunction.hh"
 
 namespace Amanzi {
-namespace Flow {
 
 /* ******************************************************************
 * Calculate pairs <list of cells, function>
 ****************************************************************** */
-void FlowDomainFunction::Define(const std::vector<std::string>& regions,
-                                const Teuchos::RCP<const MultiFunction>& f,
-                                int action, int submodel) 
+void PK_DomainFunction::Define(const std::vector<std::string>& regions,
+                               const Teuchos::RCP<const MultiFunction>& f,
+                               int action, int submodel)
 {
   // Create the domain
   Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, AmanziMesh::CELL));
@@ -28,9 +27,9 @@ void FlowDomainFunction::Define(const std::vector<std::string>& regions,
 /* ******************************************************************
 * Calculate pairs <list of cells, function>
 ****************************************************************** */
-void FlowDomainFunction::Define(std::string& region,
-                                const Teuchos::RCP<const MultiFunction>& f,
-                                int action, int submodel) 
+void PK_DomainFunction::Define(const std::string& region,
+                               const Teuchos::RCP<const MultiFunction>& f,
+                               int action, int submodel) 
 {
   RegionList regions(1, region);
   Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, AmanziMesh::CELL));
@@ -44,7 +43,7 @@ void FlowDomainFunction::Define(std::string& region,
 /* ******************************************************************
 * Compute and normalize the result, so far by volume
 ****************************************************************** */
-void FlowDomainFunction::Compute(double t0, double t1)
+void PK_DomainFunction::Compute(double t0, double t1)
 {
   // lazily generate space for the values
   if (!finalized_) {
@@ -53,10 +52,13 @@ void FlowDomainFunction::Compute(double t0, double t1)
   
   if (specs_and_ids_.size() == 0) return;
 
+  double dt = t1 - t0;
+  if (dt > 0.0) dt = 1.0 / dt;
+ 
   // create the input tuple (time + space)
   int dim = mesh_->space_dimension();
   std::vector<double> args(1 + dim);
- 
+
   int n(0);
   for (SpecAndIDsList::const_iterator
        spec_and_ids = specs_and_ids_[AmanziMesh::CELL]->begin();
@@ -78,10 +80,10 @@ void FlowDomainFunction::Compute(double t0, double t1)
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
         value_[*id] -= (*(*spec_and_ids)->first->second)(args)[0];
-      }
+        value_[*id] *= dt;
+       }
     }
-
-    n++; 
+    n++;
   }
 }
 
@@ -89,14 +91,17 @@ void FlowDomainFunction::Compute(double t0, double t1)
 /* ******************************************************************
 * Compute and distribute the result by volume.
 ****************************************************************** */
-void FlowDomainFunction::ComputeDistribute(double t0, double t1)
+void PK_DomainFunction::ComputeDistribute(double t0, double t1)
 {
   // lazily generate space for the values
   if (!finalized_) {
     Finalize();
   }
 
-  // create the input tuple (time + space)
+  double dt = t1 - t0;
+  if (dt > 0.0) dt = 1.0 / dt;
+
+   // create the input tuple (time + space)
   int dim = (*mesh_).space_dimension();
   std::vector<double> args(1 + dim);
 
@@ -131,6 +136,7 @@ void FlowDomainFunction::ComputeDistribute(double t0, double t1)
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
         value_[*id] -= (*(*spec_and_ids)->first->second)(args)[0] / domain_volume;
+        value_[*id] *= dt;
       }
     }
 
@@ -143,20 +149,23 @@ void FlowDomainFunction::ComputeDistribute(double t0, double t1)
 * Compute and distribute the result by specified weight if an action
 * is set on. Otherwise, weight could be a null pointer.
 ****************************************************************** */
-void FlowDomainFunction::ComputeDistribute(double t0, double t1, double* weight)
+void PK_DomainFunction::ComputeDistribute(double t0, double t1, double* weight)
 {
   // lazily generate space for the values
   if (!finalized_) {
     Finalize();
   }
 
+  double dt = t1 - t0;
+  if (dt > 0.0) dt = 1.0 / dt;
+ 
   // create the input tuple (time + space)
-  int dim = (*mesh_).space_dimension();
+  int dim = mesh_->space_dimension();
   std::vector<double> args(1 + dim);
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
   int n(0);
+
   for (SpecAndIDsList::const_iterator
        spec_and_ids = specs_and_ids_[AmanziMesh::CELL]->begin();
        spec_and_ids != specs_and_ids_[AmanziMesh::CELL]->end(); ++spec_and_ids) {
@@ -168,7 +177,6 @@ void FlowDomainFunction::ComputeDistribute(double t0, double t1, double* weight)
     Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
 
     if (action == CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME) {
-      // calculate physical volume of region.
       for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
         if (*id < ncells_owned) domain_volume += mesh_->cell_volume(*id);
       }
@@ -189,11 +197,12 @@ void FlowDomainFunction::ComputeDistribute(double t0, double t1, double* weight)
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
           for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
           value_[*id] -= (*(*spec_and_ids)->first->second)(args)[0] / domain_volume;
+          value_[*id] *= dt;
         }
       }
     }
     else if (action == CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
+      for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
         if (*id < ncells_owned) domain_volume += mesh_->cell_volume(*id);
       }
       double volume_tmp = domain_volume;
@@ -203,7 +212,6 @@ void FlowDomainFunction::ComputeDistribute(double t0, double t1, double* weight)
       for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-        // spec_and_ids->first is a RCP<Spec>, Spec's second is an RCP to the function.
         value_[*id] = (*(*spec_and_ids)->first->second)(args)[0] * weight[*id] / domain_volume;
       }      
 
@@ -213,6 +221,7 @@ void FlowDomainFunction::ComputeDistribute(double t0, double t1, double* weight)
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
           for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
           value_[*id] -= (*(*spec_and_ids)->first->second)(args)[0] * weight[*id] / domain_volume;
+          value_[*id] *= dt;
         }
       }
     }
@@ -221,7 +230,6 @@ void FlowDomainFunction::ComputeDistribute(double t0, double t1, double* weight)
       for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-        // spec_and_ids->first is a RCP<Spec>, Spec's second is an RCP to the function.
         value_[*id] = (*(*spec_and_ids)->first->second)(args)[0];
       }      
 
@@ -231,6 +239,7 @@ void FlowDomainFunction::ComputeDistribute(double t0, double t1, double* weight)
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
           for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
           value_[*id] -= (*(*spec_and_ids)->first->second)(args)[0];
+          value_[*id] *= dt;
         }
       }
     }
@@ -243,7 +252,7 @@ void FlowDomainFunction::ComputeDistribute(double t0, double t1, double* weight)
 /* ******************************************************************
 * Return all specified actions. 
 ****************************************************************** */
-int FlowDomainFunction::CollectActionsList()
+int PK_DomainFunction::CollectActionsList()
 {
   int list(0);
   int nspec = spec_list_.size();
@@ -251,6 +260,5 @@ int FlowDomainFunction::CollectActionsList()
   return list;
 }
 
-}  // namespace Flow
 }  // namespace Amanzi
 

@@ -1050,9 +1050,9 @@ void Transport_PK::ComputeAddSourceTerms(double tp, double dtp,
     double t0 = tp - dtp;
     int distribution = srcs[m]->CollectActionsList();
     if (distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      srcs[m]->ComputeDistributeMultiValue(t0, tp, Kxy->Values()); 
+      srcs[m]->ComputeDistribute(t0, tp, Kxy->Values()); 
     } else {
-      srcs[m]->ComputeDistributeMultiValue(t0, tp);
+      srcs[m]->ComputeDistribute(t0, tp);
     }
 
     TransportDomainFunction::Iterator it;

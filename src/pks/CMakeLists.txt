@@ -35,6 +35,7 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 set(pks_src_files PK_Factory.cc
                   PK_BoundaryFunction.cc
+                  PK_DomainFunction.cc
    )
 
 add_amanzi_library(pks
@@ -48,6 +49,7 @@ set(pks_inc_files
   CommonDefs.hh
   PK.hh
   PK_BoundaryFunction.hh
+  PK_DomainFunction.hh
   PK_Factory.hh)  
 
 add_install_include_file(${pks_inc_files})

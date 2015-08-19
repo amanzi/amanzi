@@ -33,9 +33,9 @@ typedef std::pair<std::string, int> Action;
 class PK_BoundaryFunction : public Functions::UniqueMeshFunction {
  public:
   PK_BoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-                      UniqueMeshFunction(mesh),
-                      finalized_(false), 
-                      global_size_(0) {};
+      UniqueMeshFunction(mesh),
+      finalized_(false), 
+      global_size_(0) {};
   ~PK_BoundaryFunction() {};
   
   virtual void Define(const std::vector<std::string>& regions,
@@ -57,7 +57,7 @@ class PK_BoundaryFunction : public Functions::UniqueMeshFunction {
   Iterator begin() const { return value_.begin(); }
   Iterator end() const  { return value_.end(); }
   Iterator find(const int j) const { return value_.find(j); }
-  std::map<int,double>::size_type size() { return value_.size(); }
+  std::map<int, double>::size_type size() { return value_.size(); }
 
  protected:
   std::map<int,double> value_;
