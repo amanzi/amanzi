@@ -144,6 +144,11 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
   flow_list->sublist("boundary conditions") = TranslateFlowBCs_();
   flow_list->sublist("source terms") = TranslateFlowSources_();
 
+  // models and default assumptions. 
+  // Note that MPC/PKs may overwrite these parameters
+  flow_list->sublist("physical models and assumptions")
+      .set<std::string>("water content model", "constant density");
+
   flow_list->sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
   return out_list;
 }

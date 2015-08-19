@@ -505,18 +505,19 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   bc_names.push_back("uniform_temperature");
 
   node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
-  if (node_list->getLength() == 0) return out_list;
-  node = node_list->item(0);
+  if (node_list->getLength() > 0) {
+    node = node_list->item(0);
 
-  for (int n = 0; n < bc_names.size(); ++n) {
-    children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode(bc_names[n].c_str()));
-    for (int i = 0; i < children->getLength(); ++i) {
-      DOMNode* inode = children->item(i);
-      if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+    for (int n = 0; n < bc_names.size(); ++n) {
+      children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode(bc_names[n].c_str()));
+      for (int i = 0; i < children->getLength(); ++i) {
+        DOMNode* inode = children->item(i);
+        if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
-      double t = GetAttributeValueD_(static_cast<DOMElement*>(inode), "start");
-      time_map[t] = dt_init_d;
-      dt_max_map[t] = -1.0;
+        double t = GetAttributeValueD_(static_cast<DOMElement*>(inode), "start");
+        time_map[t] = dt_init_d;
+        dt_max_map[t] = -1.0;
+      }
     }
   }
 
@@ -528,18 +529,19 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   src_names.push_back("flow_weighted_conc");
 
   node_list = doc_->getElementsByTagName(mm.transcode("sources"));
-  if (node_list->getLength() == 0) return out_list;
-  node = node_list->item(0);
+  if (node_list->getLength() > 0) {
+    node = node_list->item(0);
 
-  for (int n = 0; n < src_names.size(); ++n) {
-    children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode(src_names[n].c_str()));
-    for (int i = 0; i < children->getLength(); ++i) {
-      DOMNode* inode = children->item(i);
-      if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+    for (int n = 0; n < src_names.size(); ++n) {
+      children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode(src_names[n].c_str()));
+      for (int i = 0; i < children->getLength(); ++i) {
+        DOMNode* inode = children->item(i);
+        if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
-      double t = GetAttributeValueD_(static_cast<DOMElement*>(inode), "start");
-      time_map[t] = dt_init_d;
-      dt_max_map[t] = -1.0;
+        double t = GetAttributeValueD_(static_cast<DOMElement*>(inode), "start");
+        time_map[t] = dt_init_d;
+        dt_max_map[t] = -1.0;
+      }
     }
   }
 
@@ -580,6 +582,9 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   out_list.set<Teuchos::Array<double> >("Start Times", time_init);
   out_list.set<Teuchos::Array<double> >("Initial Time Step", dt_init);
   out_list.set<Teuchos::Array<double> >("Maximum Time Step", dt_max);
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+      *vo_->os() << "created " << dt_max.size() << " special times" << std::endl;
 
   return out_list;
 }

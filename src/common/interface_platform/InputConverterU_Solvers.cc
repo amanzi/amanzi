@@ -147,7 +147,7 @@ Teuchos::ParameterList InputConverterU::TranslateTrilinosML_()
   int nsmooth(TRILINOS_ML_NSMOOTH);
 
   bool flag;
-  DOMNode* node = GetUniqueElementByTagsString_("unstr_linear_solver, linear_solvers, preconditioner", flag);
+  DOMNode* node = GetUniqueElementByTagsString_("unstr_preconditioners, trilinos_ml", flag);
   if (flag) {
     DOMNodeList* children = node->getChildNodes();
 
@@ -208,7 +208,7 @@ Teuchos::ParameterList InputConverterU::TranslateBILU_()
   int bilu_overlap(TRILINOS_ILU_OLV);
 
   bool flag;
-  DOMNode* node = GetUniqueElementByTagsString_("unstr_linear_solver, linear_solvers, preconditioner", flag);
+  DOMNode* node = GetUniqueElementByTagsString_("unstr_preconditioners, block_ilu", flag);
 
   if (flag) {
     DOMNodeList* children = node->getChildNodes();
@@ -261,7 +261,7 @@ Teuchos::ParameterList InputConverterU::TranslateHypreAMG_()
   double strong_threshold(HYPRE_AMG_STR_THR);
 
   bool flag;
-  DOMNode* node = GetUniqueElementByTagsString_("unstr_linear_solver, linear_solvers, preconditioner", flag);
+  DOMNode* node = GetUniqueElementByTagsString_("unstr_preconditioners, hypre_amg", flag);
 
   if (flag) {
     DOMNodeList* children = node->getChildNodes();
