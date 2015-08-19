@@ -9,7 +9,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "chemistry_pk_base.hh"
+#include "Chemistry_PK_Base.hh"
 #include "ChemistryEngine.hh"
 #include "VerboseObject.hh"
 

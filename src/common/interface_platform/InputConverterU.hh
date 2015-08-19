@@ -34,11 +34,12 @@ class InputConverterU : public InputConverter {
   InputConverterU() :
       vo_(NULL),
       flow_single_phase_(false),
-      compressibility_(false) {};
+      compressibility_(false),
+      transport_permeability_(false) {};
   ~InputConverterU() { if (vo_ != NULL) delete vo_; }
 
   // main members
-  Teuchos::ParameterList Translate();
+  Teuchos::ParameterList Translate(int rank, int num_proc);
   void SaveXMLFile(Teuchos::ParameterList& plist, std::string& filename);
 
  private:
@@ -58,11 +59,12 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateState_();
   Teuchos::ParameterList TranslateMaterialsPartition_();
   Teuchos::ParameterList TranslateCycleDriver_();
+  Teuchos::ParameterList TranslateCycleDriverNew_();
   Teuchos::ParameterList TranslateTimePeriodControls_();
   Teuchos::ParameterList TranslatePKs_(const Teuchos::ParameterList& cd_list);
   Teuchos::ParameterList TranslateDiffusionOperator_(
       const std::string& disc_method, const std::string& pc_method,
-      const std::string& nonlinear_solver, const std::string& rel_perm);
+      const std::string& nonlinear_solver, const std::string& extensions);
   Teuchos::ParameterList TranslateTimeIntegrator_(
       const std::string& err_options, const std::string& nonlinear_solver,
       bool modify_correction, const std::string& unstr_colntrols);
@@ -78,6 +80,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateTransportSources_();
   Teuchos::ParameterList TranslateChemistry_();
   Teuchos::ParameterList TranslateEnergy_();
+  Teuchos::ParameterList TranslateEnergyBCs_();
 
   void ProcessMacros_(const std::string& prefix, char* text_content,
                       Teuchos::ParameterList& mPL, Teuchos::ParameterList& outPL);
@@ -86,21 +89,26 @@ class InputConverterU : public InputConverter {
 
   Teuchos::ParameterList CreateAnalysis_();
   Teuchos::ParameterList CreateRegionAll_();
-  void CreateBDGFile(Teuchos::ParameterList& sorption, std::string& filename);
+  std::string CreateBGDFile(std::string& filename);
 
   void FilterEmptySublists_(Teuchos::ParameterList& plist);
 
  private:
   int dim_;
+  int rank_, num_proc_;
   Tree tree_;
   Tree phases_;
 
   std::map<std::string, std::string> pk_model_;
+  std::map<std::string, bool> pk_master_;
 
   // global flow constants
-  bool flow_single_phase_;
+  std::string flow_model_;  // global value
+  bool flow_single_phase_;  // runtime value
   bool compressibility_;
   double rho_;
+
+  bool transport_permeability_;
 
   // global transport and chemistry constants
   std::vector<std::string> comp_names_all_;

@@ -207,7 +207,13 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
       CharToStrings_(mm.transcode(node->getTextContent())));
 
   node = GetUniqueElementByTagsString_(unstr_controls + ", preconditioner", flag); 
-  if (flag) out_list.set<std::string>("preconditioner", mm.transcode(node->getTextContent()));
+  if (flag) {
+    std::string text = mm.transcode(node->getTextContent());
+    if (text == "hypre_amg") text = "Hypre AMG";
+    if (text == "trilinos_ml") text = "Trilinos ML";
+    if (text == "block_ilu") text = "Block ILU";
+    out_list.set<std::string>("preconditioner", text);
+  }
 
   // special cases
   if (flow_single_phase_) {
@@ -232,6 +238,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
     out_list.set<std::string>("preconditioner enhancement", "GMRES for Newton");
   }
 
+  bdf1.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
   return out_list;
 }
 
@@ -248,17 +255,18 @@ Teuchos::ParameterList InputConverterU::TranslateInitialization_(
   DOMNode* node;
 
   // set defaults
-  std::string method("saturated solver");
-  out_list.set<std::string>("method", method);
+  out_list.set<std::string>("method", "saturated solver");
   out_list.set<std::string>("linear solver", TI_SOLVER);
 
   // overwite defaults using numerical controls
   bool flag;
+  std::string method;
   std::string controls(unstr_controls + ", unstr_initialization");
 
   node = GetUniqueElementByTagsString_(controls + ", method", flag); 
   if (flag) {
-    method = mm.transcode(node->getTextContent());
+    method = GetTextContentS_(node, "picard, darcy_solver");
+    if (method == "darcy_solver") method = "saturated solver";
     out_list.set<std::string>("method", method);
   }
 
@@ -271,7 +279,11 @@ Teuchos::ParameterList InputConverterU::TranslateInitialization_(
       strtod(mm.transcode(node->getTextContent()), NULL));
 
   node = GetUniqueElementByTagsString_(controls + ", linear_solver", flag); 
-  if (flag) out_list.set<std::string>("linear solver", mm.transcode(node->getTextContent()));
+  if (flag) {
+    std::string text = mm.transcode(node->getTextContent());
+    if (text == "aztecoo") text = "AztecOO";
+    out_list.set<std::string>("linear solver", text);
+  }
 
   if (method == "picard") {
     Teuchos::ParameterList& pic_list = out_list.sublist("picard parameters");
@@ -297,15 +309,15 @@ Teuchos::ParameterList InputConverterU::TranslateInitialization_(
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
     const std::string& disc_method, const std::string& pc_method,
-    const std::string& nonlinear_solver, const std::string& rel_perm)
+    const std::string& nonlinear_solver, const std::string& extensions)
 {
   Teuchos::ParameterList out_list;
   Teuchos::ParameterList tmp_list;
 
-  // std::string tmp(disc_method);
-  // std::replace(tmp.begin(), tmp.end(), '-', ':');
   std::string tmp = boost::replace_all_copy(disc_method, "-", ": ");
   replace(tmp.begin(), tmp.end(), '_', ' ');
+  if (tmp == "mfd: two point flux approximation") tmp = "mfd: two-point flux approximation";
+
   tmp_list.set<std::string>("discretization primary", boost::to_lower_copy(tmp));
   tmp_list.set<std::string>("discretization secondary", "mfd: optimized for sparsity");
 
@@ -331,6 +343,18 @@ Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
   out_list.sublist("diffusion operator").sublist("matrix") = tmp_list;
   out_list.sublist("diffusion operator").sublist("preconditioner") = tmp_list;
 
+  // extensions
+  if (extensions == "vapor matrix") {
+    Teuchos::ParameterList& vapor = out_list.sublist("diffusion operator").sublist("vapor matrix");
+    vapor = tmp_list;
+    vapor.set<std::string>("nonlinear coefficient", "standard: cell");
+    vapor.set<bool>("exclude primary terms", false);
+    vapor.set<bool>("scaled constraint equation", false);
+    vapor.set<bool>("gravity", "false");
+    vapor.set<std::string>("newton correction", "none");
+  }
+
+  // fixing miscalleneous scenarious
   if (pc_method == "linearized_operator") {
     out_list.sublist("diffusion operator").sublist("preconditioner")
         .set<std::string>("newton correction", "approximate jacobian");

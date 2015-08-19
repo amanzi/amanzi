@@ -14,7 +14,11 @@
 #include "WRMFactory.hh"
 
 // explicity instantitate the static data of factory
-template<> Amanzi::Utils::Factory<Amanzi::Flow::WRM>::map_type* 
-    Amanzi::Utils::Factory<Amanzi::Flow::WRM>::map_;
+namespace Amanzi {
+namespace Utils {
 
+template<> Factory<Flow::WRM>::map_type* Factory<Flow::WRM>::map_;
+
+}  // namespace Utils
+}  // namespace Amanzi
 

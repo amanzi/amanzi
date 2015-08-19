@@ -55,9 +55,9 @@ void Visualization::ReadParameters_() {
   filebasename_ = plist_.get<std::string>("file name base","amanzi_vis");
   dynamic_mesh_ = plist_.get<bool>("dynamic mesh",false);
 
-  Teuchos::Array<std::string> no_regions(0); 
+  Teuchos::Array<std::string> no_regions(0);
   Teuchos::ParameterList& tmp = plist_.sublist("Write Regions");
-  
+    
   regions_.clear();
   for (Teuchos::ParameterList::ConstIterator it = tmp.begin(); it != tmp.end(); ++it) {
     regions_[it->first] = tmp.get<Teuchos::Array<std::string> >(it->first, no_regions);

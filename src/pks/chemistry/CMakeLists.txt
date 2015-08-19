@@ -54,7 +54,7 @@ generate_evaluators_registration_header(
 file(GLOB chem_inc_files "*hh")
 set(chem_src_files)
 if (ENABLE_Unstructured)
-  list(APPEND chem_src_files Chemistry_State.cc;chemistry_pk.cc;Chemistry_PK_Wrapper.cc)
+  list(APPEND chem_src_files Chemistry_State.cc;Chemistry_PK.cc;Chemistry_PK_Wrapper.cc)
   if (ENABLE_ALQUIMIA)
     list(APPEND chem_src_files alquimia_chemistry_pk.cc)
   endif()

@@ -56,8 +56,8 @@ void InputAnalysis::RegionAnalysis()
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
         std::string name(regions[i]);
         name.resize(std::min(40, (int)name.size()));
-        *vo_->os() << "src region: \"" << name << "\" with " << nblock << " cells," 
-                   << " size: " << volume << " [m^3]" << std::endl;
+        *vo_->os() << "src: \"" << name << "\" has " << nblock << " cells" 
+                   << " of " << volume << " [m^3]" << std::endl;
       }
 
       if (nblock == 0) {
@@ -90,8 +90,8 @@ void InputAnalysis::RegionAnalysis()
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
         std::string name(regions[i]);
         name.resize(std::min(40, (int)name.size()));
-        *vo_->os() << "bc region: \"" << name << "\" with " << nblock << " faces,"
-                   << " size: " << area << " [m^2]" << std::endl;
+        *vo_->os() << "bc: \"" << name << "\" has " << nblock << " faces"
+                   << " of " << area << " [m^2]" << std::endl;
       }
 
       if (nblock == 0) {
@@ -141,8 +141,8 @@ void InputAnalysis::RegionAnalysis()
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
         std::string name(regions[i]);
         name.resize(std::min(40, (int)name.size()));
-        *vo_->os() << "obs region: \"" << name << "\" with " << nblock << " " << type 
-                   << " size: " << volume << std::endl;
+        *vo_->os() << "obs: \"" << name << "\" has " << nblock << " " << type 
+                   << ", size: " << volume << std::endl;
       }
 
       if (nblock == 0) {

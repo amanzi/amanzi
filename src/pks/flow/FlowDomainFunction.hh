@@ -19,49 +19,15 @@
 
 #include "CommonDefs.hh"
 #include "Mesh.hh"
-#include "unique_mesh_function.hh"
+#include "PK_DomainFunction.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-class FlowDomainFunction : public Functions::UniqueMeshFunction {
+class FlowDomainFunction : public PK_DomainFunction {
  public:
-  explicit FlowDomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : 
-      UniqueMeshFunction(mesh),
-      finalized_(false) {}
-
-  void Define(const std::vector<std::string>& regions,
-              const Teuchos::RCP<const MultiFunction>& f,
-              int action, int submodel);
-
-  void Define(std::string& region,
-              const Teuchos::RCP<const MultiFunction>& f,
-              int action, int submodel);
-
-  // source term on time interval (t0, t1]
-  void Compute(double t0, double t1);
-  void ComputeDistribute(double t0, double t1);
-  void ComputeDistribute(double t0, double t1, double* weight);
-  
-  void Finalize() {};
- 
-  // iterator methods
-  typedef std::map<int,double>::const_iterator Iterator;
-  Iterator begin() const { return value_.begin(); }
-  Iterator end() const  { return value_.end(); }
-  Iterator find(const int j) const { return value_.find(j); }
-  std::map<int,double>::size_type size() { return value_.size(); }
-
-  // extract internal information
-  int CollectActionsList();
-
- private:
-  std::vector<int> actions_;
-  std::vector<int> submodel_;
-
- protected:
-  std::map<int,double> value_;
-  bool finalized_;
+  FlowDomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      PK_DomainFunction(mesh) {};
 };
 
 }  // namespace Flow

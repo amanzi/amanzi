@@ -6,7 +6,7 @@
   BDFFnBase<CompositeVector>, to use TreeVectors.
 */
 
-#include "chemistry_pk.hh"
+#include "Chemistry_PK.hh"
 #include "Chemistry_PK_Wrapper.hh"
 
 namespace Amanzi {

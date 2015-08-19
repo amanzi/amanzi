@@ -90,7 +90,7 @@ register_evaluator_with_factory(
   LISTNAME   ENERGY_TWO_PHASE_REG
   )
 generate_evaluators_registration_header(
-  HEADERFILE energy_registration.hh
+  HEADERFILE pks_energy_registration.hh
   LISTNAME   ENERGY_TWO_PHASE_REG
   INSTALL    True
   )
@@ -132,7 +132,7 @@ set(flow_inc_files
   EnergyOnePhase_PK.hh
   EnergyTwoPhase_PK.hh
   Energy_BC_Factory.hh
-  energy_registration.hh
+  pks_energy_registration.hh
   IEM.hh
   IEM_Linear.hh
   IEM_WaterVapor.hh

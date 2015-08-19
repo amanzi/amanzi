@@ -6,7 +6,8 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Markus Berndt (original version)
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <algorithm>
@@ -85,16 +86,20 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
       flow_list->sublist("physical models and assumptions")
                 .set<std::string>("porosity model", "compressible: pressure function");
     }
+  } else {
+    Errors::Message msg;
+    msg << "Internal error for flow model \"" << pk_model_["flow"] << "\".\n";
+    Exceptions::amanzi_throw(msg);
   }
 
   // insert operator sublist
   std::string disc_method("mfd-optimized_for_sparsity");
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, discretization_method", flag);
-  if (flag) disc_method = mm.transcode(node->getNodeName());
+  if (flag) disc_method = mm.transcode(node->getTextContent());
 
   std::string pc_method("linearized_operator");
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, preconditioning_strategy", flag);
-  if (flag) pc_method = mm.transcode(node->getNodeName()); 
+  if (flag) pc_method = mm.transcode(node->getTextContent()); 
 
   std::string nonlinear_solver("nka");
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver", flag);
@@ -118,7 +123,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
   }
 
   flow_list->sublist("operators") = TranslateDiffusionOperator_(
-      disc_method, pc_method, nonlinear_solver, rel_perm);
+      disc_method, pc_method, nonlinear_solver, "vapor matrix");
   
   // insert time integrator
   std::string err_options, unstr_controls;
@@ -130,8 +135,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
     unstr_controls = "unstructured_controls, unstr_transient_controls";
   } 
   
-  flow_list->sublist("time integrator") = TranslateTimeIntegrator_(
-      err_options, nonlinear_solver, modify_correction, unstr_controls);
+  if (pk_master_.find("flow") != pk_master_.end()) {
+    flow_list->sublist("time integrator") = TranslateTimeIntegrator_(
+        err_options, nonlinear_solver, modify_correction, unstr_controls);
+  }
 
   // insert boundary conditions and source terms
   flow_list->sublist("boundary conditions") = TranslateFlowBCs_();
@@ -272,10 +279,9 @@ Teuchos::ParameterList InputConverterU::TranslatePOM_()
 {
   Teuchos::ParameterList out_list;
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Translating porosity models" << std::endl;
-  }
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+      *vo_->os() << "Translating porosity models" << std::endl;
 
   MemoryManager mm;
   DOMNodeList *node_list, *children;
@@ -321,6 +327,9 @@ Teuchos::ParameterList InputConverterU::TranslatePOM_()
       }
     }
   }
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+      *vo_->os() << "compessibility models: " << compressibility_ << std::endl;
 
   if (!compressibility_) {
     Teuchos::ParameterList empty;

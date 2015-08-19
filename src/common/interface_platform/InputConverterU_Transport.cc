@@ -6,7 +6,9 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Markus Berndt
+           Jeffrey Johnson
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <algorithm>
@@ -147,6 +149,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
           tmp_list.sublist("parameters for Burnett-Frind")
               .set<double>("alphaL", al).set<double>("alphaTH", ath)
               .set<double>("alphaTH", atv);
+
+          transport_permeability_ = true;
         } else if (strcmp(model.c_str(), "lichtner_kelkar_robinson") == 0) {
           tmp_list.set<std::string>("model", "Lichtner-Kelkar-Robinson");
 
@@ -158,6 +162,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
           tmp_list.sublist("parameters for Lichtner-Kelkar-Robinson")
               .set<double>("alphaLH", alh).set<double>("alphaLV", alv)
               .set<double>("alphaTH", ath).set<double>("alphaTH", atv);
+
+          transport_permeability_ = true;
         } 
       }
 
@@ -231,6 +237,10 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   // remaining global parameters
   out_list.set<int>("number of aqueous components", phases_["water"].size());
   out_list.set<int>("number of gaseous components", phases_["gas"].size());
+
+  // cross coupling of PKs
+  out_list.sublist("physical models and assumptions")
+      .set<bool>("permeability field is required", transport_permeability_);
 
   out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
   return out_list;
@@ -397,7 +407,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
 
     // process solute elements
     // -- Dirichlet BCs for concentration
-    std::string bctype, solute_name;
+    std::string bctype, bctype_flow, solute_name;
 
     element = static_cast<DOMElement*>(phase);
     DOMNodeList* solutes = element->getElementsByTagName(mm.transcode("solute_component"));
@@ -417,11 +427,16 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
           weight = "volume";
         } else if (strcmp(text, "perm_weighted") == 0) {
           weight = "permeability";
+        } else if (strcmp(text, "flow_weighted_conc") == 0) {
+          node_list = element->getElementsByTagName(mm.transcode("liquid_component")); 
+          GetSameChildNodes_(node_list->item(0), bctype_flow, flag, true);
+          weight = (bctype_flow == "volume_weighted") ? "volume" : "permeability";
         } else if (strcmp(text, "diffusion_dominated_release") == 0) {
           classical = false;
         } else {
           ThrowErrorIllformed_("sources", "element", text);
         } 
+        if (weight == "permeability") transport_permeability_ = true;
 
         if (classical) {
           std::map<double, double> tp_values;
@@ -461,12 +476,14 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
           }
         } else {
           element = static_cast<DOMElement*>(same_list[0]);
-          double total = GetAttributeValueD_(element, "inventory");
-          double diff = GetAttributeValueD_(element, "diffusion_coeff");
+          double total = GetAttributeValueD_(element, "total_inventory");
+          double diff = GetAttributeValueD_(element, "effective_diffusion_coefficient");
           double length = GetAttributeValueD_(element, "mixing_length");
           std::vector<double> times;
           times.push_back(GetAttributeValueD_(element, "start"));
-          times.push_back(GetAttributeValueD_(element, "end"));
+
+          element = static_cast<DOMElement*>(same_list[1]);
+          times.push_back(GetAttributeValueD_(element, "start"));
 
           // save data in the XML
           Teuchos::ParameterList& src_list = out_list.sublist("concentration");
@@ -477,7 +494,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
           std::vector<std::string> forms(1, "SQRT");
           double amplitude = 2 * total / length * std::pow(diff / M_PI, 0.5); 
 
-          Teuchos::ParameterList& srcfn = src.sublist("boundary concentration").sublist("function-tabular");
+          Teuchos::ParameterList& srcfn = src.sublist("sink").sublist("function-tabular");
           srcfn.set<Teuchos::Array<double> >("x values", times)
                .set<Teuchos::Array<double> >("y values", values)
                .set<Teuchos::Array<std::string> >("forms", forms);

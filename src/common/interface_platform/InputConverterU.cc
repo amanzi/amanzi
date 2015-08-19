@@ -6,7 +6,8 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Erin Barker (original version)
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <string>
@@ -27,8 +28,10 @@ XERCES_CPP_NAMESPACE_USE
 /* ******************************************************************
 * Empty
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::Translate()
+Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
 {
+  rank_ = rank;
+  num_proc_ = num_proc;
   Teuchos::ParameterList out_list;
   
   // grab verbosity early
@@ -92,6 +95,8 @@ void InputConverterU::ParseSolutes_()
       phases_["water"].push_back(TrimString_(text_content));
     }
   }
+  
+  comp_names_all_ = phases_["water"];
 }
 
 

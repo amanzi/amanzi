@@ -14,7 +14,7 @@
 #ifdef ALQUIMIA_ENABLED
 #include "alquimia_chemistry_pk.hh"
 #endif
-#include "chemistry_pk_base.hh"
+#include "Chemistry_PK_Base.hh"
 #include "Chemistry_State.hh"
 #include "PK.hh"
 #include "PK_Factory.hh"
@@ -54,7 +54,7 @@ class Chemistry_PK_Wrapper : public PK {
   virtual void set_dt(double dt) { dt_ = dt; }
 
   // Advance from state S0 to state S1 at time S0.time + dt.
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false){
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) {
     pk_->Advance(t_new - t_old, total_component_concentration);
     return true;
   }

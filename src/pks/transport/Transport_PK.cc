@@ -151,8 +151,13 @@ void Transport_PK::Setup()
   mesh_ = S_->GetMesh();
   dim = mesh_->space_dimension();
 
+  // cross-coupling of PKs
+  Teuchos::RCP<Teuchos::ParameterList> physical_models =
+      Teuchos::sublist(tp_list_, "physical models and assumptions");
+
   // require state variables when Flow is off
-  if (!S_->HasField("permeability")) {
+  bool flag = physical_models->get<bool>("permeability field is required", false);
+  if (!S_->HasField("permeability") && flag) {
     S_->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, dim);
   }
@@ -291,12 +296,16 @@ void Transport_PK::Initialize()
   for (int i =0; i < srcs.size(); i++) {
     int distribution = srcs[i]->CollectActionsList();
     if (distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
-      Errors::Message msg;
-      msg << "Transport PK: missing capability: permeability-based source distribution.\n";
-      Exceptions::amanzi_throw(msg);  
+      Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
+      CalculatePermeabilityFactorInWell();
       break;
     }
+  }
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << std::endl 
+        << vo_->color("green") << "Initalization of TI period is complete." << vo_->reset() << std::endl;
   }
 }
 
@@ -1044,9 +1053,9 @@ void Transport_PK::ComputeAddSourceTerms(double tp, double dtp,
     double t0 = tp - dtp;
     int distribution = srcs[m]->CollectActionsList();
     if (distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      srcs[m]->ComputeDistributeMultiValue(t0, tp, Kxy->Values()); 
+      srcs[m]->ComputeDistribute(t0, tp, Kxy->Values()); 
     } else {
-      srcs[m]->ComputeDistributeMultiValue(t0, tp);
+      srcs[m]->ComputeDistribute(t0, tp);
     }
 
     TransportDomainFunction::Iterator it;
@@ -1060,6 +1069,26 @@ void Transport_PK::ComputeAddSourceTerms(double tp, double dtp,
     }
   }
 }
+
+
+/* ******************************************************************
+* Calculate inner product e^T K e in each cell. 
+* Implementation works for diagonal premeability tensors only.
+****************************************************************** */
+void Transport_PK::CalculatePermeabilityFactorInWell()
+{
+  const CompositeVector& cv = *S_->GetFieldData("permeability");
+  cv.ScatterMasterToGhosted("cell");
+  const Epetra_MultiVector& perm = *cv.ViewComponent("cell", true);
+ 
+  for (int c = 0; c < ncells_wghost; c++) {
+    (*Kxy)[c] = 0.0;
+    int idim = std::max(1, dim - 1);
+    for (int i = 0; i < idim; i++) (*Kxy)[c] += perm[i][c];
+    (*Kxy)[c] /= idim;
+  }
+}
+
 
 
 /* *******************************************************************

@@ -6,7 +6,8 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Erin Barker (original version)
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <sstream>
@@ -79,7 +80,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
         // deal differently if "times" or "start-period-stop"
         bool flag;
         std::string child_name;
-        std::vector<DOMNode*> multi_list = GetSameChildNodes_(inode, child_name, flag);
+        std::vector<DOMNode*> multi_list = GetSameChildNodes_(inode, child_name, flag, false);
 
         if (child_name == "time") {
           std::vector<double> times;
@@ -345,15 +346,13 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
               } else if (strcmp(elem, "functional") == 0) {
                 if (strcmp(value, "point") == 0) {
                   obPL.set<std::string>("functional", "Observation Data: Point");
-                } else if (strcmp(elem, "integral") == 0) {
+                } else if (strcmp(value, "integral") == 0) {
                   obPL.set<std::string>("functional", "Observation Data: Integral");
-                } else if (strcmp(elem, "mean") == 0) {
+                } else if (strcmp(value, "mean") == 0) {
                   obPL.set<std::string>("functional", "Observation Data: Mean");
                 }
-              }
-
               // Keeping singular macro around to help users. This will go away
-              else if (strcmp(elem, "time_macros") == 0 ||
+              } else if (strcmp(elem, "time_macros") == 0 ||
                        strcmp(elem, "time_macro") == 0) {
                 ProcessMacros_("times", value, tmPL, obPL);
               } else if (strcmp(elem, "cycle_macros") == 0 ||
@@ -363,7 +362,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             }
           }
           std::stringstream list_name;
-          list_name << "observation-" << j+1 << ":" << phaseName;
+          list_name << "observation-" << j + 1 << ":" << phaseName;
           obsPL.sublist(list_name.str()) = obPL;
         }
 

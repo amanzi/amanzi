@@ -42,7 +42,7 @@ TotalEnergyEvaluator::TotalEnergyEvaluator(Teuchos::ParameterList& plist) :
   }
 
   dependencies_.insert(std::string("internal_energy_rock"));
-  dependencies_.insert(std::string("density_rock"));
+  dependencies_.insert(std::string("particle_density"));
 };
 
 
@@ -82,7 +82,7 @@ void TotalEnergyEvaluator::EvaluateField_(
 
   const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell", false);
   const Epetra_MultiVector& u_rock = *S->GetFieldData("internal_energy_rock")->ViewComponent("cell", false);
-  const Epetra_MultiVector& rho_rock = *S->GetFieldData("density_rock")->ViewComponent("cell", false);
+  const Epetra_MultiVector& rho_rock = *S->GetFieldData("particle_density")->ViewComponent("cell", false);
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh();
 
@@ -121,7 +121,7 @@ void TotalEnergyEvaluator::EvaluateFieldPartialDerivative_(
 
   const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell", false);
   const Epetra_MultiVector& u_rock = *S->GetFieldData("internal_energy_rock")->ViewComponent("cell", false);
-  const Epetra_MultiVector& rho_rock = *S->GetFieldData("density_rock")->ViewComponent("cell", false);
+  const Epetra_MultiVector& rho_rock = *S->GetFieldData("particle_density")->ViewComponent("cell", false);
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh();
 
@@ -169,7 +169,7 @@ void TotalEnergyEvaluator::EvaluateFieldPartialDerivative_(
     for (int c = 0; c != ncells; ++c) {
       result_v[0][c] = (1.0 - phi[0][c]) * rho_rock[0][c];
     }
-  } else if (wrt_key == "density_rock") {
+  } else if (wrt_key == "particle_density") {
     for (int c = 0; c != ncells; ++c) {
       result_v[0][c] = (1.0 - phi[0][c]) * u_rock[0][c];
     }

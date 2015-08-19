@@ -139,6 +139,10 @@ class InputConverter {
   std::vector<xercesc::DOMNode*> GetSameChildNodes_(
       xercesc::DOMNode* node, std::string& name, bool& flag, bool exception = false);
 
+  // -- extract text content and verify it
+  std::string GetTextContentS_(
+      xercesc::DOMNode* node, const char* options, bool exception = true);
+
   // data streaming/trimming/converting
   // -- times
   double TimeStringToValue_(const std::string& time_value);
@@ -167,6 +171,8 @@ class InputConverter {
  protected:
   // variois constants defined by the users
   std::map<std::string, std::string> constants_; 
+
+  std::string xmlfilename_;
 
   xercesc::XercesDOMParser* parser;
   xercesc::DOMDocument* doc_;

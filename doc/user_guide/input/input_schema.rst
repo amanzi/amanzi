@@ -1241,7 +1241,7 @@ ___
 
 The ``vis`` element defines the visualization file naming scheme and how often to write out the files.  The ``base_filename`` element contain the text component of the how the visualization files will be named.  The ``base_filename`` is appended with an index number to indicate the sequential order of the visualization files.  The ``num_digits`` elements indicates how many digits to use for the index.  See the about NOTE about specifying a file location other than the current working directory. Finally, the ``time_macros`` or ``cycle_macros`` element indicates previously defined time_macros or cycle_macros to be used to determine the frequency at which to write the visualization files.  One or more macro can be listed in a comma separated list.  Amanzi will converted the list of macros to a single list of times or cycles contained by all of the macros listed and output accordingly.
 
-The ``vis`` element also includes an optional subelement ``write_regions``.  This was primarily implemented for debugging purposes but is also useful for visualizing fields only on specific regions.  The subelement accepts a comma separated list of region names.  These regions are then included in the visualization file as fields.
+The ``vis`` element also includes an optional subelement ``write_regions``.  This was primarily implemented for debugging purposes but is also useful for visualizing fields only on specific regions.  The subelement accepts an arbitrary number of subelements named ``field``, with attibutes ``name`` (a string) and ``regions`` (a comma separated list of region names).  For each such subelement, a field will be created in the vis files using the name as a label.  The field will be initialized to 0, and then, for region list R1, R2, R3..., cells in R1 will be set to 1, cells in R2 will be set to 2, etc.  When regions in the list overlap, later ones in the list will take precedence. 
 
 An example ``vis`` element looks like the following.
 
@@ -1251,7 +1251,9 @@ An example ``vis`` element looks like the following.
         <base_filename>plot</base_filename>
 	<num_digits>5</num_digits>
 	<time_macros>Macro 1</time_macros>
-        <write_regions>region1, region2</write_regions>
+        <write_regions>
+            <field name="fieldname" regions="region1, region2, region3" />
+        </write_regions>
    </vis>
 
 Checkpoint
