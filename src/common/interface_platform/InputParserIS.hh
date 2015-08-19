@@ -39,6 +39,7 @@ class InputParserIS {
     flow_single_phase = false;
     verbosity_level = "low";
     use_picard_ = USE_PICARD;
+    constant_density = 998.2;
   };
   ~InputParserIS() {
     if (vo_ != NULL) delete vo_;

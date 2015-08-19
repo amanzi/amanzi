@@ -498,14 +498,12 @@ void CycleDriver::ReadParameterList_() {
     // }
   }
 
-  if (coordinator_list_->isSublist("Time Period Control")) {
-    Teuchos::ParameterList& tpc_list =  coordinator_list_->sublist("Time Period Control");
-    Teuchos::Array<double> reset_times    = tpc_list.get<Teuchos::Array<double> >("Start Times");
-    Teuchos::Array<double> reset_times_dt = tpc_list.get<Teuchos::Array<double> >("Initial Time Step");   
-    if (reset_times.size() != reset_times_dt.size()) {
-      Errors::Message message("You must specify the same number of Reset Times and Initial Time Steps under Time Period Control");
-      Exceptions::amanzi_throw(message);
-    }
+  if (coordinator_list_->isSublist("time period control")) {
+    Teuchos::ParameterList& tpc_list = coordinator_list_->sublist("time period control");
+    Teuchos::Array<double> reset_times = tpc_list.get<Teuchos::Array<double> >("start times");
+    Teuchos::Array<double> reset_times_dt = tpc_list.get<Teuchos::Array<double> >("initial time step");   
+    ASSERT(reset_times.size() == reset_times_dt.size());
+
     Teuchos::Array<double>::const_iterator it_tim;
     Teuchos::Array<double>::const_iterator it_dt;
     for (it_tim = reset_times.begin(), it_dt = reset_times_dt.begin();
@@ -516,10 +514,8 @@ void CycleDriver::ReadParameterList_() {
 
     if (tpc_list.isParameter("Maximal Time Step")) {
       Teuchos::Array<double> reset_max_dt = tpc_list.get<Teuchos::Array<double> >("Maximal Time Step");
-      if (reset_times.size() != reset_max_dt.size()) {
-        Errors::Message message("You must specify the same number of Reset Times and Maximal Time Steps under Time Period Control");
-        Exceptions::amanzi_throw(message);
-      }
+      ASSERT(reset_times.size() == reset_max_dt.size());
+
       Teuchos::Array<double>::const_iterator it_tim;
       Teuchos::Array<double>::const_iterator it_max;
       for (it_tim = reset_times.begin(), it_max = reset_max_dt.begin();

@@ -112,38 +112,6 @@
     </ParameterList>    
   </ParameterList>
 
-  <!--
-  <ParameterList name="MPC">
-    <ParameterList name="Restart from Checkpoint Data File">
-      <Parameter name="Checkpoint Data File Name" type="string" value="restart.h5"/>
-    </ParameterList>
-
-    <ParameterList name="Time Integration Mode">
-      <ParameterList name="Transient">
-        <Parameter name="Start" type="double" value="0.00000000000000000e+00"/>
-        <Parameter name="End" type="double" value="3.15360000000000000e+07"/>
-        <Parameter name="Initial Time Step" type="double" value="1.57680000000000000e+05"/>
-        <Parameter name="Maximum Time Step" type="double" value="1.57680000000000000e+05"/>
-        <Parameter name="Maximum Time Step Size" type="double" value="1.57680000000000000e+05"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Time Period Control">
-      <Parameter name="Start Times" type="Array(double)" value="{}"/>
-      <Parameter name="Initial Time Step" type="Array(double)" value="{}"/>
-    </ParameterList>
-    <Parameter name="disable Transport_PK" type="string" value="no"/>
-    <Parameter isUsed="true" name="Chemistry Model" type="string" value="Amanzi"/>
-    <Parameter name="transport subcycling" type="bool" value="true"/>
-    <Parameter name="max chemistry to transport timestep ratio" type="double" value="1.00000000000000000e+00"/>
-    <Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
-    <Parameter name="disable Flow_PK" type="string" value="no"/>
-    <Parameter name="Flow model" type="string" value="Steady State Saturated"/>
-    <Parameter name="time integration rescue reduction factor" type="double" value="5.00000000000000000e-01"/>
-    <ParameterList name="VerboseObject">
-      <Parameter name="Verbosity Level" type="string" value="high"/>
-    </ParameterList>
-  </ParameterList>
-  -->
   <ParameterList name="PKs">
     <ParameterList name="Pressure and Saturation">
       <Parameter name="PK type" type="string" value="pressure saturation pk"/>      

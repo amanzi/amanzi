@@ -235,7 +235,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     out_list.set<Teuchos::Array<std::string> >("component names", comp_names_all_);
   }
 
-  out_list.sublist("Time Period Control") = TranslateTimePeriodControls_();
+  out_list.sublist("time period control") = TranslateTimePeriodControls_();
   if (filename.size() > 0) {
     out_list.sublist("Restart").set<std::string>("File Name", filename);
   }
@@ -451,7 +451,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
 
   out_list.set<Teuchos::Array<std::string> >("component names", comp_names_all_);
 
-  out_list.sublist("Time Period Control") = TranslateTimePeriodControls_();
+  out_list.sublist("time period control") = TranslateTimePeriodControls_();
   if (filename.size() > 0) {
     out_list.sublist("Restart").set<std::string>("File Name", filename);
   }
@@ -579,9 +579,9 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
     }
   }
 
-  out_list.set<Teuchos::Array<double> >("Start Times", time_init);
-  out_list.set<Teuchos::Array<double> >("Initial Time Step", dt_init);
-  out_list.set<Teuchos::Array<double> >("Maximum Time Step", dt_max);
+  out_list.set<Teuchos::Array<double> >("start times", time_init);
+  out_list.set<Teuchos::Array<double> >("initial time step", dt_init);
+  out_list.set<Teuchos::Array<double> >("maximum time step", dt_max);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
       *vo_->os() << "created " << dt_max.size() << " special times" << std::endl;

@@ -198,21 +198,21 @@ Time period control
 A set of times that simulation hits exactly can be used to avoid problems with
 sudden change of boundary or source conditions.
 
-* `"Start Times`" [Array(double)] the list of times that we want to hit exactly.
+* `"start times`" [Array(double)] the list of times that we want to hit exactly.
 
-* `"Initial Time Step`" [Array(double)] the first time step after we hit a special
+* `"initial time step`" [Array(double)] the first time step after we hit a special
   time specified above.
 
-* `"Maximum Time Step`" [Array(double)] allows the user to limit the time step for a 
+* `"maximum time step`" [Array(double)] allows the user to limit the time step for a 
   particual simulation period.
 
 .. code-block:: xml
 
    <ParameterList name="Cycle Driver">  <!-- parent list -->
-     <ParameterList name="Time Period Control">
-       <Parameter name="Start Times" type="Array(double)" value="{3.0e+10}"/>
-       <Parameter name="Initial Time Step" type="Array(double)" value="{1.0e+02}"/>
-       <Parameter name="Maximum Time Step" type="Array(double)" value="{4.3234e+17}"/>
+     <ParameterList name="time period control">
+       <Parameter name="start times" type="Array(double)" value="{3.0e+10}"/>
+       <Parameter name="initial time step" type="Array(double)" value="{1.0e+02}"/>
+       <Parameter name="maximum time step" type="Array(double)" value="{4.3234e+17}"/>
      </ParameterList>
    </ParameterList>
 
@@ -4056,13 +4056,13 @@ at intervals corresponding to the numerical time step values or intervals corres
 
   * `"dynamic mesh`" [bool] (false) write mesh data for every visualization dump, this facilitates visualizing deforming meshes.
 
-  * `"Write Regions`" [list] contains auxiliary fields with region ids to write into the visualization file.
+  * `"write regions`" [list] contains auxiliary fields with region ids to write into the visualization file.
 
     * `"REGION_NAME`" [Array(string)] the user-defined field name and the list of assigned regions. 
       The first entry in the regions array is marked with the value 1.0 in the array, the second with the value 2.0, and so forth. 
       The code ignores entries in the regions array that are not valid regions that contain cells.
 
-  * `"Write Partitions`" [bool] (false) if this parameter is true, then write an array into the visualization file that contains the rank number of the processor that owns a mesh cell. 
+  * `"write partitions`" [bool] (false) if this parameter is true, then write an array into the visualization file that contains the rank number of the processor that owns a mesh cell. 
 
 .. code-block:: xml
 
@@ -4079,7 +4079,7 @@ at intervals corresponding to the numerical time step values or intervals corres
 
        <Parameter name="dynamic mesh" type="bool" value="false"/>
 
-       <ParameterList name="Write Regions">
+       <ParameterList name="write regions">
          <Parameter name="regions" type="Array(string)" value="{Obs_r1, Obs_r1, Obs_r3}"/>
          <Parameter name="wells" type="Array(string)" value="{Obs_r1}"/>
        </ParameterList>

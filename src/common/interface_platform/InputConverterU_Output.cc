@@ -194,7 +194,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           std::string name = GetAttributeValueS_(element, "name");
           std::string regs = GetAttributeValueS_(element, "regions");
           std::vector<std::string> regions = CharToStrings_(regs.c_str());
-          visPL.sublist("Write Regions").set<Teuchos::Array<std::string> >(name, regions);
+          visPL.sublist("write regions").set<Teuchos::Array<std::string> >(name, regions);
         }
       }
     }
