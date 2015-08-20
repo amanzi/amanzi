@@ -88,7 +88,7 @@ set(ATS_LIBS
                       pk_flow_icy_overland
 		              # pk_prescribed_deformation
 #                      pk_prescribed_volumetric_deformation
-                      # pk_volumetric_deformation
+                      pk_volumetric_deformation
                       pk_surface_balance_SEB
                       pk_BGC
                       pk_bases
@@ -111,9 +111,9 @@ set(ATS_LIBS
 set(AMANZI_LIBS
                       amanzi_operators
                       amanzi_state
-	                  amanzi_whetstone
+	              amanzi_whetstone
                       amanzi_time_integration
-	                  amanzi_solvers
+	              amanzi_solvers
                       amanzi_data_structures
                       amanzi_mesh
                       amanzi_column_mesh
