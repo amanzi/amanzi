@@ -83,6 +83,7 @@ class VolumetricDeformation : public PKPhysicalBase {
   };
   DeformMode deform_mode_;
   std::string deform_region_;
+  double  deform_value_;
   Teuchos::RCP<Function> thaw_front_func_;
   double min_vol_frac_, min_S_liq_;
   Teuchos::RCP<Functions::CompositeVectorFunction> deform_func_;

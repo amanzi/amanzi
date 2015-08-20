@@ -4,6 +4,7 @@
 
    License: see $ATS_DIR/COPYRIGHT
    Author: Markus Berndt
+           Daniil Svyatskiy
 
    Interface for the Volumetric Deformation PK.
 
@@ -35,6 +36,7 @@ VolumetricDeformation::VolumetricDeformation(const Teuchos::RCP<Teuchos::Paramet
   PKPhysicalBase(plist, FElist, solution) {
   poro_key_ = plist_->get<std::string>("porosity key","base_porosity");
   dt_ = plist_->get<double>("initial time step");
+  deform_value_ = 0.;
 
   // The deformation mode describes how to calculate new cell volume from a
   // provided function and the old cell volume.
@@ -48,6 +50,7 @@ VolumetricDeformation::VolumetricDeformation(const Teuchos::RCP<Teuchos::Paramet
   } else if (mode_name == "saturation") {
     deform_mode_ = DEFORM_MODE_SATURATION;
     deform_region_ = plist_->get<std::string>("deformation region");
+    deform_value_ = plist_->get<double>("deformation porosity value", 0.3);
     min_vol_frac_ = plist_->get<double>("minimum volume fraction");
     min_S_liq_ = plist_->get<double>("minimum liquid saturation");
   } else {
@@ -215,13 +218,14 @@ void VolumetricDeformation::initialize(const Teuchos::Ptr<State>& S) {
 
   //the PK's initial condition sets the initial porosity.  From this, we
   // calculate the actual initial condition, which is the rock volume.
-  std::cout<<"name "<<name_<<" key_ "<<key_<<"\n";
+  //  std::cout<<"name "<<name_<<" key_ "<<key_<<"\n";
+
   Epetra_MultiVector& base_poro = *S->GetFieldData(key_,name_)
       ->ViewComponent("cell",false);
   AmanziMesh::Entity_ID_List cells;
   mesh_->get_set_entities(deform_region_, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
   for (AmanziMesh::Entity_ID_List::const_iterator c=cells.begin(); c!=cells.end(); ++c) {
-    base_poro[0][*c] = 0.9;
+    base_poro[0][*c] = deform_value_;
   }
   
 
@@ -570,7 +574,7 @@ bool VolumetricDeformation::advance(double dt) {
         smallest_cv = std::min(smallest_cv, cv_frac * cv[0][*c]);
         dcell_vol_c[0][*c] = (cv_frac - 1)*cv[0][*c]*poro[0][*c];
 
-        std::cout<<*c<<" "<<cv[0][*c]<<" "<<dcell_vol_c[0][*c]<<" frac "<<frac<<" poro "<<poro[0][*c]<<" ice "<<s_ice[0][*c]<<" liq "<<s_liq[0][*c]<<" gas "<<s_gas[0][*c]<< " soil vol "<<soil_mass_vol<<"\n";
+        //        std::cout<<*c<<" "<<cv[0][*c]<<" "<<dcell_vol_c[0][*c]<<" frac "<<frac<<" poro "<<poro[0][*c]<<" ice "<<s_ice[0][*c]<<" liq "<<s_liq[0][*c]<<" gas "<<s_gas[0][*c]<< " soil vol "<<soil_mass_vol<<"\n";
         //cv1[0][*c] = cv_frac*cv0[0][*c];
       }
 
@@ -829,7 +833,8 @@ bool VolumetricDeformation::advance(double dt) {
       for (unsigned int n=0; n!=nnodes; ++n) {
         AmanziGeometry::Point nc(3);
         mesh_->node_get_coordinates(n, &nc);
-        if (nc[dim-1] < min_height) below_node_list->push_back(n);
+        if (nc[dim-1] < min_height) 
+          below_node_list->push_back(n);
       }
       //exit(0);
 
@@ -941,10 +946,10 @@ bool VolumetricDeformation::advance(double dt) {
   for (int c=0; c!=ncells; ++c) {
     base_poro[0][c] = 1 - (1. - base_poro_old[0][c]) * cv[0][c]/cv_new[0][c];
 
-    if (fabs(cv[0][c]/cv_new[0][c] - 1)>0.001){
-      std::cout<<"volumes "<<c<<": "<<cv[0][c]<<" "<<cv_new[0][c]<<"\n";
-      std::cout<<"porosity "<<base_poro[0][c] <<" "<<base_poro_old[0][c]<<"\n";
-    }
+    // if (fabs(cv[0][c]/cv_new[0][c] - 1)>0.001){
+    //   std::cout<<"volumes "<<c<<": "<<cv[0][c]<<" "<<cv_new[0][c]<<"\n";
+    //   std::cout<<"porosity "<<base_poro[0][c] <<" "<<base_poro_old[0][c]<<"\n";
+    // }
   }  
 
   S_next_->GetFieldEvaluator("porosity") -> HasFieldChanged(S_next_.ptr(), name_);
