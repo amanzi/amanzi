@@ -66,7 +66,6 @@ class Flow_PK : public FnTimeIntegratorPK {
 
   // -- absolute permeability and derived quantities.
   void SetAbsolutePermeabilityTensor();
-  void CalculatePermeabilityFactorInWell();
 
   void ProcessShiftWaterTableList(const Teuchos::ParameterList& list);
   void CalculateShiftWaterTable(const std::string region);

@@ -20,6 +20,7 @@
 #include "LinearOperatorFactory.hh"
 #include "mfd3d_diffusion.hh"
 #include "OperatorDiffusionFactory.hh"
+#include "PK_Utils.hh"
 #include "tensor.hh"
 
 #include "Darcy_PK.hh"
@@ -271,10 +272,6 @@ void Darcy_PK::Initialize()
   // Allocate memory for other fundamental structures
   K.resize(ncells_owned);
 
-  if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
-  }
-
   // pressures (lambda is not important when solver is very accurate)
   DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
                                  *pressure.ViewComponent("face"));
@@ -338,7 +335,7 @@ void Darcy_PK::Initialize()
   // initialize well modeling
   if (src_sink != NULL) {
     if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      CalculatePermeabilityFactorInWell();
+      PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
       src_sink->ComputeDistribute(t_old, t_new, Kxy->Values()); 
     } else {
       src_sink->ComputeDistribute(t_old, t_new);

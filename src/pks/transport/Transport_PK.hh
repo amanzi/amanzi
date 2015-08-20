@@ -119,8 +119,6 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   bool PopulateBoundaryData(std::vector<int>& bc_model,
                             std::vector<double>& bc_value, int component);
 
-  void CalculatePermeabilityFactorInWell();
-
   // -- limiters 
   void LimiterBarthJespersen(const int component,
                              Teuchos::RCP<const Epetra_Vector> scalar_field, 

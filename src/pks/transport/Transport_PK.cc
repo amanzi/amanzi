@@ -29,6 +29,7 @@
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorDiffusion.hh"
 #include "OperatorAccumulation.hh"
+#include "PK_Utils.hh"
 
 #include "Transport_PK.hh"
 
@@ -296,8 +297,7 @@ void Transport_PK::Initialize()
   for (int i =0; i < srcs.size(); i++) {
     int distribution = srcs[i]->CollectActionsList();
     if (distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
-      CalculatePermeabilityFactorInWell();
+      PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
       break;
     }
   }
@@ -1069,26 +1069,6 @@ void Transport_PK::ComputeAddSourceTerms(double tp, double dtp,
     }
   }
 }
-
-
-/* ******************************************************************
-* Calculate inner product e^T K e in each cell. 
-* Implementation works for diagonal premeability tensors only.
-****************************************************************** */
-void Transport_PK::CalculatePermeabilityFactorInWell()
-{
-  const CompositeVector& cv = *S_->GetFieldData("permeability");
-  cv.ScatterMasterToGhosted("cell");
-  const Epetra_MultiVector& perm = *cv.ViewComponent("cell", true);
- 
-  for (int c = 0; c < ncells_wghost; c++) {
-    (*Kxy)[c] = 0.0;
-    int idim = std::max(1, dim - 1);
-    for (int i = 0; i < idim; i++) (*Kxy)[c] += perm[i][c];
-    (*Kxy)[c] /= idim;
-  }
-}
-
 
 
 /* *******************************************************************
