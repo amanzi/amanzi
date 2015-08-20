@@ -1435,8 +1435,8 @@ The remaining `"Flow`" parameters are
    </ParameterList>
 
 
-Verbose output
-..............
+Explanatino of verbose output
+.............................
 
 When verbosity is set to *high*, this PK reports information about 
 current status of the simulation.
@@ -3847,9 +3847,9 @@ Observation file
 A user may request any number of specific observations from Amanzi.  Each labeled Observation Data quantity involves a field quantity, a model, a region from which it will extract its source data, and a list of discrete times 
 for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of Amanzi arguments.
 
-* `"Observation Data`" [list] can accept multiple lists for named observations (OBSERVATION)
+* `"Observation Data`" [list] can accept multiple lists for named observations.
 
-  * `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
+  * `"observation output filename`" [string] user-defined name for the file that the observations are written to.
     The file name can contain relative or absolute path to an *existing* directory only. 
 
   * `"precision`" [int] defined the number of significant digits. Default is 16.
@@ -3906,9 +3906,9 @@ The following Observation Data functionals are currently supported.  All of them
 
    <ParameterList>  <!-- parent list -->
      <ParameterList name="Observation Data">
-       <Parameter name="Observation Output Filename" type="string" value="obs_output.out"/>
+       <Parameter name="observation output filename" type="string" value="obs_output.out"/>
        <Parameter name="precision" type="int" value="10"/>
-       <ParameterList name="some observation name">
+       <ParameterList name="SOME OBSERVATION NAME">
          <Parameter name="region" type="string" value="some point region name"/>
          <Parameter name="functional" type="string" value="Observation Data: Point"/>
          <Parameter name="variable" type="string" value="Volumetric water content"/>

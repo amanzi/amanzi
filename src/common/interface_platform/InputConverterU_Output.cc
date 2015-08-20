@@ -271,7 +271,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
       text = mm.transcode(inode->getTextContent());
 
       if (strcmp(tagname, "filename") == 0) {
-        obsPL.set<std::string>("Observation Output Filename", TrimString_(text));
+        obsPL.set<std::string>("observation output filename", TrimString_(text));
       } else if (strcmp(tagname, "liquid_phase") == 0) {
         attr_map = inode->getAttributes();
         node = attr_map->getNamedItem(mm.transcode("name"));

@@ -535,7 +535,7 @@ void CycleDriver::ReadParameterList_() {
 /* ******************************************************************
 * Acquire the chosen timestep size
 *******************************************************************/
-double CycleDriver::get_dt( bool after_failure) {
+double CycleDriver::get_dt(bool after_failure) {
   // get the physical step size
   double dt;
 
@@ -553,7 +553,6 @@ double CycleDriver::get_dt( bool after_failure) {
       break;
     }
   }
-
 
   // check if the step size has gotten too small
   if (dt < min_dt_) {
@@ -646,11 +645,6 @@ bool CycleDriver::Advance(double dt) {
       S_->advance_time(dt);
     }
 
-    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      *vo_->os() << "New time(y) = "<< S_->time() / (60*60*24*365.25);
-      *vo_->os() << std::endl;
-    }
-
     bool force_vis(false);
     bool force_check(false);
     bool force_obser(false);
@@ -678,6 +672,10 @@ bool CycleDriver::Advance(double dt) {
     }
     //Amanzi::timer_manager.start("I/O");
 
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      *vo_->os() << "New time(y) = "<< S_->time() / (60*60*24*365.25);
+      *vo_->os() << std::endl;
+    }
   } else {
     // Failed the timestep.  
     // Potentially write out failed timestep for debugging
@@ -731,7 +729,7 @@ void CycleDriver::Visualize(bool force) {
     if (force || (*vis)->DumpRequested(S_->cycle(), S_->time())) {
       WriteVis((*vis).ptr(), S_.ptr());
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "Cycle " << S_->cycle() << ": writing visualization file" << std::endl;
+      *vo_->os() << "writing visualization file" << std::endl;
     }
   }
 }
@@ -746,7 +744,7 @@ void CycleDriver::WriteCheckpoint(double dt, bool force) {
     
     // if (force) pk_->CalculateDiagnostics();
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Cycle " << S_->cycle() << ": writing checkpoint file" << std::endl;
+    *vo_->os() << "writing checkpoint file" << std::endl;
   }
 }
 
@@ -869,7 +867,7 @@ void CycleDriver::Go() {
         fail = Advance(dt);
         dt = get_dt(fail);
       }  // while not finished
-      while ((S_->time() < tp_end_[time_period_id_]) &&  ((tp_max_cycle_[time_period_id_] == -1) 
+      while ((S_->time() < tp_end_[time_period_id_]) && ((tp_max_cycle_[time_period_id_] == -1) 
                                      || (S_->cycle() - start_cycle_num <= tp_max_cycle_[time_period_id_])));
 
       time_period_id_++;
