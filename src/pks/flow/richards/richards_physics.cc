@@ -9,6 +9,9 @@
   Ethan Coon (ATS version) (ecoon@lanl.gov)
 ------------------------------------------------------------------------- */
 
+#include "Teuchos_LAPACK.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+
 #include "FieldEvaluator.hh"
 #include "Op.hh"
 #include "richards.hh"
@@ -34,19 +37,16 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> rel_perm =
     S->GetFieldData(uw_coef_key_);
   matrix_diff_->Setup(rel_perm, Teuchos::null);
-
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // derive fluxes
   Teuchos::RCP<const CompositeVector> pres =
       S->GetFieldData(key_, name_);
-  //  if (update_flux_ == UPDATE_FLUX_ITERATION) {
-    // update the flux
-    Teuchos::RCP<CompositeVector> flux =
-        S->GetFieldData(flux_key_, name_);
-    matrix_diff_->UpdateFlux(*pres, *flux);
-    //  }
+  Teuchos::RCP<CompositeVector> flux =
+      S->GetFieldData(flux_key_, name_);
+  matrix_diff_->UpdateFlux(*pres, *flux);
 
+  // apply boundary conditions
   matrix_diff_->ApplyBCs(true, true);
 
   // calculate the residual
@@ -63,7 +63,7 @@ void Richards::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   // update the water content at both the old and new times.
   S_next_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_next_.ptr(), name_);
   S_inter_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_inter_.ptr(), name_);
-
+    
   // get these fields
   Teuchos::RCP<const CompositeVector> wc1 = S_next_->GetFieldData(conserved_key_);
   Teuchos::RCP<const CompositeVector> wc0 = S_inter_->GetFieldData(conserved_key_);
@@ -71,8 +71,9 @@ void Richards::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   // Water content only has cells, while the residual has cells and faces.
   g->ViewComponent("cell",false)->Update(1.0/dt, *wc1->ViewComponent("cell",false),
           -1.0/dt, *wc0->ViewComponent("cell",false), 1.0);
-
+  
   db_->WriteVector("res (acc)", g, true);
+
 };
 
 
@@ -164,439 +165,54 @@ void Richards::SetAbsolutePermeabilityTensor_(const Teuchos::Ptr<State>& S) {
 };
 
 
-// // -----------------------------------------------------------------------------
-// // Update elemental discretization matrices with gravity terms.
-// //
-// // Must be called before applying boundary conditions and global assembling.
-// // -----------------------------------------------------------------------------
-// void Richards::AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
-//         const Teuchos::Ptr<const CompositeVector>& rel_perm,
-//         const Teuchos::Ptr<const CompositeVector>& rho,
-//         const Teuchos::Ptr<Operators::MatrixMFD>& matrix) {
+void
+Richards::UpdateVelocity_(const Teuchos::Ptr<State>& S) {
+  const Epetra_MultiVector& flux = *S_->GetFieldData(flux_key_)
+      ->ViewComponent("face", true);
+
+  S->GetFieldEvaluator(molar_dens_key_)->HasFieldChanged(S.ptr(), name_);
+  const Epetra_MultiVector& nliq_c = *S->GetFieldData(molar_dens_key_)
+      ->ViewComponent("cell",false);
+  Epetra_MultiVector& velocity = *S->GetFieldData(velocity_key_, name_)
+      ->ViewComponent("cell", true);
+
+  int d(mesh_->space_dimension());
+  AmanziGeometry::Point local_velocity(d);
+
+  Teuchos::LAPACK<int, double> lapack;
+  Teuchos::SerialDenseMatrix<int, double> matrix(d, d);
+  double rhs[d];
+
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  AmanziMesh::Entity_ID_List faces;
+  for (int c=0; c!=ncells_owned; ++c) {
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    for (int i=0; i!=d; ++i) rhs[i] = 0.0;
+    matrix.putScalar(0.0);
+
+    for (int n=0; n!=nfaces; ++n) {  // populate least-square matrix
+      int f = faces[n];
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      double area = mesh_->face_area(f);
+
+      for (int i=0; i!=d; ++i) {
+        rhs[i] += normal[i] * flux[0][f];
+        matrix(i, i) += normal[i] * normal[i];
+        for (int j = i+1; j < d; ++j) {
+          matrix(j, i) = matrix(i, j) += normal[i] * normal[j];
+        }
+      }
+    }
+
+    int info;
+    lapack.POSV('U', d, 1, matrix.values(), d, rhs, d, &info);
+
+    for (int i=0; i!=d; ++i) velocity[i][c] = rhs[i] / nliq_c[0][c];
+  }
+}
 
-//   if (matrix->method() == Amanzi::Operators::FV_TPFA){
-//     Teuchos::Ptr<Operators::Matrix_TPFA> matrix_tpfa = Teuchos::ptr_dynamic_cast<Operators::Matrix_TPFA>(matrix);
-//     AddGravityFluxes_FV_(g_vec, rel_perm, rho, matrix_tpfa);
-//     return;
-//   }
-
-
-
-
-//   AmanziGeometry::Point gravity(g_vec->MyLength());
-//   for (int i=0; i!=g_vec->MyLength(); ++i) gravity[i] = (*g_vec)[i];
-
-//   AmanziMesh::Entity_ID_List faces;
-//   std::vector<int> dirs;
-
-//   if (rel_perm == Teuchos::null) { // no rel perm
-//     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
-//     unsigned int ncells = rho->size("cell",false);
-//     for (unsigned int c=0; c!=ncells; ++c) {
-//       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-
-//       Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
-//       double& Fc = matrix->Fc_cells()[c];
-
-//       for (unsigned int n=0; n!=faces.size(); ++n) {
-//         int f = faces[n];
-//         AmanziGeometry::Point normal = mesh_->face_normal(f) * dirs[n];
-//         if (tpfa_) {
-//           // normal must be vector connecting centroids, not true normal
-//           AmanziMesh::Entity_ID_List cells;
-//           mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-//           const AmanziGeometry::Point& cell_centroid = mesh_->cell_centroid(c);
-//           AmanziGeometry::Point dc(mesh_->space_dimension());
-//           if (cells.size() == 1) {
-//             dc = mesh_->face_centroid(f) - cell_centroid;
-//           } else if (cells[0] == c) {
-//             dc = mesh_->cell_centroid(cells[1]) - cell_centroid;
-//           } else {
-//             dc = mesh_->cell_centroid(cells[0]) - cell_centroid;
-//           }
-//           normal = AmanziGeometry::norm(normal) / AmanziGeometry::norm(dc) * dc;
-//         }
-
-//         double outward_flux = ( ((*K_)[c] * gravity) * normal) * rho_v[0][c];
-//         Ff[n] += outward_flux;
-//         Fc -= outward_flux;  // Nonzero-sum contribution when not upwinding
-//       }
-//     }
-
-//   } else if (!rel_perm->HasComponent("face")) { // rel perm on cells only
-//     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
-//     const Epetra_MultiVector& krel_cells = *rel_perm->ViewComponent("cell",false);
-//     unsigned int ncells = rho->size("cell",false);
-//     for (unsigned int c=0; c!=ncells; ++c) {
-//       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-
-//       Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
-//       double& Fc = matrix->Fc_cells()[c];
-
-//       for (unsigned int n=0; n!=faces.size(); ++n) {
-//         int f = faces[n];
-//         AmanziGeometry::Point normal = mesh_->face_normal(f) * dirs[n];
-//         if (tpfa_) {
-//           // normal must be vector connecting centroids, not true normal
-//           AmanziMesh::Entity_ID_List cells;
-//           mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-//           const AmanziGeometry::Point& cell_centroid = mesh_->cell_centroid(c);
-//           AmanziGeometry::Point dc(mesh_->space_dimension());
-//           if (cells.size() == 1) {
-//             dc = mesh_->face_centroid(f) - cell_centroid;
-//           } else if (cells[0] == c) {
-//             dc = mesh_->cell_centroid(cells[1]) - cell_centroid;
-//           } else {
-//             dc = mesh_->cell_centroid(cells[0]) - cell_centroid;
-//           }
-//           normal = AmanziGeometry::norm(normal) / AmanziGeometry::norm(dc) * dc;
-//         }
-
-//         double outward_flux = ( ((*K_)[c] * gravity) * normal) * krel_cells[0][c] * rho_v[0][c];
-//         Ff[n] += outward_flux;
-//         Fc -= outward_flux;  // Nonzero-sum contribution when not upwinding
-//       }
-//     }
-
-//   } else if (!rel_perm->HasComponent("cell")) { // rel perm on faces only
-//     rel_perm->ScatterMasterToGhosted("face");
-
-//     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
-//     const Epetra_MultiVector& krel_faces = *rel_perm->ViewComponent("face",true);
-//     unsigned int ncells = rho->size("cell",false);
-//     for (unsigned int c=0; c!=ncells; ++c) {
-//       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-
-//       Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
-//       double& Fc = matrix->Fc_cells()[c];
-
-//       for (unsigned int n=0; n!=faces.size(); ++n) {
-//         int f = faces[n];
-//         AmanziGeometry::Point normal = mesh_->face_normal(f) * dirs[n];
-//         if (tpfa_) {
-//           // normal must be vector connecting centroids, not true normal
-//           AmanziMesh::Entity_ID_List cells;
-//           mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-//           const AmanziGeometry::Point& cell_centroid = mesh_->cell_centroid(c);
-//           AmanziGeometry::Point dc(mesh_->space_dimension());
-//           if (cells.size() == 1) {
-//             dc = mesh_->face_centroid(f) - cell_centroid;
-//           } else if (cells[0] == c) {
-//             dc = mesh_->cell_centroid(cells[1]) - cell_centroid;
-//           } else {
-//             dc = mesh_->cell_centroid(cells[0]) - cell_centroid;
-//           }
-//           normal = AmanziGeometry::norm(normal) / AmanziGeometry::norm(dc) * dc;
-//         }
-
-//         double outward_flux = ( ((*K_)[c] * gravity) * normal) * rho_v[0][c];
-//         Ff[n] += outward_flux * (scaled_constraint_ ? 1. : krel_faces[0][f]);
-//         Fc -= outward_flux * krel_faces[0][f] ;  // Nonzero-sum contribution when not upwinding
-//       }
-//     }
-
-//   } else { // rel perm on both cells and faces
-//     rel_perm->ScatterMasterToGhosted("face");
-
-//     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
-//     const Epetra_MultiVector& krel_faces = *rel_perm->ViewComponent("face",true);
-//     const Epetra_MultiVector& krel_cells = *rel_perm->ViewComponent("cell",false);
-//     unsigned int ncells = rho->size("cell",false);
-//     for (unsigned int c=0; c!=ncells; ++c) {
-//       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-
-//       Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
-//       double& Fc = matrix->Fc_cells()[c];
-
-//       for (unsigned int n=0; n!=faces.size(); ++n) {
-//         int f = faces[n];
-//         AmanziGeometry::Point normal = mesh_->face_normal(f) * dirs[n];
-//         if (tpfa_) {
-//           // normal must be vector connecting centroids, not true normal
-//           AmanziMesh::Entity_ID_List cells;
-//           mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-//           const AmanziGeometry::Point& cell_centroid = mesh_->cell_centroid(c);
-//           AmanziGeometry::Point dc(mesh_->space_dimension());
-//           if (cells.size() == 1) {
-//             dc = mesh_->face_centroid(f) - cell_centroid;
-//           } else if (cells[0] == c) {
-//             dc = mesh_->cell_centroid(cells[1]) - cell_centroid;
-//           } else {
-//             dc = mesh_->cell_centroid(cells[0]) - cell_centroid;
-//           }
-//           normal = AmanziGeometry::norm(normal) / AmanziGeometry::norm(dc) * dc;
-//         }
-
-//         double outward_flux = ( ((*K_)[c] * gravity) * normal) * krel_cells[0][c] * rho_v[0][c];
-
-//         //std::cout<<"grav "<<( ((*K_)[c] * gravity) * normal) * dirs[n]<<" rho "<<rho_v[0][c]<<" krel "<<krel_cells[0][c]<<"\n";
-
-//         Ff[n] += outward_flux * (scaled_constraint_ ? 1. : krel_faces[0][f]);
-//         Fc -= outward_flux * krel_faces[0][f];  // Nonzero-sum contribution when not upwinding
-
-//       }      
-//     }
-//   }
-// };
-
-// // -----------------------------------------------------------------------------
-// // Update elemental discretization matrices with gravity terms.
-// //
-// // Must be called before applying boundary conditions and global assembling.
-// // -----------------------------------------------------------------------------
-// void Richards::AddGravityFluxes_FV_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
-//         const Teuchos::Ptr<const CompositeVector>& rel_perm,
-//         const Teuchos::Ptr<const CompositeVector>& rho,
-//         const Teuchos::Ptr<Operators::Matrix_TPFA>& matrix) {
-
-//   int dim = g_vec->MyLength();
-//   AmanziGeometry::Point gravity(dim);
-//   for (int i=0; i!=g_vec->MyLength(); ++i) gravity[i] = (*g_vec)[i];
-
-//   //Teuchos::RCP<const CompositeVector> rhs = matrix->rhs();
-//   //Epetra_MultiVector& F_cell = *rhs.ViewComponent("cell",false);
-
-//   std::vector<double>& Fc_cell = matrix->Fc_cells();
-
-//   Teuchos::RCP<Epetra_Vector> grav_terms = matrix->gravity_terms();
-
-//   AmanziMesh::Entity_ID_List faces, cells;
-//   std::vector<int> dirs;
-
-//   if (rel_perm == Teuchos::null) { // no rel perm
-
-//     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell", true);
-//     unsigned int ncells = rho->size("cell",false);
-
-//     for (unsigned int c=0; c!=ncells; ++c) {
-//       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-//       int nfaces = faces.size();
-//       Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
-//       Fc_cell[c] = 0.;
-
-//       for (int n = 0; n < nfaces; n++) {
-//         int f = faces[n];
-//         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-//         double rho_avr = 0.;
-//         for (int i=0; i<cells.size(); ++i) rho_avr += rho_v[0][cells[i]];
-//         rho_avr *= 1./cells.size();
-
-//         double grav_flux = dirs[n] * gravity[dim-1] * (*grav_terms)[f] * rho_avr;
-//         if (cells.size() == 1){
-//           if (bc_markers_[f] != Amanzi::Operators::OPERATOR_BC_DIRICHLET){
-//             Ff[n] -= grav_flux;
-//           }
-//           Fc_cell[c] -= grav_flux;
-//         }
-//         else{
-//           Fc_cell[c] -= grav_flux;
-//         }  
-//       }
-//     }
-
-//   }
-//   // else if (!rel_perm->HasComponent("cell")) { // rel perm on faces only
-//   else{
-//     rel_perm->ScatterMasterToGhosted("face");
-
-//     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell", true);
-//     const Epetra_MultiVector& krel_faces = *rel_perm->ViewComponent("face",true);
-//     const Epetra_MultiVector& krel_cells = *rel_perm->ViewComponent("cell",false);
-//     unsigned int ncells = rho->size("cell",false);
-//     //Epetra_MultiVector& rhs_cells = *rhs_->ViewComponent("cell",false);
-
-//     for (unsigned int c=0; c!=ncells; ++c) {
-//       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-//       int nfaces = faces.size();
-//       Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
-//       Fc_cell[c] = 0.;
-
-//       ASSERT(std::abs(krel_cells[0][c] - 1.) < 1.e-10);
-
-//       for (int n = 0; n < nfaces; n++) {
-//         int f = faces[n];
-//         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-
-
-//         double rho_avr = 0.;
-//         for (int i=0; i<cells.size(); ++i) rho_avr += rho_v[0][cells[i]];
-//         rho_avr *= 1./cells.size();
-
-//         double grav_flux = dirs[n] * gravity[dim-1] * (*grav_terms)[f] * rho_avr * krel_faces[0][f];
-
-//         if (cells.size() == 1){
-//           if (bc_markers_[f] != Amanzi::Operators::OPERATOR_BC_DIRICHLET){
-//             Ff[n] -= grav_flux;
-//           }
-//           Fc_cell[c] -= grav_flux;
-//         }
-//         else{
-//           Fc_cell[c] -= grav_flux;
-//         }  
-
-//       }
-//     }
-//   }
-//  // else {
-//  //   Errors::Message message(std::string("FV discretization doesn't support this type of relative permeability\n"));
-//  // }
-
-// }
-
-
-// // -----------------------------------------------------------------------------
-// // Updates global Darcy vector calculated by a discretization method.
-// // -----------------------------------------------------------------------------
-// void Richards::AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
-//         const Teuchos::Ptr<const CompositeVector>& rel_perm,
-//         const Teuchos::Ptr<const CompositeVector>& rho,
-//         const Teuchos::Ptr<CompositeVector>& darcy_flux) {
-
-
-
-
-//   AmanziGeometry::Point gravity(g_vec->MyLength());
-//   for (int i=0; i!=g_vec->MyLength(); ++i) gravity[i] = (*g_vec)[i];
-
-//   AmanziMesh::Entity_ID_List faces;
-//   std::vector<int> dirs;
-
-//   int f_owned = darcy_flux->size("face", false);
-//   std::vector<bool> done(darcy_flux->size("face",true), false);
-//   Epetra_MultiVector& darcy_flux_v = *darcy_flux->ViewComponent("face",false);
-
-//   if (rel_perm == Teuchos::null) { // no rel perm
-//     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
-//     unsigned int ncells = rho->size("cell",false);
-//     for (unsigned int c=0; c!=ncells; ++c) {
-//       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-//       for (unsigned int n=0; n!=faces.size(); ++n) {
-//         int f = faces[n];
-//         AmanziGeometry::Point normal = mesh_->face_normal(f) * dirs[n];
-//         if (tpfa_) {
-//           // normal must be vector connecting centroids, not true normal
-//           AmanziMesh::Entity_ID_List cells;
-//           mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-//           const AmanziGeometry::Point& cell_centroid = mesh_->cell_centroid(c);
-//           AmanziGeometry::Point dc(mesh_->space_dimension());
-//           if (cells.size() == 1) {
-//             dc = mesh_->face_centroid(f) - cell_centroid;
-//           } else if (cells[0] == c) {
-//             dc = mesh_->cell_centroid(cells[1]) - cell_centroid;
-//           } else {
-//             dc = mesh_->cell_centroid(cells[0]) - cell_centroid;
-//           }
-//           normal = AmanziGeometry::norm(normal) / AmanziGeometry::norm(dc) * dc;
-//         }
-
-//         if (f<f_owned && !done[f]) {
-//           darcy_flux_v[0][f] += (((*K_)[c] * gravity) * normal) * dirs[n] * rho_v[0][c];
-//           done[f] = true;
-//         }
-//       }
-//     }
-
-//   } else if (!rel_perm->HasComponent("face")) { // rel perm on cells only
-//     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
-//     const Epetra_MultiVector& krel_cells = *rel_perm->ViewComponent("cell",false);
-//     unsigned int ncells = rho->size("cell",false);
-//     for (unsigned int c=0; c!=ncells; ++c) {
-//       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-//       for (unsigned int n=0; n!=faces.size(); ++n) {
-//         int f = faces[n];
-//         AmanziGeometry::Point normal = mesh_->face_normal(f) * dirs[n];
-//         if (tpfa_) {
-//           // normal must be vector connecting centroids, not true normal
-//           AmanziMesh::Entity_ID_List cells;
-//           mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-//           const AmanziGeometry::Point& cell_centroid = mesh_->cell_centroid(c);
-//           AmanziGeometry::Point dc(mesh_->space_dimension());
-//           if (cells.size() == 1) {
-//             dc = mesh_->face_centroid(f) - cell_centroid;
-//           } else if (cells[0] == c) {
-//             dc = mesh_->cell_centroid(cells[1]) - cell_centroid;
-//           } else {
-//             dc = mesh_->cell_centroid(cells[0]) - cell_centroid;
-//           }
-//           normal = AmanziGeometry::norm(normal) / AmanziGeometry::norm(dc) * dc;
-//         }
-
-//         if (f<f_owned && !done[f]) {
-//           darcy_flux_v[0][f] += (((*K_)[c] * gravity) * normal) * dirs[n]
-//               * krel_cells[0][c] * rho_v[0][c];
-//           done[f] = true;
-//         }
-//       }
-//     }
-
-//   } else if (!rel_perm->HasComponent("cell")) { // rel perm on faces only
-//     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
-//     const Epetra_MultiVector& krel_faces = *rel_perm->ViewComponent("face",true);
-//     unsigned int ncells = rho->size("cell",false);
-//     for (unsigned int c=0; c!=ncells; ++c) {
-//       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-//       for (unsigned int n=0; n!=faces.size(); ++n) {
-//         int f = faces[n];
-//         AmanziGeometry::Point normal = mesh_->face_normal(f) * dirs[n];
-//         if (tpfa_) {
-//           // normal must be vector connecting centroids, not true normal
-//           AmanziMesh::Entity_ID_List cells;
-//           mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-//           const AmanziGeometry::Point& cell_centroid = mesh_->cell_centroid(c);
-//           AmanziGeometry::Point dc(mesh_->space_dimension());
-//           if (cells.size() == 1) {
-//             dc = mesh_->face_centroid(f) - cell_centroid;
-//           } else if (cells[0] == c) {
-//             dc = mesh_->cell_centroid(cells[1]) - cell_centroid;
-//           } else {
-//             dc = mesh_->cell_centroid(cells[0]) - cell_centroid;
-//           }
-//           normal = AmanziGeometry::norm(normal) / AmanziGeometry::norm(dc) * dc;
-//         }
-
-//         if (f<f_owned && !done[f]) {
-//           darcy_flux_v[0][f] += (((*K_)[c] * gravity) * normal) * dirs[n]
-//               * krel_faces[0][f] * rho_v[0][c];
-//           done[f] = true;
-//         }
-//       }
-//     }
-
-//   } else { // rel perm on both cells and faces
-//     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
-//     const Epetra_MultiVector& krel_faces = *rel_perm->ViewComponent("face",true);
-//     const Epetra_MultiVector& krel_cells = *rel_perm->ViewComponent("cell",false);
-//     unsigned int ncells = rho->size("cell",false);
-//     for (unsigned int c=0; c!=ncells; ++c) {
-//       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-//       for (unsigned int n=0; n!=faces.size(); ++n) {
-//         int f = faces[n];
-//         AmanziGeometry::Point normal = mesh_->face_normal(f) * dirs[n];
-//         if (tpfa_) {
-//           // normal must be vector connecting centroids, not true normal
-//           AmanziMesh::Entity_ID_List cells;
-//           mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-//           const AmanziGeometry::Point& cell_centroid = mesh_->cell_centroid(c);
-//           AmanziGeometry::Point dc(mesh_->space_dimension());
-//           if (cells.size() == 1) {
-//             dc = mesh_->face_centroid(f) - cell_centroid;
-//           } else if (cells[0] == c) {
-//             dc = mesh_->cell_centroid(cells[1]) - cell_centroid;
-//           } else {
-//             dc = mesh_->cell_centroid(cells[0]) - cell_centroid;
-//           }
-//           normal = AmanziGeometry::norm(normal) / AmanziGeometry::norm(dc) * dc;
-//         }
-
-//         if (f<f_owned && !done[f]) {
-//           darcy_flux_v[0][f] += (((*K_)[c] * gravity) * normal) * dirs[n]
-//               * krel_cells[0][c] * krel_faces[0][f] * rho_v[0][c];
-//           done[f] = true;
-//         }
-//       }
-//     }
-//   }
-// };
 
 // // -------------------------------------------------------------
 // // Diffusion term, div -\phi s \tau n D grad \omega

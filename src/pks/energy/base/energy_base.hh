@@ -121,13 +121,6 @@ public:
           const Teuchos::Ptr<CompositeVector>& f);
 
  protected:
-  enum FluxUpdateMode {
-    UPDATE_FLUX_ITERATION = 0,
-    UPDATE_FLUX_TIMESTEP = 1,
-    UPDATE_FLUX_VIS = 2,
-    UPDATE_FLUX_NEVER = 3
-  };
-
   int niter_;
 
   // boundary conditions
@@ -140,21 +133,21 @@ public:
   Teuchos::RCP<Operators::BCs> bc_adv_;
 
   // operators
-  Operators::UpwindMethod Krel_method_;
   Teuchos::RCP<Operators::Upwinding> upwinding_;
+  Teuchos::RCP<Operators::Upwinding> dkdT_upwinding_;
 
   // mathematical operators
+  Teuchos::RCP<Operators::Operator> matrix_; // pc in PKPhysicalBDFBase
   Teuchos::RCP<Operators::OperatorDiffusion> matrix_diff_;
-  Teuchos::RCP<Operators::OperatorDiffusionMFD> matrix_diff_mfd_;
   Teuchos::RCP<Operators::OperatorAdvection> matrix_adv_;
 
   Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
   Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
   Teuchos::RCP<Operators::OperatorAdvection> preconditioner_adv_;
+  Teuchos::RCP<Operators::Operator> lin_solver_;
 
   // flags and control
   double dT_max_;
-  FluxUpdateMode update_flux_;
   bool modify_predictor_with_consistent_faces_;
   bool modify_predictor_for_freezing_;
   bool modify_correction_for_freezing_;
@@ -183,6 +176,7 @@ public:
   Key source_key_;
   Key dsource_dT_key_;
   Key mass_source_key_;
+  Key ss_flux_key_;
 
 };
 

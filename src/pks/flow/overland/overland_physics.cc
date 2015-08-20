@@ -37,7 +37,7 @@ void OverlandFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   // not calculate fluxes.
   Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData("pres_elev");
   Teuchos::RCP<CompositeVector> flux =
-      S->GetFieldData("surface_flux", name_);
+      S->GetFieldData("surface-flux", name_);
   matrix_diff_->UpdateFlux(*pres_elev, *flux);
 
   // assemble the stiffness matrix
@@ -69,7 +69,7 @@ void OverlandFlow::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   Teuchos::RCP<const CompositeVector> wc0 =
       S_inter_->GetFieldData("ponded_depth");
   Teuchos::RCP<const CompositeVector> cv =
-      S_next_->GetFieldData("surface_cell_volume");
+      S_next_->GetFieldData("surface-cell_volume");
 
   // Water content only has cells, while the residual has cells and faces.
   g->ViewComponent("cell",false)->Multiply(1.0/dt,
@@ -88,7 +88,7 @@ void OverlandFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g) {
   Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
 
   const Epetra_MultiVector& cv1 =
-      *S_next_->GetFieldData("surface_cell_volume")->ViewComponent("cell",false);
+      *S_next_->GetFieldData("surface-cell_volume")->ViewComponent("cell",false);
 
   if (is_source_term_) {
     // Add in external source term.

@@ -6,7 +6,7 @@ License: BSD
 Authors: Ethan Coon (ecoon@lanl.gov)
 ----------------------------------------------------------------------------- */
 
-#include "overland_head.hh"
+#include "overland_pressure.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -14,7 +14,7 @@ namespace Flow {
 // -------------------------------------------------------------
 // Diffusion term, div K grad (h + elev)
 // -------------------------------------------------------------
-void OverlandHeadFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
+void OverlandPressureFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& g) {
 
   // update the rel perm according to the scheme of choice.
@@ -38,7 +38,7 @@ void OverlandHeadFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData("pres_elev");
   if (update_flux_ == UPDATE_FLUX_ITERATION) {
     Teuchos::RCP<CompositeVector> flux =
-        S->GetFieldData("surface_flux", name_);
+        S->GetFieldData("surface-flux", name_);
     matrix_diff_->UpdateFlux(*pres_elev, *flux);
   }
 
@@ -53,18 +53,18 @@ void OverlandHeadFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 // -------------------------------------------------------------
 // Accumulation of water, dh/dt
 // -------------------------------------------------------------
-void OverlandHeadFlow::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
+void OverlandPressureFlow::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   double dt = S_next_->time() - S_inter_->time();
 
   // get these fields
-  S_next_->GetFieldEvaluator("surface_water_content")
+  S_next_->GetFieldEvaluator("surface-water_content")
       ->HasFieldChanged(S_next_.ptr(), name_);
-  S_inter_->GetFieldEvaluator("surface_water_content")
+  S_inter_->GetFieldEvaluator("surface-water_content")
       ->HasFieldChanged(S_inter_.ptr(), name_);
   Teuchos::RCP<const CompositeVector> wc1 =
-      S_next_->GetFieldData("surface_water_content");
+      S_next_->GetFieldData("surface-water_content");
   Teuchos::RCP<const CompositeVector> wc0 =
-      S_inter_->GetFieldData("surface_water_content");
+      S_inter_->GetFieldData("surface-water_content");
 
   // Water content only has cells, while the residual has cells and faces.
   g->ViewComponent("cell",false)->Update(1.0/dt, *wc1->ViewComponent("cell",false),
@@ -75,11 +75,11 @@ void OverlandHeadFlow::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) 
 // -------------------------------------------------------------
 // Source term
 // -------------------------------------------------------------
-void OverlandHeadFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g) {
+void OverlandPressureFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g) {
   Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
 
   const Epetra_MultiVector& cv1 =
-      *S_next_->GetFieldData("surface_cell_volume")->ViewComponent("cell",false);
+      *S_next_->GetFieldData("surface-cell_volume")->ViewComponent("cell",false);
 
   if (is_source_term_) {
     // Add in external source term.
@@ -91,16 +91,16 @@ void OverlandHeadFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g) {
     if (source_in_meters_) {
       // External source term is in [m water / s], not in [mols / s], so a
       // density is required.  This density should be upwinded.
-      S_next_->GetFieldEvaluator("surface_molar_density_liquid")
+      S_next_->GetFieldEvaluator("surface-molar_density_liquid")
           ->HasFieldChanged(S_next_.ptr(), name_);
-      S_next_->GetFieldEvaluator("surface_source_molar_density")
+      S_next_->GetFieldEvaluator("surface-source_molar_density")
           ->HasFieldChanged(S_next_.ptr(), name_);
 
       const Epetra_MultiVector& nliq1 =
-          *S_next_->GetFieldData("surface_molar_density_liquid")
+          *S_next_->GetFieldData("surface-molar_density_liquid")
           ->ViewComponent("cell",false);
       const Epetra_MultiVector& nliq1_s =
-        *S_next_->GetFieldData("surface_source_molar_density")
+        *S_next_->GetFieldData("surface-source_molar_density")
           ->ViewComponent("cell",false);
 
       int ncells = g_c.MyLength();

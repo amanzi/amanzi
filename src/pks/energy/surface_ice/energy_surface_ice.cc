@@ -42,9 +42,9 @@ EnergySurfaceIce::EnergySurfaceIce(const Teuchos::RCP<Teuchos::ParameterList>& p
     is_energy_source_term_(false),
     is_mass_source_term_(false),
     is_air_conductivity_(false) {
-  plist_->set("primary variable key", "surface_temperature");
+  plist_->set("primary variable key", "surface-temperature");
   plist_->set("domain name", "surface");
-  plist_->set("conserved quantity key", "surface_energy");
+  plist_->set("conserved quantity key", "surface-energy");
 }
 
 
@@ -73,12 +73,8 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- energy, the conserved quantity
   S->RequireField(energy_key_)->SetMesh(mesh_)->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList& ee_plist = plist_->sublist("energy evaluator");
-  ee_plist.set("energy key", energy_key_);
-  Teuchos::RCP<SurfaceIceEnergyEvaluator> ee =
-    Teuchos::rcp(new SurfaceIceEnergyEvaluator(ee_plist));
-  S->SetFieldEvaluator(energy_key_, ee);
-
+  S->RequireFieldEvaluator(energy_key_);
+  
   // -- advection of enthalpy
   S->RequireField(enthalpy_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -173,14 +169,14 @@ void EnergySurfaceIce::initialize(const Teuchos::Ptr<State>& S) {
   // require a model based on p,T.
   // This will be removed once boundary faces are implemented.
   Teuchos::RCP<FieldEvaluator> eos_fe =
-      S->GetFieldEvaluator("surface_molar_density_liquid");
+      S->GetFieldEvaluator("surface-molar_density_liquid");
   Teuchos::RCP<Relations::EOSEvaluator> eos_eval =
     Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(eos_fe);
   ASSERT(eos_eval != Teuchos::null);
   eos_liquid_ = eos_eval->get_EOS();
 
   Teuchos::RCP<FieldEvaluator> iem_fe =
-      S->GetFieldEvaluator("surface_internal_energy_liquid");
+      S->GetFieldEvaluator("surface-internal_energy_liquid");
   Teuchos::RCP<EnergyRelations::IEMEvaluator> iem_eval =
     Teuchos::rcp_dynamic_cast<EnergyRelations::IEMEvaluator>(iem_fe);
   ASSERT(iem_eval != Teuchos::null);
@@ -198,7 +194,7 @@ void EnergySurfaceIce::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S
   // Simply grab the internal cell for now.
   const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)
       ->ViewComponent("face",false);
-  const Epetra_MultiVector& pres_c = *S->GetFieldData("surface_pressure")
+  const Epetra_MultiVector& pres_c = *S->GetFieldData("surface-pressure")
       ->ViewComponent("cell",false);
 
   //  Teuchos::writeParameterListToXmlOStream(*plist_, std::cout);
@@ -300,9 +296,9 @@ void EnergySurfaceIce::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double 
   // implemented correctly, as they are part of a PK (surface energy
   // balance!)
   if (is_source_term_ && 
-      S->HasFieldEvaluator("surface_conducted_energy_source") &&
-      !S->GetFieldEvaluator("surface_conducted_energy_source")->IsDependency(S, key_) &&
-      S->HasField("dsurface_conducted_energy_source_dsurface_temperature")) {
+      S->HasFieldEvaluator("surface-conducted_energy_source") &&
+      !S->GetFieldEvaluator("surface-conducted_energy_source")->IsDependency(S, key_) &&
+      S->HasField("dsurface-conducted_energy_source_dsurface-temperature")) {
     // This checks if 1, there is a source, and, 2, there is a
     // conducted component to that source, and 4, someone, somewhere
     // (i.e. SEB PK) has defined a dsource_dT, but 3, the source
@@ -311,7 +307,7 @@ void EnergySurfaceIce::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double 
     std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
 
     const Epetra_MultiVector& dsource_dT =
-        *S->GetFieldData("dsurface_conducted_energy_source_dsurface_temperature")->ViewComponent("cell",false);
+        *S->GetFieldData("dsurface-conducted_energy_source_dsurface-temperature")->ViewComponent("cell",false);
     const Epetra_MultiVector& cell_vol = *S->GetFieldData(cell_vol_key_)->ViewComponent("cell",false);
     unsigned int ncells = dsource_dT.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
@@ -320,7 +316,7 @@ void EnergySurfaceIce::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double 
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
       *vo_->os() << "Adding hacked source to PC:" << std::endl;
-      db_->WriteVector("de_src_dT", S->GetFieldData("dsurface_conducted_energy_source_dsurface_temperature").ptr(), false);
+      db_->WriteVector("de_src_dT", S->GetFieldData("dsurface-conducted_energy_source_dsurface-temperature").ptr(), false);
     }
 
   }

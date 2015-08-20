@@ -32,6 +32,7 @@ enum UpwindMethod {
   UPWIND_METHOD_CENTERED = 0,
   UPWIND_METHOD_GRAVITY,
   UPWIND_METHOD_TOTAL_FLUX,
+  UPWIND_METHOD_NO_DENOMINATOR,
   UPWIND_METHOD_ARITHMETIC_MEAN,
   UPWIND_METHOD_POTENTIAL_DIFFERENCE
 };
@@ -51,6 +52,10 @@ class Upwinding {
                     std::vector<Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > >* Jpp_faces) const {
     ASSERT(0);
   }
+
+  virtual std::string
+  CoefficientLocation() = 0;
+  
 
 };
 

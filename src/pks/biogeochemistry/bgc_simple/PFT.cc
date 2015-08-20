@@ -24,7 +24,7 @@ PFT::PFT(std::string pft_type_, int ncells, double* brootcells_) :
 void PFT::Init(double col_area)
 {
   
-  SLA = 20;
+  SLA = 30;
   leaf2rootratio = 1.0;
   leaf2stemratio = 5;
   Vcmax25 = 100;
@@ -32,11 +32,6 @@ void PFT::Init(double col_area)
   GDDleafon = 100;
   GDDbase = 0.0;
   GDD = 0.0;
-  Bleaf = 1.0/SLA * col_area;//es note that all the following B vals are perm^2, so that elsewhere they should be *gridarea to account for varying grid areas.
-  Bstore = 2* Bleaf;
-  Bleafmemory = Bleaf;
-  Bstem = Bleaf/leaf2stemratio;
-  Broot = Bleaf/leaf2rootratio; 
   leaflitterfrc[0] = 0.1;
   leaflitterfrc[1] = 0.5;
   leaflitterfrc[1] = 0.4;
@@ -46,7 +41,7 @@ void PFT::Init(double col_area)
   stemlitterfrc[0] = 0.05;
   stemlitterfrc[1] = 0.15;
   stemlitterfrc[1] = 0.8;
-  LUE = 0.05;
+  LUE = 0.06;
   LER = 0.8;
   mp = 6.0;
   GPP = 0.0;
@@ -58,9 +53,9 @@ void PFT::Init(double col_area)
   minLeafWP = -2.0;
   storagecleaf2sw = 1.5;
   storagecroot2sw = 15;
-  rootlongevity = 4.0;
+  rootlongevity = 10.0;
   leaflongevity = 4.0;
-  stemlongevity = 10.0;
+  stemlongevity = 100.0;
   tar_leafstorageccon = 0.2;
   Emax25 = 0.1*Vcmax25;
   gRespF = 0.25;
@@ -72,7 +67,6 @@ void PFT::Init(double col_area)
   leafondaysi = 0;
   CSinkLimit = 0.0;
   seedrainlai = 0.01;
-  totalBiomass = Bleaf + Bstem + Broot;
   maxLAI = 1;
 
   for (int i = 0; i < 10; i++){
@@ -86,10 +80,31 @@ void PFT::Init(Teuchos::ParameterList& plist,double col_area)
   // ex
   // rootlongevity = plist.get<double>("root longevity", 4.0);
   //note default vals below are those of sedge
-       maxRootD = plist.get<double>("max root depth", 0.5);
-       Vcmax25 = plist.get<double>("Vcmax25", 100.);
-       Emax25 = plist.get<double>("Emax25", 10.);
-       SLA = plist.get<double>("SLA", 16);
+  maxRootD = plist.get<double>("max root depth", 0.5);
+  Vcmax25 = plist.get<double>("Vcmax25", 100.);
+  Jmax25 = 2.0 * Vcmax25; 
+  Emax25 = plist.get<double>("Emax25", 10.);
+  SLA = plist.get<double>("SLA", 16);
+  evergreen = plist.get<bool>("evergreen", false);
+  leaf2rootratio =  plist.get<double>("ratio of leaf to root", 1.0);
+
+  leaflongevity =  plist.get<double>("leaf longevity", 4.0);
+  rootlongevity =  plist.get<double>("root longevity", 4.0);
+  stemlongevity =  plist.get<double>("stem longevity", 10.0);
+
+
+  Bleaf = 1.0/SLA * col_area;//es note that all the following B vals are perm^2, so that elsewhere they should be *gridarea to account for varying grid areas.
+  Bstore = 2* Bleaf;
+  Bleafmemory = Bleaf;
+  Bstem = Bleaf/leaf2stemratio;
+  Broot = Bleaf/leaf2rootratio;
+  totalBiomass = Bleaf + Bstem + Broot;
+
+  if (evergreen) { 
+    Bleafmemory = 0.;
+  }else{
+    Bleaf = 0.;
+  }
 
 }
 

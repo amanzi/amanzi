@@ -11,12 +11,14 @@ namespace Amanzi {
 namespace SurfaceBalance {
 namespace SEBPhysics {
 
-void ThermoProperties::UpdateVaporPressure() {
+void ThermoProperties::UpdateVaporPressure() {  // Ho & Webb 2006
+  double pressure_fudgefactor = 100;
+  double R = 461.52; // Pa m^3 / kg K
   if (std::isnan(relative_humidity)) {
     if (pressure < 101325.) {
       // vapor pressure lowering
       double pc = 101325. - pressure;
-      relative_humidity = std::exp(-pc / (density_w*461.52*temp));
+      relative_humidity = std::exp(-pc*pressure_fudgefactor / (density_w*R*temp));
     } else {
       relative_humidity = 1.;
     }

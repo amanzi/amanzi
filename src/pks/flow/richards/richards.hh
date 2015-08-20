@@ -86,6 +86,8 @@ protected:
   virtual bool UpdatePermeabilityData_(const Teuchos::Ptr<State>& S);
   virtual bool UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<State>& S);
 
+  virtual void UpdateVelocity_(const Teuchos::Ptr<State>& S);
+
   // physical methods
   // -- diffusion term
   virtual void ApplyDiffusion_(const Teuchos::Ptr<State>& S,
@@ -135,15 +137,7 @@ protected:
   virtual double BoundaryValue(Teuchos::RCP<const Amanzi::CompositeVector> solution, int face_id);
 
 protected:
-  enum FluxUpdateMode {
-    UPDATE_FLUX_ITERATION = 0,
-    UPDATE_FLUX_TIMESTEP = 1,
-    UPDATE_FLUX_VIS = 2,
-    UPDATE_FLUX_NEVER = 3
-  };
-
   // control switches
-  FluxUpdateMode update_flux_;
   Operators::UpwindMethod Krel_method_;
   int niter_;
   bool infiltrate_only_if_unfrozen_;
@@ -179,6 +173,7 @@ protected:
   Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
   Teuchos::RCP<Operators::OperatorDiffusion> face_matrix_diff_;
   Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
+  Teuchos::RCP<Operators::Operator> lin_solver_;
 
   // residual vector for vapor diffusion
   Teuchos::RCP<CompositeVector> res_vapor;
@@ -212,12 +207,13 @@ protected:
   Key mass_dens_key_;
   Key molar_dens_key_;
   Key perm_key_;
-  Key coef_key_;
-  Key uw_coef_key_;
+  Key coef_key_, dcoef_key_;
+  Key uw_coef_key_, duw_coef_key_;
   Key flux_key_;
   Key flux_dir_key_;
   Key velocity_key_;
   Key source_key_;
+  Key ss_flux_key_;
 
  private:
   // factory registration
