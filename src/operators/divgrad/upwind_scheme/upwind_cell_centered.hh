@@ -38,7 +38,8 @@ public:
         const CompositeVector& cell_coef,
         const Teuchos::Ptr<CompositeVector>& face_coef);
 
-
+  virtual std::string
+  CoefficientLocation() { return "standard: cell"; }
 
 private:
 

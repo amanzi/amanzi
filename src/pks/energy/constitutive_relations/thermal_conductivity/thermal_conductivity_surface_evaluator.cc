@@ -18,7 +18,7 @@ ThermalConductivitySurfaceEvaluator::ThermalConductivitySurfaceEvaluator(
     SecondaryVariableFieldEvaluator(plist) {
   if (my_key_ == std::string("")) {
     my_key_ = plist_.get<std::string>("thermal conductivity key",
-            "surface_thermal_conductivity");
+            "surface-thermal_conductivity");
   }
 
   uf_key_ = plist_.get<std::string>("unfrozen fraction key", "unfrozen_fraction");
@@ -29,10 +29,10 @@ ThermalConductivitySurfaceEvaluator::ThermalConductivitySurfaceEvaluator(
 
   ASSERT(plist_.isSublist("thermal conductivity parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters");
-  K_liq_ = sublist.get<double>("thermal conductivity of water");
-  K_ice_ = sublist.get<double>("thermal conductivity of ice");
+  K_liq_ = sublist.get<double>("thermal conductivity of water [W/(m-K)]", 0.58);
+  K_ice_ = sublist.get<double>("thermal conductivity of ice [W/(m-K)]", 2.18);
 
-  min_K_ = sublist.get<double>("minimum thermal conductivity", 0.);
+  min_K_ = sublist.get<double>("minimum thermal conductivity", 1.e-14);
 }
 
 

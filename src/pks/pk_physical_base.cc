@@ -48,12 +48,8 @@ void PKPhysicalBase::setup(const Teuchos::Ptr<State>& S) {
   // require primary variable evaluator
   S->RequireFieldEvaluator(key_);
   Teuchos::RCP<FieldEvaluator> fm = S->GetFieldEvaluator(key_);
-  //#if ENABLE_DBC
   solution_evaluator_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   ASSERT(solution_evaluator_ != Teuchos::null);
-  //#else
-  //solution_evaluator_ = Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(fm);
-  //#endif
 };
 
 

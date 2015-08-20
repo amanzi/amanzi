@@ -6,7 +6,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/overla
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/elevation)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
-include_directories(${ATS_SOURCE_DIR}/src/pks/flow/overland_head)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/overland_pressure)
 
 add_library(pk_flow_icy_overland
     icy_overland.cc

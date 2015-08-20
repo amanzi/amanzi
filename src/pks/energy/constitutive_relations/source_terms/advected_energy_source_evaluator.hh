@@ -35,7 +35,6 @@ class AdvectedEnergySourceEvaluator : public SecondaryVariableFieldEvaluator {
  protected:
   void InitializeFromPlist_();
 
-  std::string domain_;
   Key internal_enthalpy_key_;
   Key external_enthalpy_key_;
   Key mass_source_key_;

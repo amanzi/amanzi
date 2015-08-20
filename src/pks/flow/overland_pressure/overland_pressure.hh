@@ -30,15 +30,15 @@ namespace FlowRelations {
 }
 
 
-class OverlandHeadFlow : public PKPhysicalBDFBase {
+class OverlandPressureFlow : public PKPhysicalBDFBase {
 
 public:
-  OverlandHeadFlow(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  OverlandPressureFlow(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                    Teuchos::ParameterList& FElist,
                    const Teuchos::RCP<TreeVector>& solution);
   
   // Virtual destructor
-  virtual ~OverlandHeadFlow() {}
+  virtual ~OverlandPressureFlow() {}
 
   // main methods
   // -- Initialize owned (dependent) variables.
@@ -159,7 +159,7 @@ protected:
   int niter_;
 
   // factory registration
-  static RegisteredPKFactory<OverlandHeadFlow> reg_;
+  static RegisteredPKFactory<OverlandPressureFlow> reg_;
 };
 
 }  // namespace AmanziFlow

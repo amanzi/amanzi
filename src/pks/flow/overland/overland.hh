@@ -101,12 +101,12 @@ protected:
 
   // control switches
   bool standalone_mode_; // domain mesh == surface mesh
-  Operators::UpwindMethod upwind_method_;
+//  Operators::UpwindMethod upwind_method_;
   bool is_source_term_;
 
   // coupling term
   Key source_key_;
-  bool full_jacobian_;
+  bool jacobian_;
 
   // work data space
   Teuchos::RCP<Operators::Upwinding> upwinding_;

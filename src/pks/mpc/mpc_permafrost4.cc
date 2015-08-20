@@ -146,9 +146,9 @@ MPCPermafrost4::initialize(const Teuchos::Ptr<State>& S) {
   MPCSubsurface::initialize(S);
 
   // ensure continuity of ICs... surface takes precedence.
-  CopySurfaceToSubsurface(*S->GetFieldData("surface_pressure", surf_flow_pk_->name()),
+  CopySurfaceToSubsurface(*S->GetFieldData("surface-pressure", surf_flow_pk_->name()),
                           S->GetFieldData("pressure", domain_flow_pk_->name()).ptr());
-  CopySurfaceToSubsurface(*S->GetFieldData("surface_temperature", surf_energy_pk_->name()),
+  CopySurfaceToSubsurface(*S->GetFieldData("surface-temperature", surf_energy_pk_->name()),
                           S->GetFieldData("temperature", domain_energy_pk_->name()).ptr());
 }
 
@@ -288,17 +288,17 @@ MPCPermafrost4::UpdatePreconditioner(double t,
   // Add the surface off-diagonal blocks.
   // -- surface dWC/dT
   // -- ALWAYS ZERO
-  // S_next_->GetFieldEvaluator("surface_water_content")
-  //     ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "surface_temperature");
+  // S_next_->GetFieldEvaluator("surface-water_content")
+  //     ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "surface-temperature");
   // Teuchos::RCP<const CompositeVector> dWCdT =
-  //     S_next_->GetFieldData("dsurface_water_content_dsurface_temperature");
+  //     S_next_->GetFieldData("dsurface-water_content_dsurface-temperature");
   // dWC_dT_surf_->AddAccumulationTerm(*dWCdT->ViewComponent("cell", false), h);
   
   // -- surface dE_dp
-  S_next_->GetFieldEvaluator("surface_energy")
-      ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "surface_pressure");
+  S_next_->GetFieldEvaluator("surface-energy")
+      ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "surface-pressure");
   Teuchos::RCP<const CompositeVector> dEdp =
-      S_next_->GetFieldData("dsurface_energy_dsurface_pressure");
+      S_next_->GetFieldData("dsurface-energy_dsurface-pressure");
   dE_dp_surf_->AddAccumulationTerm(*dEdp->ViewComponent("cell", false), h);
 
   // write for debugging
@@ -408,7 +408,7 @@ MPCPermafrost4::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   
   // Copy consistent faces to surface
   if (modified) {
-    S_next_->GetFieldEvaluator("surface_relative_permeability")->HasFieldChanged(S_next_.ptr(),name_);
+    S_next_->GetFieldEvaluator("surface-relative_permeability")->HasFieldChanged(S_next_.ptr(),name_);
     Teuchos::RCP<const CompositeVector> h_prev = S_inter_->GetFieldData("ponded_depth");
     MergeSubsurfaceAndSurfacePressure(*h_prev, u->SubVector(0)->Data().ptr(), u->SubVector(2)->Data().ptr());
     CopySubsurfaceToSurface(*u->SubVector(1)->Data(), u->SubVector(3)->Data().ptr());
@@ -586,8 +586,8 @@ MPCPermafrost4::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
 //   surf_dh->PutScalar(0.);
 
 //   // Grab the necessary components of the solution, in both CV and TV forms.
-//   Teuchos::RCP<CompositeVector> cv_p = S_next_->GetFieldData("surface_pressure", sub_pks_[2]->name());
-//   Teuchos::RCP<CompositeVector> cv_T = S_next_->GetFieldData("surface_temperature", sub_pks_[3]->name());
+//   Teuchos::RCP<CompositeVector> cv_p = S_next_->GetFieldData("surface-pressure", sub_pks_[2]->name());
+//   Teuchos::RCP<CompositeVector> cv_T = S_next_->GetFieldData("surface-temperature", sub_pks_[3]->name());
 
 //   Teuchos::RCP<const TreeVector> tv_p;
 //   Teuchos::RCP<const TreeVector> tv_T;
@@ -646,10 +646,10 @@ MPCPermafrost4::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
 //     }
 
 //     // revert solution so we don't break things
-//     S_next_->GetFieldData("surface_pressure",sub_pks_[2]->name())
+//     S_next_->GetFieldData("surface-pressure",sub_pks_[2]->name())
 //         ->ViewComponent("cell",false)->Update(1., surf_dp_c, 1.);
 //     sub_pks_[2]->ChangedSolution();
-//     S_next_->GetFieldData("surface_temperature",sub_pks_[3]->name())
+//     S_next_->GetFieldData("surface-temperature",sub_pks_[3]->name())
 //         ->ViewComponent("cell",false)->Update(1., surf_dT_c, 1.);
 //     sub_pks_[3]->ChangedSolution();
 //   }
@@ -666,10 +666,10 @@ MPCPermafrost4::ModifyCorrection_FrozenSurface_(double h, Teuchos::RCP<const Tre
   Epetra_MultiVector& du_domain_f = *du->SubVector(0)->Data()->ViewComponent("face",false);
 
   const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
-  S_next_->GetFieldEvaluator("surface_water_content")
-      ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "surface_pressure");
+  S_next_->GetFieldEvaluator("surface-water_content")
+      ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "surface-pressure");
   const Epetra_MultiVector& dWC_dp_surf_c =
-      *S_next_->GetFieldData("dsurface_water_content_dsurface_pressure")
+      *S_next_->GetFieldData("dsurface-water_content_dsurface-pressure")
       ->ViewComponent("cell",false);
 
   int nmodified = 0;

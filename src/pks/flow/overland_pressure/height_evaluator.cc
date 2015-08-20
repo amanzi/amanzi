@@ -24,10 +24,10 @@ HeightEvaluator::HeightEvaluator(Teuchos::ParameterList& plist) :
   my_key_ = plist_.get<std::string>("height key", my_key_);
 
   // my dependencies
-  dens_key_ = plist_.get<std::string>("mass density key", "surface_mass_density_liquid");
+  dens_key_ = plist_.get<std::string>("mass density key", "surface-mass_density_liquid");
   dependencies_.insert(dens_key_);
 
-  pres_key_ = plist_.get<std::string>("head key", "surface_pressure");
+  pres_key_ = plist_.get<std::string>("head key", "surface-pressure");
   dependencies_.insert(pres_key_);
 
   gravity_key_ = plist_.get<std::string>("gravity key", "gravity");

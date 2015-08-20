@@ -9,7 +9,8 @@
 #include "independent_variable_field_evaluator.hh"
 #include "overland_conductivity_evaluator.hh"
 #include "manning_conductivity_model.hh"
-// #include "no_denominator_conductivity_model.hh"
+#include "split_denominator_conductivity_model.hh"
+#include "ponded_depth_passthrough_conductivity_model.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -34,7 +35,7 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterL
   dens_ = plist_.get<bool>("include density factor", true);
 
   if (dens_) {
-    dens_key_ = plist_.get<std::string>("density key", "surface_molar_density_liquid");
+    dens_key_ = plist_.get<std::string>("density key", "surface-molar_density_liquid");
     dependencies_.insert(dens_key_);
   }
   
@@ -43,14 +44,17 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterL
             "overland_conductivity");
   }
 
-  // create the model, hard-coded until we have a 2nd model
+  // create the model
   ASSERT(plist_.isSublist("overland conductivity model"));
   Teuchos::ParameterList sublist = plist_.sublist("overland conductivity model");
   std::string model_type = sublist.get<std::string>("overland conductivity type", "manning");
-  if (model_type == "manning") {
+  if ((model_type == "manning") || (model_type == "manning harmonic mean") ||
+      (model_type == "manning cell centered")){
     model_ = Teuchos::rcp(new ManningConductivityModel(sublist));
-  } else if (model_type == "no denominator") {
-    //    model_ = Teuchos::rcp(new NoDenominatorConductivityModel(sublist));
+  } else if (model_type == "manning split denominator") {
+    model_ = Teuchos::rcp(new SplitDenominatorConductivityModel(sublist));
+  } else if (model_type == "manning ponded depth passthrough") {
+    model_ = Teuchos::rcp(new PondedDepthPassthroughConductivityModel(sublist));
   } else {
     ASSERT(0);
   }

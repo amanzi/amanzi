@@ -27,7 +27,16 @@ BGCSimple::BGCSimple(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                      const Teuchos::RCP<TreeVector>& solution) :
     PKPhysicalBase(plist, FElist, solution),
     PKDefaultBase(plist, FElist, solution),
-    ncells_per_col_(-1) {}
+    ncells_per_col_(-1) {
+
+  // set up additional primary variables -- this is very hacky...
+  // -- transpiration
+  Teuchos::ParameterList& trans_sublist =
+      FElist.sublist("transpiration");
+  trans_sublist.set("evaluator name", "transpiration");
+  trans_sublist.set("field evaluator type", "primary variable");
+
+}
 
 // is a PK
 // -- Setup data
@@ -110,11 +119,31 @@ void BGCSimple::setup(const Teuchos::Ptr<State>& S) {
   }
 
   // requirements: primary variable
-  S->RequireField(key_, name_)->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, nPools);
+  S->RequireField(key_, name_)->SetMesh(mesh_)
+      ->SetComponent("cell", AmanziMesh::CELL, nPools);
 
+  // requirements: other primary variables
+  S->RequireField("transpiration", name_)->SetMesh(mesh_)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator("transpiration");
+  trans_eval_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(
+      S->GetFieldEvaluator("transpiration"));
+  if (trans_eval_ == Teuchos::null) {
+    Errors::Message message("BGC: error, failure to initialize primary variable for transpiration");
+    Exceptions::amanzi_throw(message);
+  }
+  
   // requirement: diagnostics
-  S->RequireField("co2_decomposition", name_)->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireField("total_biomass", name_)->SetMesh(surf_mesh_)->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
+  S->RequireField("co2_decomposition", name_)->SetMesh(mesh_)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireField("total_biomass", name_)->SetMesh(surf_mesh_)
+      ->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
+  S->RequireField("leaf_biomass", name_)->SetMesh(surf_mesh_)
+      ->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
+  S->RequireField("c_sink_limit", name_)->SetMesh(surf_mesh_)
+      ->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
+  S->RequireField("lai", name_)->SetMesh(surf_mesh_)
+      ->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
 
   // requirement: temp of each cell
   S->RequireFieldEvaluator("temperature");
@@ -166,6 +195,12 @@ void BGCSimple::initialize(const Teuchos::Ptr<State>& S) {
   S->GetField("co2_decomposition", name_)->set_initialized();
   S->GetFieldData("total_biomass", name_)->PutScalar(0.);
   S->GetField("total_biomass", name_)->set_initialized();
+  S->GetFieldData("leaf_biomass", name_)->PutScalar(0.);
+  S->GetField("leaf_biomass", name_)->set_initialized();
+  S->GetFieldData("c_sink_limit", name_)->PutScalar(0.);
+  S->GetField("c_sink_limit", name_)->set_initialized();
+  S->GetFieldData("lai", name_)->PutScalar(0.);
+  S->GetField("lai", name_)->set_initialized();
 
   // init root carbon
   Teuchos::RCP<Epetra_SerialDenseVector> col_temp =
@@ -229,7 +264,15 @@ bool BGCSimple::advance(double dt) {
       ->ViewComponent("cell",false);
   Epetra_MultiVector& co2_decomp = *S_next_->GetFieldData("co2_decomposition", name_)
       ->ViewComponent("cell",false);
+  Epetra_MultiVector& trans = *S_next_->GetFieldData("transpiration", name_)
+      ->ViewComponent("cell",false);
   Epetra_MultiVector& biomass = *S_next_->GetFieldData("total_biomass", name_)
+      ->ViewComponent("cell",false);
+  Epetra_MultiVector& leafbiomass = *S_next_->GetFieldData("leaf_biomass", name_)
+      ->ViewComponent("cell",false);
+  Epetra_MultiVector& csink = *S_next_->GetFieldData("c_sink_limit", name_)
+      ->ViewComponent("cell",false);
+  Epetra_MultiVector& lai = *S_next_->GetFieldData("lai", name_)
       ->ViewComponent("cell",false);
 
   S_next_->GetFieldEvaluator("temperature")->HasFieldChanged(S_next_.ptr(), name_);
@@ -280,6 +323,7 @@ bool BGCSimple::advance(double dt) {
 
   // Create a workspace array for the result
   Epetra_SerialDenseVector co2_decomp_c(ncells_per_col_);
+  Epetra_SerialDenseVector trans_c(ncells_per_col_);
 
   // Grab the mesh partition to get soil properties
   Teuchos::RCP<const Functions::MeshPartition> mp = S_next_->GetMeshPartition(soil_part_name_);
@@ -315,7 +359,7 @@ bool BGCSimple::advance(double dt) {
     // call the model
     BGCAdvance(S_inter_->time(), dt, scv[0][col], cryoturbation_coef_, met,
                *temp_c, *pres_c, *depth_c, *dz_c,
-               pfts_[col], soil_carbon_pools_[col], co2_decomp_c);
+               pfts_[col], soil_carbon_pools_[col], co2_decomp_c, trans_c);
 
     // copy back
     // -- serious cache thrash... --etc
@@ -326,14 +370,22 @@ bool BGCSimple::advance(double dt) {
 
       // and integrate the decomp
       co2_decomp[0][col_iter[i]] += co2_decomp_c[i];
+
+      // and pull in the transpiration
+      trans[0][col_iter[i]] = trans_c[i];
     }
 
     for (int lcv_pft=0; lcv_pft!=pfts_[col].size(); ++lcv_pft) {
       biomass[lcv_pft][col] = pfts_[col][lcv_pft]->totalBiomass;
+      leafbiomass[lcv_pft][col] = pfts_[col][lcv_pft]->Bleaf;
+      csink[lcv_pft][col] = pfts_[col][lcv_pft]->CSinkLimit;
+      lai[lcv_pft][col] = pfts_[col][lcv_pft]->lai;
     }
 
   } // end loop over columns
 
+  // mark primaries as changed
+  trans_eval_->SetFieldAsChanged(S_next_.ptr());
   return false;
 }
 

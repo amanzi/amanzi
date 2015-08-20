@@ -41,7 +41,8 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
              const Epetra_SerialDenseVector& SoilThicknessArr,
              std::vector<Teuchos::RCP<PFT> >& pftarr,
              std::vector<Teuchos::RCP<SoilCarbon> >& soilcarr,
-             Epetra_SerialDenseVector& SoilCO2Arr)
+             Epetra_SerialDenseVector& SoilCO2Arr,
+             Epetra_SerialDenseVector& TransArr)
 {
   // required constants
   double p_atm = 101325.;
@@ -56,7 +57,16 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
   // calculate fractional day length
   int doy = std::floor(std::fmod(t_days, 365.25));
   if (doy == 0) doy = 365;
-  double daylen = DayLength(met.lat, doy) * dt_days;
+  double daylen = DayLength(met.lat, doy);
+
+  if (doy == 190) {
+    std::cout << "we are here!" << std::endl;
+  }
+  if (doy == 260) {
+    std::cout << "we are here!" << std::endl;
+  }
+  
+  
 
   double PAR = met.qSWin * 2.3 * 24.0 *60.0 / daylen; // convert to PAR at the daytime
 
@@ -70,7 +80,7 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
     pft.GPP = 0.0;
 
     if (pft.totalBiomass > 0.0) {
-      if (pft.evergreen != 1) {
+      if (!pft.evergreen) {
         //---------------------------------------------------------------------------------
         //calculate plant phenology
         if (pft.leafstatus == 1) {
@@ -187,6 +197,7 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
       double psn = 0.;
       double tleaf = 0.;
       double leafresp = 0.;
+      pft.GPP = 0.;
       // THIS LOOKS SUSPICIOUS... tleaf falls off the bottom of loop?
 
       for (int leaf_layer=0; leaf_layer!=max_leaf_layers; ++leaf_layer){
@@ -206,11 +217,12 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
             psn *= (pft.lai - nleaflayers + 1);
             leafresp *= (pft.lai - nleaflayers + 1);
           }
-          pft.GPP = daylen * 60.0 * Cv* psn * gridarea * dt_days;
+          pft.GPP = pft.GPP +  daylen * 60.0 * Cv* psn * gridarea * dt_days;
           leafresptotal += dt * Cv * leafresp * gridarea;
         }
         PARi *= std::exp(-pft.LER);
       }
+     if(met.tair<273.15) leafresptotal = leafresptotal/10.0; //winter hypbernation
 
       //------------------------------------------------------------------------------------------------
       // respiration
@@ -234,7 +246,8 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
                        &psn, &tleaf, &leafresp);
 
         leafresptotal = dt_days * Cv*leafresp*gridarea;
-        double bleaf0 = 1.0 / pft.SLA;
+        if(met.tair<273.15) leafresptotal = leafresptotal/10.0; //winter hypbernation
+        double bleaf0 = 1.0 / pft.SLA * gridarea;
         stemresp = leafresptotal*pft.Bstem / bleaf0*pft.stem2leafrespratio;
         rootresp = 0.0;
         double refTFactor = TEffectsQ10(2.0, tleaf, 25.0);
@@ -279,7 +292,7 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
         pft.CSinkLimit = std::min(1.0, pft.CSinkLimit);
       }
 
-      double GrowthFlux = 0.0010368* Emax*csink_factor*pft.lai*gridarea;
+      double GrowthFlux = 0.0010368* Emax*csink_factor*pft.lai*gridarea*dt_days;
       // -- 0.0010368 is a conversion factor from umol C/m2/s->kg C/m2/day
       // for carbon storage boundary check,avoid numerical errors
       GrowthFlux = std::min(GrowthFlux, 0.5*pft.Bstore);
@@ -435,7 +448,7 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
       }
 
       if ((pft.lai + pft.laimemory) < 0.001 ||
-          pft.Bstore < 0.001*(pft.Bleaf + pft.Bleafmemory)) {
+          pft.Bstore < 0.00001*(pft.Bleaf + pft.Bleafmemory)) {
         // kill all to avoid very small vegetation types and numerical errors
         mort = 1.0;
         std::cout << "WARNING: plant killed for pft " << pft.pft_type;
@@ -499,7 +512,9 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
           if (pft.annCBalance[i] > 0.0) pft.maxLAI = i+1;
         }
         if (pft.maxLAI == 0) pft.maxLAI = 1;
-        if (pft.pft_type == "moss") pft.maxLAI = 1; // for moss, no more than 2 leaf layers
+        if (pft.pft_type == "moss") { 
+            pft.maxLAI = 1; // for moss, no more than 2 leaf layers
+        }
 
         // zero out annual variables
         for (int i=0; i!=max_leaf_layers; ++i){
@@ -521,7 +536,7 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
         double rootstoragecratio = pft.storagecroot2sw*stemstoragecratio;
 
         // AFFECTED BY DT! --etc
-        double turnoverLeaf = pft.evergreen == 0 ? 0. : dt_days / (pft.leaflongevity * 365.25);
+        double turnoverLeaf = (!pft.evergreen) ? 0. : dt_days / (pft.leaflongevity * 365.25);
         double carbondrawnLeaf = turnoverLeaf*pft.Bleaf;
         ASSERT(turnoverLeaf <= 0.9);
 
@@ -586,7 +601,7 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
         pft.Bleaf = pft.seedrainlai*gridarea / pft.SLA;
         pft.Bstem = pft.Bleaf / pft.leaf2stemratio;
         pft.Broot = pft.Bleaf / pft.leaf2rootratio;
-        if (pft.evergreen != 1) {
+        if (!pft.evergreen) {
           pft.Bleafmemory = pft.Bleaf;
           pft.Bleaf = 0.0;
           pft.GDD = 0.0;
