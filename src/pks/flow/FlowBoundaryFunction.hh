@@ -25,9 +25,7 @@
 
 #include "CommonDefs.hh"
 #include "Mesh.hh"
-#include "MultiFunction.hh"
 #include "PK_BoundaryFunction.hh"
-#include "unique_mesh_function.hh"
 
 namespace Amanzi {
 namespace Flow {

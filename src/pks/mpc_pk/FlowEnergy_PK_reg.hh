@@ -11,6 +11,6 @@
 
 namespace Amanzi {
 
-RegisteredPKFactory<FlowEnergy_PK> FlowEnergy_PK::reg_("flow energy");
+RegisteredPKFactory<FlowEnergy_PK> FlowEnergy_PK::reg_("thermal richards");
 
 }  // namespace Amanzi

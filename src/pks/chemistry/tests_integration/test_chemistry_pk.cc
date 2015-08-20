@@ -18,7 +18,7 @@
 #include "GenerationSpec.hh"
 #include "State.hh"
 
-#include "chemistry_pk.hh"
+#include "Chemistry_PK.hh"
 #include "Chemistry_State.hh"
 #include "species.hh"
 #include "chemistry_exception.hh"

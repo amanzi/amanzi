@@ -84,7 +84,7 @@
       <ParameterList name="TP 0">
         <ParameterList name="PK Tree">
           <ParameterList name="Flow and Energy">
-            <Parameter name="PK type" type="string" value="flow energy"/>
+            <Parameter name="PK type" type="string" value="thermal richards"/>
             <ParameterList name="Flow">
               <Parameter name="PK type" type="string" value="richards"/>
             </ParameterList>
@@ -99,10 +99,10 @@
         <Parameter name="initial time step" type="double" value="500.0"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Time Period Control">
-      <Parameter name="Start Times" type="Array(double)" value="{6.153732e+10, 6.15688776e+10}"/>
-      <Parameter name="Initial Time Step" type="Array(double)" value="{10.0, 10.0}"/>
-      <Parameter name="Maximum Time Step" type="Array(double)" value="{4.3234e+17, 4.3234e+17}"/>
+    <ParameterList name="time period control">
+      <Parameter name="start times" type="Array(double)" value="{6.153732e+10, 6.15688776e+10}"/>
+      <Parameter name="initial time step" type="Array(double)" value="{10.0, 10.0}"/>
+      <Parameter name="maximum time step" type="Array(double)" value="{4.3234e+17, 4.3234e+17}"/>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{}"/>
     <ParameterList name="VerboseObject">
@@ -112,7 +112,7 @@
 
   <ParameterList name="State">
     <ParameterList name="field evaluators">
-      <ParameterList name="density_rock">
+      <ParameterList name="particle_density">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">

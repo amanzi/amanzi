@@ -44,7 +44,7 @@ namespace AmanziNewInput {
  ******************************************************************
  */
 //Teuchos::ParameterList translate(const std::string& xmlfilename, const std::string& xmlSchemafile) {
-Teuchos::ParameterList translate(const std::string& xmlfilename) {
+Teuchos::ParameterList translate(const std::string& xmlfilename, std::string& spec) {
 
   Teuchos::ParameterList new_list;
   Teuchos::ParameterList def_list;
@@ -97,6 +97,20 @@ Teuchos::ParameterList translate(const std::string& xmlfilename) {
   // to the old format
   DOMDocument *doc = parser->getDocument();
 
+  // check that XML has version 2,x or version 1.x spec
+  DOMElement* root = doc->getDocumentElement();
+  char* tmp = XMLString::transcode(root->getTagName());
+  spec = "";
+  if (strcmp(tmp, "amanzi_input") == 0) {
+    spec = "v2";
+  } else {
+    if (strcmp(tmp, "ParameterList") == 0) spec = "v1";
+    delete errorHandler;
+    XMLPlatformUtils::Terminate();
+    return new_list;
+  }
+  XMLString::release(&tmp);
+
   // grab the version number attribute
   new_list.set<std::string>("Amanzi Input Format Version", get_amanzi_version(doc,def_list));
 
@@ -120,6 +134,16 @@ Teuchos::ParameterList translate(const std::string& xmlfilename) {
 
   new_list.sublist("General Description") = get_model_description(doc, def_list);
   new_list.sublist("Echo Translated Input") = get_echo_translated(doc, def_list);
+  // check that we have to translate to spec 1.x
+  const Teuchos::ParameterList& echo_list = new_list.sublist("Echo Translated Input");
+  if (echo_list.isParameter("Format")) {
+    if (echo_list.get<std::string>("Format") == "unstructured_native") {
+      delete errorHandler;
+      XMLPlatformUtils::Terminate();
+      return new_list;
+    }
+  }
+
   new_list.sublist("Mesh") = get_Mesh(doc, def_list);
   new_list.sublist("Domain").set<int>("Spatial Dimension",dimension_);
   new_list.sublist("Execution Control") = get_execution_controls(doc, &def_list);
@@ -4094,10 +4118,10 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
               list.sublist(regName).sublist("Region: Ellipse").set<Teuchos::Array<double> >("Center",center);
               XMLString::release(&textContent2);
             }
-            else if (strcmp(nodeName,"raduis") == 0){
+            else if (strcmp(nodeName,"radius") == 0){
               textContent2 = XMLString::transcode(curGKid->getTextContent());
-              Teuchos::Array<double> raduis = make_coordinates(textContent2, *def_list);
-              list.sublist(regName).sublist("Region: Ellipse").set<Teuchos::Array<double> >("Radius",raduis);
+              Teuchos::Array<double> radius = make_coordinates(textContent2, *def_list);
+              list.sublist(regName).sublist("Region: Ellipse").set<Teuchos::Array<double> >("Radius",radius);
               XMLString::release(&textContent2);
             }
           }
@@ -6875,7 +6899,7 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
                         obPL.set<std::string>("Variable","Aqueous saturation");
                       }
                       else {
-                        //TODO: EIB - don't think this is in structured
+                        obPL.set<std::string>("Variable","Aqueous Saturation");
                       }
                     }
                     else if (strcmp(obsType,"aqueous_conc")==0) {
@@ -6957,7 +6981,7 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
 	                    obPL.set<std::string>("Functional","Observation Data: Integral");
 	                  }
                           else if (strcmp(Value,"mean")==0) {
-	                    obPL.set<std::string>("Functional","Observation Data: Mean");
+			    obPL.set<std::string>("Functional","Observation Data: Mean");
 	                  }
 		        }
                         // Keeping singular macro around to help users.  This will go away

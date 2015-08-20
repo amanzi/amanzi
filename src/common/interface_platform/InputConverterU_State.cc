@@ -6,7 +6,8 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Markus Berndt (original version)
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <sstream>
@@ -43,7 +44,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   Teuchos::ParameterList& out_ev = out_list.sublist("field evaluators");
   Teuchos::ParameterList& out_ic = out_list.sublist("initial conditions");
 
-  XString mm;
+  MemoryManager mm;
   Errors::Message msg;
   char* tagname;
   char* text_content;
@@ -56,20 +57,26 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
   // --- viscosity
   bool flag;
-  DOMNode* node = getUniqueElementByTagNames_("phases", "liquid_phase", "viscosity", flag);
+  DOMNode* node = GetUniqueElementByTagsString_("phases, liquid_phase, viscosity", flag);
   text_content = mm.transcode(node->getTextContent());
   double viscosity = std::strtod(text_content, NULL);
   out_ic.sublist("fluid_viscosity").set<double>("value", viscosity);
 
   // --- constant density
-  node = getUniqueElementByTagNames_("phases", "liquid_phase", "density", flag);
+  node = GetUniqueElementByTagsString_("phases, liquid_phase, density", flag);
   text_content = mm.transcode(node->getTextContent());
   rho_ = std::strtod(text_content, NULL);
   out_ic.sublist("fluid_density").set<double>("value", rho_);
 
-  out_ic.sublist("water_density").sublist("function").sublist("All")
-      .set<std::string>("region","All")
-      .set<std::string>("component","cell")
+  // out_ic.sublist("water_density").sublist("function").sublist("All")
+  //     .set<std::string>("region", "All")
+  //     .set<std::string>("component", "cell")
+  //     .sublist("function").sublist("function-constant")
+  //     .set<double>("value", rho_);
+
+  out_ic.sublist("mass_density_liquid").sublist("function").sublist("All")
+      .set<std::string>("region", "All")
+      .set<std::string>("component", "cell")
       .sublist("function").sublist("function-constant")
       .set<double>("value", rho_);
 
@@ -85,7 +92,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       std::string mat_name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
 
-      node = getUniqueElementByTagNames_(inode, "assigned_regions", flag);
+      node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
       // record the material ID for each region that this material occupies
@@ -108,7 +115,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- porosity: skip if compressibility model was already provided.
       if (!compressibility_) {
         double porosity;
-        node = getUniqueElementByTagNames_(inode, "mechanical_properties", "porosity", flag);
+        node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
         if (flag) {
           porosity = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
         } else {
@@ -117,8 +124,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         }
         Teuchos::ParameterList& porosity_ev = out_ev.sublist("porosity");
         porosity_ev.sublist("function").sublist(reg_str)
-            .set<Teuchos::Array<std::string> >("regions",regions)
-            .set<std::string>("component","cell")
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
             .sublist("function").sublist("function-constant")
             .set<double>("value", porosity);
         porosity_ev.set<std::string>("field evaluator type", "independent variable");
@@ -129,10 +136,10 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       bool perm_init_from_file(false), conductivity(false);
       std::string perm_file, perm_attribute, perm_format;
 
-      node = getUniqueElementByTagNames_(inode, "permeability", flag);
+      node = GetUniqueElementByTagsString_(inode, "permeability", flag);
       if (!flag) {
         conductivity = true;
-        node = getUniqueElementByTagNames_(inode, "hydraulic_conductivity", flag);
+        node = GetUniqueElementByTagsString_(inode, "hydraulic_conductivity", flag);
       }
 
       // first we get eilter permeability values or the file name
@@ -147,7 +154,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
         if (DOMNode::ATTRIBUTE_NODE == knode->getNodeType()) {
           tagname = mm.transcode(knode->getNodeName());
-          text_content = mm.transcode(knode->getNodeValue());
+          text_content = mm.transcode(knode->getTextContent());
 
           if (strcmp(tagname, "x") == 0) {
             kx = std::strtod(text_content, NULL);
@@ -159,11 +166,11 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             file++;
           } else if (strcmp(tagname, "filename") == 0) {
             file++;
-            file_name = new char[std::strlen(text_content)];
-            std::strcpy(attr_name, text_content);
+            file_name = new char[std::strlen(text_content) + 1];
+            std::strcpy(file_name, text_content);
           } else if (strcmp(tagname, "attribute") == 0) {
             file++;
-            attr_name = new char[std::strlen(text_content)];
+            attr_name = new char[std::strlen(text_content) + 1];
             std::strcpy(attr_name, text_content);
           }
         }
@@ -204,42 +211,43 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       }
 
       // -- specific_yield
-      node = getUniqueElementByTagNames_(inode, "mechanical_properties", "specific_yield", flag);
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_yield", flag);
       if (flag) {
         double specific_yield = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
 
         Teuchos::ParameterList& spec_yield_ic = out_ic.sublist("specific_yield");
         spec_yield_ic.sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions",regions)
-            .set<std::string>("component","cell")
+            .set<std::string>("component", "cell")
             .sublist("function").sublist("function-constant")
             .set<double>("value", specific_yield);
       }
 
       // -- specific storage
-      node = getUniqueElementByTagNames_(inode, "mechanical_properties", "specific_storage", flag);
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_storage", flag);
       if (flag) {
         double specific_storage = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
 
         Teuchos::ParameterList& spec_yield_ic = out_ic.sublist("specific_storage");
         spec_yield_ic.sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions",regions)
-            .set<std::string>("component","cell")
+            .set<std::string>("component", "cell")
             .sublist("function").sublist("function-constant")
             .set<double>("value", specific_storage);
       }
 
       // -- particle density
-      node = getUniqueElementByTagNames_(inode, "particle_density", flag);
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, particle_density", flag);
       if (flag) {
         double particle_density = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
 
-        Teuchos::ParameterList& part_dens_ic = out_ic.sublist("particle_density");
-        part_dens_ic.sublist("function").sublist(reg_str)
-            .set<Teuchos::Array<std::string> >("regions",regions)
-            .set<std::string>("component","cell")
+        Teuchos::ParameterList& part_dens_ev = out_ev.sublist("particle_density");
+        part_dens_ev.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
             .sublist("function").sublist("function-constant")
             .set<double>("value", particle_density);
+        part_dens_ev.set<std::string>("field evaluator type", "independent variable");
       }
     }
   }
@@ -251,7 +259,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   for (int i = 0; i < childern->getLength(); i++) {
     DOMNode* inode = childern->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-      node = getUniqueElementByTagNames_(inode, "assigned_regions", flag);
+      node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       text_content = mm.transcode(node->getTextContent());
       std::vector<std::string> regions = CharToStrings_(text_content);
 
@@ -262,20 +270,20 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       }
 
       // -- uniform pressure
-      node = getUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, uniform_pressure", flag);
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, uniform_pressure", flag);
       if (flag) {
         double p = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
 
         Teuchos::ParameterList& pressure_ic = out_ic.sublist("pressure");
         pressure_ic.sublist("function").sublist(reg_str)
-            .set<Teuchos::Array<std::string> >("regions",regions)
-            .set<std::string>("component","cell")
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
             .sublist("function").sublist("function-constant")
             .set<double>("value", p);
       }
 
       // -- linear pressure
-      node = getUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, linear_pressure", flag);
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, linear_pressure", flag);
       if (flag) {
         double p = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
         std::vector<double> grad = GetAttributeVector_(static_cast<DOMElement*>(node), "gradient");
@@ -303,7 +311,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       }
 
       // -- uniform saturation
-      node = getUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, uniform_saturation", flag);
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, uniform_saturation", flag);
       if (flag) {
         double s = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
 
@@ -316,7 +324,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       }
 
       // -- linear saturation
-      node = getUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, linear_saturation", flag);
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, linear_saturation", flag);
       if (flag) {
         double s = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
         std::vector<double> grad = GetAttributeVector_(static_cast<DOMElement*>(node), "gradient");
@@ -344,7 +352,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       }
 
       // -- darcy_flux
-      node = getUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, velocity", flag);
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, velocity", flag);
       if (flag) {
         std::vector<double> velocity;
         velocity.push_back(GetAttributeValueD_(static_cast<DOMElement*>(node), "x"));
@@ -374,7 +382,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       int ncomp_g = phases_["gas"].size();
       int ncomp_all = ncomp_l + ncomp_g;
 
-      node = getUniqueElementByTagsString_(inode, "liquid_phase", flag);
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase", flag);
       if (flag && ncomp_all > 0) {
         std::vector<double> vals(ncomp_l, 0.0);
 
@@ -393,7 +401,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         Teuchos::ParameterList& tcc_ic = out_ic.sublist("total_component_concentration");
         Teuchos::ParameterList& dof_list = tcc_ic.sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions", regions)
-            .set<std::string>("component","cell")
+            .set<std::string>("component", "cell")
             .sublist("function")
             .set<int>("Number of DoFs", ncomp_all)
             .set<std::string>("Function type", "composite function");
@@ -407,7 +415,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       }
 
       // -- total_component_concentration (gas phase)
-      node = getUniqueElementByTagsString_(inode, "gas_phase", flag);
+      node = GetUniqueElementByTagsString_(inode, "gas_phase", flag);
       if (flag) {
         std::vector<double> vals(ncomp_g, 0.0);
 
@@ -432,6 +440,22 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", vals[k]);
         }
       }
+
+      // -- uniform temperature
+      node = GetUniqueElementByTagsString_(inode, "uniform_temperature", flag);
+      if (flag) {
+        double val = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+
+        Teuchos::ParameterList& temperature_ic = out_ic.sublist("temperature");
+        temperature_ic.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
+            .sublist("function").sublist("function-constant")
+            .set<double>("value", val);
+      }
+
+      // atmospheric pressure
+      out_ic.sublist("atmospheric_pressure").set<double>("value", ATMOSPHERIC_PRESSURE);
     }
   }
 
@@ -450,7 +474,7 @@ Teuchos::ParameterList InputConverterU::TranslateMaterialsPartition_()
   Teuchos::ParameterList out_list;
   Teuchos::ParameterList& tmp_list = out_list.sublist("materials");
 
-  XString mm;
+  MemoryManager mm;
   bool flag;
   std::vector<std::string> regions;
 
@@ -462,7 +486,7 @@ Teuchos::ParameterList InputConverterU::TranslateMaterialsPartition_()
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       DOMNamedNodeMap* attr_map = inode->getAttributes();
 
-      DOMNode* node = getUniqueElementByTagNames_(inode, "assigned_regions", flag);
+      DOMNode* node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       if (flag) {
         char* text_content = mm.transcode(node->getTextContent());
         std::vector<std::string> names = CharToStrings_(text_content);

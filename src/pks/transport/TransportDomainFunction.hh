@@ -19,58 +19,34 @@
 
 #include "CommonDefs.hh"
 #include "Mesh.hh"
-#include "unique_mesh_function.hh"
+#include "PK_DomainFunction.hh"
 
 namespace Amanzi {
 namespace Transport {
 
-class TransportDomainFunction : public Functions::UniqueMeshFunction {
+class TransportDomainFunction : public PK_DomainFunction {
  public:
-  explicit TransportDomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : 
-      UniqueMeshFunction(mesh),
-      finalized_(false) {}
+  TransportDomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : 
+      PK_DomainFunction(mesh) {};
   
   void Define(const std::vector<std::string>& regions,
               const Teuchos::RCP<const MultiFunction>& f,
               int action, int submodel,
               const std::string& name);
 
-  void Define(const std::string region,
+  void Define(const std::string& region,
               const Teuchos::RCP<const MultiFunction>& f,
               int action, int submodel,
               const std::string& name);
   
-  void Compute(double t0, double t1);
-  void ComputeDistribute(double t0, double t1);
-  void ComputeDistribute(double t0, double t1, double* weight);
-  void ComputeDistributeMultiValue(double t0, double t1);
-  void ComputeDistributeMultiValue(double t0, double t1, double* weight);
-  
-  void Finalize() {}
- 
-  // extract internal information
-  int CollectActionsList();
- 
-  // iterator methods
-  typedef std::map<int,double>::const_iterator Iterator;
-  Iterator begin() const { return value_.begin(); }
-  Iterator end() const  { return value_.end(); }
-  Iterator find(const int j) const { return value_.find(j); }
-
   // access
   const std::string& tcc_name() { return tcc_name_; }
   int tcc_index() { return tcc_index_; }
   void set_tcc_index(int i) { tcc_index_ = i; }
 
  private:
-  std::vector<int> actions_;
-  std::vector<int> submodel_;
   std::string tcc_name_;
   int tcc_index_; // index the global list of components
-
- protected:
-  std::map<int,double> value_;
-  bool finalized_;
 };
 
 

@@ -585,7 +585,9 @@
 		  	<time_macros>string</time_macros>
 			<!-- OR -->
 		  	<cycle_macros>string</cycle_macros>
-		  	<write_regions>string</write_regions>
+			<write_regions>
+			    <field name="string" regions="string, string, string" />
+			</write_regions>
 		</vis>
 
 		<checkpoint>

@@ -1,12 +1,10 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
-ATS
+ATS & Amanzi
 
 License: see $AMANZI_DIR/COPYRIGHT
 Author Ethan Coon
 
 Function from R^d to R^n.
-
 ------------------------------------------------------------------------- */
 
 #ifndef AMANZI_MULTIVECTOR_FUNCTION_HH_

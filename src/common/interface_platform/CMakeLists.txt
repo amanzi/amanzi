@@ -34,8 +34,17 @@ include_directories(${Boost_INCLUDE_DIRS})
 #
 # interface library
 #
-file(GLOB _hh_inc_files "*.hh")
-set(interface_inc_files  ${_hh_inc_files} )
+# file(GLOB _hh_inc_files "*.hh")
+set(interface_inc_files
+  Simulator.hh
+  ObservationData.hh
+  InputConverter.hh
+  InputConverterU.hh
+  InputConverterU_Defs.hh
+  InputParserIS.hh
+  InputParserIS_Defs.hh
+  InputTranslator.hh)
+
 add_amanzi_library(interface
                       SOURCE 
                            InputParserIS.cc
@@ -44,7 +53,8 @@ add_amanzi_library(interface
                            InputParserIS_Solvers.cc InputParserIS_Mesh.cc InputParserIS_Output.cc
                            InputConverter.cc InputConverterU.cc
                            InputConverterU_State.cc InputConverterU_MPC.cc InputConverterU_PK.cc
-                           InputConverterU_Flow.cc InputConverterU_Transport.cc InputConverterU_Chemistry.cc
+                           InputConverterU_Flow.cc InputConverterU_Transport.cc
+                           InputConverterU_Energy.cc InputConverterU_Chemistry.cc
                            InputConverterU_Solvers.cc InputConverterU_Mesh.cc InputConverterU_Output.cc
 			   InputTranslator.cc
                       HEADERS ${interface_inc_files}

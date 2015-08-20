@@ -6,7 +6,9 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Markus Berndt
+           Jeffrey Johnson
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <algorithm>
@@ -39,7 +41,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "Translating transport" << std::endl;
 
-  XString mm;
+  MemoryManager mm;
 
   char *text, *tagname;
   DOMNodeList *node_list, *children;
@@ -49,7 +51,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   bool flag;
   double cfl(1.0);
 
-  node = getUniqueElementByTagNames_("unstructured_controls", "unstr_transport_controls", "cfl", flag);
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, cfl", flag);
   if (flag) {
     text = mm.transcode(node->getTextContent());
     cfl = strtod(text, NULL);
@@ -66,14 +68,14 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   out_list.set<bool>("transport subcycling", TRANSPORT_SUBCYCLING);
 
   // overwrite data from expert parameters  
-  node = getUniqueElementByTagNames_("unstructured_controls", "unstr_transport_controls", "sub_cycling", flag);
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, sub_cycling", flag);
   if (flag) {
     text = mm.transcode(node->getTextContent());
     out_list.set<bool>("transport subcycling", (strcmp(text, "on") == 0));
   }
 
   int poly_order(0);
-  node = getUniqueElementByTagNames_("unstructured_controls", "unstr_transport_controls", "algorithm", flag);
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, algorithm", flag);
   if (flag) {
     text = mm.transcode(node->getTextContent());
     if (strcmp(text, "explicit first-order") == 0) {
@@ -118,14 +120,14 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       std::string mat_name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
 
       // -- regions
-      node = getUniqueElementByTagNames_(inode, "assigned_regions", flag);
+      node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
       Teuchos::ParameterList& tmp_list = mat_list.sublist(mat_name);
       tmp_list.set<Teuchos::Array<std::string> >("regions", regions);
 
       // -- dispersion tensor
-      node = getUniqueElementByTagNames_(inode, "mechanical_properties", "dispersion_tensor", flag);
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, dispersion_tensor", flag);
       if (flag) {
         double al, alh, alv, at, ath, atv;
         std::string model = GetAttributeValueS_(static_cast<DOMElement*>(node), "type");
@@ -147,6 +149,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
           tmp_list.sublist("parameters for Burnett-Frind")
               .set<double>("alphaL", al).set<double>("alphaTH", ath)
               .set<double>("alphaTH", atv);
+
+          transport_permeability_ = true;
         } else if (strcmp(model.c_str(), "lichtner_kelkar_robinson") == 0) {
           tmp_list.set<std::string>("model", "Lichtner-Kelkar-Robinson");
 
@@ -158,11 +162,13 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
           tmp_list.sublist("parameters for Lichtner-Kelkar-Robinson")
               .set<double>("alphaLH", alh).set<double>("alphaLV", alv)
               .set<double>("alphaTH", ath).set<double>("alphaTH", atv);
+
+          transport_permeability_ = true;
         } 
       }
 
       // -- tortousity
-      node = getUniqueElementByTagNames_(inode, "mechanical_properties", "tortuosity", flag);
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, tortuosity", flag);
       if (flag) {
         double val = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
         tmp_list.set<double>("aqueous tortuosity", val);
@@ -172,7 +178,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
 
   // -- molecular diffusion
   //    check in phases->water list (other solutes are ignored)
-  node = getUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, solutes", flag);
+  node = GetUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, solutes", flag);
   if (flag) {
     Teuchos::ParameterList& diff_list = out_list.sublist("molecular diffusion");
     std::vector<std::string> aqueous_names;
@@ -199,7 +205,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
 
   // -- molecular diffusion
   //    check in phases->air list (other solutes are ignored)
-  node = getUniqueElementByTagsString_("phases, gas_phase, dissolved_components, solutes", flag);
+  node = GetUniqueElementByTagsString_("phases, gas_phase, dissolved_components, solutes", flag);
   if (flag) {
     Teuchos::ParameterList& diff_list = out_list.sublist("molecular diffusion");
     std::vector<std::string> gaseous_names;
@@ -232,6 +238,10 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   out_list.set<int>("number of aqueous components", phases_["water"].size());
   out_list.set<int>("number of gaseous components", phases_["gas"].size());
 
+  // cross coupling of PKs
+  out_list.sublist("physical models and assumptions")
+      .set<bool>("permeability field is required", transport_permeability_);
+
   out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
   return out_list;
 }
@@ -244,7 +254,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
 {
   Teuchos::ParameterList out_list;
 
-  XString mm;
+  MemoryManager mm;
 
   char *text, *tagname;
   DOMNodeList *node_list, *children;
@@ -264,13 +274,13 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
 
     // read the assigned regions
     bool flag;
-    node = getUniqueElementByTagsString_(inode, "assigned_regions", flag);
+    node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     text = mm.transcode(node->getTextContent());
     std::vector<std::string> regions = CharToStrings_(text);
 
     vv_bc_regions_.insert(vv_bc_regions_.end(), regions.begin(), regions.end());
 
-    phase = getUniqueElementByTagNames_(inode, "liquid_phase", flag);
+    phase = GetUniqueElementByTagsString_(inode, "liquid_phase", flag);
     if (!flag) continue;
 
     // process solute sources for concentration
@@ -283,7 +293,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
       for (int n = 0; n < solutes->getLength(); ++n) {
         node = solutes->item(n);
         // process a group of similar elements defined by the first element
-        std::vector<DOMNode*> same_list = getSameChildNodes_(node, bctype, flag, true);
+        std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
         solute_name = GetAttributeValueS_(static_cast<DOMElement*>(same_list[0]), "name");
 
         std::map<double, double> tp_values;
@@ -324,9 +334,9 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
     }
 
     // -- geochemistry BCs 
-    node = getUniqueElementByTagNames_(phase, "geochemistry", flag);
+    node = GetUniqueElementByTagsString_(phase, "geochemistry", flag);
     if (flag) {
-      std::vector<DOMNode*> same_list = getSameChildNodes_(node, bctype, flag, true);
+      std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
       std::map<double, std::string> tp_forms, tp_values;
 
       for (int j = 0; j < same_list.size(); ++j) {
@@ -366,7 +376,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
 {
   Teuchos::ParameterList out_list;
 
-  XString mm;
+  MemoryManager mm;
 
   char *text, *tagname;
   DOMNodeList *node_list, *children;
@@ -386,18 +396,18 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
 
     // read the assigned regions
     bool flag;
-    node = getUniqueElementByTagsString_(inode, "assigned_regions", flag);
+    node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     text = mm.transcode(node->getTextContent());
     std::vector<std::string> regions = CharToStrings_(text);
 
     vv_src_regions_.insert(vv_src_regions_.end(), regions.begin(), regions.end());
 
-    phase = getUniqueElementByTagNames_(inode, "liquid_phase", flag);
+    phase = GetUniqueElementByTagsString_(inode, "liquid_phase", flag);
     if (!flag) continue;
 
     // process solute elements
     // -- Dirichlet BCs for concentration
-    std::string bctype, solute_name;
+    std::string bctype, bctype_flow, solute_name;
 
     element = static_cast<DOMElement*>(phase);
     DOMNodeList* solutes = element->getElementsByTagName(mm.transcode("solute_component"));
@@ -406,7 +416,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
       for (int n = 0; n < solutes->getLength(); ++n) {
         node = solutes->item(n);
         // get a group of similar elements defined by the first element
-        std::vector<DOMNode*> same_list = getSameChildNodes_(node, bctype, flag, true);
+        std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
         solute_name = GetAttributeValueS_(static_cast<DOMElement*>(same_list[0]), "name");
 
         // weighting method
@@ -417,11 +427,16 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
           weight = "volume";
         } else if (strcmp(text, "perm_weighted") == 0) {
           weight = "permeability";
+        } else if (strcmp(text, "flow_weighted_conc") == 0) {
+          node_list = element->getElementsByTagName(mm.transcode("liquid_component")); 
+          GetSameChildNodes_(node_list->item(0), bctype_flow, flag, true);
+          weight = (bctype_flow == "volume_weighted") ? "volume" : "permeability";
         } else if (strcmp(text, "diffusion_dominated_release") == 0) {
           classical = false;
         } else {
           ThrowErrorIllformed_("sources", "element", text);
         } 
+        if (weight == "permeability") transport_permeability_ = true;
 
         if (classical) {
           std::map<double, double> tp_values;
@@ -461,12 +476,14 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
           }
         } else {
           element = static_cast<DOMElement*>(same_list[0]);
-          double total = GetAttributeValueD_(element, "inventory");
-          double diff = GetAttributeValueD_(element, "diffusion_coeff");
+          double total = GetAttributeValueD_(element, "total_inventory");
+          double diff = GetAttributeValueD_(element, "effective_diffusion_coefficient");
           double length = GetAttributeValueD_(element, "mixing_length");
           std::vector<double> times;
           times.push_back(GetAttributeValueD_(element, "start"));
-          times.push_back(GetAttributeValueD_(element, "end"));
+
+          element = static_cast<DOMElement*>(same_list[1]);
+          times.push_back(GetAttributeValueD_(element, "start"));
 
           // save data in the XML
           Teuchos::ParameterList& src_list = out_list.sublist("concentration");
@@ -477,7 +494,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
           std::vector<std::string> forms(1, "SQRT");
           double amplitude = 2 * total / length * std::pow(diff / M_PI, 0.5); 
 
-          Teuchos::ParameterList& srcfn = src.sublist("boundary concentration").sublist("function-tabular");
+          Teuchos::ParameterList& srcfn = src.sublist("sink").sublist("function-tabular");
           srcfn.set<Teuchos::Array<double> >("x values", times)
                .set<Teuchos::Array<double> >("y values", values)
                .set<Teuchos::Array<std::string> >("forms", forms);

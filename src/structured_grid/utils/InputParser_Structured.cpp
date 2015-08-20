@@ -4602,6 +4602,9 @@ namespace Amanzi {
             if (functional == "Observation Data: Integral") {
               sublist.set("obs_type","integral");
             }
+            else if (functional == "Observation Data: Mean") {
+              sublist.set("obs_type","average");
+            }
             else if (functional == "Observation Data: Point") {
               sublist.set("obs_type","point_sample");
 

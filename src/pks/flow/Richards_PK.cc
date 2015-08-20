@@ -27,6 +27,7 @@
 #include "mfd3d_diffusion.hh"
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionFactory.hh"
+#include "PK_Utils.hh"
 #include "Point.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "UpwindFactory.hh"
@@ -382,11 +383,6 @@ void Richards_PK::Initialize()
   K.resize(ncells_owned);
   SetAbsolutePermeabilityTensor();
 
-  // Allocate memory for wells.
-  if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
-  }
-
   // Select a proper matrix class. 
   const Teuchos::ParameterList& tmp_list = rp_list_->sublist("operators")
                                                     .sublist("diffusion operator");
@@ -541,7 +537,7 @@ void Richards_PK::Initialize()
   
   // initialize well modeling
   if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    CalculatePermeabilityFactorInWell();
+    PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
   }
 
   // Optional step: calculate hydrostatic solution consistent with BCs

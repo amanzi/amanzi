@@ -98,7 +98,7 @@ if ( BUILD_TESTS )
     include_directories(${TRANSPORT_SOURCE_DIR})
     include_directories(${Boost_INCLUDE_DIRS})
 
-    set(amanzi_libs transport state operators mesh_functions data_structures functions 
+    set(amanzi_libs transport pks state operators mesh_functions data_structures functions 
                     whetstone mesh_factory mesh_audit mesh geometry)
 
     # Test: miscaleneous transport routines
