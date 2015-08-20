@@ -53,7 +53,7 @@ class CycleDriver {
   void Reset_PK();
   void Finalize();
   void ReportMemory();
-  bool Advance(double dt);
+  double Advance(double dt);
   void Visualize(bool force = false);
   void Observations(bool force = false);
   void WriteCheckpoint(double dt, bool force = false);

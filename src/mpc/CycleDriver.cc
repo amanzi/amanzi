@@ -609,11 +609,12 @@ void CycleDriver::set_dt(double dt) {
 /* ******************************************************************
 * This is used by CLM
 ****************************************************************** */
-bool CycleDriver::Advance(double dt) {
+double CycleDriver::Advance(double dt) {
 
   bool advance = true;
   bool fail = false;
   bool reinit = false;
+  double dt_new;
 
   if (tp_end_[time_period_id_] == tp_start_[time_period_id_]) 
     advance = false;
@@ -656,9 +657,12 @@ bool CycleDriver::Advance(double dt) {
       S_->set_position(TIME_PERIOD_END);
     }
 
+    dt_new = get_dt(fail);
+
     if (!reset_info_.empty())
         if (S_->time() == reset_info_.front().first)
             force_check = true;
+
 
     // make observations, vis, and checkpoints
 
@@ -666,7 +670,7 @@ bool CycleDriver::Advance(double dt) {
     if (advance) {
       pk_->CalculateDiagnostics();
       Visualize(force_vis);
-      WriteCheckpoint(get_dt(fail), force_check);   // write Checkpoint with new dt
+      WriteCheckpoint(dt_new, force_check);   // write Checkpoint with new dt
       Observations(force_obser);
       WriteWalkabout(force_check);
     }
@@ -689,7 +693,7 @@ bool CycleDriver::Advance(double dt) {
     // Otherwise this would be very broken, as flow could succeed, but
     // transport fail, and we wouldn't have a way of backing up. --ETC
   }
-  return fail;
+  return dt_new;
 }
 
 
@@ -849,7 +853,8 @@ void CycleDriver::Go() {
 #if !DEBUG_MODE
   try {
 #endif
-    bool fail = false;
+    //bool fail = false;
+
     while (time_period_id_ < num_time_periods_) {
       int start_cycle_num = S_->cycle();
       do {
@@ -864,8 +869,9 @@ void CycleDriver::Go() {
         S_->set_final_time(S_->time() + dt);
         S_->set_position(TIME_PERIOD_INSIDE);
 
-        fail = Advance(dt);
-        dt = get_dt(fail);
+        dt = Advance(dt);
+        //dt = get_dt(fail);
+
       }  // while not finished
       while ((S_->time() < tp_end_[time_period_id_]) && ((tp_max_cycle_[time_period_id_] == -1) 
                                      || (S_->cycle() - start_cycle_num <= tp_max_cycle_[time_period_id_])));
