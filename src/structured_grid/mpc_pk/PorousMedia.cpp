@@ -2429,6 +2429,8 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
       MultiFab::Copy(oldaux,get_new_data(Aux_Chem_Type),0,0,Naux,0);
     }
 
+    bool issue_subcycle_warning_msg = true;
+
     while (continue_subtr) {
 
       // Adjust dt_sub to spread out dt changes and avoid small final step
@@ -2461,22 +2463,24 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
       if (n_subtr > max_n_subcycle_transport + std::max(2.,.15*max_n_subcycle_transport))
       {
 	if (ParallelDescriptor::IOProcessor()) {
-	  if (is_first_flow_step_after_regrid) {
+	  if (is_first_flow_step_after_regrid && issue_subcycle_warning_msg) {
 	    std::cout << "TRAN: Level: "
 		      << level
 		      << " WARNING: # substeps required for dt interval surpassed max_n_subcycle_transport (= "
 		      << max_n_subcycle_transport
 		      << ").\n  Criteria skipped on first flow step after regrid, but situation can be avoided\n"
-		      << "by setting maximum stepsize appropriate."
+		      << "    by setting maximum stepsize appropriate."
 		      << std::endl;
 	  }
-	  else 
-	  {
+	  else {
 	    std::cout << "TRAN: time stepping bust!! # substeps required for dt interval surpassed "
 		      << "max_n_subcycle_transport (= " << max_n_subcycle_transport << ")." << std::endl;
 	  }
 	}
-	if (!is_first_flow_step_after_regrid) {
+	if (is_first_flow_step_after_regrid) {
+	  issue_subcycle_warning_msg = false;
+	}
+	else {
 	  BoxLib::Abort();
 	}
       }
