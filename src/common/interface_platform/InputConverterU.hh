@@ -35,7 +35,8 @@ class InputConverterU : public InputConverter {
       vo_(NULL),
       flow_single_phase_(false),
       compressibility_(false),
-      transport_permeability_(false) {};
+      transport_permeability_(false),
+      init_filename_("") {};
   ~InputConverterU() { if (vo_ != NULL) delete vo_; }
 
   // main members
@@ -112,6 +113,10 @@ class InputConverterU : public InputConverter {
 
   // global transport and chemistry constants
   std::vector<std::string> comp_names_all_;
+
+  // global state parameters
+  // -- initialization filename, different form restart
+  std::string init_filename_;
 
   // for analysis
   std::vector<std::string> vv_bc_regions_;

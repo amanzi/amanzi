@@ -68,12 +68,6 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   rho_ = std::strtod(text_content, NULL);
   out_ic.sublist("fluid_density").set<double>("value", rho_);
 
-  // out_ic.sublist("water_density").sublist("function").sublist("All")
-  //     .set<std::string>("region", "All")
-  //     .set<std::string>("component", "cell")
-  //     .sublist("function").sublist("function-constant")
-  //     .set<double>("value", rho_);
-
   out_ic.sublist("mass_density_liquid").sublist("function").sublist("All")
       .set<std::string>("region", "All")
       .set<std::string>("component", "cell")

@@ -67,6 +67,11 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   out_list.sublist("Analysis") = CreateAnalysis_();
   FilterEmptySublists_(out_list);
 
+  // miscalleneous cross-list information
+  if (init_filename_.size() > 0) {
+    out_list.sublist("State").set<std::string>("initialization filename", init_filename_);
+  }
+
   return out_list;
 }
   

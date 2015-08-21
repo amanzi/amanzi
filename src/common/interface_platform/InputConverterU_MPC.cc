@@ -102,6 +102,8 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
 
         filename = GetAttributeValueS_(element, "restart", false, "");
       }
+      if (init_filename_.size() == 0)
+          init_filename_ = GetAttributeValueS_(element, "initialize", false, "");
     }
   }
 

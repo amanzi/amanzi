@@ -230,10 +230,6 @@ terminated because its allocation of time ran out.
 
   * `"File Name`" [string] provides name of the existing checkpoint data file to restart from.
 
-  * `"initialize from checkpoint data file and do not restart`" [bool] (optional) If this is set to false 
-    (default), then a restart is performed, if it is set to true, then all fields are initialized from 
-    the checkpoint data file.
-
 .. code-block:: xml
   
   <ParameterList name="Cycle Driver">  <!-- parent list -->
@@ -256,13 +252,21 @@ State
 Sublist `"State`" allows the user to initialize various fields and field evaluators 
 using a variety of tools. 
 A field evaluator is a node in the Phalanx-like (acyclic) dependency tree. 
-The corresponding sublist of the State is named `"field evaluators`"
+The corresponding sublist of the State is named `"field evaluators`".
 The initialization sublist of the State is named `"initial conditions`"
+
+* `"initialization filename`" [string] provides name of the existing checkpoint data 
+  file. The initialization sequence is as follows. First, we try to initialize a
+  field using the provided check-point file. Second, regardless of the outcome of the
+  previous step, we try to initialize the field using the sublist `"initial conditions`".
+  By desing, the second step allows us to overwrite only part for the field.
+  This parameter is optional.
 
 .. code-block:: xml
 
   <ParameterList>  <!-- parent list -->
     <ParameterList name="State">
+      <Parameter name="initialization filename" type="string" value="CHECK00123.h5"/>
       <ParameterList name="field evaluators">
          ... list of field evaluators
       </ParameterList>
@@ -1435,7 +1439,7 @@ The remaining `"Flow`" parameters are
    </ParameterList>
 
 
-Explanatino of verbose output
+Explanation of verbose output
 .............................
 
 When verbosity is set to *high*, this PK reports information about 
@@ -1831,6 +1835,17 @@ The remaining parameters that can be used by a developer include
 * `"runtime diagnostics: regions`" [Array(string)] defines a boundary region for 
   tracking solutes. Default value is a seepage face boundary, see Flow PK.
 
+
+Explanation of verbose output
+.............................
+
+.. code-block:: xml
+
+  CycleDriver      |   Cycle 40: time(y) = 0.953452, dt(y) = 0.238395
+  TI::BDF1         |    step 40 T = 3.00887e+07 [sec]  dT = 7.52316e+06
+  TI::BDF1         |    preconditioner lag is 20 out of 20
+  TI::BDF1         |    success: 4 nonlinear itrs error=7.87642e-08
+  TI::BDF1         |    TS:40 FS:0 NS:64 PC:42 64 LS:0 dt:1.0000e+03 7.5232e+06
 
 Chemistry PK
 ------------
