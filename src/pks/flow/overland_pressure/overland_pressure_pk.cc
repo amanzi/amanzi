@@ -70,7 +70,7 @@ OverlandPressureFlow::OverlandPressureFlow(const Teuchos::RCP<Teuchos::Parameter
 
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))
-    plist_->set("absolute error tolerance", 0.01 * 55500.0); // h * nl
+    plist_->set("absolute error tolerance", 0.01 * 55000.0); // h * nl
 
 }
 
@@ -171,13 +171,20 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   //    diffusion
   Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("Diffusion PC");
   mfd_pc_plist.set("nonlinear coefficient", coef_location);
-  mfd_pc_plist.set("scaled constraint equation", mfd_plist.get<bool>("scaled constraint equation"));
+  mfd_pc_plist.set("scaled constraint equation",
+                   mfd_plist.get<bool>("scaled constraint equation"));
+  mfd_pc_plist.set("constraint equation scaling cutoff",
+                   mfd_plist.get<double>("constraint equation scaling cutoff", 1.0));
   if (!mfd_pc_plist.isParameter("discretization primary"))
-    mfd_pc_plist.set("discretization primary", mfd_plist.get<std::string>("discretization primary"));
-  if (!mfd_pc_plist.isParameter("discretization secondary") && mfd_plist.isParameter("discretization secondary"))
-    mfd_pc_plist.set("discretization secondary", mfd_plist.get<std::string>("discretization secondary"));
+    mfd_pc_plist.set("discretization primary",
+                     mfd_plist.get<std::string>("discretization primary"));
+  if (!mfd_pc_plist.isParameter("discretization secondary") &&
+      mfd_plist.isParameter("discretization secondary"))
+    mfd_pc_plist.set("discretization secondary",
+                     mfd_plist.get<std::string>("discretization secondary"));
   if (!mfd_pc_plist.isParameter("schema"))
-    mfd_pc_plist.set("schema", mfd_plist.get<Teuchos::Array<std::string> >("schema"));
+    mfd_pc_plist.set("schema",
+                     mfd_plist.get<Teuchos::Array<std::string> >("schema"));
 
   preconditioner_diff_ = opfactory.Create(mesh_, bc_, mfd_pc_plist);
   preconditioner_diff_->Setup(Teuchos::null);
@@ -232,8 +239,9 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   //    Potentially create a linear solver
   if (plist_->isSublist("linear solver")) {
-    Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
+    Teuchos::ParameterList& linsolve_sublist = plist_->sublist("linear solver");
     AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
+
     lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);
   } else {
     lin_solver_ = preconditioner_;
