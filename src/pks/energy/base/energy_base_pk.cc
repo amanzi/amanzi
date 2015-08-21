@@ -393,6 +393,7 @@ bool EnergyBase::UpdateConductivityData_(const Teuchos::Ptr<State>& S) {
     if (uw_cond->HasComponent("face"))
       uw_cond->ScatterMasterToGhosted("face");
   }
+  return update;
 }
 
 // -----------------------------------------------------------------------------
