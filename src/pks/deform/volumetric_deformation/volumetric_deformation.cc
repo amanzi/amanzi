@@ -4,6 +4,7 @@
 
    License: see $ATS_DIR/COPYRIGHT
    Author: Markus Berndt
+           Daniil Svyatskiy
 
    Interface for the Volumetric Deformation PK.
 
@@ -23,18 +24,19 @@
 
 namespace Amanzi {
 namespace Deform {
-
+     
 using namespace Amanzi::AmanziMesh;
 
-RegisteredPKFactory<VolumetricDeformation> VolumetricDeformation::reg_("volumetric deformation");
+// RegisteredPKFactory<VolumetricDeformation> VolumetricDeformation::reg_("volumetric deformation");
 
 VolumetricDeformation::VolumetricDeformation(const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution):
-    PKDefaultBase(plist, FElist, solution),
-    PKPhysicalBase(plist, FElist, solution) {
-  poro_key_ = plist_->get<std::string>("porosity key","porosity");
+  PKDefaultBase(plist, FElist, solution),
+  PKPhysicalBase(plist, FElist, solution) {
+  poro_key_ = plist_->get<std::string>("porosity key","base_porosity");
   dt_ = plist_->get<double>("initial time step");
+  deform_value_ = 0.;
 
   // The deformation mode describes how to calculate new cell volume from a
   // provided function and the old cell volume.
@@ -45,6 +47,12 @@ VolumetricDeformation::VolumetricDeformation(const Teuchos::RCP<Teuchos::Paramet
     deform_mode_ = DEFORM_MODE_THAW_FRONT;
     deform_region_ = plist_->get<std::string>("deformation region");
     min_vol_frac_ = plist_->get<double>("minimum volume fraction");
+  } else if (mode_name == "saturation") {
+    deform_mode_ = DEFORM_MODE_SATURATION;
+    deform_region_ = plist_->get<std::string>("deformation region");
+    deform_value_ = plist_->get<double>("deformation porosity value", 0.3);
+    min_vol_frac_ = plist_->get<double>("minimum volume fraction");
+    min_S_liq_ = plist_->get<double>("minimum liquid saturation");
   } else {
     Errors::Message mesg("Unknown deformation mode specified.  Valid: [dVdt, thaw front].");
     Exceptions::amanzi_throw(mesg);
@@ -91,12 +99,10 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
   }
 
   // create storage for primary variable, rock volume
-  S->RequireField(key_, name_)->SetMesh(mesh_)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireField(key_, name_)->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
 
   // Create storage and a function for cell volume change
-  Teuchos::RCP<CompositeVectorSpace> cv_fac =
-      S->RequireField("cell_volume_change", name_);
+  Teuchos::RCP<CompositeVectorSpace> cv_fac =  S->RequireField("cell_volume_change", name_);
   cv_fac->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
 
   switch(deform_mode_) {
@@ -125,6 +131,24 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
       thaw_front_func_ = Teuchos::rcp(fac.Create(func_plist));
       break;
     }
+    case (DEFORM_MODE_SATURATION): {
+      // Create storage for the initial face centroids
+      // S->RequireField("initial_face_height", name_)->SetMesh(mesh_)
+      //     ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
+
+      // Create storage for the initial cell volumes
+      // S->RequireField("initial_cell_volume", name_)->SetMesh(mesh_)
+      //   ->SetComponent("cell", AmanziMesh::CELL, 1);
+      // S->RequireField("integrated_cell_volume", name_)->SetMesh(mesh_)
+      //   ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+      // create the function to determine the front location
+      // Teuchos::ParameterList func_plist =
+      //     plist_->sublist("thaw front function");
+      // FunctionFactory fac;
+      // thaw_front_func_ = Teuchos::rcp(fac.Create(func_plist));
+      break;
+    }
 
     default:
       ASSERT(0);
@@ -148,8 +172,7 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
 
   S->RequireFieldEvaluator("cell_volume");
   S->RequireFieldEvaluator("porosity");
-  S->RequireField("porosity")->SetMesh(mesh_)->SetGhosted()
-      ->AddComponent("cell",AmanziMesh::CELL,1);
+  S->RequireField("porosity")->SetMesh(mesh_)->SetGhosted()->AddComponent("cell",AmanziMesh::CELL,1);
 
   // Strategy-specific setup
   switch (strategy_) {
@@ -193,14 +216,18 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
 void VolumetricDeformation::initialize(const Teuchos::Ptr<State>& S) {
   PKPhysicalBase::initialize(S);
 
-  // the PK's initial condition sets the initial porosity.  From this, we
+  //the PK's initial condition sets the initial porosity.  From this, we
   // calculate the actual initial condition, which is the rock volume.
-  Epetra_MultiVector& rock_vol = *S->GetFieldData(key_,name_)
+  //  std::cout<<"name "<<name_<<" key_ "<<key_<<"\n";
+
+  Epetra_MultiVector& base_poro = *S->GetFieldData(key_,name_)
       ->ViewComponent("cell",false);
-  int ncells = rock_vol.MyLength();
-  for (int c=0; c!=ncells; ++c) {
-    rock_vol[0][c] = (1.0 - rock_vol[0][c]) * mesh_->cell_volume(c);
+  AmanziMesh::Entity_ID_List cells;
+  mesh_->get_set_entities(deform_region_, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
+  for (AmanziMesh::Entity_ID_List::const_iterator c=cells.begin(); c!=cells.end(); ++c) {
+    base_poro[0][*c] = deform_value_;
   }
+  
 
   // initialize the deformation
   S->GetFieldData("cell_volume_change",name_)->PutScalar(0.);
@@ -221,7 +248,8 @@ void VolumetricDeformation::initialize(const Teuchos::Ptr<State>& S) {
         S->GetField("initial_face_height",name_)->set_initialized();
       }
 
-      { // initialize the cell volume
+      { 
+        // initialize the cell volume
         Epetra_MultiVector& cv =
             *S->GetFieldData("initial_cell_volume",name_)
             ->ViewComponent("cell",false);
@@ -232,9 +260,51 @@ void VolumetricDeformation::initialize(const Teuchos::Ptr<State>& S) {
         }
         *S->GetFieldData("integrated_cell_volume", name_)
             ->ViewComponent("cell",false) = cv;
+        *S->GetFieldData("cell_volume", name_)
+            ->ViewComponent("cell",false) = cv;
 
         S->GetField("integrated_cell_volume",name_)->set_initialized();
         S->GetField("initial_cell_volume",name_)->set_initialized();
+        S->GetField("cell_volume",name_)->set_initialized();
+      }
+      break;
+    }
+  case (DEFORM_MODE_SATURATION): {
+      // {  // initialize the face centroid locations
+      //   Epetra_MultiVector& face_height =
+      //       *S->GetFieldData("initial_face_height",name_)
+      //       ->ViewComponent("face",true);
+
+      //   unsigned int nfaces_ghosted = face_height.MyLength();
+      //   for (unsigned int f=0; f!=nfaces_ghosted; ++f) {
+      //     face_height[0][f] = mesh_->face_centroid(f)[2];
+      //   }
+
+      //   S->GetField("initial_face_height",name_)->set_initialized();
+      // }
+
+      { 
+        // initialize the cell volume
+        //S_next_->GetFieldEvaluator("cell_volume") -> HasFieldChanged(S_next_.ptr(), name_);
+        Epetra_MultiVector& cv =
+            *S->GetFieldData("cell_volume","cell_volume")
+            ->ViewComponent("cell",false);
+
+        unsigned int ncells = cv.MyLength();
+        for (unsigned int c=0; c!=ncells; ++c) {
+          cv[0][c] = mesh_->cell_volume(c);
+        }
+
+
+        // // *S->GetFieldData("integrated_cell_volume", name_)
+        // //     ->ViewComponent("cell",false) = cv;
+        // // *S->GetFieldData("cell_volume", name_)
+        // //     ->ViewComponent("cell",false) = cv
+        //   ;
+
+        // // S->GetField("integrated_cell_volume",name_)->set_initialized();
+        // // S->GetField("initial_cell_volume",name_)->set_initialized();
+        // S->GetField("cell_volume",name_)->set_initialized();
       }
       break;
     }
@@ -319,10 +389,13 @@ bool VolumetricDeformation::advance(double dt) {
                << S_next_->time() << " with step size " << dt << std::endl
                << "----------------------------------------------------------------" << std::endl;
 
+
   std::vector<double> ss(1,S_next_->time());
   double ss0 = S_->time();
   double dT = ss[0] - ss0;
   double T_mid = (ss[0] + ss0) / 2.;
+  double min_height = 1e+23;
+  double max_height = -1e+23;
 
   // Collect data from state
   Teuchos::RCP<CompositeVector> dcell_vol_vec =
@@ -390,6 +463,7 @@ bool VolumetricDeformation::advance(double dt) {
       Epetra_MultiVector& cv1 = *S_next_->GetFieldData("integrated_cell_volume",name_)
           ->ViewComponent("cell",false);
 
+
       double thaw_height = (*thaw_front_func_)(ss);
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
         *vo_->os() << "Thaw Height = " << thaw_height << std::endl;
@@ -449,6 +523,80 @@ bool VolumetricDeformation::advance(double dt) {
         }
       }
 
+      break;
+    }
+    case (DEFORM_MODE_SATURATION): {
+      const Epetra_MultiVector& cv = *S_next_->GetFieldData("cell_volume")->ViewComponent("cell",true);
+      // const Epetra_MultiVector& face_height =
+      //     *S_next_->GetFieldData("initial_face_height")->ViewComponent("face",true);
+      // const Epetra_MultiVector& cv0 =
+      //     *S_next_->GetFieldData("initial_cell_volume")->ViewComponent("cell",false);
+      const Epetra_MultiVector& s_liq =
+        *S_->GetFieldData("saturation_liquid")->ViewComponent("cell",false);
+      const Epetra_MultiVector& s_ice =
+        *S_->GetFieldData("saturation_ice")->ViewComponent("cell",false);
+      const Epetra_MultiVector& s_gas =
+        *S_->GetFieldData("saturation_gas")->ViewComponent("cell",false);
+      // Epetra_MultiVector& cv1 = *S_next_->GetFieldData("integrated_cell_volume",name_)
+      //     ->ViewComponent("cell",false);
+      const Epetra_MultiVector& temp =
+          *S_->GetFieldData("temperature")->ViewComponent("cell",false);
+      const Epetra_MultiVector& poro =
+          *S_->GetFieldData("porosity")->ViewComponent("cell",false);
+      const Epetra_MultiVector& base_poro =
+          *S_->GetFieldData("base_porosity")->ViewComponent("cell",false);
+
+      Epetra_MultiVector& dcell_vol_c = *dcell_vol_vec->ViewComponent("cell",false);
+      int dim = mesh_->space_dimension();
+      AmanziGeometry::Point centroid(dim);
+      double smallest_cv = 1.e10;
+      double smallest_cv_frac = 1.;
+      AmanziMesh::Entity_ID_List cells;
+      mesh_->get_set_entities(deform_region_, AmanziMesh::CELL,
+              AmanziMesh::OWNED, &cells);
+      for (AmanziMesh::Entity_ID_List::const_iterator c=cells.begin(); c!=cells.end(); ++c) {
+
+        centroid = mesh_->cell_centroid(*c);
+        max_height = std::max(max_height, centroid[dim - 1]);
+
+        double frac;
+        frac = min_S_liq_ +  s_ice[0][*c] + s_gas[0][*c];
+        //frac = 1.;
+              
+        // renormalize to min_vol_frac - 1
+        double cv_frac = (frac * (1.-min_vol_frac_) + min_vol_frac_);
+        double soil_mass_vol = cv[0][*c]*(1 - base_poro[0][*c]);
+
+        //cv_frac = frac;
+        cv_frac = std::min(cv_frac,1.);
+
+        smallest_cv_frac = std::min(smallest_cv_frac, cv_frac);
+        smallest_cv = std::min(smallest_cv, cv_frac * cv[0][*c]);
+        dcell_vol_c[0][*c] = (cv_frac - 1)*cv[0][*c]*poro[0][*c];
+
+        //        std::cout<<*c<<" "<<cv[0][*c]<<" "<<dcell_vol_c[0][*c]<<" frac "<<frac<<" poro "<<poro[0][*c]<<" ice "<<s_ice[0][*c]<<" liq "<<s_liq[0][*c]<<" gas "<<s_gas[0][*c]<< " soil vol "<<soil_mass_vol<<"\n";
+        //cv1[0][*c] = cv_frac*cv0[0][*c];
+      }
+
+      if (strategy_ == DEFORM_STRATEGY_GLOBAL_OPTIMIZATION ||
+          strategy_ == DEFORM_STRATEGY_MSTK) {
+      //   // set up the fixed list
+        fixed_node_list = Teuchos::rcp(new AmanziMesh::Entity_ID_List());
+        AmanziMesh::Entity_ID_List nodes;
+        mesh_->get_set_entities("bottom face", AmanziMesh::NODE,
+                                AmanziMesh::OWNED, &nodes);
+        for (AmanziMesh::Entity_ID_List::const_iterator n=nodes.begin();
+             n!=nodes.end(); ++n) {                  
+          fixed_node_list->push_back(*n);
+        }
+      //   unsigned int nnodes = mesh_->num_entities(AmanziMesh::NODE,AmanziMesh::USED);
+      //   for (unsigned int n=0; n!=nnodes; ++n) {
+      //     AmanziGeometry::Point nc(3);
+      //     mesh_->node_get_coordinates(n, &nc);
+      //     if (nc[2] < thaw_height) fixed_node_list->push_back(n);
+      //}
+      }
+      //exit(0);
       break;
     }
     default:
@@ -628,32 +776,70 @@ bool VolumetricDeformation::advance(double dt) {
       // collect needed data, ghosted
       // -- cell vol
       Teuchos::RCP<const CompositeVector> cv_vec = S_->GetFieldData("cell_volume");
-      cv_vec->ScatterMasterToGhosted("cell");
-      const Epetra_MultiVector& cv = *cv_vec->ViewComponent("cell",true);
+      const Epetra_MultiVector& cv = *cv_vec->ViewComponent("cell");
+      // Teuchos::RCP<const CompositeVector> cv_vec_next = S_next_->GetFieldData("cell_volume");
+      // const Epetra_MultiVector& cv_next = *cv_vec_next->ViewComponent("cell");
 
-      // -- rock vol
-      Teuchos::RCP<const CompositeVector> rock_vol_vec = S_->GetFieldData(key_);
-      rock_vol_vec->ScatterMasterToGhosted("cell");
-      const Epetra_MultiVector& rock_vol_c = *rock_vol_vec->ViewComponent("cell",true);
+
+
+      Teuchos::RCP<const CompositeVector> poro_vec = S_->GetFieldData("porosity");
+      const Epetra_MultiVector& poro = *poro_vec->ViewComponent("cell");
+
+      const Epetra_MultiVector& s_liq =
+        *S_->GetFieldData("saturation_liquid")->ViewComponent("cell",false);
+      const Epetra_MultiVector& s_ice =
+        *S_->GetFieldData("saturation_ice")->ViewComponent("cell",false);
+      const Epetra_MultiVector& s_gas =
+        *S_->GetFieldData("saturation_gas")->ViewComponent("cell",false);
+    
 
       // -- dcell vol
-      dcell_vol_vec->ScatterMasterToGhosted("cell");
+      //dcell_vol_vec->ScatterMasterToGhosted("cell");
       const Epetra_MultiVector& dcell_vol_c =
           *dcell_vol_vec->ViewComponent("cell",true);
 
       // data needed in vectors
       int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+      int nnodes = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
       std::vector<double> target_cell_vols(ncells);
       std::vector<double> min_cell_vols(ncells);
+      int dim = mesh_->space_dimension();
+      AmanziGeometry::Point centroid(dim);
+      min_height = max_height;
 
       for (int c=0; c!=ncells; ++c) {
         target_cell_vols[c] = cv[0][c] + dcell_vol_c[0][c];
-        min_cell_vols[c] = rock_vol_c[0][c] + .001 * cv[0][c];
+        min_cell_vols[c] = (1 - poro[0][c])* cv[0][c] +  (poro[0][c]*s_ice[0][c]) * cv[0][c];
+        //min_cell_vols[c] *= 0.5;
         // min vol is rock vol + a bit
+        if (fabs(cv[0][c] - target_cell_vols[c]) > 0){
+          std::cout<<c<<": "<<" "<<cv[0][c]<<" "<<target_cell_vols[c]<<" "<<min_cell_vols[c]<<"\n";
+          centroid = mesh_->cell_centroid(c);
+          min_height = std::min(min_height, centroid[dim - 1]);
+        }
+        ASSERT(min_cell_vols[c] <= target_cell_vols[c]);
       }
 
+
+      std::cout<<"min_height "<<min_height<<"\n";
+        Teuchos::RCP<AmanziMesh::Entity_ID_List>  below_node_list = Teuchos::rcp(new AmanziMesh::Entity_ID_List());
+        // AmanziMesh::Entity_ID_List nodes;
+        // mesh_->get_set_entities("bottom face", AmanziMesh::NODE,
+        //                         AmanziMesh::OWNED, &nodes);
+        // for (AmanziMesh::Entity_ID_List::const_iterator n=nodes.begin();
+        //      n!=nodes.end(); ++n) {                  
+        //   fixed_node_list->push_back(*n);
+        // }
+      for (unsigned int n=0; n!=nnodes; ++n) {
+        AmanziGeometry::Point nc(3);
+        mesh_->node_get_coordinates(n, &nc);
+        if (nc[dim-1] < min_height) 
+          below_node_list->push_back(n);
+      }
+      //exit(0);
+
       // call deform
-      mesh_nc_->deform(target_cell_vols, min_cell_vols, *fixed_node_list, true);
+      mesh_nc_->deform(target_cell_vols, min_cell_vols, *below_node_list, true);
 
       break;
     }
@@ -661,11 +847,14 @@ bool VolumetricDeformation::advance(double dt) {
       ASSERT(0);
   }
 
+  Teuchos::RCP<const CompositeVector> cv_vec = S_->GetFieldData("cell_volume");
+  //cv_vec->ScatterMasterToGhosted("cell");
+  const Epetra_MultiVector& cv = *cv_vec->ViewComponent("cell",true);
+
   // now we have to adapt the surface mesh to the new volume mesh
   // extract the correct new coordinates for the surface from the domain
   // mesh and update the surface mesh accordingly
   if (surf_mesh_ != Teuchos::null) {
-
     // WORKAROUND for non-communication in deform() by Mesh
     //    int nsurfnodes = surf_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
     //            Amanzi::AmanziMesh::OWNED);
@@ -738,27 +927,32 @@ bool VolumetricDeformation::advance(double dt) {
     }
   }
 
-  // rock vol should never change!
-  // // setting deformation to be rock_volume at old time, (1-poro_old)*CV_old
-  // {
-  //   Epetra_MultiVector& def = *S_next_->GetFieldData(key_,name_)
-  //       ->ViewComponent("cell",false);
+  // update cell volumes
+  S_next_->GetFieldEvaluator("cell_volume") -> HasFieldChanged(S_next_.ptr(), name_);
 
-  //   int ncells = def.MyLength();
-  //   for (int c=0; c!=ncells; ++c) {
-  //     def[0][c] = (1. - poro[0][c]) * cv[0][c];
-  //   }
-  // }
 
-  // mark the placeholder evaluator as changed
-  solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
+  // update base porosity
+  Teuchos::RCP<const CompositeVector> cv_vec_new = S_next_->GetFieldData("cell_volume");
 
-  // REMOVE ME --etc
-  // update porosity and cell volumes
-  S_next_->GetFieldEvaluator("cell_volume")
-      ->HasFieldChanged(S_next_.ptr(), name_);
-  S_next_->GetFieldEvaluator("porosity")
-      ->HasFieldChanged(S_next_.ptr(), name_);
+  cv_vec->ScatterMasterToGhosted("cell");
+  const Epetra_MultiVector& cv_new = *cv_vec_new->ViewComponent("cell",false);
+
+  Teuchos::RCP<const CompositeVector> base_poro_vec_old = S_->GetFieldData(poro_key_);
+  const Epetra_MultiVector& base_poro_old = *base_poro_vec_old->ViewComponent("cell");
+  // Output
+  Epetra_MultiVector& base_poro = *S_next_->GetFieldData(key_, name_)->ViewComponent("cell");
+
+  int ncells = base_poro.MyLength();
+  for (int c=0; c!=ncells; ++c) {
+    base_poro[0][c] = 1 - (1. - base_poro_old[0][c]) * cv[0][c]/cv_new[0][c];
+
+    // if (fabs(cv[0][c]/cv_new[0][c] - 1)>0.001){
+    //   std::cout<<"volumes "<<c<<": "<<cv[0][c]<<" "<<cv_new[0][c]<<"\n";
+    //   std::cout<<"porosity "<<base_poro[0][c] <<" "<<base_poro_old[0][c]<<"\n";
+    // }
+  }  
+
+  S_next_->GetFieldEvaluator("porosity") -> HasFieldChanged(S_next_.ptr(), name_);
 
   return false;
 }

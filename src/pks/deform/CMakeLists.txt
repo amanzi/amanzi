@@ -38,3 +38,15 @@ generate_evaluators_registration_header(
   INSTALL    True
   )
 
+# volumetric_deformation/
+
+register_evaluator_with_factory(
+  HEADERFILE volumetric_deformation/volumetric_deformation_reg.hh
+  LISTNAME  VOLUMETRIC_DEFORMATION_EVAL)
+
+generate_evaluators_registration_header(
+  HEADERFILE deform_volumetric_deformation_registration.hh
+  LISTNAME   VOLUMETRIC_DEFORMATION_EVAL
+  INSTALL    True
+  )
+

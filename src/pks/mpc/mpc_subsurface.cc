@@ -34,7 +34,7 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
   // supress energy's vision of advective terms as we can do better
   Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
   plist_->sublist("PKs").sublist(pk_order[1]).set("supress advective terms in preconditioner", true);
-
+  
   // set up the sub-pks
   StrongMPC<PKPhysicalBDFBase>::setup(S);
   mesh_ = S->GetMesh("domain");
