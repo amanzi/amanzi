@@ -234,7 +234,7 @@ double OverlandFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       int ncells = dvec->size(*comp,false);
       for (unsigned int c=0; c!=ncells; ++c) {
         double enorm_c = std::abs(h * dvec_v[0][c])
-            / ((atol_*cv[0][c] + rtol_*std::abs(pd[0][c]))*cv[0][c]);
+            / (atol_*cv[0][c] + rtol_*std::abs(pd[0][c])*cv[0][c]);
 
         if (enorm_c > enorm_comp) {
           enorm_comp = enorm_c;
