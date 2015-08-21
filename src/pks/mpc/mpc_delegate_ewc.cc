@@ -64,6 +64,11 @@ void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
     ASSERT(0);
   } else if (precon_string == "smart ewc") {
     precon_type_ = PRECON_SMART_EWC;
+  } else {
+    Errors::Message message;
+    message << "EWC Delegate: invalid preconditioner string: \"" << precon_string
+            << "\", valid are \"none\", \"ewc\", \"smart ewc\"";
+    Exceptions::amanzi_throw(message);
   }
 
   // select the method used for nonlinear prediction
