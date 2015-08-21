@@ -198,21 +198,21 @@ Time period control
 A set of times that simulation hits exactly can be used to avoid problems with
 sudden change of boundary or source conditions.
 
-* `"Start Times`" [Array(double)] the list of times that we want to hit exactly.
+* `"start times`" [Array(double)] the list of times that we want to hit exactly.
 
-* `"Initial Time Step`" [Array(double)] the first time step after we hit a special
+* `"initial time step`" [Array(double)] the first time step after we hit a special
   time specified above.
 
-* `"Maximum Time Step`" [Array(double)] allows the user to limit the time step for a 
+* `"maximum time step`" [Array(double)] allows the user to limit the time step for a 
   particual simulation period.
 
 .. code-block:: xml
 
    <ParameterList name="Cycle Driver">  <!-- parent list -->
-     <ParameterList name="Time Period Control">
-       <Parameter name="Start Times" type="Array(double)" value="{3.0e+10}"/>
-       <Parameter name="Initial Time Step" type="Array(double)" value="{1.0e+02}"/>
-       <Parameter name="Maximum Time Step" type="Array(double)" value="{4.3234e+17}"/>
+     <ParameterList name="time period control">
+       <Parameter name="start times" type="Array(double)" value="{3.0e+10}"/>
+       <Parameter name="initial time step" type="Array(double)" value="{1.0e+02}"/>
+       <Parameter name="maximum time step" type="Array(double)" value="{4.3234e+17}"/>
      </ParameterList>
    </ParameterList>
 
@@ -1435,8 +1435,8 @@ The remaining `"Flow`" parameters are
    </ParameterList>
 
 
-Verbose output
-..............
+Explanatino of verbose output
+.............................
 
 When verbosity is set to *high*, this PK reports information about 
 current status of the simulation.
@@ -1504,7 +1504,20 @@ and :math:`\boldsymbol{v}` is average pore velocity.
 Physical models and assumptions
 ...............................
 
-To be written.
+This list is used to summarize physical models and assumptions, such as
+coupling with other PKs.
+This list is often generated or extended by a high-level MPC PK.
+
+* `"permeability field is required`" [bool] indicate if some transport features
+  require absolute permeability. Default is *false*.
+
+.. code-block:: xml
+
+   <ParameterList name="Transport">  <!-- parent list -->
+     <ParameterList name="physical models and assumptions">
+       <Parameter name="permeability field is required" type="bool" value="false"/>
+     </ParameterList>
+   </ParameterList>
 
 
 Global parameters
@@ -3834,9 +3847,9 @@ Observation file
 A user may request any number of specific observations from Amanzi.  Each labeled Observation Data quantity involves a field quantity, a model, a region from which it will extract its source data, and a list of discrete times 
 for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of Amanzi arguments.
 
-* `"Observation Data`" [list] can accept multiple lists for named observations (OBSERVATION)
+* `"Observation Data`" [list] can accept multiple lists for named observations.
 
-  * `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
+  * `"observation output filename`" [string] user-defined name for the file that the observations are written to.
     The file name can contain relative or absolute path to an *existing* directory only. 
 
   * `"precision`" [int] defined the number of significant digits. Default is 16.
@@ -3893,9 +3906,9 @@ The following Observation Data functionals are currently supported.  All of them
 
    <ParameterList>  <!-- parent list -->
      <ParameterList name="Observation Data">
-       <Parameter name="Observation Output Filename" type="string" value="obs_output.out"/>
+       <Parameter name="observation output filename" type="string" value="obs_output.out"/>
        <Parameter name="precision" type="int" value="10"/>
-       <ParameterList name="some observation name">
+       <ParameterList name="SOME OBSERVATION NAME">
          <Parameter name="region" type="string" value="some point region name"/>
          <Parameter name="functional" type="string" value="Observation Data: Point"/>
          <Parameter name="variable" type="string" value="Volumetric water content"/>
@@ -4043,13 +4056,13 @@ at intervals corresponding to the numerical time step values or intervals corres
 
   * `"dynamic mesh`" [bool] (false) write mesh data for every visualization dump, this facilitates visualizing deforming meshes.
 
-  * `"Write Regions`" [list] contains auxiliary fields with region ids to write into the visualization file.
+  * `"write regions`" [list] contains auxiliary fields with region ids to write into the visualization file.
 
     * `"REGION_NAME`" [Array(string)] the user-defined field name and the list of assigned regions. 
       The first entry in the regions array is marked with the value 1.0 in the array, the second with the value 2.0, and so forth. 
       The code ignores entries in the regions array that are not valid regions that contain cells.
 
-  * `"Write Partitions`" [bool] (false) if this parameter is true, then write an array into the visualization file that contains the rank number of the processor that owns a mesh cell. 
+  * `"write partitions`" [bool] (false) if this parameter is true, then write an array into the visualization file that contains the rank number of the processor that owns a mesh cell. 
 
 .. code-block:: xml
 
@@ -4066,7 +4079,7 @@ at intervals corresponding to the numerical time step values or intervals corres
 
        <Parameter name="dynamic mesh" type="bool" value="false"/>
 
-       <ParameterList name="Write Regions">
+       <ParameterList name="write regions">
          <Parameter name="regions" type="Array(string)" value="{Obs_r1, Obs_r1, Obs_r3}"/>
          <Parameter name="wells" type="Array(string)" value="{Obs_r1}"/>
        </ParameterList>

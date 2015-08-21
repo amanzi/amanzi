@@ -28,6 +28,7 @@ class FlowDomainFunction : public PK_DomainFunction {
  public:
   FlowDomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       PK_DomainFunction(mesh) {};
+  ~FlowDomainFunction() {};
 };
 
 }  // namespace Flow

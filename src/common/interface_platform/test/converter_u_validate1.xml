@@ -126,10 +126,10 @@
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{Tc-99}"/>
-    <ParameterList name="Time Period Control">
-      <Parameter name="Start Times" type="Array(double)" value="{6.1729344e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
-      <Parameter name="Initial Time Step" type="Array(double)" value="{1.0e+01, 1.0e+01, 1.0e+01, 1.0}"/>
-      <Parameter name="Maximum Time Step" type="Array(double)" value="{4.32340e+17, 4.32340e+17, 4.32340e+17, 4.32340e+17}"/>
+    <ParameterList name="time period control">
+      <Parameter name="start times" type="Array(double)" value="{6.1729344e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
+      <Parameter name="initial time step" type="Array(double)" value="{1.0e+01, 1.0e+01, 1.0e+01, 1.0}"/>
+      <Parameter name="maximum time step" type="Array(double)" value="{4.32340e+17, 4.32340e+17, 4.32340e+17, 4.32340e+17}"/>
     </ParameterList>
     <ParameterList name="VerboseObject">
       <Parameter name="Verbosity Level" type="string" value="high"/>

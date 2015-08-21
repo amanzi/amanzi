@@ -203,7 +203,7 @@ void PK_DomainFunction::ComputeDistribute(double t0, double t1, double* weight)
     }
     else if (action == CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
-        if (*id < ncells_owned) domain_volume += mesh_->cell_volume(*id);
+        if (*id < ncells_owned) domain_volume += mesh_->cell_volume(*id) * weight[*id];
       }
       double volume_tmp = domain_volume;
       mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);

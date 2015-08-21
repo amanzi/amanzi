@@ -105,8 +105,9 @@ void DeformingCellVolumeEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 void DeformingCellVolumeEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-  Errors::Message message("Deforming cell volume's derivatives are not implemented");
-  Exceptions::amanzi_throw(message);
+  
+	//Errors::Message message("Deforming cell volume's derivatives are not implemented");
+	// Exceptions::amanzi_throw(message);
 }
 
 

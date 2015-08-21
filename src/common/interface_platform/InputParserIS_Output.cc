@@ -289,7 +289,7 @@ Teuchos::ParameterList InputParserIS::CreateObservationDataList_(Teuchos::RCP<Te
       Teuchos::ParameterList olist = plist->sublist("Output").sublist("Observation Data");
       // If the node has value refering to the name of the output file, grab it
       if (olist.isParameter("Observation Output Filename")) {
-        obs_list.set<std::string>("Observation Output Filename", olist.get<std::string>("Observation Output Filename"));
+        obs_list.set<std::string>("observation output filename", olist.get<std::string>("Observation Output Filename"));
       } else {
         Exceptions::amanzi_throw(Errors::Message("The required parameter Observation Output Filename was not specified."));
       }

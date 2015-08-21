@@ -680,7 +680,7 @@ PorousMedia::restart (Amr&          papa,
       diffnp1_cc = new MultiFab(grids, ndiff, 1);
     }
 
-  is_first_step_after_regrid = false;
+  is_first_flow_step_after_regrid = false;
   old_intersect_new          = grids;
 
   //
@@ -1190,7 +1190,7 @@ PorousMedia::initData ()
       BL_ASSERT(chem_ok);
     }
 
-    is_first_step_after_regrid = true;
+    is_first_flow_step_after_regrid = true;
     old_intersect_new          = grids;
 }
 
@@ -1713,7 +1713,7 @@ PorousMedia::init (AmrLevel& old)
   }
     
   old_intersect_new          = BoxLib::intersect(grids,oldns->boxArray());
-  is_first_step_after_regrid = true;
+  is_first_flow_step_after_regrid = true;
 }
 
 void
@@ -2111,6 +2111,7 @@ PorousMedia::multilevel_advance (Real  time,
     }
   }
 
+  is_first_flow_step_after_regrid = false;
   return step_ok;
 }
 
@@ -2428,6 +2429,8 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
       MultiFab::Copy(oldaux,get_new_data(Aux_Chem_Type),0,0,Naux,0);
     }
 
+    bool issue_subcycle_warning_msg = true;
+
     while (continue_subtr) {
 
       // Adjust dt_sub to spread out dt changes and avoid small final step
@@ -2457,22 +2460,29 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
                         "TRAN",tmax_subtr,t_eps); 
       }
       n_subtr++;
-      if (n_subtr > max_n_subcycle_transport + std::max(2.,.15*max_n_subcycle_transport)) {
+      if (n_subtr > max_n_subcycle_transport + std::max(2.,.15*max_n_subcycle_transport))
+      {
 	if (ParallelDescriptor::IOProcessor()) {
-	  std::cout << "TRAN: Level: "
-		    << level
-		    << " time stepping bust!!  # substeps required for dt interval surpassed max_n_subcycle_transport (= "
-		    << max_n_subcycle_transport
-		    << ")."
-		    << std::endl;
+	  if (is_first_flow_step_after_regrid && issue_subcycle_warning_msg) {
+	    std::cout << "TRAN: Level: "
+		      << level
+		      << " WARNING: # substeps required for dt interval surpassed max_n_subcycle_transport (= "
+		      << max_n_subcycle_transport
+		      << ").\n  Criteria skipped on first flow step after regrid, but situation can be avoided\n"
+		      << "    by setting maximum stepsize appropriate."
+		      << std::endl;
+	  }
+	  else {
+	    std::cout << "TRAN: time stepping bust!! # substeps required for dt interval surpassed "
+		      << "max_n_subcycle_transport (= " << max_n_subcycle_transport << ")." << std::endl;
+	  }
 	}
-	if (PMParent()->levelSteps(level)==0  && ParallelDescriptor::IOProcessor()) {
-	  std::cout << "TRAN: Level: "
-		    << level
-		    << ". Either reduce the initial time step or increase max_n_subcycle_transport and re-run"
-		    << std::endl;
+	if (is_first_flow_step_after_regrid) {
+	  issue_subcycle_warning_msg = false;
 	}
-	BoxLib::Abort();
+	else {
+	  BoxLib::Abort();
+	}
       }
 
       // Set time interval for this advection step, for State_Type
@@ -4870,7 +4880,8 @@ PorousMedia::computeNewDt (int                   finest_level,
   }
 
   int n_factor = 1;
-  for (int i = 0; i <= max_level; i++)
+  //for (int i = 0; i <= max_level; i++)
+  for (int i = 0; i <= finest_level; i++)
   {
       n_factor   *= n_cycle[i];
       dt_level[i] = dt_0/( (Real)n_factor );
@@ -5072,7 +5083,6 @@ PorousMedia::post_timestep (int crse_iteration)
   }
 
   old_intersect_new          = grids;
-  is_first_step_after_regrid = false;
 }
 
 PMAmr*
@@ -5151,10 +5161,10 @@ PorousMedia::post_regrid (int lbase,
   Layout& layout = PMParent()->GetLayout();
   layout.Build(); // Internally destroys itself on rebuild
 
-  if (model != PM_STEADY_SATURATED && level == lbase) {
+  PMAmr* pm_parent = PMParent();
+  int new_nLevs = new_finest - lbase + 1;
 
-    PMAmr* pm_parent = PMParent();
-    int new_nLevs = new_finest - lbase + 1;
+  if (model != PM_STEADY_SATURATED && level == lbase) {
 
     if (richard_solver != 0) {
       delete richard_solver;
@@ -5180,6 +5190,15 @@ PorousMedia::post_regrid (int lbase,
 
   // invalidate source volumes
   source_volume.clear();
+
+  // set flag used as a workaround for things that break after a regrid
+  //  (like trusting the multilevel velocity field)
+  for (int lev=0; lev<new_nLevs; ++lev) {
+    PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
+    BL_ASSERT(pm);
+
+    pm->is_first_flow_step_after_regrid = true;
+  }
 }
 
 void 

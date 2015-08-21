@@ -205,9 +205,9 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::RCP<
     }
   }
 
-  tpc_list.set<Teuchos::Array<double> >("Start Times", start_times);
-  tpc_list.set<Teuchos::Array<double> >("Initial Time Step", initial_time_step);
-  tpc_list.set<Teuchos::Array<double> >("Maximum Time Step", maximum_time_step);
+  tpc_list.set<Teuchos::Array<double> >("start times", start_times);
+  tpc_list.set<Teuchos::Array<double> >("initial time step", initial_time_step);
+  tpc_list.set<Teuchos::Array<double> >("maximum time step", maximum_time_step);
 
   return tpc_list;
 }
@@ -416,7 +416,7 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::RCP<Teucho
   cycle_driver_list.sublist("time periods").sublist(tp_list_name.data()).set<double>("end period time", end_time);
   cycle_driver_list.sublist("time periods").sublist(tp_list_name.data()).set<int>("maximum cycle number", max_cycle_number);
   cycle_driver_list.sublist("time periods").sublist(tp_list_name.data()).set<double>("initial time step", dt_tran);
-  cycle_driver_list.sublist("Time Period Control") = tpc_list;
+  cycle_driver_list.sublist("time period control") = tpc_list;
 
   cycle_driver_list.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
 

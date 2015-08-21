@@ -34,7 +34,8 @@ class InputConverterU : public InputConverter {
   InputConverterU() :
       vo_(NULL),
       flow_single_phase_(false),
-      compressibility_(false) {};
+      compressibility_(false),
+      transport_permeability_(false) {};
   ~InputConverterU() { if (vo_ != NULL) delete vo_; }
 
   // main members
@@ -106,6 +107,8 @@ class InputConverterU : public InputConverter {
   bool flow_single_phase_;  // runtime value
   bool compressibility_;
   double rho_;
+
+  bool transport_permeability_;
 
   // global transport and chemistry constants
   std::vector<std::string> comp_names_all_;
