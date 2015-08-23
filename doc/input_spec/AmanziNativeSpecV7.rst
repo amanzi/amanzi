@@ -1,5 +1,5 @@
 ==========================================
-Amanzi-U Native XML Input Specification V6
+Amanzi-U Native XML Input Specification V7
 ==========================================
 
 .. contents:: **Table of Contents**
