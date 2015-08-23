@@ -171,7 +171,7 @@ Teuchos::ParameterList InputConverterU::TranslateMisc_()
     element = static_cast<DOMElement*>(node);
     std::string filename = GetAttributeValueS_(element, "file_name", false, "native_v6.xml");
 
-    out_list.set<std::string>("File Name", filename);
+    out_list.set<std::string>("file name", filename);
   }
 
   return out_list;

@@ -226,9 +226,9 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
   }
 
   // Add any geochemical conditions we find in the Chemistry section of the file.
-  if (chem_param_list_.isParameter("Geochemical Conditions")) 
+  if (chem_param_list_.isParameter("geochemical conditions")) 
   {
-    Teuchos::ParameterList conditions = chem_param_list_.sublist("Geochemical Conditions");
+    Teuchos::ParameterList conditions = chem_param_list_.sublist("geochemical conditions");
     for (Teuchos::ParameterList::ConstIterator iter = conditions.begin();
          iter != conditions.end(); ++iter)
     {
@@ -374,9 +374,9 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
   }
 
   // Other settings.
-  max_time_step_ = chem_param_list_.get<double>("Max Time Step (s)", 9.9e9);
-  min_time_step_ = chem_param_list_.get<double>("Min Time Step (s)", 9.9e9);
-  prev_time_step_ = chem_param_list_.get<double>("Initial Time Step (s)", std::min(min_time_step_, max_time_step_));
+  max_time_step_ = chem_param_list_.get<double>("max time step (s)", 9.9e9);
+  min_time_step_ = chem_param_list_.get<double>("min time step (s)", 9.9e9);
+  prev_time_step_ = chem_param_list_.get<double>("initial time step (s)", std::min(min_time_step_, max_time_step_));
   /*  if ((min_time_step_ == 9.9e9) && (prev_time_step_ < 9.9e9))
     min_time_step_ = prev_time_step_;
   else if ((min_time_step_ == 9.9e9) && (max_time_step_ < 9.9e9))
@@ -399,33 +399,33 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
     Exceptions::amanzi_throw(msg);
     } */
   time_step_ = prev_time_step_;
-  time_step_control_method_ = chem_param_list_.get<std::string>("Time Step Control Method", "fixed");
-  num_iterations_for_time_step_cut_ = chem_param_list_.get<int>("Time Step Cut Threshold", 8);
+  time_step_control_method_ = chem_param_list_.get<std::string>("time step control method", "fixed");
+  num_iterations_for_time_step_cut_ = chem_param_list_.get<int>("time step cut threshold", 8);
   if (num_iterations_for_time_step_cut_ <= 0)
   {
     msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
-    msg << "  Invalid Time Step Cut Threshold: " << num_iterations_for_time_step_cut_ << " (must be > 1).\n";
+    msg << "  Invalid \"time step cut threshold\": " << num_iterations_for_time_step_cut_ << " (must be > 1).\n";
     Exceptions::amanzi_throw(msg);
   }
-  num_steps_before_time_step_increase_ = chem_param_list_.get<int>("Time Step Increase Threshold", 4);
+  num_steps_before_time_step_increase_ = chem_param_list_.get<int>("time step increase threshold", 4);
   if (num_steps_before_time_step_increase_ <= 0)
   {
     msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
-    msg << "  Invalid Time Step Increase Threshold: " << num_steps_before_time_step_increase_ << " (must be > 1).\n";
+    msg << "  Invalid \"time step increase threshold\": " << num_steps_before_time_step_increase_ << " (must be > 1).\n";
     Exceptions::amanzi_throw(msg);
   }
-  time_step_cut_factor_ = chem_param_list_.get<double>("Time Step Cut Factor", 2.0);
+  time_step_cut_factor_ = chem_param_list_.get<double>("time step cut factor", 2.0);
   if (time_step_cut_factor_ <= 1.0)
   {
     msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
-    msg << "  Invalid Time Step Cut Factor: " << time_step_cut_factor_ << " (must be > 1).\n";
+    msg << "  Invalid \"time step cut factor\": " << time_step_cut_factor_ << " (must be > 1).\n";
     Exceptions::amanzi_throw(msg);
   }
-  time_step_increase_factor_ = chem_param_list_.get<double>("Time Step Increase Factor", 1.2);
+  time_step_increase_factor_ = chem_param_list_.get<double>("time step increase factor", 1.2);
   if (time_step_increase_factor_ <= 1.0)
   {
     msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
-    msg << "  Invalid Time Step Increase Factor: " << time_step_increase_factor_ << " (must be > 1).\n";
+    msg << "  Invalid \"time step increase factor\": " << time_step_increase_factor_ << " (must be > 1).\n";
     Exceptions::amanzi_throw(msg);
   }
 }  // end XMLParameters()

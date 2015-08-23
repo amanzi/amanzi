@@ -470,20 +470,17 @@ void CycleDriver::ReadParameterList_() {
   // first assume we're not
   restart_requested_ = false;
 
-  if (coordinator_list_->isSublist("Restart")) {
-    restart_requested_ = ! coordinator_list_->sublist("Restart")
-        .get<bool>("initialize from checkpoint data file and do not restart",false);
+  if (coordinator_list_->isSublist("restart")) {
+    restart_requested_ = true;
 
-    if (restart_requested_) {
-      Teuchos::ParameterList restart_list = coordinator_list_->sublist("Restart");
-      restart_filename_ = restart_list.get<std::string>("File Name");
+    Teuchos::ParameterList restart_list = coordinator_list_->sublist("restart");
+    restart_filename_ = restart_list.get<std::string>("file name");
 
-      // make sure that the restart file actually exists, if not throw an error
-      boost::filesystem::path restart_from_filename_path(restart_filename_);
-      if (!boost::filesystem::exists(restart_from_filename_path)) {
-        Errors::Message message("CycleDriver::the specified restart file does not exist or is not a regular file.");
-        Exceptions::amanzi_throw(message);
-      }
+    // make sure that the restart file actually exists, if not throw an error
+    boost::filesystem::path restart_from_filename_path(restart_filename_);
+    if (!boost::filesystem::exists(restart_from_filename_path)) {
+      Errors::Message message("CycleDriver::the specified restart file does not exist or is not a regular file.");
+      Exceptions::amanzi_throw(message);
     }
 
     // if (restart_requested_) {

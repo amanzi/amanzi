@@ -81,9 +81,9 @@ void Chemistry_State::SetupMineralNames_() {
 void Chemistry_State::SetupSoluteNames_() {
   // get the number of component concentrations from the
   // parameter list
-  if (plist_.isParameter("Number of component concentrations")) {
+  if (plist_.isParameter("number of component concentrations")) {
     number_of_aqueous_components_ =
-        plist_.get<int>("Number of component concentrations");
+        plist_.get<int>("number of component concentrations");
   } else {
     // if the parameter list does not contain this key, then assume we
     // are being called from a state constructor w/o a valid parameter
@@ -470,8 +470,8 @@ void Chemistry_State::SetAuxDataNames(const std::vector<std::string>& aux_data_n
 }
 
 void Chemistry_State::RequireAuxData_() {
-  if (plist_.isParameter("Auxiliary Data"))  {
-    Teuchos::Array<std::string> names = plist_.get<Teuchos::Array<std::string> >("Auxiliary Data");  
+  if (plist_.isParameter("auxiliary data"))  {
+    Teuchos::Array<std::string> names = plist_.get<Teuchos::Array<std::string> >("auxiliary data");  
     
     for (Teuchos::Array<std::string>::const_iterator name = names.begin(); name != names.end(); ++name) {
 
@@ -554,8 +554,8 @@ void Chemistry_State::Initialize() {
   }
 
   // initialize auxiliary fields
-  if (plist_.isParameter("Auxiliary Data"))  {
-    Teuchos::Array<std::string> names = plist_.get<Teuchos::Array<std::string> >("Auxiliary Data");  
+  if (plist_.isParameter("auxiliary data"))  {
+    Teuchos::Array<std::string> names = plist_.get<Teuchos::Array<std::string> >("auxiliary data");  
     
     for (Teuchos::Array<std::string>::const_iterator name = names.begin(); name != names.end(); ++name) {
       S_->GetFieldData(*name, name_)->PutScalar(0.0);

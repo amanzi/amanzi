@@ -359,9 +359,9 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
       Teuchos::ParameterList& tbc_list = out_list.sublist("geochemical conditions");
       Teuchos::ParameterList& bc = tbc_list.sublist(bcname);
       bc.set<Teuchos::Array<std::string> >("regions", regions);
-      bc.set<Teuchos::Array<double> >("Times", times);
-      bc.set<Teuchos::Array<std::string> >("Geochemical Conditions", values);
-      bc.set<Teuchos::Array<std::string> >("Time Functions", forms);
+      bc.set<Teuchos::Array<double> >("times", times);
+      bc.set<Teuchos::Array<std::string> >("geochemical conditions", values);
+      bc.set<Teuchos::Array<std::string> >("time functions", forms);
     }
   }
 

@@ -239,7 +239,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
 
   out_list.sublist("time period control") = TranslateTimePeriodControls_();
   if (filename.size() > 0) {
-    out_list.sublist("Restart").set<std::string>("File Name", filename);
+    out_list.sublist("restart").set<std::string>("file name", filename);
   }
   out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
 
@@ -455,7 +455,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
 
   out_list.sublist("time period control") = TranslateTimePeriodControls_();
   if (filename.size() > 0) {
-    out_list.sublist("Restart").set<std::string>("File Name", filename);
+    out_list.sublist("restart").set<std::string>("file name", filename);
   }
   out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
 

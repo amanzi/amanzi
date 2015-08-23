@@ -258,7 +258,62 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   }
 
   // general parameters
-  out_list.set<int>("Number of component concentrations", comp_names_all_.size());
+  int max_itrs(100), cut_threshold(8), increase_threshold(4);
+  double tol(1e-12), dt_max(1e+10), dt_min(1e-10), dt_init(1e-2), dt_cut(2.0), dt_increase(1.2);
+  std::string activity_model("unit"), dt_method("fixed");
+  std::vector<std::string> aux_data;
+
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_chemistry_controls", flag);
+  if (flag) {
+    children = node->getChildNodes();
+    for (int i = 0; i < children->getLength(); ++i) {
+      DOMNode* inode = children->item(i);
+      if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+
+      text = mm.transcode(inode->getNodeName());
+      if (strcmp(text, "activity_model") == 0) {
+        activity_model = GetTextContentS_(inode, "unit, debye-huckel");
+      } else if (strcmp(text, "maximum_newton_iterations") == 0) {
+        max_itrs = strtol(mm.transcode(inode->getTextContent()), NULL, 10);
+      } else if (strcmp(text, "tolerance") == 0) {
+        tol = strtod(mm.transcode(inode->getTextContent()), NULL);
+      } else if (strcmp(text, "min_time_step") == 0) {
+        dt_min = strtod(mm.transcode(inode->getTextContent()), NULL);
+      } else if (strcmp(text, "max_time_step") == 0) {
+        dt_max = strtod(mm.transcode(inode->getTextContent()), NULL);
+      } else if (strcmp(text, "initial_time_step") == 0) {
+        dt_init = strtod(mm.transcode(inode->getTextContent()), NULL);
+      } else if (strcmp(text, "time_step_control_method") == 0) {
+        dt_method = mm.transcode(inode->getTextContent());
+      } else if (strcmp(text, "time_step_cut_threshold") == 0) {
+        cut_threshold = strtol(mm.transcode(inode->getTextContent()), NULL, 10);
+      } else if (strcmp(text, "time_step_cut_factor") == 0) {
+        dt_cut = strtod(mm.transcode(inode->getTextContent()), NULL);
+      } else if (strcmp(text, "time_step_increase_threshold") == 0) {
+        increase_threshold = strtol(mm.transcode(inode->getTextContent()), NULL, 10);
+      } else if (strcmp(text, "time_step_increase_factor") == 0) {
+        dt_increase = strtod(mm.transcode(inode->getTextContent()), NULL);
+      } else if (strcmp(text, "auxiliary_data") == 0) {
+        aux_data = CharToStrings_(mm.transcode(inode->getTextContent()));
+      }
+    }
+  }
+  out_list.set<std::string>("activity model", activity_model);
+  out_list.set<int>("maximum Newton iterations", max_itrs);
+  out_list.set<double>("tolerance", tol);
+  out_list.set<double>("max time step (s)", dt_max);
+  out_list.set<double>("min time step (s)", dt_min);
+  out_list.set<double>("initial time step (s)", dt_init);
+  out_list.set<int>("time step cut threshold", cut_threshold);
+  out_list.set<double>("time step cut factor", dt_cut);
+  out_list.set<int>("time step increase threshold", increase_threshold);
+  out_list.set<double>("time step increase factor", dt_increase);
+  out_list.set<std::string>("time step control method", dt_method);
+  if (aux_data.size() > 0)
+      out_list.set<Teuchos::Array<std::string> >("auxiliary data", aux_data);
+
+  // miscalleneous
+  out_list.set<int>("number of component concentrations", comp_names_all_.size());
 
   out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
   return out_list;

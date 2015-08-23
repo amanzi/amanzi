@@ -323,8 +323,8 @@
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{Tc-99}"/>
-    <ParameterList name="Restart">
-      <Parameter name="File Name" type="string" value="chk00168.h5"/>
+    <ParameterList name="restart">
+      <Parameter name="file name" type="string" value="chk00168.h5"/>
     </ParameterList>
     <ParameterList name="VerboseObject">
       <Parameter name="Verbosity Level" type="string" value="high"/>

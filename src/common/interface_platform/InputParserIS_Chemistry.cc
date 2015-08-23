@@ -21,6 +21,22 @@ Teuchos::ParameterList InputParserIS::CreateChemistryList_(Teuchos::RCP<Teuchos:
     chem_list = plist->sublist("Chemistry");
     chem_list.set<std::string>("chemistry model", chemistry_model_);
 
+    chem_list.set<std::string>("activity model", chem_list.get<std::string>("Activity Model", "unit"));
+    chem_list.set<int>("maximum Newton iterations", chem_list.get<int>("Maximum Newton Iterations", 100));
+    chem_list.set<double>("tolerance", chem_list.get<double>("Tolerance", 1.0e-12));
+    chem_list.set<double>("max time step (s)", chem_list.get<double>("Max Time Step (s)", 1.0e+10));
+    chem_list.set<double>("min time step (s)", chem_list.get<double>("Min Time Step (s)", 1.0e-10));
+    chem_list.set<double>("initial time step (s)", chem_list.get<double>("Initial Time Step (s)", 1.0e-10));
+    chem_list.set<std::string>("time step control method",
+        chem_list.get<std::string>("Time Step Control Method", "fixed"));
+    chem_list.set<int>("time step cut threshold", chem_list.get<int>("Time Step Cut Threshold", 8));
+    chem_list.set<double>("time step cut factor", chem_list.get<double>("Time Step Cut Factor", 2.0));
+    chem_list.set<int>("time step increase threshold", chem_list.get<int>("Time Step Increase Threshold", 4));
+    chem_list.set<double>("time step increase factor", chem_list.get<double>("Time Step Increase Factor", 1.2));
+    if (chem_list.isParameter("Auxiliary Data"))
+        chem_list.set<Teuchos::Array<std::string> >("auxiliary data",
+        chem_list.get<Teuchos::Array<std::string> >("Auxiliary Data"));
+   
     Teuchos::ParameterList& chem_ic = chem_list.sublist("initial conditions");
 
     //
@@ -38,7 +54,7 @@ Teuchos::ParameterList InputParserIS::CreateChemistryList_(Teuchos::RCP<Teuchos:
       chem_list.set<Teuchos::Array<std::string> >("Sorption Sites", sorption_site_names_);
     }
 
-    chem_list.set<int>("Number of component concentrations", comp_names_all_.size());
+    chem_list.set<int>("number of component concentrations", comp_names_all_.size());
 
     //
     // --- region specific initial conditions
