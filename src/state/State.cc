@@ -803,6 +803,7 @@ void State::InitializeFields() {
           f_it->second->Initialize(sublist);
         }
       }
+
       if (!f_it->second->initialized()){
         if (partial_init){
           f_it->second->set_initialized();
