@@ -35,11 +35,20 @@ double DayLength(double lat, int doy);
 // Limit the highest temp?
 double HighTLim(double tleaf);
 
+//solve the quadratic equation
+void Quadratic (double a, double b, double c, double* r1, double* r2) ;
+
 // This function calculate the net photosynthetic rate based on Farquhar
-// model, with updated leaf temperature based on energy balances
+// model, with updated leaf temperature based on energy balances by seperately solve light and RUBISCO-limited carboxylations
 void Photosynthesis(double PARi, double LUE, double LER, double pressure, double windv,
                     double tair, double relh, double CO2a, double mp, double Vcmax25,
-                    double* A, double* tleaf, double* Resp);
+                    double* A, double* tleaf, double* Resp, double *ET);
+//// This function calculate the net photosynthetic rate based on Farquhar
+// model, with updated leaf temperature based on energy balances by jointly solving light and RUBISCO-limited carboxylations
+void Photosynthesis0(double PARi, double LUE, double LER, double pressure, double windv,
+                    double tair, double relh, double CO2a, double mp, double Vcmax25,
+                    double* A, double* tleaf, double* Resp, double *ET);
+
 
 } // namespace
 } // namespace
