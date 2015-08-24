@@ -45,6 +45,7 @@ void PFT::Init(double col_area)
   LER = 0.8;
   mp = 6.0;
   GPP = 0.0;
+  ET = 0.0; 
   annNPP = 0.0;
   NPP = 0.0;
   root2leafrespratio = 0.8;
@@ -68,6 +69,8 @@ void PFT::Init(double col_area)
   CSinkLimit = 0.0;
   seedrainlai = 0.01;
   maxLAI = 1;
+  swpo = -0.5;
+  swpc = -2.5; 
 
   for (int i = 0; i < 10; i++){
     annCBalance[i] = 0;
