@@ -678,6 +678,7 @@ double CycleDriver::Advance(double dt) {
       *vo_->os() << std::endl;
     }
   } else {
+    dt_new = get_dt(fail);
     // Failed the timestep.  
     // Potentially write out failed timestep for debugging
     for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=failed_visualization_.begin();

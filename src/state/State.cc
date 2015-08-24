@@ -786,12 +786,29 @@ void State::InitializeEvaluators() {
 void State::InitializeFields() {
   for (FieldMap::iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
     if (!f_it->second->initialized()) {
+      bool partial_init = false;
+      if (state_plist_.isParameter("initialization filename")){
+        Teuchos::RCP<CompositeVector> field_data = f_it->second->GetFieldData();
+        std::string filename = state_plist_.get<std::string>("initialization filename");
+        Teuchos::RCP<Amanzi::HDF5_MPI> file_input =
+          Teuchos::rcp(new Amanzi::HDF5_MPI(field_data->Comm(), filename));
+        file_input->open_h5file();
+        f_it->second->ReadCheckpoint(file_input.ptr());
+        file_input->close_h5file();
+        partial_init = true;
+      }
       if (state_plist_.isSublist("initial conditions")) {
         if (state_plist_.sublist("initial conditions").isSublist(f_it->first)) {
           Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(f_it->first);
           f_it->second->Initialize(sublist);
         }
       }
+      if (!f_it->second->initialized()){
+        if (partial_init){
+          f_it->second->set_initialized();
+        }
+      }
+
     }
   }
 };
