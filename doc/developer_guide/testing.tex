@@ -9,13 +9,134 @@
 
 \section{Testing}
 
+Testing is a cornerstone of modern software development. In the form of Test-Driven
+Development, it is useful for providing feedback in the design process. In other 
+forms, it is essential for preventing the project from descending into chaos, and 
+controlling the cost of software maintenance. In this section we describe the 
+various forms of testing used to certify that Amanzi works properly, in order of 
+increasing scope.
+
+% Describe testing layout in directories?
+
 \subsection{Unit Testing}
 
-\subsection{Verfication and Benchmark Testing}
+Each individual software component should have a defined set of assumptions under 
+which it operates, and a set of behaviors and corresponding certifications on 
+what it produces. These assumptions and behaviors are ideally articulated in the 
+documentation of the component, but they should also be tested independently as part
+of the implementation process. A test of an individual component's assumptions and 
+behaviors is called a {\em unit test}. A unit test provides a set of PASS/FAIL tests for 
+each function, method, and attribute in a software component.
+
+% Talk about Amanzi's unit testing here.
+
+\subsection{Verification and Benchmark Testing}
+
+The various algorithms we use in Amanzi have to be tested on the basic subsurface 
+problems that are relevant to our charter, and compared against other codes to 
+weigh the costs and benefits of our choices against existing approaches. 
+
+A {\em verification test} consists of a simulation run with a given input describing 
+a problem that has a known solution, a characterization of the quality of the 
+solution, and a PASS or FAIL result based on the quality of that solution measured 
+against some threshold. 
+
+% Describe verification testing here.
+
+A {\em benchmark test} is a simulation run with a given input whose output is 
+compared to the output of one or more other codes. All codes must have inputs that 
+describe the same ``benchmark problem." The differences between the codes can be 
+evaluated visually and/or with numerical metrics. Numerical metrics allow benchmark 
+tests to have PASS/FAIL results, whereas a visual inspection test requires an 
+expert for evaluation, so the former are preferred where practical.
+
+% Describe benchmark testing here.
 
 \subsection{Regression Testing}
 
+A {\em regression test} is a simulation-based PASS/FAIL test similar to a 
+verification test, and is typically part of a large suite of tests that are run 
+automatically and periodically to ensure that bugs and errors have not been 
+introduced into Amanzi during code development. We provide a couple of tools for 
+constructing PASS/FAIL tests that can be used to monitor bugs and regressions. In 
+particular, we support two types of regression tests: {\em smoke tests} and 
+{\em comparison tests}.
 
+\subsubsection{Smoke tests}
 
+A smoke test simply runs an Amanzi simulation with a given input, PASSes if 
+the simulation runs to completion, and FAILs otherwise. A smoke test can be created
+(and added to Amanzi's regression test suite) by calling the following CMake command 
+inside of a CMakeLists.txt file in a testing directory:
 
+\begin{verbatim}
+ADD_AMANZI_SMOKE_TEST(<test_name> 
+                      INPUT file.xml
+                      [FILES file1;file2;...;fileN]
+                      [PARALLEL] 
+                      [NPROCS procs1 ... ]
+                      [MPI_EXEC_ARGS arg1 ... ])
+\end{verbatim}
+
+Arguments:
+\begin{itemize}
+\item \verb|test_name|: the name given to the comparison test 
+\item \verb|INPUT| (required): This (required) keyword defines an Amanzi XML input file that will 
+      be run.
+\item \verb|FILES| (optional): A list of any additional files that the test needs in order 
+      to run in its directory/environment. These files will be copied from the source 
+      directory to the run directory.
+\item \verb|PARALLEL| (optional): The presence of this keyword signifies that this is 
+      a parallel job. This is also implied by an NPROCS value > 1
+\item \verb|NPROCS| (optional): This keyword starts a list of the number of processors to
+      run the test on, and defaults to 1.
+\item \verb|MPI_EXEC_ARGS| (optional): This keyword denotes extra arguments to give to
+      MPI. It is ignored for serial tests.
+\end{itemize}
+
+\subsubsection{Comparison tests}
+
+A comparison test runs an Amanzi simulation with a given input, and then compares 
+a field or an observation from that simulation to that in the specified reference 
+file, PASSing if the L2 norm of the difference in the simulation and reference 
+values falls below the given tolerance. One can add a comparison test to the 
+Amanzi regression test suite by calling the following CMake command inside of a 
+CMakeLists.txt file within a testing directory:
+
+\begin{verbatim}
+ADD_AMANZI_COMPARISON_TEST(<test_name> 
+                           INPUT file.xml
+                           REFERENCE reference
+                           TOLERANCE tolerance
+                           [FILES file1;file2;...;fileN]
+                           [FIELD field_name]
+                           [OBSERVATION observation_name]
+                           [PARALLEL] 
+                           [NPROCS procs1 ... ]
+                           [MPI_EXEC_ARGS arg1 ... ])
+\end{verbatim}
+
+Arguments:
+\begin{itemize}
+\item \verb|test_name|: the name given to the comparison test 
+\item \verb|INPUT| (required): This (required) keyword defines an Amanzi XML input file that will 
+      be run.
+\item \verb|REFERENCE| The name of the file containing reference data to which 
+      the simulation output will be compared.
+\item \verb|TOLERANCE| (required): This specifies the maximum L2 error norm that can be 
+      measured for a successful testing outcome.
+\item \verb|FILES| (optional): A list of any additional files that the test needs in order 
+      to run in its directory/environment. These files will be copied from the source 
+      directory to the run directory.
+\item \verb|FIELD| (required if OBSERVATION not given): The name of the field in Amanzi that 
+      will be compared to its reference value for this test.
+\item \verb|OBSERVATION| (required if FIELD not given): The name of the observation in the Amanzi 
+      input that will be compared to its reference value for this test.
+\item \verb|PARALLEL| (optional): The presence of this keyword signifies that this is 
+      a parallel job. This is also implied by an NPROCS value > 1
+\item \verb|NPROCS| (optional): This keyword starts a list of the number of processors to
+      run the test on, and defaults to 1.
+\item \verb|MPI_EXEC_ARGS| (optional): This keyword denotes extra arguments to give to
+      MPI. It is ignored for serial tests.
+\end{itemize}
 
