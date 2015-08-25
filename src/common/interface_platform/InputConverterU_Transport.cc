@@ -77,16 +77,14 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   int poly_order(0);
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, algorithm", flag);
   if (flag) {
-    text = mm.transcode(node->getTextContent());
-    if (strcmp(text, "explicit first-order") == 0) {
+    std::string order = GetTextContentS_(node, "explicit first-order, xplicit second-order");
+    if (order == "explicit first-order") {
       out_list.set<int>("spatial discretization order", 1);
       out_list.set<int>("temporal discretization order", 1);
-    } else if (strcmp(text, "explicit second-order") == 0) {
+    } else if (order == "explicit second-order") {
       out_list.set<int>("spatial discretization order", 2);
       out_list.set<int>("temporal discretization order", 2);
       poly_order = 1;
-    } else {
-      ThrowErrorMissattr_("unstructured_controls", "element", "explicit first-order", "unstr_transport_controls");
     }
   }
 
