@@ -725,22 +725,33 @@ bool HDF5_MPI::readData(Epetra_Vector &x, const std::string varname)
   return readFieldData_(x, varname, PIO_DOUBLE);
 }
 
+
+bool HDF5_MPI::checkFieldData_(std::string varname) {
+  char *h5path = new char [varname.size()+1];
+  strcpy(h5path,varname.c_str());
+  bool exists;
+
+  if (viz_comm_.MyPID() == 0){
+    iofile_t *currfile;
+    currfile = IOgroup_.file[data_file_];
+    exists = H5Lexists(currfile->fid, h5path, H5P_DEFAULT);
+    if (!exists) std::cout<< "Field "<<h5path<<" is not found in hdf5 file.\n";
+  } 
+  
+  MPI_Bcast(&exists, 1, MPI_LOGICAL,  0, IOgroup_.localcomm);
+
+  return exists;
+
+}
+
+
 bool HDF5_MPI::readFieldData_(Epetra_Vector &x, std::string varname,
                               datatype_t type) {
 
   char *h5path = new char [varname.size()+1];
   strcpy(h5path,varname.c_str());
 
-  // if (IOgroup_.localrank == 0){
-  //   iofile_t *currfile;
-  //   currfile = IOgroup_.file[data_file_];
-  //   if (! H5Lexists(currfile->fid, h5path, H5P_DEFAULT) ){
-  //     std::cout<< "Field "<<h5path<<" is not found in hdf5 file.\n";
-  //     return false;
-  //   }
-  // }
-
-
+  if (!checkFieldData_(varname)) return false;
 
   int ndims;
   parallelIO_get_dataset_ndims(&ndims, data_file_, h5path, &IOgroup_);

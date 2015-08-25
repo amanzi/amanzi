@@ -145,6 +145,7 @@ class HDF5_MPI {
                        datatype_t type, std::string loc);
   bool readFieldData_(Epetra_Vector &x, std::string varname,
                       datatype_t type);
+  bool checkFieldData_(std::string varname);
 
   int getCellTypeID_(AmanziMesh::Cell_type type);
   
