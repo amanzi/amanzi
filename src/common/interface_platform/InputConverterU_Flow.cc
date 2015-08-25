@@ -99,7 +99,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
 
   std::string pc_method("linearized_operator");
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, preconditioning_strategy", flag);
-  if (flag) pc_method = mm.transcode(node->getTextContent()); 
+  if (flag) pc_method = GetTextContentS_(node, "linearized_operator, diffusion_operator"); 
 
   std::string nonlinear_solver("nka");
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver", flag);

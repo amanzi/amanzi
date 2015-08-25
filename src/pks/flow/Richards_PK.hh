@@ -147,6 +147,8 @@ class Richards_PK : public Flow_PK {
   void CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& kvapor_pres,
                                       Teuchos::RCP<CompositeVector>& kvapor_temp);
 
+  void Functional_AddWaterContentMatrix_(Teuchos::RCP<CompositeVector> f) {};
+
  private:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> rp_list_;
@@ -175,6 +177,9 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Operators::Operator> op_vapor_;
   Teuchos::RCP<Operators::OperatorDiffusion> op_vapor_diff_;
   bool vapor_diffusion_;
+
+  // multiscale models
+  bool multiscale_porosity_;
 
   // time integrators
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae;
