@@ -740,6 +740,8 @@ bool HDF5_MPI::checkFieldData_(std::string varname) {
   
   MPI_Bcast(&exists, 1, MPI_LOGICAL,  0, IOgroup_.localcomm);
 
+  delete[] h5path;
+
   return exists;
 
 }
