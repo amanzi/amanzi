@@ -362,7 +362,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             }
           }
           std::stringstream list_name;
-          list_name << "observation-" << j + 1 << ":" << phaseName;
+          list_name << "obs " << j + 1;
           obsPL.sublist(list_name.str()) = obPL;
         }
 
@@ -396,6 +396,13 @@ void InputConverterU::ProcessMacros_(
   int k(0);
   bool flag(false);
   for (int i = 0; i < macro.size(); i++) {
+    if (!mPL.isSublist(macro[i])) {
+      Errors::Message msg;
+      msg << "Macro \"" << macro[i] << "\" was not defined.\n";
+      msg << "Please correct and try again.\n";
+      Exceptions::amanzi_throw(msg);
+    }
+
     Teuchos::ParameterList& mlist = mPL.sublist(macro[i]);
     if (mlist.isParameter("sps")) {
       std::stringstream ss;

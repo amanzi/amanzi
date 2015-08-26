@@ -77,7 +77,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   int poly_order(0);
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, algorithm", flag);
   if (flag) {
-    std::string order = GetTextContentS_(node, "explicit first-order, xplicit second-order");
+    std::string order = GetTextContentS_(node, "explicit first-order, explicit second-order");
     if (order == "explicit first-order") {
       out_list.set<int>("spatial discretization order", 1);
       out_list.set<int>("temporal discretization order", 1);
@@ -234,7 +234,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
 
   // remaining global parameters
   out_list.set<int>("number of aqueous components", phases_["water"].size());
-  out_list.set<int>("number of gaseous components", phases_["gas"].size());
+  out_list.set<int>("number of gaseous components", phases_["air"].size());
 
   // cross coupling of PKs
   out_list.sublist("physical models and assumptions")
@@ -341,7 +341,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
         element = static_cast<DOMElement*>(same_list[j]);
         double t0 = GetAttributeValueD_(element, "start");
         tp_forms[t0] = GetAttributeValueS_(element, "function");
-        tp_values[t0] = GetAttributeValueS_(element, "value");
+        tp_values[t0] = GetAttributeValueS_(element, "name");
       }
 
       // create vectors of values and forms

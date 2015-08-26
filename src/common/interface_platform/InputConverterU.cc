@@ -87,12 +87,13 @@ void InputConverterU::ParseSolutes_()
 
   MemoryManager mm;
 
-  DOMNode* inode = doc_->getElementsByTagName(mm.transcode("phases"))->item(0);
-  DOMNode* node = GetUniqueElementByTagsString_(inode, "liquid_phase, dissolved_components, solutes", flag);
+  DOMNode* knode = doc_->getElementsByTagName(mm.transcode("phases"))->item(0);
 
+  // liquid phase
+  DOMNode* node = GetUniqueElementByTagsString_(knode, "liquid_phase, dissolved_components, solutes", flag);
   DOMNodeList* children = node->getChildNodes();
   for (int i = 0; i < children->getLength(); ++i) {
-    inode = children->item(i);
+    DOMNode* inode = children->item(i);
     tagname = mm.transcode(inode->getNodeName());
     text_content = mm.transcode(inode->getTextContent());
 
@@ -102,6 +103,23 @@ void InputConverterU::ParseSolutes_()
   }
   
   comp_names_all_ = phases_["water"];
+
+  // gas phase
+  node = GetUniqueElementByTagsString_(knode, "gas_phase, dissolved_components, solutes", flag);
+  if (flag) {
+    DOMNodeList* children = node->getChildNodes();
+    for (int i = 0; i < children->getLength(); ++i) {
+      DOMNode* inode = children->item(i);
+      tagname = mm.transcode(inode->getNodeName());
+      text_content = mm.transcode(inode->getTextContent());
+
+      if (strcmp(tagname, "solute") == 0) {
+        phases_["air"].push_back(TrimString_(text_content));
+      }
+    }
+
+    comp_names_all_.insert(comp_names_all_.end(), phases_["air"].begin(), phases_["air"].end());
+  }
 }
 
 
