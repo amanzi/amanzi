@@ -205,7 +205,7 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
 
           node = GetUniqueElementByTagsString_(inode, "file", flag2);
           if (flag2) {
-            std::string filename = mm.transcode(node->getTextContent());
+            std::string filename = TrimString_(mm.transcode(node->getTextContent()));
             flag2 = (filename.size() > 0);
             if (flag2) {
               if (num_proc_ > 1) {
