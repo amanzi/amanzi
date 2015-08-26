@@ -36,6 +36,12 @@ BGCSimple::BGCSimple(const Teuchos::RCP<Teuchos::ParameterList>& plist,
   trans_sublist.set("evaluator name", "transpiration");
   trans_sublist.set("field evaluator type", "primary variable");
 
+  // -- shortwave incoming shading
+  Teuchos::ParameterList& sw_sublist =
+      FElist.sublist("shortwave_radiation_to_surface");
+  sw_sublist.set("evaluator name", "shortwave_radiation_to_surface");
+  sw_sublist.set("field evaluator type", "primary variable");
+
 }
 
 // is a PK
@@ -130,6 +136,16 @@ void BGCSimple::setup(const Teuchos::Ptr<State>& S) {
       S->GetFieldEvaluator("transpiration"));
   if (trans_eval_ == Teuchos::null) {
     Errors::Message message("BGC: error, failure to initialize primary variable for transpiration");
+    Exceptions::amanzi_throw(message);
+  }
+
+  S->RequireField("shortwave_radiation_to_surface", name_)->SetMesh(mesh_)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator("shortwave_radiation_to_surface");
+  sw_eval_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(
+      S->GetFieldEvaluator("shortwave_radiation_to_surface"));
+  if (sw_eval_ == Teuchos::null) {
+    Errors::Message message("BGC: error, failure to initialize primary variable for shaded shortwave");
     Exceptions::amanzi_throw(message);
   }
   
@@ -269,6 +285,8 @@ bool BGCSimple::advance(double dt) {
       ->ViewComponent("cell",false);
   Epetra_MultiVector& trans = *S_next_->GetFieldData("transpiration", name_)
       ->ViewComponent("cell",false);
+  Epetra_MultiVector& sw = *S_next_->GetFieldData("shortwave_radiation_to_surface", name_)
+      ->ViewComponent("cell",false);
   Epetra_MultiVector& biomass = *S_next_->GetFieldData("total_biomass", name_)
       ->ViewComponent("cell",false);
   Epetra_MultiVector& leafbiomass = *S_next_->GetFieldData("leaf_biomass", name_)
@@ -329,6 +347,7 @@ bool BGCSimple::advance(double dt) {
   // Create a workspace array for the result
   Epetra_SerialDenseVector co2_decomp_c(ncells_per_col_);
   Epetra_SerialDenseVector trans_c(ncells_per_col_);
+  Epetra_SerialDenseVector sw_c(ncells_per_col_);
 
   // Grab the mesh partition to get soil properties
   Teuchos::RCP<const Functions::MeshPartition> mp = S_next_->GetMeshPartition(soil_part_name_);
@@ -364,7 +383,8 @@ bool BGCSimple::advance(double dt) {
     // call the model
     BGCAdvance(S_inter_->time(), dt, scv[0][col], cryoturbation_coef_, met,
                *temp_c, *pres_c, *depth_c, *dz_c,
-               pfts_[col], soil_carbon_pools_[col], co2_decomp_c, trans_c);
+               pfts_[col], soil_carbon_pools_[col],
+               co2_decomp_c, trans_c, sw_c);
 
     // copy back
     // -- serious cache thrash... --etc
@@ -378,6 +398,7 @@ bool BGCSimple::advance(double dt) {
 
       // and pull in the transpiration
       trans[0][col_iter[i]] = trans_c[i];
+      sw[0][col_iter[i]] = sw_c[i];
     }
 
     for (int lcv_pft=0; lcv_pft!=pfts_[col].size(); ++lcv_pft) {
@@ -392,6 +413,7 @@ bool BGCSimple::advance(double dt) {
 
   // mark primaries as changed
   trans_eval_->SetFieldAsChanged(S_next_.ptr());
+  sw_eval_->SetFieldAsChanged(S_next_.ptr());
   return false;
 }
 

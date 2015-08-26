@@ -32,7 +32,8 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
              std::vector<Teuchos::RCP<PFT> >& pftarr,
              std::vector<Teuchos::RCP<SoilCarbon> >& soilcarr,
              Epetra_SerialDenseVector& SoilCO2Arr,
-             Epetra_SerialDenseVector& TransArr);
+             Epetra_SerialDenseVector& TransArr,
+             Epetra_SerialDenseVector& SWArr);
 
 void Cryoturbate(double dt,
 		 const Epetra_SerialDenseVector& SoilTArr,

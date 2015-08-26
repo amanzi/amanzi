@@ -106,6 +106,7 @@ class BGCSimple : public PKPhysicalBase {
 
   // evaluator for transpiration
   Teuchos::RCP<PrimaryVariableFieldEvaluator> trans_eval_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> sw_eval_;
   
   // extras
   double lat_;
