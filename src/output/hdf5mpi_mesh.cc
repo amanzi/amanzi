@@ -731,19 +731,18 @@ bool HDF5_MPI::checkFieldData_(std::string varname) {
   strcpy(h5path,varname.c_str());
   bool exists;
 
-  if (viz_comm_.MyPID() == 0){
+  if (viz_comm_.MyPID() == 0) {
     iofile_t *currfile;
     currfile = IOgroup_.file[data_file_];
     exists = H5Lexists(currfile->fid, h5path, H5P_DEFAULT);
     if (!exists) std::cout<< "Field "<<h5path<<" is not found in hdf5 file.\n";
   } 
   
-  MPI_Bcast(&exists, 1, MPI_LOGICAL,  0, IOgroup_.localcomm);
+  MPI_Bcast(&exists, 1, MPI_C_BOOL, 0, IOgroup_.localcomm);
 
   delete[] h5path;
 
   return exists;
-
 }
 
 

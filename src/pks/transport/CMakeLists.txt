@@ -73,7 +73,7 @@ set(transport_inc_files
 
 set(transport_src_files Transport_PK.cc Transport_TI.cc 
                         Transport_VandV.cc Transport_IO.cc 
-                        Transport_Dispersion.cc 
+                        Transport_Dispersion.cc Transport_HenryLaw.cc
                         TransportBCFactory.cc TransportSourceFactory.cc
                         TransportBoundaryFunction_Tracer.cc TransportBoundaryFunction_Alquimia.cc
                         TransportDomainFunction.cc)
