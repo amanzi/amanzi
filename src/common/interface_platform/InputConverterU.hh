@@ -78,6 +78,9 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateFlowSources_();
   Teuchos::ParameterList TranslateTransport_();
   Teuchos::ParameterList TranslateTransportBCs_();
+  void TranslateTransportBCsGroup_(
+      std::string& bcname, std::vector<std::string>& regions,
+      xercesc::DOMNodeList* solutes, Teuchos::ParameterList& out_list);
   Teuchos::ParameterList TranslateTransportSources_();
   Teuchos::ParameterList TranslateChemistry_();
   Teuchos::ParameterList TranslateEnergy_();
