@@ -30,7 +30,7 @@
 #include "OperatorDiffusion.hh"
 #include "OperatorAccumulation.hh"
 #include "PK_Utils.hh"
-
+#include "boost/algorithm/string.hpp"
 #include "Transport_PK.hh"
 
 namespace Amanzi {
@@ -49,10 +49,12 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
 {
   std::string pk_name = pk_tree.name();
   const char* result = pk_name.data();
-  while ((result = std::strstr(result, "->")) != NULL) {
-    result += 2;
-    pk_name = result;   
-  }
+
+  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name,"->"); 
+  boost::algorithm::erase_head(pk_name,  res.end() - pk_name.begin());
+
+
+  
 
   if (glist_->isSublist("Cycle Driver")) {
     if (glist_->sublist("Cycle Driver").isParameter("component names")) {

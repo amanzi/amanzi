@@ -14,6 +14,7 @@
 
 #include "Epetra_Import.h"
 #include "Epetra_Vector.h"
+#include "boost/algorithm/string.hpp"
 
 #include "errors.hh"
 #include "exceptions.hh"
@@ -48,11 +49,10 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
   std::string pk_name = pk_tree.name();
   const char* result = pk_name.data();
 
-  while ((result = std::strstr(result, "->")) != NULL) {
-    result += 2;
-    pk_name = result;
-  }
+  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name,"->"); 
+  boost::algorithm::erase_head(pk_name,  res.end() - pk_name.begin());
 
+  
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_name, true);
