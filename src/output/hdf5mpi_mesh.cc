@@ -765,8 +765,6 @@ bool HDF5_MPI::readFieldData_(Epetra_Vector &x, std::string varname,
 
   if (!checkFieldData_(varname)) return false;
 
-  return true;
-
   int ndims;
   parallelIO_get_dataset_ndims(&ndims, data_file_, h5path, &IOgroup_);
   
