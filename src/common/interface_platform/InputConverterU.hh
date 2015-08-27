@@ -71,17 +71,26 @@ class InputConverterU : public InputConverter {
       bool modify_correction, const std::string& unstr_colntrols);
   Teuchos::ParameterList TranslateInitialization_(
       const std::string& unstr_controls);
+
+  // -- flow
   Teuchos::ParameterList TranslateFlow_(int regime = FLOW_BOTH_REGIMES);
   Teuchos::ParameterList TranslateWRM_();
   Teuchos::ParameterList TranslatePOM_();
   Teuchos::ParameterList TranslateFlowBCs_();
   Teuchos::ParameterList TranslateFlowSources_();
+
+  // -- transport
   Teuchos::ParameterList TranslateTransport_();
   Teuchos::ParameterList TranslateTransportBCs_();
   void TranslateTransportBCsGroup_(
       std::string& bcname, std::vector<std::string>& regions,
       xercesc::DOMNodeList* solutes, Teuchos::ParameterList& out_list);
   Teuchos::ParameterList TranslateTransportSources_();
+  void TranslateTransportSourcesGroup_(
+      std::string& srcname, std::vector<std::string>& regions,
+      xercesc::DOMNodeList* solutes, xercesc::DOMNode* phase_l, Teuchos::ParameterList& out_list);
+
+  // -- chemistry and energy
   Teuchos::ParameterList TranslateChemistry_();
   Teuchos::ParameterList TranslateEnergy_();
   Teuchos::ParameterList TranslateEnergyBCs_();

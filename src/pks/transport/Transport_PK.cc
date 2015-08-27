@@ -751,6 +751,9 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     }
   }
 
+  // optional Henry Law for the case of gas diffusion
+  // MakeAirWaterPartitioning_();
+
   // statistics output
   nsubcycles = ncycles;
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
