@@ -162,6 +162,7 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
 
   // -- air-water partitioning using Henry's law. This is a temporary
   //    solution to get things moving.
+  void PrepareAirWaterPartitioning_();
   void MakeAirWaterPartitioning_();
 
   // I/O methods
@@ -232,6 +233,11 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   std::string dispersion_preconditioner;
   std::string dispersion_solver;
 
+  // Hosting temporarily Henry law 
+  bool henry_law_;
+  std::vector<double> kH_;
+  std::vector<int> air_water_map_;
+ 
   double cfl_, dt_, dt_debug_, t_physics_;  
 
   std::vector<double> mass_solutes_exact_, mass_solutes_source_;  // mass for all solutes

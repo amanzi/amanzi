@@ -53,9 +53,6 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
   boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name,"->"); 
   if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name,  res.end() - pk_name.begin());
 
-
-  
-
   if (glist_->isSublist("Cycle Driver")) {
     if (glist_->sublist("Cycle Driver").isParameter("component names")) {
       // grab the component names
@@ -234,7 +231,7 @@ void Transport_PK::Initialize()
   // initialize missed fields
   InitializeFields_();
 
-  // Check input parameters. Due to limited checks, we can do it earlier.
+  // Check input parameters. Due to limited amount of checks, we can do it earlier.
   Policy(S_.ptr());
 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -303,6 +300,9 @@ void Transport_PK::Initialize()
       break;
     }
   }
+
+  // Temporarily Transport hosts Henry law.
+  PrepareAirWaterPartitioning_();
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -752,7 +752,9 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // optional Henry Law for the case of gas diffusion
-  // MakeAirWaterPartitioning_();
+  if (henry_law_) {
+    MakeAirWaterPartitioning_();
+  }
 
   // statistics output
   nsubcycles = ncycles;
