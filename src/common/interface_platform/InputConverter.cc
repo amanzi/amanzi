@@ -605,7 +605,7 @@ void InputConverter::ThrowErrorIllformed_(
 {
   Errors::Message msg;
   msg << "An error occurred during parsing node \"" << section << "\"\n";
-  msg << "Missing or ill-formed " << type << " for \"" << ill_formed << "\".\n";
+  msg << "Missing or ill-formed \"" << type << "\" for \"" << ill_formed << "\".\n";
   msg << "Please correct and try again.\n";
   Exceptions::amanzi_throw(msg);
 }
