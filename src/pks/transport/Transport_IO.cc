@@ -237,7 +237,6 @@ int Transport_PK::FindComponentNumber(const std::string component_name)
 **************************************************************** */
 void Transport_PK::ProcessStringDispersionModel(const std::string name, int* model)
 {
-  Errors::Message msg;
   if (name == "scalar") {
     *model = TRANSPORT_DISPERSIVITY_MODEL_SCALAR;
   } else if (name == "Bear") {
