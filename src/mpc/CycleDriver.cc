@@ -787,7 +787,9 @@ void CycleDriver::Go() {
     dt = tp_dt_[time_period_id_];
     dt = tsm_->TimeStep(S_->time(), dt);
     pk_->set_dt(dt);
+
   } else {
+
     // Read restart file
     restart_time = ReadCheckpointInitialTime(comm_, restart_filename_);
     position = ReadCheckpointPosition(comm_, restart_filename_);
@@ -805,6 +807,11 @@ void CycleDriver::Go() {
     // to initialize field which are not in the restart file
     S_->InitializeFields();
     S_->InitializeEvaluators();
+
+    // Initialize the process kernels
+    pk_->Initialize();
+    
+    S_->GetMeshPartition("materials");
     
     // re-initialize the state object
     restart_dT = ReadCheckpoint(comm_, Teuchos::ptr(&*S_), restart_filename_);
@@ -825,17 +832,21 @@ void CycleDriver::Go() {
       ResetDriver(time_period_id_); 
       restart_dT =  tp_dt_[time_period_id_];
     }
-    else {
-      Initialize();
-    }
+    // else {
+    //   Initialize();
+    // }
 
     S_->set_initial_time(S_->time());
     dt = tsm_->TimeStep(S_->time(), restart_dT);
     pk_->set_dt(dt);
+
   }
 
   *S_->GetScalarData("dt", "coordinator") = dt;
   S_->GetField("dt","coordinator")->set_initialized();
+
+  S_->CheckNotEvaluatedFieldsInitialized();
+  S_->CheckAllFieldsInitialized();
 
   // visualization at IC
   //Amanzi::timer_manager.start("I/O");
