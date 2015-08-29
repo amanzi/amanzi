@@ -79,10 +79,10 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   int mat(0);
 
   DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("materials"));
-  DOMNodeList* childern = node_list->item(0)->getChildNodes();
+  DOMNodeList* children = node_list->item(0)->getChildNodes();
 
-  for (int i = 0; i < childern->getLength(); i++) {
-    DOMNode* inode = childern->item(i);
+  for (int i = 0; i < children->getLength(); i++) {
+    DOMNode* inode = children->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       std::string mat_name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
 
@@ -248,10 +248,14 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
   // initialization of fields via the initial_conditions list
   node_list = doc_->getElementsByTagName(mm.transcode("initial_conditions"));
-  childern = node_list->item(0)->getChildNodes();
+  int nchildren(0);
+  if (node_list->getLength() != 0) {
+    children = node_list->item(0)->getChildNodes();
+    nchildren = children->getLength();
+  }
 
-  for (int i = 0; i < childern->getLength(); i++) {
-    DOMNode* inode = childern->item(i);
+  for (int i = 0; i < nchildren; i++) {
+    DOMNode* inode = children->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       text_content = mm.transcode(node->getTextContent());
@@ -447,11 +451,11 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .sublist("function").sublist("function-constant")
             .set<double>("value", val);
       }
-
-      // atmospheric pressure
-      out_ic.sublist("atmospheric_pressure").set<double>("value", ATMOSPHERIC_PRESSURE);
     }
   }
+
+  // atmospheric pressure
+  out_ic.sublist("atmospheric_pressure").set<double>("value", ATMOSPHERIC_PRESSURE);
 
   // add mesh partitions to the state list
   out_list.sublist("mesh partitions") = TranslateMaterialsPartition_();
@@ -473,10 +477,10 @@ Teuchos::ParameterList InputConverterU::TranslateMaterialsPartition_()
   std::vector<std::string> regions;
 
   DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("materials"));
-  DOMNodeList* childern = node_list->item(0)->getChildNodes();
+  DOMNodeList* children = node_list->item(0)->getChildNodes();
 
-  for (int i = 0; i < childern->getLength(); i++) {
-    DOMNode* inode = childern->item(i);
+  for (int i = 0; i < children->getLength(); i++) {
+    DOMNode* inode = children->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       DOMNamedNodeMap* attr_map = inode->getAttributes();
 
