@@ -9,22 +9,14 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_MULTISCALE_POROSITY_HH_
-#define AMANZI_MULTISCALE_POROSITY_HH_
+
+#include "MultiscalePorosity_DPM.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-class MultiscalePorosity {
- public:
-  virtual ~MultiscalePorosity() {};
-
-  virtual double WaterContentMatrix(
-      double dt, double phi, double n_l, double wcm0, double pcf0, double& pcm) = 0;
-};
+Utils::RegisteredFactory<MultiscalePorosity, MultiscalePorosity_DPM>
+    MultiscalePorosity_DPM::factory_("dual porosity");
 
 }  // namespace Flow
 }  // namespace Amanzi
-  
-#endif
-  

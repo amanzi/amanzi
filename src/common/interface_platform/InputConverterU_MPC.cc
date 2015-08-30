@@ -272,10 +272,11 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
   double t0, t1, dt0;
   char *method, *tagname;
   bool flag_steady(false); 
-  std::string method_d, dt0_d, filename;
+  std::string method_d, dt0_d, mode_d, filename;
 
   method_d = GetAttributeValueS_(static_cast<DOMElement*>(node), "method", false, "");
   dt0_d = GetAttributeValueS_(static_cast<DOMElement*>(node), "init_dt", false, "0.0");
+  mode_d = GetAttributeValueS_(static_cast<DOMElement*>(node), "mode", false, "");
 
   // parse execution_control
   std::map<std::string, std::string> tp_method;
@@ -290,10 +291,10 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
 
     tagname = mm.transcode(inode->getNodeName());
     if (strcmp(tagname, "execution_control") == 0) {
-      t0 = TimeStringToValue_(GetAttributeValueS_(static_cast<DOMElement*>(inode), "start"));
-      t1 = TimeStringToValue_(GetAttributeValueS_(static_cast<DOMElement*>(inode), "end"));
+      t0 = TimeStringToValue_(GetAttributeValueS_(element, "start"));
+      t1 = TimeStringToValue_(GetAttributeValueS_(element, "end"));
       dt0 = TimeStringToValue_(GetAttributeValueS_(element, "init_dt", false, dt0_d));
-      std::string mode = GetAttributeValueS_(static_cast<DOMElement*>(inode), "mode");
+      std::string mode = GetAttributeValueS_(element, "mode", false, mode_d);
 
       tp_t0[mode] = t0;
       tp_t1[mode] = t1;

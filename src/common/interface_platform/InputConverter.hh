@@ -140,7 +140,11 @@ class InputConverter {
   // -- vector parsing
   int GetPosition_(const std::vector<std::string>& names, const std::string& name);
 
-  // error messages
+  // is spec structurally sound?
+  // -- mandatory objects
+  int IsEmpty(xercesc::DOMNodeList* node_list, const std::string& name, bool exception = true);
+   
+  // -- error messages
   void ThrowErrorIllformed_(
       const std::string& section, const std::string& type, const std::string& ill_formed);
   void ThrowErrorIllformed_(

@@ -128,6 +128,12 @@ The name *Verbosity Level* is reserved by Trilinos.
    </ParameterList>
 
 
+Units
+-----
+
+Amanzi's internal default units are SI units.
+
+
 Cycle driver
 ============
 
@@ -955,24 +961,40 @@ In this example, we define two different porosity models in two soils.
 Multiscale continuum models
 ...........................
 
-The list *multiscale model* is the placeholder for various multiscale models.
-This list if optional. 
+The list *multiscale models* is the placeholder for various multiscale models.
+The list is extension of the list *water retention models*. 
+Its ordered by soil regions and includes parameters for the multiscale,
+capillary pressure, and relative permebility models.
+This list is optional. 
 
-* `"model`" [string] is the model name. Available option is `"dual porosity`".
+* `"multiscale model`" [string] is the model name. Available option is `"dual porosity`".
 
 * `"mass transfer coefficient`" [double] is the mass transfer coefficient.
 
-* `"water retention models`" [list] is the list of water retention models for 
-  matrix. It has the same structure as the analogous list for the fractured media
-  and is described above.
+* `"water retention model`" [string] specifies a model for the soil.
+  The available models are `"van Genuchten`" and `"Brooks Corey`". 
+  Parameters for each model are described above.
+
+* `"relative permeability model`" [string] The available options are `"Mualem`" (default) 
+  and `"Burdine`".
 
 .. code-block:: xml
 
    <ParameterList name="Richards problem">  <!-- parent list -->
-     <Parameter name="model" type="string" value="dual porosity"/> 
-     <Paramater name="mass transfer coefficient" type="double" value="4.0e-5"/>
-     <ParameterList name="water retention models">
-       ...
+     <ParameterList name="multiscale models"> 
+       <ParameterList name="SOIL_1">
+         <Parameter name="region" type="string" value="TOP HALF"/>
+         <Parameter name="multiscale model" type="string" value="dual porosity"/> 
+         <Paramater name="mass transfer coefficient" type="double" value="4.0e-5"/>
+
+         <Parameter name="water retention model" type="string" value="van Genuchten"/>
+         <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>
+         <Parameter name="van Genuchten m" type="double" value="0.28571"/>
+         <Parameter name="van Genuchten l" type="double" value="0.5"/>
+         <Parameter name="residual saturation" type="double" value="0.103"/>
+         <Parameter name="regularization interval" type="double" value="100.0"/>
+         <Parameter name="relative permeability model" type="string" value="Mualem"/>
+       </ParameterList>
      </ParameterList>
    </ParameterList>
 
@@ -1572,13 +1594,17 @@ This list is used to summarize physical models and assumptions, such as
 coupling with other PKs.
 This list is often generated or extended by a high-level MPC PK.
 
-* `"permeability field is required`" [bool] indicate if some transport features
+* `"gas diffusion`" [bool] indicates that air-water partitioning coefficients
+  are used to distribute components between liquid and as phases. Default is *false*.
+
+* `"permeability field is required`" [bool] indicates if some transport features
   require absolute permeability. Default is *false*.
 
 .. code-block:: xml
 
    <ParameterList name="Transport">  <!-- parent list -->
      <ParameterList name="physical models and assumptions">
+       <Parameter name="gas diffusion" type="bool" value="false"/>
        <Parameter name="permeability field is required" type="bool" value="false"/>
      </ParameterList>
    </ParameterList>
@@ -1719,11 +1745,12 @@ Three examples are below:
 
   <ParameterList name="Transport">  <!-- parent list -->
     <ParameterList name="molecular diffusion">
-      <Parameter name="aqueous names" type=Array(string)" value="{Tc-98,Tc-99}"/>
+      <Parameter name="aqueous names" type=Array(string)" value="{CO2(l),Tc-99}"/>
       <Parameter name="aqueous values" type=Array(double)" value="{1e-8,1e-9}"/>
 
-      <Parameter name="gaseous names" type=Array(string)" value="{C02}"/>
+      <Parameter name="gaseous names" type=Array(string)" value="{CO2(g)}"/>
       <Parameter name="gaseous values" type=Array(double)" value="{1e-8}"/>
+      <Parameter name="air-water partitioning coefficient" type=Array(double)" value="{0.03}"/> 
     </ParameterList>  
   </ParameterList>  
 
@@ -1741,14 +1768,14 @@ allows us to define spatially variable boundary conditions.
 
   * `"concentration`" [list] This is a reserved keyword.
    
-    * "COMP" [list] Contains a few sublists (e.g. BC_1, BC_2) for boundary conditions.
+    * "COMP" [list] contains a few sublists (e.g. BC_1, BC_2) for boundary conditions.
  
-      * "BC_1" [list] Defines boundary conditions using arrays of boundary regions and attached
+      * "BC_1" [list] defines boundary conditions using arrays of boundary regions and attached
         functions.
    
-      * `"regions`" [Array(string)] Defines a list of boundary regions where a boundary condition
+      * `"regions`" [Array(string)] defines a list of boundary regions where a boundary condition
         must be applied.
-      * `"boundary concentration`" [list] Define a function for calculating boundary conditions.
+      * `"boundary concentration`" [list] defines a function for calculating boundary conditions.
         The function specification is described in subsection Functions.
 
 The example below sets constant boundary condition 1e-5 for the duration of transient simulation.
@@ -1809,15 +1836,15 @@ Note that the source values are set up separately for each component.
 
 * `"concentration`" [list] This is a reserved keyword.
 
- * "COMP" [list] Contains a few sublists (e.g. SRC_1, SRC_2) for multiple sources and sinks.
+ * "COMP" [list] contains a few sublists (e.g. SRC_1, SRC_2) for multiple sources and sinks.
 
-  * "SRC_1" [list] Defines a source using arrays of domain regions, a function, and 
+  * "SRC_1" [list] defines a source using arrays of domain regions, a function, and 
     a distribution method.
    
-   * `"regions`" [Array(string)] Defines a list of domain regions where a source term
+   * `"regions`" [Array(string)] defines a list of domain regions where a source term
      must be applied.
 
-   * `"sink`" [list] Define a function for calculating a source term.
+   * `"sink`" [list] is a function for calculating a source term.
      The function specification is described in subsection Functions.
 
     * `"spatial distribution method`" [string] identifies a method for distributing

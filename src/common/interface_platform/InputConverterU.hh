@@ -44,6 +44,7 @@ class InputConverterU : public InputConverter {
   void SaveXMLFile(Teuchos::ParameterList& plist, std::string& filename);
 
  private:
+  void VerifyXMLStructure_();
   void ParseSolutes_();
 
   Teuchos::ParameterList TranslateVerbosity_();
@@ -76,6 +77,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateFlow_(int regime = FLOW_BOTH_REGIMES);
   Teuchos::ParameterList TranslateWRM_();
   Teuchos::ParameterList TranslatePOM_();
+  Teuchos::ParameterList TranslateFlowMSM_();
   Teuchos::ParameterList TranslateFlowBCs_();
   Teuchos::ParameterList TranslateFlowSources_();
 

@@ -9,21 +9,40 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_MULTISCALE_POROSITY_HH_
-#define AMANZI_MULTISCALE_POROSITY_HH_
+#ifndef AMANZI_MULTISCALE_POROSITY_DPM_HH_
+#define AMANZI_MULTISCALE_POROSITY_DPM_HH_
 
-#include <string>
+#include "boost/math/tools/tuple.hpp"
+#include "Teuchos_ParameterList.hpp"
+
+#include "factory.hh"
+
 #include "MultiscalePorosity.hh"
+#include "WRM.hh"
 
 namespace Amanzi {
 namespace Flow {
 
 class MultiscalePorosity_DPM : public MultiscalePorosity {
  public:
-  MultiscalePorosity_DPM() {};
+  MultiscalePorosity_DPM(Teuchos::ParameterList& plist);
   ~MultiscalePorosity_DPM() {};
 
-  void WaterContentMatrix();
+  // local (cell-based) solver
+  double WaterContentMatrix(
+      double dt, double phi, double n_l, double wcm0, double pcf0, double& pcm);
+
+  // interface to boost
+  boost::math::tuple<double, double> operator() (double pc);
+
+ private:
+  Teuchos::RCP<WRM> wrm_;
+  double alpha_;
+
+  // support of the Newton-Raphson solver
+  double sat0_, pcf0_, alpha_mod_;
+
+  static Utils::RegisteredFactory<MultiscalePorosity, MultiscalePorosity_DPM> factory_;
 };
 
 }  // namespace Flow

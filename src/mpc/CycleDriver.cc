@@ -660,9 +660,7 @@ double CycleDriver::Advance(double dt) {
         if (S_->time() == reset_info_.front().first)
             force_check = true;
 
-
     // make observations, vis, and checkpoints
-
     //Amanzi::timer_manager.start("I/O");
     if (advance) {
       pk_->CalculateDiagnostics();
@@ -682,7 +680,7 @@ double CycleDriver::Advance(double dt) {
     // Failed the timestep.  
     // Potentially write out failed timestep for debugging
     for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=failed_visualization_.begin();
-         vis!=failed_visualization_.end(); ++vis) {
+         vis != failed_visualization_.end(); ++vis) {
       WriteVis((*vis).ptr(), S_.ptr());
     }
     // The timestep sizes have been updated, so copy back old soln and try again.

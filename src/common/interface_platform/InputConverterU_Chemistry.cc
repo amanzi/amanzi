@@ -57,6 +57,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   if (strcmp(engine.c_str(), "amanzi") == 0) {
     out_list.set<std::string>("chemistry model", "Amanzi");
     std::string bgdfilename = CreateBGDFile(xmlfilename_);
+    bgdfilename = GetAttributeValueS_(static_cast<DOMElement*>(node), "bdg_file", false, bgdfilename);
     native = true;
 
     Teuchos::ParameterList& bgd_list = out_list.sublist("Thermodynamic Database");

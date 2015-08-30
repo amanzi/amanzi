@@ -40,6 +40,9 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   vo_ = new VerboseObject("InputConverter", tmp_list);
   Teuchos::OSTab tab = vo_->getOSTab();
 
+  // checks that input XML is structurally sound
+  VerifyXMLStructure_();
+
   // parsing of miscalleneous lists
   ParseSolutes_();
   ParseConstants_();
@@ -75,6 +78,27 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   return out_list;
 }
   
+
+/* ******************************************************************
+* Check that XML has required objects that frequnetly used.
+****************************************************************** */
+void InputConverterU::VerifyXMLStructure_()
+{
+  MemoryManager mm;
+
+  std::vector<std::string> names;
+  names.push_back("execution_controls");
+  names.push_back("materials");
+  names.push_back("process_kernels");
+  names.push_back("phases");
+  names.push_back("mesh");
+
+  for (std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it) {
+    DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode(it->c_str()));
+    IsEmpty(node_list, *it); 
+  }
+}
+
 
 /* ******************************************************************
 * Extract information of solute components.

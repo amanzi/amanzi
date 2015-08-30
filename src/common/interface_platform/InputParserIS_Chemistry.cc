@@ -24,9 +24,9 @@ Teuchos::ParameterList InputParserIS::CreateChemistryList_(Teuchos::RCP<Teuchos:
     chem_list.set<std::string>("activity model", chem_list.get<std::string>("Activity Model", "unit"));
     chem_list.set<int>("maximum Newton iterations", chem_list.get<int>("Maximum Newton Iterations", 100));
     chem_list.set<double>("tolerance", chem_list.get<double>("Tolerance", 1.0e-12));
-    chem_list.set<double>("max time step (s)", chem_list.get<double>("Max Time Step (s)", 1.0e+10));
-    chem_list.set<double>("min time step (s)", chem_list.get<double>("Min Time Step (s)", 1.0e-10));
-    chem_list.set<double>("initial time step (s)", chem_list.get<double>("Initial Time Step (s)", 1.0e-10));
+    // chem_list.set<double>("max time step (s)", chem_list.get<double>("Max Time Step (s)", 1.0e+10));
+    // chem_list.set<double>("min time step (s)", chem_list.get<double>("Min Time Step (s)", 1.0e-10));
+    // chem_list.set<double>("initial time step (s)", chem_list.get<double>("Initial Time Step (s)", 1.0e-10));
     chem_list.set<std::string>("time step control method",
         chem_list.get<std::string>("Time Step Control Method", "fixed"));
     chem_list.set<int>("time step cut threshold", chem_list.get<int>("Time Step Cut Threshold", 8));

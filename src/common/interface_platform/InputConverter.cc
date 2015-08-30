@@ -598,6 +598,23 @@ std::string InputConverter::TrimString_(char* tmp)
 
 
 /* *******************************************************************
+* Generate error message when list is empty.
+******************************************************************* */
+int InputConverter::IsEmpty(DOMNodeList* node_list, const std::string& name, bool exception)
+{
+  int n = node_list->getLength();
+  if (n == 0 && exception) {
+    Errors::Message msg;
+    msg << "Mandatory element \"" << name << "\" is missing.\n";
+    msg << "Please correct and try again.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return n;
+}
+
+
+/* *******************************************************************
 * Generate unified error message for ill-formed element
 ******************************************************************* */
 void InputConverter::ThrowErrorIllformed_(

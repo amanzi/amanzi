@@ -195,6 +195,11 @@ void Richards_PK::Setup()
 
   // -- multiscale extension: secondary (immobile water content)
   if (multiscale_model == "dual porosity") {
+    if (!S_->HasField("pressure_matrix")) {
+      S_->RequireField("pressure_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    }
+
     if (!S_->HasField("water_content_matrix")) {
       S_->RequireField("water_content_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -556,6 +561,13 @@ void Richards_PK::Initialize()
     PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
   }
 
+  // initialize multisclae methods
+  if (multiscale_porosity_) {
+    Teuchos::RCP<Teuchos::ParameterList>
+        msp_list = Teuchos::sublist(rp_list_, "multiscale models", true);
+    msp_ = CreateMultiscalePorosityPartition(mesh_, msp_list);
+  }
+
   // Optional step: calculate hydrostatic solution consistent with BCs
   // and clip it as requested. We have to do it only once at the beginning
   // of time period.
@@ -706,7 +718,7 @@ void Richards_PK::InitializeFields_()
         S_->GetField("saturation_liquid", passwd_)->set_initialized();
 
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-            *vo_->os() << "initilized saturation_liquid to default value 1.0" << std::endl;  
+            *vo_->os() << "initiliazed saturation_liquid to default value 1.0" << std::endl;  
       }
     }
   }
@@ -723,7 +735,7 @@ void Richards_PK::InitializeFields_()
       S_->GetField("prev_saturation_liquid", passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized prev_saturation_liquid to saturation_liquid" << std::endl;  
+          *vo_->os() << "initiliazed prev_saturation_liquid to saturation_liquid" << std::endl;  
     }
   }
 
@@ -738,7 +750,45 @@ void Richards_PK::InitializeFields_()
       S_->GetField("prev_water_content", passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized prev_water_content to water_content" << std::endl;  
+          *vo_->os() << "initiliazed prev_water_content to water_content" << std::endl;  
+    }
+  }
+
+  // pressure equilibrium 
+  if (S_->HasField("pressure_matrix")) {
+    if (!S_->GetField("pressure_matrix", passwd_)->initialized()) {
+      const Epetra_MultiVector& p1 = *S_->GetFieldData("pressure")->ViewComponent("cell");
+      Epetra_MultiVector& p0 = *S_->GetFieldData("pressure_matrix", passwd_)->ViewComponent("cell");
+      p0 = p1;
+
+      S_->GetField("pressure_matrix", passwd_)->set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initiliazed pressure_matrix to pressure" << std::endl;  
+    }
+  }
+
+  InitializeFieldFromField_("water_content_matrix", "water_content");
+  InitializeFieldFromField_("prev_water_content_matrix", "water_content_matrix");
+}
+
+
+/* ****************************************************************
+* Auxiliary initialization technique.
+**************************************************************** */
+void Richards_PK::InitializeFieldFromField_(
+    const std::string& field0, const std::string& field1)
+{
+  if (S_->HasField(field0)) {
+    if (!S_->GetField(field0, passwd_)->initialized()) {
+      const CompositeVector& f1 = *S_->GetFieldData(field1);
+      CompositeVector& f0 = *S_->GetFieldData(field0, passwd_);
+      f0 = f1;
+
+      S_->GetField(field0, passwd_)->set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initiliazed " << field0 << " to " << field1 << std::endl;
     }
   }
 }
@@ -775,7 +825,7 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // save a copy of pressure
   CompositeVector pressure_copy(*S_->GetFieldData("pressure", passwd_));
 
-  // swap saturations (may go to a high-level PK)
+  // swap saturations
   S_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_.ptr(), "flow");
   const CompositeVector& sat = *S_->GetFieldData("saturation_liquid");
   CompositeVector& sat_prev = *S_->GetFieldData("prev_saturation_liquid", passwd_);
@@ -783,13 +833,25 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   CompositeVector sat_prev_copy(sat_prev);
   sat_prev = sat;
 
-  // swap water_content (may go to a high-level PK)
+  // swap water_content
   S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
   CompositeVector& wc = *S_->GetFieldData("water_content", "water_content");
   CompositeVector& wc_prev = *S_->GetFieldData("prev_water_content", passwd_);
 
   CompositeVector wc_prev_copy(wc_prev);
   wc_prev = wc;
+
+  // swap fields for multiscale models
+  Teuchos::RCP<CompositeVector> pressure_matrix_copy, wc_matrix_prev_copy;
+  if (multiscale_porosity_) {
+    pressure_matrix_copy = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("pressure_matrix", passwd_)));
+
+    CompositeVector& wc_matrix = *S_->GetFieldData("water_content_matrix", passwd_);
+    CompositeVector& wc_matrix_prev = *S_->GetFieldData("prev_water_content_matrix", passwd_);
+
+    wc_matrix_prev_copy = Teuchos::rcp(new CompositeVector(wc_matrix_prev));
+    wc_matrix_prev = wc_matrix;
+  }
 
   // enter subspace
   if (reinit && solution->HasComponent("face")) {
@@ -825,7 +887,14 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     *S_->GetFieldData("prev_water_content", passwd_) = wc_prev_copy;
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Step failed. Restored pressure, prev_saturation_liquid, prev_water_content" << std::endl;
+    *vo_->os() << "Reverted pressure, prev_saturation_liquid, prev_water_content" << std::endl;
+
+    if (multiscale_porosity_) {
+      *S_->GetFieldData("pressure_matrix", passwd_) = *pressure_matrix_copy;
+      *S_->GetFieldData("prev_water_content_matrix", passwd_) = *wc_matrix_prev_copy;
+
+      *vo_->os() << "Reverted pressure_matrix, prev_water_content_matrix" << std::endl;
+    }
 
     return failed;
   }
