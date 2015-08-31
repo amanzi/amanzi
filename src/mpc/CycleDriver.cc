@@ -544,9 +544,13 @@ double CycleDriver::get_dt(bool after_failure) {
   for (it = reset_info_.begin(), it_max = reset_max_.begin(); it != reset_info_.end(); ++it, ++it_max) {
     if (S_->time() == it->first) {
       if (reset_max_.size() > 0) max_dt_ = it_max->second;
-      dt = it->second;
-      pk_->set_dt(dt);
-      after_failure = true;
+      if (dt < it->second){
+        pk_->set_dt(dt);
+      }else {
+        dt = it->second;
+        pk_->set_dt(dt);
+        after_failure = true;
+      }
       
       reset_info_.erase(it);
       reset_max_.erase(it_max);
@@ -817,6 +821,7 @@ void CycleDriver::Go() {
     
     // re-initialize the state object
     restart_dT = ReadCheckpoint(comm_, Teuchos::ptr(&*S_), restart_filename_);
+
     cycle0_ = S_->cycle();
     for (std::vector<std::pair<double,double> >::iterator it = reset_info_.begin();
           it != reset_info_.end(); ++it) {
