@@ -40,6 +40,9 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   vo_ = new VerboseObject("InputConverter", tmp_list);
   Teuchos::OSTab tab = vo_->getOSTab();
 
+  // checks that input XML is structurally sound
+  VerifyXMLStructure_();
+
   // parsing of miscalleneous lists
   ParseSolutes_();
   ParseConstants_();
@@ -67,9 +70,35 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   out_list.sublist("Analysis") = CreateAnalysis_();
   FilterEmptySublists_(out_list);
 
+  // miscalleneous cross-list information
+  if (init_filename_.size() > 0) {
+    out_list.sublist("State").set<std::string>("initialization filename", init_filename_);
+  }
+
   return out_list;
 }
   
+
+/* ******************************************************************
+* Check that XML has required objects that frequnetly used.
+****************************************************************** */
+void InputConverterU::VerifyXMLStructure_()
+{
+  MemoryManager mm;
+
+  std::vector<std::string> names;
+  names.push_back("execution_controls");
+  names.push_back("materials");
+  names.push_back("process_kernels");
+  names.push_back("phases");
+  names.push_back("mesh");
+
+  for (std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it) {
+    DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode(it->c_str()));
+    IsEmpty(node_list, *it); 
+  }
+}
+
 
 /* ******************************************************************
 * Extract information of solute components.
@@ -82,12 +111,13 @@ void InputConverterU::ParseSolutes_()
 
   MemoryManager mm;
 
-  DOMNode* inode = doc_->getElementsByTagName(mm.transcode("phases"))->item(0);
-  DOMNode* node = GetUniqueElementByTagsString_(inode, "liquid_phase, dissolved_components, solutes", flag);
+  DOMNode* knode = doc_->getElementsByTagName(mm.transcode("phases"))->item(0);
 
+  // liquid phase
+  DOMNode* node = GetUniqueElementByTagsString_(knode, "liquid_phase, dissolved_components, solutes", flag);
   DOMNodeList* children = node->getChildNodes();
   for (int i = 0; i < children->getLength(); ++i) {
-    inode = children->item(i);
+    DOMNode* inode = children->item(i);
     tagname = mm.transcode(inode->getNodeName());
     text_content = mm.transcode(inode->getTextContent());
 
@@ -97,6 +127,23 @@ void InputConverterU::ParseSolutes_()
   }
   
   comp_names_all_ = phases_["water"];
+
+  // gas phase
+  node = GetUniqueElementByTagsString_(knode, "gas_phase, dissolved_components, solutes", flag);
+  if (flag) {
+    DOMNodeList* children = node->getChildNodes();
+    for (int i = 0; i < children->getLength(); ++i) {
+      DOMNode* inode = children->item(i);
+      tagname = mm.transcode(inode->getNodeName());
+      text_content = mm.transcode(inode->getTextContent());
+
+      if (strcmp(tagname, "solute") == 0) {
+        phases_["air"].push_back(TrimString_(text_content));
+      }
+    }
+
+    comp_names_all_.insert(comp_names_all_.end(), phases_["air"].begin(), phases_["air"].end());
+  }
 }
 
 
@@ -166,7 +213,7 @@ Teuchos::ParameterList InputConverterU::TranslateMisc_()
     element = static_cast<DOMElement*>(node);
     std::string filename = GetAttributeValueS_(element, "file_name", false, "native_v6.xml");
 
-    out_list.set<std::string>("File Name", filename);
+    out_list.set<std::string>("file name", filename);
   }
 
   return out_list;

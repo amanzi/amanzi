@@ -450,8 +450,8 @@ void Unstructured_observations::RegisterWithTimeStepManager(const Teuchos::Ptr<T
 ****************************************************************** */
 void Unstructured_observations::FlushObservations()
 {
-  if (obs_list_.isParameter("Observation Output Filename")) {
-    std::string obs_file = obs_list_.get<std::string>("Observation Output Filename");
+  if (obs_list_.isParameter("observation output filename")) {
+    std::string obs_file = obs_list_.get<std::string>("observation output filename");
     int precision = obs_list_.get<int>("precision", 16);
 
     if (rank_ == 0) {

@@ -154,14 +154,14 @@ void TransportBCFactory::ProcessGeochemicalConditionList(std::vector<TransportBo
         if (covered_regions.find(regions) != covered_regions.end()) continue;
         covered_regions.insert(regions);
 
-        std::vector<std::string> cond_names = bc_params.get<Teuchos::Array<std::string> >("Geochemical Conditions").toVector();
-        std::vector<double> times = bc_params.get<Teuchos::Array<double> >("Times").toVector();
-        std::vector<std::string> time_funcs = bc_params.get<Teuchos::Array<std::string> >("Time Functions").toVector();
+        std::vector<std::string> cond_names = bc_params.get<Teuchos::Array<std::string> >("geochemical conditions").toVector();
+        std::vector<double> times = bc_params.get<Teuchos::Array<double> >("times").toVector();
+        std::vector<std::string> time_funcs = bc_params.get<Teuchos::Array<std::string> >("time functions").toVector();
 
-        // Make sure that the Time Functions are all "Constant".
+        // Make sure that the "time functions" are all "constant".
         for (int i = 0; i < time_funcs.size(); ++i) {
           if (time_funcs[i] != "Constant") {
-            msg << "Only Constant time functions are supported for Geochemical Conditions!\n";
+            msg << "Only Constant time functions are supported for geochemical conditions!\n";
             Exceptions::amanzi_throw(msg);
           }
         }

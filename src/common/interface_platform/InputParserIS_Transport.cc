@@ -224,7 +224,7 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::RCP<Teuchos:
                   if (comps.sublist(*i).isSublist("BC: Uniform Concentration")) {
                     Teuchos::ParameterList& bcsub = comps.sublist(*i).sublist("BC: Uniform Concentration");
 
-                    // If we only have one Geochemical condition, we don't need the Times and Time Functions
+                    // If we only have one Geochemical condition, we don't need the "times" and "time functions"
                     // entries, and make up entries for the 
                     if (bcsub.isParameter("Geochemical Condition")) { 
                       std::string cond_name = bcsub.get<std::string>("Geochemical Condition");
@@ -240,10 +240,10 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::RCP<Teuchos:
                       times[1] = FLT_MAX;
                       Teuchos::Array<std::string> time_fns(1, "Constant");
                       Teuchos::Array<std::string> cond_names(2, cond_name);
-                      bc.set<Teuchos::Array<double> >("Times", times);
-                      bc.set<Teuchos::Array<std::string> >("Time Functions", time_fns);
+                      bc.set<Teuchos::Array<double> >("times", times);
+                      bc.set<Teuchos::Array<std::string> >("time functions", time_fns);
                       bc.set<Teuchos::Array<std::string> >("regions", regs);
-                      bc.set<Teuchos::Array<std::string> >("Geochemical Conditions", cond_names);
+                      bc.set<Teuchos::Array<std::string> >("geochemical conditions", cond_names);
                     }
 
                     // Otherwise, we parse these entries.
@@ -260,9 +260,9 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::RCP<Teuchos:
                         Teuchos::ParameterList& bc = gc_list.sublist(compss.str()).sublist(name);
 
                         // Fill it with stuff.
-                        bc.set<Teuchos::Array<double> >("Times", times);
-                        bc.set<Teuchos::Array<std::string> >("Time Functions", time_fns);
-                        bc.set<Teuchos::Array<std::string> >("Geochemical Conditions", cond_names);
+                        bc.set<Teuchos::Array<double> >("times", times);
+                        bc.set<Teuchos::Array<std::string> >("time functions", time_fns);
+                        bc.set<Teuchos::Array<std::string> >("geochemical conditions", cond_names);
                         bc.set<Teuchos::Array<std::string> >("regions", regs);
                       }
                       else { // ordinary Transport BCs.

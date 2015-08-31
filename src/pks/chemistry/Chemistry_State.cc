@@ -81,9 +81,9 @@ void Chemistry_State::SetupMineralNames_() {
 void Chemistry_State::SetupSoluteNames_() {
   // get the number of component concentrations from the
   // parameter list
-  if (plist_.isParameter("Number of component concentrations")) {
+  if (plist_.isParameter("number of component concentrations")) {
     number_of_aqueous_components_ =
-        plist_.get<int>("Number of component concentrations");
+        plist_.get<int>("number of component concentrations");
   } else {
     // if the parameter list does not contain this key, then assume we
     // are being called from a state constructor w/o a valid parameter
@@ -470,8 +470,8 @@ void Chemistry_State::SetAuxDataNames(const std::vector<std::string>& aux_data_n
 }
 
 void Chemistry_State::RequireAuxData_() {
-  if (plist_.isParameter("Auxiliary Data"))  {
-    Teuchos::Array<std::string> names = plist_.get<Teuchos::Array<std::string> >("Auxiliary Data");  
+  if (plist_.isParameter("auxiliary data"))  {
+    Teuchos::Array<std::string> names = plist_.get<Teuchos::Array<std::string> >("auxiliary data");  
     
     for (Teuchos::Array<std::string>::const_iterator name = names.begin(); name != names.end(); ++name) {
 
@@ -491,7 +491,7 @@ void Chemistry_State::InitializeField_(Teuchos::ParameterList& ic_plist,
   // -- first initialize to a default: this should be a valid default if the
   // parameter is optional, and non-valid if it is not.
 
-  if (S_->HasField(fieldname)){
+  if (S_->HasField(fieldname)) {
     S_->GetFieldData(fieldname, name_)->PutScalar(default_val);
     //S_->GetField(fieldname, name_)->set_initialized();
   }
@@ -518,7 +518,6 @@ void Chemistry_State::Initialize() {
   if (number_of_aqueous_components_ > 0) {
     if (!S_->GetField("total_component_concentration",name_)->initialized()) {
       InitializeField_(ic_plist, "total_component_concentration", false, -1.0);
-      
     }
     InitializeField_(ic_plist, "free_ion_species", true, 0.0);
     InitializeField_(ic_plist, "primary_activity_coeff", true, 1.0);
@@ -554,8 +553,8 @@ void Chemistry_State::Initialize() {
   }
 
   // initialize auxiliary fields
-  if (plist_.isParameter("Auxiliary Data"))  {
-    Teuchos::Array<std::string> names = plist_.get<Teuchos::Array<std::string> >("Auxiliary Data");  
+  if (plist_.isParameter("auxiliary data"))  {
+    Teuchos::Array<std::string> names = plist_.get<Teuchos::Array<std::string> >("auxiliary data");  
     
     for (Teuchos::Array<std::string>::const_iterator name = names.begin(); name != names.end(); ++name) {
       S_->GetFieldData(*name, name_)->PutScalar(0.0);

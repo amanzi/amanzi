@@ -24,7 +24,7 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist)
 {
   // Process the list for my provided field.
-  std::string mode = plist_.get<std::string>("EOS basis", "molar");
+  std::string mode = plist_.get<std::string>("eos basis", "molar");
   if (mode == "molar") {
     mode_ = EOS_MODE_MOLAR;
   } else if (mode == "mass") {

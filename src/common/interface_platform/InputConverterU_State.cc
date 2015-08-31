@@ -68,12 +68,6 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   rho_ = std::strtod(text_content, NULL);
   out_ic.sublist("fluid_density").set<double>("value", rho_);
 
-  // out_ic.sublist("water_density").sublist("function").sublist("All")
-  //     .set<std::string>("region", "All")
-  //     .set<std::string>("component", "cell")
-  //     .sublist("function").sublist("function-constant")
-  //     .set<double>("value", rho_);
-
   out_ic.sublist("mass_density_liquid").sublist("function").sublist("All")
       .set<std::string>("region", "All")
       .set<std::string>("component", "cell")
@@ -85,10 +79,10 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   int mat(0);
 
   DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("materials"));
-  DOMNodeList* childern = node_list->item(0)->getChildNodes();
+  DOMNodeList* children = node_list->item(0)->getChildNodes();
 
-  for (int i = 0; i < childern->getLength(); i++) {
-    DOMNode* inode = childern->item(i);
+  for (int i = 0; i < children->getLength(); i++) {
+    DOMNode* inode = children->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       std::string mat_name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
 
@@ -254,10 +248,14 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
   // initialization of fields via the initial_conditions list
   node_list = doc_->getElementsByTagName(mm.transcode("initial_conditions"));
-  childern = node_list->item(0)->getChildNodes();
+  int nchildren(0);
+  if (node_list->getLength() != 0) {
+    children = node_list->item(0)->getChildNodes();
+    nchildren = children->getLength();
+  }
 
-  for (int i = 0; i < childern->getLength(); i++) {
-    DOMNode* inode = childern->item(i);
+  for (int i = 0; i < nchildren; i++) {
+    DOMNode* inode = children->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       text_content = mm.transcode(node->getTextContent());
@@ -379,7 +377,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
       // -- total_component_concentration (liquid phase)
       int ncomp_l = phases_["water"].size();
-      int ncomp_g = phases_["gas"].size();
+      int ncomp_g = phases_["air"].size();
       int ncomp_all = ncomp_l + ncomp_g;
 
       node = GetUniqueElementByTagsString_(inode, "liquid_phase", flag);
@@ -426,15 +424,15 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
           if (strcmp(tagname, "solute_component") == 0) {
             std::string text = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
-            int m = GetPosition_(phases_["gas"], text);
+            int m = GetPosition_(phases_["air"], text);
             vals[m] = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "value");
           }
         }
 
         Teuchos::ParameterList& tcc_ic = out_ic.sublist("total_component_concentration");
-        Teuchos::ParameterList& dof_list = tcc_ic.sublist("function").sublist(reg_str);
+        Teuchos::ParameterList& dof_list = tcc_ic.sublist("function").sublist(reg_str).sublist("function");
         for (int k = 0; k < ncomp_g; k++) {
-          std::string name = phases_["gas"][k];
+          std::string name = phases_["air"][k];
           std::stringstream dof_str;
           dof_str << "DoF " << ncomp_l + k + 1 << " Function";
           dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", vals[k]);
@@ -453,11 +451,11 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .sublist("function").sublist("function-constant")
             .set<double>("value", val);
       }
-
-      // atmospheric pressure
-      out_ic.sublist("atmospheric_pressure").set<double>("value", ATMOSPHERIC_PRESSURE);
     }
   }
+
+  // atmospheric pressure
+  out_ic.sublist("atmospheric_pressure").set<double>("value", ATMOSPHERIC_PRESSURE);
 
   // add mesh partitions to the state list
   out_list.sublist("mesh partitions") = TranslateMaterialsPartition_();
@@ -479,10 +477,10 @@ Teuchos::ParameterList InputConverterU::TranslateMaterialsPartition_()
   std::vector<std::string> regions;
 
   DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("materials"));
-  DOMNodeList* childern = node_list->item(0)->getChildNodes();
+  DOMNodeList* children = node_list->item(0)->getChildNodes();
 
-  for (int i = 0; i < childern->getLength(); i++) {
-    DOMNode* inode = childern->item(i);
+  for (int i = 0; i < children->getLength(); i++) {
+    DOMNode* inode = children->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       DOMNamedNodeMap* attr_map = inode->getAttributes();
 

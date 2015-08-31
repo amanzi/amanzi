@@ -124,7 +124,7 @@ public:
   virtual void Initialize(Teuchos::ParameterList& plist) = 0;
 
   // Initialize from a checkpoint file
-  virtual void ReadCheckpoint(const Teuchos::Ptr<HDF5_MPI>& file) {}
+  virtual bool ReadCheckpoint(const Teuchos::Ptr<HDF5_MPI>& file) { return true;}
 
   // write data to the visualization file
   virtual void WriteVis(const Teuchos::Ptr<Visualization>& vis) = 0;

@@ -102,6 +102,8 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
 
         filename = GetAttributeValueS_(element, "restart", false, "");
       }
+      if (init_filename_.size() == 0)
+          init_filename_ = GetAttributeValueS_(element, "initialize", false, "");
     }
   }
 
@@ -235,9 +237,9 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     out_list.set<Teuchos::Array<std::string> >("component names", comp_names_all_);
   }
 
-  out_list.sublist("Time Period Control") = TranslateTimePeriodControls_();
+  out_list.sublist("time period control") = TranslateTimePeriodControls_();
   if (filename.size() > 0) {
-    out_list.sublist("Restart").set<std::string>("File Name", filename);
+    out_list.sublist("restart").set<std::string>("file name", filename);
   }
   out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
 
@@ -270,10 +272,11 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
   double t0, t1, dt0;
   char *method, *tagname;
   bool flag_steady(false); 
-  std::string method_d, dt0_d, filename;
+  std::string method_d, dt0_d, mode_d, filename;
 
   method_d = GetAttributeValueS_(static_cast<DOMElement*>(node), "method", false, "");
   dt0_d = GetAttributeValueS_(static_cast<DOMElement*>(node), "init_dt", false, "0.0");
+  mode_d = GetAttributeValueS_(static_cast<DOMElement*>(node), "mode", false, "");
 
   // parse execution_control
   std::map<std::string, std::string> tp_method;
@@ -288,10 +291,10 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
 
     tagname = mm.transcode(inode->getNodeName());
     if (strcmp(tagname, "execution_control") == 0) {
-      t0 = TimeStringToValue_(GetAttributeValueS_(static_cast<DOMElement*>(inode), "start"));
-      t1 = TimeStringToValue_(GetAttributeValueS_(static_cast<DOMElement*>(inode), "end"));
+      t0 = TimeStringToValue_(GetAttributeValueS_(element, "start"));
+      t1 = TimeStringToValue_(GetAttributeValueS_(element, "end"));
       dt0 = TimeStringToValue_(GetAttributeValueS_(element, "init_dt", false, dt0_d));
-      std::string mode = GetAttributeValueS_(static_cast<DOMElement*>(inode), "mode");
+      std::string mode = GetAttributeValueS_(element, "mode", false, mode_d);
 
       tp_t0[mode] = t0;
       tp_t1[mode] = t1;
@@ -451,9 +454,9 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
 
   out_list.set<Teuchos::Array<std::string> >("component names", comp_names_all_);
 
-  out_list.sublist("Time Period Control") = TranslateTimePeriodControls_();
+  out_list.sublist("time period control") = TranslateTimePeriodControls_();
   if (filename.size() > 0) {
-    out_list.sublist("Restart").set<std::string>("File Name", filename);
+    out_list.sublist("restart").set<std::string>("file name", filename);
   }
   out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
 
@@ -505,18 +508,19 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   bc_names.push_back("uniform_temperature");
 
   node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
-  if (node_list->getLength() == 0) return out_list;
-  node = node_list->item(0);
+  if (node_list->getLength() > 0) {
+    node = node_list->item(0);
 
-  for (int n = 0; n < bc_names.size(); ++n) {
-    children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode(bc_names[n].c_str()));
-    for (int i = 0; i < children->getLength(); ++i) {
-      DOMNode* inode = children->item(i);
-      if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+    for (int n = 0; n < bc_names.size(); ++n) {
+      children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode(bc_names[n].c_str()));
+      for (int i = 0; i < children->getLength(); ++i) {
+        DOMNode* inode = children->item(i);
+        if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
-      double t = GetAttributeValueD_(static_cast<DOMElement*>(inode), "start");
-      time_map[t] = dt_init_d;
-      dt_max_map[t] = -1.0;
+        double t = GetAttributeValueD_(static_cast<DOMElement*>(inode), "start");
+        time_map[t] = dt_init_d;
+        dt_max_map[t] = -1.0;
+      }
     }
   }
 
@@ -528,18 +532,19 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   src_names.push_back("flow_weighted_conc");
 
   node_list = doc_->getElementsByTagName(mm.transcode("sources"));
-  if (node_list->getLength() == 0) return out_list;
-  node = node_list->item(0);
+  if (node_list->getLength() > 0) {
+    node = node_list->item(0);
 
-  for (int n = 0; n < src_names.size(); ++n) {
-    children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode(src_names[n].c_str()));
-    for (int i = 0; i < children->getLength(); ++i) {
-      DOMNode* inode = children->item(i);
-      if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+    for (int n = 0; n < src_names.size(); ++n) {
+      children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode(src_names[n].c_str()));
+      for (int i = 0; i < children->getLength(); ++i) {
+        DOMNode* inode = children->item(i);
+        if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
-      double t = GetAttributeValueD_(static_cast<DOMElement*>(inode), "start");
-      time_map[t] = dt_init_d;
-      dt_max_map[t] = -1.0;
+        double t = GetAttributeValueD_(static_cast<DOMElement*>(inode), "start");
+        time_map[t] = dt_init_d;
+        dt_max_map[t] = -1.0;
+      }
     }
   }
 
@@ -577,9 +582,12 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
     }
   }
 
-  out_list.set<Teuchos::Array<double> >("Start Times", time_init);
-  out_list.set<Teuchos::Array<double> >("Initial Time Step", dt_init);
-  out_list.set<Teuchos::Array<double> >("Maximum Time Step", dt_max);
+  out_list.set<Teuchos::Array<double> >("start times", time_init);
+  out_list.set<Teuchos::Array<double> >("initial time step", dt_init);
+  out_list.set<Teuchos::Array<double> >("maximum time step", dt_max);
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+      *vo_->os() << "created " << dt_max.size() << " special times" << std::endl;
 
   return out_list;
 }

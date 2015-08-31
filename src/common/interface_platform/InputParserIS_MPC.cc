@@ -205,9 +205,9 @@ Teuchos::ParameterList InputParserIS::CreateTimePeriodControlList_(Teuchos::RCP<
     }
   }
 
-  tpc_list.set<Teuchos::Array<double> >("Start Times", start_times);
-  tpc_list.set<Teuchos::Array<double> >("Initial Time Step", initial_time_step);
-  tpc_list.set<Teuchos::Array<double> >("Maximum Time Step", maximum_time_step);
+  tpc_list.set<Teuchos::Array<double> >("start times", start_times);
+  tpc_list.set<Teuchos::Array<double> >("initial time step", initial_time_step);
+  tpc_list.set<Teuchos::Array<double> >("maximum time step", maximum_time_step);
 
   return tpc_list;
 }
@@ -416,11 +416,11 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::RCP<Teucho
   cycle_driver_list.sublist("time periods").sublist(tp_list_name.data()).set<double>("end period time", end_time);
   cycle_driver_list.sublist("time periods").sublist(tp_list_name.data()).set<int>("maximum cycle number", max_cycle_number);
   cycle_driver_list.sublist("time periods").sublist(tp_list_name.data()).set<double>("initial time step", dt_tran);
-  cycle_driver_list.sublist("Time Period Control") = tpc_list;
+  cycle_driver_list.sublist("time period control") = tpc_list;
 
   cycle_driver_list.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
 
-  /* EIB: proposed v1.2.2 update - Change Restart name */
+  /* EIB: proposed v1.2.2 update - Change restart name */
   if (plist->sublist("Execution Control").isSublist("Restart") &&
     plist->sublist("Initial Conditions").isParameter("Init from Checkpoint File")) {
     // this is an error, you can either restart or re-init, but not both
@@ -428,14 +428,14 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::RCP<Teucho
   }
     
   if (plist->sublist("Execution Control").isSublist("Restart")) {
-    cycle_driver_list.sublist("Restart") = plist->sublist("Execution Control").sublist("Restart");
+    cycle_driver_list.sublist("restart") = plist->sublist("Execution Control").sublist("Restart");
   }
     
-  /* EIB: proposed v1.2.2 update - Change Restart name */
+  /* EIB: proposed v1.2.2 update - Change restart name */
   if (plist->sublist("Initial Conditions").isParameter("Init from Checkpoint File")) {
-    Teuchos::ParameterList& rest_list = cycle_driver_list.sublist("Restart");
+    Teuchos::ParameterList& rest_list = cycle_driver_list.sublist("restart");
     std::string file = plist->sublist("Initial Conditions").get<std::string>("Init from Checkpoint File");
-    rest_list.set<std::string>("File Name", file);
+    rest_list.set<std::string>("file name", file);
     rest_list.set<bool>("initialize from checkpoint data file and do not restart", true);
   }
 

@@ -119,8 +119,6 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   bool PopulateBoundaryData(std::vector<int>& bc_model,
                             std::vector<double>& bc_value, int component);
 
-  void CalculatePermeabilityFactorInWell();
-
   // -- limiters 
   void LimiterBarthJespersen(const int component,
                              Teuchos::RCP<const Epetra_Vector> scalar_field, 
@@ -148,7 +146,8 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   const Teuchos::RCP<Epetra_IntVector>& upwind_cell() { return upwind_cell_; }
   const Teuchos::RCP<Epetra_IntVector>& downwind_cell() { return downwind_cell_; }  
 
-  // dispersion and diffusion
+  // physical models
+  // -- dispersion and diffusion
   void CalculateDispersionTensor_(
       const Epetra_MultiVector& darcy_flux, 
       const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
@@ -160,6 +159,11 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   int FindDiffusionValue(const std::string& tcc_name, double* md, int* phase);
 
   void CalculateAxiSymmetryDirection();
+
+  // -- air-water partitioning using Henry's law. This is a temporary
+  //    solution to get things moving.
+  void PrepareAirWaterPartitioning_();
+  void MakeAirWaterPartitioning_();
 
   // I/O methods
   void ProcessParameterList();
@@ -229,6 +233,11 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   std::string dispersion_preconditioner;
   std::string dispersion_solver;
 
+  // Hosting temporarily Henry law 
+  bool henry_law_;
+  std::vector<double> kH_;
+  std::vector<int> air_water_map_;
+ 
   double cfl_, dt_, dt_debug_, t_physics_;  
 
   std::vector<double> mass_solutes_exact_, mass_solutes_source_;  // mass for all solutes

@@ -26,6 +26,7 @@
 #include "eos_registration.hh"
 #include "errors.hh"
 #include "exceptions.hh"
+#include "multiscale_flow_registration.hh"
 #include "mpc_pks_registration.hh"
 #include "pks_chemistry_registration.hh"
 #include "pks_flow_registration.hh"

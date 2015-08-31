@@ -29,7 +29,8 @@
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorDiffusion.hh"
 #include "OperatorAccumulation.hh"
-
+#include "PK_Utils.hh"
+#include "boost/algorithm/string.hpp"
 #include "Transport_PK.hh"
 
 namespace Amanzi {
@@ -48,10 +49,9 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
 {
   std::string pk_name = pk_tree.name();
   const char* result = pk_name.data();
-  while ((result = std::strstr(result, "->")) != NULL) {
-    result += 2;
-    pk_name = result;   
-  }
+
+  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name,"->"); 
+  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name,  res.end() - pk_name.begin());
 
   if (glist_->isSublist("Cycle Driver")) {
     if (glist_->sublist("Cycle Driver").isParameter("component names")) {
@@ -231,7 +231,7 @@ void Transport_PK::Initialize()
   // initialize missed fields
   InitializeFields_();
 
-  // Check input parameters. Due to limited checks, we can do it earlier.
+  // Check input parameters. Due to limited amount of checks, we can do it earlier.
   Policy(S_.ptr());
 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -296,11 +296,13 @@ void Transport_PK::Initialize()
   for (int i =0; i < srcs.size(); i++) {
     int distribution = srcs[i]->CollectActionsList();
     if (distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
-      CalculatePermeabilityFactorInWell();
+      PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
       break;
     }
   }
+
+  // Temporarily Transport hosts Henry law.
+  PrepareAirWaterPartitioning_();
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -749,6 +751,11 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     }
   }
 
+  // optional Henry Law for the case of gas diffusion
+  if (henry_law_) {
+    MakeAirWaterPartitioning_();
+  }
+
   // statistics output
   nsubcycles = ncycles;
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -1069,26 +1076,6 @@ void Transport_PK::ComputeAddSourceTerms(double tp, double dtp,
     }
   }
 }
-
-
-/* ******************************************************************
-* Calculate inner product e^T K e in each cell. 
-* Implementation works for diagonal premeability tensors only.
-****************************************************************** */
-void Transport_PK::CalculatePermeabilityFactorInWell()
-{
-  const CompositeVector& cv = *S_->GetFieldData("permeability");
-  cv.ScatterMasterToGhosted("cell");
-  const Epetra_MultiVector& perm = *cv.ViewComponent("cell", true);
- 
-  for (int c = 0; c < ncells_wghost; c++) {
-    (*Kxy)[c] = 0.0;
-    int idim = std::max(1, dim - 1);
-    for (int i = 0; i < idim; i++) (*Kxy)[c] += perm[i][c];
-    (*Kxy)[c] /= idim;
-  }
-}
-
 
 
 /* *******************************************************************

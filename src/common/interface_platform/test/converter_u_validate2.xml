@@ -323,8 +323,13 @@
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{Tc-99}"/>
-    <ParameterList name="Restart">
-      <Parameter name="File Name" type="string" value="chk00168.h5"/>
+    <ParameterList name="restart">
+      <Parameter name="file name" type="string" value="chk00168.h5"/>
+    </ParameterList>
+    <ParameterList name="time period control">
+      <Parameter name="start times" type="Array(double)" value="{0.0, 6.17266656e+10, 6.1729344e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
+      <Parameter name="initial time step" type="Array(double)" value="{1.0e+03, 1.0, 1.0, 1.0, 1.0, 1.0}"/>
+      <Parameter name="maximum time step" type="Array(double)" value="{4.3234e+17, 4.3234e+17, 4.3234e+17, 4.3234e+17, 4.3234e+17, 4.3234e+17}"/>
     </ParameterList>
     <ParameterList name="VerboseObject">
       <Parameter name="Verbosity Level" type="string" value="high"/>
@@ -333,6 +338,9 @@
   <ParameterList name="PKs">
     <ParameterList name="Flow">
       <ParameterList name="Richards problem">
+        <ParameterList name="physical models and assumptions">
+          <Parameter name="water content model" type="string" value="constant density"/>
+        </ParameterList>
         <ParameterList name="upwind">
           <Parameter name="relative permeability" type="string" value="upwind: amanzi"/>
           <Parameter name="upwind update" type="string" value="every timestep"/>
@@ -452,6 +460,9 @@
             <Parameter name="restart tolerance relaxation factor" type="double" value="1.0e+00"/>
             <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0e+00"/>
             <Parameter name="nonlinear iteration damping factor" type="double" value="1.0e+00"/>
+            <ParameterList name="VerboseObject">
+              <Parameter name="Verbosity Level" type="string" value="high"/>
+            </ParameterList>
           </ParameterList>
         </ParameterList>
         <ParameterList name="boundary conditions">
@@ -545,6 +556,9 @@
           <Parameter name="extrapolate initial guess" type="bool" value="true"/>
           <Parameter name="restart tolerance relaxation factor" type="double" value="1.0e+00"/>
           <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0e+00"/>
+          <ParameterList name="VerboseObject">
+            <Parameter name="Verbosity Level" type="string" value="high"/>
+          </ParameterList>
         </ParameterList>
       </ParameterList>
       <ParameterList name="VerboseObject">
@@ -617,6 +631,9 @@
             <Parameter name="extrapolate initial guess" type="bool" value="true"/>
             <Parameter name="restart tolerance relaxation factor" type="double" value="1.0e+00"/>
             <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0e+00"/>
+            <ParameterList name="VerboseObject">
+              <Parameter name="Verbosity Level" type="string" value="high"/>
+            </ParameterList>
           </ParameterList>
         </ParameterList>
         <ParameterList name="boundary conditions">

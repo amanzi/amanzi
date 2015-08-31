@@ -450,37 +450,6 @@ void Flow_PK::SetAbsolutePermeabilityTensor()
 
 
 /* ******************************************************************
-*  Calculate inner product e^T K e in each cell.                                               
-****************************************************************** */
-void Flow_PK::CalculatePermeabilityFactorInWell()
-{
-  for (int c = 0; c < ncells_owned; c++) {
-    (*Kxy)[c] = 0.0;
-    int idim = std::max(1, K[c].size() - 1);
-    for (int i = 0; i < idim; i++) (*Kxy)[c] += K[c](i, i);
-    (*Kxy)[c] /= idim;
-  }
-
-  // parallelization using CV capability
-#ifdef HAVE_MPI
-  CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh_);
-  cvs.SetGhosted(true);
-  cvs.SetComponent("cell", AmanziMesh::CELL, 1);
-
-  CompositeVector tmp(cvs, true);
-  Epetra_MultiVector& data = *tmp.ViewComponent("cell", true);
-
-  data = *Kxy;
-  tmp.ScatterMasterToGhosted("cell", true);
-  for (int c = ncells_owned; c < ncells_wghost; c++) {
-    (*Kxy)[c] = data[0][c];
-  }
-#endif
-}
-
-
-/* ******************************************************************
 * Add source and sink terms.                                   
 ****************************************************************** */
 void Flow_PK::AddSourceTerms(CompositeVector& rhs)

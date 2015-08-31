@@ -194,7 +194,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           std::string name = GetAttributeValueS_(element, "name");
           std::string regs = GetAttributeValueS_(element, "regions");
           std::vector<std::string> regions = CharToStrings_(regs.c_str());
-          visPL.sublist("Write Regions").set<Teuchos::Array<std::string> >(name, regions);
+          visPL.sublist("write regions").set<Teuchos::Array<std::string> >(name, regions);
         }
       }
     }
@@ -271,7 +271,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
       text = mm.transcode(inode->getTextContent());
 
       if (strcmp(tagname, "filename") == 0) {
-        obsPL.set<std::string>("Observation Output Filename", TrimString_(text));
+        obsPL.set<std::string>("observation output filename", TrimString_(text));
       } else if (strcmp(tagname, "liquid_phase") == 0) {
         attr_map = inode->getAttributes();
         node = attr_map->getNamedItem(mm.transcode("name"));
@@ -362,7 +362,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             }
           }
           std::stringstream list_name;
-          list_name << "observation-" << j + 1 << ":" << phaseName;
+          list_name << "obs " << j + 1;
           obsPL.sublist(list_name.str()) = obPL;
         }
 
@@ -396,6 +396,13 @@ void InputConverterU::ProcessMacros_(
   int k(0);
   bool flag(false);
   for (int i = 0; i < macro.size(); i++) {
+    if (!mPL.isSublist(macro[i])) {
+      Errors::Message msg;
+      msg << "Macro \"" << macro[i] << "\" was not defined.\n";
+      msg << "Please correct and try again.\n";
+      Exceptions::amanzi_throw(msg);
+    }
+
     Teuchos::ParameterList& mlist = mPL.sublist(macro[i]);
     if (mlist.isParameter("sps")) {
       std::stringstream ss;

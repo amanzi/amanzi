@@ -14,6 +14,7 @@
 
 // TPLs
 #include "boost/math/tools/roots.hpp"
+#include "boost/algorithm/string.hpp"
 #include "Epetra_IntVector.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -27,6 +28,7 @@
 #include "mfd3d_diffusion.hh"
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionFactory.hh"
+#include "PK_Utils.hh"
 #include "Point.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "UpwindFactory.hh"
@@ -60,12 +62,11 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
   S_ = S;
 
   std::string pk_name = pk_tree.name();
-  const char* result = pk_name.data();
-  while ((result = std::strstr(result, "->")) != NULL) {
-    result += 2;
-    pk_name = result;   
-  }
 
+  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name,"->"); 
+  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name,  res.end() - pk_name.begin());
+
+  
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_name, true);
@@ -140,6 +141,7 @@ void Richards_PK::Setup()
   Teuchos::RCP<Teuchos::ParameterList> physical_models =
       Teuchos::sublist(rp_list_, "physical models and assumptions");
   std::string vwc_model = physical_models->get<std::string>("water content model", "constant density");
+  std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single porosity");
 
   // Require primary field for this PK, which is pressure
   std::vector<std::string> names;
@@ -189,6 +191,24 @@ void Richards_PK::Setup()
     S_->RequireField("prev_water_content", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->GetField("prev_water_content", passwd_)->set_io_vis(false);
+  }
+
+  // -- multiscale extension: secondary (immobile water content)
+  if (multiscale_model == "dual porosity") {
+    if (!S_->HasField("pressure_matrix")) {
+      S_->RequireField("pressure_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    }
+
+    if (!S_->HasField("water_content_matrix")) {
+      S_->RequireField("water_content_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    }
+    if (!S_->HasField("prev_water_content_matrix")) {
+      S_->RequireField("prev_water_content_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+      S_->GetField("prev_water_content_matrix", passwd_)->set_io_vis(false);
+    }
   }
 
   // Require additional fields and evaluators for this PK.
@@ -364,6 +384,8 @@ void Richards_PK::Initialize()
   Teuchos::RCP<Teuchos::ParameterList> physical_models = 
       Teuchos::sublist(rp_list_, "physical models and assumptions");
   vapor_diffusion_ = physical_models->get<bool>("vapor diffusion", false);
+  multiscale_porosity_ = (physical_models->get<std::string>(
+      "multiscale model", "single porosity") != "single porosity");
 
   // Initialize actions on boundary condtions. 
   flux_units_ = molar_rho_ / rho_;
@@ -381,11 +403,6 @@ void Richards_PK::Initialize()
   // Process other fundamental structures.
   K.resize(ncells_owned);
   SetAbsolutePermeabilityTensor();
-
-  // Allocate memory for wells.
-  if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
-  }
 
   // Select a proper matrix class. 
   const Teuchos::ParameterList& tmp_list = rp_list_->sublist("operators")
@@ -541,7 +558,14 @@ void Richards_PK::Initialize()
   
   // initialize well modeling
   if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    CalculatePermeabilityFactorInWell();
+    PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
+  }
+
+  // initialize multisclae methods
+  if (multiscale_porosity_) {
+    Teuchos::RCP<Teuchos::ParameterList>
+        msp_list = Teuchos::sublist(rp_list_, "multiscale models", true);
+    msp_ = CreateMultiscalePorosityPartition(mesh_, msp_list);
   }
 
   // Optional step: calculate hydrostatic solution consistent with BCs
@@ -694,7 +718,7 @@ void Richards_PK::InitializeFields_()
         S_->GetField("saturation_liquid", passwd_)->set_initialized();
 
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-            *vo_->os() << "initilized saturation_liquid to default value 1.0" << std::endl;  
+            *vo_->os() << "initiliazed saturation_liquid to default value 1.0" << std::endl;  
       }
     }
   }
@@ -711,7 +735,7 @@ void Richards_PK::InitializeFields_()
       S_->GetField("prev_saturation_liquid", passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized prev_saturation_liquid to saturation_liquid" << std::endl;  
+          *vo_->os() << "initiliazed prev_saturation_liquid to saturation_liquid" << std::endl;  
     }
   }
 
@@ -726,7 +750,45 @@ void Richards_PK::InitializeFields_()
       S_->GetField("prev_water_content", passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized prev_water_content to water_content" << std::endl;  
+          *vo_->os() << "initiliazed prev_water_content to water_content" << std::endl;  
+    }
+  }
+
+  // pressure equilibrium 
+  if (S_->HasField("pressure_matrix")) {
+    if (!S_->GetField("pressure_matrix", passwd_)->initialized()) {
+      const Epetra_MultiVector& p1 = *S_->GetFieldData("pressure")->ViewComponent("cell");
+      Epetra_MultiVector& p0 = *S_->GetFieldData("pressure_matrix", passwd_)->ViewComponent("cell");
+      p0 = p1;
+
+      S_->GetField("pressure_matrix", passwd_)->set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initiliazed pressure_matrix to pressure" << std::endl;  
+    }
+  }
+
+  InitializeFieldFromField_("water_content_matrix", "water_content");
+  InitializeFieldFromField_("prev_water_content_matrix", "water_content_matrix");
+}
+
+
+/* ****************************************************************
+* Auxiliary initialization technique.
+**************************************************************** */
+void Richards_PK::InitializeFieldFromField_(
+    const std::string& field0, const std::string& field1)
+{
+  if (S_->HasField(field0)) {
+    if (!S_->GetField(field0, passwd_)->initialized()) {
+      const CompositeVector& f1 = *S_->GetFieldData(field1);
+      CompositeVector& f0 = *S_->GetFieldData(field0, passwd_);
+      f0 = f1;
+
+      S_->GetField(field0, passwd_)->set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initiliazed " << field0 << " to " << field1 << std::endl;
     }
   }
 }
@@ -763,7 +825,7 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // save a copy of pressure
   CompositeVector pressure_copy(*S_->GetFieldData("pressure", passwd_));
 
-  // swap saturations (may go to a high-level PK)
+  // swap saturations
   S_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_.ptr(), "flow");
   const CompositeVector& sat = *S_->GetFieldData("saturation_liquid");
   CompositeVector& sat_prev = *S_->GetFieldData("prev_saturation_liquid", passwd_);
@@ -771,13 +833,25 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   CompositeVector sat_prev_copy(sat_prev);
   sat_prev = sat;
 
-  // swap water_content (may go to a high-level PK)
+  // swap water_content
   S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
   CompositeVector& wc = *S_->GetFieldData("water_content", "water_content");
   CompositeVector& wc_prev = *S_->GetFieldData("prev_water_content", passwd_);
 
   CompositeVector wc_prev_copy(wc_prev);
   wc_prev = wc;
+
+  // swap fields for multiscale models
+  Teuchos::RCP<CompositeVector> pressure_matrix_copy, wc_matrix_prev_copy;
+  if (multiscale_porosity_) {
+    pressure_matrix_copy = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("pressure_matrix", passwd_)));
+
+    CompositeVector& wc_matrix = *S_->GetFieldData("water_content_matrix", passwd_);
+    CompositeVector& wc_matrix_prev = *S_->GetFieldData("prev_water_content_matrix", passwd_);
+
+    wc_matrix_prev_copy = Teuchos::rcp(new CompositeVector(wc_matrix_prev));
+    wc_matrix_prev = wc_matrix;
+  }
 
   // enter subspace
   if (reinit && solution->HasComponent("face")) {
@@ -813,7 +887,14 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     *S_->GetFieldData("prev_water_content", passwd_) = wc_prev_copy;
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Step failed. Restored pressure, prev_saturation_liquid, prev_water_content" << std::endl;
+    *vo_->os() << "Reverted pressure, prev_saturation_liquid, prev_water_content" << std::endl;
+
+    if (multiscale_porosity_) {
+      *S_->GetFieldData("pressure_matrix", passwd_) = *pressure_matrix_copy;
+      *S_->GetFieldData("prev_water_content_matrix", passwd_) = *wc_matrix_prev_copy;
+
+      *vo_->os() << "Reverted pressure_matrix, prev_water_content_matrix" << std::endl;
+    }
 
     return failed;
   }

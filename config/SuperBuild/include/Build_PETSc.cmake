@@ -117,7 +117,7 @@ else()
 endif()
 
 # --- Set the name of the patch
-set(PETSC_patch_file petsc-3.5.2-mat-m0.patch)
+set(PETSC_patch_file petsc-3.5.2-mat-m0.patch petsc-3.5.2-install.patch)
 # --- Configure the bash patch script
 set(PETSC_sh_patch ${PETSc_prefix_dir}/petsc-patch-step.sh)
 message(STATUS "PETSC_sh_patch: ${PETSC_sh_patch}")

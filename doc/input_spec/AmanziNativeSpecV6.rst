@@ -13,14 +13,6 @@ Parameters labeled by [WIP] (Work-In-Progress) are under development.
 Parameters labeled by [O] (Obsolete) are old capabilities and will be removed soon.
 
 
-Changes V5 -> V6
-================
-
-* Switched to a more flexible MPC driver, called Cycle Driver.
-* Added Energy PK and FlowEnergy PK.
-* Described the PDE forms of conceptual models.
-
-
 ParameterList XML
 =================
 
@@ -33,14 +25,14 @@ at the beginning and end by the following statements:
     various lists and sublists
   </ParameterList>
 
-The value in the "name" can be anything ("Main" in this example).  
+The value of *name* can be anything (*Main* in this example).  
 A ParameterList consists of just two types of entries: Parameter and ParameterList.  
-ParameterLists are labeled with a `"name`" [string], while Parameters have a separate 
-fields for `"name`" [string], `"type`" [string] and `"value`" [TYPE], where "TYPE" can 
+ParameterLists are labeled with *name* [string], while Parameters have a separate 
+fields called *name* [string], *type* [string] and *value* [TYPE], where TYPE can 
 be any of the following: double, int, bool, string, Array(double), Array(int), 
-Array(bool), Array(string).  
-The value of the parameter is given in quotes (e.g. "2.7e3").  
-Array data is specified as a single comma-delimited string bounded by {}'s (e.g. "{2.4, 2.1, 5.7}").
+and Array(string).  
+The value of the parameter is given in quotes (e.g. value="2.7e3").  
+Array data is specified as a single comma-delimited string bounded by {}'s (e.g. value="{2.4, 2.1, 5.7}").
 
 .. code-block:: xml
 
@@ -49,8 +41,8 @@ Array data is specified as a single comma-delimited string bounded by {}'s (e.g.
     <Parameter name="ratio" type="Array(int)" value="{2, 1, 4}"/>
   </ParameterList>
 
-In this example, the list "Main" has a parameter named "cfl" that is a "double" and has 
-the value of 0.9, and a Array(int) parameter named "ratio" such that ratio[0] = 2, 
+In this example, the list *Main* has parameter *cfl* that is the double with 
+value 0.9, and parameter *ratio* that is the integer array such that ratio[0] = 2, 
 ratio[1]=1, and ratio[2]=4.
 
 
@@ -65,7 +57,7 @@ In many cases, the input specifies data for a particular parameterized model, an
 supports a number of parameterizations.  
 For example, initial data might be uniform (the value is required), or linear in y (the value 
 and its gradient are required).  
-Where Amanzi supports a number of parameterized models for quantity `"model`", the available 
+Where Amanzi supports a number of parameterized models for parameter *model*, the available 
 models will be listed by name, and then will be described in the subsequent section.  
 In the manufactured example below, the specification looks as follows:
 
@@ -76,9 +68,9 @@ In the manufactured example below, the specification looks as follows:
   * `"model`" [list] specifies a model for the soil. Available options are `"van Genuchten`" 
     and `"Brooks-Corey`".
 
-Here SOIL is defined by a `"region`" and a `"model`".  
-The `"region`" is a string parameter but the `"model`" is given by a sublist with its own set of parameters.
-The parameter for `"model`" can be described in the same section or in a separate section
+Here SOIL is defined by a *region* and a *model*.  
+The *region* is a string parameter but the *model* is given by a sublist with its own set of parameters.
+The parameter for *model* can be described in the same section or in a separate section
 of this document. For instance, the local description may look like:
 
 * `"model`" [list] specifies a model for the soil. Available options are `"van Genuchten`"
@@ -101,168 +93,196 @@ Each part of the spec is illustrated by an example followed by optional comments
    </ParameterList>   
  
 This defines soil properties in region TOP_DOMAIN using the
-Brocks-Corey model with parameters `"lambda=0.7`" and `"alpha=1e-3`".
+Brocks-Corey model with parameters *lambda=0.7* and *alpha=1e-3*.
 
 Additional conventions:
 
-* Reserved keywords and labels are `"quoted and italicized`". These are usually labels or values of parameters 
+* Reserved keywords and labels are *italicized* in discussions and `"quoted and italicized`" in the spec.
+  These are usually labels or values of parameters 
   in the input file and must match (using XML matching rules) the specified or allowable values.
 
-* User-defined labels are indicated with ALL_CAPS.
-  These names are usually defined to serve best the organization of the user input data.
+* User-defined labels are marked with ALL_CAPS in this documents.
+  In practice, no rules are imposed on these names.
 
-* For developers: we are gradually migrating to low-case naming convention for parameters.
-  However, parameters of XML lists that were simply copies from the mid-level spec 
-  may violate this convention. This will go away together with the mid-level spec.
+* For developers: we are gradually migrating to low-case naming convention for most parameters
+  with exceptions of proper name (e.g. CO2, Linux), personal names (e.g. van Genuchten), and high-level
+  lists (e.g. Mesh). Abbreviations are capitalized only in the list names.
 
-* Sublist with too many parameters will be described using multiple sections and multiple examples.
+* Lists with too many parameters are described using multiple sections and multiple examples.
+  For most examples we show name of the parent sublist.
 
-* For most examples we show name of the parent sublist.
+
+Verbose output
+--------------
+
+Output of all components of Amanzi is controlled by a standard verbose 
+object sublist. This sublist can be inserted in almost any significant
+component of this spec to produce a verbose output, see the embedded examples.
+If this list is not specified, the default verbosity value is used.
+The name *Verbosity Level* is reserved by Trilinos.
+
+.. code-block:: xml
+
+   <ParameterList name="VerboseObject">
+     <Parameter name="Verbosity Level" type="string" value="high"/>
+   </ParameterList>
 
 
 Cycle driver
 ============
 
-New multiprocessor cycle driver which provides more flexibility
-to handle multiphysics process kernels. 
+New multi-processor cycle driver which provides more flexibility
+to handle multiphysics process kernels (PKs) and multiple time periods.
 
-* `"components names`" [Array(string)] list of components involved in simulation.
+* `"component names`" [Array(string)] provides the list of species names.
+  It is required for reactive transport.
 
-.. code-block:: xml
+* `"time periods`" [list] contains the list of time periods involved in the simulation.
+  the number of periods is not limited.
 
-  <Parameter name="component names" type="Array(string)" value="{H+, Na+, NO3-, Zn++}"/>
+  * `"TP #`" [list] defines a particular time period. The numbering
+    should be sequential starting with 0.
 
-* `"time periods`"  [list] defines list of time periods involved in simulation
-
-  * `"TP #`" [list]  defines a particular time period. The numbering
-    should be sequential  starting with 0.
-
-    * `"PK tree`" [list] describes a structure of process kernels 
+    * `"PK tree`" [list] describes a hierarchical structure of the process kernels
+      that reflect their weak and strong coupling.
 
       * `"PKNAME`"  [list] name of PK which is used in the
         simulation. Name can be arbitrary but the sublist with the same name
         should exist in the list of PKs (see below).
 
-      * `"PK type`" [string] specifies the type of pk. At the moment
-        available options are (darcy, richards, transport, reactive
-        transport, flow and reactive transport, chemistry).
+      * `"PK type`" [string] specifies the type of PK supported by Amanzi. At the moment
+        available options are (`"darcy`", `"richards`", `"transport`", `"reactive
+        transport`", `"flow reactive transport`", and `"chemistry`").
  
-      * `"start period time`" [double] start time of the time period
+      * `"start period time`" [double] is the start time of the current time period.
 
-      * `"end period time`" [double] end time of the time period
+      * `"end period time`" [double] is the end time of the current time period.
 
-      * `"maximum cycle number`" [int] maximal number of cycles in time
-        period (value -1 means unlimited number of cycles)
+      * `"maximum cycle number`" [int] is the maximum allowed number of cycles in 
+        the current time period. Special value -1 means unlimited number of cycles.
 
-      * `"initial time step`" initial time step for the time period
-
-Example of a sublist for a simulation with one time period is below.
-Note that the parent sublist is the global unnamed list.
+      * `"initial time step`" is the initial time step for the current time period.
 
 .. code-block:: xml
 
   <ParameterList>  <!-- parent list -->
-    <Parameter name="new mpc driver" type="bool" value="true"/>
     <ParameterList name="Cycle Driver">
       <Parameter name="component names" type="Array(string)" value="{H+, Na+, NO3-, Zn++}"/>
-      <ParameterList name="TP 0">
-        <ParameterList name="PK Tree">
-          <ParameterList name="Flow and Reactive Transport">
-            <Parameter name="PK type" type="string" value="flow reactive transport"/>
-            <ParameterList name="Reactive Transport">
-              <Parameter name="PK type" type="string" value="reactive transport"/>
-              <ParameterList name="Transport">
-                 <Parameter name="PK type" type="string" value="transport"/>
+      <ParameterList name="time periods">
+        <ParameterList name="TP 0">
+          <ParameterList name="PK Tree">
+            <ParameterList name="FLOW and REACTIVE TRANSPORT">
+              <Parameter name="PK type" type="string" value="flow reactive transport"/>
+              <ParameterList name="REACTIVE TRANSPORT">
+                <Parameter name="PK type" type="string" value="reactive transport"/>
+                <ParameterList name="TRANSPORT">
+                  <Parameter name="PK type" type="string" value="transport"/>
+                </ParameterList>
+                <ParameterList name="CHEMISTRY">
+                  <Parameter name="PK type" type="string" value="chemistry"/>
+                </ParameterList>
               </ParameterList>
-              <ParameterList name="Chemistry">
-                <Parameter name="PK type" type="string" value="chemistry"/>
+              <ParameterList name="FLOW">
+                <Parameter name="PK type" type="string" value="darcy"/>
               </ParameterList>
-            </ParameterList>
-            <ParameterList name="Flow">
-              <Parameter name="PK type" type="string" value="darcy"/>
             </ParameterList>
           </ParameterList>
+          <Parameter name="start period time" type="double" value="0.0"/>
+          <Parameter name="end period time" type="double" value="1.5778463e+09"/>
+          <Parameter name="maximum cycle number" type="int" value="-1"/>
+          <Parameter name="initial time step" type="double" value="1.57680e+05"/>
         </ParameterList>
-        <Parameter name="start period time" type="double" value="0.0"/>
-        <Parameter name="end period time" type="double" value="1.5778463e+09"/>
-        <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.57680e+05"/>
+
+        <ParameterList name="TP 1">
+        ... 
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
+In this simulation, we use the PK called *flow reactive transport*. It is
+defined internally as sequential application of two PKs, *flow* and *reactive transport*.
+The latter is defined as sequential application of two PKs, *transport* and *chemistry*.
+Process kernel *reactive transport* can susbcycle with respect to *flow*.
+Process kernel *chemistry* can susbcycle with respect to *transport*.
 
 
 Time period control
 -------------------
 
 A set of times that simulation hits exactly can be used to avoid problems with
-sudden change of boundary or source conditions.
+sudden change of boundary conditions or source/sink terms.
+The list of special times is global and should be consistent with the times specified
+for each time period *TP #*.
 
-* `"Start Times`" [Array(double)] the list of times that we want to hit exactly.
+* `"start times`" [Array(double)] is the list of particular times that we want to hit exactly.
 
-* `"Initial Time Step`" [Array(double)] the first time step after we hit a special
+* `"initial time step`" [Array(double)] is the first time step after we hit a special
   time specified above.
 
-* `"Maximum Time Step`" [Array(double)] allows the user to limit the time step for a 
-  particual simulation period.
+* `"maximum time step`" [Array(double)] allows the user to limit the time step between
+  two particular times.
 
 .. code-block:: xml
 
    <ParameterList name="Cycle Driver">  <!-- parent list -->
-     <ParameterList name="Time Period Control">
-       <Parameter name="Start Times" type="Array(double)" value="{3.0e+10}"/>
-       <Parameter name="Initial Time Step" type="Array(double)" value="{1.0e+02}"/>
-       <Parameter name="Maximum Time Step" type="Array(double)" value="{4.3234e+17}"/>
+     <ParameterList name="time period control">
+       <Parameter name="start times" type="Array(double)" value="{3.16e+10, 6.32e+10}"/>
+       <Parameter name="initial time step" type="Array(double)" value="{100.0, 100.0}"/>
+       <Parameter name="maximum time step" type="Array(double)" value="{3.16e+8, 4.0e+17}"/>
      </ParameterList>
    </ParameterList>
+
+Between approximately 1000 [y] and 2000 [y], we limit the maximum time step to 10 [y]. 
 
 
 Restart from checkpoint data file
 ---------------------------------
 
-A user may request a restart from a Checkpoint Data file by including the MPC sublist 
-`"Restart`". This mode of restarting
-will overwrite all other initialization of data that are called out in the input file.
-The purpose of restarting Amanzi in this fashion is mostly to continue a run that has been 
-terminated because its allocation of time ran out.
+A user may request a restart from a checkpoint data file by including sublist 
+*restart*. In this scenario, the code will overwrite data initialized using the input XML file.
+The purpose of restart is to continue the simulation that has been terminated before for some reasons,
+e.g. because its allocation of time ran out.
 
-* `"Restart`" [list]
+The value for the current time and current cycle is read from the checkpoint file.
+currently, the checkpoint file does not save the list of observations.
 
-  * `"File Name`" [string] provides name of the existing checkpoint data file to restart from.
+* `"restart`" [list]
 
-  * `"initialize from checkpoint data file and do not restart`" [bool] (optional) If this is set to false 
-    (default), then a restart is performed, if it is set to true, then all fields are initialized from 
-    the checkpoint data file.
+  * `"file name`" [string] provides name of the existing checkpoint data file to restart from.
 
 .. code-block:: xml
   
   <ParameterList name="Cycle Driver">  <!-- parent list -->
-    <ParameterList name="Restart">
-      <Parameter name="File Name" type="string" value="CHECK00123.h5"/>
+    <ParameterList name="restart">
+      <Parameter name="file name" type="string" value="CHECK00123.h5"/>
     </ParameterList>
   </ParameterList>
 
-
 In this example, Amanzi is restarted with all state data initialized from file
-CHECK00123.h5. All other initialization of field variables that might be called 
-out in the input file is ignored.  Recall that the value for the current time and current cycle
-is read from the checkpoint file.
-
+CHECK00123.h5. 
 
 
 State
 =====
 
-Sublist `"State`" allows the user to initialize various fields and field evaluators 
+List *State* allows the user to initialize various fields and field evaluators 
 using a variety of tools. 
 A field evaluator is a node in the Phalanx-like (acyclic) dependency tree. 
-The corresponding sublist of the State is named `"field evaluators`"
-The initialization sublist of the State is named `"initial conditions`"
+The corresponding sublist of *State* is named *field evaluators*.
+The initialization sublist of *State* is named *initial conditions*.
+
+* `"initialization filename`" [string] (optional) provides name of the existing checkpoint data 
+  file. The initialization sequence is as follows. First, we try to initialize a
+  field using the provided check-point file. Second, regardless of the outcome of the
+  previous step, we try to initialize the field using the sublist `"initial conditions`".
+  By design, the second step allows us to overwrite only part for the field.
 
 .. code-block:: xml
 
   <ParameterList>  <!-- parent list -->
     <ParameterList name="State">
+      <Parameter name="initialization filename" type="string" value="CHECK00123.h5"/>
       <ParameterList name="field evaluators">
          ... list of field evaluators
       </ParameterList>
@@ -276,36 +296,34 @@ The initialization sublist of the State is named `"initial conditions`"
 Field evaluators
 ----------------
 
-There are four types of field evaluators.
+There are three different types of field evaluators.
 
 Independent field evaluator
 ...........................
 
 An independent field evaluator has no dependencies and is specified by a function.
-Typically, tt is evaluated once per simulation.
+Typically, it is evaluated once per simulation.
 The evaluator has the following fields.
 
 * `"field evaluator type`" [string] The value of this parameter is used by the factory
   of evaluators. The available option are `"independent variable`", `"primary variable`",
-  `"secondary variable`", `"CUSTOM_EVALUATOR`".
+  and `"secondary variable`".
 
 * `"function`" [list] defines a piecewise function for calculating the independent variable.
-  In may contain multiple sublists *DOMAIN* with identical structure.
+  In may contain multiple sublists `"DOMAIN`" with identical structure.
   
-  * `"DOMAIN`" [list] defines region and function for calculating the independent variable.
+  * `"DOMAIN`" [list]
 
-    * `"region`" [string] specifies domain on the function, a single region.
+    * `"region`" [string] specifies domain of the function, a single region.
 
-    * `"regions`" [Array(string)] alternative to option *region*, domain on the function consists
-      of many regions.
+    * `"regions`" [Array(string)] is the alternative to option `"region`", domain on 
+      the function consists of many regions.
 
     * `"component`" [string] specifies geometric object associated with the mesh function.
       Available options are `"cell`", `"face`", and `"node`".
 
     * `"function`" [list] defines an analytic function for calculation. Its structure
       is described in the separate section below.
-
-* `"VerboseObject`" [list] defines the standard verbosity object
 
 .. code-block:: xml
 
@@ -314,7 +332,7 @@ The evaluator has the following fields.
       <Parameter name="field evaluator type" type="string" value="independent variable"/>
       <ParameterList name="function">
         <ParameterList name="DOMAIN">
-          <Parameter name="region" type="string" value="Computational domain"/>
+          <Parameter name="region" type="string" value="COMPUTATIONAL DOMAIN"/>
           <Parameter name="component" type="string" value="cell"/>
           <ParameterList name="function">
             <ParameterList name="function-constant">
@@ -340,8 +358,8 @@ Primary field evaluator
 The primary field evaluator has no dependencies solved for by a PK.
 Examples of independent field evaluators are primary variable of PDEs, such as
 pressure and temperature.
-Typically this evaluator is used to inform the dependency tree about new state
-of the primary variable.
+Typically this evaluator is used internally to inform the dependency tree about 
+a new state of the primary variable.
 
 
 Secondary field evaluators
@@ -352,15 +370,19 @@ There are two types of secondary fields evaluators.
 The first type is used to evaluate a single field.
 The second type is used to evaluate efficiently (in one call of an evaluator) multiple fields.
 
+Typically, secondary fields are created by high-level PKs during the setup phase and
+inserted automatically in the list of evaluators.
 The related XML syntax can provide various parameters needed for evaluation as explained in two
 examples below.
-One can also create a secondary field evaluator using the following parameters
+The developer can create a secondary field evaluator using common parameters as well
+as custom parameters (see the examples).
 
 * `"evaluator dependencies`" [Array(string)] provides a list of fields on which this evaluator
   depends.
 
 * `"check derivatives`" [bool] allows the develop to check derivatives with finite differences.
-  Default is *false*.
+  This is the expensive option involving finite difference approximations and is recommended for
+  code debugging only. Default is *false*.
 
 * `"finite difference epsilon`" [double] defines the finite difference epsilon.
   Default is 1e-10.
@@ -370,11 +392,11 @@ One can also create a secondary field evaluator using the following parameters
   <ParameterList name="field_evaluators">  <!-- parent list -->
     <ParameterList name="molar_density_liquid">
       <Parameter name="field evaluator type" type="string" value="eos"/>
-      <Parameter name="EOS basis" type="string" value="both"/>
+      <Parameter name="eos basis" type="string" value="both"/>
       <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
       <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
       <ParameterList name="EOS parameters">
-        <Parameter name="EOS type" type="string" value="liquid water"/>
+        <Parameter name="eos type" type="string" value="liquid water"/>
       </ParameterList>
       <ParameterList name="VerboseObject">
         <Parameter name="Verbosity Level" type="string" value="extreme"/>
@@ -382,12 +404,12 @@ One can also create a secondary field evaluator using the following parameters
     </ParameterList>
   </ParameterList>
 
-In this example the molar density of liquid is evaluated using an EOS evaluator.
-The field name in the dependency tree is `"molar_density_liquid`". 
-The secondary field that is evaluated simultaneously is `"mass_density_liquid`".
-The EOS evaluator knows that these fields depend on `"temperature`" and `"pressure`";
-hence, this information is not provided in the input list.
-The EOS requires one-parameter list to select the proper model for evaluation.
+In this example the molar density of liquid is evaluated using the *eos* evaluator.
+The secondary field name is *molar_density_liquid*.
+It is evaluated simultaneously with the secondary field *mass_density_liquid*.
+The internal *eos* evaluator knows that these fields depend on fields *temperature* 
+and *pressure*; hence, this information is not provided in the input list.
+The *eos* evaluator requires one-parameter list to select the proper model for evaluation.
 
 .. code-block:: xml
 
@@ -396,7 +418,7 @@ The EOS requires one-parameter list to select the proper model for evaluation.
       <Parameter name="field evaluator type" type="string" value="iem"/>
       <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
       <ParameterList name="IEM parameters">
-        <Parameter name="IEM type" type="string" value="linear"/>
+        <Parameter name="iem type" type="string" value="linear"/>
         <Parameter name="heat capacity [J/kg-K]" type="double" value="620.0"/>
       </ParameterList>
       <ParameterList name="VerboseObject">
@@ -405,9 +427,9 @@ The EOS requires one-parameter list to select the proper model for evaluation.
     </ParameterList>
   </ParameterList>
 
-In this example, the internal energy of rock is evaluated using one of the 
-available iem models. 
-A particular model is dynamically instantiated using parameter `"IEM type"`".
+In this example, the secondary field *internal_energy_rock* is evaluated using one of the 
+internal *iem* evaluators. 
+A particular evaluator is selected dynamically using parameter *iem type*.
 
 
 Initial conditions
@@ -417,10 +439,10 @@ Constant scalar field
 .....................
 
 A constant field is the global (with respect to the mesh) constant. 
-At the moment, the set of such fields includes fluid density 
-and fluid viscosity.
+At the moment, the set of such fields includes *fluid_density*
+and *fluid_viscosity*.
 The initialization requires to provide a named sublist with a single
-parameter `"value`".
+parameter *value*.
 
 .. code-block:: xml
 
@@ -435,9 +457,9 @@ Constant vector field
 .....................
 
 A constant vector field is the global (with respect to the mesh) vector constant. 
-At the moment, the set of such vector constants includes gravity.
+At the moment, the set of such vector constants includes *gravity*.
 The initialization requires to provide a named sublist with a single
-parameter `"Array(double)`". In two dimensions, is looks like
+parameter *value*. In two dimensions, is looks like
 
 .. code-block:: xml
 
@@ -451,20 +473,20 @@ parameter `"Array(double)`". In two dimensions, is looks like
 A scalar field
 ..............
 
-A variable scalar field is defined by a few functions (labeled for instance,
-`"MESH BLOCK i`" with non-overlapping ranges. 
-The required parameters for each function are `"region`", `"component`",
+A variable scalar field is defined by a few functions (labeled *MESH BLOCK #* in our
+example) with non-overlapping domains. 
+The required parameters for each function are *region*, *component*,
 and the function itself.
 
-* `"regions`" [Array(string)] list of mesh regions where the function
-  should be applied.
+* `"regions`" [Array(string)] is list of mesh regions where the function
+  should be applied, the domain of the function.
 
 * `"component`" [string] specifies a mesh object on which the discrete field 
   is defined.
 
-Optional parameters are `"write checkpoint`", `"write vis`". These
-parameters define  whether  the field has to be written into
-checkpoints of vis files. Default values are true.
+Optional parameters are *write checkpoint* and *write vis*.
+These parameters define whether the field has to be written into
+checkpoints of visualization files. Default values are *true*.
 
 .. code-block:: xml
 
@@ -489,9 +511,9 @@ checkpoints of vis files. Default values are true.
      </ParameterList>
    </ParameterList>
 
-In this example, the discrete field `"pressure`" has constant value 90000 [Pa] in 
-each mesh cell of region `"DOMAIN 1``". The second mesh block will define
-pressure in the second mesh regions and so on.
+In this example, the field *pressure* has constant value 90000 [Pa] in 
+each mesh cell of region *DOMAIN 1*. The second mesh block will define
+the pressure in the second mesh region and so on.
 
 
 A vector or tensor field
@@ -499,21 +521,29 @@ A vector or tensor field
 
 A variable tensor (or vector) field is defined similarly to a variable scalar field. 
 The difference lies in the definition of the function which is now a multi-value function.
-The required parameters are `"Number of DoFs`" and `"Function type`". 
 
-* `"dot with normal`" [bool] triggers special initialization of a
-  vector field such as the darcy flux. This field is defined by
-  projection of a vector field on face normals.
+* `"Number of DoFs`" [int] is the number of components in the vector or tensor.
 
-Optional parameters are `"write checkpoint`", `"write vis`". These
-parameters define  whether  the field has to be written into
-checkpoints of vis files. Default values are true.
+* `"Function type`" [string] defines the function type. The only available option 
+  is `"composite function`".
+
+* `"dot with normal`" [bool] triggers the special initialization of a
+  vector field such as the `"darcy_flux`". This field is defined by
+  projection of the velocity (a vector field) on face normals.
+  Changing value to *false* will produce the vector field.
+
+Optional parameters are *write checkpoint*,  and *write vis*.
+These parameters define whether the field has to be written into
+checkpoints of vis files. Default values are *true*.
 
 .. code-block:: xml
 
    <ParameterList name="initial conditions">  <!-- parent list -->
      <ParameterList name="darcy_flux">
+       <Parameter name="write checkpoint" type="bool" value="true"/>
+       <Parameter name="write vis" type="bool" value="false"/>
        <Parameter name="dot with normal" type="bool" value="true"/>
+
        <ParameterList name="function">
          <ParameterList name="MESH BLOCK 1">
            <Parameter name="regions" type="Array(string)" value="{ALL DOMAIN}"/>
@@ -539,15 +569,14 @@ checkpoints of vis files. Default values are true.
 
 In this example the constant Darcy velocity (0.002, 0.001) [m/s] is dotted with the face 
 normal producing one number per mesh face.
-changing value of `"dot with normal`" to false will produce a vector 
 
 
 Mesh partitioning
 -----------------
 
 Amanzi's state has a number of tools to verify completeness of initial data.
-This is done using sublist `"mesh partitions`". 
-Each sublist in there must have parameter `"region list`" specifying
+This is done using list *mesh partitions*. 
+Each sublist in there must have parameter *region list* specifying
 regions that define unique partition of the mesh.
 
 .. code-block:: xml
@@ -560,17 +589,18 @@ regions that define unique partition of the mesh.
      </ParameterList>
    </ParameterList>
 
-In this example, we verify that three mesh regions cover the mesh without overlaps.
-If so, all material fields, e.g. porosity, will be initialized properly.
+In this example, we verify that three mesh regions cover completely the mesh without overlaps.
+If so, all material fields, such as *porosity*, will be initialized properly.
 
 
 Initialization from a file
 --------------------------
 
-Some data can be initialized from files. Additional sublist has to be added to
-named sublist of the `"State`" list with the file name and the name of an attribute. 
-For a serial run, the file extension must be `".exo`". 
-For a parallel run, it must be `".par`".
+Some fields can be initialized from files. 
+For each field, an additional sublist has to be added to the
+named sublist of *State* list with the file name and the name of an attribute. 
+For a serial run, the file extension must be *.exo*. 
+For a parallel run, it must be *.par*.
 
 .. code-block:: xml
 
@@ -588,7 +618,7 @@ Example
 -------
 
 The complete example of a state initialization is below. Note that
-`"MATERIAL 1`" and `"MATERIAL 2`" must be valid labels of regions.
+*MATERIAL 1* and *MATERIAL 2* must be labels of the existing regions.
 
 .. code-block:: xml
 
@@ -597,7 +627,7 @@ The complete example of a state initialization is below. Note that
       <ParameterList name="porosity">
         <ParameterList name="function">
           <ParameterList name="ALL">
-            <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+            <Parameter name="regions" type="Array(string)" value="{COMPUTATIONAL DOMAIN}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -621,7 +651,7 @@ The complete example of a state initialization is below. Note that
       <ParameterList name="pressure">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="regions" type="Array(string)" value="Computational domain"/>
+            <Parameter name="regions" type="Array(string)" value="{COMPUTATIONAL DOMAIN}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -679,22 +709,22 @@ The complete example of a state initialization is below. Note that
 Process kernels (PKs)
 =====================
 
-This is a complete sublist of PKs used in a simulation.
-The name of PKs in this sublist must match PKNAMEs in Cycle Driver sublist.
+The process kernels list describes all PKs used in a simulation.
+The name of the PKs in this list must match *PKNAMEs* in *Cycle Driver* list.
 
 .. code-block:: xml
 
   <ParameterList>  <!-- parent list -->
     <ParameterList name="PKs">
-      <ParameterList name="Flow and Transport">
-        <Parameter name="PK type" type="string" value="flow transport pk"/>      
-        <Parameter name="PKs order" type="Array(string)" value="{Flow, Transport}"/> 
+      <ParameterList name="FLOW and TRANSPORT">
+        <Parameter name="PK type" type="string" value="flow reactive transport"/>      
+        <Parameter name="PKs order" type="Array(string)" value="{FLOW, TRANSPORT}"/> 
         <Parameter name="master PK index" type="int" value="0"/>
       </ParameterList>
-      <ParameterList name="Flow">
+      <ParameterList name="FLOW">
         ...
       </ParameterList>
-      <ParameterList name="Transport">
+      <ParameterList name="TRANSPORT">
         ...
       </ParameterList>
     </ParameterList>
@@ -751,7 +781,7 @@ where :math:`s_l` is liquid saturation,
 and :math:`\phi` is porosity.
 
 Based on these two models, the flow sublist includes exactly one sublist, either 
-`"Darcy problem`" or `"Richards problem`".
+*Darcy problem* or *Richards problem*.
 Structure of both sublists is quite similar. We make necessary comments on their differences.
 
 .. code-block:: xml
@@ -805,11 +835,11 @@ Combination of both approaches may lead to a more efficient code.
 Water retention models
 ......................
 
-User defines water retention models in sublist `"water retention models`". 
-It contains as many sublists, e.g. `"SOIL_1`", `"SOIL_2`", etc, as there are different soils. 
-This list is required for `"Richards problem`" only.
+User defines water retention models in sublist *water retention models*. 
+It contains as many sublists, e.g. *SOIL_1*, *SOIL_2*, etc, as there are different soils. 
+This list is required for *Richards problem* only.
  
-The water retention models are associated with non-overlapping regions. Each of the sublists (e.g. `"Soil 1`") 
+The water retention models are associated with non-overlapping regions. Each of the sublists (e.g. *Soil 1*) 
 includes a few mandatory parameters: region name, model name, and parameters for the selected model.
 
 * `"water retention model`" [string] specifies a model for the soil.
@@ -833,16 +863,15 @@ includes a few mandatory parameters: region name, model name, and parameters for
 
 Amanzi performs rudimentary checks of validity of the provided parameters. 
 The relative permeability curves can be calculated and saved in an ASCI file 
-if the list `"output`" is provided. This list has two mandatory parameters:
+if the list *output* is provided. This list has two mandatory parameters:
 
-* `"file`" [string] A user defined file name. It should be different for 
+* `"file`" [string] is the user defined file name. It should be different for 
   each soil. 
 
-* `"number of points`" [int] A number of data points. 
+* `"number of points`" [int] is the number of data points. 
   Each file will contain a table with three columns: saturation, relative permeability, and
   capillary pressure. The data points are equidistributed between the residual saturation
   and 1.
-
 
 .. code-block:: xml
 
@@ -882,11 +911,11 @@ In this example, we define two different water retention models in two soils.
 Porosity models
 ...............
 
-User defines porosity models in sublist `"porosity models`". 
-It contains as many sublists, e.g. `"SOIL_1`", `"SOIL_2`", etc, as there are different soils. 
+User defines porosity models in sublist *porosity models*. 
+It contains as many sublists, e.g. *SOIL_1*, *SOIL_2*, etc, as there are different soils. 
 
-The porosity models are associated with non-overlapping regions. Each of the sublists (e.g. `"Soil 1`") 
-includes a few mandatory parameters: region name, model name, and parameters for the selected model.
+The porosity models are associated with non-overlapping regions. Each of the sublists (e.g. *Soil 1*) 
+includes a few mandatory parameters: *region name*, *model name*, and parameters for the selected model.
 
 * `"porosity model`" [string] specifies a model for the soil.
   The available models are `"compressible`" and `"constant`". 
@@ -971,7 +1000,7 @@ relative permeability, density and viscosity.
 Diffusion operators
 ...................
 
-Operators sublist describes the PDE structure of the flow, specifies a discretization
+List *operators* describes the PDE structure of the flow, specifies a discretization
 scheme, and selects assembling schemas for matrices and preconditioners.
 
 * `"operators`" [list] 
@@ -1017,45 +1046,51 @@ scheme, and selects assembling schemas for matrices and preconditioners.
 This example creates a p-lambda system, i.e. the pressure is
 discretized in mesh cells and on mesh faces. 
 The preconditioner is defined on faces only, i.e. cell-based unknowns
-are elliminated explicitly and the preconditioner is applied to the
+are eliminated explicitly and the preconditioner is applied to the
 Schur complement.
 
 
 Boundary conditions
 ...................
 
-Boundary conditions are defined in sublist `"boundary conditions`". Four types of boundary 
-conditions are supported.
-In addition, a boundary condition may support a submodel. 
-A submodel is defined by additional parameters as described below. 
+Boundary conditions are defined in sublist *boundary conditions*. 
+Four types of boundary conditions are supported.
+Each type has a similar structure: a list of identical elements that contain
+information about a part of the boundary where it is prescribed, a function
+to calculate it, and optional parameters to modify it slightly.
+This modification is referred to as a submodel and requires additional parameters as described below. 
 
-* `"pressure`" [list] Dirichlet boundary condition, a pressure is prescribed on a surface region. 
+* `"pressure`" [list] is the Dirichlet boundary condition where the pressure is prescribed on a part of the 
+  boundary surface. No submodels is available.
 
-* `"mass flux`" [list] Neumann boundary condition, an outward mass flux is prescribed on a surface region.
-  This is the default boundary condition. If no condition is specified on a mesh face, zero flux 
+* `"mass flux`" [list] is the Neumann boundary condition where an outward mass flux is prescribed on a 
+  part of the boundary surface.
+  This is the default boundary condition. If no condition is specified on a mesh face, the zero flux 
   boundary condition is used. 
 
-  * `"rainfall`" [bool] indicates that the mass flux is defined with respect to the gravity 
-    vector and the actual influx depends on boundary slope. Default value is `"false`".
+  * `"rainfall`" [bool] indicates the submodel where the mass flux is defined with respect to the gravity 
+    vector and the actual flux depends on the boundary slope. Default is `"false`".
 
-* `"static head`" [list] Dirichlet boundary condition, the hydrostatic pressure is prescribed on a surface region.
+* `"static head`" [list] is the Dirichlet boundary condition where the hydrostatic pressure is prescribed 
+  on a part of the boundary.
 
-  * `"relative to top`" [bool] indicates that the static head is defined with respect
+  * `"relative to top`" [bool] indicates the submodel where the static head is defined with respect
     to the top boundary (a curve in 3D) of the specified regions. Support of 2D is turned off.
     Default value is `"false`". 
 
-  * `"no flow above water table`" [bool] indicates that no-flow (Neumann) boundary condition 
+  * `"no flow above water table`" [bool] indicates the submodel where the no-flow boundary condition 
     has to be used above the water table. This switch uses the pressure value at a face
     centroid. Default is `"false`".
 
-* `"seepage face`" [list] Seepage face boundary condition, a dynamic combination of the `"pressure`" and 
-  `"mass flux`" boundary conditions on a region. 
-  The atmospheric pressure is prescribed if internal pressure is higher. Otherwise, the outward mass flux is prescribed. 
+* `"seepage face`" [list] is the seepage face boundary condition, a dynamic combination of the `"pressure`" and 
+  `"mass flux`" boundary conditions over the specified region. 
+  The atmospheric pressure is prescribed if internal pressure is higher it. 
+  Otherwise, the outward mass flux is prescribed. 
 
   * `"reference pressure`" [double] defaults to the atmospheric pressure. 
 
-  * `"rainfall`" [bool] indicates that the mass flux is defined with respect to the gravity 
-    vector and the actual influx depends on boundary slope. Default value is `"false`".
+  * `"rainfall`" [bool] indicates the submodel where the mass flux is defined with respect to the gravity 
+    vector and the actual influx depends on the boundary slope. Default is `"false`".
 
   * `"submodel`" [string] indicates different models for the seepage face boundary condition.
     It can take values `"PFloTran`" and `"FACT`". The first option leads to a 
@@ -1127,20 +1162,20 @@ of the other available functions.
 Sources and sinks
 .................
 
-The external sources and sinks are typically pumping wells. The structure
-of sublist `"source terms`" mimics that of boundary conditions. 
-Again, constant functions can be replaced by any of the available time-functions.
+The sources and sinks are typically associated with pumping wells. The structure
+of list *source terms* mimics that of list *boundary conditions*. 
+Again, constant functions can be replaced by any of the available functions.
 
-* `"regions`" [Array(string)] list of regions where source is defined.
+* `"regions`" [Array(string)] is the list of regions where the source is defined.
 
-* `"spatial distribution method`" [string] identifies a method for distributing
+* `"spatial distribution method`" [string] is the method for distributing
   source Q over the specified regions. The available options are `"volume`",
-  `"none`", and `"permeability`". For option `"none`" the source term Q is measured
+  `"none`", and `"permeability`". For option `"none`", the source term Q is measured
   in [kg/m^3/s]. For the other options, it is measured in [kg/s]. When the source function
-  is defined over a few regions, Q will be distributed independently over each region.
+  is defined over a few regions, Q is distributed independently over each region.
   Default is `"none`".
 
-* `"submodel`" [string] refines definition of source. Available options are `"rate`"
+* `"submodel`" [string] refines definition of the source. Available options are `"rate`"
   and `"integrated source`". The first option defines the source in a natural way as the rate 
   of change `q`. The second option defines the indefinite integral `Q` of the rate 
   of change, i.e. the source term is calculated as `q = dQ/dt`. Default is `"rate`".
@@ -1176,13 +1211,16 @@ Again, constant functions can be replaced by any of the available time-functions
 Time integrator
 ...............
 
-The sublist `"time integrator`" defines a generic time integrator used
+The list *time integrator* defines a generic time integrator used
 by the cycle driver. 
 This driver assumes that each PK has only one time integrator.
-The sublist `"time integrator`" defines parameters controlling linear and 
+The list *time integrator* defines parameters controlling linear and 
 nonlinear solvers during a time integration period.
 We break this long sublist into smaller parts. 
-The first part controls preliminary steps in the time integrator.
+
+
+Initialization and constraints
+``````````````````````````````
 
 * `"error control options`" [Array(string)] lists various error control options. 
   A nonlinear solver is terminated when all listed options are passed. 
@@ -1271,9 +1309,13 @@ The first part controls preliminary steps in the time integrator.
      </ParameterList>
    </ParameterList>
 
-The time step change is controlled by parameter `"time step controller type`"
+
+Time step controller and nonlinear solver
+`````````````````````````````````````````
+
+The time step is controlled by parameter *time step controller type*
 and the related list of options.
-Nonlinear solver is controlled by parameter `"solver type`"  and related list of options.
+Nonlinear solver is controlled by parameter *solver type*  and related list of options.
 Amanzi supports a few nonlinear solvers described in details in a separate section.
 
 * `"time step controller type`" [list]
@@ -1290,7 +1332,7 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
     tolerance. The time integrator is usually restarted when a boundary condition 
     changes drastically. It may be beneficial to loosen the nonlinear 
     tolerance on the first several time steps after the time integrator restart. 
-    The default value is 1, while reasonable values maybe as large as 1000. 
+    The default value is 1, while a reasonable value may be as large as 1000. 
 
   * `"restart tolerance relaxation factor damping`" controls how fast the loosened 
     nonlinear tolerance will revert back to the one specified in `"nonlinear tolerance"`.
@@ -1382,6 +1424,10 @@ The time step is not changed when the number of nonlinear iterations is
 between 11 and 15.
 The time step will be cut twice if the number of nonlinear iterations exceeds 15.
 
+
+Developer parameters
+````````````````````
+
 The remaining parameters in the time integrator sublist include 
 those needed for unit tests, and future code development. 
 
@@ -1401,7 +1447,7 @@ those needed for unit tests, and future code development.
 Other parameters
 ................
 
-The remaining `"Flow`" parameters are
+The remaining *Flow* parameters are
 
 * `"atmospheric pressure`" [double] defines the atmospheric pressure, [Pa].
 
@@ -1409,7 +1455,10 @@ The remaining `"Flow`" parameters are
   for calculating absolute permeability. The available options are `"cartesian`"
   and `"layer`".
 
-* `"clipping parameters`"[list] defines how corrections in nonlinear solver modified (clipped)
+* `"clipping parameters`"[list] defines how solution increment calculated by a nonlinear 
+  solver is modified e.g., clipped.
+
+* `"plot time history`" [bool] produces an ASCII file with the time history. Default is `"false`".
 
 .. code-block:: xml
 
@@ -1418,25 +1467,13 @@ The remaining `"Flow`" parameters are
         <Parameter name="maximum saturation change" type="double" value="0.25"/>
         <Parameter name="pressure damping factor" type="double" value="0.5"/>
      </ParameterList>	
+
+     <Parameter name="plot time history" type="bool" value="false"/>
    </ParameterList>	
 
-* `"plot time history`" [bool] produces an ASCII file with time history when exists.
 
-* `"VerboseObject`" [list] defines default verbosity level for the process kernel.
-  If it does not exists, it will be created on a fly and verbosity level will be set to `"high`".
-
-.. code-block:: xml
-
-   <ParameterList name="Richards problem">  <!-- parent list -->
-     <Parameter name="atmospheric pressure" type="double" value="101325.0"/>
-     <ParameterList name="VerboseObject">
-       <Parameter name="Verbosity Level" type="string" value="medium"/>
-     </ParameterList>
-   </ParameterList>
-
-
-Verbose output
-..............
+Explanation of verbose output
+.............................
 
 When verbosity is set to *high*, this PK reports information about 
 current status of the simulation.
@@ -1444,15 +1481,16 @@ Here after keyword *global* refers to the whole simulation including
 all time periods, keyword *local* refers to the current time period.
 The incomplete list is
 
- * [global] cycle number, time T, and time step dT
- * [global] T and dT inside the time integrator (in seconds)
- * frequency of preconditioner updates
- * number of performed nonlinear steps and value of the nonlinear residual
+ * [global] cycle number, time before the step, and time step dt (in years)
+ * [local] step number, time T, and dT inside the time integrator (in seconds)
+ * [local] frequency of preconditioner updates
+ * [local] number of performed nonlinear steps and value of the nonlinear residual
  * [local] total number of successful time steps (TS), failed time steps (FS),
    preconditioner updates (PC/1) and preconditioner applies (PC/2),
    linear solves insides preconditioner (LS)
- * amount of liquid (water) in the reservoir and amount of water entering
+ * [local] amount of liquid (water) in the reservoir and amount of water entering
    and living domain through its boundary (based on darcy flux).
+ * [global] current simulation time (in years)
 
 .. code-block:: xml
 
@@ -1463,8 +1501,6 @@ The incomplete list is
   TI::BDF1         |    TS:40 FS:0 NS:64 PC:42 64 LS:0 dt:1.0000e+03 7.5232e+06
   FlowPK::Richards |    reservoir water mass=1.36211e+06 [kg], total influx=897.175 [kg]
   CycleDriver      |   New time(y) = 1.19185
-  FlowPK::Richards |    Secondary fields: hydraulic head, darcy_velocity
- 
 
 
 Transport PK
@@ -1529,8 +1565,6 @@ components and their dispersion and diffusion.
 The main parameters control temporal stability, spatial 
 and temporal accuracy, and verbosity:
 
-* `"PK type`" [string] Defines name of PK. The only available option is `"transport pk`".
-
 * `"cfl`" [double] Time step limiter, a number less than 1. Default value is 1.
    
 * `"spatial discretization order`" [int] defines accuracy of spatial discretization.
@@ -1550,14 +1584,10 @@ and temporal accuracy, and verbosity:
 * [WIP] `"number of gaseous components`" [int] The total number of gaseous components. 
   Default value is 0.
    
-* `"VerboseObject`" [list] Defines verbosity level for the process kernel.
-  Default value is `"medium`".
-
 .. code-block:: xml
 
   <ParameterList>  <!-- parent list -->
     <ParameterList name="Transport">
-      <Parameter name="PK type" type="string" value="transport pk"/>
       <Parameter name="cfl" type="double" value="1.0"/>
       <Parameter name="spatial discretization order" type="int" value="1"/>
       <Parameter name="temporal discretization order" type="int" value="1"/>
@@ -1614,7 +1644,7 @@ The diffusivity is defined independently for each solute.
       * `"alphaLV`" [double] Defines the longitudinal dispersion in the vertical direction.
         When `"alphaLH`" equals to `"alphaLV`", we obtain dispersion in the direction of the Darcy velocity.
         This and the above parameters must be defined for `"Burnett-Frind`" and `"Lichtner-Kelker-Robinson`" models.
-      * `"alphaTH`" [double] Defines the transverse dispersion in the horizonla direction orthogonal directions.
+      * `"alphaTH`" [double] Defines the transverse dispersion in the horizontal direction orthogonal directions.
       * `"alphaTV`" [double] Defines dispersion in the orthogonal directions.
         When `"alphaTH`" equals to `"alphaTV`", we obtain dispersion in the direction of the Darcy velocity.
         This and the above parameters must be defined for `"Burnett-Frind`" and `"Lichtner-Kelker-Robinson`" models.
@@ -1731,9 +1761,9 @@ but require special treatment.
     <ParameterList name="boundary conditions">
       <ParameterList name="geochemical conditions">
         <ParameterList name="EAST CRIB">   <!-- user defined name -->
-          <Parameter name="Times" type="Array(double)" value="{0.0, 100.0}"/>
-          <Parameter name="Geochemical Conditions" type="Array(string)" value="{cond1, cond2}"/>
-          <Parameter name="Time Functions" type="Array(string)" value="{constant, constant}"/>
+          <Parameter name="times" type="Array(double)" value="{0.0, 100.0}"/>
+          <Parameter name="geochemical conditions" type="Array(string)" value="{cond1, cond2}"/>
+          <Parameter name="time functions" type="Array(string)" value="{constant, constant}"/>
           <Parameter name="regions" type="Array(string)" value="{CRIB1}"/>
         </ParameterList>
       </ParameterList>
@@ -1745,7 +1775,7 @@ Sources and sinks
 .................
 
 The external sources are typically located at pumping wells. The structure
-of list `"source terms`" includes only sublists named after components. 
+of list *source terms* includes only sublists named after components. 
 Again, constant functions can be replaced by any available time-function.
 Note that the source values are set up separately for each component.
 
@@ -1832,36 +1862,117 @@ The remaining parameters that can be used by a developer include
   tracking solutes. Default value is a seepage face boundary, see Flow PK.
 
 
+Explanation of verbose output
+.............................
+
+When verbosity is set to *high*, this PK reports information about 
+current status of the simulation.
+Here after keyword *global* refers to the whole simulation including
+all time periods, keyword *local* refers to the current time period.
+The incomplete list is
+
+ * [global] cycle number, time before step, and time step dt (in years)
+ * [local] cell id and position with the smallest time step
+ * [local] convergence of a linear solver for dispersion, PCG here
+ * [local] number of subcycles, stable time step, and global time step (in seconds)
+ * [local] species's name, concentration extrema, total amount of it in the 
+   reservoir, and amount escaped through the outflow boundary
+ * [global] current simulation time (in years)
+
+.. code-block:: xml
+
+  CycleDriver      |   Cycle 10: time(y) = 0.803511, dt(y) = 0.089279
+  TransportPK      |    cell 0 has smallest dt, (-270, -270)
+  TransportPK      |    dispersion solver (pcg) ||r||=8.33085e-39 itrs=2
+  TransportPK      |    1 sub-cycles, dt_stable=2.81743e+06 [sec]  dt_MPC=2.81743e+06 [sec]
+  TransportPK      |    Tc-99: min/max=7.111e-21 0.001461 [mol/m^3], total/out=2.2957 1.4211e-14 [mol]
+  CycleDriver      |   New time(y) = 0.89279
+
+
 Chemistry PK
 ------------
 
 The chemistry header includes three parameters:
 
-* `"PK type`" [string] defined name of this PK. The only available option is `"chemistry pk`".
-
 * `"chemistry model`" [string] defines chemical model. The available options are `"Alquimia`"
   and `"Amanzi`" (default).
-
-* `"component names`" [Array(string)] provides the list of species names.
 
 .. code-block:: xml
 
   <ParameterList name="Chemistry">
-    <Parameter name="PK type" type="string" value="chemistry pk"/>
-    <Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
+    <Parameter name="chemistry model" type="string" value="Amanzi"/>
   </ParameterList>
 
 
 Geochemical engines
 ...................
 
-This chemistry list specifies the default and the third-party geochemical engines. 
-In the case of the third-party engine most details are provided in the trimmed 
-PFloTran file `"1d-tritium-trim.in`".
+Here we specify either the default or the third-party geochemical engine. 
 
-The Alquimia chemistry process kernel only requires the `"Engine`" and `"Engine Input File`"
-entries, but will also accept and respect the value given for `"Max Time Step (s)`". 
-The rest are only used by the native chemistry kernel.
+
+Alquimia
+````````
+
+The Alquimia chemistry process kernel only requires the *Engine* and *Engine Input File*
+entries, but will also accept and respect the value given for *max time step (s)*. 
+Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
+
+* `"max time step (s)`" [double] is the maximum time step that chemistry will allow the MPC to take.
+
+* `"min time step (s)`" [double] is the minimum time step that chemistry will allow the MPC to take.
+
+* `"initial time step (s)`" [double] is the initial time step that chemistry will ask the MPC to take.
+
+* `"time step control method`" [string] specifies time step control method for chemistry subcycling. 
+  Choose either "fixed" (default) or "simple".  For option "fixed", time step is fixed.
+  For option "simple", the time step is adjusted in response to stiffness of system of equations 
+  based on a simple scheme. This option require the following parameters: `"time step cut threshold`",
+  `"time step cut factor`", `"time step increase threshold`", and `"time step increase factor`".
+
+* `"time step cut threshold`" [int] is the number of Newton iterations that if exceeded
+  will trigger a time step cut. Default is 8.
+
+* `"time step cut factor`" [double] is the factor by which the time step is cut. Default is 2.0
+
+* `"time step increase threshold`" [int] is the number of consecutive successful time steps that
+  will trigger a time step increase. Default is 4.
+
+* `"time step increase factor`" [double] is the factor by which the time step is increased. Default is 1.2
+
+.. code-block:: xml
+
+  <ParameterList>  <!-- parent list -->
+    <ParameterList name="Chemistry">
+      <Parameter name="Engine" type="string" value="PFloTran"/>
+      <Parameter name="Engine Input File" type="string" value="1d-tritium-trim.in"/>
+      <Parameter name="Verbosity" type="Array(string)" value="{verbose}"/>
+      <Parameter name="min time step (s)" type="double" value="1.5778463e-07"/>
+      <Parameter name="max time step (s)" type="double" value="1.5778463e+07"/>
+      <Parameter name="initial time step (s)" type="double" value="1.0e-02"/>
+      <Parameter name="time step control method" type="string" value="simple"/>
+      <Parameter name="time step cut threshold" type="int" value="8"/>
+      <Parameter name="time step cut factor" type="double" value="2.0"/>
+      <Parameter name="time step increase threshold" type="int" value="4"/>
+      <Parameter name="time step increase factor" type="double" value="1.2"/>
+    </ParameterList>
+  </ParameterList>
+
+
+Amanzi
+``````
+
+The Amanzi chemistry process kernel uses the following parameters.
+
+* `"activity model`" [string] is the type of model used for activity corrections. 
+  Valid options are `"unit`" and `"debye-huckel`".
+
+* `"tolerance`" [double] defines tolerance in Newton solves inside the chemistry library.
+
+* `"maximum Newton iterations`" [int] is the maximum number of iteration the chemistry 
+  library can take.
+
+* `"auxiliary data`" [Array(string)] defines additional chemistry related data that the user 
+  can request be saved to vis files. Currently `"pH`" is the only variable supported.
 
 .. code-block:: xml
 
@@ -1871,160 +1982,16 @@ The rest are only used by the native chemistry kernel.
         <Parameter name="Format" type="string" value="simple"/>
         <Parameter name="File" type="string" value="tritium.bgd"/>
       </ParameterList>
-      <Parameter name="Engine" type="string" value="PFloTran"/>
-      <Parameter name="Engine Input File" type="string" value="1d-tritium-trim.in"/>
       <Parameter name="Verbosity" type="Array(string)" value="{verbose}"/>
-      <Parameter name="Activity Model" type="string" value="unit"/>
-      <Parameter name="Tolerance" type="double" value="1.5e-12"/>
-      <Parameter name="Maximum Newton Iterations" type="int" value="25"/>
-      <Parameter name="Max Time Step (s)" type="double" value="1.5778463e+07"/>
-      <Parameter name="Number of component concentrations" type="int" value="1"/>
+      <Parameter name="activity model" type="string" value="unit"/>
+      <Parameter name="tolerance" type="double" value="1.5e-12"/>
+      <Parameter name="maximum Newton iterations" type="int" value="25"/>
+      <Parameter name="max time step (s)" type="double" value="1.5e+07"/>
+      <Parameter name="min time step (s)" type="double" value="1.0e-6"/>
+      <Parameter name="number of component concentrations" type="int" value="1"/>
+      <Parameter name="auxiliary data" type="Array(string)" value="{pH}"/>
     </ParameterList>
   </ParameterList>
-
-
-Format of chemistry database (.bgd) file
-........................................
-
-A section header starts with token `"<`". 
-A comment line starts with token `"#`". 
-Data fields are separated by semicolumns.
-
-Primary Species
-```````````````
-
-Section `"Primary Species`". Each line in this section has four data fields: 
-name of a primary component, ion size parameter, charge, and atomic mass [u].
-
-.. code-block:: txt
-
-   <Primary Species
-   H+  ;   9.00 ;   1.00 ;   1.01
-   Al+++  ;   9.00 ;   3.00 ;  26.98
-   Ca++  ;   6.00 ;   2.00 ;  40.08
-
-
-Isotherms
-`````````
-
-Section `"Isotherms`". Each line in this section has three fields: primary species name, 
-adsorption isotherm model, and parameters. The adsorption model is one of: linear, langmuir, or freundlich.
-The parameters is a space delimited list of numbers. The number of  parameters and 
-their meaning depends on the model; although the first one is always *kd*.
-
-.. code-block:: txt
-
-   <Isotherm
-   A ; linear ; 10
-   B ; langmuir ; 30 0.1
-   C ; freundlich ; 1.5 1.25
-
-
-General Kinetics
-````````````````
-
-Section `"General Kinetics`". Each line in this section has five data fields.
-The first field is the reaction string that has format 
-"30 A(aq) + 2 B(aq) <-> C(aq) + .3 D(aq) +- 4 E(aq)"
-where number (stoichiometires) is followed by species name. 
-The second and fourth fields contain information about reactanct and products.
-The fourth and fifth columns contain rate constants.
-
-.. code-block:: txt
-
-   <Primary Species
-   Tritium  ;   9.00 ;   0.00 ;   1.01
-
-   <General Kinetics
-   1.00 Tritium <->  ;   1.00 Tritium ;  1.78577E-09 ; ; 
-
-
-Ion Exchange Sites
-``````````````````
-
-Section `"Ion Exchange Sites`". Each line in this section has three fields: 
-exchanger name, exchanger change, and exchanger location. 
-The location is the mineral where the exchanger is located, i.e. kaolinite.
-
-.. code-block:: txt
-
-   <Ion Exchange Sites
-   X- ; -1.0 ; Bulk
-
-
-Aqueous Equilibrium Complexes
-`````````````````````````````
-
-Section `"Aqueous Equilibrium Complexes`". Each line in this section has five 
-fields for secondary species: name = coeff reactant, log Keq, size parameter, charge, and 
-gram molecular weight.
-
-.. code-block:: txt
-
-   <Aqueous Equilibrium Complexes
-   OH- =   1.00 H2O  -1.00 H+  ;   13.99510 ;    3.50000 ;   -1.00000 ;   17.00730
-   HCO3- =   1.00 H2O  -1.00 H+   1.00 CO2(aq)  ;    6.34470 ;    4.00000 ;   -1.00000 ;   61.01710
-
-
-Minerals
-````````
-
-Section `"Minerals`". Each line in this section has five fields for secondary species:
-Name = coeff reactant, log Keq, gram molecular weight [g/mole], molar volume [cm^3/mole],
-and specific surface area [cm^2 mineral / cm^3 bulk].
-
-.. code-block:: txt
-
-   <Minerals
-   Quartz = 1.00 SiO2(aq) ; -3.75010E+00 ; 6.00843E+01 ;  2.26880E+01 ;  1.00000E+00
-   Kaolinite =  5.00 H2O  -6.00 H+  2.00 Al+++  2.00 SiO2(aq)  ; 7.57000E+00 ; 2.58160E+02 ; 9.95200E+01 ; 1.0
-
-
-Mineral Kinetics
-````````````````
-
-Section `"Mineral Kinetics`". Each line in this section has four fields.
-The first field contains mineral name that is assumed to have the same stoichiometry 
-as the mineral definition.
-The second field is the rate name.
-
-
-Ion Exchange Complexes
-``````````````````````
-
-Section `"Ion Exchange Complexes`". Each line in this section has two fields.
-The first field has format "name = coeffient and primary name followed by coefficient 
-and exchanger name. the second field is Keq.
-The following assumptions are made:
-
-   - The coefficient of the ion exchange complex is one.
-   - Each complexation reaction is written between a single
-     primary species and a single exchange site.
-
-
-Surface Complex Sites
-`````````````````````
-
-Section `"Surface Complex Sites`". Each line in this section has two fields:
-species name and density.
-
-
-Surface Complexes
-`````````````````
-
-Section `"Surface Complexes`". Each line in this section has three fields
-for secondary species. The first field has format "name = coefficient primary_name coefficient exchanger site".
-The second field is Keq. The third field is charge.
-
-
-Radiactive Decay
-````````````````
-
-Section `"Radiactive Decay`". Each line in this section has two fields.
-The first field has format "parent name --> stoichiometric coefficient and species name.
-The second fields is half-life time with units.
-The stoichiometric coefficient of the parent should always be one.
-The units is one of the following: years, days, hours, minutes, or seconds.
 
 
 Initial conditions
@@ -2059,6 +2026,150 @@ Alquimia chemistry kernel reads initial conditions from the `"State`" list.
   </ParameterList>
 
 
+Format of chemistry database (.bgd) file
+........................................
+
+A section header starts with token `"<`". 
+A comment line starts with token `"#`". 
+Data fields are separated by semicolumns.
+
+
+Primary Species
+```````````````
+
+Each line in this section has four data fields: 
+name of a primary component, ion size parameter, charge, and atomic mass [u].
+
+.. code-block:: txt
+
+   <Primary Species
+   H+  ;   9.00 ;   1.00 ;   1.01
+   Al+++  ;   9.00 ;   3.00 ;  26.98
+   Ca++  ;   6.00 ;   2.00 ;  40.08
+
+
+Isotherms
+`````````
+
+Each line in this section has three fields: primary species name, 
+adsorption isotherm model, and parameters. The adsorption model is one of: linear, langmuir, or freundlich.
+The parameters is a space delimited list of numbers. The number of  parameters and 
+their meaning depends on the model; although the first one is always *kd*.
+
+.. code-block:: txt
+
+   <Isotherm
+   A ; linear ; 10
+   B ; langmuir ; 30 0.1
+   C ; freundlich ; 1.5 1.25
+
+
+General Kinetics
+````````````````
+
+Each line in this section has five data fields.
+The first field is the reaction string that has format 
+"30 A(aq) + 2 B(aq) <-> C(aq) + .3 D(aq) +- 4 E(aq)"
+where number (stoichiometires) is followed by species name. 
+The second and fourth fields contain information about reactanct and products.
+The fourth and fifth columns contain rate constants.
+
+.. code-block:: txt
+
+   <Primary Species
+   Tritium  ;   9.00 ;   0.00 ;   1.01
+
+   <General Kinetics
+   1.00 Tritium <->  ;   1.00 Tritium ;  1.78577E-09 ; ; 
+
+
+Ion Exchange Sites
+``````````````````
+
+Each line in this section has three fields: 
+exchanger name, exchanger change, and exchanger location. 
+The location is the mineral where the exchanger is located, i.e. kaolinite.
+
+.. code-block:: txt
+
+   <Ion Exchange Sites
+   X- ; -1.0 ; Bulk
+
+
+Aqueous Equilibrium Complexes
+`````````````````````````````
+
+Each line in this section has five 
+fields for secondary species: name = coeff reactant, log Keq, size parameter, charge, and 
+gram molecular weight.
+
+.. code-block:: txt
+
+   <Aqueous Equilibrium Complexes
+   OH- =   1.00 H2O  -1.00 H+  ;   13.99510 ;    3.50000 ;   -1.00000 ;   17.00730
+   HCO3- =   1.00 H2O  -1.00 H+   1.00 CO2(aq)  ;    6.34470 ;    4.00000 ;   -1.00000 ;   61.01710
+
+
+Minerals
+````````
+
+Each line in this section has five fields for secondary species:
+Name = coeff reactant, log Keq, gram molecular weight [g/mole], molar volume [cm^3/mole],
+and specific surface area [cm^2 mineral / cm^3 bulk].
+
+.. code-block:: txt
+
+   <Minerals
+   Quartz = 1.00 SiO2(aq) ; -3.75010E+00 ; 6.00843E+01 ;  2.26880E+01 ;  1.00000E+00
+   Kaolinite =  5.00 H2O  -6.00 H+  2.00 Al+++  2.00 SiO2(aq)  ; 7.57000E+00 ; 2.58160E+02 ; 9.95200E+01 ; 1.0
+
+
+Mineral Kinetics
+````````````````
+
+Each line in this section has four fields.
+The first field contains mineral name that is assumed to have the same stoichiometry 
+as the mineral definition.
+The second field is the rate name.
+
+
+Ion Exchange Complexes
+``````````````````````
+
+Each line in this section has two fields.
+The first field has format "name = coeffient and primary name followed by coefficient 
+and exchanger name. the second field is Keq.
+The following assumptions are made:
+
+   - The coefficient of the ion exchange complex is one.
+   - Each complexation reaction is written between a single
+     primary species and a single exchange site.
+
+
+Surface Complex Sites
+`````````````````````
+
+Each line in this section has two fields: species name and density.
+
+
+Surface Complexes
+`````````````````
+
+Each line in this section has three fields
+for secondary species. The first field has format "name = coefficient primary_name coefficient exchanger site".
+The second field is Keq. The third field is charge.
+
+
+Radiactive Decay
+````````````````
+
+Each line in this section has two fields.
+The first field has format "parent name --> stoichiometric coefficient and species name.
+The second fields is half-life time with units.
+The stoichiometric coefficient of the parent should always be one.
+The units is one of the following: years, days, hours, minutes, or seconds.
+
+
 Energy PK
 ---------
 
@@ -2076,7 +2187,7 @@ where
 :math:`Q` is source or sink term,
 :math:`\boldsymbol{q}_l` is the Darcy velocity,
 :math:`\kappa` is thermal conductivity,
-and :math:`H_l` is molar enthalphy of liquid.
+and :math:`H_l` is molar enthalpy of liquid.
 We define 
 
 .. math::
@@ -2136,8 +2247,6 @@ in a variety of regimes, e.g. with or without gas phase.
 
 * `"vapor diffusion`" [bool] specifies presence of a gas phase.
   The default value is `"true`".
-
-* `"VerboseObject`" [list] is the standard verbosity object.
 
 .. code-block:: xml
 
@@ -2410,7 +2519,6 @@ Generic capabilities
 
 Collection of generic tools used by PKs.
 
-
 Operators
 ---------
 
@@ -2560,7 +2668,7 @@ and their extensions for various PKs.
 Functions
 ---------
 
-To set up non-trivial boundary conditions and/or initial fields, `Amanzi`
+To set up non-trivial boundary conditions and/or initial fields, Amanzi
 supports a few mathematical functions. 
 New function types can added easily.
 Each function is defined by a list:
@@ -2607,14 +2715,14 @@ defined piecewise:
   \end{matrix}
 
 This function is continuous and linear between two consecutive points.
-This behavior can be changed using parameter `"forms`".
+This behavior can be changed using parameter *forms*.
 This parameter is optional.
 If specified it must be an array of length equal to one less than the length 
-of `"x values`".  
-Each value in `"forms`" is either `"linear`" to indicate linear interpolation on that 
-interval, `"constant`" to use the left endpoint value for that interval, or `"FUNCTION`"
+of *x values*.  
+Each value in *forms* is either *linear* to indicate linear interpolation on that 
+interval, *constant* to use the left endpoint value for that interval, or *FUNCTION*
 to indicate an arbitrary user function, usually a math function. 
-The default value for `"x coordinate`" is `"t`".
+The default value for parameter *x coordinate* is *t*.
 
 .. code-block:: xml
 
@@ -2635,8 +2743,8 @@ The example defines function that is zero on interval :math:`(-\infty,\,0]`,
 linear on interval :math:`(0,\,1]`, constant (`f(x)=1`) on interval :math:`(1,\,2]`, 
 square root of `t` on interval :math:`(2,\,3]`,
 and constant (`f(x)=2`) on interval :math:`(3,\,\infty]`.
-The parameter `"x coordinate`" defines whether the `"x values`" refers to time `"t`",
-x-coordinate `"x`", y-coordinate `"y`", or z-coordinate `"z`".
+The parameter *x coordinate* defines whether the *x values* refers to time *t*,
+x-coordinate *x*, y-coordinate *y*, or z-coordinate *z*.
 
 
 Bilinear function
@@ -2646,13 +2754,13 @@ The bilinear function provides an extension of the linear form of the tabular fu
 to a function with 2 variables `f(x,y)`.
 A 2x2 matrix of values for `f(x,y)` and arrays of associated values for `x`
 and `y` are read in from datasets in an HDF5 file. The dataset headers are indicated
-by parameters `"row header`", `"column header`", and `"value header`" for `x`, `y`, 
+by parameters *row header*, *column header*, and *value header* for `x`, `y`, 
 and `f(x,y)`, respectively. The `x` and `y` arrays in the HDF5 file are expected to be
 strictly increasing.
-The parameters `"row coordinate`" and `"column coordinate`" define the model 
+The parameters *row coordinate* and *column coordinate* define the model 
 coordinate for `x` and `y` in the function, respectively, where
-`"t`" refers to time, `"x`" to the x-coordinate, `"y`" to the y-coordinate, 
-and `"z`" to the z-coordinate. 
+`t` refers to time, `x` to the x-coordinate, `y` to the y-coordinate, 
+and `z` to the z-coordinate. 
 
 The following code block defines a bilinear interpolation function for pressures
 that vary in time and the x dimension.
@@ -2716,7 +2824,7 @@ A multi-variable linear function is formally defined by
 .. math::
   f(x) = y_0 + \sum_{j=0}^{n-1} g_j (x_j - x_{0,j}) 
 
-with the constant term "math:`y_0` and gradient :math:`g_0,\, g_1\,..., g_{n-1}`.
+with the constant term :math:`y_0` and gradient :math:`g_0,\, g_1\,..., g_{n-1}`.
 If the reference point :math:`x_0` is specified, it must have the same
 number of values as the gradient.  Otherwise, it defaults to zero.
 Note that one of the parameters in a multi-valued linear function can be time.
@@ -2739,8 +2847,8 @@ A separable function is defined as the product of other functions such as
 .. math::
   f(x_0, x_1,...,x_{n-1}) = f_1(x_0)\, f_2(x_1,...,x_{n-1})
 
-where :math:`f_1` is defined by the `"function1`" sublist, and 
-:math:`f_2` by the `"function2`" sublist:
+where :math:`f_1` is defined by the list *function1*, and 
+:math:`f_2` by the list *function2*:
 
 .. code-block:: xml
 
@@ -2794,7 +2902,7 @@ Additive function
 
 To increase calculus of standard math functions, we support a few basic operations
 with them. The first one is the sum of two functions, `f(t) = f1(t) + f2(t)`.
-This function requires two sublists `"function1`" and `"function2`".
+This function requires two sublists *function1* and *function2*.
 
 .. code-block:: xml
 
@@ -2820,7 +2928,7 @@ Composition function
 
 To increase calculus of standard math functions, we support a few basic operations
 with them. The second one is the composition of two functions, `f(t) = f1(f2(t))`.
-This function requires two sublists `"function1`" and `"function2`".
+This function requires two sublists *function1* and *function2*.
 
 .. code-block:: xml
 
@@ -2840,7 +2948,7 @@ This function requires two sublists `"function1`" and `"function2`".
   </ParameterList>
 
 In two dimensions, this example defines function `srqt(1 + (t-3) + 2(x-2) + (y-1))`.
-In three dimension, we have to add one additional argument to the `gradient` and `x0`.
+In three dimension, we have to add one additional argument to parameters *gradient* and *x0*.
 
 
 Multiplicative function
@@ -2848,7 +2956,7 @@ Multiplicative function
 
 To increase calculus of standard math functions, we support a few basic operations
 with them. The third one is the multiplication of two functions, `f(t) = f1(t) * f2(t)`.
-This function requires two sublists `"function1`" and `"function2`".
+This function requires two sublists *function1* and *function2*.
 
 .. code-block:: xml
 
@@ -2869,12 +2977,29 @@ This function requires two sublists `"function1`" and `"function2`".
 This example defines function `srqt(t) * sin(t)`.
 
 
+Time functions
+--------------
+
+Boundary condition functions utilize a parameterized model for time variations that is either piecewise constant or piecewise linear.  For example:
+
+.. code-block:: xml
+
+   <Parameter name="times" type="Array(double)" value="{1, 2, 3}"/>
+   <Parameter name="time values" type="Array(double)" value="{10, 20, 30}"/>
+   <Parameter name="time functions" type="Array(string)" value="{Constant, Linear}"/>    
+
+This defines four time intervals: (-inf,1), (1,2), (2,3), (3,+inf).  
+By assumption the function is constant over the first and last intervals.
+The remaining two intervals are specified by the parameter *time functions*. 
+Thus, the value here is 10 anytime prior to `t=2`. The value increases linearly from 10 to 
+20 over the interval `t=2` to `t=3`, and then is constant at 30 for `t>3`.
+
+
 Solvers
 =======
 
 This section describes generic solvers and preconditioners that can be used
 by various PKs.
-
 
 .. _LinearSolvers:
 
@@ -2915,7 +3040,7 @@ This list contains sublists for various linear solvers such as PCG, GMRES, and N
      </ParameterList>
    </ParameterList>
 
-The names `"GMRES with HYPRE AMG`" and similar are chosen by the user.
+The names *GMRES with HYPRE AMG* and similar are chosen by the user.
 
 
 Generalized minimal residuals (GMRES)
@@ -3036,7 +3161,7 @@ Nonlinear solvers
 
 Amanzi supports a few nonlinear solvers. 
 Typically, a process kernel uses a factory to select a nonlinear solver.
-This factory uses parameters `"solver type`" to find parameters for 
+This factory uses parameter *solver type* to find parameters for 
 the selected solver.
 
 
@@ -3095,8 +3220,6 @@ Newton-Krylov acceleration (NKA)
 * `"nka vector tolerance`" [int] defines the minimum allowed orthogonality between vectors in 
   the local space. If a new vector does not satisfy this requirement, the space is modified. 
   Default is 0.05.
-
-* `"VerboseObject`" [list] defines the standard verbosity object. Default is the global verbosity.
 
 .. code-block:: xml
 
@@ -3322,7 +3445,7 @@ preconditioner, and identity preconditioner.
      </ParameterList>
    </ParameterList>
 
-Names `"TRILINOS ML`", `"HYPRE AMG`", and `"BLOCK ILU`" are choosen by the user.
+Names *TRILINOS ML*, *HYPRE AMG*, and *BLOCK ILU* are chosen by the user.
 
 
 Hypre's algebraic multigrid (AMG)
@@ -3488,40 +3611,40 @@ This specification format uses and describes the unstructured mesh only.
   complex man-made or geostatigraphical features.
   Under this option, the user typically provides a mesh file that was generated with 
   an external software package.
-  The following mesh file formats are currently supported: `"Exodus 2`" (see example),
-  `"MSTK`" (see example), `"MOAB`" (see example).
+  The following mesh file formats are currently supported: `"Exodus II`" (see example),
+  `"MSTK`" (see example), and `"MOAB`" (obsolete).
   Amanzi also provides a rudimentary capability to generate unstructured meshes automatically.
 
- * `"Unstructured`" [list] accepts instructions to either (1) read or, (2) generate an unstructured mesh.
+  * `"Unstructured`" [list] accepts instructions to either (1) read or, (2) generate an unstructured mesh.
 
-  * `"Read Mesh File`" [list] accepts name, format of pre-generated mesh file
+    * `"Read Mesh File`" [list] accepts name, format of pre-generated mesh file
 
-   * `"File`" [string] name of pre-generated mesh file. Note that in the case of an
-     Exodus II mesh file, the suffix of the serial mesh file must be .exo and 
-     the suffix of the parallel mesh file must be .par.
-     When running in serial the code will read this the indicated file directly.
-     When running in parallel and the suffix is .par, the code will instead read
-     the partitioned files, that have been generated with a Nemesis tool and
-     named as filename.par.N.r where N is the number of processors and r is the rank.
-     When running in parallel and the suffix is .exo, the code will partition automatically
-     the serial file.
+      * `"File`" [string] name of pre-generated mesh file. Note that in the case of an
+        Exodus II mesh file, the suffix of the serial mesh file must be .exo and 
+        the suffix of the parallel mesh file must be .par.
+        When running in serial the code will read this the indicated file directly.
+        When running in parallel and the suffix is .par, the code will instead read
+        the partitioned files, that have been generated with a Nemesis tool and
+        named as filename.par.N.r where N is the number of processors and r is the rank.
+        When running in parallel and the suffix is .exo, the code will partition automatically
+        the serial file.
      
-   * `"Format`" [string] format of pre-generated mesh file (`"MSTK`", `"MOAB`", or `"Exodus II`")
+      * `"Format`" [string] format of pre-generated mesh file (`"MSTK`", `"MOAB`", or `"Exodus II`")
 
-  * `"Generate Mesh`" [list] accepts parameters of generated mesh (currently only `"Uniform`" supported)
+    * `"Generate Mesh`" [list] accepts parameters of generated mesh (currently only `"Uniform`" supported)
 
-   * `"Uniform Structured`" [list] accepts coordinates defining the extents of simulation domain, and number of cells in each direction.
+      * `"Uniform Structured`" [list] accepts coordinates defining the extents of simulation domain, and number of cells in each direction.
 
-    * `"Domain Low Coordinate`" [Array(double)] Location of low corner of domain
-    * `"Domain High Coordinate`" [Array(double)] Location of high corner of domain
-    * `"Number Of Cells`" [Array(int)] the number of uniform cells in each coordinate direction
+        * `"Domain Low Coordinate`" [Array(double)] Location of low corner of domain
+        * `"Domain High Coordinate`" [Array(double)] Location of high corner of domain
+        * `"Number Of Cells`" [Array(int)] the number of uniform cells in each coordinate direction
 
-   * `"Expert`" [list] accepts parameters that control which particular mesh framework is to be used.
+      * `"Expert`" [list] accepts parameters that control which particular mesh framework is to be used.
 
-    * `"Framework`" [string] one of "stk::mesh", "MSTK", "MOAB" or "Simple". 
-    * `"Verify Mesh`" [bool] true or false. 
+        * `"Framework`" [string] one of `"stk::mesh`", `"MSTK`", `"MOAB`" or `"Simple`". 
+        * `"Verify Mesh`" [bool] true or false. 
 
-Example of `"Unstructured`" mesh generated internally:
+Example of *Unstructured* mesh generated internally:
 
 .. code-block:: xml
 
@@ -3539,7 +3662,7 @@ Example of `"Unstructured`" mesh generated internally:
      </ParameterList>
    </ParameterList>
 
-Example of `"Unstructured`" mesh read from an external file:
+Example of *Unstructured* mesh read from an external file:
 
 .. code-block:: xml
 
@@ -3561,13 +3684,10 @@ to be solved, and the output desired.  Regions may represents zero-, one-, two- 
 for a three-dimensional problem, the simulation domain will be a three-dimensional region bounded by a set of two-dimensional 
 regions.  If the simulation domain is N-dimensional, the boundary conditions must be specified over a set of regions are (N-1)-dimensional.
 
-Amanzi automatically defines the special region labeled `"All`", which is the 
+Amanzi automatically defines the special region labeled *All*, which is the 
 entire simulation domain. Currently, the unstructured framework does
-not support the `"All`" region, but it is expected to do so in the
+not support the *All* region, but it is expected to do so in the
 near future.
-
-Under the `"Structured`" option, Amanzi also automatically defines regions for the coordinate-aligned planes that bound the domain,
-using the following labels: `"XLOBC`", `"XHIBC`", `"YLOBC`", `"YHIBC`", `"ZLOBC`", `"ZHIBC`"
 
 User-defined regions are constructed using the following syntax
 
@@ -3601,22 +3721,40 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 Point
 -----
 
-`"Region: Point`" defines a point in space. 
+List *Region: Point* defines a point in space. 
 Using this definition, cell sets encompassing this point are retrieved inside Amanzi.
+
+.. code-block:: xml
+
+   <ParameterList name="Dnwind150"> <!-- parent list -->
+     <ParameterList name="Region: Point">
+       <Parameter name="Coordinate" type="Array(double)" value="{-150.0, 0.0, 0.0}"/>
+     </ParameterList>
+   </ParameterList>
 
 
 Box
 ---
 
-`"Region: Box`" defines a region bounded by coordinate-aligned
+List *Region: Box* defines a region bounded by coordinate-aligned
 planes. Boxes are allowed to be of zero thickness in only one
 direction in which case they are equivalent to planes.
+
+.. code-block:: xml
+
+   <ParameterList name="Well">  <!-- parent list -->
+     <ParameterList name="Region: Box">
+       <Parameter name="Low Coordinate" type="Array(double)" value="{-5.0,-5.0, -5.0}"/>
+       <Parameter name="High Coordinate" type="Array(double)" value="{5.0, 5.0,  5.0}"/>
+     </ParameterList>
+   </ParameterList>
 
 
 Plane
 -----
 
-`"Region: Plane`" is defined by a point and normal.
+List *Region: Plane* defines a plane using a point lying on the plane, called *Location*,
+and normal to the plane, called *Direction*.
 
 .. code-block:: xml
 
@@ -3634,51 +3772,68 @@ Plane
 Labeled Set
 -----------
 
-The `"Region: Labeled Set`" region defines a named set of mesh entities
+The list *Region: Labeled Set* defines a named set of mesh entities
 existing in an input mesh file. This is the same file that contains
 the computational mesh. The name of the entity set is given
-by `"Label`".  For example, a mesh file in the Exodus II
+by *Label*.  For example, a mesh file in the Exodus II
 format can be processed to tag cells, faces and/or nodes with
 specific labels, using a variety of external tools.  Regions based
 on such sets are assigned a user-defined label for Amanzi, which may
 or may not correspond to the original label in the exodus file.
 Note that the file used to express this labeled set may be in any
 Amanzi-supported mesh format (the mesh format is specified in the
-parameters for this option).  The `"entity`" parameter may be
+parameters for this option).  The *entity* parameter may be
 necessary to specify a unique set.  For example, an Exodus file
-requires `"Cell`", `"Face`" or `"Node`" as well as a label (which is
+requires *Cell*, *Face* or *Node* as well as a label (which is
 an integer).  The resulting region will have the dimensionality 
 associated with the entities in the indicated set. 
 
-By definition, "Labeled Set" region is applicable only to the
-unstructured version of Amanzi. 
-
 Currently, Amanzi-U only supports mesh files in the Exodus II format.
+
+.. code-block:: xml
+
+   <ParameterList name="Aquifer">
+     <ParameterList name="Region: Labeled Set">
+       <Parameter name="Entity" type="string" value="Cell"/>
+       <Parameter name="File" type="string" value="porflow4_4.exo"/>
+       <Parameter name="Format" type="string" value="Exodus II"/>
+       <Parameter name="Label" type="string" value="1"/>
+     </ParameterList>
+   </ParameterList>
 
 
 Color Function
 --------------
 
-`"Region: Color Function`" defines a region based a specified
-integer color, `"Value`", in a structured color function file,
-`"File`". The format of the color function file is given below in
+The list *Region: Color Function* defines a region based a specified
+integer color, *Value*, in a structured color function file,
+*File*. The format of the color function file is given below in
 the "Tabulated function file format" section. As
 shown in the file, the color values may be specified at the nodes or
 cells of the color function grid. A computational cell is assigned
 the 'color' of the data grid cell containing its cell centroid
 (cell-based colors) or the data grid nearest its cell-centroid
 (node-based colors). Computational cells sets are then built from
-all cells with the specified color `"Value`".
+all cells with the specified color *Value*.
 
 In order to avoid, gaps and overlaps in specifying materials, it is
 strongly recommended that regions be defined using a single color
 function file. 
 
+.. code-block:: xml
+
+   <ParameterList name="SOIL1">
+     <ParameterList name="Region: Color Function">
+       <Parameter name="File" type="string" value="geology_resamp_2D.tf3"/>
+       <Parameter name="Value" type="int" value="1"/>
+     </ParameterList>
+   </ParameterList>
+
 
 Polygon
 -------
 
-`"Region: Polygon`" defines a polygonal region on which mesh faces and
+The list *Region: Polygon* defines a polygonal region on which mesh faces and
 nodes can be queried. NOTE that one cannot ask for cells in a polygonal surface
 region. In 2D, the "polygonal surface" region is a line and is specified by 2 points.
 In 3D, the "polygonal surface" region is specified by an arbitrary number of points.
@@ -3710,15 +3865,15 @@ are specified.
 Logical
 -------
 
-`"Region: Logical`" Logical operations on regions allow for more
+The list *Region: Logical* defines logical operations on regions allow for more
 advanced region definitions. At this time the Logical Region allows
 for logical operations on a list of regions.  In the case of Union
 the result is obvious, it is the union of all regions.  Similarly
 for Intersection. In the case of Subtraction, subtraction is
 performed from the first region in the list.  The Complement is a
 special case in that it is the only case that operates on single
-region, and returns the complement to it within the domain 'Entire
-Domain'.  Currently, multi-region booleans are not supported in the same expression.
+region, and returns the complement to it within the domain *Entire Domain*.
+Currently, multi-region booleans are not supported in the same expression.
 
 .. code-block:: xml
 
@@ -3735,16 +3890,16 @@ Notes and example
 
 * Surface files contain labeled triangulated face sets.  The user is
   responsible for ensuring that the intersections with other surfaces
-  in the problem, including the boundaries, are `"exact`" (*i.e.* that
-  surface intersections are `"watertight`" where applicable), and that
+  in the problem, including the boundaries, are *exact* (*i.e.* that
+  surface intersections are *watertight* where applicable), and that
   the surfaces are contained within the computational domain.  If
   nodes in the surface fall outside the domain, the elements they
   define are ignored.
 
-  Examples of surface files are given in the `"Exodus II`" file 
+  Examples of surface files are given in the *Exodus II* file 
   format here.
 
-* Region names must NOT be repeated
+* Region names must NOT be repeated.
 
 .. code-block:: xml
 
@@ -3801,45 +3956,18 @@ Notes and example
      </ParameterList>
    </ParameterList>
 
-In this example, "TOP SESCTION", "MIDDLE SECTION" and "BOTTOM SECTION"
-are three box-shaped volumetric regions. "INFLOW SURFACE" is a
+In this example, *TOP SESCTION*, *MIDDLE SECTION* and *BOTTOM SECTION*
+are three box-shaped volumetric regions. *INFLOW SURFACE* is a
 surface region defined in an Exodus II-formatted labeled set
-file and "OUTFLOW PLANE" is a planar region. "BLOODY SAND" is a volumetric
+file and *OUTFLOW PLANE* is a planar region. *BLOODY SAND* is a volumetric
 region defined by the value 25 in color function file.
 
 
 Output data
 ===========
 
-VerboseObject
--------------
-
-Output of all components of Amanzi is controlled by a standard verbose 
-object sublist. If this list is not specified, the default verbosity
-value is used.
-
-.. code-block:: xml
-
-   <ParameterList name="VerboseObject">
-     <Parameter name="Verbosity Level" type="string" value="high"/>
-   </ParameterList>
-
-
-Time Functions
---------------
-
-Boundary condition functions utilize a parameterized model for time variations that is either piecewise constant or piecewise linear.  For example:
-
-.. code-block:: xml
-
-   <Parameter name="Times" type="Array(double)" value="{1, 2, 3}"/>
-   <Parameter name="Time Values" type="Array(double)" value="{10, 20, 30}"/>
-   <Parameter name="Time Functions" type="Array(string)" value="{Constant, Linear}"/>    
-
-This defines four time intervals: (-inf,1), (1,2), (2,3), (3,+inf).  By assumption the function is constant over the first and last intervals.  The remaining 
-two intervals are specified by the `"Time Functions`" parameter.  Thus, the value here is 10 anytime prior to t=2. The value increases linearly from 10 to 
-20 over the interval t=2 to t=3, and then is constant at 30 for t>3.
-
+Amanzi uses a few ways to communicate simulation data to the user that includes
+a short file with observations and full-scale visualization files.
 
 Observation file
 ----------------
@@ -3847,14 +3975,15 @@ Observation file
 A user may request any number of specific observations from Amanzi.  Each labeled Observation Data quantity involves a field quantity, a model, a region from which it will extract its source data, and a list of discrete times 
 for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of Amanzi arguments.
 
-* `"Observation Data`" [list] can accept multiple lists for named observations (OBSERVATION)
+* `"Observation Data`" [list] can accept multiple lists for named observations.
 
-  * `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
+  * `"observation output filename`" [string] user-defined name for the file that the observations are written to.
     The file name can contain relative or absolute path to an *existing* directory only. 
 
   * `"precision`" [int] defined the number of significant digits. Default is 16.
 
-  * OBSERVATION [list] user-defined label, can accept values for `"variables`", `"functional`", `"region`", `"times`", and TSPS (see below).
+  * OBSERVATION [list] user-defined label, can accept values for `"variables`", `"functional`",
+    `"region`", `"times`", and TSPS (see below).
 
     * `"variables`" [Array(string)] a list of field quantities taken from the list of 
       available field quantities:
@@ -3864,7 +3993,8 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * Aqueous pressure [Pa]
       * Hydraulic Head [m] 
       * Drawdown [m] 
-      * SOLUTE Aqueous concentration [mol/m^3] (name SOLUTE formed by string concatenation, given the definitions in `"Phase Definition`" section)
+      * SOLUTE Aqueous concentration [mol/m^3] (name SOLUTE formed by string concatenation,
+        given the definitions in `"Phase Definition`" section)
       * X-, Y-, Z- Aqueous volumetric flux [m/s]
       * MaterialID
       * Aqueous mass flow rate [kg/s] (must use integral functional in the observation)
@@ -3874,41 +4004,58 @@ for its evaluation.  The observations are evaluated during the simulation and re
     Observation "Drawdown" is calculated with respect to the value registered at the first time
     it was requested.
 
-    * `"functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
+    * `"functional`" [string] the label of a function to apply to each of the variables
+      in the variable list (Function options detailed below)
 
     * `"region`" [string] the label of a user-defined region
 
-    * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written at such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
+    * `"cycles start period stop`" [Array(int)] the first entry is the start cycle,
+      the second is the cycle period, and the third is the stop cycle or -1 in which case 
+      there is no stop cycle. A visualization dump shall be written at such cycles that 
+      satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
 
-    * `"cycles start period stop n`" [Array(int)] if multiple cycles start period stop parameters are needed, then use these parameters with n=0,1,2,..., and not the single `"cycles start period stop`" parameter.
+    * `"cycles start period stop n`" [Array(int)] if multiple cycles start-period-stop
+      parameters are needed, then use these parameters with n=0,1,2,..., and not the single 
+      `"cycles start period stop`" parameter.
 
     * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written. 
 
-    * `"times start period stop`" [Array(double)] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
+    * `"times start period stop`" [Array(double)] the first entry is the start time,
+      the second is the time period, and the third is the stop time or -1 in which case 
+      there is no stop time. A visualization dump shall be written at such times that 
+      satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
 
-    * `"times start period stop n`" [Array(double) if multiple start period stop parameters are needed, then use this these parameters with n=0,1,2,..., and not the single  `"times start period stop`" parameter.
+    * `"times start period stop n`" [Array(double) if multiple start-period-stop parameters
+      are needed, then use this these parameters with n=0,1,2,..., and not the 
+      single  `"times start period stop`" parameter.
 
-    * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
+    * `"times`" [Array(double)] an array of discrete times that at which a visualization
+      dump shall be written.
 
-    * `"delimiter`" [string] the string used to delimit columns in the observation file output, default is `",`"
+    * `"delimiter`" [string] the string used to delimit columns in the observation file
+      output, default is `",`".
 
-The following Observation Data functionals are currently supported.  All of them operate on the variables identified.
+The following Observation Data functionals are currently supported.
+All of them operate on the variables identified.
 
-* `"Observation Data: Point`" returns the value of the field quantity at a point
+* `"Observation Data: Point`" returns the value of the field quantity at a point.
 
-* `"Observation Data: Integral`" returns the integral of the field quantity over the region specified
+* `"Observation Data: Integral`" returns the integral of the field quantity over the region specified.
 
-* `"Observation Data: Extensive Integral`" returns the integral of an extensive variable over the region specified.  Note that this should be used over the above Integal when the variable to be integrated is an extensive quantity, i.e. water content or flux.
+* `"Observation Data: Extensive Integral`" returns the integral of an extensive variable
+  over the region specified.  Note that this should be used over the above Integral when 
+  the variable to be integrated is an extensive quantity, i.e. water content or flux.
 
-* `"Observation Data: Minimum`" and `"Observation Data: Maximum`" returns the minimum (respectively maximum) of the field quantity over the region specified
+* `"Observation Data: Minimum`" and `"Observation Data: Maximum`" returns the minimum 
+  (respectively maximum) of the field quantity over the region specified.
 
 .. code-block:: xml
 
    <ParameterList>  <!-- parent list -->
      <ParameterList name="Observation Data">
-       <Parameter name="Observation Output Filename" type="string" value="obs_output.out"/>
+       <Parameter name="observation output filename" type="string" value="obs_output.out"/>
        <Parameter name="precision" type="int" value="10"/>
-       <ParameterList name="some observation name">
+       <ParameterList name="SOME OBSERVATION NAME">
          <Parameter name="region" type="string" value="some point region name"/>
          <Parameter name="functional" type="string" value="Observation Data: Point"/>
          <Parameter name="variable" type="string" value="Volumetric water content"/>
@@ -3930,7 +4077,7 @@ Checkpoint file
 
 A user may request periodic dumps of Amanzi Checkpoint Data.  
 The user has no explicit control over the content of these files, but has the guarantee that 
-the Amanzi run will be reproducible (with accuracies determined
+the Amanzi run will be reproducible (with accuracy determined
 by machine round errors and randomness due to execution in a parallel computing environment).
 Therefore, output controls for Checkpoint Data are limited to file name generation and writing 
 frequency, by numerical cycle number.
@@ -3983,6 +4130,79 @@ In this example, Checkpoint Data files are written when the cycle number is
 a multiple of 100.
 
 
+Visualization file
+------------------
+
+A user may request periodic writes of field data for the purposes of visualization.  
+The user will specify explicitly what is to be included in the file at each snapshot.
+Visualization files can only be written at intervals corresponding to the numerical 
+time step values or intervals corresponding to the cycle number; writes are controlled by time step cycle number.
+
+* `"Visualization Data`" [list] can accept a file name base [string] and cycle data [list] 
+  that is used to generate the file base name or directory base name that is used in writing visualization data.
+  It can also accept a set of lists to specify which field quantities to write.
+  The file name can contain relative or absolute path to an *existing* directory only. 
+
+  * `"file name base`" [string] ("amanzi_vis")
+  
+  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, 
+    the second is the cycle period, and the third is the stop cycle or -1 in which case 
+    there is no stop cycle. A visualization dump shall be written at such cycles that 
+    satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
+
+  * `"cycles start period stop n`" [Array(int)] if multiple cycles start-period-stop parameters 
+    are needed, then use these parameters with n=0,1,2,..., and not the single 
+    `"cycles start period stop`" parameter.
+
+  * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written. 
+
+  * `"times start period stop`" [Array(double)] the first entry is the start time, 
+    the second is the time period, and the third is the stop time or -1 in which case 
+    there is no stop time. A visualization dump shall be written at such times that 
+    satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
+
+  * `"times start period stop n`" [Array(double) if multiple start-period-stop parameters 
+    are needed, then use this these parameters with n=0,1,2,..., and not the single
+    `"times start period stop`" parameter.
+
+  * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
+
+  * `"dynamic mesh`" [bool] (false) write mesh data for every visualization dump, 
+    this facilitates visualizing deforming meshes.
+
+  * `"write regions`" [list] contains auxiliary fields with region ids to write into the visualization file.
+
+    * `"REGION_NAME`" [Array(string)] the user-defined field name and the list of assigned regions. 
+      The first entry in the regions array is marked with the value 1.0 in the array, 
+      the second with the value 2.0, and so forth. 
+      The code ignores entries in the regions array that are not valid regions that contain cells.
+
+  * `"write partitions`" [bool] (false) if this parameter is true, then write an array into 
+    the visualization file that contains the rank number of the processor that owns a mesh cell. 
+
+.. code-block:: xml
+
+   <ParameterList>  <!-- parent list -->
+     <ParameterList name="Visualization Data">
+       <Parameter name="file name base" type="string" value="chk"/>
+  
+       <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
+       <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
+
+       <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
+       <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
+       <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
+
+       <Parameter name="dynamic mesh" type="bool" value="false"/>
+
+       <ParameterList name="write regions">
+         <Parameter name="regions" type="Array(string)" value="{Obs_r1, Obs_r1, Obs_r3}"/>
+         <Parameter name="wells" type="Array(string)" value="{Obs_r1}"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
+
 Walkabout file
 --------------
 
@@ -3997,15 +4217,25 @@ A user may request periodic dumps of Walkabout Data. Output controls for Walkabo
   * `"file name digits`" [int] specify the number of digits that should be appended to the file 
     name for the cycle number. Default is 5.
 
-  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written at such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
+  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, 
+    the second is the cycle period, and the third is the stop cycle or -1 in which case 
+    there is no stop cycle. A visualization dump shall be written at such cycles that 
+    satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
 
-  * `"cycles start period stop n`" [Array(int)] if multiple cycles start period stop parameters are needed, then use these parameters with n=0,1,2,..., and not the single `"cycles start period stop`" parameter.
+  * `"cycles start period stop n`" [Array(int)] if multiple cycles start-period-stop parameters 
+    are needed, then use these parameters with n=0,1,2,..., and not the single
+    `"cycles start period stop`" parameter.
 
   * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written. 
 
-  * `"times start period stop`" [Array(double)] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
+  * `"times start period stop`" [Array(double)] the first entry is the start time, 
+    the second is the time period, and the third is the stop time or -1 in which case 
+    there is no stop time. A visualization dump shall be written at such times that 
+    satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
 
-  * `"times start period stop n`" [Array(double) if multiple start period stop parameters are needed, then use this these parameters with n=0,1,2,..., and not the single  `"times start period stop`" parameter.
+  * `"times start period stop n`" [Array(double) if multiple start-period-stop parameters 
+    are needed, then use this these parameters with n=0,1,2,..., and not the single
+    `"times start period stop`" parameter.
 
   * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
 
@@ -4027,64 +4257,6 @@ A user may request periodic dumps of Walkabout Data. Output controls for Walkabo
 
 In this example, walkabout data files are written when the cycle number is 
 a multiple of 100.
-
-
-Visualization file
-------------------
-
-A user may request periodic writes of field data for the purposes of visualization.  The user will specify explicitly what is to be included in the file at each snapshot.  Visualization files can only be written 
-at intervals corresponding to the numerical time step values or intervals corresponding to the cycle number; writes are controlled by time step cycle number.
-
-* `"Visualization Data`" [list] can accept a file name base [string] and cycle data [list] 
-  that is used to generate the file base name or directory base name that is used in writing visualization data.
-  It can also accept a set of lists to specify which field quantities to write.
-  The file name can contain relative or absolute path to an *existing* directory only. 
-
-  * `"file name base`" [string] ("amanzi_vis")
-  
-  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written at such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
-
-  * `"cycles start period stop n`" [Array(int)] if multiple cycles start period stop parameters are needed, then use these parameters with n=0,1,2,..., and not the single `"cycles start period stop`" parameter.
-
-  * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written. 
-
-  * `"times start period stop`" [Array(double)] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
-
-  * `"times start period stop n`" [Array(double) if multiple start period stop parameters are needed, then use this these parameters with n=0,1,2,..., and not the single  `"times start period stop`" parameter.
-
-  * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
-
-  * `"dynamic mesh`" [bool] (false) write mesh data for every visualization dump, this facilitates visualizing deforming meshes.
-
-  * `"Write Regions`" [list] contains auxiliary fields with region ids to write into the visualization file.
-
-    * `"REGION_NAME`" [Array(string)] the user-defined field name and the list of assigned regions. 
-      The first entry in the regions array is marked with the value 1.0 in the array, the second with the value 2.0, and so forth. 
-      The code ignores entries in the regions array that are not valid regions that contain cells.
-
-  * `"Write Partitions`" [bool] (false) if this parameter is true, then write an array into the visualization file that contains the rank number of the processor that owns a mesh cell. 
-
-.. code-block:: xml
-
-   <ParameterList>  <!-- parent list -->
-     <ParameterList name="Visualization Data">
-       <Parameter name="file name base" type="string" value="chk"/>
-  
-       <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
-       <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
-
-       <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
-       <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
-       <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
-
-       <Parameter name="dynamic mesh" type="bool" value="false"/>
-
-       <ParameterList name="Write Regions">
-         <Parameter name="regions" type="Array(string)" value="{Obs_r1, Obs_r1, Obs_r3}"/>
-         <Parameter name="wells" type="Array(string)" value="{Obs_r1}"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
 
 
 Input data
@@ -4111,8 +4283,6 @@ This list contains data collected by the input parser of a higher-level spec.
   for analysis. The simulator will print number of faces(or cells) and the total area 
   (or volume) of these regions if verbosity level is equal to or above *high*.
 
-* `"VerboseObject`" [list] is the standard verbosity list.
-
 .. code-block:: xml
 
    <ParameterList>  <!-- parent list -->
@@ -4130,21 +4300,32 @@ This list contains data collected by the input parser of a higher-level spec.
 Tabulated function file format
 ------------------------------
 
-The following ASCII input file format supports the definition of a tabulated function defined over a grid.  Several XML input Parameters refer to files in this format.  The file consists of the following records (lines).  Each record is on a single line, except for the DATAVAL record which may be split across multiple lines.
+The following ASCII input file format supports the definition of a tabulated function defined over a grid.
+Several XML input Parameters refer to files in this format.
+The file consists of the following records (lines).
+Each record is on a single line, except for the DATAVAL record which may be split across multiple lines.
 
 1. **DATATYPE**:  An integer value: 0 for integer data, 1 for real data.
 
   * An integer-valued file is used to define a 'color' function used in the definition of a region.
 
-2. **GRIDTYPE**:  A string that specifies the type of grid used to define the function.  The format of the rest of the file is contingent upon this value.  The currently supported options are uniform rectilinear grids in 1, 2 and 3-D, which are indicated by the values `1DCoRectMesh`, `2DCoRectMesh` and `3DCoRectMesh`, respectively (names adopted from XDMF).
+2. **GRIDTYPE**:  A string that specifies the type of grid used to define the function.
+The format of the rest of the file is contingent upon this value.
+The currently supported options are uniform rectilinear grids in 1, 2 and 3-D, 
+which are indicated by the values `1DCoRectMesh`, `2DCoRectMesh` and `3DCoRectMesh`, 
+respectively (names adopted from XDMF).
 
-For the uniform rectilinear grids, the remaining records are as follows.  Several records take 1, 2 or 3 values depending on the space dimension of the grid.
+For the uniform rectilinear grids, the remaining records are as follows.  
+Several records take 1, 2 or 3 values depending on the space dimension of the grid.
 
-3. **NXNYNZ**: 3 (or 2, 1) integer values (NX, NY, NZ) giving the number of zones in the x, y and z coordinate directions, respectively.
+3. **NXNYNZ**: 3 (or 2, 1) integer values (NX, NY, NZ) giving the number of zones in 
+the x, y and z coordinate directions, respectively.
 
-4. **CORNER1**: 3 (or 2, 1) floating point values (X1, Y1, Z1) giving the coordinate of the first corner of the domain.
+4. **CORNER1**: 3 (or 2, 1) floating point values (X1, Y1, Z1) giving the coordinate 
+of the first corner of the domain.
 
-5. **CORNER2**: 3 (or 2, 1) floating point values (X2, Y2, Z2) giving the coordinate of the second corner of the domain.  The grid points r_{i,j,k} = (x_i, y_j, z_j) are defined as:
+5. **CORNER2**: 3 (or 2, 1) floating point values (X2, Y2, Z2) giving the coordinate 
+of the second corner of the domain.  The grid points r_{i,j,k} = (x_i, y_j, z_j) are defined as:
 
       x_i = X1 + i*(X2-X1)/NX, 0 <= i <= NX
 
@@ -4152,16 +4333,24 @@ For the uniform rectilinear grids, the remaining records are as follows.  Severa
 
       z_k = Z1 + k*(Z2-Z1)/NZ, 0 <= k <= NZ
 
-  The (i,j,k) grid cell is defined by the corner grid points r_{i-1,j-1,k-1} and r_{i,j,k}, for 1 <= i <= NX, 1 <= j <= NY, 1 <= k <= NZ.  Note that the corner points are any pair of opposite corner points; the ordering of grid points and cells starts at CORNER1 and ends at CORNER2.
+The (i,j,k) grid cell is defined by the corner grid points r_{i-1,j-1,k-1} and 
+r_{i,j,k}, for 1 <= i <= NX, 1 <= j <= NY, 1 <= k <= NZ. 
+Note that the corner points are any pair of opposite corner points; the ordering of grid 
+points and cells starts at CORNER1 and ends at CORNER2.
 
 6. **DATALOC**:  An integer value: 0 for cell-based data, 1 for point-based data.
 
 
-7. **DATACOL**:  An integer (N) giving the number of "columns" in the data.  This is the number of values per grid cell/point.  N=1 for a scalar valued function; N>1 for a N-vector valued function.
+7. **DATACOL**:  An integer (N) giving the number of "columns" in the data.  
+This is the number of values per grid cell/point.  
+N=1 for a scalar valued function; N>1 for a N-vector valued function.
 
   * only a single column is currently supported.
 
-8. **DATAVAL**: The values of the function on the cells/points of the grid.  The values should appear in Fortran array order were the values stored in the Fortran array A(N,NX,NY,NZ) (A(N,0:NX,0:NY,0:NZ) for point-based data).  That is, the column index varies fastest, x grid index next fastest, etc.
+8. **DATAVAL**: The values of the function on the cells/points of the grid.  
+The values should appear in Fortran array order were the values stored in 
+the Fortran array A(N,NX,NY,NZ) (A(N,0:NX,0:NY,0:NZ) for point-based data).  
+That is, the column index varies fastest, x grid index next fastest, etc.
     
 
 Example
@@ -4195,4 +4384,12 @@ The corresponding input file would be:
   1
   5 1 2 2 1 1
 
-*** THE END ***
+
+
+
+
+
+
+
+
+

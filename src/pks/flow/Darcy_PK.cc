@@ -14,12 +14,14 @@
 
 #include "Epetra_Import.h"
 #include "Epetra_Vector.h"
+#include "boost/algorithm/string.hpp"
 
 #include "errors.hh"
 #include "exceptions.hh"
 #include "LinearOperatorFactory.hh"
 #include "mfd3d_diffusion.hh"
 #include "OperatorDiffusionFactory.hh"
+#include "PK_Utils.hh"
 #include "tensor.hh"
 
 #include "Darcy_PK.hh"
@@ -47,11 +49,10 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
   std::string pk_name = pk_tree.name();
   const char* result = pk_name.data();
 
-  while ((result = std::strstr(result, "->")) != NULL) {
-    result += 2;
-    pk_name = result;
-  }
+  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name,"->"); 
+  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name,  res.end() - pk_name.begin());
 
+  
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_name, true);
@@ -271,10 +272,6 @@ void Darcy_PK::Initialize()
   // Allocate memory for other fundamental structures
   K.resize(ncells_owned);
 
-  if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
-  }
-
   // pressures (lambda is not important when solver is very accurate)
   DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
                                  *pressure.ViewComponent("face"));
@@ -338,7 +335,7 @@ void Darcy_PK::Initialize()
   // initialize well modeling
   if (src_sink != NULL) {
     if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      CalculatePermeabilityFactorInWell();
+      PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
       src_sink->ComputeDistribute(t_old, t_new, Kxy->Values()); 
     } else {
       src_sink->ComputeDistribute(t_old, t_new);

@@ -350,6 +350,7 @@ endfunction(ADD_AMANZI_SMOKE_TEST)
 # ADD_AMANZI_COMPARISON_TEST(<test_name> 
 #                            INPUT file.xml
 #                            NORM L1 | L2 | Linf  <--- not supported yet.
+#                            REFERENCE reference
 #                            TOLERANCE tolerance
 #                            [FILES file1;file2;...;fileN]
 #                            [FIELD field_name]
@@ -368,6 +369,12 @@ endfunction(ADD_AMANZI_SMOKE_TEST)
 # KEYWORD INPUT is required. This keyword defines the Amanzi XML input file or 
 #         observation file.
 #
+# KEYWORD REFERENCE The name of the file containing reference data to which 
+#         the simulation output will be compared.
+
+# KEYWORD NORM The maximum L2 error norm that can be measured for a successful
+#         testing outcome.
+
 # Option FILES lists any additional files that the test needs to run in its 
 # directory/environment. These files will be copied from the source directory
 # to the run directory.

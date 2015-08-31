@@ -35,7 +35,8 @@ class InputConverterU : public InputConverter {
       vo_(NULL),
       flow_single_phase_(false),
       compressibility_(false),
-      transport_permeability_(false) {};
+      transport_permeability_(false),
+      init_filename_("") {};
   ~InputConverterU() { if (vo_ != NULL) delete vo_; }
 
   // main members
@@ -43,6 +44,7 @@ class InputConverterU : public InputConverter {
   void SaveXMLFile(Teuchos::ParameterList& plist, std::string& filename);
 
  private:
+  void VerifyXMLStructure_();
   void ParseSolutes_();
 
   Teuchos::ParameterList TranslateVerbosity_();
@@ -70,14 +72,27 @@ class InputConverterU : public InputConverter {
       bool modify_correction, const std::string& unstr_colntrols);
   Teuchos::ParameterList TranslateInitialization_(
       const std::string& unstr_controls);
+
+  // -- flow
   Teuchos::ParameterList TranslateFlow_(int regime = FLOW_BOTH_REGIMES);
   Teuchos::ParameterList TranslateWRM_();
   Teuchos::ParameterList TranslatePOM_();
+  Teuchos::ParameterList TranslateFlowMSM_();
   Teuchos::ParameterList TranslateFlowBCs_();
   Teuchos::ParameterList TranslateFlowSources_();
+
+  // -- transport
   Teuchos::ParameterList TranslateTransport_();
   Teuchos::ParameterList TranslateTransportBCs_();
+  void TranslateTransportBCsGroup_(
+      std::string& bcname, std::vector<std::string>& regions,
+      xercesc::DOMNodeList* solutes, Teuchos::ParameterList& out_list);
   Teuchos::ParameterList TranslateTransportSources_();
+  void TranslateTransportSourcesGroup_(
+      std::string& srcname, std::vector<std::string>& regions,
+      xercesc::DOMNodeList* solutes, xercesc::DOMNode* phase_l, Teuchos::ParameterList& out_list);
+
+  // -- chemistry and energy
   Teuchos::ParameterList TranslateChemistry_();
   Teuchos::ParameterList TranslateEnergy_();
   Teuchos::ParameterList TranslateEnergyBCs_();
@@ -112,6 +127,10 @@ class InputConverterU : public InputConverter {
 
   // global transport and chemistry constants
   std::vector<std::string> comp_names_all_;
+
+  // global state parameters
+  // -- initialization filename, different form restart
+  std::string init_filename_;
 
   // for analysis
   std::vector<std::string> vv_bc_regions_;

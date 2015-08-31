@@ -31,6 +31,7 @@
 
 // Flow
 #include "Flow_PK.hh"
+#include "MultiscalePorosityPartition.hh"
 #include "RelPerm.hh"
 #include "RelPermEvaluator.hh"
 #include "WRMPartition.hh"
@@ -141,11 +142,14 @@ class Richards_PK : public Flow_PK {
 
  private:
   void InitializeFields_();
+  void InitializeFieldFromField_(const std::string& field0, const std::string& field1);
   void InitializeUpwind_();
 
   void Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f);
   void CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& kvapor_pres,
                                       Teuchos::RCP<CompositeVector>& kvapor_temp);
+
+  void Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<CompositeVector> f);
 
  private:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
@@ -175,6 +179,10 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Operators::Operator> op_vapor_;
   Teuchos::RCP<Operators::OperatorDiffusion> op_vapor_diff_;
   bool vapor_diffusion_;
+
+  // multiscale models
+  bool multiscale_porosity_;
+  Teuchos::RCP<MultiscalePorosityPartition> msp_;
 
   // time integrators
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae;

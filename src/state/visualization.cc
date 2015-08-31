@@ -56,13 +56,13 @@ void Visualization::ReadParameters_() {
   dynamic_mesh_ = plist_.get<bool>("dynamic mesh",false);
 
   Teuchos::Array<std::string> no_regions(0);
-  Teuchos::ParameterList& tmp = plist_.sublist("Write Regions");
+  Teuchos::ParameterList& tmp = plist_.sublist("write regions");
     
   regions_.clear();
   for (Teuchos::ParameterList::ConstIterator it = tmp.begin(); it != tmp.end(); ++it) {
     regions_[it->first] = tmp.get<Teuchos::Array<std::string> >(it->first, no_regions);
   }
-  write_partition_ = plist_.get<bool>("Write Partitions", false);
+  write_partition_ = plist_.get<bool>("write partitions", false);
 }
 
 

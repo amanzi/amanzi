@@ -470,20 +470,17 @@ void CycleDriver::ReadParameterList_() {
   // first assume we're not
   restart_requested_ = false;
 
-  if (coordinator_list_->isSublist("Restart")) {
-    restart_requested_ = ! coordinator_list_->sublist("Restart")
-        .get<bool>("initialize from checkpoint data file and do not restart",false);
+  if (coordinator_list_->isSublist("restart")) {
+    restart_requested_ = true;
 
-    if (restart_requested_) {
-      Teuchos::ParameterList restart_list = coordinator_list_->sublist("Restart");
-      restart_filename_ = restart_list.get<std::string>("File Name");
+    Teuchos::ParameterList restart_list = coordinator_list_->sublist("restart");
+    restart_filename_ = restart_list.get<std::string>("file name");
 
-      // make sure that the restart file actually exists, if not throw an error
-      boost::filesystem::path restart_from_filename_path(restart_filename_);
-      if (!boost::filesystem::exists(restart_from_filename_path)) {
-        Errors::Message message("CycleDriver::the specified restart file does not exist or is not a regular file.");
-        Exceptions::amanzi_throw(message);
-      }
+    // make sure that the restart file actually exists, if not throw an error
+    boost::filesystem::path restart_from_filename_path(restart_filename_);
+    if (!boost::filesystem::exists(restart_from_filename_path)) {
+      Errors::Message message("CycleDriver::the specified restart file does not exist or is not a regular file.");
+      Exceptions::amanzi_throw(message);
     }
 
     // if (restart_requested_) {
@@ -498,14 +495,12 @@ void CycleDriver::ReadParameterList_() {
     // }
   }
 
-  if (coordinator_list_->isSublist("Time Period Control")) {
-    Teuchos::ParameterList& tpc_list =  coordinator_list_->sublist("Time Period Control");
-    Teuchos::Array<double> reset_times    = tpc_list.get<Teuchos::Array<double> >("Start Times");
-    Teuchos::Array<double> reset_times_dt = tpc_list.get<Teuchos::Array<double> >("Initial Time Step");   
-    if (reset_times.size() != reset_times_dt.size()) {
-      Errors::Message message("You must specify the same number of Reset Times and Initial Time Steps under Time Period Control");
-      Exceptions::amanzi_throw(message);
-    }
+  if (coordinator_list_->isSublist("time period control")) {
+    Teuchos::ParameterList& tpc_list = coordinator_list_->sublist("time period control");
+    Teuchos::Array<double> reset_times = tpc_list.get<Teuchos::Array<double> >("start times");
+    Teuchos::Array<double> reset_times_dt = tpc_list.get<Teuchos::Array<double> >("initial time step");   
+    ASSERT(reset_times.size() == reset_times_dt.size());
+
     Teuchos::Array<double>::const_iterator it_tim;
     Teuchos::Array<double>::const_iterator it_dt;
     for (it_tim = reset_times.begin(), it_dt = reset_times_dt.begin();
@@ -516,10 +511,8 @@ void CycleDriver::ReadParameterList_() {
 
     if (tpc_list.isParameter("Maximal Time Step")) {
       Teuchos::Array<double> reset_max_dt = tpc_list.get<Teuchos::Array<double> >("Maximal Time Step");
-      if (reset_times.size() != reset_max_dt.size()) {
-        Errors::Message message("You must specify the same number of Reset Times and Maximal Time Steps under Time Period Control");
-        Exceptions::amanzi_throw(message);
-      }
+      ASSERT(reset_times.size() == reset_max_dt.size());
+
       Teuchos::Array<double>::const_iterator it_tim;
       Teuchos::Array<double>::const_iterator it_max;
       for (it_tim = reset_times.begin(), it_max = reset_max_dt.begin();
@@ -539,7 +532,7 @@ void CycleDriver::ReadParameterList_() {
 /* ******************************************************************
 * Acquire the chosen timestep size
 *******************************************************************/
-double CycleDriver::get_dt( bool after_failure) {
+double CycleDriver::get_dt(bool after_failure) {
   // get the physical step size
   double dt;
 
@@ -557,7 +550,6 @@ double CycleDriver::get_dt( bool after_failure) {
       break;
     }
   }
-
 
   // check if the step size has gotten too small
   if (dt < min_dt_) {
@@ -614,11 +606,12 @@ void CycleDriver::set_dt(double dt) {
 /* ******************************************************************
 * This is used by CLM
 ****************************************************************** */
-bool CycleDriver::Advance(double dt) {
+double CycleDriver::Advance(double dt) {
 
   bool advance = true;
   bool fail = false;
   bool reinit = false;
+  double dt_new;
 
   if (tp_end_[time_period_id_] == tp_start_[time_period_id_]) 
     advance = false;
@@ -650,11 +643,6 @@ bool CycleDriver::Advance(double dt) {
       S_->advance_time(dt);
     }
 
-    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      *vo_->os() << "New time(y) = "<< S_->time() / (60*60*24*365.25);
-      *vo_->os() << std::endl;
-    }
-
     bool force_vis(false);
     bool force_check(false);
     bool force_obser(false);
@@ -666,27 +654,33 @@ bool CycleDriver::Advance(double dt) {
       S_->set_position(TIME_PERIOD_END);
     }
 
+    dt_new = get_dt(fail);
+
     if (!reset_info_.empty())
         if (S_->time() == reset_info_.front().first)
             force_check = true;
 
     // make observations, vis, and checkpoints
-
     //Amanzi::timer_manager.start("I/O");
     if (advance) {
       pk_->CalculateDiagnostics();
       Visualize(force_vis);
-      WriteCheckpoint(get_dt(fail), force_check);   // write Checkpoint with new dt
+      WriteCheckpoint(dt_new, force_check);   // write Checkpoint with new dt
       Observations(force_obser);
       WriteWalkabout(force_check);
     }
     //Amanzi::timer_manager.start("I/O");
 
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      *vo_->os() << "New time(y) = "<< S_->time() / (60*60*24*365.25);
+      *vo_->os() << std::endl;
+    }
   } else {
+    dt_new = get_dt(fail);
     // Failed the timestep.  
     // Potentially write out failed timestep for debugging
     for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=failed_visualization_.begin();
-         vis!=failed_visualization_.end(); ++vis) {
+         vis != failed_visualization_.end(); ++vis) {
       WriteVis((*vis).ptr(), S_.ptr());
     }
     // The timestep sizes have been updated, so copy back old soln and try again.
@@ -695,7 +689,7 @@ bool CycleDriver::Advance(double dt) {
     // Otherwise this would be very broken, as flow could succeed, but
     // transport fail, and we wouldn't have a way of backing up. --ETC
   }
-  return fail;
+  return dt_new;
 }
 
 
@@ -735,7 +729,7 @@ void CycleDriver::Visualize(bool force) {
     if (force || (*vis)->DumpRequested(S_->cycle(), S_->time())) {
       WriteVis((*vis).ptr(), S_.ptr());
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "Cycle " << S_->cycle() << ": writing visualization file" << std::endl;
+      *vo_->os() << "writing visualization file" << std::endl;
     }
   }
 }
@@ -750,7 +744,7 @@ void CycleDriver::WriteCheckpoint(double dt, bool force) {
     
     // if (force) pk_->CalculateDiagnostics();
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Cycle " << S_->cycle() << ": writing checkpoint file" << std::endl;
+    *vo_->os() << "writing checkpoint file" << std::endl;
   }
 }
 
@@ -791,7 +785,9 @@ void CycleDriver::Go() {
     dt = tp_dt_[time_period_id_];
     dt = tsm_->TimeStep(S_->time(), dt);
     pk_->set_dt(dt);
+
   } else {
+
     // Read restart file
     restart_time = ReadCheckpointInitialTime(comm_, restart_filename_);
     position = ReadCheckpointPosition(comm_, restart_filename_);
@@ -809,6 +805,11 @@ void CycleDriver::Go() {
     // to initialize field which are not in the restart file
     S_->InitializeFields();
     S_->InitializeEvaluators();
+
+    // Initialize the process kernels
+    pk_->Initialize();
+    
+    S_->GetMeshPartition("materials");
     
     // re-initialize the state object
     restart_dT = ReadCheckpoint(comm_, Teuchos::ptr(&*S_), restart_filename_);
@@ -829,17 +830,21 @@ void CycleDriver::Go() {
       ResetDriver(time_period_id_); 
       restart_dT =  tp_dt_[time_period_id_];
     }
-    else {
-      Initialize();
-    }
+    // else {
+    //   Initialize();
+    // }
 
     S_->set_initial_time(S_->time());
     dt = tsm_->TimeStep(S_->time(), restart_dT);
     pk_->set_dt(dt);
+
   }
 
   *S_->GetScalarData("dt", "coordinator") = dt;
   S_->GetField("dt","coordinator")->set_initialized();
+
+  S_->CheckNotEvaluatedFieldsInitialized();
+  S_->CheckAllFieldsInitialized();
 
   // visualization at IC
   //Amanzi::timer_manager.start("I/O");
@@ -855,7 +860,8 @@ void CycleDriver::Go() {
 #if !DEBUG_MODE
   try {
 #endif
-    bool fail = false;
+    //bool fail = false;
+
     while (time_period_id_ < num_time_periods_) {
       int start_cycle_num = S_->cycle();
       do {
@@ -870,10 +876,11 @@ void CycleDriver::Go() {
         S_->set_final_time(S_->time() + dt);
         S_->set_position(TIME_PERIOD_INSIDE);
 
-        fail = Advance(dt);
-        dt = get_dt(fail);
+        dt = Advance(dt);
+        //dt = get_dt(fail);
+
       }  // while not finished
-      while ((S_->time() < tp_end_[time_period_id_]) &&  ((tp_max_cycle_[time_period_id_] == -1) 
+      while ((S_->time() < tp_end_[time_period_id_]) && ((tp_max_cycle_[time_period_id_] == -1) 
                                      || (S_->cycle() - start_cycle_num <= tp_max_cycle_[time_period_id_])));
 
       time_period_id_++;

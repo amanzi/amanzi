@@ -145,6 +145,7 @@ TEST(HDF5_MPI) {
   double newtime;
   int newcycle;
   std::string newstring;
+
   restart_input->readAttrReal(newtime,"time");
   std::cout << "E>> read back attribute time = " << newtime << std::endl;
   restart_input->readAttrInt(newcycle,"cycle");
@@ -153,6 +154,7 @@ TEST(HDF5_MPI) {
   std::cout << "E>> read back attribute string = " << newstring << std::endl;
   std::cout << "E>> compare results" << std::endl;
   std::cout << "E>> original:" << std::endl << *cell_quantity;
+
   Teuchos::RCP<Epetra_Vector> read_quantity;
   read_quantity = Teuchos::rcp(new Epetra_Vector(Mesh->cell_map(false)));
   std::cout << std::endl;

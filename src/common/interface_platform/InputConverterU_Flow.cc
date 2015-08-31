@@ -84,7 +84,12 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
     richards_list.sublist("porosity models") = TranslatePOM_();
     if (richards_list.sublist("porosity models").numParams() > 0) {
       flow_list->sublist("physical models and assumptions")
-                .set<std::string>("porosity model", "compressible: pressure function");
+          .set<std::string>("porosity model", "compressible: pressure function");
+    }
+    richards_list.sublist("multiscale models") = TranslateFlowMSM_();
+    if (richards_list.sublist("multiscale models").numParams() > 0) {
+      flow_list->sublist("physical models and assumptions")
+          .set<std::string>("multiscale model", "dual porosity");
     }
   } else {
     Errors::Message msg;
@@ -99,7 +104,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
 
   std::string pc_method("linearized_operator");
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, preconditioning_strategy", flag);
-  if (flag) pc_method = mm.transcode(node->getTextContent()); 
+  if (flag) pc_method = GetTextContentS_(node, "linearized_operator, diffusion_operator"); 
 
   std::string nonlinear_solver("nka");
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver", flag);
@@ -143,6 +148,11 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
   // insert boundary conditions and source terms
   flow_list->sublist("boundary conditions") = TranslateFlowBCs_();
   flow_list->sublist("source terms") = TranslateFlowSources_();
+
+  // models and default assumptions. 
+  // Note that MPC/PKs may overwrite these parameters
+  flow_list->sublist("physical models and assumptions")
+      .set<std::string>("water content model", "constant density");
 
   flow_list->sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
   return out_list;
@@ -335,6 +345,125 @@ Teuchos::ParameterList InputConverterU::TranslatePOM_()
     Teuchos::ParameterList empty;
     out_list = empty;
   }
+  return out_list;
+}
+
+
+/* ******************************************************************
+* Create list of multiscale models.
+****************************************************************** */
+Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
+{
+  Teuchos::ParameterList out_list;
+
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+    *vo_->os() << "Translating multiscale models" << std::endl;
+
+  MemoryManager mm;
+  DOMNodeList *node_list, *children;
+  DOMNode* node;
+  DOMElement* element;
+
+  bool flag;
+  std::string model, rel_perm;
+
+  node_list = doc_->getElementsByTagName(mm.transcode("materials"));
+  element = static_cast<DOMElement*>(node_list->item(0));
+  children = element->getElementsByTagName(mm.transcode("material"));
+
+  for (int i = 0; i < children->getLength(); ++i) {
+    DOMNode* inode = children->item(i); 
+    node = GetUniqueElementByTagsString_(inode, "dual_porosity, cap_pressure", flag);
+    if (!flag) continue;
+
+    model = GetAttributeValueS_(static_cast<DOMElement*>(node), "model", "van_genuchten, brooks_corey");
+    DOMNode* nnode = GetUniqueElementByTagsString_(node, "parameters", flag);
+    DOMElement* element_cp = static_cast<DOMElement*>(nnode);
+
+    node = GetUniqueElementByTagsString_(inode, "dual_porosity, rel_perm", flag);
+    rel_perm = GetAttributeValueS_(static_cast<DOMElement*>(node), "model", "mualem, burdine");
+    DOMNode* mnode = GetUniqueElementByTagsString_(node, "exp", flag);
+    DOMElement* element_rp = (flag) ? static_cast<DOMElement*>(mnode) : NULL;
+
+    // common stuff
+    // -- assigned regions
+    node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
+    std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
+
+    // -- mass transfer coefficient
+    node = GetUniqueElementByTagsString_(inode, "dual_porosity, mass_transfer_coefficient", flag);
+    double alpha = std::strtod(mm.transcode(node->getTextContent()), NULL);
+    
+    for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
+      std::stringstream ss;
+      ss << "MSM for " << *it;
+
+      Teuchos::ParameterList& msm_list = out_list.sublist(ss.str());
+
+      msm_list.set<std::string>("multiscale model", "dual porosity")
+          .set<double>("mass transfer coefficient", alpha);
+    }
+
+    // -- smoothing
+    double krel_smooth = GetAttributeValueD_(element_cp, "optional_krel_smoothing_interval", false, 0.0);
+    if (krel_smooth < 0.0) {
+      Errors::Message msg;
+      msg << "value of optional_krel_smoothing_interval must be non-negative.\n";
+      Exceptions::amanzi_throw(msg);
+    }
+
+    // -- ell
+    double ell, ell_d = (rel_perm == "mualem") ? ELL_MUALEM : ELL_BURDINE;
+    ell = GetAttributeValueD_(element_rp, "value", false, ell_d);
+
+    std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'm', 'M');
+    std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'b', 'B');
+
+    // capillary pressure models
+    if (strcmp(model.c_str(), "van_genuchten") == 0) {
+      double alpha = GetAttributeValueD_(element_cp, "alpha");
+      double sr = GetAttributeValueD_(element_cp, "sr");
+      double m = GetAttributeValueD_(element_cp, "m");
+
+      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
+        std::stringstream ss;
+        ss << "MSM for " << *it;
+
+        Teuchos::ParameterList& wrm_list = out_list.sublist(ss.str());
+
+        wrm_list.set<std::string>("water retention model", "van Genuchten")
+            .set<std::string>("region", *it)
+            .set<double>("van Genuchten m", m)
+            .set<double>("van Genuchten l", ell)
+            .set<double>("van Genuchten alpha", alpha)
+            .set<double>("residual saturation", sr)
+            .set<double>("regularization interval", krel_smooth)
+            .set<std::string>("relative permeability model", rel_perm);
+      }
+    } else if (strcmp(model.c_str(), "brooks_corey")) {
+      double lambda = GetAttributeValueD_(element_cp, "lambda");
+      double alpha = GetAttributeValueD_(element_cp, "alpha");
+      double sr = GetAttributeValueD_(element_cp, "sr");
+
+      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
+        std::stringstream ss;
+        ss << "MSM for " << *it;
+
+        Teuchos::ParameterList& wrm_list = out_list.sublist(ss.str());
+
+        wrm_list.set<std::string>("water retention model", "Brooks Corey")
+            .set<std::string>("region", *it)
+            .set<double>("Brooks Corey lambda", lambda)
+            .set<double>("Brooks Corey alpha", alpha)
+            .set<double>("Brooks Corey l", ell)
+            .set<double>("residual saturation", sr)
+            .set<double>("regularization interval", krel_smooth)
+            .set<std::string>("relative permeability model", rel_perm);
+      }
+    }
+  }
+
   return out_list;
 }
 

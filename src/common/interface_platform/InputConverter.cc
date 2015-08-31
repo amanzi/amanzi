@@ -622,7 +622,7 @@ std::string InputConverter::GetTextContentS_(
   std::string val;
 
   MemoryManager mm;
-  val = mm.transcode(node->getTextContent());
+  val = TrimString_(mm.transcode(node->getTextContent()));
 
   std::vector<std::string> names = CharToStrings_(options);
   for (std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it) {
@@ -631,7 +631,7 @@ std::string InputConverter::GetTextContentS_(
 
   char* tagname = mm.transcode(node->getNodeName());
   Errors::Message msg;
-  msg << "Validation of text content for node \"" << tagname << "\" failed.\n";
+  msg << "Validation of content \"" << val << "\" for node \"" << tagname << "\" failed.\n";
   msg << "Available options: \"" << options << "\".\n";
   msg << "Please correct and try again.\n";
   Exceptions::amanzi_throw(msg);
@@ -756,6 +756,23 @@ std::string InputConverter::TrimString_(char* tmp)
 }
 
 /* *******************************************************************
+* Generate error message when list is empty.
+******************************************************************* */
+int InputConverter::IsEmpty(DOMNodeList* node_list, const std::string& name, bool exception)
+{
+  int n = node_list->getLength();
+  if (n == 0 && exception) {
+    Errors::Message msg;
+    msg << "Mandatory element \"" << name << "\" is missing.\n";
+    msg << "Please correct and try again.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return n;
+}
+
+
+/* *******************************************************************
 * Generate unified error message for ill-formed element
 ******************************************************************* */
 void InputConverter::ThrowErrorIllformed_(
@@ -763,7 +780,7 @@ void InputConverter::ThrowErrorIllformed_(
 {
   Errors::Message msg;
   msg << "An error occurred during parsing node \"" << section << "\"\n";
-  msg << "Missing or ill-formed " << type << " for \"" << ill_formed << "\".\n";
+  msg << "Missing or ill-formed \"" << type << "\" for \"" << ill_formed << "\".\n";
   msg << "Please correct and try again.\n";
   Exceptions::amanzi_throw(msg);
 }
