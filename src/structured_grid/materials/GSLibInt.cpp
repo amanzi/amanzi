@@ -41,7 +41,7 @@ GSLibInt::parRand(Array <Real> kappaval,
 
 void
 GSLibInt::seqGaussianSim(const Array <Real>& kappaval, 
-                         const Array<int>&   n_cell, 
+                         const Box&          domain,
                          const Array<Real>&  problo,
                          const Array<Real>&  probhi,
                          int                 twoexp,
@@ -55,8 +55,8 @@ GSLibInt::seqGaussianSim(const Array <Real>& kappaval,
   Real dx[3],hdx[3];
 
   for (int i=0;i<BL_SPACEDIM; i++) {
-    nx[i] = (n_cell[i]+6)*twoexp;
-    dx[i] = (probhi[i]-problo[i])/(n_cell[i]*twoexp);
+    nx[i] = domain.length(i)*twoexp;
+    dx[i] = (probhi[i]-problo[i])/nx[i];
     hdx[i] = dx[i]*0.5;
   }
 
@@ -72,18 +72,7 @@ GSLibInt::seqGaussianSim(const Array <Real>& kappaval,
 
   std::cout << "Doing sequential gaussian simulation  ... \n";
   
-  Box bx;
-#if (BL_SPACEDIM == 3)
-  bx = Box(IntVect(0,0,0),
-	   IntVect(n_cell[0]-1,n_cell[1]-1,n_cell[2]-1));
-#else
-  bx = Box(IntVect(0,0),
-	   IntVect(n_cell[0]-1,n_cell[1]-1));
-#endif
-  bx.grow(3);
-  bx.refine(twoexp);
-  
-  BoxArray ba(bx);
+  BoxArray ba(domain);
   MultiFab mf(ba,1,0);
 
   if (ParallelDescriptor::IOProcessor())
@@ -100,12 +89,10 @@ GSLibInt::seqGaussianSim(const Array <Real>& kappaval,
 
 void
 GSLibInt::rdpGaussianSim(const Array<Real>& kappaval, 
-                         const Array<int>&  n_cell, 
+                         const Box&         domain,
                          const Array<Real>& problo,
                          const Array<Real>& probhi,
-                         int                twoexp,
                          MultiFab&          mfdata,
-                         int                crse_init_factor,
                          int                max_grid_size_fine_gen,
                          int                ngrow_fine_gen,
                          const std::string& gsfile)
@@ -115,108 +102,105 @@ GSLibInt::rdpGaussianSim(const Array<Real>& kappaval,
 
   std::string kcfile;
 
-  cndGaussianSim(kappaval,n_cell, problo, probhi, twoexp, mfdata,
-		 crse_init_factor,max_grid_size_fine_gen,ngrow_fine_gen,kcfile,gsfile);
+  cndGaussianSim(kappaval, domain, problo, probhi, mfdata,
+		 max_grid_size_fine_gen,ngrow_fine_gen,kcfile,gsfile);
+}
+
+static void
+memUsage(const std::string& note)
+{
+  Real min_alloc_fab_gb = BoxLib::TotalBytesAllocatedInFabs()/(1024.0*1024.0);
+  Real max_alloc_fab_gb = min_alloc_fab_gb;
+  Real min_fab_gb = BoxLib::TotalBytesAllocatedInFabsHWM()/(1024.0*1024.0);
+  Real max_fab_gb = min_fab_gb;
+
+  ParallelDescriptor::ReduceRealMin(min_fab_gb,ParallelDescriptor::IOProcessorNumber());
+  ParallelDescriptor::ReduceRealMax(max_fab_gb,ParallelDescriptor::IOProcessorNumber());
+  ParallelDescriptor::ReduceRealMin(min_alloc_fab_gb,ParallelDescriptor::IOProcessorNumber());
+  ParallelDescriptor::ReduceRealMax(max_alloc_fab_gb,ParallelDescriptor::IOProcessorNumber());
+  if (ParallelDescriptor::IOProcessor()) {
+    std::cout << "\n" << note << " FAB GB spread across MPI nodes: ["
+	      << min_fab_gb
+	      << " ... "
+	      << max_fab_gb
+	      << "  alloc: "
+	      << min_alloc_fab_gb
+	      << " ... "
+	      << max_alloc_fab_gb
+	      << "]\n";
+  }
 }
 
 void
 GSLibInt::cndGaussianSim(const Array<Real>& kappaval, 
-                         const Array<int>&  n_cell, 
+                         const Box&         domain,
                          const Array<Real>& problo,
                          const Array<Real>& probhi,
-                         int                twoexp,
                          MultiFab&          mfdata,
-                         int                crse_init_factor,
                          int                max_grid_size_fine_gen,
                          int                ngrow_fine_gen,
                          std::string&       kcfile,
                          const std::string& gsfile)
 {
-  int  nx[BL_SPACEDIM],nxyz;
-  Real dx[BL_SPACEDIM],dxc[BL_SPACEDIM];
-
-
+  Real dx[BL_SPACEDIM];
   int strl = gsfile.length();
 
   int cond_option = 0;
   int c_sz        = 0;
   int real_sz     = 0;
   int int_sz      = 0;
-  int c_idx[10], real_idx[20],int_idx[20];
+  int c_idx_siz   = 10;
+  int r_idx_siz   = 20;
+  int i_idx_siz   = 20;
+  Array<int> c_idx(c_idx_siz),real_idx(r_idx_siz),int_idx(i_idx_siz);
 
   //
   // Initializing gslib
   //
   int rand_seed;
-  FORT_INIT_GSLIB2(gsfile.c_str(),&strl,&c_sz,c_idx,
-		   &real_sz,real_idx,&int_sz,int_idx, &cond_option, &rand_seed);
+  FORT_INIT_GSLIB2(gsfile.c_str(),&strl,&c_sz,c_idx.dataPtr(),&c_idx_siz,
+		   &real_sz,real_idx.dataPtr(),&r_idx_siz,&int_sz,int_idx.dataPtr(),&i_idx_siz,
+		   &cond_option, &rand_seed);
 
   BoxLib::InitRandom(rand_seed);
  
- if (cond_option == 1 && c_sz == 0) {
+  if (cond_option == 1 && c_sz == 0) {
     std::cout << "GSLIB data is missing.  Doing unconditioned simulation.\n";
     cond_option = 0;
   }
 
-  int nGrow = mfdata.nGrow();
-  nxyz = 1;
   for (int i=0;i<BL_SPACEDIM; i++) {
-    dxc[i] = (probhi[i]-problo[i])/n_cell[i];
-    nx[i]  = (n_cell[i]+2*nGrow)*twoexp;
-    dx[i]  = dxc[i]/twoexp;
-    nxyz  *= nx[i];
+    dx[i]  = (probhi[i] - problo[i])/domain.length(i);
   }
 
-  Box bx(IntVect(D_DECL(          0,          0,          0)),
-         IntVect(D_DECL(n_cell[0]-1,n_cell[1]-1,n_cell[2]-1)));
-  bx.grow(nGrow);
-
-  MultiFab mfc;
-  int      cfac = crse_init_factor;
-  for (int dir=0; dir<BL_SPACEDIM; dir++) {
-    cfac = std::min(cfac,n_cell[dir]);
-  }
-
-  Array<int> domloc(BL_SPACEDIM),domhic(BL_SPACEDIM);
   Array <Real> scratch_c(1);
   if (cond_option > 0) { // originally supported other values of cond_option
     scratch_c.resize(c_sz,1.e20);
-
     if (cond_option == 1) {
-      const IntVect ivDum(D_DECL(0,0,0));
-      const Real* dDum = scratch_c.dataPtr();
-	
-      FORT_INTERNAL_DATA(dDum,ARLIM(ivDum),ARLIM(ivDum),
-			 scratch_c.dataPtr(),&c_sz,c_idx,
-			 &kappaval[0],dxc,problo.dataPtr(),
-			 domloc.dataPtr(),domhic.dataPtr());
-
+      FORT_INTERNAL_DATA(scratch_c.dataPtr(),&c_sz,c_idx.dataPtr());
     }
-
-    const int IOProc   = ParallelDescriptor::IOProcessorNumber();
-    ParallelDescriptor::ReduceRealMin(scratch_c.dataPtr(),c_sz,IOProc);
-    ParallelDescriptor::Bcast(scratch_c.dataPtr(),c_sz,IOProc);
   }
 
-  bx.refine(twoexp);
-  BoxArray ba(bx); 
+  BoxArray ba(domain);
   ba.maxSize(max_grid_size_fine_gen);
-  MultiFab mf(ba,1,ngrow_fine_gen);
-  mf.setVal(0.);
-  
-  Array< Array<Real> > scratch_r(mf.size());
-  Array< Array<int>  > scratch_i(mf.size());
-  Array< Array<int>  > order(mf.size());
+  MultiFab mfg(ba,1,ngrow_fine_gen);
+  mfg.setVal(0.);
+
+  Array< Array<Real> > scratch_r(mfg.size());
+  Array< Array<int>  > scratch_i(mfg.size());
+  Array< Array<int>  > order(mfg.size());
 
   int max_fab_size = 0;
-  for (MFIter mfi(mf); mfi.isValid(); ++mfi) {    
+  for (MFIter mfi(mfg); mfi.isValid(); ++mfi) {    
     const int  i     = mfi.index();
     const int* lo    = mfi.validbox().loVect();
     const int* hi    = mfi.validbox().hiVect();
+    const int* dlo   = domain.loVect();
+    const int* dhi   = domain.hiVect();
 	  
-    const int* k_lo  = mf[mfi].loVect();
-    const int* k_hi  = mf[mfi].hiVect();
-    const Real* kdat = mf[mfi].dataPtr();
+    const int* k_lo  = mfg[mfi].loVect();
+    const int* k_hi  = mfg[mfi].hiVect();
+    const Real* kdat = mfg[mfi].dataPtr();
     int nvalid = 1;
     int ntotal = 1;
     for (int d=0; d<BL_SPACEDIM; d++) {
@@ -235,73 +219,85 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
 
     FORT_SGSIM_SETUP(kdat,ARLIM(k_lo),ARLIM(k_hi),
     		     order[i].dataPtr(),&nvalid,
-		     scratch_c.dataPtr(),&c_sz,c_idx,
-		     scratch_r[i].dataPtr(),&real_sz,real_idx,
-		     scratch_i[i].dataPtr(),&int_sz,int_idx,    
-		     lo,hi,dx,problo.dataPtr(),&rand_seed);
+		     scratch_c.dataPtr(),&c_sz,c_idx.dataPtr(),&c_idx_siz,
+		     scratch_r[i].dataPtr(),&real_sz,real_idx.dataPtr(),&r_idx_siz,
+		     scratch_i[i].dataPtr(),&int_sz,int_idx.dataPtr(),&i_idx_siz,
+		     lo,hi,dx,problo.dataPtr(),dlo,dhi,&rand_seed);
   }
   ParallelDescriptor::ReduceIntMax(max_fab_size);
+
+  for (int i=0; i<order.size(); ++i) {
+    for (int j=0; j<order[i].size(); ++j) {
+      std::cout << "i, j, o[j]: " << i << ", " << j << ", " << order[i][j] << std::endl;
+      if (order[i][j] > 10000) {
+	BoxLib::Abort("got it");
+      }
+    }
+  }
 
   int it = 0;
   while (it < max_fab_size) {
 
-    for (MFIter mfi(mf); mfi.isValid(); ++mfi) {    
+    for (MFIter mfi(mfg); mfi.isValid(); ++mfi) {    
       const int  i     = mfi.index();
 	  
-      const int* k_lo  = mf[mfi].loVect();
-      const int* k_hi  = mf[mfi].hiVect();
-      const Real* kdat = mf[mfi].dataPtr();
+      const int* k_lo  = mfg[mfi].loVect();
+      const int* k_hi  = mfg[mfi].hiVect();
+      const Real* kdat = mfg[mfi].dataPtr();
       if (it < order[i].size()) 
       {
 	int idx_chosen = order[i][it];
 
+	//std::cout << "it, idx_chosen: " << it << " " << idx_chosen << " (max = " << mfg[mfi].box().numPts() << ")" << std::endl;
+	if (idx_chosen > mfg[mfi].box().numPts()) {
+	  std::cout << "idx_chosen: " << idx_chosen << std::endl;
+	  BoxLib::Abort("uh oh");
+	}
+
 	FORT_SGSIM_ITER(kdat,ARLIM(k_lo),ARLIM(k_hi),
-			scratch_c.dataPtr(),&c_sz,c_idx,
-			scratch_r[i].dataPtr(),&real_sz,real_idx,
-			scratch_i[i].dataPtr(),&int_sz,int_idx,
+			scratch_c.dataPtr(),&c_sz,c_idx.dataPtr(),&c_idx_siz,
+			scratch_r[i].dataPtr(),&real_sz,real_idx.dataPtr(),&r_idx_siz,
+			scratch_i[i].dataPtr(),&int_sz,int_idx.dataPtr(),&i_idx_siz,
 			&idx_chosen);
       }
     }
 
-    mf.FillBoundary();
+    mfg.FillBoundary();
 
     it = it + 1;
   }
 
-  for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
+  for (MFIter mfi(mfg); mfi.isValid(); ++mfi) {
     const int  i     = mfi.index();
-    const int* k_lo  = mf[mfi].loVect();
-    const int* k_hi  = mf[mfi].hiVect();
-    const Real* kdat = mf[mfi].dataPtr();
+    const int* k_lo  = mfg[mfi].loVect();
+    const int* k_hi  = mfg[mfi].hiVect();
+    const Real* kdat = mfg[mfi].dataPtr();
 
     FORT_SGSIM_POST(kdat,ARLIM(k_lo),ARLIM(k_hi),
-		    scratch_c.dataPtr(),&c_sz,c_idx,
-		    scratch_r[i].dataPtr(),&real_sz,real_idx, 
-		    scratch_i[i].dataPtr(),&int_sz,int_idx);
-
-    FORT_LGNORM(kdat,ARLIM(k_lo),ARLIM(k_hi),&kappaval[0]);
+		    scratch_c.dataPtr(),&c_sz,c_idx.dataPtr(),&c_idx_siz,
+		    scratch_r[i].dataPtr(),&real_sz,real_idx.dataPtr(),&r_idx_siz,
+		    scratch_i[i].dataPtr(),&int_sz,int_idx.dataPtr(),&i_idx_siz);
   }
 
-  ParallelDescriptor::Barrier();
+  VisMF::Write(mfg,"JUNK");
+  
+  for (MFIter mfi(mfg); mfi.isValid(); ++mfi) {
+    const int  i     = mfi.index();
+    const int* k_lo  = mfg[mfi].loVect();
+    const int* k_hi  = mfg[mfi].hiVect();
+    const Real* kdat = mfg[mfi].dataPtr();
+    const Box& vbox = mfi.validbox();
+    FORT_LGNORM(kdat,ARLIM(k_lo),ARLIM(k_hi),&kappaval[0],
+		vbox.loVect(),vbox.hiVect());
+  }
+
+  mfdata.copy(mfg,0,0,1); // Parallel copy
+  mfg.clear();
 
   FORT_SGSIM_DEALLOC();
 
-  BoxArray gba = BoxArray(mf.boxArray()).grow(nGrow);
-  MultiFab mfg(gba,1,0);
-  for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
-    mfg[mfi].copy(mf[mfi]);
-  }
-  mf.clear();
-
-  BoxArray gba1 = BoxArray(mfdata.boxArray()).grow(nGrow);
-  MultiFab mf1(gba1,1,0);
-  mf1.copy(mfg); // No-grow to no-grow parallel copy
-
   int nComp = mfdata.nComp(); // For now, all components get same data
-  for (MFIter mfi(mf1); mfi.isValid(); ++mfi) {
-    for (int n=0; n<nComp; ++n) {
-      const Box& bx = mf1[mfi].box();
-      mfdata[mfi].copy(mf1[mfi],bx,0,bx,n,1);
-    }
+  for (int n=1; n<nComp; ++n) {
+    MultiFab::Copy(mfdata,mfdata,0,n,1,mfdata.nGrow());
   }
 }
