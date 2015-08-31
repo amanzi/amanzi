@@ -25,7 +25,7 @@ class Dummy_PK : public FnTimeIntegratorPK {
                       const Teuchos::RCP<TreeVector>& soln);
 
   // Setup
-  virtual void Setup() {dummy_dt = 1;}
+  virtual void Setup() {dummy_dt = 1000; step_count = 1;}
 
   // Initialize owned (dependent) variables.
   virtual void Initialize() {}
@@ -110,6 +110,7 @@ class Dummy_PK : public FnTimeIntegratorPK {
   Teuchos::RCP<State> S_;
 
   double dummy_dt;
+  int step_count;
 
  private:
   // factory registration

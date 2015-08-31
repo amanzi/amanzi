@@ -535,11 +535,11 @@ void CycleDriver::ReadParameterList_() {
 double CycleDriver::get_dt(bool after_failure) {
   // get the physical step size
   double dt;
-
+ 
   dt = pk_->get_dt();
 
-  std::vector<std::pair<double,double> >::const_iterator it;
-  std::vector<std::pair<double,double> >::const_iterator it_max;
+  std::vector<std::pair<double,double> >::iterator it;
+  std::vector<std::pair<double,double> >::iterator it_max;
 
   for (it = reset_info_.begin(), it_max = reset_max_.begin(); it != reset_info_.end(); ++it, ++it_max) {
     if (S_->time() == it->first) {
@@ -547,6 +547,10 @@ double CycleDriver::get_dt(bool after_failure) {
       dt = it->second;
       pk_->set_dt(dt);
       after_failure = true;
+      
+      reset_info_.erase(it);
+      reset_max_.erase(it_max);
+
       break;
     }
   }
@@ -816,7 +820,7 @@ void CycleDriver::Go() {
     cycle0_ = S_->cycle();
     for (std::vector<std::pair<double,double> >::iterator it = reset_info_.begin();
           it != reset_info_.end(); ++it) {
-      if (it->first < S_->time()) it = reset_info_.erase(it);
+      if (it->first <= S_->time()) it = reset_info_.erase(it);
       if (it == reset_info_.end() ) break;
     }
 

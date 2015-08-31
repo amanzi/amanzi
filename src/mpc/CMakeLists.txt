@@ -34,6 +34,7 @@ include_directories(${EOS_SOURCE_DIR})
 include_directories(${TRANSPORT_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
+include_directories(${DUMMYPK_SOURCE_DIR})
 include_directories(${ENERGY_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
@@ -92,7 +93,7 @@ if (BUILD_TESTS)
           copy_directory ${MPC_SOURCE_DIR}/test ${MPC_BINARY_DIR}/test) 
     endif()
 
-    set(amanzi_libs mpc pks flow transport chemistry_pk energy pks eos 
+    set(amanzi_libs mpc pks flow transport chemistry_pk energy dummy pks eos 
                     state operators mesh_factory 
                     geometry whetstone mesh_functions functions)
     
@@ -126,19 +127,13 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_driver_frt.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-if(0)
+
     # Test: mpc-new driver dummy
     add_amanzi_test(mpc_driver_dummy mpc_driver_dummy
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_dummy_pk.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    # Test: mpc-new driver pressure saturation
-    add_amanzi_test(mpc_driver_impes mpc_driver_impes
-                    KIND      int
-                    SOURCE    test/Main.cc test/mpc_driver_impes.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-endif()
 
 #    add_executable(test_vis test/Main.cc test/test_vis.cpp)
 #    target_link_libraries(test_vis state mpc stk_mesh ${UnitTest_LIBRARIES})
