@@ -228,7 +228,8 @@ void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Comp
   const Epetra_MultiVector& pcf = *S_->GetFieldData("pressure")->ViewComponent("cell");
   const Epetra_MultiVector& pcm = *S_->GetFieldData("pressure_matrix")->ViewComponent("cell");
   const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell");
-  const Epetra_MultiVector& wcm = *S_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
+  const Epetra_MultiVector& wcm_prev = *S_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
+  Epetra_MultiVector& wcm = *S_->GetFieldData("water_content_matrix", passwd_)->ViewComponent("cell");
 
   Epetra_MultiVector& fc = *f->ViewComponent("cell");
 
@@ -236,12 +237,13 @@ void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Comp
   for (int c = 0; c < ncells_owned; ++c) {
     pcf0 = atm_pressure_ - pcf[0][c];
     pcm0 = atm_pressure_ - pcm[0][c];
-    wcm0 = wcm[0][c];
+    wcm0 = wcm_prev[0][c];
     phi0 = phi[0][c];
 
     wcm1 = msp_->second[(*msp_->first)[c]]->WaterContentMatrix(dt, phi0, molar_rho_, wcm0, pcf0, pcm0);
     fc[0][c] += (wcm1 - wcm0) / dt;
 
+    wcm[0][c] = wcm1;
     pcm[0][c] = atm_pressure_ - pcm0;
   }
 }

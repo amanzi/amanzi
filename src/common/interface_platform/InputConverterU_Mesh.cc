@@ -363,6 +363,12 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
             }
           }
         }
+        // get expert parameters
+        if (reg_elem->hasAttribute(XMLString::transcode("tolerance"))) {
+          text_content2 = mm.transcode(reg_elem->getAttribute(mm.transcode("tolerance")));
+          out_list.sublist(reg_name).sublist("Region: Polygon").sublist("Expert Parameters")
+              .set<double>("Tolerance", std::strtod(text_content2, NULL));
+        }
         out_list.sublist(reg_name).sublist("Region: Polygon").set<Teuchos::Array<double> >("Points", points);
         if (!out_list.sublist(reg_name).sublist("Region: Polygon").isParameter("Number of points")) {
           out_list.sublist(reg_name).sublist("Region: Polygon").set<int>("Number of points", pt_cnt);
