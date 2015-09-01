@@ -218,8 +218,7 @@ Time period control
 
 A set of times that simulation hits exactly can be used to avoid problems with
 sudden change of boundary conditions or source/sink terms.
-The list of special times is global and should be consistent with the times specified
-for each time period *TP #*.
+This list must *NOT* include start times for time periods *TP #*.
 
 * `"start times`" [Array(double)] is the list of particular times that we want to hit exactly.
 
