@@ -518,8 +518,8 @@ void CycleDriver::ReadParameterList_() {
       reset_info_.push_back(std::make_pair(*it_tim, *it_dt));
     }  
 
-    if (tpc_list.isParameter("Maximal Time Step")) {
-      Teuchos::Array<double> reset_max_dt = tpc_list.get<Teuchos::Array<double> >("Maximal Time Step");
+    if (tpc_list.isParameter("maximum time step")) {
+      Teuchos::Array<double> reset_max_dt = tpc_list.get<Teuchos::Array<double> >("maximum time step");
       ASSERT(reset_times.size() == reset_max_dt.size());
 
       Teuchos::Array<double>::const_iterator it_tim;
