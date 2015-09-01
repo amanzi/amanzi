@@ -49,13 +49,9 @@
         <Parameter name="Value" type="double" value="1.E-12"/>
       </ParameterList>
       <ParameterList name="Sorption Isotherms">
-        <ParameterList name="Aqueous">
-          <ParameterList name="Water">
 	    <ParameterList name="A">
 	      <Parameter name="Kd" type="double" value="10.0"/>
 	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>
