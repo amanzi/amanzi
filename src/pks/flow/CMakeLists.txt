@@ -297,6 +297,12 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/flow_richards_3D.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: Multiscale
+    add_amanzi_test(flow_multiscale flow_multiscale
+                    KIND unit
+                    SOURCE test/Main.cc test/flow_multiscale.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 
 option(ENABLE_FLOW_EXAMPLES "Build flow examples" OFF)
