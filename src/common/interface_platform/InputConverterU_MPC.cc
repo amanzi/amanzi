@@ -476,21 +476,36 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
       *vo_->os() << "Translating time period controls" << std::endl;
 
-  // get the default time steps
   MemoryManager mm;
   DOMNodeList *node_list, *children;
   DOMNode* node;
+  DOMElement* element;
 
+  // get the default time steps
   bool flag;
   node = GetUniqueElementByTagsString_("execution_controls, execution_control_defaults", flag);
 
-  double dt_init_d, dt_max_d;
+  double t, dt_init_d, dt_max_d;
+  std::map<double, double> init_dt, max_dt;
+
   dt_init_d = GetAttributeValueD_(static_cast<DOMElement*>(node), "init_dt", false, RESTART_TIMESTEP);
   dt_max_d = GetAttributeValueD_(static_cast<DOMElement*>(node), "max_dt", false, MAXIMUM_TIMESTEP);
 
+  children = doc_->getElementsByTagName(mm.transcode("execution_control"));
+  for (int i = 0; i < children->getLength(); ++i) {
+    DOMNode* inode = children->item(i);
+    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+    element = static_cast<DOMElement*>(inode);
+
+    t = GetAttributeValueD_(element, "start");
+    double dt_init = GetAttributeValueD_(element, "init_dt", false, dt_init_d);
+    double dt_max = GetAttributeValueD_(element, "max_dt", false, dt_max_d);
+    init_dt[t] = dt_init;
+    max_dt[t] = dt_max;
+  }
+
   // add start times of all boundary conditions to the list
-  Teuchos::Array<double> time_init, dt_init, dt_max;
-  std::map<double, double> time_map, dt_max_map;
+  std::map<double, double> dt_init_map, dt_max_map;
 
   std::vector<std::string> bc_names;
   bc_names.push_back("hydrostatic");
@@ -517,9 +532,15 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
         DOMNode* inode = children->item(i);
         if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
-        double t = GetAttributeValueD_(static_cast<DOMElement*>(inode), "start");
-        time_map[t] = dt_init_d;
-        dt_max_map[t] = -1.0;
+        t = GetAttributeValueD_(static_cast<DOMElement*>(inode), "start");
+        // find position before t
+        std::map<double, double>::iterator it = init_dt.upper_bound(t);
+        if (it == init_dt.end()) it--;
+        dt_init_map[t] = it->second;
+
+        it = max_dt.upper_bound(t);
+        if (it == max_dt.end()) it--;
+        dt_max_map[t] = it->second;
       }
     }
   }
@@ -541,48 +562,32 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
         DOMNode* inode = children->item(i);
         if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
-        double t = GetAttributeValueD_(static_cast<DOMElement*>(inode), "start");
-        time_map[t] = dt_init_d;
-        dt_max_map[t] = -1.0;
+        t = GetAttributeValueD_(static_cast<DOMElement*>(inode), "start");
+        // find position before t
+        std::map<double, double>::iterator it = init_dt.upper_bound(t);
+        if (it == init_dt.end()) it--;
+        dt_init_map[t] = it->second;
+
+        it = max_dt.upper_bound(t);
+        if (it == max_dt.end()) it--;
+        dt_max_map[t] = it->second;
       }
     }
   }
 
-  // add these last so that the default initial time steps get overwritten
-  children = doc_->getElementsByTagName(mm.transcode("execution_control"));
-  for (int i = 0; i < children->getLength(); ++i) {
-    DOMNode* inode = children->item(i);
-    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+  // save times in the XML, skipping TP start times
+  std::vector<double> times, dt_init, dt_max;
 
-    double t = GetAttributeValueD_(static_cast<DOMElement*>(inode), "start");
-    double dt = GetAttributeValueD_(static_cast<DOMElement*>(inode), "init_dt", false, dt_init_d);
-    double dt_max = GetAttributeValueD_(static_cast<DOMElement*>(inode), "max_dt", false, dt_max_d);
-    time_map[t] = dt;
-    dt_max_map[t] = dt_max;
-  }
-
-  // save times in the XML
-  time_init.clear();
-  dt_init.clear();
-  dt_max.clear();
-
-  for (std::map<double, double>::const_iterator map_it = time_map.begin(), max_it = dt_max_map.begin();
-       map_it != time_map.end(); ++map_it, ++max_it) {
-    time_init.push_back(map_it->first);
-    dt_init.push_back(map_it->second);
-    if (max_it->second < 0.0) {
-      if (max_it == dt_max_map.begin()) {
-	dt_max.push_back(dt_max_d);
-      } else {
-        int sz = dt_max.size();
-        if (sz > 0) dt_max.push_back(dt_max[sz-1]);
-      }
-    } else {
+  for (std::map<double, double>::const_iterator it = dt_init_map.begin(), max_it = dt_max_map.begin();
+       it != dt_init_map.end(); ++it, ++max_it) {
+    if (init_dt.find(it->first) == init_dt.end()) {
+      times.push_back(it->first);
+      dt_init.push_back(it->second);
       dt_max.push_back(max_it->second);
     }
   }
 
-  out_list.set<Teuchos::Array<double> >("start times", time_init);
+  out_list.set<Teuchos::Array<double> >("start times", times);
   out_list.set<Teuchos::Array<double> >("initial time step", dt_init);
   out_list.set<Teuchos::Array<double> >("maximum time step", dt_max);
 
