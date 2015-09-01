@@ -1291,6 +1291,51 @@ Solute_component
 
      <constraint name="some name" start="time" function="linear | uniform | constant"/>
 
+Sources
+=======
+
+Sources are defined in a similar manner to the boundary conditions.  Under the tag ``sources`` an unbounded number of individual ``source`` elements can be defined.  Within each ``source`` element the ``assigned_regions`` and ``liquid_phase`` elements must appear.  Sources can be applied to one or more region using a comma separated list of region names.  Under the ``liquid_phase`` element the ``liquid_component`` element must be define.  An unbounded number of ``solute_component`` elements and one ``geochemistry`` element may optionally be defined.
+
+Under the ``liquid_component`` and ``solute_component`` elements a time series of boundary conditions is defined using the boundary condition elements available in the table below.  Each component element can only contain one type of source.  Both elements also accept a *name* attribute to indicate the phase associated with the source.
+
+.. code-block:: xml
+
+  <sources>
+      Required Elements: assigned_regions, liquid_phase
+      Optional Elements: comments - SKIPPED
+  </sources>
+
+Assigned_regions
+----------------
+
+* `"assigned_regions`" is a comma separated list of regions to apply the source to.
+
+Liquid_phase
+------------
+
+* `"liquid_phase`" has the following elements
+
+.. code-block:: xml
+
+  <liquid_phase>
+      Required Elements: liquid_component
+      Optional Elements: solute_component (, geochemistry - SKIPPED)
+  </liquid_phase>
+
+*  Here is more info on the `"liquid_component`" elements:
+
+    * `"volume_weighted`" is defined in-line using attributes.  The attributes include "function", "start", and "value". Function specifies linear or constant temporal functional form during each time interval.  Start is a series of time values at which time intervals start.  Value is the value of the `"volume_weighted`" during the time interval. 
+
+    * `"perm_weighted`" is defined in-line using attributes.  See `"volume_weighted`" for details.
+
+*  Here is more info on the `"solute_component`" elements:
+
+    * `"uniform_conc`" is defined in-line using attributes.  The attributes include "name", "function", "start", and "value". Name is the name of a previously defined solute. Function specifies linear or constant temporal functional form during each time interval.  Start is a series of time values at which time intervals start.  Value is the value of the `"uniform_conc`" during the time interval. 
+
+    * `"flow_weighted_conc`" is defined in-line using attributes.  See `"uniform_conc`" for details.
+
+    * `"diffusion_dominated_release`" is defined in-line using attributes.  The attributes include "name", "start", "total_inventory", "mixing_length", and "effective_diffusion_coefficient". Name is the name of a previously defined solute. Start is a series of time values at which time intervals start.  Value is the value of the `"diffusion_dominated_release`" during the time interval. 
+
 Output
 ======
 
