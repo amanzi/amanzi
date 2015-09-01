@@ -98,41 +98,25 @@ using namespace std;
 
   ASSERT(!mesh.is_null());
 
-  bool mpc_new = true;
-  
-  // if (input_parameter_list.isParameter("New multi-process coordinator")){
-  //   mpc_new = input_parameter_list.get<bool>("New multi-process coordinator",false);
-  //   //mpc_new = true;
-  // }
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;
   Teuchos::RCP<Teuchos::ParameterList> glist_rcp = Teuchos::rcp(new Teuchos::ParameterList(plist));
 
-  Teuchos::RCP<Amanzi::State> S;
-  double dt_last;
+  Amanzi::CycleDriver cycle_driver(glist_rcp, mesh, comm, obs_data);
+  
+  Teuchos::RCP<Amanzi::State> S = cycle_driver.Go();
 
-  if (mpc_new){
-    if (plist.isSublist("State")){
-      // Create the state.    
-      Teuchos::ParameterList state_plist = plist.sublist("State");
-      S = Teuchos::rcp(new Amanzi::State(state_plist));
-      S->RegisterMesh("domain",mesh);      
-
-      // -------------- MULTI-PROCESS COORDINATOR------- --------------------
-      Amanzi::CycleDriver cycle_driver(glist_rcp, S, comm, obs_data);
-      //--------------- DO THE SIMULATION -----------------------------------
-      cycle_driver.Go();
-      //-----------------------------------------------------
-
-      dt_last = cycle_driver.get_dt();
-    }
-  }
+  double dt_last; 
+  dt_last = cycle_driver.get_dt();
+  int cycle = S->cycle();
 
   delete comm;
 
+  //std::cout<< cycle << " "<<dt_last<<"\n";
 
-  CHECK(S->cycle()==28 && fabs(dt_last- 9062.43)<1);
+
+  CHECK(cycle == 200 && fabs(dt_last- 1980.32)<1);
   
 
 

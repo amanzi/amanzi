@@ -68,15 +68,24 @@ double rss_usage() { // return ru_maxrss in MBytes
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist_,
-                         Teuchos::RCP<State>& S,
+CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
+                         Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                          Epetra_MpiComm* comm,
                          Amanzi::ObservationData& output_observations) :
-    parameter_list_(glist_),
-    S_(S),
+    parameter_list_(glist),
+    mesh_(mesh),
     comm_(comm),
     output_observations_(output_observations),
     restart_requested_(false) {
+
+  if (parameter_list_->isSublist("State")) {
+    Teuchos::ParameterList state_plist = parameter_list_->sublist("State");
+    S_ = Teuchos::rcp(new Amanzi::State(state_plist));
+    S_->RegisterMesh("domain", mesh_); 
+  }else{
+    Errors::Message message("CycleDriver: xml_file does not contain 'State' sublist\n");
+    Exceptions::amanzi_throw(message);
+  }
 
   // create and start the global timer
   CoordinatorInit_();
@@ -541,19 +550,24 @@ double CycleDriver::get_dt(bool after_failure) {
   std::vector<std::pair<double,double> >::iterator it;
   std::vector<std::pair<double,double> >::iterator it_max;
 
+
   for (it = reset_info_.begin(), it_max = reset_max_.begin(); it != reset_info_.end(); ++it, ++it_max) {
     if (S_->time() == it->first) {
-      if (reset_max_.size() > 0) max_dt_ = it_max->second;
+      if (reset_max_.size() > 0) {
+              max_dt_ = it_max->second;
+      }
+
       if (dt < it->second){
-        pk_->set_dt(dt);
+         pk_->set_dt(dt);
       }else {
         dt = it->second;
         pk_->set_dt(dt);
         after_failure = true;
       }
       
-      reset_info_.erase(it);
-      reset_max_.erase(it_max);
+      it = reset_info_.erase(it);
+      if (reset_max_.size() > 0) 
+        it_max = reset_max_.erase(it_max);
 
       break;
     }
@@ -572,8 +586,10 @@ double CycleDriver::get_dt(bool after_failure) {
     }
   }
 
+
   // ask the step manager if this step is ok
   dt = tsm_->TimeStep(S_->time(), dt, after_failure);
+
 
   // cap the max step size
   if (dt > max_dt_) {
@@ -771,7 +787,7 @@ void CycleDriver::WriteWalkabout(bool force){
 /* ******************************************************************
 * timestep loop.
 ****************************************************************** */
-void CycleDriver::Go() {
+Teuchos::RCP<State> CycleDriver::Go() {
 
   time_period_id_ = 0;
   int position = 0;
@@ -780,14 +796,21 @@ void CycleDriver::Go() {
   double dt;
   double restart_dT(1.0e99);
 
+
+
   if (!restart_requested_) {  // No restart
+
+
     Init_PK(time_period_id_);
+
     // start at time t = t0 and initialize the state.
     S_->set_time(tp_start_[time_period_id_]);
     S_->set_cycle(cycle0_);
     S_->set_position(TIME_PERIOD_START);
+    
 
     Setup();
+
     Initialize();
 
     dt = tp_dt_[time_period_id_];
@@ -848,6 +871,8 @@ void CycleDriver::Go() {
     pk_->set_dt(dt);
 
   }
+
+
 
   *S_->GetScalarData("dt", "coordinator") = dt;
   S_->GetField("dt","coordinator")->set_initialized();
@@ -920,8 +945,11 @@ void CycleDriver::Go() {
   
   // finalizing simulation
   S_->WriteStatistics(vo_);
+  *vo_->os() << "\nCycle " << S_->cycle()<<"\n";
   ReportMemory();
   // Finalize();
+
+  return S_;
 } 
 
 
@@ -936,10 +964,12 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   }
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(S_->GetMesh("domain"));
+
   S_old_ = S_;
 
   Teuchos::ParameterList state_plist = parameter_list_->sublist("State");
   S_ = Teuchos::rcp(new Amanzi::State(state_plist));
+
   S_->RegisterMesh("domain", mesh);
   S_->set_cycle(S_old_->cycle());
   S_->set_time(tp_start_[time_pr_id]); 
@@ -997,6 +1027,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   pk_->set_dt(tp_dt_[time_pr_id]);
 
   S_old_ = Teuchos::null;
+
 }
 
 }  // namespace Amanzi

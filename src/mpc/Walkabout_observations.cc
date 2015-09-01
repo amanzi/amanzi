@@ -28,7 +28,7 @@ namespace Amanzi {
 * Calculating an extended vector of Darcy velocities. The velocity
 * is evaluated at cell-center and at boundary points.
 ****************************************************************** */
-void Walkabout_observations::CalculateDarcyVelocity(Teuchos::RCP<State> S,
+void Walkabout_observations::CalculateDarcyVelocity(Teuchos::RCP<State>& S,
 				     std::vector<AmanziGeometry::Point>& xyz, 
                                      std::vector<AmanziGeometry::Point>& velocity)
 {
@@ -151,7 +151,7 @@ void Walkabout_observations::CalculateDarcyVelocity(Teuchos::RCP<State> S,
 * Calculating an extended vector of Darcy velocities. The velocity
 * is evaluated at cell-center and at boundary points.
 ****************************************************************** */
-void Walkabout_observations::CalculatePoreVelocity( Teuchos::RCP<State> S,
+void Walkabout_observations::CalculatePoreVelocity( Teuchos::RCP<State>& S,
 						    std::vector<AmanziGeometry::Point>& xyz, 
 						    std::vector<AmanziGeometry::Point>& velocity,
 						    std::vector<double>& porosity, std::vector<double>& saturation,
@@ -254,7 +254,7 @@ void Walkabout_observations::CalculatePoreVelocity( Teuchos::RCP<State> S,
 /* ******************************************************************
 * Write walkabout data
 ****************************************************************** */
-void Walkabout_observations::WriteWalkabout(Teuchos::RCP<State> S)
+void Walkabout_observations::WriteWalkabout(Teuchos::RCP<State>& S)
 {
   if (!is_disabled()) {
     CreateFile(S->cycle());
