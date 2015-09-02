@@ -424,10 +424,11 @@ RockManager::Initialize(const Array<std::string>* solute_names)
   }
   Array<std::string> r_names;  pp.getarr("rock",r_names,0,nrock);
 
+  ParmParse ppp("prob");
   max_grid_size_fine_gen = max_grid_size_fine_gen_DEF;
-  pp.query("max_grid_size_fine_gen",max_grid_size_fine_gen);
+  ppp.query("max_grid_size_fine_gen",max_grid_size_fine_gen);
   ngrow_fine_gen = ngrow_fine_gen_DEF;
-  pp.query("ngrow_fine_gen",ngrow_fine_gen);
+  ppp.query("ngrow_fine_gen",ngrow_fine_gen);
 
   rock.clear();
   rock.resize(nrock,PArrayManage);

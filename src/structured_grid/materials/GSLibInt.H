@@ -13,18 +13,16 @@ namespace GSLibInt
 	       MultiFab&     mfdata);
 
   void rdpGaussianSim(const Array<Real>& kappaval, 
-                      const Array<int>&  n_cell, 
+                      const Box&         domain,
                       const Array<Real>& problo,
                       const Array<Real>& probhi,
-                      int                twoexp,
                       MultiFab&          mfdata,
-                      int                crse_init_factor,
                       int                max_grid_size_fine_gen,
                       int                ngrow_fine_gen,
                       const std::string& gsfile);
 
   void seqGaussianSim(const Array <Real>& kappaval, 
-		      const Array<int>&   n_cell, 
+                      const Box&          domain,
 		      const Array<Real>&  problo,
 		      const Array<Real>&  probhi,
 		      int                 twoexp,
@@ -32,17 +30,14 @@ namespace GSLibInt
 		      const std::string&  gsfile);
 
   void cndGaussianSim(const Array<Real>& kappaval, 
-                      const Array<int>&  n_cell, 
+                      const Box&         domain,
                       const Array<Real>& problo,
                       const Array<Real>& probhi,
-                      int                twoexp,
                       MultiFab&          mfdata,
-                      int                crse_init_factor,
                       int                max_grid_size_fine_gen,
                       int                ngrow_fine_gen,
                       std::string&       kcfile,
                       const std::string& gsfile);
- 
-};
+ };
 
 #endif /*_GSLibInt_H_*/

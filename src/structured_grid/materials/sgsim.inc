@@ -56,13 +56,13 @@
       real*8    ang1(MAXNST),ang2(MAXNST),ang3(MAXNST)
       real*8    anis1(MAXNST),anis2(MAXNST)
       real*8    rotmat(MAXROT,3,3)
-      real*8    cbb
+      real*8    cbb, cmax
 
       integer   ixv(MAXOP1)
       integer   nsim,nx,ny,nz,nxy,nxyz,nd,itrans,ntr,idbg
       integer   lin,lout,ldbg,llvm,icollvm,nvaril,ktype,colocorr
       integer   noct,nclose,ndmin,ndmax,nmult,mxctx,mxcty,mxctz
-      integer   cmax,isrot,nctx,ncty,nctz,nlooku,ncnode,nodmax
+      integer   isrot,nctx,ncty,nctz,nlooku,ncnode,nodmax
       integer   ltail,utail,sstrat,mults,nst(1),it(MAXNST),test
       integer   MAXNOD,MAXCXY,MAXCTX,MAXCTY,MAXCTZ
       integer   MAXSBX,MAXSBY,MAXSBZ
@@ -81,7 +81,8 @@
       common /search2/ noct,nclose,ndmin,ndmax,sstrat,mults,nmult,isrot
       common /search3/ mxctx,mxcty,mxctz
 
-      common /cova3d/ nst,it,cmax,c0,cc,aa,ang1,ang2,ang3,anis1,anis2
+      common /cova3d/ nst,it
+      common /cova3d1/ cmax,c0,cc,aa,ang1,ang2,ang3,anis1,anis2
 
       common /clooku/ nctx,ncty,nctz,nlooku,ncnode,nodmax
 
