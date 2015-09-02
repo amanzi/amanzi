@@ -158,9 +158,6 @@ GSLibProperty::BuildGSLibFile(Real                   avg,
     }
     Box domain(geom_array[lev].Domain()); domain.grow(num_grow_coarsest * ltwoexp);
     BoxArray ba(domain);
-
-    std::cout << "LEV, domain: " << domain << std::endl;
-
     ba.maxSize(max_grid_size_fine_gen);
     stat.set(lev, new MultiFab(ba,num_comps,0));
 

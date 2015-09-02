@@ -8,6 +8,9 @@
 #include <VisMF.H>
 #include <Utility.H>
 
+static bool TRANSFORM_GSLIB_FIELD = true; // after sgsim generates field, f, return 10**(f+lm), lm = log10(mean_val)
+static int verbose = 1;
+
 void  
 GSLibInt::parRand(Array <Real> kappaval, 
                   Real         dkappa,
@@ -70,13 +73,12 @@ GSLibInt::seqGaussianSim(const Array <Real>& kappaval,
   FORT_INIT_GSLIB(gsfile.c_str(),&strl,nx,dx,hdx,&rand_seed);
   BoxLib::InitRandom(rand_seed);
 
-  std::cout << "Doing sequential gaussian simulation  ... \n";
-  
   BoxArray ba(domain);
   MultiFab mf(ba,1,0);
 
-  if (ParallelDescriptor::IOProcessor())
+  if (ParallelDescriptor::IOProcessor() && verbose>0) {
     std::cout << "starting serial sequential gaussian simulation.\n";
+  }
 
   if (ParallelDescriptor::MyProc() == mf.DistributionMap()[0]) {
     FORT_SGSIM(mf[0].dataPtr(),
@@ -97,9 +99,9 @@ GSLibInt::rdpGaussianSim(const Array<Real>& kappaval,
                          int                ngrow_fine_gen,
                          const std::string& gsfile)
 {
-  if (ParallelDescriptor::IOProcessor())
-    std::cout << "Doing random parallel gaussian simulation.\n";
-
+  if (ParallelDescriptor::IOProcessor() && verbose>0) {
+    std::cout << "Doing sequential gaussian simulation [SGSIM] in parallel...\n";
+  }
   std::string kcfile;
 
   cndGaussianSim(kappaval, domain, problo, probhi, mfdata,
@@ -113,21 +115,26 @@ memUsage(const std::string& note)
   Real max_alloc_fab_gb = min_alloc_fab_gb;
   Real min_fab_gb = BoxLib::TotalBytesAllocatedInFabsHWM()/(1024.0*1024.0);
   Real max_fab_gb = min_fab_gb;
+  Real tot_alloc_fab_gb = min_alloc_fab_gb;
+  Real tot_fab_gb = min_fab_gb;
 
   ParallelDescriptor::ReduceRealMin(min_fab_gb,ParallelDescriptor::IOProcessorNumber());
   ParallelDescriptor::ReduceRealMax(max_fab_gb,ParallelDescriptor::IOProcessorNumber());
+  ParallelDescriptor::ReduceRealSum(tot_fab_gb,ParallelDescriptor::IOProcessorNumber());
   ParallelDescriptor::ReduceRealMin(min_alloc_fab_gb,ParallelDescriptor::IOProcessorNumber());
   ParallelDescriptor::ReduceRealMax(max_alloc_fab_gb,ParallelDescriptor::IOProcessorNumber());
+  ParallelDescriptor::ReduceRealSum(tot_alloc_fab_gb,ParallelDescriptor::IOProcessorNumber());
+  std::string sep = (note == "" ? "" : "\""+note+"\"");
   if (ParallelDescriptor::IOProcessor()) {
-    std::cout << "\n" << note << " FAB GB spread across MPI nodes: ["
-	      << min_fab_gb
-	      << " ... "
-	      << max_fab_gb
-	      << "  alloc: "
-	      << min_alloc_fab_gb
-	      << " ... "
-	      << max_alloc_fab_gb
-	      << "]\n";
+    std::cout << "\nFAB Memory usage spread (in GB) " << sep << " [ HWM: " << tot_fab_gb;
+    if (ParallelDescriptor::NProcs()>1) {
+      std::cout << " (" << min_fab_gb << " ... " << max_fab_gb << ")";
+    }
+    std::cout << ", ALLOC: " << tot_alloc_fab_gb;
+    if (ParallelDescriptor::NProcs()>1) {
+      std::cout << " (" << min_alloc_fab_gb << " ... " << max_alloc_fab_gb << ")";
+    }
+    std::cout << " ]\n\n";
   }
 }
 
@@ -142,6 +149,10 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
                          std::string&       kcfile,
                          const std::string& gsfile)
 {
+  if (verbose>0) {
+    memUsage("Before SGSIM scratch allocated");
+  }
+
   Real dx[BL_SPACEDIM];
   int strl = gsfile.length();
 
@@ -186,17 +197,28 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
   MultiFab mfg(ba,1,ngrow_fine_gen);
   mfg.setVal(0.);
 
+  Array<Real> gplo(BL_SPACEDIM), gphi(BL_SPACEDIM);
+  for (int d=0; d<BL_SPACEDIM; ++d) {
+    gplo[d] = problo[d] - ngrow_fine_gen*dx[d];
+    gphi[d] = probhi[d] + ngrow_fine_gen*dx[d];
+  }
+
   Array< Array<Real> > scratch_r(mfg.size());
   Array< Array<int>  > scratch_i(mfg.size());
   Array< Array<int>  > order(mfg.size());
 
+  if (verbose>0) {
+    memUsage("After SGSIM scratch allocated");
+  }
+
+  Box gdomain = Box(domain).grow(ngrow_fine_gen);
   int max_fab_size = 0;
   for (MFIter mfi(mfg); mfi.isValid(); ++mfi) {    
     const int  i     = mfi.index();
     const int* lo    = mfi.validbox().loVect();
     const int* hi    = mfi.validbox().hiVect();
-    const int* dlo   = domain.loVect();
-    const int* dhi   = domain.hiVect();
+    const int* dlo   = gdomain.loVect();
+    const int* dhi   = gdomain.hiVect();
 	  
     const int* k_lo  = mfg[mfi].loVect();
     const int* k_hi  = mfg[mfi].hiVect();
@@ -216,24 +238,14 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
     int iuc = rand()%1000000 + i;
 
     max_fab_size = std::max(max_fab_size,nvalid);
-
     FORT_SGSIM_SETUP(kdat,ARLIM(k_lo),ARLIM(k_hi),
     		     order[i].dataPtr(),&nvalid,
 		     scratch_c.dataPtr(),&c_sz,c_idx.dataPtr(),&c_idx_siz,
 		     scratch_r[i].dataPtr(),&real_sz,real_idx.dataPtr(),&r_idx_siz,
 		     scratch_i[i].dataPtr(),&int_sz,int_idx.dataPtr(),&i_idx_siz,
-		     lo,hi,dx,problo.dataPtr(),dlo,dhi,&rand_seed);
+		     lo,hi,dx,gplo.dataPtr(),dlo,dhi,&rand_seed);
   }
   ParallelDescriptor::ReduceIntMax(max_fab_size);
-
-  for (int i=0; i<order.size(); ++i) {
-    for (int j=0; j<order[i].size(); ++j) {
-      std::cout << "i, j, o[j]: " << i << ", " << j << ", " << order[i][j] << std::endl;
-      if (order[i][j] > 10000) {
-	BoxLib::Abort("got it");
-      }
-    }
-  }
 
   int it = 0;
   while (it < max_fab_size) {
@@ -248,10 +260,10 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
       {
 	int idx_chosen = order[i][it];
 
-	//std::cout << "it, idx_chosen: " << it << " " << idx_chosen << " (max = " << mfg[mfi].box().numPts() << ")" << std::endl;
 	if (idx_chosen > mfg[mfi].box().numPts()) {
-	  std::cout << "idx_chosen: " << idx_chosen << std::endl;
-	  BoxLib::Abort("uh oh");
+	  std::cout << "idx_chosen, max: " << idx_chosen << ", " << mfg[mfi].box().numPts() << std::endl;
+	  std::cout << "it, mfindex:" << it << ", " << i << std::endl;
+	  BoxLib::Abort("uh oh, sgsim update path is broken");
 	}
 
 	FORT_SGSIM_ITER(kdat,ARLIM(k_lo),ARLIM(k_hi),
@@ -279,16 +291,16 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
 		    scratch_i[i].dataPtr(),&int_sz,int_idx.dataPtr(),&i_idx_siz);
   }
 
-  VisMF::Write(mfg,"JUNK");
-  
-  for (MFIter mfi(mfg); mfi.isValid(); ++mfi) {
-    const int  i     = mfi.index();
-    const int* k_lo  = mfg[mfi].loVect();
-    const int* k_hi  = mfg[mfi].hiVect();
-    const Real* kdat = mfg[mfi].dataPtr();
-    const Box& vbox = mfi.validbox();
-    FORT_LGNORM(kdat,ARLIM(k_lo),ARLIM(k_hi),&kappaval[0],
-		vbox.loVect(),vbox.hiVect());
+  if (TRANSFORM_GSLIB_FIELD) {
+    for (MFIter mfi(mfg); mfi.isValid(); ++mfi) {
+      const int  i     = mfi.index();
+      const int* k_lo  = mfg[mfi].loVect();
+      const int* k_hi  = mfg[mfi].hiVect();
+      const Real* kdat = mfg[mfi].dataPtr();
+      const Box& vbox = mfi.validbox();
+      FORT_LGNORM(kdat,ARLIM(k_lo),ARLIM(k_hi),&kappaval[0],
+		  vbox.loVect(),vbox.hiVect());
+    }
   }
 
   mfdata.copy(mfg,0,0,1); // Parallel copy
@@ -299,5 +311,9 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
   int nComp = mfdata.nComp(); // For now, all components get same data
   for (int n=1; n<nComp; ++n) {
     MultiFab::Copy(mfdata,mfdata,0,n,1,mfdata.nGrow());
+  }
+
+  if (verbose>0) {
+    memUsage("After SGSIM scratch cleared");
   }
 }

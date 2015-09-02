@@ -201,12 +201,18 @@ c :: ----------------------------------------------------------
       scratch_i(int_idx(1)) = ARG_H1(dat)-ARG_L1(dat)+1
       scratch_i(int_idx(2)) = 1
       scratch_i(int_idx(3)) = ARG_H2(dat)-ARG_L2(dat)+1
-      scratch_i(int_idx(14)+0) = domnlo(1)
+c$$$      scratch_i(int_idx(14)+0) = domnlo(1)
+c$$$      scratch_i(int_idx(14)+1) = 0
+c$$$      scratch_i(int_idx(14)+2) = domnlo(2)
+c$$$      scratch_i(int_idx(14)+3) = domnhi(1)
+c$$$      scratch_i(int_idx(14)+4) = 0
+c$$$      scratch_i(int_idx(14)+5) = domnhi(2)
+      scratch_i(int_idx(14)+0) = ARG_L1(dat)
       scratch_i(int_idx(14)+1) = 0
-      scratch_i(int_idx(14)+2) = domnlo(2)
-      scratch_i(int_idx(14)+3) = domnhi(1)
+      scratch_i(int_idx(14)+2) = ARG_L2(dat)
+      scratch_i(int_idx(14)+3) = ARG_H1(dat)
       scratch_i(int_idx(14)+4) = 0
-      scratch_i(int_idx(14)+5) = domnhi(2)
+      scratch_i(int_idx(14)+5) = ARG_H2(dat)
 
       scratch_r(int_idx(1)) = plo(1)
       scratch_r(int_idx(2)) = 0.d0
@@ -258,12 +264,12 @@ c :: ----------------------------------------------------------
 
          end do
       end if
+
       call sortem(1,idx2,random_val,1,order)
       call sgsim_setup(dat,nxyz,
      &     scratch_c,c_sz,c_idx,c_idx_siz,
      &     scratch_r,real_sz,real_idx,r_idx_siz,
      &     scratch_i,int_sz,int_idx,i_idx_siz)
-
       end
 
 
