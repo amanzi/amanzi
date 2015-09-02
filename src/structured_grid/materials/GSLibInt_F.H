@@ -79,11 +79,11 @@
 			  int* int_sz , int* int_idx, int* int_idx_siz, int* cond_option,
                           int* rand_seed);
 
-    void FORT_INTERNAL_DATA(const Real* scratch_c, int* c_sz, int* c_idx);
+    void FORT_INTERNAL_DATA(const Real* scratch_c, int* c_sz, int* c_idx, const int* c_idx_siz);
 
     void FORT_SEC_DATA(const Real* dat, ARLIM_P(dlo), ARLIM_P(dhi),
 		       const Real* scratch_r, int* real_sz, int* real_idx,
-		       int* ratios, Real* condg, Real* sig, Real* dx);
+		       const int* r_idx_siz, int* ratios, Real* condg, Real* sig, Real* dx);
 
     void FORT_AVE_DATA(const Real* dat, ARLIM_P(dlo), ARLIM_P(dhi),
 		       const Real* sdat, ARLIM_P(slo), ARLIM_P(shi),

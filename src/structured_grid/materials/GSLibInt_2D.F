@@ -44,15 +44,14 @@ c :: ----------------------------------------------------------
 
       end
 
-      
 c :: ----------------------------------------------------------
 c :: Conditioned the data using internal values. One big fab.
 c :: ----------------------------------------------------------
-      subroutine FORT_INTERNAL_DATA(scratch_c,c_sz,c_idx)
+      subroutine FORT_INTERNAL_DATA(scratch_c,c_sz,c_idx,c_idx_siz)
       implicit none
 #include "sgsim2.inc"
-
-      integer c_sz,c_idx(10)
+      integer c_idx_siz
+      integer c_sz,c_idx(c_idx_siz)
       REAL_T  scratch_c(c_sz)
 
       if (do_cond .eq. 1) then
@@ -64,13 +63,14 @@ c :: ----------------------------------------------------------
 c :: Conditioned the data using secondary values. One big fab.
 c :: ----------------------------------------------------------
       subroutine FORT_SEC_DATA(dat,DIMS(dat),
-     &                         scratch_r,real_sz,real_idx,
+     &                         scratch_r,real_sz,real_idx,r_idx_siz,
      &                         ratios,condg,sig,dx)
       implicit none
 #include "sgsim2.inc"
 
       integer DIMDEC(dat)
-      integer real_sz, real_idx(20)
+      integer r_idx_siz
+      integer real_sz, real_idx(r_idx_siz)
       integer ratios(SDIM)
       REAL_T  scratch_r(real_sz)
       REAL_T  dat(DIMV(dat)),dx(SDIM),condg,sig
@@ -201,12 +201,6 @@ c :: ----------------------------------------------------------
       scratch_i(int_idx(1)) = ARG_H1(dat)-ARG_L1(dat)+1
       scratch_i(int_idx(2)) = 1
       scratch_i(int_idx(3)) = ARG_H2(dat)-ARG_L2(dat)+1
-c$$$      scratch_i(int_idx(14)+0) = domnlo(1)
-c$$$      scratch_i(int_idx(14)+1) = 0
-c$$$      scratch_i(int_idx(14)+2) = domnlo(2)
-c$$$      scratch_i(int_idx(14)+3) = domnhi(1)
-c$$$      scratch_i(int_idx(14)+4) = 0
-c$$$      scratch_i(int_idx(14)+5) = domnhi(2)
       scratch_i(int_idx(14)+0) = ARG_L1(dat)
       scratch_i(int_idx(14)+1) = 0
       scratch_i(int_idx(14)+2) = ARG_L2(dat)
@@ -245,9 +239,9 @@ c$$$      scratch_i(int_idx(14)+5) = domnhi(2)
             end if
          end do
       end do
+
       if(mults.eq.1) then
          do imult=1,nmult
-            
             nny = max(1,(hi(2)-lo(2)+1)/(imult*4))
             nnx = max(1,(hi(1)-lo(1)+1)/(imult*4))
             jy  = 1

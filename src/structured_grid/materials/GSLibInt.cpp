@@ -188,7 +188,7 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
   if (cond_option > 0) { // originally supported other values of cond_option
     scratch_c.resize(c_sz,1.e20);
     if (cond_option == 1) {
-      FORT_INTERNAL_DATA(scratch_c.dataPtr(),&c_sz,c_idx.dataPtr());
+      FORT_INTERNAL_DATA(scratch_c.dataPtr(),&c_sz,c_idx.dataPtr(),&c_idx_siz);
     }
   }
 
