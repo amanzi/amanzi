@@ -51,7 +51,7 @@ module geostat
       integer, pointer :: nisb(:)
       integer, pointer :: ixsbtosr(:), iysbtosr(:), izsbtosr(:)
       integer, pointer :: ixnode(:), iynode(:), iznode(:)
-      integer, pointer :: order(:)
+      integer, pointer :: order(:), dlo(:), dhi(:)
 
       real*8,  pointer :: xmn,xsiz,xmnsup,xsizsup
       real*8,  pointer :: ymn,ysiz,ymnsup,ysizsup
