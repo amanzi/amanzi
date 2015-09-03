@@ -205,7 +205,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
       }
     case 6:
       {
-        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("/low and Transport");
+        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("Flow and Transport");
         tmp_list.set<std::string>("PK type", "flow reactive transport");
         tmp_list.sublist("Transport").set<std::string>("PK type", "transport");
         tmp_list.sublist("Flow").set<std::string>("PK type", pk_model_["flow"]);
