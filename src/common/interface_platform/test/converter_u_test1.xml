@@ -75,6 +75,11 @@
         <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
         <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
         <max_divergent_iterations>3</max_divergent_iterations>
+
+        <unstr_initialization>
+          <method>darcy_solver</method>
+          <linear_solver>aztecoo</linear_solver>
+        </unstr_initialization>
       </unstr_steady-state_controls>
 
       <unstr_transient_controls>
@@ -87,11 +92,6 @@
         <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
         <max_divergent_iterations>3</max_divergent_iterations>
       </unstr_transient_controls>
-
-      <unstr_initialization>
-        <method>darcy_solver</method>
-        <linear_solver>aztecoo</linear_solver>
-      </unstr_initialization>
 
       <unstr_linear_solver>
         <max_iterations>100</max_iterations>

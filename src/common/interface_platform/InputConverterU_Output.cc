@@ -288,6 +288,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
         }
 
         // loop over observations
+        int nobs(0);
         DOMNodeList* children = inode->getChildNodes();
         for (int j = 0; j < children->getLength(); j++) {
           Teuchos::ParameterList obPL;
@@ -360,7 +361,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             }
           }
           std::stringstream list_name;
-          list_name << "obs " << j + 1;
+          list_name << "obs " << ++nobs;
           obsPL.sublist(list_name.str()) = obPL;
         }
 

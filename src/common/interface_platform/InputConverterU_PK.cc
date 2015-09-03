@@ -146,6 +146,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
   bdf1.set<bool>("extrapolate initial guess", true);
   bdf1.set<double>("restart tolerance relaxation factor", TI_TOL_RELAX_FACTOR);
   bdf1.set<double>("restart tolerance relaxation factor damping", TI_TOL_RELAX_FACTOR_DAMPING);
+  bdf1.set<int>("nonlinear iteration initial guess extrapolation order", 1);
 
   bool flag;
   node = GetUniqueElementByTagsString_(unstr_controls + ", max_iterations", flag);

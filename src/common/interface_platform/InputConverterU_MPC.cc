@@ -58,6 +58,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   node = GetUniqueElementByTagsString_(node_list->item(0), "execution_control_defaults", flag);
   element = static_cast<DOMElement*>(node);
 
+  int max_cycles, max_cycles_steady;
   double t0, t1, dt0, t0_steady, t1_steady, dt0_steady;
   char *method, *tagname;
   bool flag_steady(false); 
@@ -84,6 +85,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
       t0 = TimeStringToValue_(GetAttributeValueS_(element, "start"));
       t1 = TimeStringToValue_(GetAttributeValueS_(element, "end"));
       dt0 = TimeStringToValue_(GetAttributeValueS_(element, "init_dt", false, dt0_d));
+      max_cycles = GetAttributeValueD_(element, "max_cycles", false, -1);
       std::string mode = GetAttributeValueS_(element, "mode");
 
       dt_cut_[mode] = TimeStringToValue_(GetAttributeValueS_(element, "reduction_factor", false, dt_cut_d));
@@ -93,6 +95,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
         t0_steady = t0;
         t1_steady = t1;
         dt0_steady = dt0;
+        max_cycles_steady = max_cycles;
         flag_steady = true;
       } else {
         if (tp_mode.find(t0) != tp_mode.end()) {
@@ -103,7 +106,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
         tp_mode[t0] = mode;
         tp_t1[t0] = t1;
         tp_dt0[t0] = dt0;
-        tp_max_cycles[t0] = GetAttributeValueD_(element, "max_cycles", false, 10000000);
+        tp_max_cycles[t0] = max_cycles;
 
         filename = GetAttributeValueS_(element, "restart", false, "");
       }
@@ -170,6 +173,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     tmp_list.set<double>("start period time", t0_steady);
     tmp_list.set<double>("end period time", t1_steady);
     tmp_list.set<double>("initial time step", dt0_steady);
+    tmp_list.set<int>("maximum cycle number", max_cycles_steady);
 
     tp_id++;
   }
@@ -315,7 +319,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       tp_t0[mode] = t0;
       tp_t1[mode] = t1;
       tp_dt0[mode] = dt0;
-      tp_max_cycles[mode] = GetAttributeValueD_(element, "max_cycles", false, 10000000);
+      tp_max_cycles[mode] = GetAttributeValueD_(element, "max_cycles", false, -1);
       dt_cut_[mode] = TimeStringToValue_(GetAttributeValueS_(element, "reduction_factor", false, dt_cut_d));
       dt_inc_[mode] = TimeStringToValue_(GetAttributeValueS_(element, "increase_factor", false, dt_inc_d));
 
