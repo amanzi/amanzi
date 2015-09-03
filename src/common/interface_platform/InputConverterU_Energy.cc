@@ -87,7 +87,8 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_()
   
   if (pk_master_.find("energy") != pk_master_.end()) {
     energy_list->sublist("time integrator") = TranslateTimeIntegrator_(
-        err_options, nonlinear_solver, modify_correction, unstr_controls);
+        err_options, nonlinear_solver, modify_correction, unstr_controls,
+        TI_TS_REDUCTION_FACTOR, TI_TS_INCREASE_FACTOR);  
   }
 
   // insert boundary conditions and source terms

@@ -297,8 +297,6 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
 
           if (strcmp(obs_type, "aqueous_pressure") == 0) {
             obPL.set<std::string>("variable", "Aqueous pressure");
-          } else if (strcmp(obs_type, "integrated_mass") == 0) {
-            // TODO: can't find matching version
           } else if (strcmp(obs_type, "volumetric_water_content") == 0) {
             obPL.set<std::string>("variable", "Volumetric water content");
           } else if (strcmp(obs_type, "gravimetric_water_content") == 0) {
@@ -353,7 +351,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
                 }
               // Keeping singular macro around to help users. This will go away
               } else if (strcmp(elem, "time_macros") == 0 ||
-                       strcmp(elem, "time_macro") == 0) {
+                         strcmp(elem, "time_macro") == 0) {
                 ProcessMacros_("times", value, tmPL, obPL);
               } else if (strcmp(elem, "cycle_macros") == 0 ||
                          strcmp(elem, "cycle_macro") == 0) {

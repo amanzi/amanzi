@@ -33,13 +33,13 @@ XERCES_CPP_NAMESPACE_USE
 /* ******************************************************************
 * Create flow list.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
+Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
 {
   Teuchos::ParameterList out_list;
   Teuchos::ParameterList* flow_list;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-    *vo_->os() << "Translating flow, regime=" << regime << std::endl;
+    *vo_->os() << "Translating flow, mode=" << mode << std::endl;
 
   MemoryManager mm;
   DOMNode* node;
@@ -132,7 +132,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
   
   // insert time integrator
   std::string err_options, unstr_controls;
-  if (regime == FLOW_STEADY_REGIME) {
+  if (mode == "steady") {
     err_options = "pressure";
     unstr_controls = "unstructured_controls, unstr_steady-state_controls";
   } else {
@@ -142,7 +142,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
   
   if (pk_master_.find("flow") != pk_master_.end()) {
     flow_list->sublist("time integrator") = TranslateTimeIntegrator_(
-        err_options, nonlinear_solver, modify_correction, unstr_controls);
+        err_options, nonlinear_solver, modify_correction, unstr_controls,
+        dt_cut_[mode], dt_inc_[mode]);
   }
 
   // insert boundary conditions and source terms
