@@ -131,7 +131,7 @@
       <ParameterList name="Intrinsic Permeability: GSLib">
 	<Parameter name="GSLib Parameter File" type="string" value="material_data/sgsim1.par"/>
         <Parameter name="GSLib Data File" type="string" value="run_data/permeability1_gslib"/>
-        <Parameter name="Value" type="double" value="1.e-12"/>
+        <Parameter name="Value" type="double" value="2.e-12"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
         <Parameter name="m" type="double" value="0.2294"/>
@@ -149,7 +149,7 @@
       <ParameterList name="Intrinsic Permeability: GSLib">
 	<Parameter name="GSLib Parameter File" type="string" value="material_data/sgsim2.par"/>
         <Parameter name="GSLib Data File" type="string" value="run_data/permeability2_gslib"/>
-        <Parameter name="Value" type="double" value="1.e-12"/>
+        <Parameter name="Value" type="double" value="7.e-11"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
         <Parameter name="alpha" type="double" value="2.0260E-03"/>
@@ -163,18 +163,18 @@
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.2340"/>
       </ParameterList>
-      <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
+      <ParameterList name="Intrinsic Permeability: GSLib">
 	<Parameter name="GSLib Parameter File" type="string" value="material_data/sgsim3.par"/>
         <Parameter name="GSLib Data File" type="string" value="run_data/permeability3_gslib"/>
-        <Parameter name="Value" type="double" value="1.e-10"/>
+        <Parameter name="Value" type="double" value="2.e-9"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
         <Parameter name="alpha" type="double" value="2.0674E-03"/>
         <Parameter name="Sr" type="double" value="0.0"/>
         <Parameter name="m" type="double" value="0.3006"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
-        <Parameter name="WRM Plot File" type="string" value="run_data/kr_Facies_3.dat"/>
-        <Parameter name="WRM Plot File Number Of Points" type="int" value="1001"/>
+        <!-- <Parameter name="WRM Plot File" type="string" value="run_data/kr_Facies_3.dat"/> -->
+        <!-- <Parameter name="WRM Plot File Number Of Points" type="int" value="1001"/> -->
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Region between Plane Surface 2 and Plane Surface 3}"/>
     </ParameterList>
