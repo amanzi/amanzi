@@ -76,7 +76,6 @@ set(state_inc_files
   rank_evaluator_reg.hh
   StateDefs.hh
   State.hh
-  UnstructuredObservations.hh
   visualization.hh
   Debugger.hh)
 
@@ -86,7 +85,6 @@ add_amanzi_library(state
                           checkpoint.cc
                           visualization.cc
                           Observable.cc
-                          UnstructuredObservations.cc
                           chemistry_data.cc
                           cell_volume_evaluator.cc
                           Field.cc

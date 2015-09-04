@@ -67,6 +67,7 @@ TEST(CONVERTER_BASE) {
       // old_xml->validateParametersAndSetDefaults(new_xml);
     } catch (std::exception& e) {
       std::cout << e.what() << std::endl;
+      CHECK(false);
     }
   }
 }

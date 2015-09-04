@@ -626,9 +626,9 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
 {
   Teuchos::ParameterList out_list;
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    *vo_->os() << "Translating process kernels" << std::endl;
-  }
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+      *vo_->os() << "Translating process kernels" << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
 
   // create PKs list
   Teuchos::ParameterList tp_list = cd_list.sublist("time periods");
@@ -637,6 +637,12 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
     if ((it->second).isList()) {
       Teuchos::ParameterList& pk_tree = tp_list.sublist(it->first).sublist("PK Tree");
       RegisterPKsList_(pk_tree, out_list);
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+        std::string name = pk_tree.begin()->first;
+        *vo_->os() << "PK name=\"" << name << "\", factory: \"" 
+                   << pk_tree.sublist(name).get<std::string>("PK type") << "\"" << std::endl;
+      }
     }
   }
 

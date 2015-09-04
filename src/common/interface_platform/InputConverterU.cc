@@ -168,6 +168,10 @@ void InputConverterU::ParseModelDescription_()
     coords_.push_back("y"); 
     coords_.push_back("z"); 
   }
+
+  node = GetUniqueElementByTagsString_(node_list->item(0), "author", flag);
+  if (flag && vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
+    *vo_->os() << "AUTHOR: " << mm.transcode(node->getTextContent()) << std::endl;
 }
 
 

@@ -164,8 +164,9 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
         for (int j = 0; j < nsolutes; ++j) {
           std::string solute_name = phases_["water"][j];
-          element = GetUniqueChildByAttribute_(node, "name", solute_name, flag, "true");
-          double val = GetAttributeValueD_(element, "value", false, 0.0);
+          element = GetUniqueChildByAttribute_(node, "name", solute_name, flag, false);
+          if (!flag) continue;
+          double val = GetAttributeValueD_(element, "selectivity", false, 0.0);
 
           std::stringstream ss;
           ss << "DoF " << j + 1 << " Function";
@@ -202,7 +203,8 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
         for (int j = 0; j < nsolutes; ++j) {
           std::string solute_name = phases_["water"][j];
-          element = GetUniqueChildByAttribute_(node, "name", solute_name, flag, "true");
+          element = GetUniqueChildByAttribute_(node, "name", solute_name, flag, false);
+          if (!flag) continue;
 
           std::stringstream ss;
           ss << "DoF " << j + 1 << " Function";

@@ -131,7 +131,7 @@ Richards_PK::~Richards_PK()
 ****************************************************************** */
 void Richards_PK::Setup()
 {
-  dt_ = -1.0;
+  dt_ = 0.0;
   mesh_ = S_->GetMesh();
   dim = mesh_->space_dimension();
 
@@ -401,7 +401,6 @@ void Richards_PK::Initialize()
     bc_head->ComputeShift(t_new, shift_water_table_->Values());
 
   // Process other fundamental structures.
-  K.resize(ncells_owned);
   SetAbsolutePermeabilityTensor();
 
   // Select a proper matrix class. 

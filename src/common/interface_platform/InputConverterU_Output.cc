@@ -368,7 +368,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
         out_list.sublist("Observation Data") = obsPL;
 
         if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-          *vo_->os() << "Found " << children->getLength() << " observations" << std::endl;
+          *vo_->os() << "Found " << nobs << " observations" << std::endl;
       }
     }
   }
