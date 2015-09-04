@@ -1971,6 +1971,8 @@ The Alquimia chemistry process kernel only requires the *Engine* and *Engine Inp
 entries, but will also accept and respect the value given for *max time step (s)*. 
 Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
 
+* `"Minerals`" [Array(string)] is the list of mineral names.
+
 * `"max time step (s)`" [double] is the maximum time step that chemistry will allow the MPC to take.
 
 * `"min time step (s)`" [double] is the minimum time step that chemistry will allow the MPC to take.
@@ -2000,6 +2002,7 @@ Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
       <Parameter name="Engine" type="string" value="PFloTran"/>
       <Parameter name="Engine Input File" type="string" value="1d-tritium-trim.in"/>
       <Parameter name="Verbosity" type="Array(string)" value="{verbose}"/>
+      <Parameter name="Minerals" type="Array(string)" value="{quartz, kaolinite, goethite, opal}"/>
       <Parameter name="min time step (s)" type="double" value="1.5778463e-07"/>
       <Parameter name="max time step (s)" type="double" value="1.5778463e+07"/>
       <Parameter name="initial time step (s)" type="double" value="1.0e-02"/>
@@ -2054,6 +2057,16 @@ Initial conditions
 This sublist completes initialization of state variable, see list `"State`" for 
 more detail. This section is only required for the native chemistry kernel, the
 Alquimia chemistry kernel reads initial conditions from the `"State`" list.
+The following cell-based fields can be initialized here:
+
+* `"mineral_volume_fractions`"
+* `"mineral_specific_surface_area`"
+* `"ion_exchange_sites`"
+* `"ion_exchange_ref_cation_conc`"
+* `"isotherm_kd`"
+* `"isotherm_langmuir_b`"
+* `"surface_complexation`"
+* `"free_ion_species`"
 
 .. code-block:: xml
 
