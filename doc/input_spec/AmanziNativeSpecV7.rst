@@ -7,10 +7,17 @@ Amanzi-U Native XML Input Specification V7
 
 Overview
 ========
+
 This is a continuously evolving specification format used by the code developers. 
 It is main purpose is to develop and test new capabilities without disruption of end-users.
 Parameters labeled by [WIP] (Work-In-Progress) are under development.
 Parameters labeled by [O] (Obsolete) are old capabilities and will be removed soon.
+
+
+Changes V6 -> V7
+================
+
+* Observations use lower-case names.
 
 
 ParameterList XML
@@ -4055,20 +4062,19 @@ for its evaluation.  The observations are evaluated during the simulation and re
     * `"variables`" [Array(string)] a list of field quantities taken from the list of 
       available field quantities:
 
-      * Volumetric water content [volume water / bulk volume]
-      * Aqueous saturation [volume water / volume pore space]
-      * Aqueous pressure [Pa]
-      * Hydraulic Head [m] 
-      * Drawdown [m] 
-      * SOLUTE Aqueous concentration [mol/m^3] (name SOLUTE formed by string concatenation,
-        given the definitions in `"Phase Definition`" section)
-      * X-, Y-, Z- Aqueous volumetric flux [m/s]
-      * MaterialID
-      * Aqueous mass flow rate [kg/s] (must use integral functional in the observation)
-      * Aqueous volumetric flow rate [m^3/s] (must use integral functional in the observation)
-      * SOLUTE volumetric flow rate [mol/s] (must use integral functional in the observation)
+      * volumetric water content [-] (volume water / bulk volume)
+      * aqueous saturation [-] (volume water / volume pore space)
+      * aqueous pressure [Pa]
+      * hydraulic head [m] 
+      * drawdown [m] 
+      * SOLUTE Aqueous concentration [mol/m^3]
+      * x-, y-, z- aqueous volumetric flux [m/s]
+      * material id [-]
+      * aqueous mass flow rate [kg/s] (when funtional="integral")
+      * aqueous volumetric flow rate [m^3/s] (when functional="integral")
+      * SOLUTE volumetric flow rate [mol/s] (when functional="integral")
 
-    Observation "Drawdown" is calculated with respect to the value registered at the first time
+    Observation *drawdown* is calculated with respect to the value registered at the first time
     it was requested.
 
     * `"functional`" [string] the label of a function to apply to each of the variables
@@ -4102,7 +4108,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
     * `"delimiter`" [string] the string used to delimit columns in the observation file
       output, default is `",`".
 
-The following Observation Data functionals are currently supported.
+The following observation functionals are currently supported.
 All of them operate on the variables identified.
 
 * `"Observation Data: Point`" returns the value of the field quantity at a point.
@@ -4125,7 +4131,7 @@ All of them operate on the variables identified.
        <ParameterList name="SOME OBSERVATION NAME">
          <Parameter name="region" type="string" value="some point region name"/>
          <Parameter name="functional" type="string" value="Observation Data: Point"/>
-         <Parameter name="variable" type="string" value="Volumetric water content"/>
+         <Parameter name="variable" type="string" value="volumetric water content"/>
          <Parameter name="times" type="Array(double)" value="{100000.0, 200000.0}"/>
 
          <Parameter name="cycles" type="Array(int)" value="{100000, 200000, 400000, 500000}"/>

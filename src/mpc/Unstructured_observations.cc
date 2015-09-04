@@ -169,8 +169,8 @@ int Unstructured_observations::MakeObservations(State& S)
       Amanzi::AmanziMesh::Entity_ID_List entity_ids;
       std::string solute_var;
       if (obs_solute) solute_var = comp_names_[tcc_index] + " volumetric flow rate";
-      if (var == "Aqueous mass flow rate" || 
-          var == "Aqueous volumetric flow rate" ||
+      if (var == "aqueous mass flow rate" || 
+          var == "aqueous volumetric flow rate" ||
           var == solute_var) {  // flux needs faces
         mesh_block_size = S.GetMesh()->get_set_size((i->second).region,
                                                         Amanzi::AmanziMesh::FACE,
@@ -278,7 +278,7 @@ int Unstructured_observations::MakeObservations(State& S)
         const Epetra_MultiVector& ws = *S.GetFieldData("saturation_liquid")->ViewComponent("cell");
         const Epetra_MultiVector& pressure = *S.GetFieldData("pressure")->ViewComponent("cell");
   
-        if (var == "Volumetric water content") {
+        if (var == "volumetric water content") {
           for (int i = 0; i < mesh_block_size; i++) {
             int c = entity_ids[i];
             double vol = S.GetMesh()->cell_volume(c);
@@ -294,21 +294,21 @@ int Unstructured_observations::MakeObservations(State& S)
             volume += vol;
             value += porosity[0][c] * ws[0][c] * rho / (particle_density * (1.0 - porosity[0][c])) * vol;
           }    
-        } else if (var == "Aqueous pressure") {
+        } else if (var == "aqueous pressure") {
           for (int i = 0; i < mesh_block_size; i++) {
             int c = entity_ids[i];
             double vol = S.GetMesh()->cell_volume(c);
             volume += vol;
             value += pressure[0][c] * vol;
           }
-        } else if (var == "Aqueous saturation") {
+        } else if (var == "aqueous saturation") {
           for (int i = 0; i < mesh_block_size; i++) {
             int c = entity_ids[i];
             double vol = S.GetMesh()->cell_volume(c);
             volume += vol;
             value += ws[0][c] * vol;
           }    
-        } else if (var == "Hydraulic Head") {
+        } else if (var == "hydraulic head") {
           const Epetra_MultiVector& hydraulic_head = *S.GetFieldData("hydraulic_head")->ViewComponent("cell");
   
           for (int i = 0; i < mesh_block_size; ++i) {
@@ -317,7 +317,7 @@ int Unstructured_observations::MakeObservations(State& S)
             volume += vol;
             value += hydraulic_head[0][c] * vol;
           }
-        } else if (var == "Drawdown") {
+        } else if (var == "drawdown") {
           const Epetra_MultiVector& hydraulic_head = *S.GetFieldData("hydraulic_head")->ViewComponent("cell");
   
           for (int i = 0; i < mesh_block_size; ++i) {
@@ -334,10 +334,10 @@ int Unstructured_observations::MakeObservations(State& S)
           } else {
             value = it->second - value;
           }
-        } else if (var == "Aqueous mass flow rate" || 
-                   var == "Aqueous volumetric flow rate") {
+        } else if (var == "aqueous mass flow rate" || 
+                   var == "aqueous volumetric flow rate") {
           double density(1.0);
-          if (var == "Aqueous mass flow rate") density = rho;
+          if (var == "aqueous mass flow rate") density = rho;
           const Epetra_MultiVector& darcy_flux = *S.GetFieldData("darcy_flux")->ViewComponent("face");
   
           if (obs_boundary) { // observation is on a boundary set
@@ -365,7 +365,7 @@ int Unstructured_observations::MakeObservations(State& S)
               volume += area;
             }
           } else {
-            msg << "Observations of \"Aqueous mass flow rate\" and \"Aqueous volumetric flow rate\""
+            msg << "Observations of \"aqueous mass flow rate\" and \"aqueous volumetric flow rate\""
                 << " are only possible for Polygon, Plane and Boundary side sets";
             Exceptions::amanzi_throw(msg);
           }

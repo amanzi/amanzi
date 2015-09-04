@@ -26,7 +26,7 @@ namespace AmanziInput {
 XERCES_CPP_NAMESPACE_USE
 
 /* ******************************************************************
-* Empty
+* Main driver for the new translator.
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
 {
