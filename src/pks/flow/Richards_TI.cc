@@ -240,12 +240,17 @@ void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Comp
     wcm0 = wcm_prev[0][c];
     phi0 = phi[0][c];
 
-    wcm1 = msp_->second[(*msp_->first)[c]]->WaterContentMatrix(dt, phi0, molar_rho_, wcm0, pcf0, pcm0);
-    fc[0][c] += (wcm1 - wcm0) / dt;
+    int max_itrs(100);
+    wcm1 = msp_->second[(*msp_->first)[c]]->WaterContentMatrix(
+        dt, phi0, molar_rho_, wcm0, pcf0, pcm0, max_itrs);
 
+    fc[0][c] += (wcm1 - wcm0) / dt;
     wcm[0][c] = wcm1;
     pcm[0][c] = atm_pressure_ - pcm0;
+
+    ms_itrs_ += max_itrs;
   }
+  ms_calls_ += ncells_owned;
 }
 
 
@@ -468,7 +473,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 
     if ((unew > atm_pressure_) && (uc[0][c] < atm_pressure_)) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-	 *vo_->os() << "pressure change: " << uc[0][c] << " -> " << unew << std::endl;
+        *vo_->os() << "pressure change: " << uc[0][c] << " -> " << unew << std::endl;
       }
       duc[0][c] = tmp * damping_factor;
       npre_clipped++;

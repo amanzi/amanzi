@@ -104,6 +104,9 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   linear_operator_list_ = Teuchos::sublist(glist, "Solvers", true);
   ti_list_ = Teuchos::sublist(rp_list_, "time integrator");
 
+  ms_itrs_ = 0;
+  ms_calls_ = 0;
+
   vo_ = NULL;
 }
 
@@ -560,7 +563,7 @@ void Richards_PK::Initialize()
     PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
   }
 
-  // initialize multisclae methods
+  // initialize multiscale methods
   if (multiscale_porosity_) {
     Teuchos::RCP<Teuchos::ParameterList>
         msp_list = Teuchos::sublist(rp_list_, "multiscale models", true);
@@ -821,10 +824,15 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   dt_ = t_new - t_old;
 
-  // save a copy of pressure
+  // initialize statistics
+  ms_itrs_ = 0;
+  ms_calls_ = 0;
+
+  // save a copy of primary and conservative fields
+  // -- pressure
   CompositeVector pressure_copy(*S_->GetFieldData("pressure", passwd_));
 
-  // swap saturations
+  // -- saturations, swap prev <- current
   S_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_.ptr(), "flow");
   const CompositeVector& sat = *S_->GetFieldData("saturation_liquid");
   CompositeVector& sat_prev = *S_->GetFieldData("prev_saturation_liquid", passwd_);
@@ -832,7 +840,7 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   CompositeVector sat_prev_copy(sat_prev);
   sat_prev = sat;
 
-  // swap water_content
+  // -- water_conten, swap prev <- current
   S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
   CompositeVector& wc = *S_->GetFieldData("water_content", "water_content");
   CompositeVector& wc_prev = *S_->GetFieldData("prev_water_content", passwd_);
@@ -840,7 +848,7 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   CompositeVector wc_prev_copy(wc_prev);
   wc_prev = wc;
 
-  // swap fields for multiscale models
+  // -- field for multiscale models, save and swap
   Teuchos::RCP<CompositeVector> pressure_matrix_copy, wc_matrix_prev_copy;
   if (multiscale_porosity_) {
     pressure_matrix_copy = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("pressure_matrix", passwd_)));
@@ -937,6 +945,12 @@ void Richards_PK::CommitStep(double t_old, double t_new)
   *pdot_cells_prev = *pdot_cells;
 
   dt_ = dt_next_;
+
+  // output of simulation status
+  if (multiscale_porosity_ && vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "multiscale: NS:" << double(ms_itrs_) / ms_calls_ << std::endl;
+  }
 }
 
 

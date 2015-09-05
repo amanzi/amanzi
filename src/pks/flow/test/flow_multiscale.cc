@@ -57,7 +57,7 @@ TEST(FLOW_2D_MULTISCALE) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 6.0, 120.0, 3, 120, gm);
+  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 6.0, 120.0, 3, 60, gm);
 
   // create a simple state and populate it
   Teuchos::ParameterList state_list = plist->sublist("State");
