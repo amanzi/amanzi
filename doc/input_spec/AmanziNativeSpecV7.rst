@@ -977,6 +977,9 @@ This list is optional.
 
 * `"mass transfer coefficient`" [double] is the mass transfer coefficient.
 
+* `"tolerance`" [double] defines tolerance for iterative methods used to solve
+  secondary equations. Default is 1e-8.
+
 * `"water retention model`" [string] specifies a model for the soil.
   The available models are `"van Genuchten`" and `"Brooks Corey`". 
   Parameters for each model are described above.
@@ -992,6 +995,7 @@ This list is optional.
          <Parameter name="region" type="string" value="TOP HALF"/>
          <Parameter name="multiscale model" type="string" value="dual porosity"/> 
          <Paramater name="mass transfer coefficient" type="double" value="4.0e-5"/>
+         <Paramater name="tolerance" type="double" value="1e-8"/>
 
          <Parameter name="water retention model" type="string" value="van Genuchten"/>
          <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>

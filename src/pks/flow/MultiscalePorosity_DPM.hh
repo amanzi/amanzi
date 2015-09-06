@@ -28,6 +28,9 @@ class MultiscalePorosity_DPM : public MultiscalePorosity {
   MultiscalePorosity_DPM(Teuchos::ParameterList& plist);
   ~MultiscalePorosity_DPM() {};
 
+  // Calculate field water content assuming pressure equilibrium
+  double ComputeField(double phi, double n_l, double pcm);
+
   // local (cell-based) solver returns water content and capilalry
   // pressure in the matrix. max_itrs is input/output parameter
   double WaterContentMatrix(
@@ -37,6 +40,7 @@ class MultiscalePorosity_DPM : public MultiscalePorosity {
  private:
   Teuchos::RCP<WRM> wrm_;
   double alpha_;
+  double tol_;
 
   static Utils::RegisteredFactory<MultiscalePorosity, MultiscalePorosity_DPM> factory_;
 };

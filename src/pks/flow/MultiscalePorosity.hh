@@ -19,6 +19,12 @@ class MultiscalePorosity {
  public:
   virtual ~MultiscalePorosity() {};
 
+  // Filed here is the water content.
+  // There is no need to use evaluators for this task.
+  virtual double ComputeField(double phi, double n_l, double pcm) = 0;
+
+  // local (cell-based) solver returns water content and capilalry
+  // pressure in the matrix. 
   virtual double WaterContentMatrix(
       double dt, double phi, double n_l, double wcm0, double pcf0,
       double& pcm, int& max_itrs) = 0;

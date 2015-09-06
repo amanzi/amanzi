@@ -28,6 +28,16 @@ MultiscalePorosity_DPM::MultiscalePorosity_DPM(Teuchos::ParameterList& plist)
   wrm_ = factory.Create(plist);
 
   alpha_ = plist.get<double>("mass transfer coefficient", 0.0);
+  tol_ = plist.get<double>("tolerance", 1e-8);
+}
+
+
+/* ******************************************************************
+* It should be called only once; otherwise, create an evaluator.
+****************************************************************** */
+double MultiscalePorosity_DPM::ComputeField(double phi, double n_l, double pcm)
+{
+  return wrm_->saturation(pcm) * phi * n_l;
 }
 
 
@@ -49,11 +59,11 @@ double MultiscalePorosity_DPM::WaterContentMatrix(
   alpha_mod = alpha_ * dt / (phi * n_l);
 
   // setup iterative parameters
-  double tol(1e-8), f0, f1, ds, dp, dsdp, guess, result(pcm);
+  double f0, f1, ds, dp, dsdp, guess, result(pcm);
   double delta(1.0e+10), delta1(1.0e+10), delta2(1.0e+10);
   int count(max_itrs);
 
-  while (--count && (fabs(result * tol) < fabs(delta))) {
+  while (--count && (fabs(result * tol_) < fabs(delta))) {
     delta2 = delta1;
     delta1 = delta;
 
