@@ -135,10 +135,10 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > get_bdf1_dae() { return bdf1_dae; }
 
   // developement members
-  //template <class Model> 
   double DeriveBoundaryFaceValue(int f, const CompositeVector& u, Teuchos::RCP<const WRM> model);
   virtual double BoundaryFaceValue(int f, const CompositeVector& pressure);
   void PlotWRMcurves(Teuchos::ParameterList& plist);
+  void VV_ReportMultiscale();
 
  private:
   void InitializeFields_();

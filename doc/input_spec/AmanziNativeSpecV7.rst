@@ -998,7 +998,6 @@ This list is optional.
          <Parameter name="van Genuchten m" type="double" value="0.28571"/>
          <Parameter name="van Genuchten l" type="double" value="0.5"/>
          <Parameter name="residual saturation" type="double" value="0.103"/>
-         <Parameter name="regularization interval" type="double" value="100.0"/>
          <Parameter name="relative permeability model" type="string" value="Mualem"/>
        </ParameterList>
      </ParameterList>

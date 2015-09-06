@@ -77,6 +77,38 @@
         </ParameterList>
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
       </ParameterList>
+      <ParameterList name="porosity_matrix">
+        <ParameterList name="function">
+          <ParameterList name="RegionMiddle">
+            <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2.08199999999999996e-01"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="RegionBottom">
+            <Parameter name="regions" type="Array(string)" value="{RegionBottom}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2.20599999999999991e-01"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="RegionTop">
+            <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2.34000000000000014e-01"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+      </ParameterList>
     </ParameterList>
     <ParameterList name="initial conditions">
       <ParameterList name="gravity">
@@ -247,7 +279,7 @@
         <ParameterList name="multiscale models">
           <ParameterList name="MSM for RegionMiddle">
             <Parameter name="multiscale model" type="string" value="dual porosity"/>
-            <Parameter name="mass transfer coefficient" type="double" value="1.0e-8"/>
+            <Parameter name="mass transfer coefficient" type="double" value="1.0e-9"/>
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
             <Parameter name="region" type="string" value="RegionMiddle"/>
             <Parameter name="van Genuchten m" type="double" value="2.294e-01"/>
@@ -259,7 +291,7 @@
           </ParameterList>
           <ParameterList name="MSM for RegionBottom">
             <Parameter name="multiscale model" type="string" value="dual porosity"/>
-            <Parameter name="mass transfer coefficient" type="double" value="1.0e-6"/>
+            <Parameter name="mass transfer coefficient" type="double" value="1.0e-9"/>
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
             <Parameter name="region" type="string" value="RegionBottom"/>
             <Parameter name="van Genuchten m" type="double" value="2.136e-01"/>
@@ -271,7 +303,7 @@
           </ParameterList>
           <ParameterList name="MSM for RegionTop">
             <Parameter name="multiscale model" type="string" value="dual porosity"/>
-            <Parameter name="mass transfer coefficient" type="double" value="5.0e-6"/>
+            <Parameter name="mass transfer coefficient" type="double" value="1.0e-9"/>
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
             <Parameter name="region" type="string" value="RegionTop"/>
             <Parameter name="van Genuchten m" type="double" value="3.006e-01"/>

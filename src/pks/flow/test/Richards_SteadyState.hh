@@ -95,6 +95,7 @@ int AdvanceToSteadyState(
 
     // commit step
     RPK.CommitStep(T_physics - dT, T_physics);
+    RPK.VV_ReportMultiscale();
   }
 
   ti_specs.num_itrs = itrs;

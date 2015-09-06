@@ -212,6 +212,10 @@ void Richards_PK::Setup()
         ->SetComponent("cell", AmanziMesh::CELL, 1);
       S_->GetField("prev_water_content_matrix", passwd_)->set_io_vis(false);
     }
+
+    S_->RequireField("porosity_matrix", "porosity_matrix")->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireFieldEvaluator("porosity_matrix");
   }
 
   // Require additional fields and evaluators for this PK.
@@ -916,6 +920,7 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     VV_ReportWaterBalance(S_.ptr());
+    VV_ReportMultiscale();
   }
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     VV_ReportSeepageOutflow(S_.ptr());
@@ -945,12 +950,6 @@ void Richards_PK::CommitStep(double t_old, double t_new)
   *pdot_cells_prev = *pdot_cells;
 
   dt_ = dt_next_;
-
-  // output of simulation status
-  if (multiscale_porosity_ && vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "multiscale: NS:" << double(ms_itrs_) / ms_calls_ << std::endl;
-  }
 }
 
 
@@ -1047,10 +1046,24 @@ double Richards_PK::DeriveBoundaryFaceValue(
   }
 }
 
+
 /* ******************************************************************
 * This is strange.
 ****************************************************************** */
-void  Richards_PK::CalculateDiagnostics() {
+void Richards_PK::VV_ReportMultiscale()
+{
+  if (multiscale_porosity_ && ms_calls_ && 
+      vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "multiscale: NS:" << double(ms_itrs_) / ms_calls_ << std::endl;
+  }
+}
+
+
+/* ******************************************************************
+* This is strange.
+****************************************************************** */
+void Richards_PK::CalculateDiagnostics() {
   UpdateLocalFields_();
 }
 

@@ -227,7 +227,7 @@ void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Comp
 {
   const Epetra_MultiVector& pcf = *S_->GetFieldData("pressure")->ViewComponent("cell");
   const Epetra_MultiVector& pcm = *S_->GetFieldData("pressure_matrix")->ViewComponent("cell");
-  const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell");
+  const Epetra_MultiVector& phi = *S_->GetFieldData("porosity_matrix")->ViewComponent("cell");
   const Epetra_MultiVector& wcm_prev = *S_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
   Epetra_MultiVector& wcm = *S_->GetFieldData("water_content_matrix", passwd_)->ViewComponent("cell");
 
