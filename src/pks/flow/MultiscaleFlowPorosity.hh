@@ -6,18 +6,20 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
+  Base class for continuum multiscale porosity models. 
+
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_MULTISCALE_POROSITY_HH_
-#define AMANZI_MULTISCALE_POROSITY_HH_
+#ifndef MULTISCALE_FLOW_POROSITY_HH_
+#define MULTISCALE_FLOW_POROSITY_HH_
 
 namespace Amanzi {
 namespace Flow {
 
-class MultiscalePorosity {
+class MultiscaleFlowPorosity {
  public:
-  virtual ~MultiscalePorosity() {};
+  virtual ~MultiscaleFlowPorosity() {};
 
   // Filed here is the water content.
   // There is no need to use evaluators for this task.

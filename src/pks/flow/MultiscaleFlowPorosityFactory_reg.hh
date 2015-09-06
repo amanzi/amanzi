@@ -11,14 +11,14 @@
   Self-registering factory for multiscale porosity models.
 */
 
-#include "MultiscalePorosityFactory.hh"
+#include "MultiscaleFlowPorosityFactory.hh"
 
 // explicity instantitate the static data of factory
 namespace Amanzi {
 namespace Utils {
 
 template<>
-Factory<Flow::MultiscalePorosity>::map_type* Factory<Flow::MultiscalePorosity>::map_;
+Factory<Flow::MultiscaleFlowPorosity>::map_type* Factory<Flow::MultiscaleFlowPorosity>::map_;
 
 }  // namespace Utils
 }  // namespace Amanzi

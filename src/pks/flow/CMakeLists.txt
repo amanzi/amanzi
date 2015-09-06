@@ -98,12 +98,12 @@ generate_evaluators_registration_header(
 
 # multiscale models
 register_evaluator_with_factory(
-  HEADERFILE MultiscalePorosityFactory_reg.hh
+  HEADERFILE MultiscaleFlowPorosityFactory_reg.hh
   LISTNAME   MSM_FLOW_REGISTRATIONS
   )
 
 register_evaluator_with_factory(
-  HEADERFILE MultiscalePorosity_DPM_reg.hh
+  HEADERFILE MultiscaleFlowPorosity_DPM_reg.hh
   LISTNAME   MSM_FLOW_REGISTRATIONS
   )
 
@@ -129,8 +129,8 @@ set(flow_src_files Flow_PK.cc
                    WRMPartition.cc WRMFactory.cc WRMEvaluator.cc 
                    VWContentEvaluator.cc VWContentEvaluator_ConstDensity.cc
                    DarcyVelocityEvaluator.cc
-                   MultiscalePorosityFactory.cc MultiscalePorosityPartition.cc
-                   MultiscalePorosity_DPM.cc
+                   MultiscaleFlowPorosityFactory.cc MultiscaleFlowPorosityPartition.cc
+                   MultiscaleFlowPorosity_DPM.cc
                    )
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )
@@ -154,10 +154,10 @@ set(flow_inc_files
   Flow_PK.hh
   Flow_SourceFactory.hh
   FlowTypeDefs.hh
-  MultiscalePorosity.hh
-  MultiscalePorosity_DPM.hh
-  MultiscalePorosityFactory.hh
-  MultiscalePorosityPartition.hh
+  MultiscaleFlowPorosity.hh
+  MultiscaleFlowPorosity_DPM.hh
+  MultiscaleFlowPorosityFactory.hh
+  MultiscaleFlowPorosityPartition.hh
   PorosityModel.hh
   PorosityModelPartition.hh
   RelPerm.hh

@@ -205,7 +205,7 @@ void Richards_PK::Setup()
 
     Teuchos::RCP<Teuchos::ParameterList>
         msp_list = Teuchos::sublist(rp_list_, "multiscale models", true);
-    msp_ = CreateMultiscalePorosityPartition(mesh_, msp_list);
+    msp_ = CreateMultiscaleFlowPorosityPartition(mesh_, msp_list);
 
     if (!S_->HasField("water_content_matrix")) {
       S_->RequireField("water_content_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(true)

@@ -31,7 +31,7 @@
 
 // Flow
 #include "Flow_PK.hh"
-#include "MultiscalePorosityPartition.hh"
+#include "MultiscaleFlowPorosityPartition.hh"
 #include "RelPerm.hh"
 #include "RelPermEvaluator.hh"
 #include "WRMPartition.hh"
@@ -189,7 +189,7 @@ class Richards_PK : public Flow_PK {
   // multiscale models
   bool multiscale_porosity_;
   int ms_itrs_, ms_calls_;
-  Teuchos::RCP<MultiscalePorosityPartition> msp_;
+  Teuchos::RCP<MultiscaleFlowPorosityPartition> msp_;
 
   // time integrators
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae;
