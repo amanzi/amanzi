@@ -90,7 +90,6 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 
   /* initialize a transport process kernel from a transport state */
   TPK.Initialize();
-  TPK.PrintStatistics();
 
   /* advance the transport state */
   int iter, k;

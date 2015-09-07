@@ -11,23 +11,24 @@
   Self-registering factory for mulscale porosity models.
 */
 
-#ifndef MULTISCALE_FLOW_POROSITY_FACTORY_HH_
-#define MULTISCALE_FLOW_POROSITY_FACTORY_HH_
+#ifndef MULTISCALE_TRANSPORT_POROSITY_FACTORY_HH_
+#define MULTISCALE_TRANSPORT_POROSITY_FACTORY_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "MultiscaleFlowPorosity.hh"
 #include "factory.hh"
 
-namespace Amanzi {
-namespace Flow {
+#include "MultiscaleTransportPorosity.hh"
 
-class MultiscaleFlowPorosityFactory : public Utils::Factory<MultiscaleFlowPorosity> {
+namespace Amanzi {
+namespace Transport {
+
+class MultiscaleTransportPorosityFactory : public Utils::Factory<MultiscaleTransportPorosity> {
  public:
-  Teuchos::RCP<MultiscaleFlowPorosity> Create(Teuchos::ParameterList& plist);
+  Teuchos::RCP<MultiscaleTransportPorosity> Create(Teuchos::ParameterList& plist);
 };
 
-}  // namespace Flow
+}  // namespace Transport
 }  // namespace Amanzi
 
 #endif

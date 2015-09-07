@@ -18,6 +18,7 @@ Changes V6 -> V7
 ================
 
 * Observations use lower-case names.
+* Added dual porosity model to flow and transport.
 
 
 ParameterList XML
@@ -843,6 +844,7 @@ Combination of both approaches may lead to a more efficient code.
        <Parameter name="water content model" type="string" value="constant density"/>
        <Parameter name="viscosity model" type="string" value="constant viscosity"/>
        <Parameter name="porosity model" type="string" value="compressible: pressure function"/>
+       <Parameter name="multiscale model" type="string" value="single porosity"/>
      </ParameterList>
    </ParameterList>
 
@@ -1609,12 +1611,16 @@ This list is often generated or extended by a high-level MPC PK.
 * `"permeability field is required`" [bool] indicates if some transport features
   require absolute permeability. Default is *false*.
 
+* `"multiscale model`" [string] specifies a multiscale model.
+  Available options are `"single porosity`" (default) and `"dual porosity`".
+
 .. code-block:: xml
 
    <ParameterList name="Transport">  <!-- parent list -->
      <ParameterList name="physical models and assumptions">
        <Parameter name="gas diffusion" type="bool" value="false"/>
        <Parameter name="permeability field is required" type="bool" value="false"/>
+       <Parameter name="multiscale model" type="string" value="single porosity"/>
      </ParameterList>
    </ParameterList>
 
@@ -1747,7 +1753,7 @@ Three examples are below:
   </ParameterList>  
 
 
-* `"molecular diffusion`" [list] Defines names of solutes in aqueous and gaseous phases and related
+* `"molecular diffusion`" [list] defines names of solutes in aqueous and gaseous phases and related
   diffusivity values.
 
 .. code-block:: xml
@@ -1760,6 +1766,37 @@ Three examples are below:
       <Parameter name="gaseous names" type=Array(string)" value="{CO2(g)}"/>
       <Parameter name="gaseous values" type=Array(double)" value="{1e-8}"/>
       <Parameter name="air-water partitioning coefficient" type=Array(double)" value="{0.03}"/> 
+    </ParameterList>  
+  </ParameterList>  
+
+
+Multiscale continuum models
+...........................
+
+The list of multiscale models is the placeholder for various multiscale models.
+Its ordered by materials and includes parameters for the assigned multiscale model
+This list is optional.
+
+* `"multiscale model`" [string] is the model name. Available option is "dual porosity".
+
+* `"regions`" [Array(string)] is the list of regions where this model should be applied.
+
+* `"solute transfer coefficient`" [list] defines diffusive solute transport due to
+  convetration gradients.
+
+.. code-block:: xml
+
+  <ParameterList name="Transport">  <!-- parent list -->
+    <ParameterList name="multiscale models">
+      <ParameterList name="WHITE SOIL">
+        <Parameter name="multiscale model" type="string" value="dual porosity"/>
+        <Parameter name="regions" type="Array(string)" value="{TOP_REGION, BOTTOM_REGION}"/>
+        <Paramater name="solute transfer coefficient" type="double" value="4.0e-5"/>
+      </ParameterList>  
+
+      <ParameterList name="GREY SOIL">
+         ...  
+      </ParameterList>  
     </ParameterList>  
   </ParameterList>  
 

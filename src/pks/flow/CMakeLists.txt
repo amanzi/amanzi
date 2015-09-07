@@ -44,6 +44,7 @@ include_directories(${WHETSTONE_SOURCE_DIR})
 #
 # Flow registrations
 #
+# -- pk registration
 register_evaluator_with_factory(
   HEADERFILE Darcy_PK_reg.hh
   LISTNAME   PKS_FLOW_REGISTRATIONS
@@ -96,7 +97,7 @@ generate_evaluators_registration_header(
   INSTALL    True
   )
 
-# multiscale models
+# -- multiscale models registration
 register_evaluator_with_factory(
   HEADERFILE MultiscaleFlowPorosityFactory_reg.hh
   LISTNAME   MSM_FLOW_REGISTRATIONS

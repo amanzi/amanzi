@@ -11,8 +11,6 @@
 
 #include <string>
 
-#include "boost/math/tools/roots.hpp"
-
 #include "FlowDefs.hh"
 #include "MultiscaleFlowPorosity_DPM.hh"
 #include "WRMFactory.hh"

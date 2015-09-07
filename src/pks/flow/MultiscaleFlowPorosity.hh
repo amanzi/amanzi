@@ -21,7 +21,7 @@ class MultiscaleFlowPorosity {
  public:
   virtual ~MultiscaleFlowPorosity() {};
 
-  // Filed here is the water content.
+  // Field here is the water content.
   // There is no need to use evaluators for this task.
   virtual double ComputeField(double phi, double n_l, double pcm) = 0;
 

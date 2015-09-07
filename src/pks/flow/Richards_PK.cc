@@ -788,7 +788,7 @@ void Richards_PK::InitializeStatistics_()
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << std::endl 
-        << vo_->color("green") << "Initalization of TP is complete, T=" << S_->time()
+        << vo_->color("green") << "Initalization of PK is complete, T=" << S_->time()
         << " dT=" << dt_ << vo_->reset() << std::endl;
     *vo_->os()<< "EC:" << error_control_ << " Src:" << src_sink_distribution
               << " Upwind:" << relperm_->method() << op_matrix_diff_->little_k()

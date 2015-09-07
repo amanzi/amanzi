@@ -27,10 +27,9 @@ namespace Amanzi {
 namespace Transport {
 
 /* ******************************************************************
-* Routine processes parameter list. It needs to be called only once
-* on each processor.                                                     
+* Inialization of various transport structures.
 ****************************************************************** */
-void Transport_PK::ProcessParameterList()
+void Transport_PK::InitializeAll_()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
@@ -248,39 +247,6 @@ void Transport_PK::ProcessStringDispersionModel(const std::string name, int* mod
   } else {
     *model = TRANSPORT_DISPERSIVITY_MODEL_NULL;
   }
-}
-
-
-/* ************************************************************* */
-/* Printing information about Transport status                   */
-/* ************************************************************* */
-void Transport_PK::PrintStatistics() const
-{
-  Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
-
-  if (vo_->getVerbLevel() > Teuchos::VERB_NONE) {
-    std::cout << "Transport PK: CFL = " << cfl_ << std::endl;
-    std::cout << "    Total number of components = " << tcc_prev.NumVectors() << std::endl;
-    std::cout << "    Verbosity level = " << vo_->getVerbLevel() << std::endl;
-    std::cout << "    Spatial/temporal discretication orders = " << spatial_disc_order
-         << " " << temporal_disc_order << std::endl;
-    std::cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << std::endl;
-  }
-}
-
-
-/* ****************************************************************
-* DEBUG: creating GMV file 
-**************************************************************** */
-void Transport_PK::WriteGMVfile(Teuchos::RCP<State> S) const
-{
-  Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
-
-  GMV::open_data_file(*mesh_, (std::string)"transport.gmv");
-  GMV::start_data();
-  GMV::write_cell_data(tcc_prev, 0, "component0");
-  GMV::write_cell_data(*ws, 0, "saturation");
-  GMV::close_data_file();
 }
 
 }  // namespace Transport

@@ -18,7 +18,6 @@
 #ifndef MULTISCALE_FLOW_POROSITY_DPM_HH_
 #define MULTISCALE_FLOW_POROSITY_DPM_HH_
 
-#include "boost/math/tools/tuple.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 #include "factory.hh"

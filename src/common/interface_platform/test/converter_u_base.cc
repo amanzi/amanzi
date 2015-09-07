@@ -68,6 +68,7 @@ TEST(CONVERTER_BASE) {
     } catch (std::exception& e) {
       std::cout << e.what() << std::endl;
       CHECK(false);
+      break;
     }
   }
 }
