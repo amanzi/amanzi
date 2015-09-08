@@ -82,6 +82,7 @@ set(transport_inc_files
   MaterialProperties.hh
   MultiscaleTransportPorosity.hh
   MultiscaleTransportPorosityFactory.hh
+  MultiscaleTransportPorosityPartition.hh
   MultiscaleTransportPorosity_DPM.hh
   TransportBCFactory.hh
   TransportBoundaryFunction.hh
@@ -96,6 +97,7 @@ set(transport_src_files Transport_PK.cc Transport_TI.cc
                         Transport_VandV.cc Transport_Initialize.cc 
                         Transport_Dispersion.cc Transport_HenryLaw.cc
                         MultiscaleTransportPorosityFactory.cc MultiscaleTransportPorosity_DPM.cc
+                        MultiscaleTransportPorosityPartition.cc
                         TransportBCFactory.cc TransportSourceFactory.cc
                         TransportBoundaryFunction_Tracer.cc TransportBoundaryFunction_Alquimia.cc
                         TransportDomainFunction.cc)

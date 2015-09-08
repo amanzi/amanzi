@@ -27,11 +27,8 @@ class MultiscaleTransportPorosity {
   // Compute solute flux 
   virtual double ComputeSoluteFlux(double flux_liquid, double tcc_f, double tcc_m) = 0;
 
-  // access
-  const std::vector<std::string>& regions() { return regions_; }
-
- protected:
-  std::vector<std::string> regions_;
+  // Modify outflux used in the stability estimate.
+  virtual void UpdateStabilityOutflux(double flux_liquid, double* outflux) = 0;
 };
 
 }  // namespace Transport

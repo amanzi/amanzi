@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  This is the transport component of the Amanzi code. 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -11,25 +11,25 @@
   A collection of multiscale porosity models along with a mesh partition.
 */
 
-#ifndef MULTISCALE_FLOW_POROSITY_PARTITION_HH_
-#define MULTISCALE_FLOW_POROSITY_PARTITION_HH_
+#ifndef MULTISCALE_TRANSPORT_POROSITY_PARTITION_HH_
+#define MULTISCALE_TRANSPORT_POROSITY_PARTITION_HH_
 
 #include "Mesh.hh"
 #include "MeshPartition.hh"
-#include "MultiscaleFlowPorosity.hh"
+#include "MultiscaleTransportPorosity.hh"
 
 namespace Amanzi {
-namespace Flow {
+namespace Transport {
 
-typedef std::vector<Teuchos::RCP<MultiscaleFlowPorosity> > MsFList;
-typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, MsFList> MultiscaleFlowPorosityPartition;
+typedef std::vector<Teuchos::RCP<MultiscaleTransportPorosity> > MsTList;
+typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, MsTList> MultiscaleTransportPorosityPartition;
 
 // Non-member factory
-Teuchos::RCP<MultiscaleFlowPorosityPartition> CreateMultiscaleFlowPorosityPartition(
+Teuchos::RCP<MultiscaleTransportPorosityPartition> CreateMultiscaleTransportPorosityPartition(
     Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     Teuchos::RCP<Teuchos::ParameterList> plist);
 
-}  // namespace Flow
+}  // namespace Transport
 }  // namespace Amanzi
 
 #endif

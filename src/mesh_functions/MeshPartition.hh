@@ -1,12 +1,16 @@
-/* -------------------------------------------------------------------------
+/*
+  This is the function component of Amanzi. 
 
-License: see $AMANZI_DIR/COPYRIGHT
-Author: Ethan Coon
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-A MeshPartition is a collection of non-overlapping Regions which cover 
-(otionally) a mesh.
+  Author: Ethan Coon
 
-------------------------------------------------------------------------- */
+  A MeshPartition is a collection of non-overlapping regions which cover 
+  (optionally) a mesh.
+*/
 
 #ifndef AMANZI_MESH_FUNCTIONS_PARTITION_
 #define AMANZI_MESH_FUNCTIONS_PARTITION_
@@ -21,11 +25,20 @@ namespace Functions {
 
 class MeshPartition {
  public:
+  MeshPartition() : initialized_(false) {};
+
   MeshPartition(AmanziMesh::Entity_kind kind,
                 const std::vector<std::string>& regions);
 
+  // this routine could be used to optimize mesh coloring
+  void Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                  AmanziMesh::Entity_kind kind,
+                  const std::vector<std::vector<std::string> >& regions,
+                  const int default_value);
+
   void Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                   const int default_value);
+
   void Verify() const;
 
   // access

@@ -21,7 +21,6 @@ namespace Transport {
 MultiscaleTransportPorosity_DPM::MultiscaleTransportPorosity_DPM(Teuchos::ParameterList& plist)
 {
   omega_ = plist.get<double>("solute transfer coefficient", 0.0);
-  regions_ = plist.get<Teuchos::Array<std::string> >("regions").toVector();
 }
 
 
@@ -33,6 +32,16 @@ double MultiscaleTransportPorosity_DPM::ComputeSoluteFlux(
 {
   double tmp = (flux_liquid > 0.0) ? tcc_f : tcc_m; 
   return flux_liquid * tmp + omega_ * (tcc_f - tcc_m);
+}
+
+
+/* ******************************************************************
+* It should be called only once; otherwise, create an evaluator.
+****************************************************************** */
+void MultiscaleTransportPorosity_DPM::UpdateStabilityOutflux(
+    double flux_liquid, double* outflux)
+{ 
+  *outflux += std::max(0.0, flux_liquid) + omega_;
 }
 
 }  // namespace Transport

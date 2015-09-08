@@ -36,7 +36,7 @@
 #endif
 
 // Transport
-#include "MultiscaleTransportPorosity.hh"
+#include "MultiscaleTransportPorosityPartition.hh"
 #include "TransportBoundaryFunction.hh"
 #include "TransportDomainFunction.hh"
 #include "TransportDefs.hh"
@@ -169,7 +169,6 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
 
   // initialization methods
   void InitializeAll_();
-  void InitializeMSM_();
   void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
   void ProcessStringDispersionModel(const std::string name, int* model);
 
@@ -244,7 +243,7 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
 
   // multiscale models
   bool multiscale_porosity_;
-  std::vector<Teuchos::RCP<MultiscaleTransportPorosity> > msp_;
+  Teuchos::RCP<MultiscaleTransportPorosityPartition> msp_;
  
   double cfl_, dt_, dt_debug_, t_physics_;  
 
