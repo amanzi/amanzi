@@ -28,12 +28,23 @@ ColumnMesh::ColumnMesh (const Mesh& inmesh,
 {
   ASSERT(column_id_ >= 0 && column_id_ < inmesh.num_columns());
 
+  // set supporting subclasses
+  set_comm(extracted_.get_comm());
+  set_geometric_model(extracted_.geometric_model());
+  
   // compute special geometric quantities for column entities (node
   // coordinates, face centroids, cell centroids, face areas)
   compute_special_node_coordinates_();
   
   // build epetra maps
   build_epetra_maps_();
+}
+
+
+ColumnMesh::~ColumnMesh () {
+  if (face_map_) delete face_map_;
+  if (exterior_face_map_) delete exterior_face_map_;
+  if (exterior_face_importer_) delete exterior_face_importer_;  
 }
 
 
@@ -121,6 +132,13 @@ void ColumnMesh::build_epetra_maps_() {
   int nfaces = column_faces_.size();
   face_map_ = new Epetra_Map(nfaces,indexBase,epcomm);
 
+  std::vector<int> ext_gids(2,-1);
+  ext_gids[0] = 0;
+  ext_gids[1] = nfaces-1;
+
+  exterior_face_map_ = new Epetra_Map(-1, 2, &ext_gids[0], 0, *get_comm());
+  exterior_face_importer_ = new Epetra_Import(*exterior_face_map_, *face_map_);
+  
 }
 
 

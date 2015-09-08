@@ -61,7 +61,7 @@ class ColumnMesh : public Mesh {
              const int column_id, 
              const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
 
-  ~ColumnMesh () {};
+  ~ColumnMesh ();
   
 
   // Get parallel type of entity - OWNED, GHOST, USED (See MeshDefs.hh)
@@ -347,8 +347,7 @@ class ColumnMesh : public Mesh {
 
   virtual
   const Epetra_Map& exterior_face_map (void) const {
-    Errors::Message mesg("Boundary faces not implemented in this framework");
-    amanzi_throw(mesg);
+    return *exterior_face_map_;
   }
     
 
@@ -358,8 +357,7 @@ class ColumnMesh : public Mesh {
   
   virtual
   const Epetra_Import& exterior_face_importer (void) const {
-    Errors::Message mesg("Boundary faces not implemented in this framework");
-    amanzi_throw(mesg);
+    return *exterior_face_importer_;
   }
 
 
@@ -539,6 +537,8 @@ class ColumnMesh : public Mesh {
   Entity_ID_List face_in_column_;
 
   Epetra_Map *face_map_;
+  Epetra_Map *exterior_face_map_;
+  Epetra_Import *exterior_face_importer_;
 
 
 
