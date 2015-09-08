@@ -844,6 +844,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
     
     // re-initialize the state object
     restart_dT = ReadCheckpoint(comm_, Teuchos::ptr(&*S_), restart_filename_);
+    //    S_->WriteStatistics(vo_);
 
     cycle0_ = S_->cycle();
     for (std::vector<std::pair<double,double> >::iterator it = reset_info_.begin();
