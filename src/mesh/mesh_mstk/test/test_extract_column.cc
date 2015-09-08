@@ -36,6 +36,28 @@ TEST(Extract_Column_MSTK)
 
   CHECK_EQUAL(3,cell_list.size());
 
+  // check we are not doubling up on some cells (catches previous bug)
+  for (int i=0; i!=3; ++i) {
+    for (int j=0; j!=3; ++j) {
+      if (i != j) {
+        CHECK(cell_list[i] != cell_list[j]);
+      }
+    }
+  }
+
+
+  Amanzi::AmanziMesh::Entity_ID_List const& face_list = mesh.faces_of_column(colid);
+  CHECK_EQUAL(4,face_list.size());
+
+  // check we are not doubling up on some faces (catches previous bug)
+  for (int i=0; i!=4; ++i) {
+    for (int j=0; j!=4; ++j) {
+      if (i != j) {
+        CHECK(face_list[i] != face_list[j]);
+      }
+    }
+  }
+  
   Amanzi::AmanziMesh::Mesh_MSTK column_mesh(mesh,cell_list,
                                             Amanzi::AmanziMesh::CELL,
                                             false,false);

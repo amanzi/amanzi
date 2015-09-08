@@ -132,6 +132,15 @@ public:
 	    const bool request_faces = true,
 	    const bool request_edges = false);
 
+  Mesh_MSTK(const Epetra_MpiComm *comm,
+            const Mesh& inmesh,
+            const Entity_ID_List& entity_ids, 
+            const Entity_kind entity_kind,
+            const bool flatten = false,
+            const bool extrude = false,
+            const bool request_faces = true,
+            const bool request_edges = false);
+  
 
   ~Mesh_MSTK ();
 
