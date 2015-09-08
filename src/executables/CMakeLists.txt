@@ -116,7 +116,6 @@ set(AMANZI_LIBS
 	              amanzi_solvers
                       amanzi_data_structures
                       amanzi_mesh
-                      amanzi_column_mesh
                       amanzi_mesh_audit
                       amanzi_mesh_functions
                       amanzi_functions
