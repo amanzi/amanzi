@@ -661,10 +661,8 @@ bool Richards::UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<State>& S) {
     *vo_->os() << "  Updating permeability derivatives?";
 
   bool update_perm = S->GetFieldEvaluator(coef_key_)->HasFieldDerivativeChanged(S, name_, key_);
-  Key dkruw_dp_key = getDerivKey(uw_coef_key_, key_);
-  Key dkr_dp_key = getDerivKey(coef_key_, key_);
-  Teuchos::RCP<CompositeVector> duw_rel_perm = S->GetFieldData(dkruw_dp_key, name_);
-  Teuchos::RCP<const CompositeVector> drel_perm = S->GetFieldData(dkr_dp_key);
+  Teuchos::RCP<CompositeVector> duw_rel_perm = S->GetFieldData(duw_coef_key_, name_);
+  Teuchos::RCP<const CompositeVector> drel_perm = S->GetFieldData(dcoef_key_);
 
   if (update_perm) {
     // Move rel perm on boundary_faces into uw_rel_perm on faces
@@ -1133,6 +1131,20 @@ double Richards::BoundaryValue(Teuchos::RCP<const Amanzi::CompositeVector> solut
   return value;
 
 }
+
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+Richards::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+                 Teuchos::RCP<const TreeVector> u,
+                 Teuchos::RCP<TreeVector> du) {
+  // if the primary variable has boundary face, this is for upwinding rel
+  // perms and is never actually used.  Make sure it does not go to undefined
+  // pressures.
+  if (du->Data()->HasComponent("boundary_face")) {
+    du->Data()->ViewComponent("boundary_face")->PutScalar(0.);
+  }
+  return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
+}
+
 
 } // namespace
 } // namespace

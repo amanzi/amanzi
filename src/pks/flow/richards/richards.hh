@@ -136,6 +136,12 @@ protected:
 
   virtual double BoundaryValue(Teuchos::RCP<const Amanzi::CompositeVector> solution, int face_id);
 
+  // -- Possibly modify the correction before it is applied
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+      ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+                       Teuchos::RCP<const TreeVector> u,
+                       Teuchos::RCP<TreeVector> du);
+  
 protected:
   // control switches
   Operators::UpwindMethod Krel_method_;
