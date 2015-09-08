@@ -9,7 +9,6 @@ Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
 #include "Epetra_FECrsMatrix.h"
 #include "EpetraExt_RowMatrixOut.h"
 #include "boost/math/special_functions/fpclassify.hpp"
-#include "Mesh_MSTK.hh"
 
 #include "Op.hh"
 #include "richards.hh"
