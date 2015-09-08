@@ -95,7 +95,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           reg2mat[regions[k]] = mat++;
         } else {
           std::stringstream ss;
-          ss << "There is more than one material assinged to region " << regions[k] << ".";
+          ss << "There is more than one material assigned to region \"" << regions[k] << "\".";
           Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
         }
       }
@@ -117,6 +117,19 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           Exceptions::amanzi_throw(msg);
         }
         Teuchos::ParameterList& porosity_ev = out_ev.sublist("porosity");
+        porosity_ev.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
+            .sublist("function").sublist("function-constant")
+            .set<double>("value", porosity);
+        porosity_ev.set<std::string>("field evaluator type", "independent variable");
+      }
+
+      // --- multiscale porosity if any
+      node = GetUniqueElementByTagsString_(inode, "multiscale_structure, porosity", flag);
+      if (flag) {
+        double porosity;
+        Teuchos::ParameterList& porosity_ev = out_ev.sublist("porosity_matrix");
         porosity_ev.sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions", regions)
             .set<std::string>("component", "cell")

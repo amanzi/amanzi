@@ -111,7 +111,7 @@ if __name__ == "__main__":
         struct = 0
         
     try:
-        comp = 'Aqueous pressure'
+        comp = 'aqueous pressure'
         path_to_amanziU = "."
         root_amanziU = 'observation.out'
         #x_amanziU, c_amanziU = GetXY_AmanziU(path_to_amanziU,root_amanziU,time,comp)
@@ -121,7 +121,7 @@ if __name__ == "__main__":
         unstruct = 0
 
     try:
-        comp = 'Aqueous pressure'
+        comp = 'aqueous pressure'
         path_to_amanziU = path_to_golden
         root_amanziU = 'observation.out'
         #x_amanziU_gold, c_amanziU_gold = GetXY_AmanziU(path_to_amanziU,root_amanziU,comp)

@@ -297,34 +297,34 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           char* obs_type = mm.transcode(jnode->getNodeName());
 
           if (strcmp(obs_type, "aqueous_pressure") == 0) {
-            obPL.set<std::string>("variable", "Aqueous pressure");
+            obPL.set<std::string>("variable", "aqueous pressure");
           } else if (strcmp(obs_type, "volumetric_water_content") == 0) {
-            obPL.set<std::string>("variable", "Volumetric water content");
+            obPL.set<std::string>("variable", "volumetric water content");
           } else if (strcmp(obs_type, "gravimetric_water_content") == 0) {
             obPL.set<std::string>("variable", "Gravimetric water content");
           } else if (strcmp(obs_type, "x_aqueous_volumetric_flux") == 0) {
-            obPL.set<std::string>("variable", "X-Aqueous volumetric flux");
+            obPL.set<std::string>("variable", "x-aqueous volumetric flux");
           } else if (strcmp(obs_type, "y_aqueous_volumetric_flux") == 0) {
-            obPL.set<std::string>("variable", "Y-Aqueous volumetric flux");
+            obPL.set<std::string>("variable", "y-aqueous volumetric flux");
           } else if (strcmp(obs_type, "z_aqueous_volumetric_flux") == 0) {
-            obPL.set<std::string>("variable", "Z-Aqueous volumetric flux");
+            obPL.set<std::string>("variable", "z-aqueous volumetric flux");
           } else if (strcmp(obs_type, "material_id") == 0) {
-            obPL.set<std::string>("variable", "MaterialID");
+            obPL.set<std::string>("variable", "material id");
           } else if (strcmp(obs_type, "hydraulic_head") == 0) {
-            obPL.set<std::string>("variable", "Hydraulic Head");
+            obPL.set<std::string>("variable", "hydraulic head");
           } else if (strcmp(obs_type, "aqueous_mass_flow_rate") == 0) {
-            obPL.set<std::string>("variable", "Aqueous mass flow rate");
+            obPL.set<std::string>("variable", "aqueous mass flow rate");
           } else if (strcmp(obs_type, "aqueous_volumetric_flow_rate") == 0) {
-            obPL.set<std::string>("variable", "Aqueous volumetric flow rate");
+            obPL.set<std::string>("variable", "aqueous volumetric flow rate");
           } else if (strcmp(obs_type, "aqueous_saturation") == 0) {
-            obPL.set<std::string>("variable", "Aqueous saturation");
+            obPL.set<std::string>("variable", "aqueous saturation");
           } else if (strcmp(obs_type, "aqueous_conc") == 0) {
             std::string solute_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "solute");
             std::stringstream name;
             name<< solute_name << " Aqueous concentration";
             obPL.set<std::string>("variable", name.str());
           } else if (strcmp(obs_type, "drawdown") == 0) {
-            obPL.set<std::string>("variable", "Drawdown");
+            obPL.set<std::string>("variable", "drawdown");
           } else if (strcmp(obs_type, "solute_volumetric_flow_rate") == 0) {
             std::string solute_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "solute");
             std::stringstream name;

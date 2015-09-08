@@ -1,6 +1,7 @@
 #include <sstream>
 #include <string>
 #include <boost/bind.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include "errors.hh"
 #include "exceptions.hh"
@@ -445,6 +446,8 @@ Teuchos::ParameterList InputParserIS::CreateObservationDataList_(Teuchos::RCP<Te
           if (obs_list.sublist(i->first).isParameter("Variable")) {
             std::string name = obs_list.sublist(i->first).get<std::string>("Variable");
             obs_list.sublist(i->first).set<std::string>("variable", name);
+            if (name.find("Aqueous concentration") == std::string::npos)
+                obs_list.sublist(i->first).set<std::string>("variable", boost::to_lower_copy(name));
             obs_list.sublist(i->first).remove("Variable");
           }
           if (obs_list.sublist(i->first).isParameter("Functional")) {

@@ -28,19 +28,15 @@ class MultiscalePorosity_DPM : public MultiscalePorosity {
   MultiscalePorosity_DPM(Teuchos::ParameterList& plist);
   ~MultiscalePorosity_DPM() {};
 
-  // local (cell-based) solver
+  // local (cell-based) solver returns water content and capilalry
+  // pressure in the matrix. max_itrs is input/output parameter
   double WaterContentMatrix(
-      double dt, double phi, double n_l, double wcm0, double pcf0, double& pcm);
-
-  // interface to boost
-  boost::math::tuple<double, double> operator() (double pc);
+      double dt, double phi, double n_l, double wcm0, double pcf0, 
+      double& pcm, int& max_itrs);
 
  private:
   Teuchos::RCP<WRM> wrm_;
   double alpha_;
-
-  // support of the Newton-Raphson solver
-  double sat0_, pcf0_, alpha_mod_;
 
   static Utils::RegisteredFactory<MultiscalePorosity, MultiscalePorosity_DPM> factory_;
 };
