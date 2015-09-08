@@ -306,8 +306,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
       TranslateTransportBCsGroup_(bcname, regions, solutes, out_list);
     }
 
-    // -- geochemistry BCs 
-    node = GetUniqueElementByTagsString_(phase, "geochemistry", flag);
+    // geochemistry BCs 
+    node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry", flag);
     if (flag) {
       std::string bctype;
       std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);

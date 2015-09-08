@@ -424,10 +424,11 @@ RockManager::Initialize(const Array<std::string>* solute_names)
   }
   Array<std::string> r_names;  pp.getarr("rock",r_names,0,nrock);
 
+  ParmParse ppp("prob");
   max_grid_size_fine_gen = max_grid_size_fine_gen_DEF;
-  pp.query("max_grid_size_fine_gen",max_grid_size_fine_gen);
+  ppp.query("max_grid_size_fine_gen",max_grid_size_fine_gen);
   ngrow_fine_gen = ngrow_fine_gen_DEF;
-  pp.query("ngrow_fine_gen",ngrow_fine_gen);
+  ppp.query("ngrow_fine_gen",ngrow_fine_gen);
 
   rock.clear();
   rock.resize(nrock,PArrayManage);
@@ -1116,8 +1117,9 @@ RockManager::GetProperty(Real               time,
 
       // Build a boxarray that includes grow cells, except where they extend out the domain
       BoxArray bavals = BoxArray(mf.boxArray()).grow(nGrow);
+      const Box& this_domain = this_amrData->ProbDomain()[level];
       for (int j=0; j<bavals.size(); ++j) {
-	bavals.set(j,Box(bavals[j]) & geom.Domain());
+	bavals.set(j,Box(bavals[j]) & this_domain);
       }
       MultiFab valstmp(bavals,nComp,0);
       this_amrData->FillVar(valstmp,level,gslib_prop->PlotfileVars(),destFillComps);

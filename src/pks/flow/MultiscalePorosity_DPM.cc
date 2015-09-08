@@ -32,34 +32,69 @@ MultiscalePorosity_DPM::MultiscalePorosity_DPM(Teuchos::ParameterList& plist)
 
 
 /* ******************************************************************
-* Main capability: cell-based Newton solver.
+* Main capability: cell-based Newton solver. It returns water content, 
+* pressure in the matrix. max_itrs is input/output parameter.
 ****************************************************************** */
 double MultiscalePorosity_DPM::WaterContentMatrix(
-    double dt, double phi, double n_l, double wcm0, double pcf0, double& pcm)
+    double dt, double phi, double n_l, double wcm0, double pcf0, double& pcm, int& max_itrs)
 {
-  double guess(pcm);
-  double left = pcm - 1e+5; 
-  double right = pcm + 1e+5; 
+  double patm(1e+5), zoom, pmin, pmax;
+  zoom = fabs(pcm) + patm;
+  pmin = pcm - zoom; 
+  pmax = pcm + zoom; 
 
-  // setup internal parameters for operator()
-  pcf0_ = pcf0;
-  sat0_ = wcm0 / (phi * n_l);
-  alpha_mod_ = alpha_ * dt / (phi * n_l);
+  // setup local parameters 
+  double sat0, alpha_mod;
+  sat0 = wcm0 / (phi * n_l);
+  alpha_mod = alpha_ * dt / (phi * n_l);
 
-  pcm = boost::math::tools::newton_raphson_iterate<MultiscalePorosity_DPM, double>(*this, guess, left, right, 20);
+  // setup iterative parameters
+  double tol(1e-8), f0, f1, ds, dp, dsdp, guess, result(pcm);
+  double delta(1.0e+10), delta1(1.0e+10), delta2(1.0e+10);
+  int count(max_itrs);
+
+  while (--count && (fabs(result * tol) < fabs(delta))) {
+    delta2 = delta1;
+    delta1 = delta;
+
+    ds = wrm_->saturation(result) - sat0;
+    dp = result - pcf0;
+    dsdp = wrm_->dSdPc(result);
+
+    f0 = ds - alpha_mod * dp;
+    if (f0 == 0.0) break;
+
+    f1 = dsdp - alpha_mod;
+    delta = f0 / f1;
+
+    // If the last two steps have not converged, try bisection:
+    if (fabs(delta * 2) > fabs(delta2)) {
+      delta = (delta > 0) ? (result - pmin) / 2 : (result - pmax) / 2;
+    }
+    guess = result;
+    result -= delta;
+    if (result <= pmin) {
+      delta = (guess - pmin) / 2;
+      result = guess - delta;
+      if ((result == pmin) || (result == pmax)) break;
+
+    } else if (result >= pmax) {
+      delta = (guess - pmax) / 2;
+      result = guess - delta;
+      if ((result == pmin) || (result == pmax)) break;
+    }
+
+    // update brackets:
+    if (delta > 0.0) {
+      pmax = guess;
+    } else {
+      pmin = guess;
+    }
+  }
+  max_itrs -= count - 1;
+
+  pcm = result;
   return wrm_->saturation(pcm) * phi * n_l;
-}
-
-
-/* ******************************************************************
-* Funtion evaluation for Newton solver.
-****************************************************************** */
-boost::math::tuple<double, double> MultiscalePorosity_DPM::operator() (double pc)
-{
-  double ds = wrm_->saturation(pc) - sat0_;
-  double dp = pc - pcf0_;
-  double dsdp = wrm_->dSdPc(pc);
-  return boost::math::make_tuple(ds - alpha_mod_ * dp, dsdp - alpha_mod_);
 }
 
 }  // namespace Flow

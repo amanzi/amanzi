@@ -104,6 +104,9 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   linear_operator_list_ = Teuchos::sublist(glist, "Solvers", true);
   ti_list_ = Teuchos::sublist(rp_list_, "time integrator");
 
+  ms_itrs_ = 0;
+  ms_calls_ = 0;
+
   vo_ = NULL;
 }
 
@@ -131,7 +134,7 @@ Richards_PK::~Richards_PK()
 ****************************************************************** */
 void Richards_PK::Setup()
 {
-  dt_ = -1.0;
+  dt_ = 0.0;
   mesh_ = S_->GetMesh();
   dim = mesh_->space_dimension();
 
@@ -209,6 +212,10 @@ void Richards_PK::Setup()
         ->SetComponent("cell", AmanziMesh::CELL, 1);
       S_->GetField("prev_water_content_matrix", passwd_)->set_io_vis(false);
     }
+
+    S_->RequireField("porosity_matrix", "porosity_matrix")->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireFieldEvaluator("porosity_matrix");
   }
 
   // Require additional fields and evaluators for this PK.
@@ -401,7 +408,6 @@ void Richards_PK::Initialize()
     bc_head->ComputeShift(t_new, shift_water_table_->Values());
 
   // Process other fundamental structures.
-  K.resize(ncells_owned);
   SetAbsolutePermeabilityTensor();
 
   // Select a proper matrix class. 
@@ -561,7 +567,7 @@ void Richards_PK::Initialize()
     PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
   }
 
-  // initialize multisclae methods
+  // initialize multiscale methods
   if (multiscale_porosity_) {
     Teuchos::RCP<Teuchos::ParameterList>
         msp_list = Teuchos::sublist(rp_list_, "multiscale models", true);
@@ -822,10 +828,15 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   dt_ = t_new - t_old;
 
-  // save a copy of pressure
+  // initialize statistics
+  ms_itrs_ = 0;
+  ms_calls_ = 0;
+
+  // save a copy of primary and conservative fields
+  // -- pressure
   CompositeVector pressure_copy(*S_->GetFieldData("pressure", passwd_));
 
-  // swap saturations
+  // -- saturations, swap prev <- current
   S_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_.ptr(), "flow");
   const CompositeVector& sat = *S_->GetFieldData("saturation_liquid");
   CompositeVector& sat_prev = *S_->GetFieldData("prev_saturation_liquid", passwd_);
@@ -833,7 +844,7 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   CompositeVector sat_prev_copy(sat_prev);
   sat_prev = sat;
 
-  // swap water_content
+  // -- water_conten, swap prev <- current
   S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
   CompositeVector& wc = *S_->GetFieldData("water_content", "water_content");
   CompositeVector& wc_prev = *S_->GetFieldData("prev_water_content", passwd_);
@@ -841,7 +852,7 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   CompositeVector wc_prev_copy(wc_prev);
   wc_prev = wc;
 
-  // swap fields for multiscale models
+  // -- field for multiscale models, save and swap
   Teuchos::RCP<CompositeVector> pressure_matrix_copy, wc_matrix_prev_copy;
   if (multiscale_porosity_) {
     pressure_matrix_copy = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("pressure_matrix", passwd_)));
@@ -909,6 +920,7 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     VV_ReportWaterBalance(S_.ptr());
+    VV_ReportMultiscale();
   }
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     VV_ReportSeepageOutflow(S_.ptr());
@@ -1034,10 +1046,24 @@ double Richards_PK::DeriveBoundaryFaceValue(
   }
 }
 
+
 /* ******************************************************************
 * This is strange.
 ****************************************************************** */
-void  Richards_PK::CalculateDiagnostics() {
+void Richards_PK::VV_ReportMultiscale()
+{
+  if (multiscale_porosity_ && ms_calls_ && 
+      vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "multiscale: NS:" << double(ms_itrs_) / ms_calls_ << std::endl;
+  }
+}
+
+
+/* ******************************************************************
+* This is strange.
+****************************************************************** */
+void Richards_PK::CalculateDiagnostics() {
   UpdateLocalFields_();
 }
 

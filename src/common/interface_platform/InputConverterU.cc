@@ -26,7 +26,7 @@ namespace AmanziInput {
 XERCES_CPP_NAMESPACE_USE
 
 /* ******************************************************************
-* Empty
+* Main driver for the new translator.
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
 {
@@ -46,6 +46,7 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   // parsing of miscalleneous lists
   ParseSolutes_();
   ParseConstants_();
+  ParseModelDescription_();
 
   out_list.set<bool>("Native Unstructured Input", "true");
 
@@ -150,17 +151,44 @@ void InputConverterU::ParseSolutes_()
 /* ******************************************************************
 * Extract generic verbosity object for all sublists.
 ****************************************************************** */
+void InputConverterU::ParseModelDescription_()
+{
+  MemoryManager mm;
+  DOMNodeList* node_list;
+  DOMNode* node;
+
+  bool flag;
+  node_list = doc_->getElementsByTagName(mm.transcode("model_description"));
+  node = GetUniqueElementByTagsString_(node_list->item(0), "coordinate_system", flag);
+
+  if (flag) {
+    coords_ = CharToStrings_(mm.transcode(node->getTextContent()));
+  } else { 
+    coords_.push_back("x"); 
+    coords_.push_back("y"); 
+    coords_.push_back("z"); 
+  }
+
+  node = GetUniqueElementByTagsString_(node_list->item(0), "author", flag);
+  if (flag && vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
+    *vo_->os() << "AUTHOR: " << mm.transcode(node->getTextContent()) << std::endl;
+}
+
+
+/* ******************************************************************
+* Extract generic verbosity object for all sublists.
+****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateVerbosity_()
 {
   Teuchos::ParameterList vlist;
+
+  MemoryManager mm;
 
   DOMNodeList* node_list;
   DOMNode* node_attr;
   DOMNamedNodeMap* attr_map;
   char* text_content;
-
-  MemoryManager mm;
-    
+ 
   // get execution contorls node
   node_list = doc_->getElementsByTagName(mm.transcode("execution_controls"));
   

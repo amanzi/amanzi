@@ -57,7 +57,7 @@ TEST(FLOW_2D_MULTISCALE) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 6.0, 120.0, 3, 120, gm);
+  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 6.0, 120.0, 3, 60, gm);
 
   // create a simple state and populate it
   Teuchos::ParameterList state_list = plist->sublist("State");
@@ -105,5 +105,5 @@ TEST(FLOW_2D_MULTISCALE) {
 
   // check the pressure
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  // for (int c = 0; c < ncells; c++) CHECK(p[0][c] > -4.0 && p[0][c] < 0.01);
+  for (int c = 0; c < 60; c++) CHECK(fabs(pm[0][c] - pf[0][c]) < 0.03);
 }

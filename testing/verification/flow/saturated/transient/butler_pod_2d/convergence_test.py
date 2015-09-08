@@ -111,7 +111,7 @@ if __name__ == "__main__":
         struct = 0
         
     try:
-        comp = 'Drawdown'
+        comp = 'drawdown'
         path_to_amanziU = "."
         root_amanziU = 'observations.out'
         #x_amanziU, c_amanziU = GetOBS_AmanziU(path_to_amanziU,obs_name,comp)
@@ -121,7 +121,7 @@ if __name__ == "__main__":
         unstruct = 0
 
     try:
-        comp = 'Drawdown'
+        comp = 'drawdown'
         path_to_amanziU = path_to_golden
         root_amanziU = 'observations.out'
         x_amanziU_gold, c_amanziU_gold = GetOBS_AmanziU(path_to_amanziU,root_amanziU,comp)

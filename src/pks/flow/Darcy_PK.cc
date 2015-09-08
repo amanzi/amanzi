@@ -269,9 +269,6 @@ void Darcy_PK::Initialize()
   CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
   ComputeBCs(pressure);
 
-  // Allocate memory for other fundamental structures
-  K.resize(ncells_owned);
-
   // pressures (lambda is not important when solver is very accurate)
   DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
                                  *pressure.ViewComponent("face"));

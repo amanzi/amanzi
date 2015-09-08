@@ -20,7 +20,8 @@ class MultiscalePorosity {
   virtual ~MultiscalePorosity() {};
 
   virtual double WaterContentMatrix(
-      double dt, double phi, double n_l, double wcm0, double pcf0, double& pcm) = 0;
+      double dt, double phi, double n_l, double wcm0, double pcf0,
+      double& pcm, int& max_itrs) = 0;
 };
 
 }  // namespace Flow
