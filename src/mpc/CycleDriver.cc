@@ -550,7 +550,6 @@ double CycleDriver::get_dt(bool after_failure) {
   std::vector<std::pair<double,double> >::iterator it;
   std::vector<std::pair<double,double> >::iterator it_max;
 
-
   for (it = reset_info_.begin(), it_max = reset_max_.begin(); it != reset_info_.end(); ++it, ++it_max) {
     if (S_->time() == it->first) {
       if (reset_max_.size() > 0) {
@@ -589,7 +588,6 @@ double CycleDriver::get_dt(bool after_failure) {
 
   // ask the step manager if this step is ok
   dt = tsm_->TimeStep(S_->time(), dt, after_failure);
-
 
   // cap the max step size
   if (dt > max_dt_) {
