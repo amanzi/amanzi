@@ -564,6 +564,24 @@
     <ParameterList name="Transport">
       <ParameterList name="physical models and assumptions">
         <Parameter name="permeability field is required" type="bool" value="false"/>
+        <Parameter name="multiscale model" type="string" value="dual porosity"/>
+      </ParameterList>
+      <ParameterList name="multiscale models">
+        <ParameterList name="MSM 0">
+          <Parameter name="multiscale model" type="string" value="dual porosity"/>
+          <Parameter name="solute transfer coefficient" type="double" value="0.00000000000000000e+00"/>
+          <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
+        </ParameterList>
+        <ParameterList name="MSM 1">
+          <Parameter name="multiscale model" type="string" value="dual porosity"/>
+          <Parameter name="solute transfer coefficient" type="double" value="0.00000000000000000e+00"/>
+          <Parameter name="regions" type="Array(string)" value="{RegionBottom}"/>
+        </ParameterList>
+        <ParameterList name="MSM 2">
+          <Parameter name="multiscale model" type="string" value="dual porosity"/>
+          <Parameter name="solute transfer coefficient" type="double" value="0.00000000000000000e+00"/>
+          <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
+        </ParameterList>
       </ParameterList>
       <Parameter name="spatial discretization order" type="int" value="1"/>
       <Parameter name="temporal discretization order" type="int" value="1"/>
