@@ -12,8 +12,8 @@
 */
 
 #include "dbc.hh"
-#include "MultiscalePorosityFactory.hh"
-#include "MultiscalePorosityPartition.hh"
+#include "MultiscaleFlowPorosityFactory.hh"
+#include "MultiscaleFlowPorosityPartition.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -21,12 +21,12 @@ namespace Flow {
 /* ******************************************************************
 * Non-member factory.
 ****************************************************************** */
-Teuchos::RCP<MultiscalePorosityPartition> CreateMultiscalePorosityPartition(
+Teuchos::RCP<MultiscaleFlowPorosityPartition> CreateMultiscaleFlowPorosityPartition(
     Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     Teuchos::RCP<Teuchos::ParameterList> plist)
 {
-  MultiscalePorosityFactory factory;
-  std::vector<Teuchos::RCP<MultiscalePorosity> > msp_list;
+  MultiscaleFlowPorosityFactory factory;
+  std::vector<Teuchos::RCP<MultiscaleFlowPorosity> > msp_list;
   std::vector<std::string> region_list;
 
   for (Teuchos::ParameterList::ConstIterator lcv = plist->begin(); lcv != plist->end(); ++lcv) {
@@ -45,7 +45,7 @@ Teuchos::RCP<MultiscalePorosityPartition> CreateMultiscalePorosityPartition(
   partition->Initialize(mesh, -1);
   partition->Verify();
 
-  return Teuchos::rcp(new MultiscalePorosityPartition(partition, msp_list));
+  return Teuchos::rcp(new MultiscaleFlowPorosityPartition(partition, msp_list));
 }
 
 }  // namespace Flow

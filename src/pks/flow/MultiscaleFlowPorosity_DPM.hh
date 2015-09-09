@@ -6,27 +6,35 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
+  A two-scale porosity model (fracture + matrix) aka dual porosity
+  model. Current naming convention is that the fields used in the 
+  single-porosity model correspond now to the fracture continuum.
+  Example: pressure = pressure in the fracture continuum;
+           pressure_matrix = pressure in the matrix continuum.
+
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_MULTISCALE_POROSITY_DPM_HH_
-#define AMANZI_MULTISCALE_POROSITY_DPM_HH_
+#ifndef MULTISCALE_FLOW_POROSITY_DPM_HH_
+#define MULTISCALE_FLOW_POROSITY_DPM_HH_
 
-#include "boost/math/tools/tuple.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 #include "factory.hh"
 
-#include "MultiscalePorosity.hh"
+#include "MultiscaleFlowPorosity.hh"
 #include "WRM.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-class MultiscalePorosity_DPM : public MultiscalePorosity {
+class MultiscaleFlowPorosity_DPM : public MultiscaleFlowPorosity {
  public:
-  MultiscalePorosity_DPM(Teuchos::ParameterList& plist);
-  ~MultiscalePorosity_DPM() {};
+  MultiscaleFlowPorosity_DPM(Teuchos::ParameterList& plist);
+  ~MultiscaleFlowPorosity_DPM() {};
+
+  // Calculate field water content assuming pressure equilibrium
+  double ComputeField(double phi, double n_l, double pcm);
 
   // local (cell-based) solver returns water content and capilalry
   // pressure in the matrix. max_itrs is input/output parameter
@@ -37,8 +45,9 @@ class MultiscalePorosity_DPM : public MultiscalePorosity {
  private:
   Teuchos::RCP<WRM> wrm_;
   double alpha_;
+  double tol_;
 
-  static Utils::RegisteredFactory<MultiscalePorosity, MultiscalePorosity_DPM> factory_;
+  static Utils::RegisteredFactory<MultiscaleFlowPorosity, MultiscaleFlowPorosity_DPM> factory_;
 };
 
 }  // namespace Flow

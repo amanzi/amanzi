@@ -356,7 +356,7 @@ void Darcy_PK::Initialize()
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << std::endl 
-        << vo_->color("green") << "Initalization of TI period is complete." << vo_->reset() << std::endl;
+        << vo_->color("green") << "Initalization of PK is complete." << vo_->reset() << std::endl;
     *vo_->os() << "TI:\"" << ti_method_name.c_str() << "\""
                << " dt:" << dt_method_name << " Src:" << src_sink_distribution
                << " LS:\"" << solver_name_.c_str() << "\""

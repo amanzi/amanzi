@@ -203,6 +203,10 @@ void Richards_PK::Setup()
         ->SetComponent("cell", AmanziMesh::CELL, 1);
     }
 
+    Teuchos::RCP<Teuchos::ParameterList>
+        msp_list = Teuchos::sublist(rp_list_, "multiscale models", true);
+    msp_ = CreateMultiscaleFlowPorosityPartition(mesh_, msp_list);
+
     if (!S_->HasField("water_content_matrix")) {
       S_->RequireField("water_content_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -567,13 +571,6 @@ void Richards_PK::Initialize()
     PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
   }
 
-  // initialize multiscale methods
-  if (multiscale_porosity_) {
-    Teuchos::RCP<Teuchos::ParameterList>
-        msp_list = Teuchos::sublist(rp_list_, "multiscale models", true);
-    msp_ = CreateMultiscalePorosityPartition(mesh_, msp_list);
-  }
-
   // Optional step: calculate hydrostatic solution consistent with BCs
   // and clip it as requested. We have to do it only once at the beginning
   // of time period.
@@ -667,31 +664,7 @@ void Richards_PK::Initialize()
   }
 
   // verbose output
-  // print the header for new time period
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << std::endl 
-        << vo_->color("green") << "Initalization of TP is complete, T=" << t_old 
-        << " dT=" << dt_ << vo_->reset() << std::endl;
-    *vo_->os()<< "EC:" << error_control_ << " Src:" << src_sink_distribution
-              << " Upwind:" << relperm_->method() << op_matrix_diff_->little_k()
-              << " PC:\"" << preconditioner_name_.c_str() << "\"" 
-              << " TI:\"" << ti_method_name.c_str() << "\"" << std::endl
-              << "matrix: " << op_matrix_->PrintDiagnostics() << std::endl
-              << "precon: " << op_preconditioner_->PrintDiagnostics() << std::endl;
-
-    int missed_tmp = missed_bc_faces_;
-    int dirichlet_tmp = dirichlet_bc_faces_;
-#ifdef HAVE_MPI
-    mesh_->get_comm()->SumAll(&missed_tmp, &missed_bc_faces_, 1);
-    mesh_->get_comm()->SumAll(&dirichlet_tmp, &dirichlet_bc_faces_, 1);
-#endif
-
-    *vo_->os() << "pressure BC assigned to " << dirichlet_bc_faces_ << " faces" << std::endl;
-    *vo_->os() << "default (no-flow) BC assigned to " << missed_bc_faces_ << " faces" << std::endl << std::endl;
-
-    VV_PrintHeadExtrema(*solution);
-  }
+  InitializeStatistics_();
 }
 
 
@@ -729,38 +702,11 @@ void Richards_PK::InitializeFields_()
     }
   }
 
-  if (S_->HasField("prev_saturation_liquid")) {
-    if (!S_->GetField("prev_saturation_liquid", passwd_)->initialized()) {
-      pressure_eval_->SetFieldAsChanged(S_.ptr());
-      S_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_.ptr(), passwd_);
+  InitializeFieldFromField_("prev_saturation_liquid", "saturation_liquid", true);
+  InitializeFieldFromField_("prev_water_content", "water_content", true);
 
-      const CompositeVector& s1 = *S_->GetFieldData("saturation_liquid");
-      CompositeVector& s0 = *S_->GetFieldData("prev_saturation_liquid", passwd_);
-      s0 = s1;
-
-      S_->GetField("prev_saturation_liquid", passwd_)->set_initialized();
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initiliazed prev_saturation_liquid to saturation_liquid" << std::endl;  
-    }
-  }
-
-  if (S_->HasField("prev_water_content")) {
-    if (!S_->GetField("prev_water_content", passwd_)->initialized()) {
-      S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), passwd_);
-
-      const CompositeVector& wc1 = *S_->GetFieldData("water_content");
-      CompositeVector& wc0 = *S_->GetFieldData("prev_water_content", passwd_);
-      wc0 = wc1;
-
-      S_->GetField("prev_water_content", passwd_)->set_initialized();
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initiliazed prev_water_content to water_content" << std::endl;  
-    }
-  }
-
-  // pressure equilibrium 
+  // set matrix fields assuming presure equilibrium
+  // -- pressure
   if (S_->HasField("pressure_matrix")) {
     if (!S_->GetField("pressure_matrix", passwd_)->initialized()) {
       const Epetra_MultiVector& p1 = *S_->GetFieldData("pressure")->ViewComponent("cell");
@@ -770,12 +716,22 @@ void Richards_PK::InitializeFields_()
       S_->GetField("pressure_matrix", passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initiliazed pressure_matrix to pressure" << std::endl;  
+          *vo_->os() << "initialized pressure_matrix to pressure" << std::endl;  
     }
   }
 
-  InitializeFieldFromField_("water_content_matrix", "water_content");
-  InitializeFieldFromField_("prev_water_content_matrix", "water_content_matrix");
+  // -- water contents 
+  if (S_->HasField("water_content_matrix")) {
+    if (!S_->GetField("water_content_matrix", passwd_)->initialized()) {
+      CalculateVWContentMatrix_();
+      S_->GetField("water_content_matrix", passwd_)->set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initialized water_content_matrix to VWContent(pressure_matrix)" << std::endl;  
+    }
+  }
+
+  InitializeFieldFromField_("prev_water_content_matrix", "water_content_matrix", false);
 }
 
 
@@ -783,10 +739,13 @@ void Richards_PK::InitializeFields_()
 * Auxiliary initialization technique.
 **************************************************************** */
 void Richards_PK::InitializeFieldFromField_(
-    const std::string& field0, const std::string& field1)
+    const std::string& field0, const std::string& field1, bool call_evaluator)
 {
   if (S_->HasField(field0)) {
     if (!S_->GetField(field0, passwd_)->initialized()) {
+      if (call_evaluator)
+          S_->GetFieldEvaluator(field1)->HasFieldChanged(S_.ptr(), passwd_);
+
       const CompositeVector& f1 = *S_->GetFieldData(field1);
       CompositeVector& f0 = *S_->GetFieldData(field0, passwd_);
       f0 = f1;
@@ -815,6 +774,40 @@ void Richards_PK::InitializeUpwind_()
   } else {
     darcy_flux_upwind = Teuchos::rcp(new CompositeVector(*darcy_flux_copy));
     darcy_flux_upwind->PutScalar(0.0);
+  }
+}
+
+
+/* ******************************************************************
+* Print the header for new time period.
+****************************************************************** */
+void Richards_PK::InitializeStatistics_()
+{
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    std::string ti_method_name = ti_list_->get<std::string>("time integration method");
+
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << std::endl 
+        << vo_->color("green") << "Initalization of PK is complete, T=" << S_->time()
+        << " dT=" << dt_ << vo_->reset() << std::endl;
+    *vo_->os()<< "EC:" << error_control_ << " Src:" << src_sink_distribution
+              << " Upwind:" << relperm_->method() << op_matrix_diff_->little_k()
+              << " PC:\"" << preconditioner_name_.c_str() << "\"" 
+              << " TI:\"" << ti_method_name.c_str() << "\"" << std::endl
+              << "matrix: " << op_matrix_->PrintDiagnostics() << std::endl
+              << "precon: " << op_preconditioner_->PrintDiagnostics() << std::endl;
+
+    int missed_tmp = missed_bc_faces_;
+    int dirichlet_tmp = dirichlet_bc_faces_;
+#ifdef HAVE_MPI
+    mesh_->get_comm()->SumAll(&missed_tmp, &missed_bc_faces_, 1);
+    mesh_->get_comm()->SumAll(&dirichlet_tmp, &dirichlet_bc_faces_, 1);
+#endif
+
+    *vo_->os() << "pressure BC assigned to " << dirichlet_bc_faces_ << " faces" << std::endl;
+    *vo_->os() << "default (no-flow) BC assigned to " << missed_bc_faces_ << " faces" << std::endl << std::endl;
+
+    VV_PrintHeadExtrema(*solution);
   }
 }
 

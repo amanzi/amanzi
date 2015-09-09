@@ -91,7 +91,6 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
 
   /* initialize a transport process kernel */
   TPK.Initialize();
-  TPK.PrintStatistics();
 
   /* advance the state */
   Teuchos::RCP<Epetra_MultiVector>

@@ -11,9 +11,8 @@
 
 #include <string>
 
-#include "boost/math/tools/roots.hpp"
-
-#include "MultiscalePorosity_DPM.hh"
+#include "FlowDefs.hh"
+#include "MultiscaleFlowPorosity_DPM.hh"
 #include "WRMFactory.hh"
 
 namespace Amanzi {
@@ -22,12 +21,22 @@ namespace Flow {
 /* ******************************************************************
 * This model is minor extension of the WRM.
 ****************************************************************** */
-MultiscalePorosity_DPM::MultiscalePorosity_DPM(Teuchos::ParameterList& plist)
+MultiscaleFlowPorosity_DPM::MultiscaleFlowPorosity_DPM(Teuchos::ParameterList& plist)
 {
   WRMFactory factory;
   wrm_ = factory.Create(plist);
 
   alpha_ = plist.get<double>("mass transfer coefficient", 0.0);
+  tol_ = plist.get<double>("tolerance", FLOW_DPM_NEWTON_TOLERANCE);
+}
+
+
+/* ******************************************************************
+* It should be called only once; otherwise, create an evaluator.
+****************************************************************** */
+double MultiscaleFlowPorosity_DPM::ComputeField(double phi, double n_l, double pcm)
+{
+  return wrm_->saturation(pcm) * phi * n_l;
 }
 
 
@@ -35,7 +44,7 @@ MultiscalePorosity_DPM::MultiscalePorosity_DPM(Teuchos::ParameterList& plist)
 * Main capability: cell-based Newton solver. It returns water content, 
 * pressure in the matrix. max_itrs is input/output parameter.
 ****************************************************************** */
-double MultiscalePorosity_DPM::WaterContentMatrix(
+double MultiscaleFlowPorosity_DPM::WaterContentMatrix(
     double dt, double phi, double n_l, double wcm0, double pcf0, double& pcm, int& max_itrs)
 {
   double patm(1e+5), zoom, pmin, pmax;
@@ -49,11 +58,11 @@ double MultiscalePorosity_DPM::WaterContentMatrix(
   alpha_mod = alpha_ * dt / (phi * n_l);
 
   // setup iterative parameters
-  double tol(1e-8), f0, f1, ds, dp, dsdp, guess, result(pcm);
+  double f0, f1, ds, dp, dsdp, guess, result(pcm);
   double delta(1.0e+10), delta1(1.0e+10), delta2(1.0e+10);
   int count(max_itrs);
 
-  while (--count && (fabs(result * tol) < fabs(delta))) {
+  while (--count && (fabs(result * tol_) < fabs(delta))) {
     delta2 = delta1;
     delta1 = delta;
 

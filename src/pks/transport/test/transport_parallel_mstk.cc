@@ -99,7 +99,6 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
 
   /* initialize a transport process kernel */
   TPK.Initialize();
-  TPK.PrintStatistics();
 
   /* advance the state */
   double t_old(0.0), t_new, dt;

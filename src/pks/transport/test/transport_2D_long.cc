@@ -89,7 +89,6 @@ TEST(ADVANCE_WITH_2D_MESH) {
 
   /* initialize a transport process kernel */
   TPK.Initialize();
-  TPK.PrintStatistics();
 
   /* advance the transport state */
   double t_old(0.0), t_new(0.0), dt;

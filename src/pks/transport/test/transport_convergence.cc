@@ -119,7 +119,6 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     /* initialize a transport process kernel */
     TPK.Initialize();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
-    if (nx == 20) TPK.PrintStatistics();
  
     /* advance the state */
     int iter = 0;
@@ -235,7 +234,6 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
     /* initialize a transport process kernel */
     TPK.Initialize();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
-    if (nx == 20) TPK.PrintStatistics();
  
     /* advance the state */
     int ncycles = 0, iter = 0;
@@ -354,7 +352,6 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     /* initialize a transport process kernel */
     TPK.Initialize();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 2;
-    if (nx == 20) TPK.PrintStatistics();
  
     /* advance the state */
     if (nx == 20) dt0 = TPK.CalculateTransportDt();
@@ -485,7 +482,6 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
     /* initialize a transport process kernel */
     TPK.Initialize();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
-    if (loop == 0) TPK.PrintStatistics();
  
     /* advance the state */
     int iter = 0;
@@ -610,7 +606,6 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
     /* initialize a transport process kernel */
     TPK.Initialize();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 2;
-    if (loop == 0) TPK.PrintStatistics();
  
     /* advance the state */
     int iter = 0;

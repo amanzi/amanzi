@@ -31,7 +31,7 @@
 
 // Flow
 #include "Flow_PK.hh"
-#include "MultiscalePorosityPartition.hh"
+#include "MultiscaleFlowPorosityPartition.hh"
 #include "RelPerm.hh"
 #include "RelPermEvaluator.hh"
 #include "WRMPartition.hh"
@@ -125,25 +125,31 @@ class Richards_PK : public Flow_PK {
   int AdvanceToSteadyState_Picard(Teuchos::ParameterList& picard_list);
   double CalculateRelaxationFactor(const Epetra_MultiVector& uold, const Epetra_MultiVector& unew);
 
+  // -- mutiscale methods
+  void CalculateVWContentMatrix_();
+  void VV_ReportMultiscale();
+
   // -- miscaleneous methods
   void UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u);
   double ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du);
  
-  // access methods
+  // -- access methods
   Teuchos::RCP<Operators::Operator> op_matrix() { return op_matrix_; }
   const Teuchos::RCP<CompositeVector> get_solution() { return solution; }
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > get_bdf1_dae() { return bdf1_dae; }
 
-  // developement members
+  // -- verbose output and visualization methods
+  void PlotWRMcurves(Teuchos::ParameterList& plist);
+
+  // -- developement methods
   double DeriveBoundaryFaceValue(int f, const CompositeVector& u, Teuchos::RCP<const WRM> model);
   virtual double BoundaryFaceValue(int f, const CompositeVector& pressure);
-  void PlotWRMcurves(Teuchos::ParameterList& plist);
-  void VV_ReportMultiscale();
 
  private:
   void InitializeFields_();
-  void InitializeFieldFromField_(const std::string& field0, const std::string& field1);
+  void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
   void InitializeUpwind_();
+  void InitializeStatistics_();
 
   void Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f);
   void CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& kvapor_pres,
@@ -183,7 +189,7 @@ class Richards_PK : public Flow_PK {
   // multiscale models
   bool multiscale_porosity_;
   int ms_itrs_, ms_calls_;
-  Teuchos::RCP<MultiscalePorosityPartition> msp_;
+  Teuchos::RCP<MultiscaleFlowPorosityPartition> msp_;
 
   // time integrators
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae;

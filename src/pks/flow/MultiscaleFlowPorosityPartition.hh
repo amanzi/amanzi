@@ -8,24 +8,24 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  A collection of MultiscalePorosity models along with a mesh partition.
+  A collection of multiscale porosity models along with a mesh partition.
 */
 
-#ifndef AMANZI_FLOW_MULTISCALE_POROSITY_PARTITION_HH_
-#define AMANZI_FLOW_MULTISCALE_POROSITY_PARTITION_HH_
+#ifndef MULTISCALE_FLOW_POROSITY_PARTITION_HH_
+#define MULTISCALE_FLOW_POROSITY_PARTITION_HH_
 
 #include "Mesh.hh"
 #include "MeshPartition.hh"
-#include "MultiscalePorosity.hh"
+#include "MultiscaleFlowPorosity.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-typedef std::vector<Teuchos::RCP<MultiscalePorosity> > MsPList;
-typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, MsPList> MultiscalePorosityPartition;
+typedef std::vector<Teuchos::RCP<MultiscaleFlowPorosity> > MsFList;
+typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, MsFList> MultiscaleFlowPorosityPartition;
 
 // Non-member factory
-Teuchos::RCP<MultiscalePorosityPartition> CreateMultiscalePorosityPartition(
+Teuchos::RCP<MultiscaleFlowPorosityPartition> CreateMultiscaleFlowPorosityPartition(
     Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     Teuchos::RCP<Teuchos::ParameterList> plist);
 

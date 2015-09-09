@@ -10,13 +10,13 @@
 */
 
 
-#include "MultiscalePorosity_DPM.hh"
+#include "MultiscaleTransportPorosity_DPM.hh"
 
 namespace Amanzi {
-namespace Flow {
+namespace Transport {
 
-Utils::RegisteredFactory<MultiscalePorosity, MultiscalePorosity_DPM>
-    MultiscalePorosity_DPM::factory_("dual porosity");
+Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_DPM>
+    MultiscaleTransportPorosity_DPM::factory_("dual porosity");
 
-}  // namespace Flow
+}  // namespace Transport
 }  // namespace Amanzi
