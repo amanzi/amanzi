@@ -707,6 +707,45 @@ Mesh_MSTK::Mesh_MSTK (const Mesh& inmesh,
   List_Delete(src_ents);
 }
 
+//---------------------------------------------------------
+// Extract MSTK entities from an ID list and make a new MSTK mesh WITH A NEW COMM
+//---------------------------------------------------------
+
+Mesh_MSTK::Mesh_MSTK (const Epetra_MpiComm *comm,
+                      const Mesh& inmesh, 
+                      const Entity_ID_List& entity_ids, 
+                      const Entity_kind entity_kind,
+                      const bool flatten,
+                      const bool extrude,
+                      const bool request_faces,
+                      const bool request_edges) :
+    mpicomm(comm->GetMpiComm()),
+    Mesh(inmesh.verbosity_obj(),request_faces,request_edges),
+    extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
+{  
+  // store pointers to the MESH_XXXFromID functions so that they can
+  // be called without a switch statement 
+
+  static MEntity_ptr (*MEntFromID[4])(Mesh_ptr,int) =
+    {MESH_VertexFromID, MESH_EdgeFromID, MESH_FaceFromID, MESH_RegionFromID};
+
+  MType entity_dim = ((Mesh_MSTK&) inmesh).entity_kind_to_mtype(entity_kind);
+
+  Mesh_ptr inmesh_mstk = ((Mesh_MSTK&) inmesh).mesh;
+
+  int nent = entity_ids.size();
+  List_ptr src_ents = List_New(nent);
+  for (int i = 0; i < nent; ++i) {
+    MEntity_ptr ent = MEntFromID[entity_dim](inmesh_mstk,entity_ids[i]+1);
+    List_Add(src_ents,ent);
+  }
+  
+  extract_mstk_mesh((Mesh_MSTK&) inmesh, src_ents, entity_dim, flatten, extrude,
+                    request_faces, request_edges);
+
+  List_Delete(src_ents);
+}
+
 // Translate a setname into a special string with decorations
 // indicating which type of entity is in that set
 
