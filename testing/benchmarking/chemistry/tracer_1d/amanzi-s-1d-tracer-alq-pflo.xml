@@ -42,7 +42,7 @@
   </ParameterList>
   <ParameterList name="Material Properties">
     <ParameterList name="Soil">
-      <Parameter name="Assigned Regions" type="Array(string)" value="{All, XLOBC}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.25"/>
       </ParameterList>
