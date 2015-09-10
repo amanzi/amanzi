@@ -193,7 +193,7 @@ if __name__ == "__main__":
         input_filename = os.path.join("amanzi-s-1d-tracer-alq-crunch.xml")
         path_to_amanziS = "struct_amanzi-output-crunch"
         run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
-        root_amanziS = "plt00501"
+        root_amanziS = "plt00051"
         compS = "Tracer_Aqueous_Concentration"
         x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
         struct_c = len(x_amanziS_crunch)
