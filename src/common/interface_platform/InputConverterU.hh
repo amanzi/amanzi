@@ -85,6 +85,7 @@ class InputConverterU : public InputConverter {
 
   // -- transport
   Teuchos::ParameterList TranslateTransport_();
+  Teuchos::ParameterList TranslateTransportMSM_();
   Teuchos::ParameterList TranslateTransportBCs_();
   void TranslateTransportBCsGroup_(
       std::string& bcname, std::vector<std::string>& regions,

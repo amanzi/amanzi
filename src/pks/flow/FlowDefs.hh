@@ -45,6 +45,7 @@ const int FLOW_RELATIVE_PERM_ARITHMETIC_AVERAGE = 5;
 const int FLOW_RELATIVE_PERM_AMANZI_MFD = 7;
 const double FLOW_RELATIVE_PERM_TOLERANCE = 1e-12;  // [-]
 
+// time integration
 const int FLOW_TI_ERROR_CONTROL_PRESSURE = 1;  // binary mask for error control
 const int FLOW_TI_ERROR_CONTROL_SATURATION = 2;
 const int FLOW_TI_ERROR_CONTROL_RESIDUAL = 4;
@@ -59,6 +60,9 @@ const double FLOW_DT_ADAPTIVE_INCREASE = 4.0;
 const double FLOW_DT_ADAPTIVE_REDUCTION = 0.1;
 const double FLOW_DT_ADAPTIVE_SAFETY_FACTOR = 0.9;
 const double FLOW_DT_ADAPTIVE_ERROR_TOLERANCE = 1e-10;
+
+// multiscale models
+const double FLOW_DPM_NEWTON_TOLERANCE = 1e-8;
 
 const int FLOW_HEX_FACES = 6;  // Hexahedron is the common element
 const int FLOW_HEX_NODES = 8;

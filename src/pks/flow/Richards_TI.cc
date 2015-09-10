@@ -10,7 +10,7 @@
            Konstantin Lipnikov (lipnikov@lanl.gov)
            Daniil Svyatskiy (dasvyat@lanl.gov)
 
-  The routine implements interface to the BDF1 time integrator.  
+  Interface to the BDF1 time integrator.  
 */
 
 #include <algorithm>
@@ -251,6 +251,24 @@ void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Comp
     ms_itrs_ += max_itrs;
   }
   ms_calls_ += ncells_owned;
+}
+
+
+/* ******************************************************************
+* Calculate volumetric water content in matrix
+****************************************************************** */
+void Richards_PK::CalculateVWContentMatrix_()
+{
+  const Epetra_MultiVector& pcm = *S_->GetFieldData("pressure_matrix")->ViewComponent("cell");
+  const Epetra_MultiVector& phi = *S_->GetFieldData("porosity_matrix")->ViewComponent("cell");
+  Epetra_MultiVector& wcm = *S_->GetFieldData("water_content_matrix", passwd_)->ViewComponent("cell");
+
+  double phi0, pcm0;
+  for (int c = 0; c < ncells_owned; ++c) {
+    pcm0 = atm_pressure_ - pcm[0][c];
+    phi0 = phi[0][c];
+    wcm[0][c] = msp_->second[(*msp_->first)[c]]->ComputeField(phi0, molar_rho_, pcm0);
+  }
 }
 
 

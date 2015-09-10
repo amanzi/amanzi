@@ -77,6 +77,7 @@ void RelPermEvaluator::EvaluateField_(
     const Teuchos::Ptr<State>& S,
     const Teuchos::Ptr<CompositeVector>& result)
 {
+  ASSERT(false);
   // relperm_->Compute(S->GetFieldData(pressure_key_), result);
 }
 

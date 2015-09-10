@@ -162,11 +162,9 @@ scheme provides excellent match (circles).
 
 .. include:: table_cross-section-b.txt
 
-
 .. plot:: amanzi_dispersion_aligned_point_2d-c.py
    :align: center
 
-	   
 .. include:: table_cross-section-c.txt
 
 

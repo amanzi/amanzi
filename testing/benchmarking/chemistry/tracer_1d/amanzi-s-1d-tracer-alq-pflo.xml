@@ -23,7 +23,7 @@
         <ParameterList name="Expert Settings">
           <Parameter name="gravity" type="double" value="0"/>
           <Parameter name="max_n_subcycle_transport" type="int" value="1"/>
-          <Parameter name="cfl" type="double" value="0.1"/> 
+          <Parameter name="cfl" type="double" value="1.0"/> 
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -42,7 +42,7 @@
   </ParameterList>
   <ParameterList name="Material Properties">
     <ParameterList name="Soil">
-      <Parameter name="Assigned Regions" type="Array(string)" value="{All, XLOBC}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.25"/>
       </ParameterList>
