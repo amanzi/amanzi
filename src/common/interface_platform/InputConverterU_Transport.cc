@@ -264,7 +264,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
 {
-  Teuchos::ParameterList out_list;
+  Teuchos::ParameterList out_list, empty_list;
 
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
@@ -289,6 +289,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
     std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
     node = GetUniqueElementByTagsString_(inode, "multiscale_structure, solute_transfer_coefficient", flag);
+    if (!flag) return empty_list;
     double omega = std::strtod(mm.transcode(node->getTextContent()), NULL);
     
     std::stringstream ss;
