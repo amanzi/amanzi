@@ -30,6 +30,7 @@ cd ${exodusii_build_dir}
       -D CMAKE_C_FLAGS='@Amanzi_COMMON_CFLAGS@' \
       -D CMAKE_CXX_FLAGS='@Amanzi_COMMON_CXXFLAGS@' \
       -D CMAKE_Fortran_FLAGS='@Amanzi_COMMON_CXXFLAGS@' \
+      -D BUILD_SHARED_LIBS:BOOL=@BUILD_SHARED_LIBS@ \
       -D NETCDF_INCLUDE_DIR=@TPL_INSTALL_PREFIX@/include \
       -D NETCDF_LIBRARY=@TPL_INSTALL_PREFIX@/lib/${netcdf_library} \
       -D NETCDF_NCDUMP=${netcdf_ncdump} \
