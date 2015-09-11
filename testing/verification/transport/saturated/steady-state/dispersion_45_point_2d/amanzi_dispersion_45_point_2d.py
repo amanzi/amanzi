@@ -245,6 +245,11 @@ if __name__ == "__main__":
         axes1.set_yscale('log')
         axes1.set_xlim(obs_slices[slice]['domain'][0],obs_slices[slice]['domain'][1])
         axes1.set_ylim(obs_slices[slice]['range'][0],obs_slices[slice]['range'][1])
+
+        axes1.legend(loc='lower right')
+        axes1.set_xlabel('Position along the Plume Centerline, x[m]',fontsize=14)
+        axes1.set_ylabel('Concentration [kg/m$^3$]',fontsize=14)
+        axes1.text(150,0.003,'Concentration along y=0, at t=1440 days.',fontsize=14)
         
         # Plot centerline along y=x
         PlotObservations(obs_scatter,slice,subtests,axes1)
