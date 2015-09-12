@@ -43,13 +43,13 @@ def plottest(axes1, obstimes, obsdata, ana_data):
 if __name__ == "__main__":
 
     import os
-    import run_amanzi
+    import run_amanzi_standard
 
     input_filename =os.path.join("amanzi_butler_strip_2d.xml")
 
     CWD = os.getcwd()
     try: 
-        run_amanzi.run_amanzi('../'+input_filename)
+        run_amanzi_standard.run_amanzi(input_filename, 2)
 #        obs_xml=loadInputXML(input_filename)
         obs_data = load_amanzi_obs()
 

@@ -78,18 +78,36 @@ verification['confined_flow'] = {
   'index_entry' : 'confined_flow/index.rst',
   'index' : {'index_title' : 'Confined Flow Tests',
              'index_file' : 'doc/user_guide/verification/confined_flow/index.rst',
-             'index_list' : [ 'linear_head_head_1d' ,
+             'index_list' : [ 'linear_head_head_1d',
+                              'linear_flux_head_1d',
+                              'linear_materials_serial_1d',
+                              'linear_materials_parallel_1d',
                               'theis_isotropic_1d',
                               'butler_pod_2d',
-                              # 'linear_flux_head',
-                              # 'linear_materials_serial',
-                              # 'linear_materials_parallel',
+                              'butler_strip_2d',
+                              'hantush_anisotropic_2d',
+                              'boundedDomain_2d', 
                             ],
             },
   'linear_head_head_1d' : {
     'from_dir' : 'testing/verification/flow/saturated/steady-state/linear_head_head_1d',
     'dest_dir' : 'doc/user_guide/verification/confined_flow/linear_head_head_1d',
     'index_entry' : 'linear_head_head/amanzi_linear_head_head_1d.rst'
+  },
+  'linear_flux_head_1d' : {
+    'from_dir' : 'testing/verification/flow/saturated/steady-state/linear_flux_head_1d',
+    'dest_dir' : 'doc/user_guide/verification/confined_flow/linear_flux_head_1d',
+    'index_entry' : 'linear_flux_head/amanzi_linear_flux_head_1d.rst'
+  },
+  'linear_materials_serial_1d' : {
+    'from_dir' : 'testing/verification/flow/saturated/steady-state/linear_materials_serial_1d',
+    'dest_dir' : 'doc/user_guide/verification/confined_flow/linear_materials_serial_1d',
+    'index_entry' : 'linear_materials_serial/amanzi_linear_materials_serial_1d.rst'
+  },
+  'linear_materials_parallel_1d' : {
+    'from_dir' : 'testing/verification/flow/saturated/steady-state/linear_materials_parallel_1d',
+    'dest_dir' : 'doc/user_guide/verification/confined_flow/linear_materials_parallel_1d',
+    'index_entry' : 'linear_materials_parallel/amanzi_linear_materials_parallel_1d.rst'
   },
   'theis_isotropic_1d' : {
     'from_dir' : 'testing/verification/flow/saturated/transient/theis_isotropic_1d',
@@ -101,25 +119,22 @@ verification['confined_flow'] = {
     'dest_dir' : 'doc/user_guide/verification/confined_flow/butler_pod_2d',
     'index_entry' : 'butler_pod_2d/amanzi_butler_pod_2d.rst',
   },
+  'butler_strip_2d' : {
+    'from_dir' : 'testing/verification/flow/saturated/transient/butler_strip_2d',
+    'dest_dir' : 'doc/user_guide/verification/confined_flow/butler_strip_2d',
+    'index_entry' : 'butler_strip_2d/amanzi_butler_strip_2d.rst',
+  },
+  'hantush_anisotropic_2d' : {
+    'from_dir' : 'testing/verification/flow/saturated/transient/hantush_anisotropic_2d',
+    'dest_dir' : 'doc/user_guide/verification/confined_flow/hantush_anisotropic_2d',
+    'index_entry' : 'hantush_anisotropic_2d/amanzi_hantush_anisotropic_2d.rst',
+  },
+  'boundedDomain_2d' : {
+     'from_dir' : 'testing/verification/flow/saturated/transient/boundedDomain_2d',
+     'dest_dir' : 'doc/user_guide/verification/confined_flow/boundedDomain_2d',
+     'index_entry' : 'boundedDomain_2d/amanzi_boundedDomain_2d.rst',
+  },
 }
-
-"""
-  'linear_flux_head' : {
-    'from_dir' : 'testing/verification/flow/saturated/steady-state/linear_flux_head_1d',
-    'dest_dir' : 'doc/user_guide/verification/confined_flow/linear_flux_head',
-    'index_entry' : 'linear_flux_head/amanzi_linear_flux_head_1d.rst'
-  },
-  'linear_materials_serial' : {
-    'from_dir' : 'testing/verification/flow/saturated/steady-state/linear_materials_serial_1d',
-    'dest_dir' : 'doc/user_guide/verification/confined_flow/linear_materials_serial',
-    'index_entry' : 'linear_materials_serial/amanzi_linear_materials_serial_1d.rst'
-  },
-  'linear_materials_parallel' : {
-    'from_dir' : 'testing/verification/flow/saturated/steady-state/linear_materials_parallel_1d',
-    'dest_dir' : 'doc/user_guide/verification/confined_flow/linear_materials_parallel',
-    'index_entry' : 'linear_materials_parallel/amanzi_linear_materials_parallel_1d.rst'
-  },
-"""
 
 verification['confined_flow_parallel'] = {
   'index' : {'index_title' : 'Confined Flow Tests',
@@ -132,23 +147,6 @@ verification['confined_flow_parallel'] = {
                             ],
             },
 }
-"""
-  'hantush_anisotropic' : {
-    'from_dir' : 'testing/verification/flow/saturated/transient/hantush_anisotropic_2d',
-    'dest_dir' : 'doc/user_guide/verification/confined_flow/hantush_anisotropic_2d',
-    'index_entry' : 'hantush_anisotropic_2d/amanzi_hantush_anisotropic_2d.rst',
-  },
-  'butler_strip_2d' : {
-    'from_dir' : 'testing/verification/flow/saturated/transient/butler_strip_2d',
-    'dest_dir' : 'doc/user_guide/verification/confined_flow/butler_strip_2d',
-    'index_entry' : 'butler_strip_2d/amanzi_butler_strip_2d.rst',
-  },
-  'boundedDomain_2d' : {
-     'from_dir' : 'testing/verification/flow/saturated/transient/boundedDomain_2d',
-     'dest_dir' : 'doc/user_guide/verification/confined_flow/boundedDomain_2d',
-     'index_entry' : 'boundedDomain_2d/amanzi_boundedDomain_2d.rst',
-  },
-"""
 
 verification['unconfined_flow'] = {
   'index_entry': 'unconfined_flow/index.rst',
@@ -177,9 +175,9 @@ verification['unconfined_flow'] = {
     'dest_dir' : 'doc/user_guide/verification/unconfined_flow/unconfined_layered_2d',
     'index_entry' : 'unconfined_layered/amanzi_unconfined_layered_2d.rst'
   },
-  'unconfined_recharge': {
+  'unconfined_recharge_1d': {
     'from_dir' : 'testing/verification/flow/richards/steady-state/unconfined_recharge_1d',
-    'dest_dir' : 'doc/user_guide/verification/unconfined_flow/unconfined_recharge',
+    'dest_dir' : 'doc/user_guide/verification/unconfined_flow/unconfined_recharge_1d',
   },
 """
 
@@ -187,17 +185,17 @@ verification['transport'] = {
   'index_entry': 'transport/index.rst',
   'index' : {'index_title' : 'Transport of Solutes: Advection, Dispersion and Diffusion',
              'index_file' : 'doc/user_guide/verification/transport/index.rst',
-             'index_list' : [ # 'dispersion_aligned_point_2d',
+             'index_list' : [ 'dispersion_aligned_point_2d',
                               # 'dispersion_45_point_2d'
                             ],
             },
-}
-"""
   'dispersion_aligned_point_2d' : {
     'from_dir' : 'testing/verification/transport/saturated/steady-state/dispersion_aligned_point_2d',
     'dest_dir' : 'doc/user_guide/verification/transport/dispersion_aligned_point_2d',
     'index_entry' : 'dispersion_aligned_point_2d/amanzi_dispersion_aligned_point_2d.rst',
   },
+}
+"""
   'dispersion_45_point_2d' : {
     'from_dir' : 'testing/verification/transport/saturated/steady-state/dispersion_45_point_2d',
     'dest_dir' : 'doc/user_guide/verification/transport/dispersion_45_point_2d',
@@ -265,13 +263,13 @@ benchmark['transport'] = {
   'index_entry' : 'transport/index.rst',
   'index' : { 'index_title' : 'Transport',
               'index_file' : 'doc/user_guide/benchmarking/transport/index.rst',
-              'index_list' : [ 'non_grid_aligned_2d'
+              'index_list' : [ 'non_grid_aligned',
                              ]
             },
-  'non_grid_aligned_2d' : {
+  'non_grid_aligned' : {
     'from_dir' : 'testing/benchmarking/chemistry/non_grid_aligned',
-    'dest_dir' : 'doc/user_guide/benchmarking/transport/non_grid_aligned_2d',
-    'index_entry' : 'non_grid_aligned_2d/non_grid_aligned.rst'
+    'dest_dir' : 'doc/user_guide/benchmarking/transport/non_grid_aligned',
+    'index_entry' : 'non_grid_aligned/non_grid_aligned.rst'
   },
 }
 
@@ -390,8 +388,8 @@ print("\nRunning verification tests...")
 
 mpi_exec = os.getenv('AMANZI_MPI_EXEC', 'mpirun')
 mpi_np = os.getenv('AMANZI_MPI_NP', '1')
-print("Enviromental variables or default 'AMANZI_MPI_EXEC' = " + mpi_exec)
-print("Enviromental variables or default 'AMANZI_MPI_NP' = " + mpi_np)
+print("Enviromental variable or default 'AMANZI_MPI_EXEC' = " + mpi_exec)
+print("Enviromental variable or default 'AMANZI_MPI_NP' = " + mpi_np)
 
 suffices = {"", "-a", "-b", "-c"}
 

@@ -1,181 +1,187 @@
 <amanzi_input type="unstructured" version="2.1.1">
-    <echo_translated_input file_name="oldspec.xml" format="v1" />
-    <model_description name="SR Test Problem">
-      <comments>Confind aquifer transient drawdown (Theis 1935)</comments>
-      <model_id>Theis</model_id>
-      <author>Dylan Harp, Alec Thomas, David Moulton</author>
-      <units>
-        <length_unit>m</length_unit>
-        <time_unit>s</time_unit>
-        <mass_unit>kg</mass_unit>
-        <conc_unit>molar</conc_unit>
-      </units>
-    </model_description>
-    <definitions>
-      <macros>
-        <time_macro name="Observation Times">
-          <time>0.0</time>
-          <time>1</time>
-          <time>3</time>
-          <time>7</time>
-          <time>15</time>
-          <time>31</time>
-          <time>63</time>
-          <time>127</time>
-          <time>255</time>
-          <time>511</time>
-          <time>1023</time>
-          <time>2047</time>
-          <time>4095</time>
-          <time>8191</time>
-          <time>16383</time>
-          <time>32677</time>
-          <time>65535</time>
-          <time>131071</time>
-          <time>262143</time>
-          <time>524287</time>
-          <time>1e6</time>
-          <time>1e7</time>
-          <time>1e8</time>
-          <time>1e9</time>
-        </time_macro>
-      </macros>
-    </definitions>
-    <process_kernels>
-      <comments>Single-phase transient flow</comments>
-      <flow model="saturated" state="on" />
-      <transport state="off" />
-      <chemistry process_model="none" state="off" />
-    </process_kernels>
-    <execution_controls>
-      <verbosity level="extreme" />
-      <execution_control_defaults increase_factor="1.5" init_dt="3.64" max_dt="10 y" method="bdf1" />
-      <execution_control end="1.e9" init_dt="3.64" mode="transient" start="0.0" />
-    </execution_controls>
-    <numerical_controls>
-      <unstructured_controls>
-        <unstr_linear_solver>
-          <max_iterations>1000</max_iterations>
-          <tolerance>1.0e-16</tolerance>
-        </unstr_linear_solver>
-        <unstr_transport_controls>
-          <algorithm>none</algorithm>
-        </unstr_transport_controls>
-        <unstr_preconditioners>
-          <hypre_amg />
-          <trilinos_ml />
-          <block_ilu />
-        </unstr_preconditioners>
-        <unstr_preconditioners>
-          <hypre_amg />
-          <trilinos_ml />
-          <block_ilu />
-        </unstr_preconditioners>
+  <echo_translated_input file_name="oldspec.xml" format="unstructured_native" />
+  <model_description name="SR Test Problem">
+    <comments>Confind aquifer transient drawdown (Theis 1935)</comments>
+    <model_id>Theis</model_id>
+    <author>Dylan Harp, Alec Thomas, David Moulton</author>
+    <units>
+      <length_unit>m</length_unit>
+      <time_unit>s</time_unit>
+      <mass_unit>kg</mass_unit>
+      <conc_unit>molar</conc_unit>
+    </units>
+  </model_description>
+  <definitions>
+    <macros>
+      <time_macro name="Observation Times">
+        <time>0.0</time>
+        <time>1</time>
+        <time>3</time>
+        <time>7</time>
+        <time>15</time>
+        <time>31</time>
+        <time>63</time>
+        <time>127</time>
+        <time>255</time>
+        <time>511</time>
+        <time>1023</time>
+        <time>2047</time>
+        <time>4095</time>
+        <time>8191</time>
+        <time>16383</time>
+        <time>32677</time>
+        <time>65535</time>
+        <time>131071</time>
+        <time>262143</time>
+        <time>524287</time>
+        <time>1e6</time>
+        <time>1e7</time>
+        <time>1e8</time>
+        <time>1e9</time>
+      </time_macro>
+    </macros>
+  </definitions>
+
+  <process_kernels>
+    <comments>Single-phase transient flow</comments>
+    <flow model="saturated" state="on" />
+    <transport state="off" />
+    <chemistry process_model="none" engine="none" state="off" />
+  </process_kernels>
+
+  <execution_controls>
+    <verbosity level="high" />
+    <execution_control_defaults increase_factor="1.5" init_dt="3.64" max_dt="10 y" method="bdf1" />
+    <execution_control end="1.e9" init_dt="3.64" mode="transient" start="0.0" />
+  </execution_controls>
+
+  <numerical_controls>
+    <unstructured_controls>
+      <unstr_linear_solver>
+        <max_iterations>1000</max_iterations>
+        <tolerance>1.0e-16</tolerance>
+      </unstr_linear_solver>
+      <unstr_transport_controls>
+        <algorithm>none</algorithm>
+      </unstr_transport_controls>
+      <unstr_preconditioners>
+        <hypre_amg />
+        <trilinos_ml />
+        <block_ilu />
+      </unstr_preconditioners>
       </unstructured_controls>
     </numerical_controls>
-    <mesh framework="mstk">
-      <dimension>3</dimension>
-      <read>
-        <file>../mesh_cylinder.exo</file>
-        <format>exodus ii</format>
-      </read>
-    </mesh>
-    <regions>
-      <region name="Entire Domain">
-        <comments>One region covering the entire domain</comments>
-        <box high_coordinates="20200,20200,1.0" low_coordinates="0.0,0.0,0.0" />
-      </region>
-      <region name="cylinder">
-        <region_file entity="Cell" format="exodus ii" label="20000" name="../mesh_cylinder.exo" type="labeled set" />
-      </region>
-      <region name="bg">
-        <region_file entity="Cell" format="exodus ii" label="10000" name="../mesh_cylinder.exo" type="labeled set" />
-      </region>
-      <region name="Well">
-        <box high_coordinates="1.0800000e+04, 1.010400e+04, 1.0e+00" low_coordinates="1.060000e+04, 1.009600e+04, 0.0e+00" />
-      </region>
-      <plane location="0.0, 0.0, 0.0" name="yz1" normal="-1.0,0.0,0.0" />
-      <plane location="2.020000e+04, 0.0e+00, 0.0e+00" name="yz2" normal="1.0,0.0,0.0" />
-      <plane location="0.0,0.0,0.0" name="xz1" normal="0.0,-1.0,0.0" />
-      <plane location="0.0e+00, 2.020000e+04, 0.0e+00" name="xz2" normal="0.0,1.0,0.0" />
-      <point coordinate="(1.011900e+04, 1.013477e+04, 1.0e+00)" name="Obs1" />
-      <point coordinate="(9.9213700080e+03, 1.04125699999999997e+04, 1.0e+00)" name="Obs2" />
-    </regions>
-    <phases>
+
+  <mesh framework="mstk">
+    <dimension>3</dimension>
+    <read>
+      <file>mesh_cylinder.exo</file>
+      <format>exodus ii</format>
+    </read>
+  </mesh>
+
+  <regions>
+    <region name="Entire Domain">
+      <comments>One region covering the entire domain</comments>
+      <box high_coordinates="20200,20200,1.0" low_coordinates="0.0,0.0,0.0" />
+    </region>
+    <region name="cylinder">
+      <region_file entity="Cell" format="exodus ii" label="20000" name="mesh_cylinder.exo" type="labeled set" />
+    </region>
+    <region name="bg">
+      <region_file entity="Cell" format="exodus ii" label="10000" name="mesh_cylinder.exo" type="labeled set" />
+    </region>
+    <region name="Well">
+      <box high_coordinates="1.0800000e+04, 1.010400e+04, 1.0e+00" low_coordinates="1.060000e+04, 1.009600e+04, 0.0e+00" />
+    </region>
+    <plane location="0.0, 0.0, 0.0" name="yz1" normal="-1.0,0.0,0.0" />
+    <plane location="2.020000e+04, 0.0e+00, 0.0e+00" name="yz2" normal="1.0,0.0,0.0" />
+    <plane location="0.0,0.0,0.0" name="xz1" normal="0.0,-1.0,0.0" />
+    <plane location="0.0e+00, 2.020000e+04, 0.0e+00" name="xz2" normal="0.0,1.0,0.0" />
+    <point coordinate="(1.011900e+04, 1.013477e+04, 1.0e+00)" name="Obs1" />
+    <point coordinate="(9.9213700080e+03, 1.04125699999999997e+04, 1.0e+00)" name="Obs2" />
+  </regions>
+
+  <phases>
+    <liquid_phase name="water">
+      <eos>false</eos>
+      <viscosity>1.002E-03</viscosity>
+      <density>1000.0</density>
+    </liquid_phase>
+  </phases>
+
+  <materials>
+    <material name="Soil_1">
+      <comments>Material properties for zone 1</comments>
+      <assigned_regions>cylinder</assigned_regions>
+      <mechanical_properties>
+        <porosity value="0.25" />
+        <specific_storage value="2.0e-4" />
+      </mechanical_properties>
+      <permeability x="1.187E-10" y="1.187E-10" z="1.187E-10" />
+    </material>
+    <material name="Soil_2">
+      <comments>Material properties for zone 2</comments>
+      <assigned_regions>bg</assigned_regions>
+      <mechanical_properties>
+        <porosity value="0.25" />
+        <specific_storage value="2.0e-4" />
+      </mechanical_properties>
+      <permeability x="1.187E-9" y="1.187E-9" z="1.187E-9" />
+    </material>
+  </materials>
+
+  <initial_conditions>
+    <initial_condition name="Initial Condition">
+      <comments>Constant pressure of 100m</comments>
+      <assigned_regions>Entire Domain</assigned_regions>
       <liquid_phase name="water">
-        <eos>false</eos>
-        <viscosity>1.002E-03</viscosity>
-        <density>1000.0</density>
+        <liquid_component name="water">
+          <linear_pressure gradient="(0.0,0.0,0)" reference_coord="(2.020e+04, 2.020e+04, 1.0e+01)" value="1.07785e6" />
+        </liquid_component>
       </liquid_phase>
-    </phases>
-    <materials>
-      <material name="Soil_1">
-        <comments>Material properties for zone 1</comments>
-        <assigned_regions>cylinder</assigned_regions>
-        <mechanical_properties>
-          <porosity value="0.25" />
-          <specific_storage value="2.0e-4" />
-        </mechanical_properties>
-        <permeability x="1.187E-10" y="1.187E-10" z="1.187E-10" />
-      </material>
-      <material name="Soil_2">
-        <comments>Material properties for zone 2</comments>
-        <assigned_regions>bg</assigned_regions>
-        <mechanical_properties>
-          <porosity value="0.25" />
-          <specific_storage value="2.0e-4" />
-        </mechanical_properties>
-        <permeability x="1.187E-9" y="1.187E-9" z="1.187E-9" />
-      </material>
-    </materials>
-    <initial_conditions>
-      <initial_condition name="Initial Condition">
-        <comments>Constant pressure of 100m</comments>
-        <assigned_regions>Entire Domain</assigned_regions>
-        <liquid_phase name="water">
-          <liquid_component name="water">
-            <linear_pressure gradient="(0.0,0.0,0)" reference_coord="(2.020000e+04, 2.020000e+04, 1.0e+01)" value="1.07785e6" />
-          </liquid_component>
-        </liquid_phase>
-      </initial_condition>
-    </initial_conditions>
-    <boundary_conditions>
-      <boundary_condition name="Far Field Head">
-        <comments>Far field static head of the confined aquifer</comments>
-        <assigned_regions>xz1,xz2,yz1,yz2</assigned_regions>
-        <liquid_phase name="water">
-          <liquid_component name="water">
-            <uniform_pressure function="constant" start="1.07785e6" value="1.07785e6" />
-          </liquid_component>
-        </liquid_phase>
-      </boundary_condition>
-    </boundary_conditions>
-    <sources>
-      <source name="Pumping Well">
-        <assigned_regions>Well</assigned_regions>
-        <liquid_phase name="water">
-          <liquid_component name="water">
-            <volume_weighted function="constant" start="0.0" value="-11.5485" />
-          </liquid_component>
-        </liquid_phase>
-      </source>
-    </sources>
-    <output>
-      <observations>
-        <filename>observations.out</filename>
-        <liquid_phase name="water">
-          <drawdown>
-            <assigned_regions>Obs1</assigned_regions>
-            <functional>point</functional>
-            <time_macros>Observation Times</time_macros>
-          </drawdown>
-          <drawdown>
-            <assigned_regions>Obs2</assigned_regions>
-            <functional>point</functional>
-            <time_macros>Observation Times</time_macros>
-          </drawdown>
-        </liquid_phase>
-      </observations>
-    </output>
-  </amanzi_input>
+    </initial_condition>
+  </initial_conditions>
+
+  <boundary_conditions>
+    <boundary_condition name="Far Field Head">
+      <comments>Far field static head of the confined aquifer</comments>
+      <assigned_regions>xz1,xz2,yz1,yz2</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure function="constant" start="1.07785e6" value="1.07785e6" />
+        </liquid_component>
+      </liquid_phase>
+    </boundary_condition>
+  </boundary_conditions>
+
+  <sources>
+    <source name="Pumping Well">
+      <assigned_regions>Well</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <volume_weighted function="constant" start="0.0" value="-11.5485" />
+        </liquid_component>
+      </liquid_phase>
+    </source>
+  </sources>
+
+  <output>
+    <observations>
+      <filename>observations.out</filename>
+      <liquid_phase name="water">
+        <drawdown>
+          <assigned_regions>Obs1</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </drawdown>
+        <drawdown>
+          <assigned_regions>Obs2</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </drawdown>
+      </liquid_phase>
+    </observations>
+  </output>
+</amanzi_input>
   

@@ -130,9 +130,8 @@ Simulation results
 
 Simulation results show a good agreement with expected results. Precipitation of calcite is indicated by its volume fraction at time 72 seconds (see Figure). For the structured and unstructured discretizations, the solution profiles for the precipitated calcite are similar narrow bands between the inflowing solutes.  In both case, the solute profiles are monotonic and well-behaved at all mesh resolutions.  With additional refinement (not shown), the magnitude of the peak calcite volume fraction increases (due the increased vertical gradients of precipitating solutes at the inflow boundary condition), but its concentration stays properly confined to a narrow zone at the interface. These results demonstrate that Amanzi is capable of robustly capturing non-grid-aligned processes in both the structured and unstructured mesh frameworks.
 
-.. plot:: chemistry/non_grid_aligned/non_grid_aligned.py
-
-..   :align: left
+.. plot:: benchmarking/transport/non_grid_aligned/non_grid_aligned.py
+   :align: left
 
 References
 ----------

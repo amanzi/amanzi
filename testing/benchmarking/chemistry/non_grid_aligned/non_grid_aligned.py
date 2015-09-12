@@ -28,8 +28,8 @@ def GetXYZ_Amanzi(path,root,time,comp,nodesx=121,nodesy=101):
     amanzi_mesh = h5py.File(meshname,'r')
 
     # nodal x, y
-    x = [r[0] for r in amanzi_mesh['0']['Mesh']['Nodes']]
-    y = [r[1] for r in amanzi_mesh['0']['Mesh']['Nodes']]
+    x = [r[0] for r in amanzi_mesh[time]['Mesh']['Nodes']]
+    y = [r[1] for r in amanzi_mesh[time]['Mesh']['Nodes']]
 
     # element x
     x_ = get_chunks(x,chunk_size=nodesx)

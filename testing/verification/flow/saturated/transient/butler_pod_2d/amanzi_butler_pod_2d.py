@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     cwd = os.getcwd()
     try: 
-        run_amanzi_standard.run_amanzi(input_filename, 10)
+        run_amanzi_standard.run_amanzi(input_filename, 10, {"mesh_cylinder.exo"})
         # obs_xml=loadInputXML(input_filename)
         obs_data = load_amanzi_obs()
 

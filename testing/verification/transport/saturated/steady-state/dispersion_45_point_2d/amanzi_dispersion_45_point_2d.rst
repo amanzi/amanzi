@@ -28,7 +28,7 @@ The plume structure is characterized by three line cuts.
 The first cut is given by line :math:`y=0` that goes through the well.
 The two other cuts are given by lines :math:`x=0` and :math:`x=424`.
 
-.. plot:: amanzi_dispersion_45_point_2d.py
+.. plot:: verification/transport/dispersion_45_point_2d/amanzi_dispersion_45_point_2d.py
    :align: center
 
 .. include:: table_values_centerline.txt
