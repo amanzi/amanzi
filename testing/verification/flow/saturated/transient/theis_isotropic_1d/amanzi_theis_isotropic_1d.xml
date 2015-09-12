@@ -270,7 +270,7 @@
     </ParameterList>
 
     <ParameterList name="Observation Data">
-      <Parameter name="Observation Output Filename" type="string" value="observation_v1.out"/>
+      <Parameter name="Observation Output Filename" type="string" value="observation.out"/>
       <ParameterList name="Pressure 01">
 	<Parameter name="Region" type="string" value="Obs_r10"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>

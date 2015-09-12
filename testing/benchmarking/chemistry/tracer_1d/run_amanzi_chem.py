@@ -48,6 +48,7 @@ def run_amanzi_chem(xml_input_file, run_path=None, chemfiles=None, directory=Non
 
     try:
         stdout_file = open("stdout.out", "w")
+        print("TEST: tracer")
         ierr = subprocess.call([executable, "--xml_file="+xml_input_file], stdout=stdout_file, stderr= subprocess.STDOUT)
 
     finally:
