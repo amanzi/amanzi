@@ -136,18 +136,6 @@ verification['confined_flow'] = {
   },
 }
 
-verification['confined_flow_parallel'] = {
-  'index' : {'index_title' : 'Confined Flow Tests',
-             'index_file' : 'doc/user_guide/verification/confined_flow/index.rst',
-             'index_list' : [ # 'theis_isotropic',
-                              # 'hantush_anisotropic',
-                              # 'butler_strip_2d',
-                              # 'butler_pod_2d',
-                              # 'boundedDomain_2d', 
-                            ],
-            },
-}
-
 verification['unconfined_flow'] = {
   'index_entry': 'unconfined_flow/index.rst',
   'index' : {'index_title' : 'Unconfined Flow Tests',
@@ -334,11 +322,6 @@ if ( opts.verification or opts.full_guide ):
     toc_user_guide['index_list'].append('verification')
     toc_user_guide['verification'] = { 'index_entry' : 'verification/index.rst' }
     sections['verification'] = verification
-    if ( opts.parallel or opts.full_guide ):
-        verification['confined_flow']['index']['index_list'].extend(verification['confined_flow_parallel']['index']['index_list'])
-        for key in verification['confined_flow_parallel']['index']['index_list']:
-            verification['confined_flow'][key]=verification['confined_flow_parallel'][key]
-        print verification['confined_flow']
 
 if ( opts.benchmarking or opts.full_guide ):
     toc_user_guide['index_list'].append('benchmarking')
