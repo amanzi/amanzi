@@ -92,27 +92,27 @@ verification['confined_flow'] = {
   'linear_head_head_1d' : {
     'from_dir' : 'testing/verification/flow/saturated/steady-state/linear_head_head_1d',
     'dest_dir' : 'doc/user_guide/verification/confined_flow/linear_head_head_1d',
-    'index_entry' : 'linear_head_head/amanzi_linear_head_head_1d.rst'
+    'index_entry' : 'linear_head_head_1d/amanzi_linear_head_head_1d.rst'
   },
   'linear_flux_head_1d' : {
     'from_dir' : 'testing/verification/flow/saturated/steady-state/linear_flux_head_1d',
     'dest_dir' : 'doc/user_guide/verification/confined_flow/linear_flux_head_1d',
-    'index_entry' : 'linear_flux_head/amanzi_linear_flux_head_1d.rst'
+    'index_entry' : 'linear_flux_head_1d/amanzi_linear_flux_head_1d.rst'
   },
   'linear_materials_serial_1d' : {
     'from_dir' : 'testing/verification/flow/saturated/steady-state/linear_materials_serial_1d',
     'dest_dir' : 'doc/user_guide/verification/confined_flow/linear_materials_serial_1d',
-    'index_entry' : 'linear_materials_serial/amanzi_linear_materials_serial_1d.rst'
+    'index_entry' : 'linear_materials_serial_1d/amanzi_linear_materials_serial_1d.rst'
   },
   'linear_materials_parallel_1d' : {
     'from_dir' : 'testing/verification/flow/saturated/steady-state/linear_materials_parallel_1d',
     'dest_dir' : 'doc/user_guide/verification/confined_flow/linear_materials_parallel_1d',
-    'index_entry' : 'linear_materials_parallel/amanzi_linear_materials_parallel_1d.rst'
+    'index_entry' : 'linear_materials_parallel_1d/amanzi_linear_materials_parallel_1d.rst'
   },
   'theis_isotropic_1d' : {
     'from_dir' : 'testing/verification/flow/saturated/transient/theis_isotropic_1d',
     'dest_dir' : 'doc/user_guide/verification/confined_flow/theis_isotropic_1d',
-    'index_entry' : 'theis_isotropic/amanzi_theis_isotropic_1d.rst',
+    'index_entry' : 'theis_isotropic_1d/amanzi_theis_isotropic_1d.rst',
   },
   'butler_pod_2d' : {
     'from_dir' : 'testing/verification/flow/saturated/transient/butler_pod_2d',

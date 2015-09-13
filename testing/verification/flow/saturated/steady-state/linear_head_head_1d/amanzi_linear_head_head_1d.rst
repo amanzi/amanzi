@@ -104,6 +104,7 @@ Amanzi has reproduced the exact solution.
 This is also visible in the following table:
 
 .. include:: table_values.txt
+   :align: center
 
 
 FIXME:
@@ -111,5 +112,4 @@ FIXME:
 
   * probably do not want the points on the boundary 
   * we may want to plot flux?
-  * the table needs to be centered
   * values in the table need to be sorted.
