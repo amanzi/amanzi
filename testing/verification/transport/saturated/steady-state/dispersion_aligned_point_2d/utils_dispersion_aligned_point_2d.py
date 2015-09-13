@@ -1,22 +1,19 @@
 import matplotlib.pyplot as plt
 import numpy
-from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
+from amanzi_xml.observations.ObservationXMLv2 import ObservationXMLv2 as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
 import prettytable 
 import os, re
 
 def loadInputXML(filename):
-
     # load input xml file
     #  -- create an ObservationXML object
-
     Obs_xml = ObsXML(filename)
-
     return Obs_xml
 
-def loadDataFile(Obs_xml,directory):
 
+def loadDataFile(Obs_xml,directory):
     # load the data file
     #  -- use above xml object to get observation filename
     #  -- create an ObservationData object
@@ -34,7 +31,6 @@ def loadDataFile(Obs_xml,directory):
     return Obs_data
 
 def CollectObservations(Obs_xml, Obs_data, Obs_lines):
-
     ## FIXME:  This should collect whatever types of observations it finds, e.g., pressure, concentrations, etc.
 
     # Create dictionary for scatter plots
@@ -44,10 +40,8 @@ def CollectObservations(Obs_xml, Obs_data, Obs_lines):
         Obs_scatter[key]['distance']=[]
         Obs_scatter[key]['Tc99']=[]
 
-
     # Collect observations in scatter_data
     for key in Obs_lines:
-
         if (Obs_lines[key]['slice'][0] is 'x'):
             slice_coord=0
         elif (Obs_lines[key]['slice'][0] is 'y'):
@@ -59,7 +53,6 @@ def CollectObservations(Obs_xml, Obs_data, Obs_lines):
             vary_coord=1
 
         for obs in Obs_data.observations.itervalues(): 
-
             if ( obs.coordinate[slice_coord] == Obs_lines[key]['slice'][1] ):
                 Obs_scatter[key]['distance'].append(obs.coordinate[vary_coord])
                 Obs_scatter[key]['Tc99'].append(obs.data[0])
@@ -270,21 +263,27 @@ def PlotAnalyticSoln(solution, analytic, slice, axes1):
 
 
 def AmanziResults(input_filename,subtests,obs_slices,overwrite=False):
-    
-    import run_amanzi_dispersion
+    import run_amanzi_standard
 
-    #
     # Create emtpy dictionaries
-    #
     obs_scatter={}
     obs_data={}
     obs_xml={}
 
     try: 
-
         for st in subtests:
+            # modify file content
+            old_content = open(input_filename).read()
+            new_content = old_content.replace("explicit first-order", subtests[st]['parameters'])
+            tmp_filename = "tmp.xml"
+            f = open(tmp_filename, 'w')
+            f.write(new_content)
+            f.flush()
+            f.close()
 
-            run_amanzi_dispersion.run_amanzi(input_filename, subtests[st]['directory'], subtests[st]['parameters'], subtests[st]['mesh_file'],overwrite)
+            run_amanzi_standard.run_amanzi(tmp_filename, 1, 
+                                           ["amanzi_dispersion_aligned_point_2d.exo"],
+                                           subtests[st]['directory'])
             obs_xml[st]=loadInputXML(input_filename)
             obs_data[st]=loadDataFile(obs_xml[st],subtests[st]['directory'])
 
@@ -331,13 +330,13 @@ def SetupTests():
     subtests = { 'amanzi_first' : 
                  { 'directory'  : 'amanzi-output-first-order',
                    'mesh_file'  : '../amanzi_dispersion_aligned_point_2d.exo',
-                   'parameters' : { 'Transport Integration Algorithm': 'Explicit First-Order' },
+                   'parameters' : 'explicit first-order',
                    'plot_props' : { 'marker':'s', 'color':'r', 'label': 'Amanzi: First Order' } 
                  },
                  'amanzi_second' : 
                  { 'directory'  : 'amanzi-output-second-order',
                    'mesh_file'  : '../amanzi_dispersion_aligned_point_2d.exo',
-                   'parameters' : { 'Transport Integration Algorithm': "Explicit Second-Order" },
+                   'parameters' : 'explicit second-order',
                    'plot_props' : { 'marker':'o', 'color':'b', 'label': 'Amanzi: Second Order' }
                  },
              }

@@ -41,7 +41,7 @@
         <density>998.2</density>
         <dissolved_components>
           <solutes>
-            <solute coefficient_of_diffusion="1.0e-9">Tc-99</solute>
+            <solute coefficient_of_diffusion="0.0">Tc-99</solute>
           </solutes>
         </dissolved_components>
       </liquid_phase>
@@ -78,7 +78,7 @@
       <comments>no comment</comments>
       <dimension>2</dimension>
       <read>
-        <file>amanzi_dispersion_aligned_point_2d.exo </file>
+        <file>amanzi_dispersion_aligned_point_2d.exo</file>
         <format>exodus ii</format>
       </read>
     </mesh>
@@ -160,7 +160,6 @@
         <liquid_phase name = "water">
           <solute_component name="group1">
             <volume_weighted name="Tc-99" value="8.1483e-08" function="constant" start="0.0"/>
-            <volume_weighted name="Tc-99" value="8.1483e-08" function="constant" start="1.0E7"/>
           </solute_component> 
         </liquid_phase>
       </source>
@@ -173,7 +172,7 @@
         <time_macros>EveryYear</time_macros>
       </vis>
       <observations>
-        <filename>obs5_2_1.out</filename>
+        <filename>obs5_2_1_r5.out</filename>
         <liquid_phase name="water">
           <aqueous_conc solute="Tc-99">
             <assigned_regions>Origin</assigned_regions>

@@ -190,17 +190,12 @@ About
 
 * Input Files:
 
-  * amanzi_dispersion_aligned_point_2d.xml 
+  * amanzi_dispersion_aligned_point_2d-isv2.xml 
 
-    * Spec Version 1.2, unstructured mesh framework
+    * Spec Version 2.2, unstructured mesh framework
     * mesh:  amanzi_dispersion_aligned_point_2d.exo
     * runs
  
-  * amanzi_dispersion_aligned_point_2d-isv2.xml 
-
-    * Version 2.0, unstructured mesh framework
-    * not the same problem, doesn't run yet
-
   * amanzi_dispersion_aligned_point_2d-s.xml
 
     * Spec Version 1.2, structured AMR framework
@@ -217,7 +212,6 @@ About
 
     * three-dimensional statically refined mesh
     * one layer of cells in the z-direction
-    * Needed by version 2.0 input file.
 
 * Analytic solution computed with AT123D-AT
 
@@ -235,9 +229,8 @@ Status
 
   * Input Files:
 
-    * Version 1.2 - unstructured: runs 2D problem, results are in excellent agreement
+    * Version 2.2 - unstructured: runs 2D problem, results are in excellent agreement
     * Version 1.2 - structured AMR: runs
-    * Version 2.0 - input file needs to be updated to match Version 1.2
 
   * Documentation:
 
