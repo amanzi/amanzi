@@ -104,7 +104,6 @@ Amanzi has reproduced the exact solution.
 This is also visible in the following table:
 
 .. include:: table_values.txt
-   :align: center
 
 
 FIXME:

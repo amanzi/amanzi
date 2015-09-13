@@ -148,7 +148,7 @@ verification['unconfined_flow'] = {
   'unconfined_no_recharge_1d': {
     'from_dir' : 'testing/verification/flow/richards/steady-state/unconfined_no_recharge_1d',
     'dest_dir' : 'doc/user_guide/verification/unconfined_flow/unconfined_no_recharge_1d',
-    'index_entry' : 'unconfined_no_recharge/amanzi_unconfined_no_recharge_1d.rst'
+    'index_entry' : 'unconfined_no_recharge_1d/amanzi_unconfined_no_recharge_1d.rst'
   },
 }
 

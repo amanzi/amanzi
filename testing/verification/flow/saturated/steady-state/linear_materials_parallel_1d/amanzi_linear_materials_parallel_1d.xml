@@ -21,7 +21,7 @@
     <ParameterList name="Time Integration Mode">
         <ParameterList name="Steady">
           <Parameter name="Start" type="double" value="0.0"/>
-          <Parameter name="End" type="double" value="1.0"/>
+          <Parameter name="End" type="double" value="1000.0"/>
           <Parameter name="Initial Time Step" type="double" value="1.0"/>
         </ParameterList>
     </ParameterList>
