@@ -44,6 +44,6 @@ axes1.text(150,0.003,'Concentration along y=0, at t=1440 days.',fontsize=14)
 # plt.show()
 
 # Create/Write the table:
-# utils_dispersion_45_point_2d.MakeTableCols(table_layout,slice,obs_scatter,subtests,analytic_soln,analytic)
+utils_dispersion_45_point_2d.MakeTableCols(table_layout,slice,obs_scatter,subtests,analytic_soln,analytic)
 
 

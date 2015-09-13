@@ -31,7 +31,7 @@ The two other cuts are given by lines :math:`x=0` and :math:`x=424`.
 .. plot:: verification/transport/dispersion_45_point_2d/amanzi_dispersion_45_point_2d.py
    :align: center
 
-.. include:: table_values_centerline.txt
+.. include:: table_centerline.txt
 
 The analytic data were computed with the AT123DAT software package.
 A difference observed near downstream boundary for the Amanzi with the 

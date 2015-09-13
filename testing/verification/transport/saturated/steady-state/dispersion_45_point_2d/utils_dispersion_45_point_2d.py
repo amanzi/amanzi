@@ -66,7 +66,7 @@ def CollectObservations(Obs_xml, Obs_data, Obs_lines):
                 else:
                     s = math.sqrt(float(obs.coordinate[slice_dep])**2+float(obs.coordinate[slice_indep])**2)
                     Obs_scatter[key]['distance'].append(math.copysign(s,obs.coordinate[slice_indep]))
-                Obs_scatter[key]['Tc99'].append(obs.data)
+                Obs_scatter[key]['Tc99'].append(obs.data[0])
 
     return Obs_scatter
 
@@ -135,14 +135,20 @@ def MakeTableCols(table_layout,slice,
             idepvar=table_layout[slice][col_key]['idepvar']
             var=table_layout[slice][col_key]['variable']
             analytic_data=[]
+ 
+            vmin_max = 0.0
             for d in master_data:
-                if d in solution[idepvar]:
-                    i = solution[idepvar].index(d)
-                    analytic_data.append(solution[var][i])
-                else:
-                    analytic_data.append("Unavailable")
+                vmin = 1e+99
+                for v in solution[idepvar]:
+                    if (abs(d - v) < vmin):
+                       vmin = abs(d - v)
+                       i = solution[idepvar].index(v)
+                analytic_data.append(solution[var][i])
+                vmin_max = max(vmin_max, vmin)
+
             t.add_column(col_key, analytic_data)
             t.float_format[col_key]=".5e"
+            print "Maximal deviation at point distance was ", vmin_max
 
     # We could insert columns for particular error / differences here.
 
@@ -240,6 +246,9 @@ def CollectAnalyticSolutions(input_file,directory,obs_slice):
     except IOError:
         raise RuntimeError("Unable to open file"+at123d_soln+", it does not exist OR permissions are incorrect")
 
+    # Convert horizontal axis to float and shift to align the source
+    coord = 'x'
+    solution['distance'] = [float(i) - float(solution['source'][coord]) for i in solution[coord]]
     return solution
 
 
@@ -294,7 +303,6 @@ def AnalyticSolutions(analytic,obs_slices,overwrite=False):
     analytic_soln={}
 
     try:
-
         for a in analytic:
             run_at123d_at.run_at123d(analytic[a]['input_file'], analytic[a]['directory'],overwrite)
             analytic_soln[a]=CollectAnalyticSolutions(analytic[a]['input_file'],analytic[a]['directory'],obs_slices[a])
@@ -313,7 +321,7 @@ def SetupTests():
 
     obs_slices = { 'centerline' : { 'slice' : [ 'y', 1.0, 0.0 ], 
                                     'vary' : 's', 
-                                    'domain' : [-270.0,960.0],
+                                    'domain' : [-300.0,1400.0],
                                     'range' : [5e-10,3e-3] 
                                   }
                  }
