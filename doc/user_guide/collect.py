@@ -2,6 +2,7 @@
 
 import os, sys, utils, shutil, subprocess
 import optparse
+import fnmatch
 
 #  Create dictionary that describes:
 #
@@ -9,6 +10,17 @@ import optparse
 #  - index files to be created
 #  - subdirectories (tests/tutorials) to be copied
 #
+
+#
+# support routines
+#
+def find(pattern, path):
+    result = []
+    for root, dirs, files in os.walk(path):
+        for name in files:
+            if fnmatch.fnmatch(name, pattern):
+                result.append(os.path.join(root, name))
+    return result
 
 #
 # Install
@@ -369,8 +381,11 @@ print("\nRunning verification tests...")
 
 mpi_exec = os.getenv('AMANZI_MPI_EXEC', 'mpirun')
 mpi_np = os.getenv('AMANZI_MPI_NP', '1')
-print("Enviromental variable or default 'AMANZI_MPI_EXEC' = " + mpi_exec)
-print("Enviromental variable or default 'AMANZI_MPI_NP' = " + mpi_np)
+print(">>> Enviromental variable or default 'AMANZI_INSTALL_DIR' = " 
+      + os.getenv('AMANZI_INSTALL_DIR', 'missing'))
+print(">>> Enviromental variable or default 'AMANZI_MPI_EXEC' = " + mpi_exec)
+print(">>> Enviromental variable or default 'AMANZI_MPI_NP' = " + mpi_np)
+print
 
 suffices = {"", "-a", "-b", "-c"}
 
@@ -385,9 +400,14 @@ for name in verification['index']['index_list']:
             filename = "amanzi_" + key + s + ".py"
             if os.path.isfile(filename):
                stdout_file = open("collect.log", "w")
-               print("   " + filename)
+               print("   script: " + filename)
                subprocess.call(["python", filename], stdout=stdout_file, stderr= subprocess.STDOUT)
 
+               for el in find("stdout.out", run_directory):
+                   if ("Amanzi::SIMULATION_SUCCESSFUL" in open(el).read()):
+                      print("   result: SIMULATION_SUCCESSFUL")
+                   else:
+                      print("   ERROR: " + el)
         os.chdir(cwd)
 
 for name in benchmark['index']['index_list']:
@@ -401,7 +421,12 @@ for name in benchmark['index']['index_list']:
             filename = key + s + ".py"
             if os.path.isfile(filename):
                stdout_file = open("collect.log", "w")
-               print("   " + filename)
+               print("   script: " + filename)
                subprocess.call(["python", filename], stdout=stdout_file, stderr= subprocess.STDOUT)
 
+               for el in find("stdout.out", run_directory):
+                   if ("Amanzi::SIMULATION_SUCCESSFUL" in open(el).read()):
+                      print("   result: SIMULATION_SUCCESSFUL")
+                   else:
+                      print("   ERROR: " + el)
         os.chdir(cwd)

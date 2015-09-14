@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
     CWD = os.getcwd()
     try: 
-        run_amanzi_standard.run_amanzi(input_filename, 2)
+        run_amanzi_standard.run_amanzi(input_filename, 10)
         obs_xml = loadInputXML(input_filename)
         obs_data = load_amanzi_obs()
 
