@@ -17,9 +17,10 @@ class ObservationXMLv2(object):
 
     def getObservationList(self):
         return search.getElementByTags(self.xml, "/amanzi_input/output/observations/liquid_phase")
+        #return search.getElementByPath(self.xml, "/amanzi_input/output/observations/liquid_phase")
 
     def getRegionList(self):
-        return search.getElementByTagPath(self.xml, "/Main/Regions")
+        return search.getElementByPath(self.xml, "/amanzi_input/regions")
 
     def getAllNames(self):
         self.names = []
@@ -41,13 +42,15 @@ class ObservationXMLv2(object):
             self.coordinates[well_name] = coordinate
         return self.coordinates
 
-    #def getCoordinateFromList(self, one_list):
-    #    well_name = one_list.getElement("Region").value
-    #    region = search.getElementByTagPath(self.xml, "/Main/Regions/"+ well_name)
-    #    local = region.sublist("Region: Point")
-    #    location = search.getElementByTagPath(local, "/Region: Point/Coordinate")
-    #    coordinate = location.value
-    #    return coordinate
+    def getCoordinateFromList(self, one_list):
+        well_name = one_list.getElement("Region").value
+        region = search.getElementByName(search.getElementByPath(self.xml, "/amanzi_input/regions/"), well_name)
+
+        try:
+            coordinate = region.get("coordinate")
+        except KeyError:
+            raise RuntimeError("Region is not of type point")
+        return coordinate
 
     def getObservationFilename(self):
         obs = search.getElementByTags(self.xml, "/amanzi_input/output/observations/filename")
