@@ -224,6 +224,7 @@ bool PorousMedia::solute_transport_limits_dt;
 //
 // Chemistry flag.
 //
+bool PorousMedia::shut_off_reactions;
 bool PorousMedia::do_tracer_chemistry;
 bool PorousMedia::react_tracers;
 bool PorousMedia::do_full_strang;
@@ -580,6 +581,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::variable_scal_diff = true; 
 
   PorousMedia::do_tracer_chemistry = false;
+  PorousMedia::shut_off_reactions = false;
   PorousMedia::do_tracer_advection = false;
   PorousMedia::do_tracer_diffusion = false;
   PorousMedia::setup_tracer_transport = false;
@@ -1036,6 +1038,7 @@ void PorousMedia::read_prob()
       do_richard_init_to_steady = true;
   }
 
+  pb.query("shut_off_reactions",shut_off_reactions);
   pb.query("do_tracer_advection",do_tracer_advection);
   pb.query("do_tracer_diffusion",do_tracer_diffusion);
   if (do_tracer_advection || do_tracer_diffusion) {
@@ -1714,7 +1717,8 @@ void  PorousMedia::read_tracer()
   chemistry_helper = 0;
 
   first_order_decay_constant.resize(ntracers,0);
-  if (do_tracer_chemistry) {
+  bool have_tracer_chemistry = chemistry_model_name == "Amanzi" || chemistry_model_name == "Alquimia";
+  if (have_tracer_chemistry) {
     const std::string chemistry_str = "Chemistry";
 
     ParmParse ppc(chemistry_str.c_str());
@@ -1903,7 +1907,7 @@ void  PorousMedia::read_tracer()
         {
           if (ppri.countval("geochemical_condition")) {
 
-            if ( !(chemistry_model_name == "Alquimia" && do_tracer_chemistry) ) {
+            if ( !(chemistry_model_name == "Alquimia") ) {
               BoxLib::Abort("Cannot use geochemical conditions if chemistry model not Alquimia");
             }
             std::string geocond; ppri.get("geochemical_condition",geocond);
@@ -2013,7 +2017,7 @@ void  PorousMedia::read_tracer()
             Array<std::string> forms;
 
             if (ppri.countval("geochemical_conditions")) {
-              if ( !(chemistry_model_name == "Alquimia" && do_tracer_chemistry) ) {
+              if ( !(chemistry_model_name == "Alquimia") ) {
                 BoxLib::Abort("Cannot use geochemical conditions if chemistry model not Alquimia");
               }
               int nv = ppri.countval("geochemical_conditions");
