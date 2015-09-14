@@ -14,7 +14,7 @@ class ObservationXML(object):
 
         self.obs_file = self.getObservationFilename()
         self.coordinates = []
-        self.names= []
+        self.names = []
 
     def getObservationList(self):
         return search.getElementByTagPath(self.xml, "/Main/Output/Observation Data")

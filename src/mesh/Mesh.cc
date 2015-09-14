@@ -1429,12 +1429,20 @@ int Mesh::build_columns() const {
 
     double dp = negzvec*normal;
 
-    // Face normals not necessarily -1, may be tilted, so this misses some faces
-    //    if (fabs(dp-1.0) > 1.0e-06) continue;
+    // Columns assume that side faces are always perfectly vertical.
+    if (fabs(dp) < 1.e-6) continue;
+    
+    // // The below fails miserably often for real meshes.  We CANNOT assume that the
+    // // bottom is flat!  Fix this to accept a list of faces from which to
+    // // construct the columns. --etc
+    
+    // // Columns assume 
+    // // Face normals not necessarily -1, may be tilted, so this misses some faces
+    // if (fabs(dp-1.0) > 1.0e-06) continue;
 
-    if (dp < 1.e-8) continue; // instead, all non-top/bottom faces have 
-                              // a zero z component, and all top faces are 
-                              // negative dot products
+    // // if (dp < 1.e-8) continue; // instead, all non-top/bottom faces have 
+    // //                           // a zero z component, and all top faces are 
+    // //                           // negative dot products
 
     // found a boundary face with a downward facing normal
 
@@ -1450,8 +1458,9 @@ int Mesh::build_columns() const {
 
     dp = negzvec*cfvec;
 
+    if (dp < 1.e-6) continue;
     //    if (fabs(dp-1.0) > 1.0e-06) continue;
-    if (dp < 1.e-08) continue;
+    //    if (dp < 1.e-08) continue;
 
     // Now we are quite sure that this is a face at the bottom of the
     // mesh/domain
@@ -1464,11 +1473,12 @@ int Mesh::build_columns() const {
     Entity_ID_List fcells2, cfaces, colcells, colfaces;
     std::vector<int> cfdirs;
 
-    colfaces.push_back(i);     
-
-    ncolumns++;
     bool done = false;
     while (!done) {
+
+      columnID[cur_cell] = ncolumns;
+      colcells.push_back(cur_cell);
+      colfaces.push_back(bot_face);
 
       // Faces of current cell
 
@@ -1495,7 +1505,6 @@ int Mesh::build_columns() const {
 
       ASSERT(top_face != bot_face);
       ASSERT(top_face != -1);
-
 
       // record the cell above and cell below
 
@@ -1598,15 +1607,14 @@ int Mesh::build_columns() const {
       }
 
 
-      columnID[cur_cell] = ncolumns;
-      colcells.push_back(cur_cell);
-      colfaces.push_back(top_face);
-
-      // continue the process
 
       bot_face = top_face;
 
+
     } // while (!done)
+
+
+    colfaces.push_back(top_face);
 
     column_cells.push_back(colcells);
     column_faces.push_back(colfaces);

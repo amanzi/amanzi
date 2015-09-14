@@ -8,16 +8,16 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)
-include(LibraryManager)
+#include(LibraryManager)
 
 #
 # Define a project name
 # After this command the following varaibles are defined
-#   DUMMY_SOURCE_DIR
-#   DUMMY_BINARY_DIR
+#   DUMMYPK_SOURCE_DIR
+#   DUMMYPK_BINARY_DIR
 # Other projects (subdirectories) can reference this directory
 # through these variables.
-project(DUMMY)
+project(DUMMYPK)
 
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
@@ -25,21 +25,12 @@ include_directories(${ATK_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
-include_directories(${OUTPUT_SOURCE_DIR})
-include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
-include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
-include_directories(${FUNCS_SOURCE_DIR})
-include_directories(${MFUNCS_SOURCE_DIR})
-include_directories(${DBG_SOURCE_DIR})
-include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${PKS_SOURCE_DIR})
 include_directories(${MPC_SOURCE_DIR})
-include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
-include_directories(${DUMMY_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -51,11 +42,11 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 # Dummy registrations
 #
 register_evaluator_with_factory( HEADERFILE Dummy_PK_reg.hh
-  LISTNAME   DUMMY_REGISTRATIONS )
+  LISTNAME   PKS_DUMMY_REGISTRATIONS )
 
 generate_evaluators_registration_header( 
   HEADERFILE pks_dummy_registration.hh   
-  LISTNAME   DUMMY_REGISTRATIONS
+  LISTNAME   PKS_DUMMY_REGISTRATIONS
   INSTALL    True )
 
 
@@ -78,11 +69,10 @@ set(dummy_inc_files
   Dummy_PK.hh
   )  
 
-
 add_install_include_file(${dummy_inc_files})
 
-#if (BUILD_TESTS) 
-if (0)
+if (BUILD_TESTS) 
+#if (0)
   include_directories(${MESH_FACTORY_SOURCE_DIR})
 
   # Add UnitTest includes
@@ -92,19 +82,19 @@ if (0)
   include_directories(${MPC_SOURCE_DIR})
 
     # Copy test directory files if an out of source build
-    if (NOT (${DUMMY_SOURCE_DIR} EQUAL ${DUMMY_BINARY_DIR}) )
+    if (NOT (${DUMMYPK_SOURCE_DIR} EQUAL ${DUMMYPK_BINARY_DIR}) )
         execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${DUMMY_SOURCE_DIR}/test ${DUMMY_BINARY_DIR}/test) 
+          copy_directory ${DUMMYPK_SOURCE_DIR}/test ${DUMMYPK_BINARY_DIR}/test) 
     endif()
 
   set(amanzi_libs mpc flow state  mesh_factory operators 
                     geometry mesh_functions functions dummy pks)
 
   # Test: dummy_pk 
-  add_amanzi_test(multiphase_simple multiphase_simple
-                  KIND      int
-                  SOURCE    test/Main.cc test/flow_multiphase_simple.cc
-		  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+#  add_amanzi_test(multiphase_simple multiphase_simple
+#                  KIND      int
+#                  SOURCE    test/Main.cc test/flow_multiphase_simple.cc
+#		  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
 
 endif()

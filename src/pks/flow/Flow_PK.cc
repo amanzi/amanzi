@@ -405,8 +405,10 @@ void Flow_PK::SetAbsolutePermeabilityTensor()
   AmanziGeometry::Point n1(dim), n2(dim), normal(dim), tau(dim);
   WhetStone::Tensor N(dim, 2), Ninv(dim, 2), D(dim, 2);
 
+  K.resize(ncells_owned);
+
   if (dim == 2) {
-    for (int c = 0; c < K.size(); c++) {
+    for (int c = 0; c < ncells_owned; c++) {
       if (perm[0][c] == perm[1][c]) {
 	K[c].Init(dim, 1);
 	K[c](0, 0) = perm[0][c];

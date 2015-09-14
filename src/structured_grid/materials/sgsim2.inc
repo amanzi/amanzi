@@ -53,13 +53,13 @@
       real*8    ang1(MAXNST),ang2(MAXNST),ang3(MAXNST)
       real*8    anis1(MAXNST),anis2(MAXNST)
       real*8    rotmat(MAXROT,3,3)
-      real*8    cbb
+      real*8    cbb, cmax
 
       integer   ixv(MAXOP1),do_cond
       integer   nsim,nxy,nxyz,nd,itrans,ntr,idbg,ismooth
       integer   llvm,ldbg,icollvm,nvaril,ktype,colocorr
       integer   noct,nclose,ndmin,ndmax,nmult,mxctx,mxcty,mxctz
-      integer   cmax,isrot,nctx,ncty,nctz,nlooku,ncnode,nodmax
+      integer   isrot,nctx,ncty,nctz,nlooku,ncnode,nodmax
       integer   ltail,utail,sstrat,mults,nst(1),it(MAXNST),test
       integer   MAXNOD,MAXCXY,MAXCTX,MAXCTY,MAXCTZ
       integer   MAXSBX,MAXSBY,MAXSBZ,MAXKR1
@@ -81,7 +81,8 @@
       common /psearch2/ noct,nclose,ndmin,ndmax,sstrat,mults,nmult
       common /psearch3/ mxctx,mxcty,mxctz
 
-      common /pcova3d1/ nst,it,cmax,c0,cc,aa,ang1,ang2,ang3
+      common /pcova3d1/ nst,it
+      common /pcova3d1a/ cmax,c0,cc,aa,ang1,ang2,ang3
       common /pcova3d2/ anis1,anis2,isrot
 
       common /pclooku/ nctx,ncty,nctz,nlooku,ncnode,nodmax
@@ -98,7 +99,7 @@
 
       save /piaco/,/pgenerl1/,/pgenerl2/,/pgenerl3/,/pgenerl4/,/pgenerr/ 
       save /psearch1/,/psearch2/,/psearch3/
-      save /pcova3d1/,/pcova3d2/
+      save /pcova3d1/,/pcova3d1a/,/pcova3d2/
       save /pclooku/ 
       save /pkrigev/ 
       save /pMAXMAX1/,/pMAXMAX2/

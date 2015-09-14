@@ -86,8 +86,16 @@ int AdvanceToSteadyState(
     CompositeVector& wc_prev = *S->GetFieldData("prev_water_content", "flow");
     wc_prev = wc;
 
+    // update and swap matrix water content
+    if (S->HasField("water_content_matrix")) {
+      const CompositeVector& wc = *S->GetFieldData("water_content_matrix");
+      CompositeVector& wc_prev = *S->GetFieldData("prev_water_content_matrix", "flow");
+      wc_prev = wc;
+    }
+
     // commit step
     RPK.CommitStep(T_physics - dT, T_physics);
+    RPK.VV_ReportMultiscale();
   }
 
   ti_specs.num_itrs = itrs;

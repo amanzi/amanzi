@@ -124,7 +124,7 @@ Here the user can specify and name times to be used in other sections of the inp
 
   <named_times>
       Required Elements: NONE
-      Optional Elements: time 
+      Optional Elements: time [S]
   </named_times>
 
 A *time* requires the attributes `"name`" and `"value`".  If a unit is not specified with the value seconds is taken as the default.
@@ -180,7 +180,7 @@ The ``macros`` section defines time, cycle, and variable macros.  These specify 
 
   <constants>
       Required Elements: NONE
-      Optional Elements: time_macro, cycle_macro, variable_macro
+      Optional Elements: time_macro, cycle_macro, variable_macro [S]
   </constants>
 
 Time_macro
@@ -299,13 +299,13 @@ The ``execution_control_defaults`` element specifies default values to be utiliz
       
     * max_dt = "labeled_time" 
       
-    * reduction_factor = "exponential" 
+    * reduction_factor = "exponential"
       
-    * increase_factor = "exponential" 
+    * increase_factor = "exponential"
       
     * mode = "steady | transient" 
       
-    * method = "bdf1 | picard"
+    * method = "bdf1 | picard" [S]
 
 .. code-block:: xml
 
@@ -324,17 +324,19 @@ Individual time periods of the simulation are defined using ``execution_control`
       
     * max_dt = "labeled_time" 
       
-    * reduction_factor = "exponential" 
+    * reduction_factor = "exponential"
       
-    * increase_factor = "exponential" 
+    * increase_factor = "exponential"
       
     * mode = "steady | transient" 
       
-    * method = "bdf1 | picard" 
+    * method = "bdf1 | picard" [S]
 
-    * restart = "string", this attribute specifies the name of the Amanzi checkpoint file previously created and to be used to initialize the current simulation
+    * restart = "string", this attribute specifies the name of the Amanzi checkpoint file previously created and to be used to restart the current simulation
+
+    * initialize = "string" [U], this attribute specifies the name of the Amanzi checkpoint file previously created and to be used to initialize the current simulation
        
-    * max_cycles = "integer" (ONLY valid for Transient and Transient with Static Flow)
+    * max_cycles = "integer" 
 
 .. code-block:: xml
 
@@ -350,7 +352,7 @@ This section allows the user to define control parameters associated with the un
 
   <numerical_controls>
       Required Elements: NONE
-      Optional Elements: comments, common_controls, unstructured_controls, structured_controls
+      Optional Elements: comments, common_controls [S], unstructured_controls [U], structured_controls [S]
   </numerical_controls>
 
 Unstructured_controls
@@ -380,8 +382,6 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
     * `"algorithm`" = "string" (options: explicit first-order(default), explicit second-order, implicit upwind)
 
     * `"sub_cycling`" = "string" (options: off(default), on)
-
-  * `"unstr_transport_controls`" specifies numerical controls for the flow process kernel available under the unstructured algorithm.  It has the following elements
 
   * `"unstr_steady-state_controls`"  has the following elements
 
@@ -427,35 +427,11 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
  
     * `"restart_tolerance_relaxation_factor`" = "exponential"
 
-  * `"unstr_transient_controls`"  has the following elements
-
-    * `"comments`" = "string" - SKIPPED 
-      
-    * `"bdf1_integration_method`" has the following elements
-
-        * `"min_iterations`" = "integer"
-
-        * `"max_iterations`" = "integer"
-
-        * `"limit_iterations`" = "integer"
- 
-        * `"nonlinear_tolerance`" = "exponential"
-
-        * `"max_preconditioner_lag_iterations`" = "integer"
-
-        * `"max_divergent_iterations`" = "integer"
-
-        * `"nonlinear_iteration_damping_factor`" = "exponential"
-
-        * `"nonlinear_iteration_divergence_factor`" = "exponential"
-
-        * `"restart_tolerance_factor`" = "exponential"
-
-        * `"restart_tolerance_relaxation_factor`" = "exponential"
-
-        * `"initialize_with_darcy`" = "boolean"
+    * `"restart_tolerance_relaxation_factor_damping`" = "exponential"
 
     * `"preconditioner`" requires an attribute `"name`". (options: trilinos_ml, hypre_amg, block_ilu) See below for subelements based on preconditioner name.
+
+  * `"unstr_transient_controls`"  has the same elements as `"unstr_steady-state_controls`"
 
   * `"unstr_linear_solver`"  has the following elements
 
@@ -477,39 +453,40 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
  
     * `"chem_max_newton_iterations`" = "integer"
 
-`"unstr_transient_controls`" and `"unstr_linear_solver`" accept a subelement for specifying the `"preconditioner`" and it's options.  Current preconditioners available are Trilinos' ML, Hypre's AMG, and block ILU.  Below are the structures for each preconditioner.
+  * `"unstr_preconditioners`" has a list of named presonditioners. Available preconditioners 
+    are Trilinos' ML, Hypre's AMG, and block ILU.  Below are the structures for each named preconditioner.
 
-  * `"preconditioners`" with `"name = 'trilinos_ml'`" has the following optional elements
+    * `"trilinos_ml'`" has the following optional elements
 
-    * `"trilinos_smoother_type`" = "string" (options: jacobi, gauss_seidel, ilu)
+      * `"trilinos_smoother_type`" = "string" (options: jacobi, gauss_seidel, ilu)
 
-    * `"trilinos_threshold`" = "exponential" 
+      * `"trilinos_threshold`" = "exponential" 
 
-    * `"trilinos_smoother_sweeps`" = "integer"
+      * `"trilinos_smoother_sweeps`" = "integer"
 
-    * `"trilinos_cycle_applications`" = "integer"
+      * `"trilinos_cycle_applications`" = "integer"
 
-  * `"preconditioners`" with `"name = 'hypre_amg'`" has the following optional elements
+    * `"hypre_amg'`" has the following optional elements
 
-    * `"hypre_cycle_applications`" = "integer"
+      * `"hypre_cycle_applications`" = "integer"
 
-    * `"hypre_smoother_sweeps`" = "integer"
+      * `"hypre_smoother_sweeps`" = "integer"
 
-    * `"hypre_tolerance`" = "exponential" 
+      * `"hypre_tolerance`" = "exponential" 
 
-    * `"hypre_strong_threshold`" = "exponential" 
+      * `"hypre_strong_threshold`" = "exponential" 
 
-  * `"preconditioners`" with `"name = 'block_ilu'`" has the following optional elements
+    * `"block_ilu'`" has the following optional elements
 
-    * `"ilu_overlap`" = "integer"
+      * `"ilu_overlap`" = "integer"
 
-    * `"ilu_relax`" = "exponential"
+      * `"ilu_relax`" = "exponential"
 
-    * `"ilu_rel_threshold`" = "exponential" 
+      * `"ilu_rel_threshold`" = "exponential" 
 
-    * `"ilu_abs_threshold`" = "exponential" 
+      * `"ilu_abs_threshold`" = "exponential" 
 
-    * `"ilu_level_of_fill`" = "integer" 
+      * `"ilu_level_of_fill`" = "integer" 
 
 Structured_controls
 ---------------------
@@ -753,8 +730,8 @@ A region is define as describe above.  A file is define as follows.
 
 Currently color functions and labeled sets can only be read from Exodus II files.  This will likely be the same file specified in the `"mesh`" element.  PLEASE NOTE the values listed within [] for attributes above are CASE SENSITIVE.  For many attributes within the Amanzi Input Schema the value is tested against a limited set of specific strings.  Therefore an user generated input file may generate errors due to a mismatch in cases.  Note that all specified names within this schema use lower case.
 
-Polygonal_Surface
------------------
+Polygonal_Surface [U]
+---------------------
 
 A polygonal_surface region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the unstructured algorithm.
 
@@ -764,7 +741,7 @@ A polygonal_surface region is used to define a bounded planar region and is spec
       <point> (X, Y, Z) </point>
       <point> (X, Y, Z) </point>
       <point> (X, Y, Z) </point>
-    </polygonal_surface
+    </polygonal_surface>
 
 The attribute ``tolerance`` is optional.  This value prescribes a tolerance for determining the cell face centroids that lie on the defined plane.
 
@@ -779,8 +756,8 @@ Logical regions are compound regions formed from other primitive type regions us
     <logical  name="logical name" operation = "union | intersection | subtraction | complement" region_list = "region1, region2, region3"/>
 
 
-Polygon
--------
+Polygon [S]
+-----------
 
 A polygon region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the structured algorithm in 2D.
 
@@ -792,8 +769,8 @@ A polygon region is used to define a bounded planar region and is specified by t
       <point> (X, Y) </point>
     </polygon>
 
-Ellipse
--------
+Ellipse [S]
+-----------
 
 An ellipse region is used to define a bounded planar region and is specified by a center and X and Y radii.  This region type is only valid for the structured algorithm in 2D.
 
@@ -804,8 +781,8 @@ An ellipse region is used to define a bounded planar region and is specified by 
       <radius> (radiusX, radiusY) </radius>
     </ellipse>
 
-Rotated Polygon
----------------
+Rotated Polygon [S]
+-------------------
 
 A rotated_polygon region is defined by a list of points defining the polygon, the plane in which the points exist, the axis about which to rotate the polygon, and a reference point for the rotation axis.  The points listed for the polygon must be in order and the ordering will be maintained during input translation. This region type is only valid for the structured algorithm in 3D.
 
@@ -820,8 +797,8 @@ A rotated_polygon region is defined by a list of points defining the polygon, th
         <reference_point> (X, Y) </reference_point>
     </rotated_polygon>
 
-Swept Polygon
----------------
+Swept Polygon [S]
+-----------------
 
 A swept_polygon region is defined by a list of points defining the polygon, the plane in which the points exist, the extents (min,max) to sweep the polygon normal to the plane.  The points listed for the polygon must be in order and the ordering will be maintained during input translation. This region type is only valid for the structured algorithm in 3D.
 
@@ -844,7 +821,7 @@ Geochemistry allows users to define a reaction network and constraints to be ass
 .. code-block:: xml
 
   <geochemistry>
-      Required Elements: reaction_network, constraint
+      Required Elements: reaction_network [S], constraint [S]
   </geochemistry>
 
 PFLOTRAN Chemistry
@@ -1058,6 +1035,7 @@ Some general discussion of the `"Phases`" section goes here.
   <Phases>
       Required Elements: liquid_phase 
       Optional Elements: solid_phase
+      Optional Elements: gas_phase [U]
   </Phases>
 
 Liquid_phase
@@ -1069,7 +1047,7 @@ Liquid_phase
 
   <liquid_phase>
       Required Elements: viscosity, density
-      Optional Elements: dissolved_components, eos
+      Optional Elements: dissolved_components, eos [S]
   </liquid_phase>
 
 Here is more info on the `"liquid_phase`" elements:
@@ -1291,6 +1269,51 @@ Solute_component
 
      <constraint name="some name" start="time" function="linear | uniform | constant"/>
 
+Sources
+=======
+
+Sources are defined in a similar manner to the boundary conditions.  Under the tag ``sources`` an unbounded number of individual ``source`` elements can be defined.  Within each ``source`` element the ``assigned_regions`` and ``liquid_phase`` elements must appear.  Sources can be applied to one or more region using a comma separated list of region names.  Under the ``liquid_phase`` element the ``liquid_component`` element must be define.  An unbounded number of ``solute_component`` elements and one ``geochemistry`` element may optionally be defined.
+
+Under the ``liquid_component`` and ``solute_component`` elements a time series of boundary conditions is defined using the boundary condition elements available in the table below.  Each component element can only contain one type of source.  Both elements also accept a *name* attribute to indicate the phase associated with the source.
+
+.. code-block:: xml
+
+  <sources>
+      Required Elements: assigned_regions, liquid_phase
+      Optional Elements: comments - SKIPPED
+  </sources>
+
+Assigned_regions
+----------------
+
+* `"assigned_regions`" is a comma separated list of regions to apply the source to.
+
+Liquid_phase
+------------
+
+* `"liquid_phase`" has the following elements
+
+.. code-block:: xml
+
+  <liquid_phase>
+      Required Elements: liquid_component
+      Optional Elements: solute_component (, geochemistry - SKIPPED)
+  </liquid_phase>
+
+*  Here is more info on the `"liquid_component`" elements:
+
+    * `"volume_weighted`" is defined in-line using attributes.  The attributes include "function", "start", and "value". Function specifies linear or constant temporal functional form during each time interval.  Start is a series of time values at which time intervals start.  Value is the value of the `"volume_weighted`" during the time interval. 
+
+    * `"perm_weighted`" is defined in-line using attributes.  See `"volume_weighted`" for details.
+
+*  Here is more info on the `"solute_component`" elements:
+
+    * `"uniform_conc`" is defined in-line using attributes.  The attributes include "name", "function", "start", and "value". Name is the name of a previously defined solute. Function specifies linear or constant temporal functional form during each time interval.  Start is a series of time values at which time intervals start.  Value is the value of the `"uniform_conc`" during the time interval. 
+
+    * `"flow_weighted_conc`" is defined in-line using attributes.  See `"uniform_conc`" for details.
+
+    * `"diffusion_dominated_release`" is defined in-line using attributes.  The attributes include "name", "start", "total_inventory", "mixing_length", and "effective_diffusion_coefficient". Name is the name of a previously defined solute. Start is a series of time values at which time intervals start.  Value is the value of the `"diffusion_dominated_release`" during the time interval. 
+
 Output
 ======
 
@@ -1388,7 +1411,7 @@ The *liquid_phase* element requires that the name of the phase be specified as a
 
      <liquid_phase name="Name of Phase (Required)">
        Required Elements: NONE 
-       Optional Elements: integrated_mass, volumetric_water_content, gravimetric_water_content, aqueous_pressure, 
+       Optional Elements: integrated_mass [S], volumetric_water_content, gravimetric_water_content, aqueous_pressure, 
                           x_aqueous_volumetric_flux, y_aqueous_volumetric_flux, z_aqueous_volumetric_flux, material_id, 
                           hydraulic_head, aqueous_mass_flow_rate, aqueous_volumetric_flow_rate, aqueous_conc, drawdown,
                           solute_volumetric_flow_rate
@@ -1436,8 +1459,8 @@ Example:
 
     </observations>
 
-Walkabout
-----------
+Walkabout [U]
+-------------
 
 The ''walkabout'' element defines the file naming scheme and frequency for writing out the walkabout files.  As mentioned above, the user does not influence what is written to the walkabout files only the writing frequency and naming scheme.  Thus, the ''walkabout'' element has the following requirements
 

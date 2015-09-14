@@ -1,4 +1,5 @@
-<amanzi_input version="2.1.0" type="unstructured">
+<amanzi_input version="2.1.1" type="unstructured">
+  <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
 
   <model_description name="1D Flow and Transport w/Kd">
     <author>Glenn Hammond</author>
@@ -11,7 +12,7 @@
   </model_description>
 
   <definitions>
-        <macros>
+    <macros>
       <time_macro name="every_0.05_year">
         <start>0</start>
         <timestep_interval>1.5768e6</timestep_interval>
@@ -29,7 +30,6 @@
       </cycle_macro>
     </macros>
   </definitions>
-
 
   <process_kernels>
     <flow state="on" model="saturated"/>
@@ -53,11 +53,11 @@
   </phases>
 
   <execution_controls>
-      <comments> </comments>
-      <verbosity level="extreme"/>
-      <execution_control_defaults init_dt= "1.5768e+5"   max_dt="6.0e+10"  reduction_factor="0.8"  increase_factor="1.25" mode="transient" method="bdf1"/>
-      <execution_control  start="0.0 y" end="0.0 y" init_dt= "1.5768e+5" max_dt="6.0e+10"  reduction_factor="0.8"  increase_factor="1.25" mode="steady" method="bdf1"/>
-      <execution_control  start="0.0 y" end="1.5778463e9" mode = "transient" />
+    <comments> </comments>
+    <verbosity level="extreme"/>
+    <execution_control_defaults init_dt= "1.5768e+5"   max_dt="6.0e+10"  reduction_factor="0.8"  increase_factor="1.25" mode="transient" method="bdf1"/>
+    <execution_control  start="0.0 y" end="0.0 y" init_dt= "1.5768e+5" max_dt="6.0e+10"  reduction_factor="0.8"  increase_factor="1.25" mode="steady" method="bdf1"/>
+    <execution_control  start="0.0 y" end="1.5778463e9" mode = "transient" />
   </execution_controls>
 
   <numerical_controls>
@@ -68,39 +68,21 @@
         <limit_iterations>20</limit_iterations>
         <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
         <nonlinear_tolerance>1.0e-12</nonlinear_tolerance>
-        <!--
-                <pseudo_time_integrator>
-                       <method>picard</method>
-                    <preconditioner>hypre_amg</preconditioner>
-                    <linear_solver>aztec00</linear_solver>
-                    <control_options>pressure</control_options>
-                    <clipping_saturation>0.95</clipping_saturation>
-                    <convergence_tolerance>0.95</convergence_tolerance>
-                    <initialize_with_darcy>true</initialize_with_darcy>
-                </pseudo_time_integrator>
-                          -->
       </unstr_steady-state_controls>
+
       <unstr_transient_controls>
-        <comments>Comments section.</comments>
-        <bdf1_integration_method min_iterations="10" max_iterations="15" limit_iterations="20" max_preconditioner_lag_iterations="4" nonlinear_tolerance="1e-12" />
-        <preconditioner name = "trilinos_ml">
-        </preconditioner>
+        <min_iterations>10</min_iterations>
+        <max_iterations>15</max_iterations>
+        <limit_iterations>20</limit_iterations>
+        <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
+        <nonlinear_tolerance>1.0e-12</nonlinear_tolerance>
       </unstr_transient_controls>
       <unstr_linear_solver>
         <comments>Comment section.</comments>
-        <!--
         <method>gmres</method>
         <max_iterations>20</max_iterations>
-                          -->
         <tolerance>1.0e-22</tolerance>
-        <preconditioner name = "trilinos_ml">
-          <!--
-          <trilinos_smoother_type>jacobi</trilinos_smoother_type>
-          <trilinos_threshold>0</trilinos_threshold>
-          <trilinos_smoother_sweeps>3</trilinos_smoother_sweeps>
-                                  <trilinos_cycle_applications>2</trilinos_cycle_applications>
-                                  -->
-        </preconditioner>
+        <preconditioner name = "trilinos_ml" />
       </unstr_linear_solver>
       <unstr_chemistry_controls>
         <chem_tolerance>1e-12</chem_tolerance>
@@ -158,15 +140,15 @@
 
   <initial_conditions>  
     <initial_condition name="initial_ic">
-                    <assigned_regions>All</assigned_regions>
-                    <liquid_phase name="water">
-                        <liquid_component name="water">
-                            <uniform_pressure value="201325.0"/>
-                        </liquid_component>
-                        <solute_component name= "A" value= "1.e-20" function="uniform"/>
-                        <solute_component name= "B" value= "1.e-20" function="uniform"/>
-                        <solute_component name= "C" value= "1.e-20" function="uniform"/>
-                    </liquid_phase>
+      <assigned_regions>All</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="201325.0"/>
+        </liquid_component>
+        <solute_component name= "A" value= "1.e-20" function="uniform"/>
+        <solute_component name= "B" value= "1.e-20" function="uniform"/>
+        <solute_component name= "C" value= "1.e-20" function="uniform"/>
+      </liquid_phase>
     </initial_condition>
   </initial_conditions>
 
@@ -193,8 +175,8 @@
       </liquid_phase>
     </boundary_condition>
     <!-- EIB: problem I'm matching uses BC: Zero Gradient which doesn't actually exist, 
-         so removing BC to match target problem.
-    <boundary_condition name="east_bc">
+         so removing BC to match target problem.-->
+    <!--boundary_condition name="east_bc">
       <assigned_regions>east</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
@@ -206,8 +188,7 @@
           <aqueous_conc name = "C" start = "0.0" value= "0" function="constant"/>
         </solute_component>
       </liquid_phase>
-    </boundary_condition>
-                -->
+    </boundary_condition-->
   </boundary_conditions>
 
   <output>

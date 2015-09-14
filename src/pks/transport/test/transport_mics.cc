@@ -76,7 +76,6 @@ TEST(CONSTRUCTOR) {
 
   /* initialize a transport process kernel from a transport state */
   TPK.Initialize();
-  TPK.PrintStatistics();
 
   double cfl = TPK.cfl();
   CHECK(0 < cfl && cfl <= 1.0);

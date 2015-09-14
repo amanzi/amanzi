@@ -77,8 +77,8 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
     for (int i = 0; i < children->getLength(); ++i) {
       DOMNode* inode = children->item(i);
-      text = mm.transcode(inode->getTextContent());
-      minerals.push_back(text);
+      std::string name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
+      minerals.push_back(name);
     }
   }
 
@@ -164,8 +164,8 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
         for (int j = 0; j < nsolutes; ++j) {
           std::string solute_name = phases_["water"][j];
-          element = GetUniqueChildByAttribute_(node, "name", solute_name, flag, "true");
-          double val = GetAttributeValueD_(element, "value", false, 0.0);
+          element = GetUniqueChildByAttribute_(node, "name", solute_name, flag, false);
+          double val = (!flag) ? 0.0 : GetAttributeValueD_(element, "selectivity", false, 0.0);
 
           std::stringstream ss;
           ss << "DoF " << j + 1 << " Function";
@@ -202,25 +202,29 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
         for (int j = 0; j < nsolutes; ++j) {
           std::string solute_name = phases_["water"][j];
-          element = GetUniqueChildByAttribute_(node, "name", solute_name, flag, "true");
+          element = GetUniqueChildByAttribute_(node, "name", solute_name, flag, false);
+          if (flag) {
+            DOMNode* jnode = GetUniqueElementByTagsString_(element, "kd_model", flag);
+            element = static_cast<DOMElement*>(jnode);
+          }
 
           std::stringstream ss;
           ss << "DoF " << j + 1 << " Function";
 
-          double val = GetAttributeValueD_(element, "kd", false, 0.0);
+          double val = (!flag) ? 0.0 : GetAttributeValueD_(element, "kd", false, 0.0);
           aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", val);
 
-          val = GetAttributeValueD_(element, "langmuir_b", false, 0.0);
+          val = (!flag) ? 0.0 : GetAttributeValueD_(element, "b", false, 0.0);
           aux2_list.sublist(ss.str()).sublist("function-constant").set<double>("value", val);
 
-          val = GetAttributeValueD_(element, "freundlich_n", false, 0.0);
+          val = (!flag) ? 0.0 : GetAttributeValueD_(element, "n", false, 0.0);
           aux3_list.sublist(ss.str()).sublist("function-constant").set<double>("value", val);
         }
       }
     }
 
     // surface complexation
-    node = GetUniqueElementByTagsString_(inode, "surface_complexation", flag);
+    node = GetUniqueElementByTagsString_(inode, "surface_complexation, site", flag);
     if (flag) {
       Teuchos::ParameterList& complexation = ic_list.sublist("surface_complexation");
 

@@ -1,4 +1,5 @@
 <amanzi_input type="unstructured" version="2.1.1">
+  <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
     <model_description name="Dispersion Example Problem">
       <comments>Example input file</comments>
       <model_id>Single-Phase Saturated</model_id>
@@ -9,6 +10,7 @@
         <mass_unit>kg</mass_unit>
         <conc_unit>molar</conc_unit>
       </units>
+      <coordinate_system>x,z</coordinate_system>
     </model_description>
     <definitions>
       <macros>
@@ -39,7 +41,7 @@
         <density>998.2</density>
         <dissolved_components>
           <solutes>
-            <solute coefficient_of_diffusion="1.0e-9">Tc-99</solute>
+            <solute coefficient_of_diffusion="0.0">Tc-99</solute>
           </solutes>
         </dissolved_components>
       </liquid_phase>
@@ -75,17 +77,17 @@
     <mesh framework="mstk">
       <comments>no comment</comments>
       <dimension>2</dimension>
-      <generate>
-        <number_of_cells nx="84" nz="37" />
-        <box high_coordinates="960.0,270.0" low_coordinates="-271.0,-270.0" />
-      </generate>
+      <read>
+        <file>amanzi_dispersion_aligned_point_2d.exo</file>
+        <format>exodus ii</format>
+      </read>
     </mesh>
     <regions>
       <region name="All">
         <box high_coordinates="971.25,  281.25" low_coordinates="-273.75, -273.75" />
       </region>
       <region name="Well">
-        <box high_coordinates="0.1, 0.1" low_coordinates="-0.1,-0.1" />
+        <box high_coordinates="0.1, 0.1" low_coordinates="-0.1, -0.1" />
       </region>
       <point coordinate="-210.0,0.0" name="Upwind210" />
       <point coordinate="-150.0,0.0" name="Upwind150" />
@@ -125,6 +127,7 @@
       <point coordinate="424.0,210.0" name="Crossb210" />
       <point coordinate="424.0,240.0" name="Crossb240" />
     </regions>
+
     <materials>
       <material name="Aquifers">
         <mechanical_properties>
@@ -137,6 +140,7 @@
         <assigned_regions>All</assigned_regions>
       </material>
     </materials>
+
     <initial_conditions>
       <initial_condition name="All">
         <assigned_regions>All</assigned_regions>
@@ -149,6 +153,18 @@
         </liquid_phase>
       </initial_condition>
     </initial_conditions>
+
+    <sources>
+      <source name="Well">
+        <assigned_regions>Well</assigned_regions>
+        <liquid_phase name = "water">
+          <solute_component name="group1">
+            <volume_weighted name="Tc-99" value="8.1483e-08" function="constant" start="0.0"/>
+          </solute_component> 
+        </liquid_phase>
+      </source>
+    </sources>
+
     <output>
       <vis>
         <base_filename>plot</base_filename>
@@ -156,7 +172,7 @@
         <time_macros>EveryYear</time_macros>
       </vis>
       <observations>
-        <filename>obs5_2_1.out</filename>
+        <filename>obs5_2_1_r5.out</filename>
         <liquid_phase name="water">
           <aqueous_conc solute="Tc-99">
             <assigned_regions>Origin</assigned_regions>
@@ -347,4 +363,4 @@
       </observations>
     </output>
   </amanzi_input>
-  
+

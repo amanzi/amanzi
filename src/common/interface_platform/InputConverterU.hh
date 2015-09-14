@@ -46,6 +46,7 @@ class InputConverterU : public InputConverter {
  private:
   void VerifyXMLStructure_();
   void ParseSolutes_();
+  void ParseModelDescription_();
 
   Teuchos::ParameterList TranslateVerbosity_();
   Teuchos::ParameterList TranslateMisc_();
@@ -69,12 +70,13 @@ class InputConverterU : public InputConverter {
       const std::string& nonlinear_solver, const std::string& extensions);
   Teuchos::ParameterList TranslateTimeIntegrator_(
       const std::string& err_options, const std::string& nonlinear_solver,
-      bool modify_correction, const std::string& unstr_colntrols);
+      bool modify_correction, const std::string& unstr_controls,
+      double dt_cut_default, double dt_inc_default);
   Teuchos::ParameterList TranslateInitialization_(
       const std::string& unstr_controls);
 
   // -- flow
-  Teuchos::ParameterList TranslateFlow_(int regime = FLOW_BOTH_REGIMES);
+  Teuchos::ParameterList TranslateFlow_(const std::string& mode);
   Teuchos::ParameterList TranslateWRM_();
   Teuchos::ParameterList TranslatePOM_();
   Teuchos::ParameterList TranslateFlowMSM_();
@@ -83,6 +85,7 @@ class InputConverterU : public InputConverter {
 
   // -- transport
   Teuchos::ParameterList TranslateTransport_();
+  Teuchos::ParameterList TranslateTransportMSM_();
   Teuchos::ParameterList TranslateTransportBCs_();
   void TranslateTransportBCsGroup_(
       std::string& bcname, std::vector<std::string>& regions,
@@ -111,11 +114,15 @@ class InputConverterU : public InputConverter {
  private:
   int dim_;
   int rank_, num_proc_;
+  std::vector<std::string> coords_;
+
   Tree tree_;
   Tree phases_;
 
+  // global data
   std::map<std::string, std::string> pk_model_;
   std::map<std::string, bool> pk_master_;
+  std::map<std::string, double> dt_cut_, dt_inc_;
 
   // global flow constants
   std::string flow_model_;  // global value
@@ -129,7 +136,7 @@ class InputConverterU : public InputConverter {
   std::vector<std::string> comp_names_all_;
 
   // global state parameters
-  // -- initialization filename, different form restart
+  // -- initialization filename, different from restart
   std::string init_filename_;
 
   // for analysis

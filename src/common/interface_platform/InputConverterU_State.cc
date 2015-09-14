@@ -95,7 +95,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           reg2mat[regions[k]] = mat++;
         } else {
           std::stringstream ss;
-          ss << "There is more than one material assinged to region " << regions[k] << ".";
+          ss << "There is more than one material assigned to region \"" << regions[k] << "\".";
           Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
         }
       }
@@ -125,6 +125,19 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         porosity_ev.set<std::string>("field evaluator type", "independent variable");
       }
 
+      // --- multiscale porosity if any
+      node = GetUniqueElementByTagsString_(inode, "multiscale_structure, porosity", flag);
+      if (flag) {
+        double porosity;
+        Teuchos::ParameterList& porosity_ev = out_ev.sublist("porosity_matrix");
+        porosity_ev.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
+            .sublist("function").sublist("function-constant")
+            .set<double>("value", porosity);
+        porosity_ev.set<std::string>("field evaluator type", "independent variable");
+      }
+
       // -- permeability.
       double perm_x, perm_y, perm_z;
       bool perm_init_from_file(false), conductivity(false);
@@ -136,11 +149,11 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         node = GetUniqueElementByTagsString_(inode, "hydraulic_conductivity", flag);
       }
 
-      // first we get eilter permeability values or the file name
+      // first we get either permeability value or the file name
       int file(0);
       char* file_name;
       char* attr_name;
-      double kx, ky(-1.0), kz;
+      double kx(-1.0), ky(-1.0), kz(-1.0);
 
       DOMNamedNodeMap* attr_tmp = node->getAttributes();
       for (int k=0; k < attr_tmp->getLength(); k++) {
@@ -201,7 +214,10 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           aux_list.sublist("DoF 3 Function").sublist("function-constant").set<double>("value", kz);
         }
       } else {
-        ThrowErrorIllformed_("materials", "element", "file/filename/attribute");
+        ThrowErrorIllformed_("materials", "permeability/hydraulic conductivity", "file/filename/attribute");
+      }
+      if (kx < 0.0 || ky < 0.0 || kz < 0.0) {
+        ThrowErrorIllformed_("materials", "permeability/hydraulic conductivity", "file/filename/attribute");
       }
 
       // -- specific_yield
@@ -353,9 +369,9 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, velocity", flag);
       if (flag) {
         std::vector<double> velocity;
-        velocity.push_back(GetAttributeValueD_(static_cast<DOMElement*>(node), "x"));
-        velocity.push_back(GetAttributeValueD_(static_cast<DOMElement*>(node), "y"));
-        if (dim_ == 3) velocity.push_back(GetAttributeValueD_(static_cast<DOMElement*>(node), "z"));
+        velocity.push_back(GetAttributeValueD_(static_cast<DOMElement*>(node), coords_[0].c_str()));
+        velocity.push_back(GetAttributeValueD_(static_cast<DOMElement*>(node), coords_[1].c_str()));
+        if (dim_ == 3) velocity.push_back(GetAttributeValueD_(static_cast<DOMElement*>(node), coords_[2].c_str()));
 
         Teuchos::ParameterList& darcy_flux_ic = out_ic.sublist("darcy_flux");
         Teuchos::ParameterList& tmp_list =

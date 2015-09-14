@@ -111,5 +111,4 @@ FIXME:
 
   * probably do not want the points on the boundary 
   * we may want to plot flux?
-  * the table needs to be centered
   * values in the table need to be sorted.

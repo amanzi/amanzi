@@ -42,11 +42,9 @@ class HeatConduction {
  public:
   HeatConduction(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh) { 
     CompositeVectorSpace cvs;
-    cvs.SetMesh(mesh_);
-    cvs.SetGhosted(true);
-    cvs.SetComponent("cell", AmanziMesh::CELL, 1);
-    cvs.SetOwned(false);
-    cvs.AddComponent("face", AmanziMesh::FACE, 1);
+    cvs.SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("face", AmanziMesh::FACE, 1);
 
     values_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
     derivatives_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));

@@ -398,6 +398,7 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
     msg << "  Initial Time Step is smaller than Min Time Step!\n";
     Exceptions::amanzi_throw(msg);
     } */
+
   time_step_ = prev_time_step_;
   time_step_control_method_ = chem_param_list_.get<std::string>("time step control method", "fixed");
   num_iterations_for_time_step_cut_ = chem_param_list_.get<int>("time step cut threshold", 8);
@@ -712,6 +713,7 @@ void Alquimia_Chemistry_PK::ComputeNextTimeStep()
       num_successful_steps_ = 0;
     }
   }
+
   if (time_step_ > max_time_step_)
     time_step_ = max_time_step_;
   /* else if (time_step_ > min_time_step_)
