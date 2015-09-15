@@ -399,13 +399,34 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
     for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
       std::stringstream ss;
       ss << "MSM for " << *it;
-
       Teuchos::ParameterList& msm_list = out_list.sublist(ss.str());
 
       msm_list.set<std::string>("multiscale model", "dual porosity")
           .set<double>("mass transfer coefficient", alpha);
     }
 
+    // -- porosity models
+    node = GetUniqueElementByTagsString_(inode, "multiscale_structure, porosity", flag);
+    double phi = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+    double compres = GetAttributeValueD_(static_cast<DOMElement*>(node), "compressibility", false, 0.0);
+
+    for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
+      std::stringstream ss;
+      ss << "MSM for " << *it;
+      Teuchos::ParameterList& msm_list = out_list.sublist(ss.str());
+
+      if (compres == 0.0) {
+        msm_list.set<std::string>("porosity model", "constant");
+        msm_list.set<double>("value", phi);
+      } else {
+        msm_list.set<std::string>("porosity model", "compressible");
+        msm_list.set<double>("undeformed soil porosity", phi);
+        msm_list.set<double>("reference pressure", ATMOSPHERIC_PRESSURE);
+        msm_list.set<double>("pore compressibility", compres);
+      }
+    }
+
+    // capillary pressure models
     // -- ell
     double ell, ell_d = (rel_perm == "mualem") ? ELL_MUALEM : ELL_BURDINE;
     ell = GetAttributeValueD_(element_rp, "value", false, ell_d);
@@ -413,7 +434,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
     std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'm', 'M');
     std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'b', 'B');
 
-    // capillary pressure models
+    // -- van Genuchten or Brooks-Corey
     if (strcmp(model.c_str(), "van_genuchten") == 0) {
       double alpha = GetAttributeValueD_(element_cp, "alpha");
       double sr = GetAttributeValueD_(element_cp, "sr");
@@ -422,7 +443,6 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
       for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
         std::stringstream ss;
         ss << "MSM for " << *it;
-
         Teuchos::ParameterList& wrm_list = out_list.sublist(ss.str());
 
         wrm_list.set<std::string>("water retention model", "van Genuchten")

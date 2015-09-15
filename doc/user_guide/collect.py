@@ -376,7 +376,7 @@ utils.WalkRstFiles(amanzi_home,sections,logfile)
 # =======================================================================================
 
 # Run the tests
-print("\nRunning verification tests...")
+print("\nRunning verification and benchmarking tests...")
 
 mpi_exec = os.getenv('AMANZI_MPI_EXEC', 'mpirun')
 mpi_np = os.getenv('AMANZI_MPI_NP', '1')
@@ -400,12 +400,13 @@ for name in verification['index']['index_list']:
             if os.path.isfile(filename):
                stdout_file = open("collect.log", "w")
                print("   script: " + filename)
-               subprocess.call(["python", filename], stdout=stdout_file, stderr= subprocess.STDOUT)
+               subprocess.call(["python", filename], stdout=stdout_file, stderr=subprocess.STDOUT)
 
                for el in find("stdout.out", run_directory):
                    if ("Amanzi::SIMULATION_SUCCESSFUL" in open(el).read()):
                       print("   result: SIMULATION_SUCCESSFUL")
                    else:
+                      el = el[el.find("verification"):]
                       print("   ERROR: " + el)
         os.chdir(cwd)
 
@@ -421,11 +422,12 @@ for name in benchmark['index']['index_list']:
             if os.path.isfile(filename):
                stdout_file = open("collect.log", "w")
                print("   script: " + filename)
-               subprocess.call(["python", filename], stdout=stdout_file, stderr= subprocess.STDOUT)
+               subprocess.call(["python", filename], stdout=stdout_file, stderr=subprocess.STDOUT)
 
                for el in find("stdout.out", run_directory):
                    if ("Amanzi::SIMULATION_SUCCESSFUL" in open(el).read()):
                       print("   result: SIMULATION_SUCCESSFUL")
                    else:
+                      el = el[el.find("benchmarking"):]
                       print("   ERROR: " + el)
         os.chdir(cwd)
