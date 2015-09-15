@@ -23,13 +23,14 @@
       </ParameterList>
     </ParameterList>
 
-    <Parameter name="Verbosity" type="string" value="Extreme"/>
+    <Parameter name="Verbosity" type="string" value="High"/>
 
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
         <ParameterList name="Linear Solver">
           <Parameter name="linear solver tolerance" type="double" value="1e-20"/>
           <Parameter name="linear solver maximum iterations" type="int" value="1000"/>
+          <Parameter name="linear solver iterative method" type="string" value="pcg"/>
         </ParameterList>
         <ParameterList name="Transient Implicit Time Integration">
           <Parameter name="Transient Time Step Increase Factor" type="double" value="1.1"/>
@@ -210,23 +211,23 @@
     </ParameterList>
     
     <ParameterList name="Observation Data">
-      <Parameter name="Observation Output Filename" type="string" value="obs4_6.out"/>
+      <Parameter name="Observation Output Filename" type="string" value="observation.out"/>
       <ParameterList name="Pressure 01">
         <Parameter name="Region" type="string" value="Obs_x"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Hydraulic Head"/>
+        <Parameter name="Variable" type="string" value="Drawdown"/>
         <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Pressure 02">
         <Parameter name="Region" type="string" value="Obs_y"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Hydraulic Head"/>
+        <Parameter name="Variable" type="string" value="Drawdown"/>
         <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
       <ParameterList name="Pressure 03">
         <Parameter name="Region" type="string" value="Obs_xy"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Hydraulic Head"/>
+        <Parameter name="Variable" type="string" value="Drawdown"/>
         <Parameter name="Time Macros" type="Array(string)" value="{Observation Times}"/>
       </ParameterList>
     </ParameterList>
