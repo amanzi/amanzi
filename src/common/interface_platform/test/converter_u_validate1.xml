@@ -395,6 +395,9 @@
   <ParameterList name="PKs">
     <ParameterList name="Flow Steady">
       <ParameterList name="Richards problem">
+        <ParameterList name="physical models and assumptions">
+          <Parameter name="water content model" type="string" value="constant density"/>
+        </ParameterList>
         <ParameterList name="upwind">
           <Parameter name="relative permeability" type="string" value="upwind: amanzi"/>
           <Parameter name="upwind update" type="string" value="every timestep"/>
@@ -604,6 +607,9 @@
       <Parameter name="master PK index" type="int" value="0"/>
     </ParameterList>
     <ParameterList name="Transport">
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="permeability field is required" type="bool" value="false"/>
+      </ParameterList>
       <Parameter name="spatial discretization order" type="int" value="1"/>
       <Parameter name="temporal discretization order" type="int" value="1"/>
       <Parameter name="cfl" type="double" value="1.0"/>
@@ -673,6 +679,9 @@
     </ParameterList>
     <ParameterList name="Flow">
       <ParameterList name="Richards problem">
+        <ParameterList name="physical models and assumptions">
+          <Parameter name="water content model" type="string" value="constant density"/>
+        </ParameterList>
         <ParameterList name="upwind">
           <Parameter name="relative permeability" type="string" value="upwind: amanzi"/>
           <Parameter name="upwind update" type="string" value="every timestep"/>
@@ -866,6 +875,9 @@
             <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
             <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
             <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
+            <ParameterList name="VerboseObject">
+              <Parameter name="Verbosity Level" type="string" value="high"/>
+            </ParameterList>
           </ParameterList>
           <ParameterList name="VerboseObject">
             <Parameter name="Verbosity Level" type="string" value="high"/>

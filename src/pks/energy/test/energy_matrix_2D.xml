@@ -199,7 +199,7 @@
         <Parameter name="field evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
         <ParameterList name="IEM parameters">
-          <Parameter name="IEM type" type="string" value="linear"/>
+          <Parameter name="iem type" type="string" value="linear"/>
           <Parameter name="heat capacity [J/mol-K]" type="double" value="76.0"/>
         </ParameterList>
         <ParameterList name="VerboseObject">
@@ -211,7 +211,7 @@
         <Parameter name="field evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
         <ParameterList name="IEM parameters">
-          <Parameter name="IEM type" type="string" value="linear"/>
+          <Parameter name="iem type" type="string" value="linear"/>
           <Parameter name="heat capacity [J/kg-K]" type="double" value="620.0"/>
         </ParameterList>
         <ParameterList name="VerboseObject">
@@ -229,11 +229,11 @@
 
       <ParameterList name="molar_density_liquid">
         <Parameter name="field evaluator type" type="string" value="eos"/>
-        <Parameter name="EOS basis" type="string" value="both"/>
+        <Parameter name="eos basis" type="string" value="both"/>
         <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
         <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
         <ParameterList name="EOS parameters">
-          <Parameter name="EOS type" type="string" value="liquid water"/>
+          <Parameter name="eos type" type="string" value="liquid water"/>
         </ParameterList>
         <ParameterList name="VerboseObject">
           <Parameter name="Verbosity Level" type="string" value="extreme"/>
@@ -242,12 +242,12 @@
 
       <ParameterList name="molar_density_gas">
         <Parameter name="field evaluator type" type="string" value="eos"/>
-        <Parameter name="EOS basis" type="string" value="molar"/>
+        <Parameter name="eos basis" type="string" value="molar"/>
         <Parameter name="molar density key" type="string" value="molar_density_gas"/>
         <ParameterList name="EOS parameters">
-          <Parameter name="EOS type" type="string" value="vapor in gas"/>
+          <Parameter name="eos type" type="string" value="vapor in gas"/>
           <ParameterList name="gas EOS parameters">
-            <Parameter name="EOS type" type="string" value="ideal gas"/>
+            <Parameter name="eos type" type="string" value="ideal gas"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="VerboseObject">

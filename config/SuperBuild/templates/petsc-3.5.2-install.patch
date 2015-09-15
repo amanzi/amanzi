@@ -1,0 +1,10 @@
+--- a/config/install.py
++++ b/config/install.py
+@@ -192,7 +192,7 @@ class Installer(script.Script):
+   def fixConf(self):
+     import shutil
+-    for file in ['rules', 'variables','petscrules', 'petscvariables']:
++    for file in ['rules', 'variables','petscrules', 'petscvariables', 'PETScConfig.cmake']:
+       self.fixConfFile(os.path.join(self.destConfDir,file))
+     self.fixConfFile(os.path.join(self.destLibDir,'pkgconfig','PETSc.pc'))
+     return

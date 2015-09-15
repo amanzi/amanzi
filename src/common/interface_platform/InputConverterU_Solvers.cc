@@ -81,9 +81,9 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
         } else if (strcmp(tagname, "max_iterations") == 0) {
           maxiter = std::strtol(text_content, NULL, 10);
         } else if (strcmp(tagname, "method") == 0) {
-          method = text_content;
+          method = TrimString_(text_content);
         } else if (strcmp(tagname, "preconditioner") == 0) {
-          prec = text_content;
+          prec = TrimString_(text_content);
         }
       }
     }

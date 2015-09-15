@@ -94,6 +94,11 @@ void Richards_PK::Functional(double t_old, double t_new,
     Functional_AddVaporDiffusion_(f->Data());
   }
 
+  // add water content in matrix
+  if (multiscale_porosity_) {
+    Functional_AddWaterContentMatrix_(f->Data());
+  }
+
   // calculate normalized residual
   functional_max_norm = 0.0;
   functional_max_cell = 0;

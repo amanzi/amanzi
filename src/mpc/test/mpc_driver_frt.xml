@@ -216,9 +216,9 @@
 	<Parameter name="Format" type="string" value="simple"/>
 	<Parameter name="File" type="string" value="test/mpc_driver_reactive_transport.bgd"/>
       </ParameterList>
-      <Parameter name="Activity Model" type="string" value="unit"/>
+      <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="Verbosity" type="Array(string)" value="{verbose}"/>
-      <Parameter name="Maximum Newton Iterations" type="int" value="50"/>
+      <Parameter name="maximum Newton iterations" type="int" value="50"/>
       <ParameterList name="initial conditions">
 	<ParameterList name="mineral_volume_fractions">
 	  <ParameterList name="function">
@@ -430,7 +430,7 @@
 	</ParameterList>
       </ParameterList>
       <Parameter name="Minerals" type="Array(string)" value="{Halite}"/>
-      <Parameter name="Number of component concentrations" type="int" value="4"/>
+      <Parameter name="number of component concentrations" type="int" value="4"/>
       <ParameterList name="VerboseObject">
 	<Parameter name="Verbosity Level" type="string" value="high"/>
       </ParameterList>

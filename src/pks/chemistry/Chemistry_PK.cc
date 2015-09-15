@@ -263,7 +263,7 @@ void Chemistry_PK::XMLParameters(void) {
   //
   //---------------------------------------------------------------------------
   beaker_parameters_.activity_model_name =
-      parameter_list_.get<std::string>("Activity Model", "unit");
+      parameter_list_.get<std::string>("activity model", "unit");
   // Pitzer virial coefficients database
   if (beaker_parameters_.activity_model_name == "pitzer-hwm") {
     if (parameter_list_.isParameter("Pitzer Database File")) {
@@ -273,7 +273,7 @@ void Chemistry_PK::XMLParameters(void) {
       std::ostringstream error_stream;
       error_stream << ChemistryException::kChemistryError;
       error_stream << "Chemistry_PK::XMLParameters(): \n";
-      error_stream << "  Input parameter 'Pitzer Database File' must be specified if 'Activity Model' is 'pitzer-hwm'.\n";
+      error_stream << "  Input parameter 'Pitzer Database File' must be specified if 'activity model' is 'pitzer-hwm'.\n";
       Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
       
     }
@@ -285,10 +285,10 @@ void Chemistry_PK::XMLParameters(void) {
   //
   // --------------------------------------------------------------------------
   beaker_parameters_.tolerance =
-      parameter_list_.get<double>("Tolerance", 1.0e-12);
+      parameter_list_.get<double>("tolerance", 1.0e-12);
 
   beaker_parameters_.max_iterations =
-      static_cast<unsigned int>(parameter_list_.get<int>("Maximum Newton Iterations", 200));
+      static_cast<unsigned int>(parameter_list_.get<int>("maximum Newton iterations", 200));
 
   // --------------------------------------------------------------------------
   //
@@ -296,15 +296,15 @@ void Chemistry_PK::XMLParameters(void) {
   //
   // --------------------------------------------------------------------------
   aux_names_.clear();
-  if (parameter_list_.isParameter("Auxiliary Data")) {
-    Teuchos::Array<std::string> names = parameter_list_.get<Teuchos::Array<std::string> >("Auxiliary Data");
+  if (parameter_list_.isParameter("auxiliary data")) {
+    Teuchos::Array<std::string> names = parameter_list_.get<Teuchos::Array<std::string> >("auxiliary data");
     for (Teuchos::Array<std::string>::const_iterator name = names.begin();
          name != names.end(); ++name) {
       if (*name == "pH") {
         aux_names_.push_back(*name);
       } else {
         std::stringstream message;
-        message << "XMLParameters(): unknown value in 'Auxiliary Data' list: " 
+        message << "XMLParameters(): unknown value in 'auxiliary data' list: " 
                 << *name << std::endl;
         chem_out->WriteWarning(Teuchos::VERB_LOW, message);
       }
@@ -315,7 +315,7 @@ void Chemistry_PK::XMLParameters(void) {
   // misc other chemistry flags
   //
   // --------------------------------------------------------------------------
-  set_max_time_step(parameter_list_.get<double>("Max Time Step (s)", 9.9e9));
+  set_max_time_step(parameter_list_.get<double>("max time step (s)", 9.9e9));
 
 }  // end XMLParameters()
 

@@ -63,12 +63,12 @@ public:
   // visualization and checkpoint i/o
   void WriteVis(const Teuchos::Ptr<Visualization>& vis);
   void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& ckp);
-  void ReadCheckpoint(const Teuchos::Ptr<HDF5_MPI>& file);
+  bool ReadCheckpoint(const Teuchos::Ptr<HDF5_MPI>& file);
 
   long int GetLocalElementCount();
 
 protected:
-  void ReadCheckpoint_(std::string filename);
+  bool ReadCheckpoint_(std::string filename);
   void ReadCellsFromCheckpoint_(std::string filename); // for ICs
   void ReadAttributeFromExodusII_(Teuchos::ParameterList& plist); 
   void ReadVariableFromExodusII_(Teuchos::ParameterList& plist); 

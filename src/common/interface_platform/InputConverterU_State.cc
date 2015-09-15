@@ -68,12 +68,6 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   rho_ = std::strtod(text_content, NULL);
   out_ic.sublist("fluid_density").set<double>("value", rho_);
 
-  // out_ic.sublist("water_density").sublist("function").sublist("All")
-  //     .set<std::string>("region", "All")
-  //     .set<std::string>("component", "cell")
-  //     .sublist("function").sublist("function-constant")
-  //     .set<double>("value", rho_);
-
   out_ic.sublist("mass_density_liquid").sublist("function").sublist("All")
       .set<std::string>("region", "All")
       .set<std::string>("component", "cell")
@@ -379,7 +373,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
       // -- total_component_concentration (liquid phase)
       int ncomp_l = phases_["water"].size();
-      int ncomp_g = phases_["gas"].size();
+      int ncomp_g = phases_["air"].size();
       int ncomp_all = ncomp_l + ncomp_g;
 
       node = GetUniqueElementByTagsString_(inode, "liquid_phase", flag);
@@ -426,15 +420,15 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
           if (strcmp(tagname, "solute_component") == 0) {
             std::string text = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
-            int m = GetPosition_(phases_["gas"], text);
+            int m = GetPosition_(phases_["air"], text);
             vals[m] = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "value");
           }
         }
 
         Teuchos::ParameterList& tcc_ic = out_ic.sublist("total_component_concentration");
-        Teuchos::ParameterList& dof_list = tcc_ic.sublist("function").sublist(reg_str);
+        Teuchos::ParameterList& dof_list = tcc_ic.sublist("function").sublist(reg_str).sublist("function");
         for (int k = 0; k < ncomp_g; k++) {
-          std::string name = phases_["gas"][k];
+          std::string name = phases_["air"][k];
           std::stringstream dof_str;
           dof_str << "DoF " << ncomp_l + k + 1 << " Function";
           dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", vals[k]);

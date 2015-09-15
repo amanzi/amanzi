@@ -25,7 +25,7 @@ namespace EOS {
 
 // method for instantiating EOS implementations
 Teuchos::RCP<EOS> EOSFactory::CreateEOS(Teuchos::ParameterList& plist) {
-  std::string eos_typename = plist.get<std::string>("EOS type");
+  std::string eos_typename = plist.get<std::string>("eos type");
   return Teuchos::rcp(CreateInstance(eos_typename, plist));
 };
 

@@ -116,7 +116,7 @@ class HDF5_MPI {
   void writeDataInt(const Epetra_Vector &x, const std::string varname);
   
   // Read array data from HDF5 data file.
-  void readData(Epetra_Vector &x, const std::string varname);
+  bool readData(Epetra_Vector &x, const std::string varname);
   
   // Write and read string datasets
   void writeDataString(char **x, int num_entries, const std::string varname);
@@ -143,8 +143,9 @@ class HDF5_MPI {
 
   void writeFieldData_(const Epetra_Vector &x, std::string varname,
                        datatype_t type, std::string loc);
-  void readFieldData_(Epetra_Vector &x, std::string varname,
+  bool readFieldData_(Epetra_Vector &x, std::string varname,
                       datatype_t type);
+  bool checkFieldData_(std::string varname);
 
   int getCellTypeID_(AmanziMesh::Cell_type type);
   

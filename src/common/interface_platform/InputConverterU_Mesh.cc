@@ -48,8 +48,6 @@ namespace AmanziInput {
 
 XERCES_CPP_NAMESPACE_USE
 
-const Teuchos::Array<std::string> meshfile_strings = 
-   Teuchos::tuple<std::string>("exodus ii", "exodus II", "Exodus II", "Exodus ii", "H5M", "h5m");
 
 /* ******************************************************************
 * Translate unstructured mesh. Introduces global parameter dim_.
@@ -73,8 +71,6 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
   Errors::Message msg;
   Teuchos::ParameterList mesh_list;
     
-  Teuchos::RCP<Teuchos::StringValidator> meshfile_validator = Teuchos::rcp(new Teuchos::StringValidator(meshfile_strings));
-  
   // read in new stuff
   node_list = doc_->getElementsByTagName(mm.transcode("mesh"));
 
@@ -194,44 +190,41 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
         else if (strcmp(tagname, "read") == 0) {
           read = true;
           generate = false;
-          bool goodtype = false;
-          bool goodname = false;
-          DOMElement* elementRead = static_cast<DOMElement*>(inode);
+          bool flag1, flag2;
 
-          char* value = mm.transcode(elementRead->getElementsByTagName(
-              mm.transcode("format"))->item(0)->getTextContent());
-          std::string format(TrimString_(value));
+          node = GetUniqueElementByTagsString_(inode, "format", flag1);
+          if (flag1) {
+            std::string format = GetTextContentS_(node, "exodus ii, exodus II, Exodus II, Exodus ii, H5M, h5m");
 
-          if (boost::iequals(format, "exodus ii")) {
-            mesh_list.set<std::string>("Format", "Exodus II");
-            goodtype = true;
-          } else if (boost::iequals(format, "h5m")) {
-            mesh_list.set<std::string>("Format", "H5M");
-            goodtype = true;
-          } else {
-            mesh_list.set<std::string>("Format", format, "Format of meshfile", meshfile_validator);
-          }
-
-          std::string filename = mm.transcode(elementRead->getElementsByTagName(
-              mm.transcode("file"))->item(0)->getTextContent());
-          if (filename.size() > 0) {
-            if (num_proc_ > 1) {
-              std::string par_filename(filename);
-              par_filename.replace(par_filename.size() - 4, 4, ".par");
-
-              // attach the right extensions as required by Nemesis file naming conventions
-              // in which files are named as mymesh.par.N.r where N = numproc and r is rank
-              int ndigits = (int)floor(log10(num_proc_)) + 1;
-              std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
-              std::string tmp = boost::str(boost::format(fmt) % par_filename % num_proc_ % rank_);
-              boost::filesystem::path p(tmp);
-
-             if (boost::filesystem::exists(p)) filename = par_filename;
+            if (boost::iequals(format, "exodus ii")) {
+              mesh_list.set<std::string>("Format", "Exodus II");
+            } else if (boost::iequals(format, "h5m")) {
+              mesh_list.set<std::string>("Format", "H5M");
             }
-            mesh_list.set<std::string>("File", filename);
-            goodname = true;
           }
-          if (goodtype && goodname) all_good = true;
+
+          node = GetUniqueElementByTagsString_(inode, "file", flag2);
+          if (flag2) {
+            std::string filename = TrimString_(mm.transcode(node->getTextContent()));
+            flag2 = (filename.size() > 0);
+            if (flag2) {
+              if (num_proc_ > 1) {
+                std::string par_filename(filename);
+                par_filename.replace(par_filename.size() - 4, 4, ".par");
+
+                // attach the right extensions as required by Nemesis file naming conventions
+                // in which files are named as mymesh.par.N.r where N = numproc and r is rank
+                int ndigits = (int)floor(log10(num_proc_)) + 1;
+                std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
+                std::string tmp = boost::str(boost::format(fmt) % par_filename % num_proc_ % rank_);
+                boost::filesystem::path p(tmp);
+
+               if (boost::filesystem::exists(p)) filename = par_filename;
+              }
+              mesh_list.set<std::string>("File", filename);
+            } 
+          }
+          all_good = flag1 && flag2;
         }
       }
     }

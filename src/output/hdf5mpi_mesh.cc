@@ -720,20 +720,52 @@ void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, std::string varname,
   delete [] tmp;
 }
 
-void HDF5_MPI::readData(Epetra_Vector &x, const std::string varname)
+bool HDF5_MPI::readData(Epetra_Vector &x, const std::string varname)
 {
-  readFieldData_(x, varname, PIO_DOUBLE);
+  return readFieldData_(x, varname, PIO_DOUBLE);
 }
 
-void HDF5_MPI::readFieldData_(Epetra_Vector &x, std::string varname,
+
+bool HDF5_MPI::checkFieldData_(std::string varname) {
+  char *h5path = new char [varname.size()+1];
+  strcpy(h5path,varname.c_str());
+  bool exists;
+
+  if (viz_comm_.MyPID() == 0){
+    iofile_t *currfile;
+    currfile = IOgroup_.file[data_file_];
+    exists = H5Lexists(currfile->fid, h5path, H5P_DEFAULT);
+    if (!exists) std::cout<< "Field "<<h5path<<" is not found in hdf5 file.\n";
+  } 
+  
+  MPI_Bcast(&exists, 1, MPI_LOGICAL,  0, IOgroup_.localcomm);
+
+  delete[] h5path;
+
+  return exists;
+
+}
+
+
+bool HDF5_MPI::readFieldData_(Epetra_Vector &x, std::string varname,
                               datatype_t type) {
 
   char *h5path = new char [varname.size()+1];
   strcpy(h5path,varname.c_str());
 
-  int ndims;
+  if (!checkFieldData_(varname)) return false;
 
+  int ndims;
   parallelIO_get_dataset_ndims(&ndims, data_file_, h5path, &IOgroup_);
+  
+  if (ndims < 0) {
+    if (viz_comm_.MyPID() == 0){
+      std::cout<< "Dimension of the field "<<h5path<<" is negative.\n";
+    }
+    return false;
+  }
+
+
   int  globaldims[ndims], localdims[ndims];
   parallelIO_get_dataset_dims(globaldims, data_file_, h5path, &IOgroup_);
   localdims[0] = x.MyLength();
@@ -749,6 +781,8 @@ void HDF5_MPI::readFieldData_(Epetra_Vector &x, std::string varname,
 
   delete [] data;
   delete [] h5path;
+
+  return true;
 
 }
 

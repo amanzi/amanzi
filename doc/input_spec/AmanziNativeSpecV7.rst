@@ -1,5 +1,5 @@
 ==========================================
-Amanzi-U Native XML Input Specification V6
+Amanzi-U Native XML Input Specification V7
 ==========================================
 
 .. contents:: **Table of Contents**
@@ -782,7 +782,7 @@ and :math:`\phi` is porosity.
 
 Based on these two models, the flow sublist includes exactly one sublist, either 
 *Darcy problem* or *Richards problem*.
-Structure of both sublists is quite similar. We make necessary comments on their differences.
+Structure of both sublists is quite similar.
 
 .. code-block:: xml
 
@@ -809,6 +809,9 @@ Combination of both approaches may lead to a more efficient code.
 
 * `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
   e.g. by EnergyFlow PK. The default value is `"false`".
+
+* `"multiscale model`" [string] specifies a multiscale model.
+  Available options are `"single porosity`" (default) and `"dual porosity`".
 
 * `"water content model`" [string] changes the evaluator for water
   content. Available options are `"generic`" and `"constant density`" (default).
@@ -947,6 +950,31 @@ includes a few mandatory parameters: *region name*, *model name*, and parameters
    </ParameterList>
 
 In this example, we define two different porosity models in two soils.
+
+
+Multiscale continuum models
+...........................
+
+The list *multiscale model* is the placeholder for various multiscale models.
+This list if optional. 
+
+* `"model`" [string] is the model name. Available option is `"dual porosity`".
+
+* `"mass transfer coefficient`" [double] is the mass transfer coefficient.
+
+* `"water retention models`" [list] is the list of water retention models for 
+  matrix. It has the same structure as the analogous list for the fractured media
+  and is described above.
+
+.. code-block:: xml
+
+   <ParameterList name="Richards problem">  <!-- parent list -->
+     <Parameter name="model" type="string" value="dual porosity"/> 
+     <Paramater name="mass transfer coefficient" type="double" value="4.0e-5"/>
+     <ParameterList name="water retention models">
+       ...
+     </ParameterList>
+   </ParameterList>
 
 
 Upwind 

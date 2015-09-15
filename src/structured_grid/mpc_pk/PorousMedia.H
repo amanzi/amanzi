@@ -1034,7 +1034,7 @@ protected:
   //
   // Flag for doing first step after regrid
   //
-  bool is_first_step_after_regrid;
+  bool is_first_flow_step_after_regrid;
   bool is_grid_changed_after_regrid;
   //
   // Intersection of current BoxArray with that from before regrid.

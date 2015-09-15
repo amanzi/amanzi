@@ -77,16 +77,14 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   int poly_order(0);
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, algorithm", flag);
   if (flag) {
-    text = mm.transcode(node->getTextContent());
-    if (strcmp(text, "explicit first-order") == 0) {
+    std::string order = GetTextContentS_(node, "explicit first-order, explicit second-order");
+    if (order == "explicit first-order") {
       out_list.set<int>("spatial discretization order", 1);
       out_list.set<int>("temporal discretization order", 1);
-    } else if (strcmp(text, "explicit second-order") == 0) {
+    } else if (order == "explicit second-order") {
       out_list.set<int>("spatial discretization order", 2);
       out_list.set<int>("temporal discretization order", 2);
       poly_order = 1;
-    } else {
-      ThrowErrorMissattr_("unstructured_controls", "element", "explicit first-order", "unstr_transport_controls");
     }
   }
 
@@ -236,7 +234,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
 
   // remaining global parameters
   out_list.set<int>("number of aqueous components", phases_["water"].size());
-  out_list.set<int>("number of gaseous components", phases_["gas"].size());
+  out_list.set<int>("number of gaseous components", phases_["air"].size());
 
   // cross coupling of PKs
   out_list.sublist("physical models and assumptions")
@@ -343,7 +341,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
         element = static_cast<DOMElement*>(same_list[j]);
         double t0 = GetAttributeValueD_(element, "start");
         tp_forms[t0] = GetAttributeValueS_(element, "function");
-        tp_values[t0] = GetAttributeValueS_(element, "value");
+        tp_values[t0] = GetAttributeValueS_(element, "name");
       }
 
       // create vectors of values and forms
@@ -359,9 +357,9 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
       Teuchos::ParameterList& tbc_list = out_list.sublist("geochemical conditions");
       Teuchos::ParameterList& bc = tbc_list.sublist(bcname);
       bc.set<Teuchos::Array<std::string> >("regions", regions);
-      bc.set<Teuchos::Array<double> >("Times", times);
-      bc.set<Teuchos::Array<std::string> >("Geochemical Conditions", values);
-      bc.set<Teuchos::Array<std::string> >("Time Functions", forms);
+      bc.set<Teuchos::Array<double> >("times", times);
+      bc.set<Teuchos::Array<std::string> >("geochemical conditions", values);
+      bc.set<Teuchos::Array<std::string> >("time functions", forms);
     }
   }
 

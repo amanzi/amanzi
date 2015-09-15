@@ -33,7 +33,7 @@
 
   <ParameterList name="State">
     <Parameter name="Number of mesh blocks" type="int" value="1"/>
-    <Parameter name="Number of component concentrations" type="int" value="3"/>
+    <Parameter name="number of component concentrations" type="int" value="3"/>
     <Parameter name="Constant water saturation" type="double" value="1.0"/>
     <Parameter name="Constant water density" type="double" value="997.16"/>
     <Parameter name="Constant viscosity" type="double" value="1.0"/>
@@ -86,11 +86,13 @@
   </ParameterList>
 
   <ParameterList name="Chemistry">
-    <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
-    <Parameter name="Thermodynamic Database File" type="string" value="test/calcite.bgd" />
-    <Parameter name="Max Time Step (s)" type="double" value="864000.0" />
+    <ParameterList name="Thermodynamic Database">
+      <Parameter name="Format" type="string" value="simple" />
+      <Parameter name="File" type="string" value="test/calcite.bgd" />
+    </ParameterList>
+    <Parameter name="max time step (s)" type="double" value="864000.0" />
     <Parameter name="Verbosity" type="int" value="2" />
-    <Parameter name="Activity Model" type="string" value="debye-huckel" />
+    <Parameter name="activity model" type="string" value="debye-huckel" />
     <ParameterList name="Initial Conditions">
       <Parameter name="Number of minerals" type="int" value="1"/>
       <Parameter name="Number of mesh blocks" type="int" value="1"/>

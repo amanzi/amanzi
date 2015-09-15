@@ -420,7 +420,7 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::RCP<Teucho
 
   cycle_driver_list.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
 
-  /* EIB: proposed v1.2.2 update - Change Restart name */
+  /* EIB: proposed v1.2.2 update - Change restart name */
   if (plist->sublist("Execution Control").isSublist("Restart") &&
     plist->sublist("Initial Conditions").isParameter("Init from Checkpoint File")) {
     // this is an error, you can either restart or re-init, but not both
@@ -428,14 +428,14 @@ Teuchos::ParameterList InputParserIS::CreateCycleDriverList_(Teuchos::RCP<Teucho
   }
     
   if (plist->sublist("Execution Control").isSublist("Restart")) {
-    cycle_driver_list.sublist("Restart") = plist->sublist("Execution Control").sublist("Restart");
+    cycle_driver_list.sublist("restart") = plist->sublist("Execution Control").sublist("Restart");
   }
     
-  /* EIB: proposed v1.2.2 update - Change Restart name */
+  /* EIB: proposed v1.2.2 update - Change restart name */
   if (plist->sublist("Initial Conditions").isParameter("Init from Checkpoint File")) {
-    Teuchos::ParameterList& rest_list = cycle_driver_list.sublist("Restart");
+    Teuchos::ParameterList& rest_list = cycle_driver_list.sublist("restart");
     std::string file = plist->sublist("Initial Conditions").get<std::string>("Init from Checkpoint File");
-    rest_list.set<std::string>("File Name", file);
+    rest_list.set<std::string>("file name", file);
     rest_list.set<bool>("initialize from checkpoint data file and do not restart", true);
   }
 

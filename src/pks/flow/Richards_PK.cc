@@ -141,6 +141,7 @@ void Richards_PK::Setup()
   Teuchos::RCP<Teuchos::ParameterList> physical_models =
       Teuchos::sublist(rp_list_, "physical models and assumptions");
   std::string vwc_model = physical_models->get<std::string>("water content model", "constant density");
+  std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single porosity");
 
   // Require primary field for this PK, which is pressure
   std::vector<std::string> names;
@@ -190,6 +191,19 @@ void Richards_PK::Setup()
     S_->RequireField("prev_water_content", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->GetField("prev_water_content", passwd_)->set_io_vis(false);
+  }
+
+  // -- multiscale extension: secondary (immobile water content)
+  if (multiscale_model == "dual porosity") {
+    if (!S_->HasField("water_content_matrix")) {
+      S_->RequireField("water_content_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    }
+    if (!S_->HasField("prev_water_content_matrix")) {
+      S_->RequireField("prev_water_content_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+      S_->GetField("prev_water_content_matrix", passwd_)->set_io_vis(false);
+    }
   }
 
   // Require additional fields and evaluators for this PK.
@@ -365,6 +379,8 @@ void Richards_PK::Initialize()
   Teuchos::RCP<Teuchos::ParameterList> physical_models = 
       Teuchos::sublist(rp_list_, "physical models and assumptions");
   vapor_diffusion_ = physical_models->get<bool>("vapor diffusion", false);
+  multiscale_porosity_ = (physical_models->get<std::string>(
+      "multiscale model", "single porosity") != "single porosity");
 
   // Initialize actions on boundary condtions. 
   flux_units_ = molar_rho_ / rho_;

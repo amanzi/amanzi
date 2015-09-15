@@ -208,7 +208,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
 
   node = GetUniqueElementByTagsString_(unstr_controls + ", preconditioner", flag); 
   if (flag) {
-    std::string text = mm.transcode(node->getTextContent());
+    std::string text = GetTextContentS_(node, "hypre_amg, trilinos_ml, block_ilu");
     if (text == "hypre_amg") text = "Hypre AMG";
     if (text == "trilinos_ml") text = "Trilinos ML";
     if (text == "block_ilu") text = "Block ILU";

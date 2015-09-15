@@ -54,7 +54,7 @@ void FlowEnergy_PK::Setup()
          .set<std::string>("field evaluator type", "iem")
          .set<std::string>("internal energy key", "internal_energy_rock");
     elist.sublist("internal_energy_rock").sublist("IEM parameters")
-         .set<std::string>("IEM type", "linear")
+         .set<std::string>("iem type", "linear")
          .set<double>("heat capacity [J/mol-K]", 620.0);
   }
 
@@ -70,13 +70,13 @@ void FlowEnergy_PK::Setup()
   if (!S_->HasField("molar_density_gas")) {
     elist.sublist("molar_density_gas")
          .set<std::string>("field evaluator type", "eos")
-         .set<std::string>("EOS basis", "molar")
+         .set<std::string>("eos basis", "molar")
          .set<std::string>("molar density key", "molar_density_gas");
     elist.sublist("molar_density_gas").sublist("EOS parameters")
-         .set<std::string>("EOS type", "vapor in gas");
+         .set<std::string>("eos type", "vapor in gas");
     elist.sublist("molar_density_gas").sublist("EOS parameters")
          .sublist("gas EOS parameters")
-         .set<std::string>("EOS type", "ideal gas");
+         .set<std::string>("eos type", "ideal gas");
   }
 
   // -- molar fraction
@@ -97,7 +97,7 @@ void FlowEnergy_PK::Setup()
          .set<std::string>("internal energy key", "internal_energy_liquid");
     elist.sublist("internal_energy_liquid")
          .sublist("IEM parameters")
-         .set<std::string>("IEM type", "linear")
+         .set<std::string>("iem type", "linear")
          .set<double>("heat capacity [J/mol-K]", 76.0);
   }
 
@@ -105,11 +105,11 @@ void FlowEnergy_PK::Setup()
   if (!S_->HasField("molar_density_liquid")) {
     elist.sublist("molar_density_liquid")
          .set<std::string>("field evaluator type", "eos")
-         .set<std::string>("EOS basis", "both")
+         .set<std::string>("eos basis", "both")
          .set<std::string>("molar density key", "molar_density_liquid")
          .set<std::string>("mass density key", "mass_density_liquid");
     elist.sublist("molar_density_liquid").sublist("EOS parameters")
-         .set<std::string>("EOS type", "liquid water");
+         .set<std::string>("eos type", "liquid water");
     elist.sublist("molar_density_liquid")
          .sublist("VerboseObject").set<std::string>("Verbosity Level", "medium");
 
