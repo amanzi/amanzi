@@ -153,33 +153,32 @@ verification['unconfined_flow'] = {
   'index' : {'index_title' : 'Unconfined Flow Tests',
              'index_file'  : 'doc/user_guide/verification/unconfined_flow/index.rst',
              'index_list'  : [ 'unconfined_no_recharge_1d', 
-                               # 'unconfined_seepage_1d'
-                               # 'unconfined_layered_2d',
+                               'unconfined_seepage_1d',
+                               'unconfined_layered_2d',
+                               'unconfined_recharge_1d',
                              ], 
             },
   'unconfined_no_recharge_1d': {
     'from_dir' : 'testing/verification/flow/richards/steady-state/unconfined_no_recharge_1d',
     'dest_dir' : 'doc/user_guide/verification/unconfined_flow/unconfined_no_recharge_1d',
-    'index_entry' : 'unconfined_no_recharge_1d/amanzi_unconfined_no_recharge_1d.rst'
+    'index_entry' : 'unconfined_no_recharge_1d/amanzi_unconfined_no_recharge_1d.rst',
   },
-}
-
-"""
   'unconfined_seepage_1d': {
     'from_dir' : 'testing/verification/flow/richards/steady-state/unconfined_seepage_1d',
     'dest_dir' : 'doc/user_guide/verification/unconfined_flow/unconfined_seepage_1d',
-    'index_entry' : 'unconfined_seepage/amanzi_unconfined_seepage_1d.rst',
+    'index_entry' : 'unconfined_seepage_1d/amanzi_unconfined_seepage_1d.rst',
   },
   'unconfined_layered_2d': {
     'from_dir' : 'testing/verification/flow/richards/steady-state/unconfined_layered_2d',
     'dest_dir' : 'doc/user_guide/verification/unconfined_flow/unconfined_layered_2d',
-    'index_entry' : 'unconfined_layered/amanzi_unconfined_layered_2d.rst'
+    'index_entry' : 'unconfined_layered_2d/amanzi_unconfined_layered_2d.rst'
   },
   'unconfined_recharge_1d': {
     'from_dir' : 'testing/verification/flow/richards/steady-state/unconfined_recharge_1d',
     'dest_dir' : 'doc/user_guide/verification/unconfined_flow/unconfined_recharge_1d',
+    'index_entry' : 'unconfined_recharge_1d/amanzi_unconfined_recharge_1d.rst',
   },
-"""
+}
 
 verification['transport'] = {
   'index_entry': 'transport/index.rst',
