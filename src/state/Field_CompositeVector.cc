@@ -324,7 +324,8 @@ bool Field_CompositeVector::ReadCheckpoint(const Teuchos::Ptr<HDF5_MPI>& file_in
     }
     for (unsigned int j = 0; j!=subfield_names_[i].size(); ++j) {
       bool read = file_input->readData(*(*vec)(j), chkp_names[j]);
-      if (!read) return false;
+      if (!read) 
+        return false;     
     }
     i++;
   }

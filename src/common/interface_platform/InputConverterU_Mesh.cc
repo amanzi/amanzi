@@ -65,201 +65,143 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
   DOMNode* node;
   DOMElement* element;
 
-  bool generate(true), read(false), all_good(false);
+  bool flag, read(false), generate(false);
   std::string framework;
-  std::stringstream helper;
   Errors::Message msg;
   Teuchos::ParameterList mesh_list;
     
   // read in new stuff
   node_list = doc_->getElementsByTagName(mm.transcode("mesh"));
+  if (node_list->getLength() == 0)
+      ThrowErrorIllformed_("mesh", "element", "framework");
 
-  // read the attribute to set the framework sublist
-  if (node_list->getLength() > 0) {
-    node = node_list->item(0);
-    element = static_cast<DOMElement*>(node);
-    framework = GetAttributeValueS_(element, "framework");
+  DOMNode* inode = node_list->item(0);
+  element = static_cast<DOMElement*>(inode);
+  framework = GetAttributeValueS_(element, "framework");
 
-    // Define global parameter dim_ = the space dimension.
-    children = node->getChildNodes();
-    all_good = false;
+  // Define global parameter dim_ = the space dimension.
+  node = GetUniqueElementByTagsString_(inode, "dimension", flag);
+  if (flag) {
+    char* tmp = mm.transcode(node->getTextContent());
+    dim_ = std::strtol(tmp, NULL, 10);
+  } 
 
-    for (int i = 0; i < children->getLength(); i++) {
-      DOMNode* inode = children->item(i);
-      if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-        char* tagname = mm.transcode(inode->getNodeName());
-        if (strcmp(tagname, "dimension") == 0) {
-          char* tmp = mm.transcode(inode->getTextContent());
-          if (strlen(tmp) > 0) {
-            dim_ = std::strtol(tmp, NULL, 10);
-            all_good = true;
-          }
-        }
+  if (!flag || dim_ <= 0)
+      ThrowErrorIllformed_("mesh", "dimension", "dimension");
+
+  // Now we can properly parse the generate/read list.
+  children = inode->getChildNodes();
+
+  for (int i = 0; i < children->getLength(); i++) {
+    DOMNode* inode = children->item(i);
+    if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
+      char* tagname = mm.transcode(inode->getNodeName());   
+
+      // A structured mesh is generated.
+      if (strcmp(tagname, "generate") == 0) {
+        generate = true;
+        node = GetUniqueElementByTagsString_(inode, "number_of_cells", flag);
+        if (!flag) 
+            ThrowErrorIllformed_("mesh", "number_of_cells", "generate");
+        element = static_cast<DOMElement*>(node);
+
+        std::vector<int> ncells; 
+        int nx = GetAttributeValueL_(element, "nx");
+        if (nx > 0) ncells.push_back(nx);
+        int ny = GetAttributeValueL_(element, "ny", false, 0);
+        if (ny > 0) ncells.push_back(ny); 
+        int nz = GetAttributeValueL_(element, "nz", false, 0);
+        if (nz > 0) ncells.push_back(nz); 
+
+        if (ncells.size() != dim_) 
+            ThrowErrorIllformed_("mesh", "number_of_cells", "generate");
+
+        // get Box
+        node = GetUniqueElementByTagsString_(inode, "box", flag);
+        if (!flag) 
+            ThrowErrorIllformed_("mesh", "box", "generate");
+        element = static_cast<DOMElement*>(node);
+
+        std::string tmp = GetAttributeValueS_(element, "low_coordinates");
+        std::vector<double> low = MakeCoordinates_(tmp);
+        if (low.size() != dim_)
+            ThrowErrorIllformed_("mesh", "low_coordinates", "generate");
+
+        tmp = GetAttributeValueS_(element, "high_coordinates");
+        std::vector<double> high = MakeCoordinates_(tmp);
+        if (high.size() != dim_)
+            ThrowErrorIllformed_("mesh", "high_coordinates", "generate");
+
+        mesh_list.set<Teuchos::Array<int> >("Number of Cells", ncells);
+        mesh_list.set<Teuchos::Array<double> >("Domain Low Coordinate", low);
+        mesh_list.set<Teuchos::Array<double> >("Domain High Coordinate", high);
       }
-    }
 
-    if (!all_good) {
-      ThrowErrorIllformed_("mesh", "element", "dimension");
-    }
+      // Un unstructured mesh will be read from a file.
+      else if (strcmp(tagname, "read") == 0) {
+        bool flag1, flag2;
 
-    // Now we can properly parse the generate/read list.
-    all_good = false;
-    for (int i = 0; i < children->getLength(); i++) {
-      DOMNode* inode = children->item(i);
-      if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-        char* tagname = mm.transcode(inode->getNodeName());   
+        node = GetUniqueElementByTagsString_(inode, "format", flag1);
+        if (flag1) {
+          std::string format = GetTextContentS_(node, "exodus ii, exodus II, Exodus II, Exodus ii, H5M, h5m");
 
-        // A structured mesh is generated.
-        if (strcmp(tagname,"generate") == 0) {
-          all_good = true;
-          generate = true;
-          read = false;
-          DOMElement* element_gen = static_cast<DOMElement*>(inode);
-
-          node_list = element_gen->getElementsByTagName(mm.transcode("number_of_cells"));
-          node = node_list->item(0);
-          DOMElement* element_node = static_cast<DOMElement*>(node);
-          DOMNamedNodeMap *attr_map = node->getAttributes();
-
-          Teuchos::Array<int> ncells; 
-          DOMNode* node_attr;
-          char* attr_name;
-          char* tmp;
-
-          // make sure number of attributes equals dimension
-          if (attr_map->getLength() == dim_) {
-            // loop over attributes to get nx, ny, nz as needed
-            for (int j = 0; j < attr_map->getLength(); j++) {
-              node_attr = attr_map->item(j);
-              attr_name = mm.transcode(node_attr->getNodeName());
-
-              if (attr_name) {
-                tmp = mm.transcode(node_attr->getNodeValue());
-                if (strlen(tmp) > 0) {
-                  ncells.append(std::strtol(tmp, NULL, 10));
-                } else {
-                  all_good = false;
-                  helper << "number_of_cells " << attr_name;
-                }
-              } else {
-               all_good = false;
-               helper << "number_of_cells " << attr_name;
-              }
-            }
-            mesh_list.set<Teuchos::Array<int> >("Number of Cells", ncells);
-          } else {
-            helper << "number_of_cells";
-            all_good = false;
-          }
-
-          // get Box - generalize
-          node_list = element_gen->getElementsByTagName(mm.transcode("box"));
-          node = node_list->item(0);
-          element_node = static_cast<DOMElement*>(node);
-
-          tmp = mm.transcode(element_node->getAttribute(mm.transcode("low_coordinates")));
-          if (strlen(tmp) > 0) {
-            // translate to array
-            std::vector<double> low = MakeCoordinates_(tmp);
-            mesh_list.set<Teuchos::Array<double> >("Domain Low Coordinate", low);
-            if (low.size() != dim_) {
-              helper << "low_coordinates";
-              all_good = false;
-            }
-          } else {
-            helper << "low_coordinates";
-            all_good = false;
-          }
-
-          tmp = mm.transcode(element_node->getAttribute(mm.transcode("high_coordinates")));
-          if (strlen(tmp) > 0) {
-            // translate to array
-            std::vector<double> high = MakeCoordinates_(tmp);
-            mesh_list.set<Teuchos::Array<double> >("Domain High Coordinate", high);
-            if (high.size() != dim_) {
-              helper << "high_coordinates";
-              all_good = false;
-            }
-          } else {
-            helper << "high_coordinates";
-            all_good = false;
+          if (boost::iequals(format, "exodus ii")) {
+            mesh_list.set<std::string>("Format", "Exodus II");
+          } else if (boost::iequals(format, "h5m")) {
+            mesh_list.set<std::string>("Format", "H5M");
           }
         }
 
-        // Un unstructured mesh will be read from a file.
-        else if (strcmp(tagname, "read") == 0) {
-          read = true;
-          generate = false;
-          bool flag1, flag2;
-
-          node = GetUniqueElementByTagsString_(inode, "format", flag1);
-          if (flag1) {
-            std::string format = GetTextContentS_(node, "exodus ii, exodus II, Exodus II, Exodus ii, H5M, h5m");
-
-            if (boost::iequals(format, "exodus ii")) {
-              mesh_list.set<std::string>("Format", "Exodus II");
-            } else if (boost::iequals(format, "h5m")) {
-              mesh_list.set<std::string>("Format", "H5M");
-            }
-          }
-
-          node = GetUniqueElementByTagsString_(inode, "file", flag2);
+        node = GetUniqueElementByTagsString_(inode, "file", flag2);
+        if (flag2) {
+          std::string filename = TrimString_(mm.transcode(node->getTextContent()));
+          flag2 = (filename.size() > 0);
           if (flag2) {
-            std::string filename = TrimString_(mm.transcode(node->getTextContent()));
-            flag2 = (filename.size() > 0);
-            if (flag2) {
-              if (num_proc_ > 1) {
-                std::string par_filename(filename);
-                par_filename.replace(par_filename.size() - 4, 4, ".par");
+            if (num_proc_ > 1) {
+              std::string par_filename(filename);
+              par_filename.replace(par_filename.size() - 4, 4, ".par");
 
-                // attach the right extensions as required by Nemesis file naming conventions
-                // in which files are named as mymesh.par.N.r where N = numproc and r is rank
-                int ndigits = (int)floor(log10(num_proc_)) + 1;
-                std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
-                std::string tmp = boost::str(boost::format(fmt) % par_filename % num_proc_ % rank_);
-                boost::filesystem::path p(tmp);
+              // attach the right extensions as required by Nemesis file naming conventions
+              // in which files are named as mymesh.par.N.r where N = numproc and r is rank
+              int ndigits = (int)floor(log10(num_proc_)) + 1;
+              std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
+              std::string tmp = boost::str(boost::format(fmt) % par_filename % num_proc_ % rank_);
+              boost::filesystem::path p(tmp);
 
-               if (boost::filesystem::exists(p)) filename = par_filename;
-              }
-              mesh_list.set<std::string>("File", filename);
-            } 
-          }
-          all_good = flag1 && flag2;
+              if (boost::filesystem::exists(p)) filename = par_filename;
+            }
+            mesh_list.set<std::string>("File", filename);
+          } 
         }
+        read = flag1 && flag2;
       }
     }
+  }
 
-    if (!all_good) {
-      ThrowErrorIllformed_("mesh", helper.str(), "generate/read");
-    }
-    
-    if (generate || read) {
-      Teuchos::ParameterList& tmp_list = out_list.sublist("Unstructured").sublist("Expert");
-      if (strcmp(framework.c_str(), "mstk") == 0) {
-        tmp_list.set<std::string>("Framework", "MSTK");
-      } else if (strcmp(framework.c_str() ,"moab") == 0) {
-        tmp_list.set<std::string>("Framework", "MOAB");
-      } else if (strcmp(framework.c_str(), "simple") == 0) {
-        tmp_list.set<std::string>("Framework", "Simple");
-      } else if (strcmp(framework.c_str(), "stk::mesh") == 0) {
-        tmp_list.set<std::string>("Framework", "stk::mesh");
-      } else {
-        msg << "Amanzi::InputConverter: an error occurred during parsing mesh.\n"
-            << "  Unknown framework \"" << framework << "\".\n";
-        Exceptions::amanzi_throw(msg); 
-      }
-    }
-
-    if (generate) {
-      out_list.sublist("Unstructured").sublist("Generate Mesh") = mesh_list;
-    } else if (read) {
-      out_list.sublist("Unstructured").sublist("Read Mesh File") = mesh_list;
+  if (generate || read) {
+    Teuchos::ParameterList& tmp_list = out_list.sublist("Unstructured").sublist("Expert");
+    if (strcmp(framework.c_str(), "mstk") == 0) {
+      tmp_list.set<std::string>("Framework", "MSTK");
+    } else if (strcmp(framework.c_str() ,"moab") == 0) {
+      tmp_list.set<std::string>("Framework", "MOAB");
+    } else if (strcmp(framework.c_str(), "simple") == 0) {
+      tmp_list.set<std::string>("Framework", "Simple");
+    } else if (strcmp(framework.c_str(), "stk::mesh") == 0) {
+      tmp_list.set<std::string>("Framework", "stk::mesh");
     } else {
-      msg << "Amanzi::InputConverter: an error occurred during parsing mesh.\n";
-      Exceptions::amanzi_throw(msg);
+      msg << "Amanzi::InputConverter: an error occurred during parsing mesh.\n"
+          << "  Unknown framework \"" << framework << "\".\n";
+      Exceptions::amanzi_throw(msg); 
     }
+  }
+
+  if (generate) {
+    out_list.sublist("Unstructured").sublist("Generate Mesh") = mesh_list;
+  } else if (read) {
+    out_list.sublist("Unstructured").sublist("Read Mesh File") = mesh_list;
   } else {
-    ThrowErrorIllformed_("mesh", "element", "framework");
+    msg << "Amanzi::InputConverter: an error occurred during parsing mesh.\n";
+    Exceptions::amanzi_throw(msg);
   }
 
   return out_list;
@@ -273,9 +215,8 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
 {
   Teuchos::ParameterList out_list;
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    *vo_->os() << "Translating regions" << std::endl;
-  }
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+      *vo_->os() << "Translating regions" << std::endl;
 
   MemoryManager mm;
   DOMNodeList* node_list;
@@ -394,37 +335,26 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
       else if (strcmp(node_name,"polygonal_surface") == 0) {
         tree_["regions"].push_back(reg_name);
         
-        // if attribute 'num_points' exists, get it
-        int num_points(-1);
-        int pt_cnt(0);
-        if (reg_elem->hasAttribute(mm.transcode("num_points"))) {
-          text_content2 = mm.transcode(reg_elem->getAttribute(mm.transcode("num_points")));
-          std::string str(text_content2);
-          boost::algorithm::trim(str);
-          num_points = std::strtol(text_content2, NULL, 10);
-          out_list.sublist(reg_name).sublist("Region: Polygon").set<int>("Number of points", num_points);
-        }
-        // get verticies (add count them)
-        std::vector<double> points;
-        DOMNodeList* gkids = reg_elem->getChildNodes();
-        for (int j = 0; j < gkids->getLength(); j++) {
-          DOMNode* jnode = gkids->item(j);
+        std::vector<double> point, points;
+        DOMNodeList* point_list = reg_elem->getElementsByTagName(mm.transcode("point"));
+        int num_points = point_list->getLength();
+
+        for (int j = 0; j < num_points; j++) {
+          DOMNode* jnode = point_list->item(j);
           if (DOMNode::ELEMENT_NODE == jnode->getNodeType()) {
-            node_name = mm.transcode(jnode->getNodeName());
-            if (strcmp(node_name, "point") == 0) {
-              text_content2 = mm.transcode(jnode->getTextContent());
-              std::vector<double> point = MakeCoordinates_(text_content2);
-              for (std::vector<double>::iterator pt = point.begin(); pt != point.end(); ++pt) {
-                points.push_back(*pt);
-              }
-              pt_cnt++;
-            }
+            point = MakeCoordinates_(mm.transcode(jnode->getTextContent()));
+            points.insert(points.end(), point.begin(), point.end());
           }
         }
-        out_list.sublist(reg_name).sublist("Region: Polygon").set<Teuchos::Array<double> >("Points", points);
-        if (!out_list.sublist(reg_name).sublist("Region: Polygon").isParameter("Number of points")) {
-          out_list.sublist(reg_name).sublist("Region: Polygon").set<int>("Number of points", pt_cnt);
+        // get expert parameters
+        if (reg_elem->hasAttribute(XMLString::transcode("tolerance"))) {
+          text_content2 = mm.transcode(reg_elem->getAttribute(mm.transcode("tolerance")));
+          out_list.sublist(reg_name).sublist("Region: Polygon").sublist("Expert Parameters")
+              .set<double>("Tolerance", std::strtod(text_content2, NULL));
         }
+        out_list.sublist(reg_name).sublist("Region: Polygon")
+            .set<Teuchos::Array<double> >("Points", points)
+            .set<int>("Number of points", num_points);
       }
 
       else if (strcmp(node_name, "logical") == 0) {
@@ -475,6 +405,11 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         }
       }
     }
+  }
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "found " << tree_["regions"].size() << " regions plus region \"All\"." << std::endl;
   }
 
   out_list.sublist("All") = CreateRegionAll_();

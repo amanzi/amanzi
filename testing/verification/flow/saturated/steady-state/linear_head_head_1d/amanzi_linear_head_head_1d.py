@@ -19,8 +19,8 @@ def loadInputXML(filename):
 #  -- load the data using this object
 
 def loadDataFile(Obs_xml):
-    output_file =  Obs_xml.getObservationFilename()
-    Obs_data = ObsDATA("amanzi-output/"+output_file)
+    output_file = Obs_xml.getObservationFilename()
+    Obs_data = ObsDATA("amanzi-output/" + output_file)
     Obs_data.getObservationData()
     coords = Obs_xml.getAllCoordinates()
 
@@ -112,11 +112,12 @@ def MakeTable(Obs_data,Obs_xml,filename):
 if __name__ == "__main__":
 
     import os
-    import run_amanzi
+    import run_amanzi_standard
 
     input_filename = "amanzi_linear_head_head_1d.xml"
     try: 
-        run_amanzi.run_amanzi("../"+input_filename)
+        max_np = 1
+        run_amanzi_standard.run_amanzi(input_filename, max_np)
         obs_xml=loadInputXML(input_filename)
         obs_data=loadDataFile(obs_xml)
 

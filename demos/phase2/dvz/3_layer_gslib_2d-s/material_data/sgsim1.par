@@ -2,18 +2,18 @@
                   ********************
 
 START OF PARAMETERS:
-material_data/cluster.dat     -file with data
-1  2  0  3  5  0              -  columns for X,Y,Z,vr,wt,sec.var.
--1.0e21       1.0e21          -  trimming limits
+material_data/cond.dat        -file with data
+1  0  2  3  0  0              -  columns for X,Y,Z,vr,wt,sec.var.
+-10    10                     -  trimming limits
 0                             -transform the data (0=no, 1=yes)
-material_data/sgsim.trn       -  file for output trans table
+material_data/sgsim1.trn       -  file for output trans table
 0                             -  consider ref. dist (0=no, 1=yes)
-material_data/histsmth.out    -  file with ref. dist distribution
+NA                            -  file with ref. dist distribution
 1  2                          -  columns for vr and wt
-0.d0    15.0                  -  zmin,zmax(tail extrapolation)
-1       0.0                   -  lower tail option, parameter
-1      15.0                   -  upper tail option, parameter
-1                             -debugging level: 0,1,2,3
+-10.0    10.0                 -  zmin,zmax(tail extrapolation)
+1         0.0                 -  lower tail option, parameter
+1         0.0                 -  upper tail option, parameter
+0                             -debugging level: 0,1,2,3
 material_data/sgsim1.dbg      -file for debugging output
 material_data/sgsim1.out      -file for simulation output (unused)
 1                             -number of realizations to generate
@@ -22,16 +22,16 @@ material_data/sgsim1.out      -file for simulation output (unused)
 1     0.5    1.0              -nz,zmn,zsiz
 69069                         -random number seed
 0 10                          -min and max original data for sim
-12                            -number of simulated nodes to use
+36                            -number of simulated nodes to use
 1                             -assign data to nodes (0=no, 1=yes)
-0      0                      -multiple grid search (0=no, 1=yes),num
+0      4                      -multiple grid search (0=no, 1=yes),num
 0                             -maximum data per octant (0=not used)
-10.0  10.0  10.0                 -maximum search radii (hmax,hmin,vert)
+4.0    4.0   4.0              -maximum search radii (hmax,hmin,vert)
 0.d0  0.d0  0.d0              -angles for search ellipsoid
-51    51     1                -size of covariance lookup table
+51    1      51               -size of covariance lookup table
 1     1.0    0.1              -ktype: 0=SK,1=OK,2=LVM,3=EXDR,4=COLC
-../data/ydata.dat             -  file with LVM, EXDR, or COLC variable
+                              -  file with LVM, EXDR, or COLC variable
 4                             -  column for secondary variable
-1    0.001                    -nst, nugget effect
-1    0.9 -10.d0 0.d0  0.d0    -it,cc,ang1,ang2,ang3
-         2.0  10.0  1.0       -a_hmax, a_hmin, a_vert
+1    0.                       -nst, nugget effect
+1    1.0  90.  70.0  0.0       -it,cc,ang1,ang2,ang3
+          0.4  0.4   5.0       -a_hmax, a_hmin, a_vert

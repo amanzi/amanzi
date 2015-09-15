@@ -14,6 +14,7 @@
 
 #include "Epetra_Import.h"
 #include "Epetra_Vector.h"
+#include "boost/algorithm/string.hpp"
 
 #include "errors.hh"
 #include "exceptions.hh"
@@ -48,11 +49,10 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
   std::string pk_name = pk_tree.name();
   const char* result = pk_name.data();
 
-  while ((result = std::strstr(result, "->")) != NULL) {
-    result += 2;
-    pk_name = result;
-  }
+  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name,"->"); 
+  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name,  res.end() - pk_name.begin());
 
+  
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_name, true);
@@ -269,9 +269,6 @@ void Darcy_PK::Initialize()
   CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
   ComputeBCs(pressure);
 
-  // Allocate memory for other fundamental structures
-  K.resize(ncells_owned);
-
   // pressures (lambda is not important when solver is very accurate)
   DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
                                  *pressure.ViewComponent("face"));
@@ -359,7 +356,7 @@ void Darcy_PK::Initialize()
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << std::endl 
-        << vo_->color("green") << "Initalization of TI period is complete." << vo_->reset() << std::endl;
+        << vo_->color("green") << "Initalization of PK is complete." << vo_->reset() << std::endl;
     *vo_->os() << "TI:\"" << ti_method_name.c_str() << "\""
                << " dt:" << dt_method_name << " Src:" << src_sink_distribution
                << " LS:\"" << solver_name_.c_str() << "\""

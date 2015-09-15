@@ -35,7 +35,8 @@ XERCES_CPP_NAMESPACE_USE
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
     const std::string& err_options, const std::string& nonlinear_solver,
-    bool modify_correction, const std::string& unstr_controls)
+    bool modify_correction, const std::string& unstr_controls,
+    double dt_cut_default, double dt_inc_default)
 {
   Teuchos::ParameterList out_list;
 
@@ -72,8 +73,8 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
   Teuchos::ParameterList& controller = bdf1.sublist("timestep controller standard parameters");
   controller.set<int>("max iterations", TI_MAX_ITERATIONS)
       .set<int>("min iterations", TI_MIN_ITERATIONS)
-      .set<double>("time step increase factor", TI_TS_INCREASE_FACTOR)
-      .set<double>("time step reduction factor", TI_TS_REDUCTION_FACTOR)
+      .set<double>("time step increase factor", dt_inc_default)
+      .set<double>("time step reduction factor", dt_cut_default)
       .set<double>("max time step", MAXIMUM_TIMESTEP)
       .set<double>("min time step", MINIMUM_TIMESTEP);
 
@@ -145,6 +146,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
   bdf1.set<bool>("extrapolate initial guess", true);
   bdf1.set<double>("restart tolerance relaxation factor", TI_TOL_RELAX_FACTOR);
   bdf1.set<double>("restart tolerance relaxation factor damping", TI_TOL_RELAX_FACTOR_DAMPING);
+  bdf1.set<int>("nonlinear iteration initial guess extrapolation order", 1);
 
   bool flag;
   node = GetUniqueElementByTagsString_(unstr_controls + ", max_iterations", flag);

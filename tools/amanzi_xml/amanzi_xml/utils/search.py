@@ -111,6 +111,23 @@ def getElementByTagPath(elem, path):
                     return getElementByNamePath(child, "/".join(etagnames))
 
 
+def getElementByTags(elem, path):
+    """Get element by tags only, which is for v2 XML specs"""
+    etagnames = path.strip("/").split("/")
+    mytagname = etagnames[0].strip().strip("}").strip("{").split(",")
+
+    if len(mytagname) > 0:
+        assert elem.tag == mytagname[0]
+    etagnames.pop(0)
+
+    if len(etagnames) == 0:
+        return elem
+    else:
+        childtagname = etagnames[0].strip().strip("}").strip("{").split(",")
+        for child in generateChildByTag(elem, childtagname[0]):
+            return getElementByTags(child, "/".join(etagnames))
+
+
 # def searchAndRemoveByName(pl, abspath):
 #     """Search for an absolute path and remove the parameter."""
 #     subpath = abspath.split("/")

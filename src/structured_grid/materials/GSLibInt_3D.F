@@ -15,7 +15,7 @@ c :: ----------------------------------------------------------
 c :: Read GSLIB parameters
 c :: ----------------------------------------------------------
       subroutine FORT_INIT_GSLIB(paramfl,paramsz,nx_in,xsiz_in,xmn_in,rseed)
-
+      implicit none
       integer   paramsz, rseed
       character paramfl(paramsz)
 
@@ -29,51 +29,48 @@ c :: ----------------------------------------------------------
 c :: ----------------------------------------------------------
 c :: Read GSLIB parameters version 2
 c :: ----------------------------------------------------------
-      subroutine FORT_INIT_GSLIB2(paramfl,paramsz,c_sz,c_idx, 
-     &     real_sz,real_idx,int_sz,int_idx,cond_option,rseed)
-
+      subroutine FORT_INIT_GSLIB2(paramfl,paramsz,c_sz,c_idx,
+     &     c_idx_siz,real_sz,real_idx,r_idx_siz,int_sz,int_idx,
+     &     i_idx_siz,cond_option,rseed)
+      implicit none
       integer   paramsz,cond_option,rseed
       integer   c_sz,real_sz,int_sz
-      integer   c_idx(10),real_idx(20),int_idx(20)
+      integer   c_idx_siz,r_idx_siz,i_idx_siz
+      integer   c_idx(c_idx_siz),real_idx(r_idx_siz),int_idx(i_idx_siz)
       character paramfl(paramsz)
 
-      call readparm2(paramfl,c_sz,c_idx,
-     &     real_sz,real_idx,int_sz,int_idx,cond_option,rseed)
+      call readparm2(paramfl,c_sz,c_idx,c_idx_siz,real_sz,real_idx,
+     &     r_idx_siz,int_sz,int_idx,i_idx_siz,cond_option,rseed)
 
       end
-      
-c :: ----------------------------------------------------------
-c :: Conditioned the data using internal values. One big fab.  WRONG!!!
-c :: ----------------------------------------------------------
-      subroutine FORT_INTERNAL_DATA(dat,DIMS(dat),
-     &     scratch_c,c_sz,c_idx,condg,dx,plo,domlo,domhi)
 
+c :: ----------------------------------------------------------
+c :: Conditioned the data using internal values. One big fab.
+c :: ----------------------------------------------------------
+      subroutine FORT_INTERNAL_DATA(scratch_c,c_sz,c_idx,c_idx_siz)
+      implicit none
 #include "sgsim2.inc"
-
-      integer DIMDEC(dat)
-      integer c_sz,c_idx(10)
-      integer domlo(SDIM),domhi(SDIM)
-      REAL_T  dat(DIMV(dat))
+      integer c_idx_siz
+      integer c_sz,c_idx(c_idx_siz)
       REAL_T  scratch_c(c_sz)
-      REAL_T  dx(SDIM),plo(SDIM),condg
 
       if (do_cond .eq. 1) then
          call read_cond_data(scratch_c,c_sz,c_idx)
       end if
-      
       end
 
 c :: ----------------------------------------------------------
 c :: Conditioned the data using secondary values. One big fab.
 c :: ----------------------------------------------------------
       subroutine FORT_SEC_DATA(dat,DIMS(dat),
-     &                         scratch_r,real_sz,real_idx,
+     &                         scratch_r,real_sz,real_idx,r_idx_siz,
      &                         ratios,condg,sig,dx)
-
+      implicit none
 #include "sgsim2.inc"
 
       integer DIMDEC(dat)
-      integer real_sz, real_idx(20)
+      integer r_idx_siz
+      integer real_sz, real_idx(r_idx_siz)
       integer ratios(SDIM)
       REAL_T  scratch_r(real_sz)
       REAL_T  dat(DIMV(dat)),dx(SDIM),condg,sig
@@ -92,7 +89,7 @@ c :: Conditioned the data using secondary values. One big fab.
 c :: ----------------------------------------------------------
       subroutine FORT_AVE_DATA(dat,DIMS(dat),sdat,DIMS(sdat),
      &     ratios,condg,sig,dx)
-
+      implicit none
       integer DIMDEC(dat),DIMDEC(sdat),ratios(SDIM)
       REAL_T  dat(DIMV(dat)),sdat(DIMV(sdat)),dx(SDIM),condg,sig
 
@@ -154,10 +151,13 @@ c :: Sequential full SGSIM code
 c :: ----------------------------------------------------------
       subroutine FORT_SGSIM(dat,DIMS(dat),dx)
 
-      include 'sgsim.inc'
+      implicit none
+#include "sgsim2.inc"
 
       integer DIMDEC(dat)
       REAL_T  dat(DIMV(dat)),dx(SDIM)
+      integer nx, ny, nz
+      REAL_T  xsiz,ysiz,zsiz,xmn,ymn,zmn
 
       nx = ARG_H1(dat)-ARG_L1(dat)+1
       ny = ARG_H2(dat)-ARG_L2(dat)+1
@@ -182,25 +182,27 @@ c :: Read GSLIB parameters
 c :: ----------------------------------------------------------
       subroutine FORT_SGSIM_SETUP(dat,DIMS(dat),
      &     order,nvalid,
-     &     scratch_c,c_sz,c_idx,
-     &     scratch_r,real_sz,real_idx,
-     &     scratch_i,int_sz,int_idx,
-     &     lo,hi,dx,plo,iseed)
+     &     scratch_c,c_sz,c_idx,c_idx_siz,
+     &     scratch_r,real_sz,real_idx,r_idx_siz,
+     &     scratch_i,int_sz,int_idx,i_idx_siz,
+     &     lo,hi,dx,plo,domnlo,domnhi,iseed)
 
+      implicit none
 #include "sgsim2.inc"
 
       integer DIMDEC(dat)
       integer nvalid
       integer c_sz,real_sz,int_sz
-      integer c_idx(10),real_idx(20),int_idx(20)
+      integer c_idx_siz,r_idx_siz,i_idx_siz
+      integer c_idx(c_idx_siz),real_idx(r_idx_siz),int_idx(i_idx_siz)
       integer iseed
-      integer lo(SDIM),hi(SDIM)
+      integer lo(SDIM),hi(SDIM),domnlo(SDIM),domnhi(SDIM)
       integer scratch_i(int_sz)
       integer order(nvalid)
       REAL_T  dat(DIMV(dat))
       REAL_T  scratch_r(real_sz)
       REAL_T  scratch_c(c_sz)
-      REAL_T  dx(SDIM), plo(SDIM)
+      REAL_T  dx(SDIM),plo(SDIM)
       REAL_T  random_val(nvalid)
 
       integer i,j,k,idx,idx2,imult,index
@@ -211,6 +213,12 @@ c :: ----------------------------------------------------------
       scratch_i(int_idx(1)) = ARG_H1(dat)-ARG_L1(dat)+1
       scratch_i(int_idx(2)) = ARG_H2(dat)-ARG_L2(dat)+1
       scratch_i(int_idx(3)) = ARG_H3(dat)-ARG_L3(dat)+1
+      scratch_i(int_idx(14)+0) = ARG_L1(dat)
+      scratch_i(int_idx(14)+1) = ARG_L2(dat)
+      scratch_i(int_idx(14)+2) = ARG_L3(dat)
+      scratch_i(int_idx(14)+3) = ARG_H1(dat)
+      scratch_i(int_idx(14)+4) = ARG_H2(dat)
+      scratch_i(int_idx(14)+5) = ARG_H3(dat)
 
       scratch_r(int_idx(1)) = plo(1) + (ARG_L1(dat)+0.5d0)*dx(1)
       scratch_r(int_idx(2)) = plo(2) + (ARG_L2(dat)+0.5d0)*dx(2)
@@ -220,9 +228,16 @@ c :: ----------------------------------------------------------
       scratch_r(int_idx(6)) = dx(3)
 
       if (ixv(1) .eq. 0) ixv(1) = iseed
-      nxyz = (ARG_H1(dat)-ARG_L1(dat)+1)*(ARG_H2(dat)-ARG_L2(dat)+1)*
-     &       (ARG_H3(dat)-ARG_L3(dat)+1)  
-c     work out a random path within search region
+
+      nxyz = 1
+      do i = 1,3
+         nxyz = nxyz * scratch_i(int_idx(i))
+      enddo
+
+      ! Work out a random path over cells to fill (valid), use indexing 
+      ! based on all cells, including grow region.  This ensures that
+      ! the grow cells have an id that we can use when passing known
+      ! values to the krige algorithms
       idx  = 0
       idx2 = 0
       do k = ARG_L3(dat),ARG_H3(dat)
@@ -233,7 +248,6 @@ c     work out a random path within search region
      &             j .ge. lo(2) .and. j .le. hi(2) .and.
      &             k .ge. lo(3) .and. k .le. hi(3)) then
                   idx2 = idx2 + 1
-c                  random_val(idx2) = acorni(iseed)
                   call blutilrand(random_val(idx2))
                   order(idx2) = idx
                end if
@@ -267,10 +281,9 @@ c                  random_val(idx2) = acorni(iseed)
 
       call sortem(1,idx2,random_val,1,order)
       call sgsim_setup(dat,nxyz,
-     &     scratch_c,c_sz,c_idx,
-     &     scratch_r,real_sz,real_idx,
-     &     scratch_i,int_sz,int_idx)
-
+     &     scratch_c,c_sz,c_idx,c_idx_siz,
+     &     scratch_r,real_sz,real_idx,r_idx_siz,
+     &     scratch_i,int_sz,int_idx,i_idx_siz)
       end
 
 
@@ -278,14 +291,15 @@ c :: ----------------------------------------------------------
 c :: Read GSLIB parameters
 c :: ----------------------------------------------------------
       subroutine FORT_SGSIM_ITER(dat,DIMS(dat),  
-     &     scratch_c,c_sz,c_idx,
-     &     scratch_r,real_sz,real_idx,
-     &     scratch_i,int_sz,int_idx,
+     &     scratch_c,c_sz,c_idx,c_idx_siz,
+     &     scratch_r,real_sz,real_idx,r_idx_siz,
+     &     scratch_i,int_sz,int_idx,i_idx_siz,
      &     idx)
-
+      implicit none
       integer DIMDEC(dat)
       integer c_sz,real_sz,int_sz,idx,nxyz
-      integer c_idx(10),real_idx(20),int_idx(20)
+      integer c_idx_siz,r_idx_siz,i_idx_siz
+      integer c_idx(c_idx_siz),real_idx(r_idx_siz),int_idx(i_idx_siz)
       integer scratch_i(int_sz)
       REAL_T  dat(DIMV(dat))
       REAL_T  scratch_r(real_sz)
@@ -296,22 +310,24 @@ c :: ----------------------------------------------------------
      &       (ARG_H3(dat)-ARG_L3(dat)+1)
 
       call sgsim_single_iter(idx,dat,nxyz,
-     &     scratch_c,c_sz,c_idx,
-     &     scratch_r,real_sz,real_idx,
-     &     scratch_i,int_sz,int_idx)
+     &     scratch_c,c_sz,c_idx,c_idx_siz,
+     &     scratch_r,real_sz,real_idx,r_idx_siz,
+     &     scratch_i,int_sz,int_idx,i_idx_siz)
 
       end
+
 c :: ----------------------------------------------------------
 c :: Read GSLIB parameters
 c :: ----------------------------------------------------------
       subroutine FORT_SGSIM_POST(dat,DIMS(dat),
-     &     scratch_c,c_sz,c_idx,
-     &     scratch_r,real_sz,real_idx,
-     &     scratch_i,int_sz,int_idx)
-
+     &     scratch_c,c_sz,c_idx,c_idx_siz,
+     &     scratch_r,real_sz,real_idx,r_idx_siz,
+     &     scratch_i,int_sz,int_idx,i_idx_siz)
+      implicit none
       integer DIMDEC(dat)
       integer c_sz,real_sz,int_sz
-      integer c_idx(10),real_idx(20),int_idx(20)
+      integer c_idx_siz,r_idx_siz,i_idx_siz
+      integer c_idx(c_idx_siz),real_idx(r_idx_siz),int_idx(i_idx_siz)
       integer scratch_i(int_sz)
       REAL_T  dat(DIMV(dat))
       REAL_T  scratch_r(real_sz)
@@ -324,9 +340,9 @@ c :: ----------------------------------------------------------
      &       (ARG_H3(dat)-ARG_L3(dat)+1)
 
       call sgsim_post(dat,nxyz,
-     &     scratch_c,c_sz,c_idx,
-     &     scratch_r,real_sz,real_idx,
-     &     scratch_i,int_sz,int_idx)
+     &     scratch_c,c_sz,c_idx,c_idx_siz,
+     &     scratch_r,real_sz,real_idx,r_idx_siz,
+     &     scratch_i,int_sz,int_idx,i_idx_siz)
 
       end
 
@@ -342,23 +358,23 @@ c :: ----------------------------------------------------------
 c :: ----------------------------------------------------------
 c :: Turn normal field into lognormal field
 c :: ----------------------------------------------------------
-      subroutine FORT_LGNORM(dat,DIMS(dat),condg)
-
-      integer i,j,k
+      subroutine FORT_LGNORM(dat,DIMS(dat),condg,lo,hi)
+      implicit none
+      integer i,j,k,lo(SDIM),hi(SDIM)
       integer DIMDEC(dat)
-      REAL_T  condg
+      REAL_T  condg, lc
       REAL_T  dat(DIMV(dat))
 
+      lc = log10(condg)
       do k = ARG_L3(dat),ARG_H3(dat)      
          do j=ARG_L2(dat),ARG_H2(dat)
             do i=ARG_L1(dat),ARG_H1(dat)
-               dat(i,j,k) = 10**(dat(i,j,k)+log10(condg))
+               dat(i,j,k) = 10**(dat(i,j,k)+lc)
             end do
          end do
       end do
 
       end
-
 
 c ::: -------------------------------------------------
 c ::: This routine create non-uniform layered structure

@@ -86,8 +86,12 @@ Teuchos::ParameterList InputParserIS::Translate(Teuchos::ParameterList* input_pl
           .set<Teuchos::Array<std::string> >("runtime diagnostics: regions", transport_diagnostics_);
 
   // output unused parameters (experimental)
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    PrintUnused_(plist->sublist("Execution Control").sublist("Numerical Control Parameters"), vo_);
+  if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+    // PrintUnused_(plist->sublist("Execution Control").sublist("Numerical Control Parameters"), vo_);
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << vo_->color("red") << "\n\nEND-of-LINE Statement.\n\n"
+               << "Series 1.2.x will be terminated in the next release of Amanzi.\n"
+               << "Please upgrade to spec 2.2 or higher to use new features." << vo_->reset() << "\n\n\n";
   }
 
   return new_list;

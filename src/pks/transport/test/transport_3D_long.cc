@@ -97,7 +97,6 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
 
   /* initialize a transport process kernel */
   TPK.Initialize();
-  TPK.PrintStatistics();
 
   /* advance the transport state */
   int iter, k;

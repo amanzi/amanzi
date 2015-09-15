@@ -727,23 +727,28 @@ bool HDF5_MPI::readData(Epetra_Vector &x, const std::string varname)
 
 
 bool HDF5_MPI::checkFieldData_(std::string varname) {
-  char *h5path = new char [varname.size()+1];
-  strcpy(h5path,varname.c_str());
-  bool exists;
 
-  if (viz_comm_.MyPID() == 0){
+ char *h5path = new char [varname.size()+1];
+  strcpy(h5path,varname.c_str());
+  bool exists=false;
+
+  if (viz_comm_.MyPID() != 0) {
+    MPI_Bcast(&exists, 1, MPI_C_BOOL, 0, viz_comm_.Comm());
+  } else {
     iofile_t *currfile;
     currfile = IOgroup_.file[data_file_];
     exists = H5Lexists(currfile->fid, h5path, H5P_DEFAULT);
-    if (!exists) std::cout<< "Field "<<h5path<<" is not found in hdf5 file.\n";
+
+    if (!exists) {
+      std::cout<< "Field "<<h5path<<" is not found in hdf5 file.\n";
+    }
+
+    MPI_Bcast(&exists, 1, MPI_C_BOOL, 0, viz_comm_.Comm()); 
   } 
   
-  MPI_Bcast(&exists, 1, MPI_LOGICAL,  0, IOgroup_.localcomm);
-
   delete[] h5path;
 
   return exists;
-
 }
 
 

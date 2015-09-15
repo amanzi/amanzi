@@ -10,7 +10,7 @@
            Konstantin Lipnikov (lipnikov@lanl.gov)
            Daniil Svyatskiy (dasvyat@lanl.gov)
 
-  The routine implements interface to the BDF1 time integrator.  
+  Interface to the BDF1 time integrator.  
 */
 
 #include <algorithm>
@@ -96,7 +96,7 @@ void Richards_PK::Functional(double t_old, double t_new,
 
   // add water content in matrix
   if (multiscale_porosity_) {
-    Functional_AddWaterContentMatrix_(f->Data());
+    Functional_AddMassTransferMatrix_(dtp, f->Data());
   }
 
   // calculate normalized residual
@@ -212,6 +212,62 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
     kp_cell[0][c] = tmp * mlf_g[0][c] / nRT;
     kt_cell[0][c] = tmp * (dmlf_g_dt[0][c] / atm_pressure_ 
                         +  mlf_g[0][c] * pc / (nRT * temp[0][c]));
+  }
+}
+
+
+/* ******************************************************************
+* Calculate additional conribution to Richards functional:
+*  f += alpha (p_f - p_m), where
+*    p_f   - pressure in the fracture
+*    p_m   - pressure in the matrix
+*    alpha - piecewise constant mass fransfer coeffiecient
+****************************************************************** */
+void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<CompositeVector> f)
+{
+  const Epetra_MultiVector& pcf = *S_->GetFieldData("pressure")->ViewComponent("cell");
+  const Epetra_MultiVector& pcm = *S_->GetFieldData("pressure_matrix")->ViewComponent("cell");
+  const Epetra_MultiVector& phi = *S_->GetFieldData("porosity_matrix")->ViewComponent("cell");
+  const Epetra_MultiVector& wcm_prev = *S_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
+  Epetra_MultiVector& wcm = *S_->GetFieldData("water_content_matrix", passwd_)->ViewComponent("cell");
+
+  Epetra_MultiVector& fc = *f->ViewComponent("cell");
+
+  double phi0, wcm0, wcm1, pcf0, pcm0;
+  for (int c = 0; c < ncells_owned; ++c) {
+    pcf0 = atm_pressure_ - pcf[0][c];
+    pcm0 = atm_pressure_ - pcm[0][c];
+    wcm0 = wcm_prev[0][c];
+    phi0 = phi[0][c];
+
+    int max_itrs(100);
+    wcm1 = msp_->second[(*msp_->first)[c]]->WaterContentMatrix(
+        dt, phi0, molar_rho_, wcm0, pcf0, pcm0, max_itrs);
+
+    fc[0][c] += (wcm1 - wcm0) / dt;
+    wcm[0][c] = wcm1;
+    pcm[0][c] = atm_pressure_ - pcm0;
+
+    ms_itrs_ += max_itrs;
+  }
+  ms_calls_ += ncells_owned;
+}
+
+
+/* ******************************************************************
+* Calculate volumetric water content in matrix
+****************************************************************** */
+void Richards_PK::CalculateVWContentMatrix_()
+{
+  const Epetra_MultiVector& pcm = *S_->GetFieldData("pressure_matrix")->ViewComponent("cell");
+  const Epetra_MultiVector& phi = *S_->GetFieldData("porosity_matrix")->ViewComponent("cell");
+  Epetra_MultiVector& wcm = *S_->GetFieldData("water_content_matrix", passwd_)->ViewComponent("cell");
+
+  double phi0, pcm0;
+  for (int c = 0; c < ncells_owned; ++c) {
+    pcm0 = atm_pressure_ - pcm[0][c];
+    phi0 = phi[0][c];
+    wcm[0][c] = msp_->second[(*msp_->first)[c]]->ComputeField(phi0, molar_rho_, pcm0);
   }
 }
 
@@ -435,7 +491,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 
     if ((unew > atm_pressure_) && (uc[0][c] < atm_pressure_)) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-	 *vo_->os() << "pressure change: " << uc[0][c] << " -> " << unew << std::endl;
+        *vo_->os() << "pressure change: " << uc[0][c] << " -> " << unew << std::endl;
       }
       duc[0][c] = tmp * damping_factor;
       npre_clipped++;

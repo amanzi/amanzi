@@ -36,6 +36,7 @@
 #endif
 
 // Transport
+#include "MultiscaleTransportPorosityPartition.hh"
 #include "TransportBoundaryFunction.hh"
 #include "TransportDomainFunction.hh"
 #include "TransportDefs.hh"
@@ -99,8 +100,6 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   // -- control members
   void CreateDefaultState(Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int ncomponents);
   void Policy(Teuchos::Ptr<State> S);
-  void PrintStatistics() const;
-  void WriteGMVfile(Teuchos::RCP<State> S) const;
 
   void VV_CheckGEDproperty(Epetra_MultiVector& tracer) const; 
   void VV_CheckTracerBounds(Epetra_MultiVector& tracer, int component,
@@ -146,7 +145,8 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   const Teuchos::RCP<Epetra_IntVector>& upwind_cell() { return upwind_cell_; }
   const Teuchos::RCP<Epetra_IntVector>& downwind_cell() { return downwind_cell_; }  
 
-  // dispersion and diffusion
+  // physical models
+  // -- dispersion and diffusion
   void CalculateDispersionTensor_(
       const Epetra_MultiVector& darcy_flux, 
       const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
@@ -159,8 +159,17 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
 
   void CalculateAxiSymmetryDirection();
 
-  // I/O methods
-  void ProcessParameterList();
+  // -- air-water partitioning using Henry's law. This is a temporary
+  //    solution to get things moving.
+  void PrepareAirWaterPartitioning_();
+  void MakeAirWaterPartitioning_();
+
+  // -- multiscale methods
+  void AddMultiscalePorosity_(double t_old, double t_new, double t_int1, double t_int2);
+
+  // initialization methods
+  void InitializeAll_();
+  void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
   void ProcessStringDispersionModel(const std::string name, int* model);
 
   // miscaleneous methods
@@ -223,10 +232,19 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
 
   std::vector<WhetStone::Tensor> D;
   int dispersion_models_;
-  std::vector<int> axi_symmetry_;  // axi symmetry direction of permeability tensor
+  std::vector<int> axi_symmetry_;  // axi-symmetry direction of permeability tensor
   std::string dispersion_preconditioner;
   std::string dispersion_solver;
 
+  // Hosting temporarily Henry law 
+  bool henry_law_;
+  std::vector<double> kH_;
+  std::vector<int> air_water_map_;
+
+  // multiscale models
+  bool multiscale_porosity_;
+  Teuchos::RCP<MultiscaleTransportPorosityPartition> msp_;
+ 
   double cfl_, dt_, dt_debug_, t_physics_;  
 
   std::vector<double> mass_solutes_exact_, mass_solutes_source_;  // mass for all solutes

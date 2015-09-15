@@ -84,7 +84,7 @@ TEST(MASS_MATRIX_2D) {
       M.Inverse();
     }
 
-    printf("Mass matrix for cell %3d\n", cell);
+    printf("Mass matrix for cell %3d method=%d\n", cell, method);
     for (int i = 0; i < nrows; i++) {
       for (int j = 0; j < nrows; j++ ) printf("%8.4f ", M(i, j)); 
       printf("\n");
@@ -179,7 +179,7 @@ TEST(MASS_MATRIX_3D) {
       M.Inverse();
     }
 
-    printf("Mass matrix for cell %3d\n", cell);
+    printf("Mass matrix for cell %3d method=%d\n", cell, method);
     for (int i = 0; i < nrows; i++) {
       for (int j = 0; j < nrows; j++ ) printf("%8.4f ", M(i, j)); 
       printf("\n");
@@ -263,7 +263,7 @@ TEST(STIFFNESS_MATRIX_2D) {
       mfd.StiffnessMatrixOptimized(cell, T, A);
     }
 
-    printf("Stiffness matrix for cell %3d\n", cell);
+    printf("Stiffness matrix for cell %3d method=%d\n", cell, method);
     for (int i = 0; i < nrows; i++) {
       for (int j = 0; j < nrows; j++ ) printf("%8.4f ", A(i, j)); 
       printf("\n");

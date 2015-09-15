@@ -288,6 +288,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
         }
 
         // loop over observations
+        int nobs(0);
         DOMNodeList* children = inode->getChildNodes();
         for (int j = 0; j < children->getLength(); j++) {
           Teuchos::ParameterList obPL;
@@ -296,36 +297,34 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           char* obs_type = mm.transcode(jnode->getNodeName());
 
           if (strcmp(obs_type, "aqueous_pressure") == 0) {
-            obPL.set<std::string>("variable", "Aqueous pressure");
-          } else if (strcmp(obs_type, "integrated_mass") == 0) {
-            // TODO: can't find matching version
+            obPL.set<std::string>("variable", "aqueous pressure");
           } else if (strcmp(obs_type, "volumetric_water_content") == 0) {
-            obPL.set<std::string>("variable", "Volumetric water content");
+            obPL.set<std::string>("variable", "volumetric water content");
           } else if (strcmp(obs_type, "gravimetric_water_content") == 0) {
             obPL.set<std::string>("variable", "Gravimetric water content");
           } else if (strcmp(obs_type, "x_aqueous_volumetric_flux") == 0) {
-            obPL.set<std::string>("variable", "X-Aqueous volumetric flux");
+            obPL.set<std::string>("variable", "x-aqueous volumetric flux");
           } else if (strcmp(obs_type, "y_aqueous_volumetric_flux") == 0) {
-            obPL.set<std::string>("variable", "Y-Aqueous volumetric flux");
+            obPL.set<std::string>("variable", "y-aqueous volumetric flux");
           } else if (strcmp(obs_type, "z_aqueous_volumetric_flux") == 0) {
-            obPL.set<std::string>("variable", "Z-Aqueous volumetric flux");
+            obPL.set<std::string>("variable", "z-aqueous volumetric flux");
           } else if (strcmp(obs_type, "material_id") == 0) {
-            obPL.set<std::string>("variable", "MaterialID");
+            obPL.set<std::string>("variable", "material id");
           } else if (strcmp(obs_type, "hydraulic_head") == 0) {
-            obPL.set<std::string>("variable", "Hydraulic Head");
+            obPL.set<std::string>("variable", "hydraulic head");
           } else if (strcmp(obs_type, "aqueous_mass_flow_rate") == 0) {
-            obPL.set<std::string>("variable", "Aqueous mass flow rate");
+            obPL.set<std::string>("variable", "aqueous mass flow rate");
           } else if (strcmp(obs_type, "aqueous_volumetric_flow_rate") == 0) {
-            obPL.set<std::string>("variable", "Aqueous volumetric flow rate");
+            obPL.set<std::string>("variable", "aqueous volumetric flow rate");
           } else if (strcmp(obs_type, "aqueous_saturation") == 0) {
-            obPL.set<std::string>("variable", "Aqueous saturation");
+            obPL.set<std::string>("variable", "aqueous saturation");
           } else if (strcmp(obs_type, "aqueous_conc") == 0) {
             std::string solute_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "solute");
             std::stringstream name;
             name<< solute_name << " Aqueous concentration";
             obPL.set<std::string>("variable", name.str());
           } else if (strcmp(obs_type, "drawdown") == 0) {
-            obPL.set<std::string>("variable", "Drawdown");
+            obPL.set<std::string>("variable", "drawdown");
           } else if (strcmp(obs_type, "solute_volumetric_flow_rate") == 0) {
             std::string solute_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "solute");
             std::stringstream name;
@@ -353,7 +352,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
                 }
               // Keeping singular macro around to help users. This will go away
               } else if (strcmp(elem, "time_macros") == 0 ||
-                       strcmp(elem, "time_macro") == 0) {
+                         strcmp(elem, "time_macro") == 0) {
                 ProcessMacros_("times", value, tmPL, obPL);
               } else if (strcmp(elem, "cycle_macros") == 0 ||
                          strcmp(elem, "cycle_macro") == 0) {
@@ -362,14 +361,14 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             }
           }
           std::stringstream list_name;
-          list_name << "obs " << j + 1;
+          list_name << "obs " << ++nobs;
           obsPL.sublist(list_name.str()) = obPL;
         }
 
         out_list.sublist("Observation Data") = obsPL;
 
         if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-          *vo_->os() << "Found " << children->getLength() << " observations" << std::endl;
+          *vo_->os() << "Found " << nobs << " observations" << std::endl;
       }
     }
   }

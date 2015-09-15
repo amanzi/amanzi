@@ -72,6 +72,7 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
   if (plist_.isParameter("max coarse size"))
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxCoarseSize,
 							plist_.get<int>("max coarse size"))));
+
   if (plist_.isParameter("number of functions")) {
     // num_funcs > 1 tells BoomerAMG to use the "systems of PDEs" code.  Note
     // that, to use this approach, unknowns must be ordered with DoF fastest
@@ -82,9 +83,16 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
     // of BoomerAMG are not documented very well.  Here we ignore her option
     // 2, as she warns it is inefficient and likely not useful.
     // http://lists.mcs.anl.gov/pipermail/petsc-users/2007-April/001487.html
+
     int num_funcs = plist_.get<int>("number of functions");
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
             &HYPRE_BoomerAMGSetNumFunctions, num_funcs)));
+
+    if (plist_.isParameter("integer blocking")) {
+      int* blocking = plist_.get<int*>("integer blocking");
+      funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetDofFunc, blocking)));
+    }
+
 
     // additional options
     if (num_funcs > 1) {

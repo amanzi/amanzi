@@ -68,15 +68,24 @@ double rss_usage() { // return ru_maxrss in MBytes
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist_,
-                         Teuchos::RCP<State>& S,
+CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
+                         Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                          Epetra_MpiComm* comm,
                          Amanzi::ObservationData& output_observations) :
-    parameter_list_(glist_),
-    S_(S),
+    parameter_list_(glist),
+    mesh_(mesh),
     comm_(comm),
     output_observations_(output_observations),
     restart_requested_(false) {
+
+  if (parameter_list_->isSublist("State")) {
+    Teuchos::ParameterList state_plist = parameter_list_->sublist("State");
+    S_ = Teuchos::rcp(new Amanzi::State(state_plist));
+    S_->RegisterMesh("domain", mesh_); 
+  }else{
+    Errors::Message message("CycleDriver: xml_file does not contain 'State' sublist\n");
+    Exceptions::amanzi_throw(message);
+  }
 
   // create and start the global timer
   CoordinatorInit_();
@@ -509,8 +518,8 @@ void CycleDriver::ReadParameterList_() {
       reset_info_.push_back(std::make_pair(*it_tim, *it_dt));
     }  
 
-    if (tpc_list.isParameter("Maximal Time Step")) {
-      Teuchos::Array<double> reset_max_dt = tpc_list.get<Teuchos::Array<double> >("Maximal Time Step");
+    if (tpc_list.isParameter("maximum time step")) {
+      Teuchos::Array<double> reset_max_dt = tpc_list.get<Teuchos::Array<double> >("maximum time step");
       ASSERT(reset_times.size() == reset_max_dt.size());
 
       Teuchos::Array<double>::const_iterator it_tim;
@@ -535,18 +544,30 @@ void CycleDriver::ReadParameterList_() {
 double CycleDriver::get_dt(bool after_failure) {
   // get the physical step size
   double dt;
-
+ 
   dt = pk_->get_dt();
 
-  std::vector<std::pair<double,double> >::const_iterator it;
-  std::vector<std::pair<double,double> >::const_iterator it_max;
+  std::vector<std::pair<double,double> >::iterator it;
+  std::vector<std::pair<double,double> >::iterator it_max;
 
   for (it = reset_info_.begin(), it_max = reset_max_.begin(); it != reset_info_.end(); ++it, ++it_max) {
     if (S_->time() == it->first) {
-      if (reset_max_.size() > 0) max_dt_ = it_max->second;
-      dt = it->second;
-      pk_->set_dt(dt);
-      after_failure = true;
+      if (reset_max_.size() > 0) {
+              max_dt_ = it_max->second;
+      }
+
+      if (dt < it->second){
+         pk_->set_dt(dt);
+      }else {
+        dt = it->second;
+        pk_->set_dt(dt);
+        after_failure = true;
+      }
+      
+      it = reset_info_.erase(it);
+      if (reset_max_.size() > 0) 
+        it_max = reset_max_.erase(it_max);
+
       break;
     }
   }
@@ -563,6 +584,7 @@ double CycleDriver::get_dt(bool after_failure) {
       Exceptions::amanzi_throw(message);
     }
   }
+
 
   // ask the step manager if this step is ok
   dt = tsm_->TimeStep(S_->time(), dt, after_failure);
@@ -660,9 +682,7 @@ double CycleDriver::Advance(double dt) {
         if (S_->time() == reset_info_.front().first)
             force_check = true;
 
-
     // make observations, vis, and checkpoints
-
     //Amanzi::timer_manager.start("I/O");
     if (advance) {
       pk_->CalculateDiagnostics();
@@ -682,7 +702,7 @@ double CycleDriver::Advance(double dt) {
     // Failed the timestep.  
     // Potentially write out failed timestep for debugging
     for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=failed_visualization_.begin();
-         vis!=failed_visualization_.end(); ++vis) {
+         vis != failed_visualization_.end(); ++vis) {
       WriteVis((*vis).ptr(), S_.ptr());
     }
     // The timestep sizes have been updated, so copy back old soln and try again.
@@ -765,7 +785,7 @@ void CycleDriver::WriteWalkabout(bool force){
 /* ******************************************************************
 * timestep loop.
 ****************************************************************** */
-void CycleDriver::Go() {
+Teuchos::RCP<State> CycleDriver::Go() {
 
   time_period_id_ = 0;
   int position = 0;
@@ -774,20 +794,29 @@ void CycleDriver::Go() {
   double dt;
   double restart_dT(1.0e99);
 
+
+
   if (!restart_requested_) {  // No restart
+
+
     Init_PK(time_period_id_);
+
     // start at time t = t0 and initialize the state.
     S_->set_time(tp_start_[time_period_id_]);
     S_->set_cycle(cycle0_);
     S_->set_position(TIME_PERIOD_START);
+    
 
     Setup();
+
     Initialize();
 
     dt = tp_dt_[time_period_id_];
     dt = tsm_->TimeStep(S_->time(), dt);
     pk_->set_dt(dt);
+
   } else {
+
     // Read restart file
     restart_time = ReadCheckpointInitialTime(comm_, restart_filename_);
     position = ReadCheckpointPosition(comm_, restart_filename_);
@@ -805,13 +834,20 @@ void CycleDriver::Go() {
     // to initialize field which are not in the restart file
     S_->InitializeFields();
     S_->InitializeEvaluators();
+
+    // Initialize the process kernels
+    pk_->Initialize();
+    
+    S_->GetMeshPartition("materials");
     
     // re-initialize the state object
     restart_dT = ReadCheckpoint(comm_, Teuchos::ptr(&*S_), restart_filename_);
+    //    S_->WriteStatistics(vo_);
+
     cycle0_ = S_->cycle();
     for (std::vector<std::pair<double,double> >::iterator it = reset_info_.begin();
           it != reset_info_.end(); ++it) {
-      if (it->first < S_->time()) it = reset_info_.erase(it);
+      if (it->first <= S_->time()) it = reset_info_.erase(it);
       if (it == reset_info_.end() ) break;
     }
 
@@ -825,17 +861,23 @@ void CycleDriver::Go() {
       ResetDriver(time_period_id_); 
       restart_dT =  tp_dt_[time_period_id_];
     }
-    else {
-      Initialize();
-    }
+    // else {
+    //   Initialize();
+    // }
 
     S_->set_initial_time(S_->time());
     dt = tsm_->TimeStep(S_->time(), restart_dT);
     pk_->set_dt(dt);
+
   }
+
+
 
   *S_->GetScalarData("dt", "coordinator") = dt;
   S_->GetField("dt","coordinator")->set_initialized();
+
+  S_->CheckNotEvaluatedFieldsInitialized();
+  S_->CheckAllFieldsInitialized();
 
   // visualization at IC
   //Amanzi::timer_manager.start("I/O");
@@ -902,8 +944,11 @@ void CycleDriver::Go() {
   
   // finalizing simulation
   S_->WriteStatistics(vo_);
+  *vo_->os() << "\nCycle " << S_->cycle()<<"\n";
   ReportMemory();
   // Finalize();
+
+  return S_;
 } 
 
 
@@ -918,10 +963,12 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   }
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(S_->GetMesh("domain"));
+
   S_old_ = S_;
 
   Teuchos::ParameterList state_plist = parameter_list_->sublist("State");
   S_ = Teuchos::rcp(new Amanzi::State(state_plist));
+
   S_->RegisterMesh("domain", mesh);
   S_->set_cycle(S_old_->cycle());
   S_->set_time(tp_start_[time_pr_id]); 
@@ -979,6 +1026,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   pk_->set_dt(tp_dt_[time_pr_id]);
 
   S_old_ = Teuchos::null;
+
 }
 
 }  // namespace Amanzi

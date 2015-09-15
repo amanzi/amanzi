@@ -176,8 +176,7 @@ AlquimiaHelper_Structured::BL_to_Alquimia(const FArrayBox& aqueous_saturation,  
   chem_state.aqueous_pressure = aqueous_pressure(iv,sPress) * BL_ONEATM;
 
   for (int i=0; i<Nmobile; ++i) {
-    Real moles_per_Liter = primary_species_mobile(iv,sPrimMob+i) * chem_state.water_density * 1.e-3;
-    chem_state.total_mobile.data[i] = std::max(0.,moles_per_Liter);
+    chem_state.total_mobile.data[i] = std::max(0.,primary_species_mobile(iv,sPrimMob+i));
   }
 
   if (using_sorption) {
@@ -445,8 +444,7 @@ AlquimiaHelper_Structured::Alquimia_to_BL(FArrayBox& primary_species_mobile,   i
                                           AlquimiaAuxiliaryOutputData& aux_output)
 {
   for (int i=0; i<Nmobile; ++i) {
-    Real moles_per_kg = chem_state.total_mobile.data[i] * 1.e3 / chem_state.water_density;
-    primary_species_mobile(iv,sPrimMob+i) = moles_per_kg;
+    primary_species_mobile(iv,sPrimMob+i) = chem_state.total_mobile.data[i];
   }
 
   if (using_sorption) {

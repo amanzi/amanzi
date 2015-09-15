@@ -349,6 +349,6 @@ int ReadCheckpointPosition(Epetra_MpiComm* comm,
 
 void DeformCheckpointMesh(const Teuchos::Ptr<State>& S);
 
-} // namespace amanzi
+}  // namespace Amanzi
 
 #endif

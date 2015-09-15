@@ -183,7 +183,7 @@ void IndependentVariableFieldEvaluatorFromFile::UpdateField_(const Teuchos::Ptr<
         // now we are in the interval, interpolate
         if (t == t_after_) {
           *cv = *val_after_;
-        } else {
+        } else if (t < t_after_) {
           Interpolate_(t, cv.ptr());
         }
       }

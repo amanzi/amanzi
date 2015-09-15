@@ -97,7 +97,7 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
   bool fail = false;
   chem_step_succeeded = false;
 
- // First we do a transport step.
+  // First we do a transport step.
   bool pk_fail = tranport_pk_->AdvanceStep(t_old, t_new, reinit);
 
   //Right now transport step is always succeeded.
@@ -107,9 +107,8 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
     Errors::Message message("MPC: Transport PK returned an unexpected error.");
     Exceptions::amanzi_throw(message);
   }
-  //std::cout<<*total_component_concentration_stor;
 
-// Second, we do a chemistry step.
+  // Second, we do a chemistry step.
   try {
     chemistry_pk_->set_total_component_concentration(total_component_concentration_stor);
 
