@@ -125,7 +125,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         porosity_ev.set<std::string>("field evaluator type", "independent variable");
       }
 
-      // --- multiscale porosity if any
+      // --- multiscale porosity if any 
+      //     We use evaluator
       node = GetUniqueElementByTagsString_(inode, "multiscale_structure, porosity", flag);
       if (flag) {
         double porosity;

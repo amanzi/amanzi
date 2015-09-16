@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
-import numpy
-from amanzi_xml.observations.ObservationXMLv2 import ObservationXMLv2 as ObsXML
+import numpy, math
+from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
 import prettytable 
@@ -9,6 +9,7 @@ import os, re
 def loadInputXML(filename):
     # load input xml file
     #  -- create an ObservationXML object
+
     Obs_xml = ObsXML(filename)
     return Obs_xml
 
@@ -30,6 +31,7 @@ def loadDataFile(Obs_xml,directory):
 
     return Obs_data
 
+
 def CollectObservations(Obs_xml, Obs_data, Obs_lines):
     ## FIXME:  This should collect whatever types of observations it finds, e.g., pressure, concentrations, etc.
 
@@ -43,38 +45,43 @@ def CollectObservations(Obs_xml, Obs_data, Obs_lines):
     # Collect observations in scatter_data
     for key in Obs_lines:
         if (Obs_lines[key]['slice'][0] is 'x'):
-            slice_coord=0
+            slice_dep = 0
+            slice_indep = 1
         elif (Obs_lines[key]['slice'][0] is 'y'):
-            slice_coord=1
-            
-        if ( Obs_lines[key]['vary'] is 'x' ):
-            vary_coord=0
-        elif ( Obs_lines[key]['vary'] is 'y'):
-            vary_coord=1
+            slice_dep = 1
+            slice_indep = 0
 
-        for obs in Obs_data.observations.itervalues(): 
-            if ( obs.coordinate[slice_coord] == Obs_lines[key]['slice'][1] ):
-                Obs_scatter[key]['distance'].append(obs.coordinate[vary_coord])
+        if (Obs_lines[key]['vary'] is 'x'):
+            vary_coord=0
+        elif (Obs_lines[key]['vary'] is 'y'):
+            vary_coord=1
+        elif (Obs_lines[key]['vary'] is 's'):
+            vary_coord=2
+
+        for obs in Obs_data.observations.itervalues():
+            if (obs.coordinate[slice_dep] == Obs_lines[key]['slice'][1] * obs.coordinate[slice_indep]
+                                             + Obs_lines[key]['slice'][2]):
+                if (Obs_lines[key]['vary'] is 'x' or Obs_lines[key]['vary'] is 'y'):
+                    Obs_scatter[key]['distance'].append(obs.coordinate[slice_indep])
+                else:
+                    s = math.sqrt(float(obs.coordinate[slice_dep])**2+float(obs.coordinate[slice_indep])**2)
+                    Obs_scatter[key]['distance'].append(math.copysign(s,obs.coordinate[slice_indep]))
                 Obs_scatter[key]['Tc99'].append(obs.data[0])
 
     return Obs_scatter
 
 
 def PlotObservations(Obs_scatter,slice_name,subtests,axes1):
-
     # Plot the observations
     for st in Obs_scatter:
         plot_props=subtests[st]['plot_props']
         axes1.scatter(Obs_scatter[st][slice_name]['distance'],Obs_scatter[st][slice_name]['Tc99'],
-                      c=plot_props['color'],marker=plot_props['marker'],s=25,label=plot_props['label']
-        )
-
+                      c=plot_props['color'],marker=plot_props['marker'],s=25,label=plot_props['label'])
     return
+
 
 def MakeTableCols(table_layout,slice,
                   Obs_scatter,subtests,analytic_soln,analytic,master_column=None):
-    
-    #
     #  API:  Missing
     #
     #  Table Layout:
@@ -92,9 +99,7 @@ def MakeTableCols(table_layout,slice,
     #  Local copy of header keys/text
     headers=table_layout[slice]['header']
 
-    #
     #  First (Master) Column
-    #
     if master_column is None:
         master_key=headers[0]
         if ( table_layout[slice][master_key]['datasrc'] == 'Amanzi' ):
@@ -108,9 +113,7 @@ def MakeTableCols(table_layout,slice,
     else:
         t.add_column(master_column[master_key], master_column[master_data])
 
-    #
     # Second -- Last Columns
-    #
     del headers[0]
     for col_key in headers:
         if ( table_layout[slice][col_key]['datasrc'] == 'Amanzi' ):
@@ -132,18 +135,22 @@ def MakeTableCols(table_layout,slice,
             idepvar=table_layout[slice][col_key]['idepvar']
             var=table_layout[slice][col_key]['variable']
             analytic_data=[]
+ 
+            vmin_max = 0.0
             for d in master_data:
-                if d in solution[idepvar]:
-                    i = solution[idepvar].index(d)
-                    analytic_data.append(solution[var][i])
-                else:
-                    analytic_data.append("Unavailable")
+                vmin = 1e+99
+                for v in solution[idepvar]:
+                    if (abs(d - v) < vmin):
+                       vmin = abs(d - v)
+                       i = solution[idepvar].index(v)
+                analytic_data.append(solution[var][i])
+                vmin_max = max(vmin_max, vmin)
+
             t.add_column(col_key, analytic_data)
             t.float_format[col_key]=".5e"
+            print "Maximal deviation at point distance was ", vmin_max
 
-    #
-    #  We could insert columns for particular error / differences here.
-    #   
+    # We could insert columns for particular error / differences here.
 
     # Set formatting options
     t.padding_width = 5
@@ -161,27 +168,25 @@ def MakeTableCols(table_layout,slice,
 
     return
 
-def CollectAnalyticSolutions(input_file,directory,obs_slice):
 
+def CollectAnalyticSolutions(input_file,directory,obs_slice):
     at123d_setup=os.path.join(directory,os.path.splitext(input_file)[0]+"_setup.out")
     at123d_soln=os.path.join(directory,os.path.splitext(input_file)[0]+"_soln.out")
 
     solution = {}
     solution['source']={}
 
-    #
-    #  If symmetry in Y is used, then the source must be centered at the lower bound (0.0). 
-    #
+    # If symmetry in Y is used, then the source must be centered at the lower bound (0.0). 
     WidthMode=False
 
     try:
         with open(at123d_setup,'r') as f_setup:
             for line in f_setup:
-                if ( WidthMode ):
-                    if ( "2 FINITE WIDTH" in line ):
+                if (WidthMode):
+                    if ( "2 FINITE WIDTH" in line):
                         WidthMode=False
                         solution['width_mode']=int(re.sub(r'.*. ','', line).rstrip().lstrip())
-                elif ( "WIDTH CONTROL" in line ):
+                elif ("WIDTH CONTROL" in line):
                     WidthMode=True
                 elif ( "NO. OF POINTS IN X-DIRECTION" in line ):
                     solution['nx']=int(re.sub(r'.*. ','', line).rstrip().lstrip())
@@ -206,7 +211,6 @@ def CollectAnalyticSolutions(input_file,directory,obs_slice):
 
     except IOError:
         raise RuntimeError("Unable to open file"+at123d_setup+", it does not exist OR permissions are incorrect")
-
 
     read_x=True
     read_y=True
@@ -242,24 +246,23 @@ def CollectAnalyticSolutions(input_file,directory,obs_slice):
     except IOError:
         raise RuntimeError("Unable to open file"+at123d_soln+", it does not exist OR permissions are incorrect")
 
-    # Identify the independent variable 
-    coord = obs_slice['vary']
-
     # Convert horizontal axis to float and shift to align the source
+    coord = 'x'
     solution['distance'] = [float(i) - float(solution['source'][coord]) for i in solution[coord]]
-    solution['c'] = [float(i) for i in solution['c']]
-                    
     return solution
 
 
-def PlotAnalyticSoln(solution, analytic, slice, axes1):
+def PlotAnalyticSoln(solution, analytic, slice, obs_slices, axes1):
+    soln = solution[slice]
+    obs_slice = obs_slices[slice]
 
-    plot_props = analytic[slice]['plot_props']
+    # Set the key for the horizontal axis
+    coord = analytic[slice]['vary']
 
-    axes1.plot(
-        solution[slice]['distance'],solution[slice]['c'],
-        label=plot_props['label'],c=plot_props['color'],
-    )
+    # Convert horizontal axis to float and shift to align the source
+    hv = [float(i) - float(soln['source'][coord]) for i in soln[coord]]
+    vv = [float(i) for i in soln['c']]
+    axes1.plot(hv,vv)
 
 
 def AmanziResults(input_filename,subtests,obs_slices,overwrite=False):
@@ -274,16 +277,14 @@ def AmanziResults(input_filename,subtests,obs_slices,overwrite=False):
         for st in subtests:
             # modify file content
             old_content = open(input_filename).read()
-            new_content = old_content.replace("explicit first-order", subtests[st]['parameters'])
+            new_content = old_content.replace("Explicit First-Order", subtests[st]['parameters'])
             tmp_filename = "tmp.xml"
             f = open(tmp_filename, 'w')
             f.write(new_content)
             f.flush()
             f.close()
 
-            run_amanzi_standard.run_amanzi(tmp_filename, 4, 
-                                           ["amanzi_dispersion_aligned_point_2d.exo"],
-                                           subtests[st]['directory'])
+            run_amanzi_standard.run_amanzi(tmp_filename, 1, [], subtests[st]['directory'])
             obs_xml[st]=loadInputXML(input_filename)
             obs_data[st]=loadDataFile(obs_xml[st],subtests[st]['directory'])
 
@@ -297,13 +298,11 @@ def AmanziResults(input_filename,subtests,obs_slices,overwrite=False):
 
 
 def AnalyticSolutions(analytic,obs_slices,overwrite=False):
-
     import run_at123d_at
 
     analytic_soln={}
 
     try:
-
         for a in analytic:
             run_at123d_at.run_at123d(analytic[a]['input_file'], analytic[a]['directory'],overwrite)
             analytic_soln[a]=CollectAnalyticSolutions(analytic[a]['input_file'],analytic[a]['directory'],obs_slices[a])
@@ -315,50 +314,39 @@ def AnalyticSolutions(analytic,obs_slices,overwrite=False):
 
 
 def SetupTests():
-
     # Collect slices of concentration from the observations
     #
     # Slice should be all fixed quantities, i.e., Time is fixed as well 
     # Should include observation type (or return slices sorted with observation type as a key).
 
-    obs_slices = { 'centerline'  : {'slice': [ 'y', 0.0 ], 'vary': 'x', 'domain': [-270.0,960.0] },
-                   'x=0.0'       : {'slice': [ 'x', 0.0 ], 'vary': 'y', 'domain': [-5.0,270.0] },
-                   'x=424.0'     : {'slice': [ 'x', 424.0 ], 'vary': 'y', 'domain': [-5.0,270.0] },
-    }
-
+    obs_slices = { 'centerline' : { 'slice' : [ 'y', 1.0, 0.0 ], 
+                                    'vary' : 's', 
+                                    'domain' : [-300.0,1400.0],
+                                    'range' : [5e-10,3e-3] 
+                                  }
+                 }
 
     subtests = { 'amanzi_first' : 
                  { 'directory'  : 'amanzi-output-first-order',
-                   'mesh_file'  : '../amanzi_dispersion_aligned_point_2d.exo',
-                   'parameters' : 'explicit first-order',
+                   'mesh_file'  : '../amanzi_dispersion_45_point_2d.exo',
+                   'parameters' : 'Explicit First-Order',
                    'plot_props' : { 'marker':'s', 'color':'r', 'label': 'Amanzi: First Order' } 
                  },
                  'amanzi_second' : 
                  { 'directory'  : 'amanzi-output-second-order',
-                   'mesh_file'  : '../amanzi_dispersion_aligned_point_2d.exo',
-                   'parameters' : 'explicit second-order',
+                   'mesh_file'  : '../amanzi_dispersion_45_point_2d.exo',
+                   'parameters' : 'Explicit Second-Order',
                    'plot_props' : { 'marker':'o', 'color':'b', 'label': 'Amanzi: Second Order' }
-                 },
-             }
+                 }
+               }
    
-
     analytic = { 'centerline'   : 
                  { 'directory'  : 'at123d-at',
                    'input_file' : 'at123d-at_centerline.list',
+                   'vary'       : 'x',
                    'plot_props' : { 'color': 'blue', 'linestyle' : '-', 'label':'Analytic (AT123D-AT)' }
-                 },
-                 'x=0.0'      : 
-                 { 'directory' : 'at123d-at', 
-                   'input_file' : 'at123d-at_slice_x=0.list', 
-                   'plot_props' : { 'color': 'blue', 'linestyle' : '-', 'label':'Analytic (AT123D-AT)' }
-                 },
-                 'x=424.0'      :   
-                 { 'directory'  : 'at123d-at', 
-                   'input_file' : 'at123d-at_slice_x=420.list',
-                   'plot_props' : { 'color': 'blue', 'linestyle' : '-', 'label':'Analytic (AT123D-AT)' }
-                 },
+                 }
                }
-
 
     table_layout={ 'centerline' : 
                    { 'filename' : 'table_centerline.txt',
@@ -373,37 +361,7 @@ def SetupTests():
                      { 'datasrc' : 'Amanzi', 'subtest' : 'amanzi_second', 'variable': 'Tc99' },
                      'Analytic (AT123D-AT)':
                      { 'datasrc' : 'Analytic', 'idepvar' : 'distance', 'variable': 'c' },
-                 },
-                   'x=0.0' : 
-                   { 'filename' : 'table_cross-section-b.txt',
-                     'header'   : [ 'y [m]', 'Analytic (AT123D-AT)',
-                                    'Amanzi First-Order', 'Amanzi Second-Order'],
-                     'tabular'  : '|R|C|C|C|',
-                     'y [m]'    : 
-                     { 'datasrc' : 'Amanzi', 'subtest' : 'amanzi_first', 'variable': 'distance' }, 
-                     'Amanzi First-Order' :
-                     { 'datasrc' : 'Amanzi', 'subtest' : 'amanzi_first', 'variable': 'Tc99' },
-                     'Amanzi Second-Order' : 
-                     { 'datasrc' : 'Amanzi', 'subtest' : 'amanzi_second', 'variable': 'Tc99' },
-                     'Analytic (AT123D-AT)':
-                     { 'datasrc' : 'Analytic', 'idepvar' : 'distance', 'variable': 'c' },
-                 },
-                   'x=424.0' : 
-                   { 'filename' : 'table_cross-section-c.txt',
-                     'header'   : [ 'y [m]', 'Analytic (AT123D-AT)',
-                                    'Amanzi First-Order', 'Amanzi Second-Order'],
-                     'tabular'  : '|R|C|C|C|',
-                     'y [m]'    : 
-                     { 'datasrc' : 'Amanzi', 'subtest' : 'amanzi_first', 'variable': 'distance' }, 
-                     'Amanzi First-Order' :
-                     { 'datasrc' : 'Amanzi', 'subtest' : 'amanzi_first', 'variable': 'Tc99' },
-                     'Amanzi Second-Order' : 
-                     { 'datasrc' : 'Amanzi', 'subtest' : 'amanzi_second', 'variable': 'Tc99' },
-                     'Analytic (AT123D-AT)':
-                     { 'datasrc' : 'Analytic', 'idepvar' : 'distance', 'variable': 'c' },
+                   }
                  }
-
-               }
-                   
 
     return obs_slices, subtests, analytic, table_layout

@@ -123,11 +123,11 @@ def MakeTable(Obs_data,Obs_xml,filename):
 if __name__ == "__main__":
 
     import os
-    import run_amanzi
+    import run_amanzi_standard
 
     input_filename = "amanzi_linear_materials_parallel_1d.xml"
     try: 
-        run_amanzi.run_amanzi("../"+input_filename)
+        run_amanzi_standard.run_amanzi(input_filename, 2)
         obs_xml=loadInputXML(input_filename)
         obs_data=loadDataFile(obs_xml)
 

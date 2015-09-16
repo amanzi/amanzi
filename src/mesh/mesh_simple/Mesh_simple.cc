@@ -485,13 +485,13 @@ unsigned int Mesh_simple::num_entities (AmanziMesh::Entity_kind kind,
 {
   switch (kind) {
     case AmanziMesh::FACE: 
-      return num_faces_;
+      return (ptype != AmanziMesh::GHOST) ? num_faces_ : 0;
       break;
     case AmanziMesh::NODE:
-      return num_nodes_;
+      return (ptype != AmanziMesh::GHOST) ? num_nodes_ : 0;
       break;
     case AmanziMesh::CELL:
-      return num_cells_;
+      return (ptype != AmanziMesh::GHOST) ? num_cells_ : 0;
       break;
     default:
       throw std::exception();

@@ -7,7 +7,6 @@ import sys
 import h5py
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 from matplotlib import cm as cm
 
@@ -53,14 +52,13 @@ def GetXYZ_Amanzi(path,root,time,comp,nodesx=121,nodesy=101):
 # Main -------------------------------------------------------------------------------------
 if __name__ == "__main__":
 
-    import run_amanzi_chem
+    import run_amanzi_standard
 
     # root name for problem
-    root = "non_grid_aligned"  #"plot"
+    root = "non_grid_aligned"
     nodesx = 121
     nodesy = 101
 
-    CWD = os.getcwd()
     local_path = "" 
 
     # subplots
@@ -73,13 +71,12 @@ if __name__ == "__main__":
         # Amanzi native chemistry
         input_filename = os.path.join("non_grid_aligned-u.xml")
         path_to_amanzi = "amanzi-native-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["calcite_dbs.bgd"])
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["calcite_dbs.bgd"], path_to_amanzi)
         
         comp = 'mineral_volume_fractions.cell.Calcite vol frac'
         x_native, y_native, z_native = GetXYZ_Amanzi(path_to_amanzi,root,time,comp,nodesx=nodesx,nodesy=nodesy)
 
     except:
-
         pass    
       
     extent = [0.0, 0.60, 0.0, 0.50]
@@ -99,6 +96,7 @@ if __name__ == "__main__":
     cbar.ax.set_ylabel('Calcite\n'+'volume\n'+'fraction [-]',fontsize=20,rotation=0)
     cbar.ax.yaxis.set_label_coords(-1.0, 1.15)
 
+    #plt.show()
     #plt.savefig(local_path+"non_grid_aligned_2d.png",format="png")
 
     

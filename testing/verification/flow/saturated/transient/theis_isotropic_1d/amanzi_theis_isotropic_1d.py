@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy
 import math
-from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
+from amanzi_xml.observations.ObservationXMLv2 import ObservationXMLv2 as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
 import model_theis_isotropic_1d
@@ -114,13 +114,14 @@ def MakeTable(Obs_data,Obs_xml,filename):
 if __name__ == "__main__":
 
     import os
-    import run_amanzi
+    import run_amanzi_standard
 
-    input_filename =os.path.join("amanzi_theis_isotropic_1d.xml")
+    input_filename =os.path.join("amanzi_theis_isotropic_1d-isv2.xml")
 
-    CWD = os.getcwd()
+    cwd = os.getcwd()
     try: 
-        run_amanzi.run_amanzi('../'+input_filename)
+        max_np = 10
+        run_amanzi_standard.run_amanzi(input_filename, max_np)
         obs_xml=loadInputXML(input_filename)
         obs_data=loadDataFile(obs_xml)
 
@@ -133,6 +134,6 @@ if __name__ == "__main__":
         MakeTable(obs_data,obs_xml,input_filename)
 
     finally:
-        os.chdir(CWD)
+        os.chdir(cwd)
 
 

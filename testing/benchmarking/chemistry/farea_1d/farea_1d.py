@@ -7,7 +7,6 @@ import sys
 import h5py
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
 
@@ -57,7 +56,7 @@ def GetXY_PFloTran(path,root,time,comp):
 if __name__ == "__main__":
 
     import os
-    import run_amanzi_chem
+    import run_amanzi_standard
     import numpy as np
 
     # root name for problem
@@ -140,7 +139,7 @@ if __name__ == "__main__":
         # Amanzi native chemistry
         input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "amanzi-native-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["ascem-2012-"+root+".bgd"])
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["ascem-2012-"+root+".bgd"], path_to_amanzi)
 
         # tot conc
         u_amanzi_native = [[[] for x in range(len(totcama))] for x in range(len(timesama))]
@@ -171,7 +170,9 @@ if __name__ == "__main__":
         # Amanzi-Alquimia
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq.xml")
         path_to_amanzi = "amanzi-alquimia-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["ascem-2012-1d-"+root+"-trim.in","ascem-2012-"+root+".dat"])
+        run_amanzi_standard.run_amanzi(input_filename, 1, 
+                                       ["ascem-2012-1d-"+root+"-trim.in", "ascem-2012-"+root+".dat"],
+                                       path_to_amanzi)
 
         # tot concentration
         u_amanzi_alquimia = [[[] for x in range(len(totcama))] for x in range(len(timesama))]

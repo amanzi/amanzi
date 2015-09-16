@@ -1182,7 +1182,7 @@ PorousMedia::initData ()
         
     // Call chemistry to relax initial data to equilibrium
     bool chem_relax_ics = false;
-    if (do_tracer_chemistry>0  &&  ic_chem_relax_dt>0) {
+    if (do_tracer_chemistry>0  &&  ic_chem_relax_dt>0  && !shut_off_reactions) {
       MultiFab& Fcnt = get_new_data(FuncCount_Type);
       Fcnt.setVal(1);
       int nGrow = 0;
@@ -2442,7 +2442,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
         }
       }
 
-      if (react_tracers  &&  do_full_strang) {
+      if (!shut_off_reactions && react_tracers  &&  do_full_strang) {
 	const Real strt_time_chem = ParallelDescriptor::second();
 	if (verbose > 0 && full_transport_out && ParallelDescriptor::IOProcessor() && n_subtr>1) {
           print_time_data(std::cout,level,do_output_chemistry_time_in_years,t_subtr,dt_subtr,n_subtr,
@@ -2544,25 +2544,25 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 	  state[Aux_Chem_Type].setOldTimeLevel(t_subtr);
 	}
 
-	// Set up "old" tracers from previous "new" tracers
+	// Now, since we have put the explicit updates into Fext, we will set "new" to "old" before advancing
 	int first_tracer = ncomps;
-	MultiFab::Copy(state[State_Type].oldData(),state[State_Type].newData(),first_tracer,first_tracer,ntracers,0);
+	MultiFab::Copy(state[State_Type].newData(),state[State_Type].oldData(),first_tracer,first_tracer,ntracers,0);
 	if (chemistry_helper != 0) {
 	  int Naux = AmrLevel::get_desc_lst()[Aux_Chem_Type].nComp();
-	  MultiFab::Copy(state[Aux_Chem_Type].oldData(),state[Aux_Chem_Type].newData(),0,0,Naux,0);
+	  MultiFab::Copy(state[Aux_Chem_Type].newData(),state[Aux_Chem_Type].oldData(),0,0,Naux,0);
 	}
 
         tracer_diffusion (reflux_on_this_call,use_cached_sat,Fext);
+
       }
       else {
-
 	// Time-explicit source update
 	Fext.mult(dt_subtr,ncomps,ntracers);
 	MultiFab::Add(get_new_data(State_Type),Fext,ncomps,ncomps,ntracers,0);
       }
 
       bool step_ok_chem = true;
-      if (react_tracers > 0) {
+      if (!shut_off_reactions && react_tracers > 0) {
 	const Real strt_time_chem = ParallelDescriptor::second();
 	bool do_write = verbose > 0 &&  ParallelDescriptor::IOProcessor();
 	if (do_full_strang) {
@@ -2713,7 +2713,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
     
     std::cout << "PorousMedia advance transport time: " << run_time << '\n';
   }
-  
+
   return true;
 }
 
@@ -3625,37 +3625,33 @@ PorousMedia::advance_chemistry (Real time,
 
   bool chem_ok = true;
 
-  // Set time interval for this step
-  state[State_Type].setNewTimeLevel(time+dt);
-  state[State_Type].allocOldData();
-  state[State_Type].setOldTimeLevel(time);
-
-  state[FuncCount_Type].setNewTimeLevel(time+dt);
-  state[FuncCount_Type].allocOldData();
-  state[FuncCount_Type].setOldTimeLevel(time);
-
-  state[Aux_Chem_Type].setNewTimeLevel(time+dt);
-  state[Aux_Chem_Type].allocOldData();
-  state[Aux_Chem_Type].setOldTimeLevel(time);
-
   int first_tracer = ncomps;
-  //
-  // Get some refs, initialize result with old state
-  //
+  std::set<int> types_advanced;
+  types_advanced.insert(State_Type);
+  types_advanced.insert(FuncCount_Type);
+  types_advanced.insert(Aux_Chem_Type);
+  types_advanced.insert(Press_Type);
+
+  // Prepare the state data structures
+  for (int lev=0; lev<=parent->finestLevel(); ++lev) {
+    PorousMedia& pm = getLevel(lev);        
+    for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); 
+         it!=End; ++it) {      
+      StateData& SD = pm.state[*it];
+      SD.setNewTimeLevel(time + dt);
+      SD.allocOldData();
+      SD.setOldTimeLevel(time);
+
+      int sComp = *it==State_Type ? ncomps : 0; // Only modify concentrations in State_Type
+      int nComp = *it==State_Type ? ntracers : SD.newData().nComp(); // 
+      MultiFab::Copy(SD.oldData(),SD.newData(),sComp,sComp,nComp,SD.newData().nGrow());
+    }
+  }
+
   MultiFab& S_old = get_old_data(State_Type);
   MultiFab& P_old = get_old_data(Press_Type);
   MultiFab& Aux_old = get_old_data(Aux_Chem_Type);
   MultiFab& Fcnt_old = get_old_data(FuncCount_Type);
-
-  MultiFab& S_new = get_new_data(State_Type);
-  MultiFab& P_new = get_new_data(Press_Type);
-  MultiFab& Aux_new = get_new_data(Aux_Chem_Type);
-  MultiFab& Fcnt_new = get_new_data(FuncCount_Type);
-
-  MultiFab::Copy(S_old,S_new,ncomps,ncomps,ntracers,S_new.nGrow());
-  MultiFab::Copy(Aux_old,Aux_new,0,0,Aux_new.nComp(),Aux_new.nGrow());
-  MultiFab::Copy(Fcnt_old,Fcnt_new,0,0,Fcnt_new.nComp(),Fcnt_new.nGrow());
-  BL_ASSERT(S_old.nComp() >= ncomps+ntracers);
 
   //
   // Copy state into redistributed multifab for better load balance
@@ -3714,11 +3710,6 @@ PorousMedia::advance_chemistry (Real time,
   for (MFIter mfi(volTemp); mfi.isValid(); ++mfi) {
     geom.GetVolume(volTemp[mfi], volTemp.boxArray(), mfi.index(), 0);
   }  
-
-  //  HACK...should be unnecessary
-  for (MFIter mfi(stateTemp); mfi.isValid(); ++mfi) {
-    setPhysBoundaryValues(stateTemp[mfi],State_Type,time,0,0,ncomps+ntracers);
-  }
 
   //
   // Do the chemistry advance
@@ -3779,15 +3770,24 @@ PorousMedia::advance_chemistry (Real time,
   phiTemp.clear();
   volTemp.clear();
     
+  MultiFab& S_new = get_new_data(State_Type);
+  MultiFab& P_new = get_new_data(Press_Type);
+  MultiFab& Aux_new = get_new_data(Aux_Chem_Type);
+  MultiFab& Fcnt_new = get_new_data(FuncCount_Type);
+
   S_new.copy(stateTemp,ncomps,ncomps,ntracers); // Parallel copy, tracers only
   stateTemp.clear();
+  P_new.copy(pressTemp,0,0,P_new.nComp()); // Parallel copy, everything
+  pressTemp.clear();
   Aux_new.copy(auxTemp,0,0,Aux_new.nComp()); // Parallel copy, everything.
   auxTemp.clear();
     	
   S_new.FillBoundary();
+  P_new.FillBoundary();
   Aux_new.FillBoundary();
 	
   geom.FillPeriodicBoundary(S_new,true);
+  geom.FillPeriodicBoundary(P_new,true);
   geom.FillPeriodicBoundary(Aux_new,true);
 
   if (ngrow == 0 || ngrow_tmp == 0) {

@@ -2,6 +2,10 @@
 #include <iomanip>
 #include <algorithm>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include <PMAmr.H>
 #include <PorousMedia.H>
 #include <Observation.H>
@@ -134,6 +138,58 @@ PMAmr::checkPoint ()
   file_name_digits = chk_file_digits;
   Amr::checkPoint();
   file_name_digits = file_name_digits_tmp;
+}
+
+static std::string getFilePart(const std::string& path)
+{
+  std::vector<std::string> parts = BoxLib::Tokenize(path,"/");
+  return parts[parts.size()-1];
+}
+
+/*
+static std::string getDirPart(const std::string& path)
+{
+  std::vector<std::string> parts = BoxLib::Tokenize(path,"/");
+  std::string ret;
+  if (path.at(0) == '/') {
+    ret = "/";
+  }
+  else if (parts.size() == 1) {
+    ret = "./";
+  }
+
+  for (int i=0; i<parts.size()-1; ++i) {
+    ret += parts[i];
+    if (i!=parts.size()-2) ret += '/';
+  }
+  return ret;
+}
+*/
+
+void
+PMAmr::LinkFinalCheckpoint (int step)
+{
+  if (ParallelDescriptor::IOProcessor()) {
+    struct stat statbuff;
+
+    std::string finalCheckpointName = BoxLib::Concatenate(check_file_root,step,chk_file_digits);
+    std::string finalCheck_filePart = getFilePart(finalCheckpointName);
+
+    std::string linkName = check_file_root + "_final";
+
+    bool link_exists = ::lstat(linkName.c_str(), &statbuff) != -1;
+    if (link_exists) {
+      std::cout << "Unlinking \"" << linkName << "\""<< std::endl;
+      int ret = unlink(linkName.c_str()); BL_ASSERT(ret == 0);
+    }
+    
+    std::cout << "Symbolic link, \"" << linkName
+	      << "\" created to final checkpoint, \"" << finalCheckpointName
+	      << "\""<< std::endl;
+
+    int ret = symlink(finalCheck_filePart.c_str(),linkName.c_str());
+    BL_ASSERT(ret == 0);
+  }
 }
 
 void
