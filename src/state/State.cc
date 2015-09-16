@@ -1034,8 +1034,11 @@ void WriteVis(const Teuchos::Ptr<Visualization>& vis,
 // Non-member function for checkpointing.
 void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk,
                      const Teuchos::Ptr<State>& S,
-                     double dt) {
+                     double dt,
+                     bool final) {
   if ( !chk->is_disabled() ) {
+
+    chk->SetFinal(final);
     chk->CreateFile(S->cycle());
 
     for (State::field_iterator field=S->field_begin(); field!=S->field_end(); ++field) {

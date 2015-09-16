@@ -762,7 +762,10 @@ void CycleDriver::Visualize(bool force) {
 ****************************************************************** */
 void CycleDriver::WriteCheckpoint(double dt, bool force) {
   if (force || checkpoint_->DumpRequested(S_->cycle(), S_->time())) {
-    Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt);
+    bool final = false;
+    if (fabs( S_->time() - tp_end_[num_time_periods_-1])) final = true;
+
+    Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt, final);
     
     // if (force) pk_->CalculateDiagnostics();
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -861,9 +864,6 @@ Teuchos::RCP<State> CycleDriver::Go() {
       ResetDriver(time_period_id_); 
       restart_dT =  tp_dt_[time_period_id_];
     }
-    // else {
-    //   Initialize();
-    // }
 
     S_->set_initial_time(S_->time());
     dt = tsm_->TimeStep(S_->time(), restart_dT);
