@@ -62,8 +62,9 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   double t0, t1, dt0, t0_steady, t1_steady, dt0_steady;
   char *method, *tagname;
   bool flag_steady(false); 
-  std::string method_d, dt0_d, dt_cut_d, dt_inc_d, filename;
+  std::string mode_d, method_d, dt0_d, dt_cut_d, dt_inc_d, filename;
 
+  mode_d = GetAttributeValueS_(element, "mode", false, "");
   method_d = GetAttributeValueS_(element, "method", false, "");
   dt0_d = GetAttributeValueS_(element, "init_dt", false, "0.0");
   dt_cut_d = GetAttributeValueS_(element, "reduction_factor", false, "0.8");
@@ -86,7 +87,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
       t1 = TimeStringToValue_(GetAttributeValueS_(element, "end"));
       dt0 = TimeStringToValue_(GetAttributeValueS_(element, "init_dt", false, dt0_d));
       max_cycles = GetAttributeValueD_(element, "max_cycles", false, -1);
-      std::string mode = GetAttributeValueS_(element, "mode");
+      std::string mode = GetAttributeValueS_(element, "mode", false, mode_d);
 
       dt_cut_[mode] = TimeStringToValue_(GetAttributeValueS_(element, "reduction_factor", false, dt_cut_d));
       dt_inc_[mode] = TimeStringToValue_(GetAttributeValueS_(element, "increase_factor", false, dt_inc_d));
@@ -245,10 +246,12 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
 
   if (transient_model & 2 || transient_model & 1) {
     out_list.set<Teuchos::Array<std::string> >("component names", comp_names_all_);
+    out_list.set<int>("number of liquid components", phases_["water"].size());
   }
 
   out_list.sublist("time period control") = TranslateTimePeriodControls_();
   if (filename.size() > 0) {
+    restart_ = true;
     out_list.sublist("restart").set<std::string>("file name", filename);
   }
   out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");

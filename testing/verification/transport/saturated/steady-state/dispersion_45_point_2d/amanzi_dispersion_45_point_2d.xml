@@ -212,12 +212,12 @@
     </ParameterList>
     <ParameterList name="Cross0210">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{210.0, 210.0}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-210.0, 210.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Cross0240">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{240.0, 240.0}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-240.0, 240.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Crossb030">

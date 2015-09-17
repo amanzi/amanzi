@@ -46,8 +46,9 @@ class Unstructured_observations {
     if (vo_ != NULL) delete vo_;
   }
   
-  void RegisterComponentNames(std::vector<std::string> comp_names) {
+  void RegisterComponentNames(std::vector<std::string> comp_names, int num_liquid) {
     comp_names_ = comp_names;
+    num_liquid_ = num_liquid;
   }
 
   int MakeObservations(State& S);
@@ -68,7 +69,9 @@ class Unstructured_observations {
   Teuchos::ParameterList obs_list_;
   Amanzi::ObservationData& observation_data_;
   std::map<std::string, Observable> observations;
+
   std::vector<std::string> comp_names_;
+  int num_liquid_;
   std::map<std::string, double> drawdown_;
 };
 

@@ -36,6 +36,7 @@ class InputConverterU : public InputConverter {
       flow_single_phase_(false),
       compressibility_(false),
       transport_permeability_(false),
+      restart_(false),
       init_filename_("") {};
   ~InputConverterU() { if (vo_ != NULL) delete vo_; }
 
@@ -137,6 +138,7 @@ class InputConverterU : public InputConverter {
 
   // global state parameters
   // -- initialization filename, different from restart
+  bool restart_;
   std::string init_filename_;
 
   // for analysis

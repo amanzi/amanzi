@@ -21,7 +21,7 @@ overwrite=False
 analytic_soln = utils_dispersion_45_point_2d.AnalyticSolutions(analytic,obs_slices,overwrite)
 
 #
-# One of three plots 'centerline', 'x=0.0', and 'x=424.0'
+# One of two plots rotated 'centerline' (y=x) and rotated 'x=0.0' (y=-x)
 # 
 slice='centerline'
 
@@ -32,7 +32,7 @@ axes1.set_yscale('log')
 axes1.set_xlim(obs_slices[slice]['domain'][0],obs_slices[slice]['domain'][1])
 axes1.set_ylim(obs_slices[slice]['range'][0],obs_slices[slice]['range'][1])
 
-# Plot centerline (y=0) 
+# Plot rotated centerline (x=y) 
 utils_dispersion_45_point_2d.PlotObservations(obs_scatter,slice,subtests,axes1)
 utils_dispersion_45_point_2d.PlotAnalyticSoln(analytic_soln,analytic,slice,obs_slices,axes1)
 
@@ -41,7 +41,7 @@ axes1.set_xlabel('Position along the Plume Centerline, x[m]',fontsize=14)
 axes1.set_ylabel('Concentration [kg/m$^3$]',fontsize=14)
 axes1.text(150,0.003,'Concentration along y=0, at t=1440 days.',fontsize=14)
 
-# plt.show()
+plt.show()
 
 # Create/Write the table:
 utils_dispersion_45_point_2d.MakeTableCols(table_layout,slice,obs_scatter,subtests,analytic_soln,analytic)
