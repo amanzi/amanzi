@@ -56,6 +56,7 @@ class InputConverterS : public InputConverter {
   int dim_;
   int nx_, ny_, nz_;
   std::vector<double> lo_coords_, hi_coords_;
+  std::string chemistry_engine_;
 };
 
 }  // namespace AmanziInput
