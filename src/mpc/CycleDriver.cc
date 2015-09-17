@@ -837,15 +837,12 @@ Teuchos::RCP<State> CycleDriver::Go() {
     // to initialize field which are not in the restart file
     S_->InitializeFields();
     S_->InitializeEvaluators();
-
-    // Initialize the process kernels
-    pk_->Initialize();
-    
+   
     S_->GetMeshPartition("materials");
     
     // re-initialize the state object
     restart_dT = ReadCheckpoint(comm_, Teuchos::ptr(&*S_), restart_filename_);
-    //    S_->WriteStatistics(vo_);
+    //S_->WriteStatistics(vo_);
 
     cycle0_ = S_->cycle();
     for (std::vector<std::pair<double,double> >::iterator it = reset_info_.begin();
@@ -863,6 +860,9 @@ Teuchos::RCP<State> CycleDriver::Go() {
       if (time_period_id_ < num_time_periods_ - 1) time_period_id_++;
       ResetDriver(time_period_id_); 
       restart_dT =  tp_dt_[time_period_id_];
+    }else{
+      // Initialize the process kernels
+      pk_->Initialize();
     }
 
     S_->set_initial_time(S_->time());
@@ -886,6 +886,8 @@ Teuchos::RCP<State> CycleDriver::Go() {
   WriteCheckpoint(dt);
   Observations();
   S_->WriteStatistics(vo_);
+
+
   //Amanzi::timer_manager.stop("I/O");
  
   // iterate process kernels

@@ -115,6 +115,8 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
   // Amanzi and Alquimia.
   chem_engine_->InitState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
 
+
+
   // Now loop through all the regions and initialize.
   int ierr = 0;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = chemistry_state_->mesh_maps();
