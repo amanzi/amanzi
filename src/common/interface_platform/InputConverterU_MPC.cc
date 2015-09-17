@@ -246,6 +246,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
 
   if (transient_model & 2 || transient_model & 1) {
     out_list.set<Teuchos::Array<std::string> >("component names", comp_names_all_);
+    out_list.set<int>("number of liquid components", phases_["water"].size());
   }
 
   out_list.sublist("time period control") = TranslateTimePeriodControls_();

@@ -145,9 +145,9 @@ void CycleDriver::Setup() {
     Teuchos::ParameterList observation_plist = parameter_list_->sublist("Observation Data");
     observations_ = Teuchos::rcp(new Amanzi::Unstructured_observations(observation_plist, output_observations_, comm_));
     if (coordinator_list_->isParameter("component names")) {
-      Teuchos::Array<std::string> comp_names =
-          coordinator_list_->get<Teuchos::Array<std::string> >("component names");
-      observations_->RegisterComponentNames(comp_names.toVector());
+      Teuchos::Array<std::string> comp_names = coordinator_list_->get<Teuchos::Array<std::string> >("component names");
+      int num_liquid = coordinator_list_->get<int>("number of liquid components");
+      observations_->RegisterComponentNames(comp_names.toVector(), num_liquid);
     }
   }
 

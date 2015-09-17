@@ -151,6 +151,8 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
 * `"component names`" [Array(string)] provides the list of species names.
   It is required for reactive transport.
 
+* `"number of liquid components`" [int] is the number of liquid components. 
+   
 * `"time periods`" [list] contains the list of time periods involved in the simulation.
   the number of periods is not limited.
 
@@ -182,6 +184,7 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
   <ParameterList>  <!-- parent list -->
     <ParameterList name="Cycle Driver">
       <Parameter name="component names" type="Array(string)" value="{H+, Na+, NO3-, Zn++}"/>
+      <Parameter name="number of liquid components" type="int" value="4"/>
       <ParameterList name="time periods">
         <ParameterList name="TP 0">
           <ParameterList name="PK Tree">
@@ -4368,6 +4371,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * hydraulic head [m] 
       * drawdown [m] 
       * SOLUTE Aqueous concentration [mol/m^3]
+      * SOLUTE gaseous concentration [mol/m^3]
       * x-, y-, z- aqueous volumetric flux [m/s]
       * material id [-]
       * aqueous mass flow rate [kg/s] (when funtional="integral")
