@@ -331,6 +331,7 @@ void Richards_PK::Setup()
 /* ******************************************************************
 * This is long but simple subroutine. It goes through time integrator
 * list and initializes various objects created during setup step.
+* Some local objects needs to the most 
 ****************************************************************** */
 void Richards_PK::Initialize()
 {

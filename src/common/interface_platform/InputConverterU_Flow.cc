@@ -138,6 +138,15 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
   } else {
     err_options = "pressure, residual";
     unstr_controls = "unstructured_controls, unstr_transient_controls";
+
+    // restart leads to a conflict
+    node = GetUniqueElementByTagsString_(unstr_controls + ", unstr_initialization", flag); 
+    if (flag && restart_) {
+      Errors::Message msg;
+      msg << "Parameters \"restart\" and \"unstr_transient_control->unstr_initialization\""
+          << " are mutually exclusive.\n";
+      Exceptions::amanzi_throw(msg);
+    }
   } 
   
   if (pk_master_.find("flow") != pk_master_.end()) {

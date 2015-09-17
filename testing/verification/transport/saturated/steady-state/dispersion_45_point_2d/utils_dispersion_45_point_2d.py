@@ -9,7 +9,6 @@ import os, re
 def loadInputXML(filename):
     # load input xml file
     #  -- create an ObservationXML object
-
     Obs_xml = ObsXML(filename)
     return Obs_xml
 
@@ -28,13 +27,11 @@ def loadDataFile(Obs_xml,directory):
     for obs in Obs_data.observations.itervalues():
         region = obs.region
         obs.coordinate = coords[region]
-
     return Obs_data
 
 
 def CollectObservations(Obs_xml, Obs_data, Obs_lines):
-    ## FIXME:  This should collect whatever types of observations it finds, e.g., pressure, concentrations, etc.
-
+    ## FIXME: This should collect whatever types of observations it finds, e.g., pressure, concentrations, etc.
     # Create dictionary for scatter plots
     Obs_scatter={}
     for key in Obs_lines:
@@ -51,20 +48,13 @@ def CollectObservations(Obs_xml, Obs_data, Obs_lines):
             slice_dep = 1
             slice_indep = 0
 
-        if (Obs_lines[key]['vary'] is 'x'):
-            vary_coord=0
-        elif (Obs_lines[key]['vary'] is 'y'):
-            vary_coord=1
-        elif (Obs_lines[key]['vary'] is 's'):
-            vary_coord=2
-
         for obs in Obs_data.observations.itervalues():
-            if (obs.coordinate[slice_dep] == Obs_lines[key]['slice'][1] * obs.coordinate[slice_indep]
-                                             + Obs_lines[key]['slice'][2]):
+            if (obs.coordinate[slice_dep] == Obs_lines[key]['slice'][1] * obs.coordinate[slice_indep]):
+                print key, obs.coordinate, Obs_lines[key]['slice'][1]
                 if (Obs_lines[key]['vary'] is 'x' or Obs_lines[key]['vary'] is 'y'):
                     Obs_scatter[key]['distance'].append(obs.coordinate[slice_indep])
                 else:
-                    s = math.sqrt(float(obs.coordinate[slice_dep])**2+float(obs.coordinate[slice_indep])**2)
+                    s = math.sqrt(float(obs.coordinate[0])**2 + float(obs.coordinate[1])**2)
                     Obs_scatter[key]['distance'].append(math.copysign(s,obs.coordinate[slice_indep]))
                 Obs_scatter[key]['Tc99'].append(obs.data[0])
 
@@ -290,7 +280,6 @@ def AmanziResults(input_filename,subtests,obs_slices,overwrite=False):
 
             # Collect observations to plot
             obs_scatter[st]=CollectObservations(obs_xml[st], obs_data[st], obs_slices)
-            
     finally: 
         pass
 
@@ -319,11 +308,15 @@ def SetupTests():
     # Slice should be all fixed quantities, i.e., Time is fixed as well 
     # Should include observation type (or return slices sorted with observation type as a key).
 
-    obs_slices = { 'centerline' : { 'slice' : [ 'y', 1.0, 0.0 ], 
-                                    'vary' : 's', 
+    obs_slices = { 'centerline' : { 'slice'  : [ 'y', 1.0 ],  # x=y
+                                    'vary'   : 's', 
                                     'domain' : [-300.0,1400.0],
-                                    'range' : [5e-10,3e-3] 
-                                  }
+                                    'range'  : [5e-10,3e-3] 
+                                  },
+                   'x=0.0'      : { 'slice'  : [ 'x', -1.0 ],  # x=-y
+                                    'vary'   : 's', 
+                                    'domain' : [-5.0,350.0],
+                                  },
                  }
 
     subtests = { 'amanzi_first' : 
@@ -340,12 +333,18 @@ def SetupTests():
                  }
                }
    
-    analytic = { 'centerline'   : 
+    analytic = { 'centerline' : 
                  { 'directory'  : 'at123d-at',
                    'input_file' : 'at123d-at_centerline.list',
                    'vary'       : 'x',
                    'plot_props' : { 'color': 'blue', 'linestyle' : '-', 'label':'Analytic (AT123D-AT)' }
-                 }
+                 },
+                 'x=0.0' : 
+                 { 'directory'  : 'at123d-at', 
+                   'input_file' : 'at123d-at_slice_x=0.list', 
+                   'vary'       : 'y',
+                   'plot_props' : { 'color': 'blue', 'linestyle' : '-', 'label':'Analytic (AT123D-AT)' }
+                 },
                }
 
     table_layout={ 'centerline' : 
@@ -361,7 +360,21 @@ def SetupTests():
                      { 'datasrc' : 'Amanzi', 'subtest' : 'amanzi_second', 'variable': 'Tc99' },
                      'Analytic (AT123D-AT)':
                      { 'datasrc' : 'Analytic', 'idepvar' : 'distance', 'variable': 'c' },
-                   }
+                   },
+                   'x=0.0' : 
+                   { 'filename' : 'table_cross-section-b.txt',
+                     'header'   : [ 'y [m]', 'Analytic (AT123D-AT)',
+                                    'Amanzi First-Order', 'Amanzi Second-Order'],
+                     'tabular'  : '|R|C|C|C|',
+                     'y [m]'    : 
+                     { 'datasrc' : 'Amanzi', 'subtest' : 'amanzi_first', 'variable': 'distance' }, 
+                     'Amanzi First-Order' :
+                     { 'datasrc' : 'Amanzi', 'subtest' : 'amanzi_first', 'variable': 'Tc99' },
+                     'Amanzi Second-Order' : 
+                     { 'datasrc' : 'Amanzi', 'subtest' : 'amanzi_second', 'variable': 'Tc99' },
+                     'Analytic (AT123D-AT)':
+                     { 'datasrc' : 'Analytic', 'idepvar' : 'distance', 'variable': 'c' },
+                   },
                  }
 
     return obs_slices, subtests, analytic, table_layout
