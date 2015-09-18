@@ -379,6 +379,16 @@ int Unstructured_observations::MakeObservations(State& S)
                 << " are only possible for Polygon, Plane and Boundary side sets";
             Exceptions::amanzi_throw(msg);
           }
+
+        } else if (var == "pH") {
+          const Epetra_MultiVector& pH = *S.GetFieldData("pH")->ViewComponent("cell");
+  
+          for (int i = 0; i < mesh_block_size; ++i) {
+            int c = entity_ids[i];
+            double vol = S.GetMesh()->cell_volume(c);
+            volume += vol;
+            value += pH[0][c] * vol;
+          }
         } else {
           msg << "Cannot make an observation for aqueous variable \"" << var << "\"";
           Exceptions::amanzi_throw(msg);
