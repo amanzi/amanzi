@@ -587,6 +587,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
     Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());
     bc.set<Teuchos::Array<std::string> >("regions", regions);
 
+    // select one region for transport diagnostics (FIXME)
+    if (bctype == "seepage face")
+        transport_diagnostics_.insert(transport_diagnostics_.end(), regions.begin(), regions.end());
+
     Teuchos::ParameterList& bcfn = bc.sublist(bcname);
     if (times.size() == 1) {
       bcfn.sublist("function-constant").set<double>("value", values[0]);

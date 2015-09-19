@@ -72,10 +72,16 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   FilterEmptySublists_(out_list);
 
   // miscalleneous cross-list information
+  // -- initialization file name
   if (init_filename_.size() > 0) {
     out_list.sublist("State").set<std::string>("initialization filename", init_filename_);
   }
 
+  // -- additional transport diagnostics (FIXME)
+  if (transport_diagnostics_.size() > 0) {
+    out_list.sublist("PKs").sublist("Transport")
+        .set<Teuchos::Array<std::string> >("runtime diagnostics: regions", transport_diagnostics_);
+  }
   return out_list;
 }
   

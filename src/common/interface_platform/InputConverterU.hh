@@ -142,6 +142,8 @@ class InputConverterU : public InputConverter {
   std::string init_filename_;
 
   // for analysis
+  std::vector<std::string> transport_diagnostics_;
+
   std::vector<std::string> vv_bc_regions_;
   std::vector<std::string> vv_src_regions_;
   std::vector<std::string> vv_obs_regions_;
