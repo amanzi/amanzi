@@ -283,7 +283,7 @@ Teuchos::ParameterList InputConverterU::TranslateInitialization_(
   node = GetUniqueElementByTagsString_(controls + ", linear_solver", flag); 
   if (flag) {
     std::string text = mm.transcode(node->getTextContent());
-    if (text == "aztec00") text = "AztecOO";
+    if (text == "aztec00" || text == "aztecoo") text = "AztecOO";
     out_list.set<std::string>("linear solver", text);
   }
 

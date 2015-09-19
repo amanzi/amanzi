@@ -41,16 +41,11 @@ set(interface_inc_files
   InputConverter.hh
   InputConverterU.hh
   InputConverterU_Defs.hh
-  InputParserIS.hh
   InputParserIS_Defs.hh
   InputTranslator.hh)
 
 add_amanzi_library(interface
                       SOURCE 
-                           InputParserIS.cc
-                           InputParserIS_State.cc InputParserIS_MPC.cc
-                           InputParserIS_Flow.cc InputParserIS_Transport.cc InputParserIS_Chemistry.cc
-                           InputParserIS_Solvers.cc InputParserIS_Mesh.cc InputParserIS_Output.cc
                            InputConverter.cc InputConverterU.cc
                            InputConverterU_State.cc InputConverterU_MPC.cc InputConverterU_PK.cc
                            InputConverterU_Flow.cc InputConverterU_Transport.cc
