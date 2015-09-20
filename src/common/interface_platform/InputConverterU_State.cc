@@ -213,6 +213,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         aux_list.sublist("DoF 2 Function").sublist("function-constant").set<double>("value", ky);
         if (dim_ == 3) {
           aux_list.sublist("DoF 3 Function").sublist("function-constant").set<double>("value", kz);
+        } else {
+          kz = 0.0;
         }
       } else {
         ThrowErrorIllformed_("materials", "permeability/hydraulic conductivity", "file/filename/attribute");

@@ -255,7 +255,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
   }
 
   // get output->observations node - this node must exist ONCE
-  int nobs_liquid, nobs_gas;
+  int nobs_liquid(0), nobs_gas(0);
   node = GetUniqueElementByTagsString_("output, observations", flag);
 
   if (flag && node->getNodeType() == DOMNode::ELEMENT_NODE) {
