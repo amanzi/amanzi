@@ -128,7 +128,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
   }
 
   flow_list->sublist("operators") = TranslateDiffusionOperator_(
-      disc_method, pc_method, nonlinear_solver, "vapor matrix");
+      disc_method, pc_method, nonlinear_solver, "vapor matrix", true);
   
   // insert time integrator
   std::string err_options, unstr_controls;

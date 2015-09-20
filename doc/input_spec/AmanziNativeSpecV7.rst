@@ -1104,16 +1104,16 @@ scheme, and selects assembling schemas for matrices and preconditioners.
     <ParameterList name="operators">
       <ParameterList name="diffusion operator">
         <ParameterList name="matrix">
-          <Parameter name="discretization primary" type="string" value="monotone mfd"/>
-          <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+          <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+          <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
           <Parameter name="gravity" type="bool" value="true"/>
           <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
         </ParameterList>
         <ParameterList name="preconditioner">
-          <Parameter name="discretization primary" type="string" value="monotone mfd"/>
-          <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+          <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+          <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
           <Parameter name="newton correction" type="string" value="approximate jacobian"/>
@@ -1786,6 +1786,38 @@ Three examples are below:
       <Parameter name="air-water partitioning coefficient" type=Array(double)" value="{0.03}"/> 
     </ParameterList>  
   </ParameterList>  
+
+
+Dispersion operator
+...................
+
+List *operators* describes the PDE structure of the flow, specifies a discretization
+scheme, and selects assembling schemas for matrices and preconditioners.
+
+* `"operators`" [list] 
+
+  * `"diffusion operator`" [list] 
+
+    * `"matrix`" [list] defines parameters for generating and assembling dispersion matrix.
+      See section describing operators. 
+
+.. code-block:: xml
+
+  <ParameterList name="Transport">  <!-- parent list -->
+    <ParameterList name="operators">
+      <ParameterList name="diffusion operator">
+        <ParameterList name="matrix">
+          <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+          <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
+          <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+          <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+This example creates a p-lambda system, i.e. the concentation is
+discretized in mesh cells and on mesh faces. The later unknowns are auxiliary unknwons.
 
 
 Multiscale continuum models
@@ -2781,16 +2813,16 @@ scheme, and selects assembling schemas for matrices and preconditioners.
        <Parameter name="include enthalpy in preconditioner" type="boll" value="true"/>
        <ParameterList name="diffusion operator">
          <ParameterList name="matrix">
-           <Parameter name="discretization primary" type="string" value="monotone mfd"/>
-           <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+           <Parameter name="discretization primary" type="string" value="mdf: optimized for monotonicity"/>
+           <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
            <Parameter name="gravity" type="bool" value="false"/>
            <Parameter name="upwind method" type="string" value="standard: cell"/> 
          </ParameterList>
          <ParameterList name="preconditioner">
-           <Parameter name="discretization primary" type="string" value="monotone mfd"/>
-           <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+           <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+           <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
            <Parameter name="gravity" type="bool" value="true"/>
@@ -2985,8 +3017,8 @@ Diffusion operator
 .. code-block:: xml
 
     <ParameterList name="OPERATOR_NAME">
-      <Parameter name="discretization primary" type="string" value="monotone mfd"/>
-      <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+      <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
       <Parameter name="gravity" type="bool" value="true"/>

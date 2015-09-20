@@ -585,6 +585,24 @@
         <Parameter name="aqueous names" type="Array(string)" value="{}"/>
         <Parameter name="aqueous values" type="Array(double)" value="{}"/>
       </ParameterList>
+      <ParameterList name="operators">
+        <ParameterList name="diffusion operator">
+          <ParameterList name="matrix">
+            <Parameter name="discretization primary" type="string" value="mfd: monotone for hex"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+            <Parameter name="gravity" type="bool" value="false"/>
+          </ParameterList>
+          <ParameterList name="preconditioner">
+            <Parameter name="discretization primary" type="string" value="mfd: monotone for hex"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+            <Parameter name="gravity" type="bool" value="false"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="boundary conditions">
         <ParameterList name="concentration">
           <ParameterList name="Tc-99">

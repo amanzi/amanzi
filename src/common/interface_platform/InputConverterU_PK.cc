@@ -307,23 +307,34 @@ Teuchos::ParameterList InputConverterU::TranslateInitialization_(
 
 
 /* ******************************************************************
-* Create operators sublist
+* Create operators sublist:
+*   disc_methods     = {primary, secondary}
+*   pc_method        = "linerized_operator" | "diffusion_operator"
+*   nonlinear_solver = "" | "Newton"
+*   extentions       = "" | "vapor matrix" 
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
-    const std::string& disc_method, const std::string& pc_method,
-    const std::string& nonlinear_solver, const std::string& extensions)
+    const std::string& disc_methods, const std::string& pc_method,
+    const std::string& nonlinear_solver, const std::string& extensions,
+    bool gravity)
 {
   Teuchos::ParameterList out_list;
   Teuchos::ParameterList tmp_list;
 
-  std::string tmp = boost::replace_all_copy(disc_method, "-", ": ");
-  replace(tmp.begin(), tmp.end(), '_', ' ');
-  if (tmp == "mfd: two point flux approximation") tmp = "mfd: two-point flux approximation";
+  // process primary and secondary discretization methods
+  std::vector<std::string> methods = CharToStrings_(disc_methods.c_str());
+  for (int i = 0; i < methods.size(); ++i) {
+    std::string tmp = boost::replace_all_copy(methods[i], "-", ": ");
+    replace(tmp.begin(), tmp.end(), '_', ' ');
+    if (tmp == "mfd: two point flux approximation") tmp = "mfd: two-point flux approximation";
+    methods[i] = tmp;
+  }
+  if (methods.size() == 1) methods.push_back("mfd: optimized for sparsity");
 
-  tmp_list.set<std::string>("discretization primary", boost::to_lower_copy(tmp));
-  tmp_list.set<std::string>("discretization secondary", "mfd: optimized for sparsity");
+  tmp_list.set<std::string>("discretization primary", methods[0]);
+  tmp_list.set<std::string>("discretization secondary", methods[1]);
 
-  if (disc_method != "fv: default") {
+  if (methods[0] != "fv: default") {
     Teuchos::Array<std::string> stensil(2);
     stensil[0] = "face";
     stensil[1] = "cell";
@@ -331,17 +342,18 @@ Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
 
     if (pc_method != "linearized_operator") stensil.remove(1);
     tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
-    tmp_list.set<bool>("gravity", true);
+    tmp_list.set<bool>("gravity", gravity);
   } else {
     Teuchos::Array<std::string> stensil(1);
     stensil[0] = "cell";
     tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
 
     tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
-    tmp_list.set<bool>("gravity", true);
+    tmp_list.set<bool>("gravity", gravity);
   }
 
   // create two operators for matrix and preconditioner
+  // Note that PK may use only one of them.
   out_list.sublist("diffusion operator").sublist("matrix") = tmp_list;
   out_list.sublist("diffusion operator").sublist("preconditioner") = tmp_list;
 
