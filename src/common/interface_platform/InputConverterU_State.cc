@@ -468,6 +468,15 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .sublist("function").sublist("function-constant")
             .set<double>("value", val);
       }
+
+      // -- geochemical condition
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry, constraint", flag);
+      if (flag) {
+        std::string name = GetAttributeValueS_(static_cast<DOMElement*>(node), "name");
+
+        out_ic.sublist("geochemical conditions").sublist(name)
+            .set<Teuchos::Array<std::string> >("regions", regions);
+      }
     }
   }
 

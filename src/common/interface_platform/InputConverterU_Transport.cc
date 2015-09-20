@@ -360,7 +360,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
       TranslateTransportBCsGroup_(bcname, regions, solutes, out_list);
     }
 
-    // geochemistry BCs 
+    // geochemical BCs 
     node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry", flag);
     if (flag) {
       std::string bctype;
@@ -382,14 +382,23 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
         values.push_back(it->second);
         forms.push_back(tp_forms[it->first]);
       }
-     
+
+      if (times.size() == 1) {
+        times.push_back(times[0] + 1e+20);
+        values.push_back(values[0]);
+      } else {
+        forms.pop_back();
+      }
+
       // save in the XML files  
       Teuchos::ParameterList& tbc_list = out_list.sublist("geochemical conditions");
-      Teuchos::ParameterList& bc = tbc_list.sublist(bcname);
-      bc.set<Teuchos::Array<std::string> >("regions", regions);
-      bc.set<Teuchos::Array<double> >("times", times);
-      bc.set<Teuchos::Array<std::string> >("geochemical conditions", values);
-      bc.set<Teuchos::Array<std::string> >("time functions", forms);
+      for (int i = 0; i < phases_["water"].size(); ++i) {
+        Teuchos::ParameterList& bc = tbc_list.sublist(phases_["water"][i]).sublist(bcname);
+        bc.set<Teuchos::Array<std::string> >("regions", regions);
+        bc.set<Teuchos::Array<double> >("times", times);
+        bc.set<Teuchos::Array<std::string> >("geochemical conditions", values);
+        bc.set<Teuchos::Array<std::string> >("time functions", forms);
+      }
     }
   }
 

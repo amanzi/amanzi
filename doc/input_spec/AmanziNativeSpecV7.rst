@@ -587,6 +587,21 @@ In this example the constant Darcy velocity (0.002, 0.001) [m/s] is dotted with 
 normal producing one number per mesh face.
 
 
+Geochemical constraint
+......................
+
+We can define geochemical contraint as follows:
+
+.. code-block:: xml
+
+   <ParameterList name="initial conditions">  <!-- parent list -->
+     <ParameterList name="geochemical conditions">
+       <ParameterList name="initial">
+         <Parameter name="regions" type="Array(string)" value="{Entire Domain}"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
 Mesh partitioning
 -----------------
 
@@ -1818,6 +1833,7 @@ allows us to define spatially variable boundary conditions.
   * `"concentration`" [list] This is a reserved keyword.
    
     * "COMP" [list] contains a few sublists (e.g. BC_1, BC_2) for boundary conditions.
+      The name *COMP* must be the name in the list of solutes.
  
       * "BC_1" [list] defines boundary conditions using arrays of boundary regions and attached
         functions.
@@ -1858,17 +1874,21 @@ The example below sets constant boundary condition 1e-5 for the duration of tran
 
 Geochemical boundary conditions are concentration-type boundary conditions
 but require special treatment. 
+Note that the number of *forms* below is one less than the number of times
+and geochemical conditions.
 
 .. code-block:: xml
 
   <ParameterList name="Transport">  <!-- parent list -->
     <ParameterList name="boundary conditions">
       <ParameterList name="geochemical conditions">
-        <ParameterList name="EAST CRIB">   <!-- user defined name -->
-          <Parameter name="times" type="Array(double)" value="{0.0, 100.0}"/>
-          <Parameter name="geochemical conditions" type="Array(string)" value="{cond1, cond2}"/>
-          <Parameter name="time functions" type="Array(string)" value="{constant, constant}"/>
-          <Parameter name="regions" type="Array(string)" value="{CRIB1}"/>
+        <ParameterList name="H+"> 
+          <ParameterList name="EAST CRIB">   <!-- user defined name -->
+            <Parameter name="times" type="Array(double)" value="{0.0, 100.0}"/>
+            <Parameter name="geochemical conditions" type="Array(string)" value="{cond1, cond2}"/>
+            <Parameter name="time functions" type="Array(string)" value="{constant}"/>
+            <Parameter name="regions" type="Array(string)" value="{CRIB1}"/>
+          </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
