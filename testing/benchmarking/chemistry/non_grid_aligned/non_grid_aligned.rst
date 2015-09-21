@@ -130,9 +130,8 @@ Simulation results
 
 Simulation results show a good agreement with expected results. Precipitation of calcite is indicated by its volume fraction at time 72 seconds (see Figure). For the structured and unstructured discretizations, the solution profiles for the precipitated calcite are similar narrow bands between the inflowing solutes.  In both case, the solute profiles are monotonic and well-behaved at all mesh resolutions.  With additional refinement (not shown), the magnitude of the peak calcite volume fraction increases (due the increased vertical gradients of precipitating solutes at the inflow boundary condition), but its concentration stays properly confined to a narrow zone at the interface. These results demonstrate that Amanzi is capable of robustly capturing non-grid-aligned processes in both the structured and unstructured mesh frameworks.
 
-.. plot:: prototype/chemistry/non_grid_aligned/plot_non_grid_aligned.py
-
-..   :align: left
+.. plot:: benchmarking/transport/non_grid_aligned/non_grid_aligned.py
+   :align: left
 
 References
 ----------
@@ -143,6 +142,9 @@ References
 .. [Lipnikov2014] L. Beirao da Veiga, K. Lipnikov, and G. Manzini. The Mimetic Finite Difference Method for Elliptic PDEs. Springer, 2014, 408p.
 .. [BDS1988] J.B. Bell, C.N. Dawson, and G.R. Shubin (1988) An unsplit higher order Godunov method for scalar conservation laws in multiple dimensions, J. Comput. Physics, 74, p. 1-24
 .. [Nonaka2011] A. Nonaka, S. May, A.S. Almgren, and J.B. Bell (2011) A three-dimensional, unsplit Godunov method ofr scalar conservation laws, SIAM J. Sci. Comput, 33(4), 2039-2062
+
+
+.. _non_grid_aligned.rst:
 
 About
 -----

@@ -104,7 +104,7 @@ def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
 if __name__ == "__main__":
 
     import os
-    import run_amanzi_chem
+    import run_amanzi_standard
     import numpy as np
 
     # root name for problem
@@ -199,7 +199,7 @@ if __name__ == "__main__":
         # Amanzi native chemistry
         input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "amanzi-native-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=[root+".bgd"])
+        run_amanzi_standard.run_amanzi(input_filename, 1, [root+".bgd"], path_to_amanzi)
 
         u_amanzi_native = [[[] for x in range(len(amanzi_components))] for x in range(len(times))]
         for i, time in enumerate(times):
@@ -223,7 +223,7 @@ if __name__ == "__main__":
         # Amanzi-Alquimia
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq.xml")
         path_to_amanzi = "amanzi-alquimia-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+"-trim.in",root+".dat"])
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+"-trim.in",root+".dat"], path_to_amanzi)
 
         u_amanzi_alquimia = [[[] for x in range(len(amanzi_components))] for x in range(len(times))]
         for i, time in enumerate(times):
@@ -247,7 +247,7 @@ if __name__ == "__main__":
         # Amanzi-Alquimia-Crunch
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
         path_to_amanzi = "amanzi-alquimia-crunch-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+"-crunch.in",root+".dbs"])
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+"-crunch.in",root+".dbs"], path_to_amanzi)
 
         u_amanzi_alquimia_crunch = [[[] for x in range(len(amanzi_components))] for x in range(len(times))]
         for i, time in enumerate(times):
@@ -273,7 +273,7 @@ if __name__ == "__main__":
     try:
         input_filename = os.path.join("amanzi-s-1d-ion-exchange-alq.xml")
         path_to_amanziS = "struct_amanzi-output-pflo"
-        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
+        run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
         root_amanziS = "plt00051"
         #compS = "Na+_Aqueous_Concentration"
         #x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
@@ -301,7 +301,7 @@ if __name__ == "__main__":
     try:
         input_filename = os.path.join("amanzi-s-1d-ion-exchange-alq-crunch.xml")
         path_to_amanziS = "struct_amanzi-output-crunch"
-        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
+        run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
         root_amanziS = "plt00051"
         #compS = "Na+_Aqueous_Concentration"
         #x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)

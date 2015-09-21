@@ -1,14 +1,14 @@
-subroutine adv_update(so,sn,ng_s,capo,capn,ng_cap,aofs,ng_a,phi,ng_phi,dt,num_comp,lo,hi)
+subroutine adv_update(Cold,Cnew,ng_C,Sold,Snew,ng_S,aofs,ng_a,phi,ng_phi,dt,num_comp,lo,hi)
 
   use bl_types
   implicit none
 
-  integer        , intent(in   ) :: ng_s,ng_cap,ng_a,ng_phi,num_comp
+  integer        , intent(in   ) :: ng_C,ng_S,ng_a,ng_phi,num_comp
   integer        , intent(in   ) :: lo(2), hi(2)
-  real(kind=dp_t), intent(inout) :: so(lo(1)-ng_s:hi(1)+ng_s,lo(2)-ng_s:hi(2)+ng_s,0:num_comp-1)
-  real(kind=dp_t), intent(inout) :: sn(lo(1)-ng_s:hi(1)+ng_s,lo(2)-ng_s:hi(2)+ng_s,0:num_comp-1)
-  real(kind=dp_t), intent(inout) :: capo(lo(1)-ng_cap:hi(1)+ng_cap,lo(2)-ng_cap:hi(2)+ng_cap)
-  real(kind=dp_t), intent(inout) :: capn(lo(1)-ng_cap:hi(1)+ng_cap,lo(2)-ng_cap:hi(2)+ng_cap)
+  real(kind=dp_t), intent(inout) :: Cold(lo(1)-ng_C:hi(1)+ng_C,lo(2)-ng_C:hi(2)+ng_C,0:num_comp-1)
+  real(kind=dp_t), intent(inout) :: Cnew(lo(1)-ng_C:hi(1)+ng_C,lo(2)-ng_C:hi(2)+ng_C,0:num_comp-1)
+  real(kind=dp_t), intent(inout) :: Sold(lo(1)-ng_S:hi(1)+ng_S,lo(2)-ng_S:hi(2)+ng_S)
+  real(kind=dp_t), intent(inout) :: Snew(lo(1)-ng_S:hi(1)+ng_S,lo(2)-ng_S:hi(2)+ng_S)
   real(kind=dp_t), intent(inout) :: aofs(lo(1)-ng_a:hi(1)+ng_a,lo(2)-ng_a:hi(2)+ng_a,0:num_comp-1)
   real(kind=dp_t), intent(inout) :: phi(lo(1)-ng_phi:hi(1)+ng_phi,lo(2)-ng_phi:hi(2)+ng_phi)
   real(kind=dp_t), intent(inout) :: dt
@@ -18,7 +18,7 @@ subroutine adv_update(so,sn,ng_s,capo,capn,ng_cap,aofs,ng_a,phi,ng_phi,dt,num_co
   do comp=0,num_comp-1
      do j = lo(2),hi(2)
         do i = lo(1),hi(1)           
-           sn(i,j,comp) = (so(i,j,comp)*capo(i,j) - dt*aofs(i,j,comp)/phi(i,j))/capn(i,j)
+           Cnew(i,j,comp) = (Cold(i,j,comp)*Sold(i,j) - dt*aofs(i,j,comp)/phi(i,j))/Snew(i,j)
         end do
      end do
   end do ! loop over components

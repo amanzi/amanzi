@@ -1,4 +1,6 @@
 <amanzi_input type="unstructured" version="2.1.1">
+    <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
+
     <model_description name="SR Test Problem">
       <comments>Confind aquifer transient drawdown (Theis 1935)</comments>
       <model_id>Theis</model_id>
@@ -38,11 +40,13 @@
       <transport state="off" />
       <chemistry engine="none" process_model="none" state="off" />
     </process_kernels>
+
     <execution_controls>
       <verbosity level="high" />
       <execution_control_defaults increase_factor="1.1" init_dt="3.64" method="bdf1" />
       <execution_control end="1.64e5" init_dt="3.64" mode="transient" start="0.0" />
     </execution_controls>
+
     <numerical_controls>
       <unstructured_controls>
         <unstr_linear_solver>
@@ -57,13 +61,15 @@
           <trilinos_ml />
           <block_ilu />
         </unstr_preconditioners>
-        <unstr_preconditioners>
-          <hypre_amg />
-          <trilinos_ml />
-          <block_ilu />
-        </unstr_preconditioners>
+        <unstr_transient_controls>
+          <unstr_initialization>
+            <method>darcy_solver</method>
+            <linear_solver>aztecoo</linear_solver>
+          </unstr_initialization>
+        </unstr_transient_controls>
       </unstructured_controls>
     </numerical_controls>
+
     <mesh framework="mstk">
       <comments>Three-dimensional box 100m x 50m x 50m</comments>
       <dimension>3</dimension>
@@ -72,6 +78,7 @@
         <box high_coordinates="1200.0,1200.0,10.0" low_coordinates="-1200.0,-1200.0,0.0" />
       </generate>
     </mesh>
+
     <regions>
       <region name="Entire Domain">
         <comments>One region covering the entire domain</comments>
@@ -88,10 +95,11 @@
       <plane location="1200.0,-1200.0,0.0" name="yz2" normal="1.0,0.0,0.0" />
       <plane location="-1200.0,-1200.0,0.0" name="xz1" normal="0.0,-1.0,0.0" />
       <plane location="-1200.0,1200.0,0.0" name="xz2" normal="0.0,1.0,0.0" />
-      <point coordinate="(-33.0,0.0,5.0)" name="Obs_r1" />
-      <point coordinate="(-55.0,0.0,5.0)" name="Obs_r2" />
-      <point coordinate="(-161.0,0.0,5.0)" name="Obs_r3" />
+      <point coordinate="-33.0,0.0,5.0" name="Obs_r1" />
+      <point coordinate="-55.0,0.0,5.0" name="Obs_r2" />
+      <point coordinate="-161.0,0.0,5.0" name="Obs_r3" />
     </regions>
+
     <phases>
       <liquid_phase name="water">
         <eos>false</eos>
@@ -99,17 +107,19 @@
         <density>1000.0</density>
       </liquid_phase>
     </phases>
+
     <materials>
       <material name="Soil">
         <comments>Homogeneous material properties throughout the entire domain</comments>
         <assigned_regions>Entire Domain</assigned_regions>
         <mechanical_properties>
-          <porosity value="0.25" />
+          <porosity value="0.2" />
           <specific_storage value="7.5e-5" />
         </mechanical_properties>
         <permeability x="2.35E-11" y="2.35E-11" z="2.35E-11" />
       </material>
     </materials>
+
     <initial_conditions>
       <initial_condition name="Initial Condition">
         <comments>Hydrostatic pressure with a water-table height of 20.0m</comments>
@@ -121,6 +131,7 @@
         </liquid_phase>
       </initial_condition>
     </initial_conditions>
+
     <boundary_conditions>
       <boundary_condition name="Far Field Head">
         <comments>Far field static head of the confined aquifer</comments>
@@ -132,6 +143,18 @@
         </liquid_phase>
       </boundary_condition>
     </boundary_conditions>
+
+    <sources>
+      <source name="Pumping Well">
+        <assigned_regions>Well</assigned_regions>
+        <liquid_phase name = "water">
+          <liquid_component>
+            <volume_weighted value="-4.0" function="constant" start="0.0"/>
+          </liquid_component>
+        </liquid_phase>
+      </source>
+    </sources>
+
     <output>
       <observations>
         <filename>observation.out</filename>
@@ -147,7 +170,7 @@
             <time_macros>Observation Times</time_macros>
           </aqueous_pressure>
           <aqueous_pressure>
-            <assigned_regions>Obs_r2</assigned_regions>
+            <assigned_regions>Obs_r3</assigned_regions>
             <functional>point</functional>
             <time_macros>Observation Times</time_macros>
           </aqueous_pressure>

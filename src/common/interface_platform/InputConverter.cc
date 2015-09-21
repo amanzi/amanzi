@@ -713,6 +713,8 @@ double InputConverter::TimeCharToValue_(const char* time_value)
   if (tmp2 != NULL) {
     if (strcmp(tmp2, "y") == 0) { 
       time *= 365.25 * 24.0 * 3600.0;
+    } else if (strcmp(tmp2, "m") == 0) {
+      time *= 365.25 * 2.0 * 3600.0;
     } else if (strcmp(tmp2, "d") == 0) {
       time *= 24.0 * 3600.0;
     } else if (strcmp(tmp2, "h") == 0) {

@@ -35,7 +35,9 @@ class InputConverterU : public InputConverter {
       vo_(NULL),
       flow_single_phase_(false),
       compressibility_(false),
+      mesh_rectangular_(false),
       transport_permeability_(false),
+      restart_(false),
       init_filename_("") {};
   ~InputConverterU() { if (vo_ != NULL) delete vo_; }
 
@@ -46,6 +48,7 @@ class InputConverterU : public InputConverter {
  private:
   void VerifyXMLStructure_();
   void ParseSolutes_();
+  void ParseModelDescription_();
 
   Teuchos::ParameterList TranslateVerbosity_();
   Teuchos::ParameterList TranslateMisc_();
@@ -65,16 +68,17 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateTimePeriodControls_();
   Teuchos::ParameterList TranslatePKs_(const Teuchos::ParameterList& cd_list);
   Teuchos::ParameterList TranslateDiffusionOperator_(
-      const std::string& disc_method, const std::string& pc_method,
-      const std::string& nonlinear_solver, const std::string& extensions);
+      const std::string& disc_methods, const std::string& pc_method,
+      const std::string& nonlinear_solver, const std::string& extensions, bool gravity);
   Teuchos::ParameterList TranslateTimeIntegrator_(
       const std::string& err_options, const std::string& nonlinear_solver,
-      bool modify_correction, const std::string& unstr_colntrols);
+      bool modify_correction, const std::string& unstr_controls,
+      double dt_cut_default, double dt_inc_default);
   Teuchos::ParameterList TranslateInitialization_(
       const std::string& unstr_controls);
 
   // -- flow
-  Teuchos::ParameterList TranslateFlow_(int regime = FLOW_BOTH_REGIMES);
+  Teuchos::ParameterList TranslateFlow_(const std::string& mode);
   Teuchos::ParameterList TranslateWRM_();
   Teuchos::ParameterList TranslatePOM_();
   Teuchos::ParameterList TranslateFlowMSM_();
@@ -83,6 +87,7 @@ class InputConverterU : public InputConverter {
 
   // -- transport
   Teuchos::ParameterList TranslateTransport_();
+  Teuchos::ParameterList TranslateTransportMSM_();
   Teuchos::ParameterList TranslateTransportBCs_();
   void TranslateTransportBCsGroup_(
       std::string& bcname, std::vector<std::string>& regions,
@@ -111,11 +116,15 @@ class InputConverterU : public InputConverter {
  private:
   int dim_;
   int rank_, num_proc_;
+  std::vector<std::string> coords_;
+
   Tree tree_;
   Tree phases_;
 
+  // global data
   std::map<std::string, std::string> pk_model_;
   std::map<std::string, bool> pk_master_;
+  std::map<std::string, double> dt_cut_, dt_inc_;
 
   // global flow constants
   std::string flow_model_;  // global value
@@ -123,16 +132,21 @@ class InputConverterU : public InputConverter {
   bool compressibility_;
   double rho_;
 
-  bool transport_permeability_;
+  // global mesh data
+  bool mesh_rectangular_;
 
   // global transport and chemistry constants
+  bool transport_permeability_;
   std::vector<std::string> comp_names_all_;
 
   // global state parameters
-  // -- initialization filename, different form restart
+  // -- initialization filename, different from restart
+  bool restart_;
   std::string init_filename_;
 
   // for analysis
+  std::vector<std::string> transport_diagnostics_;
+
   std::vector<std::string> vv_bc_regions_;
   std::vector<std::string> vv_src_regions_;
   std::vector<std::string> vv_obs_regions_;

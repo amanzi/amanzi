@@ -106,7 +106,7 @@ def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
 if __name__ == "__main__":
 
     import os
-    import run_amanzi_chem
+    import run_amanzi_standard
     import numpy as np
 
     # root name for problem
@@ -157,7 +157,7 @@ if __name__ == "__main__":
         # Amanzi native chemistry
         input_filename = os.path.join("amanzi-u-1d-"+root+".xml") #+"-alq-FO.xml")
         path_to_amanzi = "amanzi-native-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=[root+".bgd"])
+        run_amanzi_standard.run_amanzi(input_filename, 1, [root+".bgd"], path_to_amanzi)
         x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
         native = True
      
@@ -171,7 +171,7 @@ if __name__ == "__main__":
         # Amanzi-Alquimia
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq.xml")
         path_to_amanzi = "amanzi-alquimia-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+"-trim.in",root+".dat"])
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+"-trim.in",root+".dat"], path_to_amanzi)
         x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
 
         alquim = True
@@ -185,7 +185,9 @@ if __name__ == "__main__":
         # Amanzi-Alquimia-Crunch
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
         path_to_amanzi = "amanzi-alquimia-crunch-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+"-crunch.in",root+".dbs",root+".dbsx"])
+        run_amanzi_standard.run_amanzi(input_filename, 1, 
+                                       ["1d-"+root+"-crunch.in",root+".dbs","aqueous"+".dbs"],
+                                       path_to_amanzi)
         x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
 
         alquim_crunch = True
@@ -200,7 +202,7 @@ if __name__ == "__main__":
         # import pdb; pdb.set_trace()
         input_filename = os.path.join("amanzi-s-1d-tritium-alq.xml")
         path_to_amanziS = "struct_amanzi-output-pflo"
-        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
+        run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
         root_amanziS = "plt00100"
         compS = "Tritium_Aqueous_Concentration"
         x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
@@ -213,7 +215,7 @@ if __name__ == "__main__":
         # import pdb; pdb.set_trace()
         input_filename = os.path.join("amanzi-s-1d-tritium-alq-crunch.xml")
         path_to_amanziS = "struct_amanzi-output-crunch"
-        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
+        run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
         root_amanziS = "plt00100"
         compS = "Tritium_Aqueous_Concentration"
         x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)

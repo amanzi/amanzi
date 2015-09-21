@@ -76,8 +76,12 @@ clean:
 	echo "Removing the generated ./index.rst"   ;\
 	rm -f ./index.rst
 
-html: 
+run_tests: 
 	python collect.py $(AMANZI_SECTION_OPTIONS) 
+	@echo "TESTs finished."
+	@echo
+
+html:   run_tests
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."

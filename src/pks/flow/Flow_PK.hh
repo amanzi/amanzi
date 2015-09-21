@@ -168,8 +168,7 @@ class Flow_PK : public FnTimeIntegratorPK {
 
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
   Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval_;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval_;
-  Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> porosity_eval_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval_, pressure_matrix_eval_;
 
  protected:
   VerboseObject* vo_;

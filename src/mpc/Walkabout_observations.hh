@@ -23,12 +23,12 @@ public:
   Walkabout_observations(Teuchos::ParameterList& plist, Epetra_MpiComm *comm): Checkpoint (plist, comm){};
   Walkabout_observations() : Checkpoint() {};
 
-  void WriteWalkabout(Teuchos::RCP<State> S);
-  void CalculateDarcyVelocity(Teuchos::RCP<State> S,
+  void WriteWalkabout(Teuchos::RCP<State>& S);
+  void CalculateDarcyVelocity(Teuchos::RCP<State>& S,
 			      std::vector<AmanziGeometry::Point>& xyz, 
 			      std::vector<AmanziGeometry::Point>& velocity);
 
-  void CalculatePoreVelocity(Teuchos::RCP<State> S,
+  void CalculatePoreVelocity(Teuchos::RCP<State>& S,
 			     std::vector<AmanziGeometry::Point>& xyz, 
 			     std::vector<AmanziGeometry::Point>& velocity,
 			     std::vector<double>& porosity, std::vector<double>& saturation,

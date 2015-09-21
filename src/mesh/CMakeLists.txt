@@ -73,12 +73,6 @@ endif(ENABLE_MSTK_Mesh)
 
 add_subdirectory(mesh_factory)
 
-# special derived class for column mesh - have to put it after
-# mesh_factory because the column mesh test uses the mesh_factory
-# functionality, not the class itself
-
-add_subdirectory(column_mesh)
-
 
 
 if (BUILD_TESTS)

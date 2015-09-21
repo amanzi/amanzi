@@ -100,12 +100,12 @@ Comparison of  Analytic Solution and Amanzi Results
 
 
 The comparison shows that the results from the Amanzi model are nearly identical to those from the analytical solution.
-Detailed comparison can be found in [Lu2014]_.
+Detailed comparison can be found in [Lu2014report]_.
 
 References
 ----------
 
-.. [Lu2014] Lu, Z., D. Harp, and K. Birdsell, Comparison of the Amanzi Model against Analytical Solutions and the FEHM Model, Tech. Report LA-UR-14-20898, Los Alamos National Laboratory, Los Alamos, 2014.
+.. [Lu2014report] Lu, Z., D. Harp, and K. Birdsell, Comparison of the Amanzi Model against Analytical Solutions and the FEHM Model, Tech. Report LA-UR-14-20898, Los Alamos National Laboratory, Los Alamos, 2014.
 
 
 About

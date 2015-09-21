@@ -76,8 +76,8 @@ set(state_inc_files
   rank_evaluator_reg.hh
   StateDefs.hh
   State.hh
-  UnstructuredObservations.hh
   visualization.hh
+  UnstructuredObservations.hh
   Debugger.hh)
 
 set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
@@ -86,7 +86,6 @@ add_amanzi_library(state
                           checkpoint.cc
                           visualization.cc
                           Observable.cc
-                          UnstructuredObservations.cc
                           chemistry_data.cc
                           cell_volume_evaluator.cc
                           Field.cc
@@ -104,6 +103,7 @@ add_amanzi_library(state
                           independent_variable_field_evaluator_fromfunction.cc
                           independent_variable_field_evaluator_fromfile.cc
                           deforming_cell_volume_evaluator.cc
+                          UnstructuredObservations.cc
                           Debugger.cc
                    HEADERS ${state_inc_files}
                    LINK_LIBS atk functions output mesh ${state_tpl_libs})

@@ -103,6 +103,15 @@ Teuchos::ParameterList translate(const std::string& xmlfilename, std::string& sp
   spec = "";
   if (strcmp(tmp, "amanzi_input") == 0) {
     spec = "v2";
+    // check that input is for Amanzi-U
+    char* type = XMLString::transcode(root->getAttribute(XMLString::transcode("type")));
+    if (strcmp(type, "unstructured") == 0) {
+      Teuchos::ParameterList& echo_list = new_list.sublist("Echo Translated Input");
+      echo_list.set<std::string>("Format", "unstructured_native");
+      delete errorHandler;
+      XMLPlatformUtils::Terminate();
+      return new_list;
+    }
   } else {
     if (strcmp(tmp, "ParameterList") == 0) spec = "v1";
     delete errorHandler;
@@ -134,15 +143,6 @@ Teuchos::ParameterList translate(const std::string& xmlfilename, std::string& sp
 
   new_list.sublist("General Description") = get_model_description(doc, def_list);
   new_list.sublist("Echo Translated Input") = get_echo_translated(doc, def_list);
-  // check that we have to translate to spec 1.x
-  const Teuchos::ParameterList& echo_list = new_list.sublist("Echo Translated Input");
-  if (echo_list.isParameter("Format")) {
-    if (echo_list.get<std::string>("Format") == "unstructured_native") {
-      delete errorHandler;
-      XMLPlatformUtils::Terminate();
-      return new_list;
-    }
-  }
 
   new_list.sublist("Mesh") = get_Mesh(doc, def_list);
   new_list.sublist("Domain").set<int>("Spatial Dimension",dimension_);

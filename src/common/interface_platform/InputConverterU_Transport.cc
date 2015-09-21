@@ -235,6 +235,26 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
     diff_list.set<Teuchos::Array<double> >("air-water partitioning coefficient", henry_coef);
   }
 
+  // add dispersion/diffusion operator
+  node = GetUniqueElementByTagsString_(
+      "unstructured_controls, unstr_transport_controls, dispersion_discretization_method", flag);
+  std::string disc_methods;
+  if (flag)
+    disc_methods = mm.transcode(node->getTextContent());
+  else
+    disc_methods = (mesh_rectangular_) ? "mfd-monotone_for_hex" : "mfd-optimized_for_monotonicity";
+  disc_methods.append(", mfd-two_point_flux_approximation");
+
+  out_list.sublist("operators") = TranslateDiffusionOperator_(
+      disc_methods, "diffusion_operator", "", "", false);
+
+  // multiscale model list
+  out_list.sublist("multiscale models") = TranslateTransportMSM_();
+  if (out_list.sublist("multiscale models").numParams() > 0) {
+    out_list.sublist("physical models and assumptions")
+        .set<std::string>("multiscale model", "dual porosity");
+  }
+
   // create the sources and boundary conditions lists
   out_list.sublist("boundary conditions") = TranslateTransportBCs_();
   out_list.sublist("source terms") = TranslateTransportSources_();
@@ -248,6 +268,53 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       .set<bool>("permeability field is required", transport_permeability_);
 
   out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
+  return out_list;
+}
+
+
+/* ******************************************************************
+* Create list of multiscale models.
+****************************************************************** */
+Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
+{
+  Teuchos::ParameterList out_list, empty_list;
+
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+    *vo_->os() << "Translating multiscale models" << std::endl;
+
+  MemoryManager mm;
+  DOMNodeList *node_list, *children;
+  DOMNode* node;
+  DOMElement* element;
+
+  bool flag;
+  std::string model, rel_perm;
+
+  node_list = doc_->getElementsByTagName(mm.transcode("materials"));
+  element = static_cast<DOMElement*>(node_list->item(0));
+  children = element->getElementsByTagName(mm.transcode("material"));
+
+  for (int i = 0; i < children->getLength(); ++i) {
+    DOMNode* inode = children->item(i); 
+
+    node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
+    std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
+
+    node = GetUniqueElementByTagsString_(inode, "multiscale_structure, solute_transfer_coefficient", flag);
+    if (!flag) return empty_list;
+    double omega = std::strtod(mm.transcode(node->getTextContent()), NULL);
+    
+    std::stringstream ss;
+    ss << "MSM " << i;
+
+    Teuchos::ParameterList& msm_list = out_list.sublist(ss.str());
+
+    msm_list.set<std::string>("multiscale model", "dual porosity")
+        .set<double>("solute transfer coefficient", omega)
+        .set<Teuchos::Array<std::string> >("regions", regions);
+  }
+
   return out_list;
 }
 
@@ -306,8 +373,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
       TranslateTransportBCsGroup_(bcname, regions, solutes, out_list);
     }
 
-    // -- geochemistry BCs 
-    node = GetUniqueElementByTagsString_(phase, "geochemistry", flag);
+    // geochemical BCs 
+    node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry", flag);
     if (flag) {
       std::string bctype;
       std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
@@ -328,14 +395,23 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
         values.push_back(it->second);
         forms.push_back(tp_forms[it->first]);
       }
-     
+
+      if (times.size() == 1) {
+        times.push_back(times[0] + 1e+20);
+        values.push_back(values[0]);
+      } else {
+        forms.pop_back();
+      }
+
       // save in the XML files  
       Teuchos::ParameterList& tbc_list = out_list.sublist("geochemical conditions");
-      Teuchos::ParameterList& bc = tbc_list.sublist(bcname);
-      bc.set<Teuchos::Array<std::string> >("regions", regions);
-      bc.set<Teuchos::Array<double> >("times", times);
-      bc.set<Teuchos::Array<std::string> >("geochemical conditions", values);
-      bc.set<Teuchos::Array<std::string> >("time functions", forms);
+      for (int i = 0; i < phases_["water"].size(); ++i) {
+        Teuchos::ParameterList& bc = tbc_list.sublist(phases_["water"][i]).sublist(bcname);
+        bc.set<Teuchos::Array<std::string> >("regions", regions);
+        bc.set<Teuchos::Array<double> >("times", times);
+        bc.set<Teuchos::Array<std::string> >("geochemical conditions", values);
+        bc.set<Teuchos::Array<std::string> >("time functions", forms);
+      }
     }
   }
 
@@ -488,6 +564,8 @@ void InputConverterU::TranslateTransportSourcesGroup_(
       weight = "volume";
     } else if (strcmp(text, "perm_weighted") == 0) {
       weight = "permeability";
+    } else if (strcmp(text, "aqueous_conc") == 0) {
+      weight = "none";
     } else if (strcmp(text, "flow_weighted_conc") == 0) {
       element = static_cast<DOMElement*>(phase_l);
       node_list = element->getElementsByTagName(mm.transcode("liquid_component")); 

@@ -6,9 +6,6 @@
 #include <Utility.H>
 #include <WritePlotfile.H>
 
-static int crse_init_factor = 32;
-static int max_grid_fine_gen = 32;
-
 static std::string MaterialPlotFileVersion = "MaterialPlotFile-V1.0";
 
 Property*
@@ -69,37 +66,63 @@ EnsureFolderExists(const std::string& full_path)
   }
 }
 
+static void
+memUsage(const std::string& note)
+{
+  Real min_alloc_fab_gb = BoxLib::TotalBytesAllocatedInFabs()/(1024.0*1024.0);
+  Real max_alloc_fab_gb = min_alloc_fab_gb;
+  Real min_fab_gb = BoxLib::TotalBytesAllocatedInFabsHWM()/(1024.0*1024.0);
+  Real max_fab_gb = min_fab_gb;
+
+  ParallelDescriptor::ReduceRealMin(min_fab_gb,ParallelDescriptor::IOProcessorNumber());
+  ParallelDescriptor::ReduceRealMax(max_fab_gb,ParallelDescriptor::IOProcessorNumber());
+  ParallelDescriptor::ReduceRealMin(min_alloc_fab_gb,ParallelDescriptor::IOProcessorNumber());
+  ParallelDescriptor::ReduceRealMax(max_alloc_fab_gb,ParallelDescriptor::IOProcessorNumber());
+  if (ParallelDescriptor::IOProcessor()) {
+    std::cout << "\n" << note << " FAB GB spread across MPI nodes: ["
+	      << min_fab_gb
+	      << " ... "
+	      << max_fab_gb
+	      << "  alloc: "
+	      << min_alloc_fab_gb
+	      << " ... "
+	      << max_alloc_fab_gb
+	      << "]\n";
+  }
+}
+
 void
 GSLibProperty::BuildGSLibFile(Real                   avg,
                               const std::string&     gslib_param_file,
                               const std::string&     gslib_data_file,
                               const Array<Geometry>& geom_array,
                               const Array<IntVect>&  ref_ratio,
-                              int                    num_grow,
+                              int                    num_grow_fine_gen,
                               int                    max_grid_size_fine_gen,
                               Property::CoarsenRule  crule)
 {
+  /*
+    Build a property database able to support copy-on-intersect operations to fill 1 grow
+    cell on the coarsest level using coarsenend fine generated data.
+
+    A multi-level multifab tower is created, and at the finest level filled by calls to 
+    gslib routines.  The resulting data is coarsened to all AMR levels, and then written as
+    a plotfile.
+   */
   BL_ASSERT(num_comps > 0);
   BL_ASSERT(varnames.size() == num_comps);
 
   int nLev = geom_array.size();
   int finest_level = nLev - 1;
   const Geometry& geom = geom_array[finest_level];
-  Box stat_box = Box(geom.Domain());
 
   if(!BoxLib::FileExists(gslib_param_file)) {
     const std::string& str = "GSLib parameter file: \"" + gslib_param_file + "\" does not exist";
     BoxLib::Abort(str.c_str());
   }
 
-  // Original interface supports layered structure, we disable that for now
   Array<Real> avgVals(1,avg);
-  Array<int> n_cell(BL_SPACEDIM);
   const Geometry& geom0 = geom_array[0];
-  for (int d=0; d<BL_SPACEDIM; ++d) {
-    n_cell[d] = geom0.Domain().length(d);
-  }
-
   Real time=0; // dummy, for now
 
   // Find cummulative refinement ratio
@@ -107,55 +130,45 @@ GSLibProperty::BuildGSLibFile(Real                   avg,
   for (int i = 1; i<nLev; i++) {
     twoexp *= ref_ratio[i-1][0];  // FIXME: Assumes uniform refinement
   }
+  int num_grow_coarsest = 1;
+  int ng_cum = num_grow_coarsest * twoexp; // num fine grow cells needed to fill num_grow coarse cells
+  Box gstat_box(geom.Domain()); gstat_box.grow(ng_cum); // Faked domain over which to build property
 
-  PArray<MultiFab> stat(nLev,PArrayManage);
-  BoxArray stat_ba(stat_box);
+  BoxArray stat_ba(gstat_box);
   stat_ba.maxSize(max_grid_size_fine_gen);
-  int ng_cum = num_grow * twoexp;
-  stat.set(finest_level, new MultiFab(stat_ba,num_comps,ng_cum));
+  PArray<MultiFab> stat(nLev,PArrayManage);
+  stat.set(finest_level, new MultiFab(stat_ba,num_comps,0));
 
-  const Array<Real> prob_lo(geom0.ProbLo(),BL_SPACEDIM);
-  const Array<Real> prob_hi(geom0.ProbHi(),BL_SPACEDIM);
+  Array<Real> prob_lo(BL_SPACEDIM);
+  Array<Real> prob_hi(BL_SPACEDIM);
 
-  GSLibInt::rdpGaussianSim(avgVals,n_cell,prob_lo,prob_hi,twoexp,stat[finest_level],
-                           crse_init_factor,max_grid_size_fine_gen,ng_cum,gslib_param_file);
-
-  for (int d=1; d<num_comps; ++d) {
-    MultiFab::Copy(stat[finest_level],stat[finest_level],0,d,1,stat[finest_level].nGrow());
+  for (int d=0; d<BL_SPACEDIM; ++d) {
+    prob_lo[d] = geom0.ProbLo()[d] - num_grow_coarsest * geom0.CellSize(d);
+    prob_hi[d] = geom0.ProbHi()[d] + num_grow_coarsest * geom0.CellSize(d);
   }
 
+  GSLibInt::rdpGaussianSim(avgVals,gstat_box,prob_lo,prob_hi,stat[finest_level],
+                           max_grid_size_fine_gen,num_grow_fine_gen,gslib_param_file);
+
   for (int lev=finest_level-1; lev>=0; --lev) {
+
     int ltwoexp = 1;
-    for (int i = 1; i<lev; i++) {
-      ltwoexp *= ref_ratio[i-1][0];  // FIXME: Assumes uniform refinement
+    for (int i = 1; i<=lev; i++) {
+      ltwoexp *= ref_ratio[i-1][0];  
     }
-
-    const Box& domain = geom_array[lev].Domain();
+    Box domain(geom_array[lev].Domain()); domain.grow(num_grow_coarsest * ltwoexp);
     BoxArray ba(domain);
-    ba.maxSize(max_grid_size_fine_gen / ref_ratio[lev][0]); // FIXME: Assumes uniform refinement
-    stat.set(lev, new MultiFab(ba,num_comps,num_grow*ltwoexp));
+    ba.maxSize(max_grid_size_fine_gen);
+    stat.set(lev, new MultiFab(ba,num_comps,0));
 
-    BoxArray baf = BoxArray(ba).refine(ref_ratio[lev]);
-    MultiFab fine(baf,num_comps,stat[lev].nGrow()*ref_ratio[lev][0]);// FIXME: Assumes uniform refinement
-    BoxArray bafg = BoxArray(baf).grow(fine.nGrow());
-    MultiFab fineg(bafg,num_comps,0);
-    fineg.copy(stat[lev+1]); // parallel copy
-    for (MFIter mfi(fine); mfi.isValid(); ++mfi) {
-      fine[mfi].copy(fineg[mfi]);
-    }
-    fineg.clear();
-
-    MatFiller::FillCellsOutsideDomain(time,lev+1,fine,0,num_comps,geom_array[lev+1]);
-
-    for (MFIter mfi(fine); mfi.isValid(); ++mfi) {
-      const FArrayBox& finefab = fine[mfi];
+    BoxArray baf = BoxArray(ba).refine(ref_ratio[lev][0]); // FIXME: Assumes uniform refinement
+    MultiFab tmf_fine(baf,num_comps,0,Fab_allocate);
+    tmf_fine.copy(stat[lev+1],0,0,num_comps); // parallel copy
+    for (MFIter mfi(tmf_fine); mfi.isValid(); ++mfi) {
+      const FArrayBox& finefab = tmf_fine[mfi];
       FArrayBox& crsefab = stat[lev][mfi];
       const Box& cbox = crsefab.box();
-      if ( !(finefab.box().contains(Box(cbox).refine(ref_ratio[lev])) ) ) {
-        std::cout << "c,f: " << cbox << " " << finefab.box() << std::endl;
-        BoxLib::Abort();
-      }
-      MatFiller::CoarsenData(fine[mfi],0,stat[lev][mfi],cbox,0,num_comps,ref_ratio[lev],crule);
+      MatFiller::CoarsenData(finefab,0,stat[lev][mfi],cbox,0,num_comps,ref_ratio[lev],crule);
     }
   }
 
@@ -215,7 +228,7 @@ GSLibProperty::BuildDataFile(const Array<Geometry>& geom_array,
     
     BuildGSLibFile(avg, param_file, data_file,
 		   geom_array, ref_ratio, num_grow,
-		   max_grid_fine_gen, crule);
+		   max_grid_size_fine_gen, crule);
 
     if (ParallelDescriptor::IOProcessor()) {
       std::cout << "\n*************** NOTE ***********************************\n"

@@ -255,6 +255,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
   }
 
   // get output->observations node - this node must exist ONCE
+  int nobs_liquid(0), nobs_gas(0);
   node = GetUniqueElementByTagsString_("output, observations", flag);
 
   if (flag && node->getNodeType() == DOMNode::ELEMENT_NODE) {
@@ -272,22 +273,13 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
 
       if (strcmp(tagname, "filename") == 0) {
         obsPL.set<std::string>("observation output filename", TrimString_(text));
+
       } else if (strcmp(tagname, "liquid_phase") == 0) {
-        attr_map = inode->getAttributes();
-        node = attr_map->getNamedItem(mm.transcode("name"));
-        std::string phaseName;
+        node = inode->getAttributes()->getNamedItem(mm.transcode("name"));
+        if (!node)
+            ThrowErrorMissattr_("observations", "attribute", "name", "liquid_phase");
 
-        if (node) {
-          char* text_content = mm.transcode(node->getNodeValue());
-          phaseName = std::string(text_content);
-          if (phaseName=="water") {
-            phaseName = "Water";
-          }
-        } else {
-          ThrowErrorMissattr_("observations", "attribute", "name", "liquid_phase");
-        }
-
-        // loop over observations
+        nobs_liquid = 0;
         DOMNodeList* children = inode->getChildNodes();
         for (int j = 0; j < children->getLength(); j++) {
           Teuchos::ParameterList obPL;
@@ -296,36 +288,36 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           char* obs_type = mm.transcode(jnode->getNodeName());
 
           if (strcmp(obs_type, "aqueous_pressure") == 0) {
-            obPL.set<std::string>("variable", "Aqueous pressure");
-          } else if (strcmp(obs_type, "integrated_mass") == 0) {
-            // TODO: can't find matching version
+            obPL.set<std::string>("variable", "aqueous pressure");
           } else if (strcmp(obs_type, "volumetric_water_content") == 0) {
-            obPL.set<std::string>("variable", "Volumetric water content");
+            obPL.set<std::string>("variable", "volumetric water content");
           } else if (strcmp(obs_type, "gravimetric_water_content") == 0) {
             obPL.set<std::string>("variable", "Gravimetric water content");
           } else if (strcmp(obs_type, "x_aqueous_volumetric_flux") == 0) {
-            obPL.set<std::string>("variable", "X-Aqueous volumetric flux");
+            obPL.set<std::string>("variable", "x-aqueous volumetric flux");
           } else if (strcmp(obs_type, "y_aqueous_volumetric_flux") == 0) {
-            obPL.set<std::string>("variable", "Y-Aqueous volumetric flux");
+            obPL.set<std::string>("variable", "y-aqueous volumetric flux");
           } else if (strcmp(obs_type, "z_aqueous_volumetric_flux") == 0) {
-            obPL.set<std::string>("variable", "Z-Aqueous volumetric flux");
+            obPL.set<std::string>("variable", "z-aqueous volumetric flux");
           } else if (strcmp(obs_type, "material_id") == 0) {
-            obPL.set<std::string>("variable", "MaterialID");
+            obPL.set<std::string>("variable", "material id");
           } else if (strcmp(obs_type, "hydraulic_head") == 0) {
-            obPL.set<std::string>("variable", "Hydraulic Head");
+            obPL.set<std::string>("variable", "hydraulic head");
           } else if (strcmp(obs_type, "aqueous_mass_flow_rate") == 0) {
-            obPL.set<std::string>("variable", "Aqueous mass flow rate");
+            obPL.set<std::string>("variable", "aqueous mass flow rate");
           } else if (strcmp(obs_type, "aqueous_volumetric_flow_rate") == 0) {
-            obPL.set<std::string>("variable", "Aqueous volumetric flow rate");
+            obPL.set<std::string>("variable", "aqueous volumetric flow rate");
           } else if (strcmp(obs_type, "aqueous_saturation") == 0) {
-            obPL.set<std::string>("variable", "Aqueous saturation");
+            obPL.set<std::string>("variable", "aqueous saturation");
+          } else if (strcmp(obs_type, "ph") == 0) {
+            obPL.set<std::string>("variable", "pH");
           } else if (strcmp(obs_type, "aqueous_conc") == 0) {
             std::string solute_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "solute");
             std::stringstream name;
-            name<< solute_name << " Aqueous concentration";
+            name << solute_name << " Aqueous concentration";
             obPL.set<std::string>("variable", name.str());
           } else if (strcmp(obs_type, "drawdown") == 0) {
-            obPL.set<std::string>("variable", "Drawdown");
+            obPL.set<std::string>("variable", "drawdown");
           } else if (strcmp(obs_type, "solute_volumetric_flow_rate") == 0) {
             std::string solute_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "solute");
             std::stringstream name;
@@ -353,7 +345,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
                 }
               // Keeping singular macro around to help users. This will go away
               } else if (strcmp(elem, "time_macros") == 0 ||
-                       strcmp(elem, "time_macro") == 0) {
+                         strcmp(elem, "time_macro") == 0) {
                 ProcessMacros_("times", value, tmPL, obPL);
               } else if (strcmp(elem, "cycle_macros") == 0 ||
                          strcmp(elem, "cycle_macro") == 0) {
@@ -362,16 +354,71 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             }
           }
           std::stringstream list_name;
-          list_name << "obs " << j + 1;
+          list_name << "obl " << ++nobs_liquid;
           obsPL.sublist(list_name.str()) = obPL;
         }
 
-        out_list.sublist("Observation Data") = obsPL;
+      } else if (strcmp(tagname, "gas_phase") == 0) {
+        node = inode->getAttributes()->getNamedItem(mm.transcode("name"));
+        if (!node)
+            ThrowErrorMissattr_("observations", "attribute", "name", "gas_phase");
 
-        if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-          *vo_->os() << "Found " << children->getLength() << " observations" << std::endl;
+        nobs_gas = 0;
+        DOMNodeList* children = inode->getChildNodes();
+        for (int j = 0; j < children->getLength(); j++) {
+          Teuchos::ParameterList obPL;
+          DOMNode* jnode = children->item(j);
+          if (jnode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+          char* obs_type = mm.transcode(jnode->getNodeName());
+
+          if (strcmp(obs_type, "gaseous_conc") == 0) {
+            std::string solute_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "solute");
+            std::stringstream name;
+            name << solute_name << " gaseous concentration";
+            obPL.set<std::string>("variable", name.str());
+          }
+
+          DOMNodeList* kids = jnode->getChildNodes();
+          for (int k = 0; k < kids->getLength(); k++) {
+            DOMNode* knode = kids->item(k);
+            if (DOMNode::ELEMENT_NODE == knode->getNodeType()) {
+              char* elem = mm.transcode(knode->getNodeName());
+              char* value = mm.transcode(knode->getTextContent());
+
+              if (strcmp(elem, "assigned_regions") == 0) {
+                obPL.set<std::string>("region", TrimString_(value));
+                vv_obs_regions_.push_back(TrimString_(value));
+              } else if (strcmp(elem, "functional") == 0) {
+                if (strcmp(value, "point") == 0) {
+                  obPL.set<std::string>("functional", "Observation Data: Point");
+                } else if (strcmp(value, "integral") == 0) {
+                  obPL.set<std::string>("functional", "Observation Data: Integral");
+                } else if (strcmp(value, "mean") == 0) {
+                  obPL.set<std::string>("functional", "Observation Data: Mean");
+                }
+              // Keeping singular macro around to help users. This will go away
+              } else if (strcmp(elem, "time_macros") == 0 ||
+                         strcmp(elem, "time_macro") == 0) {
+                ProcessMacros_("times", value, tmPL, obPL);
+              } else if (strcmp(elem, "cycle_macros") == 0 ||
+                         strcmp(elem, "cycle_macro") == 0) {
+                ProcessMacros_("cycles", value, cmPL, obPL);
+              }
+            }
+          }
+          std::stringstream list_name;
+          list_name << "obg " << ++nobs_gas;
+          obsPL.sublist(list_name.str()) = obPL;
+        }
       }
     }
+
+    out_list.sublist("Observation Data") = obsPL;
+  }
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    *vo_->os() << "Found " << nobs_liquid << " liquid observations" << std::endl;
+    *vo_->os() << "Found " << nobs_gas << " gas observations" << std::endl;
   }
 
   return out_list;

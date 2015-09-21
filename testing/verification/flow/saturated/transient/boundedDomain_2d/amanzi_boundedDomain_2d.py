@@ -1,7 +1,4 @@
 import sys
-#sys.path.append('.')
-sys.path.append('../../../../../../tools/amanzi_xml')
-sys.path.append('../../../../../../tools/prettytable')
 import matplotlib.pyplot as plt
 import numpy
 import math
@@ -12,21 +9,18 @@ import prettytable
 
 # load the data from output file, which is in amanzi-output
 def load_amanzi_obs():
-#    output_file=Obs_xml.getObservationFilename()
-    output_file="observations.out"
-    obs_data = ObsDATA("amanzi-output/"+output_file)
-    obs_data.getObservationData()   # get all data
-
-
+    # output_file=obs_xml.getObservationFilename()
+    output_file = "observations.out"
+    obs_data = ObsDATA("amanzi-output/" + output_file)
+    obs_data.getObservationData()
     return obs_data
 
-# load data from analytic solution
 def load_ana_solution():
+    # load data from analytic solution
     ana_data =numpy.genfromtxt('analytic/test_h_tr.dat')
     return ana_data
 
 def plottest(axes1, obstimes, obsdata, ana_data):
-
     axes1.set_ylabel('Drawdown [m]')
     axes1.set_xlabel('Time after pumping [days]')
     axes1.set_title('Drawdown at Observation Well with Distance r1  = 24m and r2 = 100m ')
@@ -47,13 +41,13 @@ def plottest(axes1, obstimes, obsdata, ana_data):
 if __name__ == "__main__":
 
     import os
-    import run_amanzi
+    import run_amanzi_standard
 
     input_filename =os.path.join("amanzi_boundedDomain_2d.xml")
 
     CWD = os.getcwd()
     try: 
-        run_amanzi.run_amanzi('../'+input_filename)
+        run_amanzi_standard.run_amanzi(input_filename, 10)
         obs_data = load_amanzi_obs()
 
         obsdata = []
@@ -67,13 +61,13 @@ if __name__ == "__main__":
         obstimes[:] =  obstimes[:]/24./3600.
 
         ana_data=load_ana_solution()
-#       note: in analytical solution the drawdown (m) was given at time in days
+        # note: in analytical solution the drawdown (m) was given at time in days
 
         fig1= plt.figure()
         axes1=fig1.add_axes([.1,.1,.8,.8])
        
         plottest(axes1,obstimes, obsdata, ana_data)
-#        plt.show()
+        # plt.show()
 
     finally:
         os.chdir(CWD)

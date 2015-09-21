@@ -1,12 +1,5 @@
 <ParameterList>
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
-  <Parameter isUsed="true" name="input file name" type="string" value="dvz_3layer_2D.xml"/>
-  <ParameterList name="Checkpoint Data">
-    <Parameter name="file name base" type="string" value="checkpoint"/>
-    <Parameter name="file name digits" type="int" value="5"/>
-    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
-  </ParameterList>
   <ParameterList name="Visualization Data">
     <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
@@ -126,6 +119,7 @@
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{Tc-99}"/>
+    <Parameter name="number of liquid components" type="int" value="1"/>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{6.1729344e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
       <Parameter name="initial time step" type="Array(double)" value="{1.0e+01, 1.0e+01, 1.0e+01, 1.0}"/>
@@ -183,19 +177,6 @@
       </ParameterList>
       <ParameterList name="fluid_density">
         <Parameter name="value" type="double" value="9.982e+02"/>
-      </ParameterList>
-      <ParameterList name="water_density">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="9.982e+02"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
       </ParameterList>
       <ParameterList name="mass_density_liquid">
         <ParameterList name="function">
@@ -311,7 +292,6 @@
   <ParameterList name="Preconditioners">
     <ParameterList name="Trilinos ML">
       <Parameter name="preconditioner type" type="string" value="ml"/>
-      <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
       <ParameterList name="ml parameters">
         <Parameter name="ML output" type="int" value="0"/>
         <Parameter name="max levels" type="int" value="40"/>
@@ -332,7 +312,6 @@
     </ParameterList>
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>
-      <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0.0"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
@@ -346,7 +325,6 @@
     </ParameterList>
     <ParameterList name="Block ILU">
       <Parameter name="preconditioner type" type="string" value="block ilu"/>
-      <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
       <ParameterList name="block ilu parameters">
         <Parameter name="fact: relax value" type="double" value="1.0"/>
         <Parameter name="fact: absolute threshold" type="double" value="0.0"/>
@@ -520,33 +498,11 @@
               </ParameterList>
             </ParameterList>
             <ParameterList name="BC 3">
-              <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCribs}"/>
+              <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCribs, Recharge_Boundary_btwnCribs, Recharge_Boundary_EastOfCribs}"/>
               <Parameter name="rainfall" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
                   <Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10, 9.4672798e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -1.48666e-06}"/>
-                  <Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-            <ParameterList name="BC 4">
-              <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_btwnCribs}"/>
-              <Parameter name="rainfall" type="bool" value="false"/>
-              <ParameterList name="outward mass flux">
-                <ParameterList name="function-tabular">
-                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 9.4672798e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -1.48666e-06}"/>
-                  <Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-            <ParameterList name="BC 5">
-              <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_EastOfCribs}"/>
-              <Parameter name="rainfall" type="bool" value="false"/>
-              <ParameterList name="outward mass flux">
-                <ParameterList name="function-tabular">
-                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 9.4672798e+10}"/>
                   <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -1.48666e-06}"/>
                   <Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
                 </ParameterList>
@@ -629,6 +585,24 @@
         <Parameter name="aqueous names" type="Array(string)" value="{}"/>
         <Parameter name="aqueous values" type="Array(double)" value="{}"/>
       </ParameterList>
+      <ParameterList name="operators">
+        <ParameterList name="diffusion operator">
+          <ParameterList name="matrix">
+            <Parameter name="discretization primary" type="string" value="mfd: monotone for hex"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+            <Parameter name="gravity" type="bool" value="false"/>
+          </ParameterList>
+          <ParameterList name="preconditioner">
+            <Parameter name="discretization primary" type="string" value="mfd: monotone for hex"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+            <Parameter name="gravity" type="bool" value="false"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="boundary conditions">
         <ParameterList name="concentration">
           <ParameterList name="Tc-99">
@@ -675,7 +649,6 @@
       </ParameterList>
       <Parameter name="number of aqueous components" type="int" value="1"/>
       <Parameter name="number of gaseous components" type="int" value="0"/>
-      <Parameter name="runtime diagnostics: regions" type="Array(string)" value="{}"/>
     </ParameterList>
     <ParameterList name="Flow">
       <ParameterList name="Richards problem">
@@ -689,9 +662,6 @@
           <ParameterList name="upwind divk parameters">
             <Parameter name="tolerance" type="double" value="1.0e-12"/>
           </ParameterList>
-        </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
         </ParameterList>
         <Parameter name="atmospheric pressure" type="double" value="1.01325e+05"/>
         <ParameterList name="water retention models">
@@ -804,33 +774,11 @@
               </ParameterList>
             </ParameterList>
             <ParameterList name="BC 3">
-              <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCribs}"/>
+              <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCribs, Recharge_Boundary_btwnCribs, Recharge_Boundary_EastOfCribs}"/>
               <Parameter name="rainfall" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
                   <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 9.4672798e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -1.48666e-06}"/>
-                  <Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-            <ParameterList name="BC 4">
-              <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_btwnCribs}"/>
-              <Parameter name="rainfall" type="bool" value="false"/>
-              <ParameterList name="outward mass flux">
-                <ParameterList name="function-tabular">
-                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 9.4672798e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -1.48666e-06}"/>
-                  <Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-            <ParameterList name="BC 5">
-              <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_EastOfCribs}"/>
-              <Parameter name="rainfall" type="bool" value="false"/>
-              <ParameterList name="outward mass flux">
-                <ParameterList name="function-tabular">
-                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10, 9.4672798e+10}"/>
                   <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -1.48666e-06}"/>
                   <Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
                 </ParameterList>
@@ -879,9 +827,9 @@
               <Parameter name="Verbosity Level" type="string" value="high"/>
             </ParameterList>
           </ParameterList>
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="high"/>
-          </ParameterList>
+        </ParameterList>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

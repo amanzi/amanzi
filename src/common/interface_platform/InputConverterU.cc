@@ -26,7 +26,7 @@ namespace AmanziInput {
 XERCES_CPP_NAMESPACE_USE
 
 /* ******************************************************************
-* Empty
+* Main driver for the new translator.
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
 {
@@ -46,6 +46,7 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   // parsing of miscalleneous lists
   ParseSolutes_();
   ParseConstants_();
+  ParseModelDescription_();
 
   out_list.set<bool>("Native Unstructured Input", "true");
 
@@ -71,10 +72,16 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   FilterEmptySublists_(out_list);
 
   // miscalleneous cross-list information
+  // -- initialization file name
   if (init_filename_.size() > 0) {
     out_list.sublist("State").set<std::string>("initialization filename", init_filename_);
   }
 
+  // -- additional transport diagnostics (FIXME)
+  if (transport_diagnostics_.size() > 0) {
+    out_list.sublist("PKs").sublist("Transport")
+        .set<Teuchos::Array<std::string> >("runtime diagnostics: regions", transport_diagnostics_);
+  }
   return out_list;
 }
   
@@ -150,17 +157,44 @@ void InputConverterU::ParseSolutes_()
 /* ******************************************************************
 * Extract generic verbosity object for all sublists.
 ****************************************************************** */
+void InputConverterU::ParseModelDescription_()
+{
+  MemoryManager mm;
+  DOMNodeList* node_list;
+  DOMNode* node;
+
+  bool flag;
+  node_list = doc_->getElementsByTagName(mm.transcode("model_description"));
+  node = GetUniqueElementByTagsString_(node_list->item(0), "coordinate_system", flag);
+
+  if (flag) {
+    coords_ = CharToStrings_(mm.transcode(node->getTextContent()));
+  } else { 
+    coords_.push_back("x"); 
+    coords_.push_back("y"); 
+    coords_.push_back("z"); 
+  }
+
+  node = GetUniqueElementByTagsString_(node_list->item(0), "author", flag);
+  if (flag && vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
+    *vo_->os() << "AUTHOR: " << mm.transcode(node->getTextContent()) << std::endl;
+}
+
+
+/* ******************************************************************
+* Extract generic verbosity object for all sublists.
+****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateVerbosity_()
 {
   Teuchos::ParameterList vlist;
+
+  MemoryManager mm;
 
   DOMNodeList* node_list;
   DOMNode* node_attr;
   DOMNamedNodeMap* attr_map;
   char* text_content;
-
-  MemoryManager mm;
-    
+ 
   // get execution contorls node
   node_list = doc_->getElementsByTagName(mm.transcode("execution_controls"));
   
@@ -262,7 +296,7 @@ void InputConverterU::SaveXMLFile(
     Teuchos::ParameterList& out_list, std::string& xmlfilename)
 {
   std::string filename(xmlfilename);
-  std::string new_extension("_native_v6.xml");
+  std::string new_extension("_native_v7.xml");
   size_t pos = filename.find(".xml");
   filename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)14);
 

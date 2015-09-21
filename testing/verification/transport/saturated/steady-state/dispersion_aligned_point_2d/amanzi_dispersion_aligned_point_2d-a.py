@@ -7,7 +7,7 @@ import utils_dispersion_aligned_point_2d
 #
 # Amanzi Input File:
 #
-input_filename = "amanzi_dispersion_aligned_point_2d.xml"
+input_filename = "amanzi_dispersion_aligned_point_2d-isv2.xml"
     
 #
 # Overwrite:  True|False
@@ -35,7 +35,6 @@ axes1.set_xlim(obs_slices[slice]['domain'][0],obs_slices[slice]['domain'][1])
 utils_dispersion_aligned_point_2d.PlotObservations(obs_scatter,slice,subtests,axes1)
 utils_dispersion_aligned_point_2d.PlotAnalyticSoln(analytic_soln,analytic,slice,axes1)
 
-#
 axes1.legend(loc='lower right')
 axes1.set_xlabel('Position along the Plume Centerline, x[m]',fontsize=14)
 axes1.set_ylabel('Concentration [kg/m$^3$]',fontsize=14)

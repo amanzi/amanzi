@@ -35,7 +35,8 @@ XERCES_CPP_NAMESPACE_USE
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
     const std::string& err_options, const std::string& nonlinear_solver,
-    bool modify_correction, const std::string& unstr_controls)
+    bool modify_correction, const std::string& unstr_controls,
+    double dt_cut_default, double dt_inc_default)
 {
   Teuchos::ParameterList out_list;
 
@@ -72,8 +73,8 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
   Teuchos::ParameterList& controller = bdf1.sublist("timestep controller standard parameters");
   controller.set<int>("max iterations", TI_MAX_ITERATIONS)
       .set<int>("min iterations", TI_MIN_ITERATIONS)
-      .set<double>("time step increase factor", TI_TS_INCREASE_FACTOR)
-      .set<double>("time step reduction factor", TI_TS_REDUCTION_FACTOR)
+      .set<double>("time step increase factor", dt_inc_default)
+      .set<double>("time step reduction factor", dt_cut_default)
       .set<double>("max time step", MAXIMUM_TIMESTEP)
       .set<double>("min time step", MINIMUM_TIMESTEP);
 
@@ -145,6 +146,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
   bdf1.set<bool>("extrapolate initial guess", true);
   bdf1.set<double>("restart tolerance relaxation factor", TI_TOL_RELAX_FACTOR);
   bdf1.set<double>("restart tolerance relaxation factor damping", TI_TOL_RELAX_FACTOR_DAMPING);
+  bdf1.set<int>("nonlinear iteration initial guess extrapolation order", 1);
 
   bool flag;
   node = GetUniqueElementByTagsString_(unstr_controls + ", max_iterations", flag);
@@ -281,7 +283,7 @@ Teuchos::ParameterList InputConverterU::TranslateInitialization_(
   node = GetUniqueElementByTagsString_(controls + ", linear_solver", flag); 
   if (flag) {
     std::string text = mm.transcode(node->getTextContent());
-    if (text == "aztecoo") text = "AztecOO";
+    if (text == "aztec00" || text == "aztecoo") text = "AztecOO";
     out_list.set<std::string>("linear solver", text);
   }
 
@@ -305,23 +307,34 @@ Teuchos::ParameterList InputConverterU::TranslateInitialization_(
 
 
 /* ******************************************************************
-* Create operators sublist
+* Create operators sublist:
+*   disc_methods     = {primary, secondary}
+*   pc_method        = "linerized_operator" | "diffusion_operator"
+*   nonlinear_solver = "" | "Newton"
+*   extentions       = "" | "vapor matrix" 
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
-    const std::string& disc_method, const std::string& pc_method,
-    const std::string& nonlinear_solver, const std::string& extensions)
+    const std::string& disc_methods, const std::string& pc_method,
+    const std::string& nonlinear_solver, const std::string& extensions,
+    bool gravity)
 {
   Teuchos::ParameterList out_list;
   Teuchos::ParameterList tmp_list;
 
-  std::string tmp = boost::replace_all_copy(disc_method, "-", ": ");
-  replace(tmp.begin(), tmp.end(), '_', ' ');
-  if (tmp == "mfd: two point flux approximation") tmp = "mfd: two-point flux approximation";
+  // process primary and secondary discretization methods
+  std::vector<std::string> methods = CharToStrings_(disc_methods.c_str());
+  for (int i = 0; i < methods.size(); ++i) {
+    std::string tmp = boost::replace_all_copy(methods[i], "-", ": ");
+    replace(tmp.begin(), tmp.end(), '_', ' ');
+    if (tmp == "mfd: two point flux approximation") tmp = "mfd: two-point flux approximation";
+    methods[i] = tmp;
+  }
+  if (methods.size() == 1) methods.push_back("mfd: optimized for sparsity");
 
-  tmp_list.set<std::string>("discretization primary", boost::to_lower_copy(tmp));
-  tmp_list.set<std::string>("discretization secondary", "mfd: optimized for sparsity");
+  tmp_list.set<std::string>("discretization primary", methods[0]);
+  tmp_list.set<std::string>("discretization secondary", methods[1]);
 
-  if (disc_method != "fv: default") {
+  if (methods[0] != "fv: default") {
     Teuchos::Array<std::string> stensil(2);
     stensil[0] = "face";
     stensil[1] = "cell";
@@ -329,17 +342,18 @@ Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
 
     if (pc_method != "linearized_operator") stensil.remove(1);
     tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
-    tmp_list.set<bool>("gravity", true);
+    tmp_list.set<bool>("gravity", gravity);
   } else {
     Teuchos::Array<std::string> stensil(1);
     stensil[0] = "cell";
     tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
 
     tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
-    tmp_list.set<bool>("gravity", true);
+    tmp_list.set<bool>("gravity", gravity);
   }
 
   // create two operators for matrix and preconditioner
+  // Note that PK may use only one of them.
   out_list.sublist("diffusion operator").sublist("matrix") = tmp_list;
   out_list.sublist("diffusion operator").sublist("preconditioner") = tmp_list;
 

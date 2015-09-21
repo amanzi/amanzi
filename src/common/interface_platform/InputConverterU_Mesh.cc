@@ -100,6 +100,7 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
       // A structured mesh is generated.
       if (strcmp(tagname, "generate") == 0) {
         generate = true;
+        mesh_rectangular_ = "true";
         node = GetUniqueElementByTagsString_(inode, "number_of_cells", flag);
         if (!flag) 
             ThrowErrorIllformed_("mesh", "number_of_cells", "generate");
@@ -215,9 +216,8 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
 {
   Teuchos::ParameterList out_list;
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    *vo_->os() << "Translating regions" << std::endl;
-  }
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+      *vo_->os() << "Translating regions" << std::endl;
 
   MemoryManager mm;
   DOMNodeList* node_list;
@@ -336,31 +336,15 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
       else if (strcmp(node_name,"polygonal_surface") == 0) {
         tree_["regions"].push_back(reg_name);
         
-        // if attribute 'num_points' exists, get it
-        int num_points(-1);
-        int pt_cnt(0);
-        if (reg_elem->hasAttribute(mm.transcode("num_points"))) {
-          text_content2 = mm.transcode(reg_elem->getAttribute(mm.transcode("num_points")));
-          std::string str(text_content2);
-          boost::algorithm::trim(str);
-          num_points = std::strtol(text_content2, NULL, 10);
-          out_list.sublist(reg_name).sublist("Region: Polygon").set<int>("Number of points", num_points);
-        }
-        // get verticies (add count them)
-        std::vector<double> points;
-        DOMNodeList* gkids = reg_elem->getChildNodes();
-        for (int j = 0; j < gkids->getLength(); j++) {
-          DOMNode* jnode = gkids->item(j);
+        std::vector<double> point, points;
+        DOMNodeList* point_list = reg_elem->getElementsByTagName(mm.transcode("point"));
+        int num_points = point_list->getLength();
+
+        for (int j = 0; j < num_points; j++) {
+          DOMNode* jnode = point_list->item(j);
           if (DOMNode::ELEMENT_NODE == jnode->getNodeType()) {
-            node_name = mm.transcode(jnode->getNodeName());
-            if (strcmp(node_name, "point") == 0) {
-              text_content2 = mm.transcode(jnode->getTextContent());
-              std::vector<double> point = MakeCoordinates_(text_content2);
-              for (std::vector<double>::iterator pt = point.begin(); pt != point.end(); ++pt) {
-                points.push_back(*pt);
-              }
-              pt_cnt++;
-            }
+            point = MakeCoordinates_(mm.transcode(jnode->getTextContent()));
+            points.insert(points.end(), point.begin(), point.end());
           }
         }
         // get expert parameters
@@ -369,10 +353,9 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
           out_list.sublist(reg_name).sublist("Region: Polygon").sublist("Expert Parameters")
               .set<double>("Tolerance", std::strtod(text_content2, NULL));
         }
-        out_list.sublist(reg_name).sublist("Region: Polygon").set<Teuchos::Array<double> >("Points", points);
-        if (!out_list.sublist(reg_name).sublist("Region: Polygon").isParameter("Number of points")) {
-          out_list.sublist(reg_name).sublist("Region: Polygon").set<int>("Number of points", pt_cnt);
-        }
+        out_list.sublist(reg_name).sublist("Region: Polygon")
+            .set<Teuchos::Array<double> >("Points", points)
+            .set<int>("Number of points", num_points);
       }
 
       else if (strcmp(node_name, "logical") == 0) {
@@ -423,6 +406,11 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         }
       }
     }
+  }
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "found " << tree_["regions"].size() << " regions plus region \"All\"." << std::endl;
   }
 
   out_list.sublist("All") = CreateRegionAll_();

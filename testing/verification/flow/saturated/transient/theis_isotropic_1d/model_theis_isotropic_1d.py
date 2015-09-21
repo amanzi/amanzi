@@ -83,28 +83,44 @@ class TransientTheis(object):
 def createFromXML(filename):
         
     #-- grab parameters from input XML file.
-    import amanzi_xml.observations.ObservationXML as Obs_xml
-    observations = Obs_xml.ObservationXML(filename)
+    import amanzi_xml.observations.ObservationXMLv2 as Obs_xml
+    observations = Obs_xml.ObservationXMLv2(filename)
     xml = observations.xml
     coords = observations.getAllCoordinates()
     import amanzi_xml.utils.search as search
     params = dict()
-    params["times"] = []
+
     params["r"] = []
     for (coord) in coords.itervalues():
         params["r"].append(coord[0]) 
     
-    for i in search.getElementByTagPath(xml, "/Main/Output/Time Macros/Observation Times/Values").value:
-        params["times"].append(i)
+    params["times"] = []
+    for i in search.getElementByTags(xml, "/amanzi_input/definitions/macros/time_macro"):
+        params["times"].append(float(i.text))
 
-    params.setdefault("g",9.80665)
-    params.setdefault("pi",math.pi)
-    params["z"] = search.getElementByTagPath(xml, "/Main/Regions/Well/Region: Box/High Coordinate").value[2]
-    params["K"] = search.getElementByTagPath(xml, "/Main/Material Properties/Soil/Intrinsic Permeability: Uniform/Value").value
-    params["mu"] = search.getElementByTagPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Viscosity: Uniform/Viscosity").value
-    params["rho"] = search.getElementByTagPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Density: Uniform/Density").value
-    params["Q"] = search.getElementByTagPath(xml, "/Main/Sources/Pumping Well/Source: Volume Weighted/Values").value[0]
-    params["S_s"] = search.getElementByTagPath(xml, "/Main/Material Properties/Soil/Specific Storage: Uniform/Value").value
+    params.setdefault("g", 9.80665)
+    params.setdefault("pi", math.pi)
+
+    for i in search.getElementByTags(xml, "/amanzi_input/regions"):
+        if (i.get("name") == "Well"):
+            params["z"] = float(i.find("box").get("high_coordinates").split(',')[2])
+
+    strK = search.getElementByTags(xml, "/amanzi_input/materials/material/permeability").get('x')
+    params["K"] = float(strK)
+
+    strMu = search.getElementByTags(xml, "/amanzi_input/phases/liquid_phase/viscosity").text
+    params["mu"] = float(strMu)
+
+    strRho = search.getElementByTags(xml, "/amanzi_input/phases/liquid_phase/density").text
+    params["rho"] = float(strRho)
+
+    strQ = search.getElementByTags(xml, "/amanzi_input/sources/source/liquid_phase" + 
+                                        "/liquid_component/volume_weighted").get("value")
+    params["Q"] = float(strQ)
+
+    strSs = search.getElementByTags(xml, "/amanzi_input/materials/material" + 
+                                         "/mechanical_properties/specific_storage").get("value")
+    params["S_s"] = float(strSs)
     
     return TransientTheis(params)
 

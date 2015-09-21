@@ -101,7 +101,7 @@ def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
 if __name__ == "__main__":
 
     import os
-    import run_amanzi_chem
+    import run_amanzi_standard
     import numpy as np
 
     # root name for problem
@@ -140,7 +140,7 @@ if __name__ == "__main__":
         # Amanzi native chemistry
         input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "amanzi-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi)
+        run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanzi)
 
         x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
         native = len(x_amanzi_native)
@@ -153,7 +153,7 @@ if __name__ == "__main__":
         comp = 'total_component_concentration.cell.Tracer conc'
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-pflo.xml")
         path_to_amanzi = "amanzi-alquimia-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+".in",root+".dat"])
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+".in",root+".dat"], path_to_amanzi)
         x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
         alq = len(x_amanzi_alquimia)
 
@@ -165,7 +165,7 @@ if __name__ == "__main__":
         comp = 'total_component_concentration.cell.Tracer conc'
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
         path_to_amanzi = "amanzi-alquimia-crunch-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+"-crunch.in",root+".dbs"])
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+"-crunch.in",root+".dbs"], path_to_amanzi)
         x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
         alq_crunch = len(x_amanzi_alquimia_crunch)
 
@@ -179,8 +179,8 @@ if __name__ == "__main__":
     try:
         input_filename = os.path.join("amanzi-s-1d-tracer-alq-pflo.xml")
         path_to_amanziS = "struct_amanzi-output-pflo"
-        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
-        root_amanziS = "plt00501"
+        run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
+        root_amanziS = "plt00051"
         compS = "Tracer_Aqueous_Concentration"
         x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
         struct = len(x_amanziS)
@@ -192,8 +192,8 @@ if __name__ == "__main__":
         # import pdb; pdb.set_trace()
         input_filename = os.path.join("amanzi-s-1d-tracer-alq-crunch.xml")
         path_to_amanziS = "struct_amanzi-output-crunch"
-        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
-        root_amanziS = "plt00501"
+        run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
+        root_amanziS = "plt00051"
         compS = "Tracer_Aqueous_Concentration"
         x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
         struct_c = len(x_amanziS_crunch)

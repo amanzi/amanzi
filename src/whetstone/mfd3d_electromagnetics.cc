@@ -420,6 +420,8 @@ int MFD3D_Electromagnetics::H1consistency2D_(int c, const Tensor& T,
 
     N(i, d) = (xf - xc) * normal / len; 
   }
+
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
 
