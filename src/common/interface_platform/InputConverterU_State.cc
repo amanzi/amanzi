@@ -125,19 +125,6 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         porosity_ev.set<std::string>("field evaluator type", "independent variable");
       }
 
-      // --- multiscale porosity if any
-      node = GetUniqueElementByTagsString_(inode, "multiscale_structure, porosity", flag);
-      if (flag) {
-        double porosity;
-        Teuchos::ParameterList& porosity_ev = out_ev.sublist("porosity_matrix");
-        porosity_ev.sublist("function").sublist(reg_str)
-            .set<Teuchos::Array<std::string> >("regions", regions)
-            .set<std::string>("component", "cell")
-            .sublist("function").sublist("function-constant")
-            .set<double>("value", porosity);
-        porosity_ev.set<std::string>("field evaluator type", "independent variable");
-      }
-
       // -- permeability.
       double perm_x, perm_y, perm_z;
       bool perm_init_from_file(false), conductivity(false);
@@ -212,6 +199,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         aux_list.sublist("DoF 2 Function").sublist("function-constant").set<double>("value", ky);
         if (dim_ == 3) {
           aux_list.sublist("DoF 3 Function").sublist("function-constant").set<double>("value", kz);
+        } else {
+          kz = 0.0;
         }
       } else {
         ThrowErrorIllformed_("materials", "permeability/hydraulic conductivity", "file/filename/attribute");
@@ -466,6 +455,15 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<std::string>("component", "cell")
             .sublist("function").sublist("function-constant")
             .set<double>("value", val);
+      }
+
+      // -- geochemical condition
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry, constraint", flag);
+      if (flag) {
+        std::string name = GetAttributeValueS_(static_cast<DOMElement*>(node), "name");
+
+        out_ic.sublist("geochemical conditions").sublist(name)
+            .set<Teuchos::Array<std::string> >("regions", regions);
       }
     }
   }

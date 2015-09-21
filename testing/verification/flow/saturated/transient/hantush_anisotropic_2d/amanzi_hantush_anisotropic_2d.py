@@ -7,10 +7,9 @@ from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
 import prettytable
 
-# load the data from output file, which is in amanzi-output
 def load_amanzi_obs():
-    # output_file=obs_xml.getObservationFilename()
-    output_file = "observations.out"
+    #output_file = Obs_xml.getObservationFilename()
+    output_file = "observation.out"
     obs_data = ObsDATA("amanzi-output/" + output_file)
     obs_data.getObservationData()
     return obs_data
@@ -43,11 +42,10 @@ if __name__ == "__main__":
     import os
     import run_amanzi_standard
 
-    input_filename =os.path.join("amanzi_boundedDomain_2d.xml")
+    input_filename =os.path.join("amanzi_hantush_anisotropic_2d.xml")
 
-    CWD = os.getcwd()
     try: 
-        run_amanzi_standard.run_amanzi(input_filename, 10)
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["porflow4_6.exo"])
         obs_data = load_amanzi_obs()
 
         obsdata = []
@@ -58,18 +56,17 @@ if __name__ == "__main__":
 
         obsdata  = numpy.transpose(numpy.array(obsdata))
         obstimes  = numpy.transpose(numpy.array(obstimes))
-        obstimes[:] =  obstimes[:]/24./3600.
+        obstimes[:] =  obstimes[:] /24. / 3600.
 
+        # analytic solution is not available yet
         ana_data=load_ana_solution()
-        # note: in analytical solution the drawdown (m) was given at time in days
 
-        fig1= plt.figure()
-        axes1=fig1.add_axes([.1,.1,.8,.8])
+        fig1 = plt.figure()
+        axes1 = fig1.add_axes([.1,.1,.8,.8])
        
-        plottest(axes1,obstimes, obsdata, ana_data)
+        plottest(axes1, obstimes, obsdata, ana_data)
         # plt.show()
-
+ 
     finally:
-        os.chdir(CWD)
-
+        pass
 

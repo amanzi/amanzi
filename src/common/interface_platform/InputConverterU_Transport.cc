@@ -235,6 +235,19 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
     diff_list.set<Teuchos::Array<double> >("air-water partitioning coefficient", henry_coef);
   }
 
+  // add dispersion/diffusion operator
+  node = GetUniqueElementByTagsString_(
+      "unstructured_controls, unstr_transport_controls, dispersion_discretization_method", flag);
+  std::string disc_methods;
+  if (flag)
+    disc_methods = mm.transcode(node->getTextContent());
+  else
+    disc_methods = (mesh_rectangular_) ? "mfd-monotone_for_hex" : "mfd-optimized_for_monotonicity";
+  disc_methods.append(", mfd-two_point_flux_approximation");
+
+  out_list.sublist("operators") = TranslateDiffusionOperator_(
+      disc_methods, "diffusion_operator", "", "", false);
+
   // multiscale model list
   out_list.sublist("multiscale models") = TranslateTransportMSM_();
   if (out_list.sublist("multiscale models").numParams() > 0) {
@@ -360,7 +373,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
       TranslateTransportBCsGroup_(bcname, regions, solutes, out_list);
     }
 
-    // geochemistry BCs 
+    // geochemical BCs 
     node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry", flag);
     if (flag) {
       std::string bctype;
@@ -382,14 +395,23 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
         values.push_back(it->second);
         forms.push_back(tp_forms[it->first]);
       }
-     
+
+      if (times.size() == 1) {
+        times.push_back(times[0] + 1e+20);
+        values.push_back(values[0]);
+      } else {
+        forms.pop_back();
+      }
+
       // save in the XML files  
       Teuchos::ParameterList& tbc_list = out_list.sublist("geochemical conditions");
-      Teuchos::ParameterList& bc = tbc_list.sublist(bcname);
-      bc.set<Teuchos::Array<std::string> >("regions", regions);
-      bc.set<Teuchos::Array<double> >("times", times);
-      bc.set<Teuchos::Array<std::string> >("geochemical conditions", values);
-      bc.set<Teuchos::Array<std::string> >("time functions", forms);
+      for (int i = 0; i < phases_["water"].size(); ++i) {
+        Teuchos::ParameterList& bc = tbc_list.sublist(phases_["water"][i]).sublist(bcname);
+        bc.set<Teuchos::Array<std::string> >("regions", regions);
+        bc.set<Teuchos::Array<double> >("times", times);
+        bc.set<Teuchos::Array<std::string> >("geochemical conditions", values);
+        bc.set<Teuchos::Array<std::string> >("time functions", forms);
+      }
     }
   }
 

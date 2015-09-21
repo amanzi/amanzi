@@ -201,10 +201,14 @@ void Richards_PK::Setup()
     if (!S_->HasField("pressure_matrix")) {
       S_->RequireField("pressure_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+      Teuchos::ParameterList elist;
+      elist.set<std::string>("evaluator name", "pressure_matrix");
+      pressure_matrix_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+      S_->SetFieldEvaluator("pressure_matrix", pressure_matrix_eval_);
     }
 
-    Teuchos::RCP<Teuchos::ParameterList>
-        msp_list = Teuchos::sublist(rp_list_, "multiscale models", true);
+    Teuchos::RCP<Teuchos::ParameterList> msp_list = Teuchos::sublist(rp_list_, "multiscale models", true);
     msp_ = CreateMultiscaleFlowPorosityPartition(mesh_, msp_list);
 
     if (!S_->HasField("water_content_matrix")) {
@@ -219,7 +223,13 @@ void Richards_PK::Setup()
 
     S_->RequireField("porosity_matrix", "porosity_matrix")->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireFieldEvaluator("porosity_matrix");
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("porosity key", "porosity_matrix");
+    elist.set<std::string>("pressure key", "pressure_matrix");
+    Teuchos::RCP<PorosityModelPartition> pom = CreatePorosityModelPartition(mesh_, msp_list);
+    Teuchos::RCP<PorosityModelEvaluator> eval = Teuchos::rcp(new PorosityModelEvaluator(elist, pom));
+    S_->SetFieldEvaluator("porosity_matrix", eval);
   }
 
   // Require additional fields and evaluators for this PK.
@@ -331,6 +341,7 @@ void Richards_PK::Setup()
 /* ******************************************************************
 * This is long but simple subroutine. It goes through time integrator
 * list and initializes various objects created during setup step.
+* Some local objects needs to the most 
 ****************************************************************** */
 void Richards_PK::Initialize()
 {
@@ -625,6 +636,13 @@ void Richards_PK::Initialize()
     CompositeVector& wc = *S_->GetFieldData("water_content", "water_content");
     CompositeVector& wc_prev = *S_->GetFieldData("prev_water_content", passwd_);
     wc_prev = wc;
+
+    // We start with pressure equilebrium
+    if (multiscale_porosity_) {
+      *S_->GetFieldData("pressure_matrix", passwd_)->ViewComponent("cell") =
+          *S_->GetFieldData("pressure")->ViewComponent("cell");
+      pressure_matrix_eval_->SetFieldAsChanged(S_.ptr());
+    }
   }
 
   // Trigger update of secondary fields depending on the primary pressure.

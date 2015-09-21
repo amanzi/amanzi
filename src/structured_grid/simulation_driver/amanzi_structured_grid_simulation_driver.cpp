@@ -284,6 +284,7 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     if (amrptr->stepOfLastCheckPoint() < amrptr->levelSteps(0)) {
         amrptr->checkPoint();
     }
+    amrptr->LinkFinalCheckpoint(amrptr->stepOfLastCheckPoint());
 
     if (amrptr->stepOfLastPlotFile() < amrptr->levelSteps(0)) {
         amrptr->writePlotFile();

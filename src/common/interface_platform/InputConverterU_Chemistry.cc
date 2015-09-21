@@ -50,14 +50,15 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   // chemical engine
   bool flag;
   node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
-  std::string engine = GetAttributeValueS_(static_cast<DOMElement*>(node), "engine");
+  element = static_cast<DOMElement*>(node);
+  std::string engine = GetAttributeValueS_(element, "engine");
 
   // process engine
   bool native(false);
   if (strcmp(engine.c_str(), "amanzi") == 0) {
     out_list.set<std::string>("chemistry model", "Amanzi");
     std::string bgdfilename = CreateBGDFile(xmlfilename_);
-    bgdfilename = GetAttributeValueS_(static_cast<DOMElement*>(node), "bdg_file", false, bgdfilename);
+    bgdfilename = GetAttributeValueS_(element, "input_filename", false, bgdfilename);
     native = true;
 
     Teuchos::ParameterList& bgd_list = out_list.sublist("Thermodynamic Database");
@@ -67,6 +68,8 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   } else if (strcmp(engine.c_str(), "pflotran") == 0) {
     out_list.set<std::string>("chemistry model", "Alquimia");
     out_list.set<std::string>("Engine", "PFloTran");
+    std::string inpfilename = GetAttributeValueS_(element, "input_filename");
+    out_list.set<std::string>("Engine Input File", inpfilename);
   }
   
   // minerals
@@ -264,7 +267,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
   // general parameters
   int max_itrs(100), cut_threshold(8), increase_threshold(4);
-  double tol(1e-12), dt_max(1e+10), dt_min(1e-10), dt_init(1e-2), dt_cut(2.0), dt_increase(1.2);
+  double tol(1e-12), dt_max(1e+10), dt_min(1e+10), dt_init(1e+7), dt_cut(2.0), dt_increase(1.2);
   std::string activity_model("unit"), dt_method("fixed");
   std::vector<std::string> aux_data;
 

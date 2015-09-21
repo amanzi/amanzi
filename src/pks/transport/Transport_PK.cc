@@ -606,23 +606,8 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   if (flag_dispersion || flag_diffusion) {
-    Teuchos::ParameterList op_list;
-    op_list.set<std::string>("discretization secondary", "mfd: two-point flux approximation");
-
-    if (mesh_->mesh_type() == AmanziMesh::RECTANGULAR) {
-      op_list.set<std::string>("discretization primary", "mfd: monotone for hex");
-      Teuchos::Array<std::string> stensil(2);
-      stensil[0] = "face";
-      stensil[1] = "cell";
-      op_list.set<Teuchos::Array<std::string> >("schema", stensil);
-      stensil.remove(1);
-      op_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
-    } else {
-      op_list.set<std::string>("discretization primary", "mfd: two-point flux approximation");
-      Teuchos::Array<std::string> stensil(1);
-      stensil[0] = "cell";
-      op_list.set<Teuchos::Array<std::string> >("schema", stensil);
-    }
+    Teuchos::ParameterList& op_list = 
+        tp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
 
     // default boundary conditions (none inside domain and Neumann on its boundary)
     std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);

@@ -113,12 +113,11 @@ def MakeTable(Obs_data,Obs_xml,filename):
 if __name__ == "__main__":
 
     import os
-    import run_amanzi_with_meshfile
+    import run_amanzi_standard
 
     input_filename = "amanzi_unconfined_seepage_1d.xml"
-    mesh_filename = "porflow4_4.exo"
     try: 
-        run_amanzi_with_meshfile.run_amanzi(input_filename,None,None,mesh_filename)
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["porflow4_4.exo"])
         obs_xml=loadInputXML(input_filename)
         
         obs_data=loadDataFile(obs_xml)

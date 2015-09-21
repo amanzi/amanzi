@@ -38,6 +38,7 @@ public:
 
     virtual void writePlotFile ();
     virtual void checkPoint ();
+    void LinkFinalCheckpoint (int step);
 
     void pm_timeStep (int  level,
                       Real time,

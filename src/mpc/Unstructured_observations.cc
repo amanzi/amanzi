@@ -152,16 +152,17 @@ int Unstructured_observations::MakeObservations(State& S)
       }
 
       // check if observation of solute was requested
-      bool obs_solute(false), obs_aqueous(true);     
+      bool obs_solute_liquid(false), obs_solute_gas(false), obs_aqueous(true);     
       int tcc_index(-1);
       for (tcc_index = 0; tcc_index != comp_names_.size(); ++tcc_index) {
         int pos = var.find(comp_names_[tcc_index]);
         if (pos == 0) { 
-          obs_solute = true;
+          (tcc_index < num_liquid_) ? obs_solute_liquid = true : obs_solute_gas = true;
           obs_aqueous = false;
           break;
         }
       }
+      bool obs_solute = obs_solute_liquid || obs_solute_gas;
 
       // check if observation is on faces of cells. 
       bool obs_boundary(false);
@@ -173,8 +174,8 @@ int Unstructured_observations::MakeObservations(State& S)
           var == "aqueous volumetric flow rate" ||
           var == solute_var) {  // flux needs faces
         mesh_block_size = S.GetMesh()->get_set_size((i->second).region,
-                                                        Amanzi::AmanziMesh::FACE,
-                                                        Amanzi::AmanziMesh::OWNED);
+                                                    Amanzi::AmanziMesh::FACE,
+                                                    Amanzi::AmanziMesh::OWNED);
         entity_ids.resize(mesh_block_size);
         S.GetMesh()->get_set_entities((i->second).region, 
                                           Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED,
@@ -191,12 +192,12 @@ int Unstructured_observations::MakeObservations(State& S)
         }
       } else { // all others need cells
         mesh_block_size = S.GetMesh()->get_set_size((i->second).region,
-                                                        Amanzi::AmanziMesh::CELL,
-                                                        Amanzi::AmanziMesh::OWNED);    
+                                                    Amanzi::AmanziMesh::CELL,
+                                                    Amanzi::AmanziMesh::OWNED);    
         entity_ids.resize(mesh_block_size);
         S.GetMesh()->get_set_entities((i->second).region,
-                                          Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
-                                          &entity_ids);
+                                      Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
+                                      &entity_ids);
       }
       
       // find global meshblocksize
@@ -221,13 +222,22 @@ int Unstructured_observations::MakeObservations(State& S)
           continue;
         }
 
-        const Epetra_MultiVector& tcc = *S.GetFieldData("total_component_concentration")->ViewComponent("cell", false);
+        const Epetra_MultiVector& ws = *S.GetFieldData("saturation_liquid")->ViewComponent("cell");
+        const Epetra_MultiVector& tcc = *S.GetFieldData("total_component_concentration")->ViewComponent("cell");
 
         if (var == comp_names_[tcc_index] + " Aqueous concentration") { 
           for (int i = 0; i < mesh_block_size; i++) {
             int c = entity_ids[i];
-            value += tcc[tcc_index][c] * S.GetMesh()->cell_volume(c);
-            volume += S.GetMesh()->cell_volume(c);
+            double factor = ws[0][c] * S.GetMesh()->cell_volume(c);
+            value += tcc[tcc_index][c] * factor;
+            volume += factor;
+          }
+        } else if (var == comp_names_[tcc_index] + " gaseous concentration") { 
+          for (int i = 0; i < mesh_block_size; i++) {
+            int c = entity_ids[i];
+            double factor = (1.0 - ws[0][c]) * S.GetMesh()->cell_volume(c);
+            value += tcc[tcc_index][c] * factor;
+            volume += factor;
           }
         } else if (var == comp_names_[tcc_index] + " volumetric flow rate") {
           const Epetra_MultiVector& darcy_flux = *S.GetFieldData("darcy_flux")->ViewComponent("face");
@@ -368,6 +378,16 @@ int Unstructured_observations::MakeObservations(State& S)
             msg << "Observations of \"aqueous mass flow rate\" and \"aqueous volumetric flow rate\""
                 << " are only possible for Polygon, Plane and Boundary side sets";
             Exceptions::amanzi_throw(msg);
+          }
+
+        } else if (var == "pH") {
+          const Epetra_MultiVector& pH = *S.GetFieldData("pH")->ViewComponent("cell");
+  
+          for (int i = 0; i < mesh_block_size; ++i) {
+            int c = entity_ids[i];
+            double vol = S.GetMesh()->cell_volume(c);
+            volume += vol;
+            value += pH[0][c] * vol;
           }
         } else {
           msg << "Cannot make an observation for aqueous variable \"" << var << "\"";

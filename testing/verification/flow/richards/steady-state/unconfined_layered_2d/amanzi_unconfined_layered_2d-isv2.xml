@@ -1,4 +1,5 @@
 <amanzi_input type="unstructured" version="2.1.1">
+    <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
     <model_description name="unconfined_layered_2d">
       <comments>Steady-State Richards: unconfined_layered_2d</comments>
       <model_id>2SSUncFlow1</model_id>
@@ -40,7 +41,7 @@
         <unstr_steady-state_controls>
           <unstr_initialization>
             <method>darcy_solver</method>
-            <linear_solver>aztec00</linear_solver>
+            <linear_solver>AztecOO</linear_solver>
           </unstr_initialization>
         </unstr_steady-state_controls>
         <unstr_linear_solver>
@@ -1551,4 +1552,4 @@
       </vis>
     </output>
   </amanzi_input>
-  
+

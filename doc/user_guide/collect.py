@@ -2,6 +2,7 @@
 
 import os, sys, utils, shutil, subprocess
 import optparse
+import fnmatch
 
 #  Create dictionary that describes:
 #
@@ -9,6 +10,17 @@ import optparse
 #  - index files to be created
 #  - subdirectories (tests/tutorials) to be copied
 #
+
+#
+# support routines
+#
+def find(pattern, path):
+    result = []
+    for root, dirs, files in os.walk(path):
+        for name in files:
+            if fnmatch.fnmatch(name, pattern):
+                result.append(os.path.join(root, name))
+    return result
 
 #
 # Install
@@ -141,33 +153,32 @@ verification['unconfined_flow'] = {
   'index' : {'index_title' : 'Unconfined Flow Tests',
              'index_file'  : 'doc/user_guide/verification/unconfined_flow/index.rst',
              'index_list'  : [ 'unconfined_no_recharge_1d', 
-                               # 'unconfined_seepage_1d'
-                               # 'unconfined_layered_2d',
+                               'unconfined_seepage_1d',
+                               'unconfined_layered_2d',
+                               'unconfined_recharge_1d',
                              ], 
             },
   'unconfined_no_recharge_1d': {
     'from_dir' : 'testing/verification/flow/richards/steady-state/unconfined_no_recharge_1d',
     'dest_dir' : 'doc/user_guide/verification/unconfined_flow/unconfined_no_recharge_1d',
-    'index_entry' : 'unconfined_no_recharge_1d/amanzi_unconfined_no_recharge_1d.rst'
+    'index_entry' : 'unconfined_no_recharge_1d/amanzi_unconfined_no_recharge_1d.rst',
   },
-}
-
-"""
   'unconfined_seepage_1d': {
     'from_dir' : 'testing/verification/flow/richards/steady-state/unconfined_seepage_1d',
     'dest_dir' : 'doc/user_guide/verification/unconfined_flow/unconfined_seepage_1d',
-    'index_entry' : 'unconfined_seepage/amanzi_unconfined_seepage_1d.rst',
+    'index_entry' : 'unconfined_seepage_1d/amanzi_unconfined_seepage_1d.rst',
   },
   'unconfined_layered_2d': {
     'from_dir' : 'testing/verification/flow/richards/steady-state/unconfined_layered_2d',
     'dest_dir' : 'doc/user_guide/verification/unconfined_flow/unconfined_layered_2d',
-    'index_entry' : 'unconfined_layered/amanzi_unconfined_layered_2d.rst'
+    'index_entry' : 'unconfined_layered_2d/amanzi_unconfined_layered_2d.rst'
   },
   'unconfined_recharge_1d': {
     'from_dir' : 'testing/verification/flow/richards/steady-state/unconfined_recharge_1d',
     'dest_dir' : 'doc/user_guide/verification/unconfined_flow/unconfined_recharge_1d',
+    'index_entry' : 'unconfined_recharge_1d/amanzi_unconfined_recharge_1d.rst',
   },
-"""
+}
 
 verification['transport'] = {
   'index_entry': 'transport/index.rst',
@@ -365,12 +376,15 @@ utils.WalkRstFiles(amanzi_home,sections,logfile)
 # =======================================================================================
 
 # Run the tests
-print("\nRunning verification tests...")
+print("\nRunning verification and benchmarking tests...")
 
 mpi_exec = os.getenv('AMANZI_MPI_EXEC', 'mpirun')
 mpi_np = os.getenv('AMANZI_MPI_NP', '1')
-print("Enviromental variable or default 'AMANZI_MPI_EXEC' = " + mpi_exec)
-print("Enviromental variable or default 'AMANZI_MPI_NP' = " + mpi_np)
+print(">>> Enviromental variable or default 'AMANZI_INSTALL_DIR' = " 
+      + os.getenv('AMANZI_INSTALL_DIR', 'missing'))
+print(">>> Enviromental variable or default 'AMANZI_MPI_EXEC' = " + mpi_exec)
+print(">>> Enviromental variable or default 'AMANZI_MPI_NP' = " + mpi_np)
+print
 
 suffices = {"", "-a", "-b", "-c"}
 
@@ -385,9 +399,15 @@ for name in verification['index']['index_list']:
             filename = "amanzi_" + key + s + ".py"
             if os.path.isfile(filename):
                stdout_file = open("collect.log", "w")
-               print("   " + filename)
-               subprocess.call(["python", filename], stdout=stdout_file, stderr= subprocess.STDOUT)
+               print("   script: " + filename)
+               subprocess.call(["python", filename], stdout=stdout_file, stderr=subprocess.STDOUT)
 
+               for el in find("stdout.out", run_directory):
+                   if ("Amanzi::SIMULATION_SUCCESSFUL" in open(el).read()):
+                      print("   result: SIMULATION_SUCCESSFUL")
+                   else:
+                      el = el[el.find("verification"):]
+                      print("   ERROR: " + el)
         os.chdir(cwd)
 
 for name in benchmark['index']['index_list']:
@@ -401,7 +421,13 @@ for name in benchmark['index']['index_list']:
             filename = key + s + ".py"
             if os.path.isfile(filename):
                stdout_file = open("collect.log", "w")
-               print("   " + filename)
-               subprocess.call(["python", filename], stdout=stdout_file, stderr= subprocess.STDOUT)
+               print("   script: " + filename)
+               subprocess.call(["python", filename], stdout=stdout_file, stderr=subprocess.STDOUT)
 
+               for el in find("stdout.out", run_directory):
+                   if ("Amanzi::SIMULATION_SUCCESSFUL" in open(el).read()):
+                      print("   result: SIMULATION_SUCCESSFUL")
+                   else:
+                      el = el[el.find("benchmarking"):]
+                      print("   ERROR: " + el)
         os.chdir(cwd)

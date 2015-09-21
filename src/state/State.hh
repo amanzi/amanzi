@@ -335,7 +335,8 @@ void WriteVis(const Teuchos::Ptr<Visualization>& vis,
 // Checkpointing State.
 void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& ckp,
                      const Teuchos::Ptr<State>& S,
-                     double dt);
+                     double dt,
+                     bool final=false);
 
 double ReadCheckpoint(Epetra_MpiComm* comm,
                       const Teuchos::Ptr<State>& S,

@@ -22,7 +22,6 @@
 #include "ErrorHandler.hpp"
 #include "InputTranslator.hh"
 #include "InputConverterU.hh"
-//#include "DOMPrintErrorHandler.hpp"
 #include "XMLParameterListWriter.hh"
 
 #include "amanzi_version.hh"
@@ -255,7 +254,7 @@ int main(int argc, char *argv[]) {
 	    }
 	  }
 	}
-        // optional unstructured converter
+        // unstructured converter
 	if (echo_list.isParameter("Format")) {
           if (echo_list.get<std::string>("Format") == "unstructured_native") {
             bool found;
@@ -265,7 +264,7 @@ int main(int argc, char *argv[]) {
             if (rank == 0) converter.SaveXMLFile(driver_parameter_list, xmlInFileName);
           }
         }
-      } else if(spec == "v1") {
+      } else if (spec == "v1") {
         Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
         driver_parameter_list = *plist;
       } else {

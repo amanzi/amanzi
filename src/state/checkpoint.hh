@@ -35,6 +35,8 @@ class Checkpoint : public IOEvent {
   void WriteAttributes(double time, double dt, int cycle, int pos) const;
   void WriteAttributes(double time, double dt, int cycle) const;
   void WriteAttributes(double time, int cycle) const;
+  void SetFinal(bool fnl){final_ = fnl;}
+  bool IsFinal(){return final_;}
   void Finalize();
 
   void set_filebasename(std::string base) { filebasename_ = base; }
@@ -45,6 +47,7 @@ class Checkpoint : public IOEvent {
   std::string filebasename_;
   int filenamedigits_;
   int restart_cycle_;
+  bool final_;
 
   Teuchos::RCP<Amanzi::HDF5_MPI> checkpoint_output_;
 };

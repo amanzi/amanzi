@@ -145,9 +145,9 @@ void CycleDriver::Setup() {
     Teuchos::ParameterList observation_plist = parameter_list_->sublist("Observation Data");
     observations_ = Teuchos::rcp(new Amanzi::Unstructured_observations(observation_plist, output_observations_, comm_));
     if (coordinator_list_->isParameter("component names")) {
-      Teuchos::Array<std::string> comp_names =
-          coordinator_list_->get<Teuchos::Array<std::string> >("component names");
-      observations_->RegisterComponentNames(comp_names.toVector());
+      Teuchos::Array<std::string> comp_names = coordinator_list_->get<Teuchos::Array<std::string> >("component names");
+      int num_liquid = coordinator_list_->get<int>("number of liquid components", comp_names.size());
+      observations_->RegisterComponentNames(comp_names.toVector(), num_liquid);
     }
   }
 
@@ -762,7 +762,10 @@ void CycleDriver::Visualize(bool force) {
 ****************************************************************** */
 void CycleDriver::WriteCheckpoint(double dt, bool force) {
   if (force || checkpoint_->DumpRequested(S_->cycle(), S_->time())) {
-    Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt);
+    bool final = false;
+    if (fabs( S_->time() - tp_end_[num_time_periods_-1])) final = true;
+
+    Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt, final);
     
     // if (force) pk_->CalculateDiagnostics();
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -834,15 +837,12 @@ Teuchos::RCP<State> CycleDriver::Go() {
     // to initialize field which are not in the restart file
     S_->InitializeFields();
     S_->InitializeEvaluators();
-
-    // Initialize the process kernels
-    pk_->Initialize();
-    
+   
     S_->GetMeshPartition("materials");
     
     // re-initialize the state object
     restart_dT = ReadCheckpoint(comm_, Teuchos::ptr(&*S_), restart_filename_);
-    //    S_->WriteStatistics(vo_);
+    //S_->WriteStatistics(vo_);
 
     cycle0_ = S_->cycle();
     for (std::vector<std::pair<double,double> >::iterator it = reset_info_.begin();
@@ -860,10 +860,10 @@ Teuchos::RCP<State> CycleDriver::Go() {
       if (time_period_id_ < num_time_periods_ - 1) time_period_id_++;
       ResetDriver(time_period_id_); 
       restart_dT =  tp_dt_[time_period_id_];
+    }else{
+      // Initialize the process kernels
+      pk_->Initialize();
     }
-    // else {
-    //   Initialize();
-    // }
 
     S_->set_initial_time(S_->time());
     dt = tsm_->TimeStep(S_->time(), restart_dT);
@@ -886,6 +886,8 @@ Teuchos::RCP<State> CycleDriver::Go() {
   WriteCheckpoint(dt);
   Observations();
   S_->WriteStatistics(vo_);
+
+
   //Amanzi::timer_manager.stop("I/O");
  
   // iterate process kernels

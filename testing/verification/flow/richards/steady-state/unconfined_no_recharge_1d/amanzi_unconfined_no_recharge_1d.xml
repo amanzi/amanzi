@@ -25,6 +25,11 @@
         <ParameterList name="Steady-State Implicit Time Integration">
           <Parameter name="steady initialize with darcy" type="bool" value="true"/>
         </ParameterList>
+        <ParameterList name="Initialization">
+          <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+          <Parameter name="linear solver" type="string" value="AztecOO"/>
+          <Parameter name="method" type="string" value="Darcy Solver"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>

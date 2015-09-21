@@ -47,7 +47,7 @@
       </liquid_phase>
     </phases>
     <execution_controls>
-      <verbosity level="extreme" />
+      <verbosity level="high" />
       <execution_control_defaults init_dt="1.0" method="picard" mode="steady" />
       <execution_control end="1.2096e+8" mode="transient" start="0.0" />
     </execution_controls>

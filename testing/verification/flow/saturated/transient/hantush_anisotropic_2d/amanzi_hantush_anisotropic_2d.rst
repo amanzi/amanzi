@@ -49,3 +49,13 @@ Schematic
 .. image:: schematic/ellipse.png
 	   
 
+Results and Comparison
+----------------------
+
+
+Comparison of  Analytic Solution and Amanzi Results
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. plot:: amanzi_hantush_anisotropic_2d.py
+          :align: center
+

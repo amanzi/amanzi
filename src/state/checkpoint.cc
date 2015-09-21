@@ -34,6 +34,7 @@ Checkpoint::Checkpoint (Teuchos::ParameterList& plist, Epetra_MpiComm* comm) :
   // Set up the HDF5
   checkpoint_output_ = Teuchos::rcp(new HDF5_MPI(*comm));
   checkpoint_output_->setTrackXdmf(false);
+  final_ = false;
 }
 
 
@@ -58,6 +59,17 @@ void Checkpoint::CreateFile(const int cycle) {
   oss << std::right << cycle;
   checkpoint_output_->createDataFile(oss.str());
   checkpoint_output_->open_h5file();
+
+  if (final_){ 
+    std::string ch_file = oss.str() + ".h5";
+
+    std::stringstream oss_final;
+    oss_final << filebasename_<<"_final.h5";       
+    std::string ch_final =  oss_final.str();
+
+    link(ch_file.data(), ch_final.data());
+  }
+
 };
 
 void Checkpoint::Finalize() {
