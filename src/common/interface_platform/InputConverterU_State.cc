@@ -125,20 +125,6 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         porosity_ev.set<std::string>("field evaluator type", "independent variable");
       }
 
-      // --- multiscale porosity if any 
-      //     We use evaluator
-      node = GetUniqueElementByTagsString_(inode, "multiscale_structure, porosity", flag);
-      if (flag) {
-        double porosity;
-        Teuchos::ParameterList& porosity_ev = out_ev.sublist("porosity_matrix");
-        porosity_ev.sublist("function").sublist(reg_str)
-            .set<Teuchos::Array<std::string> >("regions", regions)
-            .set<std::string>("component", "cell")
-            .sublist("function").sublist("function-constant")
-            .set<double>("value", porosity);
-        porosity_ev.set<std::string>("field evaluator type", "independent variable");
-      }
-
       // -- permeability.
       double perm_x, perm_y, perm_z;
       bool perm_init_from_file(false), conductivity(false);
