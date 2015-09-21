@@ -142,7 +142,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
       if (flow_model_ != "constant") transient_model += 4 * pk_state[tagname];
 
     } else if (strcmp(tagname, "chemistry") == 0) {
-      std::string model = GetAttributeValueS_(element, "engine");
+      std::string model = GetAttributeValueS_(element, "engine", false, "none");
       pk_model_["chemistry"] = model;
       transient_model += pk_state[tagname];
 
