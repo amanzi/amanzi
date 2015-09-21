@@ -41,7 +41,7 @@ axes1.set_xlabel('Position along the Plume Centerline, x[m]',fontsize=14)
 axes1.set_ylabel('Concentration [kg/m$^3$]',fontsize=14)
 axes1.text(150,0.003,'Concentration along y=0, at t=1440 days.',fontsize=14)
 
-plt.show()
+#plt.show()
 
 # Create/Write the table:
 utils_dispersion_45_point_2d.MakeTableCols(table_layout,slice,obs_scatter,subtests,analytic_soln,analytic)

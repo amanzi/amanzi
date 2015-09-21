@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy, math
-from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
+from amanzi_xml.observations.ObservationXMLv2 import ObservationXMLv2 as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
 import prettytable 
@@ -50,7 +50,6 @@ def CollectObservations(Obs_xml, Obs_data, Obs_lines):
 
         for obs in Obs_data.observations.itervalues():
             if (obs.coordinate[slice_dep] == Obs_lines[key]['slice'][1] * obs.coordinate[slice_indep]):
-                print key, obs.coordinate, Obs_lines[key]['slice'][1]
                 if (Obs_lines[key]['vary'] is 'x' or Obs_lines[key]['vary'] is 'y'):
                     Obs_scatter[key]['distance'].append(obs.coordinate[slice_indep])
                 else:
@@ -267,14 +266,14 @@ def AmanziResults(input_filename,subtests,obs_slices,overwrite=False):
         for st in subtests:
             # modify file content
             old_content = open(input_filename).read()
-            new_content = old_content.replace("Explicit First-Order", subtests[st]['parameters'])
+            new_content = old_content.replace("explicit first-order", subtests[st]['parameters'])
             tmp_filename = "tmp.xml"
             f = open(tmp_filename, 'w')
             f.write(new_content)
             f.flush()
             f.close()
 
-            run_amanzi_standard.run_amanzi(tmp_filename, 1, [], subtests[st]['directory'])
+            run_amanzi_standard.run_amanzi(tmp_filename, 1, ["amanzi_dispersion_45_point_2d.exo"], subtests[st]['directory'])
             obs_xml[st]=loadInputXML(input_filename)
             obs_data[st]=loadDataFile(obs_xml[st],subtests[st]['directory'])
 
@@ -311,7 +310,7 @@ def SetupTests():
     obs_slices = { 'centerline' : { 'slice'  : [ 'y', 1.0 ],  # x=y
                                     'vary'   : 's', 
                                     'domain' : [-300.0,1400.0],
-                                    'range'  : [5e-10,3e-3] 
+                                    'range'  : [5e-10,6e-3] 
                                   },
                    'x=0.0'      : { 'slice'  : [ 'x', -1.0 ],  # x=-y
                                     'vary'   : 's', 
@@ -322,13 +321,13 @@ def SetupTests():
     subtests = { 'amanzi_first' : 
                  { 'directory'  : 'amanzi-output-first-order',
                    'mesh_file'  : '../amanzi_dispersion_45_point_2d.exo',
-                   'parameters' : 'Explicit First-Order',
+                   'parameters' : 'explicit first-order',
                    'plot_props' : { 'marker':'s', 'color':'r', 'label': 'Amanzi: First Order' } 
                  },
                  'amanzi_second' : 
                  { 'directory'  : 'amanzi-output-second-order',
                    'mesh_file'  : '../amanzi_dispersion_45_point_2d.exo',
-                   'parameters' : 'Explicit Second-Order',
+                   'parameters' : 'explicit second-order',
                    'plot_props' : { 'marker':'o', 'color':'b', 'label': 'Amanzi: Second Order' }
                  }
                }
