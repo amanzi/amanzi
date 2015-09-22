@@ -55,7 +55,7 @@ class Matrix {
     A_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, map, map, 3));
     for (int i = 0; i < N; i++) {
       int indices[3];
-      double values[3] = {-i, 2 * i + 1, -i - 1};
+      double values[3] = {(double) -i, (double) 2 * i + 1, (double) -i - 1};
       for (int k = 0; k < 3; k++) indices[k] = i + k - 1; 
       A_->InsertMyValues(i, 3, values, indices);
     }

@@ -58,6 +58,7 @@ set(SEACAS_CMAKE_CACHE_ARGS
                     -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=FALSE
                     -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE
                     -DTrilinos_ENABLE_SEACAS:BOOL=TRUE
+                    -DTPL_ENABLE_Matio:BOOL=FALSE
                     -DTPL_Netcdf_LIBRARIES:STRING=${seacas_netcdf_libraries}
                     -DNetcdf_INCLUDE_DIRS:STRING=${TPL_INSTALL_PREFIX}/include
                     )

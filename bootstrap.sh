@@ -1083,6 +1083,13 @@ check_compilers
 # Check the cmake, hg and curl tools
 check_tools
 
+# add fpic?
+if [ "${shared}" -eq "${TRUE}" ]; then
+  build_c_flags="${build_c_flags} -fPIC"
+  build_fort_flags="${build_fort_flags} -fPIC"
+  build_cxx_flags="${build_cxx_flags} -fPIC"
+fi
+
 # Print and exit if --print is set
 if [ "${print_exit}" -eq "${TRUE}" ]; then
   print_variable_values

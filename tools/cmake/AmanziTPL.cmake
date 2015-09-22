@@ -112,7 +112,7 @@ if ( NOT Trilinos_INSTALL_PREFIX )
                   " to define the Trilinos installation location"
 		  "\n-DTrilinos_INSTALL_PREFIX:PATH=<trilnos directory>\n")
 endif()
-set(Trilinos_MINIMUM_VERSION 11.0.3)
+set(Trilinos_MINIMUM_VERSION 12.0.0)
 find_package(Trilinos ${Trilinos_MINIMUM_VERSION} REQUIRED
              PATHS ${Trilinos_INSTALL_PREFIX}
              PATH_SUFFIXES include)
@@ -328,7 +328,7 @@ endif()
 ##############################################################################
 # MSTK - https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-1.80.tar.gz
 ##############################################################################
-option(ENABLE_MSTK_Mesh "Build Amanzi with the MOAB mesh framework" OFF)
+option(ENABLE_MSTK_Mesh "Build Amanzi with the MSTK mesh framework" OFF)
 set_feature_info(MSTK_Mesh
                  ENABLE_MSTK_Mesh
                  "A mesh framework"

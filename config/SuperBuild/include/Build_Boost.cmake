@@ -15,7 +15,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 # -- Define build definitions
 
 # We only build what we need, this is NOT a full Boost install
-set(Boost_projects "system,filesystem,program_options,regex")
+set(Boost_projects "system,filesystem,program_options,regex,graph")
 
 # --- Define the configure command
 
