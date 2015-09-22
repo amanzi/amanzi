@@ -45,6 +45,7 @@ include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 #
 # Transport registrations
 #
+# -- pk registration
 register_evaluator_with_factory(
   HEADERFILE Transport_PK_reg.hh
   LISTNAME   PKS_TRANSPORT_REGISTRATIONS
@@ -56,12 +57,33 @@ generate_evaluators_registration_header(
   INSTALL    True
   )
 
+# -- multiscale models registration
+register_evaluator_with_factory(
+  HEADERFILE MultiscaleTransportPorosityFactory_reg.hh
+  LISTNAME   MSM_TRANSPORT_REGISTRATIONS
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE MultiscaleTransportPorosity_DPM_reg.hh
+  LISTNAME   MSM_TRANSPORT_REGISTRATIONS
+  )
+
+generate_evaluators_registration_header( 
+  HEADERFILE multiscale_transport_registration.hh   
+  LISTNAME   MSM_TRANSPORT_REGISTRATIONS
+  INSTALL    True
+  )
+
 #
 # Library: transport
 #
 set(transport_inc_files
-  MaterialProperties.hh
   DiffusionPhase.hh
+  MaterialProperties.hh
+  MultiscaleTransportPorosity.hh
+  MultiscaleTransportPorosityFactory.hh
+  MultiscaleTransportPorosityPartition.hh
+  MultiscaleTransportPorosity_DPM.hh
   TransportBCFactory.hh
   TransportBoundaryFunction.hh
   TransportBoundaryFunction_Tracer.hh
@@ -72,8 +94,10 @@ set(transport_inc_files
   TransportSourceFactory.hh)
 
 set(transport_src_files Transport_PK.cc Transport_TI.cc 
-                        Transport_VandV.cc Transport_IO.cc 
-                        Transport_Dispersion.cc 
+                        Transport_VandV.cc Transport_Initialize.cc 
+                        Transport_Dispersion.cc Transport_HenryLaw.cc
+                        MultiscaleTransportPorosityFactory.cc MultiscaleTransportPorosity_DPM.cc
+                        MultiscaleTransportPorosityPartition.cc
                         TransportBCFactory.cc TransportSourceFactory.cc
                         TransportBoundaryFunction_Tracer.cc TransportBoundaryFunction_Alquimia.cc
                         TransportDomainFunction.cc)
@@ -90,9 +114,14 @@ if ( BUILD_TESTS )
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
 
+    # Copy test directory files if any out of source build
     if (NOT (${TRANSPORT_SOURCE_DIR} EQUAL ${TRANSPORT_BINARY_DIR}) )
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${TRANSPORT_SOURCE_DIR}/test ${TRANSPORT_BINARY_DIR}/test) 
+        # execute_process(COMMAND ${CMAKE_COMMAND} -E 
+        #   copy_directory ${TRANSPORT_SOURCE_DIR}/test ${TRANSPORT_BINARY_DIR}/test) 
+        file(GLOB DataFiles "${TRANSPORT_SOURCE_DIR}/test/*.xml"
+                            "${TRANSPORT_SOURCE_DIR}/test/*.exo"
+                            "${TRANSPORT_SOURCE_DIR}/test/*.par.*")
+        file(COPY ${DataFiles} DESTINATION ${TRANSPORT_BINARY_DIR}/test/)
     endif()
 
     include_directories(${TRANSPORT_SOURCE_DIR})
@@ -165,14 +194,5 @@ if ( BUILD_TESTS )
                        SOURCE test/Main.cc test/transport_parallel_read_mstk.cc
                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()    
-
-    if ( ENABLE_STK_Mesh )
-        add_amanzi_test(transport_parallel_stk transport_parallel_stk
-			KIND unit
-	                NPROCS 4
-                        SOURCE test/Main.cc test/transport_parallel_stk.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-    endif()    
 endif()
-
 

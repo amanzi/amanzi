@@ -2,7 +2,6 @@
   <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
 
   <model_description name="DVZ 3layer 2D">
-    <comments>Example input file</comments>
     <author>Konstantin Lipnikov</author>
     <units>
       <length_unit>m</length_unit>
@@ -10,6 +9,9 @@
       <mass_unit>kg</mass_unit>
       <conc_unit>molar</conc_unit>
     </units>
+    <constants>
+      <time_constant name="START" value="1956,y"/>
+    </constants>
   </model_description>
 
   <definitions>
@@ -18,7 +20,7 @@
         <time>1.2096E+10</time>
       </time_macro>
       <time_macro name="EveryMonth">
-        <start>1956,y</start>
+        <start>START</start>
         <timestep_interval>1,m</timestep_interval>
         <stop>1988,y</stop>
       </time_macro>
@@ -52,7 +54,7 @@
     <verbosity level="high" />
     <execution_control_defaults init_dt="1.0" method="picard" mode="steady" />
     <execution_control end="1956,y" mode="steady" start="0.0" />
-    <execution_control end="3000,y" mode="transient" start="1956,y" />
+    <execution_control end="3000,y" mode="transient" start="START" />
   </execution_controls>
 
   <numerical_controls>
@@ -75,6 +77,11 @@
         <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
         <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
         <max_divergent_iterations>3</max_divergent_iterations>
+
+        <unstr_initialization>
+          <method>darcy_solver</method>
+          <linear_solver>aztecoo</linear_solver>
+        </unstr_initialization>
       </unstr_steady-state_controls>
 
       <unstr_transient_controls>
@@ -87,11 +94,6 @@
         <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
         <max_divergent_iterations>3</max_divergent_iterations>
       </unstr_transient_controls>
-
-      <unstr_initialization>
-        <method>darcy_solver</method>
-        <linear_solver>aztecoo</linear_solver>
-      </unstr_initialization>
 
       <unstr_linear_solver>
         <max_iterations>100</max_iterations>

@@ -33,13 +33,13 @@ XERCES_CPP_NAMESPACE_USE
 /* ******************************************************************
 * Create flow list.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
+Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
 {
   Teuchos::ParameterList out_list;
   Teuchos::ParameterList* flow_list;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-    *vo_->os() << "Translating flow, regime=" << regime << std::endl;
+    *vo_->os() << "Translating flow, mode=" << mode << std::endl;
 
   MemoryManager mm;
   DOMNode* node;
@@ -84,7 +84,12 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
     richards_list.sublist("porosity models") = TranslatePOM_();
     if (richards_list.sublist("porosity models").numParams() > 0) {
       flow_list->sublist("physical models and assumptions")
-                .set<std::string>("porosity model", "compressible: pressure function");
+          .set<std::string>("porosity model", "compressible: pressure function");
+    }
+    richards_list.sublist("multiscale models") = TranslateFlowMSM_();
+    if (richards_list.sublist("multiscale models").numParams() > 0) {
+      flow_list->sublist("physical models and assumptions")
+          .set<std::string>("multiscale model", "dual porosity");
     }
   } else {
     Errors::Message msg;
@@ -127,7 +132,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
   
   // insert time integrator
   std::string err_options, unstr_controls;
-  if (regime == FLOW_STEADY_REGIME) {
+  if (mode == "steady") {
     err_options = "pressure";
     unstr_controls = "unstructured_controls, unstr_steady-state_controls";
   } else {
@@ -137,7 +142,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(int regime)
   
   if (pk_master_.find("flow") != pk_master_.end()) {
     flow_list->sublist("time integrator") = TranslateTimeIntegrator_(
-        err_options, nonlinear_solver, modify_correction, unstr_controls);
+        err_options, nonlinear_solver, modify_correction, unstr_controls,
+        dt_cut_[mode], dt_inc_[mode]);
   }
 
   // insert boundary conditions and source terms
@@ -340,6 +346,135 @@ Teuchos::ParameterList InputConverterU::TranslatePOM_()
     Teuchos::ParameterList empty;
     out_list = empty;
   }
+  return out_list;
+}
+
+
+/* ******************************************************************
+* Create list of multiscale models.
+****************************************************************** */
+Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
+{
+  Teuchos::ParameterList out_list;
+
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+    *vo_->os() << "Translating multiscale models" << std::endl;
+
+  MemoryManager mm;
+  DOMNodeList *node_list, *children;
+  DOMNode* node;
+  DOMElement* element;
+
+  bool flag;
+  std::string model, rel_perm;
+
+  node_list = doc_->getElementsByTagName(mm.transcode("materials"));
+  element = static_cast<DOMElement*>(node_list->item(0));
+  children = element->getElementsByTagName(mm.transcode("material"));
+
+  for (int i = 0; i < children->getLength(); ++i) {
+    DOMNode* inode = children->item(i); 
+    node = GetUniqueElementByTagsString_(inode, "multiscale_structure, cap_pressure", flag);
+    if (!flag) continue;
+
+    model = GetAttributeValueS_(static_cast<DOMElement*>(node), "model", "van_genuchten, brooks_corey");
+    DOMNode* nnode = GetUniqueElementByTagsString_(node, "parameters", flag);
+    DOMElement* element_cp = static_cast<DOMElement*>(nnode);
+
+    node = GetUniqueElementByTagsString_(inode, "multiscale_structure, rel_perm", flag);
+    rel_perm = GetAttributeValueS_(static_cast<DOMElement*>(node), "model", "mualem, burdine");
+    DOMNode* mnode = GetUniqueElementByTagsString_(node, "exp", flag);
+    DOMElement* element_rp = (flag) ? static_cast<DOMElement*>(mnode) : NULL;
+
+    // common stuff
+    // -- assigned regions
+    node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
+    std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
+
+    // -- mass transfer coefficient
+    node = GetUniqueElementByTagsString_(inode, "multiscale_structure, mass_transfer_coefficient", flag);
+    double alpha = std::strtod(mm.transcode(node->getTextContent()), NULL);
+    
+    for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
+      std::stringstream ss;
+      ss << "MSM for " << *it;
+      Teuchos::ParameterList& msm_list = out_list.sublist(ss.str());
+
+      msm_list.set<std::string>("multiscale model", "dual porosity")
+          .set<double>("mass transfer coefficient", alpha);
+    }
+
+    // -- porosity models
+    node = GetUniqueElementByTagsString_(inode, "multiscale_structure, porosity", flag);
+    double phi = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+    double compres = GetAttributeValueD_(static_cast<DOMElement*>(node), "compressibility", false, 0.0);
+
+    for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
+      std::stringstream ss;
+      ss << "MSM for " << *it;
+      Teuchos::ParameterList& msm_list = out_list.sublist(ss.str());
+
+      if (compres == 0.0) {
+        msm_list.set<std::string>("porosity model", "constant");
+        msm_list.set<double>("value", phi);
+      } else {
+        msm_list.set<std::string>("porosity model", "compressible");
+        msm_list.set<double>("undeformed soil porosity", phi);
+        msm_list.set<double>("reference pressure", ATMOSPHERIC_PRESSURE);
+        msm_list.set<double>("pore compressibility", compres);
+      }
+    }
+
+    // capillary pressure models
+    // -- ell
+    double ell, ell_d = (rel_perm == "mualem") ? ELL_MUALEM : ELL_BURDINE;
+    ell = GetAttributeValueD_(element_rp, "value", false, ell_d);
+
+    std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'm', 'M');
+    std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'b', 'B');
+
+    // -- van Genuchten or Brooks-Corey
+    if (strcmp(model.c_str(), "van_genuchten") == 0) {
+      double alpha = GetAttributeValueD_(element_cp, "alpha");
+      double sr = GetAttributeValueD_(element_cp, "sr");
+      double m = GetAttributeValueD_(element_cp, "m");
+
+      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
+        std::stringstream ss;
+        ss << "MSM for " << *it;
+        Teuchos::ParameterList& wrm_list = out_list.sublist(ss.str());
+
+        wrm_list.set<std::string>("water retention model", "van Genuchten")
+            .set<std::string>("region", *it)
+            .set<double>("van Genuchten m", m)
+            .set<double>("van Genuchten l", ell)
+            .set<double>("van Genuchten alpha", alpha)
+            .set<double>("residual saturation", sr)
+            .set<std::string>("relative permeability model", rel_perm);
+      }
+    } else if (strcmp(model.c_str(), "brooks_corey")) {
+      double lambda = GetAttributeValueD_(element_cp, "lambda");
+      double alpha = GetAttributeValueD_(element_cp, "alpha");
+      double sr = GetAttributeValueD_(element_cp, "sr");
+
+      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
+        std::stringstream ss;
+        ss << "MSM for " << *it;
+
+        Teuchos::ParameterList& wrm_list = out_list.sublist(ss.str());
+
+        wrm_list.set<std::string>("water retention model", "Brooks Corey")
+            .set<std::string>("region", *it)
+            .set<double>("Brooks Corey lambda", lambda)
+            .set<double>("Brooks Corey alpha", alpha)
+            .set<double>("Brooks Corey l", ell)
+            .set<double>("residual saturation", sr)
+            .set<std::string>("relative permeability model", rel_perm);
+      }
+    }
+  }
+
   return out_list;
 }
 

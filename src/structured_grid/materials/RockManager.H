@@ -144,18 +144,6 @@ public:
   const Material& FindMaterial(const std::string& name) const;
   const Material& FindMaterialInRegions(const Array<std::string>& region_names) const;
 
-  static void BuildGSLibFile(Real                   avg,
-                             Real                   std,
-                             const std::string&     gslib_param_file,
-                             const std::string&     gslib_data_file,
-                             const Array<Real>&     gslib_file_shift,
-                             const Array<Geometry>& geom_array,
-                             const Array<IntVect>&  ref_ratio,
-                             int                    num_grow,
-                             int                    max_grid_size_fine_gen,
-                             Property::CoarsenRule& crule,
-                             const std::string&     varname);
-
   bool Is_CP_model_XX(int model_id, const std::string& str) const;
   bool Is_Kr_model_XX(int model_id, const std::string& str) const;
 

@@ -61,10 +61,14 @@ TEST(CONVERTER_BASE) {
       xmlFileName.str("");
       xmlFileName << "test/converter_u_validate" << i << ".xml";
       old_xml = Teuchos::getParametersFromXmlFile(xmlFileName.str());
-      new_xml.validateParametersAndSetDefaults(*old_xml);
-      old_xml->validateParametersAndSetDefaults(new_xml);
+      new_xml.validateParameters(*old_xml);
+      old_xml->validateParameters(new_xml);
+      // new_xml.validateParametersAndSetDefaults(*old_xml);
+      // old_xml->validateParametersAndSetDefaults(new_xml);
     } catch (std::exception& e) {
       std::cout << e.what() << std::endl;
+      CHECK(false);
+      break;
     }
   }
 }

@@ -1194,15 +1194,29 @@ Sources are defined in a similar manner to the boundary conditions.  Under the t
 
 Under the ``liquid_component`` and ``solute_component`` elements a time series of boundary conditions is defined using the boundary condition elements available in the table below.  Each component element can only contain one type of source.  Both elements also accept a *name* attribute to indicate the phase associated with the source.
 
-+-------------------------+--------------------+-----------------------------------+
-|Liquid Phase Source Type | Attributes         | Value Type                        |
-+=========================+====================+===================================+
-|volume_weighted          | | start            | | double/time_constant/constant   |
-|perm_weighted            | | value            | | double                          |
-|                         | | function         | | ``linear | uniform | constant`` |
-+-------------------------+--------------------+-----------------------------------+
++-----------------------------+--------------------+-----------------------------------+
+|Liquid Component Source Type | Attributes         | Value Type                        |
++=============================+====================+===================================+
+|volume_weighted              | | start            | | double/time_constant/constant   |
+|perm_weighted                | | value            | | double                          |
+|                             | | function         | | ``linear | constant``           |
++-----------------------------+--------------------+-----------------------------------+
 
-For the solute component, the source available is ``aqueous_conc`` which has the attributes *name*, *value*, *function*, and *start*.  The function options available are *uniform*, *linear*, and *constant*.
+For the solute component, the sources available are ``uniform_conc``, ``flow_weighted_conc``, and ``diffusion_dominated_release`` which are described below.
+
++-----------------------------+-----------------------------------+---------------------------------+
+|Solute Component Source Type | Attributes                        | Value Type                      |
++=============================+===================================+=================================+
+|uniform_conc                 | | start                           | | double/time_constant/constant |
+|flow_weighted_conc           | | value                           | | double                        |
+|                             | | function                        | | ``linear | constant``         |
++-----------------------------+-----------------------------------+---------------------------------+
+|diffusion_dominated_release  | | name                            | | string                        |
+|                             | | start                           | | double/time_constant/constant |
+|                             | | total_inventory                 | | double                        |
+|                             | | mixing_length                   | | double                        |
+|                             | | effective_diffusion_coefficient | | double                        |
++-----------------------------+--------------------+------------------------------------------------+
 
 
 An example ``sources`` element looks like the following.

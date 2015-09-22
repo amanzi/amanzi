@@ -104,7 +104,7 @@ def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
 if __name__ == "__main__":
 
     import os
-    import run_amanzi_chem
+    import run_amanzi_standard
     import numpy as np
 
     # root name for problem
@@ -226,21 +226,18 @@ if __name__ == "__main__":
     CWD = os.getcwd()
     local_path = "" 
 
-    # local_path="/home/scratch/smolins/amanzi-fresh/demos/phase2/chemistry/1d-calcite/"
-    # path_to_amanzi="/home/scratch/smolins/amanzi-alquimia/examples/phase2/chemistry/1d-calcite/"
-
     # subplots
     fig, ax = plt.subplots(3,sharex=True,figsize=(8,10))
     
     try:
         # hardwired for 1d-calcite: Ca = component 2, last time = '72'
-#        times = ['31','41','51','61','71']
+        # times = ['31','41','51','61','71']
         times = ['71']
 
         # Amanzi native chemistry
         input_filename = os.path.join("amanzi-u-1d-calcite.xml")
         path_to_amanzi = "amanzi-native-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["calcite.bgd"])
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["calcite.bgd"], path_to_amanzi)
         
         comp = 'total_component_concentration.cell.Ca++ conc'
         Ca_amanzi_native = []
@@ -267,7 +264,7 @@ if __name__ == "__main__":
         # Amanzi-Alquimia
         input_filename = os.path.join("amanzi-u-1d-calcite-alq.xml")
         path_to_amanzi = "amanzi-alquimia-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-calcite-trim.in","calcite.dat"])
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-calcite-trim.in","calcite.dat"], path_to_amanzi)
 
         comp = 'total_component_concentration.cell.Ca++ conc'
         Ca_amanzi_alquimia = []
@@ -297,7 +294,7 @@ if __name__ == "__main__":
         # Amanzi-Alquimia-Crunch
         input_filename = os.path.join("amanzi-u-1d-calcite-alq-crunch.xml")
         path_to_amanzi = "amanzi-alquimia-crunch-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-calcite-crunch.in","calcite.dbs"])
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-calcite-crunch.in","calcite.dbs"], path_to_amanzi)
 
         comp = 'total_component_concentration.cell.Ca++ conc'
         Ca_amanzi_alquimia_crunch = []
@@ -330,7 +327,7 @@ if __name__ == "__main__":
         # import pdb; pdb.set_trace()
         input_filename = os.path.join("amanzi-s-1d-calcite-alq.xml")
         path_to_amanziS = "struct_amanzi-output-pflo"
-        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
+        run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
         root_amanziS = "plt00501"
         compS = "Ca++_Aqueous_Concentration"
         x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)

@@ -1094,6 +1094,7 @@ protected:
   // Chemistry/solute/tracer parameters 
   //
   static bool do_tracer_chemistry; // Does the user want to react tracers
+  static bool shut_off_reactions; //Hack to do all chemistry-related work, but bypass actual reactions update
   static bool do_tracer_advection; // Does the user want to advect tracers
   static bool do_tracer_diffusion; // Does the user want to diffuse tracers
   static bool setup_tracer_transport; // Should the memory for tracers be allocated/initialized

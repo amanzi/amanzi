@@ -33,7 +33,7 @@
     <execution_controls>
       <verbosity level="high" />
       <execution_control_defaults method="bdf1" mode="steady" />
-      <execution_control end="0.0" init_dt="1000" method="bdf1" mode="steady" start="0.0" />
+      <execution_control end="1.0" init_dt="1" method="bdf1" mode="steady" start="0.0" />
     </execution_controls>
     <numerical_controls>
       <unstructured_controls>

@@ -47,6 +47,14 @@
           <Parameter name="linear solver tolerance" type="double" value="1e-18"/>
           <Parameter name="linear solver maximum iterations" type="int" value="100"/>
         </ParameterList>
+        <ParameterList name="Steady-State Implicit Time Integration">
+          <Parameter name="steady initialize with darcy" type="bool" value="true"/>
+        </ParameterList>
+        <ParameterList name="Initialization">
+          <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+          <Parameter name="linear solver" type="string" value="AztecOO"/>
+          <Parameter name="method" type="string" value="Darcy Solver"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   

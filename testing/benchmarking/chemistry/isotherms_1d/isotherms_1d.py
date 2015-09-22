@@ -9,7 +9,6 @@ import sys
 import h5py
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
 
@@ -106,7 +105,7 @@ def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
 if __name__ == "__main__":
 
     import os
-    import run_amanzi_chem
+    import run_amanzi_standard
     import numpy as np
 
     # root name for problem
@@ -171,7 +170,7 @@ if __name__ == "__main__":
     try:
         input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "amanzi-native-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=[root+".bgd"])
+        run_amanzi_standard.run_amanzi(input_filename, 1, [root+".bgd"], path_to_amanzi)
 
         u_amanzi_native = [[[] for x in range(len(amanzi_totc))] for x in range(len(timesama))]
         for i, time in enumerate(timesama):
@@ -199,7 +198,7 @@ if __name__ == "__main__":
     try:  
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq.xml")
         path_to_amanzi = "amanzi-alquimia-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+"-trim.in",root+".dat"])
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+"-trim.in",root+".dat"], path_to_amanzi)
 
         u_amanzi_alquimia = [[[] for x in range(len(amanzi_totc))] for x in range(len(timesama))]
         for i, time in enumerate(timesama):
@@ -223,7 +222,7 @@ if __name__ == "__main__":
     try:  
         input_filename = os.path.join("amanzi-u-1d-"+root+"-isv2.xml")
         path_to_amanzi = "amanzi-native-isv2-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,isV2=True)
+        run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanzi)
 
         u_amanzi_native_isv2 = [[[] for x in range(len(amanzi_totc))] for x in range(len(timesama2))]
         for i, time in enumerate(timesama2):
@@ -247,7 +246,7 @@ if __name__ == "__main__":
     try:  
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
         path_to_amanzi = "amanzi-alquimia-crunch-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+"-crunch.in",root+".dbs"])
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+"-crunch.in",root+".dbs"], path_to_amanzi)
 
         u_amanzi_alquimia_crunch = [[[] for x in range(len(amanzi_totc_crunch))] for x in range(len(timesama))]
         for i, time in enumerate(timesama):
@@ -274,7 +273,7 @@ if __name__ == "__main__":
     try:
         input_filename = os.path.join("amanzi-s-1d-isotherms-alq-pflo.xml")
         path_to_amanziS = "struct_amanzi-output-pflo"
-        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
+        run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
         root_amanziS = "plt00051"
         c_amanziS = [ [] for x in range(len(amanzi_totc)) ]
         v_amanziS = [ [] for x in range(len(amanzi_totc)) ]
@@ -291,7 +290,7 @@ if __name__ == "__main__":
     try:
         input_filename = os.path.join("amanzi-s-1d-isotherms-alq-crunch.xml")
         path_to_amanziS = "struct_amanzi-output-crunch"
-        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
+        run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
         root_amanziS = "plt00051"
         compS = "A_Aqueous_Concentration"
         x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)

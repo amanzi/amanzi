@@ -26,6 +26,8 @@
 #include "eos_registration.hh"
 #include "errors.hh"
 #include "exceptions.hh"
+#include "multiscale_flow_registration.hh"
+#include "multiscale_transport_registration.hh"
 #include "mpc_pks_registration.hh"
 #include "pks_chemistry_registration.hh"
 #include "pks_flow_registration.hh"
@@ -353,14 +355,18 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   analysis.OutputBCs();
 
   Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(new_list));
-  if (new_list.isSublist("State")) {
-    Teuchos::ParameterList state_plist = new_list.sublist("State");
-    Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
-    S->RegisterMesh("domain", mesh);      
+  Amanzi::CycleDriver cycle_driver(glist, mesh, comm, output_observations);
 
-    Amanzi::CycleDriver cycle_driver(glist, S, comm, output_observations);
-    cycle_driver.Go();
-  }
+  cycle_driver.Go();
+
+  // if (new_list.isSublist("State")) {
+  //   Teuchos::ParameterList state_plist = new_list.sublist("State");
+  //   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
+  //   S->RegisterMesh("domain", mesh);      
+
+  //   Amanzi::CycleDriver cycle_driver(glist, S, comm, output_observations);
+  //   S = cycle_driver.Go();
+  // }
   
   // Clean up
   mesh.reset();

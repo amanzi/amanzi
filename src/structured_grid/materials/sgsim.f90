@@ -65,7 +65,8 @@
       real*8  powint,vrr,vrg,twt,av,ss
       real*8  aa1,aa2,xx,radius1,radius2
       real*8  tmin,tmax,sill
-      
+
+      call bl_abort()
 !
 ! Input/Output units used:
 !
@@ -695,7 +696,7 @@
 !
       inquire(file=datafl,exist=testfl)
       if(testfl) then
-            write(*,*) 'Reading input data'
+            write(*,*) 'SGSIM: Reading input data'
             open(lin,file=datafl,status='OLD')
             read(lin,*,err=99)
             read(lin,*,err=99) nvari
@@ -917,8 +918,9 @@
       end
 
 
-      subroutine readparm2(paramfl,cdata_sz,cdata_idx,&
-                           real_sz,real_idx,int_sz,int_idx,cond_option,rseed)
+      subroutine readparm2(paramfl,cdata_sz,cdata_idx,c_idx_siz,&
+                           real_sz,real_idx,r_idx_siz,int_sz,int_idx,&
+                           i_idx_siz,cond_option,rseed)
 !-----------------------------------------------------------------------
 !
 !                  Initialization and Read Parameters
@@ -933,6 +935,7 @@
 !-----------------------------------------------------------------------
 
       use geostat2
+      implicit none
       include  'sgsim2.inc'
 
       integer   rseed
@@ -942,7 +945,8 @@
       logical   testfl,trans
 
       integer cdata_sz,int_sz, real_sz
-      integer cdata_idx(10),int_idx(20), real_idx(20)
+      integer c_idx_siz,r_idx_siz,i_idx_siz
+      integer cdata_idx(c_idx_siz),int_idx(i_idx_siz),real_idx(r_idx_siz)
 
       integer lin,lout
       integer idum,i
@@ -952,6 +956,7 @@
       real*8  xmnt,ymnt,zmnt,xsizt,ysizt,zsizt,sill
       character outfl*64,dbgfl*64,str*64
       integer myprocid
+
 !
 ! Input/Output units used:
 !
@@ -959,7 +964,6 @@
       lout = 2
       ldbg = 3
       llvm = 4
-      is_ang2_changed = .false.
 
       open(lin,file=paramfl,status='OLD')
 !
@@ -1024,6 +1028,8 @@
       read(lin,*,err=98) sang1,sang2,sang3
       read(lin,*,err=98) mxctx,mxcty,mxctz
       read(lin,*,err=98) ktype
+
+      if (ktype.ge.2) stop 'ktype >= 2 not yet supported'
       
       trans = .true.
       if(ktype.lt.0) then
@@ -1065,7 +1071,7 @@
             endif
       end do
 
-      if (idbg.gt.1) then
+      if (idbg.gt.1 .and. myprocid.eq.0) then
 !         write(*,*) ' do_cond = ',do_cond
          write(*,*) ' data file = ',datafl(1:40)
          write(*,*) ' input columns = ',ixl,iyl,izl,ivrl,iwt,isecvr
@@ -1183,11 +1189,18 @@
 ! ixnode,iynode,iznode
 !
       real_sz = 13 
+      if (r_idx_siz .lt. real_sz) then
+         print *,'ERROR: r_idx_siz too small, increase to at least',real_sz
+      endif
       do i = 1,real_sz
          real_idx(i) = i
       end do
+      !TODO: if ktype >= 2, need space for lvm, which will be as big as the biggest box
 
-      int_sz = 6 + MAXSB + 3*8*MAXSB + 3*MAXXYZ
+      int_sz = 6 + MAXSB + 3*8*MAXSB + 3*MAXXYZ + 2*3
+      if (i_idx_siz .lt. 15) then
+         print *,'ERROR: i_idx_siz too small, increase to at least',15
+      endif
       int_idx(1)  = 1
       int_idx(2)  = 2
       int_idx(3)  = 3
@@ -1201,7 +1214,8 @@
       int_idx(11) = int_idx(10) + 8*MAXSB
       int_idx(12) = int_idx(11) + MAXXYZ
       int_idx(13) = int_idx(12) + MAXXYZ
-      int_idx(14) = int_idx(13) + MAXXYZ
+      int_idx(14) = int_idx(13) + MAXXYZ  ! scratch_i(int_idx(14):int_idx(14)+5) = dlo1,dlo2,dlo3,dhi1,dhi2,dhi3
+      int_idx(15) = int_idx(14) + 6
 
       cdata_sz = 0
       cdata_idx = 0
@@ -1213,6 +1227,9 @@
 
 !        Allocate the needed memory
          cdata_sz = MAXDAT*9 + MAXXYZ
+         if (c_idx_siz .lt. 10) then
+            print *,'ERROR: c_idx_siz too small, increase to at least',10
+         endif
          cdata_idx(1)  = 1
          cdata_idx(2)  = cdata_idx(1) + MAXDAT
          cdata_idx(3)  = cdata_idx(2) + MAXDAT
@@ -1238,15 +1255,16 @@
 
       end
 
-      subroutine read_cond_data(scratch_c,c_sz,c_idx)
+      subroutine read_cond_data(scratch_c,c_sz,c_idx,c_idx_siz)
 !-----------------------------------------------------
 ! Read conditioning data from GSLIB-style files
 !-----------------------------------------------------
-
       use geostat2
+      implicit none
       include 'sgsim2.inc'
        
-      integer   c_sz,c_idx(10)
+      integer   c_idx_siz
+      integer   c_sz,c_idx(c_idx_siz)
       character tmpfl*64
       
       real*8, target ::  scratch_c(c_sz)
@@ -1292,7 +1310,7 @@
 
 
       subroutine get_maxdat(ndat,datafl,smthfl)
-
+      implicit none
       integer   ndat
       character datafl*64, smthfl*64
 
@@ -1352,13 +1370,14 @@
 
       subroutine read_datafl(x,y,z,vr,wt,sec,nvr)
 
+      implicit none
       include 'sgsim2.inc'
 
       integer nvr
       real*8  x(nvr),y(nvr),z(nvr),vr(nvr),wt(nvr),sec(nvr)
 
       logical testfl      
-      integer i,j,nvari,nt,lin
+      integer i,j,nvari,nt,lin,myprocid
       real*8  twt,av,ss
       real*8,allocatable :: var(:)
 
@@ -1369,7 +1388,10 @@
          write(*,*) "datafl is wrong: ",datafl
          stop
       end if
-      write(*,*) 'Reading input data'
+      call bl_pd_myproc(myprocid)
+      if (myprocid.eq.0) then
+         write(*,*) 'Reading input data'
+      endif
       open(lin,file=datafl,status='OLD')
       read(lin,*,err=99)
       read(lin,*,err=99) nvari
@@ -1431,14 +1453,15 @@
 !
 ! Compute the averages and variances as an error check for the user:
 !
-      av = av / max(twt,EPSLON)
-      ss =(ss / max(twt,EPSLON)) - av * av
-      write(*,   111) nd,nt,av,ss
-111   format(/,' Data for SGSIM: Number of acceptable data  = ',i8,/,&
-            '                 Number trimmed             = ',i8,/,&
-            '                 Weighted Average           = ',f12.4,/,&
-            '                 Weighted Variance          = ',f12.4,/)
-
+      if (myprocid.eq.0) then
+         av = av / max(twt,EPSLON)
+         ss =(ss / max(twt,EPSLON)) - av * av
+         write(*,   111) nd,nt,av,ss
+111      format(/,' Data for SGSIM: Number of acceptable data  = ',i8,/,&
+              '                 Number trimmed             = ',i8,/,&
+              '                 Weighted Average           = ',f12.4,/,&
+              '                 Weighted Variance          = ',f12.4,/)
+      endif
       close(lin)
       return
  99   stop 'ERROR in data file!'
@@ -1449,6 +1472,7 @@
       subroutine setup_trans_table(vrtr,vrgtr,nvr,ntr,transfl,&
                                    tmpfl,icolvr,icolwt,tmin,tmax)
 
+      implicit none
       character tmpfl*64,transfl*64,str*64
       integer   icolvr,icolwt,nvr,ntr
       real*8    vrtr(nvr),vrgtr(nvr)
@@ -1562,7 +1586,7 @@
 !-----------------------------------------------------------------------
 ! Normal scores transform
 !-----------------------------------------------------------------------
-
+      implicit none
       integer nvr,ntr
       real*8  vr(nvr),vrtr(ntr),vrgtr(ntr)      
 
@@ -1588,9 +1612,10 @@
 !-----------------------------------------------------------------------
 
       use geostat2
+      implicit none
       include "sgsim2.inc"
 
-      logical testfl,testind,trans
+      logical testfl,testindx,testindy,testindz,trans
       integer i,j,index,ns
       integer iz,iy,ix,ierr
       real*8  av,ss,vrr,vrg,powint,oldcp,cp,w
@@ -1664,11 +1689,17 @@
 !
       if(ktype.eq.2) then
          do i=1,nd
-            call getindx(nx,xmn,xsiz,x(i),ix,testind)
-            call getindx(ny,ymn,ysiz,y(i),iy,testind)
-            call getindx(nz,zmn,zsiz,z(i),iz,testind)
-            index = ix + (iy-1)*nx + (iz-1)*nxy
-            sec(i) = lvm(index)
+            !call getindx(nx,xmn,xsiz,x(i),ix,testind)
+            !call getindx(ny,ymn,ysiz,y(i),iy,testind)
+            !call getindx(nz,zmn,zsiz,z(i),iz,testind)
+            !index = ix + (iy-1)*nx + (iz-1)*nxy
+            call getindxmod(dlo(1),dhi(1),xmn,xsiz,x(i),ix,testindx)
+            call getindxmod(dlo(2),dhi(2),ymn,ysiz,y(i),iy,testindy)
+            call getindxmod(dlo(3),dhi(3),zmn,zsiz,z(i),iz,testindz)
+            if (testindx .and. testindy .and. testindz) then
+               call get1Didx(ix,iy,iz,dlo,dhi,index)
+               sec(i) = lvm(index)
+            endif
 !
 ! Calculation of residual moved to krige subroutine: vr(i)=vr(i)-sec(i)
 !
@@ -1680,11 +1711,17 @@
       if(ktype.eq.3) then
          do i=1,nd
             if(sec(i).eq.UNEST) then
-               call getindx(nx,xmn,xsiz,x(i),ix,testind)
-               call getindx(ny,ymn,ysiz,y(i),iy,testind)
-               call getindx(nz,zmn,zsiz,z(i),iz,testind)
-               index = ix + (iy-1)*nx + (iz-1)*nxy
-               sec(i) = lvm(index)
+               !call getindx(nx,xmn,xsiz,x(i),ix,testind)
+               !call getindx(ny,ymn,ysiz,y(i),iy,testind)
+               !call getindx(nz,zmn,zsiz,z(i),iz,testind)
+               !index = ix + (iy-1)*nx + (iz-1)*nxy
+               call getindxmod(dlo(1),dhi(1),xmn,xsiz,x(i),ix,testindx)
+               call getindxmod(dlo(2),dhi(2),ymn,ysiz,y(i),iy,testindy)
+               call getindxmod(dlo(3),dhi(3),zmn,zsiz,z(i),iz,testindz)
+               if (testindx .and. testindy .and. testindz) then
+                  call get1Didx(ix,iy,iz,dlo,dhi,index)
+                  sec(i) = lvm(index)
+               endif
             end if
          end do
       end if
@@ -2170,10 +2207,69 @@
       return
       end
 
+      subroutine getindxmod(ilo,ihi,min,siz,loc,index,inflag)
+! -----------------------------------------------------------------------
+!      Gets the coordinate index location of a point within a grid cell
+!      -MSD: Modified orig to augment arglist with allowable idx range
+!      ***********************************************************
+!      ilo     minimum allowable index
+!      ihi     maximum allowable index
+!      min     location of left side of ilo
+!      siz     size of the cells
+!      loc     location of the point being considered
+!      index   output index within [ilo,ihi]
+!      inflag  true if the location is actually in the grid (false otherwise
+!              e.g., if the location is outside then index will be set to
+!              nearest boundary
+! -----------------------------------------------------------------------
+      implicit none
+      integer   ilo, ihi,index
+      real*8    min,siz,loc
+      logical   inflag
+
+      ! Compute the index of "loc":
+      index = int( (loc-min)/siz ) + ilo
+
+      ! Check to see if in or out:
+      if(index.lt.ilo) then
+            index  = ilo
+            inflag = .false.
+      else if(index.gt.ihi) then
+            index  = ihi
+            inflag = .false.
+      else
+            inflag = .true.
+      end if
+      end
+
+      subroutine get3Didx(ix,iy,iz,dlo,dhi,idx1D)
+      implicit none
+      integer idx1D,ix,iy,iz,dlo(3),dhi(3),nx,ny
+      nx = (dhi(1)-dlo(1)+1)
+      ny = (dhi(2)-dlo(2)+1)
+      iz = int((idx1D-1)/(nx*ny)) + dlo(3)
+      iy = int((idx1D-(iz-dlo(3))*nx*ny-1)/nx) + dlo(2)
+      ix = idx1D - (iz-dlo(3))*nx*ny - (iy-dlo(2))*nx + dlo(1) - 1
+      end
+
+      subroutine get1Didx(ix,iy,iz,dlo,dhi,idx1D)
+      implicit none
+      integer idx1D,ix,iy,iz,dlo(3),dhi(3),nx,ny
+      nx = (dhi(1)-dlo(1)+1)
+      ny = (dhi(2)-dlo(2)+1)
+      idx1D = ix-dlo(1) + (iy-dlo(2))*nx + (iz-dlo(3))*nx*ny + 1
+      end
+
+      double precision function getCCloc(idx,mn,lo,sz)
+      implicit none
+      integer idx,lo
+      double precision mn, sz
+      getCCloc = mn + dble(idx-lo+0.5d0)*sz
+      end
 
       subroutine sgsim_setup(sim,sim_sz,scratch_c,c_sz,c_idx,&
-        scratch_r,real_sz,real_idx,&
-        scratch_i,int_sz,int_idx)
+           c_idx_siz,scratch_r,real_sz,real_idx,r_idx_siz,&
+           scratch_i,int_sz,int_idx,i_idx_siz)
 !-----------------------------------------------------------------------
 !
 !    SGSIM setup: Only for a single instance. 
@@ -2181,22 +2277,24 @@
 !-----------------------------------------------------------------------
 
       use       geostat2
+      implicit none
       include  'sgsim2.inc'
 
-      integer   sim_sz,c_sz,real_sz,int_sz
-      integer   c_idx(10),real_idx(20),int_idx(20)
+      integer, intent(in) ::  sim_sz,c_sz,real_sz,int_sz
+      integer   c_idx_siz, r_idx_siz, i_idx_siz
+      integer   c_idx(c_idx_siz),real_idx(r_idx_siz),int_idx(i_idx_siz)
       real*8    sim(sim_sz)
 
       integer, target :: scratch_i(int_sz)
       real*8 , target :: scratch_c(c_sz)
       real*8 , target :: scratch_r(real_sz)
       
-      logical   testind
+      logical   testindx, testindy, testindz
       integer   ix,iy,iz,id2,id,ind,nsbtosr,nsec,is
       real*8    xx,yy,zz
       real*8    sec2,sec3
       real*8    test2,TINY
-
+      double precision getCCloc
 
       nx       => scratch_i(int_idx(1))
       ny       => scratch_i(int_idx(2))
@@ -2211,6 +2309,8 @@
       ixnode   => scratch_i(int_idx(11):int_idx(12)-1)
       iynode   => scratch_i(int_idx(12):int_idx(13)-1)
       iznode   => scratch_i(int_idx(13):int_idx(14)-1)
+      dlo      => scratch_i(int_idx(14):int_idx(14)+2)
+      dhi      => scratch_i(int_idx(14)+3:int_idx(14)+5)
 
       xmn      => scratch_r(real_idx(1))
       ymn      => scratch_r(real_idx(2))
@@ -2224,7 +2324,9 @@
       xsizsup  => scratch_r(real_idx(10))
       ysizsup  => scratch_r(real_idx(11))
       zsizsup  => scratch_r(real_idx(12))
-      lvm      => scratch_r(real_idx(13):real_idx(12)+nx*ny*nz) 
+      if (ktype .ge. 2) then
+         lvm      => scratch_r(real_idx(13):real_idx(13)+nx*ny*nz-1)
+      endif
 
       if (do_cond .gt. 0) then
          x     => scratch_c(c_idx(1):c_idx(2)-1)
@@ -2237,9 +2339,6 @@
          close => scratch_c(c_idx(8):c_idx(9)-1)
          sec   => scratch_c(c_idx(9):c_idx(10)-1)
       end if
-
-      nxy  = nx*ny
-      nxyz = nx*ny*nz
 ! 
 ! Set up the rotation/anisotropy matrices that are needed for the
 ! variogram and search.
@@ -2269,53 +2368,70 @@
 !      
 !      write(*,*) 'Constructing covariance matrix'
       call ctable2()
-
 !
 ! Assign the data to the closest grid node:
 !
       sim = UNEST
       TINY = 0.0001
       do id=1,nd
-         call getindx(nx,xmn,xsiz,x(id),ix,testind)
-         call getindx(ny,ymn,ysiz,y(id),iy,testind)
-         call getindx(nz,zmn,zsiz,z(id),iz,testind)
 
-         ind = ix + (iy-1)*nx + (iz-1)*nxy
-         xx  = xmn + dble(ix-1)*xsiz
-         yy  = ymn + dble(iy-1)*ysiz
-         zz  = zmn + dble(iz-1)*zsiz
+         call getindxmod(dlo(1),dhi(1),xmn,xsiz,x(id),ix,testindx)
+         call getindxmod(dlo(2),dhi(2),ymn,ysiz,y(id),iy,testindy)
+         call getindxmod(dlo(3),dhi(3),zmn,zsiz,z(id),iz,testindz)
 
-! FIXME: Is this more correct?
-         xx  = xmn + dble(ix-0.5d0)*xsiz
-         yy  = ymn + dble(iy-0.5d0)*ysiz
-         zz  = zmn + dble(iz-0.5d0)*zsiz
+         if (testindx .and. testindy .and. testindz) then
 
-         test = abs(xx-x(id)) + abs(yy-y(id)) + abs(zz-z(id))
+            xx = getCCloc(ix,xmn,dlo(1),xsiz)
+            yy = getCCloc(iy,ymn,dlo(2),ysiz)
+            zz = getCCloc(iz,zmn,dlo(3),zsiz)
+
+            test = abs(xx-x(id)) + abs(yy-y(id)) + abs(zz-z(id))
 !
 ! Assign this data to the node (unless there is a closer data):
 !
-         if(sstrat.eq.1) then
-            if(sim(ind).ge.0.d0) then
-               id2 = int(sim(ind)+0.5)
-               test2 = abs(xx-x(id2)) + abs(yy-y(id2))&
+            call get1Didx(ix,iy,iz,dlo,dhi,ind)
+            if(sstrat.eq.1) then
+               if (ind .gt. sim_sz) then
+                  print *,'dlo,dhi',dlo,dhi
+                  print *,'ix,iy,iz,ind:',ix,iy,iz,ind
+                  print *,'bust in sgsim_setup',ind,sim_sz
+                  stop
+               endif
+               if(sim(ind).ge.0.d0) then
+                  id2 = int(sim(ind)+0.5)
+                  test2 = abs(xx-x(id2)) + abs(yy-y(id2))&
                        + abs(zz-z(id2))
-               if(test.le.test2) sim(ind) = dble(id)
-               write(ldbg,102) id,id2
-            else
-               sim(ind) = dble(id)
+                  if(test.le.test2) sim(ind) = dble(id)
+                  write(ldbg,102) id,id2
+               else
+                  sim(ind) = dble(id)
+               end if
             end if
-         end if
 !
-! Assign a flag so that this node does not get simulated:
+! If not assign to node, but coincidently lands on node,
+! assign a flag so that this node does not get simulated:
 !
-         if(sstrat.eq.0.and.test.le.TINY) sim(ind)=10.0*UNEST
+            if(sstrat.eq.0.and.test.le.TINY) sim(ind)=10.0*UNEST
+
+         else
+            ! print *,'conditioning data outside domain'
+            ! print *,'   (x,y,z) = (',x(id),y(id),z(id),')'
+            ! print *,'   domain_lo = (',xmn,ymn,zmn,')'
+            ! print *,'   domain_hi = (',&
+            !      xmn+dble(dhi(1)-dlo(1)+1)*xsiz,&
+            !      ymn+dble(dhi(2)-dlo(2)+1)*ysiz,&
+            !      zmn+dble(dhi(3)-dlo(3)+1)*zsiz,')'
+            ! print *,testindx,testindy,testindz
+         endif
       end do
+
  102  format(' WARNING data values ',2i5,' are both assigned to ',&
              /,'         the same node - taking the closest')
+
 !
 ! Now, enter data values into the simulated grid:
 !
-      do ind=1,nxyz
+      do ind=1,sim_sz
          if(sim(ind).gt.0) then
             id = int(sim(ind)+0.5)
             if(id.gt.0) sim(ind) = vr(id)
@@ -2324,8 +2440,9 @@
       end
 
       subroutine sgsim_single_iter(index,sim,sim_sz,&
-        scratch_c,c_sz,c_idx,&
-        scratch_r,real_sz,real_idx,scratch_i,int_sz,int_idx)
+           scratch_c,c_sz,c_idx,c_idx_siz,&
+           scratch_r,real_sz,real_idx,r_idx_siz,&
+           scratch_i,int_sz,int_idx,i_idx_siz)
 !-----------------------------------------------------------------------
 !
 !    SGSIM iteration: Only for a single iteration. 
@@ -2333,11 +2450,13 @@
 !-----------------------------------------------------------------------      
 
       use       geostat2
+      implicit none
       include  'sgsim2.inc'
 
       integer index
       integer sim_sz,c_sz,real_sz,int_sz
-      integer c_idx(10),real_idx(20),int_idx(20)
+      integer c_idx_siz, r_idx_siz, i_idx_siz
+      integer c_idx(c_idx_siz),real_idx(r_idx_siz),int_idx(i_idx_siz)
       real*8  sim(sim_sz)
 
       integer, target :: scratch_i(int_sz) 
@@ -2350,6 +2469,7 @@
       real*8  p,acorni,xp,cstdev,cmean,gmean
       real*8  cnodex(MAXNOD),cnodey(MAXNOD),cnodez(MAXNOD)
       real*8  cnodev(MAXNOD)
+      double precision getCCloc
 
       nx       => scratch_i(int_idx(1))
       ny       => scratch_i(int_idx(2))
@@ -2364,6 +2484,8 @@
       ixnode   => scratch_i(int_idx(11):int_idx(12)-1)
       iynode   => scratch_i(int_idx(12):int_idx(13)-1)
       iznode   => scratch_i(int_idx(13):int_idx(14)-1)
+      dlo      => scratch_i(int_idx(14):int_idx(14)+2)
+      dhi      => scratch_i(int_idx(14)+3:int_idx(14)+5)
 
       xmn      => scratch_r(real_idx(1))
       ymn      => scratch_r(real_idx(2))
@@ -2377,7 +2499,9 @@
       xsizsup  => scratch_r(real_idx(10))
       ysizsup  => scratch_r(real_idx(11))
       zsizsup  => scratch_r(real_idx(12))
-      lvm      => scratch_r(real_idx(12)+1:real_idx(12)+nx*ny*nz)
+      if (ktype .ge. 2) then
+         lvm      => scratch_r(real_idx(13):real_idx(13)+nx*ny*nz-1)
+      endif
 
       x        => scratch_c(c_idx(1):c_idx(2)-1)
       y        => scratch_c(c_idx(2):c_idx(3)-1)
@@ -2389,26 +2513,17 @@
       close    => scratch_c(c_idx(8):c_idx(9)-1)
       sec      => scratch_c(c_idx(9):c_idx(10)-1)
 
-      nxy  = nx*ny
-      nxyz = nx*ny*nz
-
 !
 ! Figure out the location of this point and make sure it has
 ! not been assigned a value already:
-!
-      
+!      
       if(sim(index).gt.(UNEST+EPSLON).or.&
          sim(index).lt.(UNEST*2.0)) return
-      iz = int((index-1)/nxy) + 1
-      iy = int((index-(iz-1)*nxy-1)/nx) + 1
-      ix = index - (iz-1)*nxy - (iy-1)*nx
-      xx = xmn + dble(ix-1)*xsiz
-      yy = ymn + dble(iy-1)*ysiz
-      zz = zmn + dble(iz-1)*zsiz
 
-      xx = xmn + dble(ix-0.5d0)*xsiz
-      yy = ymn + dble(iy-0.5d0)*ysiz
-      zz = zmn + dble(iz-0.5d0)*zsiz
+      call get3Didx(ix,iy,iz,dlo,dhi,index)
+      xx = getCCloc(ix,xmn,dlo(1),xsiz)
+      yy = getCCloc(iy,ymn,dlo(2),ysiz)
+      zz = getCCloc(iz,zmn,dlo(3),zsiz)
 !
 ! Now, we'll simulate the point ix,iy,iz.  First, get the close data
 ! and make sure that there are enough to actually simulate a value,
@@ -2425,7 +2540,7 @@
          if(nclose.lt.ndmin) return
          if(nclose.gt.ndmax) nclose = ndmax
       endif
-      call srchnd2(icnode,cnodex,cnodey,cnodez,cnodev,sim,ix,iy,iz)
+      call srchnd2(icnode,cnodex,cnodey,cnodez,cnodev,sim,sim_sz,ix,iy,iz)
 !
 ! Calculate the conditional mean and standard deviation.  This will be
 ! done with kriging if there are data, otherwise, the global mean and
@@ -2449,10 +2564,11 @@
 
          lktype = ktype
          if(ktype.eq.1.and.(nclose+ncnode).lt.4)lktype=0
+
          call krige2(icnode,cnodex,cnodey,cnodez,cnodev,&
                    ix,iy,iz,xx,yy,zz,lktype,gmean,&
                    cmean,cstdev)
-      endif
+     endif
 !
 ! Draw a random number and assign a value to this node:
 !
@@ -2477,8 +2593,9 @@
 
       end
  
-      subroutine sgsim_post(sim,sim_sz, scratch_c,c_sz,c_idx,&
-        scratch_r,real_sz,real_idx,scratch_i,int_sz,int_idx)
+      subroutine sgsim_post(sim,sim_sz, scratch_c,c_sz,c_idx,c_idx_siz,&
+           scratch_r,real_sz,real_idx,r_idx_siz,scratch_i,int_sz,&
+           int_idx,i_idx_siz)
 !-----------------------------------------------------------------------
 !
 !    SGSIM postprocessing: for a single instance. 
@@ -2487,24 +2604,29 @@
 
 
       use       geostat2
+      implicit none
       include  'sgsim2.inc'
 
       integer   sim_sz,c_sz,real_sz,int_sz
-      integer   c_idx(10),real_idx(20),int_idx(20)
+      integer   c_idx_siz, r_idx_siz, i_idx_siz
+      integer   c_idx(c_idx_siz),real_idx(r_idx_siz),int_idx(i_idx_siz)
       real*8    sim(sim_sz)
 
       integer,  target :: scratch_i(int_sz) 
       real*8,   target :: scratch_c(c_sz)
       real*8,   target :: scratch_r(real_sz)
 
+      logical   testindx, testindy, testindz
       integer   ne,ind,id,ix,iy,iz
       real*8    ss,av,xx,yy,zz
       real*8    backtr,simval,TINY
-      logical   testind
+      double precision getCCloc
 
       nx       => scratch_i(int_idx(1))
       ny       => scratch_i(int_idx(2))
       nz       => scratch_i(int_idx(3))
+      dlo      => scratch_i(int_idx(14):int_idx(14)+2)
+      dhi      => scratch_i(int_idx(14)+3:int_idx(14)+5)
 
       xmn      => scratch_r(real_idx(1))
       ymn      => scratch_r(real_idx(2))
@@ -2512,7 +2634,9 @@
       xsiz     => scratch_r(real_idx(4))
       ysiz     => scratch_r(real_idx(5))
       zsiz     => scratch_r(real_idx(6))
-      lvm      => scratch_r(real_idx(13):real_idx(12)+nx*ny*nz)
+      if (ktype .ge. 2) then
+         lvm      => scratch_r(real_idx(13):real_idx(13)+nx*ny*nz-1)
+      endif
 
       x        => scratch_c(c_idx(1):c_idx(2)-1)
       y        => scratch_c(c_idx(2):c_idx(3)-1)
@@ -2522,23 +2646,25 @@
       vrtr     => scratch_c(c_idx(6):c_idx(7)-1)
       vrgtr    => scratch_c(c_idx(7):c_idx(8)-1)
 
-      nxy = nx*ny
-      nxyz = nx*ny*nz
 !
 ! Do we need to reassign the data to the grid nodes?
 !
       TINY = 0.0001
       if(sstrat.eq.0) then
          do id=1,nd
-            call getindx(nx,xmn,xsiz,x(id),ix,testind)
-            call getindx(ny,ymn,ysiz,y(id),iy,testind)
-            call getindx(nz,zmn,zsiz,z(id),iz,testind)
-            xx  = xmn + dble(ix-1)*xsiz
-            yy  = ymn + dble(iy-1)*ysiz
-            zz  = zmn + dble(iz-1)*zsiz
-            ind = ix + (iy-1)*nx + (iz-1)*nxy
-            test=abs(xx-x(id))+abs(yy-y(id))+abs(zz-z(id))
-            if(test.le.TINY) sim(ind) = vr(id)
+            call getindxmod(dlo(1),dhi(1),xmn,xsiz,x(id),ix,testindx)
+            call getindxmod(dlo(2),dhi(2),ymn,ysiz,y(id),iy,testindy)
+            call getindxmod(dlo(3),dhi(3),zmn,zsiz,z(id),iz,testindz)
+
+            if (testindx .and. testindy .and. testindz) then
+               call get1Didx(ix,iy,iz,dlo,dhi,ind)
+               xx = getCCloc(ix,xmn,dlo(1),xsiz)
+               yy = getCCloc(iy,ymn,dlo(2),ysiz)
+               zz = getCCloc(iz,zmn,dlo(3),zsiz)
+
+               test=abs(xx-x(id))+abs(yy-y(id))+abs(zz-z(id))
+               if(test.le.TINY) sim(ind) = vr(id)
+            endif
          end do
       end if
 !
@@ -2547,7 +2673,7 @@
       ne = 0
       av = 0.d0
       ss = 0.d0
-      do ind=1,nxyz
+      do ind=1,sim_sz
          simval = sim(ind)
          if(simval.gt.-9.0.and.simval.lt.9.0) then
             ne = ne + 1
@@ -2624,6 +2750,7 @@
 
 
       use       geostat
+      implicit none
       include  'sgsim.inc'
 
       integer ix,iy,iz,loc
@@ -2661,7 +2788,7 @@
 !
 ! Initialize the covariance subroutine and cbb at the same time:
 !
-      call cova3(0.d0,0.d0,0.d0,0.d0,0.d0,0.d0,1,nst,MAXNST,c0,it,cc,aa,&
+      call cova3m(0.d0,0.d0,0.d0,0.d0,0.d0,0.d0,1,nst,MAXNST,c0,it,cc,aa,&
                 1,MAXROT,rotmat,cmax,cbb)
 !
 ! Now, set up the table and keep track of the node offsets that are
@@ -2677,7 +2804,7 @@
       do k=-nctz,nctz
       zz = k * zsiz
       kc = nctz + 1 + k
-            call cova3(0.d0,0.d0,0.d0,xx,yy,zz,1,nst,MAXNST,c0,it,cc,aa,&
+            call cova3m(0.d0,0.d0,0.d0,xx,yy,zz,1,nst,MAXNST,c0,it,cc,aa,&
                       1,MAXROT,rotmat,cmax,covtab(ic,jc,kc))
             hsqd = sqdist(0.d0,0.d0,0.d0,xx,yy,zz,isrot,MAXROT,rotmat)
             
@@ -2777,6 +2904,7 @@
 
 
       use geostat
+      implicit none
       include  'sgsim.inc'
       integer   ninoct(8)
 
@@ -2866,6 +2994,7 @@
 !-----------------------------------------------------------------------
 
       use      geostat
+      implicit none
       include 'sgsim.inc'
 
       logical first
@@ -2930,8 +3059,10 @@
                   iy1    = iy + (int(iynode(ind))-ncty-1)
                   iz1    = iz + (int(iznode(ind))-nctz-1)
                   index  = ix1 + (iy1-1)*nx + (iz1-1)*nxy
-                  vrea(j)= lvm(index)
-                  if(lktype.eq.2) vra(j) = vra(j) - vrea(j)
+                  if (ktype.eq.2) then
+                     vrea(j)= lvm(index)
+                     vra(j) = vra(j) - vrea(j)
+                  endif
             endif
             do i=1,j
 !
@@ -2963,7 +3094,7 @@
 ! Decide whether or not to use the covariance look-up table:
 !
                   if(j.le.nclose.or.i.le.nclose) then
-                        call cova3(x1,y1,z1,x2,y2,z2,1,nst,MAXNST,c0,it,&
+                        call cova3m(x1,y1,z1,x2,y2,z2,1,nst,MAXNST,c0,it,&
                                   cc,aa,1,MAXROT,rotmat,cmax,cov)
                         a(in) = cov
                   else
@@ -2976,7 +3107,7 @@
                         if(ii.lt.1.or.ii.gt.MAXCTX.or.&
                           jj.lt.1.or.jj.gt.MAXCTY.or.&
                           kk.lt.1.or.kk.gt.MAXCTZ) then
-                              call cova3(x1,y1,z1,x2,y2,z2,1,nst,MAXNST,&
+                              call cova3m(x1,y1,z1,x2,y2,z2,1,nst,MAXNST,&
                                   c0,it,cc,aa,1,MAXROT,rotmat,cmax,cov)
                         else
                               cov = covtab(ii,jj,kk)
@@ -2988,7 +3119,7 @@
 ! Get the RHS value (possibly with covariance look-up table):
 !
             if(j.le.nclose) then
-                  call cova3(xx,yy,zz,x1,y1,z1,1,nst,MAXNST,c0,it,cc,aa,&
+                  call cova3m(xx,yy,zz,x1,y1,z1,1,nst,MAXNST,c0,it,cc,aa,&
                             1,MAXROT,rotmat,cmax,cov)
                   r(j) = cov
             else
@@ -3001,7 +3132,7 @@
                   if(ii.lt.1.or.ii.gt.MAXCTX.or.&
                     jj.lt.1.or.jj.gt.MAXCTY.or.&
                     kk.lt.1.or.kk.gt.MAXCTZ) then
-                        call cova3(xx,yy,zz,x1,y1,z1,1,nst,MAXNST,c0,it,&
+                        call cova3m(xx,yy,zz,x1,y1,z1,1,nst,MAXNST,c0,it,&
                                   cc,aa,1,MAXROT,rotmat,cmax,cov)
                   else
                         cov = covtab(ii,jj,kk)
@@ -3196,6 +3327,7 @@
 
 
       use       geostat2
+      implicit none
       include  'sgsim2.inc'
 
 
@@ -3235,7 +3367,7 @@
 !
 ! Initialize the covariance subroutine and cbb at the same time:
 !
-      call cova3(0.d0,0.d0,0.d0,0.d0,0.d0,0.d0,1,nst,MAXNST,c0,it,cc,aa,&
+      call cova3m(0.d0,0.d0,0.d0,0.d0,0.d0,0.d0,1,nst,MAXNST,c0,it,cc,aa,&
                  1,MAXROT,rotmat,cmax,cbb)
 !
 ! Now, set up the table and keep track of the node offsets that are
@@ -3251,7 +3383,7 @@
       do k=-nctz,nctz
       zz = k * zsiz
       kc = nctz + 1 + k
-            call cova3(0.d0,0.d0,0.d0,xx,yy,zz,1,nst,MAXNST,c0,it,cc,aa,&
+            call cova3m(0.d0,0.d0,0.d0,xx,yy,zz,1,nst,MAXNST,c0,it,cc,aa,&
                       1,MAXROT,rotmat,cmax,covtab(ic,jc,kc))
             hsqd = sqdist(0.d0,0.d0,0.d0,xx,yy,zz,isrot,MAXROT,rotmat)
             
@@ -3313,7 +3445,7 @@
       end
 
       subroutine srchnd2(icnode,cnodex,cnodey,cnodez,cnodev,&
-                        sim,ix,iy,iz)
+                        sim,sim_sz,ix,iy,iz)
 !-----------------------------------------------------------------------
 !
 !               Search for nearby Simulated Grid nodes
@@ -3348,18 +3480,18 @@
 !-----------------------------------------------------------------------
 
       use geostat2
+      implicit none
       include 'sgsim2.inc'
 
-      integer ix,iy,iz
+      integer sim_sz,ix,iy,iz
       integer icnode(MAXNOD)
       real*8  cnodex(MAXNOD),cnodey(MAXNOD),cnodez(MAXNOD)
       real*8  cnodev(MAXNOD)
-      real*8  sim(nxyz)
+      real*8  sim(sim_sz)
 
       integer i,j,k,il,ind,idx,idy,idz,iq
       integer ninoct(8)
       
-
 !
 ! Consider all the nearby nodes until enough have been found:
 !
@@ -3374,9 +3506,16 @@
             i = ix + (ixnode(il)-nctx-1)
             j = iy + (iynode(il)-ncty-1)
             k = iz + (iznode(il)-nctz-1)
-            if(i.lt. 1.or.j.lt. 1.or.k.lt. 1) go to 2
-            if(i.gt.nx.or.j.gt.ny.or.k.gt.nz) go to 2
-            ind = i + (j-1)*nx + (k-1)*nxy
+
+            if (i.lt.dlo(1).or.j.lt.dlo(2).or.k.lt.dlo(3)) goto 2
+            if (i.gt.dhi(1).or.j.gt.dhi(2).or.k.gt.dhi(3)) goto 2
+
+            call get1Didx(i,j,k,dlo,dhi,ind)
+            if (ind.gt.sim_sz) then
+               print *,'bust in srchnd2',ind,sim_sz
+            endif
+
+
             if(sim(ind).gt.UNEST) then
 !
 ! Check the number of data already taken from this octant:
@@ -3444,6 +3583,7 @@
 !-----------------------------------------------------------------------
 
       use      geostat2
+      implicit none
       include 'sgsim2.inc'
 
       integer ix,iy,iz
@@ -3477,12 +3617,14 @@
       if(lktype.eq.4) neq = na + 1
       if(lktype.eq.5) neq = na + 1
       if(lktype.ge.3) then
-         ind = ix + (iy-1)*nx + (iz-1)*nxy
+         call get1Didx(ix,iy,iz,dlo,dhi,ind)
+         !ind = ix + (iy-1)*nx + (iz-1)*nxy
          if(lvm(ind).le.-6.0.or.lvm(ind).ge.6.0) then
             lktype = 0
             go to 33
          end if      
       end if
+
 !
 ! Set up kriging matrices:
 !
@@ -3512,9 +3654,12 @@
             ix1    = ix + (int(ixnode(ind))-nctx-1)
             iy1    = iy + (int(iynode(ind))-ncty-1)
             iz1    = iz + (int(iznode(ind))-nctz-1)
-            index  = ix1 + (iy1-1)*nx + (iz1-1)*nxy
-            vrea(j)= lvm(index)
-            if(lktype.eq.2) vra(j) = vra(j) - vrea(j)
+            call get1Didx(ix1,iy1,iz1,dlo,dhi,index)
+            !index  = ix1 + (iy1-1)*nx + (iz1-1)*nxy
+            if (lktype.eq.2) then
+               vrea(j)= lvm(index)
+               vra(j) = vra(j) - vrea(j)
+            endif
          endif
          do i=1,j
 !
@@ -3545,8 +3690,10 @@
 !
 ! Decide whether or not to use the covariance look-up table:
 !
+
+
              if(j.le.nclose.or.i.le.nclose) then
-                call cova3(x1,y1,z1,x2,y2,z2,1,nst,MAXNST,c0,it,&
+                call cova3m(x1,y1,z1,x2,y2,z2,1,nst,MAXNST,c0,it,&
                           cc,aa,1,MAXROT,rotmat,cmax,cov)
                 a(in) = dble(cov)
              else
@@ -3559,7 +3706,7 @@
                 if(ii.lt.1.or.ii.gt.MAXCTX.or.&
                   jj.lt.1.or.jj.gt.MAXCTY.or.&
                   kk.lt.1.or.kk.gt.MAXCTZ) then
-                   call cova3(x1,y1,z1,x2,y2,z2,1,nst,MAXNST,&
+                   call cova3m(x1,y1,z1,x2,y2,z2,1,nst,MAXNST,&
                              c0,it,cc,aa,1,MAXROT,rotmat,cmax,cov)
                 else
                    cov = covtab(ii,jj,kk)
@@ -3571,7 +3718,7 @@
 ! Get the RHS value (possibly with covariance look-up table):
 !
           if(j.le.nclose) then
-             call cova3(xx,yy,zz,x1,y1,z1,1,nst,MAXNST,c0,it,cc,aa,&
+             call cova3m(xx,yy,zz,x1,y1,z1,1,nst,MAXNST,c0,it,cc,aa,&
                        1,MAXROT,rotmat,cmax,cov)
              r(j) = dble(cov)
           else
@@ -3581,10 +3728,11 @@
              ii = nctx + 1 + (ix - ix1)
              jj = ncty + 1 + (iy - iy1)
              kk = nctz + 1 + (iz - iz1)
+
              if(ii.lt.1.or.ii.gt.MAXCTX.or.&
                jj.lt.1.or.jj.gt.MAXCTY.or.&
                kk.lt.1.or.kk.gt.MAXCTZ) then
-                call cova3(xx,yy,zz,x1,y1,z1,1,nst,MAXNST,c0,it,&
+                call cova3m(xx,yy,zz,x1,y1,z1,1,nst,MAXNST,c0,it,&
                           cc,aa,1,MAXROT,rotmat,cmax,cov)
              else
                 cov = covtab(ii,jj,kk)
@@ -3642,7 +3790,8 @@
          a(in)    = 0.d0
          in       = in + 1
          a(in)    = 0.d0
-         ind      = ix + (iy-1)*nx + (iz-1)*nxy
+         call get1Didx(ix,iy,iz,dlo,dhi,ind)
+         !ind      = ix + (iy-1)*nx + (iz-1)*nxy
          r(na+2)  = lvm(ind)
          rr(na+2) = r(na+2)
          if((edmax-edmin).lt.EPSLON) neq = neq - 1
@@ -3717,12 +3866,14 @@
          cstdev = cstdev - dble(s(i)*rr(i))
          sumwts = sumwts + dble(s(i))
       end do
+
       if(lktype.eq.1) cstdev = cstdev - dble(s(na+1))
 
       if(lktype.eq.2) cmean  = cmean + gmean
 
       if(lktype.eq.4) then
-            ind    = ix + (iy-1)*nx + (iz-1)*nxy
+            call get1Didx(ix,iy,iz,dlo,dhi,ind)
+            !ind    = ix + (iy-1)*nx + (iz-1)*nxy
             cmean  = cmean  + dble(s(na+1))*lvm(ind)
             cstdev = cstdev - dble(s(na+1) *rr(na+1))
       end if
@@ -3756,6 +3907,143 @@
 !
 ! Finished Here:
 !
+      return
+      end
+
+
+      subroutine cova3m(x1,y1,z1,x2,y2,z2,ivarg,nst,MAXNST,c0,it,cc,aa,&
+           irot,MAXROT,rotmat,cmax,cova)
+! -----------------------------------------------------------------------
+
+!                     Covariance Between Two Points
+!                     *****************************
+
+!  This subroutine calculated the covariance associated with a variogram
+!  model specified by a nugget effect and nested varigoram structures.
+!  The anisotropy definition can be different for each nested structure.
+
+
+
+!  INPUT VARIABLES:
+
+!    x1,y1,z1         coordinates of first point
+!    x2,y2,z2         coordinates of second point
+!    nst(ivarg)       number of nested structures (maximum of 4)
+!    ivarg            variogram number (set to 1 unless doing cokriging
+!                        or indicator kriging)
+!    MAXNST           size of variogram parameter arrays
+!    c0(ivarg)        isotropic nugget constant
+!    it(i)            type of each nested structure:
+!                       1. spherical model of range a;
+!                       2. exponential model of parameter a;
+!                            i.e. practical range is 3a
+!                       3. gaussian model of parameter a;
+!                            i.e. practical range is a*sqrt(3)
+!                       4. power model of power a (a must be gt. 0  and
+!                            lt. 2).  if linear model, a=1,c=slope.
+!                       5. hole effect model
+!    cc(i)            multiplicative factor of each nested structure.
+!                       (sill-c0) for spherical, exponential,and gaussian
+!                       slope for linear model.
+!    aa(i)            parameter "a" of each nested structure.
+!    irot             index of the rotation matrix for the first nested 
+!                     structure (the second nested structure will use
+!                     irot+1, the third irot+2, and so on)
+!    MAXROT           size of rotation matrix arrays
+!    rotmat           rotation matrices
+
+
+!  OUTPUT VARIABLES:
+
+!    cmax             maximum covariance
+!    cova             covariance between (x1,y1,z1) and (x2,y2,z2)
+
+
+
+!  EXTERNAL REFERENCES: sqdist    computes anisotropic squared distance
+!                       rotmat    computes rotation matrix for distance
+! -----------------------------------------------------------------------
+
+      implicit none
+
+      double precision PI, PMX, EPSLON
+      parameter(PI=3.14159265,PMX=999.,EPSLON=1.e-20)
+
+      double precision x1,y1,z1,x2,y2,z2,cmax,cova
+      integer ivarg,MAXNST,irot,MAXROT
+      integer   nst(*),it(*)
+      double precision c0(*),cc(*),aa(*)
+      double precision rotmat(MAXROT,3,3),hsqd,sqdist,h,hr
+      integer ir,is,ist,istart
+
+ ! Calculate the maximum covariance value (used for zero distances and
+ ! for power model covariance):
+
+      istart = 1 + (ivarg-1)*MAXNST
+      cmax   = c0(ivarg)
+      do is=1,nst(ivarg)
+            ist = istart + is - 1
+            if(it(ist).eq.4) then
+                  cmax = cmax + PMX
+            else
+                  cmax = cmax + cc(ist)
+            endif
+      end do
+
+ ! Check for "zero" distance, return with cmax if so:
+
+      hsqd = sqdist(x1,y1,z1,x2,y2,z2,irot,MAXROT,rotmat)
+      if(real(hsqd).lt.EPSLON) then
+            cova = cmax
+            return
+      endif
+
+ ! Loop over all the structures:
+
+      cova = 0.d0
+      do is=1,nst(ivarg)
+            ist = istart + is - 1
+
+ ! Compute the appropriate distance:
+
+            if(ist.ne.1) then
+                  ir = min((irot+is-1),MAXROT)
+                  hsqd=sqdist(x1,y1,z1,x2,y2,z2,ir,MAXROT,rotmat)
+            end if
+            h = real(dsqrt(hsqd))
+
+ ! Spherical Variogram Model?
+
+            if(it(ist).eq.1) then
+                  hr = h/aa(ist)
+                  if(hr.lt.1.) cova=cova+cc(ist)*(1.-hr*(1.5-.5*hr*hr))
+
+ ! Exponential Variogram Model?
+
+            else if(it(ist).eq.2) then
+                  cova = cova + cc(ist)*exp(-3.0*h/aa(ist))
+
+ ! Gaussian Variogram Model?
+
+            else if(it(ist).eq.3) then
+                  cova = cova + cc(ist)*exp(-3.*(h/aa(ist))*(h/aa(ist)))
+
+ ! Power Variogram Model?
+
+            else if(it(ist).eq.4) then
+                  cova = cova + cmax - cc(ist)*(h**aa(ist))
+
+ ! Hole Effect Model?
+
+            else if(it(ist).eq.5) then
+                 ! d = 10.0 * aa(ist)
+                 ! cova = cova + cc(ist)*exp(-3.0*h/d)*cos(h/aa(ist)*PI)
+                  cova = cova + cc(ist)*cos(h/aa(ist)*PI)
+            endif
+      end do
+
+ ! Finished:
+
       return
       end
 

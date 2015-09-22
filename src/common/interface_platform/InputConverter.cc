@@ -553,6 +553,8 @@ double InputConverter::TimeCharToValue_(const char* time_value)
   if (tmp2 != NULL) {
     if (strcmp(tmp2, "y") == 0) { 
       time *= 365.25 * 24.0 * 3600.0;
+    } else if (strcmp(tmp2, "m") == 0) {
+      time *= 365.25 * 2.0 * 3600.0;
     } else if (strcmp(tmp2, "d") == 0) {
       time *= 24.0 * 3600.0;
     } else if (strcmp(tmp2, "h") == 0) {
@@ -598,6 +600,23 @@ std::string InputConverter::TrimString_(char* tmp)
 
 
 /* *******************************************************************
+* Generate error message when list is empty.
+******************************************************************* */
+int InputConverter::IsEmpty(DOMNodeList* node_list, const std::string& name, bool exception)
+{
+  int n = node_list->getLength();
+  if (n == 0 && exception) {
+    Errors::Message msg;
+    msg << "Mandatory element \"" << name << "\" is missing.\n";
+    msg << "Please correct and try again.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return n;
+}
+
+
+/* *******************************************************************
 * Generate unified error message for ill-formed element
 ******************************************************************* */
 void InputConverter::ThrowErrorIllformed_(
@@ -605,7 +624,7 @@ void InputConverter::ThrowErrorIllformed_(
 {
   Errors::Message msg;
   msg << "An error occurred during parsing node \"" << section << "\"\n";
-  msg << "Missing or ill-formed " << type << " for \"" << ill_formed << "\".\n";
+  msg << "Missing or ill-formed \"" << type << "\" for \"" << ill_formed << "\".\n";
   msg << "Please correct and try again.\n";
   Exceptions::amanzi_throw(msg);
 }

@@ -115,7 +115,6 @@ TEST(DISPERSION) {
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::hide_line_prefix = true;
   TPK.Initialize();
-  TPK.PrintStatistics();
 
   /* advance the state */
   double dt0;
@@ -214,7 +213,6 @@ TEST(DIFFUSION) {
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::hide_line_prefix = true;
   TPK.Initialize();
-  TPK.PrintStatistics();
 
   /* advance the state */
   double dt0;
@@ -319,7 +317,6 @@ TEST(GAS_DIFFUSION) {
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::hide_line_prefix = true;
   TPK.Initialize();
-  TPK.PrintStatistics();
 
   /* advance the state */
   double dt0;

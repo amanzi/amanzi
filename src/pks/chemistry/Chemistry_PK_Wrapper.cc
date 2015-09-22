@@ -9,6 +9,8 @@
 #include "Chemistry_PK.hh"
 #include "Chemistry_PK_Wrapper.hh"
 
+#include "boost/algorithm/string.hpp"
+
 namespace Amanzi {
 namespace AmanziChemistry {
 
@@ -22,11 +24,8 @@ Chemistry_PK_Wrapper::Chemistry_PK_Wrapper(Teuchos::ParameterList& pk_tree,
 {
   std::string pk_name = pk_tree.name();
 
-  const char* result = pk_name.data();
-  while ((result = std::strstr(result, "->")) != NULL) {
-    result += 2;
-    pk_name = result;   
-  }
+  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name,"->"); 
+  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name,  res.end() - pk_name.begin());
 
   // grab the component names
   if (glist_->isSublist("Cycle Driver")) {

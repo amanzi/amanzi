@@ -32,15 +32,15 @@ using namespace std;
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
   
-  std::string xmlInFileName = "test/test_dummy_pk.xml";
+  std::string xmlInFileName = "test/mpc_driver_dummy.xml";
 
   // read the main parameter list
-  Teuchos::ParameterList driver_parameter_list;
+  Teuchos::ParameterList plist;
   Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
-  driver_parameter_list = xmlreader.getParameters();
+  plist = xmlreader.getParameters();
   
   // For now create one geometric model from all the regions in the spec
-  Teuchos::ParameterList reg_params = driver_parameter_list.sublist("Regions");
+  Teuchos::ParameterList reg_params = plist.sublist("Regions");
 
   int spdim = 2;
   Amanzi::AmanziGeometry::GeometricModelPtr 
@@ -54,17 +54,17 @@ using namespace std;
   int rank, ierr, aerr, size;
 
   // get the Mesh sublist
-  Teuchos::ParameterList mesh_parameter_list = driver_parameter_list.sublist("Mesh");
+  Teuchos::ParameterList mesh_parameter_list = plist.sublist("Mesh");
 
   Amanzi::VerboseObject *meshverbobj = 
-    new Amanzi::VerboseObject("Mesh", driver_parameter_list);
+    new Amanzi::VerboseObject("Mesh", plist);
 
   // Create a mesh factory for this geometric model
   Amanzi::AmanziMesh::MeshFactory factory(comm,meshverbobj) ;
 
   // get the Mesh sublist
   ierr = 0;
-  Teuchos::ParameterList mesh_params = driver_parameter_list.sublist("Mesh");
+  Teuchos::ParameterList mesh_params = plist.sublist("Mesh");
   
   Teuchos::ParameterList unstr_mesh_params = mesh_params.sublist("Unstructured");
 
@@ -98,35 +98,28 @@ using namespace std;
 
   ASSERT(!mesh.is_null());
 
-  bool mpc_new = true;
-  
-  // if (input_parameter_list.isParameter("New multi-process coordinator")){
-  //   mpc_new = input_parameter_list.get<bool>("New multi-process coordinator",false);
-  //   //mpc_new = true;
-  // }
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;
   Teuchos::RCP<Teuchos::ParameterList> glist_rcp = Teuchos::rcp(new Teuchos::ParameterList(plist));
+
+  Amanzi::CycleDriver cycle_driver(glist_rcp, mesh, comm, obs_data);
   
+  Teuchos::RCP<Amanzi::State> S = cycle_driver.Go();
 
-  if (mpc_new){
-    if (driver_parameter_list.isSublist("State")){
-      // Create the state.    
-      Teuchos::ParameterList state_plist = driver_parameter_list.sublist("State");
-      Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
-      S->RegisterMesh("domain",mesh);      
+  double dt_last; 
+  dt_last = cycle_driver.get_dt();
+  int cycle = S->cycle();
 
-      // -------------- MULTI-PROCESS COORDINATOR------- --------------------
-      Amanzi::CycleDriver cycle_driver(glist_rcp, S, comm, obs_data);
-      //--------------- DO THE SIMULATION -----------------------------------
-      cycle_driver.go();
-      //-----------------------------------------------------
-    }
-  }
-
-  
   delete comm;
+
+  //std::cout<< cycle << " "<<dt_last<<"\n";
+
+
+  CHECK(cycle == 200 && fabs(dt_last- 1980.32)<1);
+  
+
+
 }
 
 
