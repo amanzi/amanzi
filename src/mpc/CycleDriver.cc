@@ -292,7 +292,7 @@ void CycleDriver::Initialize() {
 void CycleDriver::Finalize() {
   if (!checkpoint_->DumpRequested(S_->cycle(), S_->time())) {
     pk_->CalculateDiagnostics();
-    Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), 0.0);
+    Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), 0.0, true);
   }
 }
 
@@ -763,7 +763,10 @@ void CycleDriver::Visualize(bool force) {
 void CycleDriver::WriteCheckpoint(double dt, bool force) {
   if (force || checkpoint_->DumpRequested(S_->cycle(), S_->time())) {
     bool final = false;
-    if (fabs( S_->time() - tp_end_[num_time_periods_-1])) final = true;
+
+    if (fabs( S_->time() - tp_end_[num_time_periods_-1]) < 1e-6) {
+      final = true;
+    }
 
     Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt, final);
     
