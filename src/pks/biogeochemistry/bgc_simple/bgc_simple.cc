@@ -139,7 +139,7 @@ void BGCSimple::setup(const Teuchos::Ptr<State>& S) {
     Exceptions::amanzi_throw(message);
   }
 
-  S->RequireField("shortwave_radiation_to_surface", name_)->SetMesh(mesh_)
+  S->RequireField("shortwave_radiation_to_surface", name_)->SetMesh(surf_mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("shortwave_radiation_to_surface");
   sw_eval_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(
@@ -347,7 +347,7 @@ bool BGCSimple::advance(double dt) {
   // Create a workspace array for the result
   Epetra_SerialDenseVector co2_decomp_c(ncells_per_col_);
   Epetra_SerialDenseVector trans_c(ncells_per_col_);
-  Epetra_SerialDenseVector sw_c(ncells_per_col_);
+  double sw_c(0.);
 
   // Grab the mesh partition to get soil properties
   Teuchos::RCP<const Functions::MeshPartition> mp = S_next_->GetMeshPartition(soil_part_name_);
@@ -379,6 +379,7 @@ bool BGCSimple::advance(double dt) {
     met.relhum = rel_hum[0][col];
     met.CO2a = co2[0][col];
     met.lat = lat_;
+    sw_c = met.qSWin;
 
     // call the model
     BGCAdvance(S_inter_->time(), dt, scv[0][col], cryoturbation_coef_, met,
@@ -398,7 +399,7 @@ bool BGCSimple::advance(double dt) {
 
       // and pull in the transpiration
       trans[0][col_iter[i]] = trans_c[i];
-      sw[0][col_iter[i]] = sw_c[i];
+      sw[0][col] = sw_c;
     }
 
     for (int lcv_pft=0; lcv_pft!=pfts_[col].size(); ++lcv_pft) {
