@@ -506,7 +506,12 @@
 					<velocity value="exp" reference_coord="coordinate" gradient="coordinate"/>
 				</liquid_component>
 
-				<solute_component name="string" value = "0" function="linear | constant" reference_coord="coordinate" gradient="coordinate"/>
+				<solute_component name="solute">
+					<uniform_conc name="string1" start="time" value="exp"/>
+					<uniform_conc name="string2" start="time" value="exp"/>
+					<uniform_conc name="string3" start="time" value="exp"/>
+					<linear_conc name="string4" value="exp" reference_coord="coordinate" gradient="coordinate"/>
+				</solute_component>
 
 				<geochemistry>
 					<constraint name="constraint_name" start="time" function="constant | linear"/>
@@ -544,7 +549,9 @@
 				</liquid_component>
 
 				<solute_component name="solute">
-					<aqueous_conc name="string" start="time" function="constant | linear"  value="exp"/>
+					<aqueous_conc name="string1" start="time" function="constant | linear"  value="exp"/>
+					<aqueous_conc name="string2" start="time" function="constant | linear"  value="exp"/>
+					<aqueous_conc name="string3" start="time" function="constant | linear"  value="exp"/>
 				</solute_component>
 
 				<geochemistry>

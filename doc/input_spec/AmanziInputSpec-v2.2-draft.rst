@@ -1141,15 +1141,16 @@ Liquid_phase
 
 *  Here is more info on the `"solute_component`" elements:
 
-    * `"solute_component`" is defined in-line using attributes.  The attributes include "function", "value", and "name". Function specifies linear or constant temporal functional form during each time interval.  Value is the value of the `"solute_component`".  Name is the name of the solute component.
+    * `"solute_component`" appears once with the attribute name="solute".  Subelements `"uniform_conc`" are used to define the uniform aqueous concentration of the specified solute. The attributes include "name" and "value". 
 
 .. code-block:: xml
 
-     <solute_component name="some name" value="exponential" function="uniform" />
+     <solute_component name="solute">
+         <uniform_conc name="solute name 1" value="exponential"/>
+         <uniform_conc name="solute name 2" value="exponential"/>
+         <uniform_conc name="solute name 3" value="exponential"/>
+     </solute_component>
 
-..     <solute_component name="some name" (filename="filename" SKIPPED) value="exponential" function="uniform (|linear SKIPPED) " (reference_coord="coordinate" gradient="coordinate" - linear skipped) />
-
-NOTE: Reading from a file is not yet implemented.  Also, the reference_coord and gradient attributes are only needed for the "linear" function type, which is also not yet implemented.
 
 Geochemistry
 ------------
@@ -1253,13 +1254,13 @@ Liquid_phase
 Solute_component
 ----------------
 
-*  Here is more info on the `"solute_component`" elements:
-
-    * `"aqueous_conc`" is an element with the following attributes: ONLY CONSTANT, for now
+*  To define boundary conditions for any solutes, a single `"solute_component`" element, with the attribute `"name`"="solute" is included under the `"liquid_phase`" element.  This element appears once.  An unbounded number of `"aqueous_conc`" subelements may appear to define changes in aqueous concentration at specified times for a given solute.  The aqueous concentration may be defined for multiple solutes. 
+  
+    * `"aqueous_conc`" is an element with the following attributes: 
 
 .. code-block:: xml
 
-     <aqueous_conc name="some name" value="exponential" function="linear | uniform | constant" start="time" />
+     <aqueous_conc name="some name" value="exponential" function="constant" start="time" />
 
 *  Here is more info on the `"geochemistry`" elements:
 

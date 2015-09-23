@@ -145,8 +145,10 @@
         <liquid_component name="water">
           <uniform_pressure name="IC1" value="101325.0" />
         </liquid_component>
-        <solute_component function="uniform" name="CO3--" value="1e-10" />
-        <solute_component function="uniform" name="Ca++" value="1e-10" />
+        <solute_component name="solute">
+          <uniform_conc name="CO3--" value="1e-10" />
+          <uniform_conc name="Ca++" value="1e-10" />
+        </solute_component>
       </liquid_phase>
     </initial_condition>
   </initial_conditions>
