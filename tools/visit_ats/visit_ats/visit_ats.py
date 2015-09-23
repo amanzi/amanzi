@@ -128,7 +128,8 @@ class VisItWindow:
 
     def createMesh(self, color='w', opacity=0.15):
         _colors = dict(w=(255,255,255,255),
-                       k=(0,0,0,255)
+                       k=(0,0,0,255),
+                       gray=(175,175,175),
                        )
 
         v.AddPlot('Mesh', "Mesh")
@@ -136,8 +137,9 @@ class VisItWindow:
         ma.legendFlag = 0
         ma.meshColor = _colors[color]
         ma.meshColorSource = ma.MeshCustom
-        ma.opaqueMode = ma.On
-        ma.opacity = opacity
+        if (opacity < 1.):
+            ma.opaqueMode = ma.On
+            ma.opacity = opacity
         v.SetPlotOptions(ma)
 
         pname = v.GetPlotList().GetPlots(v.GetNumPlots()-1).plotName
@@ -499,10 +501,9 @@ class ATSVis(Vis):
         """Adds a plot of surface ponded depth"""
         return self.createSurfacePseudocolor("ponded_depth.cell.0", **kwargs)
 
-    def plotSnowDepth(self, window=None, limits=None, legend=False):
+    def plotSnowDepth(self, **kwargs):
         """Adds a plot of snow depth"""
-        return self.createSnowPseudocolor("snow_depth.cell.0", limits=limits,
-                                          cmap="snow_white", window=window, legend=legend)
+        return self.createSnowPseudocolor("snow_depth.cell.0", **kwargs)
 
     def _getIndexByTime(self, time):
         pass
