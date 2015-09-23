@@ -52,9 +52,8 @@ void UpdateEvapResistance(const SEB& seb, const ThermoProperties& vp_surf, Energ
    Surface_Vap_Diffusion = 0.000022 * (std::pow(actual_porosity,2)) * Surface_Vap_Diffusion;
 // Sakagucki and Zeng 2009 eqaution (10)
    double cell_dimension = 0.01/2; // This is from cell center to the boundary **** HARD CODED FOR CURENT MOSS CELLS ********.
-   double VWC = seb.in.surf.saturation_liquid * actual_porosity;
-   double L_Rsoil = std::exp(std::pow((1-(VWC/actual_porosity)),5));
-   L_Rsoil = cell_dimension * (L_Rsoil -1) * (1/(2.718-1));
+   double L_Rsoil = std::exp(std::pow(1-seb.in.surf.saturation_liquid, 5));
+   L_Rsoil = cell_dimension * (L_Rsoil -1) * (1/(std::exp(1.)-1));
    double Rsoil = 0.0;
    
    if(Vaper_direction <= 0){
@@ -75,7 +74,7 @@ void UpdateEvapResistance(const SEB& seb, const ThermoProperties& vp_surf, Energ
    std::cout<<"Snow ht: "<<seb.out.snow_new.ht<<"  Saturation: "<<seb.in.surf.saturation_liquid<<std::endl;
    std::cout<<"Air_Temp: "<<vp_air.temp<<" Ground Temp: "<<vp_surf.temp<< std::endl;
    std::cout<<"Vapor Direction: "<<Vaper_direction<<" Air Vapor Pres: "<<vp_air.actual_vaporpressure<<" Surf Vapor Pres: "<<vp_surf.actual_vaporpressure << std::endl;
-   std::cout<<"Surface_Vap_Diffusion: "<< Surface_Vap_Diffusion <<"  L_Rsoil:  "<<L_Rsoil<<"  Rsoil: "<<Rsoil<<"   VWC: "<<VWC<<std::endl;
+   std::cout<<"Surface_Vap_Diffusion: "<< Surface_Vap_Diffusion <<"  L_Rsoil:  "<<L_Rsoil<<"  Rsoil: "<<Rsoil<<"   sat_l: "<<seb.in.surf.saturation_liquid<<std::endl;
    std::cout<<"Air Resistance: "<<Rair<<std::endl;
    std::cout<<"Evap Resistance: "<<eb.Evap_Resistance<<std::endl; 
    }
