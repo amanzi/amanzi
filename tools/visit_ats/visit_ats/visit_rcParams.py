@@ -43,6 +43,13 @@ rcParams = {'font.family':'Times',
                             }
             }
 
+
+rcParams_poster = {'legend.fontheight':0.025,
+                   'legend.title.fontheight':0.025,
+                   'legend.scale':(1.1,1.),
+                   'time.fontheight':0.04,
+                   }
+            
 import visit as v
 
 # fonts
