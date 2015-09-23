@@ -721,6 +721,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
     std::vector<std::string> vnames;
     std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
     vnames.push_back("air_temp"); vecs.push_back(S_next_->GetFieldData("air_temperature").ptr());
+    vnames.push_back("rel hum"); vecs.push_back(S_next_->GetFieldData("relative_humidity").ptr());
     vnames.push_back("Qsw_in"); vecs.push_back(S_next_->GetFieldData("incoming_shortwave_radiation").ptr());
     vnames.push_back("precip_rain"); vecs.push_back(S_next_->GetFieldData("precipitation_rain").ptr());
     vnames.push_back("precip_snow"); vecs.push_back(S_next_->GetFieldData("precipitation_snow").ptr());
@@ -740,7 +741,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
     vecs.clear();
     vnames.push_back("energy_source"); vecs.push_back(S_next_->GetFieldData("surface-conducted_energy_source").ptr());
     vnames.push_back("water_source"); vecs.push_back(S_next_->GetFieldData("surface-mass_source").ptr());
-    //    vnames.push_back("surface-vapor_source"); vecs.push_back(S_next_->GetFieldData("mass_source").ptr());
+    vnames.push_back("evap flux"); vecs.push_back(S_next_->GetFieldData("evaporative_flux").ptr());
     vnames.push_back("T_water_source"); vecs.push_back(S_next_->GetFieldData("surface-mass_source_temperature").ptr());
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
