@@ -19,6 +19,7 @@ namespace
 }
 namespace
 {
+  std::string visit_plotfile_list_name = "movie.visit";
   //
   // These are all ParmParse'd in, as variables with the same name are
   // not accessible to this derived class...should fix
@@ -106,15 +107,45 @@ PMAmr::~PMAmr()
   }
 }
 
-static std::string visit_plotfile_list_name = "movie.visit";
+static std::string getFilePart(const std::string& path)
+{
+  std::vector<std::string> parts = BoxLib::Tokenize(path,"/");
+  return parts[parts.size()-1];
+}
+
+static std::string getDirPart(const std::string& path)
+{
+  std::vector<std::string> parts = BoxLib::Tokenize(path,"/");
+  std::string ret;
+  if (path.at(0) == '/') {
+    ret = "/";
+  }
+  else if (parts.size() == 1) {
+    ret = "./";
+  }
+
+  for (int i=0; i<parts.size()-1; ++i) {
+    ret += parts[i];
+    if (i!=parts.size()-2) ret += '/';
+  }
+  return ret;
+}
+
 void
 PMAmr::UpdateVisitPlotfileList() const
 {
-  std::ofstream ofs(visit_plotfile_list_name.c_str());
-  for (int i=0; i<plotfiles_written.size(); ++i) {
-    ofs << plotfiles_written[i] << "/Header" << '\n';
+  if (ParallelDescriptor::IOProcessor())
+  {
+    const std::string plot_dir_part = getDirPart(plot_file_root);
+    const std::string visit_plotfile_list_fullPath
+      = plot_dir_part + "/" + visit_plotfile_list_name;
+
+    std::ofstream ofs(visit_plotfile_list_fullPath.c_str());
+    for (int i=0; i<plotfiles_written.size(); ++i) {
+      ofs << getFilePart(plotfiles_written[i]) << "/Header" << '\n';
+    }
+    ofs.close();
   }
-  ofs.close();
 }
 
 void 
@@ -139,32 +170,6 @@ PMAmr::checkPoint ()
   Amr::checkPoint();
   file_name_digits = file_name_digits_tmp;
 }
-
-static std::string getFilePart(const std::string& path)
-{
-  std::vector<std::string> parts = BoxLib::Tokenize(path,"/");
-  return parts[parts.size()-1];
-}
-
-/*
-static std::string getDirPart(const std::string& path)
-{
-  std::vector<std::string> parts = BoxLib::Tokenize(path,"/");
-  std::string ret;
-  if (path.at(0) == '/') {
-    ret = "/";
-  }
-  else if (parts.size() == 1) {
-    ret = "./";
-  }
-
-  for (int i=0; i<parts.size()-1; ++i) {
-    ret += parts[i];
-    if (i!=parts.size()-2) ret += '/';
-  }
-  return ret;
-}
-*/
 
 void
 PMAmr::LinkFinalCheckpoint (int step)
