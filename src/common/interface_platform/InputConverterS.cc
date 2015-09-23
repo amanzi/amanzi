@@ -787,8 +787,10 @@ void InputConverterS::ParseGeochemistry_()
         DOMElement* solute = static_cast<DOMElement*>(solutes[i]);
         string name = GetAttributeValueS_(solute, "name", true);
 
-        // FIXME: What are the required attributes of the solute here?
-//        string forward_rate = GetAttributeValueS_(solute, "forward_rate", true);
+        // Rate constant.
+        string rate_constant = GetAttributeValueS_(solute, "rate_constant", true);
+        AddToTable(table, MakePPPrefix("tracer", name, "firstOrderDecayConstant"), 
+                                       MakePPEntry(rate_constant));
       }
     }
 
@@ -1149,16 +1151,16 @@ void InputConverterS::ParseProcessKernels_()
   string chemistry_state = GetAttributeValueS_(chemistry, "state");
   if (chemistry_state == "on")
   {
-    string chemistry_engine = GetAttributeValueS_(chemistry, "engine");
-    if (chemistry_engine == "amanzi")
+    chemistry_engine_ = GetAttributeValueS_(chemistry, "engine");
+    if (chemistry_engine_ == "amanzi")
     {
       AddToTable(table, MakePPPrefix("prob", "chemistry_model"), MakePPEntry("Amanzi"));
       // FIXME: What else here?
     }
-    else if (chemistry_engine != "none") // Alquimia!
+    else if (chemistry_engine_ != "none") // Alquimia!
     {
       AddToTable(table, MakePPPrefix("prob", "chemistry_model"), MakePPEntry("Alquimia"));
-      if (chemistry_engine == "pflotran")
+      if (chemistry_engine_ == "pflotran")
         AddToTable(table, MakePPPrefix("Chemistry", "Engine"), MakePPEntry("PFloTran"));
       // FIXME: What else here?
     }
@@ -1288,9 +1290,9 @@ void InputConverterS::Translate()
   ParseNumericalControls_();
   ParseMesh_();
   ParseRegions_();
+  ParseProcessKernels_();
   ParseGeochemistry_();
   ParseMaterials_();
-  ParseProcessKernels_();
   ParsePhases_();
   ParseInitialConditions_();
   ParseBoundaryConditions_();
