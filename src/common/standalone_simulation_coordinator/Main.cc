@@ -300,13 +300,13 @@ int main(int argc, char *argv[]) {
 
     if (framework=="Structured") {
 #ifdef ENABLE_Structured
-      simulator = new AmanziStructuredGridSimulationDriver();
+      simulator = new AmanziStructuredGridSimulationDriver(xmlInFileName);
 #else
       amanzi_throw(Errors::Message("Structured not supported in current build"));
 #endif
     } else {
 #ifdef ENABLE_Unstructured
-      simulator = new AmanziUnstructuredGridSimulationDriver();
+      simulator = new AmanziUnstructuredGridSimulationDriver(driver_parameter_list);
 #else
       amanzi_throw(Errors::Message("Unstructured not supported in current build"));
 #endif
@@ -314,7 +314,7 @@ int main(int argc, char *argv[]) {
 
     //MPI_Comm mpi_comm(MPI_COMM_WORLD);
     Amanzi::ObservationData output_observations;
-    Amanzi::Simulator::ReturnType ret = simulator->Run(mpi_comm, driver_parameter_list, output_observations);
+    Amanzi::Simulator::ReturnType ret = simulator->Run(mpi_comm, output_observations);
 
     if (ret == Amanzi::Simulator::FAIL) {
       amanzi_throw(Errors::Message("The amanzi simulator returned an error code, this is most likely due to an error in the mesh creation."));

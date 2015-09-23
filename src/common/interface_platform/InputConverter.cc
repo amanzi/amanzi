@@ -9,6 +9,7 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
+#include <iostream>
 #include <sstream>
 #include <fstream>
 #include <string>

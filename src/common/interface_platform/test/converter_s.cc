@@ -12,8 +12,10 @@
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
+#include <mpi.h>
 
 // TPLs
 #include "ParmParse.H"
