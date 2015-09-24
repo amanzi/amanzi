@@ -990,7 +990,11 @@ void OperatorDiffusionMFD::CreateMassMatrices_()
     if (K_.get()) Kc = (*K_)[c];
     WhetStone::DenseMatrix Wff(nfaces, nfaces);
 
-    if (surface_mesh) {
+    // For problems with degenerate coefficients we should skip WhetStone.
+    if (Kc.Trace() == 0.0) {
+      Wff.PutScalar(0.0);
+      ok = WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK;
+    } else if (surface_mesh) {
       ok = mfd.MassMatrixInverseSurface(c, Kc, Wff);
     } else {
       int method = mfd_primary_;
