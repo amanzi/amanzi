@@ -23,6 +23,9 @@ class PMAmr;
 class Observation
 {
 public: 
+  typedef std::pair<std::ostream&,std::ostream&> ostream; // first:text, second:binary
+  typedef std::pair<std::istream&,std::istream&> istream;
+
   /* This is the identifier for a particular observation
   */
   std::string name;
@@ -31,9 +34,9 @@ public:
   */
   std::string field;
 
-  /* This specifies the region in which the observation is applied. 
+  /* This specifies the name of the region in which the observation is applied. 
    */
-  const Region& region;
+  std::string region_name;
 
   /* This specifies the observation type
    */
@@ -47,17 +50,23 @@ public:
 
   Observation(const std::string& name,
               const std::string& field,
-              const Region&      region,
+              const std::string& region_name,
               const std::string& obs_type,
               const std::string& eventLabel);
+
+  Observation(Observation::istream& is);
+  void CheckPoint(Observation::ostream& os) const;
 
   void process(Real t_old, Real t_new, int iter, int verbose);
   static void setPMAmrPtr(PMAmr* amr) {amrp = amr;}
   static PMAmr* PMAmrPtr() {return amrp;} 
+
   static void Cleanup ();
   static void Initialize ();
 
 protected:
+  const Region& GetRegion(const std::string& name) const;
+
   std::pair<Real,Real> integral_and_volume (Real time);
   static PMAmr* amrp; // Should be const, but cannot be
   Real average(Real time);
