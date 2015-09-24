@@ -493,21 +493,24 @@ void Chemistry_State::InitializeField_(Teuchos::ParameterList& ic_plist,
   // parameter is optional, and non-valid if it is not.
 
   if (S_->HasField(fieldname)) {
+    S_->GetFieldData(fieldname, name_)->PutScalar(default_val);
+    //S_->GetField(fieldname, name_)->set_initialized();
+  }
+
+
+
+  if (S_->HasField(fieldname)) {
     if (!S_->GetField(fieldname, name_) -> initialized()) {
       if (ic_plist.isSublist(fieldname)) {
         S_->GetField(fieldname, name_)->Initialize(ic_plist.sublist(fieldname));
       } else if (sane_default) {
         // -- sane default provided, functional initialization not necessary
-        S_->GetFieldData(fieldname, name_)->PutScalar(default_val);
+        //S_->GetFieldData(fieldname, name_)->PutScalar(default_val);
         S_->GetField(fieldname, name_)->set_initialized();
       }
     }
   }
 
-  // if (S_->HasField(fieldname)) {
-  //   S_->GetFieldData(fieldname, name_)->PutScalar(default_val);
-  //   //S_->GetField(fieldname, name_)->set_initialized();
-  // }
 
   // // -- initialize from the ParameterList
   // if (ic_plist.isSublist(fieldname)) {
@@ -531,7 +534,7 @@ void Chemistry_State::Initialize() {
   // Aqueous species:
   if (number_of_aqueous_components_ > 0) {
     if (!S_->GetField("total_component_concentration",name_)->initialized()) {
-      InitializeField_(ic_plist, "total_component_concentration", false, -1.0);
+      InitializeField_(ic_plist, "total_component_concentration", true, 0.);
     }
     InitializeField_(ic_plist, "free_ion_species", true, 0.0);
     InitializeField_(ic_plist, "primary_activity_coeff", true, 1.0);
