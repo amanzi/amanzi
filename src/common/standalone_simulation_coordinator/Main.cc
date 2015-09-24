@@ -1,9 +1,4 @@
-#ifdef ENABLE_Unstructured
-#include "AmanziUnstructuredGridSimulationDriver.hh"
-#endif
-#ifdef ENABLE_Structured
-#include "amanzi_structured_grid_simulation_driver.H"
-#endif
+#include "SimulatorFactory.hh"
 
 #include <iostream>
 
