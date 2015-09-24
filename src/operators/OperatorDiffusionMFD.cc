@@ -304,7 +304,7 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
         double matsum = 0.0;
         for (int n = 0; n < nfaces; n++) {
           double rowsum = 0.0;
-          double cur_kf = (kf[n] < constraint_scaling_cutoff_) ? 1.0 : kf[n];
+          double cur_kf = (kf[n] < scaled_constraint_cutoff_) ? 1.0 : kf[n];
           for (int m = 0; m < nfaces; m++) {
             double tmp = Wff(n, m) * cur_kf;
             rowsum += tmp;
@@ -325,7 +325,6 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
 
     // Amanzi's first upwind: the family of DIVK fmethods
     if (little_k_ & OPERATOR_LITTLE_K_DIVK_BASE) {
-      ASSERT(!scaled_constraint_);
       double matsum = 0.0; 
       for (int n = 0; n < nfaces; n++) {
         double rowsum = 0.0;
@@ -531,10 +530,6 @@ void OperatorDiffusionMFD::ApplyBCs(bool primary, bool eliminate)
 void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
                                            bool primary, bool eliminate)
 {
-  if (scaled_constraint_)
-    ASSERT(little_k_ != OPERATOR_LITTLE_K_DIVK &&
-           little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN);
-
   // apply diffusion type BCs to FACE-CELL system
   AmanziMesh::Entity_ID_List faces;
 
@@ -622,10 +617,10 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
 
       } else if (bc_model_trial[f] == OPERATOR_BC_NEUMANN) {
         if (scaled_constraint_) {
-          if (std::abs(kf[n]) < 1e-12) {
+          if (std::abs(kf[n]) < scaled_constraint_fuzzy_) {
             ASSERT(value == 0.0);
             rhs_face[0][f] = 0.0;
-          } else if (kf[n] < constraint_scaling_cutoff_) {
+          } else if (kf[n] < scaled_constraint_cutoff_) {
             rhs_face[0][f] -= value * mesh_->face_area(f) / kf[n];
           } else {
             rhs_face[0][f] -= value * mesh_->face_area(f);
@@ -641,10 +636,10 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
         }
         double area = mesh_->face_area(f);
         if (scaled_constraint_) {
-          if (std::abs(kf[n]) < 1e-12) {
+          if (std::abs(kf[n]) < scaled_constraint_fuzzy_) {
             ASSERT((value == 0.0) && (bc_mixed[f] == 0.0));
             rhs_face[0][f] = 0.0;
-          } else if (kf[n] < constraint_scaling_cutoff_) {
+          } else if (kf[n] < scaled_constraint_cutoff_) {
             rhs_face[0][f] -= value * area / kf[n];
             Acell(n, n) += bc_mixed[f] * area / kf[n];
           } else {
@@ -1203,7 +1198,8 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
   
   // scaled constraint -- enables zero value of k on a face
   scaled_constraint_ = plist.get<bool>("scaled constraint equation", false);
-  constraint_scaling_cutoff_ = plist.get<double>("constraint equation scaling cutoff", 1.0);
+  scaled_constraint_cutoff_ = plist.get<double>("constraint equation scaling cutoff", 1.0);
+  scaled_constraint_fuzzy_ = plist.get<double>("constraint equation fuzzy number", 1.0e-12);
 
   // little-k options
   ASSERT(!plist.isParameter("upwind method"));
@@ -1224,6 +1220,12 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
     little_k_ = OPERATOR_LITTLE_K_DIVK_TWIN;  // for resolved simulation
   } else {
     ASSERT(false);
+  }
+
+  // verify input consistency
+  if (scaled_constraint_) {
+    ASSERT(little_k_ != OPERATOR_LITTLE_K_DIVK &&
+           little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN);
   }
 
   // Do we need to calculate Newton correction terms?

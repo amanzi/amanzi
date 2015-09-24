@@ -3005,6 +3005,14 @@ Diffusion operator
     that must be added to the matrix. These terms represent Jacobian and are needed 
     for the preconditioner. Available options are `"true jacobian`" and `"approximate jacobian`".
 
+  * `"scaled constraint equation`" [bool] rescales flux continuity equations on mesh faces.
+    These equations are divided by the nonlinear coefficient. This option allows us to 
+    treat the case of zero nonlinear coefficient. At moment this feature does not work 
+    with non-zero gravity term. Default is *false*.
+
+  * `"constraint equation scaling cutoff"`" [double] specifies the cutoff value for
+    applying rescaling strategy described above.  
+
   * `"consistent faces`" [list] may contain a `"preconditioner`" and
     `"linear operator`" list (see sections Preconditioners_ and LinearSolvers_
     respectively).  If these lists are provided, and the `"discretization

@@ -137,8 +137,10 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   int newton_correction_;
   double factor_;
   bool exclude_primary_terms_;
+
+  // modifiers for flux continuity equations
   bool scaled_constraint_;
-  double constraint_scaling_cutoff_;
+  double scaled_constraint_cutoff_, scaled_constraint_fuzzy_;
 
   int mfd_primary_, mfd_secondary_, mfd_pc_primary_, mfd_pc_secondary_;
   int nfailed_primary_;
