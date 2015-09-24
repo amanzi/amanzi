@@ -195,6 +195,8 @@ void Chemistry_PK::InitializeChemistry(void) {
     Exceptions::amanzi_throw(geochem_error); 
   }  
 
+  chemistry_state_->SetAllFieldsInitialized();
+
   chem_out->Write(Teuchos::VERB_HIGH, "InitializeChemistry(): initialization was successful.\n");
 }  // end InitializeChemistry()
 

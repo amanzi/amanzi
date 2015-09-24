@@ -265,6 +265,17 @@ class Chemistry_State {
                         const AlquimiaAuxiliaryOutputData& aux_output,
                         Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
 
+  // Copies the data in the given Alquimia containers to the given cell within the 
+  // chemistry state. Modifies only uninitialize fields
+
+  void InitFromAlquimia(const int cell_id,
+                        const AlquimiaMaterialProperties& mat_props,
+                        const AlquimiaState& state,
+                        const AlquimiaAuxiliaryData& aux_data,
+                        const AlquimiaAuxiliaryOutputData& aux_output);
+
+  void SetAllFieldsInitialized();
+
 #endif
 
  protected:
