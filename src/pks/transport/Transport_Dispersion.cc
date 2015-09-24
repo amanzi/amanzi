@@ -34,8 +34,8 @@ void Transport_PK::CalculateDispersionTensor_(
     const Epetra_MultiVector& darcy_flux, 
     const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
 {
-  D.resize(ncells_owned);
-  for (int c = 0; c < ncells_owned; c++) D[c].Init(dim, 2);
+  D_.resize(ncells_owned);
+  for (int c = 0; c < ncells_owned; c++) D_[c].Init(dim, 2);
 
   AmanziGeometry::Point velocity(dim), omega(dim);
   AmanziMesh::Entity_ID_List faces;
@@ -52,17 +52,17 @@ void Transport_PK::CalculateDispersionTensor_(
       AmanziMesh::Entity_ID_List::iterator c;
       if (spec->model == TRANSPORT_DISPERSIVITY_MODEL_SCALAR) {
         for (c = block.begin(); c != block.end(); c++) {
-          D[*c].PutScalar(0.0); 
+          D_[*c].PutScalar(0.0); 
           for (int i = 0; i < dim; i++) {
-            D[*c](i, i) = spec->alphaLH;
+            D_[*c](i, i) = spec->alphaLH;
           }
-          D[*c] *= porosity[0][*c] * saturation[0][*c];
+          D_[*c] *= porosity[0][*c] * saturation[0][*c];
         }
       // Isotropic dispersitivity model.
       // Darcy velocity is reconstructed for its normal components.
       } else if (spec->model == TRANSPORT_DISPERSIVITY_MODEL_BEAR) {
         for (c = block.begin(); c != block.end(); c++) {
-          D[*c].PutScalar(0.0); 
+          D_[*c].PutScalar(0.0); 
 
           mesh_->cell_get_faces(*c, &faces);
           int nfaces = faces.size();
@@ -77,14 +77,14 @@ void Transport_PK::CalculateDispersionTensor_(
 
           double anisotropy = (spec->alphaLH - spec->alphaTH) / vel_norm;
           for (int i = 0; i < dim; i++) {
-            D[*c](i, i) = spec->alphaTH * vel_norm;
+            D_[*c](i, i) = spec->alphaTH * vel_norm;
             for (int j = i; j < dim; j++) {
               double s = anisotropy * velocity[i] * velocity[j];
-              D[*c](j, i) = D[*c](i, j) += s;
+              D_[*c](j, i) = D_[*c](i, j) += s;
             }
           }
 
-          D[*c] *= porosity[0][*c] * saturation[0][*c];
+          D_[*c] *= porosity[0][*c] * saturation[0][*c];
         }
       // Anisotropic dispersitivity model.
       // This model assumes that space is 3D which is checked in Transport_IO.cc.
@@ -94,7 +94,7 @@ void Transport_PK::CalculateDispersionTensor_(
         const Epetra_MultiVector& perm = *S_->GetFieldData("permeability")->ViewComponent("cell");
 
         for (c = block.begin(); c != block.end(); c++) {
-          D[*c].PutScalar(0.0); 
+          D_[*c].PutScalar(0.0); 
 
           // Reconstruct Darcy velocity for its normal components.
           mesh_->cell_get_faces(*c, &faces);
@@ -115,17 +115,17 @@ void Transport_PK::CalculateDispersionTensor_(
             a3 = (spec->alphaTH - spec->alphaTV) / vel_norm;
 
             for (int i = 0; i < dim; i++) {
-              D[*c](i, i) = a1;
+              D_[*c](i, i) = a1;
               for (int j = i; j < dim; j++) {
-                D[*c](i, j) += a2 * velocity[i] * velocity[j];
-                D[*c](j, i) = D[*c](i, j);
+                D_[*c](i, j) += a2 * velocity[i] * velocity[j];
+                D_[*c](j, i) = D_[*c](i, j);
               }
             }
-            D[*c](0, 0) += a3 * velocity[1] * velocity[1];
-            D[*c](1, 1) += a3 * velocity[0] * velocity[0];
+            D_[*c](0, 0) += a3 * velocity[1] * velocity[1];
+            D_[*c](1, 1) += a3 * velocity[0] * velocity[0];
 
-            D[*c](0, 1) -= a3 * velocity[0] * velocity[1];
-            D[*c](1, 0) -= a3 * velocity[0] * velocity[1];
+            D_[*c](0, 1) -= a3 * velocity[0] * velocity[1];
+            D_[*c](1, 0) -= a3 * velocity[0] * velocity[1];
 
           } else if (spec->model == TRANSPORT_DISPERSIVITY_MODEL_LICHTNER_KELKAR_ROBINSON) {
             int k = axi_symmetry_[*c];
@@ -143,15 +143,15 @@ void Transport_PK::CalculateDispersionTensor_(
             a3 = (spec->alphaTV - spec->alphaTH) * vel_norm;
 
             for (int i = 0; i < dim; i++) {
-              D[*c](i, i) = a1;
+              D_[*c](i, i) = a1;
               for (int j = i; j < dim; j++) {
-                D[*c](i, j) += a2 * velocity[i] * velocity[j] + a3 * omega[i] * omega[j];
-                D[*c](j, i) = D[*c](i, j);
+                D_[*c](i, j) += a2 * velocity[i] * velocity[j] + a3 * omega[i] * omega[j];
+                D_[*c](j, i) = D_[*c](i, j);
               }
             }
           }
 
-          D[*c] *= porosity[0][*c] * saturation[0][*c];
+          D_[*c] *= porosity[0][*c] * saturation[0][*c];
         }
       }
     }
@@ -166,9 +166,9 @@ void Transport_PK::CalculateDiffusionTensor_(
     double md, int phase, 
     const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
 {
-  if (D.size() == 0) {
-    D.resize(ncells_owned);
-    for (int c = 0; c < ncells_owned; c++) D[c].Init(dim, 1);
+  if (D_.size() == 0) {
+    D_.resize(ncells_owned);
+    for (int c = 0; c < ncells_owned; c++) D_[c].Init(dim, 1);
   }
 
   for (int mb = 0; mb < mat_properties_.size(); mb++) {
@@ -182,11 +182,11 @@ void Transport_PK::CalculateDiffusionTensor_(
       AmanziMesh::Entity_ID_List::iterator c;
       if (phase == TRANSPORT_PHASE_LIQUID) {
         for (c = block.begin(); c != block.end(); c++) {
-          D[*c] += md * spec->tau[phase] * porosity[0][*c] * saturation[0][*c];
+          D_[*c] += md * spec->tau[phase] * porosity[0][*c] * saturation[0][*c];
         }
       } else if (phase == TRANSPORT_PHASE_GAS) {
         for (c = block.begin(); c != block.end(); c++) {
-          D[*c] += md * spec->tau[phase] * porosity[0][*c] * (1.0 - saturation[0][*c]);
+          D_[*c] += md * spec->tau[phase] * porosity[0][*c] * (1.0 - saturation[0][*c]);
         }
       }
     }
