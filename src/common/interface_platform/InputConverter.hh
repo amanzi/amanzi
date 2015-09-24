@@ -25,6 +25,9 @@
 #include "xercesc/dom/DOM.hpp"
 #include "xercesc/parsers/XercesDOMParser.hpp"
 
+// Amanzi's
+#include "VerboseObject.hh"
+
 namespace Amanzi {
 namespace AmanziInput {
 

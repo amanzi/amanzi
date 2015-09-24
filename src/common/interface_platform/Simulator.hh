@@ -16,6 +16,7 @@ namespace Amanzi
     virtual ~Simulator() {}
     
     virtual Amanzi::Simulator::ReturnType Run(const MPI_Comm&               mpi_comm,
+                                              Teuchos::ParameterList&       input_parameter_list,
                                               Amanzi::ObservationData&      output_observations) = 0;
   };
 } // end namespace amanzi
