@@ -126,7 +126,7 @@ double WRM_vanGenuchten::k_relative(double pc) const
 /* ******************************************************************
 * Saturation formula (3.5)-(3.6).                                         
 ****************************************************************** */
-double WRM_vanGenuchten::saturation(double pc)  const
+double WRM_vanGenuchten::saturation(double pc) const
 {
   if (pc > 0.0) {
     return pow(1.0 + pow(alpha_*pc, n_), -m_) * (1.0 - sr_) + sr_;

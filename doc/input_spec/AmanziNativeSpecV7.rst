@@ -2161,8 +2161,8 @@ more detail. This section is only required for the native chemistry kernel, the
 Alquimia chemistry kernel reads initial conditions from the `"State`" list.
 The following cell-based fields can be initialized here:
 
-* `"mineral_volume_fractions`"
-* `"mineral_specific_surface_area`"
+* `"mineral_volume_fractions`" (Alquimia only)
+* `"mineral_specific_surface_area`" (Alqumia only)
 * `"ion_exchange_sites`"
 * `"ion_exchange_ref_cation_conc`"
 * `"isotherm_kd`"
