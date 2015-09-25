@@ -224,18 +224,19 @@ int Unstructured_observations::MakeObservations(State& S)
 
         const Epetra_MultiVector& ws = *S.GetFieldData("saturation_liquid")->ViewComponent("cell");
         const Epetra_MultiVector& tcc = *S.GetFieldData("total_component_concentration")->ViewComponent("cell");
+        const Epetra_MultiVector& porosity = *S.GetFieldData("porosity")->ViewComponent("cell");    
 
         if (var == comp_names_[tcc_index] + " Aqueous concentration") { 
           for (int i = 0; i < mesh_block_size; i++) {
             int c = entity_ids[i];
-            double factor = ws[0][c] * S.GetMesh()->cell_volume(c);
+            double factor = porosity[0][c] * ws[0][c] * S.GetMesh()->cell_volume(c);
             value += tcc[tcc_index][c] * factor;
             volume += factor;
           }
         } else if (var == comp_names_[tcc_index] + " gaseous concentration") { 
           for (int i = 0; i < mesh_block_size; i++) {
             int c = entity_ids[i];
-            double factor = (1.0 - ws[0][c]) * S.GetMesh()->cell_volume(c);
+            double factor = porosity[0][c] * (1.0 - ws[0][c]) * S.GetMesh()->cell_volume(c);
             value += tcc[tcc_index][c] * factor;
             volume += factor;
           }
