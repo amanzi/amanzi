@@ -477,7 +477,7 @@ void Unstructured_observations::FlushObservations()
 
     if (rank_ == 0) {
       std::ofstream out;
-      out.open(obs_file.c_str(),std::ios::out);
+      out.open(obs_file.c_str(), std::ios::out);
       
       out.precision(precision);
       out.setf(std::ios::scientific);
