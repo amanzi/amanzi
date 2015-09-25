@@ -68,17 +68,11 @@ class MemoryManager {
 
 class InputConverter {
  public:
-  InputConverter() {
-    xercesc::XMLPlatformUtils::Initialize();
-  }
 
-  ~InputConverter() {
-    delete parser;
-    xercesc::XMLPlatformUtils::Terminate();
-  }
+  explicit InputConverter(xercesc::DOMDocument* input):
+    doc_(input) {}
 
-  // main member: creates xerces document using the file name
-  void Init(const std::string& xmlfilename, bool& found);
+  virtual ~InputConverter() {}
 
   // parse various nodes
   void ParseConstants_();
@@ -158,7 +152,6 @@ class InputConverter {
 
   std::string xmlfilename_;
 
-  xercesc::XercesDOMParser* parser;
   xercesc::DOMDocument* doc_;
 };
 

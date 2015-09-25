@@ -47,51 +47,6 @@ namespace AmanziInput {
 XERCES_CPP_NAMESPACE_USE
 
 /* ******************************************************************
-* Initialization of xercecs document.
-****************************************************************** */
-void InputConverter::Init(const std::string& xmlfilename, bool& found)
-{
-  xmlfilename_ = xmlfilename;
-  
-  parser = new XercesDOMParser();
-  parser->setExitOnFirstFatalError(true);
-  parser->setValidationConstraintFatal(true);
-  parser->setValidationScheme(XercesDOMParser::Val_Never);
-  parser->setDoNamespaces(true);
-  parser->setCreateCommentNodes(false);
-
-  AmanziErrorHandler* errorHandler = new AmanziErrorHandler();
-  parser->setErrorHandler(errorHandler);
-  parser->useCachedGrammarInParse(true);
- 
-  bool errorsOccured = false;
-
-  try {
-    parser->parse(xmlfilename.c_str());
-  }
-  catch (const OutOfMemoryException& e) {
-    std::cerr << "OutOfMemoryException" << std::endl;
-    errorsOccured = true;
-    Exceptions::amanzi_throw(Errors::Message("Ran out of memory while parsing the input file. Aborting."));
-  }
-  catch (...) {
-    errorsOccured = true;
-    Exceptions::amanzi_throw(Errors::Message("Errors occured while parsing the input file. Aborting."));
-  }
-
-  doc_ = parser->getDocument();
-  FilterNodes(doc_, "comments");
-
-  // check that XML has version 2.x or version 1.x spec
-  MemoryManager mm;
-  DOMElement* element = doc_->getDocumentElement();
-  found = strcmp(mm.transcode(element->getTagName()), "amanzi_input") != 0;
-
-  delete errorHandler;
-}
-
-
-/* ******************************************************************
 * Populates protected std::map constants_.
 ****************************************************************** */
 void InputConverter::ParseConstants_()

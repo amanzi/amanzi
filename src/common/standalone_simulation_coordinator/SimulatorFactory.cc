@@ -23,6 +23,8 @@ namespace SimulatorFactory
 
 Simulator* Create(const std::string& input_filename)
 {
+  XMLPlatformUtils::Initialize();
+
   // Set up an XML DOM parser.
   XercesDOMParser* parser = new XercesDOMParser();
   parser->setExitOnFirstFatalError(true);
@@ -78,6 +80,7 @@ Simulator* Create(const std::string& input_filename)
   delete doc;
   delete errorHandler;
   delete parser;
+  XMLPlatformUtils::Terminate();
 
   return simulator;
 }
