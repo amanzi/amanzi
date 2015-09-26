@@ -9,7 +9,23 @@ struct AmanziUnstructuredGridSimulationDriver
     : Amanzi::Simulator, 
       public Teuchos::VerboseObject<AmanziUnstructuredGridSimulationDriver>
 {
-  virtual ReturnType Run(const MPI_Comm& mpi_comm,
-                         Teuchos::ParameterList& input_parameter_list,
-                         Amanzi::ObservationData& output_observations);
+ public:
+
+  // v1 constructor
+  explicit AmanziUnstructuredGridSimulationDriver(const std::string& xmlInFileName);
+
+  // v2 constructor
+  explicit AmanziUnstructuredGridSimulationDriver(xercesc::DOMDocument* input);
+
+  // Destructor.
+  ~AmanziUnstructuredGridSimulationDriver();
+
+  ReturnType Run(const MPI_Comm& mpi_comm,
+                 Amanzi::ObservationData& output_observations);
+
+  private:
+
+  // Read our parameter list.
+  void ReadParameterList();
+  Teuchos::ParameterList* plist_;
 };

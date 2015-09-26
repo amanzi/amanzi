@@ -1,6 +1,7 @@
 #ifndef SIMULATOR_H
 #define SIMULATOR_H
 
+#include <mpi.h>
 #include <map>
 #include <vector>
 
@@ -13,7 +14,12 @@ namespace Amanzi
 {
   class Simulator
   {
+   public: 
+
     enum ReturnType {SUCCESS, FAIL, NUM_RETURN_TYPES};
+
+    // Legacy constructor -- move to private section when we get rid of v1.2 spec.
+    Simulator() {}
 
     // Constructor accepts an XML DOM.
     explicit Simulator(xercesc::DOMDocument* input) {}
@@ -26,7 +32,6 @@ namespace Amanzi
    private:
 
     // Disallowed operations.
-    Simulator();
     Simulator(const Simulator&);
     Simulator& operator=(const Simulator&);
   };

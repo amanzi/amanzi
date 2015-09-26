@@ -15,8 +15,7 @@
 
 #include "DOMTreeErrorReporter.hpp"
 #include "ErrorHandler.hpp"
-#include "InputTranslator.hh"
-#include "InputConverterU.hh"
+#include "SimulatorFactory.hh"
 #include "XMLParameterListWriter.hh"
 
 #include "amanzi_version.hh"
@@ -228,8 +227,11 @@ int main(int argc, char *argv[]) {
       throw std::string("amanzi not run");
     }
 
+    // Create a simulator that corresponds to our input file.
+    Amanzi::Simulator* simulator = Amanzi::SimulatorFactory::Create(xmlInFileName);
+
+#if 0
     // Translate 2.x to 1.2.x or read directly 1.2.x
-    MPI_Comm mpi_comm(MPI_COMM_WORLD);
     Teuchos::ParameterList driver_parameter_list;
     try {
       std::string spec;
@@ -288,11 +290,6 @@ int main(int argc, char *argv[]) {
       amanzi_throw(Errors::Message("The Mesh parameter list must contain one sublist: \"Structured\" or \"Unstructured\""));
     }
 
-    Amanzi::Simulator* simulator = NULL;
-
-    Amanzi::timer_manager.add("Full Simulation", Amanzi::Timer::ONCE);
-    Amanzi::timer_manager.start("Full Simulation");
-
     if (framework=="Structured") {
 #ifdef ENABLE_Structured
       simulator = new AmanziStructuredGridSimulationDriver();
@@ -306,10 +303,15 @@ int main(int argc, char *argv[]) {
       amanzi_throw(Errors::Message("Unstructured not supported in current build"));
 #endif
     }
+#endif
 
-    //MPI_Comm mpi_comm(MPI_COMM_WORLD);
+    // Start timers.
+    Amanzi::timer_manager.add("Full Simulation", Amanzi::Timer::ONCE);
+    Amanzi::timer_manager.start("Full Simulation");
+
+    MPI_Comm mpi_comm(MPI_COMM_WORLD);
     Amanzi::ObservationData output_observations;
-    Amanzi::Simulator::ReturnType ret = simulator->Run(mpi_comm, driver_parameter_list, output_observations);
+    Amanzi::Simulator::ReturnType ret = simulator->Run(mpi_comm, output_observations);
 
     if (ret == Amanzi::Simulator::FAIL) {
       amanzi_throw(Errors::Message("The amanzi simulator returned an error code, this is most likely due to an error in the mesh creation."));

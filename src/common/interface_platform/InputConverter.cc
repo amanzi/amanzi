@@ -32,6 +32,7 @@
 #include "xercesc/dom/DOM.hpp"
 #include "xercesc/util/XMLString.hpp"
 #include "xercesc/util/PlatformUtils.hpp"
+#include "xercesc/parsers/XercesDOMParser.hpp"
 #include "xercesc/parsers/DOMLSParserImpl.hpp"
 #include "xercesc/framework/StdOutFormatTarget.hpp"
 #include "xercesc/util/OutOfMemoryException.hpp"
@@ -40,9 +41,45 @@
 #include "ErrorHandler.hpp"
 #include "InputConverter.hh"
 
+using namespace xercesc;
 
 namespace Amanzi {
 namespace AmanziInput {
+
+DOMDocument* OpenXMLInput(const std::string& xml_input)
+{
+  XMLPlatformUtils::Initialize();
+
+  // Set up an XML DOM parser.
+  XercesDOMParser* parser = new XercesDOMParser();
+  parser->setExitOnFirstFatalError(true);
+  parser->setValidationConstraintFatal(true);
+  parser->setValidationScheme(XercesDOMParser::Val_Never);
+  parser->setDoNamespaces(true);
+  parser->setCreateCommentNodes(false);
+
+  AmanziErrorHandler* errorHandler = new AmanziErrorHandler();
+  parser->setErrorHandler(errorHandler);
+  parser->useCachedGrammarInParse(true);
+ 
+  try {
+    parser->parse(xml_input.c_str());
+  }
+  catch (const OutOfMemoryException& e) {
+    std::cerr << "OutOfMemoryException" << std::endl;
+    Exceptions::amanzi_throw(Errors::Message("Ran out of memory while parsing the input file. Aborting."));
+  }
+  catch (...) {
+    Exceptions::amanzi_throw(Errors::Message("Errors occured while parsing the input file. Aborting."));
+  }
+
+  // Open and return the document.
+  DOMDocument* doc = parser->getDocument();
+  delete parser;
+  delete errorHandler;
+
+  return doc;
+}
 
 XERCES_CPP_NAMESPACE_USE
 

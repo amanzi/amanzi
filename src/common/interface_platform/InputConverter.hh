@@ -66,9 +66,15 @@ class MemoryManager {
   std::vector<XMLCh*> xchar;
 };
 
+// This helper method opens an XML file and parses it, returning a pointer 
+// to the DOM
+xercesc::DOMDocument* OpenXMLInput(const std::string& xml_input);
+
 class InputConverter {
  public:
 
+  explicit InputConverter(const std::string& xml_input):
+    doc_(OpenXMLInput(xml_input)) {}
   explicit InputConverter(xercesc::DOMDocument* input):
     doc_(input) {}
 

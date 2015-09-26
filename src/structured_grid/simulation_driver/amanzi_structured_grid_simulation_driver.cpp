@@ -1,3 +1,4 @@
+#include "InputTranslator.hh"
 #include "amanzi_structured_grid_simulation_driver.H"
 #include "ParmParse.H"
 #include "PMAmr.H"
@@ -102,9 +103,33 @@ bool ConfirmFileExists(const std::string& name) {
   return ok;
 }
 
+
+// v1 spec constructor -- delete when we get rid of v1.2 spec.
+AmanziStructuredGridSimulationDriver::AmanziStructuredGridSimulationDriver(const std::string& xmlInFileName)
+{
+  std::string spec;
+  Teuchos::ParameterList driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName, spec);
+  plist_ = new Teuchos::ParameterList(Amanzi::AmanziNewInput::translate(xmlInFileName, spec));
+}
+
+AmanziStructuredGridSimulationDriver::AmanziStructuredGridSimulationDriver(xercesc::DOMDocument* input)
+{
+  plist_ = NULL;
+//	ParmParse::Initialize(argc,argv,NULL);
+//
+//  Amanzi::AmanziInput::InputConverterS converter(input);
+//  plist_ = new Teuchos::ParameterList(converter.Translate());
+// NOT IN DEFAULT YET.
+}
+
+AmanziStructuredGridSimulationDriver::~AmanziStructuredGridSimulationDriver()
+{
+  if (plist_ != NULL)
+    delete plist_;
+}
+
 Amanzi::Simulator::ReturnType
 AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_comm,
-                                           Teuchos::ParameterList&       input_parameter_list,
                                            Amanzi::ObservationData&      output_observations)
 {
     int argc=0;
@@ -121,9 +146,9 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     std::string petsc_file_str = "Petsc Options File";
     std::string petsc_options_file;
 
-    petsc_file_specified = input_parameter_list.isParameter(petsc_file_str);
+    petsc_file_specified = plist_->isParameter(petsc_file_str);
     if (petsc_file_specified) {
-      petsc_options_file = Teuchos::getParameter<std::string>(input_parameter_list, petsc_file_str);
+      petsc_options_file = Teuchos::getParameter<std::string>(*plist_, petsc_file_str);
       petsc_file_exists = ConfirmFileExists(petsc_options_file);
       if (petsc_file_exists) {
 	PetscInitialize(&argc,&argv,petsc_options_file.c_str(),petsc_help.c_str());
@@ -158,14 +183,14 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
 
     // Check version number
     std::string amanzi_version_str = "Amanzi Input Format Version";
-    if (!input_parameter_list.isParameter(amanzi_version_str))
+    if (!plist_->isParameter(amanzi_version_str))
     {
       std::string str = "Must specify a value for the top-level parameter: \"" 
         + amanzi_version_str + "\"";
       BoxLib::Abort(str.c_str());
     }
 
-    std::string version = Teuchos::getParameter<std::string>(input_parameter_list, amanzi_version_str);
+    std::string version = Teuchos::getParameter<std::string>(*plist_, amanzi_version_str);
     std::pair<bool,std::string> status = InputVersionOK(version);
     if (!status.first) {
       if (ParallelDescriptor::IOProcessor()) {
@@ -176,9 +201,9 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     }
 
     bool pause_for_debug = false;
-    if (input_parameter_list.isParameter("Pause For Debug"))
+    if (plist_->isParameter("Pause For Debug"))
       {
-          pause_for_debug= Teuchos::getParameter<bool>(input_parameter_list, "Pause For Debug");
+          pause_for_debug= Teuchos::getParameter<bool>(*plist_, "Pause For Debug");
       }
 
     if ( pause_for_debug && ParallelDescriptor::IOProcessor() ) {
@@ -192,25 +217,25 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
         std::cout << "   continuing run..." << std::endl;
     }
 
-    if (input_parameter_list.isParameter("PPfile"))
+    if (plist_->isParameter("PPfile"))
       {
-	const std::string& PPfile = Teuchos::getParameter<std::string>(input_parameter_list, "PPfile");
+	const std::string& PPfile = Teuchos::getParameter<std::string>(*plist_, "PPfile");
 	ParmParse::Initialize(argc,argv,PPfile.c_str());
       }
 
     // Determine whether we need to convert to input file to 
     //native structured format
-    bool native = input_parameter_list.get<bool>("Native Structured Input",false);
+    bool native = plist_->get<bool>("Native Structured Input",false);
     Teuchos::ParameterList converted_parameter_list;
     if (!native) 
       converted_parameter_list =
-	Amanzi::AmanziInput::convert_to_structured(input_parameter_list);
+	Amanzi::AmanziInput::convert_to_structured(*plist_);
     else
-      converted_parameter_list = input_parameter_list;
+      converted_parameter_list = *plist_;
 
-    if (input_parameter_list.isParameter("EchoXMLfile"))
+    if (plist_->isParameter("EchoXMLfile"))
       {
-        const std::string& EchoXMLfile = Teuchos::getParameter<std::string>(input_parameter_list, "EchoXMLfile");
+        const std::string& EchoXMLfile = Teuchos::getParameter<std::string>(*plist_, "EchoXMLfile");
         Teuchos::writeParameterListToXmlFile(converted_parameter_list,EchoXMLfile);
       }
 
@@ -219,7 +244,7 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
 
     BoxLib::Initialize_ParmParse(converted_parameter_list);
 
-    const Teuchos::ParameterList& echo_list = input_parameter_list.sublist("Echo Translated Input");
+    const Teuchos::ParameterList& echo_list = plist_->sublist("Echo Translated Input");
     if (echo_list.isParameter("Format")) {
       if (echo_list.get<std::string>("Format") == "native") {
 	if (ParallelDescriptor::IOProcessor()) {
