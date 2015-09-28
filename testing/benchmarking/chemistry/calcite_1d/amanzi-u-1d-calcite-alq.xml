@@ -98,8 +98,8 @@
         <maximum_newton_terations>150</maximum_newton_terations>
         <auxiliary_data>pH</auxiliary_data>
         <max_time_step>15778463.0</max_time_step>
-        <initial_time_step>1.5768e+5</initial_time_step>
-        <time_step_control_method>simple</time_step_control_method>
+        <initial_time_step>1.5768e+7</initial_time_step>
+        <time_step_control_method>fixed</time_step_control_method>
       </unstr_chemistry_controls>
 
       <unstr_linear_solver>

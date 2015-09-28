@@ -61,6 +61,7 @@
 #   0.92.17      - update MSTK to version 2.2.3 (adds element set capabilities)
 #   0.92.18      - update Boost to version 1.58.0 
 #   0.92.19      - update CCSE to version 1.3.2
+#   0.92.20      - update CCSE to version 1.3.4 (fix issue with fsnapshot)
 
 include(CMakeParseArguments)
 
@@ -110,7 +111,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 92)
-set (AMANZI_TPLS_VERSION_PATCH 19)
+set (AMANZI_TPLS_VERSION_PATCH 20)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -174,12 +175,12 @@ set(METIS_MD5_SUM        5465e67079419a69e0116de24fce58fe)
 #
 set(CCSE_VERSION_MAJOR 1)
 set(CCSE_VERSION_MINOR 3)
-set(CCSE_VERSION_PATCH 2)
+set(CCSE_VERSION_PATCH 4)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
 set(CCSE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(CCSE_ARCHIVE_FILE   ccse-${CCSE_VERSION}.tar.gz) 
-set(CCSE_MD5_SUM        cf58c8c89f67e7600d0a496781092ac9)
+set(CCSE_MD5_SUM        faa52bb553cea8ca9ea436c1a7135b12)
 
 #
 # TPL: UnitTest

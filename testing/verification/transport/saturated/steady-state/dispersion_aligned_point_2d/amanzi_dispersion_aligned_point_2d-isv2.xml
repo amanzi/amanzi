@@ -149,7 +149,9 @@
             <velocity function="uniform" x="1.8634e-06" z="0.0" />
             <uniform_pressure value="101325" />
           </liquid_component>
-          <solute_component function="uniform" name="Tc-99" value="0.0" />
+          <solute_component name="solute">
+            <uniform_conc name="Tc-99" value="0.0"/>
+          </solute_component>
         </liquid_phase>
       </initial_condition>
     </initial_conditions>

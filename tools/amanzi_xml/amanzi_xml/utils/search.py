@@ -125,7 +125,11 @@ def getElementByTags(elem, path):
     else:
         childtagname = etagnames[0].strip().strip("}").strip("{").split(",")
         for child in generateChildByTag(elem, childtagname[0]):
-            return getElementByTags(child, "/".join(etagnames))
+            if len(childtagname) == 1:
+                return getElementByTags(child, "/".join(etagnames))
+            else:
+                if child.get("name") == childtagname[1]:
+                    return getElementByTags(child, "/".join(etagnames))
 
 
 # def searchAndRemoveByName(pl, abspath):

@@ -145,8 +145,10 @@
         <liquid_component name="water">
           <uniform_pressure name="IC1" value="101325.0" />
         </liquid_component>
-        <solute_component function="uniform" name="CO3--" value="1e-10" />
-        <solute_component function="uniform" name="Ca++" value="1e-10" />
+        <solute_component name="solute">
+          <uniform_conc name="CO3--" value="1e-10" />
+          <uniform_conc name="Ca++" value="1e-10" />
+        </solute_component>
       </liquid_phase>
     </initial_condition>
   </initial_conditions>
@@ -158,10 +160,8 @@
         <liquid_component name="water">
           <inward_mass_flux function="uniform" start="0.0" value="0.50e+1"/>
         </liquid_component>
-        <solute_component name="CO3--">
+        <solute_component name="solute">
           <aqueous_conc name="CO3--" value="1e-10" function="constant" start="0.0"/>
-        </solute_component> 
-        <solute_component name="Ca+">
           <aqueous_conc name="Ca++" value="5e-2" function="constant" start="0.0"/>
         </solute_component> 
       </liquid_phase>
@@ -173,10 +173,8 @@
         <liquid_component name="water">
           <inward_mass_flux function="uniform" start="0.0" value="0.26e+1"/>
         </liquid_component>
-        <solute_component name="CO3--">
+        <solute_component name="solute">
           <aqueous_conc name="CO3--" value="5e-2" function="constant" start="0.0"/>
-        </solute_component> 
-        <solute_component name="Ca+">
           <aqueous_conc name="Ca++" value="1e-10" function="constant" start="0.0"/>
         </solute_component> 
       </liquid_phase>

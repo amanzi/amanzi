@@ -151,9 +151,11 @@
         <liquid_component name="water">
           <uniform_pressure name="IC1" value="201325.0" />
         </liquid_component>
-        <solute_component function="uniform" name="H+" value="1.6290737950863135E-05" />
-        <solute_component function="uniform" name="HCO3-" value="1.7348824177512681E-03" />
-        <solute_component function="uniform" name="Ca++" value="5.2312130065730166E-04" />
+        <solute_component name="solute">
+          <uniform_conc name="H+" value="1.6290737950863135E-05" />
+          <uniform_conc name="HCO3-" value="1.7348824177512681E-03" />
+          <uniform_conc name="Ca++" value="5.2312130065730166E-04" />
+        </solute_component>
         <geochemistry>
           <constraint name="initial" start="0.0"/>
         </geochemistry>
@@ -168,13 +170,9 @@
         <liquid_component name="water">
           <inward_mass_flux function="uniform" start="0.0" value="7.91317859e-6"/>
         </liquid_component>
-        <solute_component name="H+">
+        <solute_component name="solute">
           <aqueous_conc name="H+" value="9.6641473107457617E-04" function="constant" start="0.0"/>
-        </solute_component> 
-        <solute_component name="HCO3-">
           <aqueous_conc name="HCO3-" value="9.9999999902971649E-04" function="constant" start="0.0"/>
-        </solute_component> 
-        <solute_component name="Ca+">
           <aqueous_conc name="Ca++" value="1.6792633971909330E-05" function="constant" start="0.0"/>
         </solute_component> 
         <!--geochemistry>

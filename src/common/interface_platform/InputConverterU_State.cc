@@ -385,7 +385,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       int ncomp_g = phases_["air"].size();
       int ncomp_all = ncomp_l + ncomp_g;
 
-      node = GetUniqueElementByTagsString_(inode, "liquid_phase", flag);
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, solute_component", flag);
       if (flag && ncomp_all > 0) {
         std::vector<double> vals(ncomp_l, 0.0);
 
@@ -394,7 +394,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           DOMNode* jnode = children->item(j);
           tagname = mm.transcode(jnode->getNodeName());
 
-          if (strcmp(tagname, "solute_component") == 0) {
+          if (strcmp(tagname, "uniform_conc") == 0) {
             std::string text = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
             int m = GetPosition_(phases_["water"], text);
             vals[m] = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "value");
@@ -418,7 +418,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       }
 
       // -- total_component_concentration (gas phase)
-      node = GetUniqueElementByTagsString_(inode, "gas_phase", flag);
+      node = GetUniqueElementByTagsString_(inode, "gas_phase, solute_component", flag);
       if (flag) {
         std::vector<double> vals(ncomp_g, 0.0);
 
@@ -427,7 +427,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           DOMNode* jnode = children->item(j);
           tagname = mm.transcode(jnode->getNodeName());
 
-          if (strcmp(tagname, "solute_component") == 0) {
+          if (strcmp(tagname, "uniform_conc") == 0) {
             std::string text = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
             int m = GetPosition_(phases_["air"], text);
             vals[m] = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "value");

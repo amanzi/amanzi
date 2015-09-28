@@ -99,7 +99,8 @@ int Alquimia_Chemistry_PK::InitializeSingleCell(int cell_index, const std::strin
                                  alq_state_, alq_aux_data_, alq_aux_output_);
 
   // Move the information back into Amanzi's state.
-  CopyAlquimiaStateToAmanzi(cell_index, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
+  // CopyAlquimiaStateToAmanzi(cell_index, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
+  InitAmanziStateFromAlquimia(cell_index, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
 
   return 0;
 }
@@ -114,8 +115,6 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
   // Initialize the data structures that we will use to traffic data between 
   // Amanzi and Alquimia.
   chem_engine_->InitState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
-
-
 
   // Now loop through all the regions and initialize.
   int ierr = 0;
@@ -155,6 +154,8 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
       (*aux_state_vec)[0] = (*aux_output_)[i];
     }
   }
+
+  chemistry_state_->SetAllFieldsInitialized();
 
   chem_initialized_ = true;
   num_iterations_ = 0;
@@ -544,6 +545,111 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id,
     }
   }
 }  // end CopyAlquimiaStateToAmanzi()
+
+void Alquimia_Chemistry_PK::InitAmanziStateFromAlquimia(const int cell_id,
+                                                      const AlquimiaMaterialProperties& mat_props,
+                                                      const AlquimiaState& state,
+                                                      const AlquimiaAuxiliaryData& aux_data,
+                                                      const AlquimiaAuxiliaryOutputData& aux_output)
+{
+  //chemistry_state_->CopyFromAlquimia(cell_id, mat_props, state, aux_data, aux_output,
+  //                                   chemistry_state_->total_component_concentration());
+
+  chemistry_state_->InitFromAlquimia(cell_id, mat_props, state, aux_data, aux_output);                                    
+
+  // Auxiliary output.
+  if (aux_output_ != Teuchos::null) 
+  {
+    std::vector<std::string> mineralNames, primaryNames;
+    chem_engine_->GetMineralNames(mineralNames);
+    chem_engine_->GetPrimarySpeciesNames(primaryNames);
+    int numAqueousComplexes = chem_engine_->NumAqueousComplexes();
+    for (unsigned int i = 0; i < aux_names_.size(); i++) 
+    {
+      if (aux_names_.at(i) == "pH") 
+      {
+        double* cell_aux_output = (*aux_output_)[i];
+        cell_aux_output[cell_id] = aux_output.pH;
+      }
+      else if (aux_names_.at(i).find("mineral_saturation_index") != std::string::npos)
+      {
+        for (int j = 0; j < mineralNames.size(); ++j)
+        {
+          std::string full_name = std::string("mineral_saturation_index_") + mineralNames[j];
+          if (aux_names_.at(i) == full_name)
+          {
+            double* cell_aux_output = (*aux_output_)[i];
+            cell_aux_output[cell_id] = aux_output.mineral_saturation_index.data[j];
+          }
+        }
+      }
+      else if (aux_names_.at(i).find("mineral_reaction_rate") != std::string::npos)
+      {
+        for (int j = 0; j < mineralNames.size(); ++j)
+        {
+          std::string full_name = std::string("mineral_reaction_rate_") + mineralNames[j];
+          if (aux_names_.at(i) == full_name)
+          {
+            double* cell_aux_output = (*aux_output_)[i];
+            cell_aux_output[cell_id] = aux_output.mineral_reaction_rate.data[j];
+          }
+        }
+      }
+      else if (aux_names_.at(i) == "primary_free_ion_concentration")
+      {
+        for (int j = 0; j < primaryNames.size(); ++j)
+        {
+          std::string full_name = std::string("primary_free_ion_concentration_") + primaryNames[j];
+          if (aux_names_.at(i) == full_name)
+          {
+            double* cell_aux_output = (*aux_output_)[i];
+            cell_aux_output[cell_id] = aux_output.primary_free_ion_concentration.data[j];
+          }
+        }
+      }
+      else if (aux_names_.at(i) == "primary_activity_coeff")
+      {
+        for (int j = 0; j < primaryNames.size(); ++j)
+        {
+          std::string full_name = std::string("primary_activity_coeff_") + primaryNames[j];
+          if (aux_names_.at(i) == full_name)
+          {
+            double* cell_aux_output = (*aux_output_)[i];
+            cell_aux_output[cell_id] = aux_output.primary_activity_coeff.data[j];
+          }
+        }
+      }
+      else if (aux_names_.at(i) == "secondary_free_ion_concentration")
+      {
+        for (int j = 0; j < numAqueousComplexes; ++j)
+        {
+          char num_str[16];
+          snprintf(num_str, 15, "%d", j);
+          std::string full_name = std::string("secondary_free_ion_concentration_") + std::string(num_str);
+          if (aux_names_.at(i) == full_name)
+          {
+            double* cell_aux_output = (*aux_output_)[i];
+            cell_aux_output[cell_id] = aux_output.secondary_free_ion_concentration.data[j];
+          }
+        }
+      }
+      else if (aux_names_.at(i) == "secondary_activity_coeff")
+      {
+        for (int j = 0; j < numAqueousComplexes; ++j)
+        {
+          char num_str[16];
+          snprintf(num_str, 15, "%d", j);
+          std::string full_name = std::string("secondary_activity_coeff_") + std::string(num_str);
+          if (aux_names_.at(i) == full_name)
+          {
+            double* cell_aux_output = (*aux_output_)[i];
+            cell_aux_output[cell_id] = aux_output.secondary_activity_coeff.data[j];
+          }
+        }
+      }
+    }
+  }
+}  // end InitAmanziStateFromAlquimia()
 
 /*******************************************************************************
  **

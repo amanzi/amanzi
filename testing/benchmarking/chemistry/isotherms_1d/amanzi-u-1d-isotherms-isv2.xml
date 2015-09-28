@@ -145,9 +145,11 @@
         <liquid_component name="water">
           <uniform_pressure value="201325.0"/>
         </liquid_component>
-        <solute_component name= "A" value= "1.e-20" function="uniform"/>
-        <solute_component name= "B" value= "1.e-20" function="uniform"/>
-        <solute_component name= "C" value= "1.e-20" function="uniform"/>
+        <solute_component name="solute">
+          <uniform_conc name= "A" value= "1.e-20"/>
+          <uniform_conc name= "B" value= "1.e-20"/>
+          <uniform_conc name= "C" value= "1.e-20"/>
+        </solute_component>
       </liquid_phase>
     </initial_condition>
   </initial_conditions>
