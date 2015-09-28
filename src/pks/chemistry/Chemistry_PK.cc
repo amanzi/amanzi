@@ -1,7 +1,7 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
 #include "Chemistry_PK.hh"
-
+ 
 #include <string>
 #include <algorithm>
 
@@ -140,6 +140,7 @@ void Chemistry_PK::InitializeChemistry(void) {
     // std::cout << geochem_error.what() << std::endl;
     // Exceptions::amanzi_throw(geochem_error);
   }
+
   int recv(0);
   chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) {
@@ -170,7 +171,10 @@ void Chemistry_PK::InitializeChemistry(void) {
       //chem_->DisplayTotalColumns(static_cast<double>(-cell), beaker_components_, display_free_columns_);
       // solve for initial free-ion concentrations
       chem_->Speciate(&beaker_components_, beaker_parameters_);
-      CopyBeakerStructuresToCellState(cell);
+
+      //CopyBeakerStructuresToCellState(cell);
+      chemistry_state_->InitFromBeakerStructure(cell, beaker_components_);
+
     } catch (ChemistryException& geochem_error) {
       ierr = 1;
       // std::cout << "ChemistryPK::InitializeChemistry(): " 

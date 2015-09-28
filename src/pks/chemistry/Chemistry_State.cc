@@ -976,6 +976,136 @@ void Chemistry_State::InitFromAlquimia(const int cell_id,
 
 #endif
 
+void Chemistry_State::InitFromBeakerStructure(const int cell_id,
+                                              Beaker::BeakerComponents beaker_components){
+
+  if (!S_->GetField("total_component_concentration")->initialized()){   
+    for (unsigned int c = 0; c < number_of_aqueous_components(); c++) {
+      double* cell_components = (*total_component_concentration())[c];
+      cell_components[cell_id] = beaker_components.total.at(c);
+    }
+  }
+
+  if (!S_->GetField("free_ion_species")->initialized()) {
+    for (unsigned int c = 0; c < number_of_aqueous_components(); c++) {
+      double* cell_free_ion = (*free_ion_species())[c];
+      cell_free_ion[cell_id] = beaker_components.free_ion.at(c);
+    }
+  }
+
+  //
+  // activity coefficients
+  //
+  int n_primary_comps = beaker_components.primary_activity_coeff.size();
+  if (n_primary_comps > 0) {
+    if (!S_->GetField("primary_activity_coeff")->initialized()) {
+      for (unsigned int i = 0; i < beaker_components.primary_activity_coeff.size(); ++i) {
+        double* cells = (*primary_activity_coeff())[i];
+        cells[cell_id] = beaker_components.primary_activity_coeff.at(i);
+      }
+    }
+  }
+  int n_secondary_comps = beaker_components.secondary_activity_coeff.size();
+  if (n_secondary_comps > 0) {
+    if (!S_->GetField("secondary_activity_coeff")->initialized()) {
+      for (unsigned int i = 0; i < beaker_components.secondary_activity_coeff.size(); ++i) {
+        double* cells = (*secondary_activity_coeff())[i];
+        cells[cell_id] =  beaker_components.secondary_activity_coeff.at(i);
+      }
+    }
+  }
+  //
+  // minerals
+  //
+  if (!S_->GetField("mineral_volume_fractions")->initialized()) {
+    for (unsigned int m = 0; m < number_of_minerals_; m++) {
+      double* cell_minerals = (*mineral_volume_fractions())[m];
+      cell_minerals[cell_id] = beaker_components.mineral_volume_fraction.at(m);
+      if (mineral_specific_surface_area() != Teuchos::null) {
+        cell_minerals = (*mineral_specific_surface_area())[m];
+        cell_minerals[cell_id] = beaker_components.mineral_specific_surface_area.at(m);
+      }
+    }
+  }
+
+  //
+  // sorption
+  //
+  if (using_sorption()) {
+    if (!S_->GetField("total_sorbed")->initialized()) {
+      for (unsigned int c = 0; c < number_of_aqueous_components(); c++) {
+        double* cell_total_sorbed = (*total_sorbed())[c];
+        cell_total_sorbed[cell_id] = beaker_components.total_sorbed.at(c);
+      }
+    }
+  }
+
+  //
+  // surface complexation
+  //
+  
+
+  for (unsigned int i = 0; i < number_of_sorption_sites(); i++) {
+    if (!S_->GetField("sorption_sites")->initialized()) {
+      double* cell_sorption_sites = (*sorption_sites())[i];
+      cell_sorption_sites[cell_id] = beaker_components.surface_site_density.at(i);
+      // TODO(bandre): need to save surface complexation free site conc here!
+    }
+  }
+
+
+ 
+  for (unsigned int i = 0; i < beaker_components.surface_complex_free_site_conc.size(); ++i) {
+    if (!S_->GetField("surface_complex_free_site_conc")->initialized()) { 
+     double* cells = (*surface_complex_free_site_conc())[i];
+      cells[cell_id] = beaker_components.surface_complex_free_site_conc.at(i);
+    }
+  }
+
+  //
+  // ion exchange
+  //
+
+  for (unsigned int i = 0; i < number_of_ion_exchange_sites(); i++) {
+    if (!S_->GetField("ion_exchange_sites")->initialized()) {
+      double* cell_ion_exchange_sites = (*ion_exchange_sites())[i];
+      cell_ion_exchange_sites[cell_id] = beaker_components.ion_exchange_sites.at(i);
+      // TODO(bandre): need to save ion exchange ref cation conc here!
+    }
+  }
+
+
+  for (unsigned int i = 0; i < beaker_components.ion_exchange_ref_cation_conc.size(); ++i) {
+    if (!S_->GetField("ion_exchange_ref_cation_conc")->initialized()) {
+      double* cells = (*ion_exchange_ref_cation_conc())[i];
+      cells[cell_id] = beaker_components.ion_exchange_ref_cation_conc.at(i);
+    }
+  }
+
+  //
+  // sorption isotherms
+  //
+  if (using_sorption_isotherms()) {
+    for (unsigned int i = 0; i < number_of_aqueous_components(); ++i) {
+      if (!S_->GetField("isotherm_kd")->initialized()) {
+        double* cell_data = (*isotherm_kd())[i];
+        cell_data[cell_id] = beaker_components.isotherm_kd.at(i);
+      }
+
+      if (!S_->GetField("isotherm_freundlich_n")->initialized()) {
+        double* cell_data = (*isotherm_freundlich_n())[i];
+        cell_data[cell_id] = beaker_components.isotherm_freundlich_n.at(i);
+      }
+
+      if (!S_->GetField("isotherm_langmuir_b")->initialized()) {
+        double *cell_data = (*isotherm_langmuir_b())[i];
+        cell_data[cell_id] = beaker_components.isotherm_langmuir_b.at(i);
+      }
+    }
+  }
+
+}
+
 void Chemistry_State::SetAllFieldsInitialized(){
   if (using_sorption_isotherms()) {
     S_->GetField("isotherm_langmuir_b", name_)->set_initialized();

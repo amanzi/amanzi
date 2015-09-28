@@ -276,6 +276,11 @@ class Chemistry_State {
 
 #endif
 
+  void InitFromBeakerStructure(const int cell_id,
+                               Beaker::BeakerComponents beaker_components);
+
+
+
   void SetAllFieldsInitialized();
 
  protected:
