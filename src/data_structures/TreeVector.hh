@@ -28,6 +28,7 @@ assumed in several places.
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 
+#include "Iterators.hh"
 #include "data_structures_types.hh"
 
 #include "CompositeVector.hh"
@@ -64,12 +65,16 @@ class TreeVector {
   const TreeVectorSpace& Map() const { return *map_; }
 
   // Access to SubVectors
-  std::vector< Teuchos::RCP<TreeVector> >& SubVectors() { return subvecs_; }
+  typedef std::vector<Teuchos::RCP<TreeVector> > SubVectorsContainer;
+  typedef Utils::iterator<SubVectorsContainer, TreeVector> iterator;
+  typedef Utils::const_iterator<SubVectorsContainer, TreeVector> const_iterator;
 
-  // Const access to SubVectors.
-  const std::vector< Teuchos::RCP<TreeVector> >& SubVectors() const {
-    return subvecs_; }
-
+  iterator begin() { return iterator(subvecs_.begin()); }
+  const_iterator begin() const { return const_iterator(subvecs_.begin()); }
+  iterator end() { return iterator(subvecs_.end()); }
+  const_iterator end() const { return const_iterator(subvecs_.end()); }
+  size_t size() const { return subvecs_.size(); }
+  
   // Access to the sub-vector by index
   Teuchos::RCP<TreeVector> SubVector(int index);
 

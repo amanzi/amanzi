@@ -32,7 +32,8 @@ add_amanzi_library(atk
                           TimeStepManager.cc
                           XMLParameterListWriter.cc 
                           LeastSquare.cc 
-                          VerboseObject.cc 
+                          VerboseObject.cc
+			  IOEvent.cc
                    HEADERS HDF5Reader.hh
                            Utils.hh
                            Timer.hh
@@ -42,6 +43,7 @@ add_amanzi_library(atk
                            VerboseObject.hh
                            VerboseObject_objs.hh
                            GlobalVerbosity.hh
+			   IOEvent.hh
                            factory.hh
                            factory_with_state.hh
                            LeastSquare.hh
