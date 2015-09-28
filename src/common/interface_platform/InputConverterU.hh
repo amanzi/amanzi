@@ -39,7 +39,7 @@ class InputConverterU : public InputConverter {
       mesh_rectangular_(false),
       transport_permeability_(false),
       restart_(false),
-      init_filename_("") {};
+      init_filename_(input) {};
 
   explicit InputConverterU(xercesc::DOMDocument* input) :
       InputConverter(input), 
