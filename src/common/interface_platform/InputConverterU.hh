@@ -31,25 +31,24 @@ typedef std::map<std::string, std::vector<std::string> > Tree;
 
 class InputConverterU : public InputConverter {
  public:
-  explicit InputConverterU(const std::string& input) :
-      InputConverter(input), 
+  explicit InputConverterU(const std::string& input_filename) :
+      InputConverter(input_filename), 
       vo_(NULL),
       flow_single_phase_(false),
       compressibility_(false),
       mesh_rectangular_(false),
       transport_permeability_(false),
-      restart_(false),
-      init_filename_(input) {};
+      restart_(false) {}
 
-  explicit InputConverterU(xercesc::DOMDocument* input) :
-      InputConverter(input), 
+  explicit InputConverterU(const std::string& input_filename, 
+                           xercesc::DOMDocument* input_doc) :
+      InputConverter(input_filename, input_doc), 
       vo_(NULL),
       flow_single_phase_(false),
       compressibility_(false),
       mesh_rectangular_(false),
       transport_permeability_(false),
-      restart_(false),
-      init_filename_("") {};
+      restart_(false) {}
 
   ~InputConverterU() { if (vo_ != NULL) delete vo_; }
 

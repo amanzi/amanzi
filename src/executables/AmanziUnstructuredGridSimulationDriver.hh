@@ -15,7 +15,8 @@ struct AmanziUnstructuredGridSimulationDriver
   explicit AmanziUnstructuredGridSimulationDriver(const std::string& xmlInFileName);
 
   // v2 constructor
-  explicit AmanziUnstructuredGridSimulationDriver(xercesc::DOMDocument* input);
+  AmanziUnstructuredGridSimulationDriver(const std::string& xmlInFileName,
+                                         xercesc::DOMDocument* input);
 
   // Destructor.
   ~AmanziUnstructuredGridSimulationDriver();

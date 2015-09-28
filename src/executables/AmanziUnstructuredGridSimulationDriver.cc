@@ -46,14 +46,15 @@ AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(c
   plist_ = new Teuchos::ParameterList(Amanzi::AmanziNewInput::translate(xmlInFileName, spec));
 }
 
-AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(xercesc::DOMDocument* input)
+AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const string& xmlInFileName,
+                                                                               xercesc::DOMDocument* input)
 {
   int argc = 0;
   Teuchos::GlobalMPISession mpiSession(0,NULL,0);
   int rank = mpiSession.getRank();
   int num_proc = mpiSession.getNProc();
 
-  Amanzi::AmanziInput::InputConverterU converter(input);
+  Amanzi::AmanziInput::InputConverterU converter(xmlInFileName, input);
   plist_ = new Teuchos::ParameterList(converter.Translate(rank, num_proc));
   // NOTE: we don't write the converted file, since we don't have the filename in this 
   // NOTE: context. We could write it to a generic file. Need to decide what to do here.

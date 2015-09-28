@@ -22,7 +22,8 @@ namespace SimulatorFactory
 
 Simulator* Create(const std::string& input_filename)
 {
-  DOMDocument* doc = Amanzi::AmanziInput::OpenXMLInput(input_filename);
+  XercesDOMParser* parser = Amanzi::AmanziInput::CreateXMLParser();
+  DOMDocument* doc = Amanzi::AmanziInput::OpenXMLInput(parser, input_filename);
 
   // Determine whether this is a structured or unstructured input and dispatch 
   // accordingly.
@@ -65,7 +66,7 @@ Simulator* Create(const std::string& input_filename)
   {
 #ifdef ENABLE_Unstructured
     if (version[0] == '2')
-      simulator = new AmanziUnstructuredGridSimulationDriver(doc);
+      simulator = new AmanziUnstructuredGridSimulationDriver(input_filename, doc);
     else // Assume version 1
     {
       assert(version[0] == '1');
@@ -78,6 +79,7 @@ Simulator* Create(const std::string& input_filename)
 
   // Clean up.
   delete doc;
+  delete parser;
   XMLPlatformUtils::Terminate();
 
   return simulator;
