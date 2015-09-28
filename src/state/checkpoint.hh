@@ -19,7 +19,7 @@ Checkpointing for state.
 #include "Epetra_Comm.h"
 
 #include "hdf5mpi_mesh.hh"
-#include "io_event.hh"
+#include "IOEvent.hh"
 
 namespace Amanzi {
 
@@ -49,6 +49,9 @@ class Checkpoint : public IOEvent {
   int restart_cycle_;
   bool final_;
 
+  // the Epetra communicator
+  const Epetra_MpiComm *comm_;
+  
   Teuchos::RCP<Amanzi::HDF5_MPI> checkpoint_output_;
 };
 
