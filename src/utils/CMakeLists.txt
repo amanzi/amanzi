@@ -44,6 +44,7 @@ add_amanzi_library(atk
                            VerboseObject_objs.hh
                            GlobalVerbosity.hh
 			   IOEvent.hh
+			   Iterators.hh
                            factory.hh
                            factory_with_state.hh
                            LeastSquare.hh
