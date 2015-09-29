@@ -145,7 +145,6 @@ protected:
 protected:
   // control switches
   Operators::UpwindMethod Krel_method_;
-  int niter_;
   bool infiltrate_only_if_unfrozen_;
   bool modify_predictor_with_consistent_faces_;
   bool modify_predictor_wc_;

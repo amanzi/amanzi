@@ -53,7 +53,6 @@ Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
     modify_predictor_bc_flux_(false),
     upwind_from_prev_flux_(false),
     precon_wc_(false),
-    niter_(0),
     dynamic_mesh_(false),
     clobber_surf_kr_(false),
     vapor_diffusion_(false),
@@ -506,8 +505,6 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
 
   PKPhysicalBDFBase::commit_state(dt, S);
   
-  niter_ = 0;
-
   // update BCs, rel perm
   UpdateBoundaryConditions_(S.ptr());
   bool update = UpdatePermeabilityData_(S.ptr());
@@ -1136,6 +1133,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 Richards::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
                  Teuchos::RCP<const TreeVector> u,
                  Teuchos::RCP<TreeVector> du) {
+
   // if the primary variable has boundary face, this is for upwinding rel
   // perms and is never actually used.  Make sure it does not go to undefined
   // pressures.

@@ -30,7 +30,6 @@ void Richards::Functional(double t_old,
                    Teuchos::RCP<TreeVector> g) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = vo_->getOSTab();
-  niter_++;
 
   double h = t_new - t_old;
   ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
@@ -109,18 +108,6 @@ void Richards::Functional(double t_old,
       AddSources_(S_next_.ptr(), res.ptr());
     }
   }
-  
-#if DEBUG_RES_FLAG
-  if (niter_ < 23) {
-    std::stringstream namestream;
-    namestream << "flow_residual_" << niter_;
-    *S_next_->GetFieldData(namestream.str(),name_) = *res;
-
-    std::stringstream solnstream;
-    solnstream << "flow_solution_" << niter_;
-    *S_next_->GetFieldData(solnstream.str(),name_) = *u;
-  }
-#endif
 };
 
 // -----------------------------------------------------------------------------

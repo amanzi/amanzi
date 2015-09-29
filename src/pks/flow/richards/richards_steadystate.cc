@@ -137,8 +137,6 @@ void RichardsSteadyState::Functional(double t_old, double t_new, Teuchos::RCP<Tr
   Teuchos::OSTab tab = vo_->getOSTab();
 
   
-  niter_++;
-
   double h = t_new - t_old;
   ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
   ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
