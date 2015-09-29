@@ -242,7 +242,7 @@ void Coordinator::initialize() {
   // -- register any intermediate requested times
   if (coordinator_list_->isSublist("required times")) {
     Teuchos::ParameterList& sublist = coordinator_list_->sublist("required times");
-    IOEvent pause_times(sublist, comm_);
+    IOEvent pause_times(sublist);
     pause_times.RegisterWithTimeStepManager(tsm_.ptr());
   }
 
