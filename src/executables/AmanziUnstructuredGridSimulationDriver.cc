@@ -50,9 +50,8 @@ AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(c
                                                                                xercesc::DOMDocument* input)
 {
   int argc = 0;
-  Teuchos::GlobalMPISession mpiSession(0,NULL,0);
-  int rank = mpiSession.getRank();
-  int num_proc = mpiSession.getNProc();
+  int rank = Teuchos::GlobalMPISession::getRank();
+  int num_proc = Teuchos::GlobalMPISession::getNProc();
 
   Amanzi::AmanziInput::InputConverterU converter(xmlInFileName, input);
   plist_ = new Teuchos::ParameterList(converter.Translate(rank, num_proc));
