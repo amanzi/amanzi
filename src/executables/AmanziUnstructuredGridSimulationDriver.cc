@@ -11,6 +11,8 @@
 #include "CycleDriver.hh"
 #include "Domain.hh"
 #include "GeometricModel.hh"
+#include "InputTranslator.hh"
+#include "InputConverterU.hh"
 #include "InputAnalysis.hh"
 #include "MeshAudit.hh"
 #include "MeshFactory.hh"
@@ -34,10 +36,36 @@
 #include "pks_energy_registration.hh"
 #include "wrm_flow_registration.hh"
 
+using namespace std;
+
+// v1 spec constructor -- delete when we get rid of v1.2 spec.
+AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const string& xmlInFileName)
+{
+  string spec;
+  Teuchos::ParameterList driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName, spec);
+  plist_ = new Teuchos::ParameterList(Amanzi::AmanziNewInput::translate(xmlInFileName, spec));
+}
+
+AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const string& xmlInFileName,
+                                                                               xercesc::DOMDocument* input)
+{
+  int argc = 0;
+  int rank = Teuchos::GlobalMPISession::getRank();
+  int num_proc = Teuchos::GlobalMPISession::getNProc();
+
+  Amanzi::AmanziInput::InputConverterU converter(xmlInFileName, input);
+  plist_ = new Teuchos::ParameterList(converter.Translate(rank, num_proc));
+  // NOTE: we don't write the converted file, since we don't have the filename in this 
+  // NOTE: context. We could write it to a generic file. Need to decide what to do here.
+}
+
+AmanziUnstructuredGridSimulationDriver::~AmanziUnstructuredGridSimulationDriver()
+{
+  delete plist_;
+}
 
 Amanzi::Simulator::ReturnType
 AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
-                                            Teuchos::ParameterList& plist,
                                             Amanzi::ObservationData& output_observations)
 {
   using Teuchos::OSTab;
@@ -57,13 +85,13 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
   //------------ DOMAIN, GEOMETRIC MODEL, ETC ----------------------------
   // Create a VerboseObject to pass to the geometric model class 
-  Amanzi::VerboseObject *gmverbobj = new Amanzi::VerboseObject("Geometric Model", plist);
+  Amanzi::VerboseObject *gmverbobj = new Amanzi::VerboseObject("Geometric Model", *plist_);
 
   // Create the simulation domain
   Amanzi::timer_manager.add("Geometric Model creation",Amanzi::Timer::ONCE);
   Amanzi::timer_manager.start("Geometric Model creation");
 
-  Teuchos::ParameterList domain_params = plist.sublist("Domain");
+  Teuchos::ParameterList domain_params = plist_->sublist("Domain");
   unsigned int spdim = domain_params.get<int>("Spatial Dimension");
   
   Amanzi::AmanziGeometry::Domain *simdomain_ptr = new Amanzi::AmanziGeometry::Domain(spdim);
@@ -75,7 +103,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   // with a geometric model.
 
   // For now create one geometric model from all the regions in the spec
-  Teuchos::ParameterList reg_params = plist.sublist("Regions");
+  Teuchos::ParameterList reg_params = plist_->sublist("Regions");
 
   Amanzi::AmanziGeometry::GeometricModelPtr 
       geom_model_ptr(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm));
@@ -96,7 +124,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   Amanzi::timer_manager.start("Mesh creation");
 
   // Create a Verbose object to pass to the mesh_factory and mesh
-  Amanzi::VerboseObject *meshverbobj = new Amanzi::VerboseObject("Mesh", plist);
+  Amanzi::VerboseObject *meshverbobj = new Amanzi::VerboseObject("Mesh", *plist_);
 
   // Create a mesh factory for this geometric model
   Amanzi::AmanziMesh::MeshFactory factory(comm, meshverbobj) ;
@@ -106,7 +134,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
   // get the Mesh sublist
   ierr = 0;
-  Teuchos::ParameterList mesh_params = plist.sublist("Mesh");
+  Teuchos::ParameterList mesh_params = plist_->sublist("Mesh");
 
   // Make sure the unstructured mesh option was chosen
   bool unstructured_option = mesh_params.isSublist("Unstructured");
@@ -288,11 +316,11 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
   // -------------- ANALYSIS --------------------------------------------
   Amanzi::InputAnalysis analysis(mesh);
-  analysis.Init(plist);
+  analysis.Init(*plist_);
   analysis.RegionAnalysis();
   analysis.OutputBCs();
 
-  Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(plist));
+  Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(*plist_));
   Amanzi::CycleDriver cycle_driver(glist, mesh, comm, output_observations);
 
   cycle_driver.Go();

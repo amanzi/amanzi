@@ -1,9 +1,4 @@
-#ifdef ENABLE_Unstructured
-#include "AmanziUnstructuredGridSimulationDriver.hh"
-#endif
-#ifdef ENABLE_Structured
-#include "amanzi_structured_grid_simulation_driver.H"
-#endif
+#include "SimulatorFactory.hh"
 
 #include <iostream>
 
@@ -20,8 +15,7 @@
 
 #include "DOMTreeErrorReporter.hpp"
 #include "ErrorHandler.hpp"
-#include "InputTranslator.hh"
-#include "InputConverterU.hh"
+#include "SimulatorFactory.hh"
 #include "XMLParameterListWriter.hh"
 
 #include "amanzi_version.hh"
@@ -78,7 +72,7 @@ int main(int argc, char *argv[]) {
     Teuchos::CommandLineProcessor CLP;
 
     CLP.setDocString("The Amanzi driver reads an XML input file and\n"
-                     "runs a reactive flow and transport simulation.\n");
+        "runs a reactive flow and transport simulation.\n");
 
     std::string xmlInFileName = "";
     CLP.setOption("xml_file", &xmlInFileName, "XML options file");
@@ -97,12 +91,12 @@ int main(int argc, char *argv[]) {
 
     bool print_paths(false);
     CLP.setOption("print_paths", "no_print_paths", &print_paths, "Print paths of the xml input file and the xml schema file.");    
-    
+
     CLP.throwExceptions(false);
     CLP.recogniseAllOptions(true);
 
     Teuchos::CommandLineProcessor::EParseCommandLineReturn
-        parseReturn = CLP.parse(argc, argv);
+      parseReturn = CLP.parse(argc, argv);
 
     if (parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
       throw std::string("amanzi not run");
@@ -113,7 +107,7 @@ int main(int argc, char *argv[]) {
     if (parseReturn == Teuchos::CommandLineProcessor::PARSE_ERROR) {
       throw std::string("amanzi not run");
     }
-    
+
     if (print_all) {
       print_paths = true;
       print_tpl_versions = true;
@@ -128,99 +122,99 @@ int main(int argc, char *argv[]) {
     if (print_version) {
       if (rank == 0) {
         std::cout << "Amanzi Version " << XSTR(AMANZI_VERSION) << std::endl;
-	std::cout << "HG branch      " << XSTR(AMANZI_HG_BRANCH) << std::endl;
-	std::cout << "HG global hash " << XSTR(AMANZI_HG_GLOBAL_HASH) << std::endl;
-	std::cout << "HG local id    " << XSTR(AMANZI_HG_LOCAL_ID) << std::endl;
+        std::cout << "HG branch      " << XSTR(AMANZI_HG_BRANCH) << std::endl;
+        std::cout << "HG global hash " << XSTR(AMANZI_HG_GLOBAL_HASH) << std::endl;
+        std::cout << "HG local id    " << XSTR(AMANZI_HG_LOCAL_ID) << std::endl;
       }
     }
 
     if (print_tpl_versions) {
       if (rank == 0) {
 #ifdef AMANZI_MAJOR
-	std::cout << "Amanzi TPL collection version "<<  XSTR(AMANZI_MAJOR) << "." << XSTR(AMANZI_MINOR) << "." << XSTR(AMANZI_PATCH) << std::endl;
+        std::cout << "Amanzi TPL collection version "<<  XSTR(AMANZI_MAJOR) << "." << XSTR(AMANZI_MINOR) << "." << XSTR(AMANZI_PATCH) << std::endl;
 #endif
-	std::cout << "Third party libraries that this amanzi binary is linked against:" << std::endl;
+        std::cout << "Third party libraries that this amanzi binary is linked against:" << std::endl;
 #ifdef ALQUIMIA_MAJOR
-	std::cout << "  ALQUIMIA       " << XSTR(ALQUIMIA_MAJOR) << "." << XSTR(ALQUIMIA_MINOR) << "." << XSTR(ALQUIMIA_PATCH) << std::endl;
+        std::cout << "  ALQUIMIA       " << XSTR(ALQUIMIA_MAJOR) << "." << XSTR(ALQUIMIA_MINOR) << "." << XSTR(ALQUIMIA_PATCH) << std::endl;
 #endif
 #ifdef ASCEMIO_MAJOR
-	std::cout << "  ASCEMIO        " << XSTR(ASCEMIO_MAJOR) << "." << XSTR(ASCEMIO_MINOR) << "." << XSTR(ASCEMIO_PATCH) << std::endl;
+        std::cout << "  ASCEMIO        " << XSTR(ASCEMIO_MAJOR) << "." << XSTR(ASCEMIO_MINOR) << "." << XSTR(ASCEMIO_PATCH) << std::endl;
 #endif
 #ifdef Boost_MAJOR
-	std::cout << "  Boost          " << XSTR(Boost_MAJOR) << "." << XSTR(Boost_MINOR) << "." << XSTR(Boost_PATCH) << std::endl;
+        std::cout << "  Boost          " << XSTR(Boost_MAJOR) << "." << XSTR(Boost_MINOR) << "." << XSTR(Boost_PATCH) << std::endl;
 #endif
 #ifdef CCSE_MAJOR
-	std::cout << "  CCSE           " << XSTR(CCSE_MAJOR) << "." << XSTR(CCSE_MINOR) << "." << XSTR(CCSE_PATCH) << std::endl;
+        std::cout << "  CCSE           " << XSTR(CCSE_MAJOR) << "." << XSTR(CCSE_MINOR) << "." << XSTR(CCSE_PATCH) << std::endl;
 #endif
 #ifdef CURL_MAJOR
-	std::cout << "  CURL           " << XSTR(CURL_MAJOR) << "." << XSTR(CURL_MINOR) << "." << XSTR(CURL_PATCH) << std::endl;
+        std::cout << "  CURL           " << XSTR(CURL_MAJOR) << "." << XSTR(CURL_MINOR) << "." << XSTR(CURL_PATCH) << std::endl;
 #endif
 #ifdef ExodusII_MAJOR
-	std::cout << "  ExodusII       " << XSTR(ExodusII_MAJOR) << "." << XSTR(ExodusII_MINOR) << "." << XSTR(ExodusII_PATCH) << std::endl;
+        std::cout << "  ExodusII       " << XSTR(ExodusII_MAJOR) << "." << XSTR(ExodusII_MINOR) << "." << XSTR(ExodusII_PATCH) << std::endl;
 #endif
 #ifdef HDF5_MAJOR
-	std::cout << "  HDF5           " << XSTR(HDF5_MAJOR) << "." << XSTR(HDF5_MINOR) << "." << XSTR(HDF5_PATCH) << std::endl;
+        std::cout << "  HDF5           " << XSTR(HDF5_MAJOR) << "." << XSTR(HDF5_MINOR) << "." << XSTR(HDF5_PATCH) << std::endl;
 #endif
 #ifdef HYPRE_MAJOR
-	std::cout << "  HYPRE          " << XSTR(HYPRE_MAJOR) << "." << XSTR(HYPRE_MINOR) << "." << XSTR(HYPRE_PATCH) << std::endl;
+        std::cout << "  HYPRE          " << XSTR(HYPRE_MAJOR) << "." << XSTR(HYPRE_MINOR) << "." << XSTR(HYPRE_PATCH) << std::endl;
 #endif
 #ifdef METIS_MAJOR
-	std::cout << "  METIS          " << XSTR(METIS_MAJOR) << "." << XSTR(METIS_MINOR) << "." << XSTR(METIS_PATCH) << std::endl;	
+        std::cout << "  METIS          " << XSTR(METIS_MAJOR) << "." << XSTR(METIS_MINOR) << "." << XSTR(METIS_PATCH) << std::endl;	
 #endif
 #ifdef MOAB_MAJOR
-	std::cout << "  MOAB           " << XSTR(MOAB_MAJOR) << "." << XSTR(MOAB_MINOR) << "." << XSTR(MOAB_PATCH) << std::endl;
+        std::cout << "  MOAB           " << XSTR(MOAB_MAJOR) << "." << XSTR(MOAB_MINOR) << "." << XSTR(MOAB_PATCH) << std::endl;
 #endif
 #ifdef MSTK_MAJOR 
-	std::cout << "  MSTK           " << XSTR(MSTK_MAJOR) << "." << XSTR(MSTK_MINOR) << "." << XSTR(MSTK_PATCH) << std::endl;
+        std::cout << "  MSTK           " << XSTR(MSTK_MAJOR) << "." << XSTR(MSTK_MINOR) << "." << XSTR(MSTK_PATCH) << std::endl;
 #endif
 #ifdef NetCDF_MAJOR
-	std::cout << "  NetCDF         " << XSTR(NetCDF_MAJOR) << "." << XSTR(NetCDF_MINOR) << "." << XSTR(NetCDF_PATCH) << std::endl;
+        std::cout << "  NetCDF         " << XSTR(NetCDF_MAJOR) << "." << XSTR(NetCDF_MINOR) << "." << XSTR(NetCDF_PATCH) << std::endl;
 #endif
 #ifdef NetCDF_Fortran_MAJOR
-	std::cout << "  NetCDF_Fortran " << XSTR(NetCDF_Fortran_MAJOR) << "." << XSTR(NetCDF_Fortran_MINOR) << "." << XSTR(NetCDF_Fortran_PATCH) << std::endl;
+        std::cout << "  NetCDF_Fortran " << XSTR(NetCDF_Fortran_MAJOR) << "." << XSTR(NetCDF_Fortran_MINOR) << "." << XSTR(NetCDF_Fortran_PATCH) << std::endl;
 #endif
 #ifdef ParMetis_MAJOR
-	std::cout << "  ParMetis       " << XSTR(ParMetis_MAJOR) << "." << XSTR(ParMetis_MINOR) << "." << XSTR(ParMetis_PATCH) << std::endl;
+        std::cout << "  ParMetis       " << XSTR(ParMetis_MAJOR) << "." << XSTR(ParMetis_MINOR) << "." << XSTR(ParMetis_PATCH) << std::endl;
 #endif
 #ifdef PETSc_MAJOR
-	std::cout << "  PETSc          " << XSTR(PETSc_MAJOR) << "." << XSTR(PETSc_MINOR) << "." << XSTR(PETSc_PATCH) << std::endl;	
+        std::cout << "  PETSc          " << XSTR(PETSc_MAJOR) << "." << XSTR(PETSc_MINOR) << "." << XSTR(PETSc_PATCH) << std::endl;	
 #endif
 #ifdef PFLOTRAN_MAJOR
-	std::cout << "  PFLOTRAN       " << XSTR(PFLOTRAN_MAJOR) << "." << XSTR(PFLOTRAN_MINOR) << "." << XSTR(PFLOTRAN_PATCH) << std::endl;
+        std::cout << "  PFLOTRAN       " << XSTR(PFLOTRAN_MAJOR) << "." << XSTR(PFLOTRAN_MINOR) << "." << XSTR(PFLOTRAN_PATCH) << std::endl;
 #endif
 #ifdef SEACAS_MAJOR
-	std::cout << "  SEACAS         " << XSTR(SEACAS_MAJOR) << "." << XSTR(SEACAS_MINOR) << "." << XSTR(SEACAS_PATCH) << std::endl;
+        std::cout << "  SEACAS         " << XSTR(SEACAS_MAJOR) << "." << XSTR(SEACAS_MINOR) << "." << XSTR(SEACAS_PATCH) << std::endl;
 #endif
 #ifdef SuperLU_MAJOR
-	std::cout << "  SuperLU        " << XSTR(SuperLU_MAJOR) << "." << XSTR(SuperLU_MINOR) << "." << XSTR(SuperLU_PATCH) << std::endl;
+        std::cout << "  SuperLU        " << XSTR(SuperLU_MAJOR) << "." << XSTR(SuperLU_MINOR) << "." << XSTR(SuperLU_PATCH) << std::endl;
 #endif
 #ifdef SuperLUDist_MAJOR
-	std::cout << "  SuperLUDist    " << XSTR(SuperLUDist_MAJOR) << "." << XSTR(SuperLUDist_MINOR) << "." << XSTR(SuperLUDist_PATCH) << std::endl;
+        std::cout << "  SuperLUDist    " << XSTR(SuperLUDist_MAJOR) << "." << XSTR(SuperLUDist_MINOR) << "." << XSTR(SuperLUDist_PATCH) << std::endl;
 #endif
 #ifdef Trilinos_MAJOR
-	std::cout << "  Trilinos       " << XSTR(Trilinos_MAJOR) << "." << XSTR(Trilinos_MINOR) << "." << XSTR(Trilinos_PATCH) << std::endl;
+        std::cout << "  Trilinos       " << XSTR(Trilinos_MAJOR) << "." << XSTR(Trilinos_MINOR) << "." << XSTR(Trilinos_PATCH) << std::endl;
 #endif
 #ifdef UnitTest_MAJOR
-	std::cout << "  UnitTest       " << XSTR(UnitTest_MAJOR) << "." << XSTR(UnitTest_MINOR) << "." << XSTR(UnitTest_PATCH) << std::endl;
+        std::cout << "  UnitTest       " << XSTR(UnitTest_MAJOR) << "." << XSTR(UnitTest_MINOR) << "." << XSTR(UnitTest_PATCH) << std::endl;
 #endif
 #ifdef XERCES_MAJOR
-	std::cout << "  XERCES         " << XSTR(XERCES_MAJOR) << "." << XSTR(XERCES_MINOR) << "." << XSTR(XERCES_PATCH) << std::endl;
+        std::cout << "  XERCES         " << XSTR(XERCES_MAJOR) << "." << XSTR(XERCES_MINOR) << "." << XSTR(XERCES_PATCH) << std::endl;
 #endif
 #ifdef ZLIB_MAJOR
-	std::cout << "  ZLIB           " << XSTR(ZLIB_MAJOR) << "." << XSTR(ZLIB_MINOR) << "." << XSTR(ZLIB_PATCH) << std::endl;
+        std::cout << "  ZLIB           " << XSTR(ZLIB_MAJOR) << "." << XSTR(ZLIB_MINOR) << "." << XSTR(ZLIB_PATCH) << std::endl;
 #endif
       }
     }
 
     if (print_paths) {
       if (rank == 0) {
-	std::cout << "xml input file:  " << xmlInFileName << std::endl;
+        std::cout << "xml input file:  " << xmlInFileName << std::endl;
       }
     }
 
     if (xmlInFileName.size() == 0) {
       if (rank == 0) {
-	std::cout << "ERROR: No xml input file was specified. Use the command line option --xml_file to specify one." << std::endl;
+        std::cout << "ERROR: No xml input file was specified. Use the command line option --xml_file to specify one." << std::endl;
       }      
       throw std::string("amanzi not run");      
     }
@@ -228,34 +222,37 @@ int main(int argc, char *argv[]) {
     // check if the input file actually exists
     if (!exists(xmlInFileName)) {
       if (rank == 0) {
-	std::cout << "ERROR: The xml input file " << xmlInFileName << " that was specified using the command line option --xml_file does not exist." << std::endl;
+        std::cout << "ERROR: The xml input file " << xmlInFileName << " that was specified using the command line option --xml_file does not exist." << std::endl;
       }
       throw std::string("amanzi not run");
     }
 
+    // Create a simulator that corresponds to our input file.
+    Amanzi::Simulator* simulator = Amanzi::SimulatorFactory::Create(xmlInFileName);
+
+#if 0
     // Translate 2.x to 1.2.x or read directly 1.2.x
-    MPI_Comm mpi_comm(MPI_COMM_WORLD);
     Teuchos::ParameterList driver_parameter_list;
     try {
       std::string spec;
       driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName, spec);
       if (spec == "v2") {
-	const Teuchos::ParameterList& echo_list = driver_parameter_list.sublist("Echo Translated Input");
-	if (echo_list.isParameter("Format")) {
-	  if (echo_list.get<std::string>("Format") == "v1") {
-	    std::string new_filename = echo_list.get<std::string>("File Name");
-	    if (rank == 0) {
-	      printf("Amanzi: writing the translated parameter list to file %s...\n", new_filename.c_str());
-	      Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
-	      Teuchos::XMLObject XMLobj = XMLWriter.toXML(driver_parameter_list);
-	      std::ofstream xmlfile;
-	      xmlfile.open(new_filename.c_str());
-	      xmlfile << XMLobj;
-	    }
-	  }
-	}
+        const Teuchos::ParameterList& echo_list = driver_parameter_list.sublist("Echo Translated Input");
+        if (echo_list.isParameter("Format")) {
+          if (echo_list.get<std::string>("Format") == "v1") {
+            std::string new_filename = echo_list.get<std::string>("File Name");
+            if (rank == 0) {
+              printf("Amanzi: writing the translated parameter list to file %s...\n", new_filename.c_str());
+              Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
+              Teuchos::XMLObject XMLobj = XMLWriter.toXML(driver_parameter_list);
+              std::ofstream xmlfile;
+              xmlfile.open(new_filename.c_str());
+              xmlfile << XMLobj;
+            }
+          }
+        }
         // unstructured converter
-	if (echo_list.isParameter("Format")) {
+        if (echo_list.isParameter("Format")) {
           if (echo_list.get<std::string>("Format") == "unstructured_native") {
             bool found;
             Amanzi::AmanziInput::InputConverterU converter;
@@ -268,7 +265,7 @@ int main(int argc, char *argv[]) {
         Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
         driver_parameter_list = *plist;
       } else {
-	amanzi_throw(Errors::Message("Unexpected Error reading input file"));
+        amanzi_throw(Errors::Message("Unexpected Error reading input file"));
       }
     }
     catch (std::exception& e) {
@@ -293,11 +290,6 @@ int main(int argc, char *argv[]) {
       amanzi_throw(Errors::Message("The Mesh parameter list must contain one sublist: \"Structured\" or \"Unstructured\""));
     }
 
-    Amanzi::Simulator* simulator = NULL;
-
-    Amanzi::timer_manager.add("Full Simulation", Amanzi::Timer::ONCE);
-    Amanzi::timer_manager.start("Full Simulation");
-
     if (framework=="Structured") {
 #ifdef ENABLE_Structured
       simulator = new AmanziStructuredGridSimulationDriver();
@@ -311,10 +303,15 @@ int main(int argc, char *argv[]) {
       amanzi_throw(Errors::Message("Unstructured not supported in current build"));
 #endif
     }
+#endif
 
-    //MPI_Comm mpi_comm(MPI_COMM_WORLD);
+    // Start timers.
+    Amanzi::timer_manager.add("Full Simulation", Amanzi::Timer::ONCE);
+    Amanzi::timer_manager.start("Full Simulation");
+
+    MPI_Comm mpi_comm(MPI_COMM_WORLD);
     Amanzi::ObservationData output_observations;
-    Amanzi::Simulator::ReturnType ret = simulator->Run(mpi_comm, driver_parameter_list, output_observations);
+    Amanzi::Simulator::ReturnType ret = simulator->Run(mpi_comm, output_observations);
 
     if (ret == Amanzi::Simulator::FAIL) {
       amanzi_throw(Errors::Message("The amanzi simulator returned an error code, this is most likely due to an error in the mesh creation."));
@@ -332,28 +329,28 @@ int main(int argc, char *argv[]) {
   catch (std::string& s) {
     if (rank == 0) {
       if (s == "amanzi not run") {
-	std::cout << "Amanzi::SIMULATION_DID_NOT_RUN\n";
+        std::cout << "Amanzi::SIMULATION_DID_NOT_RUN\n";
       } 
     }
   }
   catch (std::exception& e) {
     if (rank == 0) {
       if (! strcmp(e.what(), "amanzi not run")) {
-	std::cout << "Amanzi::SIMULATION_DID_NOT_RUN\n";
+        std::cout << "Amanzi::SIMULATION_DID_NOT_RUN\n";
       } else {
-	std::cout << e.what() << std::endl;
-	std::cout << "Amanzi::SIMULATION_FAILED\n";
+        std::cout << e.what() << std::endl;
+        std::cout << "Amanzi::SIMULATION_FAILED\n";
       }
     }
   }
   catch (int& ierr) {
     if (rank == 0) {
       std::cout << "Caught unknown exception with integer code " << ierr 
-                << ". Known sources: Epetra_MultiVector::AllocateForCopy" << std::endl;
+        << ". Known sources: Epetra_MultiVector::AllocateForCopy" << std::endl;
       std::cout << "Amanzi::SIMULATION_FAILED\n";
     }
   }
-  
+
   // catch all
   catch (...) {
     if (rank == 0) {
