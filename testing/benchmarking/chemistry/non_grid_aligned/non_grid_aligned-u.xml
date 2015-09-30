@@ -27,7 +27,7 @@
   </definitions>
 
   <process_kernels>
-    <flow model="saturated" state="on" />
+    <flow model="constant" state="on"/>
     <transport state="on" />
     <chemistry engine="amanzi" process_model="none" state="on" input_filename="calcite_dbs.bgd"/>
   </process_kernels>
@@ -69,7 +69,7 @@
         <cfl>1</cfl>
       </unstr_transport_controls>
 
-      <unstr_transient_controls>
+      <unstr_steady-state_controls>
         <min_iterations>10</min_iterations>
         <max_iterations>15</max_iterations>
         <limit_iterations>20</limit_iterations>
@@ -78,7 +78,8 @@
         <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
         <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
         <max_divergent_iterations>3</max_divergent_iterations>
-      </unstr_transient_controls>
+        <unstr_initialization method="darcy" />
+      </unstr_steady-state_controls>
 
       <unstr_chemistry_controls>
         <Parameter name="Verbosity" type="Array(string)" value="{verbose}" />
@@ -86,6 +87,8 @@
         <tolerance>1.5e-12</tolerance>
         <maximum_newton_terations>150</maximum_newton_terations>
         <max_time_step>15778463.0</max_time_step>
+        <initial_time_step>157784.63</initial_time_step>
+        <time_step_control_method>simple</time_step_control_method>
       </unstr_chemistry_controls>
 
       <unstr_linear_solver>
@@ -160,10 +163,8 @@
         <liquid_component name="water">
           <inward_mass_flux function="uniform" start="0.0" value="0.50e+1"/>
         </liquid_component>
-        <solute_component name="CO3--">
+        <solute_component name="solute">
           <aqueous_conc name="CO3--" value="1e-10" function="constant" start="0.0"/>
-        </solute_component> 
-        <solute_component name="Ca+">
           <aqueous_conc name="Ca++" value="5e-2" function="constant" start="0.0"/>
         </solute_component> 
       </liquid_phase>
@@ -175,10 +176,8 @@
         <liquid_component name="water">
           <inward_mass_flux function="uniform" start="0.0" value="0.26e+1"/>
         </liquid_component>
-        <solute_component name="CO3--">
+        <solute_component name="solute">
           <aqueous_conc name="CO3--" value="5e-2" function="constant" start="0.0"/>
-        </solute_component> 
-        <solute_component name="Ca+">
           <aqueous_conc name="Ca++" value="1e-10" function="constant" start="0.0"/>
         </solute_component> 
       </liquid_phase>

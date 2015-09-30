@@ -668,7 +668,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
       if (flag_op1) {
         op->Init();
-        Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D);
+        Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D_);
         op1->Setup(Dptr, Teuchos::null, Teuchos::null);
         op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
@@ -709,16 +709,16 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     }
 
     // Diffuse gaseous components. We ignore dispersion 
-    // tensor (D is reset). Inactive cells (s[c] = 1 and D[c] = 0) 
+    // tensor (D is reset). Inactive cells (s[c] = 1 and D_[c] = 0) 
     // are treated with a hack of the accumulation term.
-    D.clear();
+    D_.clear();
     md_old = 0.0;
     for (int i = num_aqueous; i < num_components; i++) {
       FindDiffusionValue(component_names_[i], &md_new, &phase);
       md_change = md_new - md_old;
       md_old = md_new;
 
-      if (md_change != 0.0) {
+      if (md_change != 0.0 || i == num_aqueous) {
         CalculateDiffusionTensor_(md_change, phase, *phi, *ws);
       }
 
@@ -732,7 +732,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       }
 
       op->Init();
-      Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D);
+      Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D_);
       op1->Setup(Dptr, Teuchos::null, Teuchos::null);
       op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
@@ -740,8 +740,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       PopulateBoundaryData(bc_model, bc_value, i);
 
       Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
-      double time = t_physics_ + dt_MPC;
-      ComputeAddSourceTerms(time, 1.0, srcs, rhs_cell, i, i);
+      ComputeAddSourceTerms(t_new, 1.0, srcs, rhs_cell, i, i);
       op1->ApplyBCs(true, true);
 
       // add accumulation term

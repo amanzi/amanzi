@@ -34,7 +34,9 @@ State::State() {};
 State::State(Teuchos::ParameterList& state_plist) :
     state_plist_(state_plist),
     time_(0.0),
-    cycle_(0) {};
+    cycle_(0),
+    position_in_tp_(TIME_PERIOD_START)
+{};
 
 // copy constructor:
 // Create a new State with different data but the same values.
@@ -46,6 +48,7 @@ State::State(const State& other, StateConstructMode mode) :
     meshes_(other.meshes_),
     field_factories_(other.field_factories_),
     time_(other.time_),
+    position_in_tp_(other.position_in_tp_),
     cycle_(other.cycle_) {
 
   if (mode == STATE_CONSTRUCT_MODE_COPY_DATA) {
@@ -1092,8 +1095,8 @@ double ReadCheckpoint(Epetra_MpiComm* comm,
   for (State::field_iterator field=S->field_begin(); field!=S->field_end(); ++field) {
     if (field->second->type() == COMPOSITE_VECTOR_FIELD &&
         field->second->io_checkpoint()) {
-      field->second->ReadCheckpoint(checkpoint);
-      field->second->set_initialized();
+      bool read_complete = field->second->ReadCheckpoint(checkpoint);
+      if (read_complete) field->second->set_initialized();
     }
   }
   

@@ -8,7 +8,7 @@
 
 #include "ObservationData.hh"
 #include "State.hh"
-#include "io_event.hh"
+#include "IOEvent.hh"
 
 #include "TimeStepManager.hh"
 #include "VerboseObject.hh"
@@ -26,7 +26,7 @@ class Unstructured_observations {
                Epetra_MpiComm* comm):
         variable(variable_), region(region_),
         functional(functional_), plist_(plist),
-        IOEvent(plist, comm)
+        IOEvent(plist)
     {
       ReadParameters_();
     }

@@ -32,6 +32,7 @@
 #include "xercesc/dom/DOM.hpp"
 #include "xercesc/util/XMLString.hpp"
 #include "xercesc/util/PlatformUtils.hpp"
+#include "xercesc/parsers/XercesDOMParser.hpp"
 #include "xercesc/parsers/DOMLSParserImpl.hpp"
 #include "xercesc/framework/StdOutFormatTarget.hpp"
 #include "xercesc/util/OutOfMemoryException.hpp"
@@ -40,56 +41,98 @@
 #include "ErrorHandler.hpp"
 #include "InputConverter.hh"
 
-
 namespace Amanzi {
 namespace AmanziInput {
 
-XERCES_CPP_NAMESPACE_USE
-
-/* ******************************************************************
-* Initialization of xercecs document.
-****************************************************************** */
-void InputConverter::Init(const std::string& xmlfilename, bool& valid)
+XercesDOMParser* CreateXMLParser()
 {
-  xmlfilename_ = xmlfilename;
-  
-  parser = new XercesDOMParser();
+  XMLPlatformUtils::Initialize();
+
+  // Set up an XML DOM parser.
+  XercesDOMParser* parser = new XercesDOMParser();
   parser->setExitOnFirstFatalError(true);
   parser->setValidationConstraintFatal(true);
   parser->setValidationScheme(XercesDOMParser::Val_Never);
   parser->setDoNamespaces(true);
   parser->setCreateCommentNodes(false);
+  parser->useCachedGrammarInParse(true);
 
+  return parser;
+}
+
+xercesc::DOMDocument* OpenXMLInput(XercesDOMParser* parser,
+                                   const std::string& xml_input)
+{
+  // Open, parse, and return the document.
   AmanziErrorHandler* errorHandler = new AmanziErrorHandler();
   parser->setErrorHandler(errorHandler);
-  parser->useCachedGrammarInParse(true);
- 
-  bool errorsOccured = false;
 
   try {
-    parser->parse(xmlfilename.c_str());
+    parser->parse(xml_input.c_str());
   }
   catch (const OutOfMemoryException& e) {
     std::cerr << "OutOfMemoryException" << std::endl;
-    errorsOccured = true;
     Exceptions::amanzi_throw(Errors::Message("Ran out of memory while parsing the input file. Aborting."));
   }
   catch (...) {
-    errorsOccured = true;
     Exceptions::amanzi_throw(Errors::Message("Errors occured while parsing the input file. Aborting."));
   }
 
-  doc_ = parser->getDocument();
-  FilterNodes(doc_, "comments");
-
-  // check that XML has version 2.x or version 1.x spec
-  MemoryManager mm;
-  DOMElement* element = doc_->getDocumentElement();
-  valid = (strcmp(mm.transcode(element->getTagName()), "amanzi_input") == 0);
-
+  parser->setErrorHandler(NULL);
   delete errorHandler;
+  xercesc::DOMDocument* doc = parser->getDocument();
+  return doc;
 }
 
+InputConverter::InputConverter(const std::string& input_filename):
+  xmlfilename_(input_filename),
+  doc_(NULL),
+  parser_(NULL)
+{
+  parser_ = CreateXMLParser();
+  doc_ = OpenXMLInput(parser_, input_filename);
+  FilterNodes(doc_, "comments");
+}
+
+InputConverter::InputConverter(const std::string& input_filename,
+                               xercesc::DOMDocument* input_doc):
+  xmlfilename_(input_filename),
+  doc_(input_doc),
+  parser_(NULL)
+{
+  FilterNodes(doc_, "comments");
+}
+
+InputConverter::~InputConverter()
+{
+//  if (doc_ != NULL)
+//    delete doc_;
+  if (parser_ != NULL)
+    delete parser_;
+}
+
+XERCES_CPP_NAMESPACE_USE
+
+/* ******************************************************************
+* Filters out all nodes named "filter" starting with node "parent".
+****************************************************************** */
+void InputConverter::FilterNodes(DOMNode* parent, const std::string& filter)
+{
+  DOMNodeList* children = parent->getChildNodes();
+  MemoryManager mm;
+  
+  for (int i = 0; i < children->getLength(); ++i) {
+    DOMNode* child = children->item(i);
+  
+    if (child->getNodeType() == DOMNode::ELEMENT_NODE) {
+      if (mm.transcode(child->getNodeName()) == filter) {
+        parent->removeChild(child);
+      } else {
+        FilterNodes(child, filter);
+      }
+    }
+  }
+}
 
 /* ******************************************************************
 * Populates protected std::map constants_.
@@ -144,27 +187,6 @@ void InputConverter::ParseConstants_()
   }
 }
 
-
-/* ******************************************************************
-* Filters out all nodes named "filter" starting with node "parent".
-****************************************************************** */
-void InputConverter::FilterNodes(DOMNode* parent, const std::string& filter)
-{
-  DOMNodeList* children = parent->getChildNodes();
-  MemoryManager mm;
-  
-  for (int i = 0; i < children->getLength(); ++i) {
-    DOMNode* child = children->item(i);
-  
-    if (child->getNodeType() == DOMNode::ELEMENT_NODE) {
-      if (mm.transcode(child->getNodeName()) == filter) {
-        parent->removeChild(child);
-      } else {
-        FilterNodes(child, filter);
-      }
-    }
-  }
-}
 
 
 /* ******************************************************************

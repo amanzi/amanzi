@@ -40,9 +40,7 @@ TEST(CONVERTER_BASE) {
     std::stringstream xmlFileName;
     xmlFileName << "test/converter_u_test" << i << ".xml";
 
-    bool found;
-    Amanzi::AmanziInput::InputConverterU converter;
-    converter.Init(xmlFileName.str(), found);
+    Amanzi::AmanziInput::InputConverterU converter(xmlFileName.str());
     Teuchos::ParameterList new_xml;
     try {
       new_xml = converter.Translate(0, 1);

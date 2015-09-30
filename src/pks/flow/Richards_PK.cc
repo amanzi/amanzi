@@ -181,9 +181,7 @@ void Richards_PK::Setup()
     S_->RequireField("water_content", "water_content")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-    Teuchos::ParameterList elist, vwc_list;
-    elist.sublist("VerboseObject").set<std::string>("Verbosity Level", "extreme");
-
+    Teuchos::ParameterList vwc_list;
     VWContentEvaluatorFactory fac;
     Teuchos::RCP<VWContentEvaluator> eval = fac.Create(vwc_model, vwc_list);
     S_->SetFieldEvaluator("water_content", eval);
@@ -637,7 +635,7 @@ void Richards_PK::Initialize()
     CompositeVector& wc_prev = *S_->GetFieldData("prev_water_content", passwd_);
     wc_prev = wc;
 
-    // We start with pressure equilebrium
+    // We start with pressure equilibrium
     if (multiscale_porosity_) {
       *S_->GetFieldData("pressure_matrix", passwd_)->ViewComponent("cell") =
           *S_->GetFieldData("pressure")->ViewComponent("cell");
@@ -724,16 +722,17 @@ void Richards_PK::InitializeFields_()
   // set matrix fields assuming presure equilibrium
   // -- pressure
   if (S_->HasField("pressure_matrix")) {
-    if (!S_->GetField("pressure_matrix", passwd_)->initialized()) {
+    // if (!S_->GetField("pressure_matrix", passwd_)->initialized()) {
       const Epetra_MultiVector& p1 = *S_->GetFieldData("pressure")->ViewComponent("cell");
       Epetra_MultiVector& p0 = *S_->GetFieldData("pressure_matrix", passwd_)->ViewComponent("cell");
       p0 = p1;
 
       S_->GetField("pressure_matrix", passwd_)->set_initialized();
+      pressure_matrix_eval_->SetFieldAsChanged(S_.ptr());
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
           *vo_->os() << "initialized pressure_matrix to pressure" << std::endl;  
-    }
+    // }
   }
 
   // -- water contents 

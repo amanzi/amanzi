@@ -814,7 +814,6 @@ Teuchos::RCP<State> CycleDriver::Go() {
     
 
     Setup();
-
     Initialize();
 
     dt = tp_dt_[time_period_id_];
@@ -1031,6 +1030,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   pk_->set_dt(tp_dt_[time_pr_id]);
 
   S_old_ = Teuchos::null;
+
 
 }
 

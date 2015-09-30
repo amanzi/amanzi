@@ -32,7 +32,7 @@ double ObservableMax(double a, double b, double vol) { return std::max(a,b); }
 
 
 Observable::Observable(Teuchos::ParameterList& plist, Epetra_MpiComm *comm) :
-    IOEvent(plist, comm),
+    IOEvent(plist),
     count_(0) {
   // process the spec
   name_ = plist.name();

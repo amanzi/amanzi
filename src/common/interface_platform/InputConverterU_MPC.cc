@@ -162,7 +162,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
         Exceptions::amanzi_throw(msg);
       }
       node = GetUniqueElementByTagsString_(
-          "unstructured_controls, unstr_steady-state_controls, unstr_initialization", flag);
+          "numerical_controls, unstructured_controls, unstr_steady-state_controls, unstr_initialization", flag);
       if (!flag) {
         msg << "Constant flow must have an initialization list, unless state=off.\n";
         Exceptions::amanzi_throw(msg);

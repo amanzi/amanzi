@@ -31,6 +31,8 @@
 namespace Amanzi {
 namespace AmanziInput {
 
+XERCES_CPP_NAMESPACE_USE
+
 /* 
 * A simple wrapper for XMLString class. It collects memory pointers
 * and destroys them later. The focus is on simplicity of its using,
@@ -66,20 +68,31 @@ class MemoryManager {
   std::vector<XMLCh*> xchar;
 };
 
+//------------------------------------------------------------------------
+// XML helper methods for parsing outside of an InputConverter:
+
+// Creates an XML parser with our desired settings. This parser must be deleted
+// after the document has been used.
+XercesDOMParser* CreateXMLParser();
+
+// Using the given XML parser, parses the document contained in the file with 
+// the given name.
+xercesc::DOMDocument* OpenXMLInput(XercesDOMParser* parser,
+                                   const std::string& xml_input);
+//------------------------------------------------------------------------
+
 class InputConverter {
  public:
-  InputConverter() {
-    xercesc::XMLPlatformUtils::Initialize();
-  }
 
-  ~InputConverter() {
-    delete parser;
-    xercesc::XMLPlatformUtils::Terminate();
-  }
+  // This constructor opens up the file with the given name, sets up a parser,
+  // and parses the file.
+  explicit InputConverter(const std::string& input_filename);
 
-  // main member: creates xerces document using the file name
-  // valid is set to true if the input is valid, false if not.
-  void Init(const std::string& xmlfilename, bool& valid);
+  // This constructor uses an already-parsed XML document, and does not 
+  // manage the parser.
+  InputConverter(const std::string& input_filename, xercesc::DOMDocument* input_doc);
+
+  virtual ~InputConverter();
 
   // parse various nodes
   void ParseConstants_();
@@ -173,7 +186,7 @@ class InputConverter {
       const std::string& section, const std::string& missing, const std::string& name);
 
  protected:
-  // variois constants defined by the users
+  // various constants defined by the users
   std::map<std::string, std::string> constants_; 
 
   std::string xmlfilename_;

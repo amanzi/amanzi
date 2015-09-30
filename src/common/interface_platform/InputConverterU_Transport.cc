@@ -421,31 +421,41 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
 
 /* ******************************************************************
 * Create list of transport BCs for particular group of solutes.
+* Solutes may have only one element, see schema for details.
 ****************************************************************** */
 void InputConverterU::TranslateTransportBCsGroup_(
     std::string& bcname, std::vector<std::string>& regions,
     DOMNodeList* solutes, Teuchos::ParameterList& out_list)
 {
   DOMElement* element;
+  if (solutes->getLength() == 0) return;
+ 
+  DOMNode* node = solutes->item(0);
 
-  for (int n = 0; n < solutes->getLength(); ++n) {
-    DOMNode* node = solutes->item(n);
+  // get child nodes with the same tagname
+  bool flag;
+  std::string bctype, solute_name, tmp_name;
+  std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
 
-    // process a group of similar elements defined by the first element
-    bool flag;
-    std::string bctype, solute_name;
-
-    std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
+  while (same_list.size() > 0) {
+    // process a group of elements named as the i0-th element
     solute_name = GetAttributeValueS_(static_cast<DOMElement*>(same_list[0]), "name");
 
     std::map<double, double> tp_values;
     std::map<double, std::string> tp_forms;
 
-    for (int j = 0; j < same_list.size(); ++j) {
-      element = static_cast<DOMElement*>(same_list[j]);
-      double t0 = GetAttributeValueD_(element, "start");
-      tp_forms[t0] = GetAttributeValueS_(element, "function");
-      tp_values[t0] = GetAttributeValueD_(element, "value");
+    for (std::vector<DOMNode*>::iterator it = same_list.begin(); it != same_list.end(); ++it) {
+      element = static_cast<DOMElement*>(*it);
+      tmp_name = GetAttributeValueS_(element, "name");
+
+      if (tmp_name == solute_name) {
+        double t0 = GetAttributeValueD_(element, "start");
+        tp_forms[t0] = GetAttributeValueS_(element, "function");
+        tp_values[t0] = GetAttributeValueD_(element, "value");
+
+        same_list.erase(it);
+        it--;
+      } 
     }
 
     // create vectors of values and forms

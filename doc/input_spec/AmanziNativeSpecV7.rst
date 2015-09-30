@@ -2161,8 +2161,8 @@ more detail. This section is only required for the native chemistry kernel, the
 Alquimia chemistry kernel reads initial conditions from the `"State`" list.
 The following cell-based fields can be initialized here:
 
-* `"mineral_volume_fractions`"
-* `"mineral_specific_surface_area`"
+* `"mineral_volume_fractions`" (Alquimia only)
+* `"mineral_specific_surface_area`" (Alqumia only)
 * `"ion_exchange_sites`"
 * `"ion_exchange_ref_cation_conc`"
 * `"isotherm_kd`"
@@ -3004,6 +3004,14 @@ Diffusion operator
   * `"newton correction`" [string] specifies a model for non-physical terms 
     that must be added to the matrix. These terms represent Jacobian and are needed 
     for the preconditioner. Available options are `"true jacobian`" and `"approximate jacobian`".
+
+  * `"scaled constraint equation`" [bool] rescales flux continuity equations on mesh faces.
+    These equations are divided by the nonlinear coefficient. This option allows us to 
+    treat the case of zero nonlinear coefficient. At moment this feature does not work 
+    with non-zero gravity term. Default is *false*.
+
+  * `"constraint equation scaling cutoff"`" [double] specifies the cutoff value for
+    applying rescaling strategy described above.  
 
   * `"consistent faces`" [list] may contain a `"preconditioner`" and
     `"linear operator`" list (see sections Preconditioners_ and LinearSolvers_

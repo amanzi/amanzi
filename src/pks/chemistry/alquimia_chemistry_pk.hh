@@ -149,6 +149,12 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
                                  const AlquimiaAuxiliaryData& aux_data,
                                  const AlquimiaAuxiliaryOutputData& aux_output);
 
+  void InitAmanziStateFromAlquimia(const int cell_id,
+                                   const AlquimiaMaterialProperties& mat_props,
+                                   const AlquimiaState& state,
+                                   const AlquimiaAuxiliaryData& aux_data,
+                                   const AlquimiaAuxiliaryOutputData& aux_output);
+
 };
 
 }  // namespace AmanziChemistry

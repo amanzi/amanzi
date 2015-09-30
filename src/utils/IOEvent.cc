@@ -13,15 +13,15 @@ to do the I/O.
 
 #include "TimeStepManager.hh"
 
-#include "io_event.hh"
+#include "IOEvent.hh"
 
 namespace Amanzi {
 
 // -----------------------------------------------------------------------------
 // Standard constructor.
 // -----------------------------------------------------------------------------
-IOEvent::IOEvent(Teuchos::ParameterList& plist, Epetra_MpiComm *comm) :
-    plist_(plist), disabled_(false), comm_(comm) {
+IOEvent::IOEvent(Teuchos::ParameterList& plist) :
+    plist_(plist), disabled_(false) {
   ReadParameters_();
 };
 
