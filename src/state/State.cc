@@ -1095,8 +1095,8 @@ double ReadCheckpoint(Epetra_MpiComm* comm,
   for (State::field_iterator field=S->field_begin(); field!=S->field_end(); ++field) {
     if (field->second->type() == COMPOSITE_VECTOR_FIELD &&
         field->second->io_checkpoint()) {
-      field->second->ReadCheckpoint(checkpoint);
-      field->second->set_initialized();
+      bool read_complete = field->second->ReadCheckpoint(checkpoint);
+      if (read_complete) field->second->set_initialized();
     }
   }
   
