@@ -132,7 +132,7 @@ list(APPEND ssc_tpl_libs ${PETSC_LIBRARIES})
 # Main: Amanzi (seems to require redundant lib listing to resolve everything....not sure why)
 #
 add_amanzi_executable(amanzi
-                      SOURCE Main.cc
+                      SOURCE Main.cc SimulatorFactory.cc
                       LINK_LIBS ${ssc_libs} ${ssc_tpl_libs} ${ssc_libs}
                       OUTPUT_NAME amanzi
                       OUTPUT_DIRECTORY ${SSC_BINARY_DIR})
