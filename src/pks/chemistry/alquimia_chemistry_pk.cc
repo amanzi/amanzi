@@ -99,6 +99,7 @@ int Alquimia_Chemistry_PK::InitializeSingleCell(int cell_index, const std::strin
                                  alq_state_, alq_aux_data_, alq_aux_output_);
 
   // Move the information back into Amanzi's state.
+  // CopyAlquimiaStateToAmanzi(cell_index, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
   InitAmanziStateFromAlquimia(cell_index, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
 
   return 0;
@@ -137,11 +138,6 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
     }
   }
 
-
-  chemistry_state_->SetAllFieldsInitialized();
-
-
-
   // figure out if any of the processes threw an error, if so all processes will re-throw
   int recv = 0;
   chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
@@ -158,6 +154,8 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
       (*aux_state_vec)[0] = (*aux_output_)[i];
     }
   }
+
+  chemistry_state_->SetAllFieldsInitialized();
 
   chem_initialized_ = true;
   num_iterations_ = 0;
@@ -451,7 +449,6 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id,
                                                       const AlquimiaAuxiliaryData& aux_data,
                                                       const AlquimiaAuxiliaryOutputData& aux_output)
 {
- 
   chemistry_state_->CopyFromAlquimia(cell_id, mat_props, state, aux_data, aux_output, 
                                      chemistry_state_->total_component_concentration());
 
@@ -549,16 +546,16 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id,
   }
 }  // end CopyAlquimiaStateToAmanzi()
 
-
 void Alquimia_Chemistry_PK::InitAmanziStateFromAlquimia(const int cell_id,
                                                       const AlquimiaMaterialProperties& mat_props,
                                                       const AlquimiaState& state,
                                                       const AlquimiaAuxiliaryData& aux_data,
                                                       const AlquimiaAuxiliaryOutputData& aux_output)
 {
+  //chemistry_state_->CopyFromAlquimia(cell_id, mat_props, state, aux_data, aux_output,
+  //                                   chemistry_state_->total_component_concentration());
 
-  chemistry_state_->InitFromAlquimia(cell_id, mat_props, state, aux_data, aux_output); 
-
+  chemistry_state_->InitFromAlquimia(cell_id, mat_props, state, aux_data, aux_output);                                    
 
   // Auxiliary output.
   if (aux_output_ != Teuchos::null) 

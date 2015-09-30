@@ -13,6 +13,7 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "ResidualDebugger.hh"
 #include "SolverFnBase.hh"
 
 namespace Amanzi {
@@ -30,7 +31,9 @@ class Solver {
   // mutators
   virtual void set_tolerance(double tol) = 0;
   virtual void set_pc_lag(double pc_lag) = 0;
-
+  virtual void set_db(const Teuchos::RCP<
+		      ResidualDebugger<Vector,VectorSpace> >& db) {}
+  
   // access 
   virtual double tolerance() = 0;
   virtual double residual() = 0;

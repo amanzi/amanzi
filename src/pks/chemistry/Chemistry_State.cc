@@ -487,39 +487,23 @@ void Chemistry_State::RequireAuxData_() {
 
 void Chemistry_State::InitializeField_(Teuchos::ParameterList& ic_plist,
     std::string fieldname, bool sane_default, double default_val) {
-
   // Initialize mineral volume fractions
   // -- first initialize to a default: this should be a valid default if the
   // parameter is optional, and non-valid if it is not.
 
   if (S_->HasField(fieldname)) {
-    S_->GetFieldData(fieldname, name_)->PutScalar(default_val);
-    //S_->GetField(fieldname, name_)->set_initialized();
+    if (!S_->GetField(fieldname)->initialized())
+      S_->GetFieldData(fieldname, name_)->PutScalar(default_val);
   }
 
-
-
-  if (S_->HasField(fieldname)) {
-    if (!S_->GetField(fieldname, name_) -> initialized()) {
-      if (ic_plist.isSublist(fieldname)) {
-        S_->GetField(fieldname, name_)->Initialize(ic_plist.sublist(fieldname));
-      } else if (sane_default) {
-        // -- sane default provided, functional initialization not necessary
-        //S_->GetFieldData(fieldname, name_)->PutScalar(default_val);
-        S_->GetField(fieldname, name_)->set_initialized();
-      }
-    }
+  // -- initialize from the ParameterList
+  if (ic_plist.isSublist(fieldname)) {
+    if (!S_->GetField(fieldname)->initialized())
+      S_->GetField(fieldname, name_)->Initialize(ic_plist.sublist(fieldname));
+  } else if (sane_default) {
+    // -- sane default provided, functional initialization not necessary
+    S_->GetField(fieldname, name_)->set_initialized();
   }
-
-
-  // // -- initialize from the ParameterList
-  // if (ic_plist.isSublist(fieldname)) {
-  //   S_->GetField(fieldname, name_)->Initialize(ic_plist.sublist(fieldname));
-  // } else if (sane_default) {
-  //   // -- sane default provided, functional initialization not necessary
-  //   S_->GetField(fieldname, name_)->set_initialized();
-  // }
-
 }
 
 void Chemistry_State::Initialize() {
@@ -534,7 +518,7 @@ void Chemistry_State::Initialize() {
   // Aqueous species:
   if (number_of_aqueous_components_ > 0) {
     if (!S_->GetField("total_component_concentration",name_)->initialized()) {
-      InitializeField_(ic_plist, "total_component_concentration", false, -1.);
+      InitializeField_(ic_plist, "total_component_concentration", false, -1.0);
     }
     InitializeField_(ic_plist, "free_ion_species", false, 0.0);
     InitializeField_(ic_plist, "primary_activity_coeff", false, 1.0);
@@ -578,7 +562,6 @@ void Chemistry_State::Initialize() {
       S_->GetField(*name, name_)->set_initialized();
     }  
   }
-
 }
 
 // This can only be done AFTER the chemistry is initialized and fully set up?
@@ -736,70 +719,66 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
   // be updated here.
   //(this->water_density())[cell_id] = state.water_density;
   //(this->porosity())[cell_id] = state.porosity;
-
- 
-  for (unsigned int c = 0; c < number_of_aqueous_components(); c++) {
+  for (unsigned int c = 0; c < number_of_aqueous_components(); c++) 
+  {
     double mobile = state.total_mobile.data[c];
     double* cell_components = (*aqueous_components)[c];
     cell_components[cell_id] = mobile;
 
-    if (using_sorption()){
-      if (S_->HasField("total_sorbed")){
-          double immobile = state.total_immobile.data[c];
-          double* cell_total_sorbed = (*this->total_sorbed())[c];
-          cell_total_sorbed[cell_id] = immobile;
-      }
+    if (using_sorption())
+    {
+      double immobile = state.total_immobile.data[c];
+      double* cell_total_sorbed = (*this->total_sorbed())[c];
+      cell_total_sorbed[cell_id] = immobile;
     }
   }
 
-  
-  
   // Free ion species.
   for (unsigned int c = 0; c < number_of_aqueous_components(); c++) {
     double* cell_free_ion = (*this->free_ion_species())[c];
     cell_free_ion[cell_id] = aux_output.primary_free_ion_concentration.data[c];
   }
 
-  if (S_->HasField("mineral_volume_fractions")){
-    // Mineral properties.
-    for (unsigned int m = 0; m < number_of_minerals(); m++){
-      double* cell_minerals = (*this->mineral_volume_fractions())[m];
-      cell_minerals[cell_id] = state.mineral_volume_fraction.data[m];
-      if (this->mineral_specific_surface_area() != Teuchos::null) {
-        cell_minerals = (*this->mineral_specific_surface_area())[m];
-        cell_minerals[cell_id] = state.mineral_specific_surface_area.data[m];
-      }       
+  // Mineral properties.
+  for (unsigned int m = 0; m < number_of_minerals(); m++) 
+  {
+    double* cell_minerals = (*this->mineral_volume_fractions())[m];
+    cell_minerals[cell_id] = state.mineral_volume_fraction.data[m];
+    if (this->mineral_specific_surface_area() != Teuchos::null) 
+    {
+      cell_minerals = (*this->mineral_specific_surface_area())[m];
+      cell_minerals[cell_id] = state.mineral_specific_surface_area.data[m];
     }
   }
 
-
-
-  if (S_->HasField("ion_exchange_sites")){
-    // ion exchange
-    for (unsigned int i = 0; i < number_of_ion_exchange_sites(); i++) {
-      double* cell_ion_exchange_sites = (*this->ion_exchange_sites())[i];
-      cell_ion_exchange_sites[cell_id] = state.cation_exchange_capacity.data[i];
-    }    
+  // ion exchange
+  for (unsigned int i = 0; i < number_of_ion_exchange_sites(); i++) 
+  {
+    double* cell_ion_exchange_sites = (*this->ion_exchange_sites())[i];
+    cell_ion_exchange_sites[cell_id] = state.cation_exchange_capacity.data[i];
   }
 
   // surface complexation
-  if (number_of_sorption_sites() > 0){
-    for (unsigned int i = 0; i < number_of_sorption_sites(); i++){
+  if (number_of_sorption_sites() > 0)
+  {
+    for (unsigned int i = 0; i < number_of_sorption_sites(); i++) 
+    {
       double* cell_sorption_sites = (*this->sorption_sites())[i];
       cell_sorption_sites[cell_id] = state.surface_site_density.data[i];
     }
   }
 
-
   // Auxiliary data -- block copy.
   int num_aux_ints = aux_data.aux_ints.size;
   int num_aux_doubles = aux_data.aux_doubles.size;
-  if (num_aux_data_ == -1){
+  if (num_aux_data_ == -1) 
+  {
     // Set things up and register a vector in the State.
     assert(num_aux_ints >= 0);
     assert(num_aux_doubles >= 0);
     num_aux_data_ = num_aux_ints + num_aux_doubles;
-    if (!S_->HasField("alquimia_aux_data")){
+    if (!S_->HasField("alquimia_aux_data"))
+    {
       Teuchos::RCP<CompositeVectorSpace> fac = S_->RequireField("alquimia_aux_data", name_);
       fac->SetMesh(mesh_);
       fac->SetGhosted(false);
@@ -815,26 +794,26 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
     }
     aux_data_ = S_->GetField("alquimia_aux_data", name_)->GetFieldData()->ViewComponent("cell");
   }
-  else {
+  else
+  {
     assert(num_aux_data_ == num_aux_ints + num_aux_doubles);
   }
-
-
-
-  for (int i = 0; i < num_aux_ints; i++){
+  for (int i = 0; i < num_aux_ints; i++) 
+  {
     double* cell_aux_ints = (*aux_data_)[i];
     cell_aux_ints[cell_id] = (double)aux_data.aux_ints.data[i];
   }
-
-  for (int i = 0; i < num_aux_doubles; i++){
+  for (int i = 0; i < num_aux_doubles; i++) 
+  {
     double* cell_aux_doubles = (*aux_data_)[i + num_aux_ints];
     cell_aux_doubles[cell_id] = aux_data.aux_doubles.data[i];
   }
 
-  if (using_sorption_isotherms()) {
-    for (unsigned int i = 0; i < number_of_aqueous_components(); ++i){
-      double* cell_data;
-      cell_data = (*this->isotherm_kd())[i];
+  if (using_sorption_isotherms()) 
+  {
+    for (unsigned int i = 0; i < number_of_aqueous_components(); ++i) 
+    {
+      double* cell_data = (*this->isotherm_kd())[i];
       cell_data[cell_id] = mat_props.isotherm_kd.data[i];
 
       cell_data = (*this->isotherm_freundlich_n())[i];
@@ -842,12 +821,9 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
 
       cell_data = (*this->isotherm_langmuir_b())[i];
       cell_data[cell_id] = mat_props.langmuir_b.data[i];
-
     }
   }
-
 }
-
 
 void Chemistry_State::InitFromAlquimia(const int cell_id,
                                        const AlquimiaMaterialProperties& mat_props,
@@ -938,7 +914,7 @@ void Chemistry_State::InitFromAlquimia(const int cell_id,
     assert(num_aux_doubles >= 0);
     num_aux_data_ = num_aux_ints + num_aux_doubles;
     if (!S_->HasField("alquimia_aux_data")){
-      //      if (!S_->GetField("alquimia_aux_data", name_)->initialized()) {
+     
       Teuchos::RCP<CompositeVectorSpace> fac = S_->RequireField("alquimia_aux_data", name_);
       fac->SetMesh(mesh_);
       fac->SetGhosted(false);
@@ -950,8 +926,8 @@ void Chemistry_State::InitFromAlquimia(const int cell_id,
       F->SetData(sac);
       F->CreateData();
       F->GetFieldData()->PutScalar(0.0);
-      // F->set_initialized();
-        //}
+      F->set_initialized(false);
+        
     }
 
     aux_data_ = S_->GetField("alquimia_aux_data", name_)->GetFieldData()->ViewComponent("cell");
@@ -975,27 +951,160 @@ void Chemistry_State::InitFromAlquimia(const int cell_id,
 
   if (using_sorption_isotherms()) {
     for (unsigned int i = 0; i < number_of_aqueous_components(); ++i){
-      double* cell_data;
-      if (!S_->GetField("isotherm_kd")->initialized() ){
-        cell_data = (*this->isotherm_kd())[i];
-        cell_data[cell_id] = mat_props.isotherm_kd.data[i];
-      }
+       double* cell_data;
+       if (!S_->GetField("isotherm_kd")->initialized() ){
+         cell_data = (*this->isotherm_kd())[i];
+         cell_data[cell_id] = mat_props.isotherm_kd.data[i];
+       }
 
-      if (!S_->GetField("isotherm_freundlich_n")->initialized() ){
-        cell_data = (*this->isotherm_freundlich_n())[i];
-        cell_data[cell_id] = mat_props.freundlich_n.data[i];
-      }
+       if (!S_->GetField("isotherm_freundlich_n")->initialized() ){
+         cell_data = (*this->isotherm_freundlich_n())[i];
+         cell_data[cell_id] = mat_props.freundlich_n.data[i];
+       }
 
-      if (!S_->GetField("isotherm_langmuir_b")->initialized() ){
-        cell_data = (*this->isotherm_langmuir_b())[i];
-        cell_data[cell_id] = mat_props.langmuir_b.data[i];
-      }
+       if (!S_->GetField("isotherm_langmuir_b")->initialized() ){
+         cell_data = (*this->isotherm_langmuir_b())[i];
+         cell_data[cell_id] = mat_props.langmuir_b.data[i];
+       }
 
     }
   }
 
 }
 
+
+
+#endif
+
+void Chemistry_State::InitFromBeakerStructure(const int cell_id,
+                                              Beaker::BeakerComponents beaker_components){
+
+  if (!S_->GetField("total_component_concentration")->initialized()){   
+    for (unsigned int c = 0; c < number_of_aqueous_components(); c++) {
+      double* cell_components = (*total_component_concentration())[c];
+      cell_components[cell_id] = beaker_components.total.at(c);
+    }
+  }
+
+  if (!S_->GetField("free_ion_species")->initialized()) {
+    for (unsigned int c = 0; c < number_of_aqueous_components(); c++) {
+      double* cell_free_ion = (*free_ion_species())[c];
+      cell_free_ion[cell_id] = beaker_components.free_ion.at(c);
+    }
+  }
+
+  //
+  // activity coefficients
+  //
+  int n_primary_comps = beaker_components.primary_activity_coeff.size();
+  if (n_primary_comps > 0) {
+    if (!S_->GetField("primary_activity_coeff")->initialized()) {
+      for (unsigned int i = 0; i < beaker_components.primary_activity_coeff.size(); ++i) {
+        double* cells = (*primary_activity_coeff())[i];
+        cells[cell_id] = beaker_components.primary_activity_coeff.at(i);
+      }
+    }
+  }
+  int n_secondary_comps = beaker_components.secondary_activity_coeff.size();
+  if (n_secondary_comps > 0) {
+    if (!S_->GetField("secondary_activity_coeff")->initialized()) {
+      for (unsigned int i = 0; i < beaker_components.secondary_activity_coeff.size(); ++i) {
+        double* cells = (*secondary_activity_coeff())[i];
+        cells[cell_id] =  beaker_components.secondary_activity_coeff.at(i);
+      }
+    }
+  }
+  //
+  // minerals
+  //
+  if (!S_->GetField("mineral_volume_fractions")->initialized()) {
+    for (unsigned int m = 0; m < number_of_minerals_; m++) {
+      double* cell_minerals = (*mineral_volume_fractions())[m];
+      cell_minerals[cell_id] = beaker_components.mineral_volume_fraction.at(m);
+      if (mineral_specific_surface_area() != Teuchos::null) {
+        cell_minerals = (*mineral_specific_surface_area())[m];
+        cell_minerals[cell_id] = beaker_components.mineral_specific_surface_area.at(m);
+      }
+    }
+  }
+
+  //
+  // sorption
+  //
+  if (using_sorption()) {
+    if (!S_->GetField("total_sorbed")->initialized()) {
+      for (unsigned int c = 0; c < number_of_aqueous_components(); c++) {
+        double* cell_total_sorbed = (*total_sorbed())[c];
+        cell_total_sorbed[cell_id] = beaker_components.total_sorbed.at(c);
+      }
+    }
+  }
+
+  //
+  // surface complexation
+  //
+  
+
+  for (unsigned int i = 0; i < number_of_sorption_sites(); i++) {
+    if (!S_->GetField("sorption_sites")->initialized()) {
+      double* cell_sorption_sites = (*sorption_sites())[i];
+      cell_sorption_sites[cell_id] = beaker_components.surface_site_density.at(i);
+      // TODO(bandre): need to save surface complexation free site conc here!
+    }
+  }
+
+
+ 
+  for (unsigned int i = 0; i < beaker_components.surface_complex_free_site_conc.size(); ++i) {
+    if (!S_->GetField("surface_complex_free_site_conc")->initialized()) { 
+     double* cells = (*surface_complex_free_site_conc())[i];
+      cells[cell_id] = beaker_components.surface_complex_free_site_conc.at(i);
+    }
+  }
+
+  //
+  // ion exchange
+  //
+
+  for (unsigned int i = 0; i < number_of_ion_exchange_sites(); i++) {
+    if (!S_->GetField("ion_exchange_sites")->initialized()) {
+      double* cell_ion_exchange_sites = (*ion_exchange_sites())[i];
+      cell_ion_exchange_sites[cell_id] = beaker_components.ion_exchange_sites.at(i);
+      // TODO(bandre): need to save ion exchange ref cation conc here!
+    }
+  }
+
+
+  for (unsigned int i = 0; i < beaker_components.ion_exchange_ref_cation_conc.size(); ++i) {
+    if (!S_->GetField("ion_exchange_ref_cation_conc")->initialized()) {
+      double* cells = (*ion_exchange_ref_cation_conc())[i];
+      cells[cell_id] = beaker_components.ion_exchange_ref_cation_conc.at(i);
+    }
+  }
+
+  //
+  // sorption isotherms
+  //
+  if (using_sorption_isotherms()) {
+    for (unsigned int i = 0; i < number_of_aqueous_components(); ++i) {
+      if (!S_->GetField("isotherm_kd")->initialized()) {
+        double* cell_data = (*isotherm_kd())[i];
+        cell_data[cell_id] = beaker_components.isotherm_kd.at(i);
+      }
+
+      if (!S_->GetField("isotherm_freundlich_n")->initialized()) {
+        double* cell_data = (*isotherm_freundlich_n())[i];
+        cell_data[cell_id] = beaker_components.isotherm_freundlich_n.at(i);
+      }
+
+      if (!S_->GetField("isotherm_langmuir_b")->initialized()) {
+        double *cell_data = (*isotherm_langmuir_b())[i];
+        cell_data[cell_id] = beaker_components.isotherm_langmuir_b.at(i);
+      }
+    }
+  }
+
+}
 
 void Chemistry_State::SetAllFieldsInitialized(){
   if (using_sorption_isotherms()) {
@@ -1037,8 +1146,6 @@ void Chemistry_State::SetAllFieldsInitialized(){
 
 }
 
-
-#endif
 
 } // namespace AmanziChemistry
 } // namespace Amanzi

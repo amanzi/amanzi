@@ -18,7 +18,7 @@ Visualization of data.
 #include "Mesh.hh"
 #include "hdf5mpi_mesh.hh"
 
-#include "io_event.hh"
+#include "IOEvent.hh"
 
 namespace Amanzi {
 

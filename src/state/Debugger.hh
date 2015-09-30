@@ -37,13 +37,13 @@ class Debugger {
   void WriteCellInfo(bool include_faces=false);
 
   // Write a vector individually.
-  void WriteVector(std::string name,
+  void WriteVector(const std::string& name,
                    const Teuchos::Ptr<const CompositeVector>& vec,
                    bool include_faces=false);
 
   // Write list of vectors.
-  void WriteVectors(std::vector<std::string> names,
-                    std::vector< Teuchos::Ptr<const CompositeVector> >& vecs,
+  void WriteVectors(const std::vector<std::string>& names,
+                    const std::vector<Teuchos::Ptr<const CompositeVector> >& vecs,
                     bool include_faces=false);
 
   // call MPI_Comm_Barrier to sync between writing steps

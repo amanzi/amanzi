@@ -110,8 +110,8 @@ int CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& tv,
   ASSERT(tv.Data() == Teuchos::null);
   int ierr(0);
   int my_dof = 0;
-  for (std::vector<Teuchos::RCP<TreeVector> >::const_iterator it = tv.SubVectors().begin();
-       it != tv.SubVectors().end(); ++it) {
+  for (TreeVector::const_iterator it = tv.begin();
+       it != tv.end(); ++it) {
     ASSERT((*it)->Data() != Teuchos::null);
     ierr |= CopyCompositeVectorToSuperVector(map, *(*it)->Data(), sv, my_dof);
     my_dof++;            
@@ -127,8 +127,8 @@ int CopySuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
   ASSERT(tv.Data() == Teuchos::null);
   int ierr(0);
   int my_dof = 0;
-  for (std::vector<Teuchos::RCP<TreeVector> >::iterator it = tv.SubVectors().begin();
-       it != tv.SubVectors().end(); ++it) {
+  for (TreeVector::iterator it = tv.begin();
+       it != tv.end(); ++it) {
     ASSERT((*it)->Data() != Teuchos::null);
     ierr |= CopySuperVectorToCompositeVector(map, sv, *(*it)->Data(), my_dof);
     my_dof++;            
@@ -147,8 +147,8 @@ int AddSuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
   ASSERT(tv.Data() == Teuchos::null);
   int ierr(0);
   int my_dof = 0;
-  for (std::vector<Teuchos::RCP<TreeVector> >::iterator it = tv.SubVectors().begin();
-       it != tv.SubVectors().end(); ++it) {
+  for (TreeVector::iterator it = tv.begin();
+       it != tv.end(); ++it) {
     ASSERT((*it)->Data() != Teuchos::null);
     ierr |= AddSuperVectorToCompositeVector(map, sv, *(*it)->Data(), my_dof);
     my_dof++;            

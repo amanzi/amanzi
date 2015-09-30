@@ -274,9 +274,14 @@ class Chemistry_State {
                         const AlquimiaAuxiliaryData& aux_data,
                         const AlquimiaAuxiliaryOutputData& aux_output);
 
-  void SetAllFieldsInitialized();
-
 #endif
+
+  void InitFromBeakerStructure(const int cell_id,
+                               Beaker::BeakerComponents beaker_components);
+
+
+
+  void SetAllFieldsInitialized();
 
  protected:
   void InitializeField_(Teuchos::ParameterList& ic_plist, std::string fieldname,

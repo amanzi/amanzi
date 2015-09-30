@@ -20,7 +20,8 @@ Checkpointing for state.
 namespace Amanzi {
 
 Checkpoint::Checkpoint (Teuchos::ParameterList& plist, Epetra_MpiComm* comm) :
-    IOEvent(plist, comm) {
+    IOEvent(plist),
+    comm_(comm) {
   ReadParameters_();
 
   // set the line prefix for output
