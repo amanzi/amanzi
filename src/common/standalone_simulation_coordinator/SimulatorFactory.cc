@@ -31,47 +31,71 @@ Simulator* Create(const std::string& input_filename)
   XMLCh xstr[100];
   DOMElement* element = doc->getDocumentElement();
   XMLString::transcode(element->getTagName(), str, 99);
-  if (strcmp(str, "amanzi_input") != 0)
-    Exceptions::amanzi_throw(Errors::Message("Invalid input file."));
-
-  // Figure out the version of the input spec used.
-  XMLString::transcode("version", xstr, 99);
-  if (not element->hasAttribute(xstr)) 
-    Exceptions::amanzi_throw(Errors::Message("Invalid input file (no 'version' attribute in amanzi_input)."));
-  XMLString::transcode(element->getAttribute(xstr), str, 99);
-  string version = str;
+  string version;
+  if (strcmp(str, "amanzi_input") == 0)
+    version = "v2";
+  else
+  {
+    if (strcmp(str, "ParameterList") == 0)
+      version = "v1";
+    else
+      Exceptions::amanzi_throw(Errors::Message("Invalid input file."));
+  }
 
   // Figure out the type of input (structured, unstructured).
-  XMLString::transcode("type", xstr, 99);
-  if (not element->hasAttribute(xstr)) 
-    Exceptions::amanzi_throw(Errors::Message("Invalid input file (no 'type' attribute in amanzi_input)."));
-  XMLString::transcode(element->getAttribute(xstr), str, 99);
-  string type = str;
+  string type;
+  if (version == "v2")
+  {
+    XMLString::transcode("type", xstr, 99);
+    if (not element->hasAttribute(xstr)) 
+      Exceptions::amanzi_throw(Errors::Message("Invalid input file (no 'type' attribute in amanzi_input)."));
+    XMLString::transcode(element->getAttribute(xstr), str, 99);
+    type = str;
+  }
+  else
+  {
+    // We check the parameter lists for the Structured tag. If we don't 
+    // find this, we assume it to be unstructured.
+    type = "unstructured";
+    XMLString::transcode("ParameterList", xstr, 99);
+    DOMNodeList* nodes = doc->getElementsByTagName(xstr);
+    for (int i = 0; i < nodes->getLength(); ++i)
+    {
+      DOMElement* element = static_cast<DOMElement*>(nodes->item(i));
+      if (element != NULL)
+      {
+        XMLString::transcode("name", xstr, 99);
+        XMLString::transcode(element->getAttribute(xstr), str, 99);
+        if (strcmp(str, "Structured") == 0)
+        {
+          type = "structured";
+          break;
+        }
+      }
+    }
+  }
+
+  // Create the appropriate simulator.
   Simulator* simulator = NULL;
   if (type == "structured")
   {
 #ifdef ENABLE_Structured
-    if (version[0] == '2')
-      simulator = new AmanziStructuredGridSimulationDriver(doc);
-    else // Assume version 1
-    {
-      assert(version[0] == '1');
+    // Uncomment the following lines when the new v2 -> PP translator works.
+//    if (version == "v2")
+//      simulator = new AmanziStructuredGridSimulationDriver(doc);
+//    else 
       simulator = new AmanziStructuredGridSimulationDriver(input_filename);
-    }
 #else
     amanzi_throw(Errors::Message("Structured not supported in current build"));
 #endif
   }
-  else if (strcmp(str, "unstructured") == 0)
+  else if (type == "unstructured")
   {
 #ifdef ENABLE_Unstructured
-    if (version[0] == '2')
+    if (version == "v2")
       simulator = new AmanziUnstructuredGridSimulationDriver(input_filename, doc);
-    else // Assume version 1
-    {
-      assert(version[0] == '1');
+    else 
       simulator = new AmanziUnstructuredGridSimulationDriver(input_filename);
-    }
 #else
     amanzi_throw(Errors::Message("Unstructured not supported in current build"));
 #endif

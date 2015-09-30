@@ -27,6 +27,6 @@ struct AmanziStructuredGridSimulationDriver
 
   private:
 
-  Teuchos::ParameterList* plist_;
+  Teuchos::ParameterList plist_;
 };
 #endif
