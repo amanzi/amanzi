@@ -100,6 +100,7 @@ InputConverter::InputConverter(const std::string& input_filename,
   doc_(input_doc),
   parser_(NULL)
 {
+  FilterNodes(doc_, "comments");
 }
 
 InputConverter::~InputConverter()
