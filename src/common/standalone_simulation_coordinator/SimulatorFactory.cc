@@ -78,7 +78,6 @@ Simulator* Create(const std::string& input_filename)
   }
 
   // Clean up.
-  delete doc;
   delete parser;
   XMLPlatformUtils::Terminate();
 
