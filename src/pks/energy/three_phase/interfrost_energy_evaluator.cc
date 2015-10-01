@@ -24,7 +24,7 @@ namespace Energy {
 InterfrostEnergyEvaluator::InterfrostEnergyEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   my_key_ = plist_.get<std::string>("energy key", "energy");
-
+ 
   dependencies_.insert(std::string("porosity"));
   dependencies_.insert(std::string("base_porosity"));
 

@@ -44,8 +44,15 @@ EnergyBase::EnergyBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
     flux_exists_(true),
     implicit_advection_(true) {
 
+//I-CHANGED
+//---
+if (!plist_->isParameter("primary variable key"))
+    plist_->set("primary variable key", "temperature");
+if (!plist_->isParameter("conserved quantity suffix"))
+  plist_->set("conserved quantity suffix", "energy");
+//--
   // set a default absolute tolerance
-  if (!plist_->isParameter("absolute error tolerance")) {
+/*  if (!plist_->isParameter("absolute error tolerance")) {
     std::string domain = plist_->get<std::string>("domain name", "domain");
     if (domain == "domain") {    
       plist_->set("absolute error tolerance", .5 * .1 * 55000. * 76.e-6); // phi * s * nl * u at 1C in MJ/mol
@@ -54,7 +61,7 @@ EnergyBase::EnergyBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
     } else {
       ASSERT(0);
     }
-  }
+    }*/
 }
 
 
@@ -64,7 +71,9 @@ EnergyBase::EnergyBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
 void EnergyBase::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBDFBase::setup(S);
   SetupEnergy_(S);
+
   SetupPhysicalEvaluators_(S);
+
 };
 
 
@@ -84,7 +93,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   }
   if (flux_key_.empty()) {
     flux_key_ = plist_->get<std::string>("flux key",
-            getKey(domain_, "flux"));
+            getKey(domain_, "darcy_flux"));
   }
   if (energy_flux_key_.empty()) {
     energy_flux_key_ = plist_->get<std::string>("energy flux key",
@@ -271,6 +280,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   flux_exists_ = S->HasField(flux_key_); // this bool is needed to know if PK
                                          // makes flux or we need an
                                          // independent variable evaluator
+
   S->RequireField(flux_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("face", AmanziMesh::FACE, 1);
 

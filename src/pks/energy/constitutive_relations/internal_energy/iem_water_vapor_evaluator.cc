@@ -52,15 +52,16 @@ void IEMWaterVaporEvaluator::InitializeFromPlist_() {
   } else {
     domain_name = domain_name+std::string("_");
   }
-
+  domain_name = getDomain(my_key_);
   // -- temperature
+ 
   temp_key_ = plist_.get<std::string>("temperature key",
-          domain_name+std::string("temperature"));
+                                      getKey(domain_name,std::string("temperature")));
   dependencies_.insert(temp_key_);
 
   // -- molar fraction of water vapor in the gaseous phase
   mol_frac_key_ = plist_.get<std::string>("vapor molar fraction key",
-          domain_name+std::string("mol_frac_gas"));
+                                          getKey(domain_name,std::string("mol_frac_gas")));
   dependencies_.insert(mol_frac_key_);
 }
 

@@ -63,7 +63,7 @@ Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
 
   if (!plist_->isParameter("conserved quantity suffix"))
     plist_->set("conserved quantity suffix", "water_content");
-
+  
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))
     plist_->set("absolute error tolerance", .5 * .1 * 55000.); // phi * s * nl
@@ -102,6 +102,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     coef_key_ = plist_->get<std::string>("conductivity key",
             getKey(domain_, "relative_permeability"));
   }
+  
   if (uw_coef_key_.empty()) {
     uw_coef_key_ = plist_->get<std::string>("upwinded conductivity key",
             getKey(domain_, "upwind_relative_permeability"));
@@ -343,6 +344,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   S->RequireField(velocity_key_, name_)->SetMesh(mesh_)->SetGhosted()
                                 ->SetComponent("cell", AmanziMesh::CELL, 3);
 
+  
 }
 
 
@@ -729,7 +731,8 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     }
   } else {
     // Neumann boundary conditions that turn off if temp < freezing
-    const Epetra_MultiVector& temp = *S->GetFieldData("temperature")->ViewComponent("face");
+
+    const Epetra_MultiVector& temp = *S->GetFieldData(getKey(domain_,"temperature"))->ViewComponent("face");
     for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
       int f = bc->first;
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;

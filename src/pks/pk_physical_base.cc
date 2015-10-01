@@ -20,7 +20,7 @@ PKPhysicalBase::PKPhysicalBase(const Teuchos::RCP<Teuchos::ParameterList>& plist
 
   // domain -- default is the entire mesh, no prefix
   if (domain_.empty()) {
-    domain_ = plist_->get<std::string>("domain name", std::string("domain"));
+   domain_ = plist_->get<std::string>("domain name", std::string("domain"));
   }
   
   if (key_.empty()) {

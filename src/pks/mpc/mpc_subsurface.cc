@@ -45,12 +45,12 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
   // Get the sub-blocks from the sub-PK's preconditioners.
   Teuchos::RCP<Operators::Operator> pcA = sub_pks_[0]->preconditioner();
   Teuchos::RCP<Operators::Operator> pcB = sub_pks_[1]->preconditioner();
-
+  
   // Create the combined operator
   Teuchos::RCP<TreeVectorSpace> tvs = Teuchos::rcp(new TreeVectorSpace());
   tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(pcA->DomainMap()))));
   tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(pcB->DomainMap()))));
-
+ 
   preconditioner_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
   preconditioner_->SetOperatorBlock(0, 0, pcA);
   preconditioner_->SetOperatorBlock(1, 1, pcB);
@@ -284,6 +284,7 @@ void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
     ddivhq_dT_->SetBCs(sub_pks_[1]->BCs(), sub_pks_[1]->BCs());
     ddivhq_dT_->Setup(richards_pk_->K_);
   }  
+
 }
 
 
