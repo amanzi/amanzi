@@ -273,8 +273,13 @@ void InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node,
   }
 }
 
-InputConverterS::InputConverterS():
-  InputConverter()
+InputConverterS::InputConverterS(const string& input_filename):
+  InputConverter(input_filename)
+{
+}
+
+InputConverterS::InputConverterS(const string& input_filename, xercesc::DOMDocument* input_doc):
+  InputConverter(input_filename, input_doc)
 {
 }
 

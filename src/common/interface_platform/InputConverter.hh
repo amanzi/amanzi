@@ -190,9 +190,8 @@ class InputConverter {
   std::map<std::string, std::string> constants_; 
 
   std::string xmlfilename_;
-
-  xercesc::XercesDOMParser* parser;
   xercesc::DOMDocument* doc_;
+  xercesc::XercesDOMParser* parser_;
 
  private:
 

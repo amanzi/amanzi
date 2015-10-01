@@ -23,7 +23,14 @@ namespace AmanziInput {
 class InputConverterS : public InputConverter {
  public:
 
-  InputConverterS();
+  // This constructor opens up the file with the given name, sets up a parser,
+  // and parses the file.
+  explicit InputConverterS(const std::string& input_filename);
+
+  // This constructor uses an already-parsed XML document, and does not 
+  // manage the parser.
+  InputConverterS(const std::string& input_filename, xercesc::DOMDocument* input_doc);
+
   ~InputConverterS();
 
   // main members
