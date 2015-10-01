@@ -29,9 +29,9 @@ TwoPhase::TwoPhase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                    const Teuchos::RCP<TreeVector>& solution) :
     PKDefaultBase(plist, FElist, solution),
     EnergyBase(plist, FElist, solution) {
-  if (!plist_->isParameter("flux key")) plist_->set("flux key", "darcy_flux");
-
-  plist_->set("conserved quantity key", "energy");
+  //  if (!plist_->isParameter("flux key")) plist_->set("flux key", "darcy_flux");
+//I-CHANGED
+//  plist_->set("conserved quantity key", "energy");
 }
 
 // -------------------------------------------------------------

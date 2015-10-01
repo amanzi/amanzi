@@ -88,19 +88,23 @@ WRMPermafrostEvaluator::Clone() const {
  -------------------------------------------------------------------------------- */
 void WRMPermafrostEvaluator::InitializeFromPlist_() {
   // my keys are for saturation -- order matters... gas -> liq -> ice
+  
+  
   my_keys_.push_back(plist_.get<std::string>("gas saturation key", "saturation_gas"));
+Key domain_name = getDomain(my_keys_[0]);
+ 
   s_l_key_ = plist_.get<std::string>("liquid saturation key", "saturation_liquid");
   my_keys_.push_back(s_l_key_);
   my_keys_.push_back(plist_.get<std::string>("ice saturation key", "saturation_ice"));
 
   // liquid-gas capillary pressure
   pc_liq_key_ = plist_.get<std::string>("gas-liquid capillary pressure key",
-          "capillary_pressure_gas_liq");
+                                        getKey(domain_name,"capillary_pressure_gas_liq"));
   dependencies_.insert(pc_liq_key_);
 
   // liquid-gas capillary pressure
   pc_ice_key_ = plist_.get<std::string>("liquid-ice capillary pressure key",
-          "capillary_pressure_liq_ice");
+                                        getKey(domain_name,"capillary_pressure_liq_ice"));
   dependencies_.insert(pc_ice_key_);
 }
 

@@ -23,25 +23,28 @@ namespace Energy {
 
 ThreePhaseEnergyEvaluator::ThreePhaseEnergyEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
-  my_key_ = plist_.get<std::string>("energy key", "energy");
+  //  my_key_ = plist_.get<std::string>("energy key", "energy");
+  // my_key_ = plist_.get<std::string>("saturation liquid key", "saturation_liquid");
 
-  dependencies_.insert(std::string("porosity"));
-  dependencies_.insert(std::string("base_porosity"));
+ Key domain_name = getDomain(my_key_);
 
-  dependencies_.insert(std::string("saturation_liquid"));
-  dependencies_.insert(std::string("molar_density_liquid"));
-  dependencies_.insert(std::string("internal_energy_liquid"));
+ dependencies_.insert(std::string(getKey(domain_name, "porosity")));
+ dependencies_.insert(std::string(getKey(domain_name, "base_porosity")));
 
-  dependencies_.insert(std::string("saturation_gas"));
-  dependencies_.insert(std::string("molar_density_gas"));
-  dependencies_.insert(std::string("internal_energy_gas"));
+ dependencies_.insert(std::string(getKey(domain_name, "saturation_liquid")));
+ dependencies_.insert(std::string(getKey(domain_name, "molar_density_liquid")));
+ dependencies_.insert(std::string(getKey(domain_name, "internal_energy_liquid")));
 
-  dependencies_.insert(std::string("saturation_ice"));
-  dependencies_.insert(std::string("molar_density_ice"));
-  dependencies_.insert(std::string("internal_energy_ice"));
+ dependencies_.insert(std::string(getKey(domain_name, "saturation_gas")));
+ dependencies_.insert(std::string(getKey(domain_name, "molar_density_gas")));
+ dependencies_.insert(std::string(getKey(domain_name, "internal_energy_gas")));
 
-  dependencies_.insert(std::string("density_rock"));
-  dependencies_.insert(std::string("internal_energy_rock"));
+ dependencies_.insert(std::string(getKey(domain_name, "saturation_ice")));
+ dependencies_.insert(std::string(getKey(domain_name, "molar_density_ice")));
+ dependencies_.insert(std::string(getKey(domain_name, "internal_energy_ice")));
+
+ dependencies_.insert(std::string(getKey(domain_name, "density_rock")));
+ dependencies_.insert(std::string(getKey(domain_name, "internal_energy_rock")));
   //  dependencies_.insert(std::string("cell_volume"));
 
   //  check_derivative_ = true;
@@ -58,6 +61,7 @@ ThreePhaseEnergyEvaluator::Clone() const {
 
 void ThreePhaseEnergyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
+  
   const Epetra_MultiVector& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell",false);
   const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell",false);
   const Epetra_MultiVector& u_l = *S->GetFieldData("internal_energy_liquid")->ViewComponent("cell",false);
