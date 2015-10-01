@@ -1,11 +1,18 @@
-#include "InputTranslator.hh"
+#ifndef ENABLE_Structured
+#define ENABLE_Structured
+#endif
+
+#include "InputConverterS.hh"
 #include "amanzi_structured_grid_simulation_driver.H"
 #include "ParmParse.H"
 #include "PMAmr.H"
 #include "PMAMR_Labels.H"
 #include "PorousMedia.H"
+#include "InputParser_Structured.H"
 
 #include "ParmParseHelpers.H"
+
+XERCES_CPP_NAMESPACE_USE
 
 static std::map<std::string,std::string>& AMR_to_Amanzi_label_map = Amanzi::AmanziInput::AMRToAmanziLabelMap();
 
@@ -107,24 +114,18 @@ bool ConfirmFileExists(const std::string& name) {
 // v1 spec constructor -- delete when we get rid of v1.2 spec.
 AmanziStructuredGridSimulationDriver::AmanziStructuredGridSimulationDriver(const std::string& xmlInFileName)
 {
-  std::string spec;
-  Teuchos::ParameterList parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName, spec);
-  if (spec == "v2")
-    plist_ = parameter_list;
-  else
-  {
-    Teuchos::RCP<Teuchos::ParameterList> parameter_list = Teuchos::getParametersFromXmlFile(xmlInFileName);
-    plist_ = *parameter_list;
-  }
+  Teuchos::RCP<Teuchos::ParameterList> parameter_list = Teuchos::getParametersFromXmlFile(xmlInFileName);
+  plist_ = *parameter_list;
 }
 
-AmanziStructuredGridSimulationDriver::AmanziStructuredGridSimulationDriver(xercesc::DOMDocument* input)
+AmanziStructuredGridSimulationDriver::AmanziStructuredGridSimulationDriver(const std::string& input_file, xercesc::DOMDocument* input)
 {
-//	ParmParse::Initialize(argc,argv,NULL);
-//
-//  Amanzi::AmanziInput::InputConverterS converter(input);
-//  plist_ = new Teuchos::ParameterList(converter.Translate());
-// NOT IN DEFAULT YET.
+  int argc = 0;
+  char** argv = NULL;
+	ParmParse::Initialize(argc,argv,NULL);
+
+  Amanzi::AmanziInput::InputConverterS converter(input_file, input);
+  converter.Translate();
 }
 
 AmanziStructuredGridSimulationDriver::~AmanziStructuredGridSimulationDriver()

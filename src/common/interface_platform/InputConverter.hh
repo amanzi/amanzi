@@ -77,8 +77,8 @@ XercesDOMParser* CreateXMLParser();
 
 // Using the given XML parser, parses the document contained in the file with 
 // the given name.
-xercesc::DOMDocument* OpenXMLInput(XercesDOMParser* parser,
-                                   const std::string& xml_input);
+DOMDocument* OpenXMLInput(XercesDOMParser* parser,
+                          const std::string& xml_input);
 //------------------------------------------------------------------------
 
 class InputConverter {
@@ -90,7 +90,7 @@ class InputConverter {
 
   // This constructor uses an already-parsed XML document, and does not 
   // manage the parser.
-  InputConverter(const std::string& input_filename, xercesc::DOMDocument* input_doc);
+  InputConverter(const std::string& input_filename, DOMDocument* input_doc);
 
   virtual ~InputConverter();
 
@@ -190,8 +190,8 @@ class InputConverter {
   std::map<std::string, std::string> constants_; 
 
   std::string xmlfilename_;
-  xercesc::DOMDocument* doc_;
-  xercesc::XercesDOMParser* parser_;
+  DOMDocument* doc_;
+  XercesDOMParser* parser_;
 
  private:
 

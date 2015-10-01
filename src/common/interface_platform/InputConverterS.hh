@@ -29,7 +29,7 @@ class InputConverterS : public InputConverter {
 
   // This constructor uses an already-parsed XML document, and does not 
   // manage the parser.
-  InputConverterS(const std::string& input_filename, xercesc::DOMDocument* input_doc);
+  InputConverterS(const std::string& input_filename, DOMDocument* input_doc);
 
   ~InputConverterS();
 

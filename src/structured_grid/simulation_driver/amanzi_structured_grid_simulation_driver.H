@@ -6,7 +6,8 @@
 #include "Teuchos_ParameterList.hpp"
 #include "ObservationData.hh"
 #include "Simulator.hh"
-#include "InputParser_Structured.H"
+
+XERCES_CPP_NAMESPACE_USE
 
 struct AmanziStructuredGridSimulationDriver
   : Amanzi::Simulator
@@ -17,7 +18,7 @@ struct AmanziStructuredGridSimulationDriver
   explicit AmanziStructuredGridSimulationDriver(const std::string& xmlInFileName);
 
   // v2 constructor
-  explicit AmanziStructuredGridSimulationDriver(xercesc::DOMDocument* input);
+  AmanziStructuredGridSimulationDriver(const std::string& input_file, DOMDocument* input);
 
   // Destructor
   ~AmanziStructuredGridSimulationDriver();
