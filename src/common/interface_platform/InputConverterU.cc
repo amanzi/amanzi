@@ -82,6 +82,10 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
     out_list.sublist("PKs").sublist("Transport")
         .set<Teuchos::Array<std::string> >("runtime diagnostics: regions", transport_diagnostics_);
   }
+
+  // save the translate file
+  if (rank_ == 0) SaveXMLFile(out_list, xmlfilename_);
+
   return out_list;
 }
   
