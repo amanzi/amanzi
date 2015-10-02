@@ -54,6 +54,7 @@ AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(c
     plist_ = new Teuchos::ParameterList(Amanzi::AmanziNewInput::translate(xmlInFileName, spec));
 }
 
+
 AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const string& xmlInFileName,
                                                                                xercesc::DOMDocument* input)
 {
@@ -62,14 +63,14 @@ AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(c
 
   Amanzi::AmanziInput::InputConverterU converter(xmlInFileName, input);
   plist_ = new Teuchos::ParameterList(converter.Translate(rank, num_proc));
-  // NOTE: we don't write the converted file, since we don't have the filename in this 
-  // NOTE: context. We could write it to a generic file. Need to decide what to do here.
 }
+
 
 AmanziUnstructuredGridSimulationDriver::~AmanziUnstructuredGridSimulationDriver()
 {
   delete plist_;
 }
+
 
 Amanzi::Simulator::ReturnType
 AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
