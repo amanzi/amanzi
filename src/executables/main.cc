@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
           Teuchos::getParameter<std::string>(mesh_parameter_list,"Framework"));
 
   AmanziUnstructuredGridSimulationDriver* simulator = new AmanziUnstructuredGridSimulationDriver();
-  Amanzi::Simulator::ReturnType ret = simulator->Run(mpi_comm, driver_parameter_list);
+  int ret = simulator->Run(mpi_comm, driver_parameter_list);
 
   delete simulator;
   delete comm;

@@ -45,8 +45,8 @@ Effectively stolen from Amanzi, with few modifications.
 
 #include "amanzi_unstructured_grid_simulation_driver.hh"
 
-Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
-        const MPI_Comm& mpi_comm, Teuchos::ParameterList& input_parameter_list) {
+int AmanziUnstructuredGridSimulationDriver::Run(
+    const MPI_Comm& mpi_comm, Teuchos::ParameterList& input_parameter_list) {
 
   using Teuchos::OSTab;
   setDefaultVerbLevel(Amanzi::VerbosityLevel::level_);
@@ -134,7 +134,7 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
   int aerr = 0;
   comm->SumAll(&ierr, &aerr, 1);
   if (aerr > 0) {
-    return Amanzi::Simulator::FAIL;
+    return 1;
   }
 
   // Create the mesh
@@ -176,7 +176,7 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
       }
 
       comm->SumAll(&ierr, &aerr, 1);
-      if (aerr > 0) return Amanzi::Simulator::FAIL;
+      if (aerr > 0) return 1;
     }
   } else if (mesh_plist.isSublist("Generate Mesh")) {
     // try to generate the mesh from data in plist
@@ -191,7 +191,7 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
     }
 
     comm->SumAll(&ierr, &aerr, 1);
-    if (aerr > 0) return Amanzi::Simulator::FAIL;
+    if (aerr > 0) return 1;
 
   } else {
     std::cerr << rank << ": error: "
@@ -217,7 +217,7 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
             std::cout << "Mesh Audit confirms that mesh is ok" << std::endl;
           } else {
             std::cout << "Mesh Audit could not verify correctness of mesh" << std::endl;
-            return Amanzi::Simulator::FAIL;
+            return 1;
           }
         } else {
           std::ostringstream ofile;
@@ -237,7 +237,7 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
           } else {
             if (rank == 0)
               std::cerr << "Mesh Audit could not verify correctness of mesh" << std::endl;
-            return Amanzi::Simulator::FAIL;
+            return 1;
           }
         }
       }  // if verify
@@ -283,7 +283,7 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
               std::cout << "Mesh Audit confirms that surface mesh is ok" << std::endl;
             } else {
               std::cout << "Mesh Audit could not verify correctness of surface mesh" << std::endl;
-              return Amanzi::Simulator::FAIL;
+              return 1;
             }
           } else {
             std::ostringstream ofile;
@@ -303,7 +303,7 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
             } else {
               if (rank == 0)
                 std::cerr << "Surface Mesh Audit could not verify correctness of mesh" << std::endl;
-              return Amanzi::Simulator::FAIL;
+              return 1;
             }
           }
         }  // if verify
@@ -366,7 +366,7 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
     delete geom_model_ptr->Region_i(i);
   }
   delete geom_model_ptr;
-  return Amanzi::Simulator::SUCCESS;
+  return 0;
 }
 
 
