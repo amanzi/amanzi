@@ -114,9 +114,6 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
   cvs.SetComponent("face", AmanziMesh::FACE, 1);
   transmissibility_ = Teuchos::rcp(new CompositeVector(cvs, true));
 
-  // default parameters for Newton correction
-  constant_rho_ = true;
-  rho_ = 1.0;
   transmissibility_initialized_ = false;
 }
 
@@ -129,7 +126,7 @@ void OperatorDiffusionFV::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor
   K_ = K;
 
   if (!transmissibility_initialized_) {
-    ComputeTransmissibility_(NULL, Teuchos::null);
+    ComputeTransmissibility_();
   }
 }
 
@@ -157,7 +154,7 @@ void OperatorDiffusionFV::Setup(const Teuchos::RCP<const CompositeVector>& k,
 
   // verify that mass matrices were initialized.
   if (!transmissibility_initialized_) {
-    ComputeTransmissibility_(NULL, Teuchos::null);
+    ComputeTransmissibility_();
   }
 }
 
@@ -437,8 +434,7 @@ void OperatorDiffusionFV::ComputeJacobianLocal_(
 /* ******************************************************************
 * Compute transmissibilities on faces 
 ****************************************************************** */
-void OperatorDiffusionFV::ComputeTransmissibility_(
-   AmanziGeometry::Point* g, Teuchos::RCP<CompositeVector> g_cv)
+void OperatorDiffusionFV::ComputeTransmissibility_()
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
 
@@ -503,24 +499,10 @@ void OperatorDiffusionFV::ComputeTransmissibility_(
     a_dist *= 1.0 / norm(a_dist);
 
     trans_face[0][f] = 1.0 / beta_face[0][f];
-
-    if (g != NULL) {
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      double dir = copysign(1.0, normal * a_dist);
-      // double grav = (gravity * normal) / area;
-      double grav = ((*g) * a_dist) * rho_ * dir;
-      grav *= h_face[0][f];
-
-      Epetra_MultiVector& gravity_face = *g_cv->ViewComponent("face", true);
-      gravity_face[0][f] = trans_face[0][f] * grav;
-    }
   }
-  // Epetra_MultiVector& gravity_face = *g_cv->ViewComponent("face", true);
-  // std::cout<<gravity_face<<"\n";
 
 #ifdef HAVE_MPI
   transmissibility_->ScatterMasterToGhosted("face", true);
-  if (g != NULL) g_cv->ScatterMasterToGhosted("face", true);
 #endif
 
   transmissibility_initialized_ = true;

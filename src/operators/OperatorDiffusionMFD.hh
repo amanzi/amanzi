@@ -63,10 +63,10 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   }
 
   // main virtual members for populating an operator
+  using OperatorDiffusion::Setup;
   virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
   virtual void Setup(const Teuchos::RCP<const CompositeVector>& k,
                      const Teuchos::RCP<const CompositeVector>& dkdp);
-  using OperatorDiffusion::Setup;
 
   // -- To calculate elemetal matrices, we can use input parameters flux 
   //    and u from the previous nonlinear iteration. Otherwise, use null-pointers.
@@ -77,7 +77,8 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   //    previous nonlinear iteration. The second parameter, u, so far is a
   //    placeholder for new approximation methods.
   virtual void UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
-                                              const Teuchos::Ptr<const CompositeVector>& u);
+                                              const Teuchos::Ptr<const CompositeVector>& u,
+                                              double scalar_limiter);
 
   // modify the operator
   // -- by incorporating boundary conditions. Variable 'primary' indicates
@@ -120,7 +121,8 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   void UpdateMatricesMixedWithGrad_(const Teuchos::Ptr<const CompositeVector>& flux);
 
   void AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVector>& flux,
-                                const Teuchos::Ptr<const CompositeVector>& u);
+                                const Teuchos::Ptr<const CompositeVector>& u,
+                                double scalar_limiter);
 
   void ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
                        bool primary, bool eliminate);

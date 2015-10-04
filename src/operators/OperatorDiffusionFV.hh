@@ -58,19 +58,10 @@ class OperatorDiffusionFV : public OperatorDiffusion {
 
   // main virtual members
   // -- setup
+  using OperatorDiffusion::Setup;
   virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
   virtual void Setup(const Teuchos::RCP<const CompositeVector>& k,
                      const Teuchos::RCP<const CompositeVector>& dkdp);
-  using OperatorDiffusion::Setup;
-
-  virtual void SetDensity(double rho) {
-    constant_rho_ = true;
-    rho_ = rho;
-  }
-  virtual void SetDensity(const Teuchos::RCP<const CompositeVector>& rho) {
-    constant_rho_ = false;
-    rho_cv_ = rho;
-  }
 
   // -- create an operator
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
@@ -91,7 +82,7 @@ class OperatorDiffusionFV : public OperatorDiffusion {
   const CompositeVector& transmissibility() { return *transmissibility_; }
 
  protected:
-  void ComputeTransmissibility_(AmanziGeometry::Point* g, Teuchos::RCP<CompositeVector> g_cv);
+  void ComputeTransmissibility_();
 
   void AnalyticJacobian_(const CompositeVector& solution);
 

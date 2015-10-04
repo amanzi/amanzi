@@ -29,7 +29,6 @@ namespace Operators {
 void OperatorDiffusionFVwithGravity::InitDiffusion_(Teuchos::ParameterList& plist)
 {
   gravity_term_ = Teuchos::rcp(new CompositeVector(*transmissibility_));
-  g_.set(mesh_->space_dimension(), 0.0);
 }
 
 
@@ -211,6 +210,97 @@ void OperatorDiffusionFVwithGravity::ComputeJacobianLocal_(
       Jpp(0, 0) = 0.0;
     }
   }
+}
+
+
+/* ******************************************************************
+* Compute transmissibilities on faces 
+****************************************************************** */
+void OperatorDiffusionFVwithGravity::ComputeTransmissibility_(
+   AmanziGeometry::Point* g, Teuchos::RCP<CompositeVector> g_cv)
+{
+  const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
+
+  // Compute auxiliary structure. Note that first components of both 
+  // fields are used symmetrically (no specific order).
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh_);
+  cvs.SetGhosted(true);
+  cvs.SetComponent("face", AmanziMesh::FACE, 1);
+
+  CompositeVector beta(cvs, true);
+  Epetra_MultiVector& beta_face = *beta.ViewComponent("face", true);
+  beta.PutScalar(0.0);
+
+  CompositeVector h(cvs, true);
+  Epetra_MultiVector& h_face = *h.ViewComponent("face", true);
+  h.PutScalar(0.0);
+
+  AmanziMesh::Entity_ID_List faces, cells;
+  AmanziGeometry::Point a_dist, a;
+  WhetStone::Tensor Kc(mesh_->space_dimension(), 1); 
+  Kc(0, 0) = 1.0;
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    if (K_.get()) Kc = (*K_)[c];
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    for (int i = 0; i < nfaces; i++) {
+      int f = faces[i];
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+      double area = mesh_->face_area(f);
+
+      a = xf - mesh_->cell_centroid(c);
+      double h_tmp = norm(a);
+      double s = area / h_tmp;
+      double perm = ((Kc * a) * normal) * s;
+      double dxn = a * normal;
+      h_face[0][f] += h_tmp;
+      beta_face[0][f] += fabs(dxn / perm);
+    }
+  }
+
+  beta.GatherGhostedToMaster(Add);
+  h.GatherGhostedToMaster(Add);
+
+  // Compute transmissibilities. Since it is done only, we repeat
+  // some calculatons.
+  transmissibility_->PutScalar(0.0);
+
+  for (int f = 0; f < nfaces_owned; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    if (ncells == 2) {
+      a_dist = mesh_->cell_centroid(cells[1]) - mesh_->cell_centroid(cells[0]);
+    } else if (ncells == 1) {    
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+      a_dist = xf - mesh_->cell_centroid(cells[0]);
+    } 
+    a_dist *= 1.0 / norm(a_dist);
+
+    trans_face[0][f] = 1.0 / beta_face[0][f];
+
+    if (g != NULL) {
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      double dir = copysign(1.0, normal * a_dist);
+      // double grav = (gravity * normal) / area;
+      double grav = ((*g) * a_dist) * rho_ * dir;
+      grav *= h_face[0][f];
+
+      Epetra_MultiVector& gravity_face = *g_cv->ViewComponent("face", true);
+      gravity_face[0][f] = trans_face[0][f] * grav;
+    }
+  }
+
+#ifdef HAVE_MPI
+  transmissibility_->ScatterMasterToGhosted("face", true);
+  if (g != NULL) g_cv->ScatterMasterToGhosted("face", true);
+#endif
+
+  transmissibility_initialized_ = true;
 }
 
 
