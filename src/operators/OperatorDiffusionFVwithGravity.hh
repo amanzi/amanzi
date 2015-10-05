@@ -79,7 +79,7 @@ class OperatorDiffusionFVwithGravity : public OperatorDiffusionFV {
              const Teuchos::RCP<const CompositeVector>& dkdp,
              double rho, const AmanziGeometry::Point& g) {
     rho_ = rho;
-    g_  = g;
+    g_ = g;
     Setup(K);
     Setup(k, dkdp);
   } 
@@ -90,7 +90,7 @@ class OperatorDiffusionFVwithGravity : public OperatorDiffusionFV {
              const Teuchos::RCP<const CompositeVector>& rho,
              const AmanziGeometry::Point& g) {
     rho_cv_ = rho;
-    g_  = g;
+    g_ = g;
     Setup(K);
     Setup(k, dkdp);
   }
