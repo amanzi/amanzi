@@ -30,28 +30,20 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 #endif()
 
 # List of packages enabled in the Trilinos build
-set(Trilinos_PACKAGE_LIST Teuchos Epetra EpetraExt NOX Ifpack)
+set(Trilinos_PACKAGE_LIST Teuchos Epetra Belos NOX)
 if ( ENABLE_STK_Mesh )
   list(APPEND Trilinos_PACKAGE_LIST STK)
 endif()
 if ( ENABLE_MSTK_Mesh )
   list(APPEND Trilinos_PACKAGE_LIST Zoltan)
 endif()
-if ( ENABLE_Unstructured )
-  list(APPEND Trilinos_PACKAGE_LIST ML)
-endif()
 
 
 # Generate the Trilinos Package CMake Arguments
-set(Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF")
+set(Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF")
 foreach(package ${Trilinos_PACKAGE_LIST})
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_${package}:STRING=ON")
 endforeach()
-
-# Build PyTrilinos if shared
-if (BUILD_SHARED_LIBS)
-  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_PyTrilinos:BOOL=ON")
-endif()
 
 # Trilinos 11.0.3 has some C++ compile errors in it that we can sidestep by 
 # defining HAVE_TEUCHOS_ARRAY_BOUNDSCHECK.
@@ -102,13 +94,9 @@ endif()
 
 # Boost
 list(APPEND Trilinos_CMAKE_TPL_ARGS
-            "-DTPL_ENABLE_BoostLib:BOOL=ON" 
             "-DTPL_ENABLE_Boost:BOOL=ON" 
-            "-DTPL_ENABLE_GLM:BOOL=OFF" 
-            "-DTPL_BoostLib_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include"
-            "-DBoostLib_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
             "-DTPL_Boost_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include"
-            "-DBoost_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib")
+            "-DTPL_Boost_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib")
 
 # NetCDF
 list(APPEND Trilinos_CMAKE_TPL_ARGS
@@ -181,7 +169,7 @@ set(Trilinos_CMAKE_LANG_ARGS
 # Trilinos patches
 set(ENABLE_Trilinos_Patch ON)
 if (ENABLE_Trilinos_Patch)
-  set(Trilinos_patch_file trilinos-ifpack-hypre.patch trilinos-duplicate-parameters.patch trilinos-ifpack-hypre2.patch)
+  set(Trilinos_patch_file trilinos-ifpack-hypre.patch trilinos-duplicate-parameters.patch)
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
                  ${Trilinos_prefix_dir}/trilinos-patch-step.sh
                  @ONLY)

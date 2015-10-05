@@ -175,6 +175,7 @@ public:
   bool HasComponent(std::string name) const { return map_->HasComponent(name); }
   int NumComponents() const { return size(); }
   int NumVectors(std::string name) const { return map_->NumVectors(name); }
+  int GlobalLength() { return mastervec_->GlobalLength(); }
   AmanziMesh::Entity_kind Location(std::string name) const { return map_->Location(name); }
 
   // Provides the size of each component's vector, either ghosted or non-ghosted.

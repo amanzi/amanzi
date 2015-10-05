@@ -50,6 +50,7 @@ public:
   name_iterator end() { return names_.end(); }
   unsigned int size() const { return names_.size(); }
 
+  int GlobalLength() const;
   int NumComponents() const { return num_components_; }
   int NumVectors(std::string name) const { return num_dofs_[Index_(name)]; }
   unsigned int size(std::string name) const { return sizes_[Index_(name)]; }

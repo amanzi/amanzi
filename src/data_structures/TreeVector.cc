@@ -90,6 +90,21 @@ int TreeVector::PutScalar(double scalar) {
   return ierr;
 }
 
+int TreeVector::Random() {
+  // Set all data of this node and all child nodes to random.
+  int ierr = 0;
+  if (data_ != Teuchos::null) {
+    ierr = data_->Random();
+    if (ierr) return ierr;
+  }
+  for (std::vector< Teuchos::RCP<TreeVector> >::iterator subvec = subvecs_.begin();
+       subvec != subvecs_.end(); ++subvec) {
+    ierr = (*subvec)->Random();
+    if (ierr) return ierr;
+  }
+  return ierr;
+}
+
 int TreeVector::NormInf(double* ninf) const {
   // Take the L_Inf norm of this.
   if (ninf == NULL) return 1;
