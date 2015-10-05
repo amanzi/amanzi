@@ -78,7 +78,6 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
 
   LinearOperatorGMRES(const LinearOperatorGMRES& other); // not implemented
 
-
  private:
   using LinearOperator<Matrix, Vector, VectorSpace>::m_;
   using LinearOperator<Matrix, Vector, VectorSpace>::h_;
@@ -89,6 +88,9 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
   mutable int num_itrs_, num_itrs_total_, returned_code_;
   mutable double residual_, fnorm_, rnorm0_;
   mutable bool initialized_;
+
+  int controller_start_, controller_end_;
+  mutable double controller_[2];
 };
 
 
@@ -267,6 +269,26 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
       }
     }
 
+    // optional controller of convergence
+    if (i == controller_start_) { 
+      controller_[0] = residual_;
+    } else if (i == controller_end_) {
+      double len = 0.5 / (controller_end_ - controller_start_);
+      controller_[0] = std::pow(controller_[0] / residual_, len);
+      controller_[0] = std::min(controller_[0], 2.0);
+      controller_[1] = residual_;
+    } else if (i > controller_end_) {
+      double reduction = controller_[1] / residual_;
+      if (reduction < controller_[0]) {
+        if (vo_->os_OK(Teuchos::VERB_EXTREME))
+          *vo_->os() << "controller indicates convergence stagnation\n"; 
+
+        ComputeSolution_(x, i, T, s, v); 
+        return LIN_SOLVER_MAX_ITERATIONS;
+      }
+      controller_[1] = residual_;
+    }
+
     if (i < krylov_dim_ - 1) {
       v[i + 1] = Teuchos::rcp(new Vector(w));
       if (tmp != 0.0) {  // zero occurs in exact arithmetic
@@ -295,6 +317,10 @@ void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterLi
   max_itrs_ = plist.get<int>("maximum number of iterations", 100);
   krylov_dim_ = plist.get<int>("size of Krylov space", 10);
   overflow_tol_ = plist.get<double>("overflow tolerance", 3.0e+50);
+
+  controller_start_ = plist.get<int>("controller training start", 0);
+  controller_end_ = plist.get<int>("controller training end", 3);
+  controller_end_ = std::max(controller_end_, controller_start_ + 1);
 
   int criteria(0);
   if (plist.isParameter("convergence criteria")) {

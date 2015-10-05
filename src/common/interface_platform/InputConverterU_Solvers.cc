@@ -98,6 +98,8 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
     Teuchos::ParameterList& method_list = aztecoo_list.sublist(method);
     method_list.set<double>("error tolerance", tol);
     method_list.set<int>("maximum number of iterations", maxiter);
+    method_list.set<int>("controller training start", 0);  // two gmres extensions
+    method_list.set<int>("controller training end", 3);
     method_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
   }
 
@@ -123,6 +125,8 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
     criteria.push_back("relative rhs");
     criteria.push_back("relative residual");
     method_list.set<Teuchos::Array<std::string> >("convergence criteria", criteria);
+    method_list.set<int>("controller training start", 0);
+    method_list.set<int>("controller training end", 3);
     method_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
   }
 

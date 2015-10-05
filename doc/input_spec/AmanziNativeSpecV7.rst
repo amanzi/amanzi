@@ -3500,6 +3500,13 @@ Internal parameters for GMRES include
 * `"overflow tolerance`" [double] defines the maximum allowed jump in residual. The default
   value is 3.0e+50.
 
+* `"controller training start`" [int] defines the iteration number when the stagnation controller 
+  starts to collect data of the convergence history. Default is 0.
+
+* `"controller training end`" [int] defines the iteration number when the stagnation controller
+  stops to collect data of the convergence history. The cotroller becomes active on the next
+  iteration. Default is 3.
+
 .. code-block:: xml
 
    <ParameterList name="GMRES with HYPRE AMG">  <!-- parent list -->
