@@ -5,6 +5,8 @@
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "XMLParameterListWriter.hh"
 
 #include "AmanziUnstructuredGridSimulationDriver.hh"
@@ -43,26 +45,32 @@ AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(c
 {
   string spec;
   Teuchos::ParameterList driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName, spec);
-  plist_ = new Teuchos::ParameterList(Amanzi::AmanziNewInput::translate(xmlInFileName, spec));
+  if (driver_parameter_list.numParams() == 0) // empty list, must be native spec.
+  {
+    Teuchos::RCP<Teuchos::ParameterList> native = Teuchos::getParametersFromXmlFile(xmlInFileName);
+    plist_ = new Teuchos::ParameterList(*native);
+  }
+  else
+    plist_ = new Teuchos::ParameterList(Amanzi::AmanziNewInput::translate(xmlInFileName, spec));
 }
+
 
 AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const string& xmlInFileName,
                                                                                xercesc::DOMDocument* input)
 {
-  int argc = 0;
   int rank = Teuchos::GlobalMPISession::getRank();
   int num_proc = Teuchos::GlobalMPISession::getNProc();
 
   Amanzi::AmanziInput::InputConverterU converter(xmlInFileName, input);
   plist_ = new Teuchos::ParameterList(converter.Translate(rank, num_proc));
-  // NOTE: we don't write the converted file, since we don't have the filename in this 
-  // NOTE: context. We could write it to a generic file. Need to decide what to do here.
 }
+
 
 AmanziUnstructuredGridSimulationDriver::~AmanziUnstructuredGridSimulationDriver()
 {
   delete plist_;
 }
+
 
 Amanzi::Simulator::ReturnType
 AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,

@@ -1,0 +1,202 @@
+<amanzi_input type="unstructured" version="2.1.1">
+    <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
+
+    <model_description name="SR Test Problem">
+      <comments>Two-dimensional flow to a well in an anisotropic confined aquifer (Hantush and Thomas, 1966)</comments>
+      <model_id>Anisotropic</model_id>
+      <author>Alec Thomas, Konstantin Lipnikov</author>
+      <units>
+        <length_unit>m</length_unit>
+        <time_unit>s</time_unit>
+        <mass_unit>kg</mass_unit>
+        <conc_unit>molar</conc_unit>
+      </units>
+    </model_description>
+    <definitions>
+      <macros>
+        <time_macro name="Observation Times">
+          <time>0.0</time>
+          <time>172.8</time>
+          <time>345.6</time>
+          <time>518.4</time>
+          <time>777.6</time>
+          <time>1209.6</time>
+          <time>1728.0</time>
+          <time>2419.2</time>
+          <time>3196.8</time>
+          <time>4320.0</time>
+          <time>5788.8</time>
+          <time>7689.6</time>
+          <time>1.0022e+4</time>
+          <time>1.3306e+4</time>
+          <time>1.7539e+4</time>
+          <time>2.2896e+4</time>
+          <time>3.0067e+4</time>
+          <time>3.9053e+4</time>
+          <time>5.0026e+4</time>
+          <time>6.6010e+4</time>
+          <time>8.64e+4</time>
+        </time_macro>
+        <cycle_macro name="Every 10">
+          <start>0</start>
+          <timestep_interval>10</timestep_interval>
+          <stop>-1</stop>
+        </cycle_macro>
+      </macros>
+    </definitions>
+
+    <process_kernels>
+      <comments>Single-phase transient flow</comments>
+      <flow model="saturated" state="on"/>
+      <transport state="off"/>
+      <chemistry engine="none" process_model="none" state="off"/>
+    </process_kernels>
+
+    <execution_controls>
+      <verbosity level="high"/>
+      <execution_control_defaults increase_factor="1.1" init_dt="3.64" method="bdf1" />
+      <execution_control end="8.64e+4" init_dt="3.64" mode="transient" start="0.0" />
+    </execution_controls>
+
+    <numerical_controls>
+      <unstructured_controls>
+        <unstr_linear_solver>
+          <max_iterations>1000</max_iterations>
+          <tolerance>1.0e-16</tolerance>
+          <method>pcg</method>
+        </unstr_linear_solver>
+        <unstr_preconditioners>
+          <hypre_amg />
+          <trilinos_ml />
+          <block_ilu />
+        </unstr_preconditioners>
+        <unstr_transient_controls>
+          <unstr_initialization>
+            <method>darcy_solver</method>
+            <linear_solver>aztecoo</linear_solver>
+          </unstr_initialization>
+        </unstr_transient_controls>
+      </unstructured_controls>
+    </numerical_controls>
+
+    <mesh framework="mstk">
+      <comments>Three-dimensional box [-100, 100 ] x [-100, 100] x [0, 5]</comments>
+      <dimension>3</dimension>
+      <read>
+        <file>porflow4_6.exo</file>
+        <format>exodus ii</format>
+      </read>
+    </mesh>
+
+    <regions>
+      <region name="Entire Domain">
+        <comments>One region covering the entire domain</comments>
+        <box high_coordinates="1.2e3, 1.2e3, 5.0" low_coordinates="-1.2e3, -1.2e3, 0.0" />
+      </region>
+      <region name="Well">
+        <comments>Well</comments>
+        <box high_coordinates="0.9,  0.9, 5.0" low_coordinates="-0.9, -0.9, 0.0" />
+      </region>
+      <region name="Left">
+        <plane location="-1.2e3, -1.2e3, 0.0" normal="-1.0, 0.0, 0.0" />
+      </region>
+      <region name="Front">
+        <plane location="-1.2e3, -1.2e3, 0.0" normal="0.0, -1.0, 0.0" />
+      </region>
+      <region name="Bottom">
+        <plane location="-1.2e3, -1.2e3, 0.0" normal="0.0, 0.0, -1.0" />
+      </region>
+      <region name="Right">
+        <plane location="1.2e3, 1.2e3, 5.0" normal="1.0, 0.0, 0.0" />
+      </region>
+      <region name="Back">
+        <plane location="1.2e3, 1.2e3, 5.0" normal="0.0, 1.0, 0.0" />
+      </region>
+
+      <point coordinate="55.0,  0.0, 2.0" name="Obs_x" />
+      <point coordinate=" 0.0, 55.0, 2.0" name="Obs_y" />
+      <point coordinate="55.0, 55.0, 2.0" name="Obs_xy" />
+    </regions>
+
+    <phases>
+      <liquid_phase name="water">
+        <eos>false</eos>
+        <viscosity>1.002E-03</viscosity>
+        <density>998.20</density>
+      </liquid_phase>
+    </phases>
+
+    <materials>
+      <material name="Soil">
+        <assigned_regions>Entire Domain</assigned_regions>
+        <mechanical_properties>
+          <porosity value="0.3" />
+          <specific_storage value="7.5e-5" />
+        </mechanical_properties>
+        <permeability x="2.3543E-11" y="2.3543E-12" z="2.3543E-12" />
+      </material>
+    </materials>
+
+    <initial_conditions>
+      <initial_condition name="Initial Condition">
+        <assigned_regions>Entire Domain</assigned_regions>
+        <liquid_phase name="water">
+          <liquid_component name="water">
+            <linear_pressure gradient="0.0,0.0,-9792.34" reference_coord="0.0, 0.0, 5.0)" value="101325.0" />
+          </liquid_component>
+        </liquid_phase>
+      </initial_condition>
+    </initial_conditions>
+
+    <boundary_conditions>
+      <boundary_condition name="Far Field Head">
+        <assigned_regions>Left, Right, Front, Back</assigned_regions>
+        <liquid_phase name="water">
+          <liquid_component name="water">
+            <hydrostatic function="constant" start="0.0" value="5.0" />
+          </liquid_component>
+        </liquid_phase>
+      </boundary_condition>
+    </boundary_conditions>
+
+    <sources>
+      <source name="Pumping Well">
+        <assigned_regions>Well</assigned_regions>
+        <liquid_phase name = "water">
+          <liquid_component>
+            <volume_weighted value="-2.0" function="constant" start="0.0"/>
+          </liquid_component>
+        </liquid_phase>
+      </source>
+    </sources>
+
+    <output>
+      <observations>
+        <filename>observation.out</filename>
+        <liquid_phase name="water">
+          <drawdown>
+            <assigned_regions>Obs_x</assigned_regions>
+            <functional>point</functional>
+            <time_macros>Observation Times</time_macros>
+          </drawdown>
+          <drawdown>
+            <assigned_regions>Obs_y</assigned_regions>
+            <functional>point</functional>
+            <time_macros>Observation Times</time_macros>
+          </drawdown>
+          <drawdown>
+            <assigned_regions>Obs_xy</assigned_regions>
+            <functional>point</functional>
+            <time_macros>Observation Times</time_macros>
+          </drawdown>
+        </liquid_phase>
+      </observations>
+
+      <vis>
+        <base_filename>plot</base_filename>
+        <num_digits>5</num_digits>
+        <cycle_macros>Every 10</cycle_macros>
+      </vis>
+    </output>
+  </amanzi_input>
+  

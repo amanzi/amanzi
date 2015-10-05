@@ -125,12 +125,13 @@ void OperatorDiffusionMFD::UpdateMatrices(
 ****************************************************************** */
 void OperatorDiffusionMFD::UpdateMatricesNewtonCorrection(
     const Teuchos::Ptr<const CompositeVector>& flux,
-    const Teuchos::Ptr<const CompositeVector>& u)
+    const Teuchos::Ptr<const CompositeVector>& u,
+    double scalar_limiter)
 {
   // add Newton-type corrections
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
     if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
-      AddNewtonCorrectionCell_(flux, u);
+      AddNewtonCorrectionCell_(flux, u, scalar_limiter);
     } else {
       Errors::Message msg("OperatorDiffusion: Newton correction may only be applied to schemas that include CELL dofs.");
       Exceptions::amanzi_throw(msg);
@@ -825,7 +826,8 @@ void OperatorDiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
 ****************************************************************** */
 void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
     const Teuchos::Ptr<const CompositeVector>& flux,
-    const Teuchos::Ptr<const CompositeVector>& u)
+    const Teuchos::Ptr<const CompositeVector>& u,
+    double scalar_limiter)
 {
   // hack: ignore correction if no flux provided.
   if (flux == Teuchos::null) return;
@@ -850,21 +852,11 @@ void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
 
     // This change is to deal with the case where kf < 0, i.e. for energy when:
     // div (qh) = div (h k grad p), where h is enthalpy and can be negative.
-    //   double v = flux_f[0][f];
-    //   double vmod = kf[0][f] > 0.0 ? fabs(v) * dkdp_f[0][f] / kf[0][f] : 0.0;
     double v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] / kf[0][f] : 0.0;
     double vmod = std::abs(v) * dkdp_f[0][f];
 
-    if (constant_rho_) {
-      vmod *= rho_;
-    } else {
-      int c1 = cells[0];
-      int c2 = cells[ncells - 1];
-      if (rho_cv_.get()) {
-        const Epetra_MultiVector& rho_cv = *rho_cv_->ViewComponent("cell", true); 
-        vmod *= (rho_cv[0][c1] + rho_cv[0][c2]) / 2;
-      }
-    }
+    // prototype for future limiters (external or internal ?)
+    vmod *= scalar_limiter;
 
     // interior face
     int i, dir, c1, c2;
@@ -1255,10 +1247,6 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
-
-  // default parameters for Newton correction
-  constant_rho_ = true;
-  rho_ = 1.0;
 
   mass_matrices_initialized_ = false;
   K_ = Teuchos::null;

@@ -29,12 +29,21 @@ class OperatorDiffusionFactory {
   OperatorDiffusionFactory() {};
   ~OperatorDiffusionFactory() {};
 
+  // diffusion operators with optional gravity
+  // decision is made based on data in the parametre list
   Teuchos::RCP<OperatorDiffusion> Create(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                                          Teuchos::RCP<BCs> bc,
                                          Teuchos::ParameterList& oplist,
-                                         const AmanziGeometry::Point& g,
-                                         int upwind_method);
+                                         double rho,
+                                         const AmanziGeometry::Point& g);
 
+  Teuchos::RCP<OperatorDiffusion> Create(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                                         Teuchos::RCP<BCs> bc,
+                                         Teuchos::ParameterList& oplist,
+                                         Teuchos::RCP<const CompositeVector> rho,
+                                         const AmanziGeometry::Point& g);
+
+  // diffusion operators without gravity
   Teuchos::RCP<OperatorDiffusion> Create(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                                          Teuchos::RCP<BCs> bc,
                                          Teuchos::ParameterList& oplist);
@@ -44,6 +53,10 @@ class OperatorDiffusionFactory {
   
   Teuchos::RCP<OperatorDiffusion> Create(Teuchos::ParameterList& oplist,
                                          const Teuchos::RCP<Operator>& global_op);
+
+ private:
+  inline void SetCellSchema_(Teuchos::ParameterList& oplist);
+  inline void SetCellFaceSchema_(Teuchos::ParameterList& oplist);
 };
 
 }  // namespace Operators

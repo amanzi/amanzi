@@ -110,10 +110,8 @@ void EnergyOnePhase_PK::Initialize()
   Teuchos::ParameterList oplist_matrix = tmp_list.sublist("matrix");
   Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
 
-  AmanziGeometry::Point g(dim);
-
   Operators::OperatorDiffusionFactory opfactory;
-  op_matrix_diff_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, g, 0);
+  op_matrix_diff_ = opfactory.Create(mesh_, op_bc_, oplist_matrix);
   op_matrix_diff_->SetBCs(op_bc_, op_bc_);
   op_matrix_ = op_matrix_diff_->global_operator();
   op_matrix_->Init();
@@ -127,7 +125,7 @@ void EnergyOnePhase_PK::Initialize()
   op_advection_ = op_matrix_advection_->global_operator();
 
   // initialize coupled operators: diffusion + advection + accumulation
-  op_preconditioner_diff_ = opfactory.Create(mesh_, op_bc_, oplist_pc, g, 0);
+  op_preconditioner_diff_ = opfactory.Create(mesh_, op_bc_, oplist_pc);
   op_preconditioner_diff_->SetBCs(op_bc_, op_bc_);
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
   op_preconditioner_->Init();

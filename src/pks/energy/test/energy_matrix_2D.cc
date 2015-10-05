@@ -123,8 +123,7 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
                                        .sublist("diffusion operator")
                                        .sublist("preconditioner");
   OperatorDiffusionFactory opfactory;
-  AmanziGeometry::Point g(2);
-  Teuchos::RCP<OperatorDiffusion> op1 = opfactory.Create(mesh, bc, oplist, g, 0);
+  Teuchos::RCP<OperatorDiffusion> op1 = opfactory.Create(mesh, bc, oplist);
   op1->SetBCs(bc, bc);
 
   // populate the diffusion operator

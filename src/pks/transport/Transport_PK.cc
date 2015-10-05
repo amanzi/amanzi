@@ -617,10 +617,9 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     Teuchos::RCP<Operators::BCs> bc_dummy = 
         Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
-    AmanziGeometry::Point g;
 
     Operators::OperatorDiffusionFactory opfactory;
-    Teuchos::RCP<Operators::OperatorDiffusion> op1 = opfactory.Create(mesh_, bc_dummy, op_list, g, 0);
+    Teuchos::RCP<Operators::OperatorDiffusion> op1 = opfactory.Create(mesh_, bc_dummy, op_list);
     op1->SetBCs(bc_dummy, bc_dummy);
     Teuchos::RCP<Operators::Operator> op = op1->global_operator();
     Teuchos::RCP<Operators::OperatorAccumulation> op2 =

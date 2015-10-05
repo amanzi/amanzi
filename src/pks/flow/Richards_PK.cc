@@ -428,33 +428,30 @@ void Richards_PK::Initialize()
   Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
 
   std::string name = rp_list_->sublist("upwind").get<std::string>("relative permeability");
-  int upw_id(Operators::OPERATOR_UPWIND_FLUX);
   std::string upw_method("standard: cell");
   if (name == "upwind: darcy velocity") {
     upw_method = "upwind: face";
   } else if (name == "upwind: gravity") {
     upw_method = "upwind: face";
-    upw_id = Operators::OPERATOR_UPWIND_CONSTANT_VECTOR;
   } else if (name == "upwind: amanzi") {
     upw_method = "divk: cell-face";
     // upw_method = "divk: face";
   } else if (name == "other: arithmetic average") {
     upw_method = "upwind: face";
-    upw_id = Operators::OPERATOR_UPWIND_ARITHMETIC_AVERAGE;
   }
   oplist_matrix.set<std::string>("nonlinear coefficient", upw_method);
   oplist_pc.set<std::string>("nonlinear coefficient", upw_method);
 
   Operators::OperatorDiffusionFactory opfactory;
-  op_matrix_diff_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, molar_gravity_, upw_id);
+  op_matrix_diff_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, rho_, gravity_);
   op_matrix_ = op_matrix_diff_->global_operator();
-  op_preconditioner_diff_ = opfactory.Create(mesh_, op_bc_, oplist_pc, molar_gravity_, upw_id);
+  op_preconditioner_diff_ = opfactory.Create(mesh_, op_bc_, oplist_pc, rho_, gravity_);
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
   op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_preconditioner_));
 
   if (vapor_diffusion_) {
     Teuchos::ParameterList oplist_vapor = tmp_list.sublist("vapor matrix");
-    op_vapor_diff_ = opfactory.Create(mesh_, op_bc_, oplist_vapor, gravity_, 0);
+    op_vapor_diff_ = opfactory.Create(mesh_, op_bc_, oplist_vapor);
     op_vapor_ = op_vapor_diff_->global_operator();
     op_preconditioner_->OpPushBack(op_vapor_diff_->local_matrices(),
                                    Operators::OPERATOR_PROPERTY_DATA_READ_ONLY);
@@ -530,11 +527,11 @@ void Richards_PK::Initialize()
   op_matrix_->Init();
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
   op_matrix_diff_->SetBCs(op_bc_, op_bc_);
-  op_matrix_diff_->Setup(Kptr, krel_, dKdP_, molar_rho_);
+  op_matrix_diff_->Setup(Kptr, krel_, dKdP_);
 
   op_preconditioner_->Init();
   op_preconditioner_->SetBCs(op_bc_, op_bc_);
-  op_preconditioner_diff_->Setup(Kptr, krel_, dKdP_, molar_rho_);
+  op_preconditioner_diff_->Setup(Kptr, krel_, dKdP_);
 
   // -- assemble phase
   UpdateSourceBoundaryData(t_old, t_new, pressure);
@@ -543,7 +540,7 @@ void Richards_PK::Initialize()
   op_matrix_diff_->ApplyBCs(true, true);
 
   op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
-  op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr());
+  op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr(), molar_rho_);
   op_preconditioner_diff_->ApplyBCs(true, true);
   op_preconditioner_->SymbolicAssembleMatrix();
 
@@ -785,7 +782,7 @@ void Richards_PK::InitializeUpwind_()
     darcy_flux_upwind = darcy_flux_copy;
   } else if (relperm_->method() == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
     darcy_flux_upwind = Teuchos::rcp(new CompositeVector(*darcy_flux_copy));
-    relperm_->ComputeGravityFlux(K, molar_gravity_, darcy_flux_upwind);
+    relperm_->ComputeGravityFlux(K, gravity_, darcy_flux_upwind);
   } else {
     darcy_flux_upwind = Teuchos::rcp(new CompositeVector(*darcy_flux_copy));
     darcy_flux_upwind->PutScalar(0.0);

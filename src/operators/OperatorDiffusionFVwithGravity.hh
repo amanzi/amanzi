@@ -33,46 +33,66 @@ class BCs;
 class OperatorDiffusionFVwithGravity : public OperatorDiffusionFV {
  public:
   OperatorDiffusionFVwithGravity(Teuchos::ParameterList& plist,
-                                 const Teuchos::RCP<Operator>& global_op) :
-      OperatorDiffusionFV(plist, global_op)
+                                 const Teuchos::RCP<Operator>& global_op,
+                                 double rho, const AmanziGeometry::Point& g) :
+      OperatorDiffusionFV(plist, global_op),
+      rho_(rho),
+      g_(g)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
     InitDiffusion_(plist);
   }
 
   OperatorDiffusionFVwithGravity(Teuchos::ParameterList& plist,
-                                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      OperatorDiffusionFV(plist, mesh)
+                                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                 double rho, const AmanziGeometry::Point& g) :
+      OperatorDiffusionFV(plist, mesh),
+      rho_(rho),
+      g_(g)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
     InitDiffusion_(plist);
   }
 
   OperatorDiffusionFVwithGravity(Teuchos::ParameterList& plist,
-                                 const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      OperatorDiffusionFV(plist, mesh)
+                                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                 Teuchos::RCP<const CompositeVector> rho_cv,
+                                 const AmanziGeometry::Point& g) :
+      OperatorDiffusionFV(plist, mesh),
+      rho_cv_(rho_cv),
+      g_(g)
   {
+    rho_ = 1.0;  // FIXME: vector is not supported
     operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
     InitDiffusion_(plist);
   }
 
   // main virtual members
   // -- setup
+  using OperatorDiffusionFV::Setup;
   virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
   virtual void Setup(const Teuchos::RCP<const CompositeVector>& k,
                      const Teuchos::RCP<const CompositeVector>& dkdp);
-  using OperatorDiffusion::Setup;
 
-  virtual void SetGravity(const AmanziGeometry::Point& g) {
-    g_ = g;
-  }
-  virtual void SetDensity(double rho) {
-    constant_rho_ = true;
+  void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
+             const Teuchos::RCP<const CompositeVector>& k,
+             const Teuchos::RCP<const CompositeVector>& dkdp,
+             double rho, const AmanziGeometry::Point& g) {
     rho_ = rho;
-  }
-  virtual void SetDensity(const Teuchos::RCP<const CompositeVector>& rho) {
-    constant_rho_ = false;
+    g_ = g;
+    Setup(K);
+    Setup(k, dkdp);
+  } 
+
+  void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
+             const Teuchos::RCP<const CompositeVector>& k,
+             const Teuchos::RCP<const CompositeVector>& dkdp,
+             const Teuchos::RCP<const CompositeVector>& rho,
+             const AmanziGeometry::Point& g) {
     rho_cv_ = rho;
+    g_ = g;
+    Setup(K);
+    Setup(k, dkdp);
   }
 
   // -- create an operator
@@ -99,9 +119,14 @@ class OperatorDiffusionFVwithGravity : public OperatorDiffusionFV {
       double *pres, double *dkdp_cell,
       WhetStone::DenseMatrix& Jpp);
 
+  void ComputeTransmissibility_(AmanziGeometry::Point* g, Teuchos::RCP<CompositeVector> g_cv);
+
   virtual void InitDiffusion_(Teuchos::ParameterList& plist);
 
  protected:
+  double rho_;
+  Teuchos::RCP<const CompositeVector> rho_cv_;
+
   AmanziGeometry::Point g_;
   Teuchos::RCP<CompositeVector> gravity_term_;
 };
