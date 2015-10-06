@@ -48,8 +48,8 @@ Interfrost::UpdatePreconditioner(double t,
 
   // Recreate mass matrices
   if (dynamic_mesh_) {
-    matrix_diff_->Setup(K_);
-    preconditioner_diff_->Setup(K_);
+    matrix_diff_->SetTensorCoefficient(K_);
+    preconditioner_diff_->SetTensorCoefficient(K_);
   }
 
   // update state with the solution up.
@@ -112,7 +112,7 @@ Interfrost::UpdatePreconditioner(double t,
 
   Key dkrdp_key = getDerivKey(uw_coef_key_, key_);
   Teuchos::RCP<const CompositeVector> dkrdp = S_next_->GetFieldData(dkrdp_key);
-   preconditioner_diff_->Setup(rel_perm_modified, dkrdp);
+   preconditioner_diff_->SetScalarCoefficient(rel_perm_modified, dkrdp);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData(flux_key_, name_);
   preconditioner_diff_->UpdateFlux(*up->Data(), *flux);

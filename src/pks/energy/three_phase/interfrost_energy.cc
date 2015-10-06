@@ -83,7 +83,7 @@ InterfrostEnergy::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> 
       S_next_->GetFieldData(conductivity_key_);
 
   preconditioner_->Init();
-  preconditioner_diff_->Setup(conductivity, Teuchos::null);
+  preconditioner_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // update with accumulation terms

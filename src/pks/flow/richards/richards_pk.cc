@@ -199,13 +199,13 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   mfd_plist.set("gravity", true);
   
   Operators::OperatorDiffusionFactory opfactory;
-  matrix_diff_ = opfactory.Create(mesh_, bc_, mfd_plist);
+  matrix_diff_ = opfactory.CreateWithGravity(mfd_plist, mesh_, bc_);
   matrix_ = matrix_diff_->global_operator();
 
   // -- create the operator, data for flux directions
   Teuchos::ParameterList face_diff_list(mfd_plist);
   face_diff_list.set("nonlinear coefficient", "none");
-  face_matrix_diff_ = opfactory.Create(mesh_, bc_, face_diff_list);
+  face_matrix_diff_ = opfactory.CreateWithGravity(face_diff_list, mesh_, bc_);
 
   S->RequireField(flux_dir_key_, name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("face", AmanziMesh::FACE, 1);
@@ -222,7 +222,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   if (!mfd_pc_plist.isParameter("schema"))
     mfd_pc_plist.set("schema", mfd_plist.get<Teuchos::Array<std::string> >("schema"));
 
-  preconditioner_diff_ = opfactory.Create(mesh_, bc_, mfd_pc_plist);
+  preconditioner_diff_ = opfactory.CreateWithGravity(mfd_pc_plist, mesh_, bc_);
   preconditioner_ = preconditioner_diff_->global_operator();
   
   //    If using approximate Jacobian for the preconditioner, we also need derivative information.
@@ -464,23 +464,18 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
 
   matrix_diff_->SetGravity(g);
   matrix_diff_->SetBCs(bc_, bc_);
+  matrix_diff_->SetTensorCoefficient(K_);
 
-  // This is EPIC!  FV fails to deal correctly with the gravity term with rho
-  // is non-constant, so we hack and set rho = 1000 for that term in case we
-  // are doing FV.  This should not affect MFD.
-  matrix_diff_->SetDensity(998.);
-  matrix_diff_->Setup(K_);
-  matrix_diff_->SetDensity(1.);
 
   preconditioner_diff_->SetGravity(g);
   preconditioner_diff_->SetBCs(bc_, bc_);
-  preconditioner_diff_->Setup(K_);
+  preconditioner_diff_->SetTensorCoefficient(K_);
   preconditioner_->SymbolicAssembleMatrix();
 
   face_matrix_diff_->SetGravity(g);
   face_matrix_diff_->SetBCs(bc_, bc_);
-  face_matrix_diff_->Setup(K_);
-  face_matrix_diff_->Setup(Teuchos::null, Teuchos::null);
+  face_matrix_diff_->SetTensorCoefficient(K_);
+  face_matrix_diff_->SetScalarCoefficient(Teuchos::null, Teuchos::null);
   face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // if (vapor_diffusion_){
@@ -521,7 +516,7 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
     Teuchos::RCP<const CompositeVector> rho = S->GetFieldData(mass_dens_key_);
     matrix_->Init();
     matrix_diff_->SetDensity(rho);
-    matrix_diff_->Setup(rel_perm, Teuchos::null);
+    matrix_diff_->SetScalarCoefficient(rel_perm, Teuchos::null);
     matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
     // derive fluxes
@@ -577,7 +572,7 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
       S->GetFieldData(mass_dens_key_);
   // update the stiffness matrix
   matrix_diff_->SetDensity(rho);
-  matrix_diff_->Setup(rel_perm, Teuchos::null);
+  matrix_diff_->SetScalarCoefficient(rel_perm, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // derive fluxes
@@ -890,7 +885,7 @@ bool Richards::ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u) {
     S_next_->GetFieldData(uw_coef_key_);
 
   matrix_->Init();
-  matrix_diff_->Setup(rel_perm, Teuchos::null);
+  matrix_diff_->SetScalarCoefficient(rel_perm, Teuchos::null);
   Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData(mass_dens_key_);
   matrix_diff_->SetDensity(rho);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -999,7 +994,7 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
   rel_perm_one->PutScalar(1.);
   matrix_->Init();
   matrix_diff_->SetDensity(rho);
-  matrix_diff_->Setup(rel_perm_one, Teuchos::null);
+  matrix_diff_->SetScalarCoefficient(rel_perm_one, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   matrix_diff_->ApplyBCs(true, true);
 

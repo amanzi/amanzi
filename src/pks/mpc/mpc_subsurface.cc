@@ -99,7 +99,7 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
       divq_plist.set("newton correction", "approximate jacobian");
       divq_plist.set("exclude primary terms", true);
       Operators::OperatorDiffusionFactory opfactory;
-      ddivq_dT_ = opfactory.Create(divq_plist, mesh_);
+      ddivq_dT_ = opfactory.CreateWithGravity(divq_plist, mesh_);
       dWC_dT_block_ = ddivq_dT_->global_operator();
     }
 
@@ -137,17 +137,17 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
 
       Operators::OperatorDiffusionFactory opfactory;
       if (dE_dp_block_ == Teuchos::null) {
-        ddivhq_dp_ = opfactory.Create(divhq_dp_plist, mesh_);
+        ddivhq_dp_ = opfactory.CreateWithGravity(divhq_dp_plist, mesh_);
         dE_dp_block_ = ddivhq_dp_->global_operator();
       } else {
-        ddivhq_dp_ = opfactory.Create(divhq_dp_plist, dE_dp_block_);
+        ddivhq_dp_ = opfactory.CreateWithGravity(divhq_dp_plist, dE_dp_block_);
       }
 
       // derivative with respect to temperature
       Teuchos::ParameterList divhq_dT_plist(plist_->sublist("PKs").sublist(pk_order[0]).sublist("Diffusion PC"));
       divhq_dT_plist.set("exclude primary terms", true);
       divhq_dT_plist.set("newton correction", "approximate jacobian");
-      ddivhq_dT_ = opfactory.Create(divhq_dT_plist, pcB);
+      ddivhq_dT_ = opfactory.CreateWithGravity(divhq_dT_plist, pcB);
 
       // need a field, evaluator, and upwinding for h * kr * rho/mu
       // -- first the evaluator
@@ -258,11 +258,11 @@ void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
     g[0] = (*gvec)[0]; g[1] = (*gvec)[1]; g[2] = (*gvec)[2];
     ddivq_dT_->SetGravity(g);    
     ddivq_dT_->SetBCs(sub_pks_[1]->BCs(), sub_pks_[0]->BCs());
-    ddivq_dT_->Setup(richards_pk_->K_);
+    ddivq_dT_->SetTensorCoefficient(richards_pk_->K_);
   }
 
   if (ddivKgT_dp_ != Teuchos::null) {
-    ddivKgT_dp_->Setup(Teuchos::null);
+    ddivKgT_dp_->SetTensorCoefficient(Teuchos::null);
   }
 
   if (ddivhq_dp_ != Teuchos::null) {
@@ -278,11 +278,11 @@ void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
     g[0] = (*gvec)[0]; g[1] = (*gvec)[1]; g[2] = (*gvec)[2];
     ddivhq_dp_->SetGravity(g);    
     ddivhq_dp_->SetBCs(sub_pks_[0]->BCs(), sub_pks_[1]->BCs());
-    ddivhq_dp_->Setup(richards_pk_->K_);
+    ddivhq_dp_->SetTensorCoefficient(richards_pk_->K_);
 
     ddivhq_dT_->SetGravity(g);    
     ddivhq_dT_->SetBCs(sub_pks_[1]->BCs(), sub_pks_[1]->BCs());
-    ddivhq_dT_->Setup(richards_pk_->K_);
+    ddivhq_dT_->SetTensorCoefficient(richards_pk_->K_);
   }  
 
 }
@@ -352,7 +352,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData("mass_density_liquid");
 
       ddivq_dT_->SetDensity(rho);
-      ddivq_dT_->Setup(kr_uw, dkrdT_uw);
+      ddivq_dT_->SetScalarCoefficient(kr_uw, dkrdT_uw);
       ddivq_dT_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
       ddivq_dT_->ApplyBCs(false, true);
     }
@@ -374,7 +374,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
           ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "pressure");
       Teuchos::RCP<const CompositeVector> dKdp = S_next_->GetFieldData("dthermal_conductivity_dpressure");
       Teuchos::RCP<const CompositeVector> Kappa = S_next_->GetFieldData("numerical_thermal_conductivity");
-      ddivKgT_dp_->Setup(Kappa, dKdp);
+      ddivKgT_dp_->SetScalarCoefficient(Kappa, dKdp);
       ASSERT(false); // this UpdateMatrices call does not work?
       ddivKgT_dp_->UpdateMatrices(Teuchos::null, up->SubVector(1)->Data().ptr());
       ddivKgT_dp_->ApplyBCs(false, true);
@@ -439,7 +439,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
 
       // form the operator: pressure component
       ddivhq_dp_->SetDensity(rho);
-      ddivhq_dp_->Setup(enth_kr_uw, denth_kr_dp_uw);
+      ddivhq_dp_->SetScalarCoefficient(enth_kr_uw, denth_kr_dp_uw);
       // -- update the local matrices, div h * kr grad
       ddivhq_dp_->UpdateMatrices(Teuchos::null, Teuchos::null);
       // -- determine the advective fluxes, q_a = h * kr grad p
@@ -452,7 +452,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
 
       // form the operator: temperature component
       ddivhq_dT_->SetDensity(rho);
-      ddivhq_dT_->Setup(enth_kr_uw, denth_kr_dT_uw);
+      ddivhq_dT_->SetScalarCoefficient(enth_kr_uw, denth_kr_dT_uw);
       // -- add in components div (d h*kr / dp) grad q_a / (h*kr)
       ddivhq_dT_->UpdateMatricesNewtonCorrection(adv_flux_ptr, up->SubVector(0)->Data().ptr());
       ddivhq_dT_->ApplyBCs(false, true);

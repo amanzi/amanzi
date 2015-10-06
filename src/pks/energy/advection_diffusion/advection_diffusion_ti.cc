@@ -94,7 +94,7 @@ void AdvectionDiffusion::UpdatePreconditioner(double t, Teuchos::RCP<const TreeV
   Teuchos::RCP<const CompositeVector> thermal_conductivity =
       S_next_->GetFieldData("thermal_conductivity");
   preconditioner_->Init();
-  preconditioner_diff_->Setup(thermal_conductivity, Teuchos::null);
+  preconditioner_diff_->SetScalarCoefficient(thermal_conductivity, Teuchos::null);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // update with accumulation terms

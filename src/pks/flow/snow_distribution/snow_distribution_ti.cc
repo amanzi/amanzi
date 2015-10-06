@@ -141,8 +141,8 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   // calculating the operator is done in 3 steps:
   // 1. Create all local matrices.
   preconditioner_->Init();
-  preconditioner_diff_->Setup(cond_times_factor, Teuchos::null);
-  //  preconditioner_diff_->Setup(cond_times_factor, dcond_times_factor);
+  preconditioner_diff_->SetScalarCoefficient(cond_times_factor, Teuchos::null);
+  //  preconditioner_diff_->SetScalarCoefficient(cond_times_factor, dcond_times_factor);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   // preconditioner_diff_->UpdateMatrices(*up->Data(), *flux);
   // preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);

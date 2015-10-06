@@ -72,7 +72,7 @@ void AdvectionDiffusion::ApplyDiffusion_(const Teuchos::RCP<State> S,
     S->GetFieldData("thermal_conductivity");
 
   matrix_diff_->global_operator()->Init();
-  matrix_diff_->Setup(thermal_conductivity, Teuchos::null);
+  matrix_diff_->SetScalarCoefficient(thermal_conductivity, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // calculate the div-grad operator, apply it to temperature, and add to residual

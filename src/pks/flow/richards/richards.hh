@@ -174,9 +174,9 @@ protected:
 
   // mathematical operators
   Teuchos::RCP<Operators::Operator> matrix_; // pc in PKPhysicalBDFBase
-  Teuchos::RCP<Operators::OperatorDiffusion> matrix_diff_;
-  Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
-  Teuchos::RCP<Operators::OperatorDiffusion> face_matrix_diff_;
+  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> matrix_diff_;
+  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> preconditioner_diff_;
+  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> face_matrix_diff_;
   Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
   Teuchos::RCP<Operators::Operator> lin_solver_;
 
