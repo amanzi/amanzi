@@ -110,14 +110,6 @@ bool ConfirmFileExists(const std::string& name) {
   return ok;
 }
 
-
-// v1 spec constructor -- delete when we get rid of v1.2 spec.
-AmanziStructuredGridSimulationDriver::AmanziStructuredGridSimulationDriver(const std::string& xmlInFileName)
-{
-  Teuchos::RCP<Teuchos::ParameterList> parameter_list = Teuchos::getParametersFromXmlFile(xmlInFileName);
-  plist_ = *parameter_list;
-}
-
 AmanziStructuredGridSimulationDriver::AmanziStructuredGridSimulationDriver(const std::string& input_file, xercesc::DOMDocument* input)
 {
   int argc = 0;
@@ -136,132 +128,16 @@ Amanzi::Simulator::ReturnType
 AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_comm,
                                            Amanzi::ObservationData&      output_observations)
 {
+#ifdef BL_USE_PETSC
+    // We don't support petsc options files at the moment.
+    PetscInitializeNoArguments();
+#endif
+    // Did we do this already?
     int argc=0;
     char** argv;
-
-    // NOTE: Delay checking input version until we have started parallel so that we can guarantee
-    //       a single error message
-
-    bool petsc_file_exists = false;
-    bool petsc_file_specified = false;
-
-#ifdef BL_USE_PETSC
-    std::string petsc_help = "Amanzi-S passthrough access to PETSc help option\n";
-    std::string petsc_file_str = "Petsc Options File";
-    std::string petsc_options_file;
-
-    petsc_file_specified = plist_.isParameter(petsc_file_str);
-    if (petsc_file_specified) {
-      petsc_options_file = Teuchos::getParameter<std::string>(plist_, petsc_file_str);
-      petsc_file_exists = ConfirmFileExists(petsc_options_file);
-      if (petsc_file_exists) {
-	PetscInitialize(&argc,&argv,petsc_options_file.c_str(),petsc_help.c_str());
-      }
-      else
-      {
-	PetscInitializeNoArguments();
-      }
-    }
-    else {
-      PetscInitializeNoArguments();
-    }
-#endif
-
     BoxLib::Initialize(argc,argv,false,mpi_comm);
 
-    // Now its ok to write message
-    if (petsc_file_specified) {
-      if (petsc_file_exists) {
-	if (ParallelDescriptor::IOProcessor()) {
-	  std::cout << "Initializing PETSc with parameter file: \""
-		    << petsc_options_file << "\"" << std::endl;
-	}
-      }
-      else {
-	std::cout << "\nWARNING: Couldn't open PETSc parameter file: \""
-		  << petsc_options_file << "\" ... continuing anyway\n" << std::endl;
-      }
-    }
-
     BL_PROFILE_VAR("main()", pmain);
-
-    // Check version number
-    std::string amanzi_version_str = "Amanzi Input Format Version";
-    if (!plist_.isParameter(amanzi_version_str))
-    {
-      std::string str = "Must specify a value for the top-level parameter: \"" 
-        + amanzi_version_str + "\"";
-      BoxLib::Abort(str.c_str());
-    }
-
-    std::string version = Teuchos::getParameter<std::string>(plist_, amanzi_version_str);
-    std::pair<bool,std::string> status = InputVersionOK(version);
-    if (!status.first) {
-      if (ParallelDescriptor::IOProcessor()) {
-        std::cout << status.second << std::endl;
-      }
-      ParallelDescriptor::Barrier();
-      BoxLib::Abort();
-    }
-
-    bool pause_for_debug = false;
-    if (plist_.isParameter("Pause For Debug"))
-      {
-          pause_for_debug= Teuchos::getParameter<bool>(plist_, "Pause For Debug");
-      }
-
-    if ( pause_for_debug && ParallelDescriptor::IOProcessor() ) {
-        std::string junk;
-        std::cout << "Waiting to attach debugger.  Enter any string to continue ";
-        std::cin >> junk;
-    }
-    ParallelDescriptor::Barrier();
-
-    if ( pause_for_debug && ParallelDescriptor::IOProcessor() ) {
-        std::cout << "   continuing run..." << std::endl;
-    }
-
-    if (plist_.isParameter("PPfile"))
-      {
-	const std::string& PPfile = Teuchos::getParameter<std::string>(plist_, "PPfile");
-	ParmParse::Initialize(argc,argv,PPfile.c_str());
-      }
-
-    // Determine whether we need to convert to input file to 
-    //native structured format
-    bool native = plist_.get<bool>("Native Structured Input",false);
-    Teuchos::ParameterList converted_parameter_list;
-    if (!native) 
-      converted_parameter_list =
-	Amanzi::AmanziInput::convert_to_structured(plist_);
-    else
-      converted_parameter_list = plist_;
-
-    if (plist_.isParameter("EchoXMLfile"))
-      {
-        const std::string& EchoXMLfile = Teuchos::getParameter<std::string>(plist_, "EchoXMLfile");
-        Teuchos::writeParameterListToXmlFile(converted_parameter_list,EchoXMLfile);
-      }
-
-    // Stuff away a static copy of the input parameters
-    PorousMedia::SetInputParameterList(converted_parameter_list);
-
-    BoxLib::Initialize_ParmParse(converted_parameter_list);
-
-    const Teuchos::ParameterList& echo_list = plist_.sublist("Echo Translated Input");
-    if (echo_list.isParameter("Format")) {
-      if (echo_list.get<std::string>("Format") == "native") {
-	if (ParallelDescriptor::IOProcessor()) {
-	  const std::string& pp_file = echo_list.get<std::string>("File Name");
-	  EnsureFolderExists(pp_file);
-	  std::ofstream ofs; ofs.open(pp_file.c_str());
-	  bool prettyPrint = false;
-	  ParmParse::dumpTable(ofs,prettyPrint);
-	  ofs.close();
-	}
-      }
-      ParallelDescriptor::Barrier();
-    }
 
     const Real run_strt = ParallelDescriptor::second();
 

@@ -3,7 +3,6 @@
 
 #include "BoxLib.H"
 #include "ParallelDescriptor.H"
-#include "Teuchos_ParameterList.hpp"
 #include "ObservationData.hh"
 #include "Simulator.hh"
 
@@ -14,9 +13,6 @@ struct AmanziStructuredGridSimulationDriver
 {
  public:
 
-  // v1 constructor
-  explicit AmanziStructuredGridSimulationDriver(const std::string& xmlInFileName);
-
   // v2 constructor
   AmanziStructuredGridSimulationDriver(const std::string& input_file, DOMDocument* input);
 
@@ -25,9 +21,5 @@ struct AmanziStructuredGridSimulationDriver
 
   ReturnType Run(const MPI_Comm&               mpi_comm,
                  Amanzi::ObservationData&      output_observations);
-
-  private:
-
-  Teuchos::ParameterList plist_;
 };
 #endif

@@ -85,7 +85,7 @@ Simulator* Create(const std::string& input_filename)
     if (version == "v2")
       simulator = new AmanziStructuredGridSimulationDriver(input_filename, doc);
     else 
-      simulator = new AmanziStructuredGridSimulationDriver(input_filename);
+      amanzi_throw(Errors::Message("Input spec v1 is no longer supported by Amanzi-S."));
 #else
     amanzi_throw(Errors::Message("Structured not supported in current build"));
 #endif
