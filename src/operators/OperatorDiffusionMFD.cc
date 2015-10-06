@@ -1088,6 +1088,7 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
     names.resize(2);
     names[0] = "face";
     names[1] = "cell";
+    plist.set<Teuchos::Array<std::string> >("schema", names);
   }
 
   int schema_dofs = 0;
