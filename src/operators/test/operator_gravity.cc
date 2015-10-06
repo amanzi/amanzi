@@ -120,13 +120,13 @@ void RunTestGravity(std::string op_list_name) {
 
   // create first diffusion operator using constant density
   Operators::OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op1 = opfactory.Create(mesh, bc, op_list, rho, g);
+  Teuchos::RCP<OperatorDiffusion> op1 = opfactory.Create(op_list, mesh, bc, rho, g);
 
   op1->Setup(K, knc->values(), knc->derivatives());
   op1->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // create and populate the second operator using vector density
-  Teuchos::RCP<OperatorDiffusion> op2 = opfactory.Create(mesh, bc, op_list, rho_cv, g);
+  Teuchos::RCP<OperatorDiffusion> op2 = opfactory.Create(op_list, mesh, bc, rho_cv, g);
 
   op2->Setup(K, knc->values(), knc->derivatives());
   op2->UpdateMatrices(flux.ptr(), Teuchos::null);

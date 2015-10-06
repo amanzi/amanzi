@@ -77,7 +77,7 @@ class OperatorDiffusionMFD : public virtual OperatorDiffusion {
   //    placeholder for new approximation methods.
   virtual void UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
                                               const Teuchos::Ptr<const CompositeVector>& u,
-                                              double scalar_limiter);
+                                              double scalar_limiter=1);
 
   // modify the operator
   // -- by incorporating boundary conditions. Variable 'primary' indicates

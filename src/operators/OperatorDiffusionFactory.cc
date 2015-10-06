@@ -31,10 +31,11 @@ namespace Operators {
 * This is the constructor used by Amanzi
 ****************************************************************** */
 Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh, 
-    Teuchos::RCP<BCs> bc, 
     Teuchos::ParameterList& oplist,
-    double rho, const AmanziGeometry::Point& g)
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, 
+    const Teuchos::RCP<BCs>& bc, 
+    double rho,
+    const AmanziGeometry::Point& g)
 {
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::null;
 
@@ -70,9 +71,9 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
 * for time-varying density.
 ****************************************************************** */
 Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh, 
-    Teuchos::RCP<BCs> bc, 
     Teuchos::ParameterList& oplist,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, 
+    const Teuchos::RCP<BCs>& bc, 
     const Teuchos::RCP<const CompositeVector>& rho,
     const AmanziGeometry::Point& g)
 {
@@ -115,9 +116,9 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
 * No gravity included, straight diffusion operator.
 ****************************************************************** */
 Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-    Teuchos::RCP<BCs> bc,
-    Teuchos::ParameterList& oplist)
+    Teuchos::ParameterList& oplist,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+    const Teuchos::RCP<BCs>& bc)
 {
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::null;
   std::string name = oplist.get<std::string>("discretization primary");
@@ -143,7 +144,7 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
 ****************************************************************** */
 Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
     Teuchos::ParameterList& oplist,
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::null;
   std::string name = oplist.get<std::string>("discretization primary");
@@ -187,17 +188,18 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
 Teuchos::RCP<OperatorDiffusionWithGravity>
 OperatorDiffusionFactory::CreateWithGravity(
     Teuchos::ParameterList& oplist,
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-    const AmanziGeometry::Point& g) {
-
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+    const Teuchos::RCP<BCs>& bc)
+{
   Teuchos::RCP<OperatorDiffusionWithGravity> op = Teuchos::null;
   std::string name = oplist.get<std::string>("discretization primary");
   
   if (name == "fv: default") {
-    op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh, g));
+    op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh));
   } else {
-    op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, mesh, g));
+    op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, mesh));
   }
+  op->SetBCs(bc, bc);
   return op;
 }
 
@@ -211,18 +213,63 @@ Teuchos::RCP<OperatorDiffusionWithGravity>
 OperatorDiffusionFactory::CreateWithGravity(
     Teuchos::ParameterList& oplist,
     const Teuchos::RCP<Operator>& global_op,
-    const AmanziGeometry::Point& g) {
-
+    const Teuchos::RCP<BCs>& bc)
+{
   Teuchos::RCP<OperatorDiffusionWithGravity> op = Teuchos::null;
   std::string name = oplist.get<std::string>("discretization primary");
   
   if (name == "fv: default") {
-    op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, global_op, g));
+    op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, global_op));
   } else {
-    op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, global_op, g));
+    op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, global_op));
+  }
+  op->SetBCs(bc, bc);
+  return op;
+}
+
+
+/* ******************************************************************
+* Initialization of diffusion operator with gravity: method 1
+*
+* With gravity, assumed vector, temporally varying density.
+* Used by ATS.
+****************************************************************** */
+Teuchos::RCP<OperatorDiffusionWithGravity>
+OperatorDiffusionFactory::CreateWithGravity(
+    Teuchos::ParameterList& oplist,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+{
+  Teuchos::RCP<OperatorDiffusionWithGravity> op = Teuchos::null;
+  std::string name = oplist.get<std::string>("discretization primary");
+  
+  if (name == "fv: default") {
+    op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh));
+  } else {
+    op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, mesh));
   }
   return op;
+}
 
+/* ******************************************************************
+* Initialization of diffusion operator with gravity: method 2
+*
+* With gravity, assumed vector, temporally varying density.
+* Used by ATS.
+****************************************************************** */
+Teuchos::RCP<OperatorDiffusionWithGravity>
+OperatorDiffusionFactory::CreateWithGravity(
+    Teuchos::ParameterList& oplist,
+    const Teuchos::RCP<Operator>& global_op)
+{
+  Teuchos::RCP<OperatorDiffusionWithGravity> op = Teuchos::null;
+  std::string name = oplist.get<std::string>("discretization primary");
+  
+  if (name == "fv: default") {
+    op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, global_op));
+  } else {
+    op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, global_op));
+  }
+  return op;
 }
   
 

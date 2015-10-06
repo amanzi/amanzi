@@ -936,7 +936,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator nodal");
   OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc_v, op_list, rho, g);
+  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(op_list, mesh, bc_v, rho, g);
   op->AddBCs(bc_f, bc_f);
   
   // populate the diffusion operator

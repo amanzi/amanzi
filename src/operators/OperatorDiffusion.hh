@@ -69,7 +69,7 @@ class OperatorDiffusion {
   virtual void UpdateMatricesNewtonCorrection(
           const Teuchos::Ptr<const CompositeVector>& flux,
           const Teuchos::Ptr<const CompositeVector>& u,
-          double scalar_limiter) {};
+          double scalar_limiter=1) {};
 
   // -- after solving the problem: postrocessing
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux) = 0;
