@@ -198,7 +198,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     mfd_pc_plist.set("discretization primary", mfd_plist.get<std::string>("discretization primary"));
   if (!mfd_pc_plist.isParameter("discretization secondary") && mfd_plist.isParameter("discretization secondary"))
     mfd_pc_plist.set("discretization secondary", mfd_plist.get<std::string>("discretization secondary"));
-  if (!mfd_pc_plist.isParameter("schema"))
+  if (!mfd_pc_plist.isParameter("schema") && mfd_plist.isParameter("schema"))
     mfd_pc_plist.set("schema", mfd_plist.get<Teuchos::Array<std::string> >("schema"));
 
   preconditioner_diff_ = opfactory.Create(mfd_pc_plist, mesh_, bc_);
