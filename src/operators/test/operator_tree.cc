@@ -277,24 +277,20 @@ void RunTest(std::string op_list_name) {
                                       .get<Teuchos::ParameterList>(op_list_name);
   Operators::OperatorDiffusionFactory opfactory;
   Teuchos::RCP<OperatorDiffusion> op00 = opfactory.Create(mesh, bc, olist);
-  op00->SetBCs(bc, bc);
-  op00->Setup(k1, Teuchos::null);
+  op00->SetScalarCoefficient(k1, Teuchos::null);
   op00->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   Teuchos::RCP<OperatorDiffusion> op11 = opfactory.Create(mesh, bc, olist);
-  op11->SetBCs(bc, bc);
-  op11->Setup(k1, Teuchos::null);
+  op11->SetScalarCoefficient(k1, Teuchos::null);
   op11->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // populate the off-diagonal Laplace operators
   Teuchos::RCP<OperatorDiffusion> op01 = opfactory.Create(mesh, bc, olist);
-  op01->SetBCs(bc, bc);
-  op01->Setup(k2, Teuchos::null);
+  op01->SetScalarCoefficient(k2, Teuchos::null);
   op01->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   Teuchos::RCP<OperatorDiffusion> op10 = opfactory.Create(mesh, bc, olist);
-  op10->SetBCs(bc, bc);
-  op10->Setup(k2, Teuchos::null);
+  op10->SetScalarCoefficient(k2, Teuchos::null);
   op10->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // update right-hand side (ZERO) and apply boundary conditions

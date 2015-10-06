@@ -141,7 +141,7 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
   // We assume the same DOFs for pressure and temperature. 
   // We assume that field temperature has already essential BCs.
   op_vapor_->Init();
-  op_vapor_diff_->Setup(kvapor_temp, Teuchos::null);
+  op_vapor_diff_->SetScalarCoefficient(kvapor_temp, Teuchos::null);
   op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op_vapor_diff_->ApplyBCs(false, false);
 
@@ -153,7 +153,7 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
   // Calculate vapor contribution due to capillary pressure.
   // We elliminate essential BCs to re-use the local Op for PC.
   op_vapor_->Init();
-  op_vapor_diff_->Setup(kvapor_pres, Teuchos::null);
+  op_vapor_diff_->SetScalarCoefficient(kvapor_pres, Teuchos::null);
   op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op_vapor_diff_->ApplyBCs(false, true);
 

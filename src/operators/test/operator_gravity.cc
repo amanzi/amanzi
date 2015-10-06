@@ -86,15 +86,14 @@ void RunTestGravity(std::string op_list_name) {
 
   // create fluid densities
   CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh);
-  cvs.SetGhosted(true);
-  cvs.SetComponent("cell", AmanziMesh::CELL, 1);
-  cvs.SetOwned(false);
-  cvs.AddComponent("face", AmanziMesh::FACE, 1);
+  cvs.SetMesh(mesh)
+    ->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1)
+    ->AddComponent("face", AmanziMesh::FACE, 1);
 
-  double rho(1.0);
+  double rho(2.0);
   Teuchos::RCP<CompositeVector> rho_cv = Teuchos::rcp(new CompositeVector(cvs));
-  rho_cv->PutScalar(1.0);
+  rho_cv->PutScalar(2.0);
 
   // we need flux and dummy solution to populate nonlinear coefficient
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs));

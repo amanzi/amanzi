@@ -30,11 +30,12 @@ namespace Operators {
 
 class BCs;
 
-class OperatorDiffusionFV : public OperatorDiffusion {
+class OperatorDiffusionFV : public virtual OperatorDiffusion {
  public:
   OperatorDiffusionFV(Teuchos::ParameterList& plist,
                       const Teuchos::RCP<Operator>& global_op) :
-      OperatorDiffusion(global_op)
+    OperatorDiffusion(global_op),
+    transmissibility_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV;
     InitDiffusion_(plist);
@@ -42,7 +43,8 @@ class OperatorDiffusionFV : public OperatorDiffusion {
 
   OperatorDiffusionFV(Teuchos::ParameterList& plist,
                       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      OperatorDiffusion(mesh)
+    OperatorDiffusion(mesh),
+    transmissibility_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV;
     InitDiffusion_(plist);
@@ -50,7 +52,8 @@ class OperatorDiffusionFV : public OperatorDiffusion {
 
   OperatorDiffusionFV(Teuchos::ParameterList& plist,
                       const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      OperatorDiffusion(mesh)
+    OperatorDiffusion(mesh),
+    transmissibility_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV;
     InitDiffusion_(plist);
@@ -59,8 +62,8 @@ class OperatorDiffusionFV : public OperatorDiffusion {
   // main virtual members
   // -- setup
   using OperatorDiffusion::Setup;
-  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
-  virtual void Setup(const Teuchos::RCP<const CompositeVector>& k,
+  virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
+  virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                      const Teuchos::RCP<const CompositeVector>& dkdp);
 
   // -- create an operator

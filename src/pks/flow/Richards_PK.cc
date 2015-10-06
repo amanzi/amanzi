@@ -546,7 +546,7 @@ void Richards_PK::Initialize()
 
   if (vapor_diffusion_) {
     // op_vapor_diff_->SetBCs(op_bc_);
-    op_vapor_diff_->Setup(Teuchos::null, Teuchos::null);
+    op_vapor_diff_->SetScalarCoefficient(Teuchos::null, Teuchos::null);
   }
 
   // generic linear solver for all cases except for a few

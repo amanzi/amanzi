@@ -45,7 +45,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialization of the operator, scalar coefficient.
 ****************************************************************** */
-void OperatorDiffusionMFD::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
+void OperatorDiffusionMFD::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
 {
   K_ = K;
 
@@ -62,8 +62,8 @@ void OperatorDiffusionMFD::Setup(const Teuchos::RCP<std::vector<WhetStone::Tenso
 /* ******************************************************************
 * Initialization of the operator: nonlinear coefficient.
 ****************************************************************** */
-void OperatorDiffusionMFD::Setup(const Teuchos::RCP<const CompositeVector>& k,
-                                 const Teuchos::RCP<const CompositeVector>& dkdp)
+void OperatorDiffusionMFD::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
+						const Teuchos::RCP<const CompositeVector>& dkdp)
 {
   k_ = k;
   dkdp_ = dkdp;
@@ -1082,7 +1082,13 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
 
   // Define stencil for the MFD diffusion method.
   std::vector<std::string> names;
-  names = plist.get<Teuchos::Array<std::string> > ("schema").toVector();
+  if (plist.isParameter("schema")) {
+    names = plist.get<Teuchos::Array<std::string> > ("schema").toVector();
+  } else {
+    names.resize(2);
+    names[0] = "face";
+    names[1] = "cell";
+  }
 
   int schema_dofs = 0;
   for (int i = 0; i < names.size(); i++) {

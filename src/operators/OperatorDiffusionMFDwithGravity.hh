@@ -22,6 +22,7 @@
 
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionMFD.hh"
+#include "OperatorDiffusionWithGravity.hh"
 
 
 namespace Amanzi {
@@ -29,40 +30,57 @@ namespace Operators {
 
 class BCs;
 
-class OperatorDiffusionMFDwithGravity : public OperatorDiffusionMFD {
+class OperatorDiffusionMFDwithGravity : public OperatorDiffusionMFD,
+					public OperatorDiffusionWithGravity {
  public:
   OperatorDiffusionMFDwithGravity(Teuchos::ParameterList& plist,
                                   const Teuchos::RCP<Operator>& global_op,
                                   double rho, const AmanziGeometry::Point& g) :
       OperatorDiffusionMFD(plist, global_op),
-      rho_(rho),
-      g_(g)
+      OperatorDiffusionWithGravity(global_op),
+      OperatorDiffusion(global_op)
   {
     operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
     Init_(plist);
+    SetGravity(g);
+    SetDensity(rho);
   }
 
   OperatorDiffusionMFDwithGravity(Teuchos::ParameterList& plist,
                                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                   double rho, const AmanziGeometry::Point& g) :
       OperatorDiffusionMFD(plist, mesh),
-      rho_(rho),
-      g_(g)
+      OperatorDiffusionWithGravity(mesh),
+      OperatorDiffusion(mesh)
   {
     operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
     Init_(plist);
+    SetGravity(g);
+    SetDensity(rho);
   }
 
   OperatorDiffusionMFDwithGravity(Teuchos::ParameterList& plist,
-                                  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                                  Teuchos::RCP<const CompositeVector>& rho_cv,
+                                  const Teuchos::RCP<Operator>& global_op,
                                   const AmanziGeometry::Point& g) :
-      OperatorDiffusionMFD(plist, mesh),
-      rho_cv_(rho_cv),
-      g_(g)
+      OperatorDiffusionMFD(plist, global_op),
+      OperatorDiffusionWithGravity(global_op),
+      OperatorDiffusion(global_op)
   {
     operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
     Init_(plist);
+    SetGravity(g);
+  }
+  
+  OperatorDiffusionMFDwithGravity(Teuchos::ParameterList& plist,
+                                  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                  const AmanziGeometry::Point& g) :
+      OperatorDiffusionMFD(plist, mesh),
+      OperatorDiffusionWithGravity(mesh),
+      OperatorDiffusion(mesh)
+  {
+    operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
+    Init_(plist);
+    SetGravity(g);
   }
   
   // main members
@@ -77,10 +95,10 @@ class OperatorDiffusionMFDwithGravity : public OperatorDiffusionMFD {
              const Teuchos::RCP<const CompositeVector>& k,
              const Teuchos::RCP<const CompositeVector>& dkdp,
              double rho, const AmanziGeometry::Point& g) {
-    rho_ = rho;
-    g_ = g;
-    OperatorDiffusionMFD::Setup(K);
-    Setup(k, dkdp);
+    SetDensity(rho);
+    SetGravity(g);
+    OperatorDiffusionMFD::SetTensorCoefficient(K);
+    OperatorDiffusionMFD::SetScalarCoefficient(k, dkdp);
   } 
 
   void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
@@ -88,10 +106,10 @@ class OperatorDiffusionMFDwithGravity : public OperatorDiffusionMFD {
              const Teuchos::RCP<const CompositeVector>& dkdp,
              const Teuchos::RCP<const CompositeVector>& rho,
              const AmanziGeometry::Point& g) {
-    rho_cv_ = rho;
-    g_ = g;
-    Setup(K);
-    Setup(k, dkdp);
+    SetDensity(rho);
+    SetGravity(g);
+    OperatorDiffusionMFD::SetTensorCoefficient(K);
+    OperatorDiffusionMFD::SetScalarCoefficient(k, dkdp);
   }
 
   // Developments
@@ -104,10 +122,6 @@ class OperatorDiffusionMFDwithGravity : public OperatorDiffusionMFD {
   void Init_(Teuchos::ParameterList& plist);
 
  protected:
-  double rho_;
-  Teuchos::RCP<const CompositeVector> rho_cv_;
-
-  AmanziGeometry::Point g_;
   bool gravity_special_projection_;
   int gravity_method_;
 };

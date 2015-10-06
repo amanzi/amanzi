@@ -470,7 +470,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   }
 
   // populate the diffusion operator
-  op->Setup(knc->values(), knc->derivatives());
+  op->SetScalarCoefficient(knc->values(), knc->derivatives());
   op->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // get and assmeble the global operator

@@ -113,21 +113,16 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
   cvs.SetGhosted(true);
   cvs.SetComponent("face", AmanziMesh::FACE, 1);
   transmissibility_ = Teuchos::rcp(new CompositeVector(cvs, true));
-
-  transmissibility_initialized_ = false;
 }
 
 
 /* ******************************************************************
 * Setup methods: scalar coefficients
 ****************************************************************** */
-void OperatorDiffusionFV::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
+void OperatorDiffusionFV::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
 {
+  transmissibility_initialized_ = false;
   K_ = K;
-
-  if (!transmissibility_initialized_) {
-    ComputeTransmissibility_();
-  }
 }
 
 
@@ -135,9 +130,10 @@ void OperatorDiffusionFV::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor
 * Setup methods: krel and deriv -- must be called after calling a
 * setup with K absolute
 ****************************************************************** */
-void OperatorDiffusionFV::Setup(const Teuchos::RCP<const CompositeVector>& k,
+void OperatorDiffusionFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                 const Teuchos::RCP<const CompositeVector>& dkdp)
 {
+  transmissibility_initialized_ = false;
   k_ = k;
   dkdp_ = dkdp;
 
@@ -153,9 +149,11 @@ void OperatorDiffusionFV::Setup(const Teuchos::RCP<const CompositeVector>& k,
   }
 
   // verify that mass matrices were initialized.
-  if (!transmissibility_initialized_) {
-    ComputeTransmissibility_();
-  }
+  // -- this shouldn't be called here, as Trans has no dependence on
+  //    rel perm, and abs perm may not be set yet! --etc
+  // if (!transmissibility_initialized_) {
+  //   ComputeTransmissibility_();
+  // }
 }
 
 
@@ -165,6 +163,8 @@ void OperatorDiffusionFV::Setup(const Teuchos::RCP<const CompositeVector>& k,
 void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                                          const Teuchos::Ptr<const CompositeVector>& u)
 {
+  if (!transmissibility_initialized_) ComputeTransmissibility_();
+
   if (!exclude_primary_terms_) {
     const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
     const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
