@@ -1000,14 +1000,15 @@ void InputConverterS::ParseMaterials_()
 
         if ((model == "van_genuchten") || (model == "brooks_corey"))
         {
-          string alpha = GetChildValueS_(cap_pressure, "alpha", found, true);
-          string sr = GetChildValueS_(cap_pressure, "sr", found, true);
-          string m = GetChildValueS_(cap_pressure, "m", found, true);
+          DOMElement* parameters = GetChildByName_(cap_pressure, "parameters", found, true);
+          string alpha = GetAttributeValueS_(parameters, "alpha", true);
+          string sr = GetAttributeValueS_(parameters, "sr", true);
+          string m = GetAttributeValueS_(parameters, "m", true);
           AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "alpha"), MakePPEntry(alpha));
           AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "sr"), MakePPEntry(sr));
           AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "m"), MakePPEntry(m));
-          string optional_krel_smoothing_interval = GetChildValueS_(cap_pressure, "optional_krel_smoothing_interval", found, false);
-          if (found)
+          string optional_krel_smoothing_interval = GetAttributeValueS_(parameters, "optional_krel_smoothing_interval", false);
+          if (!optional_krel_smoothing_interval.empty())
           {
             AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "Kr_smoothing_max_pcap"),
                        MakePPEntry(optional_krel_smoothing_interval));
