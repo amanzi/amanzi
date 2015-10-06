@@ -42,7 +42,7 @@ void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const Tree
   Teuchos::RCP<const CompositeVector> rel_perm =
       S_next_->GetFieldData(uw_coef_key_);
   preconditioner_->Init();
-  preconditioner_diff_->Setup(rel_perm, Teuchos::null);
+  preconditioner_diff_->SetScalarCoefficient(rel_perm, Teuchos::null);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // Assemble and precompute the Schur complement for inversion.
@@ -145,7 +145,7 @@ void RichardsSteadyState::Functional(double t_old, double t_new, Teuchos::RCP<Tr
   solution_to_state(*u_new, S_next_);
   Teuchos::RCP<CompositeVector> u = u_new->Data();
 
-  if (dynamic_mesh_) matrix_diff_->Setup(K_);
+  if (dynamic_mesh_) matrix_diff_->SetTensorCoefficient(K_);
 
 #if DEBUG_FLAG
   if (vo_->os_OK(Teuchos::VERB_HIGH))

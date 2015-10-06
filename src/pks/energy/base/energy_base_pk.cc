@@ -181,8 +181,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   Teuchos::ParameterList& mfd_plist = plist_->sublist("Diffusion");
   mfd_plist.set("nonlinear coefficient", coef_location);
   Operators::OperatorDiffusionFactory opfactory;
-  matrix_diff_ = opfactory.Create(mesh_, bc_, mfd_plist);
-  matrix_diff_->Setup(Teuchos::null);
+  matrix_diff_ = opfactory.Create(mfd_plist, mesh_, bc_);
+  matrix_diff_->SetTensorCoefficient(Teuchos::null);
   matrix_ = matrix_diff_->global_operator();
 
   // -- create the forward operator for the advection term
@@ -201,8 +201,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   if (!mfd_pc_plist.isParameter("schema"))
     mfd_pc_plist.set("schema", mfd_plist.get<Teuchos::Array<std::string> >("schema"));
 
-  preconditioner_diff_ = opfactory.Create(mesh_, bc_, mfd_pc_plist);
-  preconditioner_diff_->Setup(Teuchos::null);
+  preconditioner_diff_ = opfactory.Create(mfd_pc_plist, mesh_, bc_);
+  preconditioner_diff_->SetTensorCoefficient(Teuchos::null);
   preconditioner_ = preconditioner_diff_->global_operator();
   
   // -- accumulation terms
@@ -367,7 +367,7 @@ void EnergyBase::commit_state(double dt, const Teuchos::RCP<State>& S) {
   Teuchos::RCP<const CompositeVector> conductivity =
       S->GetFieldData(uw_conductivity_key_);
   matrix_diff_->global_operator()->Init();
-  matrix_diff_->Setup(conductivity, Teuchos::null);
+  matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
@@ -685,7 +685,7 @@ void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u
 
   // Update the preconditioner
   matrix_diff_->global_operator()->Init();
-  matrix_diff_->Setup(conductivity, Teuchos::null);
+  matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   matrix_diff_->ApplyBCs(true, true);
 

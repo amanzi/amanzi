@@ -200,7 +200,7 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
 
   // 1.b: Create all local matrices.
   preconditioner_->Init();
-  preconditioner_diff_->Setup(cond, Teuchos::null);
+  preconditioner_diff_->SetScalarCoefficient(cond, Teuchos::null);
   Teuchos::RCP<const CompositeVector> pres_elev = S_next_->GetFieldData("pres_elev");
   preconditioner_diff_->UpdateMatrices(Teuchos::null, pres_elev.ptr());
   Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData("surface-flux", name_);

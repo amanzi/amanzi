@@ -152,16 +152,16 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     mfd_plist.set("scaled constraint equation", true);
   
   Operators::OperatorDiffusionFactory opfactory;
-  matrix_diff_ = opfactory.Create(mesh_, bc_, mfd_plist);
-  matrix_diff_->Setup(Teuchos::null);
+  matrix_diff_ = opfactory.Create(mfd_plist, mesh_, bc_);
+  matrix_diff_->SetTensorCoefficient(Teuchos::null);
   matrix_ = matrix_diff_->global_operator();
   
   // -- create the operator, data for flux directions
   Teuchos::ParameterList face_diff_list(mfd_plist);
   face_diff_list.set("nonlinear coefficient", "none");
-  face_matrix_diff_ = opfactory.Create(mesh_, bc_, face_diff_list);
-  face_matrix_diff_->Setup(Teuchos::null);
-  face_matrix_diff_->Setup(Teuchos::null, Teuchos::null);
+  face_matrix_diff_ = opfactory.Create(face_diff_list, mesh_, bc_);
+  face_matrix_diff_->SetTensorCoefficient(Teuchos::null);
+  face_matrix_diff_->SetScalarCoefficient(Teuchos::null, Teuchos::null);
   face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   S->RequireField("surface-flux_direction", name_)->SetMesh(mesh_)->SetGhosted()
@@ -186,8 +186,8 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     mfd_pc_plist.set("schema",
                      mfd_plist.get<Teuchos::Array<std::string> >("schema"));
 
-  preconditioner_diff_ = opfactory.Create(mesh_, bc_, mfd_pc_plist);
-  preconditioner_diff_->Setup(Teuchos::null);
+  preconditioner_diff_ = opfactory.Create(mfd_pc_plist, mesh_, bc_);
+  preconditioner_diff_->SetTensorCoefficient(Teuchos::null);
   preconditioner_ = preconditioner_diff_->global_operator();
 
   //    If using approximate Jacobian for the preconditioner, we also need derivative information.
@@ -466,7 +466,7 @@ void OverlandPressureFlow::commit_state(double dt, const Teuchos::RCP<State>& S)
   Teuchos::RCP<const CompositeVector> conductivity =
       S->GetFieldData("upwind_overland_conductivity");
   matrix_->Init();
-  matrix_diff_->Setup(conductivity, Teuchos::null);
+  matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // Patch up BCs for zero-gradient

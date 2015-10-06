@@ -39,7 +39,7 @@ void Richards::Functional(double t_old,
   solution_to_state(*u_new, S_next_);
   Teuchos::RCP<CompositeVector> u = u_new->Data();
 
-  if (dynamic_mesh_) matrix_diff_->Setup(K_);
+  if (dynamic_mesh_) matrix_diff_->SetTensorCoefficient(K_);
 
 #if DEBUG_FLAG
   if (vo_->os_OK(Teuchos::VERB_HIGH))
@@ -144,8 +144,8 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   // Recreate mass matrices
   if (dynamic_mesh_) {
-    matrix_diff_->Setup(K_);
-    preconditioner_diff_->Setup(K_);
+    matrix_diff_->SetTensorCoefficient(K_);
+    preconditioner_diff_->SetTensorCoefficient(K_);
   }
 
   // update state with the solution up.
@@ -174,7 +174,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   Teuchos::RCP<const CompositeVector> dkrdp = Teuchos::null;
   if (!duw_coef_key_.empty()) dkrdp = S_next_->GetFieldData(duw_coef_key_);
-  preconditioner_diff_->Setup(rel_perm, dkrdp);
+  preconditioner_diff_->SetScalarCoefficient(rel_perm, dkrdp);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData(flux_key_, name_);
   preconditioner_diff_->UpdateFlux(*up->Data(), *flux);

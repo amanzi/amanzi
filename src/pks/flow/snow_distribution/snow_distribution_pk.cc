@@ -110,12 +110,12 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
   matrix_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(mfd_plist, mesh_));
   matrix_ = matrix_diff_->global_operator();
   matrix_diff_->SetBCs(bc_, bc_);
-  matrix_diff_->Setup(Teuchos::null);
+  matrix_diff_->SetTensorCoefficient(Teuchos::null);
 
   Teuchos::ParameterList mfd_pc_plist = plist_->sublist("Diffusion PC");
   preconditioner_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(mfd_pc_plist, mesh_));
   preconditioner_diff_->SetBCs(bc_, bc_);
-  preconditioner_diff_->Setup(Teuchos::null);
+  preconditioner_diff_->SetTensorCoefficient(Teuchos::null);
   preconditioner_ = preconditioner_diff_->global_operator();
   preconditioner_->SymbolicAssembleMatrix();
   
@@ -184,7 +184,7 @@ bool SnowDistribution::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
       // Create the stiffness matrix without a rel perm (just n/mu)
       matrix_->Init();
-      matrix_diff_->Setup(Teuchos::null, Teuchos::null);
+      matrix_diff_->SetScalarCoefficient(Teuchos::null, Teuchos::null);
       matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
       // Derive the flux

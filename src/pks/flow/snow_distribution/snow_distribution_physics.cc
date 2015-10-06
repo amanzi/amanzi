@@ -24,7 +24,7 @@ void SnowDistribution::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   matrix_->Init();
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_snow_conductivity", name_);
-  matrix_diff_->Setup(cond, Teuchos::null);
+  matrix_diff_->SetScalarCoefficient(cond, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   matrix_diff_->ApplyBCs(true, true);
   

@@ -82,8 +82,8 @@ void AdvectionDiffusion::setup(const Teuchos::Ptr<State>& S) {
   // operator for the diffusion terms
   Operators::OperatorDiffusionFactory opfactory;
   AmanziGeometry::Point g;
-  matrix_diff_ = opfactory.Create(mesh_, bc_, mfd_plist, g, 0);
-  matrix_diff_->Setup(Teuchos::null);
+  matrix_diff_ = opfactory.Create(mfd_plist, mesh_, bc_);
+  matrix_diff_->SetTensorCoefficient(Teuchos::null);
 
   // operator for advection terms
   Teuchos::ParameterList advect_plist = plist_->sublist("Advection");
@@ -91,8 +91,8 @@ void AdvectionDiffusion::setup(const Teuchos::Ptr<State>& S) {
   
   // preconditioner
   Teuchos::ParameterList mfd_pc_plist = plist_->sublist("Diffusion PC");
-  preconditioner_diff_ = opfactory.Create(mesh_, bc_, mfd_pc_plist, g, 0);
-  preconditioner_diff_->Setup(Teuchos::null);
+  preconditioner_diff_ = opfactory.Create(mfd_pc_plist, mesh_, bc_);
+  preconditioner_diff_->SetTensorCoefficient(Teuchos::null);
   preconditioner_ = preconditioner_diff_->global_operator();
   preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, preconditioner_));
 
