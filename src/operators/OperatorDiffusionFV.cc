@@ -67,18 +67,28 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
   std::string uwname = plist.get<std::string>("nonlinear coefficient", "standard: cell");
   if (uwname == "none") {
     little_k_ = OPERATOR_LITTLE_K_NONE;
+
   } else if (uwname == "upwind: face") {
     little_k_ = OPERATOR_LITTLE_K_UPWIND;
+
   } else if (uwname == "divk: cell-face") {  
     little_k_ = OPERATOR_LITTLE_K_DIVK;
-    ASSERT(false);
+    Errors::Message msg("OperatorDiffusionFV: \"divk: cell-face\" upwinding not supported.");
+    Exceptions::amanzi_throw(msg);
+
   } else if (uwname == "divk: cell-grad-face-twin") {  
     little_k_ = OPERATOR_LITTLE_K_DIVK_TWIN_GRAD;
-    ASSERT(false);
+    Errors::Message msg("OperatorDiffusionFV: \"divk: cell-grad-face-twin\" upwinding not supported.");
+    Exceptions::amanzi_throw(msg);
+
   } else if (uwname == "standard: cell") {
     little_k_ = OPERATOR_LITTLE_K_STANDARD;  // cell-centered scheme.
+    Errors::Message msg("OperatorDiffusionFV: \"standard: cell\" upwinding not supported.");
+    Exceptions::amanzi_throw(msg);
+
   } else {
-    ASSERT(false);
+    Errors::Message msg("OperatorDiffusionFV: unknown upwind scheme specified.");
+    Exceptions::amanzi_throw(msg);
   }
 
   // Do we need to exclude the primary terms?
@@ -91,10 +101,21 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
   } else if (jacobian == "approximate jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
+    Errors::Message msg("OperatorDiffusionFV: \"approximate jacobian\" not supported -- maybe you mean \"true jacobian\"?");
+    Exceptions::amanzi_throw(msg);
   }
+
   if (newton_correction_ != OPERATOR_DIFFUSION_JACOBIAN_NONE) {
     std::string name = "Diffusion: FACE_CELL Jacobian terms";
-    jac_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+
+    if (plist.get<bool>("surface operator", false)) {
+      std::string name = "Diffusion: FACE_CELL Surface Jacobian terms";
+      jac_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name, mesh_));
+    } else {
+      std::string name = "Diffusion: FACE_CELL Jacobian terms";
+      jac_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+    }
+
     global_op_->OpPushBack(jac_op_);
   }  
 

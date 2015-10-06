@@ -1236,6 +1236,9 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
   std::string jacobian = plist.get<std::string>("newton correction", "none");
   if (jacobian == "true jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
+    Errors::Message msg("OperatorDiffusionMFD: \"true jacobian\" not supported -- maybe you mean \"approximate jacobian\"?");
+    Exceptions::amanzi_throw(msg);
+
   } else if (jacobian == "approximate jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
 
