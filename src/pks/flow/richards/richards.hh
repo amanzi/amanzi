@@ -180,6 +180,10 @@ protected:
   Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
   Teuchos::RCP<Operators::Operator> lin_solver_;
 
+  // flag to do jacobian and therefore coef derivs
+  bool jacobian_;
+  
+
   // residual vector for vapor diffusion
   Teuchos::RCP<CompositeVector> res_vapor;
   // note PC is in PKPhysicalBDFBase

@@ -52,7 +52,7 @@ MPCCoupledWater::setup(const Teuchos::Ptr<State>& S) {
     precon_->OpPushBack(*op);
   }
 
-  // -- must re-symbolic assemble surf operators, now that they have a surface operator
+  // -- must re-symbolic assemble subsurf operators, now that they have a surface operator
   precon_->SymbolicAssembleMatrix();
 
   // Potentially create a linear solver
