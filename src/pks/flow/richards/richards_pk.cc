@@ -219,7 +219,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     mfd_pc_plist.set("discretization primary", mfd_plist.get<std::string>("discretization primary"));
   if (!mfd_pc_plist.isParameter("discretization secondary") && mfd_plist.isParameter("discretization secondary"))
     mfd_pc_plist.set("discretization secondary", mfd_plist.get<std::string>("discretization secondary"));
-  if (!mfd_pc_plist.isParameter("schema"))
+  if (!mfd_pc_plist.isParameter("schema") && mfd_plist.isParameter("schema"))
     mfd_pc_plist.set("schema", mfd_plist.get<Teuchos::Array<std::string> >("schema"));
 
   preconditioner_diff_ = opfactory.CreateWithGravity(mfd_pc_plist, mesh_, bc_);
@@ -228,7 +228,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   //    If using approximate Jacobian for the preconditioner, we also need derivative information.
   //    For now this means upwinding the derivative.
   std::string jacobian = mfd_pc_plist.get<std::string>("newton correction", "none");
-  if (jacobian != "none" && Krel_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX) {
+  if (jacobian != "none") {
     dcoef_key_ = getDerivKey(coef_key_, key_);
     duw_coef_key_ = getDerivKey(uw_coef_key_, key_);
         

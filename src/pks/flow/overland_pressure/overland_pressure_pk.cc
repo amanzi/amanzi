@@ -182,7 +182,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
       mfd_plist.isParameter("discretization secondary"))
     mfd_pc_plist.set("discretization secondary",
                      mfd_plist.get<std::string>("discretization secondary"));
-  if (!mfd_pc_plist.isParameter("schema"))
+  if (!mfd_pc_plist.isParameter("schema") && mfd_plist.isParameter("schema"))
     mfd_pc_plist.set("schema",
                      mfd_plist.get<Teuchos::Array<std::string> >("schema"));
 
