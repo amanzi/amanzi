@@ -3500,6 +3500,9 @@ Internal parameters for GMRES include
 * `"overflow tolerance`" [double] defines the maximum allowed jump in residual. The default
   value is 3.0e+50.
 
+* `"preconditioning strategy`" [string] defines either `"left`" or `"right`" preconditioner.
+  Default is `"left`".
+
 * `"controller training start`" [int] defines the iteration number when the stagnation controller 
   starts to collect data of the convergence history. Default is 0.
 
