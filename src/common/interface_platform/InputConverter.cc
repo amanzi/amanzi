@@ -501,6 +501,7 @@ std::string InputConverter::GetTextContentS_(
   msg << "Available options: \"" << options << "\".\n";
   msg << "Please correct and try again.\n";
   Exceptions::amanzi_throw(msg);
+  return "";
 }
 
 
