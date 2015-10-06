@@ -227,18 +227,25 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   
   //    If using approximate Jacobian for the preconditioner, we also need derivative information.
   //    For now this means upwinding the derivative.
-  std::string jacobian = mfd_pc_plist.get<std::string>("newton correction", "none");
-  if (jacobian != "none") {
-    dcoef_key_ = getDerivKey(coef_key_, key_);
-    duw_coef_key_ = getDerivKey(uw_coef_key_, key_);
+  jacobian_ = mfd_pc_plist.get<std::string>("newton correction", "none") != "none";
+  if (jacobian_) {
+    if (preconditioner_->RangeMap().HasComponent("face")) {
+      // MFD -- upwind required
+      dcoef_key_ = getDerivKey(coef_key_, key_);
+      duw_coef_key_ = getDerivKey(uw_coef_key_, key_);
         
-    S->RequireField(duw_coef_key_, name_)
+      S->RequireField(duw_coef_key_, name_)
         ->SetMesh(mesh_)->SetGhosted()
         ->SetComponent("face", AmanziMesh::FACE, 1);
-    S->GetField(duw_coef_key_,name_)->set_io_vis(false);
 
-    upwinding_deriv_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-            dcoef_key_, duw_coef_key_, flux_dir_key_, 1.e-8));
+      upwinding_deriv_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
+                                      dcoef_key_, duw_coef_key_, flux_dir_key_, 1.e-8));
+
+    } else {
+      // FV -- no upwinding
+      dcoef_key_ = getDerivKey(coef_key_, key_);
+      duw_coef_key_ = std::string();
+    }
   }
   
   // -- accumulation terms
@@ -655,31 +662,20 @@ bool Richards::UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<State>& S) {
     *vo_->os() << "  Updating permeability derivatives?";
 
   bool update_perm = S->GetFieldEvaluator(coef_key_)->HasFieldDerivativeChanged(S, name_, key_);
-  Teuchos::RCP<CompositeVector> duw_rel_perm = S->GetFieldData(duw_coef_key_, name_);
   Teuchos::RCP<const CompositeVector> drel_perm = S->GetFieldData(dcoef_key_);
 
   if (update_perm) {
-    // Move rel perm on boundary_faces into uw_rel_perm on faces
-    // const Epetra_Import& vandelay = mesh_->exterior_face_importer();
-    // const Epetra_MultiVector& drel_perm_bf =
-    //     *drel_perm->ViewComponent("boundary_face",false);
-    // {
-    //   Epetra_MultiVector& duw_rel_perm_f = *duw_rel_perm->ViewComponent("face",false);
-    //   duw_rel_perm_f.Export(drel_perm_bf, vandelay, Insert);
-    // }
-    duw_rel_perm->PutScalar(0.);
+    if (!duw_coef_key_.empty()) {
+      Teuchos::RCP<CompositeVector> duw_rel_perm = S->GetFieldData(duw_coef_key_, name_);
+      duw_rel_perm->PutScalar(0.);
 
-    // Upwind, only overwriting boundary faces if the wind says to do so.
-    upwinding_deriv_->Update(S);
+      // Upwind, only overwriting boundary faces if the wind says to do so.
+      upwinding_deriv_->Update(S);
 
-    // if (clobber_surf_kr_) {
-    //   Epetra_MultiVector& duw_rel_perm_f = *duw_rel_perm->ViewComponent("face",false);
-    //   duw_rel_perm_f.PutScalar(0.);
-
-    //   //duw_rel_perm_f.Export(drel_perm_bf, vandelay, Insert);
-    // }
-    if (duw_rel_perm->HasComponent("face"))
       duw_rel_perm->ScatterMasterToGhosted("face");
+    } else {
+      drel_perm->ScatterMasterToGhosted("cell");
+    }
   }
 
   // debugging

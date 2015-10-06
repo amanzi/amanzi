@@ -172,10 +172,11 @@ void OverlandFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
   preconditioner_diff_->SetScalarCoefficient(cond, dcond);
   Teuchos::RCP<const CompositeVector> pres_elev = S_next_->GetFieldData("pres_elev");
   preconditioner_diff_->UpdateMatrices(Teuchos::null, pres_elev.ptr());
-  Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData("surface-flux", name_);
-  preconditioner_diff_->UpdateFlux(*up->Data(), *flux);
-  preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
-
+  if (jacobian_ && preconditioner_->RangeMap().HasComponent("face")) {
+    Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData("surface-flux", name_);
+    preconditioner_diff_->UpdateFlux(*pres_elev, *flux);
+    preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
+  }
 
   // 2. Accumulation shift
   //    The desire is to keep this matrix invertible for pressures less than
