@@ -296,6 +296,29 @@ void InputConverterS::ParseDefinitions_()
 {
   list<ParmParse::PP_entry> table;
   bool found;
+  DOMNode* constants_block = GetUniqueElementByTagsString_("definitions, constants", found);
+  if (found)
+  {
+    bool found;
+    vector<DOMNode*> constants = GetChildren_(constants_block, "constant", found);
+    if (found)
+    {
+      for (size_t i = 0; i < constants.size(); ++i)
+      {
+        DOMElement* constant = static_cast<DOMElement*>(constants[i]);
+        string name = GetAttributeValueS_(constant, "name");
+        string type = GetAttributeValueS_(constant, "type");
+        string value = GetAttributeValueS_(constant, "value");
+        if (type == "time")
+          labeled_times_[name] = value;
+        else if (type == "numerical")
+          labeled_numbers_[name] = value;
+        else if (type == "area_mass_flux")
+          labeled_area_mass_fluxes_[name] = value;
+      }
+    }
+  }
+
   DOMNode* macros = GetUniqueElementByTagsString_("definitions, macros", found);
   if (found)
   {
@@ -420,6 +443,105 @@ void InputConverterS::ParseExecutionControls_()
 {
   list<ParmParse::PP_entry> table;
   bool found;
+
+  DOMNode* controls_block = GetUniqueElementByTagsString_("execution_controls", found);
+  if (found)
+  {
+    bool found;
+    DOMNode* defaults = GetUniqueElementByTagsString_("execution_controls, execution_control_defaults", found);
+    map<string, string> default_vals;
+    if (found)
+    {
+      DOMElement* def = static_cast<DOMElement*>(defaults);
+      string init_dt = GetAttributeValueS_(def, "init_dt");
+      default_vals["init_dt"] = init_dt;
+      string max_dt = GetAttributeValueS_(def, "max_dt");
+      default_vals["max_dt"] = max_dt;
+      string reduction_factor = GetAttributeValueS_(def, "reduction_factor");
+      default_vals["reduction_factor"] = reduction_factor;
+      string increase_factor = GetAttributeValueS_(def, "increase_factor");
+      default_vals["increase_factor"] = increase_factor;
+      string mode = GetAttributeValueS_(def, "mode");
+      default_vals["mode"] = mode;
+      string method = GetAttributeValueS_(def, "method");
+      default_vals["method"] = method;
+    }
+
+    vector<DOMNode*> controls = GetChildren_(controls_block, "execution_control", found);
+    if (found)
+    {
+      for (size_t i = 0; i < controls.size(); ++i)
+      {
+        DOMElement* control = static_cast<DOMElement*>(controls[i]);
+
+        string start = GetAttributeValueS_(control, "start");
+        map<string, string>::const_iterator iter = labeled_times_.find(start);
+        if (iter != labeled_times_.end())
+          AddToTable(table, MakePPPrefix("strt_time"), MakePPEntry(iter->second));
+        else
+          AddToTable(table, MakePPPrefix("strt_time"), MakePPEntry(start));
+
+        string end = GetAttributeValueS_(control, "end", false);
+        iter = labeled_times_.find(end);
+        if (iter != labeled_times_.end())
+          AddToTable(table, MakePPPrefix("stop_time"), MakePPEntry(iter->second));
+        else
+          AddToTable(table, MakePPPrefix("stop_time"), MakePPEntry(end));
+
+        string mode = GetAttributeValueS_(control, "mode", false);
+        if (mode.empty() && !default_vals.empty())
+          AddToTable(table, MakePPPrefix("execution_mode"), MakePPEntry(default_vals["mode"]));
+        else
+          AddToTable(table, MakePPPrefix("execution_mode"), MakePPEntry(mode));
+
+        string init_dt = GetAttributeValueS_(control, "init_dt", false);
+        if (init_dt.empty() && !default_vals.empty())
+          AddToTable(table, MakePPPrefix("prob", "dt_init"), MakePPEntry(default_vals["init_dt"]));
+        else
+          AddToTable(table, MakePPPrefix("prob", "dt_init"), MakePPEntry(init_dt));
+
+        string max_dt = GetAttributeValueS_(control, "max_dt", false);
+        string max_dt_name = mode + string("_max_dt");
+        if (max_dt.empty() && !default_vals.empty())
+          AddToTable(table, MakePPPrefix("prob", max_dt_name), MakePPEntry(default_vals["max_dt"]));
+        else
+          AddToTable(table, MakePPPrefix("prob", max_dt_name), MakePPEntry(max_dt));
+
+        string reduction_factor = GetAttributeValueS_(control, "reduction_factor", false);
+        if (reduction_factor.empty() && !default_vals.empty())
+          AddToTable(table, MakePPPrefix("prob", "dt_shrink_max"), MakePPEntry(default_vals["reduction_factor"]));
+        else
+          AddToTable(table, MakePPPrefix("prob", "dt_shrink_max"), MakePPEntry(reduction_factor));
+
+        string increase_factor = GetAttributeValueS_(control, "increase_factor", false);
+        if (increase_factor.empty() && !default_vals.empty())
+          AddToTable(table, MakePPPrefix("prob", "dt_grow_max"), MakePPEntry(default_vals["increase_factor"]));
+        else
+          AddToTable(table, MakePPPrefix("prob", "dt_grow_max"), MakePPEntry(increase_factor));
+
+#if 0
+// FIXME: does "method" have a meaning in Amanzi-S?
+        string method = GetAttributeValueS_(control, "method", false);
+        if (method.empty() && !default_vals.empty())
+          AddToTable(table, MakePPPrefix("execution_mode", "method"), MakePPEntry(default_vals["method"]));
+        else
+          AddToTable(table, MakePPPrefix("execution_mode", "method"), MakePPEntry(method));
+#endif
+
+        string restart = GetAttributeValueS_(control, "restart", false);
+        if (!restart.empty())
+        AddToTable(table, MakePPPrefix("execution_mode", "restart"), MakePPEntry(restart));
+
+        string initialize = GetAttributeValueS_(control, "initialize", false);
+        if (!initialize.empty())
+        AddToTable(table, MakePPPrefix("execution_mode", "initialize"), MakePPEntry(initialize));
+
+        string max_cycles = GetAttributeValueS_(control, "max_cycles", false);
+        if (!max_cycles.empty())
+          AddToTable(table, MakePPPrefix("max_step"), MakePPEntry(max_cycles));
+      }
+    }
+  }
 
   // Verbosity level(s).
   DOMNode* verbosity = GetUniqueElementByTagsString_("execution_controls, verbosity", found);
@@ -576,6 +698,7 @@ void InputConverterS::ParseRegions_()
   bool found;
   
   DOMNode* regions = GetUniqueElementByTagsString_("regions", found);
+  vector<string> region_names;
   if (found)
   {
     bool found;
@@ -589,6 +712,7 @@ void InputConverterS::ParseRegions_()
                                    MakePPEntry("box"));
     AddToTable(table, MakePPPrefix("geometry", "All", "purpose"), 
                                    MakePPEntry("all"));
+    region_names.push_back("All");
 
     // box
     vector<DOMNode*> boxes = GetChildren_(regions, "box", found);
@@ -597,6 +721,7 @@ void InputConverterS::ParseRegions_()
       bool found;
       DOMElement* box = static_cast<DOMElement*>(boxes[i]);
       string region_name = GetAttributeValueS_(box, "name", true);
+      region_names.push_back(region_name);
       vector<double> lo_coords = GetAttributeVector_(box, "low_coordinates", found);
       vector<double> hi_coords = GetAttributeVector_(box, "high_coordinates", found);
       AddToTable(table, MakePPPrefix("geometry", region_name, "lo_coordinate"), 
@@ -643,6 +768,7 @@ void InputConverterS::ParseRegions_()
       bool found;
       DOMElement* point = static_cast<DOMElement*>(points[i]);
       string region_name = GetAttributeValueS_(point, "name", true);
+      region_names.push_back(region_name);
       vector<double> coords = GetAttributeVector_(point, "coordinate", found);
       AddToTable(table, MakePPPrefix("geometry", region_name, "coordinate"), MakePPEntry(coords));
       AddToTable(table, MakePPPrefix("geometry", region_name, "type"), MakePPEntry("point"));
@@ -656,6 +782,7 @@ void InputConverterS::ParseRegions_()
       bool found;
       DOMElement* plane = static_cast<DOMElement*>(planes[i]);
       string region_name = GetAttributeValueS_(plane, "name", true);
+      region_names.push_back(region_name);
       vector<double> location = GetAttributeVector_(plane, "location", found);
       vector<double> normal = GetAttributeVector_(plane, "normal", found);
 
@@ -694,6 +821,7 @@ void InputConverterS::ParseRegions_()
         bool found;
         DOMElement* polygon = static_cast<DOMElement*>(polygons[i]);
         string region_name = GetAttributeValueS_(polygon, "name", true);
+        region_names.push_back(region_name);
         int num_points = GetAttributeValueL_(polygon, "num_points", true);
         vector<DOMNode*> points = GetChildren_(regions, "points", found);
         vector<double> v1, v2, v3;
@@ -723,6 +851,7 @@ void InputConverterS::ParseRegions_()
         bool found;
         DOMElement* ellipse = static_cast<DOMElement*>(ellipses[i]);
         string region_name = GetAttributeValueS_(ellipse, "name", true);
+        region_names.push_back(region_name);
 
         string center_string = GetAttributeValueS_(ellipse, "center", true);
         vector<double> center = MakeCoordinates_(center_string);
@@ -763,6 +892,10 @@ void InputConverterS::ParseRegions_()
       // FIXME: Not done yet. v2.x spec claims this isn't supported for structured, BTW.
     }
   }
+
+  // Record region names.
+  if (!region_names.empty())
+    AddToTable(table, MakePPPrefix("geometry", "regions"), MakePPEntry(region_names));
 
   ParmParse::appendTable(table);
 }
@@ -1186,6 +1319,23 @@ void InputConverterS::ParseProcessKernels_()
 void InputConverterS::ParsePhases_()
 {
   list<ParmParse::PP_entry> table;
+
+  bool found;
+  DOMElement* liquid_phase = static_cast<DOMElement*>(GetUniqueElementByTagsString_("Phases, liquid_phase", found));
+  if (found)
+  {
+  }
+
+  DOMElement* solid_phase = static_cast<DOMElement*>(GetUniqueElementByTagsString_("Phases, solid_phase", found));
+  if (found)
+  {
+  }
+
+  DOMElement* gas_phase = static_cast<DOMElement*>(GetUniqueElementByTagsString_("Phases, solid_phase", found));
+  if (found)
+  {
+  }
+
   ParmParse::appendTable(table);
 }
 

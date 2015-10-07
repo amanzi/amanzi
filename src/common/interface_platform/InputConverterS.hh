@@ -62,6 +62,7 @@ class InputConverterS : public InputConverter {
   // Private data.
   int dim_;
   int nx_, ny_, nz_;
+  std::map<std::string, std::string> labeled_times_, labeled_numbers_, labeled_area_mass_fluxes_;
   std::vector<double> lo_coords_, hi_coords_;
   std::string chemistry_engine_;
 };

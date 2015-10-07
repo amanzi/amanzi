@@ -146,6 +146,8 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     Real stop_time;
 
     ParmParse pp;
+    std::ofstream dumpy("pp.dump");
+    pp.dumpTable(dumpy);
 
     max_step  = -1;    
     strt_time =  0.0;  
