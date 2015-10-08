@@ -443,9 +443,9 @@ if __name__ == "__main__":
         ax[0].legend(loc='lower right',fontsize=13)
 
     if (alq>0 or alq_crunch>0):
-        ax[1].legend(loc='lower right',fontsize=13) 
+        ax[1].legend(loc='lower right')#,fontsize=13) 
 
-    ax[2].legend(loc='lower right',fontsize=13)
+    ax[2].legend(loc='lower right')#,fontsize=13)
     plt.suptitle("Amanzi 1D Calcite Benchmark",x=0.57,fontsize=20)
     plt.tick_params(axis='x', which='major', labelsize=20)
 

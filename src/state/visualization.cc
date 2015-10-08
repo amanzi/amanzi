@@ -24,7 +24,7 @@ namespace Amanzi {
 // Constructor
 // -----------------------------------------------------------------------------
 Visualization::Visualization (Teuchos::ParameterList& plist, Epetra_MpiComm* comm) :
-  IOEvent(plist, comm), dynamic_mesh_(false) {
+  IOEvent(plist), dynamic_mesh_(false) {
   ReadParameters_();
 
   // set the line prefix for output
@@ -36,7 +36,7 @@ Visualization::Visualization (Teuchos::ParameterList& plist, Epetra_MpiComm* com
   Teuchos::readVerboseObjectSublist(&plist_,this);
 
   // Set up the HDF5
-  visualization_output_ = Teuchos::rcp(new Amanzi::HDF5_MPI(*comm_));
+  visualization_output_ = Teuchos::rcp(new Amanzi::HDF5_MPI(*comm));
   visualization_output_->setTrackXdmf(true);
   visualization_output_->setDynMesh(dynamic_mesh_);
 }

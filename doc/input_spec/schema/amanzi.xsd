@@ -1584,7 +1584,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:complexType name="typedef_ic_liquid_phase">
 	<xs:all>		
 		<xs:element name="liquid_component" type="typedef_ic_liquid_component" minOccurs="1" maxOccurs="1"/>
-		<xs:element name="solute_component" type="typedef_ic_solute_component" minOccurs="0" maxOccurs="unbounded"/>
+		<xs:element name="solute_component" type="typedef_ic_solute_component" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="geochemistry" type="typedef_ic_geochemistry" minOccurs="0" maxOccurs="1"/>
 	</xs:all>
 	<xs:attribute name="name" type="xs:string"/>
@@ -1668,13 +1668,34 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 </xs:complexType>
 
 <xs:complexType name="typedef_ic_solute_component">
+	<xs:all>
+		<xs:element name="aqueous_conc" type="typedef_ic_aqueous_conc" minOccurs="0" maxOccurs="unbounded"/>
+	</xs:all>
+	<xs:attribute name="name" type="xs:string"/>
+</xs:complexType>
+
+<!--
+<xs:complexType name="typedef_ic_aqueous_conc">
 	<xs:attribute name="name" type="xs:string"/>
 	<xs:attribute name="filename" type="xs:string"/>
 	<xs:attribute name="value" type="typedef_exponential"/>
 	<xs:attribute name="function" type="xs:string"/>
 	<xs:attribute name="reference_coord" type="typedef_coordinate"/>
 	<xs:attribute name="gradient" type="typedef_coordinate"/>
-	<!--<xs:assert  test="@function = ('linear','constant')"/>-->	
+	<<xs:assert  test="@function = ('linear','uniform')"/>	
+</xs:complexType>
+-->
+
+<xs:complexType name="typedef_ic_uniform_conc">
+	<xs:attribute name="name" type="xs:string"/>
+	<xs:attribute name="value" type="typedef_exponential"/>
+</xs:complexType>
+
+<xs:complexType name="typedef_ic_linear_conc">
+	<xs:attribute name="name" type="xs:string"/>
+	<xs:attribute name="value" type="typedef_exponential"/>
+	<xs:attribute name="reference_coord" type="typedef_coordinate"/>
+	<xs:attribute name="gradient" type="typedef_coordinate"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_ic_mineral_component">
@@ -1709,7 +1730,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:complexType name="typedef_bc_liquid_phase">
 	<xs:all minOccurs="1">		
 		<xs:element name="liquid_component" type="typedef_bc_liquid_component" minOccurs="1" maxOccurs="1"/>
-		<xs:element name="solute_component" type="typedef_bc_solute_component" minOccurs="0" maxOccurs="unbounded"/>
+		<xs:element name="solute_component" type="typedef_bc_solute_component" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="geochemistry" type="typedef_bc_geochemistry" minOccurs="0" maxOccurs="1"/>
 	</xs:all>
 	<xs:attribute name="name" type="xs:string"/>

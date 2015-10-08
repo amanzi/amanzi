@@ -5,13 +5,16 @@
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "XMLParameterListWriter.hh"
 
 #include "AmanziUnstructuredGridSimulationDriver.hh"
 #include "CycleDriver.hh"
 #include "Domain.hh"
 #include "GeometricModel.hh"
-#include "InputParserIS.hh"
+#include "InputTranslator.hh"
+#include "InputConverterU.hh"
 #include "InputAnalysis.hh"
 #include "MeshAudit.hh"
 #include "MeshFactory.hh"
@@ -35,10 +38,42 @@
 #include "pks_energy_registration.hh"
 #include "wrm_flow_registration.hh"
 
+using namespace std;
+
+// v1 spec constructor -- delete when we get rid of v1.2 spec.
+AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const string& xmlInFileName)
+{
+  string spec;
+  Teuchos::ParameterList driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName, spec);
+  if (driver_parameter_list.numParams() == 0) // empty list, must be native spec.
+  {
+    Teuchos::RCP<Teuchos::ParameterList> native = Teuchos::getParametersFromXmlFile(xmlInFileName);
+    plist_ = new Teuchos::ParameterList(*native);
+  }
+  else
+    plist_ = new Teuchos::ParameterList(Amanzi::AmanziNewInput::translate(xmlInFileName, spec));
+}
+
+
+AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const string& xmlInFileName,
+                                                                               xercesc::DOMDocument* input)
+{
+  int rank = Teuchos::GlobalMPISession::getRank();
+  int num_proc = Teuchos::GlobalMPISession::getNProc();
+
+  Amanzi::AmanziInput::InputConverterU converter(xmlInFileName, input);
+  plist_ = new Teuchos::ParameterList(converter.Translate(rank, num_proc));
+}
+
+
+AmanziUnstructuredGridSimulationDriver::~AmanziUnstructuredGridSimulationDriver()
+{
+  delete plist_;
+}
+
 
 Amanzi::Simulator::ReturnType
 AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
-                                            Teuchos::ParameterList& input_parameter_list,
                                             Amanzi::ObservationData& output_observations)
 {
   using Teuchos::OSTab;
@@ -56,72 +91,18 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   MPI_Comm_rank(mpi_comm,&rank);
   MPI_Comm_size(mpi_comm,&size);
 
-  Teuchos::ParameterList new_list; 
-  Teuchos::ParameterList sub_list;
-  
-  bool native = input_parameter_list.get<bool>("Native Unstructured Input", false);
-  
-  if (!native) {
-    Amanzi::AmanziInput::InputParserIS parser;
-    new_list = parser.Translate(&input_parameter_list, comm->NumProc());
-
-    std::string verbosity = input_parameter_list.sublist("Execution Control").get<std::string>("Verbosity", "Low");
-    
-    if (verbosity == "None") {
-      verbLevel = Teuchos::VERB_NONE;
-    } else if (verbosity == "Low") {
-      verbLevel = Teuchos::VERB_LOW;
-    } else if (verbosity == "Medium") {
-      verbLevel = Teuchos::VERB_MEDIUM;
-    } else if (verbosity == "High") {
-      verbLevel = Teuchos::VERB_HIGH;
-    } else if (verbosity == "Extreme") {
-      verbLevel = Teuchos::VERB_EXTREME;
-    } 
-  } else {
-    verbLevel = Teuchos::VERB_NONE;
-    new_list = input_parameter_list;
-  }
-  
-#ifdef ENABLE_NATIVE_XML_OUTPUT
-  // A hack: print floating-point numbers with a given precision.
-  int precision = input_parameter_list.get<int>("output precision", 0);
-
-  if (!native && includesVerbLevel(verbLevel, Teuchos::VERB_LOW, true)) { 
-    std::string xmlFileName = new_list.get<std::string>("input file name");
-    std::string new_extension("_native_v6.xml");
-    size_t pos = xmlFileName.find(".xml");
-    xmlFileName.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)14);
-    if (comm->MyPID() == 0) {
-      printf("Amanzi: writing the translated parameter list to file %s...\n", xmlFileName.c_str());
-
-      Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
-      if (precision > 0) XMLWriter.set_precision(precision);
-      Teuchos::XMLObject XMLobj = XMLWriter.toXML(new_list);
-
-      std::ofstream xmlfile;
-      xmlfile.open(xmlFileName.c_str());
-      xmlfile << XMLobj;
-    }
-  }
-#endif
-
-
   //------------ DOMAIN, GEOMETRIC MODEL, ETC ----------------------------
-
   // Create a VerboseObject to pass to the geometric model class 
-
-  Amanzi::VerboseObject *gmverbobj = new Amanzi::VerboseObject("Geometric Model", new_list);
+  Amanzi::VerboseObject *gmverbobj = new Amanzi::VerboseObject("Geometric Model", *plist_);
 
   // Create the simulation domain
   Amanzi::timer_manager.add("Geometric Model creation",Amanzi::Timer::ONCE);
   Amanzi::timer_manager.start("Geometric Model creation");
 
-  Teuchos::ParameterList domain_params = new_list.sublist("Domain");
+  Teuchos::ParameterList domain_params = plist_->sublist("Domain");
   unsigned int spdim = domain_params.get<int>("Spatial Dimension");
   
   Amanzi::AmanziGeometry::Domain *simdomain_ptr = new Amanzi::AmanziGeometry::Domain(spdim);
-
 
   // Parse the domain description and create.
 
@@ -129,17 +110,14 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   // models. We can also have free geometric regions not associated
   // with a geometric model.
 
-
   // For now create one geometric model from all the regions in the spec
-
-  Teuchos::ParameterList reg_params = new_list.sublist("Regions");
+  Teuchos::ParameterList reg_params = plist_->sublist("Regions");
 
   Amanzi::AmanziGeometry::GeometricModelPtr 
       geom_model_ptr(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm));
 
 
   // Add the geometric model to the domain
-
   simdomain_ptr->Add_Geometric_Model(geom_model_ptr);
 
   Amanzi::timer_manager.stop("Geometric Model creation");
@@ -150,13 +128,11 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
 
   // ---------------- MESH -----------------------------------------------
-
   Amanzi::timer_manager.add("Mesh creation",Amanzi::Timer::ONCE);
   Amanzi::timer_manager.start("Mesh creation");
 
   // Create a Verbose object to pass to the mesh_factory and mesh
-
-  Amanzi::VerboseObject *meshverbobj = new Amanzi::VerboseObject("Mesh", new_list);
+  Amanzi::VerboseObject *meshverbobj = new Amanzi::VerboseObject("Mesh", *plist_);
 
   // Create a mesh factory for this geometric model
   Amanzi::AmanziMesh::MeshFactory factory(comm, meshverbobj) ;
@@ -166,8 +142,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
   // get the Mesh sublist
   ierr = 0;
-  Teuchos::ParameterList mesh_params = new_list.sublist("Mesh");
-
+  Teuchos::ParameterList mesh_params = plist_->sublist("Mesh");
 
   // Make sure the unstructured mesh option was chosen
   bool unstructured_option = mesh_params.isSublist("Unstructured");
@@ -178,7 +153,6 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   }
 
   // Read and initialize the unstructured mesh parameters
-
   Teuchos::ParameterList unstr_mesh_params = mesh_params.sublist("Unstructured");
 
   // Decide on which mesh framework to use
@@ -350,24 +324,15 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
   // -------------- ANALYSIS --------------------------------------------
   Amanzi::InputAnalysis analysis(mesh);
-  analysis.Init(new_list);
+  analysis.Init(*plist_);
   analysis.RegionAnalysis();
   analysis.OutputBCs();
 
-  Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(new_list));
+  Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(*plist_));
   Amanzi::CycleDriver cycle_driver(glist, mesh, comm, output_observations);
 
   cycle_driver.Go();
 
-  // if (new_list.isSublist("State")) {
-  //   Teuchos::ParameterList state_plist = new_list.sublist("State");
-  //   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
-  //   S->RegisterMesh("domain", mesh);      
-
-  //   Amanzi::CycleDriver cycle_driver(glist, S, comm, output_observations);
-  //   S = cycle_driver.Go();
-  // }
-  
   // Clean up
   mesh.reset();
   delete meshverbobj;

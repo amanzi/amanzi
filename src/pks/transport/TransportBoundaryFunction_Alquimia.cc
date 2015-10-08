@@ -1,9 +1,12 @@
 /*
-  This is the transport component of the Amanzi code. 
+  This is the Transport component of Amanzi
 
-  License: see $AMANZI_DIR/COPYRIGHT
-  Author (v1): Neil Carlson
-         (v2): Ethan Coon
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Jeffrey Johnson (jnjohnson@lbl.gov)
 */
 
 #include "TransportBoundaryFunction_Alquimia.hh"
@@ -13,54 +16,61 @@
 namespace Amanzi {
 namespace Transport {
 
-TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(const std::vector<double>& times,
-                                                                       const std::vector<std::string>& cond_names,
-                                                                       const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
-                                                                       Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
-                                                                       Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine):
-  TransportBoundaryFunction(mesh), mesh_(mesh), times_(times), cond_names_(cond_names), chem_state_(chem_state), chem_engine_(chem_engine)
+/* ******************************************************************
+* Constructor of BCs for Alquimia.
+****************************************************************** */
+TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(
+    const std::vector<double>& times,
+    const std::vector<std::string>& cond_names,
+    const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
+    Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
+    Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine) :
+    TransportBoundaryFunction(mesh),
+    mesh_(mesh),
+    times_(times),
+    cond_names_(cond_names),
+    chem_state_(chem_state),
+    chem_engine_(chem_engine)
 {
   // Check arguments.
-  if (times_.size() != cond_names_.size())
-  {
+  // NOTE: The times are always sorted in ascending order.
+  if (times_.size() != cond_names_.size()) {
     Errors::Message msg;
     msg << "times and conditions arrays must be of equal size.";
     Exceptions::amanzi_throw(msg); 
   }
-  if (times_.size() < 2)
-  {
+  if (times_.size() < 2) {
     Errors::Message msg;
     msg << "times and conditions arrays must contain at least two elements.";
     Exceptions::amanzi_throw(msg); 
   }
 
-  if (chem_engine_ != Teuchos::null)
-  {
+  if (chem_engine_ != Teuchos::null) {
     chem_engine_->InitState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
     chem_engine_->GetPrimarySpeciesNames(tcc_names_);
-  }
-  else
-  {
+  } else {
     Errors::Message msg;
     msg << "Geochemistry is off, but a geochemical condition was requested.";
     Exceptions::amanzi_throw(msg); 
   }
-
-  // NOTE: For now, we assume the times are sorted in ascending order.
 }
 
+
+/* ******************************************************************
+* Delegating destructor.
+****************************************************************** */
 TransportBoundaryFunction_Alquimia::~TransportBoundaryFunction_Alquimia()
 {
   chem_engine_->FreeState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
 }
+
 
 /* ******************************************************************
 * Internal subroutine that defines a boundary function.
 ****************************************************************** */
 void TransportBoundaryFunction_Alquimia::Define(const std::vector<std::string> &regions)
 {
-  for (size_t i = 0; i < regions.size(); ++i)
-  {
+  for (size_t i = 0; i < regions.size(); ++i) {
     // Get the faces that belong to this region (since boundary conditions
     // are applied on faces).
     assert(mesh_->valid_set_name(regions[i], AmanziMesh::FACE));
@@ -71,8 +81,7 @@ void TransportBoundaryFunction_Alquimia::Define(const std::vector<std::string> &
     // Now get the cells that are attached to these faces.
     faces_.resize(face_indices.size());
     values_.resize(face_indices.size());
-    for (unsigned int f = 0; f < num_faces; ++f)
-    {
+    for (unsigned int f = 0; f < num_faces; ++f) {
       faces_[f] = face_indices[f];
       values_[f].resize(chem_engine_->NumPrimarySpecies());
       AmanziMesh::Entity_ID_List cells_for_face;
@@ -82,6 +91,7 @@ void TransportBoundaryFunction_Alquimia::Define(const std::vector<std::string> &
     }
   }
 }
+
 
 /* ******************************************************************
 * Internal subroutine that defines a boundary function.
@@ -100,8 +110,7 @@ void TransportBoundaryFunction_Alquimia::Compute(double time)
 {
   // Find the condition that corresponds to the given time.
   int time_index = 0;
-  while (time_index < (times_.size()-1))
-  {
+  while (time_index < (times_.size()-1)) {
     if (times_.at(time_index+1) > time)
       break;
     ++time_index;

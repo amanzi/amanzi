@@ -151,6 +151,8 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
 * `"component names`" [Array(string)] provides the list of species names.
   It is required for reactive transport.
 
+* `"number of liquid components`" [int] is the number of liquid components. 
+   
 * `"time periods`" [list] contains the list of time periods involved in the simulation.
   the number of periods is not limited.
 
@@ -182,6 +184,7 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
   <ParameterList>  <!-- parent list -->
     <ParameterList name="Cycle Driver">
       <Parameter name="component names" type="Array(string)" value="{H+, Na+, NO3-, Zn++}"/>
+      <Parameter name="number of liquid components" type="int" value="4"/>
       <ParameterList name="time periods">
         <ParameterList name="TP 0">
           <ParameterList name="PK Tree">
@@ -583,6 +586,21 @@ checkpoints of vis files. Default values are *true*.
 In this example the constant Darcy velocity (0.002, 0.001) [m/s] is dotted with the face 
 normal producing one number per mesh face.
 
+
+Geochemical constraint
+......................
+
+We can define geochemical contraint as follows:
+
+.. code-block:: xml
+
+   <ParameterList name="initial conditions">  <!-- parent list -->
+     <ParameterList name="geochemical conditions">
+       <ParameterList name="initial">
+         <Parameter name="regions" type="Array(string)" value="{Entire Domain}"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
 
 Mesh partitioning
 -----------------
@@ -1086,16 +1104,16 @@ scheme, and selects assembling schemas for matrices and preconditioners.
     <ParameterList name="operators">
       <ParameterList name="diffusion operator">
         <ParameterList name="matrix">
-          <Parameter name="discretization primary" type="string" value="monotone mfd"/>
-          <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+          <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+          <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
           <Parameter name="gravity" type="bool" value="true"/>
           <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
         </ParameterList>
         <ParameterList name="preconditioner">
-          <Parameter name="discretization primary" type="string" value="monotone mfd"/>
-          <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+          <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+          <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
           <Parameter name="newton correction" type="string" value="approximate jacobian"/>
@@ -1770,6 +1788,38 @@ Three examples are below:
   </ParameterList>  
 
 
+Dispersion operator
+...................
+
+List *operators* describes the PDE structure of the flow, specifies a discretization
+scheme, and selects assembling schemas for matrices and preconditioners.
+
+* `"operators`" [list] 
+
+  * `"diffusion operator`" [list] 
+
+    * `"matrix`" [list] defines parameters for generating and assembling dispersion matrix.
+      See section describing operators. 
+
+.. code-block:: xml
+
+  <ParameterList name="Transport">  <!-- parent list -->
+    <ParameterList name="operators">
+      <ParameterList name="diffusion operator">
+        <ParameterList name="matrix">
+          <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+          <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
+          <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+          <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+This example creates a p-lambda system, i.e. the concentation is
+discretized in mesh cells and on mesh faces. The later unknowns are auxiliary unknwons.
+
+
 Multiscale continuum models
 ...........................
 
@@ -1815,6 +1865,7 @@ allows us to define spatially variable boundary conditions.
   * `"concentration`" [list] This is a reserved keyword.
    
     * "COMP" [list] contains a few sublists (e.g. BC_1, BC_2) for boundary conditions.
+      The name *COMP* must be the name in the list of solutes.
  
       * "BC_1" [list] defines boundary conditions using arrays of boundary regions and attached
         functions.
@@ -1855,17 +1906,21 @@ The example below sets constant boundary condition 1e-5 for the duration of tran
 
 Geochemical boundary conditions are concentration-type boundary conditions
 but require special treatment. 
+Note that the number of *forms* below is one less than the number of times
+and geochemical conditions.
 
 .. code-block:: xml
 
   <ParameterList name="Transport">  <!-- parent list -->
     <ParameterList name="boundary conditions">
       <ParameterList name="geochemical conditions">
-        <ParameterList name="EAST CRIB">   <!-- user defined name -->
-          <Parameter name="times" type="Array(double)" value="{0.0, 100.0}"/>
-          <Parameter name="geochemical conditions" type="Array(string)" value="{cond1, cond2}"/>
-          <Parameter name="time functions" type="Array(string)" value="{constant, constant}"/>
-          <Parameter name="regions" type="Array(string)" value="{CRIB1}"/>
+        <ParameterList name="H+"> 
+          <ParameterList name="EAST CRIB">   <!-- user defined name -->
+            <Parameter name="times" type="Array(double)" value="{0.0, 100.0}"/>
+            <Parameter name="geochemical conditions" type="Array(string)" value="{cond1, cond2}"/>
+            <Parameter name="time functions" type="Array(string)" value="{constant}"/>
+            <Parameter name="regions" type="Array(string)" value="{CRIB1}"/>
+          </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -2106,8 +2161,8 @@ more detail. This section is only required for the native chemistry kernel, the
 Alquimia chemistry kernel reads initial conditions from the `"State`" list.
 The following cell-based fields can be initialized here:
 
-* `"mineral_volume_fractions`"
-* `"mineral_specific_surface_area`"
+* `"mineral_volume_fractions`" (Alquimia only)
+* `"mineral_specific_surface_area`" (Alqumia only)
 * `"ion_exchange_sites`"
 * `"ion_exchange_ref_cation_conc`"
 * `"isotherm_kd`"
@@ -2758,16 +2813,16 @@ scheme, and selects assembling schemas for matrices and preconditioners.
        <Parameter name="include enthalpy in preconditioner" type="boll" value="true"/>
        <ParameterList name="diffusion operator">
          <ParameterList name="matrix">
-           <Parameter name="discretization primary" type="string" value="monotone mfd"/>
-           <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+           <Parameter name="discretization primary" type="string" value="mdf: optimized for monotonicity"/>
+           <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
            <Parameter name="gravity" type="bool" value="false"/>
            <Parameter name="upwind method" type="string" value="standard: cell"/> 
          </ParameterList>
          <ParameterList name="preconditioner">
-           <Parameter name="discretization primary" type="string" value="monotone mfd"/>
-           <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+           <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+           <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
            <Parameter name="gravity" type="bool" value="true"/>
@@ -2950,6 +3005,14 @@ Diffusion operator
     that must be added to the matrix. These terms represent Jacobian and are needed 
     for the preconditioner. Available options are `"true jacobian`" and `"approximate jacobian`".
 
+  * `"scaled constraint equation`" [bool] rescales flux continuity equations on mesh faces.
+    These equations are divided by the nonlinear coefficient. This option allows us to 
+    treat the case of zero nonlinear coefficient. At moment this feature does not work 
+    with non-zero gravity term. Default is *false*.
+
+  * `"constraint equation scaling cutoff"`" [double] specifies the cutoff value for
+    applying rescaling strategy described above.  
+
   * `"consistent faces`" [list] may contain a `"preconditioner`" and
     `"linear operator`" list (see sections Preconditioners_ and LinearSolvers_
     respectively).  If these lists are provided, and the `"discretization
@@ -2962,8 +3025,8 @@ Diffusion operator
 .. code-block:: xml
 
     <ParameterList name="OPERATOR_NAME">
-      <Parameter name="discretization primary" type="string" value="monotone mfd"/>
-      <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+      <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
       <Parameter name="gravity" type="bool" value="true"/>
@@ -3436,6 +3499,16 @@ Internal parameters for GMRES include
 
 * `"overflow tolerance`" [double] defines the maximum allowed jump in residual. The default
   value is 3.0e+50.
+
+* `"preconditioning strategy`" [string] defines either `"left`" or `"right`" preconditioner.
+  Default is `"left`".
+
+* `"controller training start`" [int] defines the iteration number when the stagnation controller 
+  starts to collect data of the convergence history. Default is 0.
+
+* `"controller training end`" [int] defines the iteration number when the stagnation controller
+  stops to collect data of the convergence history. The cotroller becomes active on the next
+  iteration. Default is 3.
 
 .. code-block:: xml
 
@@ -4368,6 +4441,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * hydraulic head [m] 
       * drawdown [m] 
       * SOLUTE Aqueous concentration [mol/m^3]
+      * SOLUTE gaseous concentration [mol/m^3]
       * x-, y-, z- aqueous volumetric flux [m/s]
       * material id [-]
       * aqueous mass flow rate [kg/s] (when funtional="integral")

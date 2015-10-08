@@ -22,6 +22,7 @@
 
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionMFD.hh"
+#include "OperatorDiffusionWithGravity.hh"
 
 
 namespace Amanzi {
@@ -29,47 +30,108 @@ namespace Operators {
 
 class BCs;
 
-class OperatorDiffusionMFDwithGravity : public OperatorDiffusionMFD {
+class OperatorDiffusionMFDwithGravity : public OperatorDiffusionMFD,
+					public OperatorDiffusionWithGravity {
  public:
   OperatorDiffusionMFDwithGravity(Teuchos::ParameterList& plist,
-                               const Teuchos::RCP<Operator>& global_op) :
-      OperatorDiffusionMFD(plist, global_op)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
-    Init_(plist);
-  }
-
-  OperatorDiffusionMFDwithGravity(Teuchos::ParameterList& plist,
-                               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      OperatorDiffusionMFD(plist, mesh)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
-    Init_(plist);
-  }
-
-  OperatorDiffusionMFDwithGravity(Teuchos::ParameterList& plist,
-                               const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      OperatorDiffusionMFD(plist, mesh)
+                                  const Teuchos::RCP<Operator>& global_op) :
+      OperatorDiffusionMFD(plist, global_op),
+      OperatorDiffusionWithGravity(global_op),
+      OperatorDiffusion(global_op)
   {
     operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
     Init_(plist);
   }
   
+  OperatorDiffusionMFDwithGravity(Teuchos::ParameterList& plist,
+                                  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      OperatorDiffusionMFD(plist, mesh),
+      OperatorDiffusionWithGravity(mesh),
+      OperatorDiffusion(mesh)
+  {
+    operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
+    Init_(plist);
+  }
+  
+  OperatorDiffusionMFDwithGravity(Teuchos::ParameterList& plist,
+                                  const Teuchos::RCP<Operator>& global_op,
+                                  const AmanziGeometry::Point& g) :
+      OperatorDiffusionMFD(plist, global_op),
+      OperatorDiffusionWithGravity(global_op),
+      OperatorDiffusion(global_op)
+  {
+    operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
+    Init_(plist);
+    SetGravity(g);
+  }
+  
+  OperatorDiffusionMFDwithGravity(Teuchos::ParameterList& plist,
+                                  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                  const AmanziGeometry::Point& g) :
+      OperatorDiffusionMFD(plist, mesh),
+      OperatorDiffusionWithGravity(mesh),
+      OperatorDiffusion(mesh)
+  {
+    operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
+    Init_(plist);
+    SetGravity(g);
+  }
+  
+  OperatorDiffusionMFDwithGravity(Teuchos::ParameterList& plist,
+                                  const Teuchos::RCP<Operator>& global_op,
+                                  double rho, const AmanziGeometry::Point& g) :
+      OperatorDiffusionMFD(plist, global_op),
+      OperatorDiffusionWithGravity(global_op),
+      OperatorDiffusion(global_op)
+  {
+    operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
+    Init_(plist);
+    SetGravity(g);
+    SetDensity(rho);
+  }
+
+  OperatorDiffusionMFDwithGravity(Teuchos::ParameterList& plist,
+                                  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                  double rho, const AmanziGeometry::Point& g) :
+      OperatorDiffusionMFD(plist, mesh),
+      OperatorDiffusionWithGravity(mesh),
+      OperatorDiffusion(mesh)
+  {
+    operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
+    Init_(plist);
+    SetGravity(g);
+    SetDensity(rho);
+  }
+
   // main members
+  // -- required by the base class
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
           const Teuchos::Ptr<const CompositeVector>& u);
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
 
-  virtual void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
-  virtual void SetDensity(double rho) {
-    constant_rho_ = true;
-    rho_ = rho;
+  // -- problem initialiation
+  using OperatorDiffusionMFD::Setup;
+  void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
+             const Teuchos::RCP<const CompositeVector>& k,
+             const Teuchos::RCP<const CompositeVector>& dkdp,
+             double rho, const AmanziGeometry::Point& g) {
+    SetDensity(rho);
+    SetGravity(g);
+    OperatorDiffusionMFD::SetTensorCoefficient(K);
+    OperatorDiffusionMFD::SetScalarCoefficient(k, dkdp);
+  } 
+
+  void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
+             const Teuchos::RCP<const CompositeVector>& k,
+             const Teuchos::RCP<const CompositeVector>& dkdp,
+             const Teuchos::RCP<const CompositeVector>& rho,
+             const AmanziGeometry::Point& g) {
+    SetDensity(rho);
+    SetGravity(g);
+    OperatorDiffusionMFD::SetTensorCoefficient(K);
+    OperatorDiffusionMFD::SetScalarCoefficient(k, dkdp);
   }
-  virtual void SetDensity(const Teuchos::RCP<const CompositeVector>& rho) {
-    constant_rho_ = false;
-    rho_cv_ = rho;
-  }
-  
+
   // Developments
   // -- interface to solvers for treating nonlinear BCs.
   virtual double ComputeGravityFlux(int f) const;
@@ -80,7 +142,6 @@ class OperatorDiffusionMFDwithGravity : public OperatorDiffusionMFD {
   void Init_(Teuchos::ParameterList& plist);
 
  protected:
-  AmanziGeometry::Point g_;
   bool gravity_special_projection_;
   int gravity_method_;
 };

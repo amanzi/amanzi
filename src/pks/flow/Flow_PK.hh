@@ -141,7 +141,7 @@ class Flow_PK : public FnTimeIntegratorPK {
 
   // Stationary physical quantatities
   std::vector<WhetStone::Tensor> K; 
-  AmanziGeometry::Point gravity_, molar_gravity_;
+  AmanziGeometry::Point gravity_;
   double g_, rho_, molar_rho_, atm_pressure_;
   double flux_units_;  // scaling for flux units from kg to moles.
 
@@ -168,8 +168,7 @@ class Flow_PK : public FnTimeIntegratorPK {
 
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
   Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval_;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval_;
-  Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> porosity_eval_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval_, pressure_matrix_eval_;
 
  protected:
   VerboseObject* vo_;

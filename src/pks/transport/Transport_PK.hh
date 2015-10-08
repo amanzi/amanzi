@@ -230,7 +230,7 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   std::vector<Teuchos::RCP<MaterialProperties> > mat_properties_;  // vector of materials
   std::vector<Teuchos::RCP<DiffusionPhase> > diffusion_phase_;   // vector of phases
 
-  std::vector<WhetStone::Tensor> D;
+  std::vector<WhetStone::Tensor> D_;
   int dispersion_models_;
   std::vector<int> axi_symmetry_;  // axi-symmetry direction of permeability tensor
   std::string dispersion_preconditioner;

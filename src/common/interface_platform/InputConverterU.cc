@@ -72,9 +72,19 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   FilterEmptySublists_(out_list);
 
   // miscalleneous cross-list information
+  // -- initialization file name
   if (init_filename_.size() > 0) {
     out_list.sublist("State").set<std::string>("initialization filename", init_filename_);
   }
+
+  // -- additional transport diagnostics (FIXME)
+  if (transport_diagnostics_.size() > 0) {
+    out_list.sublist("PKs").sublist("Transport")
+        .set<Teuchos::Array<std::string> >("runtime diagnostics: regions", transport_diagnostics_);
+  }
+
+  // save the translate file
+  if (rank_ == 0) SaveXMLFile(out_list, xmlfilename_);
 
   return out_list;
 }
@@ -290,7 +300,7 @@ void InputConverterU::SaveXMLFile(
     Teuchos::ParameterList& out_list, std::string& xmlfilename)
 {
   std::string filename(xmlfilename);
-  std::string new_extension("_native_v6.xml");
+  std::string new_extension("_native_v7.xml");
   size_t pos = filename.find(".xml");
   filename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)14);
 

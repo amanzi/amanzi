@@ -1091,7 +1091,7 @@ The initial conditions are defined using a specific elements.  The element name 
 +-----------------------+------------------+-------------------------------+
 
 
-For the solute_component the attributes available are *name*, *value*, *function*, *reference_coord*, and *gradient*.  The function options available are *uniform* and *linear*.  The attributes *reference_coord*, and *gradient* are only necessary for the *linear* function type.
+The solute_component has an attribute *name* which is set to solute.  Pairings of solute name and initial aqueous concentration value are assigned using the subelement ``uniform_conc``. 
 
 If in the ``process_kernels`` section the flow model is set to *constant* then the flow field is set in one of the following ways: (1) A constant Darcy velocity is specified in the initial condition (as above); (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
 
@@ -1107,7 +1107,11 @@ An example ``initial_conditions`` element looks like the following.
 		<liquid_component name = "water">
 		    <linear_pressure value = "101325" reference_coord ="(0.0,0.0,0.5)" gradient="(0.0,0.0,-9793.5192)"/>
 		</liquid_component>
-		<solute_component name = "Tc-99" value = "0" function="uniform"/>
+		<solute_component name="solute">
+                    <uniform_conc name="Cs137" value="400"/>
+                    <uniform_conc name="Tracer" value="4"/>
+                    <uniform_conc name="Sr90" value="40"/>
+                </solute_component>
 	    </liquid_phase>
           </initial_condition>
 	</initial_conditions>
@@ -1125,12 +1129,12 @@ Under the ``liquid_component`` and ``solute_component`` elements a time series o
 |inward_mass_flux         | | name                         | | string                               | 
 |inward_volumetric_flux   | | start                        | | double/time_constant/constant        |
 |outward_mass_flux        | | value                        | | double                               |
-|outward_volumetric_flux  | | function                     | | ``linear | uniform | constant``      |
+|outward_volumetric_flux  | | function                     | | ``linear | constant``                |
 +-------------------------+--------------------------------+----------------------------------------+
 |uniform_pressure         | | name                         | | string                               |
 |                         | | start                        | | double/time_constant/constant        |
 |                         | | value                        | | double                               |
-|                         | | function                     | | ``uniform | constant``               |
+|                         | | function                     | | ``linear | constant``                |
 +-------------------------+--------------------------------+----------------------------------------+
 |linear_pressure          | | name                         | | string                               |
 |                         | | gradient_value               | | coordinate                           |
@@ -1140,7 +1144,7 @@ Under the ``liquid_component`` and ``solute_component`` elements a time series o
 |hydrostatic              | | name                         | | string                               |
 |                         | | start                        | | double/time_constant/constant        |
 |                         | | value                        | | double                               |
-|                         | | function                     | | ``uniform | constant``               |
+|                         | | function                     | | ``linear | constant``                |
 |                         | | coordinate_system            | | ``absolute | relative to mesh top``  |
 |                         | | submodel                     | | ``no_flow_above_water_table | none`` |
 +-------------------------+--------------------------------+----------------------------------------+ 
@@ -1153,14 +1157,14 @@ Under the ``liquid_component`` and ``solute_component`` elements a time series o
 |seepage_face             | | name                         | | string                               |
 |(unstructured only)      | | start                        | | double/time_constant/constant        |
 |                         | | inward_mass_flux             | | double/time_constant/constant        |
-|                         | | function                     | | ``linear | uniform | constant``      |
+|                         | | function                     | | ``linear | constant``                |
 +-------------------------+--------------------------------+----------------------------------------+
 |no_flow                  | | name                         | | string                               |
 |                         | | start                        | | double/time_constant/constant        |
-|                         | | function                     | | ``linear | uniform | constant``      |
+|                         | | function                     | | ``linear | constant``                |
 +-------------------------+--------------------------------+----------------------------------------+
 
-For the solute component, the boundary condition available is ``aqueous_conc`` which has the attributes *name*, *value*, *function*, and *start*.  The function options available are *uniform*, *linear*, and *constant*.
+For the solute component, the boundary condition available is ``aqueous_conc`` which has the attributes *name*, *value*, *function*, and *start*.  The time function options available are *constant* and *linear*. At this time only the *constant* has been implemented. Note that aqueous concentrations may be defined for multiple solutes.  A given ``aqueous_conc`` is applied to the solute in the ``name`` attribute.
 
 An example ``boundary_conditions`` element looks like the following.
 
@@ -1181,6 +1185,8 @@ An example ``boundary_conditions`` element looks like the following.
 		<aqueous_conc name = "Tc-99" start="1956.0,y"  function= "constant"  value="zero"/>
 		<aqueous_conc name = "Tc-99" start="2012.0,y"  function= "constant"  value="zero"/>
 		<aqueous_conc name = "Tc-99" start="3000.0,y"  function= "constant"  value="zero"/>
+		<aqueous_conc name = "U-238" start="0.0"     function= "constant"  value="zero"/>
+		<aqueous_conc name = "I-129" start="0.0"     function= "constant"  value="zero"/>
 	    </solute_component>
 	</liquid_phase>
     </boundary_condition>

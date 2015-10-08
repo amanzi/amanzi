@@ -160,8 +160,8 @@ void TransportBCFactory::ProcessGeochemicalConditionList(std::vector<TransportBo
 
         // Make sure that the "time functions" are all "constant".
         for (int i = 0; i < time_funcs.size(); ++i) {
-          if (time_funcs[i] != "Constant") {
-            msg << "Only Constant time functions are supported for geochemical conditions!\n";
+          if (time_funcs[i] != "constant") {
+            msg << "Only \"constant\" time functions are supported for geochemical conditions!\n";
             Exceptions::amanzi_throw(msg);
           }
         }

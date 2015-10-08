@@ -70,7 +70,6 @@ set(state_inc_files
   FieldEvaluator.hh
   Field.hh
   Field_Scalar.hh
-  io_event.hh
   Observable.hh
   rank_evaluator.hh
   rank_evaluator_reg.hh
@@ -94,7 +93,6 @@ add_amanzi_library(state
 			              Field_Scalar.cc
 			              FieldEvaluator.cc
 	                      FieldEvaluator_Factory.cc
-	                      io_event.cc
                           rank_evaluator.cc
                           primary_variable_field_evaluator.cc
                           secondary_variable_field_evaluator.cc
