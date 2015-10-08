@@ -30,7 +30,7 @@
 namespace Amanzi {
 namespace Operators {
 
-class OperatorDiffusionMFD : public OperatorDiffusion {
+class OperatorDiffusionMFD : public virtual OperatorDiffusion {
  public:
   OperatorDiffusionMFD(Teuchos::ParameterList& plist,
                        const Teuchos::RCP<Operator>& global_op) :
@@ -63,10 +63,9 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   }
 
   // main virtual members for populating an operator
-  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
-  virtual void Setup(const Teuchos::RCP<const CompositeVector>& k,
-                     const Teuchos::RCP<const CompositeVector>& dkdp);
-  using OperatorDiffusion::Setup;
+  virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
+  virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
+				    const Teuchos::RCP<const CompositeVector>& dkdp);
 
   // -- To calculate elemetal matrices, we can use input parameters flux 
   //    and u from the previous nonlinear iteration. Otherwise, use null-pointers.
@@ -77,7 +76,8 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   //    previous nonlinear iteration. The second parameter, u, so far is a
   //    placeholder for new approximation methods.
   virtual void UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
-                                              const Teuchos::Ptr<const CompositeVector>& u);
+                                              const Teuchos::Ptr<const CompositeVector>& u,
+                                              double scalar_limiter=1);
 
   // modify the operator
   // -- by incorporating boundary conditions. Variable 'primary' indicates
@@ -120,7 +120,8 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   void UpdateMatricesMixedWithGrad_(const Teuchos::Ptr<const CompositeVector>& flux);
 
   void AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVector>& flux,
-                                const Teuchos::Ptr<const CompositeVector>& u);
+                                const Teuchos::Ptr<const CompositeVector>& u,
+                                double scalar_limiter);
 
   void ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
                        bool primary, bool eliminate);
@@ -137,8 +138,10 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   int newton_correction_;
   double factor_;
   bool exclude_primary_terms_;
+
+  // modifiers for flux continuity equations
   bool scaled_constraint_;
-  double constraint_scaling_cutoff_;
+  double scaled_constraint_cutoff_, scaled_constraint_fuzzy_;
 
   int mfd_primary_, mfd_secondary_, mfd_pc_primary_, mfd_pc_secondary_;
   int nfailed_primary_;

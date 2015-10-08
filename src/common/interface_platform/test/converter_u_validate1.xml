@@ -119,6 +119,7 @@
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{Tc-99}"/>
+    <Parameter name="number of liquid components" type="int" value="1"/>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{6.1729344e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
       <Parameter name="initial time step" type="Array(double)" value="{1.0e+01, 1.0e+01, 1.0e+01, 1.0}"/>
@@ -341,6 +342,8 @@
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="1.0e-16"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <Parameter name="controller training start" type="int" value="0"/>
+        <Parameter name="controller training end" type="int" value="3"/>
         <ParameterList name="VerboseObject">
           <Parameter name="Verbosity Level" type="string" value="high"/>
         </ParameterList>
@@ -363,6 +366,8 @@
         <Parameter name="error tolerance" type="double" value="1.0e-07"/>
         <Parameter name="maximum number of iterations" type="int" value="50"/>
         <Parameter name="convergence criteria" type="Array(string)" value="{relative rhs, relative residual}"/>
+        <Parameter name="controller training start" type="int" value="0"/>
+        <Parameter name="controller training end" type="int" value="3"/>
         <ParameterList name="VerboseObject">
           <Parameter name="Verbosity Level" type="string" value="low"/>
         </ParameterList>
@@ -583,6 +588,24 @@
       <ParameterList name="molecular diffusion">
         <Parameter name="aqueous names" type="Array(string)" value="{}"/>
         <Parameter name="aqueous values" type="Array(double)" value="{}"/>
+      </ParameterList>
+      <ParameterList name="operators">
+        <ParameterList name="diffusion operator">
+          <ParameterList name="matrix">
+            <Parameter name="discretization primary" type="string" value="mfd: monotone for hex"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+            <Parameter name="gravity" type="bool" value="false"/>
+          </ParameterList>
+          <ParameterList name="preconditioner">
+            <Parameter name="discretization primary" type="string" value="mfd: monotone for hex"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+            <Parameter name="gravity" type="bool" value="false"/>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
       <ParameterList name="boundary conditions">
         <ParameterList name="concentration">
@@ -822,5 +845,9 @@
     <ParameterList name="VerboseObject">
       <Parameter name="Verbosity Level" type="string" value="high"/>
     </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Miscalleneous">
+    <Parameter isDefault="true" isUsed="true" name="output precision" type="int" value="0"/>
   </ParameterList>
 </ParameterList>

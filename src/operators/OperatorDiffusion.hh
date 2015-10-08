@@ -37,26 +37,39 @@ namespace Operators {
 class OperatorDiffusion {
  public:
   OperatorDiffusion(const Teuchos::RCP<Operator>& global_op) :
-      global_op_(global_op) {};
+      global_op_(global_op),
+      K_(Teuchos::null),
+      k_(Teuchos::null),
+      dkdp_(Teuchos::null)
+  {};
 
   OperatorDiffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      mesh_(mesh) {};
+      mesh_(mesh),
+      K_(Teuchos::null),
+      k_(Teuchos::null),
+      dkdp_(Teuchos::null)
+  {};
 
   OperatorDiffusion(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      mesh_(mesh) {};
+      mesh_(mesh),
+      K_(Teuchos::null),
+      k_(Teuchos::null),
+      dkdp_(Teuchos::null)
+  {};
   
   // main virtual members
   // -- setup 
-  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) = 0;
-  virtual void Setup(const Teuchos::RCP<const CompositeVector>& k,
-                     const Teuchos::RCP<const CompositeVector>& dkdp) = 0;
+  virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) = 0;
+  virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
+				    const Teuchos::RCP<const CompositeVector>& dkdp) = 0;
 
   // -- creation of an operator
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
           const Teuchos::Ptr<const CompositeVector>& u) = 0;
   virtual void UpdateMatricesNewtonCorrection(
           const Teuchos::Ptr<const CompositeVector>& flux,
-          const Teuchos::Ptr<const CompositeVector>& u) {};
+          const Teuchos::Ptr<const CompositeVector>& u,
+          double scalar_limiter=1) {};
 
   // -- after solving the problem: postrocessing
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux) = 0;
@@ -70,24 +83,8 @@ class OperatorDiffusion {
   virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
                      const Teuchos::RCP<const CompositeVector>& k,
                      const Teuchos::RCP<const CompositeVector>& dkdp) {
-    Setup(K);
-    Setup(k, dkdp);
-  }
-  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-                     const Teuchos::RCP<const CompositeVector>& k,
-                     const Teuchos::RCP<const CompositeVector>& dkdp,
-                     double rho) {
-    SetDensity(rho);
-    Setup(K);
-    Setup(k, dkdp);
-  }
-  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-                     const Teuchos::RCP<const CompositeVector>& k,
-                     const Teuchos::RCP<const CompositeVector>& dkdp,
-                     const Teuchos::RCP<const CompositeVector>& rho) {
-    SetDensity(rho);
-    Setup(K);
-    Setup(k, dkdp);
+    SetTensorCoefficient(K);
+    SetScalarCoefficient(k, dkdp);
   }
 
   // boundary conditions (BC) require information on test and
@@ -124,20 +121,6 @@ class OperatorDiffusion {
     bcs_test_.push_back(bc);
   }
 
-  // gravity terms -- may not be implemented
-  virtual void SetGravity(const AmanziGeometry::Point& g) {
-    Errors::Message msg("OperatorDiffusion: This diffusion implementation does not support gravity.");
-    Exceptions::amanzi_throw(msg);
-  }
-  virtual void SetDensity(double rho) {
-    Errors::Message msg("OperatorDiffusion: This diffusion implementation does not support gravity.");
-    Exceptions::amanzi_throw(msg);
-  }
-  virtual void SetDensity(const Teuchos::RCP<const CompositeVector>& rho) {
-    Errors::Message msg("OperatorDiffusion: This diffusion implementation does not support gravity.");
-    Exceptions::amanzi_throw(msg);
-  }
-  
   // -- working with consistent faces -- may not be implemented
   virtual int UpdateConsistentFaces(CompositeVector& u){
     Errors::Message msg("OperatorDiffusion: This diffusion implementation does not support working with consistent faces.");
@@ -167,13 +150,8 @@ class OperatorDiffusion {
  protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
 
-  // physics
-  bool constant_rho_;
-  double rho_;
-  Teuchos::RCP<const CompositeVector> rho_cv_;
-
+  // nonlinear coefficient and its representation
   Teuchos::RCP<const CompositeVector> k_, dkdp_;
-
   int little_k_;
 
   // operator

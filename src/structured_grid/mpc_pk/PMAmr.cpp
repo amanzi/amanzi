@@ -19,6 +19,7 @@ namespace
 }
 namespace
 {
+  std::string visit_plotfile_list_name = "movie.visit";
   //
   // These are all ParmParse'd in, as variables with the same name are
   // not accessible to this derived class...should fix
@@ -106,47 +107,12 @@ PMAmr::~PMAmr()
   }
 }
 
-static std::string visit_plotfile_list_name = "movie.visit";
-void
-PMAmr::UpdateVisitPlotfileList() const
-{
-  std::ofstream ofs(visit_plotfile_list_name.c_str());
-  for (int i=0; i<plotfiles_written.size(); ++i) {
-    ofs << plotfiles_written[i] << "/Header" << '\n';
-  }
-  ofs.close();
-}
-
-void 
-PMAmr::writePlotFile ()
-{
-  int file_name_digits_tmp = file_name_digits;
-  file_name_digits = plot_file_digits;
-  Amr::writePlotFile();
-
-  // Not exactly following C++ encapsulation here, but it gets the job done
-  plotfiles_written.push_back(BoxLib::Concatenate(plot_file_root,level_steps[0],file_name_digits));
-  file_name_digits = file_name_digits_tmp;
-
-  UpdateVisitPlotfileList();
-}
-
-void 
-PMAmr::checkPoint ()
-{
-  int file_name_digits_tmp = file_name_digits;
-  file_name_digits = chk_file_digits;
-  Amr::checkPoint();
-  file_name_digits = file_name_digits_tmp;
-}
-
 static std::string getFilePart(const std::string& path)
 {
   std::vector<std::string> parts = BoxLib::Tokenize(path,"/");
   return parts[parts.size()-1];
 }
 
-/*
 static std::string getDirPart(const std::string& path)
 {
   std::vector<std::string> parts = BoxLib::Tokenize(path,"/");
@@ -164,7 +130,120 @@ static std::string getDirPart(const std::string& path)
   }
   return ret;
 }
-*/
+
+void
+PMAmr::UpdateVisitPlotfileList() const
+{
+  if (ParallelDescriptor::IOProcessor())
+  {
+    const std::string plot_dir_part = getDirPart(plot_file_root);
+    const std::string visit_plotfile_list_fullPath
+      = plot_dir_part + "/" + visit_plotfile_list_name;
+
+    std::ofstream ofs(visit_plotfile_list_fullPath.c_str());
+    for (int i=0; i<plotfiles_written.size(); ++i) {
+      ofs << getFilePart(plotfiles_written[i]) << "/Header" << '\n';
+    }
+    ofs.close();
+  }
+}
+
+void 
+PMAmr::writePlotFile ()
+{
+  int file_name_digits_tmp = file_name_digits;
+  file_name_digits = plot_file_digits;
+  Amr::writePlotFile();
+
+  // Not exactly following C++ encapsulation here, but it gets the job done
+  plotfiles_written.push_back(BoxLib::Concatenate(plot_file_root,level_steps[0],file_name_digits));
+  file_name_digits = file_name_digits_tmp;
+
+  UpdateVisitPlotfileList();
+}
+
+void
+PMAmr::checkPointObservations () const
+{
+  if (ParallelDescriptor::IOProcessor())
+  {
+    std::string chkname = BoxLib::Concatenate(check_file_root,level_steps[0],file_name_digits);
+    std::string obsdir = chkname + "/Observations";
+
+    if( ! BoxLib::UtilCreateDirectory(obsdir, 0755)) {
+      BoxLib::CreateDirectoryFailed(obsdir);
+    }
+
+    std::string obs_ascii = obsdir + "/Header";
+    std::string obs_binary = obsdir + "/Data";
+
+    std::ofstream oao;
+    oao.open(obs_ascii.c_str(), std::ios::out);
+    if (!oao.good())
+      BoxLib::FileOpenFailed(obs_ascii);
+
+    std::ofstream obo;
+    obo.open(obs_binary.c_str(), std::ios::out|std::ios::app|std::ios::binary);
+    if (!obo.good())
+      BoxLib::FileOpenFailed(obs_binary);
+
+    oao << observations.size() << '\n';
+    Observation::ostream os(oao,obo);
+    for (int i=0; i<observations.size(); ++i) {
+      observations[i].CheckPoint(os);
+    }
+  }
+}
+
+void
+PMAmr::restartObservations (const std::string& chkname)
+{
+  std::string obsdir = chkname + "/Observations";
+  std::string obs_ascii = obsdir + "/Header";
+  std::string obs_binary = obsdir + "/Data";
+
+  /*
+    The following restart is managed by reading the actually data files on IOProc,
+    and broadcasting the ascii and binary streams to all procs so that they can
+    all build their own observation set.
+   */
+  Array<char> aFileCharPtr;
+  ParallelDescriptor::ReadAndBcastFile(obs_ascii, aFileCharPtr);
+  int Na = aFileCharPtr.size();
+  std::string aFileCharPtrString(aFileCharPtr.dataPtr(), Na);
+  std::istringstream isa(aFileCharPtrString, std::istringstream::in);
+
+  Array<char> bFileCharPtr;
+  ParallelDescriptor::ReadAndBcastFile(obs_binary, bFileCharPtr);
+  int Nb = bFileCharPtr.size();
+  std::string bFileCharPtrString(bFileCharPtr.dataPtr(), Nb);
+  std::istringstream isb(bFileCharPtrString, std::istringstream::in|std::istringstream::binary);
+
+  // Skip file read if the requisite files do not exist in the chkpoint file
+  if (isa.good() && isb.good())
+  {
+    Observation::istream is(isa,isb);
+    int n;
+    isa >> n; // Get the number of observations as the first entry in the Header file
+
+    BL_ASSERT(n = observations.size());              // Assume list of observations has not changed on restart
+    for (int i=0; i<n; ++i) {
+      const std::string new_event_label = observations[i].event_label;
+      observations[i] = Observation(is);             // Replace observation created from input with ones from chkpoint
+      observations[i].event_label = new_event_label; // Allow changing time/cycle macros on restart
+    }
+  }
+}
+
+void 
+PMAmr::checkPoint ()
+{
+  int file_name_digits_tmp = file_name_digits;
+  file_name_digits = chk_file_digits;
+  Amr::checkPoint();
+  checkPointObservations();
+  file_name_digits = file_name_digits_tmp;
+}
 
 void
 PMAmr::LinkFinalCheckpoint (int step)
@@ -1222,6 +1301,9 @@ PMAmr::restart (const std::string& filename)
     station.findGrid(amr_level,geom);
 #endif
 
+    // Read in observations
+    restartObservations(filename);
+
     if (verbose > 0)
     {
         Real dRestartTime = ParallelDescriptor::second() - dRestartTime0;
@@ -1318,8 +1400,6 @@ void PMAmr::InitializeControlEvents()
 
       std::string obs_type; ppr.get("obs_type",obs_type);
       std::string obs_field; ppr.get("field",obs_field);
-      Array<std::string> region_names(1); ppr.get("region",region_names[0]);
-      const Array<const Region*> obs_regions = region_manager->RegionPtrArray(region_names);
 
       Array<std::string> obs_time_macros, obs_cycle_macros;
       int ntm = ppr.countval("time_macros");
@@ -1363,7 +1443,8 @@ void PMAmr::InitializeControlEvents()
         BoxLib::Abort(m.c_str());
       }
 
-      observations.set(i, new Observation(obs_names[i],obs_field,*(obs_regions[0]),obs_type,event_label));
+      std::string region_name; ppr.get("region",region_name);
+      observations.set(i, new Observation(obs_names[i],obs_field,region_name,obs_type,event_label));
     }
 
     // filename for output
@@ -1492,7 +1573,7 @@ void PMAmr::FlushObservations(std::ostream& out)
       for (std::map<int,Real>::const_iterator it=vals.begin();it!=vals.end(); ++it) {
         int j = it->first;
         out << Amanzi::AmanziInput::GlobalData::AMR_to_Amanzi_label_map[observations[i].name]
-            << ", " << Amanzi::AmanziInput::GlobalData::AMR_to_Amanzi_label_map[observations[i].region.name]
+            << ", " << Amanzi::AmanziInput::GlobalData::AMR_to_Amanzi_label_map[observations[i].region_name]
             << ", " << observations[i].obs_type
             << ", " << observations[i].field
             << ", " << observations[i].times[j]

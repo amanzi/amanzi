@@ -12,7 +12,6 @@
 //#endif
 
 #include "Mesh.hh"
-#include "Element_types.hh"
 #include "MeshDefs.hh"
 #include "errors.hh"
 #include "dbc.hh"

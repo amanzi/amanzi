@@ -15,11 +15,11 @@ Observable data object
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Epetra_Comm.h"
+#include "Epetra_MpiComm.h"
 
 #include "ObservationData.hh"
 #include "MeshDefs.hh"
-#include "io_event.hh"
+#include "IOEvent.hh"
 
 namespace Amanzi {
 

@@ -49,14 +49,14 @@ TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs) :
   // make sure we have the right kind of TreeVectorSpace -- it should be
   // one parent node with all leaf node children.
   ASSERT(tvs_->Data() == Teuchos::null);
-  for (std::vector<Teuchos::RCP<const TreeVectorSpace> >::const_iterator
-           it = tvs_->SubVectors().begin();
-       it != tvs_->SubVectors().end(); ++it) {
+  for (TreeVectorSpace::const_iterator
+           it = tvs_->begin();
+       it != tvs_->end(); ++it) {
     ASSERT((*it)->Data() != Teuchos::null);
   }
 
   // resize the blocks
-  int n_blocks = tvs_->SubVectors().size();
+  int n_blocks = tvs_->size();
   blocks_.resize(n_blocks, Teuchos::Array<Teuchos::RCP<const Operator> >(n_blocks, Teuchos::null));
 }
 
@@ -77,11 +77,14 @@ int TreeOperator::Apply(const TreeVector& X, TreeVector& Y) const
   Y.PutScalar(0.0);
 
   int ierr(0);
-  for (int n = 0; n != blocks_.size(); ++n) {
-    CompositeVector& yN = *Y.SubVectors()[n]->Data();
-    for (int m = 0; m != blocks_.size(); ++m) {
+  int n=0;
+  for (TreeVector::iterator yN_tv=Y.begin(); yN_tv!=Y.end(); ++yN_tv, ++n) {
+    CompositeVector& yN = *(*yN_tv)->Data();
+    int m = 0;
+    for (TreeVector::const_iterator xM_tv=X.begin();
+	 xM_tv!=X.end(); ++xM_tv, ++m) {
       if (blocks_[n][m] != Teuchos::null) {
-        ierr |= blocks_[n][m]->Apply(*X.SubVectors()[m]->Data(), yN, 1.0);
+        ierr |= blocks_[n][m]->Apply(*(*xM_tv)->Data(), yN, 1.0);
       }
     }
   }

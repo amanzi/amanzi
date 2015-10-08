@@ -96,6 +96,7 @@ void Richards_PK::Functional(double t_old, double t_new,
 
   // add water content in matrix
   if (multiscale_porosity_) {
+    pressure_matrix_eval_->SetFieldAsChanged(S_.ptr());
     Functional_AddMassTransferMatrix_(dtp, f->Data());
   }
 
@@ -140,7 +141,7 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
   // We assume the same DOFs for pressure and temperature. 
   // We assume that field temperature has already essential BCs.
   op_vapor_->Init();
-  op_vapor_diff_->Setup(kvapor_temp, Teuchos::null);
+  op_vapor_diff_->SetScalarCoefficient(kvapor_temp, Teuchos::null);
   op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op_vapor_diff_->ApplyBCs(false, false);
 
@@ -152,7 +153,7 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
   // Calculate vapor contribution due to capillary pressure.
   // We elliminate essential BCs to re-use the local Op for PC.
   op_vapor_->Init();
-  op_vapor_diff_->Setup(kvapor_pres, Teuchos::null);
+  op_vapor_diff_->SetScalarCoefficient(kvapor_pres, Teuchos::null);
   op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op_vapor_diff_->ApplyBCs(false, true);
 
@@ -227,7 +228,10 @@ void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Comp
 {
   const Epetra_MultiVector& pcf = *S_->GetFieldData("pressure")->ViewComponent("cell");
   const Epetra_MultiVector& pcm = *S_->GetFieldData("pressure_matrix")->ViewComponent("cell");
+
+  S_->GetFieldEvaluator("porosity_matrix")->HasFieldChanged(S_.ptr(), "flow");
   const Epetra_MultiVector& phi = *S_->GetFieldData("porosity_matrix")->ViewComponent("cell");
+
   const Epetra_MultiVector& wcm_prev = *S_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
   Epetra_MultiVector& wcm = *S_->GetFieldData("water_content_matrix", passwd_)->ViewComponent("cell");
 
@@ -260,6 +264,7 @@ void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Comp
 void Richards_PK::CalculateVWContentMatrix_()
 {
   const Epetra_MultiVector& pcm = *S_->GetFieldData("pressure_matrix")->ViewComponent("cell");
+  S_->GetFieldEvaluator("porosity_matrix")->HasFieldChanged(S_.ptr(), "flow");
   const Epetra_MultiVector& phi = *S_->GetFieldData("porosity_matrix")->ViewComponent("cell");
   Epetra_MultiVector& wcm = *S_->GetFieldData("water_content_matrix", passwd_)->ViewComponent("cell");
 
@@ -319,7 +324,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   // create diffusion operators
   op_preconditioner_->Init();
   op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
-  op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr());
+  op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr(), molar_rho_);
   op_preconditioner_diff_->ApplyBCs(true, true);
 
   // add time derivative

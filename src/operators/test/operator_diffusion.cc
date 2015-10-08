@@ -470,7 +470,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   }
 
   // populate the diffusion operator
-  op->Setup(knc->values(), knc->derivatives());
+  op->SetScalarCoefficient(knc->values(), knc->derivatives());
   op->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // get and assmeble the global operator
@@ -936,7 +936,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator nodal");
   OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc_v, op_list, g, 0);
+  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(op_list, mesh, bc_v, rho, g);
   op->AddBCs(bc_f, bc_f);
   
   // populate the diffusion operator

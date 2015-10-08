@@ -125,20 +125,6 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         porosity_ev.set<std::string>("field evaluator type", "independent variable");
       }
 
-      // --- multiscale porosity if any 
-      //     We use evaluator
-      node = GetUniqueElementByTagsString_(inode, "multiscale_structure, porosity", flag);
-      if (flag) {
-        double porosity;
-        Teuchos::ParameterList& porosity_ev = out_ev.sublist("porosity_matrix");
-        porosity_ev.sublist("function").sublist(reg_str)
-            .set<Teuchos::Array<std::string> >("regions", regions)
-            .set<std::string>("component", "cell")
-            .sublist("function").sublist("function-constant")
-            .set<double>("value", porosity);
-        porosity_ev.set<std::string>("field evaluator type", "independent variable");
-      }
-
       // -- permeability.
       double perm_x, perm_y, perm_z;
       bool perm_init_from_file(false), conductivity(false);
@@ -213,6 +199,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         aux_list.sublist("DoF 2 Function").sublist("function-constant").set<double>("value", ky);
         if (dim_ == 3) {
           aux_list.sublist("DoF 3 Function").sublist("function-constant").set<double>("value", kz);
+        } else {
+          kz = 0.0;
         }
       } else {
         ThrowErrorIllformed_("materials", "permeability/hydraulic conductivity", "file/filename/attribute");
@@ -397,7 +385,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       int ncomp_g = phases_["air"].size();
       int ncomp_all = ncomp_l + ncomp_g;
 
-      node = GetUniqueElementByTagsString_(inode, "liquid_phase", flag);
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, solute_component", flag);
       if (flag && ncomp_all > 0) {
         std::vector<double> vals(ncomp_l, 0.0);
 
@@ -406,7 +394,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           DOMNode* jnode = children->item(j);
           tagname = mm.transcode(jnode->getNodeName());
 
-          if (strcmp(tagname, "solute_component") == 0) {
+          if (strcmp(tagname, "uniform_conc") == 0) {
             std::string text = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
             int m = GetPosition_(phases_["water"], text);
             vals[m] = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "value");
@@ -430,7 +418,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       }
 
       // -- total_component_concentration (gas phase)
-      node = GetUniqueElementByTagsString_(inode, "gas_phase", flag);
+      node = GetUniqueElementByTagsString_(inode, "gas_phase, solute_component", flag);
       if (flag) {
         std::vector<double> vals(ncomp_g, 0.0);
 
@@ -439,7 +427,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           DOMNode* jnode = children->item(j);
           tagname = mm.transcode(jnode->getNodeName());
 
-          if (strcmp(tagname, "solute_component") == 0) {
+          if (strcmp(tagname, "uniform_conc") == 0) {
             std::string text = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
             int m = GetPosition_(phases_["air"], text);
             vals[m] = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "value");
@@ -467,6 +455,15 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<std::string>("component", "cell")
             .sublist("function").sublist("function-constant")
             .set<double>("value", val);
+      }
+
+      // -- geochemical condition
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry, constraint", flag);
+      if (flag) {
+        std::string name = GetAttributeValueS_(static_cast<DOMElement*>(node), "name");
+
+        out_ic.sublist("geochemical conditions").sublist(name)
+            .set<Teuchos::Array<std::string> >("regions", regions);
       }
     }
   }

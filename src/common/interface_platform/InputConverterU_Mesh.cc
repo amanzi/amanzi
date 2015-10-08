@@ -100,6 +100,7 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
       // A structured mesh is generated.
       if (strcmp(tagname, "generate") == 0) {
         generate = true;
+        mesh_rectangular_ = "true";
         node = GetUniqueElementByTagsString_(inode, "number_of_cells", flag);
         if (!flag) 
             ThrowErrorIllformed_("mesh", "number_of_cells", "generate");

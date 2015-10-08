@@ -13,7 +13,7 @@
 
 #include <vector>
 #include "Teuchos_RCP.hpp"
-
+#include "Iterators.hh"
 #include "Mesh.hh"
 
 namespace Amanzi {
@@ -37,11 +37,15 @@ class TreeVectorSpace {
   void SetData(const Teuchos::RCP<const CompositeVectorSpace>& data) {
     data_ = data; }
 
-  // Iterators over SubVectors
-  std::vector< Teuchos::RCP<const TreeVectorSpace> >& SubVectors() {
-    return subvecs_; }
-  const std::vector< Teuchos::RCP<const TreeVectorSpace> >& SubVectors() const {
-    return subvecs_; }
+
+  // Access to SubVectors
+  typedef std::vector<Teuchos::RCP<const TreeVectorSpace> > SubVectorsContainer;
+  typedef Utils::iterator<SubVectorsContainer, const TreeVectorSpace> iterator;
+  typedef Utils::const_iterator<SubVectorsContainer, const TreeVectorSpace> const_iterator;
+
+  const_iterator begin() const { return const_iterator(subvecs_.begin()); }
+  const_iterator end() const { return const_iterator(subvecs_.end()); }
+  size_t size() const { return subvecs_.size(); }
 
   // Get a pointer to the sub-vector by index
   Teuchos::RCP<const TreeVectorSpace> SubVector(int index) const;

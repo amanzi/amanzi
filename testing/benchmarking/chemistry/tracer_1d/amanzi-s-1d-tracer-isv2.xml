@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<amanzi_input type="structured" version="2.1.1">
+    <model_description name="tracer_1d-str">
+        <comments>tracer_1d-str	Tue Sep 22 14:47:58 PDT 2015</comments>
+    </model_description>
+    <definitions>
+        <macros>
+            <time_macro name="every_year">
+                <start>0 s</start>
+                <timestep_interval>31556926.0 s</timestep_interval>
+                <stop>1.5778463e9 s</stop>
+            </time_macro>
+        </macros>
+    </definitions>
+    <process_kernels>
+        <flow model="saturated" state="on"/>
+        <transport state="on"/>
+        <chemistry engine="none" state="off"/>
+    </process_kernels>
+    <phases>
+        <liquid_phase name="water">
+            <viscosity>1.002e-3</viscosity>
+            <density>998.2</density>
+            <dissolved_components>
+                <solutes>
+                    <solute coefficient_of_diffusion="1.0E-9">tracer</solute>
+                </solutes>
+            </dissolved_components>
+        </liquid_phase>
+    </phases>
+    <execution_controls>
+        <verbosity level="medium"/>
+        <execution_control_defaults increase_factor="1.25" init_dt="1.5768e+5 s" max_dt="6.0e+10 s" method="bdf1" mode="transient" reduction_factor="0.8"/>
+        <execution_control end="1 s" increase_factor="1.2" init_dt="1 s" max_dt="6.0e10 s" method="bdf1" mode="steady" reduction_factor="0.8" start="0 s"/>
+        <execution_control end="1.5778463e9 s" increase_factor="1.2" reduction_factor="0.8" start="1 s"/>
+    </execution_controls>
+    <numerical_controls>
+        <common_controls/>
+        <structured_controls>
+            <str_steady-state_controls>
+                <petsc_options_file>.petsc</petsc_options_file>
+            </str_steady-state_controls>
+            <str_steady-state_controls>
+                <max_pseudo_time>1.0e14</max_pseudo_time>
+                <min_iterations>10</min_iterations>
+                <limit_iterations>20</limit_iterations>
+                <min_iterations_2>2</min_iterations_2>
+                <time_step_increase_factor>1.6</time_step_increase_factor>
+                <time_step_increase_factor_2>10.0</time_step_increase_factor_2>
+                <max_consecutive_failures_1>3</max_consecutive_failures_1>
+                <time_step_retry_factor_1>3.0</time_step_retry_factor_1>
+                <max_consecutive_failures_2>4</max_consecutive_failures_2>
+                <time_step_retry_factor_2>0.01</time_step_retry_factor_2>
+                <time_step_retry_factor_f>0.001</time_step_retry_factor_f>
+                <max_num_consecutive_success>0</max_num_consecutive_success>
+                <extra_time_step_increase_factor>10.0</extra_time_step_increase_factor>
+                <abort_on_psuedo_timestep_failure>true</abort_on_psuedo_timestep_failure>
+                <limit_function_evals>100000000</limit_function_evals>
+                <do_grid_sequence>false</do_grid_sequence>
+            </str_steady-state_controls>
+            <str_transient_controls>
+                <max_ls_iterations>10</max_ls_iterations>
+                <ls_reduction_factor>0.1</ls_reduction_factor>
+                <min_ls_factor>1.0e-8</min_ls_factor>
+                <ls_acceptance_factor>1.4</ls_acceptance_factor>
+                <monitor_line_search>0</monitor_line_search>
+                <monitor_linear_solve>0</monitor_linear_solve>
+                <use_fd_jac>true</use_fd_jac>
+                <perturbation_scale_for_J>1.0e-8</perturbation_scale_for_J>
+                <use_dense_Jacobian>false</use_dense_Jacobian>
+                <upwind_krel>true</upwind_krel>
+                <pressure_maxorder>3</pressure_maxorder>
+                <scale_solution_before_solve>true</scale_solution_before_solve>
+                <semi_analytic_J>true</semi_analytic_J>
+                <cfl>1</cfl>
+            </str_transient_controls>
+            <max_n_subcycle_transport>10</max_n_subcycle_transport>
+            <str_amr_controls/>
+        </structured_controls>
+    </numerical_controls>
+    <mesh>
+        <dimension>3</dimension>
+        <generate>
+            <number_of_cells nx="100" ny="1" nz="1"/>
+            <box high_coordinates="(10.0, 1.0, 1.0)" low_coordinates="(0.0, 0.0, 0.0)"/>
+        </generate>
+    </mesh>
+    <regions>
+        <box high_coordinates="(10.0, 1.0, 1.0)" low_coordinates="(0.0, 0.0, 0.0)" name="Region_between_surface0_and_1"/>
+        <box high_coordinates="(10.0, 1.0, 1.0)" low_coordinates="(0.0, 0.0, 0.0)" name="All"/>
+        <box high_coordinates="(10.0, 1.0, 1.0)" low_coordinates="(0.0, 0.0, 1.0)" name="+Z_Boundary"/>
+        <box high_coordinates="(10.0, 1.0, 0.0)" low_coordinates="(0.0, 0.0, 0.0)" name="-Z_Boundary"/>
+        <box high_coordinates="(10.0, 1.0, 1.0)" low_coordinates="(0.0, 1.0, 0.0)" name="+Y_Boundary"/>
+        <box high_coordinates="(10.0, 0.0, 1.0)" low_coordinates="(0.0, 0.0, 0.0)" name="-Y_Boundary"/>
+        <box high_coordinates="(10.0, 1.0, 1.0)" low_coordinates="(10.0, 0.0, 0.0)" name="+X_Boundary"/>
+        <box high_coordinates="(0.0, 1.0, 1.0)" low_coordinates="(0.0, 0.0, 0.0)" name="-X_Boundary"/>
+    </regions>
+    <materials>
+        <material name="soil">
+            <mechanical_properties>
+                <porosity value="0.25"/>
+                <particle_density value="2720.0"/>
+                <specific_storage value="1.0"/>
+                <dispersion_tensor alpha_l="0.0" alpha_t="0.0" type="uniform_isotropic"/>
+            </mechanical_properties>
+            <permeability x="1.0E-12" y="1.0E-12" z="1.0E-12"/>
+            <cap_pressure model="none"/>
+            <rel_perm model="none"/>
+            <assigned_regions>Region_between_surface0_and_1</assigned_regions>
+        </material>
+    </materials>
+    <initial_conditions>
+        <initial_condition name="IC">
+            <assigned_regions>All</assigned_regions>
+            <liquid_phase name="water">
+                <liquid_component name="water">
+                    <uniform_pressure value="201325.0"/>
+                </liquid_component>
+                <solute_component name="solute">
+                  <uniform_conc name="tracer" value="1.e-20"/>
+                </solute_component>
+            </liquid_phase>
+        </initial_condition>
+    </initial_conditions>
+    <boundary_conditions>
+        <boundary_condition name="west_bc">
+            <assigned_regions>-X_Boundary</assigned_regions>
+            <liquid_phase name="water">
+                <liquid_component name="water">
+                    <inward_mass_flux function="constant" start="0 y" value="7.91317859e-6"/>
+                </liquid_component>
+                <solute_component name="solute">
+                    <aqueous_conc function="constant" name="tracer" start="0 y" value="1.e-03"/>
+                </solute_component>
+            </liquid_phase>
+        </boundary_condition>
+        <boundary_condition name="east_bc">
+            <assigned_regions>+X_Boundary</assigned_regions>
+            <liquid_phase name="water">
+                <liquid_component name="water">
+                    <uniform_pressure function="constant" start="0 y" value="201325.0"/>
+                </liquid_component>
+                <solute_component name="solute">
+                    <aqueous_conc function="constant" name="tracer" start="0 y" value=""/>
+                </solute_component>
+            </liquid_phase>
+        </boundary_condition>
+    </boundary_conditions>
+    <output>
+        <vis>
+            <base_filename>tracer</base_filename>
+            <num_digits>5</num_digits>
+            <time_macros>every_year</time_macros>
+        </vis>
+        <checkpoint>
+            <base_filename>checkpoint</base_filename>
+            <num_digits>5</num_digits>
+        </checkpoint>
+    </output>
+</amanzi_input>

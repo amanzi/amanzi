@@ -75,12 +75,14 @@ public:
 
     void FlushObservations();
     void FlushObservations(std::ostream& out);
+    void checkPointObservations () const;
 
     static void Initialize ();
     static void Finalize ();
 
 protected:
     void restart (const std::string& filename); // Note: this should be a virtual, but it is not
+    void restartObservations (const std::string& chkname);
     void InitializeControlEvents();
     void UpdateVisitPlotfileList() const;
 

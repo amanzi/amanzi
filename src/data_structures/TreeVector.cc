@@ -52,8 +52,9 @@ void TreeVector::InitMap_() {
     data_ = Teuchos::rcp(new CompositeVector(*map_->Data()));
   }
 
-  for (int i=0; i!=map_->SubVectors().size(); ++i) {
-    InitPushBack_(Teuchos::rcp(new TreeVector(*map_->SubVectors()[i])));
+  for (TreeVectorSpace::const_iterator i=map_->begin();
+       i!=map_->end(); ++i) {
+    InitPushBack_(Teuchos::rcp(new TreeVector(**i)));
   }
 }
 

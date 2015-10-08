@@ -67,6 +67,17 @@
         <Parameter name="gaseous values" type="Array(double)" value="{1e-3}"/>
       </ParameterList>
 
+      <ParameterList name="operators">
+        <ParameterList name="diffusion operator">
+          <ParameterList name="matrix">
+            <Parameter name="discretization primary" type="string" value="fv: default"/>
+            <Parameter name="discretization secondary" type="string" value="fv: default"/>
+            <Parameter name="schema" type="Array(string)" value="{cell}"/>
+            <Parameter name="gravity" type="bool" value="false"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
       <!-- developers parameters --> 
       <Parameter name="enable internal tests" type="string" value="yes"/>   
       <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   

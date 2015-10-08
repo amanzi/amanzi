@@ -72,6 +72,7 @@ set(operators_inc_files
     Operator_Edge.hh
     BoundaryFlux.hh
     OperatorDiffusion.hh
+    OperatorDiffusionWithGravity.hh
     OperatorDiffusionFactory.hh
     OperatorDiffusionMFD.hh
     OperatorDiffusionMFDwithGravity.hh
