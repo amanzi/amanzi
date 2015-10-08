@@ -611,6 +611,7 @@ void InputConverterS::ParseNumericalControls_()
       string max_pseudo_time = GetChildValueS_(steady, "max_pseudo_time", found);
       if (found)
         AddToTable(table, MakePPPrefix("prob", "steady_max_pseudo_time"), MakePPEntry(max_pseudo_time));
+
     }
 
     // Transient controls.
@@ -620,11 +621,15 @@ void InputConverterS::ParseNumericalControls_()
     }
 
     // AMR controls.
+    int max_level = 0;
+    vector<string> user_derive_list;
     DOMElement* amr = GetChildByName_(structured_controls, "str_amr_controls", found);
     if (found)
     {
       DOMElement* refinement = GetChildByName_(amr, "refinement_indicators", found);
     }
+    AddToTable(table, MakePPPrefix("amr", "max_level"), MakePPEntry(max_level));
+    AddToTable(table, MakePPPrefix("amr", "user_derive_list"), MakePPEntry(user_derive_list));
   }
 
   ParmParse::appendTable(table);
@@ -1138,7 +1143,7 @@ void InputConverterS::ParseMaterials_()
           string sr = GetAttributeValueS_(parameters, "sr", true);
           string m = GetAttributeValueS_(parameters, "m", true);
           AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "alpha"), MakePPEntry(alpha));
-          AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "sr"), MakePPEntry(sr));
+          AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "Sr"), MakePPEntry(sr));
           AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "m"), MakePPEntry(m));
           string optional_krel_smoothing_interval = GetAttributeValueS_(parameters, "optional_krel_smoothing_interval", false);
           if (!optional_krel_smoothing_interval.empty())
@@ -1320,21 +1325,54 @@ void InputConverterS::ParsePhases_()
 {
   list<ParmParse::PP_entry> table;
 
+  vector<string> phase_names;
   bool found;
-  DOMElement* liquid_phase = static_cast<DOMElement*>(GetUniqueElementByTagsString_("Phases, liquid_phase", found));
+  DOMElement* liquid_phase = static_cast<DOMElement*>(GetUniqueElementByTagsString_("phases, liquid_phase", found));
   if (found)
   {
+    string name = GetAttributeValueS_(liquid_phase, "name");
+    phase_names.push_back(name);
+    bool found;
+    string viscosity = GetChildValueS_(liquid_phase, "viscosity", found, true);
+    AddToTable(table, MakePPPrefix("phase", name, "viscosity"), MakePPEntry(viscosity));
+    string density = GetChildValueS_(liquid_phase, "density", found, true);
+    AddToTable(table, MakePPPrefix("phase", name, "density"), MakePPEntry(density));
+    string eos = GetChildValueS_(liquid_phase, "eos", found, false);
+    if (found)
+      AddToTable(table, MakePPPrefix("phase", name, "eos"), MakePPEntry(eos)); // FIXME
+    DOMElement* dissolved_comps = GetChildByName_(liquid_phase, "dissolved_components", found);
+    if (found)
+    {
+      DOMElement* solutes = GetChildByName_(dissolved_comps, "solutes", found, true);
+      vector<DOMNode*> sols = GetChildren_(solutes, "solute", found);
+      for (size_t i = 0; i < sols.size(); ++i)
+      {
+        // FIXME: Really confused about what goes here.
+      }
+    }
+    else
+    {
+      // No information on solutes--we have a single component with the same 
+      // name as the liquid phase.
+      vector<string> components(1, name);
+      AddToTable(table, MakePPPrefix("phase", name, "comps"), MakePPEntry(components));
+
+      // Zero diffusivity by default.
+      AddToTable(table, MakePPPrefix("phase", name, "diffusivity"), MakePPEntry(0.0));
+    }
   }
 
-  DOMElement* solid_phase = static_cast<DOMElement*>(GetUniqueElementByTagsString_("Phases, solid_phase", found));
+  DOMElement* solid_phase = static_cast<DOMElement*>(GetUniqueElementByTagsString_("phases, solid_phase", found));
   if (found)
   {
+    // Currently, Amanzi-S doesn't think of things this way.
   }
 
-  DOMElement* gas_phase = static_cast<DOMElement*>(GetUniqueElementByTagsString_("Phases, solid_phase", found));
+  DOMElement* gas_phase = static_cast<DOMElement*>(GetUniqueElementByTagsString_("phases, solid_phase", found));
   if (found)
   {
   }
+  AddToTable(table, MakePPPrefix("phase", "phases"), MakePPEntry(phase_names));
 
   ParmParse::appendTable(table);
 }
