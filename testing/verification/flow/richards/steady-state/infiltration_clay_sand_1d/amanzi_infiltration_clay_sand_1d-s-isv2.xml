@@ -8,6 +8,7 @@
             <cycle_macro name="Every_100">
                 <start>0</start>
                 <timestep_interval>100</timestep_interval>
+                <stop>-1</stop>
             </cycle_macro>
         </macros>
     </definitions>
@@ -78,11 +79,6 @@
     <regions>
         <box high_coordinates="(1.0, 1.5)" low_coordinates="(0.0, 0.0)" name="Region_between_surface_0_and__1"/>
         <box high_coordinates="(1.0, 2.0)" low_coordinates="(0.0, 1.5)" name="Region_between_surface_1_and__2"/>
-        <box high_coordinates="(1.0, 2.0)" low_coordinates="(0.0, 0.0)" name="All"/>
-        <box high_coordinates="(0.0, 2.0)" low_coordinates="(0.0, 0.0)" name="-X_Boundary"/>
-        <box high_coordinates="(1.0, 2.0)" low_coordinates="(0.0, 2.0)" name="+Y_Boundary"/>
-        <box high_coordinates="(1.0, 2.0)" low_coordinates="(1.0, 0.0)" name="+X_Boundary"/>
-        <box high_coordinates="(1.0, 0.0)" low_coordinates="(0.0, 0.0)" name="-Y_Boundary"/>
     </regions>
     <materials>
         <material name="clay">
@@ -90,7 +86,7 @@
                 <porosity value="0.43"/>
                 <particle_density value="2720.0"/>
             </mechanical_properties>
-            <permeability x="1.18E-13" y="1.18E-13"/>
+            <permeability x="1.18E-13" y="1.18E-13" z="1.18E-13"/>
             <cap_pressure model="van_genuchten">
                 <parameters alpha="1.02" m="0.0909" sr="0.25"/>
             </cap_pressure>
@@ -102,7 +98,7 @@
                 <porosity value="0.43"/>
                 <particle_density value="2720.0"/>
             </mechanical_properties>
-            <permeability x="1.18E-11" y="1.18E-11"/>
+            <permeability x="1.18E-11" y="1.18E-11" z="1.18E-11"/>
             <cap_pressure model="van_genuchten">
                 <parameters alpha="0.00153" m="0.6666" sr="0.104"/>
             </cap_pressure>
@@ -112,7 +108,7 @@
     </materials>
     <initial_conditions>
         <initial_condition name="IC">
-            <assigned_regions>All,All</assigned_regions>
+            <assigned_regions>All</assigned_regions>
             <liquid_phase name="water">
                 <liquid_component name="water">
                     <uniform_pressure value="81747"/>
@@ -122,7 +118,7 @@
     </initial_conditions>
     <boundary_conditions>
         <boundary_condition name="BC For Bottom Surface">
-            <assigned_regions>-Y_Boundary</assigned_regions>
+            <assigned_regions>YLOBC</assigned_regions>
             <liquid_phase name="water">
                 <liquid_component name="water">
                     <uniform_pressure function="constant" start="0.0 y" value="99630.6336"/>
@@ -131,7 +127,7 @@
             </liquid_phase>
         </boundary_condition>
         <boundary_condition name="BC For Top Surface">
-            <assigned_regions>+Y_Boundary</assigned_regions>
+            <assigned_regions>YHIBC</assigned_regions>
             <liquid_phase name="water">
                 <liquid_component name="water">
                     <inward_mass_flux function="constant" start="0.0 y" value="5.776620e-5"/>
@@ -149,7 +145,7 @@
         <checkpoint>
             <base_filename>checkpoint</base_filename>
             <num_digits>5</num_digits>
-            <cycle_macro>Every_100</cycle_macro>
+            <cycle_macros>Every_100</cycle_macros>
         </checkpoint>
     </output>
 </amanzi_input>

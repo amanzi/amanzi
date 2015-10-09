@@ -1191,7 +1191,7 @@ PressToRhoSat::transform(Real aqueous_pressure) const
     int ncomps = cNames.size();
     int idx = -1;
     for (int j=0; j<ncomps; ++j) {
-        if (cNames[j] == "Water") {
+        if (cNames[j] == "Water" || cNames[j] == "water") {
             idx = j;
         }
     }
@@ -1228,7 +1228,6 @@ void  PorousMedia::read_comp()
       }
       Real p_rho; ppr.get("density",p_rho); density.push_back(p_rho);
       // viscosity in units of kg/(m.s)
-      //Real p_visc; ppr.get("viscosity",p_visc); muval.push_back(p_visc);
       Real p_visc; ppr.get("viscosity",p_visc); muval.push_back(p_visc);
       Real p_diff; ppr.get("diffusivity",p_diff); visc_coef.push_back(p_diff);
 

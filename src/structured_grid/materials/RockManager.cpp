@@ -418,11 +418,11 @@ RockManager::Initialize(const Array<std::string>* solute_names)
   Kr_models[Kr_model_BC_Burdine] = Kr_cnt++;
 
   ParmParse pp("rock");
-  int nrock = pp.countval("rock");
+  int nrock = pp.countval("rocks");
   if (nrock <= 0) {
     BoxLib::Abort("At least one rock type must be defined.");
   }
-  Array<std::string> r_names;  pp.getarr("rock",r_names,0,nrock);
+  Array<std::string> r_names;  pp.getarr("rocks",r_names,0,nrock);
 
   ParmParse ppp("prob");
   max_grid_size_fine_gen = max_grid_size_fine_gen_DEF;

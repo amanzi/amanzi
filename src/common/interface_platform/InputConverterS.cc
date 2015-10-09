@@ -1241,7 +1241,7 @@ void InputConverterS::ParseMaterials_()
         }
       }
     }
-    AddToTable(table, MakePPPrefix("rock", "rock"), MakePPEntry(material_names));
+    AddToTable(table, MakePPPrefix("rock", "rocks"), MakePPEntry(material_names));
   }
 
   ParmParse::appendTable(table);
