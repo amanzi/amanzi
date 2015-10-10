@@ -102,7 +102,10 @@ RichardSolver::RichardSolver(RSdata& _rs_data, NLScontrol& _nlsc)
   ierr = VecDuplicate(RhsV,&GV); CHKPETSC(ierr);
   ierr = VecDuplicate(RhsV,&AlphaV); CHKPETSC(ierr);
 
-  mftfp->BuildStencil(rs_data.pressure_bc, rs_data.pressure_maxorder);
+  int retVal = mftfp->BuildStencil(rs_data.pressure_bc, rs_data.pressure_maxorder);
+  if (retVal != 0) {
+    BoxLib::Abort("Pressure boundary condition not properly set for RichardSolver");
+  }
 
   bool calcSpace = true;
   BuildOpSkel(Jac,calcSpace);

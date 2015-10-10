@@ -369,7 +369,8 @@ static int tracer_bc[] =
 
 static int press_bc[] =
   {
-    INT_DIR, FOEXTRAP, EXT_DIR, REFLECT_EVEN, FOEXTRAP, FOEXTRAP
+    // Interior, Inflow,   Outflow, Symmetry,     SlipWall, NoSlipWall.
+    INT_DIR,     FOEXTRAP, EXT_DIR, REFLECT_EVEN, FOEXTRAP, FOEXTRAP
   };
 
 static int norm_vel_bc[] =
@@ -1397,6 +1398,14 @@ void  PorousMedia::read_comp()
       }
   }
 
+  // default to no flow first.
+  for (int j=0;j<BL_SPACEDIM;j++) {
+    phys_bc.setLo(j,Symmetry);
+    pres_bc.setLo(j,Symmetry);
+    phys_bc.setHi(j,Symmetry);
+    pres_bc.setHi(j,Symmetry);
+  }
+
   int n_bcs = cp.countval("bc_labels");
   if (n_bcs > 0)
   {
@@ -1408,14 +1417,6 @@ void  PorousMedia::read_comp()
       bc_array.resize(n_bcs,PArrayManage);
       Array<std::string> bc_names;
       cp.getarr("bc_labels",bc_names,0,n_bcs);
-
-      // default to no flow first.
-      for (int j=0;j<BL_SPACEDIM;j++) {
-	phys_bc.setLo(j,1);
-	pres_bc.setLo(j,1);
-	phys_bc.setHi(j,1);
-	pres_bc.setHi(j,1);
-      }
 
       if (region_manager == 0) {
         BoxLib::Abort("static Region manager must be set up prior to reading tracer BCs");
