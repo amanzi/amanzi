@@ -916,8 +916,108 @@ PorousMedia::variableSetUp ()
   std::string amr_prefix = "amr";
   ParmParse pp(amr_prefix);
   int num_user_derives = pp.countval("user_derive_list");
-  pp.getarr("user_derive_list",user_derive_list,0,num_user_derives);
-  for (int i=0; i<num_user_derives; ++i) {
+  if (num_user_derives != 0) {
+    pp.getarr("user_derive_list",user_derive_list,0,num_user_derives);
+  }
+
+  // Make list of internally required or otherwise desired variables
+  Array<std::string> intern_reqd_der;
+  for (int i=0; i<pNames.size(); ++i) {
+    intern_reqd_der.push_back(pNames[i] + "_Pressure");
+  }
+  for (int i=0; i<cNames.size(); ++i) {
+    intern_reqd_der.push_back(cNames[i] + "_Saturation");
+    intern_reqd_der.push_back("Volumetric_" + cNames[i] + "_Content");
+  }
+  for (int i=0; i<tNames.size(); ++i) {
+    for (int j=0; j<pNames.size(); ++j) {
+      for (int k=0; k<cNames.size(); ++k) {
+	if (pNames.size() == 1 &&  cNames.size() == 1) {
+	  intern_reqd_der.push_back(tNames[i] + "_" + pNames[k] + "_Concentration");
+	}
+	else {
+	  intern_reqd_der.push_back(tNames[i] + "_Concentration_in_" + pNames[k] + "_" + cNames[j]);
+	}
+      }
+    }
+    intern_reqd_der.push_back("Volumetric_" + tNames[i] + "_Content");
+  }
+
+  intern_reqd_der.push_back("Porosity");
+  std::string dirStr[3] = {"X", "Y", "Z"};
+  for (int i=0; i<cNames.size(); ++i) {
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+      intern_reqd_der.push_back("Volumetric_"+cNames[i]+"_Flux_"+dirStr[d]);
+    }
+  }
+
+  if (do_tracer_diffusion) {
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+      intern_reqd_der.push_back("Tortuosity_"+dirStr[d]);
+    }
+  }
+  
+  if (model==PM_SATURATED) {
+    intern_reqd_der.push_back("Specific_Storage");
+    intern_reqd_der.push_back("Specific_Yield");
+    intern_reqd_der.push_back("Particle_Density");
+  }
+
+  for (int d=0; d<BL_SPACEDIM; ++d) {
+    intern_reqd_der.push_back("Intrinsic_Permeability_"+dirStr[d]);
+  }
+
+  if (rock_manager!=0  && do_tracer_chemistry!=0)
+  {
+    if (rock_manager->UsingSorption())
+    {
+      for (int i=0; i<tNames.size(); ++i) {
+	intern_reqd_der.push_back(tNames[i]+"_Sorbed_Concentration");
+      }
+      for (int i=0; i<tNames.size(); ++i) {
+	intern_reqd_der.push_back(tNames[i]+"_Free_Ion_Guess");
+      }
+      for (int i=0; i<tNames.size(); ++i) {
+	intern_reqd_der.push_back(tNames[i]+"_Activity_Coefficient");
+      }
+
+      if (rock_manager->CationExchangeCapacityICs().size()>0) {
+	intern_reqd_der.push_back("Cation_Exchange_Capacity");
+      }
+
+      const Array<std::string>& mineralNames = rock_manager->MineralNames();
+      for (int i=0; i<mineralNames.size(); ++i) {
+	intern_reqd_der.push_back(mineralNames[i]+"_Volume_Fraction");
+      }
+      for (int i=0; i<mineralNames.size(); ++i) {
+	intern_reqd_der.push_back(mineralNames[i]+"_Specific_Surface_Area");
+      }
+
+      const Array<std::string>& sorptionSiteNames = rock_manager->SorptionSiteNames();
+      for (int i=0; i<sorptionSiteNames.size(); ++i) {
+	intern_reqd_der.push_back(sorptionSiteNames[i]+"_Surface_Site_Density");
+      }
+    }
+  }
+
+  intern_reqd_der.push_back("Material_ID");
+  intern_reqd_der.push_back("Grid_ID");
+  intern_reqd_der.push_back("Core_ID");
+  intern_reqd_der.push_back("Cell_ID");
+  intern_reqd_der.push_back("Hydraulic_Head");
+
+  for (int i=0; i<intern_reqd_der.size(); ++i) {
+    int j = -1;
+    for (int k=0; k<user_derive_list.size() && j<0; ++k) {
+      j = intern_reqd_der[i] == user_derive_list[k] ? k : -1;
+    }
+    if (j<0) {
+      user_derive_list.push_back(intern_reqd_der[i]);
+    }
+  }
+
+  // Add variables in list above to derivable list if not already added
+  for (int i=0; i<user_derive_list.size(); ++i) {
     int nCompThis = (user_derive_list[i] == "Dispersivity" ? 2 : 1);
     derive_lst.add(user_derive_list[i], regionIDtype, nCompThis);
   }
@@ -1034,7 +1134,7 @@ void PorousMedia::read_prob()
     BoxLib::Abort("Invalid model selected");
   }
 
-  if (model_name=="steady-saturated") {
+  if (model==PM_STEADY_SATURATED) {
       solute_transport_limits_dt = true;
       do_richard_init_to_steady = true;
   }

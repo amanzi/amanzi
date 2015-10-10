@@ -4156,9 +4156,10 @@ PorousMedia::sum_integrated_quantities ()
   Real mass = 0.0;
   Array<Real> tmoles(ntracers,0);
 
+  std::string VWC_name = "Volumetric_" + cNames[0] + "_Content";
   for (int lev = 0; lev <= finest_level; lev++) {
     PorousMedia& ns_level = getLevel(lev);
-    mass += ns_level.volWgtSum("Volumetric_Water_Content",time);
+    mass += ns_level.volWgtSum(VWC_name,time);
     for (int n=0; n<ntracers; ++n) {
       std::string VSC = "Volumetric_" + tNames[n] + "_Content";
       tmoles[n] += ns_level.volWgtSum(VSC,time);
@@ -7367,6 +7368,7 @@ PorousMedia::derive_Volumetric_Water_Content(Real      time,
                                              int       dcomp,
                                              int       ntrac)
 {
+#if 0
   // Note, assumes one comp per phase
   int scomp = -1;
   for (int i=0; i<cNames.size(); ++i) {
@@ -7377,6 +7379,10 @@ PorousMedia::derive_Volumetric_Water_Content(Real      time,
       scomp = i;
     }
   }
+#else
+  // HACK!!!!  Assumes pNames[0]="Aqueous" and cNames[0]="Water"
+  int scomp = 0;
+#endif
 
   if (scomp>=0) {
     const BoxArray& BA = mf.boxArray();
@@ -7407,7 +7413,7 @@ PorousMedia::derive_Volumetric_Water_Content(Real      time,
     }
   }            
   else {
-    BoxLib::Abort("PorousMedia: cannot derive Volumetric_Water_Content");
+    BoxLib::Abort(std::string("PorousMedia: cannot derive Volumetric_"+cNames[0]+"_Content").c_str());
   }
 }
 
@@ -7420,12 +7426,18 @@ PorousMedia::derive_Aqueous_Saturation(Real      time,
   // FIXME: Assumes one comp per phase
   int scomp = -1;
   int naq = 0;
+#if 0
   for (int ip=0; ip<pNames.size(); ++ip) {
     if (pNames[ip] == "Aqueous") {
       scomp = ip;
       naq++;
     }
   }
+#else
+  // Hack, assumes pNames[0]="Aqueous" and there is only one component of phase[0]
+  naq = 1;
+  scomp = 0;
+#endif
 
   if (naq==1) {
     MultiFab TMP;
@@ -7695,6 +7707,14 @@ PorousMedia::derive (const std::string& name,
   const DeriveRec* rec = derive_lst.get(name);
 
   bool not_found_yet = false;
+  std::string dirStr[3] = {"X", "Y", "Z"};
+
+  int flux_dir = -1;
+  for (int i=0; i<cNames.size(); ++i) {
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+      if (name == "Volumetric_"+cNames[i]+"_Flux_"+dirStr[d]) flux_dir = d;
+    }
+  }
 
   if (name == "Material_ID") {
     derive_Material_ID(time,mf,dcomp);
@@ -7708,43 +7728,38 @@ PorousMedia::derive (const std::string& name,
   else if (name == "Cell_ID") {
     derive_Cell_ID(time,mf,dcomp);
   }
-  else if (name == "Volumetric_Water_Content") {
+  else if (name == "Volumetric_" + cNames[0] + "_Content") {
     derive_Volumetric_Water_Content(time,mf,dcomp);
   }
-  else if (name == "Aqueous_Saturation") {
+  else if (name == cNames[0] + "_Saturation") {
     derive_Aqueous_Saturation(time,mf,dcomp);
   }
-  else if (name == "Aqueous_Pressure") {
+  else if (name == pNames[0] + "_Pressure") {
     derive_Aqueous_Pressure(time,mf,dcomp);
   }
   else if (name == "Hydraulic_Head") {
     derive_Hydraulic_Head(time,mf,dcomp);
   }
-  else if (name == "Aqueous_Volumetric_Flux_X" ||
-           name == "Aqueous_Volumetric_Flux_Y" ||
-           name == "Aqueous_Volumetric_Flux_Z") {
-    int dir = ( name == "Aqueous_Volumetric_Flux_X"  ?  0  :
-                name == "Aqueous_Volumetric_Flux_Y" ? 1 : 2);
-    derive_Aqueous_Volumetric_Flux(time,mf,dcomp,dir);
+  else if (flux_dir >= 0) {
+    derive_Aqueous_Volumetric_Flux(time,mf,dcomp,flux_dir);
   }
   else if (name=="Porosity") {
     derive_Porosity(time,mf,dcomp);
   }
   else if (rock_manager)
   {
-    if (name == "Intrinsic_Permeability_X" ||
-        name == "Intrinsic_Permeability_Y" ||
-        name == "Intrinsic_Permeability_Z") {
-      int dir = ( name == "Intrinsic_Permeability_X"  ?  0  :
-                  name == "Intrinsic_Permeability_Y" ? 1 : 2);
-      derive_Intrinsic_Permeability(time,mf,dcomp,dir);
+    int perm_dir = -1;
+    int tort_dir = -1;
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+      if (name == "Intrinsic_Permeability_"+dirStr[d]) perm_dir = d;
+      if (name == "Tortuosity_"+dirStr[d]) tort_dir = d;
     }
-    else if (name == "Tortuosity_X" ||
-             name == "Tortuosity_Y" ||
-             name == "Tortuosity_Z") {
-      int dir = ( name == "Tortuosity_X"  ?  0  :
-                  name == "Tortuosity_Y" ? 1 : 2);
-      derive_Tortuosity(time,mf,dcomp,dir);
+    
+    if (perm_dir >= 0) {
+      derive_Intrinsic_Permeability(time,mf,dcomp,perm_dir);
+    }
+    else if (tort_dir >= 0) {
+      derive_Tortuosity(time,mf,dcomp,tort_dir);
     }
     else if (name == "Specific_Storage") {
       derive_SpecificStorage(time,mf,dcomp);
@@ -7766,16 +7781,33 @@ PorousMedia::derive (const std::string& name,
   }
 
   if (not_found_yet) {
-    for (int n=0; n<ntracers && not_found_yet; ++n) {
-      std::string tname = tNames[n] + "_Aqueous_Concentration";
-      std::string VSC = "Volumetric_" + tNames[n] + "_Content";
-      if (name==tname) {
-        AmrLevel::derive(tNames[n],time,mf,dcomp);
-        not_found_yet = false;
+    for (int i=0; i<ntracers && not_found_yet; ++i) {
+
+      for (int j=0; j<pNames.size(); ++j) {
+	for (int k=0; k<cNames.size(); ++k) {
+	  std::string this_name;
+	  if (pNames.size() == 1 &&  cNames.size() == 1) {
+	    this_name = tNames[i] + "_" + pNames[k] + "_Concentration";
+	  }
+	  else {
+	    BoxLib::Abort("Scheme not yet defined for naming solutes in systems with multiple components and/or phases");
+	    this_name = tNames[i] + "_Concentration_in_" + pNames[k] + "_" + cNames[j];
+	  }
+
+	  if (this_name == name) {
+	    AmrLevel::derive(tNames[i],time,mf,dcomp);
+	    not_found_yet = false;
+	  }
+
+	}
       }
-      else if (name == VSC) {
-        derive_Volumetric_Water_Content(time,mf,dcomp,n);
-        not_found_yet = false;
+
+      if (not_found_yet) {
+	std::string VSC = "Volumetric_" + tNames[i] + "_Content";
+	if (name == VSC) {
+	  derive_Volumetric_Water_Content(time,mf,dcomp,i);
+	  not_found_yet = false;
+	}
       }
     }
 
