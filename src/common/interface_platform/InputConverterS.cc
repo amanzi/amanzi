@@ -697,27 +697,40 @@ void InputConverterS::ParseMesh_()
   ParmParse::appendTable(table);
 }
 
+static void MakeBox(list<ParmParse::PP_entry>& table,
+		    const string&              name,
+		    const vector<double>&      lo,
+		    const vector<double>&      hi)
+{
+  AddToTable(table, MakePPPrefix("geometry", name, "lo_coordinate"), MakePPEntry(lo));
+  AddToTable(table, MakePPPrefix("geometry", name, "hi_coordinate"), MakePPEntry(hi));
+  AddToTable(table, MakePPPrefix("geometry", name, "type"),          MakePPEntry("box"));
+  AddToTable(table, MakePPPrefix("geometry", name, "purpose"),       MakePPEntry("all"));
+}
+  
 void InputConverterS::ParseRegions_()
 {
   list<ParmParse::PP_entry> table;
-  bool found;
-  
-  DOMNode* regions = GetUniqueElementByTagsString_("regions", found);
   vector<string> region_names;
+  
+  // Create default regions
+  string name;
+  vector<double> lo(dim_), hi(dim_);
+  name = "All";   lo=lo_coords_; hi=hi_coords_;              MakeBox(table, name, lo, hi); region_names.push_back(name);
+  name = "XLOBC"; lo=lo_coords_; hi=hi_coords_; hi[0]=lo[0]; MakeBox(table, name, lo, hi); region_names.push_back(name);
+  name = "XHIBC"; lo=lo_coords_; hi=hi_coords_; lo[0]=hi[0]; MakeBox(table, name, lo, hi); region_names.push_back(name);
+  name = "YLOBC"; lo=lo_coords_; hi=hi_coords_; hi[1]=lo[1]; MakeBox(table, name, lo, hi); region_names.push_back(name);
+  name = "YHIBC"; lo=lo_coords_; hi=hi_coords_; lo[1]=hi[1]; MakeBox(table, name, lo, hi); region_names.push_back(name);    
+  if (dim_ > 2) {
+    name = "ZLOBC"; lo=lo_coords_; hi=hi_coords_; hi[2]=lo[2]; MakeBox(table, name, lo, hi); region_names.push_back(name);
+    name = "ZHIBC"; lo=lo_coords_; hi=hi_coords_; lo[2]=hi[2]; MakeBox(table, name, lo, hi); region_names.push_back(name);    
+  }
+
+  bool found;
+  DOMNode* regions = GetUniqueElementByTagsString_("regions", found);
   if (found)
   {
     bool found;
-
-    // First, add an All region that encompasses the entire domain.
-    AddToTable(table, MakePPPrefix("geometry", "All", "lo_coordinate"), 
-                                   MakePPEntry(lo_coords_));
-    AddToTable(table, MakePPPrefix("geometry", "All", "hi_coordinate"), 
-                                   MakePPEntry(hi_coords_));
-    AddToTable(table, MakePPPrefix("geometry", "All", "type"), 
-                                   MakePPEntry("box"));
-    AddToTable(table, MakePPPrefix("geometry", "All", "purpose"), 
-                                   MakePPEntry("all"));
-    region_names.push_back("All");
 
     // box
     vector<DOMNode*> boxes = GetChildren_(regions, "box", found);
@@ -729,10 +742,8 @@ void InputConverterS::ParseRegions_()
       region_names.push_back(region_name);
       vector<double> lo_coords = GetAttributeVector_(box, "low_coordinates", found);
       vector<double> hi_coords = GetAttributeVector_(box, "high_coordinates", found);
-      AddToTable(table, MakePPPrefix("geometry", region_name, "lo_coordinate"), 
-                                     MakePPEntry(lo_coords));
-      AddToTable(table, MakePPPrefix("geometry", region_name, "hi_coordinate"), 
-                                     MakePPEntry(hi_coords));
+      AddToTable(table, MakePPPrefix("geometry", region_name, "lo_coordinate"), MakePPEntry(lo_coords));
+      AddToTable(table, MakePPPrefix("geometry", region_name, "hi_coordinate"), MakePPEntry(hi_coords));
 
       // Determine the geometry tolerance geometry_eps. dim_, {x,y,z}{min/max}_
       // should all be available because they are computed in ParseMesh(), 
@@ -1390,16 +1401,134 @@ void InputConverterS::ParseBoundaryConditions_()
   DOMNode* boundary_conditions = GetUniqueElementByTagsString_("boundary_conditions", found);
   if (found)
   {
-    bool found;
-    vector<DOMNode*> bcs = GetChildren_(boundary_conditions, "boundary_condition", found);
-    if (found)
+    bool bfound;
+    vector<DOMNode*> bcs = GetChildren_(boundary_conditions, "boundary_condition", bfound);
+    if (bfound)
     {
+      vector<string> bc_names;
       for (size_t i = 0; i < bcs.size(); ++i)
       {
         DOMElement* bc = static_cast<DOMElement*>(bcs[i]);
         string bc_name = GetAttributeValueS_(bc, "name");
-        vector<string> times;
+	bc_names.push_back(bc_name);
+
+	// phase/comp
+	bool pfound = false;
+	DOMElement* lp = GetChildByName_(bc, "liquid_phase", pfound);
+	if (pfound) {
+	  bool cfound = false;
+	  DOMElement* lc = GetChildByName_(lp, "liquid_component", cfound);
+	  if (cfound) {
+	    vector<DOMNode*> nodes;
+	    string bc_type_labels[10] = {"inward_mass_flux",
+					 "outward_mass_flux",
+					 "inward_volumetric_flux",
+					 "outward_volumetric_flux",
+					 "uniform_pressure",
+					 "linear_pressure",
+					 "seepage_face",
+					 "hydrostatic",
+					 "linear_hydrostatic",
+					 "no_flow"};
+	    bool tfound = false;
+	    for (int i=0; i<10 && !tfound; ++i) {
+	      nodes = GetChildren_(lc, bc_type_labels[i], tfound, false);
+	      if (tfound) {
+		vector<string> functions, starts, values, imf;
+		vector<string> gvalues, rvalues, rpoints, csys, rwths, sms;
+		for (size_t j = 0; j < nodes.size(); ++j) {
+		  DOMElement* elt = static_cast<DOMElement*>(nodes[j]);
+
+		  functions.push_back(GetAttributeValueS_(elt, "function", true));
+
+		  if (bc_type_labels[i]!="linear_pressure"
+		      && bc_type_labels[i]!="seepage_face"
+		      && bc_type_labels[i]!="hydrostatic"
+		      && bc_type_labels[i]!="linear_hydrostatic")
+		    {
+		      values.push_back(GetAttributeValueS_(elt, "value", true));
+		      string this_start = GetAttributeValueS_(elt, "start", true);
+		      map<string, string>::const_iterator iter = labeled_times_.find(this_start);
+		      starts.push_back( iter != labeled_times_.end() ? iter->second : this_start );
+		    }
+		  
+		  // Get extra info, if required
+		  if (bc_type_labels[i]=="linear_pressure"
+		      || bc_type_labels[i]=="linear_hydrostatic") {
+		    gvalues.push_back(GetAttributeValueS_(elt, "gradient_value", true));
+		    rpoints.push_back(GetAttributeValueS_(elt, "reference_point", true));
+		  }
+
+		  if (bc_type_labels[i]=="linear_pressure") {
+		    rvalues.push_back(GetAttributeValueS_(elt, "reference_value", true));
+		  }
+
+		  if (bc_type_labels[i]=="linear_hydrostatic") {
+		    rwths.push_back(GetAttributeValueS_(elt, "reference_water_table_height", true));
+		    sms.push_back(GetAttributeValueS_(elt, "submodel", true));
+		  }
+
+		  if (bc_type_labels[i]=="hydrostatic") {
+		    csys.push_back(GetAttributeValueS_(elt, "coordinate_system", true));
+		    sms.push_back(GetAttributeValueS_(elt, "submodel", true));
+		  }
+
+		  if (bc_type_labels[i]=="seepage_face") {
+		    imf.push_back(GetAttributeValueS_(elt, "inward_mass_flux", true));
+		  }
+		}
+
+		if (functions.size()>0)
+		  AddToTable(table, MakePPPrefix("comp", "bcs", bc_name, "forms"),MakePPEntry(functions));
+		if (starts.size()>0)
+		  AddToTable(table, MakePPPrefix("comp", "bcs", bc_name, "times"),MakePPEntry(starts));
+		if (values.size()>0)
+		  AddToTable(table, MakePPPrefix("comp", "bcs", bc_name, "vals"),MakePPEntry(values));
+		if (imf.size()>0)
+		  AddToTable(table, MakePPPrefix("comp", "bcs", bc_name, "inward_mass_flux"),MakePPEntry(imf));
+		if (gvalues.size()>0)
+		  AddToTable(table, MakePPPrefix("comp", "bcs", bc_name, "grad"),MakePPEntry(gvalues));
+		if (rvalues.size()>0)
+		  AddToTable(table, MakePPPrefix("comp", "bcs", bc_name, "vals"),MakePPEntry(rvalues));
+		if (rpoints.size()>0)
+		  AddToTable(table, MakePPPrefix("comp", "bcs", bc_name, "loc"),MakePPEntry(rpoints));
+		if (csys.size()>0)
+		  AddToTable(table, MakePPPrefix("comp", "bcs", bc_name, "coord_sys"),MakePPEntry(csys));
+		if (rwths.size()>0)
+		  AddToTable(table, MakePPPrefix("comp", "bcs", bc_name, "wt"),MakePPEntry(functions));
+		if (sms.size()>0)
+		  AddToTable(table, MakePPPrefix("comp", "bcs", bc_name, "submodel"),MakePPEntry(functions));
+	      }
+	    }	    
+	  }
+	  else {
+	    Errors::Message msg;
+	    msg << "\"liquid_component\" not present in \"liquid_phase\" boundary_condition \""
+		<< bc_name << "\".\n";
+	    msg << "Please correct and try again.\n";
+	    Exceptions::amanzi_throw(msg);
+	  }
+	}
+	else {
+	  Errors::Message msg;
+	  msg << "\"liquid_phase\" not present in boundary_condition \"" << bc_name << "\".\n";
+	  msg << "Please correct and try again.\n";
+	  Exceptions::amanzi_throw(msg);
+	}
+
+	// Assigned regions.
+	bool rfound = false;
+	vector<string> assigned_regions = GetChildVectorS_(bc, "assigned_regions", rfound, true);
+	if (rfound) {
+	  AddToTable(table, MakePPPrefix("comp", "bcs", bc_name, "regions"), MakePPEntry(assigned_regions));
+	} else {
+	  Errors::Message msg;
+	  msg << "\"assigned_regions\" not present in boundary_condition \"" << bc_name << "\".\n";
+	  msg << "Please correct and try again.\n";
+	  Exceptions::amanzi_throw(msg);
+	}
       }
+      AddToTable(table, MakePPPrefix("comp", "bc_labels"), MakePPEntry(bc_names));
     }
   }
   ParmParse::appendTable(table);
