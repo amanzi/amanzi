@@ -60,11 +60,8 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
     global_op_->OpPushBack(local_op_);
   }
   
-  // // scaled constraint -- enables zero rel perm
-  // scaled_constraint_ = plist.get<bool>("scaled constraint equation", false);
-
   // upwind options
-  std::string uwname = plist.get<std::string>("nonlinear coefficient", "standard: cell");
+  std::string uwname = plist.get<std::string>("nonlinear coefficient", "upwind: face");
   if (uwname == "none") {
     little_k_ = OPERATOR_LITTLE_K_NONE;
 
