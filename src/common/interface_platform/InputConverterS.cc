@@ -1406,6 +1406,100 @@ void InputConverterS::ParsePhases_()
 void InputConverterS::ParseInitialConditions_()
 {
   list<ParmParse::PP_entry> table;
+  bool found;
+  DOMNode* initial_conditions = GetUniqueElementByTagsString_("initial_conditions", found);
+  if (found)
+  {
+    bool ifound;
+    vector<DOMNode*> ics = GetChildren_(initial_conditions, "initial_condition", ifound);
+    if (ifound)
+    {
+      vector<string> ic_names;
+      for (size_t i = 0; i < ics.size(); ++i)
+      {
+        DOMElement* ic = static_cast<DOMElement*>(ics[i]);
+        string ic_name = GetAttributeValueS_(ic, "name");
+        ic_names.push_back(ic_name);
+
+        // phase/comp
+        bool pfound = false;
+        DOMElement* lp = GetChildByName_(ic, "liquid_phase", pfound);
+        if (pfound) {
+          bool cfound = false;
+          DOMElement* lc = GetChildByName_(lp, "liquid_component", cfound);
+          if (cfound) {
+            vector<DOMNode*> nodes;
+            string ic_type_labels[10] = {
+              "uniform_pressure",
+              "linear_pressure",
+              "uniform_saturation",
+              "linear_saturation",
+              "velocity"};
+            bool tfound = false;
+            for (int i=0; i<10 && !tfound; ++i) {
+              nodes = GetChildren_(lc, ic_type_labels[i], tfound, false);
+              if (tfound) {
+                vector<string> functions, values;
+                vector<string> gvalues, rvalues, rpoints;
+                for (size_t j = 0; j < nodes.size(); ++j) {
+                  DOMElement* elt = static_cast<DOMElement*>(nodes[j]);
+
+                  functions.push_back(GetAttributeValueS_(elt, "function", true));
+                  values.push_back(GetAttributeValueS_(elt, "value", true));
+
+                  // Get extra info, if required
+                  if (ic_type_labels[i]=="linear_pressure"
+                      || ic_type_labels[i]=="linear_saturation") {
+                    gvalues.push_back(GetAttributeValueS_(elt, "gradient_value", true));
+                    rpoints.push_back(GetAttributeValueS_(elt, "reference_coord", true));
+                  }
+                }
+
+                AddToTable(table, MakePPPrefix("comp", "ics", ic_name, "type"),MakePPEntry(ic_type_labels[i]));
+
+                if (functions.size()>0)
+                  AddToTable(table, MakePPPrefix("comp", "ics", ic_name, "forms"),MakePPEntry(functions));
+                if (values.size()>0)
+                  AddToTable(table, MakePPPrefix("comp", "ics", ic_name, "vals"),MakePPEntry(values));
+                if (gvalues.size()>0)
+                  AddToTable(table, MakePPPrefix("comp", "ics", ic_name, "grad"),MakePPEntry(gvalues));
+                if (rvalues.size()>0)
+                  AddToTable(table, MakePPPrefix("comp", "ics", ic_name, "vals"),MakePPEntry(rvalues));
+                if (rpoints.size()>0)
+                  AddToTable(table, MakePPPrefix("comp", "ics", ic_name, "loc"),MakePPEntry(rpoints));
+              }
+            }	    
+          }
+          else {
+            Errors::Message msg;
+            msg << "\"liquid_component\" not present in \"liquid_phase\" boundary_condition \""
+              << ic_name << "\".\n";
+            msg << "Please correct and try again.\n";
+            Exceptions::amanzi_throw(msg);
+          }
+        }
+        else {
+          Errors::Message msg;
+          msg << "\"liquid_phase\" not present in initial condition \"" << ic_name << "\".\n";
+          msg << "Please correct and try again.\n";
+          Exceptions::amanzi_throw(msg);
+        }
+
+        // Assigned regions.
+        bool rfound = false;
+        vector<string> assigned_regions = GetChildVectorS_(ic, "assigned_regions", rfound, true);
+        if (rfound) {
+          AddToTable(table, MakePPPrefix("comp", "ics", ic_name, "regions"), MakePPEntry(assigned_regions));
+        } else {
+          Errors::Message msg;
+          msg << "\"assigned_regions\" not present in initial_condition \"" << ic_name << "\".\n";
+          msg << "Please correct and try again.\n";
+          Exceptions::amanzi_throw(msg);
+        }
+      }
+      AddToTable(table, MakePPPrefix("comp", "ic_labels"), MakePPEntry(ic_names));
+    }
+  }
   ParmParse::appendTable(table);
 }
 
