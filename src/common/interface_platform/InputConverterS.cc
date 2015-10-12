@@ -699,13 +699,14 @@ void InputConverterS::ParseMesh_()
 
 static void MakeBox(list<ParmParse::PP_entry>& table,
 		    const string&              name,
+		    const string&              purpose,
 		    const vector<double>&      lo,
 		    const vector<double>&      hi)
 {
   AddToTable(table, MakePPPrefix("geometry", name, "lo_coordinate"), MakePPEntry(lo));
   AddToTable(table, MakePPPrefix("geometry", name, "hi_coordinate"), MakePPEntry(hi));
   AddToTable(table, MakePPPrefix("geometry", name, "type"),          MakePPEntry("box"));
-  AddToTable(table, MakePPPrefix("geometry", name, "purpose"),       MakePPEntry("all"));
+  AddToTable(table, MakePPPrefix("geometry", name, "purpose"),       MakePPEntry(purpose));
 }
   
 void InputConverterS::ParseRegions_()
@@ -716,14 +717,14 @@ void InputConverterS::ParseRegions_()
   // Create default regions
   string name;
   vector<double> lo(dim_), hi(dim_);
-  name = "All";   lo=lo_coords_; hi=hi_coords_;              MakeBox(table, name, lo, hi); region_names.push_back(name);
-  name = "XLOBC"; lo=lo_coords_; hi=hi_coords_; hi[0]=lo[0]; MakeBox(table, name, lo, hi); region_names.push_back(name);
-  name = "XHIBC"; lo=lo_coords_; hi=hi_coords_; lo[0]=hi[0]; MakeBox(table, name, lo, hi); region_names.push_back(name);
-  name = "YLOBC"; lo=lo_coords_; hi=hi_coords_; hi[1]=lo[1]; MakeBox(table, name, lo, hi); region_names.push_back(name);
-  name = "YHIBC"; lo=lo_coords_; hi=hi_coords_; lo[1]=hi[1]; MakeBox(table, name, lo, hi); region_names.push_back(name);    
+  name = "All";   lo=lo_coords_; hi=hi_coords_;              MakeBox(table, name, "all", lo, hi); region_names.push_back(name);
+  name = "XLOBC"; lo=lo_coords_; hi=hi_coords_; hi[0]=lo[0]; MakeBox(table, name, "xlobc", lo, hi); region_names.push_back(name);
+  name = "XHIBC"; lo=lo_coords_; hi=hi_coords_; lo[0]=hi[0]; MakeBox(table, name, "xhibc", lo, hi); region_names.push_back(name);
+  name = "YLOBC"; lo=lo_coords_; hi=hi_coords_; hi[1]=lo[1]; MakeBox(table, name, "ylobc", lo, hi); region_names.push_back(name);
+  name = "YHIBC"; lo=lo_coords_; hi=hi_coords_; lo[1]=hi[1]; MakeBox(table, name, "yhibc", lo, hi); region_names.push_back(name);    
   if (dim_ > 2) {
-    name = "ZLOBC"; lo=lo_coords_; hi=hi_coords_; hi[2]=lo[2]; MakeBox(table, name, lo, hi); region_names.push_back(name);
-    name = "ZHIBC"; lo=lo_coords_; hi=hi_coords_; lo[2]=hi[2]; MakeBox(table, name, lo, hi); region_names.push_back(name);    
+    name = "ZLOBC"; lo=lo_coords_; hi=hi_coords_; hi[2]=lo[2]; MakeBox(table, name, "zlobc", lo, hi); region_names.push_back(name);
+    name = "ZHIBC"; lo=lo_coords_; hi=hi_coords_; lo[2]=hi[2]; MakeBox(table, name, "zhibc", lo, hi); region_names.push_back(name);    
   }
 
   bool found;
@@ -1053,14 +1054,23 @@ void InputConverterS::ParseMaterials_()
         string x = GetAttributeValueS_(permeability, "x", false);
         if (!x.empty())
         {
+	  AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "horizontal", "vals"),
+		     MakePPEntry(x));
+
           string y = GetAttributeValueS_(permeability, "y", true);
-          string z = GetAttributeValueS_(permeability, "z", true);
-          AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "horizontal", "vals"),
-                     MakePPEntry(x));
-          AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "horizontal1", "vals"),
-                     MakePPEntry(y));
-          AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "vertical", "vals"),
-                     MakePPEntry(z));
+	  if (dim_ < 3) {
+	    AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "vertical", "vals"),
+		       MakePPEntry(y));
+	  } else {
+	    AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "horizontal", "vals"),
+		       MakePPEntry(x));
+	    AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "horizontal1", "vals"),
+		       MakePPEntry(y));
+
+	    string z = GetAttributeValueS_(permeability, "z", true);
+	    AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "vertical", "vals"),
+		       MakePPEntry(z));
+	  }
 
           // FIXME: Are these two guys needed? When?
           AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "distribution_type"),
@@ -1103,14 +1113,19 @@ void InputConverterS::ParseMaterials_()
         string x = GetAttributeValueS_(conductivity, "x", false);
         if (!x.empty())
         {
-          string y = GetAttributeValueS_(conductivity, "y", true);
-          string z = GetAttributeValueS_(conductivity, "z", true);
           AddToTable(table, MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "horizontal", "vals"),
                      MakePPEntry(x));
-          AddToTable(table, MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "horizontal1", "vals"),
-                     MakePPEntry(y));
-          AddToTable(table, MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "vertical", "vals"),
-                     MakePPEntry(z));
+          string y = GetAttributeValueS_(conductivity, "y", true);
+	  if (dim_ < 3) {
+	    AddToTable(table, MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "vertical", "vals"),
+		       MakePPEntry(y));
+	  } else {
+	    AddToTable(table, MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "horizontal1", "vals"),
+		       MakePPEntry(y));
+	    string z = GetAttributeValueS_(conductivity, "z", true);
+	    AddToTable(table, MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "vertical", "vals"),
+		       MakePPEntry(z));
+	  }
         }
         else
         {
@@ -1477,6 +1492,8 @@ void InputConverterS::ParseBoundaryConditions_()
 		    imf.push_back(GetAttributeValueS_(elt, "inward_mass_flux", true));
 		  }
 		}
+
+		AddToTable(table, MakePPPrefix("comp", "bcs", bc_name, "type"),MakePPEntry(bc_type_labels[i]));
 
 		if (functions.size()>0)
 		  AddToTable(table, MakePPPrefix("comp", "bcs", bc_name, "forms"),MakePPEntry(functions));

@@ -1540,7 +1540,20 @@ void  PorousMedia::read_comp()
 
           use_gauge_pressure[bcname] = false; // Default value
 
-          if (bc_type == "pressure")
+	  /*
+	    Supported types
+	    string bc_type_labels[10] = {"inward_mass_flux",
+					 "outward_mass_flux",
+					 "inward_volumetric_flux",
+					 "outward_volumetric_flux",
+					 "uniform_pressure",
+					 "linear_pressure",
+					 "seepage_face",
+					 "hydrostatic",
+					 "linear_hydrostatic",
+					 "no_flow"};
+	  */
+          if (bc_type == "uniform_pressure")
           {
               int nPhase = pNames.size();
               BL_ASSERT(nPhase==1); // FIXME
@@ -1643,25 +1656,37 @@ void  PorousMedia::read_comp()
 	    Array<Array<std::string> > forms(vals.size(),Array<std::string>(0));
 	    bc_array.set(ibc,new ArrayRegionData(bcname,times,values,forms,bc_regions,bc_type));
           }
-          else if (bc_type == "zero_total_velocity")
+          else if (bc_type == "inward_volumetric_flux" 
+		   || bc_type == "outward_volumetric_flux"
+		   || bc_type == "inward_mass_flux"
+		   || bc_type == "outward_mass_flux" )
           {
               Array<Real> vals, times;
               Array<std::string> forms;
 
-              int nv = ppr.countval("aqueous_vol_flux");
+              int nv = ppr.countval("vals");
               if (nv) {
-                  ppr.getarr("aqueous_vol_flux",vals,0,nv); // "inward" flux
+                  ppr.getarr("vals",vals,0,nv);
                   times.resize(nv,0);
                   if (nv>1) {
-                      ppr.getarr("inflowtimes",times,0,nv);
-                      ppr.getarr("inflowfncs",forms,0,nv-1);
+                      ppr.getarr("times",times,0,nv);
+                      ppr.getarr("forms",forms,0,nv-1);
                   }
               }
               else {
                   vals.resize(1,0);
                   times.resize(1,0);
                   forms.resize(0);
-              }        
+              }
+
+	      // If mass flux, convert to volumetric flux.  Assume that we have already decided what the density is
+	      // Note: we should delay this conversion until bc applied if density is not constant
+	      if (bc_type == "inward_mass_flux"
+		  || bc_type == "outward_mass_flux" ) {
+		for (int k=0; k<vals.size(); ++k) {
+		  vals[k] *= 1/density[0]; // Note: this ASSUMES fluxes are of comp[0] mass
+		}
+	      }
 
               // Work out sign of flux for this boundary
               int is_hi = -1;
@@ -1696,7 +1721,7 @@ void  PorousMedia::read_comp()
               pressure_bc = 1;
 	      bc_array.set(ibc,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,1));
           }
-          else if (bc_type == "noflow")
+          else if (bc_type == "no_flow")
           {
             Array<Real> vals(1,0), times(1,0);
             Array<std::string> forms(0);
@@ -1707,8 +1732,12 @@ void  PorousMedia::read_comp()
           }
           else
           {
-	    std::cout << bc_type << " not a valid bc_type " << std::endl;
-	    BoxLib::Abort();
+	    if (bc_type == "seepage_face"
+		||bc_type == "hydrostatic"
+		|| bc_type == "linear_hydrostatic") {
+	      BoxLib::Abort(std::string(bc_type+" not yet implemented").c_str());
+	    }
+	    BoxLib::Abort(std::string(bc_type+" not a valid bc type").c_str());
           }
 
           // Some clean up 

@@ -86,7 +86,7 @@
                 <porosity value="0.43"/>
                 <particle_density value="2720.0"/>
             </mechanical_properties>
-            <permeability x="1.18E-13" y="1.18E-13" z="1.18E-13"/>
+            <permeability x="1.18E-13" y="1.18E-13"/>
             <cap_pressure model="van_genuchten">
                 <parameters alpha="1.02" m="0.0909" sr="0.25"/>
             </cap_pressure>
@@ -98,7 +98,7 @@
                 <porosity value="0.43"/>
                 <particle_density value="2720.0"/>
             </mechanical_properties>
-            <permeability x="1.18E-11" y="1.18E-11" z="1.18E-11"/>
+            <permeability x="1.18E-11" y="1.18E-11"/>
             <cap_pressure model="van_genuchten">
                 <parameters alpha="0.00153" m="0.6666" sr="0.104"/>
             </cap_pressure>
