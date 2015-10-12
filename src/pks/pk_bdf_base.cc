@@ -56,7 +56,6 @@ void PKBDFBase::initialize(const Teuchos::Ptr<State>& S) {
       *S->GetScalarData("continuation_parameter", name_) = 1.;
       S->GetField("continuation_parameter", name_)->set_initialized();
     }
-
     // -- initialize time derivative
     Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp(new TreeVector(*solution_));
     solution_dot->PutScalar(0.0);
@@ -86,11 +85,13 @@ void PKBDFBase::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // -----------------------------------------------------------------------------
 bool PKBDFBase::advance(double dt) {
   Teuchos::OSTab out = vo_->getOSTab();
+ 
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "----------------------------------------------------------------" << std::endl
                << "Advancing: t0 = " << S_inter_->time()
                << " t1 = " << S_next_->time() << " h = " << dt << std::endl
                << "----------------------------------------------------------------" << std::endl;
+ 
 
   state_to_solution(S_next_, *solution_);
 
@@ -100,7 +101,9 @@ bool PKBDFBase::advance(double dt) {
   if (true) { // this is here simply to create a context for timer,
               // which stops the clock when it is destroyed at the
               // closing brace.
+     
     fail = time_stepper_->TimeStep(dt, dt_solver, solution_);
+ 
   }
 
   if (!fail) {
@@ -120,7 +123,7 @@ bool PKBDFBase::advance(double dt) {
     // take the decreased timestep size
     dt_ = dt_solver;
   }
-
+  
   return fail;
 };
 

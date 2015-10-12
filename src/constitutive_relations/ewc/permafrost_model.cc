@@ -37,91 +37,100 @@ namespace Amanzi {
 
 #define DEBUG_FLAG 0
 
-void PermafrostModel::InitializeModel(const Teuchos::Ptr<State>& S) {
+  void PermafrostModel::InitializeModel(const Teuchos::Ptr<State>& S, Teuchos::ParameterList& plist_) {
   // these are not yet initialized
   rho_rock_ = -1.;
   p_atm_ = -1.e12;
-
+  domain = plist_.get<std::string>("domain key", "");
+  if (domain.size() != 0) {
+    mesh_ = S->GetMesh(domain);
+  } else {
+    mesh_ = S->GetMesh("domain");
+  }
+  
   // Grab the models.
   // get the WRM models and their regions
-  Teuchos::RCP<FieldEvaluator> me = S->GetFieldEvaluator("saturation_gas");
+
+  Teuchos::RCP<FieldEvaluator> me = S->GetFieldEvaluator(getKey(domain, "saturation_gas"));
+  
   Teuchos::RCP<Flow::FlowRelations::WRMPermafrostEvaluator> wrm_me =
       Teuchos::rcp_dynamic_cast<Flow::FlowRelations::WRMPermafrostEvaluator>(me);
   ASSERT(wrm_me != Teuchos::null);
   wrms_ = wrm_me->get_WRMPermafrostModels();
-
+  
   // -- liquid EOS
-  me = S->GetFieldEvaluator("molar_density_liquid");
+  me = S->GetFieldEvaluator(getKey(domain, "molar_density_liquid"));
   Teuchos::RCP<Relations::EOSEvaluator> eos_liquid_me =
       Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(me);
   ASSERT(eos_liquid_me != Teuchos::null);
   liquid_eos_ = eos_liquid_me->get_EOS();
 
   // -- ice EOS
-  me = S->GetFieldEvaluator("molar_density_ice");
+  me = S->GetFieldEvaluator(getKey(domain, "molar_density_ice"));
   Teuchos::RCP<Relations::EOSEvaluator> eos_ice_me =
       Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(me);
   ASSERT(eos_ice_me != Teuchos::null);
   ice_eos_ = eos_ice_me->get_EOS();
 
   // -- gas EOS
-  me = S->GetFieldEvaluator("molar_density_gas");
+  me = S->GetFieldEvaluator(getKey(domain, "molar_density_gas"));
   Teuchos::RCP<Relations::EOSEvaluator> eos_gas_me =
       Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(me);
   ASSERT(eos_gas_me != Teuchos::null);
   gas_eos_ = eos_gas_me->get_EOS();
 
   // -- gas vapor pressure
-  me = S->GetFieldEvaluator("mol_frac_gas");
+  me = S->GetFieldEvaluator(getKey(domain, "mol_frac_gas"));
   Teuchos::RCP<Relations::MolarFractionGasEvaluator> mol_frac_me =
-      Teuchos::rcp_dynamic_cast<Relations::MolarFractionGasEvaluator>(me);
+    Teuchos::rcp_dynamic_cast<Relations::MolarFractionGasEvaluator>(me);
   ASSERT(mol_frac_me != Teuchos::null);
   vpr_ = mol_frac_me->get_VaporPressureRelation();
 
   // -- capillary pressure for ice/water
-  me = S->GetFieldEvaluator("capillary_pressure_liq_ice");
+  me = S->GetFieldEvaluator(getKey(domain, "capillary_pressure_liq_ice"));
   Teuchos::RCP<Flow::FlowRelations::PCIceEvaluator> pc_ice_me =
-      Teuchos::rcp_dynamic_cast<Flow::FlowRelations::PCIceEvaluator>(me);
+    Teuchos::rcp_dynamic_cast<Flow::FlowRelations::PCIceEvaluator>(me);
   ASSERT(pc_ice_me != Teuchos::null);
   pc_i_ = pc_ice_me->get_PCIceWater();
 
   // -- capillary pressure for liq/gas
-  me = S->GetFieldEvaluator("capillary_pressure_gas_liq");
+  me = S->GetFieldEvaluator(getKey(domain, "capillary_pressure_gas_liq"));
   Teuchos::RCP<Flow::FlowRelations::PCLiquidEvaluator> pc_liq_me =
-      Teuchos::rcp_dynamic_cast<Flow::FlowRelations::PCLiquidEvaluator>(me);
+    Teuchos::rcp_dynamic_cast<Flow::FlowRelations::PCLiquidEvaluator>(me);
   ASSERT(pc_liq_me != Teuchos::null);
   pc_l_ = pc_liq_me->get_PCLiqAtm();
-
+  
   // -- iem for liquid
-  me = S->GetFieldEvaluator("internal_energy_liquid");
+  me = S->GetFieldEvaluator(getKey(domain, "internal_energy_liquid"));
   Teuchos::RCP<Energy::EnergyRelations::IEMEvaluator> iem_liquid_me =
       Teuchos::rcp_dynamic_cast<Energy::EnergyRelations::IEMEvaluator>(me);
   ASSERT(iem_liquid_me != Teuchos::null);
   liquid_iem_ = iem_liquid_me->get_IEM();
 
   // -- iem for ice
-  me = S->GetFieldEvaluator("internal_energy_ice");
+  me = S->GetFieldEvaluator(getKey(domain, "internal_energy_ice"));
   Teuchos::RCP<Energy::EnergyRelations::IEMEvaluator> iem_ice_me =
       Teuchos::rcp_dynamic_cast<Energy::EnergyRelations::IEMEvaluator>(me);
   ASSERT(iem_ice_me != Teuchos::null);
   ice_iem_ = iem_ice_me->get_IEM();
 
   // -- iem for gas
-  me = S->GetFieldEvaluator("internal_energy_gas");
+  me = S->GetFieldEvaluator(getKey(domain, "internal_energy_gas"));
   Teuchos::RCP<Energy::EnergyRelations::IEMWaterVaporEvaluator> iem_gas_me =
       Teuchos::rcp_dynamic_cast<Energy::EnergyRelations::IEMWaterVaporEvaluator>(me);
   ASSERT(iem_gas_me != Teuchos::null);
   gas_iem_ = iem_gas_me->get_IEM();
 
   // -- iem for rock
-  me = S->GetFieldEvaluator("internal_energy_rock");
+  me = S->GetFieldEvaluator(getKey(domain, "internal_energy_rock"));
   Teuchos::RCP<Energy::EnergyRelations::IEMEvaluator> iem_rock_me =
       Teuchos::rcp_dynamic_cast<Energy::EnergyRelations::IEMEvaluator>(me);
   ASSERT(iem_rock_me != Teuchos::null);
   rock_iem_ = iem_rock_me->get_IEM();
 
   // -- porosity
-  me = S->GetFieldEvaluator("porosity");
+
+  me = S->GetFieldEvaluator(getKey(domain, "porosity"));
   Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityEvaluator> poro_me =
       Teuchos::rcp_dynamic_cast<Flow::FlowRelations::CompressiblePorosityEvaluator>(me);
   ASSERT(poro_me != Teuchos::null);
@@ -133,8 +142,8 @@ void PermafrostModel::InitializeModel(const Teuchos::Ptr<State>& S) {
 void PermafrostModel::UpdateModel(const Teuchos::Ptr<State>& S, int c) {
   // update scalars
   p_atm_ = *S->GetScalarData("atmospheric_pressure");
-  rho_rock_ = (*S->GetFieldData("density_rock")->ViewComponent("cell"))[0][c];
-  poro_ = (*S->GetFieldData("base_porosity")->ViewComponent("cell"))[0][c];
+  rho_rock_ = (*S->GetFieldData(getKey(domain,"density_rock"))->ViewComponent("cell"))[0][c];
+  poro_ = (*S->GetFieldData(getKey(domain,"base_porosity"))->ViewComponent("cell"))[0][c];
   wrm_ = wrms_->second[(*wrms_->first)[c]];
   poro_model_ = poro_models_->second[(*poro_models_->first)[c]];
   ASSERT(IsSetUp_());

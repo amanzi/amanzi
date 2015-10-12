@@ -20,7 +20,7 @@ PKPhysicalBase::PKPhysicalBase(const Teuchos::RCP<Teuchos::ParameterList>& plist
 
   // domain -- default is the entire mesh, no prefix
   if (domain_.empty()) {
-    domain_ = plist_->get<std::string>("domain name", std::string("domain"));
+   domain_ = plist_->get<std::string>("domain name", std::string("domain"));
   }
   
   if (key_.empty()) {
@@ -102,7 +102,7 @@ void PKPhysicalBase::set_states(const Teuchos::RCP<const State>& S,
 // -----------------------------------------------------------------------------
 void PKPhysicalBase::initialize(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<Field> field = S->GetField(key_, name_);
-
+  
   if (!field->initialized()) {
     // initial conditions
     // -- Get the IC function plist.
@@ -112,21 +112,22 @@ void PKPhysicalBase::initialize(const Teuchos::Ptr<State>& S) {
       Errors::Message message(messagestream.str());
       Exceptions::amanzi_throw(message);
     }
-
+ 
     // -- Calculate the IC.
     Teuchos::ParameterList ic_plist = plist_->sublist("initial condition");
+    
     field->Initialize(ic_plist);
 
     // -- Update faces from cells if needed.
     // if (ic_plist.get<bool>("initialize faces from cells", false)) {
     //   DeriveFaceValuesFromCellValues_(field->GetFieldData().ptr());
     // }
-
+ 
     // communicate just to make sure values are initialized for valgrind's sake
     field->GetFieldData()->ScatterMasterToGhosted();
     solution_evaluator_->SetFieldAsChanged(S);
   }
-
+  
   // -- Push the data into the solution.
   solution_->SetData(field->GetFieldData());
 };

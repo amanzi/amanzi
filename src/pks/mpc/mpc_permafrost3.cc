@@ -191,7 +191,7 @@ MPCPermafrost3::initialize(const Teuchos::Ptr<State>& S) {
 
   // Initialize all sub PKs.
   MPC<PKPhysicalBDFBase>::initialize(S);
-
+  
   // ensure continuity of ICs... surface takes precedence.
   CopySurfaceToSubsurface(*S->GetFieldData("surface_pressure", sub_pks_[2]->name()),
                           S->GetFieldData("pressure", sub_pks_[0]->name()).ptr());

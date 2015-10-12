@@ -33,30 +33,37 @@ namespace Amanzi {
 void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
   // supress energy's vision of advective terms as we can do better
   Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
+
   plist_->sublist("PKs").sublist(pk_order[1]).set("supress advective terms in preconditioner", true);
-  
   // set up the sub-pks
   StrongMPC<PKPhysicalBDFBase>::setup(S);
-  mesh_ = S->GetMesh("domain");
-
+  //I-CHANGED
+  if(plist_->isParameter("domain name")){
+    domain_name = plist_->get<std::string>("domain name");
+    mesh_ = S->GetMesh(domain_name);
+  }
+  else
+    mesh_ = S->GetMesh("domain");  
   // set up debugger
   db_ = sub_pks_[0]->debugger();
-
+ 
   // Get the sub-blocks from the sub-PK's preconditioners.
+  
   Teuchos::RCP<Operators::Operator> pcA = sub_pks_[0]->preconditioner();
   Teuchos::RCP<Operators::Operator> pcB = sub_pks_[1]->preconditioner();
-
+  
   // Create the combined operator
   Teuchos::RCP<TreeVectorSpace> tvs = Teuchos::rcp(new TreeVectorSpace());
   tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(pcA->DomainMap()))));
   tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(pcB->DomainMap()))));
-
+ 
   preconditioner_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
   preconditioner_->SetOperatorBlock(0, 0, pcA);
   preconditioner_->SetOperatorBlock(1, 1, pcB);
   
   // select the method used for preconditioning
   std::string precon_string = plist_->get<std::string>("preconditioner type", "picard");
+ 
   if (precon_string == "none") {
     precon_type_ = PRECON_NONE;
   } else if (precon_string == "block diagonal") {
@@ -232,22 +239,31 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
   if (plist_->isSublist("ewc delegate")) {
     Teuchos::RCP<Teuchos::ParameterList> sub_ewc_list = Teuchos::sublist(plist_, "ewc delegate");
     sub_ewc_list->set("PK name", name_);
-    sub_ewc_list->set("domain key", "");
+    //I-CHANGED
+    if(plist_->isParameter("domain name")){
+      sub_ewc_list->set("domain key", plist_->get<std::string>("domain name"));
+    }
+    else
+      sub_ewc_list->set("domain key", "");
+    
     ewc_ = Teuchos::rcp(new MPCDelegateEWCSubsurface(*sub_ewc_list));
     Teuchos::RCP<PermafrostModel> model = Teuchos::rcp(new PermafrostModel());
     ewc_->set_model(model);
     ewc_->setup(S);
   }    
+
 }
 
 void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
+  
   StrongMPC<PKPhysicalBDFBase>::initialize(S);
+  
   if (ewc_ != Teuchos::null) ewc_->initialize(S);
 
   // initialize offdiagonal operators
   richards_pk_ = Teuchos::rcp_dynamic_cast<Flow::Richards>(sub_pks_[0]);
   ASSERT(richards_pk_ != Teuchos::null);
-
+  
   if (ddivq_dT_ != Teuchos::null) {
     Key dkrdT_key = getDerivKey("upwind_relative_permeability", "temperature");
     S->GetFieldData(dkrdT_key,name_)->PutScalar(1.0);
@@ -284,6 +300,7 @@ void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
     ddivhq_dT_->SetBCs(sub_pks_[1]->BCs(), sub_pks_[1]->BCs());
     ddivhq_dT_->Setup(richards_pk_->K_);
   }  
+
 }
 
 
@@ -357,9 +374,9 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
     }
 
     // -- dWC/dT diagonal term
-    S_next_->GetFieldEvaluator("water_content")
-        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "temperature");
-    Teuchos::RCP<const CompositeVector> dWC_dT = S_next_->GetFieldData("dwater_content_dtemperature");
+    S_next_->GetFieldEvaluator(getKey(domain_name, "water_content"))
+      ->HasFieldDerivativeChanged(S_next_.ptr(), name_, getKey(domain_name, "temperature"));
+    Teuchos::RCP<const CompositeVector> dWC_dT = S_next_->GetFieldData("d"+getKey(domain_name, "water_content") + "_d"+getKey(domain_name,"temperature"));
     dWC_dT_->AddAccumulationTerm(*dWC_dT->ViewComponent("cell", false), h);
 
     // std::cout << "1/h * DWC/DT" << std::endl;
@@ -459,9 +476,9 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
     }
 
     // -- dWC/dT diagonal term
-    S_next_->GetFieldEvaluator("energy")
-        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "pressure");
-    Teuchos::RCP<const CompositeVector> dE_dp = S_next_->GetFieldData("denergy_dpressure");
+    S_next_->GetFieldEvaluator(getKey(domain_name,"energy"))
+      ->HasFieldDerivativeChanged(S_next_.ptr(), name_, getKey(domain_name, "pressure"));
+    Teuchos::RCP<const CompositeVector> dE_dp = S_next_->GetFieldData("d"+getKey(domain_name,"energy") +"_d" +getKey(domain_name,"pressure"));
     dE_dp_->AddAccumulationTerm(*dE_dp->ViewComponent("cell", false), h);
 
     // std::cout << "1/h * DE/Dp" << std::endl;
@@ -512,7 +529,7 @@ int MPCSubsurface::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
     vecs.push_back(u->SubVector(1)->Data().ptr()); 
     db_->WriteVectors(vnames, vecs, true);
   }
-  
+
   int ierr;
   if (precon_type_ == PRECON_NONE) {
     *Pu = *u;
@@ -554,7 +571,7 @@ int MPCSubsurface::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
   //           *Pu_std->SubVector(1)->Data()->ViewComponent("face",false), 1.);
 
   }
-
+std::cout<<"MPC-SS3: \n";
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "PC * residuals:" << std::endl;
     std::vector<std::string> vnames;
@@ -564,7 +581,7 @@ int MPCSubsurface::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
     vecs.push_back(Pu->SubVector(1)->Data().ptr()); 
     db_->WriteVectors(vnames, vecs, true);
   }
-  
+
   return (ierr > 0) ? 0 : 1;
 }
 

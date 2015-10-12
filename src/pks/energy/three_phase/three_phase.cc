@@ -23,6 +23,7 @@ namespace Energy {
 void ThreePhase::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // Get data and evaluators needed by the PK
   // -- energy, the conserved quantity
+
   S->RequireField(energy_key_)->SetMesh(mesh_)->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(energy_key_);
@@ -45,6 +46,7 @@ void ThreePhase::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<EnergyRelations::ThermalConductivityThreePhaseEvaluator> tcm =
     Teuchos::rcp(new EnergyRelations::ThermalConductivityThreePhaseEvaluator(tcm_plist));
   S->SetFieldEvaluator(conductivity_key_, tcm);
+
 }
 
 void
@@ -54,7 +56,7 @@ ThreePhase::initialize(const Teuchos::Ptr<State>& S) {
   if (ic_plist.isParameter("interfrost initial condition")) {
     std::string interfrost_ic = ic_plist.get<std::string>("interfrost initial condition");
     ASSERT(interfrost_ic == "TH3");
-
+    std::cout<<"THREE-PHASE:"<<key_<< " "<<name_<<"\n";
     Teuchos::RCP<CompositeVector> temp = S->GetFieldData(key_, name_);
     double r_sq = std::pow(0.5099,2);
     Epetra_MultiVector& temp_c = *temp->ViewComponent("cell", false);
@@ -76,7 +78,7 @@ ThreePhase::initialize(const Teuchos::Ptr<State>& S) {
     // additionally call Initalize() to get faces from cell values
     field->Initialize(ic_plist);
   }
-
+  
   TwoPhase::initialize(S);
 }
 

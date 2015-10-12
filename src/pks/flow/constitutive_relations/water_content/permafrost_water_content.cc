@@ -24,22 +24,35 @@ namespace Relations {
 
 PermafrostWaterContent::PermafrostWaterContent(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
-  my_key_ = std::string("water_content");
+  //my_key_ = std::string("water_content");
+  
+  //Key domain_name = getDomainPrefix(my_key_);
+  Key domain_name = getDomain(my_key_);
+  phi_key = std::string(getKey(domain_name, "porosity"));
+  sl_key = std::string(getKey(domain_name,"saturation_liquid"));
+  mdl_key = std::string(getKey(domain_name,"molar_density_liquid"));
+  si_key = std::string(getKey(domain_name,"saturation_ice"));
+  mdi_key = std::string(getKey(domain_name,"molar_density_ice"));
+  sg_key = std::string(getKey(domain_name,"saturation_gas"));
+  mdg_key = std::string(getKey(domain_name,"molar_density_gas"));
+  mfg_key = std::string(getKey(domain_name,"mol_frac_gas"));
+  cv_key = std::string(getKey(domain_name,"cell_volume"));
 
-  dependencies_.insert(std::string("porosity"));
+  dependencies_.insert(std::string(phi_key));
 
-  dependencies_.insert(std::string("saturation_liquid"));
-  dependencies_.insert(std::string("molar_density_liquid"));
+  dependencies_.insert(std::string(sl_key));
+  dependencies_.insert(std::string(mdl_key));
 
-  dependencies_.insert(std::string("saturation_ice"));
-  dependencies_.insert(std::string("molar_density_ice"));
+  dependencies_.insert(std::string(si_key));
+  dependencies_.insert(std::string(mdi_key));
 
-  dependencies_.insert(std::string("saturation_gas"));
-  dependencies_.insert(std::string("molar_density_gas"));
-  dependencies_.insert(std::string("mol_frac_gas"));
-  //  dependencies_.insert(std::string("cell_volume"));
+  dependencies_.insert(std::string(sg_key));
+  dependencies_.insert(std::string(mdg_key));
+  dependencies_.insert(std::string(mfg_key));
+  dependencies_.insert(std::string(cv_key));
 
   //  check_derivative_ = true;
+  
 };
 
 PermafrostWaterContent::PermafrostWaterContent(const PermafrostWaterContent& other) :
@@ -53,20 +66,45 @@ PermafrostWaterContent::Clone() const {
 
 void PermafrostWaterContent::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
-  const Epetra_MultiVector& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell",false);
-  const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell",false);
+  Key domain_name = getDomain(my_key_);
+  phi_key = std::string(getKey(domain_name, "porosity"));
+  sl_key = std::string(getKey(domain_name,"saturation_liquid"));
+  mdl_key = std::string(getKey(domain_name,"molar_density_liquid"));
+  si_key = std::string(getKey(domain_name,"saturation_ice"));
+  mdi_key = std::string(getKey(domain_name,"molar_density_ice"));
+  sg_key = std::string(getKey(domain_name,"saturation_gas"));
+  mdg_key = std::string(getKey(domain_name,"molar_density_gas"));
+  mfg_key = std::string(getKey(domain_name,"mol_frac_gas"));
+  cv_key = std::string(getKey(domain_name,"cell_volume"));
 
-  const Epetra_MultiVector& s_i = *S->GetFieldData("saturation_ice")->ViewComponent("cell",false);
-  const Epetra_MultiVector& n_i = *S->GetFieldData("molar_density_ice")->ViewComponent("cell",false);
+  const Epetra_MultiVector& s_l = *S->GetFieldData(sl_key)->ViewComponent("cell",false);
+  const Epetra_MultiVector& n_l = *S->GetFieldData(mdl_key)->ViewComponent("cell",false);
 
-  const Epetra_MultiVector& s_g = *S->GetFieldData("saturation_gas")->ViewComponent("cell",false);
-  const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell",false);
-  const Epetra_MultiVector& omega_g = *S->GetFieldData("mol_frac_gas")->ViewComponent("cell",false);
+  const Epetra_MultiVector& s_i = *S->GetFieldData(si_key)->ViewComponent("cell",false);
+  const Epetra_MultiVector& n_i = *S->GetFieldData(mdi_key)->ViewComponent("cell",false);
 
-  const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell",false);
-  const Epetra_MultiVector& cell_volume = *S->GetFieldData("cell_volume")->ViewComponent("cell",false);
+  const Epetra_MultiVector& s_g = *S->GetFieldData(sg_key)->ViewComponent("cell",false);
+  const Epetra_MultiVector& n_g = *S->GetFieldData(mdg_key)->ViewComponent("cell",false);
+  const Epetra_MultiVector& omega_g = *S->GetFieldData(mfg_key)->ViewComponent("cell",false);
+
+  const Epetra_MultiVector& phi = *S->GetFieldData(phi_key)->ViewComponent("cell",false);
+  const Epetra_MultiVector& cell_volume = *S->GetFieldData(cv_key)->ViewComponent("cell",false);
   Epetra_MultiVector& result_v = *result->ViewComponent("cell",false);
 
+  /* const Epetra_MultiVector& s_l = *S->GetFieldData(sl_key)->ViewComponent("cell",false);
+  const Epetra_MultiVector& n_l = *S->GetFieldData(mdl_key)->ViewComponent("cell",false);
+
+  const Epetra_MultiVector& s_i = *S->GetFieldData(si_key)->ViewComponent("cell",false);
+  const Epetra_MultiVector& n_i = *S->GetFieldData(mdi_key)->ViewComponent("cell",false);
+
+  const Epetra_MultiVector& s_g = *S->GetFieldData(sg_key)->ViewComponent("cell",false);
+  const Epetra_MultiVector& n_g = *S->GetFieldData(mdg_key)->ViewComponent("cell",false);
+  const Epetra_MultiVector& omega_g = *S->GetFieldData(mfg_key)->ViewComponent("cell",false);
+
+  const Epetra_MultiVector& phi = *S->GetFieldData(phi_key)->ViewComponent("cell",false);
+  const Epetra_MultiVector& cell_volume = *S->GetFieldData("cell_volume")->ViewComponent("cell",false);
+  Epetra_MultiVector& result_v = *result->ViewComponent("cell",false);
+  */
   int ncells = result->size("cell",false);
   for (int c=0; c!=ncells; ++c) {
     result_v[0][c] = phi[0][c] * ( s_l[0][c]*n_l[0][c]
@@ -79,7 +117,8 @@ void PermafrostWaterContent::EvaluateField_(const Teuchos::Ptr<State>& S,
 
 void PermafrostWaterContent::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-  const Epetra_MultiVector& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell",false);
+  /*
+const Epetra_MultiVector& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell",false);
   const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell",false);
 
   const Epetra_MultiVector& s_i = *S->GetFieldData("saturation_ice")->ViewComponent("cell",false);
@@ -92,39 +131,63 @@ void PermafrostWaterContent::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<
   const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell",false);
   const Epetra_MultiVector& cell_volume = *S->GetFieldData("cell_volume")->ViewComponent("cell",false);
   Epetra_MultiVector& result_v = *result->ViewComponent("cell",false);
+  */
+  Key domain_name = getDomain(my_key_);
+  phi_key = std::string(getKey(domain_name, "porosity"));
+  sl_key = std::string(getKey(domain_name,"saturation_liquid"));
+  mdl_key = std::string(getKey(domain_name,"molar_density_liquid"));
+  si_key = std::string(getKey(domain_name,"saturation_ice"));
+  mdi_key = std::string(getKey(domain_name,"molar_density_ice"));
+  sg_key = std::string(getKey(domain_name,"saturation_gas"));
+  mdg_key = std::string(getKey(domain_name,"molar_density_gas"));
+  mfg_key = std::string(getKey(domain_name,"mol_frac_gas"));
+  cv_key = std::string(getKey(domain_name,"cell_volume"));
+  const Epetra_MultiVector& s_l = *S->GetFieldData(sl_key)->ViewComponent("cell",false);
+  const Epetra_MultiVector& n_l = *S->GetFieldData(mdl_key)->ViewComponent("cell",false);
+  
+  const Epetra_MultiVector& s_i = *S->GetFieldData(si_key)->ViewComponent("cell",false);
+  const Epetra_MultiVector& n_i = *S->GetFieldData(mdi_key)->ViewComponent("cell",false);
+  
+  const Epetra_MultiVector& s_g = *S->GetFieldData(sg_key)->ViewComponent("cell",false);
+  const Epetra_MultiVector& n_g = *S->GetFieldData(mdg_key)->ViewComponent("cell",false);
+  const Epetra_MultiVector& omega_g = *S->GetFieldData(mfg_key)->ViewComponent("cell",false);
+
+  const Epetra_MultiVector& phi = *S->GetFieldData(phi_key)->ViewComponent("cell",false);
+  const Epetra_MultiVector& cell_volume = *S->GetFieldData(cv_key)->ViewComponent("cell",false);
+  Epetra_MultiVector& result_v = *result->ViewComponent("cell",false);
 
   int ncells = result->size("cell",false);
-  if (wrt_key == "porosity") {
+  if (wrt_key == phi_key) {
     for (int c=0; c!=ncells; ++c) {
       result_v[0][c] = s_l[0][c]*n_l[0][c]
           + s_i[0][c]*n_i[0][c]
           + s_g[0][c]*n_g[0][c]*omega_g[0][c];
     }
-  } else if (wrt_key == "saturation_liquid") {
+  } else if (wrt_key == sl_key) {
     for (int c=0; c!=ncells; ++c) {
       result_v[0][c] = phi[0][c] * n_l[0][c];
     }
-  } else if (wrt_key == "molar_density_liquid") {
+  } else if (wrt_key == mdl_key) {
     for (int c=0; c!=ncells; ++c) {
       result_v[0][c] = phi[0][c] * s_l[0][c];
     }
-  } else if (wrt_key == "saturation_ice") {
+  } else if (wrt_key == si_key) {
     for (int c=0; c!=ncells; ++c) {
       result_v[0][c] = phi[0][c] * n_i[0][c];
     }
-  } else if (wrt_key == "molar_density_ice") {
+  } else if (wrt_key == mdi_key) {
     for (int c=0; c!=ncells; ++c) {
       result_v[0][c] = phi[0][c] * s_i[0][c];
     }
-  } else if (wrt_key == "saturation_gas") {
+  } else if (wrt_key == sg_key) {
     for (int c=0; c!=ncells; ++c) {
       result_v[0][c] = phi[0][c] * n_g[0][c]*omega_g[0][c];
     }
-  } else if (wrt_key == "molar_density_gas") {
+  } else if (wrt_key == mdg_key) {
     for (int c=0; c!=ncells; ++c) {
       result_v[0][c] = phi[0][c] * s_g[0][c]*omega_g[0][c];
     }
-  } else if (wrt_key == "mol_frac_gas") {
+  } else if (wrt_key == mfg_key) {
     for (int c=0; c!=ncells; ++c) {
       result_v[0][c] = phi[0][c] * s_g[0][c]*n_g[0][c];
     }

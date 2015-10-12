@@ -48,7 +48,7 @@ void WRMEvaluator::InitializeFromPlist_() {
   my_keys_.push_back(plist_.get<std::string>("saturation key", "saturation_liquid"));
 
   Key domain_name = getDomain(my_keys_[0]);
-
+  
   calc_other_sat_ = plist_.get<bool>("calculate minor saturation", true);
   if (calc_other_sat_) {
     my_keys_.push_back(plist_.get<std::string>("other saturation key",
@@ -81,6 +81,7 @@ void WRMEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   }
 
   // Potentially do face values as well.
+  
   if (results[0]->HasComponent("boundary_face")) {
     Epetra_MultiVector& sat_bf = *results[0]->ViewComponent("boundary_face",false);
     const Epetra_MultiVector& pres_bf = *S->GetFieldData(cap_pres_key_)

@@ -124,6 +124,7 @@ class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
 private:
   // factory registration
   static RegisteredPKFactory<MPCSubsurface> reg_;
+  std::string domain_name;
 
 };
 

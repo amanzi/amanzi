@@ -29,9 +29,9 @@ TwoPhase::TwoPhase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                    const Teuchos::RCP<TreeVector>& solution) :
     PKDefaultBase(plist, FElist, solution),
     EnergyBase(plist, FElist, solution) {
-  if (!plist_->isParameter("flux key")) plist_->set("flux key", "darcy_flux");
-
-  plist_->set("conserved quantity key", "energy");
+  //  if (!plist_->isParameter("flux key")) plist_->set("flux key", "darcy_flux");
+//I-CHANGED
+//  plist_->set("conserved quantity key", "energy");
 }
 
 // -------------------------------------------------------------
@@ -82,13 +82,15 @@ void TwoPhase::initialize(const Teuchos::Ptr<State>& S) {
   // BC.  This requires density and internal energy, which in turn
   // require a model based on p,T.
   // This will be removed once boundary faces are implemented.
-  Teuchos::RCP<FieldEvaluator> eos_fe = S->GetFieldEvaluator("molar_density_liquid");
+  //I-CHANGED
+ std::string domain_name = getDomain(energy_key_);
+ Teuchos::RCP<FieldEvaluator> eos_fe = S->GetFieldEvaluator(getKey(domain_name,"molar_density_liquid"));
   Teuchos::RCP<Relations::EOSEvaluator> eos_eval =
     Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(eos_fe);
   ASSERT(eos_eval != Teuchos::null);
   eos_liquid_ = eos_eval->get_EOS();
 
-  Teuchos::RCP<FieldEvaluator> iem_fe = S->GetFieldEvaluator("internal_energy_liquid");
+  Teuchos::RCP<FieldEvaluator> iem_fe = S->GetFieldEvaluator(getKey(domain_name,"internal_energy_liquid"));
   Teuchos::RCP<EnergyRelations::IEMEvaluator> iem_eval =
     Teuchos::rcp_dynamic_cast<EnergyRelations::IEMEvaluator>(iem_fe);
   ASSERT(iem_eval != Teuchos::null);
@@ -107,16 +109,18 @@ void TwoPhase::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S) {
   // NOTE this boundary flux is in enthalpy, and
   // h = n(T,p) * u_l(T) + p_l
   Teuchos::RCP<const Epetra_MultiVector> pres;
-  if (S->GetFieldData("pressure")->HasComponent("face")) {
-    pres = S->GetFieldData("pressure")->ViewComponent("face",false);
+  std::string domain_name = getDomain(energy_key_);
+  if (S->GetFieldData(getKey(domain_name,"pressure"))->HasComponent("face")) {
+    pres = S->GetFieldData(getKey(domain_name, "pressure"))->ViewComponent("face",false);
   }
-  const Epetra_MultiVector& pres_c = *S->GetFieldData("pressure")
+  const Epetra_MultiVector& pres_c = *S->GetFieldData(getKey(domain_name, "pressure"))
       ->ViewComponent("cell",false);
+  
   const Epetra_MultiVector& temp = *S->GetFieldData(key_)
-      ->ViewComponent("face",false);
+      ->ViewComponent("boundary_face",false);
   const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)
       ->ViewComponent("face",false);
-
+ 
   bool include_work = plist_->sublist("enthalpy evaluator").get<bool>("include work term", true);
   
   AmanziMesh::Entity_ID_List cells;
@@ -137,6 +141,7 @@ void TwoPhase::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S) {
       bc_values_adv_[f] = enthalpy;
     }
   }
+ 
 }
 
 

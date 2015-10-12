@@ -47,6 +47,21 @@ public:
  private:
   static Utils::RegisteredFactory<FieldEvaluator,ThreePhaseEnergyEvaluator> reg_;
   
+  Key por_key_;
+  Key bpor_key_;
+  Key sl_key_; 
+  Key mdl_key_;
+  Key iel_key_;
+  Key sg_key_ ;
+  Key mdg_key_;
+  Key ieg_key_;
+  Key si_key_;
+  Key mdi_key_;
+  Key iei_key_;
+  Key dr_key_;
+  Key ier_key_;
+  Key cv_key_;
+
 };
 
 } // namespace
