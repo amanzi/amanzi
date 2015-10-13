@@ -8,6 +8,14 @@
 #include <Utility.H>
 #include <ParmParse.H>
 
+// Note that the permeability may be specified in m^2 or in mDa
+static bool Permeability_in_m2 = true;
+static bool Permeability_in_mDa = false;
+
+// Note that the capillary pressure model alpha can be in Pa^-1 or atm^-1
+static bool Capillary_Pressure_alpha_in_invPa = true;
+static bool Capillary_Pressure_alpha_in_invAtm = false;
+
 static std::string CapillaryPressureName    = "capillary_pressure";
 static std::string PorosityName             = "porosity";
 static std::string PermeabilityName         = "permeability";
@@ -650,7 +658,24 @@ RockManager::Initialize(const Array<std::string>* solute_names)
 #endif
       }
 
-      // The permeability is specified in mDa.  
+      // Convert input permeability values to mDa, if necessary
+      if (Permeability_in_m2) {
+	BL_ASSERT(!Permeability_in_mDa);
+	for (int j=0; j<rvpvals.size(); ++j) {
+	  rvpvals[j] *= 1.01325e15; // mDa/m^2
+	}
+	for (int j=0; j<rhpvals.size(); ++j) {
+	  rhpvals[j] *= 1.01325e15; // mDa/m^2
+	}
+#if BL_SPACEDIM==3
+	for (int j=0; j<rh1pvals.size(); ++j) {
+	  rh1pvals[j] *= 1.01325e15; // mDa/m^2
+	}
+#endif
+      }
+
+
+      // The permeability is now in mDa.  
       // This needs to be multiplied with 1e-10 to be consistent 
       // with the other units in the code.  What this means is that
       // we will be evaluating the darcy velocity as:
@@ -717,6 +742,10 @@ RockManager::Initialize(const Array<std::string>* solute_names)
       Real avg; pprk.get(PermeabilityValName.c_str(),avg);
 
       // Scale (as above)
+      if (Permeability_in_m2) {
+	BL_ASSERT(!Permeability_in_mDa);
+	avg *= 1.01325e15; // to mDa
+      }
       avg *= 1.e-10;
 
       kappa_func = new GSLibProperty(PermeabilityName,avg,gslib_param_file,gslib_data_file,gslib_file_shift,harm_crsn,pc_refine);
@@ -774,6 +803,12 @@ RockManager::Initialize(const Array<std::string>* solute_names)
         }
 
         std::string Kr_model; ppr.get("Kr_model", Kr_model);
+	if (Kr_model != Kr_model_None
+	    && Kr_model != Kr_model_Mualem
+	    && Kr_model != Kr_model_Burdine) {
+	  BoxLib::Abort(std::string("Invalid Kr model: \""+Kr_model
+				    +"\" given for material: \""+rname+"\"").c_str());
+	}
         std::string Kr_full_model_name = cpl_model + "_" + Kr_model;
         std::map<std::string,int>::const_iterator itKr = Kr_models.find(Kr_full_model_name);
         if (it != Kr_models.end()) {
@@ -808,6 +843,12 @@ RockManager::Initialize(const Array<std::string>* solute_names)
           WRM_plot_file[i].first = NUM_INIT_INTERP_EVAL_PTS_DEF;
           ppr.query("WRM_plot_file_num_pts",WRM_plot_file[i].first);
         }
+
+	// Convert input alpa values to invAtm, if necessary	
+	if (Capillary_Pressure_alpha_in_invPa) {
+	  BL_ASSERT(!Capillary_Pressure_alpha_in_invAtm);
+	  alpha*1.01325e5;
+	}
 
         // Finally, load array of Real numbers for this model
         rcplParam[CPL_MODEL_ID] = (Real)rcplType;

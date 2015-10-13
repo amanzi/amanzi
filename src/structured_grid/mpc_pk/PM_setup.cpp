@@ -1004,7 +1004,9 @@ PorousMedia::variableSetUp ()
   intern_reqd_der.push_back("Grid_ID");
   intern_reqd_der.push_back("Core_ID");
   intern_reqd_der.push_back("Cell_ID");
-  intern_reqd_der.push_back("Hydraulic_Head");
+  if (gravity != 0) {
+    intern_reqd_der.push_back("Hydraulic_Head");
+  }
 
   for (int i=0; i<intern_reqd_der.size(); ++i) {
     int j = -1;
@@ -1375,7 +1377,7 @@ void  PorousMedia::read_comp()
 
           std::string ic_type; ppr.get("type",ic_type);
 	  BL_ASSERT(!do_constant_vel); // If this is ever set, it must be the only IC so we should never see this true here
-          if (ic_type == "pressure")
+          if (ic_type == "uniform_pressure")
           {
               int nPhase = pNames.size();
               Array<Real> vals(nPhase);
@@ -1430,15 +1432,15 @@ void  PorousMedia::read_comp()
                 pgrad[j] = pgrad[j] / BL_ONEATM;
 	      }
 
-              int nref = ppr.countval("ref_coord");
+              int nref = ppr.countval("loc");
               if (nref<BL_SPACEDIM) {
 		if (ParallelDescriptor::IOProcessor()) {
-		  std::cerr << "Insufficient number of components given for pressure refernce location" << std::endl;
+		  std::cerr << "Insufficient number of components given for pressure reference location" << std::endl;
 		}
                 BoxLib::Abort();
               }
               Array<Real> pref(BL_SPACEDIM);
-              ppr.getarr("ref_coord",pref,0,nref);
+              ppr.getarr("loc",pref,0,nref);
 
               int ntmp = 2*BL_SPACEDIM+1;
               Array<Real> tmp(ntmp);
@@ -1449,7 +1451,7 @@ void  PorousMedia::read_comp()
               }
               ic_array.set(i, new RegionData(icname,ic_regions,ic_type,tmp));
           }
-          else if (ic_type == "saturation")
+          else if (ic_type == "uniform_saturation")
           {
               Array<Real> vals(ncomps);
               for (int j = 0; j<cNames.size(); j++) {
@@ -1459,7 +1461,7 @@ void  PorousMedia::read_comp()
               std::string generic_type = "scalar";
               ic_array.set(i, new RegionData(icname,ic_regions,generic_type,vals));
           }
-          else if (ic_type == "constant_velocity")
+          else if (ic_type == "velocity")
           {
 	      if (model != PM_STEADY_SATURATED) {
 	          if (ParallelDescriptor::IOProcessor()) {
@@ -1468,8 +1470,8 @@ void  PorousMedia::read_comp()
 		  }
 	      }
               Array<Real> vals(BL_SPACEDIM);
-	      ppr.getarr("Velocity_Vector",vals,0,BL_SPACEDIM);
-              std::string generic_type = "constant_velocity";
+	      ppr.getarr("vel",vals,0,BL_SPACEDIM);
+              std::string generic_type = "velocity";
 	      do_constant_vel = true;
               ic_array.set(i, new RegionData(icname,ic_regions,generic_type,vals));
           }
@@ -1493,7 +1495,7 @@ void  PorousMedia::read_comp()
 	      ic_array.set(i,new RegionData(icname,ic_regions,ic_type,vals));
           }
           else {
-              BoxLib::Abort("Unsupported comp ic");
+	    BoxLib::Abort(std::string("Unsupported comp ic: \""+ic_type+"\"").c_str());
           }
       }
   }
@@ -1505,15 +1507,14 @@ void  PorousMedia::read_comp()
     phys_bc.setHi(j,Symmetry);
     pres_bc.setHi(j,Symmetry);
   }
+  rinflow_bc_lo.resize(BL_SPACEDIM,0); 
+  rinflow_bc_hi.resize(BL_SPACEDIM,0); 
+  inflow_bc_lo.resize(BL_SPACEDIM,0); 
+  inflow_bc_hi.resize(BL_SPACEDIM,0); 
 
   int n_bcs = cp.countval("bc_labels");
   if (n_bcs > 0)
   {
-      rinflow_bc_lo.resize(BL_SPACEDIM,0); 
-      rinflow_bc_hi.resize(BL_SPACEDIM,0); 
-      inflow_bc_lo.resize(BL_SPACEDIM,0); 
-      inflow_bc_hi.resize(BL_SPACEDIM,0); 
-
       bc_array.resize(n_bcs,PArrayManage);
       Array<std::string> bc_names;
       cp.getarr("bc_labels",bc_names,0,n_bcs);
@@ -1578,11 +1579,11 @@ void  PorousMedia::read_comp()
               
               is_inflow = false;
               if (model == PM_STEADY_SATURATED || model == PM_SATURATED) {
-                component_bc = 2;
+                component_bc = Outflow;
               } else {
-                component_bc = 1;
+                component_bc = Inflow;
               }
-              pressure_bc = 2;
+              pressure_bc = Outflow;
               bc_array.set(ibc, new RegionData(bcname,bc_regions,bc_type,vals));
           }
           else if (bc_type == "hydraulic_head")
@@ -1614,11 +1615,11 @@ void  PorousMedia::read_comp()
             is_inflow = false;
             if (model == PM_STEADY_SATURATED
 		|| model == PM_SATURATED ) {
-              component_bc = 2;
+              component_bc = Outflow;
             } else {
-              component_bc = 1;
+              component_bc = Inflow;
             }
-            pressure_bc = 2;
+            pressure_bc = Outflow;
 
 	    bc_array.set(ibc,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,vals.size()));
           }
@@ -1642,11 +1643,11 @@ void  PorousMedia::read_comp()
 
             is_inflow = false;
             if (model == PM_STEADY_SATURATED || model == PM_SATURATED) {
-              component_bc = 2;
+              component_bc = Outflow;
             } else {
-              component_bc = 1;
+              component_bc = Inflow;
             }
-            pressure_bc = 2;
+            pressure_bc = Outflow;
 
 	    Array<Array<Real> > values(vals.size(),Array<Real>(1,0));
             for (int j=0; j<vals.size(); ++j) {
@@ -1717,8 +1718,8 @@ void  PorousMedia::read_comp()
               }
 
               is_inflow = true;
-              component_bc = 1;
-              pressure_bc = 1;
+              component_bc = Inflow;
+              pressure_bc = Inflow;
 	      bc_array.set(ibc,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,1));
           }
           else if (bc_type == "no_flow")
@@ -1726,8 +1727,8 @@ void  PorousMedia::read_comp()
             Array<Real> vals(1,0), times(1,0);
             Array<std::string> forms(0);
             is_inflow = true;
-            component_bc = 1;
-            pressure_bc = 1;
+            component_bc = Inflow;
+            pressure_bc = Inflow;
             bc_array.set(ibc,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,1));
           }
           else

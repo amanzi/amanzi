@@ -1096,12 +1096,6 @@ void InputConverterS::ParseMaterials_()
 	    AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "vertical", "vals"),
 		       MakePPEntry(z));
 	  }
-
-          // FIXME: Are these two guys needed? When?
-          AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "distribution_type"),
-                     MakePPEntry("uniform"));
-          AddToTable(table, MakePPPrefix("rock", mat_name, "permeability_dist"),
-                     MakePPEntry("uniform"));
         }
         else
         {
@@ -1206,8 +1200,6 @@ void InputConverterS::ParseMaterials_()
 
         // FIXME: Something about a WRM plot file??
       }
-      // FIXME: Is this correct?
-      AddToTable(table, MakePPPrefix("rock", mat_name, "cpl_type"), MakePPEntry(0));
 
       // Relative permeability.
       DOMElement* rel_perm = GetChildByName_(mat, "rel_perm", found, false);
@@ -1216,9 +1208,9 @@ void InputConverterS::ParseMaterials_()
         bool found;
         string model = GetAttributeValueS_(rel_perm, "model", true);
         if (model == "mualem")
-          AddToTable(table, MakePPPrefix("rock", mat_name, "Kr_model"), MakePPEntry("mualem"));
+          AddToTable(table, MakePPPrefix("rock", mat_name, "Kr_model"), MakePPEntry("Mualem"));
         else if (model == "burdine")
-          AddToTable(table, MakePPPrefix("rock", mat_name, "Kr_model"), MakePPEntry("burdine"));
+          AddToTable(table, MakePPPrefix("rock", mat_name, "Kr_model"), MakePPEntry("Burdine"));
         else if (model != "none")
           ThrowErrorIllformed_("materials", "type", "rel_perm");
 
@@ -1325,7 +1317,7 @@ void InputConverterS::ParseProcessKernels_()
     AddToTable(table, MakePPPrefix("prob", "model_name"), MakePPEntry("steady-saturated"));
   AddToTable(table, MakePPPrefix("prob", "have_capillary"), MakePPEntry(0));
   AddToTable(table, MakePPPrefix("prob", "cfl"), MakePPEntry(-1));
-    
+
   // Transport model.
   string transport_state = GetAttributeValueS_(transport, "state");
   if (transport_state == "on")
@@ -1454,34 +1446,50 @@ void InputConverterS::ParseInitialConditions_()
           DOMElement* lc = GetChildByName_(lp, "liquid_component", cfound);
           if (cfound) {
             vector<DOMNode*> nodes;
-            string ic_type_labels[10] = {
+            string ic_type_labels[5] = {
               "uniform_pressure",
               "linear_pressure",
               "uniform_saturation",
               "linear_saturation",
               "velocity"};
             bool tfound = false;
-            for (int i=0; i<10 && !tfound; ++i) {
+            for (int i=0; i<5 && !tfound; ++i) {
               nodes = GetChildren_(lc, ic_type_labels[i], tfound, false);
               if (tfound) {
-                vector<string> values;
-                vector<string> gvalues, rvalues, rpoints;
+                vector<string> values, vel;
+                vector<double> gvalues, rvalues, rpoints;
                 for (size_t j = 0; j < nodes.size(); ++j) {
                   DOMElement* elt = static_cast<DOMElement*>(nodes[j]);
-                  values.push_back(GetAttributeValueS_(elt, "value", true));
+                  if (ic_type_labels[i]=="velocity") {
+		    vel.push_back(GetAttributeValueS_(elt, "x", true));
+		    vel.push_back(GetAttributeValueS_(elt, "y", true));
+		    if (dim_ > 2) {
+		      vel.push_back(GetAttributeValueS_(elt, "z", true));
+		    }
+		  } else {
+		    values.push_back(GetAttributeValueS_(elt, "value", true));
+		  }
 
                   // Get extra info, if required
                   if (ic_type_labels[i]=="linear_pressure"
                       || ic_type_labels[i]=="linear_saturation") {
-                    gvalues.push_back(GetAttributeValueS_(elt, "gradient_value", true));
-                    rpoints.push_back(GetAttributeValueS_(elt, "reference_coord", true));
+
+		    gvalues = GetAttributeVector_(elt, "gradient", true);
+		    if (gvalues.size() != dim_)
+		      ThrowErrorIllformed_("initial_conditions->linear_pressure", "coordinate array", "gradient");
+		    
+		    rpoints = GetAttributeVector_(elt, "reference_coord", true);
+		    if (rpoints.size() != dim_)
+		      ThrowErrorIllformed_("initial_conditions->linear_pressure", "coordinate array", "reference_coord");
                   }
                 }
 
                 AddToTable(table, MakePPPrefix("comp", "ics", ic_name, "type"),MakePPEntry(ic_type_labels[i]));
 
                 if (values.size()>0)
-                  AddToTable(table, MakePPPrefix("comp", "ics", ic_name, "vals"),MakePPEntry(values));
+                  AddToTable(table, MakePPPrefix("comp", "ics", ic_name, "val"),MakePPEntry(values));
+                if (vel.size()>0)
+                  AddToTable(table, MakePPPrefix("comp", "ics", ic_name, "vel"),MakePPEntry(vel));
                 if (gvalues.size()>0)
                   AddToTable(table, MakePPPrefix("comp", "ics", ic_name, "grad"),MakePPEntry(gvalues));
                 if (rvalues.size()>0)

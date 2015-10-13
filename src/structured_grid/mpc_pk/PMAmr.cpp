@@ -1451,8 +1451,8 @@ void PMAmr::InitializeControlEvents()
     pp.query("output_file",observation_output_file);
   }
 
-  ppa.queryarr("vis_cycle_macros",vis_cycle_macros,0,ppa.countval("vis_cycle_macros"));
-  ppa.queryarr("vis_time_macros",vis_time_macros,0,ppa.countval("vis_time_macros"));
+  ppa.queryarr("viz_cycle_macros",vis_cycle_macros,0,ppa.countval("viz_cycle_macros"));
+  ppa.queryarr("viz_time_macros",vis_time_macros,0,ppa.countval("viz_time_macros"));
   ppa.queryarr("chk_cycle_macros",chk_cycle_macros,0,ppa.countval("chk_cycle_macros"));
   ppa.queryarr("chk_time_macros",chk_time_macros,0,ppa.countval("chk_time_macros"));
 
@@ -1463,7 +1463,7 @@ void PMAmr::InitializeControlEvents()
           RegisterEvent(eit->first,eit->second);
       }
       else {
-          std::string m = "vis_cycle_macros contains unrecognized macro name \"" + vis_cycle_macros[i] + "\"";
+          std::string m = "viz_cycle_macros contains unrecognized macro name \"" + vis_cycle_macros[i] + "\"";
           BoxLib::Abort(m.c_str());
       }
   }
@@ -1475,7 +1475,7 @@ void PMAmr::InitializeControlEvents()
           RegisterEvent(eit->first,eit->second);
       }
       else {
-          std::string m = "vis_time_macros contains unrecognized macro name \"" + vis_time_macros[i] + "\"";
+          std::string m = "viz_time_macros contains unrecognized macro name \"" + vis_time_macros[i] + "\"";
           BoxLib::Abort(m.c_str());
       }
   }

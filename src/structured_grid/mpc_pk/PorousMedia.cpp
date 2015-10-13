@@ -941,7 +941,7 @@ PorousMedia::initData ()
           std::cerr << "IC: scalar - no longer supported\n";
           BoxLib::Abort("PorousMedia::initData()");
         }
-        else if (type == "pressure") 
+        else if (type == "uniform_pressure") 
         {
           Array<Real> vals = ic();
           if (region_manager == 0) {
@@ -1000,7 +1000,7 @@ PorousMedia::initData ()
             P_new[mfi].plus(atmospheric_pressure_atm);
           }
         }
-        else if (type == "constant_velocity")
+        else if (type == "velocity")
         {
           set_saturated_velocity();
         }
@@ -2261,7 +2261,7 @@ PorousMedia::set_saturated_velocity()
     const RegionData& ic = ic_array[i];
     const Array<const Region*>& ic_regions = ic.Regions();
     const std::string& type = ic.Type();
-    if (type == "constant_velocity") {
+    if (type == "velocity") {
       Array<Real> vals = ic();
       BL_ASSERT(vals.size() >= BL_SPACEDIM);
       for (int d=0; d<BL_SPACEDIM; ++d) {
@@ -7191,7 +7191,7 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, const IArrayBox& matID, const FAr
           mask.setVal(0);
           const Array<const Region*>& regions = face_bc.Regions();
 
-          if (face_bc.Type() == "pressure") {
+          if (face_bc.Type() == "uniform_pressure") {
             for (int j=0; j<regions.size(); ++j) {
               regions[j]->setVal(mask,1,0,dx,0);
             }
