@@ -821,13 +821,53 @@ Geochemistry allows users to define a reaction network and constraints to be ass
 .. code-block:: xml
 
   <geochemistry>
-      Required Elements: reaction_network [S], constraint [S]
+      Required Elements: database, reaction_network, constraints
+      Optional Elements: radioactive_decay
   </geochemistry>
+
+* `"database`" has a `"name`" attribute that defines a chemical database file containing information about chemical species
+
+* `"reaction_network`" has a `"file`" attribute that defines an input file for the chemistry engine selected in the process_kernels section.
+
+* `"constraints`" is a list of `"constraint`" and `"mineral_kinetics`" subelements identifying geochemical contraints and any relevant minerals for the reaction network.
+
+Constraints
+-----------
+
+.. code-block:: xml
+
+    <constraints>
+        <constraint type="string">
+            <primary name="string" value="exponential" type="string" [mineral="kaolinite"]>
+            ...
+        </constraint>
+        ...
+        <mineral_kinetics>
+            <mineral name="string" rate_constant="exponential"/>
+        </mineral_kinetics>
+        
+    </constraints>
+
+OR
+
+.. code-block:: xml
+
+    <constraint type="string" name="string"/>
+
+* `"constraint`" has a `"type`" attribute that identifies the type of geochemical constraint desired. Different engines support different types of constraints. The behavior of the constraint may be defined in one of two ways:
+
+    * The constraint can have a `"name`" attribute identifying a constraint defined in the reaction network file.
+
+    * If the constraint does not have a `"name`" attribute, it should have `"primary`" subelements that define the constraint in terms of its effects on the primary chemical species for the problem.
+
+* `"mineral_kinetics`" is a list of `"mineral`" subelements that each have `"name`" and `"rate_constant`" attributes.
 
 PFLOTRAN Chemistry
 ------------------
 
 For geochemistry simulated through PFLOTRAN, the user defines a reaction network and constraints.  These are defined within the same or separate text files through PFLOTRAN's input specification (see the CHEMISTRY and CONSTRAINT card definitions at https://bitbucket.org/pflotran/pflotran-dev/wiki/Documentation/QuickGuide).
+
+`"database`" should refer to a PFlotran chemical database file (\*.dat).
 
 `"reaction_network`" defines a file containing a PFLOTRAN CHEMISTRY block.
 
@@ -836,7 +876,8 @@ For geochemistry simulated through PFLOTRAN, the user defines a reaction network
 .. code-block:: xml
 
   <geochemistry>
-      <reaction_network file="calcite_flow_and_tran.in" format="simple"/>
+      <database name="calcite_flow_and_tran.dat">
+      <reaction_network file="calcite_flow_and_tran.in">
       <constraint name="Initial" filename="calcite_flow_and_tran.in"/>
       <constraint name="Inlet" filename="calcite_flow_and_tran.in"/>
   </geochemistry>
