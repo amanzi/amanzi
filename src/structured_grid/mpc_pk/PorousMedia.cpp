@@ -2927,7 +2927,7 @@ PorousMedia::get_inflow_velocity(const Orientation& face,
         for (int i=0; i<face_bc_idxs.size(); ++i) {
           const RegionData& face_bc = bc_array[face_bc_idxs[i]];
           
-          if (face_bc.Type() == "zero_total_velocity" || face_bc.Type() == "noflow") {
+          if (face_bc.Type() == "volumetric_flux" || face_bc.Type() == "no_flow") {
             ret = true;
             Array<Real> inflow_tmp = face_bc(t_eval);
             Real inflow_vel = inflow_tmp[0];
