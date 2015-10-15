@@ -7,6 +7,7 @@
         <macros>
             <cycle_macro name="Every_1">
                 <start>0</start>
+                <stop>-1</stop>
                 <timestep_interval>1</timestep_interval>
             </cycle_macro>
             <time_macro name="Steady State">
@@ -131,7 +132,7 @@
     </initial_conditions>
     <boundary_conditions>
         <boundary_condition name="TopBC">
-            <assigned_regions>+Y_Boundary</assigned_regions>
+            <assigned_regions>YHIBC</assigned_regions>
             <liquid_phase name="water">
                 <liquid_component name="water">
                     <inward_mass_flux function="constant" start="0.0 y" value="1.155e-4"/>
@@ -139,10 +140,10 @@
             </liquid_phase>
         </boundary_condition>
         <boundary_condition name="LeftBC">
-            <assigned_regions>-X_Boundary</assigned_regions>
+            <assigned_regions>XLOBC</assigned_regions>
             <liquid_phase name="water">
                 <liquid_component name="water">
-                    <hydrostatic coordinate_system="absolute" function="constant" start="0.0 y" value="49.9872"/>
+                    <hydrostatic coordinate_system="absolute" function="constant" start="0.0 y" value="49.9872" submodel="none"/>
                 </liquid_component>
             </liquid_phase>
         </boundary_condition>
@@ -156,6 +157,7 @@
         <checkpoint>
             <base_filename>checkpoint</base_filename>
             <num_digits>5</num_digits>
+            <cycle_macros>Every_1</cycle_macros>
         </checkpoint>
     </output>
 </amanzi_input>

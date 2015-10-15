@@ -401,7 +401,6 @@ void InputConverterS::ParseDefinitions_()
           for (size_t j = 0; j < time_nodes.size(); ++j)
             times.push_back(XMLString::transcode(time_nodes[j]->getTextContent()));
 
-          string macro_name = MangleString(macro_name);
           AddToTable(table, MakePPPrefix("amr", "time_macros", macro_name, "type"),
                                          MakePPEntry("times"));
           AddToTable(table, MakePPPrefix("amr", "time_macros", macro_name, "times"),
