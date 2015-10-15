@@ -7,6 +7,7 @@
         <macros>
             <cycle_macro name="Every 500">
                 <start>0</start>
+                <stop>-1</stop>
                 <timestep_interval>500</timestep_interval>
             </cycle_macro>
         </macros>
@@ -134,7 +135,7 @@
         <checkpoint>
             <base_filename>checkpoint</base_filename>
             <num_digits>5</num_digits>
-            <cycle_macro>Every 500</cycle_macro>
+            <cycle_macros>Every 500</cycle_macros>
         </checkpoint>
     </output>
 </amanzi_input>
