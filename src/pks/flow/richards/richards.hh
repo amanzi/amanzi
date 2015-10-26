@@ -196,6 +196,7 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_head_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_infilt_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_infiltration_;
 
   // delegates
