@@ -62,6 +62,7 @@
 #   0.92.18      - update Boost to version 1.58.0 
 #   0.92.19      - update CCSE to version 1.3.2
 #   0.92.20      - update CCSE to version 1.3.4 (fix issue with fsnapshot)
+#   0.92.21      - update Alquimia to version 0.3.1 (CrunchFlow integration)
 
 include(CMakeParseArguments)
 
@@ -379,8 +380,5 @@ set(ALQUIMIA_VERSION_MAJOR 0)
 set(ALQUIMIA_VERSION_MINOR 2)
 set(ALQUIMIA_VERSION_PATCH 0)
 set(ALQUIMIA_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(ALQUIMIA_ARCHIVE_FILE   alquimia-0.2.tar.gz)
-set(ALQUIMIA_MD5_SUM        ee7dee337eb0c856723bd57bd0f4edc7)
-#set(ALQUIMIA_URL_STRING     "file:///home/smolins/alquimia-crunch")
-#set(ALQUIMIA_ARCHIVE_FILE   alquimia.tar.gz)
-#set(ALQUIMIA_MD5_SUM       0544cb25e97092982aaa86d52c63d766)
+set(ALQUIMIA_ARCHIVE_FILE   alquimia-0.3.1.tar.gz)
+set(ALQUIMIA_MD5_SUM        6c513ef53709ccef413b7629a5d261ab)
