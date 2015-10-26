@@ -51,6 +51,7 @@ Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
     modify_predictor_with_consistent_faces_(false),
     modify_predictor_wc_(false),
     modify_predictor_bc_flux_(false),
+    modify_predictor_first_bc_flux_(false),
     upwind_from_prev_flux_(false),
     precon_wc_(false),
     dynamic_mesh_(false),
@@ -135,6 +136,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   bc_flux_ = bc_factory.CreateMassFlux();
   bc_seepage_ = bc_factory.CreateSeepageFacePressure();
   bc_seepage_->Compute(0.); // compute at t=0 to set up
+  bc_seepage_infilt_ = bc_factory.CreateSeepageFacePressureWithInfiltration();
+  bc_seepage_infilt_->Compute(0.); // compute at t=0 to set up
 
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
@@ -740,7 +743,6 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 
   // seepage face -- pressure <= p_atm, outward mass flux >= 0
   // const Epetra_MultiVector pressure = *S->GetFieldData(key_)->ViewComponent("face");
-  const double& p_atm = *S->GetScalarData("atmospheric_pressure");
   for (bc=bc_seepage_->begin(); bc!=bc_seepage_->end(); ++bc) {
     int f = bc->first;
     //    std::cout << "Found seepage face: " << f << " at: " << mesh_->face_centroid(f) << " with normal: " << mesh_->face_normal(f) << std::endl;
@@ -754,8 +756,22 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
       bc_values_[f] = bc->second;
     }
   }
-  if (bc_seepage_->size() > 0)
-    std::cout << "Seepage with " << bc_seepage_->size() << " faces" << std::endl;
+
+  // seepage face -- pressure <= p_atm, outward mass flux is specified
+  const double& p_atm = *S->GetScalarData("atmospheric_pressure");
+  for (bc=bc_seepage_infilt_->begin(); bc!=bc_seepage_infilt_->end(); ++bc) {
+    int f = bc->first;
+    //    std::cout << "Found seepage face: " << f << " at: " << mesh_->face_centroid(f) << " with normal: " << mesh_->face_normal(f) << std::endl;
+    double bc_pressure = BoundaryValue(S->GetFieldData(key_), f);
+    if (bc_pressure < p_atm) {
+      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+      bc_values_[f] = bc->second;
+      
+    } else {
+      bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
+      bc_values_[f] = p_atm;
+    }
+  }
 
   // surface coupling
   if (coupled_to_surface_via_head_) {
@@ -847,7 +863,8 @@ bool Richards::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
 
   bool changed(false);
   if (modify_predictor_bc_flux_ ||
-      (modify_predictor_first_bc_flux_ && S_next_->cycle() == 0)) {
+      (modify_predictor_first_bc_flux_ && 
+       ((S_next_->cycle() == 0) || (S_next_->cycle() == 1)))) {
     changed |= ModifyPredictorFluxBCs_(h,u);
   }
 
