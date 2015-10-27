@@ -742,11 +742,12 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   }
 
   // seepage face -- pressure <= p_atm, outward mass flux >= 0
-  // const Epetra_MultiVector pressure = *S->GetFieldData(key_)->ViewComponent("face");
+  Teuchos::RCP<const CompositeVector> u = S->GetFieldData(key_);
+
   for (bc=bc_seepage_->begin(); bc!=bc_seepage_->end(); ++bc) {
     int f = bc->first;
     //    std::cout << "Found seepage face: " << f << " at: " << mesh_->face_centroid(f) << " with normal: " << mesh_->face_normal(f) << std::endl;
-    double bc_pressure = BoundaryValue(S->GetFieldData(key_), f);
+    double bc_pressure = BoundaryValue(u, f);
     if (bc_pressure < bc->second) {
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_values_[f] = 0.;
@@ -759,18 +760,35 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 
   // seepage face -- pressure <= p_atm, outward mass flux is specified
   const double& p_atm = *S->GetScalarData("atmospheric_pressure");
+
+  const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
+  const Epetra_MultiVector& u_cell = *S->GetFieldData(key_)->ViewComponent("cell");
+  double tol = p_atm * 1e-14;
+
   for (bc=bc_seepage_infilt_->begin(); bc!=bc_seepage_infilt_->end(); ++bc) {
     int f = bc->first;
-    double bc_pressure = BoundaryValue(S->GetFieldData(key_), f);
-    if (bc_pressure < p_atm) {
+    double face_value = BoundaryValue(u, f);
+
+    if (face_value < p_atm - tol) {
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_values_[f] = bc->second;
-      
     } else {
-      bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_values_[f] = p_atm;
+      AmanziMesh::Entity_ID_List cells;
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      ASSERT(cells.size() == 1);
+      int c = cells[0];
+      if (u_cell[0][c] < face_value) {
+        bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_values_[f] = bc->second;
+      } else {
+        bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_values_[f] = p_atm;
+      }
     }
-      //      std::cout << "Found seepage face pres: " << f << " with pres = " << bc_pressure << " resulting in type " << bc_markers_[f] << std::endl;
+    if (flux[0][f] < 0.0) {
+      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+      bc_values_[f] = bc->second;
+    }
   }
 
   // surface coupling
