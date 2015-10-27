@@ -761,7 +761,6 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   const double& p_atm = *S->GetScalarData("atmospheric_pressure");
   for (bc=bc_seepage_infilt_->begin(); bc!=bc_seepage_infilt_->end(); ++bc) {
     int f = bc->first;
-    //    std::cout << "Found seepage face: " << f << " at: " << mesh_->face_centroid(f) << " with normal: " << mesh_->face_normal(f) << std::endl;
     double bc_pressure = BoundaryValue(S->GetFieldData(key_), f);
     if (bc_pressure < p_atm) {
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -771,6 +770,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
       bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_values_[f] = p_atm;
     }
+      //      std::cout << "Found seepage face pres: " << f << " with pres = " << bc_pressure << " resulting in type " << bc_markers_[f] << std::endl;
   }
 
   // surface coupling
