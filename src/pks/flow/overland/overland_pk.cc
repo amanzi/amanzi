@@ -480,24 +480,48 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
   if (bc_seepage_head_->size() > 0) {
     S->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S.ptr(), name_);
 
-    const Epetra_MultiVector& h_c = *S->GetFieldData("ponded_depth")->ViewComponent("cell");
+    const CompositeVector& pd = *S->GetFieldData("ponded_depth");
+    const Epetra_MultiVector& h_c = *pd.ViewComponent("cell");
     const Epetra_MultiVector& elevation_c = *S->GetFieldData("elevation")->ViewComponent("cell");
 
-    for (Functions::BoundaryFunction::Iterator bc = bc_seepage_head_->begin(); 
-         bc != bc_seepage_head_->end(); ++bc) {
-      int f = bc->first;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      int c = cells[0];
+    if (pd.HasComponent("face")) {
+      const Epetra_MultiVector& h_f = *pd.ViewComponent("face");
+      for (Functions::BoundaryFunction::Iterator bc = bc_seepage_head_->begin(); 
+           bc != bc_seepage_head_->end(); ++bc) {
+        int f = bc->first;
 
-      double hz_f = bc->second + elevation[0][f];
-      double hz_c = h_c[0][c] + elevation_c[0][c];
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        int c = cells[0];
 
-      if (hz_f >= hz_c) {
-        bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_values_[f] = 0.0;
-      } else {
-        bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
-        bc_values_[f] = hz_f;
+        double hz_f = bc->second + elevation[0][f];
+        double hz_c = h_c[0][c] + elevation_c[0][c];
+
+        if (hz_f >= hz_c) {
+          bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+          bc_values_[f] = 0.0;
+        } else {
+          bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
+          bc_values_[f] = h_f[0][f] + elevation[0][f];
+        }
+      }
+      
+    } else {
+      for (Functions::BoundaryFunction::Iterator bc = bc_seepage_head_->begin(); 
+           bc != bc_seepage_head_->end(); ++bc) {
+        int f = bc->first;
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        int c = cells[0];
+
+        double hz_f = bc->second + elevation[0][f];
+        double hz_c = h_c[0][c] + elevation_c[0][c];
+
+        if (hz_f >= hz_c) {
+          bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+          bc_values_[f] = 0.0;
+        } else {
+          bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
+          bc_values_[f] = hz_f;
+        }
       }
     }
   }
