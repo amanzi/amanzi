@@ -44,17 +44,9 @@ void IEMWaterVaporEvaluator::InitializeFromPlist_() {
   }
 
   // Set up my dependencies.
-  std::size_t end = my_key_.find_first_of("_");
-  std::string domain_name = my_key_.substr(0,end);
-  if (domain_name == std::string("internal") ||
-      domain_name == std::string("energy")) {
-    domain_name = std::string("");
-  } else {
-    domain_name = domain_name+std::string("_");
-  }
-  domain_name = getDomain(my_key_);
+  Key domain_name = getDomain(my_key_);
+
   // -- temperature
- 
   temp_key_ = plist_.get<std::string>("temperature key",
                                       getKey(domain_name,std::string("temperature")));
   dependencies_.insert(temp_key_);

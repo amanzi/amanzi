@@ -38,11 +38,13 @@ class PermafrostModel : public EWCModelBase {
  public:
   PermafrostModel() {}
 
-  virtual void InitializeModel(const Teuchos::Ptr<State>& S);
+  virtual void InitializeModel(const Teuchos::Ptr<State>& S,
+                               Teuchos::ParameterList& plist);
   virtual void UpdateModel(const Teuchos::Ptr<State>& S, int c);
   virtual bool Freezing(double T, double p);
-  virtual int EvaluateSaturations(double T, double p, double& s_gas, double& s_liq, double& s_ice);
-
+  virtual int EvaluateSaturations(double T, double p,
+                                  double& s_gas, double& s_liq, double& s_ice);
+  
  protected:
   bool IsSetUp_();
 
@@ -64,10 +66,13 @@ class PermafrostModel : public EWCModelBase {
   Teuchos::RCP<Energy::EnergyRelations::IEM> rock_iem_;
   Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityModelPartition> poro_models_;
   Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityModel> poro_model_;
+
   double p_atm_;
   double poro_;
   double rho_rock_;
 
+  Key domain;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 
 

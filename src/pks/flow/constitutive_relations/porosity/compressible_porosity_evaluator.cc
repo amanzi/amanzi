@@ -15,15 +15,16 @@ namespace FlowRelations {
 
 CompressiblePorosityEvaluator::CompressiblePorosityEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
-
-  pres_key_ = plist_.get<std::string>("pressure key", "pressure");
+  std::string domain_name=getDomain(my_key_);
+  pres_key_ = plist_.get<std::string>("pressure key", getKey(domain_name, "pressure"));
   dependencies_.insert(pres_key_);
-  poro_key_ = plist_.get<std::string>("base porosity key", "base_porosity");
+  
+  poro_key_ = plist_.get<std::string>("base porosity key", getKey(domain_name,"base_porosity"));
   dependencies_.insert(poro_key_);
 
   if (my_key_ == std::string("")) {
     my_key_ = plist_.get<std::string>("compressed porosity key",
-            "porosity");
+                                      getKey(domain_name, "porosity"));
   }
 
   ASSERT(plist_.isSublist("compressible porosity model parameters"));
