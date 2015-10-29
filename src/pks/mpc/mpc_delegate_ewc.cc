@@ -45,16 +45,13 @@ void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
   db_ = Teuchos::rcp(new Debugger(mesh_, name, *plist_));
 
   // Process the parameter list for data Keys
-  if (domain.size() > 0) domain.append(1, '_');
-  pres_key_ = plist_->get<std::string>("pressure key", domain+std::string("pressure"));
-  temp_key_ = plist_->get<std::string>("temperature key",
-          domain+std::string("temperature"));
-  e_key_ = plist_->get<std::string>("energy key", domain+std::string("energy"));
-  wc_key_ = plist_->get<std::string>("water content key",
-          domain+std::string("water_content"));
-  cv_key_ = plist_->get<std::string>("cell volume key",
-          domain+std::string("cell_volume"));
-
+  pres_key_ = plist_->get<std::string>("pressure key", getKey(domain, "pressure"));
+  temp_key_ = plist_->get<std::string>("temperature key", getKey(domain,"temperature"));
+ 
+  e_key_ = plist_->get<std::string>("energy key", getKey(domain, "energy"));
+  wc_key_ = plist_->get<std::string>("water content key", getKey(domain,"water_content"));
+  cv_key_ = plist_->get<std::string>("cell volume key", getKey(domain, "cell_volume"));
+  
   // Process the parameter list for methods
   std::string precon_string = plist_->get<std::string>("preconditioner type", "none");
   if (precon_string == "none") {
@@ -106,6 +103,7 @@ void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 void MPCDelegateEWC::initialize(const Teuchos::Ptr<State>& S) {
   // Create and initialize old stored data for previous steps.
+
   if (predictor_type_ == PREDICTOR_EWC || predictor_type_ == PREDICTOR_SMART_EWC) {
     const Epetra_MultiVector& wc = *S->GetFieldData(wc_key_)
         ->ViewComponent("cell",false);
@@ -127,7 +125,7 @@ void MPCDelegateEWC::initialize(const Teuchos::Ptr<State>& S) {
   }
 
   // initialize the model, which grabs all needed models from state
-  model_->InitializeModel(S);
+  model_->InitializeModel(S, *plist_);
 }
 
 

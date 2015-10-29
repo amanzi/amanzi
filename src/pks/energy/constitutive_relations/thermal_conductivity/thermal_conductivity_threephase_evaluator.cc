@@ -19,20 +19,22 @@ namespace EnergyRelations {
 ThermalConductivityThreePhaseEvaluator::ThermalConductivityThreePhaseEvaluator(
     Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
+  
   if (my_key_ == std::string("")) {
     my_key_ = plist_.get<std::string>("thermal conductivity key", "thermal_conductivity");
   }
-
-  poro_key_ = plist_.get<std::string>("porosity key", "porosity");
+  std::string domain_name = getDomain(my_key_);
+  
+  poro_key_ = plist_.get<std::string>("porosity key", getKey(domain_name, "porosity"));
   dependencies_.insert(poro_key_);
 
-  temp_key_ = plist_.get<std::string>("temperature key", "temperature");
+  temp_key_ = plist_.get<std::string>("temperature key",  getKey(domain_name, "temperature"));
   dependencies_.insert(temp_key_);
 
-  sat_key_ = plist_.get<std::string>("saturation key", "saturation_liquid");
+  sat_key_ = plist_.get<std::string>("saturation key", getKey(domain_name, "saturation_liquid"));
   dependencies_.insert(sat_key_);
 
-  sat2_key_ = plist_.get<std::string>("second saturation key", "saturation_ice");
+  sat2_key_ = plist_.get<std::string>("second saturation key", getKey(domain_name, "saturation_ice"));
   dependencies_.insert(sat2_key_);
 
   ASSERT(plist_.isSublist("thermal conductivity parameters"));

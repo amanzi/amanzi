@@ -6,6 +6,7 @@ ATS
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 ------------------------------------------------------------------------- */
+#include "boost/algorithm/string/predicate.hpp"
 
 #include "energy_bc_factory.hh"
 #include "advection_factory.hh"
@@ -44,24 +45,23 @@ EnergyBase::EnergyBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
     flux_exists_(true),
     implicit_advection_(true) {
 
-//I-CHANGED
-//---
-if (!plist_->isParameter("primary variable key"))
+  if (!plist_->isParameter("primary variable key"))
     plist_->set("primary variable key", "temperature");
-if (!plist_->isParameter("conserved quantity suffix"))
-  plist_->set("conserved quantity suffix", "energy");
-//--
+  if (!plist_->isParameter("conserved quantity suffix"))
+    plist_->set("conserved quantity suffix", "energy");
+
   // set a default absolute tolerance
-/*  if (!plist_->isParameter("absolute error tolerance")) {
-    std::string domain = plist_->get<std::string>("domain name", "domain");
-    if (domain == "domain") {    
-      plist_->set("absolute error tolerance", .5 * .1 * 55000. * 76.e-6); // phi * s * nl * u at 1C in MJ/mol
-    } else if (domain == "surface") {
-      plist_->set("absolute error tolerance", .01 * 55000. * 76.e-6); // h * nl * u at 1C in MJ/mol
+  if (!plist_->isParameter("absolute error tolerance")) {
+    if (domain_ == "surface") {
+      // h * nl * u at 1C in MJ/mol
+      plist_->set("absolute error tolerance", .01 * 55000. * 76.e-6);
+    } else if ((domain_ == "domain") || (boost::starts_with(domain_, "column"))) {
+      // phi * s * nl * u at 1C in MJ/mol
+      plist_->set("absolute error tolerance", .5 * .1 * 55000. * 76.e-6);
     } else {
       ASSERT(0);
     }
-    }*/
+  }
 }
 
 
