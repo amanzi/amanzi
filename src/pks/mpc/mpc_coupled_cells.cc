@@ -46,7 +46,6 @@ namespace Amanzi {
 void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
   StrongMPC<PKPhysicalBDFBase>::setup(S);
 
-  
   decoupled_ = plist_->get<bool>("decoupled",false);
 
   A_key_ = plist_->get<std::string>("conserved quantity A");
@@ -98,7 +97,6 @@ void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
 // updates the preconditioner
 void MPCCoupledCells::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
         double h) {
-
   StrongMPC<PKPhysicalBDFBase>::UpdatePreconditioner(t,up,h);
 
   // // Update and get the off-diagonal terms.

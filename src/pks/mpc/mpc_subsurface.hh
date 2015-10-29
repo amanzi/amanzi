@@ -23,6 +23,7 @@ class MPCDelegateEWCSubsurface;
 
 namespace Operators {
 class OperatorDiffusion;
+class OperatorDiffusionWithGravity;
 class OperatorAdvection;
 class OperatorAccumulation;
 class Operator;
@@ -95,15 +96,15 @@ class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
   // equations are given by:
   // dWC/dt + div q = 0
   // dE/dt + div K grad T + div hq = 0
-  Teuchos::RCP<Operators::OperatorDiffusion> ddivq_dT_;
+  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> ddivq_dT_;
   Teuchos::RCP<Operators::Upwinding> uw_dkrdT_;
 
   Teuchos::RCP<Operators::OperatorAccumulation> dWC_dT_;
   Teuchos::RCP<Operators::Operator> dWC_dT_block_;
 
   Teuchos::RCP<Operators::OperatorDiffusion> ddivKgT_dp_;
-  Teuchos::RCP<Operators::OperatorDiffusion> ddivhq_dp_;
-  Teuchos::RCP<Operators::OperatorDiffusion> ddivhq_dT_;
+  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> ddivhq_dp_;
+  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> ddivhq_dT_;
   Teuchos::RCP<Operators::OperatorAccumulation> dE_dp_;
   Teuchos::RCP<Operators::Operator> dE_dp_block_;
 
@@ -113,6 +114,21 @@ class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
 
   // friend sub-pk Richards (need K_, some flags from private data)
   Teuchos::RCP<Flow::Richards> richards_pk_;
+
+  Key domain_name_;
+  Key temp_key_;
+  Key pres_key_;
+  Key e_key_;
+  Key wc_key_;
+  Key tc_key_;
+  Key uw_tc_key_;
+  Key kr_key_;
+  Key uw_kr_key_;
+  Key hkr_key_;
+  Key uw_hkr_key_;
+  Key darcy_flux_key_;
+  Key darcy_flux_dir_key_;
+  Key rho_key_;
   
   // EWC delegate
   Teuchos::RCP<MPCDelegateEWCSubsurface> ewc_;
@@ -124,7 +140,6 @@ class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
 private:
   // factory registration
   static RegisteredPKFactory<MPCSubsurface> reg_;
-  std::string domain_name;
 
 };
 

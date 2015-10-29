@@ -74,6 +74,8 @@ def sort(varnames, keys='all', directory=".", filename="visdump_data.h5", mesh_f
             keys = [keys]
         elif type(keys) is int:
             keys = [str(keys)]
+        elif type(keys) is slice:
+            keys = keys_avail[keys]
 
         vals = np.zeros((len(varnames)+1, len(keys), len(z)), 'd')
         for i,key in enumerate(keys):

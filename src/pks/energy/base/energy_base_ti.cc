@@ -165,7 +165,7 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
       S_next_->GetFieldData(uw_conductivity_key_);
 
   preconditioner_->Init();
-  preconditioner_diff_->Setup(conductivity, Teuchos::null);
+  preconditioner_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // update with accumulation terms

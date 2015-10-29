@@ -34,32 +34,17 @@ void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
   std::string name = plist_->get<std::string>("PK name")+std::string(" EWC");
 
   // Get the mesh
-  
   Key domain = plist_->get<std::string>("domain key", "");
   if (domain.size() != 0) {
     mesh_ = S->GetMesh(domain);
   } else {
     mesh_ = S->GetMesh("domain");
   }
-  
 
   // set up a debugger
   db_ = Teuchos::rcp(new Debugger(mesh_, name, *plist_));
 
   // Process the parameter list for data Keys
-  //I-CHANGED
-  //   if (domain.size() > 0) domain.append(1, '-');
-    /*pres_key_ = plist_->get<std::string>("pressure key", domain+std::string("pressure"));
-  temp_key_ = plist_->get<std::string>("temperature key",
-          domain+std::string("temperature"));
-  std::cout<<"MPC-DELEGATE: "<<domain<<"\n";
-  e_key_ = plist_->get<std::string>("energy key", domain+std::string("energy"));
-  wc_key_ = plist_->get<std::string>("water content key",
-          domain+std::string("water_content"));
-  cv_key_ = plist_->get<std::string>("cell volume key",
-          domain+std::string("cell_volume"));
-  */
-
   pres_key_ = plist_->get<std::string>("pressure key", getKey(domain, "pressure"));
   temp_key_ = plist_->get<std::string>("temperature key", getKey(domain,"temperature"));
  

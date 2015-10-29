@@ -46,7 +46,7 @@ Effectively stolen from Amanzi, with few modifications.
 #include "amanzi_unstructured_grid_simulation_driver.hh"
 
 int AmanziUnstructuredGridSimulationDriver::Run(
-        const MPI_Comm& mpi_comm, Teuchos::ParameterList& input_parameter_list) {
+    const MPI_Comm& mpi_comm, Teuchos::ParameterList& input_parameter_list) {
 
   using Teuchos::OSTab;
   setDefaultVerbLevel(Amanzi::VerbosityLevel::level_);

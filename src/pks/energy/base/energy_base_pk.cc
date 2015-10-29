@@ -6,6 +6,7 @@ ATS
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 ------------------------------------------------------------------------- */
+#include "boost/algorithm/string/predicate.hpp"
 
 #include "energy_bc_factory.hh"
 #include "advection_factory.hh"
@@ -44,26 +45,23 @@ EnergyBase::EnergyBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
     flux_exists_(true),
     implicit_advection_(true) {
 
-//I-CHANGED
-//---
-if (!plist_->isParameter("primary variable key"))
+  if (!plist_->isParameter("primary variable key"))
     plist_->set("primary variable key", "temperature");
-if (!plist_->isParameter("conserved quantity suffix"))
-  plist_->set("conserved quantity suffix", "energy");
+  if (!plist_->isParameter("conserved quantity suffix"))
+    plist_->set("conserved quantity suffix", "energy");
 
-//--
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance")) {
-    //  std::string domain = plist_->get<std::string>("domain name", "domain");
-    std::string domain = plist_->get<std::string>("domain name", domain_);
-    if (domain == "domain") {    
-      plist_->set("absolute error tolerance", .5 * .1 * 55000. * 76.e-6); // phi * s * nl * u at 1C in MJ/mol
-    } else if (domain == "surface") {
-      plist_->set("absolute error tolerance", .01 * 55000. * 76.e-6); // h * nl * u at 1C in MJ/mol
+    if (domain_ == "surface") {
+      // h * nl * u at 1C in MJ/mol
+      plist_->set("absolute error tolerance", .01 * 55000. * 76.e-6);
+    } else if ((domain_ == "domain") || (boost::starts_with(domain_, "column"))) {
+      // phi * s * nl * u at 1C in MJ/mol
+      plist_->set("absolute error tolerance", .5 * .1 * 55000. * 76.e-6);
     } else {
       ASSERT(0);
     }
-    }
+  }
 }
 
 
@@ -183,8 +181,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   Teuchos::ParameterList& mfd_plist = plist_->sublist("Diffusion");
   mfd_plist.set("nonlinear coefficient", coef_location);
   Operators::OperatorDiffusionFactory opfactory;
-  matrix_diff_ = opfactory.Create(mesh_, bc_, mfd_plist);
-  matrix_diff_->Setup(Teuchos::null);
+  matrix_diff_ = opfactory.Create(mfd_plist, mesh_, bc_);
+  matrix_diff_->SetTensorCoefficient(Teuchos::null);
   matrix_ = matrix_diff_->global_operator();
 
   // -- create the forward operator for the advection term
@@ -200,11 +198,11 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     mfd_pc_plist.set("discretization primary", mfd_plist.get<std::string>("discretization primary"));
   if (!mfd_pc_plist.isParameter("discretization secondary") && mfd_plist.isParameter("discretization secondary"))
     mfd_pc_plist.set("discretization secondary", mfd_plist.get<std::string>("discretization secondary"));
-  if (!mfd_pc_plist.isParameter("schema"))
+  if (!mfd_pc_plist.isParameter("schema") && mfd_plist.isParameter("schema"))
     mfd_pc_plist.set("schema", mfd_plist.get<Teuchos::Array<std::string> >("schema"));
 
-  preconditioner_diff_ = opfactory.Create(mesh_, bc_, mfd_pc_plist);
-  preconditioner_diff_->Setup(Teuchos::null);
+  preconditioner_diff_ = opfactory.Create(mfd_pc_plist, mesh_, bc_);
+  preconditioner_diff_->SetTensorCoefficient(Teuchos::null);
   preconditioner_ = preconditioner_diff_->global_operator();
   
   // -- accumulation terms
@@ -354,9 +352,8 @@ void EnergyBase::commit_state(double dt, const Teuchos::RCP<State>& S) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Commiting state." << std::endl;
-  
   PKPhysicalBDFBase::commit_state(dt, S);
- 
+
   bc_temperature_->Compute(S->time());
   bc_diff_flux_->Compute(S->time());
   bc_flux_->Compute(S->time());
@@ -370,7 +367,7 @@ void EnergyBase::commit_state(double dt, const Teuchos::RCP<State>& S) {
   Teuchos::RCP<const CompositeVector> conductivity =
       S->GetFieldData(uw_conductivity_key_);
   matrix_diff_->global_operator()->Init();
-  matrix_diff_->Setup(conductivity, Teuchos::null);
+  matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
@@ -384,6 +381,7 @@ void EnergyBase::commit_state(double dt, const Teuchos::RCP<State>& S) {
   S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S.ptr(), name_);
   Teuchos::RCP<const CompositeVector> enth = S->GetFieldData(enthalpy_key_);;
   ApplyDirichletBCsToEnthalpy_(S.ptr());
+
   CompositeVector& adv_energy = *S->GetFieldData(adv_energy_flux_key_, name_);  
   matrix_adv_->UpdateFlux(*enth, *flux, bc_adv_, adv_energy);  
 
@@ -687,7 +685,7 @@ void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u
 
   // Update the preconditioner
   matrix_diff_->global_operator()->Init();
-  matrix_diff_->Setup(conductivity, Teuchos::null);
+  matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   matrix_diff_->ApplyBCs(true, true);
 

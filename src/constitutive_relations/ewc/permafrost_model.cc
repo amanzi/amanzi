@@ -37,12 +37,13 @@ namespace Amanzi {
 
 #define DEBUG_FLAG 0
 
-  void PermafrostModel::InitializeModel(const Teuchos::Ptr<State>& S, Teuchos::ParameterList& plist_) {
+void PermafrostModel::InitializeModel(const Teuchos::Ptr<State>& S,
+                                      Teuchos::ParameterList& plist) {
   // these are not yet initialized
   rho_rock_ = -1.;
   p_atm_ = -1.e12;
-  domain = plist_.get<std::string>("domain key", "");
-  if (domain.size() != 0) {
+  domain = plist.get<std::string>("domain key", "");
+  if (!domain.empty()) {
     mesh_ = S->GetMesh(domain);
   } else {
     mesh_ = S->GetMesh("domain");

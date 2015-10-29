@@ -30,7 +30,6 @@ void Richards::Functional(double t_old,
                    Teuchos::RCP<TreeVector> g) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = vo_->getOSTab();
-  niter_++;
 
   double h = t_new - t_old;
   ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
@@ -40,7 +39,7 @@ void Richards::Functional(double t_old,
   solution_to_state(*u_new, S_next_);
   Teuchos::RCP<CompositeVector> u = u_new->Data();
 
-  if (dynamic_mesh_) matrix_diff_->Setup(K_);
+  if (dynamic_mesh_) matrix_diff_->SetTensorCoefficient(K_);
 
 #if DEBUG_FLAG
   if (vo_->os_OK(Teuchos::VERB_HIGH))
@@ -109,18 +108,6 @@ void Richards::Functional(double t_old,
       AddSources_(S_next_.ptr(), res.ptr());
     }
   }
-  
-#if DEBUG_RES_FLAG
-  if (niter_ < 23) {
-    std::stringstream namestream;
-    namestream << "flow_residual_" << niter_;
-    *S_next_->GetFieldData(namestream.str(),name_) = *res;
-
-    std::stringstream solnstream;
-    solnstream << "flow_solution_" << niter_;
-    *S_next_->GetFieldData(solnstream.str(),name_) = *u;
-  }
-#endif
 };
 
 // -----------------------------------------------------------------------------
@@ -157,8 +144,8 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   // Recreate mass matrices
   if (dynamic_mesh_) {
-    matrix_diff_->Setup(K_);
-    preconditioner_diff_->Setup(K_);
+    matrix_diff_->SetTensorCoefficient(K_);
+    preconditioner_diff_->SetTensorCoefficient(K_);
   }
 
   // update state with the solution up.
@@ -167,7 +154,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   // update the rel perm according to the scheme of choice, also upwind derivatives of rel perm
   UpdatePermeabilityData_(S_next_.ptr());
-  if (!duw_coef_key_.empty()) UpdatePermeabilityDerivativeData_(S_next_.ptr());
+  if (jacobian_) UpdatePermeabilityDerivativeData_(S_next_.ptr());
 
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
@@ -180,18 +167,30 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   // Update the preconditioner with darcy and gravity fluxes
   preconditioner_->Init();
 
+  // gravity fluxes
   S_next_->GetFieldEvaluator(mass_dens_key_)->HasFieldChanged(S_next_.ptr(), name_);
   Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData(mass_dens_key_);
   preconditioner_diff_->SetDensity(rho);
 
-
+  // jacobian term
   Teuchos::RCP<const CompositeVector> dkrdp = Teuchos::null;
-  if (!duw_coef_key_.empty()) dkrdp = S_next_->GetFieldData(duw_coef_key_);
-  preconditioner_diff_->Setup(rel_perm, dkrdp);
-  preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData(flux_key_, name_);
-  preconditioner_diff_->UpdateFlux(*up->Data(), *flux);
-  preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
+  if (jacobian_) {
+    if (!duw_coef_key_.empty()) {
+      dkrdp = S_next_->GetFieldData(duw_coef_key_);
+    } else {
+      dkrdp = S_next_->GetFieldData(dcoef_key_);
+    }
+  }
+
+  // create local matrices
+  preconditioner_diff_->SetScalarCoefficient(rel_perm, dkrdp);
+  preconditioner_diff_->UpdateMatrices(Teuchos::null, up->Data().ptr());
+
+  if (jacobian_ && preconditioner_->RangeMap().HasComponent("face")) {
+    Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData(flux_key_, name_);
+    preconditioner_diff_->UpdateFlux(*up->Data(), *flux);
+    preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), up->Data().ptr());
+  }
   
   // if (vapor_diffusion_){
   //   Teuchos::RCP<CompositeVector> vapor_diff_pres = S_next_->GetFieldData("vapor_diffusion_pressure", name_);

@@ -52,7 +52,7 @@ MPCCoupledWater::setup(const Teuchos::Ptr<State>& S) {
     precon_->OpPushBack(*op);
   }
 
-  // -- must re-symbolic assemble surf operators, now that they have a surface operator
+  // -- must re-symbolic assemble subsurf operators, now that they have a surface operator
   precon_->SymbolicAssembleMatrix();
 
   // Potentially create a linear solver
@@ -248,7 +248,10 @@ MPCCoupledWater::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
     surf_db_->WriteVectors(vnames, vecs, true);
   }
 
-
+  // modify correction using sub-pk approaches
+  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult modified_res =
+    StrongMPC<PKPhysicalBDFBase>::ModifyCorrection(h, res, u, du);
+  
   // modify correction using water approaches
   int n_modified = 0;
   n_modified += water_->ModifyCorrection_WaterFaceLimiter(h, res, u, du);
@@ -301,7 +304,7 @@ MPCCoupledWater::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
     surf_db_->WriteVectors(vnames, vecs, true);
   }
 
-  return modified ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED_LAG_BACKTRACKING :
+  return (modified_res || modified) ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED_LAG_BACKTRACKING :
       AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
 }
 

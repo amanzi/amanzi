@@ -48,6 +48,10 @@ public:
     return CreateWithFunction("seepage face", "boundary pressure");
   }
 
+  Teuchos::RCP<Functions::BoundaryFunction> CreateSeepageFacePressureWithInfiltration() const {
+    return CreateWithFunction("seepage face with infiltration", "outward mass flux");
+  }
+
 };
 
 }  // namespace

@@ -34,7 +34,7 @@ namespace BGC {
   // SoilDArr [m] (depth)
   // SoilThicknessArr [m] (dz)
   // TransArr[kg H2O/m3/s]
-  // SWArr[W/m^s] (shaded shortwave radiation that makes it to the surface)
+  // sw_shaded[W/m^s] (shaded shortwave radiation that makes it to the surface)
   void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
 		  const MetData& met,
 		  const Epetra_SerialDenseVector& SoilTArr,
@@ -44,8 +44,8 @@ namespace BGC {
 		  std::vector<Teuchos::RCP<PFT> >& pftarr,
 		  std::vector<Teuchos::RCP<SoilCarbon> >& soilcarr,
 		  Epetra_SerialDenseVector& SoilCO2Arr,
-          Epetra_SerialDenseVector& TransArr,
-		  Epetra_SerialDenseVector& SWArr)
+		  Epetra_SerialDenseVector& TransArr,
+		  double& sw_shaded)
   {
   // required constants
   double p_atm = 101325.;

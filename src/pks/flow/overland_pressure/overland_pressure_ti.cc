@@ -191,21 +191,30 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   // -- update the rel perm according to the boundary info and upwinding
   // -- scheme of choice
   UpdatePermeabilityData_(S_next_.ptr());
-  UpdatePermeabilityDerivativeData_(S_next_.ptr());
+  if (jacobian_) UpdatePermeabilityDerivativeData_(S_next_.ptr());
 
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_overland_conductivity");
-  Teuchos::RCP<const CompositeVector> dcond =
-    S_next_->GetFieldData("dupwind_overland_conductivity_dponded_depth");
+
+  Teuchos::RCP<const CompositeVector> dcond = Teuchos::null;
+  if (jacobian_) {
+    if (preconditioner_->RangeMap().HasComponent("face")) {
+      dcond = S_next_->GetFieldData("dupwind_overland_conductivity_dponded_depth");
+    } else {
+      dcond = S_next_->GetFieldData("doverland_conductivity_dponded_depth");
+    }
+  }
 
   // 1.b: Create all local matrices.
   preconditioner_->Init();
-  preconditioner_diff_->Setup(cond, Teuchos::null);
+  preconditioner_diff_->SetScalarCoefficient(cond, dcond);
   Teuchos::RCP<const CompositeVector> pres_elev = S_next_->GetFieldData("pres_elev");
   preconditioner_diff_->UpdateMatrices(Teuchos::null, pres_elev.ptr());
-  Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData("surface-flux", name_);
-  preconditioner_diff_->UpdateFlux(*up->Data(), *flux);
-  preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
+  if (jacobian_ && preconditioner_->RangeMap().HasComponent("face")) {
+    Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData("surface-flux", name_);
+    preconditioner_diff_->UpdateFlux(*pres_elev, *flux);
+    preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
+  }
 
   // 2. Accumulation shift
   //    The desire is to keep this matrix invertible for pressures less than

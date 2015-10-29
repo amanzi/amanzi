@@ -36,7 +36,7 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 
   Teuchos::RCP<const CompositeVector> rel_perm =
     S->GetFieldData(uw_coef_key_);
-  matrix_diff_->Setup(rel_perm, Teuchos::null);
+  matrix_diff_->SetScalarCoefficient(rel_perm, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // derive fluxes

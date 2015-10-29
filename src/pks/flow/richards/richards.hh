@@ -145,7 +145,6 @@ protected:
 protected:
   // control switches
   Operators::UpwindMethod Krel_method_;
-  int niter_;
   bool infiltrate_only_if_unfrozen_;
   bool modify_predictor_with_consistent_faces_;
   bool modify_predictor_wc_;
@@ -175,11 +174,15 @@ protected:
 
   // mathematical operators
   Teuchos::RCP<Operators::Operator> matrix_; // pc in PKPhysicalBDFBase
-  Teuchos::RCP<Operators::OperatorDiffusion> matrix_diff_;
-  Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
-  Teuchos::RCP<Operators::OperatorDiffusion> face_matrix_diff_;
+  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> matrix_diff_;
+  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> preconditioner_diff_;
+  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> face_matrix_diff_;
   Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
   Teuchos::RCP<Operators::Operator> lin_solver_;
+
+  // flag to do jacobian and therefore coef derivs
+  bool jacobian_;
+  
 
   // residual vector for vapor diffusion
   Teuchos::RCP<CompositeVector> res_vapor;
@@ -193,6 +196,7 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_head_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_infilt_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_infiltration_;
 
   // delegates

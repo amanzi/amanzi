@@ -15,6 +15,6 @@ struct AmanziUnstructuredGridSimulationDriver
   : public Teuchos::VerboseObject<AmanziUnstructuredGridSimulationDriver>
 {
   virtual int Run (const MPI_Comm&               mpi_comm,
-                          Teuchos::ParameterList&       input_parameter_list);
+                   Teuchos::ParameterList&       input_parameter_list);
 
 };

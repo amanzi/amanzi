@@ -42,7 +42,7 @@ void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const Tree
   Teuchos::RCP<const CompositeVector> rel_perm =
       S_next_->GetFieldData(uw_coef_key_);
   preconditioner_->Init();
-  preconditioner_diff_->Setup(rel_perm, Teuchos::null);
+  preconditioner_diff_->SetScalarCoefficient(rel_perm, Teuchos::null);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // Assemble and precompute the Schur complement for inversion.
@@ -137,8 +137,6 @@ void RichardsSteadyState::Functional(double t_old, double t_new, Teuchos::RCP<Tr
   Teuchos::OSTab tab = vo_->getOSTab();
 
   
-  niter_++;
-
   double h = t_new - t_old;
   ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
   ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
@@ -147,7 +145,7 @@ void RichardsSteadyState::Functional(double t_old, double t_new, Teuchos::RCP<Tr
   solution_to_state(*u_new, S_next_);
   Teuchos::RCP<CompositeVector> u = u_new->Data();
 
-  if (dynamic_mesh_) matrix_diff_->Setup(K_);
+  if (dynamic_mesh_) matrix_diff_->SetTensorCoefficient(K_);
 
 #if DEBUG_FLAG
   if (vo_->os_OK(Teuchos::VERB_HIGH))
@@ -156,16 +154,12 @@ void RichardsSteadyState::Functional(double t_old, double t_new, Teuchos::RCP<Tr
                << " t1 = " << t_new << " h = " << h << std::endl;
 
   // dump u_old, u_new
-  
   db_->WriteCellInfo(true);
-  
   std::vector<std::string> vnames;
   vnames.push_back("p_old"); vnames.push_back("p_new");
   std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
   vecs.push_back(S_inter_->GetFieldData(key_).ptr()); vecs.push_back(u.ptr());
   db_->WriteVectors(vnames, vecs, true);
-
- 
 #endif
 
   // update boundary conditions
@@ -183,19 +177,18 @@ void RichardsSteadyState::Functional(double t_old, double t_new, Teuchos::RCP<Tr
 #if DEBUG_FLAG
   // dump s_old, s_new
   vnames[0] = "sl_old"; vnames[1] = "sl_new";
-  
-  vecs[0] = S_inter_->GetFieldData(getKey(domain_,"saturation_liquid")).ptr();
-  vecs[1] = S_next_->GetFieldData(getKey(domain_,"saturation_liquid")).ptr();
+  vecs[0] = S_inter_->GetFieldData("saturation_liquid").ptr();
+  vecs[1] = S_next_->GetFieldData("saturation_liquid").ptr();
 
-  if (S_next_->HasField(getKey(domain_,"saturation_ice"))) {
+  if (S_next_->HasField("saturation_ice")) {
     vnames.push_back("si_old");
     vnames.push_back("si_new");
-    vecs.push_back(S_inter_->GetFieldData(getKey(domain_,"saturation_ice")).ptr());
-    vecs.push_back(S_next_->GetFieldData(getKey(domain_,"saturation_ice")).ptr());
+    vecs.push_back(S_inter_->GetFieldData("saturation_ice").ptr());
+    vecs.push_back(S_next_->GetFieldData("saturation_ice").ptr());
   }
 
   vnames.push_back("k_rel");
-  vecs.push_back(S_next_->GetFieldData(getKey(domain_,"relative_permeability")).ptr());
+  vecs.push_back(S_next_->GetFieldData("relative_permeability").ptr());
   db_->WriteVectors(vnames,vecs,true);
 
   db_->WriteVector("res (post diffusion)", res.ptr(), true);

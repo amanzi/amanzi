@@ -61,7 +61,7 @@ void Coordinator::coordinator_init() {
   Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(parameter_list_, "PKs");
   Teuchos::ParameterList::ConstIterator pk_item = pks_list->begin();
   const std::string &pk_name = pks_list->name(pk_item);
-
+  
   // create the solution
   soln_ = Teuchos::rcp(new TreeVector());
 
@@ -69,6 +69,7 @@ void Coordinator::coordinator_init() {
   PKFactory pk_factory;
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list, pk_name);
   pk_list->set("PK name", pk_name);
+ 
   pk_ = pk_factory.CreatePK(pk_list, S_->FEList(), soln_);
   pk_->setup(S_.ptr());
 
@@ -93,6 +94,7 @@ void Coordinator::coordinator_init() {
 
   // create the time step manager
   tsm_ = Teuchos::rcp(new TimeStepManager());
+  
 }
 
 void Coordinator::setup() {
@@ -100,6 +102,7 @@ void Coordinator::setup() {
   S_->set_time(t0_);
   S_->set_cycle(cycle0_);
   S_->RequireScalar("dt", "coordinator");
+  
   S_->Setup();
 }
 
@@ -505,7 +508,9 @@ void Coordinator::cycle_driver() {
   {
     Teuchos::TimeMonitor monitor(*setup_timer_);
     setup();
+    
     initialize();
+    
   }
 
   // get the intial timestep -- note, this would have to be fixed for a true restart

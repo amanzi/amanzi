@@ -56,7 +56,7 @@ ThreePhase::initialize(const Teuchos::Ptr<State>& S) {
   if (ic_plist.isParameter("interfrost initial condition")) {
     std::string interfrost_ic = ic_plist.get<std::string>("interfrost initial condition");
     ASSERT(interfrost_ic == "TH3");
-    std::cout<<"THREE-PHASE:"<<key_<< " "<<name_<<"\n";
+
     Teuchos::RCP<CompositeVector> temp = S->GetFieldData(key_, name_);
     double r_sq = std::pow(0.5099,2);
     Epetra_MultiVector& temp_c = *temp->ViewComponent("cell", false);
@@ -78,7 +78,7 @@ ThreePhase::initialize(const Teuchos::Ptr<State>& S) {
     // additionally call Initalize() to get faces from cell values
     field->Initialize(ic_plist);
   }
-  
+
   TwoPhase::initialize(S);
 }
 
