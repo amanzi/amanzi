@@ -150,7 +150,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
   // -- nonlinear coefficient
   std::string method_name = plist_->get<std::string>("upwind conductivity method",
-          "cell centered");
+          "arithmetic mean");
   if (method_name == "cell centered") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindCellCentered(name_,
             conductivity_key_, uw_conductivity_key_));
@@ -519,19 +519,6 @@ void EnergyBase::UpdateBoundaryConditions_(
 
 };
 
-
-// -----------------------------------------------------------------------------
-// Add a boundary marker to owned faces.
-// -----------------------------------------------------------------------------
-void EnergyBase::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temp) {
-  Epetra_MultiVector& temp_f = *temp->ViewComponent("face",true);
-  unsigned int nfaces = temp->size("face",true);
-  for (unsigned int f=0; f!=nfaces; ++f) {
-    if (bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      temp_f[0][f] = bc_values_[f];
-    }
-  }
-};
 
 
 // -----------------------------------------------------------------------------
