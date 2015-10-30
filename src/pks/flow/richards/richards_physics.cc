@@ -30,7 +30,7 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   // update the matrix
   matrix_->Init();
 
-  S_next_->GetFieldEvaluator(mass_dens_key_)->HasFieldChanged(S_next_.ptr(), name_);
+  S->GetFieldEvaluator(mass_dens_key_)->HasFieldChanged(S, name_);
   Teuchos::RCP<const CompositeVector> rho = S->GetFieldData(mass_dens_key_);
   matrix_diff_->SetDensity(rho);
 

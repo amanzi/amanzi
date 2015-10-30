@@ -58,6 +58,9 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
   //    state.
   virtual void ChangedSolution();
 
+  virtual double BoundaryValue(const Teuchos::RCP<const Amanzi::CompositeVector>& solution, int face_id);
+  virtual void ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& u);
+  
   // PC operator access
   Teuchos::RCP<Operators::Operator> preconditioner() { return preconditioner_; }
 

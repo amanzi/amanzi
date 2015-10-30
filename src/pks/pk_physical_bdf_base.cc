@@ -157,6 +157,63 @@ double PKPhysicalBDFBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
 
 // -----------------------------------------------------------------------------
+// Add a boundary marker to owned faces.
+// -----------------------------------------------------------------------------
+void
+PKPhysicalBDFBase::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& u) {
+  if (u->HasComponent("face")) {
+    Epetra_MultiVector& u_f = *u->ViewComponent("face",false);
+    unsigned int nfaces = u_f.MyLength();
+    for (unsigned int f=0; f!=nfaces; ++f) {
+      if (bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET) {
+        u_f[0][f] = bc_values_[f];
+      }
+    }
+  } else if (u->HasComponent("boundary_face")) {
+    const Epetra_Map& vandalay_map = mesh_->exterior_face_map();
+    const Epetra_Map& face_map = mesh_->exterior_face_map();
+
+    Epetra_MultiVector& u_bf = *u->ViewComponent("boundary_face",false);
+    unsigned int nfaces = u_bf.MyLength();
+    for (unsigned int bf=0; bf!=nfaces; ++bf) {
+      AmanziMesh::Entity_ID f = face_map.LID(vandalay_map.GID(bf));
+      if (bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET) {
+        u_bf[0][bf] = bc_values_[f];
+      }
+    }
+  }    
+};
+
+
+double PKPhysicalBDFBase::BoundaryValue(const Teuchos::RCP<const Amanzi::CompositeVector>& solution, int face_id){
+  double value=0.;
+
+  if (solution->HasComponent("face")){
+    const Epetra_MultiVector& u = *solution -> ViewComponent("face",false);
+    value = u[0][face_id];
+  }
+  else if  (solution->HasComponent("boundary_face")){
+    const Epetra_MultiVector& u = *solution -> ViewComponent("boundary_face",false);
+    const Epetra_Map& fb_map = mesh_->exterior_face_map();
+    const Epetra_Map& f_map = mesh_->face_map(false);
+
+    int face_gid = f_map.GID(face_id);
+    int face_lbid = fb_map.LID(face_gid);
+
+    value =  u[0][face_lbid];
+  }
+  else{
+    Errors::Message msg("No component is defined for boundary faces\n");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return value;
+
+}
+
+
+  
+// -----------------------------------------------------------------------------
 // Experimental approach -- calling this indicates that the time
 // integration scheme is changing the value of the solution in
 // state.

@@ -123,7 +123,7 @@ int Richards::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
 #endif
 
   // Apply the preconditioner
-  int ierr = preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
+  int ierr = lin_solver_->ApplyInverse(*u->Data(), *Pu->Data());
 
 #if DEBUG_FLAG
   db_->WriteVector("PC*p_res", Pu->Data().ptr(), true);

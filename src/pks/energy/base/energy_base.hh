@@ -106,7 +106,6 @@ public:
 
   // boundary condition members
   virtual void UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S);
-  virtual void ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature);
 
   // physical methods
   // -- accumulation of energy

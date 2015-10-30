@@ -486,7 +486,6 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   face_matrix_diff_->SetBCs(bc_, bc_);
   face_matrix_diff_->SetTensorCoefficient(K_);
   face_matrix_diff_->SetScalarCoefficient(Teuchos::null, Teuchos::null);
-  face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // if (vapor_diffusion_){
   //   //vapor diffusion
@@ -619,10 +618,15 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       // update the direction of the flux -- note this is NOT the flux
       Teuchos::RCP<const CompositeVector> rho = S->GetFieldData(mass_dens_key_);
       face_matrix_diff_->SetDensity(rho);
+      face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
       Teuchos::RCP<CompositeVector> flux_dir =
           S->GetFieldData(flux_dir_key_, name_);
       Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
+
+      if (!pres->HasComponent("face"))
+        face_matrix_diff_->ApplyBCs(true, true);
+
       face_matrix_diff_->UpdateFlux(*pres, *flux_dir);
     }
 
@@ -857,28 +861,22 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 };
 
 
-// -----------------------------------------------------------------------------
-// Add a boundary marker to owned faces.
-// -----------------------------------------------------------------------------
-void
-Richards::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& pres) {
-  Epetra_MultiVector& pres_f = *pres->ViewComponent("face",false);
-  unsigned int nfaces = pres_f.MyLength();
-  for (unsigned int f=0; f!=nfaces; ++f) {
-    if (bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      pres_f[0][f] = bc_values_[f];
-    }
-  }
-};
-
-
 bool Richards::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
         Teuchos::RCP<TreeVector> u) {
-  
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Modifying predictor:" << std::endl;
 
+  // update boundary conditions
+  bc_pressure_->Compute(S_next_->time());
+  bc_flux_->Compute(S_next_->time());
+  UpdateBoundaryConditions_(S_next_.ptr(), false); // without rel perm
+  
+  // push Dirichlet data into predictor
+  if (u->Data()->HasComponent("boundary_cell")) {
+    ApplyBoundaryConditions_(u->Data().ptr());
+  }
+  
   bool changed(false);
   if (modify_predictor_bc_flux_ ||
       (modify_predictor_first_bc_flux_ && 
@@ -897,6 +895,8 @@ bool Richards::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
 }
 
 bool Richards::ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u) {
+  if (!u->Data()->HasComponent("face")) return false;
+
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "  modifications to deal with nonlinearity at flux BCs" << std::endl;
@@ -905,11 +905,6 @@ bool Richards::ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u) {
     flux_predictor_ = Teuchos::rcp(new PredictorDelegateBCFlux(S_next_, mesh_, matrix_diff_,
             wrms_, &bc_markers_, &bc_values_));
   }
-
-  // update boundary conditions
-  bc_pressure_->Compute(S_next_->time());
-  bc_flux_->Compute(S_next_->time());
-  UpdateBoundaryConditions_(S_next_.ptr());
 
   UpdatePermeabilityData_(S_next_.ptr());
   Teuchos::RCP<const CompositeVector> rel_perm =
@@ -974,6 +969,8 @@ bool Richards::ModifyPredictorWC_(double h, Teuchos::RCP<TreeVector> u) {
 // }
 
 void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) {
+  if (!u->HasComponent("face")) return; // no need
+
   // VerboseObject stuff.
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -1001,11 +998,6 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
   // Using the old BCs, so should use the old rel perm?
   // update the rel perm according to the scheme of choice
   //  UpdatePermeabilityData_(S_next_.ptr());
-
-  // update boundary conditions
-  bc_pressure_->Compute(S_next_->time());
-  bc_flux_->Compute(S_next_->time());
-  UpdateBoundaryConditions_(S_next_.ptr(), false); // without rel perm
 
   Teuchos::RCP<const CompositeVector> rel_perm = 
     S_next_->GetFieldData(uw_coef_key_);
@@ -1130,33 +1122,6 @@ bool Richards::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
   return true;
 }
 
-
-double Richards::BoundaryValue(Teuchos::RCP<const Amanzi::CompositeVector> solution, int face_id){
-
-  double value=0.;
-
-  if (solution->HasComponent("face")){
-    const Epetra_MultiVector& pres = *solution -> ViewComponent("face",false);
-    value = pres[0][face_id];
-  }
-  else if  (solution->HasComponent("boundary_face")){
-    const Epetra_MultiVector& pres = *solution -> ViewComponent("boundary_face",false);
-    const Epetra_Map& fb_map = mesh_->exterior_face_map();
-    const Epetra_Map& f_map = mesh_->face_map(false);
-
-    int face_gid = f_map.GID(face_id);
-    int face_lbid = fb_map.LID(face_gid);
-
-    value =  pres[0][face_lbid];
-  }
-  else{
-    Errors::Message msg("No component is defined for boundary faces\n");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  return value;
-
-}
 
 AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 Richards::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
