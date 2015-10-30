@@ -50,23 +50,32 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   // chemical engine
   bool flag;
   node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
-  std::string engine = GetAttributeValueS_(static_cast<DOMElement*>(node), "engine");
+  element = static_cast<DOMElement*>(node);
+  std::string engine = GetAttributeValueS_(element, "engine");
 
   // process engine
   bool native(false);
-  if (strcmp(engine.c_str(), "amanzi") == 0) {
+  if (engine ==  "amanzi") {
     out_list.set<std::string>("chemistry model", "Amanzi");
     std::string bgdfilename = CreateBGDFile(xmlfilename_);
-    bgdfilename = GetAttributeValueS_(static_cast<DOMElement*>(node), "bdg_file", false, bgdfilename);
+    bgdfilename = GetAttributeValueS_(element, "input_filename", false, bgdfilename);
     native = true;
 
     Teuchos::ParameterList& bgd_list = out_list.sublist("Thermodynamic Database");
     bgd_list.set<std::string>("Format", "simple");
     bgd_list.set<std::string>("File", bgdfilename);
 
-  } else if (strcmp(engine.c_str(), "pflotran") == 0) {
+  } else if (engine == "pflotran") {
     out_list.set<std::string>("chemistry model", "Alquimia");
     out_list.set<std::string>("Engine", "PFloTran");
+    std::string inpfilename = GetAttributeValueS_(element, "input_filename");
+    out_list.set<std::string>("Engine Input File", inpfilename);
+
+  } else if (engine == "crunchflow") {
+    out_list.set<std::string>("chemistry model", "Alquimia");
+    out_list.set<std::string>("Engine", "CrunchFlow");
+    std::string inpfilename = GetAttributeValueS_(element, "input_filename");
+    out_list.set<std::string>("Engine Input File", inpfilename);
   }
   
   // minerals
@@ -96,41 +105,44 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     text = mm.transcode(node->getTextContent());
     std::vector<std::string> regions = CharToStrings_(text);
 
-    // mineral volume fraction and specific surface area
+    // mineral volume fraction and specific surface area are created for the 
+    // native chemistry only.
     if (minerals.size() > 0) {
       out_list.set<Teuchos::Array<std::string> >("Minerals", minerals);
 
-      Teuchos::ParameterList &volfrac = ic_list.sublist("mineral_volume_fractions");
-      Teuchos::ParameterList &surfarea = ic_list.sublist("mineral_specific_surface_area");
+      if (pk_model_["chemistry"] == "amanzi") {
+        Teuchos::ParameterList &volfrac = ic_list.sublist("mineral_volume_fractions");
+        Teuchos::ParameterList &surfarea = ic_list.sublist("mineral_specific_surface_area");
 
-      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); it++) {
-        Teuchos::ParameterList& aux1_list = volfrac.sublist("function").sublist(*it)
-            .set<std::string>("region", *it)
-            .set<std::string>("component", "cell")
-            .sublist("function");
-        aux1_list.set<int>("Number of DoFs", minerals.size())
-            .set("Function type", "composite function");
+        for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); it++) {
+          Teuchos::ParameterList& aux1_list = volfrac.sublist("function").sublist(*it)
+              .set<std::string>("region", *it)
+              .set<std::string>("component", "cell")
+              .sublist("function");
+          aux1_list.set<int>("Number of DoFs", minerals.size())
+              .set("Function type", "composite function");
 
-        Teuchos::ParameterList& aux2_list = surfarea.sublist("function").sublist(*it)
-            .set<std::string>("region", *it)
-            .set<std::string>("component", "cell")
-            .sublist("function");
-        aux2_list.set<int>("Number of DoFs", minerals.size())
-            .set("Function type", "composite function");
+          Teuchos::ParameterList& aux2_list = surfarea.sublist("function").sublist(*it)
+              .set<std::string>("region", *it)
+              .set<std::string>("component", "cell")
+              .sublist("function");
+          aux2_list.set<int>("Number of DoFs", minerals.size())
+              .set("Function type", "composite function");
 
-        for (int j = 0; j < minerals.size(); ++j) {
-          std::stringstream ss;
-          ss << "DoF " << j + 1 << " Function";
-
-          node = GetUniqueElementByTagsString_(inode, "minerals", flag);
-          double mvf(0.0), msa(0.0);
-          if (flag) {
-            element = GetUniqueChildByAttribute_(node, "name", minerals[j], flag, true);
-            mvf = GetAttributeValueD_(element, "volume_fraction", false, 0.0);
-            msa = GetAttributeValueD_(element, "specific_surface_area", false, 0.0);
+          for (int j = 0; j < minerals.size(); ++j) {
+            std::stringstream ss;
+            ss << "DoF " << j + 1 << " Function";
+ 
+            node = GetUniqueElementByTagsString_(inode, "minerals", flag);
+            double mvf(0.0), msa(0.0);
+            if (flag) {
+              element = GetUniqueChildByAttribute_(node, "name", minerals[j], flag, true);
+              mvf = GetAttributeValueD_(element, "volume_fraction", false, 0.0);
+              msa = GetAttributeValueD_(element, "specific_surface_area", false, 0.0);
+            }
+            aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", mvf);
+            aux2_list.sublist(ss.str()).sublist("function-constant").set<double>("value", msa);
           }
-          aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", mvf);
-          aux2_list.sublist(ss.str()).sublist("function-constant").set<double>("value", msa);
         }
       }
     }
@@ -264,7 +276,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
   // general parameters
   int max_itrs(100), cut_threshold(8), increase_threshold(4);
-  double tol(1e-12), dt_max(1e+10), dt_min(1e-10), dt_init(1e-2), dt_cut(2.0), dt_increase(1.2);
+  double tol(1e-12), dt_max(1e+10), dt_min(1e+10), dt_init(1e+7), dt_cut(2.0), dt_increase(1.2);
   std::string activity_model("unit"), dt_method("fixed");
   std::vector<std::string> aux_data;
 

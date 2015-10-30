@@ -85,7 +85,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     // create algebraic problem (matrix = preconditioner)
     op_preconditioner_->Init();
     op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), Teuchos::null);
-    op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), Teuchos::null);
+    op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), Teuchos::null, molar_rho_);
     op_preconditioner_diff_->ApplyBCs(true, true);
 
     Teuchos::RCP<CompositeVector> rhs = op_preconditioner_->rhs();  // export RHS from the matrix class

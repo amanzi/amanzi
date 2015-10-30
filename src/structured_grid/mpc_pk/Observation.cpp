@@ -1,7 +1,9 @@
 #include <winstd.H>
 
 #include <PMAmr.H>
+#include <PorousMedia.H>
 #include <Observation.H>
+#include <RegionManager.H>
 #include <EventCoord.H>
 #include <PMAMR_Labels.H>
 
@@ -37,10 +39,10 @@ Observation::Initialize()
 
 Observation::Observation(const std::string& name,
                          const std::string& field,
-                         const Region&      region,
+                         const std::string& region_name,
                          const std::string& obs_type,
                          const std::string& event_label)
-    : name(name), field(field), region(region), obs_type(obs_type), 
+    : name(name), field(field), region_name(region_name), obs_type(obs_type), 
       event_label(event_label), obs_data_initialized(false)
 {
     if (!initialized) {
@@ -50,6 +52,73 @@ Observation::Observation(const std::string& name,
     if (obs_type_list.find(obs_type) == obs_type_list.end()) {
         BoxLib::Abort("Unsupported observation type");
     }
+}
+
+static void fail ()
+{
+  BoxLib::Abort("Observation restart failed, bad input stream");
+}
+
+Observation::Observation(Observation::istream& is)
+{
+  std::istream& ais = is.first;
+  std::istream& bis = is.second;
+
+  ais >> name;            if (!ais.good()) fail();
+  ais >> field;           if (!ais.good()) fail();
+  ais >> region_name;     if (!ais.good()) fail();
+  ais >> obs_type;        if (!ais.good()) fail();
+  ais >> event_label;     if (!ais.good()) fail();
+
+  FArrayBox fab;
+  fab.readFrom(bis);
+  if (!bis.good()) fail();
+
+  const Box& bx = fab.box();
+  int n = bx.length(0);
+  times.resize(n);
+  for (int i=0; i<n; ++i) {
+    IntVect iv(D_DECL(i,0,0));
+    times[i] = fab(iv,0);
+    vals[i] = fab(iv,1);
+  }
+}
+
+void
+Observation::CheckPoint(Observation::ostream& os) const
+{
+  std::ostream& aos = os.first;
+  std::ostream& bos = os.second;
+
+  aos << name << '\n';
+  aos << field << '\n';
+  aos << region_name << '\n';
+  aos << obs_type << '\n';
+  aos << event_label << '\n';
+
+  int n = times.size();
+  BL_ASSERT(n == vals.size());
+  Box bx(IntVect(D_DECL(0,0,0)),
+	 IntVect(D_DECL(n-1,0,0)));
+  FArrayBox fab(bx,2); // Use Fab I/O to write floating point data
+
+  for (int i=0; i<n; ++i) {
+    IntVect iv(D_DECL(i,0,0));
+    fab(iv,0) = times[i];
+    std::map<int,Real>::const_iterator it = vals.find(i);
+    BL_ASSERT(it!=vals.end());
+    fab(iv,1) = it->second;
+  }
+  fab.writeOn(bos);
+}
+
+const Region&
+Observation::GetRegion(const std::string& name) const
+{
+  RegionManager* region_manager = PorousMedia::GetRegionManager();
+  Array<std::string> names(1,name);
+  const Array<const Region*> obs_regions = region_manager->RegionPtrArray(names);
+  return *(obs_regions[0]);
 }
 
 std::pair<bool,Real>
@@ -181,9 +250,8 @@ Observation::point_sample (Real time)
   const int finest_level = amrp->finestLevel();
   const Array<IntVect>& refRatio = amrp->refRatio();
 
-
-  const Region* regPtr = &region;
-  const PointRegion* ptreg = dynamic_cast<const PointRegion*>(regPtr);
+  const Region& region = GetRegion(region_name);
+  const PointRegion* ptreg = dynamic_cast<const PointRegion*>(&region);
   if (ptreg == 0) 
   {
       BoxLib::Abort("Point Sample observation requires a point region");
@@ -219,7 +287,10 @@ Observation::point_sample (Real time)
   }
 
   if (proc_with_data<0) {
-      if (ParallelDescriptor::IOProcessor()) {
+      if (ParallelDescriptor::IOProcessor())
+      {
+	  const Region& region = GetRegion(region_name);
+
           std::cout << region << std::endl;
 
           for (int lev = 0; lev <= finest_level; lev++)
@@ -244,6 +315,7 @@ Observation::integral_and_volume (Real time)
   Real vol_inside = 0;  
   
   Real vol_scale_lev = 1;
+  const Region& region = GetRegion(region_name);
 
   for (int lev = 0; lev <= finest_level; lev++)
     {
@@ -304,6 +376,7 @@ Observation::peak_sample (Real time)
   const int finest_level = amrp->finestLevel();
   const Array<IntVect>& refRatio = amrp->refRatio();
 
+  const Region& region = GetRegion(region_name);
   std::vector< std::pair<int,Box> > isects;
   for (int lev = 0; lev <= finest_level; lev++) {
 

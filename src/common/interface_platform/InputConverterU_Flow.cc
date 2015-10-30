@@ -128,7 +128,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
   }
 
   flow_list->sublist("operators") = TranslateDiffusionOperator_(
-      disc_method, pc_method, nonlinear_solver, "vapor matrix");
+      disc_method, pc_method, nonlinear_solver, "vapor matrix", true);
   
   // insert time integrator
   std::string err_options, unstr_controls;
@@ -138,6 +138,15 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
   } else {
     err_options = "pressure, residual";
     unstr_controls = "unstructured_controls, unstr_transient_controls";
+
+    // restart leads to a conflict
+    node = GetUniqueElementByTagsString_(unstr_controls + ", unstr_initialization", flag); 
+    if (flag && restart_) {
+      Errors::Message msg;
+      msg << "Parameters \"restart\" and \"unstr_transient_control->unstr_initialization\""
+          << " are mutually exclusive.\n";
+      Exceptions::amanzi_throw(msg);
+    }
   } 
   
   if (pk_master_.find("flow") != pk_master_.end()) {
@@ -577,6 +586,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
     Teuchos::ParameterList& tbc_list = out_list.sublist(bctype);
     Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());
     bc.set<Teuchos::Array<std::string> >("regions", regions);
+
+    // select one region for transport diagnostics (FIXME)
+    if (bctype == "seepage face")
+        transport_diagnostics_.insert(transport_diagnostics_.end(), regions.begin(), regions.end());
 
     Teuchos::ParameterList& bcfn = bc.sublist(bcname);
     if (times.size() == 1) {

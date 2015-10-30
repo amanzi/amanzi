@@ -89,7 +89,6 @@ void Flow_PK::Initialize()
 
   // -- molar rescaling of some quantatities.
   molar_rho_ = rho_ / CommonDefs::MOLAR_MASS_H2O;
-  molar_gravity_.set(gravity_ * CommonDefs::MOLAR_MASS_H2O);
   flux_units_ = 0.0;  // scaling from kg to moles
 
   // parallel execution data

@@ -23,22 +23,18 @@ namespace Amanzi {
 
 template<class Vector>
 struct BDF1_State {
-  BDF1_State() {
-    maxpclag = 0;
-    extrapolate_guess = true;
-
-    seq = -1;
-    failed_solve = 0;
-    solve_itrs = 0;
-
-    pc_calls = 0;
-    pc_updates = 0;
-
-    uhist_size = 2;
-
-    hmax = std::numeric_limits<double>::min();
-    hmin = std::numeric_limits<double>::max();
-  }
+  BDF1_State() :
+      maxpclag(0),
+      extrapolate_guess(true),
+      seq(-1),
+      failed_solve(0),
+      failed_current(0),
+      solve_itrs(0),
+      pc_calls(0),
+      pc_updates(0),
+      uhist_size(2),
+      hmax(std::numeric_limits<double>::min()),
+      hmin(std::numeric_limits<double>::max()) {}
 
   // Parameters and control
   int maxpclag;  // maximum iterations that the preconditioner can be lagged
@@ -58,7 +54,8 @@ struct BDF1_State {
 
   // performance counters
   int seq;  // number of steps taken
-  int failed_solve;  // number of completely failed BCE steps
+  int failed_solve;  // number of total failed BCE steps
+  int failed_current; // number of current cycle failed steps
   int pc_updates;  // counter for the number of preconditioner updates
   double hmin, hmax;  // minimum and maximum dt used on a successful step
 

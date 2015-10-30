@@ -188,7 +188,7 @@ Debugger::WriteCellInfo(bool include_faces) {
 
 // Write a vector individually.
 void
-Debugger::WriteVector(std::string name,
+Debugger::WriteVector(const std::string& name,
                       const Teuchos::Ptr<const CompositeVector>& vec,
                       bool include_faces) {
   Teuchos::RCP<const Epetra_MultiVector> vec_c;
@@ -230,8 +230,8 @@ Debugger::WriteVector(std::string name,
 
 // Write list of vectors.
 void
-Debugger::WriteVectors(std::vector<std::string> names,
-                       std::vector< Teuchos::Ptr<const CompositeVector> >& vecs,
+Debugger::WriteVectors(const std::vector<std::string>& names,
+                       const std::vector<Teuchos::Ptr<const CompositeVector> >& vecs,
                        bool include_faces) {
   ASSERT(names.size() == vecs.size());
 

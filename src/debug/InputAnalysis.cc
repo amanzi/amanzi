@@ -159,6 +159,7 @@ void InputAnalysis::RegionAnalysis()
 ****************************************************************** */
 void InputAnalysis::OutputBCs() 
 {
+  if (!plist_->isSublist("Analysis")) return;
   if (vo_->getVerbLevel() < Teuchos::VERB_EXTREME) return;
 
   int bc_counter = 0;

@@ -821,13 +821,53 @@ Geochemistry allows users to define a reaction network and constraints to be ass
 .. code-block:: xml
 
   <geochemistry>
-      Required Elements: reaction_network [S], constraint [S]
+      Required Elements: database, reaction_network, constraints
+      Optional Elements: radioactive_decay
   </geochemistry>
+
+* `"database`" has a `"name`" attribute that defines a chemical database file containing information about chemical species
+
+* `"reaction_network`" has a `"file`" attribute that defines an input file for the chemistry engine selected in the process_kernels section.
+
+* `"constraints`" is a list of `"constraint`" and `"mineral_kinetics`" subelements identifying geochemical contraints and any relevant minerals for the reaction network.
+
+Constraints
+-----------
+
+.. code-block:: xml
+
+    <constraints>
+        <constraint type="string">
+            <primary name="string" value="exponential" type="string" [mineral="kaolinite"]>
+            ...
+        </constraint>
+        ...
+        <mineral_kinetics>
+            <mineral name="string" rate_constant="exponential"/>
+        </mineral_kinetics>
+        
+    </constraints>
+
+OR
+
+.. code-block:: xml
+
+    <constraint type="string" name="string"/>
+
+* `"constraint`" has a `"type`" attribute that identifies the type of geochemical constraint desired. Different engines support different types of constraints. The behavior of the constraint may be defined in one of two ways:
+
+    * The constraint can have a `"name`" attribute identifying a constraint defined in the reaction network file.
+
+    * If the constraint does not have a `"name`" attribute, it should have `"primary`" subelements that define the constraint in terms of its effects on the primary chemical species for the problem.
+
+* `"mineral_kinetics`" is a list of `"mineral`" subelements that each have `"name`" and `"rate_constant`" attributes.
 
 PFLOTRAN Chemistry
 ------------------
 
 For geochemistry simulated through PFLOTRAN, the user defines a reaction network and constraints.  These are defined within the same or separate text files through PFLOTRAN's input specification (see the CHEMISTRY and CONSTRAINT card definitions at https://bitbucket.org/pflotran/pflotran-dev/wiki/Documentation/QuickGuide).
+
+`"database`" should refer to a PFlotran chemical database file (\*.dat).
 
 `"reaction_network`" defines a file containing a PFLOTRAN CHEMISTRY block.
 
@@ -836,7 +876,8 @@ For geochemistry simulated through PFLOTRAN, the user defines a reaction network
 .. code-block:: xml
 
   <geochemistry>
-      <reaction_network file="calcite_flow_and_tran.in" format="simple"/>
+      <database name="calcite_flow_and_tran.dat">
+      <reaction_network file="calcite_flow_and_tran.in">
       <constraint name="Initial" filename="calcite_flow_and_tran.in"/>
       <constraint name="Inlet" filename="calcite_flow_and_tran.in"/>
   </geochemistry>
@@ -1141,15 +1182,16 @@ Liquid_phase
 
 *  Here is more info on the `"solute_component`" elements:
 
-    * `"solute_component`" is defined in-line using attributes.  The attributes include "function", "value", and "name". Function specifies linear or constant temporal functional form during each time interval.  Value is the value of the `"solute_component`".  Name is the name of the solute component.
+    * `"solute_component`" appears once with the attribute name="solute".  Subelements `"uniform_conc`" are used to define the uniform aqueous concentration of the specified solute. The attributes include "name" and "value". 
 
 .. code-block:: xml
 
-     <solute_component name="some name" value="exponential" function="uniform" />
+     <solute_component name="solute">
+         <uniform_conc name="solute name 1" value="exponential"/>
+         <uniform_conc name="solute name 2" value="exponential"/>
+         <uniform_conc name="solute name 3" value="exponential"/>
+     </solute_component>
 
-..     <solute_component name="some name" (filename="filename" SKIPPED) value="exponential" function="uniform (|linear SKIPPED) " (reference_coord="coordinate" gradient="coordinate" - linear skipped) />
-
-NOTE: Reading from a file is not yet implemented.  Also, the reference_coord and gradient attributes are only needed for the "linear" function type, which is also not yet implemented.
 
 Geochemistry
 ------------
@@ -1253,13 +1295,13 @@ Liquid_phase
 Solute_component
 ----------------
 
-*  Here is more info on the `"solute_component`" elements:
-
-    * `"aqueous_conc`" is an element with the following attributes: ONLY CONSTANT, for now
+*  To define boundary conditions for any solutes, a single `"solute_component`" element, with the attribute `"name`"="solute" is included under the `"liquid_phase`" element.  This element appears once.  An unbounded number of `"aqueous_conc`" subelements may appear to define changes in aqueous concentration at specified times for a given solute.  The aqueous concentration may be defined for multiple solutes. 
+  
+    * `"aqueous_conc`" is an element with the following attributes: 
 
 .. code-block:: xml
 
-     <aqueous_conc name="some name" value="exponential" function="linear | uniform | constant" start="time" />
+     <aqueous_conc name="some name" value="exponential" function="constant" start="time" />
 
 *  Here is more info on the `"geochemistry`" elements:
 

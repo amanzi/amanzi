@@ -1,618 +1,370 @@
-<ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
+<amanzi_input type="unstructured" version="2.1.1">
+  <model_description name="Dispersion Example Problem">
+    <comments>Example input file</comments>
+    <model_id>Single-Phase Saturated</model_id>
+    <author>Konstantin Lipnikov</author>
+    <units>
+      <length_unit>m</length_unit>
+      <time_unit>s</time_unit>
+      <mass_unit>kg</mass_unit>
+      <conc_unit>molar</conc_unit>
+    </units>
+    <coordinate_system>x,z</coordinate_system>
+  </model_description>
 
-  <ParameterList name="Execution Control">
-    <Parameter name="Flow Model" type="string" value="Single Phase"/>
-    <Parameter name="Transport Model" type="string" value="On"/>
-    <Parameter name="Chemistry Model" type="string" value="Off"/>
+  <definitions>
+    <macros>
+      <time_macro name="Observation Times">
+        <time>1.2096E+08</time>
+      </time_macro>
+      <time_macro name="EveryYear">
+        <start>0.0</start>
+        <timestep_interval>1.0E+07</timestep_interval>
+        <stop>1.0E+09</stop>
+      </time_macro>
+      <cycle_macro name="EveryCycle">
+        <start>0</start>
+        <timestep_interval>1</timestep_interval>
+      </cycle_macro>
+    </macros>
+  </definitions>
 
-    <ParameterList name="Time Integration Mode">
-      <ParameterList name="Transient with Static Flow">
-        <Parameter name="Start" type="double" value="0.0"/>
-        <Parameter name="End" type="double" value="1.2096e+8"/>
-        <Parameter name="Initial Time Step" type="double" value="1.0"/>
-      </ParameterList>
-    </ParameterList>
+  <process_kernels>
+    <comments>Single phase flow only</comments>
+    <flow model="constant" state="on" />
+    <transport state="on" />
+    <chemistry engine="none" process_model="none" state="off" />
+  </process_kernels>
 
-    <Parameter name="Verbosity" type="string" value="High"/>
+  <phases>
+    <liquid_phase name="water">
+      <eos>false</eos>
+      <viscosity>1.002E-03</viscosity>
+      <density>998.2</density>
+      <dissolved_components>
+        <solutes>
+          <solute coefficient_of_diffusion="0.0">Tc-99</solute>
+        </solutes>
+      </dissolved_components>
+    </liquid_phase>
+  </phases>
 
-    <ParameterList name="Numerical Control Parameters">
-      <ParameterList name="Unstructured Algorithm">
-        <ParameterList name="Linear Solver">
-          <Parameter name="linear solver tolerance" type="double" value="1e-20"/>
-          <Parameter name="linear solver maximum iterations" type="int" value="100"/> 
-        </ParameterList>
-        <ParameterList name="Transport Process Kernel">
-          <Parameter name="transport subcycling" type="bool" value="false"/>
-          <Parameter name="Transport Integration Algorithm" type="string" value="Explicit First-Order"/>
-          <Parameter name="CFL" type="double" value="1.0"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-      
-  <!-- MESH -->
-  <ParameterList name="Domain">
-    <Parameter name="Spatial Dimension" type="int" value="2"/>
-  </ParameterList>
+  <execution_controls>
+    <verbosity level="high" />
+    <execution_control_defaults init_dt="1.0" method="picard" mode="steady" />
+    <execution_control end="1.2096e+8" mode="transient" start="0.0" />
+  </execution_controls>
 
-  <ParameterList name="Mesh">
-    <ParameterList name="Unstructured">
-      <ParameterList name="Generate Mesh">
-        <ParameterList name="Uniform Structured">
-          <Parameter name="Number of Cells" type="Array(int)" value="{83, 83}"/>
-          <!--Parameter name="Number of Cells" type="Array(int)" value="{249, 249}"/-->
-          <Parameter name="Domain Low Coordinate" type="Array(double)" value="{-2.77500e+02, -2.7750e+02}"/>
-          <Parameter name="Domain High Coordinate" type="Array(double)" value="{9.6750e+02,   9.6750e+02}"/>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="Expert">
-        <Parameter name="Framework" type="string" value="MSTK"/>
-        <Parameter name="Verify Mesh" type="bool" value="false"/>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
+  <numerical_controls>
+    <unstructured_controls>
+      <unstr_linear_solver>
+        <max_iterations>100</max_iterations>
+        <tolerance>1e-18</tolerance>
+      </unstr_linear_solver>
+      <unstr_transport_controls>
+        <algorithm>explicit first-order</algorithm>
+        <sub_cycling>off</sub_cycling>
+        <cfl>1</cfl>
+      </unstr_transport_controls>
 
-  <!-- REGIONS -->
-  <ParameterList name="Regions">
+      <unstr_preconditioners>
+        <hypre_amg />
+        <trilinos_ml />
+        <block_ilu />
+      </unstr_preconditioners>
+    </unstructured_controls>
+  </numerical_controls>
 
-    <ParameterList name="All domain">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{-277.75, -277.75}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{971.25,  971.25}"/>
-      </ParameterList>
-    </ParameterList>
+  <mesh framework="mstk">
+    <comments>no comment</comments>
+    <dimension>2</dimension>
+    <read>
+      <file>amanzi_dispersion_45_point_2d.exo</file>
+      <format>exodus ii</format>
+    </read>
+  </mesh>
 
-    <ParameterList name="Well">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{-0.1,-0.1}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{0.1, 0.1}"/>
-      </ParameterList>
-    </ParameterList>
+  <regions>
+    <region name="All domain">
+      <box high_coordinates="971.25, 971.25" low_coordinates="-277.75, -277.75" />
+    </region>
+    <region name="Well">
+      <box high_coordinates="0.1, 0.1" low_coordinates="-0.1, -0.1" />
+    </region>
+    <point coordinate="-210.0,-210.0" name="Upwind210" />
+    <point coordinate="-150.0,-150.0" name="Upwind150" />
+    <point coordinate=" -90.0, -90.0" name="Upwind090" />
+    <point coordinate=" -30.0, -30.0" name="Upwind030" />
+    <point coordinate="   0.0,   0.0" name="Origin" />
+    <point coordinate="  30.0,  30.0" name="Dnwind030" />
+    <point coordinate="  90.0,  90.0" name="Dnwind090" />
+    <point coordinate=" 150.0, 150.0" name="Dnwind150" />
+    <point coordinate=" 210.0, 210.0" name="Dnstrm210" />
+    <point coordinate=" 270.0, 270.0" name="Dnstrm270" />
+    <point coordinate=" 330.0, 330.0" name="Dnstrm330" />
+    <point coordinate=" 390.0, 390.0" name="Dnstrm390" />
+    <point coordinate=" 450.0, 450.0" name="Dnstrm450" />
+    <point coordinate=" 510.0, 510.0" name="Dnstrm510" />
+    <point coordinate=" 570.0, 570.0" name="Dnstrm570" />
+    <point coordinate=" 630.0, 630.0" name="Dnstrm630" />
+    <point coordinate=" 690.0, 690.0" name="Dnstrm690" />
+    <point coordinate=" 750.0, 750.0" name="Dnstrm750" />
+    <point coordinate=" 810.0, 810.0" name="Dnstrm810" />
+    <point coordinate=" 870.0, 870.0" name="Dnstrm870" />
+    <point coordinate=" 930.0, 930.0" name="Dnstrm930" />
+    <point coordinate=" -30.0,  30.0" name="Cross0030" />
+    <point coordinate=" -60.0,  60.0" name="Cross0060" />
+    <point coordinate=" -90.0,  90.0" name="Cross0090" />
+    <point coordinate="-120.0, 120.0" name="Cross0120" />
+    <point coordinate="-150.0, 150.0" name="Cross0150" />
+    <point coordinate="-180.0, 180.0" name="Cross0180" />
+    <point coordinate="-210.0, 210.0" name="Cross0210" />
+    <point coordinate="-240.0, 240.0" name="Cross0240" />
+    <point coordinate=" 270.0,  30.0" name="Crossb030" />
+    <point coordinate=" 240.0,  60.0" name="Crossb060" />
+    <point coordinate=" 210.0,  90.0" name="Crossb090" />
+    <point coordinate=" 180.0, 120.0" name="Crossb120" />
+    <point coordinate=" 150.0, 150.0" name="Crossb150" />
+    <point coordinate=" 120.0, 180.0" name="Crossb180" />
+    <point coordinate="  90.0, 210.0" name="Crossb210" />
+    <point coordinate="  60.0, 240.0" name="Crossb240" />
+  </regions>
 
-    <ParameterList name="Upstrm210">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-210.0, -210.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Upstrm150">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-150.0, -150.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Upstrm090">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-90.0, -90.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Upstrm030">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-30.0, 30.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Dnstrm000">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{0.0, 0.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Dnstrm030">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{30.0, 30.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Dnstrm090">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{90.0, 90.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Dnstrm150">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{150.0, 150.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Dnstrm210">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{210.0, 210.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Dnstrm270">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{270.0, 270.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Dnstrm300">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{300.0, 300.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Dnstrm330">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{330.0, 330.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Dnstrm390">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{390.0, 390.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Dnstrm450">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{450.0, 450.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Dnstrm510">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{510.0, 510.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Dnstrm570">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{570.0, 570.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Dnstrm630">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{630.0, 630.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Dnstrm690">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{690.0, 690.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Dnstrm750">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{750.0, 750.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Dnstrm810">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{810.0, 810.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Dnstrm870">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{870.0, 870.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Dnstrm930">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{930.0, 930.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Cross0030">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-30.0, 30.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Cross0060">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-60.0, 60.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Cross0090">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-90.0, 90.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Cross0120">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-120.0, 120.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Cross0150">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-150.0, 150.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Cross0180">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-180.0, 180.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Cross0210">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{210.0, 210.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Cross0240">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{240.0, 240.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Crossb030">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{270.0, 30.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Crossb060">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{240.0,60.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Crossb090">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{210.0,90.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Crossb120">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{180.0,120.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Crossb150">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{150.0,150.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Crossb180">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{120.0,180.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Crossb210">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{90.0,210.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Crossb240">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{60.0,240.0}"/>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
+  <materials>
+    <material name="Aquifers">
+      <mechanical_properties>
+        <porosity value="0.35" />
+        <dispersion_tensor alpha_l="21.3" alpha_t="4.3" type="uniform_isotropic" />
+        <molecular_diffusion value="0.0" />
+        <tortuosity value="0.0" />
+      </mechanical_properties>
+      <permeability x="1.0e-10" z="1.0e-10" />
+      <assigned_regions>All</assigned_regions>
+    </material>
+  </materials>
 
-  <!-- Materials -->
-  <ParameterList name="Material Properties">
-    <ParameterList name="Aquifers">
-      <Parameter name="Assigned Regions" type="Array(string)" value="{All domain}"/>
-      <ParameterList name="Porosity: Uniform">
-        <Parameter name="Value" type="double" value="0.35"/>
-      </ParameterList>
-      <ParameterList name="Intrinsic Permeability: Uniform">
-        <Parameter name="Value" type="double" value="1.0e-10"/>
-      </ParameterList>
+  <initial_conditions>
+    <initial_condition name="All">
+      <assigned_regions>All domain</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <velocity function="uniform" x="1.3176e-06" z="1.3176e-06" />
+          <uniform_pressure value="101325.0" />
+        </liquid_component>
+        <solute_component name="solute">
+          <uniform_conc name="Tc-99" value="0.0"/>
+        </solute_component>
+      </liquid_phase>
+    </initial_condition>
+  </initial_conditions>
 
-      <ParameterList name="Dispersion Tensor: Uniform Isotropic">
-        <Parameter name="alphaL" type="double" value="21.3"/>
-        <Parameter name="alphaT" type="double" value="4.3"/>
-      </ParameterList>
-      <ParameterList name="Molecular Diffusion: Uniform">
-        <Parameter name="Value" type="double" value="0.0"/>
-      </ParameterList>
-      <ParameterList name="Tortuosity: Uniform">
-        <Parameter name="Value" type="double" value="0.0"/>
-      </ParameterList>
+  <sources>
+    <source name="Well">
+      <assigned_regions>Well</assigned_regions>
+      <liquid_phase name = "water">
+        <solute_component name="group1">
+          <volume_weighted name="Tc-99" value="8.1483e-08" function="constant" start="0.0"/>
+        </solute_component> 
+      </liquid_phase>
+    </source>
+  </sources>
 
-      <ParameterList name="Capillary Pressure: None"/>
-    </ParameterList>
-  </ParameterList>
+  <output>
+    <vis>
+      <base_filename>plot</base_filename>
+      <num_digits>5</num_digits>
+      <time_macros>EveryYear</time_macros>
+    </vis>
+    <observations>
+      <filename>obs5_2_1_r5.out</filename>
+      <liquid_phase name="water">
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Origin</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Upwind210</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Upwind150</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Upwind090</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Upwind030</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Dnwind030</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Dnwind090</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Dnwind150</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Dnstrm210</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Dnstrm270</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Dnstrm330</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Dnstrm390</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Dnstrm450</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Dnstrm510</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Dnstrm570</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Dnstrm630</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Dnstrm690</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Dnstrm750</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Dnstrm810</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Dnstrm870</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Dnstrm930</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Cross0030</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Cross0060</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Cross0090</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Cross0120</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Cross0150</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Cross0180</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Cross0210</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Cross0240</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Crossb030</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Crossb060</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Crossb090</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Crossb120</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Crossb150</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Crossb180</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Crossb210</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Crossb240</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_conc>
+      </liquid_phase>
+    </observations>
+  </output>
+</amanzi_input>
 
-  <!-- Phases: -->
-  <ParameterList name="Phase Definitions">
-    <ParameterList name="Aqueous">
-      <ParameterList name="Phase Properties">
-        <ParameterList name="Viscosity: Uniform">
-          <Parameter name="Viscosity" type="double" value="1.002e-3"/>
-        </ParameterList>
-        <ParameterList name="Density: Uniform">
-          <Parameter name="Density" type="double" value="998.2"/>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="Phase Components">
-        <ParameterList name="Water">
-          <Parameter name="Component Solutes" type="Array(string)" value="{Tc-99}"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-
-  <!-- Initial Conditions: -->
-  <ParameterList name="Initial Conditions">
-    <ParameterList name="All">
-      <Parameter name="Assigned Regions" type="Array(string)" value="{All domain}"/>
-
-      <ParameterList name="IC: Uniform Pressure">
-        <Parameter name="Phase" type="string" value="Aqueous"/>
-        <Parameter name="Value" type="double" value="101325.0"/>
-      </ParameterList>
-      <ParameterList name="IC: Uniform Velocity">
-        <Parameter name="Velocity Vector" type="Array(double)" value="{1.3176e-06,1.3176e-06}"/>
-      </ParameterList>
-
-      <ParameterList name="Solute IC">
-        <ParameterList name="Aqueous">
-          <ParameterList name="Water">
-            <ParameterList name="Tc-99">
-              <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="0.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-
-  <!-- Boundary Conditions -->
-  <!--ParameterList name="Boundary Conditions" -->
-
-  <!-- Source Terms -->
-  <ParameterList name="Sources">
-    <ParameterList name="SRC 1">
-      <Parameter name="Assigned Regions" type="Array(string)" value="{Well}"/>
-      <ParameterList name="Source: Volume Weighted">
-      </ParameterList>
-
-      <ParameterList name="Solute SOURCE">
-        <ParameterList name="Aqueous">
-          <ParameterList name="Water">
-            <ParameterList name="Tc-99">
-              <ParameterList name="Source: Flow Weighted Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.0E7}"/>
-                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{8.1483e-08, 8.1483e-08}"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-
-  <ParameterList name="Output">
-    <ParameterList name="Time Macros">
-      <ParameterList name="Observation Times">
-        <Parameter name="Values" type="Array(double)" value="{1.2096E+08}"/>
-      </ParameterList>
-
-      <ParameterList name="EveryYear">
-        <Parameter name="Start_Period_Stop" type="Array(double)" value="{0, 1.0e+7, 1.0e+9}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Cycle Macros">
-      <ParameterList name="EveryCycle">
-        <Parameter name="Start_Period" type="Array(int)" value="{0, 1}"/>
-      </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="Visualization Data">
-      <Parameter name="File Name Base" type="string" value="plot"/>
-      <Parameter name="File Name Digits" type="int" value="5"/>
-      <Parameter name="Time Macros" type="Array(string)" value="{EveryYear}"/>
-      <!--Parameter name="Cycle Macros" type="Array(string)" value="EveryCycle"/-->
-    </ParameterList>
-
-    <ParameterList name="Observation Data">
-      <Parameter name="Observation Output Filename" type="string" value="obs5_2_1_r5.out"/>
-      <ParameterList name="Point 00">
-        <Parameter name="Region" type="string" value="Dnstrm000"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 01">
-        <Parameter name="Region" type="string" value="Upstrm210"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 02">
-        <Parameter name="Region" type="string" value="Upstrm150"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 03">
-        <Parameter name="Region" type="string" value="Upstrm090"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 04">
-        <Parameter name="Region" type="string" value="Upstrm030"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 05">
-        <Parameter name="Region" type="string" value="Dnstrm030"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 06">
-        <Parameter name="Region" type="string" value="Dnstrm090"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 07">
-        <Parameter name="Region" type="string" value="Dnstrm150"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 08">
-        <Parameter name="Region" type="string" value="Dnstrm210"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 09">
-        <Parameter name="Region" type="string" value="Dnstrm270"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 1X">
-        <Parameter name="Region" type="string" value="Dnstrm300"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 10">
-        <Parameter name="Region" type="string" value="Dnstrm330"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 11">
-        <Parameter name="Region" type="string" value="Dnstrm390"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 12">
-        <Parameter name="Region" type="string" value="Dnstrm450"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 13">
-        <Parameter name="Region" type="string" value="Dnstrm510"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 14">
-        <Parameter name="Region" type="string" value="Dnstrm570"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 15">
-        <Parameter name="Region" type="string" value="Dnstrm630"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 16">
-        <Parameter name="Region" type="string" value="Dnstrm690"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 17">
-        <Parameter name="Region" type="string" value="Dnstrm750"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 18">
-        <Parameter name="Region" type="string" value="Dnstrm810"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 19">
-        <Parameter name="Region" type="string" value="Dnstrm870"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 20">
-        <Parameter name="Region" type="string" value="Dnstrm930"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 21">
-        <Parameter name="Region" type="string" value="Cross0030"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 22">
-        <Parameter name="Region" type="string" value="Cross0060"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 23">
-        <Parameter name="Region" type="string" value="Cross0090"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 24">
-        <Parameter name="Region" type="string" value="Cross0120"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 25">
-        <Parameter name="Region" type="string" value="Cross0150"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 26">
-        <Parameter name="Region" type="string" value="Cross0180"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 27">
-        <Parameter name="Region" type="string" value="Cross0210"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 28">
-        <Parameter name="Region" type="string" value="Cross0240"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 29">
-        <Parameter name="Region" type="string" value="Crossb030"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 30">
-        <Parameter name="Region" type="string" value="Crossb060"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 31">
-        <Parameter name="Region" type="string" value="Crossb090"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 32">
-        <Parameter name="Region" type="string" value="Crossb120"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 33">
-        <Parameter name="Region" type="string" value="Crossb150"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 34">
-        <Parameter name="Region" type="string" value="Crossb180"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 35">
-        <Parameter name="Region" type="string" value="Crossb210"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-      <ParameterList name="Point 36">
-        <Parameter name="Region" type="string" value="Crossb240"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
-        <Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-</ParameterList>

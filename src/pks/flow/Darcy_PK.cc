@@ -306,10 +306,10 @@ void Darcy_PK::Initialize()
                                             .sublist("diffusion operator")
                                             .sublist("matrix");
   Operators::OperatorDiffusionFactory opfactory;
-  op_diff_ = opfactory.Create(mesh_, op_bc_, oplist, gravity_, 0);  // The last 0 means no upwind
+  op_diff_ = opfactory.Create(oplist, mesh_, op_bc_, rho_ * rho_ / mu, gravity_);
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
   op_diff_->SetBCs(op_bc_, op_bc_);
-  op_diff_->Setup(Kptr, Teuchos::null, Teuchos::null, rho_ * rho_ / mu);
+  op_diff_->Setup(Kptr, Teuchos::null, Teuchos::null);
   op_diff_->ScaleMassMatrices(rho_ / mu);
   op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op_ = op_diff_->global_operator();

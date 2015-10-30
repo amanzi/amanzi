@@ -16,7 +16,6 @@ to do the I/O.
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
-#include "Epetra_MpiComm.h"
 
 namespace Amanzi {
 
@@ -25,7 +24,7 @@ class TimeStepManager;
 class IOEvent : public Teuchos::VerboseObject<IOEvent> {
 
  public:
-  IOEvent(Teuchos::ParameterList& plist, Epetra_MpiComm *comm);
+  IOEvent(Teuchos::ParameterList& plist);
   IOEvent(); // created with this constructor this object will not create any output
 
   void disable(bool disabled=true);
@@ -50,9 +49,6 @@ class IOEvent : public Teuchos::VerboseObject<IOEvent> {
 
   // disable visualization dumps alltogether
   bool disabled_;
-
-  // the Epetra communicator
-  Epetra_MpiComm *comm_;
 
 };
 

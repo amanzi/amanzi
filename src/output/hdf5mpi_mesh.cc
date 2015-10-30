@@ -1,3 +1,5 @@
+#include "Element_types.hh"
+
 #include "hdf5mpi_mesh.hh"
 #include <iostream>
 

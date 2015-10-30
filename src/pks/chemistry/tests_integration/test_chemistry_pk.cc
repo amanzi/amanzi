@@ -13,7 +13,6 @@
 #include "Epetra_SerialComm.h"
 #include "XMLParameterListWriter.hh"
 
-#include "InputParserIS.hh"
 #include "MeshFactory.hh"
 #include "GenerationSpec.hh"
 #include "State.hh"

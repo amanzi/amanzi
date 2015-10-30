@@ -181,9 +181,7 @@ void Richards_PK::Setup()
     S_->RequireField("water_content", "water_content")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-    Teuchos::ParameterList elist, vwc_list;
-    elist.sublist("VerboseObject").set<std::string>("Verbosity Level", "extreme");
-
+    Teuchos::ParameterList vwc_list;
     VWContentEvaluatorFactory fac;
     Teuchos::RCP<VWContentEvaluator> eval = fac.Create(vwc_model, vwc_list);
     S_->SetFieldEvaluator("water_content", eval);
@@ -201,10 +199,14 @@ void Richards_PK::Setup()
     if (!S_->HasField("pressure_matrix")) {
       S_->RequireField("pressure_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+      Teuchos::ParameterList elist;
+      elist.set<std::string>("evaluator name", "pressure_matrix");
+      pressure_matrix_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+      S_->SetFieldEvaluator("pressure_matrix", pressure_matrix_eval_);
     }
 
-    Teuchos::RCP<Teuchos::ParameterList>
-        msp_list = Teuchos::sublist(rp_list_, "multiscale models", true);
+    Teuchos::RCP<Teuchos::ParameterList> msp_list = Teuchos::sublist(rp_list_, "multiscale models", true);
     msp_ = CreateMultiscaleFlowPorosityPartition(mesh_, msp_list);
 
     if (!S_->HasField("water_content_matrix")) {
@@ -219,7 +221,13 @@ void Richards_PK::Setup()
 
     S_->RequireField("porosity_matrix", "porosity_matrix")->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireFieldEvaluator("porosity_matrix");
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("porosity key", "porosity_matrix");
+    elist.set<std::string>("pressure key", "pressure_matrix");
+    Teuchos::RCP<PorosityModelPartition> pom = CreatePorosityModelPartition(mesh_, msp_list);
+    Teuchos::RCP<PorosityModelEvaluator> eval = Teuchos::rcp(new PorosityModelEvaluator(elist, pom));
+    S_->SetFieldEvaluator("porosity_matrix", eval);
   }
 
   // Require additional fields and evaluators for this PK.
@@ -331,6 +339,7 @@ void Richards_PK::Setup()
 /* ******************************************************************
 * This is long but simple subroutine. It goes through time integrator
 * list and initializes various objects created during setup step.
+* Some local objects needs to the most 
 ****************************************************************** */
 void Richards_PK::Initialize()
 {
@@ -419,33 +428,30 @@ void Richards_PK::Initialize()
   Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
 
   std::string name = rp_list_->sublist("upwind").get<std::string>("relative permeability");
-  int upw_id(Operators::OPERATOR_UPWIND_FLUX);
   std::string upw_method("standard: cell");
   if (name == "upwind: darcy velocity") {
     upw_method = "upwind: face";
   } else if (name == "upwind: gravity") {
     upw_method = "upwind: face";
-    upw_id = Operators::OPERATOR_UPWIND_CONSTANT_VECTOR;
   } else if (name == "upwind: amanzi") {
     upw_method = "divk: cell-face";
     // upw_method = "divk: face";
   } else if (name == "other: arithmetic average") {
     upw_method = "upwind: face";
-    upw_id = Operators::OPERATOR_UPWIND_ARITHMETIC_AVERAGE;
   }
   oplist_matrix.set<std::string>("nonlinear coefficient", upw_method);
   oplist_pc.set<std::string>("nonlinear coefficient", upw_method);
 
   Operators::OperatorDiffusionFactory opfactory;
-  op_matrix_diff_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, molar_gravity_, upw_id);
+  op_matrix_diff_ = opfactory.Create(oplist_matrix, mesh_, op_bc_, rho_, gravity_);
   op_matrix_ = op_matrix_diff_->global_operator();
-  op_preconditioner_diff_ = opfactory.Create(mesh_, op_bc_, oplist_pc, molar_gravity_, upw_id);
+  op_preconditioner_diff_ = opfactory.Create(oplist_pc, mesh_, op_bc_, rho_, gravity_);
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
   op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_preconditioner_));
 
   if (vapor_diffusion_) {
     Teuchos::ParameterList oplist_vapor = tmp_list.sublist("vapor matrix");
-    op_vapor_diff_ = opfactory.Create(mesh_, op_bc_, oplist_vapor, gravity_, 0);
+    op_vapor_diff_ = opfactory.Create(oplist_vapor, mesh_, op_bc_);
     op_vapor_ = op_vapor_diff_->global_operator();
     op_preconditioner_->OpPushBack(op_vapor_diff_->local_matrices(),
                                    Operators::OPERATOR_PROPERTY_DATA_READ_ONLY);
@@ -521,11 +527,11 @@ void Richards_PK::Initialize()
   op_matrix_->Init();
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
   op_matrix_diff_->SetBCs(op_bc_, op_bc_);
-  op_matrix_diff_->Setup(Kptr, krel_, dKdP_, molar_rho_);
+  op_matrix_diff_->Setup(Kptr, krel_, dKdP_);
 
   op_preconditioner_->Init();
   op_preconditioner_->SetBCs(op_bc_, op_bc_);
-  op_preconditioner_diff_->Setup(Kptr, krel_, dKdP_, molar_rho_);
+  op_preconditioner_diff_->Setup(Kptr, krel_, dKdP_);
 
   // -- assemble phase
   UpdateSourceBoundaryData(t_old, t_new, pressure);
@@ -534,13 +540,13 @@ void Richards_PK::Initialize()
   op_matrix_diff_->ApplyBCs(true, true);
 
   op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
-  op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr());
+  op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr(), molar_rho_);
   op_preconditioner_diff_->ApplyBCs(true, true);
   op_preconditioner_->SymbolicAssembleMatrix();
 
   if (vapor_diffusion_) {
     // op_vapor_diff_->SetBCs(op_bc_);
-    op_vapor_diff_->Setup(Teuchos::null, Teuchos::null);
+    op_vapor_diff_->SetScalarCoefficient(Teuchos::null, Teuchos::null);
   }
 
   // generic linear solver for all cases except for a few
@@ -625,6 +631,13 @@ void Richards_PK::Initialize()
     CompositeVector& wc = *S_->GetFieldData("water_content", "water_content");
     CompositeVector& wc_prev = *S_->GetFieldData("prev_water_content", passwd_);
     wc_prev = wc;
+
+    // We start with pressure equilibrium
+    if (multiscale_porosity_) {
+      *S_->GetFieldData("pressure_matrix", passwd_)->ViewComponent("cell") =
+          *S_->GetFieldData("pressure")->ViewComponent("cell");
+      pressure_matrix_eval_->SetFieldAsChanged(S_.ptr());
+    }
   }
 
   // Trigger update of secondary fields depending on the primary pressure.
@@ -706,16 +719,17 @@ void Richards_PK::InitializeFields_()
   // set matrix fields assuming presure equilibrium
   // -- pressure
   if (S_->HasField("pressure_matrix")) {
-    if (!S_->GetField("pressure_matrix", passwd_)->initialized()) {
+    // if (!S_->GetField("pressure_matrix", passwd_)->initialized()) {
       const Epetra_MultiVector& p1 = *S_->GetFieldData("pressure")->ViewComponent("cell");
       Epetra_MultiVector& p0 = *S_->GetFieldData("pressure_matrix", passwd_)->ViewComponent("cell");
       p0 = p1;
 
       S_->GetField("pressure_matrix", passwd_)->set_initialized();
+      pressure_matrix_eval_->SetFieldAsChanged(S_.ptr());
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
           *vo_->os() << "initialized pressure_matrix to pressure" << std::endl;  
-    }
+    // }
   }
 
   // -- water contents 
@@ -768,7 +782,7 @@ void Richards_PK::InitializeUpwind_()
     darcy_flux_upwind = darcy_flux_copy;
   } else if (relperm_->method() == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
     darcy_flux_upwind = Teuchos::rcp(new CompositeVector(*darcy_flux_copy));
-    relperm_->ComputeGravityFlux(K, molar_gravity_, darcy_flux_upwind);
+    relperm_->ComputeGravityFlux(K, gravity_, darcy_flux_upwind);
   } else {
     darcy_flux_upwind = Teuchos::rcp(new CompositeVector(*darcy_flux_copy));
     darcy_flux_upwind->PutScalar(0.0);

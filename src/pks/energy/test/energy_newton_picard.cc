@@ -198,7 +198,7 @@ void HeatConduction::Init(
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
   op_diff_->Setup(Kptr, k, dkdT);
   op_diff_->UpdateMatrices(flux_.ptr(), solution_.ptr());
-  op_diff_->UpdateMatricesNewtonCorrection(flux_.ptr(), solution_.ptr());
+  op_diff_->UpdateMatricesNewtonCorrection(flux_.ptr(), solution_.ptr(), 1.0);
   op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
 
   // form the global matrix
@@ -265,7 +265,7 @@ void HeatConduction::UpdatePreconditioner(const Teuchos::RCP<const CompositeVect
   UpdateValues(*up);
   op_->Init();
   op_diff_->UpdateMatrices(flux_.ptr(), up.ptr());
-  op_diff_->UpdateMatricesNewtonCorrection(flux_.ptr(), up.ptr());
+  op_diff_->UpdateMatricesNewtonCorrection(flux_.ptr(), up.ptr(), 1.0);
   op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
   op_diff_->ApplyBCs(true, true);
 

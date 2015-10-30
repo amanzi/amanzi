@@ -387,7 +387,7 @@ def SetupTests():
                      { 'datasrc' : 'Amanzi', 'subtest' : 'amanzi_second', 'variable': 'Tc99' },
                      'Analytic (AT123D-AT)':
                      { 'datasrc' : 'Analytic', 'idepvar' : 'distance', 'variable': 'c' },
-                 },
+                   },
                    'x=424.0' : 
                    { 'filename' : 'table_cross-section-c.txt',
                      'header'   : [ 'y [m]', 'Analytic (AT123D-AT)',
@@ -404,6 +404,5 @@ def SetupTests():
                  }
 
                }
-                   
 
     return obs_slices, subtests, analytic, table_layout

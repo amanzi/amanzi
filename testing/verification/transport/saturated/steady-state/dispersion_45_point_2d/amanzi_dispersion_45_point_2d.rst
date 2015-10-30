@@ -28,7 +28,7 @@ The plume structure is characterized by three line cuts.
 The first cut is given by line :math:`y=0` that goes through the well.
 The two other cuts are given by lines :math:`x=0` and :math:`x=424`.
 
-.. plot:: verification/transport/dispersion_45_point_2d/amanzi_dispersion_45_point_2d.py
+.. plot:: verification/transport/dispersion_45_point_2d/amanzi_dispersion_45_point_2d-a.py
    :align: center
 
 .. include:: table_centerline.txt
@@ -38,5 +38,7 @@ A difference observed near downstream boundary for the Amanzi with the
 first-order transport scheme (Amanzi(1st)).
 The second-order transport scheme provides excellent match.
 
+.. plot:: verification/transport/dispersion_45_point_2d/amanzi_dispersion_45_point_2d-b.py
+   :align: center
 
 

@@ -19,13 +19,13 @@ namespace Amanzi {
 template<class T>
 void
 recurseTreeVectorBFS(T& tv, std::vector<Teuchos::RCP<T> >& list) {
-  for (typename std::vector<Teuchos::RCP<T> >::iterator it=tv.SubVectors().begin();
-       it!=tv.SubVectors().end(); ++it) {
+  for (typename T::iterator it=tv.begin();
+       it!=tv.end(); ++it) {
     list.push_back(*it);
   }
 
-  for (typename std::vector<Teuchos::RCP<T> >::iterator it=tv.SubVectors().begin();
-       it!=tv.SubVectors().end(); ++it) {
+  for (typename T::iterator it=tv.begin();
+       it!=tv.end(); ++it) {
     recurseTreeVectorBFS<T>(**it, list);
   }
 }
@@ -34,13 +34,13 @@ template<class T>
 void
 recurseTreeVectorBFS_const(const T& tv, std::vector<Teuchos::RCP<const T> >& list) {
 
-  for (typename std::vector<Teuchos::RCP<const T> >::const_iterator it=tv.SubVectors().begin();
-       it!=tv.SubVectors().end(); ++it) {
+  for (typename T::const_iterator it=tv.begin();
+       it!=tv.end(); ++it) {
     list.push_back(*it);
   }
 
-  for (typename std::vector<Teuchos::RCP<const T> >::const_iterator it=tv.SubVectors().begin();
-       it!=tv.SubVectors().end(); ++it) {
+  for (typename T::const_iterator it=tv.begin();
+       it!=tv.end(); ++it) {
     recurseTreeVectorBFS_const<T>(**it, list);
   }
 }

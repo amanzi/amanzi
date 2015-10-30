@@ -60,25 +60,32 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
     global_op_->OpPushBack(local_op_);
   }
   
-  // // scaled constraint -- enables zero rel perm
-  // scaled_constraint_ = plist.get<bool>("scaled constraint equation", false);
-
   // upwind options
-  std::string uwname = plist.get<std::string>("nonlinear coefficient", "standard: cell");
+  std::string uwname = plist.get<std::string>("nonlinear coefficient", "upwind: face");
   if (uwname == "none") {
     little_k_ = OPERATOR_LITTLE_K_NONE;
+
   } else if (uwname == "upwind: face") {
     little_k_ = OPERATOR_LITTLE_K_UPWIND;
+
   } else if (uwname == "divk: cell-face") {  
     little_k_ = OPERATOR_LITTLE_K_DIVK;
-    ASSERT(false);
+    Errors::Message msg("OperatorDiffusionFV: \"divk: cell-face\" upwinding not supported.");
+    Exceptions::amanzi_throw(msg);
+
   } else if (uwname == "divk: cell-grad-face-twin") {  
     little_k_ = OPERATOR_LITTLE_K_DIVK_TWIN_GRAD;
-    ASSERT(false);
+    Errors::Message msg("OperatorDiffusionFV: \"divk: cell-grad-face-twin\" upwinding not supported.");
+    Exceptions::amanzi_throw(msg);
+
   } else if (uwname == "standard: cell") {
     little_k_ = OPERATOR_LITTLE_K_STANDARD;  // cell-centered scheme.
+    Errors::Message msg("OperatorDiffusionFV: \"standard: cell\" upwinding not supported.");
+    Exceptions::amanzi_throw(msg);
+
   } else {
-    ASSERT(false);
+    Errors::Message msg("OperatorDiffusionFV: unknown upwind scheme specified.");
+    Exceptions::amanzi_throw(msg);
   }
 
   // Do we need to exclude the primary terms?
@@ -91,10 +98,21 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
   } else if (jacobian == "approximate jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
+    Errors::Message msg("OperatorDiffusionFV: \"approximate jacobian\" not supported -- maybe you mean \"true jacobian\"?");
+    Exceptions::amanzi_throw(msg);
   }
+
   if (newton_correction_ != OPERATOR_DIFFUSION_JACOBIAN_NONE) {
     std::string name = "Diffusion: FACE_CELL Jacobian terms";
-    jac_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+
+    if (plist.get<bool>("surface operator", false)) {
+      std::string name = "Diffusion: FACE_CELL Surface Jacobian terms";
+      jac_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name, mesh_));
+    } else {
+      std::string name = "Diffusion: FACE_CELL Jacobian terms";
+      jac_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+    }
+
     global_op_->OpPushBack(jac_op_);
   }  
 
@@ -113,24 +131,16 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
   cvs.SetGhosted(true);
   cvs.SetComponent("face", AmanziMesh::FACE, 1);
   transmissibility_ = Teuchos::rcp(new CompositeVector(cvs, true));
-
-  // default parameters for Newton correction
-  constant_rho_ = true;
-  rho_ = 1.0;
-  transmissibility_initialized_ = false;
 }
 
 
 /* ******************************************************************
 * Setup methods: scalar coefficients
 ****************************************************************** */
-void OperatorDiffusionFV::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
+void OperatorDiffusionFV::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
 {
+  transmissibility_initialized_ = false;
   K_ = K;
-
-  if (!transmissibility_initialized_) {
-    ComputeTransmissibility_(NULL, Teuchos::null);
-  }
 }
 
 
@@ -138,9 +148,10 @@ void OperatorDiffusionFV::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor
 * Setup methods: krel and deriv -- must be called after calling a
 * setup with K absolute
 ****************************************************************** */
-void OperatorDiffusionFV::Setup(const Teuchos::RCP<const CompositeVector>& k,
+void OperatorDiffusionFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                 const Teuchos::RCP<const CompositeVector>& dkdp)
 {
+  transmissibility_initialized_ = false;
   k_ = k;
   dkdp_ = dkdp;
 
@@ -156,9 +167,11 @@ void OperatorDiffusionFV::Setup(const Teuchos::RCP<const CompositeVector>& k,
   }
 
   // verify that mass matrices were initialized.
-  if (!transmissibility_initialized_) {
-    ComputeTransmissibility_(NULL, Teuchos::null);
-  }
+  // -- this shouldn't be called here, as Trans has no dependence on
+  //    rel perm, and abs perm may not be set yet! --etc
+  // if (!transmissibility_initialized_) {
+  //   ComputeTransmissibility_();
+  // }
 }
 
 
@@ -168,6 +181,8 @@ void OperatorDiffusionFV::Setup(const Teuchos::RCP<const CompositeVector>& k,
 void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                                          const Teuchos::Ptr<const CompositeVector>& u)
 {
+  if (!transmissibility_initialized_) ComputeTransmissibility_();
+
   if (!exclude_primary_terms_) {
     const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
     const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
@@ -437,8 +452,7 @@ void OperatorDiffusionFV::ComputeJacobianLocal_(
 /* ******************************************************************
 * Compute transmissibilities on faces 
 ****************************************************************** */
-void OperatorDiffusionFV::ComputeTransmissibility_(
-   AmanziGeometry::Point* g, Teuchos::RCP<CompositeVector> g_cv)
+void OperatorDiffusionFV::ComputeTransmissibility_()
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
 
@@ -503,24 +517,10 @@ void OperatorDiffusionFV::ComputeTransmissibility_(
     a_dist *= 1.0 / norm(a_dist);
 
     trans_face[0][f] = 1.0 / beta_face[0][f];
-
-    if (g != NULL) {
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      double dir = copysign(1.0, normal * a_dist);
-      // double grav = (gravity * normal) / area;
-      double grav = ((*g) * a_dist) * rho_ * dir;
-      grav *= h_face[0][f];
-
-      Epetra_MultiVector& gravity_face = *g_cv->ViewComponent("face", true);
-      gravity_face[0][f] = trans_face[0][f] * grav;
-    }
   }
-  // Epetra_MultiVector& gravity_face = *g_cv->ViewComponent("face", true);
-  // std::cout<<gravity_face<<"\n";
 
 #ifdef HAVE_MPI
   transmissibility_->ScatterMasterToGhosted("face", true);
-  if (g != NULL) g_cv->ScatterMasterToGhosted("face", true);
 #endif
 
   transmissibility_initialized_ = true;
