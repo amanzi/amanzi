@@ -208,11 +208,11 @@ TEST(MSTK_EDGES_3D)
 
     evec = mesh->edge_vector(e);
     elen = mesh->edge_length(e);
-    if (evec[0] == 1.0 && evec[1] == 0.0) {
+    if (evec[0] != 0.0 && evec[1] == 0.0) {
       CHECK_EQUAL(0.5,elen);
       CHECK_EQUAL(elen,norm(evec));
     }
-    else if (evec[0] == 0.0 && evec[1] == 1.0) {
+    else if (evec[0] == 0.0 && evec[1] != 0.0) {
       CHECK_EQUAL(0.25,elen);
       CHECK_EQUAL(elen,norm(evec));
     }
