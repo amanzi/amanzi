@@ -96,8 +96,8 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  ASSERT(f.Map().SameAs(m_->RangeMap()));
-  ASSERT(x.Map().SameAs(m_->DomainMap()));
+  //  ASSERT(f.Map().SameAs(m_->RangeMap()));
+  //  ASSERT(x.Map().SameAs(m_->DomainMap()));
   nka_->Restart();
 
   residual_ = 0.0;
