@@ -765,7 +765,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   // seepage face -- pressure <= p_atm, outward mass flux is specified
   const double& p_atm = *S->GetScalarData("atmospheric_pressure");
 
-  const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
+  const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)->ViewComponent("face", true);
   const Epetra_MultiVector& u_cell = *S->GetFieldData(key_)->ViewComponent("cell");
   double tol = p_atm * 1e-14;
 

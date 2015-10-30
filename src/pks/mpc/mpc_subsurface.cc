@@ -483,7 +483,8 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
     // -- dWC/dT diagonal term
     S_next_->GetFieldEvaluator(e_key_)
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, pres_key_);
-    Teuchos::RCP<const CompositeVector> dE_dp = S_next_->GetFieldData("denergy_dpressure");
+    Teuchos::RCP<const CompositeVector> dE_dp =
+      S_next_->GetFieldData(getDerivKey(e_key_, pres_key_));
     dE_dp_->AddAccumulationTerm(*dE_dp->ViewComponent("cell", false), h);
 
     // std::cout << "1/h * DE/Dp" << std::endl;
