@@ -17,6 +17,7 @@ Author: Ethan Coon
 #include "upwind_arithmetic_mean.hh"
 #include "upwind_total_flux.hh"
 #include "upwind_gravity_flux.hh"
+#include "enthalpy_evaluator.hh"
 
 #include "composite_vector_function.hh"
 #include "composite_vector_function_factory.hh"
@@ -235,6 +236,17 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
       lin_solver_ = preconditioner_;
     }
   }  
+
+  // -- advection of enthalpy
+  S->RequireField(enthalpy_key_)->SetMesh(mesh_)
+    ->SetGhosted()
+    ->AddComponent("cell", AmanziMesh::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+  Teuchos::ParameterList enth_plist = plist_->sublist("enthalpy evaluator");
+  enth_plist.set("enthalpy key", enthalpy_key_);
+  Teuchos::RCP<EnthalpyEvaluator> enth =
+    Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
+  S->SetFieldEvaluator(enthalpy_key_, enth);
 
   // source terms
   is_source_term_ = plist_->get<bool>("source term");
@@ -622,13 +634,21 @@ bool EnergyBase::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
 // -----------------------------------------------------------------------------
 bool EnergyBase::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
         Teuchos::RCP<TreeVector> u) {
-
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Modifying predictor:" << std::endl;
 
-  bool modified = false;
+  // update boundary conditions
+  bc_temperature_->Compute(S_next_->time());
+  bc_flux_->Compute(S_next_->time());
+  UpdateBoundaryConditions_(S_next_.ptr());
   
+  // push Dirichlet data into predictor
+  if (u->Data()->HasComponent("boundary_cell")) {
+    ApplyBoundaryConditions_(u->Data().ptr());
+  }
+
+  bool modified = false;
   if (modify_predictor_for_freezing_) {
     const Epetra_MultiVector& u0_c = *u0->Data()->ViewComponent("cell",false);
     Epetra_MultiVector& u_c = *u->Data()->ViewComponent("cell",false);

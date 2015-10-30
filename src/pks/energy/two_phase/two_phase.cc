@@ -45,15 +45,6 @@ void TwoPhase::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     Teuchos::rcp(new TwoPhaseEnergyEvaluator(ee_plist));
   S->SetFieldEvaluator(energy_key_, ee);
 
-  // -- advection of enthalpy
-  S->RequireField(enthalpy_key_)->SetMesh(mesh_)
-    ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList enth_plist = plist_->sublist("enthalpy evaluator");
-  enth_plist.set("enthalpy key", enthalpy_key_);
-  Teuchos::RCP<EnthalpyEvaluator> enth =
-    Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
-  S->SetFieldEvaluator(enthalpy_key_, enth);
-
   // -- thermal conductivity
   S->RequireField(conductivity_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -95,48 +86,48 @@ void TwoPhase::initialize(const Teuchos::Ptr<State>& S) {
 }
 
 
-// -------------------------------------------------------------
-// Plug enthalpy into the boundary faces manually.
-// This will be removed once boundary faces exist.
-// -------------------------------------------------------------
-void TwoPhase::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S) {
-  // put the boundary fluxes in faces for Dirichlet BCs.
-  // NOTE this boundary flux is in enthalpy, and
-  // h = n(T,p) * u_l(T) + p_l
-  Teuchos::RCP<const Epetra_MultiVector> pres;
-  Key pres_key = getKey(domain_, "pressure");
-  if (S->GetFieldData(pres_key)->HasComponent("face")) {
-    pres = S->GetFieldData(pres_key)->ViewComponent("face",false);
-  }
-  const Epetra_MultiVector& pres_c = *S->GetFieldData(pres_key)
-      ->ViewComponent("cell",false);
+// // -------------------------------------------------------------
+// // Plug enthalpy into the boundary faces manually.
+// // This will be removed once boundary faces exist.
+// // -------------------------------------------------------------
+// void TwoPhase::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S) {
+//   // put the boundary fluxes in faces for Dirichlet BCs.
+//   // NOTE this boundary flux is in enthalpy, and
+//   // h = n(T,p) * u_l(T) + p_l
+//   Teuchos::RCP<const Epetra_MultiVector> pres;
+//   Key pres_key = getKey(domain_, "pressure");
+//   if (S->GetFieldData(pres_key)->HasComponent("face")) {
+//     pres = S->GetFieldData(pres_key)->ViewComponent("face",false);
+//   }
+//   const Epetra_MultiVector& pres_c = *S->GetFieldData(pres_key)
+//       ->ViewComponent("cell",false);
 
-  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
+//   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
 
-  const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)
-      ->ViewComponent("face",false);
+//   const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)
+//       ->ViewComponent("face",false);
 
-  bool include_work = plist_->sublist("enthalpy evaluator").get<bool>("include work term", true);
+//   bool include_work = plist_->sublist("enthalpy evaluator").get<bool>("include work term", true);
   
-  AmanziMesh::Entity_ID_List cells;
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  for (int f=0; f!=nfaces; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    if (bc_markers_adv_[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      // If the advective markers are Dirichlet, and the diffusion markers are
-      // Neumann, that means we were given by the diffusive fluxes and the
-      // advected mass flux and temperature.
-      double T = bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET ? bc_values_[f] : BoundaryValue(temp, f);
-      double enthalpy = iem_liquid_->InternalEnergy(T);
-      if (include_work) {
-        double p = pres == Teuchos::null ? pres_c[0][cells[0]] : (*pres)[0][f];
-        double dens = eos_liquid_->MolarDensity(T,p);
-        enthalpy += p/dens;
-      }
-      bc_values_adv_[f] = enthalpy;
-    }
-  }
-}
+//   AmanziMesh::Entity_ID_List cells;
+//   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+//   for (int f=0; f!=nfaces; ++f) {
+//     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+//     if (bc_markers_adv_[f] == Operators::OPERATOR_BC_DIRICHLET) {
+//       // If the advective markers are Dirichlet, and the diffusion markers are
+//       // Neumann, that means we were given by the diffusive fluxes and the
+//       // advected mass flux and temperature.
+//       double T = bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET ? bc_values_[f] : BoundaryValue(temp, f);
+//       double enthalpy = iem_liquid_->InternalEnergy(T);
+//       if (include_work) {
+//         double p = pres == Teuchos::null ? pres_c[0][cells[0]] : (*pres)[0][f];
+//         double dens = eos_liquid_->MolarDensity(T,p);
+//         enthalpy += p/dens;
+//       }
+//       bc_values_adv_[f] = enthalpy;
+//     }
+//   }
+// }
 
 
 

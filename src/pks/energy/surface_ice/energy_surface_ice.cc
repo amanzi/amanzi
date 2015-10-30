@@ -75,15 +75,6 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(energy_key_);
   
-  // -- advection of enthalpy
-  S->RequireField(enthalpy_key_)->SetMesh(mesh_)
-    ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList& enth_plist = plist_->sublist("enthalpy evaluator");
-  enth_plist.set("enthalpy key", enthalpy_key_);
-  Teuchos::RCP<EnthalpyEvaluator> enth =
-    Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
-  S->SetFieldEvaluator(enthalpy_key_, enth);
-
   // -- thermal conductivity
   S->RequireField(conductivity_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -184,40 +175,40 @@ void EnergySurfaceIce::initialize(const Teuchos::Ptr<State>& S) {
 }
 
 
-// -------------------------------------------------------------
-// Plug enthalpy into the boundary faces manually.
-// This will be removed once boundary faces exist.
-// -------------------------------------------------------------
-void EnergySurfaceIce::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S) {
+// // -------------------------------------------------------------
+// // Plug enthalpy into the boundary faces manually.
+// // This will be removed once boundary faces exist.
+// // -------------------------------------------------------------
+// void EnergySurfaceIce::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S) {
 
-  // Since we don't have a surface pressure on faces, this gets a bit uglier.
-  // Simply grab the internal cell for now.
-  const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)
-      ->ViewComponent("face",false);
-  const Epetra_MultiVector& pres_c = *S->GetFieldData("surface-pressure")
-      ->ViewComponent("cell",false);
+//   // Since we don't have a surface pressure on faces, this gets a bit uglier.
+//   // Simply grab the internal cell for now.
+//   const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)
+//       ->ViewComponent("face",false);
+//   const Epetra_MultiVector& pres_c = *S->GetFieldData("surface-pressure")
+//       ->ViewComponent("cell",false);
 
-  //  Teuchos::writeParameterListToXmlOStream(*plist_, std::cout);
-  Teuchos::ParameterList& enth_plist = plist_->sublist("enthalpy evaluator", true);
-  bool include_work = enth_plist.get<bool>("include work term", true);
+//   //  Teuchos::writeParameterListToXmlOStream(*plist_, std::cout);
+//   Teuchos::ParameterList& enth_plist = plist_->sublist("enthalpy evaluator", true);
+//   bool include_work = enth_plist.get<bool>("include work term", true);
 
-  AmanziMesh::Entity_ID_List cells;
-  unsigned int nfaces = pres_c.MyLength();
-  for (unsigned int f=0; f!=nfaces; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    if (bc_markers_adv_[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      ASSERT(bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET); // Dirichlet data -- does not yet handle split fluxes here
-      double T = bc_values_[f];
-      double p = pres_c[0][cells[0]];
-      double dens = eos_liquid_->MolarDensity(T,p);
-      double int_energy = iem_liquid_->InternalEnergy(T);
-      double enthalpy = include_work ? int_energy + p/dens : int_energy;
+//   AmanziMesh::Entity_ID_List cells;
+//   unsigned int nfaces = pres_c.MyLength();
+//   for (unsigned int f=0; f!=nfaces; ++f) {
+//     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+//     if (bc_markers_adv_[f] == Operators::OPERATOR_BC_DIRICHLET) {
+//       ASSERT(bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET); // Dirichlet data -- does not yet handle split fluxes here
+//       double T = bc_values_[f];
+//       double p = pres_c[0][cells[0]];
+//       double dens = eos_liquid_->MolarDensity(T,p);
+//       double int_energy = iem_liquid_->InternalEnergy(T);
+//       double enthalpy = include_work ? int_energy + p/dens : int_energy;
 
-      bc_values_adv_[f] = enthalpy;
-    }
-  }
+//       bc_values_adv_[f] = enthalpy;
+//     }
+//   }
 
-}
+// }
 
 
 // -------------------------------------------------------------

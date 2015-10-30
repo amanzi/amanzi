@@ -171,7 +171,7 @@ PKPhysicalBDFBase::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>&
     }
   } else if (u->HasComponent("boundary_face")) {
     const Epetra_Map& vandalay_map = mesh_->exterior_face_map();
-    const Epetra_Map& face_map = mesh_->exterior_face_map();
+    const Epetra_Map& face_map = mesh_->face_map(false);
 
     Epetra_MultiVector& u_bf = *u->ViewComponent("boundary_face",false);
     unsigned int nfaces = u_bf.MyLength();
