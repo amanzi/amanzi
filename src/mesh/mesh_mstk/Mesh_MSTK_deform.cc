@@ -15,11 +15,23 @@ namespace Amanzi
 namespace AmanziMesh
 {
 
+// Some constants to be used by routines in this file only
+
+double c1=1.0, c2=1.0, c3=1.0, k1=1.0, k2=1.0, k3=0.0;
+
+
+// Main deformation driver
 
 int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
                       const std::vector<double>& min_cell_volumes_in,
                       const Entity_ID_List& fixed_nodes,
-                      const bool move_vertical) {  
+                      const bool move_vertical,
+                      const double min_vol_const1,
+                      const double min_vol_const2,
+                      const double target_vol_const1,
+                      const double target_vol_const2,
+                      const double quality_func_const1,
+                      const double quality_func_const2) {
   int idx, id;
   MVertex_ptr mv;
   const int ndim = space_dimension();
@@ -28,6 +40,15 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   static const double macheps = 2.2e-16;
   static const double sqrt_macheps = sqrt(macheps);
 
+  // Initialize the deformation function constants
+
+  k1 = min_vol_const1;
+  c1 = min_vol_const2;
+  k2 = target_vol_const1;
+  c2 = target_vol_const2;
+  k3 = quality_func_const1;
+  c3 = quality_func_const2;
+ 
   if (!move_vertical) {
     Errors::Message mesg("Only vertical movement permitted in deformation");
     amanzi_throw(mesg);
@@ -77,6 +98,19 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   std::copy(&(min_cell_volumes_in[0]), &(min_cell_volumes_in[nc]), 
             min_cell_volumes);
 
+
+  // if the target cell volume is the same as the current volume, then 
+  // assume that the cell volume is unconstrained down to the min volume
+
+  for (int i = 0; i < nc; ++i) {
+    if (target_cell_volumes[i] > 0.0) {
+      double vol = cell_volume(i);
+      if (vol == target_cell_volumes[i])
+        target_cell_volumes[i] = 0.0;
+    }
+  }
+        
+
   // Now start mesh deformation to match the target volumes
 
   // Since this is such an unconstrained problem with many local
@@ -94,6 +128,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   
   while (!converged_global && iter_global < maxiter_global) {
     double global_dist2 = 0.0;
+    double meshsizesqr_sum = 0.0;
 
     idx = 0;
     while ((mv = MESH_Next_Vertex(mesh, &idx))) {
@@ -118,8 +153,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
       }
       List_Delete(vedges);
 
-      double disteps_sqr = 1.0e-8*minlen2;
-  
+      meshsizesqr_sum += minlen2;
 
       double vxyzcur[ndim], vxyzold[ndim], vxyznew[ndim];
 
@@ -290,6 +324,9 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
 
     if (get_comm()->NumProc() > 1)
       MESH_UpdateVertexCoords(mesh,mpicomm);
+
+    double meshsize_rms = sqrt(meshsizesqr_sum/nv);
+    eps = 1.0e-06*meshsize_rms;
 
     double global_normdist2 = global_dist2/nv;
     int converged_onthisproc = 0;
@@ -481,7 +518,6 @@ double Mesh_MSTK::deform_function(const int nodeid,
                              {7,5,2},{6,4,3}};
   static int prsmidx[6][3] = {{1,2,3},{2,0,4},{0,1,5},{0,4,5},{1,3,5},{2,3,4}};
 
- 
   val = 0.0;
 
   std::copy(nodexyz,nodexyz+space_dimension(),nodexyz_copy);
@@ -644,6 +680,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
 
   // Actual computation of objective function
 
+  bool negative_volume = false;
   if (space_dimension() == 2) {
 
     for (jf =  0; jf < nf; jf++) {
@@ -724,7 +761,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
       double min_area = min_cell_volumes[fid-1];
       double min_area_diff = (face_area-min_area)/min_area;
 
-      double bfunc = 1/(1+exp(100*min_area_diff));
+      double bfunc = 1/exp(c1*min_area_diff);
       barrierfunc += bfunc;
     }
 
@@ -860,7 +897,10 @@ double Mesh_MSTK::deform_function(const int nodeid,
             /* Volume of this tet */
 
             rvlid1 = rfvlocid[jr][jf][(j+1)%nfv];
-            region_volume += Tet_Volume(xyz[rvlid],xyz[rvlid1],fcen,rcen);
+            double tet_volume = Tet_Volume(xyz[rvlid],xyz[rvlid1],fcen,rcen);
+            if (tet_volume < 0.0)
+              negative_volume = true;
+            region_volume += tet_volume;
 
             /* Condition number at corners of this tet if it is relevant */
             /* Is face vertex either v or one of its edge connected nbrs? */
@@ -901,30 +941,34 @@ double Mesh_MSTK::deform_function(const int nodeid,
         } // jf
       } // else
 
+
+      // IF ANY OF THE COMPONENT TETS HAD A NEGATIVE VOLUME, MAKE SURE THAT
+      // THE REGION VOLUME IS MADE NEGATIVE (IT MAY HAVE BEEN CANCELLED OUT 
+      // BY A MULTITUDE OF POSITIVE VOLUME TETS).
+
+      if (negative_volume)
+        region_volume = -fabs(region_volume);
+
       double target_volume = target_cell_volumes[rid-1];
       if (target_volume > 0.0) {
         double volume_diff = (region_volume-target_volume)/target_volume;
         volfunc += volume_diff*volume_diff;
       }
 
-      // every face always contributes a barrier function to
-      // keep it from going below a certain area
+      // every region always contributes a barrier function to
+      // keep it from going below a certain region
 
       double min_volume = min_cell_volumes[rid-1];
       double min_volume_diff = (region_volume-min_volume)/min_volume;
 
-      double bfunc = 1/(1+exp(100*min_volume_diff));
+      double bfunc = 1/exp(c1*min_volume_diff);
       barrierfunc += bfunc;
     } // for each region
 
   }
 
-  double c1 = 1.0e+0, c2=1.0e-1, c3=1.0e-2, k1=1.0, k2=1.0, k3=0.0;
-  double inlogexpr = k1*exp(c1*volfunc) + k2*exp(c2*barrierfunc) + k3*exp(c3*condfunc);
-  if (inlogexpr > 0.0)
-    func = log(inlogexpr);
-  else 
-    func = 1e+14;
+  double inlogexpr = k1*exp(c1*barrierfunc) + k2*exp(c2*volfunc) + k3*exp(c3*condfunc);
+  func =  (inlogexpr > 0.0 && !negative_volume) ? log(inlogexpr) : 1e+14;
   return func;
 }
 
