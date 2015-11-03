@@ -4509,6 +4509,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * aqueous pressure [Pa]
       * hydraulic head [m] 
       * drawdown [m] 
+      * water table [m]
       * SOLUTE Aqueous concentration [mol/m^3]
       * SOLUTE gaseous concentration [mol/m^3]
       * x-, y-, z- aqueous volumetric flux [m/s]
