@@ -123,6 +123,8 @@ void Checkpoint::WriteAttributes(double time, int cycle) const {
 // -----------------------------------------------------------------------------
 void Checkpoint::WriteObservations(ObservationData* obs_data)
 {
+  if (obs_data == NULL) return;
+
   std::vector<std::string> labels = obs_data->observationLabels();
   int nlabels = labels.size();
 
