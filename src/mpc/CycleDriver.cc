@@ -785,8 +785,8 @@ void CycleDriver::WriteWalkabout(bool force){
       walkabout_->WriteWalkabout(S_);
     }
   }
-
 }
+
 
 /* ******************************************************************
 * timestep loop.
@@ -800,10 +800,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
   double dt;
   double restart_dT(1.0e99);
 
-
-
   if (!restart_requested_) {  // No restart
-
 
     Init_PK(time_period_id_);
 
@@ -812,7 +809,6 @@ Teuchos::RCP<State> CycleDriver::Go() {
     S_->set_cycle(cycle0_);
     S_->set_position(TIME_PERIOD_START);
     
-
     Setup();
     Initialize();
 
@@ -870,9 +866,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
     S_->set_initial_time(S_->time());
     dt = tsm_->TimeStep(S_->time(), restart_dT);
     pk_->set_dt(dt);
-
   }
-
 
 
   *S_->GetScalarData("dt", "coordinator") = dt;

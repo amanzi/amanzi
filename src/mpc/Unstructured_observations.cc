@@ -413,8 +413,8 @@ int Unstructured_observations::MakeObservations(State& S)
       data_triplet.time = S.time();
 
       bool time_exist = false;
-      for (std::vector<Amanzi::ObservationData::DataTriple>::iterator it = od.begin(); it != od.end(); ++it){
-        if (it->time == data_triplet.time){
+      for (std::vector<Amanzi::ObservationData::DataTriple>::iterator it = od.begin(); it != od.end(); ++it) {
+        if (it->time == data_triplet.time) {
           time_exist = true;
           break;
         }

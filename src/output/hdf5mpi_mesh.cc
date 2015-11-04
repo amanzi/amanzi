@@ -578,7 +578,6 @@ void HDF5_MPI::readAttrInt(int &value, const std::string attrname)
 
 void HDF5_MPI::writeDataString(char **x, int num_entries, const std::string varname)
 {
-
   char *h5path = new char [varname.size()+1];
   strcpy(h5path,varname.c_str());
 
