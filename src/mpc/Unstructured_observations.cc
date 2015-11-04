@@ -338,12 +338,9 @@ int Unstructured_observations::MakeObservations(State& S)
             value += hydraulic_head[0][c] * vol;
           }
 
-          std::map<std::string, double>::iterator it = drawdown_.find(label);
-          if (it == drawdown_.end()) { 
-            drawdown_[label] = value;
-            value = 0.0;
-          } else {
-            value = it->second - value;
+          // zero drawdown at time = t0 wil be written directly to the file.
+          if (od.size() > 0) { 
+            value = od.begin()->value - value;
           }
         } else if (var == "aqueous mass flow rate" || 
                    var == "aqueous volumetric flow rate") {
@@ -490,18 +487,20 @@ void Unstructured_observations::FlushObservations()
         const Teuchos::ParameterEntry& entry = obs_list_.getEntry(label);
         if (entry.isList()) {
           const Teuchos::ParameterList& ind_obs_list = obs_list_.sublist(label);
+          std::vector<Amanzi::ObservationData::DataTriple>& od = observation_data_[label]; 
 
-          for (int j = 0; j < observation_data_[label].size(); j++) {
-            if (observation_data_[label][j].is_valid) {
+          for (int j = 0; j < od.size(); j++) {
+            if (od[j].is_valid) {
               if (!out.good()) {
                 std::cout << "PROBLEM BEFORE" << std::endl;
               }
+              std::string var = ind_obs_list.get<std::string>("variable");
               out << label << ", "
                   << ind_obs_list.get<std::string>("region") << ", "
                   << ind_obs_list.get<std::string>("functional") << ", "
-                  << ind_obs_list.get<std::string>("variable") << ", "
-                  << observation_data_[label][j].time << ", "
-                  << observation_data_[label][j].value << '\n';
+                  << var << ", "
+                  << od[j].time << ", "
+                  << ((var == "drawdown" && !j) ? 0.0 : od[j].value) << '\n';
               if (!out.good()) {
                 std::cout << "PROBLEM AFTER" << std::endl;
               }
