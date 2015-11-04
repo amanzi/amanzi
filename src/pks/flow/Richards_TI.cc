@@ -333,6 +333,12 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
     CompositeVector& dwc_dp = *S_->GetFieldData("dwater_content_dpressure", "water_content");
 
     op_acc_->AddAccumulationTerm(*u->Data(), dwc_dp, dtp, "cell");
+ 
+    // estimate CNLS limiters
+    if (algebraic_water_content_balance_) {
+      const CompositeVector& wc = *S_->GetFieldData("water_content");
+      CalculateCNLSLimiter_(wc, dwc_dp, bdf1_dae->tol_solver());
+    }
   }
 
   // Add vapor diffusion. We assume that the corresponding local operator
@@ -371,6 +377,12 @@ double Richards_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   double error;
   error = ErrorNormSTOMP(*u->Data(), *du->Data());
 
+  // exact algebraic relation between saturation and Darcy flux
+  // requires to save the last increment.
+  if (algebraic_water_content_balance_) {
+    *cnls_limiter_->ViewComponent("dpre") = *du->Data()->ViewComponent("cell");
+  }
+ 
   return error;
 }
 
