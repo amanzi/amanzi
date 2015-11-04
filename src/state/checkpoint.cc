@@ -70,7 +70,6 @@ void Checkpoint::CreateFile(const int cycle) {
 
     link(ch_file.data(), ch_final.data());
   }
-
 };
 
 
@@ -80,7 +79,7 @@ void Checkpoint::Finalize() {
 
 
 void Checkpoint::WriteVector(const Epetra_MultiVector& vec,
-        const std::vector<std::string>& names ) const {
+                             const std::vector<std::string>& names ) const {
   if (names.size() < vec.NumVectors()) {
     Errors::Message m("Amanzi::Checkpoint::write_vector... not enough names were specified for the the components of the multi vector");
     Exceptions::amanzi_throw(m);
@@ -155,7 +154,6 @@ void Checkpoint::WriteObservations(ObservationData* obs_data)
       for (int k = 0; k < tmp.size(); ++k) {
         tmp_data[m++] = tmp[k].time;
         tmp_data[m++] = tmp[k].value;
-        std::cout << i << " " << k << " " << m << std::endl;
       }
     }
     checkpoint_output_->writeAttrReal(tmp_data, 2 * ndata, "obs_values");

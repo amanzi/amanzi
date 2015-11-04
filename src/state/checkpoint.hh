@@ -35,8 +35,8 @@ class Checkpoint : public IOEvent {
   void WriteAttributes(double time, double dt, int cycle) const;
   void WriteAttributes(double time, int cycle) const;
   void WriteObservations(ObservationData* obs_data);
-  void SetFinal(bool fnl){final_ = fnl;}
-  bool IsFinal(){return final_;}
+  void SetFinal(bool fnl) { final_ = fnl; }
+  bool IsFinal() { return final_; }
   void Finalize();
 
   void set_filebasename(std::string base) { filebasename_ = base; }

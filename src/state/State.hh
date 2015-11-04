@@ -345,10 +345,14 @@ double ReadCheckpoint(Epetra_MpiComm* comm,
                       std::string filename);
 
 double ReadCheckpointInitialTime(Epetra_MpiComm* comm,
-                      std::string filename);
+                                 std::string filename);
 
 int ReadCheckpointPosition(Epetra_MpiComm* comm,
-                      std::string filename);
+                           std::string filename);
+
+void ReadCheckpointObservations(Epetra_MpiComm* comm,
+                                std::string filename,
+                                Amanzi::ObservationData& obs_data);
 
 void DeformCheckpointMesh(const Teuchos::Ptr<State>& S);
 

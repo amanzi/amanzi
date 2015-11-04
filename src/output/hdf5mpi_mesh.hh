@@ -97,7 +97,9 @@ class HDF5_MPI {
   void writeAttrInt(int *value, int ndim, const std::string attrname);
   void writeAttrString(const std::string value, const std::string attrname);
   void readAttrReal(double &value, const std::string attrname);
+  void readAttrReal(double **value, int *ndim, const std::string attrname);
   void readAttrInt(int &value, const std::string attrname);
+  void readAttrInt(int **value, int *ndim, const std::string attrname);
   void readAttrString(std::string &value, const std::string attrname);
 
   // Write node data to HDF5 data file.
