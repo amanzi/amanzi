@@ -24,7 +24,7 @@ EnergyTest::EnergyTest(Teuchos::RCP<Teuchos::ParameterList> plist_,
 void EnergyTest::initialize() {
   // initialize energy
   initialize_owned();
-  initialize_darcy_flux();
+  initialize_mass_flux();
   EPK->initialize(S0.ptr());
 
   // initialize state, including darcy flux, sat, density, poro from parameter list
@@ -76,17 +76,17 @@ void EnergyTest::initialize_owned() {
   S0->GetField("thermal_conductivity", "energy")->set_initialized();
 }
 
-void EnergyTest::initialize_darcy_flux() {
+void EnergyTest::initialize_mass_flux() {
   const Epetra_BlockMap& fmap = mesh->face_map(true);
-  Epetra_MultiVector& darcy_flux = *S0->GetFieldData("darcy_flux", "state")
+  Epetra_MultiVector& mass_flux = *S0->GetFieldData("mass_flux", "state")
       ->ViewComponent("face", true);
 
   for (int f=fmap.MinLID(); f<=fmap.MaxLID(); f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
     const AmanziGeometry::Point& fc = mesh->face_centroid(f);
-    darcy_flux[0][f] = my_u(fc, 0.0) * normal;
+    mass_flux[0][f] = my_u(fc, 0.0) * normal;
   }
-  S0->GetField("darcy_flux", "state")->set_initialized();
+  S0->GetField("mass_flux", "state")->set_initialized();
 }
 
 void EnergyTest::evaluate_error_temp(double t, double* L1, double* L2) {

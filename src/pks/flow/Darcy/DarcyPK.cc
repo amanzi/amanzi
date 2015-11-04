@@ -22,7 +22,7 @@ DarcyPK::DarcyPK(Teuchos::ParameterList &flow_plist, Teuchos::RCP<State> &S,
   soln->PushBack(lambda_pressure_ptr);
 
   // Require flux for transport/etc.
-  S->require_field("darcy_flux", FIELD_LOCATION_FACE, "flow");
+  S->require_field("mass_flux", FIELD_LOCATION_FACE, "flow");
 
   // Diagnostic fields.
   S->require_field("darcy_velocity", FIELD_LOCATION_CELL, "flow", 3);
@@ -97,12 +97,12 @@ void DarcyPK::initialize(Teuchos::RCP<State> &S, Teuchos::RCP<TreeVector>& soln)
 
   // Derive the Darcy fluxes on faces
   double l1_error;
-  problem_->DeriveDarcyFlux(*pressure, *darcy_flux, l1_error);
+  problem_->DeriveDarcyFlux(*pressure, *mass_flux, l1_error);
   std::cout << "L1 norm of the Darcy flux discrepancy = " << l1_error << std::endl;
 
   // Update the state with these values
   S->set_field("pressure", "flow", *pressure);
-  S->set_field("darcy_flux", "flow", *darcy_flux);
+  S->set_field("mass_flux", "flow", *mass_flux);
   Teuchos::RCP<Epetra_MultiVector> velocity = S->get_field("darcy_velocity", "flow");
   problem_->DeriveDarcyVelocity(*solution, *velocity);
 };

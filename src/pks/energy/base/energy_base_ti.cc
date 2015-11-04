@@ -195,8 +195,9 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
     }
   } else {
     for (unsigned int c=0; c!=ncells; ++c) {
-      ASSERT(de_dT[0][c] > 1.e-10);
-      Acc_cells[c] += de_dT[0][c] / h;
+      //      ASSERT(de_dT[0][c] > 1.e-10);
+      // ?? Not using e_bar anymore apparently, though I didn't think we were ever.  Need a nonzero here to ensure not singlar.
+      Acc_cells[c] += std::max(de_dT[0][c], 1.e-12) / h;
     }
   }
 

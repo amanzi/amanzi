@@ -167,7 +167,7 @@ TEST(MPC_SUBSURFACE_ENERGY) {
   S->RequireField("pressure", "flow")->SetMesh(mesh)->SetGhosted()
       ->AddComponent("cell",AmanziMesh::CELL,1)->AddComponent("face",AmanziMesh::FACE,1);
 
-  S->RequireField("darcy_flux", "darcy_flux")->SetMesh(mesh)->SetGhosted()
+  S->RequireField("mass_flux", "mass_flux")->SetMesh(mesh)->SetGhosted()
       ->AddComponent("face",AmanziMesh::FACE,1);
   
   S->Setup();
@@ -181,8 +181,8 @@ TEST(MPC_SUBSURFACE_ENERGY) {
   temp_list.set("restart file", "test/checkpoint-mpc_subsurface.h5");
   S->GetField("temperature", "energy")->Initialize(temp_list);
 
-  S->GetFieldData("darcy_flux", "darcy_flux")->PutScalar(0.);
-  S->GetField("darcy_flux", "darcy_flux")->set_initialized();
+  S->GetFieldData("mass_flux", "mass_flux")->PutScalar(0.);
+  S->GetField("mass_flux", "mass_flux")->set_initialized();
   
   mpc.initialize(S.ptr());
   S->Initialize();

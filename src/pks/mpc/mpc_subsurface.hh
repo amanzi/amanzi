@@ -126,8 +126,8 @@ class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
   Key uw_kr_key_;
   Key hkr_key_;
   Key uw_hkr_key_;
-  Key darcy_flux_key_;
-  Key darcy_flux_dir_key_;
+  Key mass_flux_key_;
+  Key mass_flux_dir_key_;
   Key rho_key_;
   
   // EWC delegate
