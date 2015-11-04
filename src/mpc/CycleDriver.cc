@@ -71,11 +71,11 @@ double rss_usage() { // return ru_maxrss in MBytes
 CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
                          Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                          Epetra_MpiComm* comm,
-                         Amanzi::ObservationData& output_observations) :
+                         Amanzi::ObservationData& observations_data) :
     parameter_list_(glist),
     mesh_(mesh),
     comm_(comm),
-    output_observations_(output_observations),
+    observations_data_(observations_data),
     restart_requested_(false) {
 
   if (parameter_list_->isSublist("State")) {
@@ -143,7 +143,7 @@ void CycleDriver::Setup() {
   // create the observations
   if (parameter_list_->isSublist("Observation Data")) {
     Teuchos::ParameterList observation_plist = parameter_list_->sublist("Observation Data");
-    observations_ = Teuchos::rcp(new Amanzi::Unstructured_observations(observation_plist, output_observations_, comm_));
+    observations_ = Teuchos::rcp(new Amanzi::Unstructured_observations(observation_plist, observations_data_, comm_));
     if (coordinator_list_->isParameter("component names")) {
       Teuchos::Array<std::string> comp_names = coordinator_list_->get<Teuchos::Array<std::string> >("component names");
       int num_liquid = coordinator_list_->get<int>("number of liquid components", comp_names.size());
@@ -292,7 +292,7 @@ void CycleDriver::Initialize() {
 void CycleDriver::Finalize() {
   if (!checkpoint_->DumpRequested(S_->cycle(), S_->time())) {
     pk_->CalculateDiagnostics();
-    Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), 0.0, true);
+    Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), 0.0, true, &observations_data_);
   }
 }
 
@@ -768,7 +768,7 @@ void CycleDriver::WriteCheckpoint(double dt, bool force) {
       final = true;
     }
 
-    Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt, final);
+    Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt, final, &observations_data_);
     
     // if (force) pk_->CalculateDiagnostics();
     Teuchos::OSTab tab = vo_->getOSTab();

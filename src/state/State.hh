@@ -38,6 +38,7 @@
 
 #include "visualization.hh"
 #include "checkpoint.hh"
+#include "ObservationData.hh"
 
 #include "Field.hh"
 #include "Field_Scalar.hh"
@@ -336,7 +337,8 @@ void WriteVis(const Teuchos::Ptr<Visualization>& vis,
 void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& ckp,
                      const Teuchos::Ptr<State>& S,
                      double dt,
-                     bool final=false);
+                     bool final = false,
+                     Amanzi::ObservationData* obs_data = NULL);
 
 double ReadCheckpoint(Epetra_MpiComm* comm,
                       const Teuchos::Ptr<State>& S,

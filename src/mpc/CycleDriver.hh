@@ -44,7 +44,7 @@ class CycleDriver {
   CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
               Teuchos::RCP<AmanziMesh::Mesh>& mesh,
               Epetra_MpiComm* comm,
-              Amanzi::ObservationData& output_observations);
+              Amanzi::ObservationData& observations_data);
 
   // PK methods
   void Setup();
@@ -95,7 +95,7 @@ class CycleDriver {
   Epetra_MpiComm* comm_;
 
   // observations
-  Amanzi::ObservationData&  output_observations_;
+  Amanzi::ObservationData& observations_data_;
   Teuchos::RCP<Amanzi::Unstructured_observations> observations_;
 
   // vis and checkpointing

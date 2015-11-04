@@ -309,6 +309,21 @@ The initialization sublist of *State* is named *initial conditions*.
   </ParameterList>
 
 
+Primary and derived fields
+--------------------------
+
+* Primary fields
+
+  * pressure [Pa]
+  * total component concentration [:math:`mol/m^3`]
+  * temperature [K]
+
+* Derived fields
+
+  * saturation [-]
+  * hydraulic head [m]
+
+
 Field evaluators
 ----------------
 
@@ -1603,10 +1618,17 @@ The remaining *Flow* parameters are
   for calculating absolute permeability. The available options are `"cartesian`"
   and `"layer`".
 
-* `"clipping parameters`"[list] defines how solution increment calculated by a nonlinear 
+* `"clipping parameters`" [list] defines how solution increment calculated by a nonlinear 
   solver is modified e.g., clipped.
 
+  * `"maximum saturation change`" [double] Default is 0.25.
+
+  * `"pressure damping factor`" [double] Default is 0.5.
+
 * `"plot time history`" [bool] produces an ASCII file with the time history. Default is `"false`".
+
+* `"algebraic water content balance`" [bool] uses algebraic correction to enforce consistency of 
+  water content and Darcy fluxes. It leads to a monotone transport. Default is *false*.
 
 .. code-block:: xml
 
@@ -1617,6 +1639,7 @@ The remaining *Flow* parameters are
      </ParameterList>	
 
      <Parameter name="plot time history" type="bool" value="false"/>
+     <Parameter name="algebraic water content balance" type="bool" value="false"/>
    </ParameterList>	
 
 

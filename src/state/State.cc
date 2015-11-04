@@ -1038,7 +1038,8 @@ void WriteVis(const Teuchos::Ptr<Visualization>& vis,
 void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk,
                      const Teuchos::Ptr<State>& S,
                      double dt,
-                     bool final) {
+                     bool final,
+                     Amanzi::ObservationData* obs_data) {
   if ( !chk->is_disabled() ) {
 
     chk->SetFinal(final);
@@ -1049,6 +1050,7 @@ void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk,
     }
 
     chk->WriteAttributes(S->time(), dt, S->cycle(), S->position());
+    chk->WriteObservations(obs_data);
     
     chk->Finalize();
   }
