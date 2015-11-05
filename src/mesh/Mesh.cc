@@ -1576,10 +1576,24 @@ int Mesh::build_columns() const {
       }
 
       // We have a matching botnode and topnode - now match up the rest
+      // even or odd handedness?
+      double even_odd_product = face_normal(top_face)[2] * face_normal(bot_face)[2];
+      ASSERT(std::abs(even_odd_product) > 0);
+      int even_odd = even_odd_product >= 0. ? 1 : -1;
+      
       for (int k = 0; k < nfvbot; k++) {
         Entity_ID botnode = botnodes[k];
-        Entity_ID topnode = topnodes[(ind+k)%nfvbot];
+	int top_i = (ind+even_odd*k)%nfvbot;
+	if (top_i < 0) top_i += nfvbot;
+        Entity_ID topnode = topnodes[top_i];
         node_nodeabove[botnode] = topnode;          
+
+	// ASSERT used in debugging
+	// AmanziGeometry::Point bc;
+	// AmanziGeometry::Point tc;
+	// node_get_coordinates(botnode, &bc);
+	// node_get_coordinates(topnode, &tc);
+	// ASSERT(std::abs(bc[0]-tc[0]) + std::abs(bc[1]-tc[1]) < 1.e-10);
       }
 
       bot_face = top_face;
