@@ -47,7 +47,7 @@ public:
   // helper evaluation methods
   void commit_step(double dt);
   void initialize_owned();
-  void initialize_darcy_flux();
+  void initialize_mass_flux();
   void evaluate_error_temp(double t, double* L1, double* L2);
 };
 

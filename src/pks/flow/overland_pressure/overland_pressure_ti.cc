@@ -211,7 +211,7 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   Teuchos::RCP<const CompositeVector> pres_elev = S_next_->GetFieldData("pres_elev");
   preconditioner_diff_->UpdateMatrices(Teuchos::null, pres_elev.ptr());
   if (jacobian_ && preconditioner_->RangeMap().HasComponent("face")) {
-    Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData("surface-flux", name_);
+    Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData("surface-mass_flux", name_);
     preconditioner_diff_->UpdateFlux(*pres_elev, *flux);
     preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
   }
@@ -424,9 +424,9 @@ double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       }
       
     } else {
-      Errors::Message msg;
-      msg << "Unused error component \"" << *comp << "\" in conserved quantity error norm.";
-      Exceptions::amanzi_throw(msg);
+      double norm;
+      dvec_v.Norm2(&norm);
+      ASSERT(norm < 1.e-15);
     }
     
     // Write out Inf norms too.

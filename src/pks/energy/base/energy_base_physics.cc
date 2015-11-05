@@ -148,5 +148,31 @@ void EnergyBase::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
   }
 }
 
+// -------------------------------------------------------------
+// Plug enthalpy into the boundary faces manually.
+// This will be removed once boundary faces exist.
+// -------------------------------------------------------------
+void EnergyBase::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S) {
+  // put the boundary fluxes in faces for Dirichlet BCs.
+  S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S, name_);
+  
+  const Epetra_MultiVector& enth_bf =
+    *S->GetFieldData(enthalpy_key_)->ViewComponent("boundary_face",false);
+
+  const Epetra_Map& vandalay_map = mesh_->exterior_face_map();
+  const Epetra_Map& face_map = mesh_->face_map(false);
+  
+  int nbfaces = enth_bf.MyLength();
+  for (int bf=0; bf!=nbfaces; ++bf) {
+    AmanziMesh::Entity_ID f = face_map.LID(vandalay_map.GID(bf));
+
+    if (bc_markers_adv_[f] == Operators::OPERATOR_BC_DIRICHLET) {
+      bc_values_adv_[f] = enth_bf[0][bf];
+    }
+  }
+}
+  
+
+  
 } //namespace Energy
 } //namespace Amanzi

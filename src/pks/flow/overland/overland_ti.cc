@@ -86,7 +86,11 @@ void OverlandFlow::Functional( double t_old,
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
 #if DEBUG_FLAG
-  db_->WriteVector("k_s", S_next_->GetFieldData("upwind_overland_conductivity").ptr(), true);
+  vnames.resize(2); vecs.resize(2);
+  vnames[0] = "k_s"; vnames[1] = "uw k_s";
+  vecs[0] = S_next_->GetFieldData("overland_conductivity").ptr();
+  vecs[1] = S_next_->GetFieldData("upwind_overland_conductivity").ptr();
+  db_->WriteVectors(vnames, vecs, true);
   db_->WriteVector("res (diff)", res.ptr(), true);
 #endif
 
@@ -173,7 +177,7 @@ void OverlandFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
   Teuchos::RCP<const CompositeVector> pres_elev = S_next_->GetFieldData("pres_elev");
   preconditioner_diff_->UpdateMatrices(Teuchos::null, pres_elev.ptr());
   if (jacobian_ && preconditioner_->RangeMap().HasComponent("face")) {
-    Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData("surface-flux", name_);
+    Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData("surface-mass_flux", name_);
     preconditioner_diff_->UpdateFlux(*pres_elev, *flux);
     preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
   }

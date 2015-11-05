@@ -31,13 +31,29 @@ namespace Amanzi {
 
 // -- Initialize owned (dependent) variables.
 void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
+  // set up keys
+  domain_name_ = plist_->get<std::string>("domain name", "domain");
+  temp_key_ = getKey(domain_name_, "temperature");
+  pres_key_ = getKey(domain_name_, "pressure");
+  e_key_ = getKey(domain_name_, "energy");
+  wc_key_ = getKey(domain_name_, "water_content");
+  tc_key_ = getKey(domain_name_, "thermal_conductivity");
+  uw_tc_key_ = getKey(domain_name_, "upwind_thermal_conductivity");
+  kr_key_ = getKey(domain_name_, "relative_permeability");
+  uw_kr_key_ = getKey(domain_name_, "upwind_relative_permeability");
+  hkr_key_ = getKey(domain_name_, "enthalpy_times_relative_permeability");
+  uw_hkr_key_ = getKey(domain_name_, "upwind_enthalpy_times_relative_permeability");
+  mass_flux_key_ = getKey(domain_name_, "mass_flux");
+  mass_flux_dir_key_ = getKey(domain_name_, "mass_flux_direction");
+  rho_key_ = getKey(domain_name_, "mass_density_liquid");
+
   // supress energy's vision of advective terms as we can do better
   Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
   plist_->sublist("PKs").sublist(pk_order[1]).set("supress advective terms in preconditioner", true);
   
   // set up the sub-pks
   StrongMPC<PKPhysicalBDFBase>::setup(S);
-  mesh_ = S->GetMesh("domain");
+  mesh_ = S->GetMesh(domain_name_);
 
   // set up debugger
   db_ = sub_pks_[0]->debugger();
@@ -56,7 +72,8 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
   preconditioner_->SetOperatorBlock(1, 1, pcB);
   
   // select the method used for preconditioning
-  std::string precon_string = plist_->get<std::string>("preconditioner type", "picard");
+  std::string precon_string = plist_->get<std::string>("preconditioner type",
+                                                       "picard");
   if (precon_string == "none") {
     precon_type_ = PRECON_NONE;
   } else if (precon_string == "block diagonal") {
@@ -86,13 +103,13 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
     // -- derivatives of kr with respect to temperature
     if (!plist_->get<bool>("supress Jacobian terms: d div q / dT", false)) {
       // need to upwind dkr/dT
-      Key dkrdT_key = getDerivKey("upwind_relative_permeability", "temperature");
+      Key dkrdT_key = getDerivKey(uw_kr_key_, temp_key_);
       S->RequireField(dkrdT_key, name_)
           ->SetMesh(mesh_)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
       S->GetField(dkrdT_key,name_)->set_io_vis(false);
       uw_dkrdT_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-              getDerivKey("relative_permeability", "temperature"),
-              dkrdT_key, "darcy_flux_direction", 1.e-8));
+              getDerivKey(kr_key_, temp_key_),
+              dkrdT_key, mass_flux_dir_key_, 1.e-8));
 
       // set up the operator
       Teuchos::ParameterList divq_plist(plist_->sublist("PKs").sublist(pk_order[0]).sublist("Diffusion PC"));
@@ -152,9 +169,9 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
       // need a field, evaluator, and upwinding for h * kr * rho/mu
       // -- first the evaluator
       Teuchos::ParameterList hkr_eval_list;
-      hkr_eval_list.set("evaluator name", "enthalpy_times_relative_permeability");
+      hkr_eval_list.set("evaluator name", hkr_key_);
       Teuchos::Array<std::string> deps(2);
-      deps[0] = "enthalpy"; deps[1] = "relative_permeability";
+      deps[0] = "enthalpy"; deps[1] = kr_key_;
       hkr_eval_list.set("evaluator dependencies", deps);
       Teuchos::RCP<FieldEvaluator> hkr_eval =
           Teuchos::rcp(new Relations::MultiplicativeEvaluator(hkr_eval_list));
@@ -162,24 +179,24 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
       // -- now the field
       names2[1] = "boundary_face";
       locations2[1] = AmanziMesh::BOUNDARY_FACE;
-      S->RequireField("enthalpy_times_relative_permeability")->SetMesh(mesh_)->SetGhosted()
+      S->RequireField(hkr_key_)->SetMesh(mesh_)->SetGhosted()
           ->AddComponents(names2, locations2, num_dofs2);
-      S->SetFieldEvaluator("enthalpy_times_relative_permeability", hkr_eval);
+      S->SetFieldEvaluator(hkr_key_, hkr_eval);
 
       // -- and the upwinded field
-      S->RequireField("numerical_enthalpy_times_relative_permeability", name_)
+      S->RequireField(uw_hkr_key_, name_)
           ->SetMesh(mesh_)->SetGhosted()
           ->SetComponent("face", AmanziMesh::FACE, 1);
-      S->GetField("numerical_enthalpy_times_relative_permeability",name_)->set_io_vis(false);
-      S->RequireField("dnumerical_enthalpy_times_relative_permeability_dpressure", name_)
+      S->GetField(uw_hkr_key_,name_)->set_io_vis(false);
+      S->RequireField(getDerivKey(uw_hkr_key_, pres_key_), name_)
           ->SetMesh(mesh_)->SetGhosted()
           ->SetComponent("face", AmanziMesh::FACE, 1);
-      S->GetField("dnumerical_enthalpy_times_relative_permeability_dpressure",name_)
+      S->GetField(getDerivKey(uw_hkr_key_, pres_key_),name_)
           ->set_io_vis(false);
-      S->RequireField("dnumerical_enthalpy_times_relative_permeability_dtemperature", name_)
+      S->RequireField(getDerivKey(uw_hkr_key_, temp_key_), name_)
           ->SetMesh(mesh_)->SetGhosted()
           ->SetComponent("face", AmanziMesh::FACE, 1);
-      S->GetField("dnumerical_enthalpy_times_relative_permeability_dtemperature",name_)
+      S->GetField(getDerivKey(uw_hkr_key_, temp_key_), name_)
           ->set_io_vis(false);
 
       // -- and the upwinding
@@ -192,14 +209,14 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
         Exceptions::amanzi_throw(msg);
       }
       upwinding_hkr_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-              "enthalpy_times_relative_permeability",
-              "numerical_enthalpy_times_relative_permeability", "darcy_flux_direction", 1.e-8));
+              hkr_key_, uw_hkr_key_, mass_flux_dir_key_, 1.e-8));
       upwinding_dhkr_dp_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-              "denthalpy_times_relative_permeability_dpressure",
-              "dnumerical_enthalpy_times_relative_permeability_dpressure", "darcy_flux_direction", 1.e-8));
+              getDerivKey(hkr_key_, pres_key_),
+              getDerivKey(uw_hkr_key_, pres_key_),                                                 mass_flux_dir_key_, 1.e-8));
       upwinding_dhkr_dT_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-              "denthalpy_times_relative_permeability_dtemperature",
-              "dnumerical_enthalpy_times_relative_permeability_dtemperature", "darcy_flux_direction", 1.e-8));
+              getDerivKey(hkr_key_, temp_key_),
+              getDerivKey(uw_hkr_key_, temp_key_),
+              mass_flux_dir_key_, 1.e-8));
     }
 
     // -- derivatives of energy with respect to pressure
@@ -232,7 +249,7 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
   if (plist_->isSublist("ewc delegate")) {
     Teuchos::RCP<Teuchos::ParameterList> sub_ewc_list = Teuchos::sublist(plist_, "ewc delegate");
     sub_ewc_list->set("PK name", name_);
-    sub_ewc_list->set("domain key", "");
+    sub_ewc_list->set("domain key", domain_name_);
     ewc_ = Teuchos::rcp(new MPCDelegateEWCSubsurface(*sub_ewc_list));
     Teuchos::RCP<PermafrostModel> model = Teuchos::rcp(new PermafrostModel());
     ewc_->set_model(model);
@@ -249,7 +266,7 @@ void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
   ASSERT(richards_pk_ != Teuchos::null);
 
   if (ddivq_dT_ != Teuchos::null) {
-    Key dkrdT_key = getDerivKey("upwind_relative_permeability", "temperature");
+    Key dkrdT_key = getDerivKey(uw_kr_key_, temp_key_);
     S->GetFieldData(dkrdT_key,name_)->PutScalar(1.0);
     S->GetField(dkrdT_key,name_)->set_initialized();
 
@@ -266,12 +283,12 @@ void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
   }
 
   if (ddivhq_dp_ != Teuchos::null) {
-    S->GetFieldData("numerical_enthalpy_times_relative_permeability", name_)->PutScalar(1.);
-    S->GetField("numerical_enthalpy_times_relative_permeability", name_)->set_initialized();
-    S->GetFieldData("dnumerical_enthalpy_times_relative_permeability_dpressure", name_)->PutScalar(1.);
-    S->GetField("dnumerical_enthalpy_times_relative_permeability_dpressure", name_)->set_initialized();
-    S->GetFieldData("dnumerical_enthalpy_times_relative_permeability_dtemperature", name_)->PutScalar(1.);
-    S->GetField("dnumerical_enthalpy_times_relative_permeability_dtemperature", name_)->set_initialized();
+    S->GetFieldData(uw_hkr_key_, name_)->PutScalar(1.);
+    S->GetField(uw_hkr_key_, name_)->set_initialized();
+    S->GetFieldData(getDerivKey(uw_hkr_key_, pres_key_), name_)->PutScalar(1.);
+    S->GetField(getDerivKey(uw_hkr_key_, pres_key_), name_)->set_initialized();
+    S->GetFieldData(getDerivKey(uw_hkr_key_, temp_key_), name_)->PutScalar(1.);
+    S->GetField(getDerivKey(uw_hkr_key_, temp_key_), name_)->set_initialized();
 
     Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
     AmanziGeometry::Point g(3);
@@ -334,9 +351,9 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
     // -- dkr/dT
     if (ddivq_dT_ != Teuchos::null) {
       // -- update and upwind d kr / dT
-      S_next_->GetFieldEvaluator("relative_permeability")
-          ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "temperature");
-      Key dkrdT_key = getDerivKey("upwind_relative_permeability", "temperature");
+      S_next_->GetFieldEvaluator(kr_key_)
+          ->HasFieldDerivativeChanged(S_next_.ptr(), name_, temp_key_);
+      Key dkrdT_key = getDerivKey(uw_kr_key_, temp_key_);
       Teuchos::RCP<CompositeVector> dkrdT_uw =
           S_next_->GetFieldData(dkrdT_key, name_);
       dkrdT_uw->PutScalar(0.);
@@ -347,9 +364,9 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       //      std::cout << "Min/Max dkrdT = " << min << ", " << max << std::endl;
 
       // form the operator
-      Teuchos::RCP<const CompositeVector> kr_uw = S_next_->GetFieldData("upwind_relative_permeability");
-      Teuchos::RCP<const CompositeVector> flux = S_next_->GetFieldData("darcy_flux");
-      Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData("mass_density_liquid");
+      Teuchos::RCP<const CompositeVector> kr_uw = S_next_->GetFieldData(uw_kr_key_);
+      Teuchos::RCP<const CompositeVector> flux = S_next_->GetFieldData(mass_flux_key_);
+      Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData(rho_key_);
 
       ddivq_dT_->SetDensity(rho);
       ddivq_dT_->SetScalarCoefficient(kr_uw, dkrdT_uw);
@@ -358,9 +375,10 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
     }
 
     // -- dWC/dT diagonal term
-    S_next_->GetFieldEvaluator("water_content")
-        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "temperature");
-    Teuchos::RCP<const CompositeVector> dWC_dT = S_next_->GetFieldData("dwater_content_dtemperature");
+    S_next_->GetFieldEvaluator(wc_key_)
+      ->HasFieldDerivativeChanged(S_next_.ptr(), name_, temp_key_);
+    Teuchos::RCP<const CompositeVector> dWC_dT =
+      S_next_->GetFieldData(getDerivKey(wc_key_, temp_key_));
     dWC_dT_->AddAccumulationTerm(*dWC_dT->ViewComponent("cell", false), h);
 
     // std::cout << "1/h * DWC/DT" << std::endl;
@@ -370,10 +388,10 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
     // dE / dp block
     // -- d Kappa / dp
     if (ddivKgT_dp_ != Teuchos::null) {
-      S_next_->GetFieldEvaluator("thermal_conductivity")
-          ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "pressure");
+      S_next_->GetFieldEvaluator(tc_key_)
+          ->HasFieldDerivativeChanged(S_next_.ptr(), name_, pres_key_);
       Teuchos::RCP<const CompositeVector> dKdp = S_next_->GetFieldData("dthermal_conductivity_dpressure");
-      Teuchos::RCP<const CompositeVector> Kappa = S_next_->GetFieldData("numerical_thermal_conductivity");
+      Teuchos::RCP<const CompositeVector> Kappa = S_next_->GetFieldData(uw_tc_key_);
       ddivKgT_dp_->SetScalarCoefficient(Kappa, dKdp);
       ASSERT(false); // this UpdateMatrices call does not work?
       ddivKgT_dp_->UpdateMatrices(Teuchos::null, up->SubVector(1)->Data().ptr());
@@ -384,36 +402,39 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
     if (ddivhq_dp_ != Teuchos::null) {
       // Update and upwind enthalpy * kr * rho/mu
       // -- update values
-      S_next_->GetFieldEvaluator("enthalpy_times_relative_permeability")
+      S_next_->GetFieldEvaluator(hkr_key_)
           ->HasFieldChanged(S_next_.ptr(), name_);
-      S_next_->GetFieldEvaluator("enthalpy_times_relative_permeability")
-          ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "pressure");
-      S_next_->GetFieldEvaluator("enthalpy_times_relative_permeability")
-          ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "temperature");
+      S_next_->GetFieldEvaluator(hkr_key_)
+          ->HasFieldDerivativeChanged(S_next_.ptr(), name_, pres_key_);
+      S_next_->GetFieldEvaluator(hkr_key_)
+          ->HasFieldDerivativeChanged(S_next_.ptr(), name_, temp_key_);
       Teuchos::RCP<const CompositeVector> enth_kr =
-          S_next_->GetFieldData("enthalpy_times_relative_permeability");
+        S_next_->GetFieldData(hkr_key_);
       Teuchos::RCP<const CompositeVector> denth_kr_dp =
-          S_next_->GetFieldData("denthalpy_times_relative_permeability_dpressure");
+        S_next_->GetFieldData(getDerivKey(hkr_key_, pres_key_));
       Teuchos::RCP<const CompositeVector> denth_kr_dT =
-          S_next_->GetFieldData("denthalpy_times_relative_permeability_dtemperature");
+        S_next_->GetFieldData(getDerivKey(hkr_key_, temp_key_));
 
       // -- zero target data (may be unnecessary?)
       Teuchos::RCP<CompositeVector> enth_kr_uw =
-          S_next_->GetFieldData("numerical_enthalpy_times_relative_permeability", name_);
+        S_next_->GetFieldData(uw_hkr_key_, name_);
       enth_kr_uw->PutScalar(0.);
       Teuchos::RCP<CompositeVector> denth_kr_dp_uw =
-          S_next_->GetFieldData("dnumerical_enthalpy_times_relative_permeability_dpressure", name_);
+        S_next_->GetFieldData(getDerivKey(uw_hkr_key_, pres_key_), name_);
       denth_kr_dp_uw->PutScalar(0.);
       Teuchos::RCP<CompositeVector> denth_kr_dT_uw =
-          S_next_->GetFieldData("dnumerical_enthalpy_times_relative_permeability_dtemperature", name_);
+        S_next_->GetFieldData(getDerivKey(uw_hkr_key_, temp_key_), name_);
       denth_kr_dT_uw->PutScalar(0.);
 
       // -- copy boundary faces into upwinded vector
-      enth_kr_uw->ViewComponent("face",false)->Export(*enth_kr->ViewComponent("boundary_face",false),
+      enth_kr_uw->ViewComponent("face",false)
+        ->Export(*enth_kr->ViewComponent("boundary_face",false),
               mesh_->exterior_face_importer(), Insert);
-      denth_kr_dp_uw->ViewComponent("face",false)->Export(*denth_kr_dp->ViewComponent("boundary_face",false),
+      denth_kr_dp_uw->ViewComponent("face",false)
+        ->Export(*denth_kr_dp->ViewComponent("boundary_face",false),
               mesh_->exterior_face_importer(), Insert);
-      denth_kr_dT_uw->ViewComponent("face",false)->Export(*denth_kr_dT->ViewComponent("boundary_face",false),
+      denth_kr_dT_uw->ViewComponent("face",false)
+        ->Export(*denth_kr_dT->ViewComponent("boundary_face",false),
               mesh_->exterior_face_importer(), Insert);
 
       // -- upwind      
@@ -434,8 +455,8 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
                 mesh_->exterior_face_importer(), Insert);
       }
       
-      Teuchos::RCP<const CompositeVector> flux = S_next_->GetFieldData("darcy_flux");
-      Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData("mass_density_liquid");
+      Teuchos::RCP<const CompositeVector> flux = S_next_->GetFieldData(mass_flux_key_);
+      Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData(rho_key_);
 
       // form the operator: pressure component
       ddivhq_dp_->SetDensity(rho);
@@ -460,9 +481,10 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
     }
 
     // -- dWC/dT diagonal term
-    S_next_->GetFieldEvaluator("energy")
-        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "pressure");
-    Teuchos::RCP<const CompositeVector> dE_dp = S_next_->GetFieldData("denergy_dpressure");
+    S_next_->GetFieldEvaluator(e_key_)
+        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, pres_key_);
+    Teuchos::RCP<const CompositeVector> dE_dp =
+      S_next_->GetFieldData(getDerivKey(e_key_, pres_key_));
     dE_dp_->AddAccumulationTerm(*dE_dp->ViewComponent("cell", false), h);
 
     // std::cout << "1/h * DE/Dp" << std::endl;

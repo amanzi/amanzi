@@ -42,6 +42,11 @@ void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const Tree
   Teuchos::RCP<const CompositeVector> rel_perm =
       S_next_->GetFieldData(uw_coef_key_);
   preconditioner_->Init();
+
+  S_next_->GetFieldEvaluator(mass_dens_key_)->HasFieldChanged(S_next_.ptr(), name_);
+  Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData(mass_dens_key_);
+  preconditioner_diff_->SetDensity(rho);
+
   preconditioner_diff_->SetScalarCoefficient(rel_perm, Teuchos::null);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 

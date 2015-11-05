@@ -6,6 +6,7 @@ ATS
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 ------------------------------------------------------------------------- */
+#include "boost/algorithm/string/predicate.hpp"
 
 #include "energy_bc_factory.hh"
 #include "advection_factory.hh"
@@ -16,6 +17,7 @@ Author: Ethan Coon
 #include "upwind_arithmetic_mean.hh"
 #include "upwind_total_flux.hh"
 #include "upwind_gravity_flux.hh"
+#include "enthalpy_evaluator.hh"
 
 #include "composite_vector_function.hh"
 #include "composite_vector_function_factory.hh"
@@ -44,24 +46,23 @@ EnergyBase::EnergyBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
     flux_exists_(true),
     implicit_advection_(true) {
 
-//I-CHANGED
-//---
-if (!plist_->isParameter("primary variable key"))
+  if (!plist_->isParameter("primary variable key"))
     plist_->set("primary variable key", "temperature");
-if (!plist_->isParameter("conserved quantity suffix"))
-  plist_->set("conserved quantity suffix", "energy");
-//--
+  if (!plist_->isParameter("conserved quantity suffix"))
+    plist_->set("conserved quantity suffix", "energy");
+
   // set a default absolute tolerance
-/*  if (!plist_->isParameter("absolute error tolerance")) {
-    std::string domain = plist_->get<std::string>("domain name", "domain");
-    if (domain == "domain") {    
-      plist_->set("absolute error tolerance", .5 * .1 * 55000. * 76.e-6); // phi * s * nl * u at 1C in MJ/mol
-    } else if (domain == "surface") {
-      plist_->set("absolute error tolerance", .01 * 55000. * 76.e-6); // h * nl * u at 1C in MJ/mol
+  if (!plist_->isParameter("absolute error tolerance")) {
+    if (domain_ == "surface") {
+      // h * nl * u at 1C in MJ/mol
+      plist_->set("absolute error tolerance", .01 * 55000. * 76.e-6);
+    } else if ((domain_ == "domain") || (boost::starts_with(domain_, "column"))) {
+      // phi * s * nl * u at 1C in MJ/mol
+      plist_->set("absolute error tolerance", .5 * .1 * 55000. * 76.e-6);
     } else {
       ASSERT(0);
     }
-    }*/
+  }
 }
 
 
@@ -93,7 +94,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   }
   if (flux_key_.empty()) {
     flux_key_ = plist_->get<std::string>("flux key",
-            getKey(domain_, "darcy_flux"));
+            getKey(domain_, "mass_flux"));
   }
   if (energy_flux_key_.empty()) {
     energy_flux_key_ = plist_->get<std::string>("energy flux key",
@@ -150,7 +151,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
   // -- nonlinear coefficient
   std::string method_name = plist_->get<std::string>("upwind conductivity method",
-          "cell centered");
+          "arithmetic mean");
   if (method_name == "cell centered") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindCellCentered(name_,
             conductivity_key_, uw_conductivity_key_));
@@ -235,6 +236,17 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
       lin_solver_ = preconditioner_;
     }
   }  
+
+  // -- advection of enthalpy
+  S->RequireField(enthalpy_key_)->SetMesh(mesh_)
+    ->SetGhosted()
+    ->AddComponent("cell", AmanziMesh::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+  Teuchos::ParameterList enth_plist = plist_->sublist("enthalpy evaluator");
+  enth_plist.set("enthalpy key", enthalpy_key_);
+  Teuchos::RCP<EnthalpyEvaluator> enth =
+    Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
+  S->SetFieldEvaluator(enthalpy_key_, enth);
 
   // source terms
   is_source_term_ = plist_->get<bool>("source term");
@@ -520,19 +532,6 @@ void EnergyBase::UpdateBoundaryConditions_(
 };
 
 
-// -----------------------------------------------------------------------------
-// Add a boundary marker to owned faces.
-// -----------------------------------------------------------------------------
-void EnergyBase::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temp) {
-  Epetra_MultiVector& temp_f = *temp->ViewComponent("face",true);
-  unsigned int nfaces = temp->size("face",true);
-  for (unsigned int f=0; f!=nfaces; ++f) {
-    if (bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      temp_f[0][f] = bc_values_[f];
-    }
-  }
-};
-
 
 // -----------------------------------------------------------------------------
 // Check admissibility of the solution guess.
@@ -635,13 +634,21 @@ bool EnergyBase::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
 // -----------------------------------------------------------------------------
 bool EnergyBase::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
         Teuchos::RCP<TreeVector> u) {
-
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Modifying predictor:" << std::endl;
 
-  bool modified = false;
+  // update boundary conditions
+  bc_temperature_->Compute(S_next_->time());
+  bc_flux_->Compute(S_next_->time());
+  UpdateBoundaryConditions_(S_next_.ptr());
   
+  // push Dirichlet data into predictor
+  if (u->Data()->HasComponent("boundary_cell")) {
+    ApplyBoundaryConditions_(u->Data().ptr());
+  }
+
+  bool modified = false;
   if (modify_predictor_for_freezing_) {
     const Epetra_MultiVector& u0_c = *u0->Data()->ViewComponent("cell",false);
     Epetra_MultiVector& u_c = *u->Data()->ViewComponent("cell",false);

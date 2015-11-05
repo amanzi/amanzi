@@ -129,7 +129,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   upwinding_ = upwfactory.Create(cond_plist, name_,
           "overland_conductivity", "upwind_overland_conductivity",
-          "surface-flux_direction");
+          "surface-mass_flux_direction");
 
   // -- require the data on appropriate locations
   std::string coef_location = upwinding_->CoefficientLocation();
@@ -164,7 +164,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   face_matrix_diff_->SetScalarCoefficient(Teuchos::null, Teuchos::null);
   face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  S->RequireField("surface-flux_direction", name_)->SetMesh(mesh_)->SetGhosted()
+  S->RequireField("surface-mass_flux_direction", name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("face", AmanziMesh::FACE, 1);
   
   // -- create the operators for the preconditioner
@@ -202,7 +202,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
       upwinding_dkdp_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
                                         "doverland_conductivity_dponded_depth",
                                         "dupwind_overland_conductivity_dponded_depth",
-                                        "surface-flux_direction", 1.e-8));
+                                        "surface-mass_flux_direction", 1.e-8));
     }
   }
   
@@ -215,7 +215,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   if (coupled_to_subsurface_via_head_) {
     // -- source term from subsurface, filled in by evaluator,
-    //    which picks the fluxes from "darcy_flux" field.
+    //    which picks the fluxes from "mass_flux" field.
     S->RequireFieldEvaluator("surface_subsurface_flux");
     S->RequireField("surface_subsurface_flux")
         ->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -246,7 +246,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   S->RequireField(key_, name_)->Update(matrix_->RangeMap())->SetGhosted();
 
   // fluxes
-  S->RequireField("surface-flux", name_)->SetMesh(mesh_)->SetGhosted()
+  S->RequireField("surface-mass_flux", name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("face", AmanziMesh::FACE, 1);
 
 };
@@ -427,9 +427,9 @@ void OverlandPressureFlow::initialize(const Teuchos::Ptr<State>& S) {
     S->GetField("dupwind_overland_conductivity_dponded_depth",name_)->set_initialized();
   }
 
-  S->GetField("surface-flux", name_)->set_initialized();
-  S->GetFieldData("surface-flux_direction", name_)->PutScalar(0.);
-  S->GetField("surface-flux_direction", name_)->set_initialized();
+  S->GetField("surface-mass_flux", name_)->set_initialized();
+  S->GetFieldData("surface-mass_flux_direction", name_)->PutScalar(0.);
+  S->GetField("surface-mass_flux_direction", name_)->set_initialized();
   //  S->GetField("surface-velocity", name_)->set_initialized();
 };
 
@@ -473,7 +473,7 @@ void OverlandPressureFlow::commit_state(double dt, const Teuchos::RCP<State>& S)
   
   // derive the fluxes
   Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
-  Teuchos::RCP<CompositeVector> flux = S->GetFieldData("surface-flux", name_);
+  Teuchos::RCP<CompositeVector> flux = S->GetFieldData("surface-mass_flux", name_);
   matrix_diff_->UpdateFlux(*potential, *flux);
 
 };
@@ -511,7 +511,7 @@ bool OverlandPressureFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S)
 
     // update the direction of the flux -- note this is NOT the flux
     Teuchos::RCP<CompositeVector> flux_dir =
-        S->GetFieldData("surface-flux_direction", name_);
+        S->GetFieldData("surface-mass_flux_direction", name_);
     Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData("pres_elev");
     face_matrix_diff_->UpdateFlux(*pres_elev, *flux_dir);
 

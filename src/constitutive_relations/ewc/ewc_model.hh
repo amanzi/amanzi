@@ -27,7 +27,7 @@ class EWCModel {
 
  public:
   virtual bool Freezing(double T, double p) = 0;
-  virtual void InitializeModel(const Teuchos::Ptr<State>& S) = 0;
+  virtual void InitializeModel(const Teuchos::Ptr<State>& S, Teuchos::ParameterList& plist) = 0;
   virtual void UpdateModel(const Teuchos::Ptr<State>& S, int c) = 0;
 
   virtual int Evaluate(double T, double p, double& energy, double& wc) = 0;

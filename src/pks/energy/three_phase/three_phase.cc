@@ -28,16 +28,6 @@ void ThreePhase::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(energy_key_);
 
-  
-  // -- advection of enthalpy
-  S->RequireField(enthalpy_key_)->SetMesh(mesh_)
-    ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList enth_plist = plist_->sublist("enthalpy evaluator");
-  enth_plist.set("enthalpy key", enthalpy_key_);
-  Teuchos::RCP<EnthalpyEvaluator> enth =
-    Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
-  S->SetFieldEvaluator(enthalpy_key_, enth);
-
   // -- thermal conductivity
   S->RequireField(conductivity_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);

@@ -43,16 +43,18 @@ class PermafrostWaterContent : public SecondaryVariableFieldEvaluator {
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
-  Key phi_key;
-  Key sl_key;
-  Key mdl_key;
-  Key si_key;
-  Key mdi_key;
-  Key sg_key;
-  Key mdg_key;
-  Key mfg_key;
-  Key cv_key;
- private:
+ protected:
+  Key phi_key_;
+  Key sl_key_;
+  Key mdl_key_;
+  Key si_key_;
+  Key mdi_key_;
+  Key sg_key_;
+  Key mdg_key_;
+  Key mfg_key_;
+  Key cv_key_;
+
+private:
   static Utils::RegisteredFactory<FieldEvaluator,PermafrostWaterContent> reg_;
 
 };

@@ -110,9 +110,9 @@ void AdvectionDiffusion::UpdatePreconditioner(double t, Teuchos::RCP<const TreeV
 
   // update with advection terms
   if (implicit_advection_) {
-    Teuchos::RCP<const CompositeVector> darcy_flux = S_next_->GetFieldData("darcy_flux");
-    preconditioner_adv_->Setup(*darcy_flux);
-    preconditioner_adv_->UpdateMatrices(*darcy_flux);
+    Teuchos::RCP<const CompositeVector> mass_flux = S_next_->GetFieldData("mass_flux");
+    preconditioner_adv_->Setup(*mass_flux);
+    preconditioner_adv_->UpdateMatrices(*mass_flux);
     preconditioner_adv_->ApplyBCs(bc_, false);
   }
   

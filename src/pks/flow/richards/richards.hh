@@ -79,7 +79,6 @@ protected:
 
   // boundary condition members
   virtual void UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr=true);
-  virtual void ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& pres);
 
   // -- builds tensor K, along with faced-based Krel if needed by the rel-perm method
   virtual void SetAbsolutePermeabilityTensor_(const Teuchos::Ptr<State>& S);
@@ -123,7 +122,7 @@ protected:
   // virtual void AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
   //         const Teuchos::Ptr<const CompositeVector>& rel_perm,
   //         const Teuchos::Ptr<const CompositeVector>& rho,
-  //         const Teuchos::Ptr<CompositeVector>& darcy_flux);
+  //         const Teuchos::Ptr<CompositeVector>& mass_flux);
 
   // Nonlinear version of CalculateConsistentFaces()
   // virtual void CalculateConsistentFacesForInfiltration_(
@@ -133,8 +132,6 @@ protected:
   virtual bool ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u);
 
   // virtual void PreconWC_(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
-
-  virtual double BoundaryValue(Teuchos::RCP<const Amanzi::CompositeVector> solution, int face_id);
 
   // -- Possibly modify the correction before it is applied
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
@@ -196,6 +193,7 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_head_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_infilt_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_infiltration_;
 
   // delegates

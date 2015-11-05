@@ -51,6 +51,7 @@ Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
     modify_predictor_with_consistent_faces_(false),
     modify_predictor_wc_(false),
     modify_predictor_bc_flux_(false),
+    modify_predictor_first_bc_flux_(false),
     upwind_from_prev_flux_(false),
     precon_wc_(false),
     dynamic_mesh_(false),
@@ -109,11 +110,11 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   }
   if (flux_key_.empty()) {
     flux_key_ = plist_->get<std::string>("darcy flux key",
-            getKey(domain_, "darcy_flux"));
+            getKey(domain_, "mass_flux"));
   }
   if (flux_dir_key_.empty()) {
     flux_dir_key_ = plist_->get<std::string>("darcy flux direction key",
-            getKey(domain_, "darcy_flux_direction"));
+            getKey(domain_, "mass_flux_direction"));
   }
   if (velocity_key_.empty()) {
     velocity_key_ = plist_->get<std::string>("darcy velocity key",
@@ -135,6 +136,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   bc_flux_ = bc_factory.CreateMassFlux();
   bc_seepage_ = bc_factory.CreateSeepageFacePressure();
   bc_seepage_->Compute(0.); // compute at t=0 to set up
+  bc_seepage_infilt_ = bc_factory.CreateSeepageFacePressureWithInfiltration();
+  bc_seepage_infilt_->Compute(0.); // compute at t=0 to set up
 
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
@@ -483,7 +486,6 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   face_matrix_diff_->SetBCs(bc_, bc_);
   face_matrix_diff_->SetTensorCoefficient(K_);
   face_matrix_diff_->SetScalarCoefficient(Teuchos::null, Teuchos::null);
-  face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // if (vapor_diffusion_){
   //   //vapor diffusion
@@ -537,7 +539,7 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
 //   if (S_next_ != Teuchos::null) {
 //     Teuchos::RCP<const CompositeVector> wc1 = S_next_->GetFieldData(conserved_key_);
 //     Teuchos::RCP<const CompositeVector> wc0 = S_->GetFieldData(conserved_key_);
-//     Teuchos::RCP<const CompositeVector> darcy_flux = S->GetFieldData(flux_key_, name_);
+//     Teuchos::RCP<const CompositeVector> mass_flux = S->GetFieldData(flux_key_, name_);
 //     CompositeVector error(*wc1);
 
 //     for (unsigned int c=0; c!=error.size("cell"); ++c) {
@@ -547,7 +549,7 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
 //       std::vector<int> dirs;
 //       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 //       for (unsigned int n=0; n!=faces.size(); ++n) {
-//         error("cell",c) += (*darcy_flux)("face",faces[n]) * dirs[n] * dt;
+//         error("cell",c) += (*mass_flux)("face",faces[n]) * dirs[n] * dt;
 //       }
 //     }
 
@@ -616,10 +618,15 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       // update the direction of the flux -- note this is NOT the flux
       Teuchos::RCP<const CompositeVector> rho = S->GetFieldData(mass_dens_key_);
       face_matrix_diff_->SetDensity(rho);
+      face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
       Teuchos::RCP<CompositeVector> flux_dir =
           S->GetFieldData(flux_dir_key_, name_);
       Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
+
+      if (!pres->HasComponent("face"))
+        face_matrix_diff_->ApplyBCs(true, true);
+
       face_matrix_diff_->UpdateFlux(*pres, *flux_dir);
     }
 
@@ -739,12 +746,12 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   }
 
   // seepage face -- pressure <= p_atm, outward mass flux >= 0
-  // const Epetra_MultiVector pressure = *S->GetFieldData(key_)->ViewComponent("face");
-  const double& p_atm = *S->GetScalarData("atmospheric_pressure");
+  Teuchos::RCP<const CompositeVector> u = S->GetFieldData(key_);
+
   for (bc=bc_seepage_->begin(); bc!=bc_seepage_->end(); ++bc) {
     int f = bc->first;
     //    std::cout << "Found seepage face: " << f << " at: " << mesh_->face_centroid(f) << " with normal: " << mesh_->face_normal(f) << std::endl;
-    double bc_pressure = BoundaryValue(S->GetFieldData(key_), f);
+    double bc_pressure = BoundaryValue(u, f);
     if (bc_pressure < bc->second) {
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_values_[f] = 0.;
@@ -754,8 +761,39 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
       bc_values_[f] = bc->second;
     }
   }
-  if (bc_seepage_->size() > 0)
-    std::cout << "Seepage with " << bc_seepage_->size() << " faces" << std::endl;
+
+  // seepage face -- pressure <= p_atm, outward mass flux is specified
+  const double& p_atm = *S->GetScalarData("atmospheric_pressure");
+
+  const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)->ViewComponent("face", true);
+  const Epetra_MultiVector& u_cell = *S->GetFieldData(key_)->ViewComponent("cell");
+  double tol = p_atm * 1e-14;
+
+  for (bc=bc_seepage_infilt_->begin(); bc!=bc_seepage_infilt_->end(); ++bc) {
+    int f = bc->first;
+    double face_value = BoundaryValue(u, f);
+
+    if (face_value < p_atm - tol) {
+      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+      bc_values_[f] = bc->second;
+    } else {
+      AmanziMesh::Entity_ID_List cells;
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      ASSERT(cells.size() == 1);
+      int c = cells[0];
+      if (u_cell[0][c] < face_value) {
+        bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_values_[f] = bc->second;
+      } else {
+        bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_values_[f] = p_atm;
+      }
+    }
+    if (flux[0][f] < 0.0) {
+      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+      bc_values_[f] = bc->second;
+    }
+  }
 
   // surface coupling
   if (coupled_to_surface_via_head_) {
@@ -823,31 +861,26 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 };
 
 
-// -----------------------------------------------------------------------------
-// Add a boundary marker to owned faces.
-// -----------------------------------------------------------------------------
-void
-Richards::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& pres) {
-  Epetra_MultiVector& pres_f = *pres->ViewComponent("face",false);
-  unsigned int nfaces = pres_f.MyLength();
-  for (unsigned int f=0; f!=nfaces; ++f) {
-    if (bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      pres_f[0][f] = bc_values_[f];
-    }
-  }
-};
-
-
 bool Richards::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
         Teuchos::RCP<TreeVector> u) {
-  
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Modifying predictor:" << std::endl;
 
+  // update boundary conditions
+  bc_pressure_->Compute(S_next_->time());
+  bc_flux_->Compute(S_next_->time());
+  UpdateBoundaryConditions_(S_next_.ptr(), false); // without rel perm
+  
+  // push Dirichlet data into predictor
+  if (u->Data()->HasComponent("boundary_cell")) {
+    ApplyBoundaryConditions_(u->Data().ptr());
+  }
+  
   bool changed(false);
   if (modify_predictor_bc_flux_ ||
-      (modify_predictor_first_bc_flux_ && S_next_->cycle() == 0)) {
+      (modify_predictor_first_bc_flux_ && 
+       ((S_next_->cycle() == 0) || (S_next_->cycle() == 1)))) {
     changed |= ModifyPredictorFluxBCs_(h,u);
   }
 
@@ -862,6 +895,8 @@ bool Richards::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
 }
 
 bool Richards::ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u) {
+  if (!u->Data()->HasComponent("face")) return false;
+
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "  modifications to deal with nonlinearity at flux BCs" << std::endl;
@@ -870,11 +905,6 @@ bool Richards::ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u) {
     flux_predictor_ = Teuchos::rcp(new PredictorDelegateBCFlux(S_next_, mesh_, matrix_diff_,
             wrms_, &bc_markers_, &bc_values_));
   }
-
-  // update boundary conditions
-  bc_pressure_->Compute(S_next_->time());
-  bc_flux_->Compute(S_next_->time());
-  UpdateBoundaryConditions_(S_next_.ptr());
 
   UpdatePermeabilityData_(S_next_.ptr());
   Teuchos::RCP<const CompositeVector> rel_perm =
@@ -939,6 +969,8 @@ bool Richards::ModifyPredictorWC_(double h, Teuchos::RCP<TreeVector> u) {
 // }
 
 void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) {
+  if (!u->HasComponent("face")) return; // no need
+
   // VerboseObject stuff.
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -966,11 +998,6 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
   // Using the old BCs, so should use the old rel perm?
   // update the rel perm according to the scheme of choice
   //  UpdatePermeabilityData_(S_next_.ptr());
-
-  // update boundary conditions
-  bc_pressure_->Compute(S_next_->time());
-  bc_flux_->Compute(S_next_->time());
-  UpdateBoundaryConditions_(S_next_.ptr(), false); // without rel perm
 
   Teuchos::RCP<const CompositeVector> rel_perm = 
     S_next_->GetFieldData(uw_coef_key_);
@@ -1095,33 +1122,6 @@ bool Richards::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
   return true;
 }
 
-
-double Richards::BoundaryValue(Teuchos::RCP<const Amanzi::CompositeVector> solution, int face_id){
-
-  double value=0.;
-
-  if (solution->HasComponent("face")){
-    const Epetra_MultiVector& pres = *solution -> ViewComponent("face",false);
-    value = pres[0][face_id];
-  }
-  else if  (solution->HasComponent("boundary_face")){
-    const Epetra_MultiVector& pres = *solution -> ViewComponent("boundary_face",false);
-    const Epetra_Map& fb_map = mesh_->exterior_face_map();
-    const Epetra_Map& f_map = mesh_->face_map(false);
-
-    int face_gid = f_map.GID(face_id);
-    int face_lbid = fb_map.LID(face_gid);
-
-    value =  pres[0][face_lbid];
-  }
-  else{
-    Errors::Message msg("No component is defined for boundary faces\n");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  return value;
-
-}
 
 AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 Richards::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
