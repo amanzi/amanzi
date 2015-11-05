@@ -12,6 +12,12 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
+// NOTE: WHEN THESE TESTS ARE RUN IN PARALLEL, THE CELLS ABOVE THE
+// DEFORMED CELLS WILL NOT SHIFT DOWN CORRECTLY BECAUSE THE COLUMNS
+// ARE NOT ALL ON ONE PROCESSOR. IN A REAL SUBSURFACE DEFORMATION 
+// SIMULATION, THE PARALLEL PARTITIONING WILL BE IN THE LATERAL DIRECTION 
+// ONLY AND EACH COLUMN WILL BE ON A SINGLE PROCESSOR, SO THE DEFORMATION
+// OF CELLS WILL BE PROPERLY COMMUNICATED TO THE LAYERS ABOVE IT
 
 TEST(MSTK_DEFORM_VOLS_2D)
 {
@@ -121,25 +127,29 @@ TEST(MSTK_DEFORM_VOLS_3D)
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
       mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,10.0,1.0,10.0,10,1,10,comm.get(),gm));
 
-  int nc = 
+  int ncused = 
     mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED);
+  int ncowned = 
+    mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+
+
 
   // Request target volume of 50% for some cells at the bottom of the center column
   // The others are unconstrained except for a barrier of minimum volume
 
   std::vector<double> orig_volumes, target_volumes, target_weights, min_volumes;
-  orig_volumes.reserve(nc);
-  target_volumes.reserve(nc);
-  target_weights.reserve(nc);
-  min_volumes.reserve(nc);
+  orig_volumes.reserve(ncused);
+  target_volumes.reserve(ncused);
+  target_weights.reserve(ncused);
+  min_volumes.reserve(ncused);
 
-  for (int i = 0; i < nc; i++) {    
+  for (int i = 0; i < ncused; i++) {    
     orig_volumes[i] = mesh->cell_volume(i);
     target_volumes[i] = orig_volumes[i];
-    min_volumes[i] = orig_volumes[i]; // quite stringent - no wiggle room
+    min_volumes[i] = 0.90*orig_volumes[i]; 
 
     Amanzi::AmanziGeometry::Point ccen = mesh->cell_centroid(i);
-    if (ccen[0] > 2.0 && ccen[0] < 8.0) { // row of cells along y axis
+    if (ccen[0] > 2.0 && ccen[0] < 8.0) { // row of cells along x axis
       if (ccen[2] > 3.1 && ccen[2] < 4.1)  {
         target_volumes[i] = 0.85*orig_volumes[i];
         min_volumes[i] = 0.770*orig_volumes[i];
@@ -159,12 +169,12 @@ TEST(MSTK_DEFORM_VOLS_3D)
                             move_vertical);
   CHECK(status);
 
-  for (int i = 0; i < nc; i++) {
+  for (int i = 0; i < ncowned; i++) {
     if (target_volumes[i] > 0.0 && target_volumes[i] < orig_volumes[i]) {
       double voldiff = (mesh->cell_volume(i)-target_volumes[i])/target_volumes[i];
     
       // Check if volume difference is with 5% of target volume
-      CHECK_CLOSE(0,voldiff,7.5e-02);
+      CHECK_CLOSE(0,voldiff,5e-02);
     }
 
     // Check that we didn't fall below the minimum prescribed volume
@@ -176,7 +186,10 @@ TEST(MSTK_DEFORM_VOLS_3D)
     CHECK(mesh->cell_volume(i)+eps >= min_volumes[i]);
     if (!(mesh->cell_volume(i)+eps >= min_volumes[i])) {
       double diff = mesh->cell_volume(i)-min_volumes[i];
-      std::cerr << "Cell " << i << ": Min volume = " << min_volumes[i] << "    "
+      std::cerr << "Cell Global ID " << mesh->GID(i,Amanzi::AmanziMesh::CELL)
+                << " Cell Local ID " << i 
+                << " Rank " << comm->MyPID() 
+                << ": Min volume = " << min_volumes[i] << "    "
                 << "Cell volume = " << mesh->cell_volume(i)  << "  Diff = "
                 << diff << std::endl;
     }
