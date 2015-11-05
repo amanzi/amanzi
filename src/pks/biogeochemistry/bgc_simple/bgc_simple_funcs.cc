@@ -65,7 +65,7 @@ namespace BGC {
   if (doy == 190) {
     std::cout << "we are here!" << std::endl;
   }
-  if (doy == 260) {
+  if (doy == 276) {
     std::cout << "we are here!" << std::endl;
   }
   
@@ -79,6 +79,16 @@ namespace BGC {
   // determine the thaw depth
   double thawD = PermafrostDepth(SoilTArr,SoilThicknessArr,273.15);
 
+  //---------------------------------------------------------------------------------
+  //calculate shaded radiations for soil
+  double radi = met.qSWin;
+  for (std::vector<Teuchos::RCP<PFT> >::iterator pft_iter=pftarr.begin();
+       pft_iter!=pftarr.end(); ++pft_iter) {
+        radi *= std::exp(-(*pft_iter)->LER * (*pft_iter)->lai);
+   }
+  sw_shaded = radi;
+  //----------------------------------------------------------------------
+  //go through the PFT array
   
   for (std::vector<Teuchos::RCP<PFT> >::iterator pft_iter=pftarr.begin();
        pft_iter!=pftarr.end(); ++pft_iter) {
@@ -194,7 +204,7 @@ namespace BGC {
            pft_other_iter!=pft_iter; ++pft_other_iter) {
         PARi0 *= std::exp(-(*pft_other_iter)->LER * (*pft_other_iter)->lai);
       }
-      double PARi=PARi0;	
+      double PARi = PARi0;
       //----------------------------------------------------------------
       // photosynthesis and respiration, no soil water limitation yet and need
       // to be implemented for more realistic simulation
@@ -441,6 +451,9 @@ namespace BGC {
                 TEffectsQ10(2.0, SoilTArr[k] - 273.15, 25.0) * HighTLim(SoilTArr[k]-273.15);
             double soil_wp = std::max(std::min( (SoilWPArr[k] - p_atm) / 1.e6, wp_max), wp_min);
             double WFactor = std::max((soil_wp - pft.minLeafWP) / (-0.05 - pft.minLeafWP),0.);
+            if (SoilDArr[k] >= thawD) {
+	      WFactor = 0.0;
+            }
             weightArr[k] = pft.BRootSoil[k] * TFactor*WFactor;
             totalweights += weightArr[k];
           }
@@ -455,8 +468,12 @@ namespace BGC {
           for (int k=0; k!=ncells; ++k) {
             weightArr[k] /= totalweights;
           }
-
+          //---------------------------------------
           // Check root mass balance
+          double sumWeight = 0.0 ;
+          for (int k=0; k!=(ncells - 1); ++k) {
+            sumWeight = sumWeight + weightArr[k];
+          }
           pft.AssertRootBalance_or_die();
 
           //-------------------------------------------------------------
@@ -464,12 +481,11 @@ namespace BGC {
           // grow downwards
           if (pft.rootD < thawD && pft.rootD < pft.maxRootD) {
             for (int k=0; k!=(ncells - 1); ++k) {
-              if (SoilDArr[k] <= thawD) {
+              if (SoilDArr[k] < thawD) {
                 pft.BRootSoil[k+1] = pft.BRootSoil[k+1] + grwBroot*weightArr[k];
               }
             }
-
-            if (SoilDArr[ncells-1] <= thawD) {
+            if (SoilDArr[ncells-1] < thawD) {
               //bottom soil layer, stay put
               pft.BRootSoil[ncells-1] += grwBroot*weightArr[ncells-1];
             }
