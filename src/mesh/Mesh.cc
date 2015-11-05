@@ -1538,9 +1538,7 @@ int Mesh::build_columns() const {
 
 
       // record the node above for each of the bot face nodes
-
       // start node of bottom face 
-
       Entity_ID_List botnodes, topnodes, sidenodes;
 
       face_get_nodes(bot_face,&botnodes);
@@ -1550,47 +1548,26 @@ int Mesh::build_columns() const {
       face_get_nodes(top_face,&topnodes);
 
       if (botnodes.size() != topnodes.size()) {
-        std::cerr << "Top and bottom face of cell have different number of nodes." << 
-          " Data in node_nodeabove may not be accurate" << std::endl;
+        Errors::Message mesg("Top and bottom face of columnar cell have different number of nodes.");
+        amanzi_throw(mesg);
       }
-      int nfvbot = botnodes.size();
 
-      // Find a lateral face in which a node of the top face is
-      // adjacent to botnode0 (i.e. they are connected by an edge)
-
+      // match a node above to a node below
       bool found = false;
       int ind = -1;
-      for (int j = 0; j < cfaces.size(); j++) {
-        if (cfaces[j] == bot_face || cfaces[j] == top_face) continue;
-
-        // lateral face
-        face_get_nodes(cfaces[j],&sidenodes);
-
-        int nfvside = sidenodes.size();
-        for (int k = 0; k < nfvside; k++) {
-          if (sidenodes[k] == botnode0) {
-
-            Entity_ID adjnode0, adjnode1;
-        
-            adjnode0 = sidenodes[(k+1)%nfvside]; 
-            adjnode1 = sidenodes[(k-1+nfvside)%nfvside];
-
-            // See if adjnode0 or adjnode1 are in the top face
-            int nfvtop = topnodes.size();
-            for (int l = 0; l < nfvtop; l++) {
-              if (topnodes[l] == adjnode0 || topnodes[l] == adjnode1) {
-                found = true;
-                ind = l;
-                break;
-              }
-            }
-
-            break;
-          }
-        }
-
-        if (found) 
-          break;
+      int nfvbot = botnodes.size();
+      
+      AmanziGeometry::Point botnode0c;
+      node_get_coordinates(botnode0, &botnode0c);
+	
+      for (int k = 0; k < nfvbot; k++) {
+	AmanziGeometry::Point kc;
+	node_get_coordinates(topnodes[k], &kc);
+	if (std::abs(botnode0c[0]-kc[0]) + std::abs(botnode0c[1]-kc[1]) < 1.e-6) {
+	  found = true;
+	  ind = k;
+	  break;
+	}
       }
 
       if (!found) {
@@ -1599,23 +1576,16 @@ int Mesh::build_columns() const {
       }
 
       // We have a matching botnode and topnode - now match up the rest
-
       for (int k = 0; k < nfvbot; k++) {
         Entity_ID botnode = botnodes[k];
         Entity_ID topnode = topnodes[(ind+k)%nfvbot];
         node_nodeabove[botnode] = topnode;          
       }
 
-
-
       bot_face = top_face;
-
-
     } // while (!done)
 
-
     colfaces.push_back(top_face);
-
     column_cells.push_back(colcells);
     column_faces.push_back(colfaces);
     ncolumns++;
