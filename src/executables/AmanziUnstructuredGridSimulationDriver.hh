@@ -22,7 +22,7 @@ struct AmanziUnstructuredGridSimulationDriver
   ~AmanziUnstructuredGridSimulationDriver();
 
   ReturnType Run(const MPI_Comm& mpi_comm,
-                 Amanzi::ObservationData& output_observations);
+                 Amanzi::ObservationData& observations_data);
 
   private:
 

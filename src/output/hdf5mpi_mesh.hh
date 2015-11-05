@@ -26,14 +26,10 @@ extern "C" {
 
 #define MAX_STRING_LENGTH 100
 
-namespace Amanzi
-{
+namespace Amanzi {
 
 class HDF5_MPI {
-
-
  public:
-
   HDF5_MPI(const Epetra_MpiComm &comm);
   HDF5_MPI(const Epetra_MpiComm &comm, std::string dataFilename);
   ~HDF5_MPI(void);
@@ -96,10 +92,14 @@ class HDF5_MPI {
   // Write attribute to HDF5 data file.
   void writeAttrReal(double value, const std::string attrname);
   void writeAttrReal(double value, const std::string attrname, std::string h5path);
+  void writeAttrReal(double *value, int ndim, const std::string attrname);
   void writeAttrInt(int value, const std::string attrname);
+  void writeAttrInt(int *value, int ndim, const std::string attrname);
   void writeAttrString(const std::string value, const std::string attrname);
   void readAttrReal(double &value, const std::string attrname);
+  void readAttrReal(double **value, int *ndim, const std::string attrname);
   void readAttrInt(int &value, const std::string attrname);
+  void readAttrInt(int **value, int *ndim, const std::string attrname);
   void readAttrString(std::string &value, const std::string attrname);
 
   // Write node data to HDF5 data file.
@@ -122,7 +122,6 @@ class HDF5_MPI {
   void readDataString(char ***x, int *num_entries, const std::string varname);
   
  private:
-
   void createXdmfMesh_(const std::string filename, const double time, const int iteration);
   void createXdmfVisit_();
   void createXdmfMeshVisit_();

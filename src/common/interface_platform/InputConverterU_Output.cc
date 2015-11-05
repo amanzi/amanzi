@@ -318,6 +318,8 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             obPL.set<std::string>("variable", name.str());
           } else if (strcmp(obs_type, "drawdown") == 0) {
             obPL.set<std::string>("variable", "drawdown");
+          } else if (strcmp(obs_type, "water_table") == 0) {
+            obPL.set<std::string>("variable", "water table");
           } else if (strcmp(obs_type, "solute_volumetric_flow_rate") == 0) {
             std::string solute_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "solute");
             std::stringstream name;

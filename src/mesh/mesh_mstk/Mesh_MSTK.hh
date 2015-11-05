@@ -360,11 +360,49 @@ public:
   // to target volumes without dropping below the minimum volumes.  If
   // move_vertical = true, nodes will be allowed to move only in the
   // vertical direction (right now arbitrary node movement is not allowed)
+  // 
+  // The two versions are with and without specification of the constants
+  // The one without specification of constants is present only to satisfy
+  // the top level Mesh function definition for now
+  //
+  // the deformation function is written as:
+  // log( min_vol_const1 * exp (min_vol_const2 * min_vol_func) +
+  //      target_vol_const1 * exp (target_vol_const2 * target_vol_func) +
+  //      quality_func_const1 * exp (quality_func_const2 * quality_func) )
+  //
+  // *Loosely* speaking, change the '1' constants to influence the weighting
+  // of different criteria and the '2' constants to influence how tightly
+  // the criteria are adhered
 
   int deform(const std::vector<double>& target_cell_volumes_in, 
              const std::vector<double>& min_cell_volumes_in, 
              const Entity_ID_List& fixed_nodes,
-             const bool move_vertical);
+             const bool move_vertical) {
+
+    const double min_vol_const1 = 1.0e+0;
+    const double min_vol_const2 = 1.0e+2;
+    const double target_vol_const1 = 1.0e+0;
+    const double target_vol_const2 = 1.0e+2;
+    const double quality_func_const1 = 0.0e+0; // ignore quality
+    const double quality_func_const2 = 1.0e+0;
+
+    deform(target_cell_volumes_in, min_cell_volumes_in, fixed_nodes,
+           move_vertical, min_vol_const1, min_vol_const2,
+           target_vol_const1, target_vol_const2, 
+           quality_func_const1, quality_func_const2);
+  }
+
+
+  int deform(const std::vector<double>& target_cell_volumes_in, 
+             const std::vector<double>& min_cell_volumes_in, 
+             const Entity_ID_List& fixed_nodes,
+             const bool move_vertical,
+             const double min_vol_const1,
+             const double min_vol_const2,
+             const double target_vol_const1,
+             const double target_vol_const2,
+             const double quality_func_const1,
+             const double quality_func_const2);
 
   // Miscellaneous
 
@@ -537,32 +575,6 @@ private:
                      const Entity_kind kind) const;
 
 
-  // Compute the value of the LOCAL component of the GLOBAL
-  // deformation objective function given a new position 'nodexyz' for
-  // node 'nodeid' i.e. only those terms in the global function that
-  // are affected by the movement of this node. 
-
-  double deform_function(const int nodeid, double const * const nodexyz) const;
-  
-  // Finite difference gradient of deformation objective function
-
-  void deform_gradient(const int nodeid, double const * const vxyz, 
-                       double *gradient) const;
-
-  // Finite difference hessian of deformation objective function
-
-  void deform_hessian(const int nodeid, double const * const nodexyz, 
-                      double hessian[3][3]) const;
-
-  // Minimum eigen value of a matrix (rank 2 and rank 3)
-
-  double mineigenvalue(const double A[3][3]) const;
-
-  // Inverse of Hessian of rank 2 or 3
-
-  int hessian_inverse(const double H[3][3],double iH[3][3]) const;
-
-
 
   // Downward Adjacencies
   //---------------------
@@ -645,6 +657,32 @@ private:
     
     return kind2mtype[cell_dimension()][(int)kind];
   }
+
+
+  // Compute the value of the LOCAL component of the GLOBAL
+  // deformation objective function given a new position 'nodexyz' for
+  // node 'nodeid' i.e. only those terms in the global function that
+  // are affected by the movement of this node. 
+  
+  double deform_function(const int nodeid, double const * const nodexyz) const;
+  
+  // Finite difference gradient of deformation objective function
+  
+  void deform_gradient(const int nodeid, double const * const vxyz, 
+                       double *gradient) const;
+  
+  // Finite difference hessian of deformation objective function
+  
+  void deform_hessian(const int nodeid, double const * const nodexyz, 
+                      double hessian[3][3]) const;
+  
+  // Minimum eigen value of a matrix (rank 2 and rank 3)
+  
+  double mineigenvalue(const double A[3][3]) const;
+  
+  // Inverse of Hessian of rank 2 or 3
+  
+  int hessian_inverse(const double H[3][3],double iH[3][3]) const;
     
 };
 

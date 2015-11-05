@@ -15,19 +15,49 @@ namespace Amanzi
 namespace AmanziMesh
 {
 
+// Some constants to be used by routines in this file only
+
+double c1=1.0, c2=1.0, c3=1.0, k1=1.0, k2=1.0, k3=0.0;
+
+
+// Main deformation driver
+
+// IMPORTANT NOTE: SINCE THIS IS A SPECIALIZED ROUTINE THAT IS
+// DESIGNED FOR DEFORMING LAYERED, COLUMNAR MESHES, IT CAN BE
+// REASONABLY EXPECTED THAT ALL ELEMENTS AND NODES OF A COLUMN WILL BE
+// ON A SINGLE PROCESSOR AND THAT ANY PARTITIONING IS ONLY IN THE
+// LATERAL DIRECTIONS. IF THIS ASSUMPTION IS VIOLATED, THE CELLS
+// ABOVE THE DEFORMED CELLS MAY NOT SHIFT DOWN
+
 
 int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
                       const std::vector<double>& min_cell_volumes_in,
                       const Entity_ID_List& fixed_nodes,
-                      const bool move_vertical) {  
+                      const bool move_vertical,
+                      const double min_vol_const1,
+                      const double min_vol_const2,
+                      const double target_vol_const1,
+                      const double target_vol_const2,
+                      const double quality_func_const1,
+                      const double quality_func_const2) {
   int idx, id;
   MVertex_ptr mv;
   const int ndim = space_dimension();
+  const int celldim = cell_dimension();
   double eps = 1.0e-06;
   double damping_factor = 0.25;
   static const double macheps = 2.2e-16;
   static const double sqrt_macheps = sqrt(macheps);
 
+  // Initialize the deformation function constants
+
+  k1 = min_vol_const1;
+  c1 = min_vol_const2;
+  k2 = target_vol_const1;
+  c2 = target_vol_const2;
+  k3 = quality_func_const1;
+  c3 = quality_func_const2;
+ 
   if (!move_vertical) {
     Errors::Message mesg("Only vertical movement permitted in deformation");
     amanzi_throw(mesg);
@@ -77,6 +107,44 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   std::copy(&(min_cell_volumes_in[0]), &(min_cell_volumes_in[nc]), 
             min_cell_volumes);
 
+
+  // if the target cell volume is the same as the current volume, then 
+  // assume that the cell volume is unconstrained down to the min volume
+
+  for (int i = 0; i < nc; ++i) {
+    if (target_cell_volumes[i] > 0.0) {
+      double vol = cell_volume(i);
+      if (vol == target_cell_volumes[i])
+        target_cell_volumes[i] = 0.0;
+    }
+  }
+
+  // Mark vertices that must be driven to move to match target volumes
+  // of their connected cells. The remaining vertices can be ignored
+  // (they can still move because of the movement of of some nodes
+  // directly below them)
+
+  List_ptr driven_verts = List_New(10);
+  idx = 0;
+  while ((mv = MESH_Next_Vertex(mesh,&idx))) {
+    if (MEnt_IsMarked(mv,fixedmk)) continue; // vertex is forbidden from moving
+
+    List_ptr vcells = (celldim == 2) ? MV_Faces(mv) : MV_Regions(mv);
+    int nvcells = List_Num_Entries(vcells);
+    for (int i = 0; i < nvcells; i++) {
+      MEntity_ptr ent = List_Entry(vcells,i);
+      int id = MEnt_ID(ent); 
+
+      if (target_cell_volumes[id-1] > 0.0) {
+        // At least one cell connected to node/vertex needs to meet
+        // a target vol. Mark the node/vertex as one that must move
+        List_Add(driven_verts,mv);
+        break;
+      }
+    }
+    List_Delete(vcells);
+  }
+
   // Now start mesh deformation to match the target volumes
 
   // Since this is such an unconstrained problem with many local
@@ -91,15 +159,13 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
 
   int iter_global=0, maxiter_global=100;
   int converged_global=0;
-  
+
   while (!converged_global && iter_global < maxiter_global) {
     double global_dist2 = 0.0;
+    double meshsizesqr_sum = 0.0;
 
     idx = 0;
-    while ((mv = MESH_Next_Vertex(mesh, &idx))) {
-      if (MEnt_IsMarked(mv,fixedmk)) continue;  // vertex cannot move
-      //      if (MV_PType(mv) == PGHOST) continue; // Fails if we don;t move ghost vertices
-
+    while ((mv = List_Next_Entry(driven_verts,&idx))) {
       int gtype = MV_GEntDim(mv);
       
       id = MV_ID(mv);
@@ -118,8 +184,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
       }
       List_Delete(vedges);
 
-      double disteps_sqr = 1.0e-8*minlen2;
-  
+      meshsizesqr_sum += minlen2;
 
       double vxyzcur[ndim], vxyzold[ndim], vxyznew[ndim];
 
@@ -231,6 +296,15 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
       // Also drop the nodes above if the objective function
       // components corresponding to those nodes do not increase
 
+      // IMPORTANT NOTE: SINCE THIS IS A SPECIALIZED ROUTINE THAT IS
+      // DESIGNED FOR DEFORMING LAYERED, COLUMNAR MESHES, IT CAN BE
+      // REASONABLY EXPECTED THAT ALL ELEMENTS AND NODES OF A COLUMN
+      // WILL BE ON A SINGLE PROCESSOR. THEREFORE, WHEN A NODE DROPS
+      // TO MATCH A TARGET VOLUME, ALL NODES ABOVE IT ARE EXPECTED
+      // TO BE ON THE SAME PROCESSOR AND CAN BE MOVED DOWN. IF THIS
+      // ASSUMPTION IS NOT TRUE, THEN THE UPDATE OF THE COLUMN 
+      // HAS TO HAPPEN DIFFERENTLY
+
       int curid = id-1;
       bool done = false;
       while (!done) {
@@ -280,7 +354,10 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
 
     iter_global++;
 
-    // Update coordinates in mesh data structures
+    // Update coordinates in mesh data structures - must update all
+    // vertices not just vertices explicitly driven by optimization
+    // since the downward movement of driven vertices can cause the
+    // vertices above to shift down.
     
     idx = 0;
     while ((mv = MESH_Next_Vertex(mesh,&idx))) {
@@ -288,8 +365,13 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
       MV_Set_Coords(mv,&(meshxyz[3*(id-1)]));
     }
 
+    // Update ghost vertex values for parallel runs
+
     if (get_comm()->NumProc() > 1)
       MESH_UpdateVertexCoords(mesh,mpicomm);
+
+    double meshsize_rms = sqrt(meshsizesqr_sum/nv);
+    eps = 1.0e-06*meshsize_rms;
 
     double global_normdist2 = global_dist2/nv;
     int converged_onthisproc = 0;
@@ -307,8 +389,10 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   delete [] min_cell_volumes;
 
   List_Unmark(fixed_verts,fixedmk);
-  List_Delete(fixed_verts);
+  List_Delete(fixed_verts);  
   MSTK_FreeMarker(fixedmk);
+
+  List_Delete(driven_verts);
 
   if (space_dimension() == 2)
     MESH_ExportToGMV(mesh,"deformed2.gmv",0,NULL,NULL,NULL);
@@ -481,7 +565,6 @@ double Mesh_MSTK::deform_function(const int nodeid,
                              {7,5,2},{6,4,3}};
   static int prsmidx[6][3] = {{1,2,3},{2,0,4},{0,1,5},{0,4,5},{1,3,5},{2,3,4}};
 
- 
   val = 0.0;
 
   std::copy(nodexyz,nodexyz+space_dimension(),nodexyz_copy);
@@ -644,6 +727,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
 
   // Actual computation of objective function
 
+  double negvol_factor = 1.0; // will turn to -1 if -ve vol detected
   if (space_dimension() == 2) {
 
     for (jf =  0; jf < nf; jf++) {
@@ -724,7 +808,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
       double min_area = min_cell_volumes[fid-1];
       double min_area_diff = (face_area-min_area)/min_area;
 
-      double bfunc = 1/(1+exp(100*min_area_diff));
+      double bfunc = 1/exp(c1*min_area_diff);
       barrierfunc += bfunc;
     }
 
@@ -860,7 +944,9 @@ double Mesh_MSTK::deform_function(const int nodeid,
             /* Volume of this tet */
 
             rvlid1 = rfvlocid[jr][jf][(j+1)%nfv];
-            region_volume += Tet_Volume(xyz[rvlid],xyz[rvlid1],fcen,rcen);
+            double tet_volume = Tet_Volume(xyz[rvlid],xyz[rvlid1],fcen,rcen);
+            negvol_factor =  (tet_volume < 0.0) ? -1 : negvol_factor;
+            region_volume += tet_volume;
 
             /* Condition number at corners of this tet if it is relevant */
             /* Is face vertex either v or one of its edge connected nbrs? */
@@ -901,30 +987,48 @@ double Mesh_MSTK::deform_function(const int nodeid,
         } // jf
       } // else
 
-      double target_volume = target_cell_volumes[rid-1];
-      if (target_volume > 0.0) {
-        double volume_diff = (region_volume-target_volume)/target_volume;
-        volfunc += volume_diff*volume_diff;
-      }
 
-      // every face always contributes a barrier function to
-      // keep it from going below a certain area
+      // IF ANY OF THE COMPONENT TETS HAD A NEGATIVE VOLUME, MAKE SURE THAT
+      // THE REGION VOLUME IS MADE NEGATIVE (IT MAY HAVE BEEN CANCELLED OUT 
+      // BY A MULTITUDE OF POSITIVE VOLUME TETS).
+      
+      region_volume = negvol_factor*fabs(region_volume);
+
+      // If the target_volume is 0, it indicates that we don't care
+      // about driving the volume towards the target_volume, so make
+      // this function value 0
+
+      double target_volume = target_cell_volumes[rid-1];
+      double volume_diff = (target_volume > 0) ? 
+          (region_volume-target_volume)/target_volume : 0.0;
+      volfunc += volume_diff*volume_diff;
+
+      // every region always contributes a barrier function to
+      // keep it from going below a certain region
 
       double min_volume = min_cell_volumes[rid-1];
       double min_volume_diff = (region_volume-min_volume)/min_volume;
 
-      double bfunc = 1/(1+exp(100*min_volume_diff));
+      double bfunc = 1/exp(c1*min_volume_diff);
       barrierfunc += bfunc;
     } // for each region
 
   }
 
-  double c1 = 1.0e+0, c2=1.0e-1, c3=1.0e-2, k1=1.0, k2=1.0, k3=0.0;
-  double inlogexpr = k1*exp(c1*volfunc) + k2*exp(c2*barrierfunc) + k3*exp(c3*condfunc);
-  if (inlogexpr > 0.0)
-    func = log(inlogexpr);
-  else 
-    func = 1e+14;
+  // If volfunc == 0.0, it means that none of the cells connected to
+  // this node need to be driven towards a particular target value. So
+  // there is no point in returning a function value based solely on
+  // differences between current volume and minimum volume as this
+  // might actually cause node movement. In such a case, make the in
+  // logexpr 1.0, which will result in a 0 function value
+
+  // Of course, the better (and more cost effective) thing to do is to
+  // tag such nodes which don't need to be explicitly moved and not
+  // try to move them at all
+
+  double inlogexpr = volfunc > 0.0 ? 
+      k1*exp(c1*barrierfunc) + k2*exp(c2*volfunc) + k3*exp(c3*condfunc) : 1;
+  func =  (inlogexpr > 0.0 && negvol_factor > 0) ? log(inlogexpr) : 1e+10;
   return func;
 }
 

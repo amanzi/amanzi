@@ -1,6 +1,6 @@
-============================================
-Amanzi XML Input Specification (Version 2.2)
-============================================
+====================================================
+Amanzi XML Input Specification (Version 2.2.1-draft)
+====================================================
 
 .. contents:: **Table of Contents**
 
@@ -1456,7 +1456,7 @@ The *liquid_phase* element requires that the name of the phase be specified as a
        Optional Elements: integrated_mass [S], volumetric_water_content, gravimetric_water_content, aqueous_pressure, 
                           x_aqueous_volumetric_flux, y_aqueous_volumetric_flux, z_aqueous_volumetric_flux, material_id, 
                           hydraulic_head, aqueous_mass_flow_rate, aqueous_volumetric_flow_rate, aqueous_conc, drawdown,
-                          solute_volumetric_flow_rate
+                          water_table, solute_volumetric_flow_rate
      </liquid_phase>
 
 The observation element identifies the field quantity to be observed.  Subelements identify the elements for a region, a model (functional) with which it will extract its source data, and a list of discrete times for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of Amanzi arguments. The elements for each observation type are as follows:
@@ -1472,6 +1472,8 @@ The only exceptions are aqueous_conc and solute_volumetric_flow_rate which both 
 
 NOTE: Previously individual observation elements had the subelement ''cycle_macro'' or ''time_macro''.  All output is moving away from only allowing a single macro to be specified to allowing multiple macros as a comma separated list.  To ease the transition for users both singular and plural are currently accepted.  However, the singular option will go away in the future.  Please update existing input files to use ''cycle_macros'' or ''time_macros''.
 
+
+NOTE: Observation "water_table" calculates maximum position of the water table (using a piecewise linear interpolation of cell-based pressures) in a given volume region. If the region is saturated, the code returns *1.0e+99*. If the region is dry, the code returns *-1.0e+99*.
 
 Example:
 

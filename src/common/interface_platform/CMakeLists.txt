@@ -37,7 +37,6 @@ include_directories(${Boost_INCLUDE_DIRS})
 # file(GLOB _hh_inc_files "*.hh")
 set(interface_inc_files
   Simulator.hh
-  ObservationData.hh
   InputConverter.hh
   InputConverterU.hh
   InputConverterU_Defs.hh
