@@ -804,7 +804,7 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 +----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Plane"`  [SU]          | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
 +----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Polygonal Surface"` [SU]| `"Number of points`", `"Points`"        | int, Array(double)           | Number of polygon points and point coordinates in linear array. This   |
+| `"Region: Polygonal Surface"`[SU]| `"Number of points`", `"Points`"        | int, Array(double)           | Number of polygon points and point coordinates in linear array. This   |
 |                                  |                                         |                              | provides a set of faces with a normal for computing flux               |    
 +----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Polygon"`  [S]         |                                         | Array(double), Array(double) | V1=(x1,x2,...) and V2=(y1,y2,...) coordinates of an ordered sequence of|
@@ -825,9 +825,9 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 |                                  |                                         |                              | (`"XY`", `"YZ`", `"XZ`"), and swept over the extent, (min, max) in the |
 |                                  |                                         |                              | direction normal to the plane                                          |
 +----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Logical"` [SU]          | `"Operation`", `"RegionList`"           | string, Array(string)        | Operation can be Union, Intersection, Subtraction, Complement          |
+| `"Region: Logical"` [SU]         | `"Operation`", `"RegionList`"           | string, Array(string)        | Operation can be Union, Intersection, Subtraction, Complement          |
 +----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Labeled Set"` [SU]      | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
+| `"Region: Labeled Set"` [SU]     | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
 |                                  | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
 +----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Color Function"` [SU]  | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |

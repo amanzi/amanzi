@@ -42,6 +42,9 @@ class BDF1_TI {
   // returns the most recent time
   double time();
 
+  // returns current nonlinear tolerance
+  double tol_solver() { return tol_solver_; }
+
   // Report statistics
   int number_nonlinear_steps() { return state_->solve_itrs; }
   void ReportStatistics_();
@@ -194,7 +197,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
 
   // Set up tolerance due to damping.
   double factor = state_->tol_multiplier;
-  double tol = tol_solver_  * factor;
+  double tol = tol_solver_ * factor;
   solver_->set_tolerance(tol);
 
   if (factor > 1.0) {

@@ -1,4 +1,3 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 Amanzi
 
@@ -7,7 +6,6 @@ Author: Markus Berndt
         Ethan Coon (ecoon@lanl.gov)
 
 Checkpointing for state.
-
 ------------------------------------------------------------------------- */
 
 
@@ -20,6 +18,7 @@ Checkpointing for state.
 
 #include "hdf5mpi_mesh.hh"
 #include "IOEvent.hh"
+#include "ObservationData.hh"
 
 namespace Amanzi {
 
@@ -35,8 +34,9 @@ class Checkpoint : public IOEvent {
   void WriteAttributes(double time, double dt, int cycle, int pos) const;
   void WriteAttributes(double time, double dt, int cycle) const;
   void WriteAttributes(double time, int cycle) const;
-  void SetFinal(bool fnl){final_ = fnl;}
-  bool IsFinal(){return final_;}
+  void WriteObservations(ObservationData* obs_data);
+  void SetFinal(bool fnl) { final_ = fnl; }
+  bool IsFinal() { return final_; }
   void Finalize();
 
   void set_filebasename(std::string base) { filebasename_ = base; }

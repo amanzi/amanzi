@@ -123,7 +123,7 @@ set(flow_src_files Flow_PK.cc
                    FlowBoundaryFunction.cc
                    Darcy_PK.cc Darcy_TI.cc Darcy_LinearOperator.cc
                    Richards_PK.cc Richards_TI.cc Richards_WRM.cc
-                   Richards_Picard.cc Richards_LinearOperator.cc
+                   Richards_Picard.cc Richards_LinearOperator.cc Richards_CNLS.cc
                    PorosityModelPartition.cc PorosityModelEvaluator.cc
                    RelPerm.cc RelPermEvaluator.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc

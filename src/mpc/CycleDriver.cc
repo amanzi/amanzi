@@ -71,11 +71,11 @@ double rss_usage() { // return ru_maxrss in MBytes
 CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
                          Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                          Epetra_MpiComm* comm,
-                         Amanzi::ObservationData& output_observations) :
+                         Amanzi::ObservationData& observations_data) :
     parameter_list_(glist),
     mesh_(mesh),
     comm_(comm),
-    output_observations_(output_observations),
+    observations_data_(observations_data),
     restart_requested_(false) {
 
   if (parameter_list_->isSublist("State")) {
@@ -143,7 +143,7 @@ void CycleDriver::Setup() {
   // create the observations
   if (parameter_list_->isSublist("Observation Data")) {
     Teuchos::ParameterList observation_plist = parameter_list_->sublist("Observation Data");
-    observations_ = Teuchos::rcp(new Amanzi::Unstructured_observations(observation_plist, output_observations_, comm_));
+    observations_ = Teuchos::rcp(new Amanzi::Unstructured_observations(observation_plist, observations_data_, comm_));
     if (coordinator_list_->isParameter("component names")) {
       Teuchos::Array<std::string> comp_names = coordinator_list_->get<Teuchos::Array<std::string> >("component names");
       int num_liquid = coordinator_list_->get<int>("number of liquid components", comp_names.size());
@@ -292,7 +292,7 @@ void CycleDriver::Initialize() {
 void CycleDriver::Finalize() {
   if (!checkpoint_->DumpRequested(S_->cycle(), S_->time())) {
     pk_->CalculateDiagnostics();
-    Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), 0.0, true);
+    Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), 0.0, true, &observations_data_);
   }
 }
 
@@ -682,16 +682,16 @@ double CycleDriver::Advance(double dt) {
         if (S_->time() == reset_info_.front().first)
             force_check = true;
 
-    // make observations, vis, and checkpoints
-    //Amanzi::timer_manager.start("I/O");
+    // make vis, observations, and checkpoints in this order
+    // Amanzi::timer_manager.start("I/O");
     if (advance) {
       pk_->CalculateDiagnostics();
       Visualize(force_vis);
-      WriteCheckpoint(dt_new, force_check);   // write Checkpoint with new dt
       Observations(force_obser);
+      WriteCheckpoint(dt_new, force_check);   // write Checkpoint with new dt
       WriteWalkabout(force_check);
     }
-    //Amanzi::timer_manager.start("I/O");
+    // Amanzi::timer_manager.start("I/O");
 
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       *vo_->os() << "New time(y) = "<< S_->time() / (60*60*24*365.25);
@@ -768,7 +768,7 @@ void CycleDriver::WriteCheckpoint(double dt, bool force) {
       final = true;
     }
 
-    Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt, final);
+    Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt, final, &observations_data_);
     
     // if (force) pk_->CalculateDiagnostics();
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -785,8 +785,8 @@ void CycleDriver::WriteWalkabout(bool force){
       walkabout_->WriteWalkabout(S_);
     }
   }
-
 }
+
 
 /* ******************************************************************
 * timestep loop.
@@ -800,10 +800,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
   double dt;
   double restart_dT(1.0e99);
 
-
-
   if (!restart_requested_) {  // No restart
-
 
     Init_PK(time_period_id_);
 
@@ -812,7 +809,6 @@ Teuchos::RCP<State> CycleDriver::Go() {
     S_->set_cycle(cycle0_);
     S_->set_position(TIME_PERIOD_START);
     
-
     Setup();
     Initialize();
 
@@ -825,6 +821,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
     // Read restart file
     restart_time = ReadCheckpointInitialTime(comm_, restart_filename_);
     position = ReadCheckpointPosition(comm_, restart_filename_);
+    ReadCheckpointObservations(comm_, restart_filename_, observations_data_);
     for (int i = 0; i < num_time_periods_; i++) {
       if (restart_time - tp_end_[i] > -1e-10) 
 	time_period_id_++;
@@ -870,9 +867,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
     S_->set_initial_time(S_->time());
     dt = tsm_->TimeStep(S_->time(), restart_dT);
     pk_->set_dt(dt);
-
   }
-
 
 
   *S_->GetScalarData("dt", "coordinator") = dt;
@@ -885,8 +880,8 @@ Teuchos::RCP<State> CycleDriver::Go() {
   //Amanzi::timer_manager.start("I/O");
   pk_->CalculateDiagnostics();
   Visualize();
-  WriteCheckpoint(dt);
   Observations();
+  WriteCheckpoint(dt);
   S_->WriteStatistics(vo_);
 
 
@@ -1022,8 +1017,6 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   S_->GetMeshPartition("materials");
 
   pk_->CalculateDiagnostics();
-  // Visualize();
-  // WriteCheckpoint(dt);
   Observations();
   S_->WriteStatistics(vo_);
 

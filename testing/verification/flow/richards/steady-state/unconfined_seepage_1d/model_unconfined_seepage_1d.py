@@ -59,7 +59,6 @@ class UnconfinedSeepageHead(object):
 
         self.L_s = self.ft2m*829.0
         self.h_s = (self.ft2m*50.0)*(2-self.L_s/self.x_1)
-        print "self.h_s = ",self.h_s
 
     def head(self, coords):
 
@@ -75,10 +74,6 @@ class UnconfinedSeepageHead(object):
 
         head = numpy.zeros(len(coords))
         head[:] = numpy.sqrt(self.h_0*self.h_0 + (self.h_s*self.h_s - self.h_0*self.h_0)*(coords[:,0]/self.L_s) + (self.Q_src*self.L_s*self.L_s/self.K)*(coords[:,0]/self.L_s)*(1.0-coords[:,0]/self.L_s))
-
-        print "term 1 ",self.h_0*self.h_0
-        print "term 2 ",(self.h_s*self.h_s - self.h_0*self.h_0)*(coords[:,0]/self.L_s)
-        print "term 3 ",(self.Q_src*self.L_s*self.L_s/self.K)*(coords[:,0]/self.L_s)*(1.0-coords[:,0]/self.L_s)
 
         return head
 
@@ -108,15 +103,25 @@ def createFromXML(filename):
     #
     #  Material Properties
     #
-    params["k"]   = search.getElementByPath(xml, "/Main/Material Properties/Aquifers/Intrinsic Permeability: Uniform/Value").value
-    params["mu"]  = search.getElementByPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Viscosity: Uniform/Viscosity").value
-    params["rho"] = search.getElementByPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Density: Uniform/Density").value
+    strK = search.getElementByTags(xml, "/amanzi_input/materials/material/permeability").get('x')
+    params["k"] = float(strK)
+
+    strMu = search.getElementByTags(xml, "/amanzi_input/phases/liquid_phase/viscosity").text
+    params["mu"] = float(strMu)
+
+    strRho = search.getElementByTags(xml, "/amanzi_input/phases/liquid_phase/density").text
+    params["rho"] = float(strRho)
 
     #
     #  Boundary Conditions
     #
-    params["h_0"] = search.getElementByPath(xml, "/Main/Boundary Conditions/LeftBC/BC: Hydrostatic/Water Table Height").value[0]
-    params["h_1"] = search.getElementByPath(xml, "/Main/Boundary Conditions/RightBC/BC: Hydrostatic/Water Table Height").value[0] 
+    strH0 = search.getElementByTags(xml, "/amanzi_input/boundary_conditions/boundary_condition,LeftBC" + 
+                                         "/liquid_phase/liquid_component/hydrostatic").get("value")
+    params["h_0"] = float(strH0)
+
+    strH1 = search.getElementByTags(xml, "/amanzi_input/boundary_conditions/boundary_condition,RightBC" + 
+                                         "/liquid_phase/liquid_component/hydrostatic").get("value")
+    params["h_1"] = float(strH1)
 
     #
     #  Standard Gravity
