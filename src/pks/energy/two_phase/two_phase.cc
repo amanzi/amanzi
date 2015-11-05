@@ -1,0 +1,145 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+
+/* -------------------------------------------------------------------------
+ATS
+
+License: see $ATS_DIR/COPYRIGHT
+Author: Ethan Coon
+
+Process kernel for energy equation for Richard's flow.
+------------------------------------------------------------------------- */
+
+#include "eos_evaluator.hh"
+#include "iem_evaluator.hh"
+#include "thermal_conductivity_twophase_evaluator.hh"
+#include "two_phase_energy_evaluator.hh"
+#include "enthalpy_evaluator.hh"
+#include "energy_bc_factory.hh"
+
+#include "two_phase.hh"
+
+namespace Amanzi {
+namespace Energy {
+
+// -------------------------------------------------------------
+// Constructor
+// -------------------------------------------------------------
+TwoPhase::TwoPhase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                   Teuchos::ParameterList& FElist,
+                   const Teuchos::RCP<TreeVector>& solution) :
+    PKDefaultBase(plist, FElist, solution),
+    EnergyBase(plist, FElist, solution) {
+  //  if (!plist_->isParameter("flux key")) plist_->set("flux key", "darcy_flux");
+//I-CHANGED
+//  plist_->set("conserved quantity key", "energy");
+}
+
+// -------------------------------------------------------------
+// Create the physical evaluators for energy, enthalpy, thermal
+// conductivity, and any sources.
+// -------------------------------------------------------------
+void TwoPhase::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
+  // Get data and evaluators needed by the PK
+  // -- energy, the conserved quantity
+  S->RequireField(energy_key_)->SetMesh(mesh_)->SetGhosted()
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList ee_plist = plist_->sublist("energy evaluator");
+  ee_plist.set("energy key", energy_key_);
+  Teuchos::RCP<TwoPhaseEnergyEvaluator> ee =
+    Teuchos::rcp(new TwoPhaseEnergyEvaluator(ee_plist));
+  S->SetFieldEvaluator(energy_key_, ee);
+
+  // -- advection of enthalpy
+  S->RequireField(enthalpy_key_)->SetMesh(mesh_)
+    ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList enth_plist = plist_->sublist("enthalpy evaluator");
+  enth_plist.set("enthalpy key", enthalpy_key_);
+  Teuchos::RCP<EnthalpyEvaluator> enth =
+    Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
+  S->SetFieldEvaluator(enthalpy_key_, enth);
+
+  // -- thermal conductivity
+  S->RequireField(conductivity_key_)->SetMesh(mesh_)
+    ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList tcm_plist =
+    plist_->sublist("thermal conductivity evaluator");
+  Teuchos::RCP<EnergyRelations::ThermalConductivityTwoPhaseEvaluator> tcm =
+    Teuchos::rcp(new EnergyRelations::ThermalConductivityTwoPhaseEvaluator(tcm_plist));
+  S->SetFieldEvaluator(conductivity_key_, tcm);
+
+}
+
+
+// -------------------------------------------------------------
+// Initialize the needed models to plug in enthalpy.
+// -------------------------------------------------------------
+void TwoPhase::initialize(const Teuchos::Ptr<State>& S) {
+  // Call the base class's initialize.
+  EnergyBase::initialize(S);
+
+  // For the boundary conditions, we currently hack in the enthalpy to
+  // the boundary faces to correctly advect in a Dirichlet temperature
+  // BC.  This requires density and internal energy, which in turn
+  // require a model based on p,T.
+  // This will be removed once boundary faces are implemented.
+  Teuchos::RCP<FieldEvaluator> eos_fe = S->GetFieldEvaluator("molar_density_liquid");
+  Teuchos::RCP<Relations::EOSEvaluator> eos_eval =
+    Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(eos_fe);
+  ASSERT(eos_eval != Teuchos::null);
+  eos_liquid_ = eos_eval->get_EOS();
+
+  Teuchos::RCP<FieldEvaluator> iem_fe = S->GetFieldEvaluator("internal_energy_liquid");
+  Teuchos::RCP<EnergyRelations::IEMEvaluator> iem_eval =
+    Teuchos::rcp_dynamic_cast<EnergyRelations::IEMEvaluator>(iem_fe);
+  ASSERT(iem_eval != Teuchos::null);
+  iem_liquid_ = iem_eval->get_IEM();
+
+}
+
+
+// -------------------------------------------------------------
+// Plug enthalpy into the boundary faces manually.
+// This will be removed once boundary faces exist.
+// -------------------------------------------------------------
+void TwoPhase::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S) {
+
+  // put the boundary fluxes in faces for Dirichlet BCs.
+  // NOTE this boundary flux is in enthalpy, and
+  // h = n(T,p) * u_l(T) + p_l
+  Teuchos::RCP<const Epetra_MultiVector> pres;
+  if (S->GetFieldData("pressure")->HasComponent("face")) {
+    pres = S->GetFieldData("pressure")->ViewComponent("face",false);
+  }
+  const Epetra_MultiVector& pres_c = *S->GetFieldData("pressure")
+      ->ViewComponent("cell",false);
+  const Epetra_MultiVector& temp = *S->GetFieldData(key_)
+      ->ViewComponent("face",false);
+  const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)
+      ->ViewComponent("face",false);
+
+  bool include_work = plist_->sublist("enthalpy evaluator").get<bool>("include work term", true);
+  
+  AmanziMesh::Entity_ID_List cells;
+  int nfaces = temp.MyLength();
+  for (int f=0; f!=nfaces; ++f) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    if (bc_markers_adv_[f] == Operators::OPERATOR_BC_DIRICHLET) {
+      // If the advective markers are Dirichlet, and the diffusion markers are
+      // Neumann, that means we were given by the diffusive fluxes and the
+      // advected mass flux and temperature.
+      double T = bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET ? bc_values_[f] : temp[0][f];
+      double enthalpy = iem_liquid_->InternalEnergy(T);
+      if (include_work) {
+        double p = pres == Teuchos::null ? pres_c[0][cells[0]] : (*pres)[0][f];
+        double dens = eos_liquid_->MolarDensity(T,p);
+        enthalpy += p/dens;
+      }
+      bc_values_adv_[f] = enthalpy;
+    }
+  }
+}
+
+
+
+} // namespace
+} // namespace
