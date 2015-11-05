@@ -29,8 +29,9 @@ class TreeVectorSpace {
       data_(cvfac) {}
   TreeVectorSpace(const TreeVectorSpace& other);
 
-  // Checks equality
+  // Comparators
   bool SameAs(const TreeVectorSpace& other) const;
+  bool SubsetOf(const TreeVectorSpace& other) const;
 
   // Set/get data space
   Teuchos::RCP<const CompositeVectorSpace> Data() const { return data_; }

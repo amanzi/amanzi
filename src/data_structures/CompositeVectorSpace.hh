@@ -37,6 +37,7 @@ public:
 
   // Checks equality
   bool SameAs(const CompositeVectorSpace& other) const;
+  bool SubsetOf(const CompositeVectorSpace& other) const;
 
   // -------------------------------------
   // Specs for the construction of CVs

@@ -55,7 +55,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
   // process engine
   bool native(false);
-  if (strcmp(engine.c_str(), "amanzi") == 0) {
+  if (engine ==  "amanzi") {
     out_list.set<std::string>("chemistry model", "Amanzi");
     std::string bgdfilename = CreateBGDFile(xmlfilename_);
     bgdfilename = GetAttributeValueS_(element, "input_filename", false, bgdfilename);
@@ -65,9 +65,15 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     bgd_list.set<std::string>("Format", "simple");
     bgd_list.set<std::string>("File", bgdfilename);
 
-  } else if (strcmp(engine.c_str(), "pflotran") == 0) {
+  } else if (engine == "pflotran") {
     out_list.set<std::string>("chemistry model", "Alquimia");
     out_list.set<std::string>("Engine", "PFloTran");
+    std::string inpfilename = GetAttributeValueS_(element, "input_filename");
+    out_list.set<std::string>("Engine Input File", inpfilename);
+
+  } else if (engine == "crunchflow") {
+    out_list.set<std::string>("chemistry model", "Alquimia");
+    out_list.set<std::string>("Engine", "CrunchFlow");
     std::string inpfilename = GetAttributeValueS_(element, "input_filename");
     out_list.set<std::string>("Engine Input File", inpfilename);
   }

@@ -243,7 +243,7 @@ void CompositeVector::CreateData_() {
 
 CompositeVector& CompositeVector::operator=(const CompositeVector& other) {
   if (this != &other) {
-    ASSERT(Map().SameAs(other.Map()));
+    ASSERT(Map().SubsetOf(other.Map()));
 
     if (Ghosted() && other.Ghosted()) {
       // If both are ghosted, copy the ghosted vector.
@@ -492,14 +492,16 @@ void CompositeVector::ApplyVandelay_() const {
 int CompositeVector::Dot(const CompositeVector& other, double* result) const {
   *result = 0.0;
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
-    double intermediate_result[NumVectors(*lcv)];
-    for (int n=0; n!=NumVectors(*lcv); ++n) intermediate_result[n] = 0.0;
-    int ierr = ViewComponent(*lcv, false)->Dot(*other.ViewComponent(*lcv,false),
-            intermediate_result);
-    if (ierr) return ierr;
-
-    for (int lcv_vector = 0; lcv_vector != NumVectors(*lcv); ++lcv_vector) {
-      *result += intermediate_result[lcv_vector];
+    if (other.HasComponent(*lcv)) {
+      double intermediate_result[NumVectors(*lcv)];
+      for (int n=0; n!=NumVectors(*lcv); ++n) intermediate_result[n] = 0.0;
+      int ierr = ViewComponent(*lcv, false)->Dot(*other.ViewComponent(*lcv,false),
+                                                 intermediate_result);
+      if (ierr) return ierr;
+      
+      for (int lcv_vector = 0; lcv_vector != NumVectors(*lcv); ++lcv_vector) {
+        *result += intermediate_result[lcv_vector];
+      }
     }
   }
   return 0;
@@ -507,7 +509,9 @@ int CompositeVector::Dot(const CompositeVector& other, double* result) const {
 
 
 // -- this <- scalarA*A + scalarThis*this
-CompositeVector& CompositeVector::Update(double scalarA, const CompositeVector& A, double scalarThis) {
+CompositeVector& CompositeVector::Update(double scalarA, const CompositeVector& A,
+                                         double scalarThis) {
+  //  ASSERT(map_->SubsetOf(*A.map_));
   ChangedValue();
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
     if (A.HasComponent(*lcv))
@@ -520,11 +524,13 @@ CompositeVector& CompositeVector::Update(double scalarA, const CompositeVector& 
 // -- this <- scalarA*A + scalarB*B + scalarThis*this
 CompositeVector& CompositeVector::Update(double scalarA, const CompositeVector& A,
                  double scalarB, const CompositeVector& B, double scalarThis) {
+  //  ASSERT(map_->SubsetOf(*A.map_));
+  //  ASSERT(map_->SubsetOf(*B.map_));
   ChangedValue();
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
-    if (A.HasComponent(*lcv))
+    if (A.HasComponent(*lcv) && B.HasComponent(*lcv))
       ViewComponent(*lcv, false)->Update(scalarA, *A.ViewComponent(*lcv,false),
-              scalarB, *B.ViewComponent(*lcv,false), scalarThis);
+                                         scalarB, *B.ViewComponent(*lcv,false), scalarThis);
   }
   return *this;
 };
@@ -533,23 +539,27 @@ CompositeVector& CompositeVector::Update(double scalarA, const CompositeVector& 
 // -- this <- scalarAB * A@B + scalarThis*this  (@ is the elementwise product
 int CompositeVector::Multiply(double scalarAB, const CompositeVector& A,
         const CompositeVector& B, double scalarThis) {
+  //  ASSERT(map_->SubsetOf(*A.map_));
+  //  ASSERT(map_->SubsetOf(*B.map_));
   ChangedValue();
   int ierr = 0;
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
-    if (A.HasComponent(*lcv))
+    if (A.HasComponent(*lcv) && B.HasComponent(*lcv))
       ierr |= ViewComponent(*lcv, false)->Multiply(scalarAB, *A.ViewComponent(*lcv,false),
-              *B.ViewComponent(*lcv,false), scalarThis);
+                                                   *B.ViewComponent(*lcv,false), scalarThis);
   }
   return ierr;
 };
 
 // -- this <- scalarAB * B / A + scalarThis*this  (/ is the elementwise division
-int CompositeVector::ReciprocalMultiply(double scalarAB, const CompositeVector& A, const CompositeVector& B,
-                  double scalarThis) {
+int CompositeVector::ReciprocalMultiply(double scalarAB, const CompositeVector& A,
+                                        const CompositeVector& B, double scalarThis) {
+  ASSERT(map_->SubsetOf(*A.map_));
+  ASSERT(map_->SubsetOf(*B.map_));
   ChangedValue();
   int ierr = 0;
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
-    if (A.HasComponent(*lcv))
+    if (A.HasComponent(*lcv) && B.HasComponent(*lcv))
       ierr |= ViewComponent(*lcv, false)->ReciprocalMultiply(scalarAB,
               *A.ViewComponent(*lcv,false), *B.ViewComponent(*lcv,false), scalarThis);
   }
@@ -561,7 +571,6 @@ int CompositeVector::ReciprocalMultiply(double scalarAB, const CompositeVector& 
 // Interpolate pressure ICs on cells to ICs for lambda (faces).
 // -----------------------------------------------------------------------------
 void DeriveFaceValuesFromCellValues(CompositeVector& cv) {
-
   if (cv.HasComponent("face")){
     cv.ScatterMasterToGhosted("cell");
     const Epetra_MultiVector& cv_c = *cv.ViewComponent("cell",true);

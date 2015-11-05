@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy
 import model_unconfined_seepage_1d
-from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
+from amanzi_xml.observations.ObservationXMLv2 import ObservationXMLv2 as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
 import prettytable 
@@ -10,7 +10,6 @@ import os
 # load input xml file
 #  -- create an ObservationXML object
 def loadInputXML(filename):
-#    print "In loadInputXML, filename = ",os.path.join(os.getcwd(),filename)
     Obs_xml = ObsXML(filename)
     return Obs_xml
             
@@ -115,7 +114,7 @@ if __name__ == "__main__":
     import os
     import run_amanzi_standard
 
-    input_filename = "amanzi_unconfined_seepage_1d.xml"
+    input_filename = "amanzi_unconfined_seepage_1d-isv2.xml"
     try: 
         run_amanzi_standard.run_amanzi(input_filename, 1, ["porflow4_4.exo"])
         obs_xml=loadInputXML(input_filename)
@@ -129,7 +128,7 @@ if __name__ == "__main__":
 
         cmap = plotTestObservations(obs_xml,obs_data,axes1)
         plotTestModel(input_filename,cmap,axes1,obs_xml,obs_data)
-        plt.show()
+        # plt.show()
 
     finally:
         pass 

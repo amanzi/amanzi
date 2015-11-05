@@ -132,7 +132,7 @@ class Richards_PK : public Flow_PK {
   // -- miscaleneous methods
   void UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u);
   double ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du);
- 
+
   // -- access methods
   Teuchos::RCP<Operators::Operator> op_matrix() { return op_matrix_; }
   const Teuchos::RCP<CompositeVector> get_solution() { return solution; }
@@ -157,6 +157,11 @@ class Richards_PK : public Flow_PK {
 
   void Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<CompositeVector> f);
 
+  // The water content change in a cell equals exactly to the balance of Darcy fluxes.
+  // This balance leads to a monotone translport.
+  void CalculateCNLSLimiter_(const CompositeVector& wc, const CompositeVector& dwc_dp, double tol);
+  void ApplyCNLSLimiter_();
+ 
  private:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> rp_list_;
@@ -213,6 +218,10 @@ class Richards_PK : public Flow_PK {
 
   // evaluators
   Teuchos::RCP<RelPermEvaluator> rel_perm_eval_;
+
+  // consistent water content and Darcy fluxes
+  bool algebraic_water_content_balance_;
+  Teuchos::RCP<CompositeVector> cnls_limiter_;
 
  private:
   void operator=(const Richards_PK& RPK);

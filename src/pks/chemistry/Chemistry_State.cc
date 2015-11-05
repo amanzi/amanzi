@@ -1017,13 +1017,16 @@ void Chemistry_State::InitFromBeakerStructure(const int cell_id,
   //
   // minerals
   //
-  if (!S_->GetField("mineral_volume_fractions")->initialized()) {
-    for (unsigned int m = 0; m < number_of_minerals_; m++) {
-      double* cell_minerals = (*mineral_volume_fractions())[m];
-      cell_minerals[cell_id] = beaker_components.mineral_volume_fraction.at(m);
-      if (mineral_specific_surface_area() != Teuchos::null) {
-        cell_minerals = (*mineral_specific_surface_area())[m];
-        cell_minerals[cell_id] = beaker_components.mineral_specific_surface_area.at(m);
+  // EIB: added check, this needs to be verified as the correct fix
+  if (number_of_minerals_ > 0) {
+    if (!S_->GetField("mineral_volume_fractions")->initialized()) {
+      for (unsigned int m = 0; m < number_of_minerals_; m++) {
+        double* cell_minerals = (*mineral_volume_fractions())[m];
+        cell_minerals[cell_id] = beaker_components.mineral_volume_fraction.at(m);
+        if (mineral_specific_surface_area() != Teuchos::null) {
+          cell_minerals = (*mineral_specific_surface_area())[m];
+          cell_minerals[cell_id] = beaker_components.mineral_specific_surface_area.at(m);
+        }
       }
     }
   }

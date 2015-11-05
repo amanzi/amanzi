@@ -674,6 +674,16 @@ void Richards_PK::Initialize()
     }
   }
 
+  // miscalleneous
+  algebraic_water_content_balance_ = rp_list_->get<bool>("algebraic water content balance", false);
+  if (algebraic_water_content_balance_) {
+    CompositeVectorSpace cvs; 
+    cvs.SetMesh(mesh_)->SetGhosted(false)
+        ->AddComponent("cell", AmanziMesh::CELL, 1)
+        ->AddComponent("dpre", AmanziMesh::CELL, 1);
+    cnls_limiter_ = Teuchos::rcp(new CompositeVector(cvs));
+  }
+
   // verbose output
   InitializeStatistics_();
 }

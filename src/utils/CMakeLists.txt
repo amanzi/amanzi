@@ -48,7 +48,9 @@ add_amanzi_library(atk
                            factory.hh
                            factory_with_state.hh
                            LeastSquare.hh
+                           ObservationData.hh
                    )
+
 if (BUILD_TESTS)
   
     # Add UnitTest include directoy
@@ -72,7 +74,6 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/test_verboseobject.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
-
 
 endif()
 

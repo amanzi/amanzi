@@ -72,7 +72,6 @@ class Unstructured_observations {
 
   std::vector<std::string> comp_names_;
   int num_liquid_;
-  std::map<std::string, double> drawdown_;
 };
 
 }  // namespace Amanzi

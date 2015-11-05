@@ -52,11 +52,12 @@ RSAMRdata::PropertyManager::UpdateProperty(Real t)
     const RockManager* rockMgr = property_ctx.rockMgr;
     bool ret = rockMgr != 0;
     if (!ret) BoxLib::Abort("MatFiller not properly constructed");
+    if (property_dataPtr == 0) BoxLib::Abort("Property MFTower not properly constructed");
     int nLevs = property_dataPtr->NumLevels();
     for (int lev=0; lev<nLevs && ret; ++lev) {
       (*property_dataPtr)[lev].setVal(0);
       int dComp = 0;
-      int nGrow = property_dataPtr->NComp();
+      int nGrow = property_dataPtr->NGrow();
       ret = rockMgr->GetProperty(eval_time,lev,(*property_dataPtr)[lev],property_ctx.property_name,dComp,nGrow);
     }
     if (!ret) BoxLib::Abort("Failed to build property");
