@@ -160,7 +160,7 @@ void BGCSimple::setup(const Teuchos::Ptr<State>& S) {
       ->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
   S->RequireField("lai", name_)->SetMesh(surf_mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
-  S->RequireField("ET", name_)->SetMesh(surf_mesh_)
+  S->RequireField("transpiration", name_)->SetMesh(surf_mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
 
   // requirement: temp of each cell
@@ -219,8 +219,8 @@ void BGCSimple::initialize(const Teuchos::Ptr<State>& S) {
   S->GetField("c_sink_limit", name_)->set_initialized();
   S->GetFieldData("lai", name_)->PutScalar(0.);
   S->GetField("lai", name_)->set_initialized();
-  S->GetFieldData("ET", name_)->PutScalar(0.);
-  S->GetField("ET", name_)->set_initialized();
+  S->GetFieldData("transpiration", name_)->PutScalar(0.);
+  S->GetField("transpiration", name_)->set_initialized();
   // init root carbon
   Teuchos::RCP<Epetra_SerialDenseVector> col_temp =
       Teuchos::rcp(new Epetra_SerialDenseVector(ncells_per_col_));
@@ -295,7 +295,7 @@ bool BGCSimple::advance(double dt) {
       ->ViewComponent("cell",false);
   Epetra_MultiVector& lai = *S_next_->GetFieldData("lai", name_)
       ->ViewComponent("cell",false);
-  Epetra_MultiVector& ET = *S_next_->GetFieldData("ET", name_)
+  Epetra_MultiVector& transpiration = *S_next_->GetFieldData("transpiration", name_)
       ->ViewComponent("cell",false);
 
   S_next_->GetFieldEvaluator("temperature")->HasFieldChanged(S_next_.ptr(), name_);
@@ -407,7 +407,7 @@ bool BGCSimple::advance(double dt) {
       leafbiomass[lcv_pft][col] = pfts_[col][lcv_pft]->Bleaf;
       csink[lcv_pft][col] = pfts_[col][lcv_pft]->CSinkLimit;
       lai[lcv_pft][col] = pfts_[col][lcv_pft]->lai;
-      ET[lcv_pft][col] = pfts_[col][lcv_pft]->ET;
+      transpiration[lcv_pft][col] = pfts_[col][lcv_pft]->ET;
     }
 
   } // end loop over columns

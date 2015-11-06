@@ -43,7 +43,7 @@ void PFT::Init(double col_area)
   stemlitterfrc[1] = 0.8;
   LUE = 0.06;
   LER = 0.8;
-  mp = 6.0;
+  mp = 9.0;
   GPP = 0.0;
   ET = 0.0; 
   annNPP = 0.0;
@@ -83,20 +83,23 @@ void PFT::Init(Teuchos::ParameterList& plist,double col_area)
   // ex
   // rootlongevity = plist.get<double>("root longevity", 4.0);
   //note default vals below are those of sedge
-  maxRootD = plist.get<double>("max root depth", 0.5);
-  Vcmax25 = plist.get<double>("Vcmax25", 100.);
+  maxRootD = plist.get<double>("max root depth [m]", 0.5);
+  Vcmax25 = plist.get<double>("Vcmax25 [micromol CO2 / m^2(leaf) s]", 100.);
   Jmax25 = 2.0 * Vcmax25; 
-  Emax25 = plist.get<double>("Emax25", 10.);
-  SLA = plist.get<double>("SLA", 16);
+  Emax25 = plist.get<double>("Emax25 [micromol C / m^2(leaf) s]", 10.);
+  SLA = plist.get<double>("SLA [m^2(leaf) / kg C", 16);
   evergreen = plist.get<bool>("evergreen", false);
-  leaf2rootratio =  plist.get<double>("ratio of leaf to root", 1.0);
+  leaf2rootratio =  plist.get<double>("ratio of leaf to root [-]", 1.0);
+  leaf2stemratio =  plist.get<double>("ratio of leaf to stem [-]", 5.0);
 
-  leaflongevity =  plist.get<double>("leaf longevity", 4.0);
-  rootlongevity =  plist.get<double>("root longevity", 4.0);
-  stemlongevity =  plist.get<double>("stem longevity", 10.0);
+  leaflongevity =  plist.get<double>("leaf longevity [yr]", 4.0);
+  rootlongevity =  plist.get<double>("root longevity [yr]", 4.0);
+  stemlongevity =  plist.get<double>("stem longevity [yr]", 10.0);
 
+  mp =  plist.get<double>("stomatal conductance to photosynthetic rate slope (mp) [?]", 9.0);
+  
 
-  Bleaf = 1.0/SLA * col_area;//es note that all the following B vals are perm^2, so that elsewhere they should be *gridarea to account for varying grid areas.
+  Bleaf = 1.0/SLA * col_area;//es note that all the following B vals are per m^2, so that elsewhere they should be *gridarea to account for varying grid areas.
   Bstore = 2* Bleaf;
   Bleafmemory = Bleaf;
   Bstem = Bleaf/leaf2stemratio;
