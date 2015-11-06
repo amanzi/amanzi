@@ -175,44 +175,51 @@ class Mesh
   // Downward Adjacencies
   //---------------------
 
-  // Get faces of a cell.
-
   // The Amanzi coding guidelines regarding function arguments is purposely
   // violated here to allow for a default input argument
 
+  // Get number of faces of a cell.
+  //
+  // On a distributed mesh, this will return all the faces of the
+  // cell, OWNED or GHOST.
+  unsigned int cell_get_num_faces(const Entity_ID cellid) const;
+
+  // Get faces of a cell.
+  //
   // On a distributed mesh, this will return all the faces of the
   // cell, OWNED or GHOST. If ordered = true, the faces will be
   // returned in a standard order according to Exodus II convention
   // for standard cells; in all other situations (ordered = false or
   // non-standard cells), the list of faces will be in arbitrary order
-
-  unsigned int cell_get_num_faces(const Entity_ID cellid) const;
-
   void cell_get_faces (const Entity_ID cellid,
                        Entity_ID_List *faceids,
                        const bool ordered=false) const;
 
   // Get faces of a cell and directions in which the cell uses the face 
-
-  // The Amanzi coding guidelines regarding function arguments is purposely
-  // violated here to allow for a default input argument
-
+  //
   // On a distributed mesh, this will return all the faces of the
   // cell, OWNED or GHOST. If ordered = true, the faces will be
   // returned in a standard order according to Exodus II convention
   // for standard cells; in all other situations (ordered = false or
   // non-standard cells), the list of faces will be in arbitrary order
-
+  //
   // In 3D, direction is 1 if face normal points out of cell
   // and -1 if face normal points into cell
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
-
   void cell_get_faces_and_dirs (const Entity_ID cellid,
                                 Entity_ID_List *faceids,
                                 std::vector<int> *face_dirs,
 				const bool ordered=false) const;
 
+  // Get the bisectors, i.e. vectors from cell centroid to face centroids.
+  virtual
+  void cell_get_faces_and_bisectors (const Entity_ID cellid,
+				     Entity_ID_List *faceids,
+				     std::vector<AmanziGeometry::Point> *bisectors,
+				     const bool ordered=false) const;
+
+  
 
   // Get edges of a cell
 
@@ -320,11 +327,9 @@ class Mesh
   // Cells connected to a face - The cells are returned in no
   // particular order. Also, the order of cells is not guaranteed to
   // be the same for corresponding faces on different processors
-  
   void face_get_cells (const Entity_ID faceid,
                        const Parallel_type ptype,
                        Entity_ID_List *cellids) const;
-
 
 
   // Same level adjacencies
@@ -481,17 +486,15 @@ class Mesh
   // the negative of the normal with respect to the cell on the other
   // side. In general surfaces meshes, this will not be true at C1
   // discontinuities
-
+  //
   // if cellid is specified, then orientation returns the direction of
   // the natural normal of the face with respect to the cell (1 is
   // pointing out of the cell and -1 pointing in)
-
 
   AmanziGeometry::Point face_normal (const Entity_ID faceid, 
 				     const bool recompute=false, 
 				     const Entity_ID cellid=-1, 
 				     int *orientation=NULL) const;
-
 
   // Edge vector - not normalized (or normalized and weighted by length
   // of the edge)
@@ -706,6 +709,7 @@ class Mesh
                                          std::vector<int> *face_dirs,
                                          const bool ordered=false) const = 0;
 
+  
   // Cells connected to a face - this function is implemented in each
   // mesh framework. The results are cached in the base class
   

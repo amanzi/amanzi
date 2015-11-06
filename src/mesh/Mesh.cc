@@ -22,7 +22,7 @@ namespace AmanziMesh
 //
 // Method is declared constant because it is not modifying the mesh
 // itself; rather it is modifying mutable data structures - see
-// declaration of Mesh calss for further explanation
+// declaration of Mesh class for further explanation
 
 void Mesh::cache_cell2face_info() const {
 
@@ -43,7 +43,7 @@ void Mesh::cache_cell2face_info() const {
 //
 // Method is declared constant because it is not modifying the mesh
 // itself; rather it is modifying mutable data structures - see
-// declaration of Mesh calss for further explanation
+// declaration of Mesh class for further explanation
 
 void Mesh::cache_face2cell_info() const {
 
@@ -78,7 +78,7 @@ void Mesh::cache_face2cell_info() const {
 //
 // Method is declared constant because it is not modifying the mesh
 // itself; rather it is modifying mutable data structures - see
-// declaration of Mesh calss for further explanation
+// declaration of Mesh class for further explanation
 
 void Mesh::cache_face2edge_info() const {
 
@@ -103,7 +103,7 @@ void Mesh::cache_face2edge_info() const {
 //
 // Method is declared constant because it is not modifying the mesh
 // itself; rather it is modifying mutable data structures - see
-// declaration of Mesh calss for further explanation
+// declaration of Mesh class for further explanation
 
 void Mesh::cache_cell2edge_info() const {
 
@@ -193,6 +193,24 @@ void Mesh::cell_get_faces_and_dirs(const Entity_ID cellid,
   
 #endif
   
+}
+
+
+// Get the bisectors, i.e. vectors from cell centroid to face centroids.
+void Mesh::cell_get_faces_and_bisectors (const Entity_ID cellid,
+			 Entity_ID_List *faceids,
+			 std::vector<AmanziGeometry::Point> *bisectors,
+			 const bool ordered) const {
+  cell_get_faces(cellid, faceids, ordered);
+
+  AmanziGeometry::Point cc = cell_centroid(cellid);
+  if (bisectors) {
+    bisectors->resize(faceids->size());
+    for (int i=0; i!=faceids->size(); ++i) {
+      (*bisectors)[i] = face_centroid((*faceids)[i]) - cc;
+    }
+  }
+  return;
 }
   
   
@@ -463,7 +481,7 @@ int Mesh::compute_face_geometric_quantities() const {
     // of the face points out of cell0 and into cell1. If one of these
     // cells do not exist, then the normal is the null vector.
 
-    compute_face_geometry(i,&area,&centroid,&normal0,&normal1);
+    compute_face_geometry(i, &area, &centroid, &normal0, &normal1);
 
     face_areas[i] = area;
     face_centroids[i] = centroid;
@@ -598,9 +616,9 @@ int Mesh::compute_cell_geometry(const Entity_ID cellid, double *volume,
 
 
 int Mesh::compute_face_geometry(const Entity_ID faceid, double *area,
-        AmanziGeometry::Point *centroid,
-        AmanziGeometry::Point *normal0,
-        AmanziGeometry::Point *normal1) const {
+				AmanziGeometry::Point *centroid,
+				AmanziGeometry::Point *normal0,
+				AmanziGeometry::Point *normal1) const {
 
   AmanziGeometry::Point_List fcoords;
 
@@ -737,7 +755,7 @@ int Mesh::compute_face_geometry(const Entity_ID faceid, double *area,
         else
           *normal1 = normal; // Note that we are not flipping the sign here
       }
-
+      
       return 1;
     }
 
@@ -921,7 +939,6 @@ AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid,
     if (recompute) {
       double area;
       AmanziGeometry::Point centroid(spacedim);
-      
       compute_face_geometry(faceid, &area, &centroid, &normal0, &normal1);
     }
     else {
@@ -1563,7 +1580,13 @@ int Mesh::build_columns() const {
       for (int k = 0; k < nfvbot; k++) {
 	AmanziGeometry::Point kc;
 	node_get_coordinates(topnodes[k], &kc);
-	if (std::abs(botnode0c[0]-kc[0]) + std::abs(botnode0c[1]-kc[1]) < 1.e-6) {
+
+	double horiz_dist = 0.;
+	for (int m=0; m!=spacedim-1; ++m) {
+	  horiz_dist += std::abs(botnode0c[m]-kc[m]);
+	}
+
+	if (horiz_dist < 1.e-6) {
 	  found = true;
 	  ind = k;
 	  break;
@@ -1571,13 +1594,22 @@ int Mesh::build_columns() const {
       }
 
       if (!found) {
-        Errors::Message mesg("Could not find the right structure in mesh");
+
+	std::cout << "botnode = " << botnode0c << std::endl;
+	for (int k = 0; k < nfvbot; k++) {
+	  AmanziGeometry::Point kc;
+	  node_get_coordinates(topnodes[k], &kc);
+	  std::cout << "  topnode " << k << " = " << kc << std::endl;
+	}
+
+	Errors::Message mesg("Could not find the right structure in mesh");
         amanzi_throw(mesg);
       }
 
       // We have a matching botnode and topnode - now match up the rest
       // even or odd handedness?
-      double even_odd_product = face_normal(top_face)[2] * face_normal(bot_face)[2];
+      double even_odd_product = face_normal(top_face)[spacedim-1]
+	* face_normal(bot_face)[spacedim-1];
       ASSERT(std::abs(even_odd_product) > 0);
       int even_odd = even_odd_product >= 0. ? 1 : -1;
       
@@ -1593,7 +1625,11 @@ int Mesh::build_columns() const {
 	// AmanziGeometry::Point tc;
 	// node_get_coordinates(botnode, &bc);
 	// node_get_coordinates(topnode, &tc);
-	// ASSERT(std::abs(bc[0]-tc[0]) + std::abs(bc[1]-tc[1]) < 1.e-10);
+	// double horiz_dist = 0.;
+	// for (int m=0; m!=spacedim-1; ++m) {
+	//   horiz_dist += std::abs(bc[m]-tc[m]);
+	// }
+	// ASSERT(horz_dist < 1.e-10);
       }
 
       bot_face = top_face;
@@ -1635,6 +1671,7 @@ std::string Mesh::cell_type_to_name (const Cell_type type)
       return "unknown";
   }
 }
+
 
 } // close namespace AmanziMesh
 } // close namespace Amanzi

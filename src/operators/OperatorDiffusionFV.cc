@@ -119,11 +119,9 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
   // mesh info
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
 
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
   // solution-independent data
   CompositeVectorSpace cvs;
@@ -472,22 +470,22 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
   h.PutScalar(0.0);
 
   AmanziMesh::Entity_ID_List faces, cells;
-  AmanziGeometry::Point a_dist, a;
+  std::vector<AmanziGeometry::Point> bisectors;
+  AmanziGeometry::Point a_dist;
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1); 
   Kc(0, 0) = 1.0;
 
   for (int c = 0; c < ncells_owned; ++c) {
     if (K_.get()) Kc = (*K_)[c];
-    mesh_->cell_get_faces(c, &faces);
+    mesh_->cell_get_faces_and_bisectors(c, &faces, &bisectors);
     int nfaces = faces.size();
 
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
+      const AmanziGeometry::Point& a = bisectors[i];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
       double area = mesh_->face_area(f);
 
-      a = xf - mesh_->cell_centroid(c);
       double h_tmp = norm(a);
       double s = area / h_tmp;
       double perm = ((Kc * a) * normal) * s;
@@ -500,22 +498,11 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
   beta.GatherGhostedToMaster(Add);
   h.GatherGhostedToMaster(Add);
 
-  // Compute transmissibilities. Since it is done only, we repeat
+  // Compute transmissibilities. Since it is done only once, we repeat
   // some calculatons.
   transmissibility_->PutScalar(0.0);
 
   for (int f = 0; f < nfaces_owned; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    int ncells = cells.size();
-
-    if (ncells == 2) {
-      a_dist = mesh_->cell_centroid(cells[1]) - mesh_->cell_centroid(cells[0]);
-    } else if (ncells == 1) {    
-      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-      a_dist = xf - mesh_->cell_centroid(cells[0]);
-    } 
-    a_dist *= 1.0 / norm(a_dist);
-
     trans_face[0][f] = 1.0 / beta_face[0][f];
   }
 

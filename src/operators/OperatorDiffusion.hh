@@ -40,21 +40,39 @@ class OperatorDiffusion {
       global_op_(global_op),
       K_(Teuchos::null),
       k_(Teuchos::null),
-      dkdp_(Teuchos::null)
+      dkdp_(Teuchos::null),
+      ncells_owned(-1),
+      ncells_wghost(-1),
+      nfaces_owned(-1),
+      nfaces_wghost(-1),
+      nnodes_owned(-1),
+      nnodes_wghost(-1)
   {};
 
   OperatorDiffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       mesh_(mesh),
       K_(Teuchos::null),
       k_(Teuchos::null),
-      dkdp_(Teuchos::null)
+      dkdp_(Teuchos::null),
+      ncells_owned(-1),
+      ncells_wghost(-1),
+      nfaces_owned(-1),
+      nfaces_wghost(-1),
+      nnodes_owned(-1),
+      nnodes_wghost(-1)
   {};
 
   OperatorDiffusion(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
       mesh_(mesh),
       K_(Teuchos::null),
       k_(Teuchos::null),
-      dkdp_(Teuchos::null)
+      dkdp_(Teuchos::null),
+      ncells_owned(-1),
+      ncells_wghost(-1),
+      nfaces_owned(-1),
+      nfaces_wghost(-1),
+      nnodes_owned(-1),
+      nnodes_wghost(-1)
   {};
   
   // main virtual members
