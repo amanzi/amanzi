@@ -108,7 +108,7 @@ endif()
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}
                    LINK_LIBS geometry mesh error_handling state data_structures 
-                             ${geochem_lib} chemistry_pk mpc_tree time_integration ${Epetra_LIBRARIES})
+                             ${geochem_lib} chemistry_pk time_integration ${Epetra_LIBRARIES})
 
 if ( BUILD_TESTS )
     # Add UnitTest includes
