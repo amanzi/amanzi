@@ -17,7 +17,7 @@
 #include "Point.hh"
 
 #include "mfd3d.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 
 namespace Amanzi {

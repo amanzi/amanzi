@@ -17,7 +17,7 @@
 
 #include "DenseMatrix.hh"
 #include "Mesh.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 #include "Flow_PK.hh"
 

@@ -19,7 +19,7 @@
 
 #include "Mesh.hh"
 #include "secondary_variable_field_evaluator.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "WRM.hh"
 #include "WRMPartition.hh"
 

@@ -18,7 +18,7 @@
 
 #include "Point.hh"
 #include "lapack.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 namespace Amanzi {
 namespace WhetStone {

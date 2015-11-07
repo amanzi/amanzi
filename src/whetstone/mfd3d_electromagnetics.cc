@@ -18,7 +18,7 @@
 #include "errors.hh"
 
 #include "DenseMatrix.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "mfd3d_electromagnetics.hh"
 
 namespace Amanzi {

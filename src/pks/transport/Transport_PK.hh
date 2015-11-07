@@ -27,7 +27,7 @@
 #include "PK_Factory.hh"
 #include "ReconstructionCell.hh"
 #include "State.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "VerboseObject.hh"
 
 #ifdef ALQUIMIA_ENABLED

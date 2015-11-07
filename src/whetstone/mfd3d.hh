@@ -34,7 +34,7 @@
 #include "WhetStoneDefs.hh"
 #include "WhetStone_typedefs.hh"
 #include "DenseMatrix.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 namespace Amanzi {
 namespace WhetStone {
