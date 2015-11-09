@@ -194,7 +194,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "solute") != 0) continue;
 
-      double val = GetAttributeValueD_(static_cast<DOMElement*>(inode), "coefficient_of_diffusion");
+      double val = GetAttributeValueD_(static_cast<DOMElement*>(inode), "coefficient_of_diffusion", false);
       text = mm.transcode(inode->getTextContent());
 
       aqueous_names.push_back(TrimString_(text));
@@ -221,7 +221,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "solute") != 0) continue;
 
-      double val = GetAttributeValueD_(static_cast<DOMElement*>(inode), "coefficient_of_diffusion");
+      double val = GetAttributeValueD_(static_cast<DOMElement*>(inode), "coefficient_of_diffusion", false);
       double kh = GetAttributeValueD_(static_cast<DOMElement*>(inode), "kh");
       text = mm.transcode(inode->getTextContent());
 

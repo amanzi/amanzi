@@ -86,7 +86,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
     for (int i = 0; i < children->getLength(); ++i) {
       DOMNode* inode = children->item(i);
-      std::string name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
+      std::string name = TrimString_(mm.transcode(inode->getTextContent()));
       minerals.push_back(name);
     }
   }
