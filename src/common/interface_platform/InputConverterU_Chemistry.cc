@@ -65,17 +65,27 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     bgd_list.set<std::string>("Format", "simple");
     bgd_list.set<std::string>("File", bgdfilename);
 
-  } else if (engine == "pflotran") {
-    out_list.set<std::string>("chemistry model", "Alquimia");
-    out_list.set<std::string>("Engine", "PFloTran");
-    std::string inpfilename = GetAttributeValueS_(element, "input_filename");
-    out_list.set<std::string>("Engine Input File", inpfilename);
+  } else {
+    bool valid_engine = true;
 
-  } else if (engine == "crunchflow") {
-    out_list.set<std::string>("chemistry model", "Alquimia");
-    out_list.set<std::string>("Engine", "CrunchFlow");
-    std::string inpfilename = GetAttributeValueS_(element, "input_filename");
-    out_list.set<std::string>("Engine Input File", inpfilename);
+    if (engine == "pflotran") {
+      out_list.set<std::string>("Engine", "PFloTran");
+    } else if (engine == "crunchflow") {
+      out_list.set<std::string>("Engine", "CrunchFlow");
+    }
+    else {
+      valid_engine = false;
+    }
+
+    // Pass along chemistry engine info.
+    if (valid_engine) {
+      out_list.set<std::string>("chemistry model", "Alquimia");
+
+      // Find the name of the engine-specific input file.
+      DOMElement* rxn_net = static_cast<DOMElement*>(GetUniqueElementByTagsString_("geochemistry, reaction_network", flag));
+      std::string inpfilename = GetAttributeValueS_(rxn_net, "file");
+      out_list.set<std::string>("Engine Input File", inpfilename);
+    }
   }
   
   // minerals

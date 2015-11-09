@@ -1060,7 +1060,7 @@ Chemistry
       
       * `"state`" = "on | off"
       
-      * `"engine`" = "amanzi | pflotran | none"
+      * `"engine`" = "amanzi | pflotran | crunchflow | none"
 
       * `"process_model`" = "implicit operator split | none" 
 
