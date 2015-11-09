@@ -69,8 +69,7 @@ void MFD3D::ModifyStabilityScalingFactor(double factor)
 /* ******************************************************************
 * Simplest stability term is added to the consistency term. 
 ****************************************************************** */
-void MFD3D::StabilityScalar(int cell, DenseMatrix& N,
-                            DenseMatrix& Mc, DenseMatrix& M)
+void MFD3D::StabilityScalar(int c, DenseMatrix& N, DenseMatrix& Mc, DenseMatrix& M)
 {
   GrammSchmidt(N);
   CalculateStabilityScalar(Mc);
@@ -239,7 +238,7 @@ int MFD3D::StabilityOptimized(const Tensor& T, DenseMatrix& N,
 * A wrapper for the simplex method that finds monotone parameters. 
 ****************************************************************** */
 int MFD3D::StabilityMMatrix_(
-    int cell, DenseMatrix& N, DenseMatrix& Mc, DenseMatrix& M, int objective)
+    int c, DenseMatrix& N, DenseMatrix& Mc, DenseMatrix& M, int objective)
 {
   int d = mesh_->space_dimension();
   int nrows = N.NumRows();

@@ -3070,6 +3070,9 @@ Diffusion operator
   * `"discretization secondary`" [string] specifies the most robust discretization method
     that is used when the primary selection fails to satisfy all a priori conditions.
 
+  * `"diffusion tensor`" [string] allows us to solve problems with symmetric and non-symmetric 
+    (but positive definite) tensors. Available options are *symmetric* (defualt) and *nonsymmetric*.
+
   * `"nonlinear coefficient`" [string] specifies a method for treating nonlinear diffusion
     coefficient, if any. Available options are `"upwind: face`", `"divk: cell-face`" (default),
     `"divk: face`", `"standard: cell`", `"divk: cell-face-twin`" and `"divk: cell-grad-face-twin`".

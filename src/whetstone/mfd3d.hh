@@ -45,7 +45,7 @@ class MFD3D {
   ~MFD3D() {};
 
   virtual int L2consistency(int cell, const Tensor& T,
-                            DenseMatrix& N, DenseMatrix& Mc) = 0;
+                            DenseMatrix& N, DenseMatrix& Mc, bool symmetry) = 0;
 
   virtual int L2consistencyInverse(int cell, const Tensor& T,
                                    DenseMatrix& R, DenseMatrix& Wc) = 0;
@@ -74,16 +74,15 @@ class MFD3D {
 
  protected:
   // supporting stability methods (add matrix Ms in M = Mc + Ms)
-  void StabilityScalar(int cell, DenseMatrix& N,  // use R, Wc, W for the inverse matrix
-                       DenseMatrix& Mc, DenseMatrix& M);
+  // use R, Wc, W for the inverse matrix
+  void StabilityScalar(int c, DenseMatrix& N, DenseMatrix& Mc, DenseMatrix& M);
 
   int StabilityOptimized(const Tensor& T, DenseMatrix& N, 
                          DenseMatrix& Mc, DenseMatrix& M);
 
-  int StabilityMonotoneHex(int cell, const Tensor& T,
-                           DenseMatrix& Mc, DenseMatrix& M);
+  int StabilityMonotoneHex(int c, const Tensor& T, DenseMatrix& Mc, DenseMatrix& M);
 
-  int StabilityMMatrix_(int cell, DenseMatrix& N, DenseMatrix& Mc, DenseMatrix& M, 
+  int StabilityMMatrix_(int c, DenseMatrix& N, DenseMatrix& Mc, DenseMatrix& M, 
                         int objective = WHETSTONE_SIMPLEX_FUNCTIONAL_SUMALL);
 
   int SimplexFindFeasibleSolution_(DenseMatrix& T, int m1, int m2, int m3, int* izrow, int* iypos);

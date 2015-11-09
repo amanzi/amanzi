@@ -228,6 +228,29 @@ double Tensor::Det()
 
 
 /* ******************************************************************
+* Symmetrizing the tensors of rank 2. 
+****************************************************************** */
+void Tensor::SymmetricPart()
+{
+  if (rank_ == 2 && d_ == 2) {
+    double tmp = (data_[1] + data_[2]) / 2;
+    data_[1] = tmp;
+    data_[2] = tmp;
+  } else if (rank_ == 2 && d_ == 3) {
+    double tmp = (data_[1] + data_[3]) / 2;
+    data_[1] = tmp;
+    data_[3] = tmp;
+    tmp = (data_[2] + data_[6]) / 2;
+    data_[2] = tmp;
+    data_[6] = tmp;
+    tmp = (data_[5] + data_[7]) / 2;
+    data_[5] = tmp;
+    data_[7] = tmp;
+  }
+}
+
+
+/* ******************************************************************
 * Check that matrix is zero.
 ****************************************************************** */
 bool Tensor::isZero()
@@ -288,6 +311,17 @@ Tensor& Tensor::operator+=(double c)
 
 
 /* ******************************************************************
+* Elementary operations with a tensor.
+****************************************************************** */
+Tensor& Tensor::operator-=(const Tensor& T)
+{
+  double* data = T.data();
+  for (int i = 0; i < size_*size_; ++i) data_[i] -= data[i];
+  return *this;
+}
+
+
+/* ******************************************************************
 * Copy operator.
 ****************************************************************** */
 Tensor& Tensor::operator=(const Tensor& T)
@@ -317,10 +351,10 @@ AmanziGeometry::Point operator*(const Tensor& T, const AmanziGeometry::Point& p)
     return p2;
 
   } else if (rank == 2) {
+    p2.set(0.0);
     for (int i = 0; i < d; i++) {
-      p2[i] = 0.0;
       for (int j = 0; j < d; j++) {
-        p2[i] += (*data) * p[j];
+        p2[j] += (*data) * p[i];
         data++;
       }
     }

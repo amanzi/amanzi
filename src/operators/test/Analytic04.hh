@@ -56,10 +56,6 @@ class Analytic04 : public AnalyticBase {
     return k;      
   }
 
-  Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    return ScalarCoefficient(p,t) * gradient_exact(p,t);
-  }
- 
   Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     double x = p[0];
     double y = p[1];

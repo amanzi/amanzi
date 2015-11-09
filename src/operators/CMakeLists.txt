@@ -157,6 +157,7 @@ if ( BUILD_TESTS )
     add_amanzi_test(operators_diffusion operators_diffusion
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion.cc
+                                        test/operator_diffusion_nonsymmetric.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_diffusion_3pe operators_diffusion NPROCS 3 KIND unit)

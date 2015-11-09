@@ -26,9 +26,10 @@ namespace WhetStone {
 
 /* ******************************************************************
 * Efficient implementation is possible in 2D. Hence, we fork the code.
+* Non-symmetric tensor is not yet used.
 ****************************************************************** */
 int MFD3D_Electromagnetics::L2consistency(int c, const Tensor& T,
-                                          DenseMatrix& N, DenseMatrix& Mc)
+                                          DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
   int ok, d = mesh_->space_dimension();
   if (d == 2) {
@@ -521,7 +522,7 @@ int MFD3D_Electromagnetics::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
   DenseMatrix N(nrows, d);
   DenseMatrix Mc(nrows, nrows);
 
-  int ok = L2consistency(c, T, N, Mc);
+  int ok = L2consistency(c, T, N, Mc, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   StabilityScalar(c, N, Mc, M);
@@ -540,7 +541,7 @@ int MFD3D_Electromagnetics::MassMatrixOptimized(int c, const Tensor& T, DenseMat
   DenseMatrix N(nrows, d);
   DenseMatrix Mc(nrows, nrows);
 
-  int ok = L2consistency(c, T, N, Mc);
+  int ok = L2consistency(c, T, N, Mc, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   ok = StabilityOptimized(T, N, Mc, M);

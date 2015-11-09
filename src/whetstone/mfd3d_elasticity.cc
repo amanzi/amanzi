@@ -30,7 +30,7 @@ namespace WhetStone {
 * Requires mesh_get_edges to complete the implementation.
 ****************************************************************** */
 int MFD3D_Elasticity::L2consistency(int c, const Tensor& T,
-                                    DenseMatrix& N, DenseMatrix& Mc)
+                                    DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
   Entity_ID_List faces;
 

@@ -167,6 +167,7 @@ class OperatorDiffusion {
   
  protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
+  bool K_symmetric_;
 
   // nonlinear coefficient and its representation
   Teuchos::RCP<const CompositeVector> k_, dkdp_;
