@@ -53,9 +53,6 @@ endif()
 #     add_definitions("-DHAVE_FATAL_MESSAGES:BOOL=TRUE")
 # endif()
 
-# Trilinos 12+ now requires c++11
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-
 # Trilinos 12 kills STK?
 set(ENABLE_STK_Mesh OFF)
 
