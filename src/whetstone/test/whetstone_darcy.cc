@@ -344,7 +344,6 @@ TEST(DARCY_FULL_TENSOR_2D) {
         }
         double vxx_exact = (method == 6) ? -0.054167 : -0.05;
         CHECK_CLOSE(vxx_exact, vxx, 1e-10);
-        std::cout << vxx << std::endl;
       }
     }
   }
