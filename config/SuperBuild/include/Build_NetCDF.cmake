@@ -75,8 +75,8 @@ build_whitespace_string(netcdf_cxxflags
 
 set(cpp_flags_list
     -I${TPL_INSTALL_PREFIX}/include
-    ${Amanzi_COMMON_CFLAGS}
-    ${Amanzi_COMMON_CXXFLAGS})
+    ${Amanzi_COMMON_CFLAGS})
+#    ${Amanzi_COMMON_CXXFLAGS})
 list(REMOVE_DUPLICATES cpp_flags_list)
 build_whitespace_string(netcdf_cppflags ${cpp_flags_list})
 

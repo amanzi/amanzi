@@ -121,11 +121,11 @@ set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${A
 #
 set(XERCES_VERSION_MAJOR 3)
 set(XERCES_VERSION_MINOR 1)
-set(XERCES_VERSION_PATCH 1)
+set(XERCES_VERSION_PATCH 2)
 set(XERCES_VERSION ${XERCES_VERSION_MAJOR}.${XERCES_VERSION_MINOR}.${XERCES_VERSION_PATCH})
 set(XERCES_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(XERCES_ARCHIVE_FILE   xerces-c-${XERCES_VERSION}.tar.gz)
-set(XERCES_MD5_SUM        6a8ec45d83c8cfb1584c5a5345cb51ae ) 
+set(XERCES_ARCHIVE_FILE   xerces-c-${XERCES_VERSION}.tar.bz2)
+set(XERCES_MD5_SUM        d987b8bb576aea456e92454781fe3615 ) 
 
 #
 # TPL: OpenMPI
@@ -187,11 +187,11 @@ set(CCSE_MD5_SUM        faa52bb553cea8ca9ea436c1a7135b12)
 # TPL: UnitTest
 #
 set(UnitTest_VERSION_MAJOR 1)
-set(UnitTest_VERSION_MINOR 4)
+set(UnitTest_VERSION_MINOR 5)
 set(UnitTest_VERSION ${UnitTest_VERSION_MAJOR}.${UnitTest_VERSION_MINOR})
 set(UnitTest_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(UnitTest_ARCHIVE_FILE   unittest-cpp-${UnitTest_VERSION}.zip)
-set(UnitTest_MD5_SUM       bd373a53403ed51ea1bbb60b1952d7e3) 
+set(UnitTest_MD5_SUM      6f6e05fa07eeb2d44e5b11bd1f38865d) 
 
 #
 # TPL: Boost

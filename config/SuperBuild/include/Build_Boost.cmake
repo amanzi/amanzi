@@ -19,6 +19,10 @@ set(Boost_projects "system,filesystem,program_options,regex,graph")
 
 # --- Define the configure command
 
+# I believe these should always get set?
+set(Boost_bjam_args "cxxflags=${Amanzi_COMMON_CXXFLAGS}")
+
+
 # Determine toolset type
 set(Boost_toolset)
 string(TOLOWER ${CMAKE_C_COMPILER_ID} compiler_id_lc)
@@ -31,7 +35,7 @@ if (compiler_id_lc)
     if ( ${compiler_id_lc} STREQUAL "intel" )
       set(Boost_toolset intel-darwin)
     else()  
-      set(Boost_toolset darwin)
+      set(Boost_toolset clang)
     endif()  
     # some extra hints.
     if (${compiler_id_lc} STREQUAL "gnu")
@@ -47,6 +51,7 @@ if (compiler_id_lc)
         endif()
       endif()
     endif()
+
   elseif(UNIX)
     if ( ${compiler_id_lc} STREQUAL "gnu" )
         set(Boost_toolset gcc)

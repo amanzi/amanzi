@@ -18,6 +18,12 @@ if ("${CMAKE_MAJOR_VERSION}" GREATER 2)
   cmake_policy(SET CMP0048 OLD)
 endif()
 
+if (CMAKE_VERSION VERSION_LESS "3.1")
+  set (CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ ${CMAKE_CXX_FLAGS}")
+else ()
+  set(CMAKE_CXX_STANDARD 11)
+endif ()
+
 # Enable testing, ctest needs this
 # all add_test commands are ignored unless this is called!
 enable_testing()
