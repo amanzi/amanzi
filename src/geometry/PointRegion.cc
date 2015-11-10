@@ -64,7 +64,7 @@ PointRegion::inside(const Point& p) const
     const VerboseObject *verbobj = Region::verbosity_obj();
     if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
       Teuchos::OSTab tab = verbosity_obj()->getOSTab();
-      *(verbobj->os()) << tempstr;
+      *(verbobj->os()) << tempstr.str();
     }
     Errors::Message mesg(tempstr.str());
     Exceptions::amanzi_throw(mesg);

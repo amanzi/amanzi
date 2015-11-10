@@ -37,7 +37,7 @@ PlaneRegion::PlaneRegion(const std::string name,
     tempstr << "\nMismatch in point and normal dimensions of PlaneRegion " << Region::name() << "Perhaps the region is improperly defined?\n";
     if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
       Teuchos::OSTab tab = verbobj->getOSTab();
-      *(verbobj->os()) << tempstr;
+      *(verbobj->os()) << tempstr.str();
     }
     Errors::Message mesg(tempstr.str());
     Exceptions::amanzi_throw(mesg);
@@ -59,7 +59,7 @@ PlaneRegion::PlaneRegion(const char *name, const unsigned int id,
     tempstr << "\nMismatch in point and normal dimensions of PlaneRegion " << Region::name() << "Perhaps the region is improperly defined?\n";
     if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
       Teuchos::OSTab tab = verbobj->getOSTab();
-      *(verbobj->os()) << tempstr;
+      *(verbobj->os()) << tempstr.str();
     }
     Errors::Message mesg(tempstr.str());
     Exceptions::amanzi_throw(mesg);
@@ -92,7 +92,7 @@ PlaneRegion::inside(const Point& p) const
     const VerboseObject *verbobj = Region::verbosity_obj();
     if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
       Teuchos::OSTab tab = verbobj->getOSTab();
-      *(verbobj->os()) << tempstr;
+      *(verbobj->os()) << tempstr.str();
     }
     Errors::Message mesg(tempstr.str());
     Exceptions::amanzi_throw(mesg);

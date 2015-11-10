@@ -68,7 +68,7 @@ void PolygonRegion::init() {
     const VerboseObject *verbobj = Region::verbosity_obj();
     if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
       Teuchos::OSTab tag = verbobj->getOSTab();
-      *(verbobj->os()) << tempstr;
+      *(verbobj->os()) << tempstr.str();
     }
     Errors::Message mesg(tempstr.str());
     Exceptions::amanzi_throw(mesg);
@@ -143,7 +143,7 @@ void PolygonRegion::init() {
     const VerboseObject *verbobj = Region::verbosity_obj();
     if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
       Teuchos::OSTab tab = verbobj->getOSTab();
-      *(verbobj->os()) << tempstr;
+      *(verbobj->os()) << tempstr.str();
     }
     Errors::Message mesg(tempstr.str());
     Exceptions::amanzi_throw(mesg);
@@ -165,7 +165,7 @@ PolygonRegion::inside(const Point& p) const
     const VerboseObject *verbobj = Region::verbosity_obj();
     if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
       Teuchos::OSTab tab = verbobj->getOSTab();
-      *(verbobj->os()) << tempstr;
+      *(verbobj->os()) << tempstr.str();
     }
     Errors::Message mesg(tempstr.str());
     Exceptions::amanzi_throw(mesg);

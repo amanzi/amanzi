@@ -2941,16 +2941,13 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
       }
     }
     else {
-      std::stringstream tempstr;
-      tempstr << "Requested CELLS on region " << region->name() << 
-          " of type " << region->type() << 
-          " and dimension " << region->dimension() << ".\n" << 
-          "This request will result in an empty set";
-    
       const VerboseObject *verbobj = Mesh::verbosity_obj();
       if (verbobj && verbobj->os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = verbobj->getOSTab();
-        *(verbobj->os()) << tempstr;
+        *(verbobj->os()) << "Requested CELLS on region " << region->name() << 
+          " of type " << region->type() << 
+          " and dimension " << region->dimension() << ".\n" << 
+          "This request will result in an empty set";
       }
     }
       
@@ -3022,16 +3019,13 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
       // Will handle it later in the routine
     }
     else {
-      std::stringstream tempstr;
-      tempstr << "Requested FACES on region " << region->name() << 
-          " of type " << region->type() << " and dimension " << 
-          region->dimension() << ".\n" << 
-          "This request will result in an empty set";
-    
       const VerboseObject *verbobj = Mesh::verbosity_obj();
       if (verbobj && verbobj->os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = verbobj->getOSTab();
-        *(verbobj->os()) << tempstr;
+        *(verbobj->os()) << "Requested FACES on region " << region->name() << 
+          " of type " << region->type() << " and dimension " << 
+          region->dimension() << ".\n" << 
+          "This request will result in an empty set";
       }
     }
     break;
@@ -3081,16 +3075,14 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
       // We will handle it later in the routine
     }
     else {
-      std::stringstream tempstr;
-      tempstr << "Requested POINTS on region " << region->name() << 
+      const VerboseObject *verbobj = Mesh::verbosity_obj();
+      if (verbobj && verbobj->os_OK(Teuchos::VERB_HIGH)) {
+        Teuchos::OSTab tab = verbobj->getOSTab();
+        *(verbobj->os()) << "Requested POINTS on region " << region->name() << 
           " of type " << region->type() << " and dimension " << 
           region->dimension() << ".\n" << 
           "This request will result in an empty set";
     
-      const VerboseObject *verbobj = Mesh::verbosity_obj();
-      if (verbobj && verbobj->os_OK(Teuchos::VERB_HIGH)) {
-        Teuchos::OSTab tab = verbobj->getOSTab();
-        *(verbobj->os()) << tempstr;
       }
     }
       
