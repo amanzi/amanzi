@@ -82,9 +82,23 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
       out_list.set<std::string>("chemistry model", "Alquimia");
 
       // Find the name of the engine-specific input file.
-      DOMElement* rxn_net = static_cast<DOMElement*>(GetUniqueElementByTagsString_("geochemistry, reaction_network", flag));
-      std::string inpfilename = GetAttributeValueS_(rxn_net, "file");
-      out_list.set<std::string>("Engine Input File", inpfilename);
+      // This XML parsing code is clunky and error-prone. Because geochemistry appears in a couple 
+      // different spots in the file, we have to be extra careful how we get the reaction network data(!).
+      // NOTE TO DOE SPONSORS: XML IS REALLY GOOD FOR JAVA AND REALLY BAD FOR C++.
+      {
+        DOMElement* root = doc_->getDocumentElement();
+        DOMNodeList* geochem_list = root->getElementsByTagName(mm.transcode("geochemistry"));
+        for (int i = 0; i < geochem_list->getLength(); ++i) {
+          DOMElement* geochem = static_cast<DOMElement*>(geochem_list->item(i));
+          DOMNodeList* rxn_net_list = geochem->getElementsByTagName(mm.transcode("reaction_network"));
+          if (rxn_net_list->getLength() >= 1) {
+            DOMElement* rxn_net = static_cast<DOMElement*>(rxn_net_list->item(0));
+            std::string inpfilename = GetAttributeValueS_(rxn_net, "file");
+            out_list.set<std::string>("Engine Input File", inpfilename);
+            break;
+          }
+        }
+      }
     }
   }
   
