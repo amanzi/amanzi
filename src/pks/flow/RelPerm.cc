@@ -130,19 +130,19 @@ void RelPerm::Init_(Teuchos::ParameterList& plist)
 {
   std::string name = plist.get<std::string>("relative permeability");
 
-  if (name == "upwind: gravity") {
+  if (name == "upwind-gravity") {
     method_ = Flow::FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
-  } else if (name == "upwind: darcy velocity") {
+  } else if (name == "upwind-darcy_velocity") {
     method_ = Flow::FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
-  } else if (name == "upwind: amanzi") {
+  } else if (name == "upwind-amanzi") {
     method_ = Flow::FLOW_RELATIVE_PERM_AMANZI_MFD;
-  } else if (name == "other: arithmetic average") {
+  } else if (name == "other-arithmetic_average") {
     method_ = Flow::FLOW_RELATIVE_PERM_ARITHMETIC_AVERAGE;
-  } else if (name == "other: harmonic average") {
+  } else if (name == "other-harmonic_average") {
     method_ = Flow::FLOW_RELATIVE_PERM_HARMONIC_AVERAGE;
   } else {
     Errors::Message msg;
-    msg << "Flow PK: unknown relative permeability method has been specified.";
+    msg << "Flow PK: unknown relative permeability method has been specified." ;
     Exceptions::amanzi_throw(msg);
   }
 }
