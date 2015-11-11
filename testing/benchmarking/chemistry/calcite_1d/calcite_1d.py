@@ -256,7 +256,11 @@ if __name__ == "__main__":
         for i, time in enumerate(times):
            x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
            VF_amanzi_native = VF_amanzi_native +[c_amanzi_native]
+
+        native = True
+
     except:
+        native = False
 
         pass    
 
@@ -265,7 +269,7 @@ if __name__ == "__main__":
         input_filename = os.path.join("amanzi-u-1d-calcite-alq.xml")
         path_to_amanzi = "amanzi-alquimia-output"
         run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-calcite-trim.in","calcite.dat"], path_to_amanzi)
-
+        import pdb; pdb.set_trace()
         comp = 'total_component_concentration.cell.Ca++ conc'
         Ca_amanzi_alquimia = []
         for i, time in enumerate(times):
@@ -368,7 +372,8 @@ if __name__ == "__main__":
                  ax[0].plot(x_amanzi_alquimia, Ca_amanzi_alquimia[i],'r-',linewidth=2)
           if alq_crunch:
                  ax[0].plot(x_amanzi_alquimia_crunch, Ca_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=12)
-          ax[0].plot(x_amanzi_native, Ca_amanzi_native[i],'rx')
+          if native:
+                 ax[0].plot(x_amanzi_native, Ca_amanzi_native[i],'rx')
 ##          ax[0].plot(x_pflotran, Ca_pflotran[i],'bx',linewidth=2)
           ax[0].plot(x_pflotran_OS, Ca_pflotran_OS[i],'m-',linewidth=2)
 #          if i>1:
@@ -382,7 +387,8 @@ if __name__ == "__main__":
                  ax[1].plot(x_amanzi_alquimia, pH_amanzi_alquimia[i],'r-',linewidth=2,label='AmanziU(2nd-O)+Alq(PFT)')
           if alq_crunch:
                  ax[1].plot(x_amanzi_alquimia_crunch, pH_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=12,label='AmanziU(2nd-O)+Alq(CF)')
-          ax[1].plot(x_amanzi_native, pH_amanzi_native[i],'rx',label='AmanziU(2nd-O) Native Chem.')
+          if native:
+                 ax[1].plot(x_amanzi_native, pH_amanzi_native[i],'rx',label='AmanziU(2nd-O) Native Chem.')
 ##          ax[1].plot(x_pflotran, pH_pflotran[i],'bx',linewidth=2)
           ax[1].plot(x_pflotran_OS, pH_pflotran_OS[i],'m-',linewidth=2)
 #          if i>0:
@@ -396,7 +402,8 @@ if __name__ == "__main__":
                    ax[2].plot(x_amanzi_alquimia, VF_amanzi_alquimia[i],'r-',linewidth=2)
             if alq_crunch:
                    ax[2].plot(x_amanzi_alquimia_crunch, VF_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=12)
-            ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'rx')
+            if native:
+                   ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'rx')
 ##            ax[2].plot(x_pflotran, VF_pflotran[i],'bx',label='PFloTran',linewidth=2)
             ax[2].plot(x_pflotran_OS, VF_pflotran_OS[i],'m-',label='PFloTran OS',linewidth=2)
 ##            ax[2].plot(x_crunchflow, VF_crunchflow[i],'y.',label='CrunchFlow GIMRT')
@@ -406,7 +413,8 @@ if __name__ == "__main__":
                    ax[2].plot(x_amanzi_alquimia, VF_amanzi_alquimia[i],'r-',linewidth=2)
             if alq_crunch:
                    ax[2].plot(x_amanzi_alquimia_crunch, VF_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=12)
-            ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'rx')
+            if native:
+                  ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'rx')
 ##            ax[2].plot(x_pflotran, VF_pflotran[i],'bx',linewidth=2)
             ax[2].plot(x_pflotran_OS, VF_pflotran_OS[i],'m-',linewidth=2)
 #            if i==1:
