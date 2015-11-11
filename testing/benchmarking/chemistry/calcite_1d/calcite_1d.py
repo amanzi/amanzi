@@ -269,7 +269,7 @@ if __name__ == "__main__":
         input_filename = os.path.join("amanzi-u-1d-calcite-alq.xml")
         path_to_amanzi = "amanzi-alquimia-output"
         run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-calcite-trim.in","calcite.dat"], path_to_amanzi)
-        import pdb; pdb.set_trace()
+
         comp = 'total_component_concentration.cell.Ca++ conc'
         Ca_amanzi_alquimia = []
         for i, time in enumerate(times):
