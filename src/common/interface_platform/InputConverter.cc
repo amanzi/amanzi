@@ -191,7 +191,7 @@ void InputConverter::ParseConstants_()
 
 /* ******************************************************************
 * Return node described by the list of consequtive names tags 
-* separated by commas. It 
+* separated by commas.  
 ****************************************************************** */
 DOMNode* InputConverter::GetUniqueElementByTagsString_(
     const std::string& tags, bool& flag)
@@ -200,6 +200,7 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
 
   MemoryManager mm;
   DOMNode* node;
+  DOMNode* node_good;
 
   std::vector<std::string> tag_names = CharToStrings_(tags.c_str());
   if (tag_names.size() == 0) return node;
@@ -209,9 +210,11 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
   int nnodes = node_list->getLength();
   if (nnodes == 0) return node;
 
+  int icnt(0);
   for (int k = 0; k < nnodes; ++k) {
     node = node_list->item(k);
 
+    bool found(true);
     for (int n = 1; n < tag_names.size(); ++n) {
       DOMNodeList* children = node->getChildNodes();
       int ntag(0);
@@ -226,14 +229,19 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
         }
       }
       if (ntag != 1) {
-        if (k == nnodes - 1) return node;
+        found = false;
         break;
       }
     }
+
+    if (found) {
+      icnt++;
+      node_good = node;
+    }
   }
 
-  flag = true;
-  return node;
+  flag = (icnt == 1);
+  return node_good;
 }
 
 
