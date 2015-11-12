@@ -15,6 +15,7 @@
 #include <string>
 
 //TPLs
+#include <boost/algorithm/string.hpp>
 #include <xercesc/dom/DOM.hpp>
 
 // Amanzi's
@@ -46,13 +47,17 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
 
   // set up default values for some expert parameters
   double atm_pres(ATMOSPHERIC_PRESSURE);
-  std::string rel_perm("upwind-amanzi");  
+  std::string rel_perm("upwind: amanzi");  
   std::string update_upwind("every timestep");
 
   // process expert parameters
   bool flag;
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, rel_perm_method", flag);
-  if (flag) rel_perm = mm.transcode(node->getTextContent());
+  if (flag) {
+    std::string tmp = mm.transcode(node->getTextContent());
+    rel_perm = boost::replace_all_copy(tmp, "-", ": ");
+    replace(rel_perm.begin(), rel_perm.end(), '_', ' ');
+  }
 
   // create flow header
   if (pk_model_["flow"] == "darcy") {
@@ -70,7 +75,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
     // "standard" is the most robust upwind method for variety of subsurface
     // scenarios. Note that "upwind: amanzi" requires "upwind method"="divk" 
     // to reproduce the same behavior on orthogonal meshes. 
-    if (strcmp(rel_perm.c_str(), "upwind-amanzi") == 0) {
+    if (strcmp(rel_perm.c_str(), "upwind: amanzi") == 0) {
       upw_list.set<std::string>("upwind method", "divk");
       upw_list.sublist("upwind divk parameters").set<double>("tolerance", 1e-12);
     } else {

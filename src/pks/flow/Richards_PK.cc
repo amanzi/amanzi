@@ -429,14 +429,14 @@ void Richards_PK::Initialize()
 
   std::string name = rp_list_->sublist("upwind").get<std::string>("relative permeability");
   std::string upw_method("standard: cell");
-  if (name == "upwind-darcy_velocity") {
+  if (name == "upwind: darcy velocity") {
     upw_method = "upwind: face";
-  } else if (name == "upwind-gravity") {
+  } else if (name == "upwind: gravity") {
     upw_method = "upwind: face";
-  } else if (name == "upwind-amanzi") {
+  } else if (name == "upwind: amanzi") {
     upw_method = "divk: cell-face";
     // upw_method = "divk: face";
-  } else if (name == "other-arithmetic_average") {
+  } else if (name == "other: arithmetic average") {
     upw_method = "upwind: face";
   }
   oplist_matrix.set<std::string>("nonlinear coefficient", upw_method);
