@@ -206,23 +206,30 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
 
   // get the first node
   DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode(tag_names[0].c_str()));
-  if (node_list->getLength() != 1) return node;
-  node = node_list->item(0);
+  int nnodes = node_list->getLength();
+  if (nnodes == 0) return node;
 
-  for (int n = 1; n < tag_names.size(); ++n) {
-    DOMNodeList* children = node->getChildNodes();
-    int ntag(0);
-    for (int i = 0; i < children->getLength(); i++) {
-      DOMNode* inode = children->item(i);
-      if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-        char* tagname = mm.transcode(inode->getNodeName());   
-        if (strcmp(tagname, tag_names[n].c_str()) == 0) {
-          node = inode;
-          ntag++;
+  for (int k = 0; k < nnodes; ++k) {
+    node = node_list->item(k);
+
+    for (int n = 1; n < tag_names.size(); ++n) {
+      DOMNodeList* children = node->getChildNodes();
+      int ntag(0);
+      for (int i = 0; i < children->getLength(); i++) {
+        DOMNode* inode = children->item(i);
+        if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
+          char* tagname = mm.transcode(inode->getNodeName());   
+          if (strcmp(tagname, tag_names[n].c_str()) == 0) {
+            node = inode;
+            ntag++;
+          }
         }
       }
+      if (ntag != 1) {
+        if (k == nnodes - 1) return node;
+        break;
+      }
     }
-    if (ntag != 1) return node;
   }
 
   flag = true;
