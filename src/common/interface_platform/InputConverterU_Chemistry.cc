@@ -50,30 +50,35 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   // chemical engine
   bool flag;
   node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
-  element = static_cast<DOMElement*>(node);
-  std::string engine = GetAttributeValueS_(element, "engine");
+  std::string engine = GetAttributeValueS_(static_cast<DOMElement*>(node), "engine");
 
   // process engine
   bool native(false);
   if (engine ==  "amanzi") {
-    out_list.set<std::string>("chemistry model", "Amanzi");
-    std::string bgdfilename = CreateBGDFile(xmlfilename_);
-    bgdfilename = GetAttributeValueS_(element, "input_filename", false, bgdfilename);
     native = true;
+    out_list.set<std::string>("chemistry model", "Amanzi");
+
+    std::string bgdfilename = CreateBGDFile(xmlfilename_);
+    std::string format("simple");
+    node = GetUniqueElementByTagsString_("geochemistry, reaction_network", flag);
+    if (flag) {
+      element = static_cast<DOMElement*>(node);
+      bgdfilename = GetAttributeValueS_(element, "file", false, bgdfilename);
+      format = GetAttributeValueS_(element, "format", false, format);
+    }
 
     Teuchos::ParameterList& bgd_list = out_list.sublist("Thermodynamic Database");
-    bgd_list.set<std::string>("Format", "simple");
     bgd_list.set<std::string>("File", bgdfilename);
+    bgd_list.set<std::string>("Format", format);
 
   } else {
-    bool valid_engine = true;
+    bool valid_engine(true);
 
     if (engine == "pflotran") {
       out_list.set<std::string>("Engine", "PFloTran");
     } else if (engine == "crunchflow") {
       out_list.set<std::string>("Engine", "CrunchFlow");
-    }
-    else {
+    } else {
       valid_engine = false;
     }
 
@@ -82,22 +87,11 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
       out_list.set<std::string>("chemistry model", "Alquimia");
 
       // Find the name of the engine-specific input file.
-      // This XML parsing code is clunky and error-prone. Because geochemistry appears in a couple 
-      // different spots in the file, we have to be extra careful how we get the reaction network data(!).
-      // NOTE TO DOE SPONSORS: XML IS REALLY GOOD FOR JAVA AND REALLY BAD FOR C++.
-      {
-        DOMElement* root = doc_->getDocumentElement();
-        DOMNodeList* geochem_list = root->getElementsByTagName(mm.transcode("geochemistry"));
-        for (int i = 0; i < geochem_list->getLength(); ++i) {
-          DOMElement* geochem = static_cast<DOMElement*>(geochem_list->item(i));
-          DOMNodeList* rxn_net_list = geochem->getElementsByTagName(mm.transcode("reaction_network"));
-          if (rxn_net_list->getLength() >= 1) {
-            DOMElement* rxn_net = static_cast<DOMElement*>(rxn_net_list->item(0));
-            std::string inpfilename = GetAttributeValueS_(rxn_net, "file");
-            out_list.set<std::string>("Engine Input File", inpfilename);
-            break;
-          }
-        }
+      node = GetUniqueElementByTagsString_("geochemistry, reaction_network", flag);
+      if (flag) {
+        element = static_cast<DOMElement*>(node);
+        std::string inpfilename = GetAttributeValueS_(element, "file");
+        out_list.set<std::string>("Engine Input File", inpfilename);
       }
     }
   }
