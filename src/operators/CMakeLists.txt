@@ -222,9 +222,9 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/operator_reconstruction.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    add_amanzi_test(test_boundary_flux_solver test_boundary_flux_solver
+    add_amanzi_test(operator_boundary_flux_solver operator_boundary_flux_solver
                     KIND unit
-                    SOURCE test/Main.cc test/test_boundary_flux_solver.cc
+                    SOURCE test/Main.cc test/operator_boundary_flux_solver.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_reconstruction_2pe operators_reconstruction NPROCS 2 KIND unit)
