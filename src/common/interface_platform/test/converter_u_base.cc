@@ -49,7 +49,7 @@ TEST(CONVERTER_BASE) {
       Teuchos::XMLObject XMLobj = XMLWriter.toXML(new_xml);
 
       std::ofstream xmlfile;
-      xmlfile.open("native_v6.xml");
+      xmlfile.open("native_v7.xml");
       xmlfile << XMLobj;
 
       std::cout << "Successful translation. Validating the result...\n\n";
