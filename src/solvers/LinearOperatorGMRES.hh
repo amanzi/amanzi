@@ -1,12 +1,15 @@
 /*
-  num_itrs_accumulated_ = 0;
   This is the Linear Solver component of the Amanzi code.
-  License: BSD
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Authors: Ethan Coon (ecoon@lanl.gov)
-  Konstantin Lipnikov (lipnikov@lanl.gov)
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Generalized minimum residual method (Yu.Kuznetsov, 1968; Y.Saad, 1986)
-  Usage:
 */
 
 #ifndef  AMANZI_GMRES_OPERATOR_HH_
@@ -49,7 +52,6 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
 
     int ierr = GMRESRestart_(v, hv, tol_, max_itrs_, criteria_);
     returned_code_ = ierr;
-    //return (ierr > 0) ? 0 : 1;  // Positive ierr code means success.
     return returned_code_;
   }
 

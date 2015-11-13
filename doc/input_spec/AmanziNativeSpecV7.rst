@@ -1127,10 +1127,10 @@ relative permeability, density and viscosity.
     `"other: harmonic average`", and `"other: arithmetic average`".
 
   * `"upwind update`" [string] defines frequency of recalculating Darcy flux inside
-    nonlinear solver. The available options are `"every time step`" and `"every nonlinear iteration`".
+    nonlinear solver. The available options are `"every timestep`" and `"every nonlinear iteration`".
     The first option freezes the Darcy flux for the whole time step. The second option
     updates it on each iteration of a nonlinear solver. The second option is recommended
-    for the New ton solver. It may impact significantly upwinding of the relative permeability 
+    for the Newton solver. It may impact significantly upwinding of the relative permeability 
     and convergence rate of this solver.
 
   * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
@@ -1199,7 +1199,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
           <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
           <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-          <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+          <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="newton correction" type="string" value="approximate jacobian"/>
         </ParameterList>
       </ParameterList>
@@ -3765,27 +3765,29 @@ Newton-Krylov acceleration (NKA)
 
 .. code-block:: xml
 
-   <Parameter name="solver type" type="string" value="nka"/>
-   <ParameterList name="nka parameters">
-     <Parameter name="nonlinear tolerance" type="double" value="1.0e-06"/>
-     <Parameter name="monitor" type="string" value="monitor update"/>
-     <Parameter name="limit iterations" type="int" value="20"/>
-     <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
-     <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
-     <Parameter name="diverged pc tolerance" type="double" value="1.0e+10"/>
-     <Parameter name="diverged residual tolerance" type="double" value="1.0e+10"/>
-     <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
-     <Parameter name="max error growth factor" type="double" value="1.0e+05"/>
-     <Parameter name="max divergent iterations" type="int" value="3"/>
-     <Parameter name="max nka vectors" type="int" value="10"/>
-     <Parameter name="nka vector tolerance" type="double" value="0.05"/>
-     <Parameter name="modify correction" type="bool" value="false"/>
-     <Parameter name="lag iterations" type="int" value="0"/>
+  <ParameterList name="BDF1">  <!-- typical parent list -->
+    <Parameter name="solver type" type="string" value="nka"/>
+    <ParameterList name="nka parameters">
+      <Parameter name="nonlinear tolerance" type="double" value="1.0e-06"/>
+      <Parameter name="monitor" type="string" value="monitor update"/>
+      <Parameter name="limit iterations" type="int" value="20"/>
+      <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="diverged pc tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="diverged residual tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+      <Parameter name="max error growth factor" type="double" value="1.0e+05"/>
+      <Parameter name="max divergent iterations" type="int" value="3"/>
+      <Parameter name="max nka vectors" type="int" value="10"/>
+      <Parameter name="nka vector tolerance" type="double" value="0.05"/>
+      <Parameter name="modify correction" type="bool" value="false"/>
+      <Parameter name="lag iterations" type="int" value="0"/>
 
-     <ParameterList name="VerboseObject">
-       <Parameter name="Verbosity Level" type="string" value="high"/>
-     </ParameterList>
-   </ParameterList>
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="high"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
 
 
 Anderson acceleration (AA)
@@ -3831,7 +3833,7 @@ Internal parameters for AA include
 
 .. code-block:: xml
 
-  <ParameterList name="AA">  <!-- parent list -->
+  <ParameterList name="BDF1">  <!-- typical parent list -->
     <ParameterList name="aa parameters">
       <Parameter name="nonlinear tolerance" type="double" value="1e-5"/>
       <Parameter name="limit iterations" type="int" value="30"/>
@@ -3887,6 +3889,44 @@ corresponds to a stable (e.g. upwind) discretization.
 
 .. code-block:: xml
 
+  <ParameterList name="BDF1">  <!-- typical parent list -->
+    <Parameter name="solver type" type="string" value="Newton"/>
+    <ParameterList name="Newton parameters">
+      <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+      <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+      <Parameter name="max divergent iterations" type="int" value="3"/>
+      <Parameter name="limit iterations" type="int" value="20"/>
+      <Parameter name="modify correction" type="bool" value="true"/>
+    </ParameterList>
+  </ParameterList>
+
+
+Inexact Newton
+..............
+
+The inexact Newton methods work for cases where the discrete Jacobian is either 
+*not* available, or not stable, or computationally expensive. The discrete
+Jacobian is replaced by a stable approximation of the continuum Jacobian.
+This solver has the same list of parameters as the Newton solver. 
+
+The difference between these solvers is in the preconditioner parameters.
+Here is the list of selected parameters for the Newton-Picard solver.
+
+.. code-block:: xml
+
+   <ParameterList name="operators">
+     <ParameterList name="diffusion operator">
+       <ParameterList name="preconditioner">
+         <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+         <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+         <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+         <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+         <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+       
    <Parameter name="solver type" type="string" value="Newton"/>
    <ParameterList name="Newton parameters">
      <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
@@ -3894,9 +3934,8 @@ corresponds to a stable (e.g. upwind) discretization.
      <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
      <Parameter name="max divergent iterations" type="int" value="3"/>
      <Parameter name="limit iterations" type="int" value="20"/>
-     <Parameter name="modify correction" type="bool" value="true"/>
+     <Parameter name="modify correction" type="bool" value="false"/>
    </ParameterList>
-
 
 Jacobian-free Newton-Krylov (JFNK)
 ..................................

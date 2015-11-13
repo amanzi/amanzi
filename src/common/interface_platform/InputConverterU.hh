@@ -155,6 +155,9 @@ class InputConverterU : public InputConverter {
   bool restart_;
   std::string init_filename_;
 
+  // global solvers
+  std::vector<std::pair<std::string, double> > gmres_solvers_;
+
   // for analysis
   std::vector<std::string> transport_diagnostics_;
 
