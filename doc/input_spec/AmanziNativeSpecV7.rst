@@ -4574,6 +4574,8 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * aqueous pressure [Pa]
       * hydraulic head [m] 
       * drawdown [m] 
+      * volumetric water content [-]
+      * gravimetric water content [-]
       * water table [m]
       * SOLUTE aqueous concentration [mol/m^3]
       * SOLUTE gaseous concentration [mol/m^3]
@@ -4585,6 +4587,8 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
     Observation *drawdown* is calculated with respect to the value registered at the first time
     it was requested.
+
+    The following observations are point-type obervations: "water table".
 
     * `"functional`" [string] the label of a function to apply to each of the variables
       in the variable list (Function options detailed below)

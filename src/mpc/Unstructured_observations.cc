@@ -11,11 +11,13 @@
 
 #include <map>
 
+// Amanzi
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
-#include "PolygonRegion.hh"
 #include "PlaneRegion.hh"
+#include "PolygonRegion.hh"
+#include "ReconstructionCell.hh"
 
 #include "Unstructured_observations.hh"
 
@@ -167,7 +169,7 @@ int Unstructured_observations::MakeObservations(State& S)
       // check if observation is on faces of cells. 
       bool obs_boundary(false);
       unsigned int mesh_block_size(0);
-      Amanzi::AmanziMesh::Entity_ID_List entity_ids;
+      AmanziMesh::Entity_ID_List entity_ids;
       std::string solute_var;
       if (obs_solute) solute_var = comp_names_[tcc_index] + " volumetric flow rate";
       if (var == "aqueous mass flow rate" || 
@@ -178,8 +180,8 @@ int Unstructured_observations::MakeObservations(State& S)
                                                     Amanzi::AmanziMesh::OWNED);
         entity_ids.resize(mesh_block_size);
         S.GetMesh()->get_set_entities((i->second).region, 
-                                          Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED,
-                                          &entity_ids);
+                                      Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED,
+                                      &entity_ids);
         obs_boundary = true;
         for (int i = 0; i != mesh_block_size; ++i) {
           int f = entity_ids[i];
@@ -296,7 +298,7 @@ int Unstructured_observations::MakeObservations(State& S)
             volume += vol;
             value += porosity[0][c] * ws[0][c] * vol;
           }
-        } else if (var == "Gravimetric water content") {
+        } else if (var == "gravimetric water content") {
           double particle_density(1.0);  // does not exist in new state, yet... TODO
   
           for (int i = 0; i < mesh_block_size; i++) {
@@ -312,6 +314,9 @@ int Unstructured_observations::MakeObservations(State& S)
             volume += vol;
             value += pressure[0][c] * vol;
           }
+        } else if (var == "water table") {
+          value = CalculateWaterTable_(S, entity_ids);
+          volume = 1.0;
         } else if (var == "aqueous saturation") {
           for (int i = 0; i < mesh_block_size; i++) {
             int c = entity_ids[i];
@@ -423,6 +428,82 @@ int Unstructured_observations::MakeObservations(State& S)
 
   FlushObservations();
   return num_obs;
+}
+
+
+/* ******************************************************************
+* Auxiliary routine: calculate maximum water table in a region.
+****************************************************************** */
+double Unstructured_observations::CalculateWaterTable_(
+    State& S, AmanziMesh::Entity_ID_List& ids)
+{
+  Teuchos::RCP<const Epetra_MultiVector> pressure = S.GetFieldData("pressure")->ViewComponent("cell", true);
+  double patm = *S.GetScalarData("atmospheric_pressure");
+
+  // initilize and apply the reconstruction operator
+  Teuchos::ParameterList plist;
+  Operators::ReconstructionCell lifting(S.GetMesh());
+  std::vector<AmanziGeometry::Point> gradient; 
+
+  lifting.Init(pressure, plist);
+  lifting.ComputeGradient(ids, gradient);
+
+  // set up extreme values for water table
+  int dim = S.GetMesh()->space_dimension();
+  double zmin(1e+99), zmax(-1e+99), pref(-1e+99), value(-1e+99);
+
+  // estimate water table
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  int found(0);
+  for (int i = 0; i < ids.size(); i++) {
+    int c = ids[i];
+    const AmanziGeometry::Point& xc = S.GetMesh()->cell_centroid(c);
+    double pf, pc = (*pressure)[0][c];
+    pref = pc;
+
+    S.GetMesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+    for (int n = 0; n < faces.size(); ++n) {
+      const AmanziGeometry::Point& xf = S.GetMesh()->face_centroid(faces[n]);
+      zmin = std::min(zmin, xf[dim - 1]);
+      zmax = std::max(zmax, xf[dim - 1]);
+
+      double dp = gradient[i] * (xf - xc);
+      pf = pc + dp;
+
+      if ((pf - patm) * (pc - patm) <= 0.0) {
+        if (fabs(dp) > 1e-8) {
+          double a = (patm - pc) / dp;
+          value = xc[dim - 1] + (xf[dim - 1] - xc[dim - 1]) * a;
+          found = 1;
+          break;
+        }
+      }
+    }
+  }
+
+  // parallel update
+  double tmp_loc[3] = {value, pref, zmax};
+  double tmp_glb[3];
+  S.GetMesh()->get_comm()->MaxAll(tmp_loc, tmp_glb, 3);
+  value = tmp_glb[0];
+  pref = tmp_glb[1];
+  zmax = tmp_glb[2];
+
+  double zmin_tmp(zmin);
+  S.GetMesh()->get_comm()->MinAll(&zmin_tmp, &zmin, 1);
+
+  int found_tmp = found;
+  S.GetMesh()->get_comm()->MaxAll(&found_tmp, &found, 1);
+
+  // process fully saturated and dry cases
+  if (found == 0) {
+    if (pref < patm) value = zmin;
+    if (pref > patm) value = zmax;
+  }
+
+  return value;
 }
 
 

@@ -292,7 +292,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           } else if (strcmp(obs_type, "volumetric_water_content") == 0) {
             obPL.set<std::string>("variable", "volumetric water content");
           } else if (strcmp(obs_type, "gravimetric_water_content") == 0) {
-            obPL.set<std::string>("variable", "Gravimetric water content");
+            obPL.set<std::string>("variable", "gravimetric water content");
           } else if (strcmp(obs_type, "x_aqueous_volumetric_flux") == 0) {
             obPL.set<std::string>("variable", "x-aqueous volumetric flux");
           } else if (strcmp(obs_type, "y_aqueous_volumetric_flux") == 0) {
