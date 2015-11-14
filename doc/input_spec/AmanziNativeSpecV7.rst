@@ -2295,7 +2295,7 @@ A comment line starts with token `"#`".
 Data fields are separated by semicolumns.
 
 
-Primary Species
+Primary species
 ```````````````
 
 Each line in this section has four data fields: 
@@ -2355,7 +2355,7 @@ their meaning depends on the model; although the first one is always *kd*.
    Tc_99  ; linear     ;     988.218
 
 
-General Kinetics
+General kinetics
 ````````````````
 
 Each line in this section has five data fields.
@@ -2374,7 +2374,7 @@ The fourth and fifth columns contain rate constants.
    1.00 Tritium <->  ;   1.00 Tritium ;  1.78577E-09 ; ; 
 
 
-Aqueous Equilibrium Complexes
+Aqueous equilibrium complexes
 `````````````````````````````
 
 Each line in this section has five 
@@ -2557,7 +2557,7 @@ and specific surface area [cm^2 mineral / cm^3 bulk].
    Polyhalite = 2.0 H2O  1.0 Mg++ 2.0 Ca++    2.0 K+  4.0 SO4-2    ; -13.7440 ; 218.1   ; 100.9722 ; 1.0
 
 
-Mineral Kinetics
+Mineral kinetics
 ````````````````
 
 Each line in this section has four fields.
@@ -2584,7 +2584,7 @@ The second field is the rate name.
    (UO2)3(PO4)2.4H2O ; TST ; log10_rate_constant  -10.0 moles/m^2/sec
 
 
-Ion Exchange Sites
+Ion exchange sites
 ``````````````````
 
 Each line in this section has three fields: 
@@ -2597,7 +2597,7 @@ The location is the mineral where the exchanger is located, i.e. kaolinite.
    X- ; -1.0 ; Halite
 
 
-Ion Exchange Complexes
+Ion exchange complexes
 ``````````````````````
 
 Each line in this section has two fields.
@@ -2621,7 +2621,7 @@ The following assumptions are made:
    NaX    = 1.0 Na+   1.0 X- ;  0.0
 
 
-Surface Complex Sites
+Surface complex sites
 `````````````````````
 
 Each line in this section has two fields: species name and surface density.
@@ -2637,7 +2637,7 @@ Each line in this section has two fields: species name and surface density.
    >davis_OH ; 1.56199E-01
 
 
-Surface Complexes
+Surface complexes
 `````````````````
 
 Each line in this section has three fields
@@ -2669,7 +2669,7 @@ The second field is Keq. The third field is charge.
    >FeOHUO3      = 1.0 >FeOH  1.0 H2O  -2.0 H+  1.0 UO2++ ;  3.05 ;  0.0
 
 
-Radiactive Decay
+Radiactive decay
 ````````````````
 
 Each line in this section has two fields.
@@ -4575,7 +4575,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * hydraulic head [m] 
       * drawdown [m] 
       * water table [m]
-      * SOLUTE Aqueous concentration [mol/m^3]
+      * SOLUTE aqueous concentration [mol/m^3]
       * SOLUTE gaseous concentration [mol/m^3]
       * x-, y-, z- aqueous volumetric flux [m/s]
       * material id [-]
