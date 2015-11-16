@@ -23,6 +23,11 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
+# -- below needed only by ResidualDebugger -- maybe this can be fixed?
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
+include_directories(${OUTPUT_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -33,19 +38,29 @@ include_directories(${NOX_INCLUDE_DIRS})
 # Library: solvers
 #
 file(GLOB solvers_inc_files "*.hh")
-set(solvers_source_files PreconditionerFactory.cc PreconditionerBoomerAMG.cc PreconditionerML.cc
-                         PreconditionerEuclid.cc PreconditionerBlockILU.cc)
+set(solvers_source_files ResidualDebugger.cc
+			 PreconditionerFactory.cc
+			 PreconditionerBoomerAMG.cc
+			 PreconditionerML.cc
+			 PreconditionerEuclid.cc
+			 PreconditionerBlockILU.cc)
 
 set(solvers_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${NOX_LIBRARIES})
 list(REVERSE solvers_tpl_libs)
 list(REMOVE_DUPLICATES solvers_tpl_libs)
 list(REVERSE solvers_tpl_libs)
+
+set(solvers_link_libs data_structures output mesh geometry error_handling whetstone atk )
+
 add_amanzi_library(solvers
                    SOURCE ${solvers_source_files} 
                    HEADERS ${solvers_inc_files}
-                   LINK_LIBS error_handling ${solvers_tpl_libs})
+                   LINK_LIBS ${solver_depends} ${solvers_tpl_libs})
+
 
 if (BUILD_TESTS)
+   set(solvers_test_link_libs solvers ${solvers_link_libs})
+
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
 
@@ -61,25 +76,25 @@ if (BUILD_TESTS)
     add_amanzi_test(solver_linear_operators solver_linear_operators
                     KIND unit
                     SOURCE test/Main.cc test/solver_linear_operators.cc
-                    LINK_LIBS error_handling whetstone atk ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
     add_amanzi_test(solver_preconditioners solver_preconditioners
                     KIND unit
                     SOURCE test/Main.cc test/solver_preconditioners.cc
-                    LINK_LIBS error_handling solvers whetstone atk ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
     add_amanzi_test(solver_linear_jfnk solver_linear_jfnk
                     KIND unit
                     SOURCE test/Main.cc test/solver_linear_jfnk.cc
-                    LINK_LIBS error_handling whetstone atk ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
     add_amanzi_test(solver_nka solver_nka
                     KIND unit
                     SOURCE test/Main.cc test/solver_nka.cc
-                    LINK_LIBS error_handling whetstone atk ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
     add_amanzi_test(solver_continuation solver_continuation
                     KIND unit
                     SOURCE test/Main.cc test/solver_continuation.cc
-                    LINK_LIBS error_handling whetstone atk ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+                    LINK_LIBS  ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 endif()

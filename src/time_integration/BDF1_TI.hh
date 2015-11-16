@@ -59,7 +59,7 @@ class BDF1_TI {
 
   Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;
-  Teuchos::RCP<AmanziSolvers::ResidualDebugger<Vector,VectorSpace> > db_;
+  Teuchos::RCP<AmanziSolvers::ResidualDebugger> db_;
 
   Teuchos::RCP<Vector> udot_prev_, udot_;  // for error estimate 
 
@@ -80,7 +80,7 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
 
   // update the verbose options
   vo_ = Teuchos::rcp(new VerboseObject("TI::BDF1", plist_));
-  db_ = Teuchos::rcp(new AmanziSolvers::ResidualDebugger<Vector,VectorSpace>(
+  db_ = Teuchos::rcp(new AmanziSolvers::ResidualDebugger(
 				plist_.sublist("ResidualDebugger")));
 
   // Create the state.
@@ -93,8 +93,7 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
 
   AmanziSolvers::SolverFactory<Vector,VectorSpace> factory;
   solver_ = factory.Create(plist_);
-
-
+  solver_->set_db(db_);
   solver_->Init(solver_fn_, initvector->Map());
 
   // Allocate memory for adaptive timestep controll
@@ -207,7 +206,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
   }
 
   // Update the debugger
-  db_->StartIteration(tlast, state_->seq, state_->failed_current, u->Map());
+  db_->StartIteration<VectorSpace>(tlast, state_->seq, state_->failed_current, u->Map());
   
   // Solve the nonlinear BCE system.
   int ierr, code, itr;
