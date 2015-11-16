@@ -725,7 +725,7 @@ void HDF5_MPI::readDataString(char ***x, int *num_entries, const std::string var
     *x = strData;
     *num_entries = tmpsize;
   } else {
-    num_entries = 0;
+    *num_entries = 0;
   }
 
   delete [] h5path;

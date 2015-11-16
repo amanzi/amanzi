@@ -50,6 +50,10 @@ void Flow_PK::Setup()
     S_->RequireScalar("fluid_density", passwd_);
   }
 
+  if (!S_->HasField("atmospheric_pressure")) {
+    S_->RequireScalar("atmospheric_pressure", passwd_);
+  }
+
   if (!S_->HasField("gravity")) {
     S_->RequireConstantVector("gravity", passwd_, dim);  // state resets ownership.
   } 
@@ -137,6 +141,16 @@ void Flow_PK::InitializeFields_()
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
           *vo_->os() << "initilized fluid_viscosity to default value 1.002e-3" << std::endl;  
+    }
+  }
+
+  if (S_->HasField("atmospheric_pressure")) {
+    if (!S_->GetField("atmospheric_pressure", passwd_)->initialized()) {
+      *(S_->GetScalarData("atmospheric_pressure", passwd_)) = FLOW_PRESSURE_ATMOSPHERIC;
+      S_->GetField("atmospheric_pressure", passwd_)->set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initilized atmospheric_pressure to default value 101325.0" << std::endl;  
     }
   }
 

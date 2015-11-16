@@ -44,6 +44,9 @@
 namespace Amanzi {
 namespace AmanziInput {
 
+/* ******************************************************************
+* Non-member functions.
+****************************************************************** */
 XercesDOMParser* CreateXMLParser()
 {
   XMLPlatformUtils::Initialize();
@@ -84,6 +87,10 @@ xercesc::DOMDocument* OpenXMLInput(XercesDOMParser* parser,
   return doc;
 }
 
+
+/* ******************************************************************
+* Various constructors.
+****************************************************************** */
 InputConverter::InputConverter(const std::string& input_filename):
   xmlfilename_(input_filename),
   doc_(NULL),
@@ -105,8 +112,8 @@ InputConverter::InputConverter(const std::string& input_filename,
 
 InputConverter::~InputConverter()
 {
-//  if (doc_ != NULL)
-//    delete doc_;
+  // if (doc_ != NULL)
+  //   delete doc_;
   if (parser_ != NULL)
     delete parser_;
 }
@@ -190,8 +197,8 @@ void InputConverter::ParseConstants_()
 
 
 /* ******************************************************************
-* Return node described by the list of consequtive names tags 
-* separated by commas.  
+* Returns node specified by the list of consequtive names tags 
+* separated by commas. Only the first tag may be not unique.
 ****************************************************************** */
 DOMNode* InputConverter::GetUniqueElementByTagsString_(
     const std::string& tags, bool& flag)

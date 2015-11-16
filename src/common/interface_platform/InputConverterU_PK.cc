@@ -91,7 +91,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
     solver->set<double>("max du growth factor", INC_DIVERG_FACTOR);
     solver->set<int>("max divergent iterations", MAX_DIVERG_ITERATIONS);
     solver->set<int>("limit iterations", NKA_LIMIT_ITERATIONS);
-    solver->set<bool>("modify correction", true);
+    solver->set<bool>("modify correction", modify_correction);
   }
   else if (nonlinear_solver == "nka") {
     bdf1.set<std::string>("solver type", "nka");
@@ -162,8 +162,11 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
       strtol(mm.transcode(node->getTextContent()), NULL, 10));
 
   node = GetUniqueElementByTagsString_(unstr_controls + ", nonlinear_tolerance", flag); 
-  if (flag) solver->set<double>("nonlinear tolerance",
-      strtod(mm.transcode(node->getTextContent()), NULL));
+  double nonlinear_tol(NONLINEAR_TOLERANCE);
+  if (flag) {
+    nonlinear_tol = strtod(mm.transcode(node->getTextContent()), NULL);
+    solver->set<double>("nonlinear tolerance", nonlinear_tol);
+  }
 
   node = GetUniqueElementByTagsString_(unstr_controls + ", time_step_reduction_factor", flag); 
   if (flag) controller.set<double>("time step reduction factor",
@@ -234,10 +237,15 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
   // overwrite parameters for special solvers
   if (nonlinear_solver == "newton" || 
       nonlinear_solver == "newton-picard") {
+    std::stringstream ss;
+    ss << "GMRES for Newton-" << gmres_solvers_.size();
+
     bdf1.set<int>("max preconditioner lag iterations", 0);
     bdf1.set<bool>("extrapolate initial guess", false);	    
-    out_list.set<std::string>("linear solver", "GMRES for Newton");
-    out_list.set<std::string>("preconditioner enhancement", "GMRES for Newton");
+    out_list.set<std::string>("linear solver", ss.str());
+    out_list.set<std::string>("preconditioner enhancement", ss.str());
+
+    gmres_solvers_.push_back(std::make_pair(ss.str(), nonlinear_tol));
   }
 
   bdf1.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
@@ -374,23 +382,15 @@ Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
         .set<std::string>("newton correction", "approximate jacobian");
   }
 
-  if (nonlinear_solver == "Newton") {
+  if (nonlinear_solver == "newton") {
     Teuchos::ParameterList& pc_list = 
         out_list.sublist("diffusion operator").sublist("preconditioner");
     pc_list.set<std::string>("newton correction", "true jacobian");
-
-    Teuchos::ParameterList& slist = pc_list.sublist("linear operator");
-    slist.set<std::string>("iterative method", "gmres");
-    Teuchos::ParameterList& gmres_list = slist.sublist("gmres parameters");
-    gmres_list.set<double>("error tolerance", NONLINEAR_TOLERANCE * 1e-2);
-    gmres_list.set<int>("maximum number of iterations", 50);
-
-    std::vector<std::string> criteria;
-    criteria.push_back("relative rhs");
-    criteria.push_back("relative residual");
-    gmres_list.set<Teuchos::Array<std::string> >("convergence criteria", criteria);
-
-    gmres_list.sublist("VerboseObject").set<std::string>("Verbosity Level", "low");
+  }
+  else if (nonlinear_solver == "newton-picard") {
+    Teuchos::ParameterList& pc_list = 
+        out_list.sublist("diffusion operator").sublist("preconditioner");
+    pc_list.set<std::string>("newton correction", "approximate jacobian");
   }
 
   return out_list;
