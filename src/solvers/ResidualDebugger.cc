@@ -83,8 +83,9 @@ ResidualDebugger::WriteVector<TreeVector>(int iter,
         const Epetra_MultiVector& vec = *r_leaves[i]->Data()
           ->ViewComponent("cell",false);
         for (int j=0; j!=vec.NumVectors(); ++j) {
-          std::string my_name = "residual.cell." + std::to_string(j);
-          vis_[i]->writeCellDataReal(*vec(j), my_name);
+          std::stringstream my_name;
+          my_name << "residual.cell." << j;
+          vis_[i]->writeCellDataReal(*vec(j), my_name.str());
         }
       }
     }
@@ -98,8 +99,9 @@ ResidualDebugger::WriteVector<TreeVector>(int iter,
           const Epetra_MultiVector& vec = *u_leaves[i]->Data()
             ->ViewComponent("cell",false);
           for (int j=0; j!=vec.NumVectors(); ++j) {
-            std::string my_name = "u.cell." + std::to_string(j);
-            vis_[i]->writeCellDataReal(*vec(j), my_name);
+            std::stringstream my_name;
+            my_name << "u.cell." << j;
+            vis_[i]->writeCellDataReal(*vec(j), my_name.str());
           }
         }
       }
@@ -114,8 +116,9 @@ ResidualDebugger::WriteVector<TreeVector>(int iter,
           const Epetra_MultiVector& vec = *du_leaves[i]->Data()
             ->ViewComponent("cell",false);
           for (int j=0; j!=vec.NumVectors(); ++j) {
-            std::string my_name = "du.cell." + std::to_string(j);
-            vis_[i]->writeCellDataReal(*vec(j), my_name);
+            std::stringstream my_name;
+            my_name << "du.cell." << j;
+            vis_[i]->writeCellDataReal(*vec(j), my_name.str());
           }
         }
       }
