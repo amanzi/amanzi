@@ -254,7 +254,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
 
 
 /* ******************************************************************
-* Translate initializa sublist for time integrator
+* Translate initialization sublist for time integrator
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateInitialization_(
     const std::string& unstr_controls)
@@ -306,7 +306,7 @@ Teuchos::ParameterList InputConverterU::TranslateInitialization_(
         strtod(mm.transcode(node->getTextContent()), NULL));
 
     node = GetUniqueElementByTagsString_(controls + ", max_iterations", flag); 
-    pic_list.set<int>("maximum number of iterations", 
+    if (flag) pic_list.set<int>("maximum number of iterations", 
         strtol(mm.transcode(node->getTextContent()), NULL, 10));
   }
 
