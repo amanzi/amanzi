@@ -42,12 +42,12 @@ ResidualDebugger::StartIteration<TreeVectorSpace>(double time,
   
     for (int i=0; i!=leaves.size(); ++i) {
       if (leaves[i]->Data()->HasComponent("cell")) {
-        std::string filename = filebasename_ + std::to_string(cycle)
-          + "_a" + std::to_string(attempt) + "_v" + std::to_string(i);
+        std::stringstream filename;
+        filename << filebasename_ << cycle << "_a" << attempt << "_v" << i;
         vis_[i] = Teuchos::rcp(new HDF5_MPI(*leaves[i]->Data()->Mesh()->get_comm()));
         vis_[i]->setTrackXdmf(true);
-        vis_[i]->createMeshFile(leaves[i]->Data()->Mesh(), filename+"_mesh");
-        vis_[i]->createDataFile(filename);
+        vis_[i]->createMeshFile(leaves[i]->Data()->Mesh(), filename.str()+"_mesh");
+        vis_[i]->createDataFile(filename.str());
         
       }
     }

@@ -136,6 +136,39 @@ The name *Verbosity Level* is reserved by Trilinos.
    </ParameterList>
 
 
+Residual Debugger
+-----------------
+
+Some components (currently just nonlinear solver, this may change)
+leverage a ResidualDebugger object for writing, to file, residuals,
+corrections, and internal iterates of a solve process for solver
+debugging/work.  Control of when these iterates are written is
+controlled by a few parameters.  This should be written sparingly --
+each attempt at a timestep and each cycle is its own file, and writes
+its own mesh file, so this should be considered i/o and runtime
+expensive.
+
+  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, 
+    the second is the cycle period, and the third is the stop cycle or -1 in which case 
+    there is no stop cycle. All iterations shall be written at such cycles that 
+    satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
+
+  * `"cycles start period stop n`" [Array(int)] if multiple cycles start-period-stop parameters 
+    are needed, then use these parameters with n=0,1,2,..., and not the single 
+    `"cycles start period stop`" parameter.
+
+  * `"cycles`" [Array(int)] an array of discrete cycles that at which all iterations shall be written. 
+
+
+
+.. code-block:: xml
+
+   <ParameterList name="ResidualDebugger">
+     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
+     <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
+   </ParameterList>
+   
+
 Units
 -----
 
@@ -1525,6 +1558,8 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
   * `"aa parameters`" [list] internal parameters for the nonlinear
     solver AA (Anderson acceleration).
 
+  * `"ResidualDebugger`" [list] a residual debugger specification.
+    
 .. code-block:: xml
 
    <ParameterList name="Richards problem">  <!-- parent list -->
