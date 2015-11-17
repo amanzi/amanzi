@@ -136,6 +136,39 @@ The name *Verbosity Level* is reserved by Trilinos.
    </ParameterList>
 
 
+Residual Debugger
+-----------------
+
+Some components (currently just nonlinear solver, this may change)
+leverage a ResidualDebugger object for writing, to file, residuals,
+corrections, and internal iterates of a solve process for solver
+debugging/work.  Control of when these iterates are written is
+controlled by a few parameters.  This should be written sparingly --
+each attempt at a timestep and each cycle is its own file, and writes
+its own mesh file, so this should be considered i/o and runtime
+expensive.
+
+  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, 
+    the second is the cycle period, and the third is the stop cycle or -1 in which case 
+    there is no stop cycle. All iterations shall be written at such cycles that 
+    satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
+
+  * `"cycles start period stop n`" [Array(int)] if multiple cycles start-period-stop parameters 
+    are needed, then use these parameters with n=0,1,2,..., and not the single 
+    `"cycles start period stop`" parameter.
+
+  * `"cycles`" [Array(int)] an array of discrete cycles that at which all iterations shall be written. 
+
+
+
+.. code-block:: xml
+
+   <ParameterList name="ResidualDebugger">
+     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
+     <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
+   </ParameterList>
+   
+
 Units
 -----
 
@@ -1127,10 +1160,10 @@ relative permeability, density and viscosity.
     `"other: harmonic average`", and `"other: arithmetic average`".
 
   * `"upwind update`" [string] defines frequency of recalculating Darcy flux inside
-    nonlinear solver. The available options are `"every time step`" and `"every nonlinear iteration`".
+    nonlinear solver. The available options are `"every timestep`" and `"every nonlinear iteration`".
     The first option freezes the Darcy flux for the whole time step. The second option
     updates it on each iteration of a nonlinear solver. The second option is recommended
-    for the New ton solver. It may impact significantly upwinding of the relative permeability 
+    for the Newton solver. It may impact significantly upwinding of the relative permeability 
     and convergence rate of this solver.
 
   * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
@@ -1199,7 +1232,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
           <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
           <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-          <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+          <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="newton correction" type="string" value="approximate jacobian"/>
         </ParameterList>
       </ParameterList>
@@ -1525,6 +1558,8 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
   * `"aa parameters`" [list] internal parameters for the nonlinear
     solver AA (Anderson acceleration).
 
+  * `"ResidualDebugger`" [list] a residual debugger specification.
+    
 .. code-block:: xml
 
    <ParameterList name="Richards problem">  <!-- parent list -->
@@ -2295,7 +2330,7 @@ A comment line starts with token `"#`".
 Data fields are separated by semicolumns.
 
 
-Primary Species
+Primary species
 ```````````````
 
 Each line in this section has four data fields: 
@@ -2355,7 +2390,7 @@ their meaning depends on the model; although the first one is always *kd*.
    Tc_99  ; linear     ;     988.218
 
 
-General Kinetics
+General kinetics
 ````````````````
 
 Each line in this section has five data fields.
@@ -2374,7 +2409,7 @@ The fourth and fifth columns contain rate constants.
    1.00 Tritium <->  ;   1.00 Tritium ;  1.78577E-09 ; ; 
 
 
-Aqueous Equilibrium Complexes
+Aqueous equilibrium complexes
 `````````````````````````````
 
 Each line in this section has five 
@@ -2557,7 +2592,7 @@ and specific surface area [cm^2 mineral / cm^3 bulk].
    Polyhalite = 2.0 H2O  1.0 Mg++ 2.0 Ca++    2.0 K+  4.0 SO4-2    ; -13.7440 ; 218.1   ; 100.9722 ; 1.0
 
 
-Mineral Kinetics
+Mineral kinetics
 ````````````````
 
 Each line in this section has four fields.
@@ -2584,7 +2619,7 @@ The second field is the rate name.
    (UO2)3(PO4)2.4H2O ; TST ; log10_rate_constant  -10.0 moles/m^2/sec
 
 
-Ion Exchange Sites
+Ion exchange sites
 ``````````````````
 
 Each line in this section has three fields: 
@@ -2597,7 +2632,7 @@ The location is the mineral where the exchanger is located, i.e. kaolinite.
    X- ; -1.0 ; Halite
 
 
-Ion Exchange Complexes
+Ion exchange complexes
 ``````````````````````
 
 Each line in this section has two fields.
@@ -2621,7 +2656,7 @@ The following assumptions are made:
    NaX    = 1.0 Na+   1.0 X- ;  0.0
 
 
-Surface Complex Sites
+Surface complex sites
 `````````````````````
 
 Each line in this section has two fields: species name and surface density.
@@ -2637,7 +2672,7 @@ Each line in this section has two fields: species name and surface density.
    >davis_OH ; 1.56199E-01
 
 
-Surface Complexes
+Surface complexes
 `````````````````
 
 Each line in this section has three fields
@@ -2669,7 +2704,7 @@ The second field is Keq. The third field is charge.
    >FeOHUO3      = 1.0 >FeOH  1.0 H2O  -2.0 H+  1.0 UO2++ ;  3.05 ;  0.0
 
 
-Radiactive Decay
+Radiactive decay
 ````````````````
 
 Each line in this section has two fields.
@@ -3069,6 +3104,9 @@ Diffusion operator
 
   * `"discretization secondary`" [string] specifies the most robust discretization method
     that is used when the primary selection fails to satisfy all a priori conditions.
+
+  * `"diffusion tensor`" [string] allows us to solve problems with symmetric and non-symmetric 
+    (but positive definite) tensors. Available options are *symmetric* (defualt) and *nonsymmetric*.
 
   * `"nonlinear coefficient`" [string] specifies a method for treating nonlinear diffusion
     coefficient, if any. Available options are `"upwind: face`", `"divk: cell-face`" (default),
@@ -3762,27 +3800,29 @@ Newton-Krylov acceleration (NKA)
 
 .. code-block:: xml
 
-   <Parameter name="solver type" type="string" value="nka"/>
-   <ParameterList name="nka parameters">
-     <Parameter name="nonlinear tolerance" type="double" value="1.0e-06"/>
-     <Parameter name="monitor" type="string" value="monitor update"/>
-     <Parameter name="limit iterations" type="int" value="20"/>
-     <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
-     <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
-     <Parameter name="diverged pc tolerance" type="double" value="1.0e+10"/>
-     <Parameter name="diverged residual tolerance" type="double" value="1.0e+10"/>
-     <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
-     <Parameter name="max error growth factor" type="double" value="1.0e+05"/>
-     <Parameter name="max divergent iterations" type="int" value="3"/>
-     <Parameter name="max nka vectors" type="int" value="10"/>
-     <Parameter name="nka vector tolerance" type="double" value="0.05"/>
-     <Parameter name="modify correction" type="bool" value="false"/>
-     <Parameter name="lag iterations" type="int" value="0"/>
+  <ParameterList name="BDF1">  <!-- typical parent list -->
+    <Parameter name="solver type" type="string" value="nka"/>
+    <ParameterList name="nka parameters">
+      <Parameter name="nonlinear tolerance" type="double" value="1.0e-06"/>
+      <Parameter name="monitor" type="string" value="monitor update"/>
+      <Parameter name="limit iterations" type="int" value="20"/>
+      <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="diverged pc tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="diverged residual tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+      <Parameter name="max error growth factor" type="double" value="1.0e+05"/>
+      <Parameter name="max divergent iterations" type="int" value="3"/>
+      <Parameter name="max nka vectors" type="int" value="10"/>
+      <Parameter name="nka vector tolerance" type="double" value="0.05"/>
+      <Parameter name="modify correction" type="bool" value="false"/>
+      <Parameter name="lag iterations" type="int" value="0"/>
 
-     <ParameterList name="VerboseObject">
-       <Parameter name="Verbosity Level" type="string" value="high"/>
-     </ParameterList>
-   </ParameterList>
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="high"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
 
 
 Anderson acceleration (AA)
@@ -3828,7 +3868,7 @@ Internal parameters for AA include
 
 .. code-block:: xml
 
-  <ParameterList name="AA">  <!-- parent list -->
+  <ParameterList name="BDF1">  <!-- typical parent list -->
     <ParameterList name="aa parameters">
       <Parameter name="nonlinear tolerance" type="double" value="1e-5"/>
       <Parameter name="limit iterations" type="int" value="30"/>
@@ -3884,6 +3924,44 @@ corresponds to a stable (e.g. upwind) discretization.
 
 .. code-block:: xml
 
+  <ParameterList name="BDF1">  <!-- typical parent list -->
+    <Parameter name="solver type" type="string" value="Newton"/>
+    <ParameterList name="Newton parameters">
+      <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+      <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+      <Parameter name="max divergent iterations" type="int" value="3"/>
+      <Parameter name="limit iterations" type="int" value="20"/>
+      <Parameter name="modify correction" type="bool" value="true"/>
+    </ParameterList>
+  </ParameterList>
+
+
+Inexact Newton
+..............
+
+The inexact Newton methods work for cases where the discrete Jacobian is either 
+*not* available, or not stable, or computationally expensive. The discrete
+Jacobian is replaced by a stable approximation of the continuum Jacobian.
+This solver has the same list of parameters as the Newton solver. 
+
+The difference between these solvers is in the preconditioner parameters.
+Here is the list of selected parameters for the Newton-Picard solver.
+
+.. code-block:: xml
+
+   <ParameterList name="operators">
+     <ParameterList name="diffusion operator">
+       <ParameterList name="preconditioner">
+         <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+         <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+         <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+         <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+         <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+       
    <Parameter name="solver type" type="string" value="Newton"/>
    <ParameterList name="Newton parameters">
      <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
@@ -3891,9 +3969,8 @@ corresponds to a stable (e.g. upwind) discretization.
      <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
      <Parameter name="max divergent iterations" type="int" value="3"/>
      <Parameter name="limit iterations" type="int" value="20"/>
-     <Parameter name="modify correction" type="bool" value="true"/>
+     <Parameter name="modify correction" type="bool" value="false"/>
    </ParameterList>
-
 
 Jacobian-free Newton-Krylov (JFNK)
 ..................................
@@ -4532,8 +4609,10 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * aqueous pressure [Pa]
       * hydraulic head [m] 
       * drawdown [m] 
+      * volumetric water content [-]
+      * gravimetric water content [-]
       * water table [m]
-      * SOLUTE Aqueous concentration [mol/m^3]
+      * SOLUTE aqueous concentration [mol/m^3]
       * SOLUTE gaseous concentration [mol/m^3]
       * x-, y-, z- aqueous volumetric flux [m/s]
       * material id [-]
@@ -4543,6 +4622,8 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
     Observation *drawdown* is calculated with respect to the value registered at the first time
     it was requested.
+
+    The following observations are point-type obervations: "water table".
 
     * `"functional`" [string] the label of a function to apply to each of the variables
       in the variable list (Function options detailed below)

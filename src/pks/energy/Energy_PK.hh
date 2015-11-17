@@ -27,7 +27,7 @@
 #include "OperatorDiffusion.hh"
 #include "PK.hh"
 #include "primary_variable_field_evaluator.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "TreeVector.hh"
 #include "VerboseObject.hh"
 

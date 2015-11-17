@@ -17,7 +17,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "exceptions.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "Point.hh"
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
@@ -40,21 +40,39 @@ class OperatorDiffusion {
       global_op_(global_op),
       K_(Teuchos::null),
       k_(Teuchos::null),
-      dkdp_(Teuchos::null)
+      dkdp_(Teuchos::null),
+      ncells_owned(-1),
+      ncells_wghost(-1),
+      nfaces_owned(-1),
+      nfaces_wghost(-1),
+      nnodes_owned(-1),
+      nnodes_wghost(-1)
   {};
 
   OperatorDiffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       mesh_(mesh),
       K_(Teuchos::null),
       k_(Teuchos::null),
-      dkdp_(Teuchos::null)
+      dkdp_(Teuchos::null),
+      ncells_owned(-1),
+      ncells_wghost(-1),
+      nfaces_owned(-1),
+      nfaces_wghost(-1),
+      nnodes_owned(-1),
+      nnodes_wghost(-1)
   {};
 
   OperatorDiffusion(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
       mesh_(mesh),
       K_(Teuchos::null),
       k_(Teuchos::null),
-      dkdp_(Teuchos::null)
+      dkdp_(Teuchos::null),
+      ncells_owned(-1),
+      ncells_wghost(-1),
+      nfaces_owned(-1),
+      nfaces_wghost(-1),
+      nnodes_owned(-1),
+      nnodes_wghost(-1)
   {};
   
   // main virtual members
@@ -149,6 +167,7 @@ class OperatorDiffusion {
   
  protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
+  bool K_symmetric_;
 
   // nonlinear coefficient and its representation
   Teuchos::RCP<const CompositeVector> k_, dkdp_;

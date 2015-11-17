@@ -172,16 +172,11 @@ void Chemistry_PK::InitializeChemistry(void) {
       // solve for initial free-ion concentrations
       chem_->Speciate(&beaker_components_, beaker_parameters_);
 
-      //CopyBeakerStructuresToCellState(cell);
-      chemistry_state_->InitFromBeakerStructure(cell, beaker_components_);
+      CopyBeakerStructuresToCellState(cell);
+      // chemistry_state_->InitFromBeakerStructure(cell, beaker_components_);
 
     } catch (ChemistryException& geochem_error) {
       ierr = 1;
-      // std::cout << "ChemistryPK::InitializeChemistry(): " 
-      //           << "An error occured while initializing chemistry in cell: " 
-      //           << cell << ".\n" << geochem_error.what() << std::endl;
-      // beaker_components_.Display("-- input components:\n");
-      // Exceptions::amanzi_throw(geochem_error);
     }
 
 #ifdef GLENN_DEBUG

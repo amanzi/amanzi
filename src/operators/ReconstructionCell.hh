@@ -37,8 +37,15 @@ class ReconstructionCell : public Reconstruction {
   ~ReconstructionCell() {};
 
   // main members for base class
+  // -- save pointer to the already distributed field.
   void Init(Teuchos::RCP<const Epetra_MultiVector> field, Teuchos::ParameterList& plist);
+
+  // -- compute gradient and keep it internally.
   void Compute();
+
+  // -- compute gradient in specified cells and return it.
+  void ComputeGradient(const AmanziMesh::Entity_ID_List& ids,
+                       std::vector<AmanziGeometry::Point>& gradient);
 
   // internal and external limiters
   void InitLimiter(Teuchos::RCP<const Epetra_MultiVector> flux);

@@ -339,4 +339,18 @@ void TreeVector::SetData(const Teuchos::RCP<CompositeVector>& data) {
   }
 };
 
+
+int TreeVector::GlobalLength() const {
+  int total = 0;
+  if (data_ != Teuchos::null) {
+    total += data_->GlobalLength();
+  }
+  
+  for (std::vector< Teuchos::RCP<TreeVector> >::const_iterator subvec = subvecs_.begin();
+       subvec != subvecs_.end(); ++subvec) {
+    total += (*subvec)->GlobalLength();
+  }
+  return total;
+};
+  
 } // namespace

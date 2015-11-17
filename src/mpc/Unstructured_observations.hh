@@ -61,6 +61,9 @@ class Unstructured_observations {
 
   void FlushObservations();
 
+ private:
+  double CalculateWaterTable_(State& S, AmanziMesh::Entity_ID_List& ids);
+
  protected:
   VerboseObject* vo_;
   

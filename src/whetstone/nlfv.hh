@@ -20,7 +20,7 @@
 #include "Point.hh"
 
 #include "WhetStone_typedefs.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 
 namespace Amanzi {

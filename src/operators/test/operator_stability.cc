@@ -26,7 +26,7 @@
 #include "GMVMesh.hh"
 #include "LinearOperatorFactory.hh"
 #include "mfd3d_diffusion.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 // Operators
 #include "Analytic01.hh"

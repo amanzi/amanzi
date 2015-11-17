@@ -21,50 +21,55 @@ process for use with vis tools.
 
 
 namespace Amanzi {
+namespace AmanziSolvers {
 
-// Constructor
-ResidualDebugger::ResidualDebugger(Teuchos::ParameterList& plist) :
-    IOEvent(plist) {
-
-  filebasename_ = plist_.get<std::string>("file name base","amanzi_dbg");
-}
-
-
+//
+// TreeVector does work
+// -----------------------------------------------------------------------------
+template<>
 void
-ResidualDebugger::StartIteration(double time, int cycle, int attempt,
+ResidualDebugger::StartIteration<TreeVectorSpace>(double time,
+                                 int cycle, int attempt,
                                  const TreeVectorSpace& space) {
+
   on_ = DumpRequested(cycle, time);
   time_ = time;
   if (on_) {
     // iterate through the TreeVector finding leaf nodes and write them
     std::vector<Teuchos::RCP<const TreeVectorSpace> > leaves =
-      collectTreeVectorLeaves(space);
+      collectTreeVectorLeaves_const(space);
     vis_.resize(leaves.size());
   
     for (int i=0; i!=leaves.size(); ++i) {
       if (leaves[i]->Data()->HasComponent("cell")) {
-        std::string filename = filebasename_ + std::to_string(cycle)
-          + "_a" + std::to_string(attempt) + "_v" + std::to_string(i) + ".h5";
-        vis_[i] = Teuchos::rcp(new HDF5_MPI(leaves[i]->Data()->Mesh()->get_comm()));
-        vis_[i]->createDataFile(filename);
+        std::stringstream filename;
+        filename << filebasename_ << cycle << "_a" << attempt << "_v" << i;
+        vis_[i] = Teuchos::rcp(new HDF5_MPI(*leaves[i]->Data()->Mesh()->get_comm()));
+        vis_[i]->setTrackXdmf(true);
+        vis_[i]->createMeshFile(leaves[i]->Data()->Mesh(), filename.str()+"_mesh");
+        vis_[i]->createDataFile(filename.str());
+        
       }
     }
   }
 }
-
   
+  
+//  
 // Write a vector individually.
+// -----------------------------------------------------------------------------
+template<>
 void
-ResidualDebugger::WriteVector(int iter,
+ResidualDebugger::WriteVector<TreeVector>(int iter,
 			      const TreeVector& res,
                               const Teuchos::Ptr<const TreeVector>& u,
                               const Teuchos::Ptr<const TreeVector>& du) {
-
   if (on_) {
     // open files
     for (std::vector<Teuchos::RCP<HDF5_MPI> >::iterator it=vis_.begin();
          it!=vis_.end(); ++it) {
       if (it->get()) {
+        (*it)->writeMesh(time_, iter);
         (*it)->createTimestep(time_, iter);
         (*it)->open_h5file();
       }
@@ -72,14 +77,15 @@ ResidualDebugger::WriteVector(int iter,
 
     // write residuals
     std::vector<Teuchos::RCP<const TreeVector> > r_leaves =
-      collectTreeVectorLeaves(res);
+      collectTreeVectorLeaves_const(res);
     for (int i=0; i!=r_leaves.size(); ++i) {
-      if (vis_[i]->get()) {
+      if (vis_[i].get()) {
         const Epetra_MultiVector& vec = *r_leaves[i]->Data()
           ->ViewComponent("cell",false);
         for (int j=0; j!=vec.NumVectors(); ++j) {
-          std::string my_name = "residual.cell." + std::to_string(j);
-          vis_[i]->writeCellDataReal(*vec(j), my_name);
+          std::stringstream my_name;
+          my_name << "residual.cell." << j;
+          vis_[i]->writeCellDataReal(*vec(j), my_name.str());
         }
       }
     }
@@ -87,14 +93,15 @@ ResidualDebugger::WriteVector(int iter,
     // write values
     if (u.get()) {
       std::vector<Teuchos::RCP<const TreeVector> > u_leaves =
-        collectTreeVectorLeaves(*u);
+        collectTreeVectorLeaves_const(*u);
       for (int i=0; i!=u_leaves.size(); ++i) {
-        if (vis_[i]->get()) {
+        if (vis_[i].get()) {
           const Epetra_MultiVector& vec = *u_leaves[i]->Data()
             ->ViewComponent("cell",false);
           for (int j=0; j!=vec.NumVectors(); ++j) {
-            std::string my_name = "u.cell." + std::to_string(j);
-            vis_[i]->writeCellDataReal(*vec(j), my_name);
+            std::stringstream my_name;
+            my_name << "u.cell." << j;
+            vis_[i]->writeCellDataReal(*vec(j), my_name.str());
           }
         }
       }
@@ -103,14 +110,15 @@ ResidualDebugger::WriteVector(int iter,
     // write corrections
     if (du.get()) {
       std::vector<Teuchos::RCP<const TreeVector> > du_leaves =
-        collectTreeVectorLeaves(*du);
+        collectTreeVectorLeaves_const(*du);
       for (int i=0; i!=du_leaves.size(); ++i) {
-        if (vis_[i]->get()) {
+        if (vis_[i].get()) {
           const Epetra_MultiVector& vec = *du_leaves[i]->Data()
             ->ViewComponent("cell",false);
           for (int j=0; j!=vec.NumVectors(); ++j) {
-            std::string my_name = "du.cell." + std::to_string(j);
-            vis_[i]->writeCellDataReal(*vec(j), my_name);
+            std::stringstream my_name;
+            my_name << "du.cell." << j;
+            vis_[i]->writeCellDataReal(*vec(j), my_name.str());
           }
         }
       }
@@ -128,4 +136,5 @@ ResidualDebugger::WriteVector(int iter,
 }
 
   
+} // namespace Solvers  
 } // namespace Amanzi

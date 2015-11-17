@@ -713,15 +713,20 @@ void HDF5_MPI::readDataString(char ***x, int *num_entries, const std::string var
   strcpy(h5path,varname.c_str());
   int ndims, dims[2], tmpsize;
 
-  parallelIO_get_dataset_ndims(&ndims, data_file_, h5path, &IOgroup_);
-  parallelIO_get_dataset_dims(dims, data_file_, h5path, &IOgroup_);
-  parallelIO_get_dataset_size(&tmpsize, data_file_, h5path, &IOgroup_);
+  bool exists = checkFieldData_(h5path);
+  if (exists) {
+    parallelIO_get_dataset_ndims(&ndims, data_file_, h5path, &IOgroup_);
+    parallelIO_get_dataset_dims(dims, data_file_, h5path, &IOgroup_);
+    parallelIO_get_dataset_size(&tmpsize, data_file_, h5path, &IOgroup_);
 
-  char **strData;
-  parallelIO_read_str_array(&strData, &tmpsize, data_file_, h5path, &IOgroup_);
+    char **strData;
+    parallelIO_read_str_array(&strData, &tmpsize, data_file_, h5path, &IOgroup_);
 
-  *x = strData;
-  *num_entries = tmpsize;
+    *x = strData;
+    *num_entries = tmpsize;
+  } else {
+    *num_entries = 0;
+  }
 
   delete [] h5path;
 }
@@ -822,7 +827,7 @@ bool HDF5_MPI::readData(Epetra_Vector &x, const std::string varname)
 
 bool HDF5_MPI::checkFieldData_(std::string varname) {
 
- char *h5path = new char [varname.size()+1];
+  char *h5path = new char [varname.size()+1];
   strcpy(h5path,varname.c_str());
   bool exists=false;
 

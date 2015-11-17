@@ -29,7 +29,7 @@
 #include "independent_variable_field_evaluator_fromfunction.hh"
 #include "PK.hh"
 #include "primary_variable_field_evaluator.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "VerboseObject.hh"
 
 // Flow

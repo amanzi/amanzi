@@ -67,17 +67,6 @@ class Analytic03 : public AnalyticBase {
     }
   }
 
-  Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    double x = p[0];
-    double y = p[1];
-    double kmean;
-    Amanzi::AmanziGeometry::Point v(dim);
-
-    kmean = (Tensor(p, t))(0, 0);
-    v = gradient_exact(p, t); 
-    return -kmean * v;
-  }
- 
   Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     double x = p[0];
     double y = p[1];

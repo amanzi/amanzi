@@ -17,7 +17,7 @@
 
 #include "mfd3d_diffusion.hh"
 #include "nlfv.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "PreconditionerFactory.hh"
 
 #include "TransportDefs.hh"

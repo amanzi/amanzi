@@ -49,7 +49,7 @@ class SolverNKA_BT_ATS : public Solver<Vector, VectorSpace> {
   // mutators
   void set_tolerance(double tol) { tol_ = tol; }
   void set_pc_lag(double pc_lag) { pc_lag_ = pc_lag; }
-  virtual void set_db(const Teuchos::RCP<ResidualDebugger<Vector,VectorSpace> >& db) {
+  virtual void set_db(const Teuchos::RCP<ResidualDebugger>& db) {
     db_ = db;
   }
 
@@ -83,7 +83,7 @@ class SolverNKA_BT_ATS : public Solver<Vector, VectorSpace> {
   Teuchos::RCP<SolverFnBase<Vector> > fn_;
   Teuchos::RCP<NKA_Base<Vector, VectorSpace> > nka_;
   Teuchos::RCP<VerboseObject> vo_;
-  Teuchos::RCP<ResidualDebugger<Vector,VectorSpace> > db_;
+  Teuchos::RCP<ResidualDebugger> db_;
 
   double nka_tol_;
   int nka_dim_;
@@ -222,7 +222,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
 
   // Evaluate error
   error = fn_->ErrorNorm(u, res);
-  db_->WriteVector(db_write_iter++, *res, u.ptr(), du_nka.ptr());
+  db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_nka.ptr());
   
   residual_ = error;
   res->Norm2(&l2_error);
@@ -325,7 +325,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
 
           // Evalute error
           error = fn_->ErrorNorm(u, res);
-	  db_->WriteVector(db_write_iter++, *res, u.ptr(), du_nka.ptr());
+	  db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_nka.ptr());
 	  
           residual_ = error;
           res->Norm2(&l2_error);
@@ -378,7 +378,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
 
                 // Evalute error
                 error = fn_->ErrorNorm(u, res);
-		db_->WriteVector(db_write_iter++, *res, u.ptr(), du_pic.ptr());
+		db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_pic.ptr());
 
                 residual_ = error;
                 res->Norm2(&l2_error);
@@ -428,7 +428,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
 
             // Evalute error
             error = fn_->ErrorNorm(u, res);
-	    db_->WriteVector(db_write_iter++, *res, u.ptr(), du_pic.ptr());
+	    db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_pic.ptr());
 	    
             residual_ = error;
             res->Norm2(&l2_error);
@@ -491,9 +491,9 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
         // Evalute error
         error = fn_->ErrorNorm(u, res);
 	if (nka_applied) {
-	  db_->WriteVector(db_write_iter++, *res, u.ptr(), du_nka.ptr());
+	  db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_nka.ptr());
 	} else {
-	  db_->WriteVector(db_write_iter++, *res, u.ptr(), du_pic.ptr());
+	  db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_pic.ptr());
 	}
 	
         residual_ = error;

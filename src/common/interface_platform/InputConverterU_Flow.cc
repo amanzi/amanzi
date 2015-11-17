@@ -15,6 +15,7 @@
 #include <string>
 
 //TPLs
+#include <boost/algorithm/string.hpp>
 #include <xercesc/dom/DOM.hpp>
 
 // Amanzi's
@@ -46,13 +47,16 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
 
   // set up default values for some expert parameters
   double atm_pres(ATMOSPHERIC_PRESSURE);
-  std::string rel_perm("upwind: amanzi");  
+  std::string rel_perm("upwind-amanzi"), rel_perm_out;
   std::string update_upwind("every timestep");
 
   // process expert parameters
   bool flag;
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, rel_perm_method", flag);
-  if (flag) rel_perm = mm.transcode(node->getNodeName());
+  if (flag) rel_perm = mm.transcode(node->getTextContent());
+ 
+  rel_perm_out = boost::replace_all_copy(rel_perm, "-", ": ");
+  replace(rel_perm_out.begin(), rel_perm_out.end(), '_', ' ');
 
   // create flow header
   if (pk_model_["flow"] == "darcy") {
@@ -64,13 +68,13 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
   } else if (pk_model_["flow"] == "richards") {
     Teuchos::ParameterList& richards_list = out_list.sublist("Richards problem");
     Teuchos::ParameterList& upw_list = richards_list.sublist("upwind");
-    upw_list.set<std::string>("relative permeability", rel_perm);
+    upw_list.set<std::string>("relative permeability", rel_perm_out);
     upw_list.set<std::string>("upwind update", update_upwind);
 
     // "standard" is the most robust upwind method for variety of subsurface
     // scenarios. Note that "upwind: amanzi" requires "upwind method"="divk" 
     // to reproduce the same behavior on orthogonal meshes. 
-    if (strcmp(rel_perm.c_str(), "upwind: amanzi") == 0) {
+    if (strcmp(rel_perm_out.c_str(), "upwind: amanzi") == 0) {
       upw_list.set<std::string>("upwind method", "divk");
       upw_list.sublist("upwind divk parameters").set<double>("tolerance", 1e-12);
     } else {
@@ -113,18 +117,27 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
   bool modify_correction(false);
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
 
-  // Newton method requires to overwrite other parameters.
+  // Newton method requires to overwrite some parameters.
   if (nonlinear_solver == "newton") {
-    modify_correction = true;  // a hack
+    modify_correction = true;
+    out_list.sublist("Richards problem").sublist("upwind")
+        .set<std::string>("upwind update", "every nonlinear iteration");
+
     if (disc_method != "fv-default" ||
         rel_perm != "upwind-darcy_velocity" ||
-        update_upwind != "every nonlinear iteration" ||
         !modify_correction) {
       Errors::Message msg;
-      msg << "Nonlinear solver \"newton\" requires \"upwind-darcy_velocity\"\n";
-      msg << "\"modify_correction\"=true, and discretization method \"fv-default\".\n";
+      msg << "Nonlinear solver \"newton\" requires \"upwind-darcy_velocity\" (is \"" << rel_perm << "\")\n";
+      msg << "\"modify_correction\"=true (is " << modify_correction 
+          << "), discretization method \"fv-default\" (is \"" << disc_method << "\").\n";
       Exceptions::amanzi_throw(msg);
     }
+  }
+
+  // Newton-Picard method requires to overwrite some parameters.
+  if (nonlinear_solver == "newton-picard") {
+    out_list.sublist("Richards problem").sublist("upwind")
+        .set<std::string>("upwind update", "every nonlinear iteration");
   }
 
   flow_list->sublist("operators") = TranslateDiffusionOperator_(

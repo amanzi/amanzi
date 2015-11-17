@@ -22,7 +22,83 @@
 #include "Point.hh"
 
 #include "mfd3d_diffusion.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
+
+
+/* **************************************************************** */
+TEST(DARCY_MASS_2D) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "Test: Mass matrix for Darcy in 2D" << std::endl;
+#ifdef HAVE_MPI
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm *comm = new Epetra_SerialComm();
+#endif
+
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(MSTK);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(pref);
+  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
+ 
+  MFD3D_Diffusion mfd(mesh);
+
+  int nfaces = 4, cell = 0;
+  DenseMatrix M(nfaces, nfaces);
+
+  for (int method = 0; method < 2; method++) {
+    Tensor T(2, 2);
+    T(0, 0) = 1.0;
+    T(1, 1) = 1.0;
+    T(0, 1) = 0.1;
+    T(1, 0) = 0.1;
+
+    if (method == 0) {
+      mfd.MassMatrix(cell, T, M);
+    } else if (method == 1) {
+      T(0, 1) += 0.1;
+      mfd.MassMatrixNonSymmetric(cell, T, M);
+    }
+
+    printf("Mass matrix for cell %3d\n", cell);
+    for (int i=0; i<nfaces; i++) {
+      for (int j=0; j<nfaces; j++ ) printf("%8.4f ", M(i, j)); 
+      printf("\n");
+    }
+
+    // verify SPD propery
+    for (int i=0; i<nfaces; i++) CHECK(M(i, i) > 0.0);
+
+    // verify exact integration property
+    AmanziMesh::Entity_ID_List faces;
+    std::vector<int> dirs;
+    mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
+    
+    double xi, yi, xj, yj;
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+    for (int i = 0; i < nfaces; i++) {
+      int f = faces[i];
+      xi = mesh->face_normal(f)[0] * dirs[i];
+      yi = mesh->face_normal(f)[1] * dirs[i];
+      for (int j = 0; j < nfaces; j++) {
+        f = faces[j];
+        xj = mesh->face_normal(f)[0] * dirs[j];
+        vxx += M(i, j) * xi * xj;
+        vxy += M(i, j) * yi * xj;
+      }
+    }
+
+    CHECK_CLOSE(T(0,0) * volume, vxx, 1e-10);
+    CHECK_CLOSE(T(1,0) * volume, vxy, 1e-10);
+  }
+
+  delete comm;
+}
 
 
 /* **************************************************************** */
@@ -49,11 +125,12 @@ TEST(DARCY_MASS_3D) {
   MFD3D_Diffusion mfd(mesh);
 
   int nfaces = 6, cell = 0;
-  Tensor T(3, 1);
-  T(0, 0) = 1;
-
   DenseMatrix M(nfaces, nfaces);
+
   for (int method = 0; method < 1; method++) {
+    Tensor T(3, 1);
+    T(0, 0) = 1.0;
+
     mfd.MassMatrix(cell, T, M);
 
     printf("Mass matrix for cell %3d\n", cell);
@@ -70,7 +147,7 @@ TEST(DARCY_MASS_3D) {
     std::vector<int> dirs;
     mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
     
-    double xi, yi, xj;
+    double xi, yi, xj, yj;
     double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
@@ -79,12 +156,14 @@ TEST(DARCY_MASS_3D) {
       for (int j = 0; j < nfaces; j++) {
         f = faces[j];
         xj = mesh->face_normal(f)[0] * dirs[j];
+        yj = mesh->face_normal(f)[1] * dirs[j];
         vxx += M(i, j) * xi * xj;
-        vxy += M(i, j) * yi * xj;
+        vxy += M(i, j) * xi * yj;
       }
     }
-    CHECK_CLOSE(vxx, volume, 1e-10);
-    CHECK_CLOSE(vxy, 0.0, 1e-10);
+
+    CHECK_CLOSE(volume, vxx, 1e-10);
+    CHECK_CLOSE(0.0, vxy, 1e-10);
   }
 
   delete comm;
@@ -193,12 +272,12 @@ TEST(DARCY_FULL_TENSOR_2D) {
  
   MFD3D_Diffusion mfd(mesh);
 
-  Tensor T(2, 2);  // tensor of rank 2
-  T(0, 0) = 1.0;
-  T(1, 1) = 2.0;
-  T(0, 1) = T(1, 0) = 1.0;
-
   for (int cell = 0; cell < 2; cell++) { 
+    Tensor T(2, 2);  // tensor of rank 2
+    T(0, 0) = 1.0;
+    T(1, 1) = 2.0;
+    T(0, 1) = T(1, 0) = 1.0;
+
     int ok, nfaces = mesh->cell_get_num_faces(cell);
     DenseMatrix W(nfaces, nfaces);
     for (int method = 0; method < 7; method++) {
@@ -229,7 +308,7 @@ TEST(DARCY_FULL_TENSOR_2D) {
         printf("\n");
       }
 
-      // verify SPD propery
+      // verify PD propery
       for (int i=0; i<nfaces; i++) CHECK(W(i, i) > 0.0);
 
       // verify exact integration property
@@ -250,6 +329,7 @@ TEST(DARCY_FULL_TENSOR_2D) {
         }
       }
       CHECK_CLOSE(2 * volume, vxx, 1e-10);
+      std::cout << vxx << std::endl;
 
       // additional tests for triangle: interal with v2 = RT basis function
       if (cell == 1) {

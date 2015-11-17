@@ -18,7 +18,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "CompositeVector.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 #include "AnalyticBase.hh"
 

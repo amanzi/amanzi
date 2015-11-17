@@ -24,7 +24,7 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 // Operators
 #include "HeatConduction.hh"

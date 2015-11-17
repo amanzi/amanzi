@@ -10,7 +10,7 @@
 
 #include "UnitTest++.h"
 
-#include "tensor.hh"
+#include "Tensor.hh"
 
 
 /* ****************************************************************

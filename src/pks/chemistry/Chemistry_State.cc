@@ -311,6 +311,7 @@ void Chemistry_State::RequireData_() {
   }
 
   // Require my data
+std::cout << "We seem to have " << compnames_.size() << " components.\n";
   if (number_of_aqueous_components_ > 0) {
 
     // Make dummy names if our component names haven't already been set.
@@ -492,17 +493,10 @@ void Chemistry_State::InitializeField_(Teuchos::ParameterList& ic_plist,
   // parameter is optional, and non-valid if it is not.
 
   if (S_->HasField(fieldname)) {
-    if (!S_->GetField(fieldname)->initialized())
+    if (!S_->GetField(fieldname)->initialized()) {
       S_->GetFieldData(fieldname, name_)->PutScalar(default_val);
-  }
-
-  // -- initialize from the ParameterList
-  if (ic_plist.isSublist(fieldname)) {
-    if (!S_->GetField(fieldname)->initialized())
-      S_->GetField(fieldname, name_)->Initialize(ic_plist.sublist(fieldname));
-  } else if (sane_default) {
-    // -- sane default provided, functional initialization not necessary
-    S_->GetField(fieldname, name_)->set_initialized();
+      S_->GetField(fieldname, name_)->set_initialized();
+    }
   }
 }
 
@@ -518,7 +512,7 @@ void Chemistry_State::Initialize() {
   // Aqueous species:
   if (number_of_aqueous_components_ > 0) {
     if (!S_->GetField("total_component_concentration",name_)->initialized()) {
-      InitializeField_(ic_plist, "total_component_concentration", false, -1.0);
+      InitializeField_(ic_plist, "total_component_concentration", false, 0.0);
     }
     InitializeField_(ic_plist, "free_ion_species", false, 0.0);
     InitializeField_(ic_plist, "primary_activity_coeff", false, 1.0);

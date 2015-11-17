@@ -1146,9 +1146,10 @@ void ReadCheckpointObservations(Epetra_MpiComm* comm,
   double *tmp_data;
 
   checkpoint->readDataString(&tmp_labels, &nlabels, "obs_names");
-  checkpoint->readAttrInt(&nobs, &nlabels, "obs_numbers");
-  checkpoint->readAttrReal(&tmp_data, &ndata, "obs_values");
-
+  if (nlabels > 0) { 
+    checkpoint->readAttrInt(&nobs, &nlabels, "obs_numbers");
+    checkpoint->readAttrReal(&tmp_data, &ndata, "obs_values");
+  }
   checkpoint->close_h5file();
 
   // populated observations
@@ -1167,9 +1168,11 @@ void ReadCheckpointObservations(Epetra_MpiComm* comm,
 
   // clean memory
   for (int i = 0; i < nlabels; i++) free(tmp_labels[i]);
-  free(tmp_labels);
-  free(nobs);
-  free(tmp_data);
+  if (nlabels > 0) {
+    free(tmp_labels);
+    free(nobs);
+    free(tmp_data);
+  }
 }
 
 // Non-member function for deforming the mesh after reading a checkpoint file

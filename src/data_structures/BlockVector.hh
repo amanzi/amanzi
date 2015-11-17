@@ -54,6 +54,7 @@ public:
   int NumComponents() const { return num_components_; }
   int NumVectors(std::string name) const { return num_dofs_[Index_(name)]; }
   unsigned int size(std::string name) const { return sizes_[Index_(name)]; }
+
   Teuchos::RCP<const Epetra_Map> ComponentMap(std::string name) const {
     return maps_[Index_(name)]; }
 

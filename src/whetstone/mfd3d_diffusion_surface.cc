@@ -16,7 +16,7 @@
 #include "Mesh.hh"
 
 #include "mfd3d_diffusion.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 namespace Amanzi {
 namespace WhetStone {

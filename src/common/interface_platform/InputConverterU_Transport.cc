@@ -194,7 +194,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "solute") != 0) continue;
 
-      double val = GetAttributeValueD_(static_cast<DOMElement*>(inode), "coefficient_of_diffusion");
+      double val = GetAttributeValueD_(static_cast<DOMElement*>(inode), "coefficient_of_diffusion", false);
       text = mm.transcode(inode->getTextContent());
 
       aqueous_names.push_back(TrimString_(text));
@@ -221,7 +221,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "solute") != 0) continue;
 
-      double val = GetAttributeValueD_(static_cast<DOMElement*>(inode), "coefficient_of_diffusion");
+      double val = GetAttributeValueD_(static_cast<DOMElement*>(inode), "coefficient_of_diffusion", false);
       double kh = GetAttributeValueD_(static_cast<DOMElement*>(inode), "kh");
       text = mm.transcode(inode->getTextContent());
 
@@ -383,8 +383,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
       for (int j = 0; j < same_list.size(); ++j) {
         element = static_cast<DOMElement*>(same_list[j]);
         double t0 = GetAttributeValueD_(element, "start");
-        tp_forms[t0] = GetAttributeValueS_(element, "function");
         tp_values[t0] = GetAttributeValueS_(element, "name");
+        tp_forms[t0] = GetAttributeValueS_(element, "function", false); // no form -> use geochemistry engine
       }
 
       // create vectors of values and forms

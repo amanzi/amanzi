@@ -25,7 +25,7 @@
 #include "MeshFactory.hh"
 #include "LinearOperatorFactory.hh"
 #include "mfd3d_diffusion.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 // Operiators
 #include "Analytic00.hh"

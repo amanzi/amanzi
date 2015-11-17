@@ -68,8 +68,16 @@ Chemistry_PK_Wrapper::Chemistry_PK_Wrapper(Teuchos::ParameterList& pk_tree,
     std::string chemEngineInputFile = chemistry_plist.get<std::string>("Engine Input File");
     chem_engine_ = Teuchos::rcp(new AmanziChemistry::ChemistryEngine(chemEngineName, chemEngineInputFile));
 
-    // Overwrite the component names with the primary species names from the engine.
+    // Overwrite the component names with the species names from the engine.
+printf("Outfitting component names...\n");
     chem_engine_->GetPrimarySpeciesNames(comp_names_);
+    for (int i = 0; i < chem_engine_->NumAqueousComplexes(); ++i)
+    {
+      char secondary[128];
+      snprintf(secondary, 127, "secondary_%d", i);
+      comp_names_.push_back(secondary);
+    }
+printf("We have %d.\n", comp_names_.size());
   }
 #endif
 

@@ -13,7 +13,7 @@
 #define AMANZI_ENERGY_ANALYTIC_BASE_HH_
 
 #include "Mesh.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 class AnalyticBase {
  public:
