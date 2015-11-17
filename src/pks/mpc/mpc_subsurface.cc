@@ -43,8 +43,8 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
   uw_kr_key_ = getKey(domain_name_, "upwind_relative_permeability");
   hkr_key_ = getKey(domain_name_, "enthalpy_times_relative_permeability");
   uw_hkr_key_ = getKey(domain_name_, "upwind_enthalpy_times_relative_permeability");
-  darcy_flux_key_ = getKey(domain_name_, "darcy_flux");
-  darcy_flux_dir_key_ = getKey(domain_name_, "darcy_flux_direction");
+  mass_flux_key_ = getKey(domain_name_, "mass_flux");
+  mass_flux_dir_key_ = getKey(domain_name_, "mass_flux_direction");
   rho_key_ = getKey(domain_name_, "mass_density_liquid");
 
   // supress energy's vision of advective terms as we can do better
@@ -109,7 +109,7 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
       S->GetField(dkrdT_key,name_)->set_io_vis(false);
       uw_dkrdT_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
               getDerivKey(kr_key_, temp_key_),
-              dkrdT_key, darcy_flux_dir_key_, 1.e-8));
+              dkrdT_key, mass_flux_dir_key_, 1.e-8));
 
       // set up the operator
       Teuchos::ParameterList divq_plist(plist_->sublist("PKs").sublist(pk_order[0]).sublist("Diffusion PC"));
@@ -209,14 +209,14 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
         Exceptions::amanzi_throw(msg);
       }
       upwinding_hkr_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-              hkr_key_, uw_hkr_key_, darcy_flux_dir_key_, 1.e-8));
+              hkr_key_, uw_hkr_key_, mass_flux_dir_key_, 1.e-8));
       upwinding_dhkr_dp_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
               getDerivKey(hkr_key_, pres_key_),
-              getDerivKey(uw_hkr_key_, pres_key_),                                                 darcy_flux_dir_key_, 1.e-8));
+              getDerivKey(uw_hkr_key_, pres_key_),                                                 mass_flux_dir_key_, 1.e-8));
       upwinding_dhkr_dT_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
               getDerivKey(hkr_key_, temp_key_),
               getDerivKey(uw_hkr_key_, temp_key_),
-              darcy_flux_dir_key_, 1.e-8));
+              mass_flux_dir_key_, 1.e-8));
     }
 
     // -- derivatives of energy with respect to pressure
@@ -365,7 +365,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
 
       // form the operator
       Teuchos::RCP<const CompositeVector> kr_uw = S_next_->GetFieldData(uw_kr_key_);
-      Teuchos::RCP<const CompositeVector> flux = S_next_->GetFieldData(darcy_flux_key_);
+      Teuchos::RCP<const CompositeVector> flux = S_next_->GetFieldData(mass_flux_key_);
       Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData(rho_key_);
 
       ddivq_dT_->SetDensity(rho);
@@ -455,7 +455,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
                 mesh_->exterior_face_importer(), Insert);
       }
       
-      Teuchos::RCP<const CompositeVector> flux = S_next_->GetFieldData(darcy_flux_key_);
+      Teuchos::RCP<const CompositeVector> flux = S_next_->GetFieldData(mass_flux_key_);
       Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData(rho_key_);
 
       // form the operator: pressure component

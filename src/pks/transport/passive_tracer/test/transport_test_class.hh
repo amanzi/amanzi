@@ -46,7 +46,7 @@ public:
   // helper evaluation methods
   void commit_step();
   void initialize_tcc();
-  void initialize_darcy_flux();
+  void initialize_mass_flux();
   void evaluate_error_tcc(double t, double* L1, double* L2);
 };
 

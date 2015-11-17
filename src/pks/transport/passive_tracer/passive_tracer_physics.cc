@@ -51,8 +51,8 @@ void PassiveTracer::AddAdvection_(Teuchos::RCP<CompositeVector> g, bool negate) 
   field->PutScalar(0);
 
   // set darcy flux
-  Teuchos::RCP<const CompositeVector> darcy_flux = S_next_->GetFieldData("darcy_flux");
-  advection_->set_flux(darcy_flux);
+  Teuchos::RCP<const CompositeVector> mass_flux = S_next_->GetFieldData("mass_flux");
+  advection_->set_flux(mass_flux);
 
   // put the advected quantity in cells
   Teuchos::RCP<const CompositeVector> conc = S_next_->GetFieldData("concentration");
@@ -64,7 +64,7 @@ void PassiveTracer::AddAdvection_(Teuchos::RCP<CompositeVector> g, bool negate) 
     for (BoundaryFunction::Iterator bc = (*bc_func)->begin(); bc!=(*bc_func)->end(); ++bc) {
       int f = bc->first;
       double conc_bc = bc->second;
-      (*field)("face",0,f) = conc_bc * fabs((*darcy_flux)(f));
+      (*field)("face",0,f) = conc_bc * fabs((*mass_flux)(f));
     }
   }
 

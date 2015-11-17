@@ -563,14 +563,14 @@ void Matrix_TPFA::ComputeNegativeResidual(const CompositeVector& solution,
 }
 
 void Matrix_TPFA::DeriveFlux(const CompositeVector& solution,
-                             const Teuchos::Ptr<CompositeVector>& darcy_flux) const {
+                             const Teuchos::Ptr<CompositeVector>& mass_flux) const {
 
 
   solution.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& p = *solution.ViewComponent("cell", true);
   const Epetra_MultiVector& lb = *solution.ViewComponent("boundary_face", false);
   // const Epetra_MultiVector& Krel_face = *rel_perm->ViewComponent("face", true);
-  Epetra_MultiVector& flux = *darcy_flux->ViewComponent("face", true);
+  Epetra_MultiVector& flux = *mass_flux->ViewComponent("face", true);
 
   const Epetra_Map& fb_map = mesh_->exterior_face_map();
   const Epetra_Map& f_map = mesh_->face_map(false);

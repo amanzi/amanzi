@@ -110,11 +110,11 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   }
   if (flux_key_.empty()) {
     flux_key_ = plist_->get<std::string>("darcy flux key",
-            getKey(domain_, "darcy_flux"));
+            getKey(domain_, "mass_flux"));
   }
   if (flux_dir_key_.empty()) {
     flux_dir_key_ = plist_->get<std::string>("darcy flux direction key",
-            getKey(domain_, "darcy_flux_direction"));
+            getKey(domain_, "mass_flux_direction"));
   }
   if (velocity_key_.empty()) {
     velocity_key_ = plist_->get<std::string>("darcy velocity key",
@@ -539,7 +539,7 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
 //   if (S_next_ != Teuchos::null) {
 //     Teuchos::RCP<const CompositeVector> wc1 = S_next_->GetFieldData(conserved_key_);
 //     Teuchos::RCP<const CompositeVector> wc0 = S_->GetFieldData(conserved_key_);
-//     Teuchos::RCP<const CompositeVector> darcy_flux = S->GetFieldData(flux_key_, name_);
+//     Teuchos::RCP<const CompositeVector> mass_flux = S->GetFieldData(flux_key_, name_);
 //     CompositeVector error(*wc1);
 
 //     for (unsigned int c=0; c!=error.size("cell"); ++c) {
@@ -549,7 +549,7 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
 //       std::vector<int> dirs;
 //       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 //       for (unsigned int n=0; n!=faces.size(); ++n) {
-//         error("cell",c) += (*darcy_flux)("face",faces[n]) * dirs[n] * dt;
+//         error("cell",c) += (*mass_flux)("face",faces[n]) * dirs[n] * dt;
 //       }
 //     }
 

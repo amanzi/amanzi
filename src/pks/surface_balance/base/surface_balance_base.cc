@@ -102,7 +102,7 @@ SurfaceBalanceBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVect
     g->Update(1.0/dt, *u_new, -1.0/dt, *u_old, 0.0);
   }
   db_->WriteVector("res(acc)", g->Data().ptr());
-  db_->WriteVector("  sM", S_next_->GetFieldData("macropore_saturation_liquid").ptr());
+  //  db_->WriteVector("  sM", S_next_->GetFieldData("macropore_saturation_liquid").ptr());
 
   if (theta_ < 1.0) {
     S_inter_->GetFieldEvaluator(source_key_)->HasFieldChanged(S_inter_.ptr(), name_);

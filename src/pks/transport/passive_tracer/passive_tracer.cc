@@ -29,7 +29,7 @@ PassiveTracer::PassiveTracer(Teuchos::ParameterList& transport_plist,
   // independent variables (not owned by this pk)
   S->RequireField("porosity", AmanziMesh::CELL, 1, true);
   S->RequireField("saturation_liquid", AmanziMesh::CELL, 1, true);
-  S->RequireField("darcy_flux", AmanziMesh::FACE, 1, true);
+  S->RequireField("mass_flux", AmanziMesh::FACE, 1, true);
   S->RequireField("cell_volume", AmanziMesh::CELL, 1, true);
 
   // operator for advection terms

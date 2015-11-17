@@ -94,7 +94,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   }
   if (flux_key_.empty()) {
     flux_key_ = plist_->get<std::string>("flux key",
-            getKey(domain_, "darcy_flux"));
+            getKey(domain_, "mass_flux"));
   }
   if (energy_flux_key_.empty()) {
     energy_flux_key_ = plist_->get<std::string>("energy flux key",

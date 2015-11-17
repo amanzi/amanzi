@@ -89,13 +89,14 @@ def sort(varnames, keys='all', directory=".", filename="visdump_data.h5", mesh_f
 
 if __name__ == "__main__":
     if sys.argv[-1] == "column_data.py":
-        z0 = 5.0
+        z0 = 0.0
     else:
         z0 = float(sys.argv[-1])
     
     with h5py.File("column_data.h5", 'w') as fout:
-        dat = sort(["pressure", "temperature"], keys=-1)
+        #dat = sort(["pressure", "temperature"], keys=-1)
+        dat = sort(["pressure",], keys=-1)
         z_depth = z0 - dat[0,0,:] # correction to get surface set, depth coordinate
         fout.create_dataset("z", data=np.flipud(z_depth))
         fout.create_dataset("pressure", data=np.flipud(dat[1,0,:]))
-        fout.create_dataset("temperature", data=np.flipud(dat[2,0,:]))
+        #fout.create_dataset("temperature", data=np.flipud(dat[2,0,:]))

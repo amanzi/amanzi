@@ -122,7 +122,7 @@ protected:
   // virtual void AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
   //         const Teuchos::Ptr<const CompositeVector>& rel_perm,
   //         const Teuchos::Ptr<const CompositeVector>& rho,
-  //         const Teuchos::Ptr<CompositeVector>& darcy_flux);
+  //         const Teuchos::Ptr<CompositeVector>& mass_flux);
 
   // Nonlinear version of CalculateConsistentFaces()
   // virtual void CalculateConsistentFacesForInfiltration_(

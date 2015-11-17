@@ -55,7 +55,7 @@ void AdvectionDiffusion::setup(const Teuchos::Ptr<State>& S) {
   factory->SetComponent("face", AmanziMesh::FACE, 1);
 
   // -- independent variables (not owned by this pk)
-  factory = S->RequireField("darcy_flux");
+  factory = S->RequireField("mass_flux");
   factory->SetMesh(S->GetMesh());
   factory->SetGhosted(true);
   factory->SetComponent("face", AmanziMesh::FACE, 1);

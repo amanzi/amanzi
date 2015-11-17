@@ -26,7 +26,7 @@ void EnergyTest::initialize() {
   // initialize energy
   EPK->initialize(S0);
   initialize_owned();
-  initialize_darcy_flux();
+  initialize_mass_flux();
 
   // finish checking state and create the state at the new timestep
   if (!S0->CheckAllInitialized()) {
@@ -54,17 +54,17 @@ void EnergyTest::initialize_owned() {
   S0->GetField("temperature", "energy")->set_initialized();
 }
 
-void EnergyTest::initialize_darcy_flux() {
+void EnergyTest::initialize_mass_flux() {
   const Epetra_BlockMap& fmap = mesh->face_map(true);
-  Teuchos::RCP<CompositeVector> darcy_flux =
-    S0->GetFieldData("darcy_flux", "state");
+  Teuchos::RCP<CompositeVector> mass_flux =
+    S0->GetFieldData("mass_flux", "state");
 
   for (int f=fmap.MinLID(); f<=fmap.MaxLID(); f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
     const AmanziGeometry::Point& fc = mesh->face_centroid(f);
-    (*darcy_flux)("face",f) = my_u(fc, 0.0) * normal;
+    (*mass_flux)("face",f) = my_u(fc, 0.0) * normal;
   }
-  S0->GetField("darcy_flux", "state")->set_initialized();
+  S0->GetField("mass_flux", "state")->set_initialized();
 }
 
 void EnergyTest::evaluate_error_temp(double t, double* L1, double* L2) {
