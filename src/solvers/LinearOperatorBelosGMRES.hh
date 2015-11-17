@@ -14,7 +14,7 @@
 #include <cmath>
 
 #include "BelosTypes.hpp"
-#include "AmanziBelosOPWrapper.hpp"
+#include "AmanziBelosOPWrapper.hh"
 #include "AmanziBelosMVWrapper.hh"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 
