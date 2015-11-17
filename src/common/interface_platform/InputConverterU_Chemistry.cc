@@ -129,8 +129,8 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
       out_list.set<Teuchos::Array<std::string> >("Minerals", minerals);
 
       if (pk_model_["chemistry"] == "amanzi") {
-        Teuchos::ParameterList &volfrac = ic_list.sublist("mineral_volume_fractions");
-        Teuchos::ParameterList &surfarea = ic_list.sublist("mineral_specific_surface_area");
+        Teuchos::ParameterList& volfrac = ic_list.sublist("mineral_volume_fractions");
+        Teuchos::ParameterList& surfarea = ic_list.sublist("mineral_specific_surface_area");
 
         for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); it++) {
           Teuchos::ParameterList& aux1_list = volfrac.sublist("function").sublist(*it)

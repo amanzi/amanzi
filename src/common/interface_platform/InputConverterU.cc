@@ -71,6 +71,9 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   out_list.sublist("Analysis") = CreateAnalysis_();
   FilterEmptySublists_(out_list);
 
+  // post-processing (may go away)
+  MergeInitialConditionsLists_(out_list);
+
   // miscalleneous cross-list information
   // -- initialization file name
   if (init_filename_.size() > 0) {
@@ -271,6 +274,30 @@ Teuchos::ParameterList InputConverterU::CreateAnalysis_()
   out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
 
   return out_list;
+}
+
+
+/* ******************************************************************
+* Filters out empty sublists starting with node "parent".
+****************************************************************** */
+void InputConverterU::MergeInitialConditionsLists_(Teuchos::ParameterList& plist)
+{
+  if (plist.sublist("PKs").isSublist("Chemistry")) {
+    Teuchos::ParameterList& ics = plist.sublist("State")
+                                       .sublist("initial conditions");
+    Teuchos::ParameterList& icc = plist.sublist("PKs").sublist("Chemistry")
+                                       .sublist("initial conditions");
+
+    for (Teuchos::ParameterList::ConstIterator it = icc.begin(); it != icc.end(); ++it) {
+      if (icc.isSublist(it->first)) {
+        Teuchos::ParameterList& slist = icc.sublist(it->first);
+        if (slist.isSublist("function")) {
+          ics.sublist(it->first) = slist;
+          slist.set<std::string>("function", "list was moved to State");
+        }
+      }
+    }
+  }  
 }
 
 
