@@ -135,10 +135,17 @@ void Transport_PK::SetupAlquimia(Teuchos::RCP<AmanziChemistry::Chemistry_State> 
   chem_engine_ = chem_engine;
 
   if (chem_engine_ != Teuchos::null) {
-    // Retrieve the component names from the chemistry engine.
+    // Retrieve the component names (primary and secondary) from the chemistry 
+    // engine.
     std::vector<std::string> component_names;
     chem_engine_->GetPrimarySpeciesNames(component_names);
     component_names_ = component_names;
+    for (int i = 0; i < chem_engine_->NumAqueousComplexes(); ++i)
+    {
+      char secondary_name[128];
+      snprintf(secondary_name, 127, "secondary_%d", i);
+      component_names_.push_back(secondary_name);
+    }
   }
 }
 #endif
