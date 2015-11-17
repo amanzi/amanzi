@@ -123,6 +123,7 @@ class InputConverterU : public InputConverter {
   std::string CreateBGDFile(std::string& filename);
 
   void FilterEmptySublists_(Teuchos::ParameterList& plist);
+  void MergeInitialConditionsLists_(Teuchos::ParameterList& plist);
 
  private:
   int dim_;

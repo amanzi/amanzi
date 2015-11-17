@@ -58,13 +58,14 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     native = true;
     out_list.set<std::string>("chemistry model", "Amanzi");
 
-    std::string bgdfilename = CreateBGDFile(xmlfilename_);
-    std::string format("simple");
+    std::string bgdfilename, format("simple");
     node = GetUniqueElementByTagsString_("geochemistry, reaction_network", flag);
     if (flag) {
       element = static_cast<DOMElement*>(node);
-      bgdfilename = GetAttributeValueS_(element, "file", false, bgdfilename);
+      bgdfilename = GetAttributeValueS_(element, "file");
       format = GetAttributeValueS_(element, "format", false, format);
+    } else {
+      bgdfilename = CreateBGDFile(xmlfilename_);
     }
 
     Teuchos::ParameterList& bgd_list = out_list.sublist("Thermodynamic Database");
@@ -129,8 +130,8 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
       out_list.set<Teuchos::Array<std::string> >("Minerals", minerals);
 
       if (pk_model_["chemistry"] == "amanzi") {
-        Teuchos::ParameterList &volfrac = ic_list.sublist("mineral_volume_fractions");
-        Teuchos::ParameterList &surfarea = ic_list.sublist("mineral_specific_surface_area");
+        Teuchos::ParameterList& volfrac = ic_list.sublist("mineral_volume_fractions");
+        Teuchos::ParameterList& surfarea = ic_list.sublist("mineral_specific_surface_area");
 
         for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); it++) {
           Teuchos::ParameterList& aux1_list = volfrac.sublist("function").sublist(*it)
