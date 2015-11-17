@@ -58,13 +58,14 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     native = true;
     out_list.set<std::string>("chemistry model", "Amanzi");
 
-    std::string bgdfilename = CreateBGDFile(xmlfilename_);
-    std::string format("simple");
+    std::string bgdfilename, format("simple");
     node = GetUniqueElementByTagsString_("geochemistry, reaction_network", flag);
     if (flag) {
       element = static_cast<DOMElement*>(node);
-      bgdfilename = GetAttributeValueS_(element, "file", false, bgdfilename);
+      bgdfilename = GetAttributeValueS_(element, "file");
       format = GetAttributeValueS_(element, "format", false, format);
+    } else {
+      bgdfilename = CreateBGDFile(xmlfilename_);
     }
 
     Teuchos::ParameterList& bgd_list = out_list.sublist("Thermodynamic Database");
