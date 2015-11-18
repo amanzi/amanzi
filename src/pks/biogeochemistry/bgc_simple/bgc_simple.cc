@@ -226,6 +226,18 @@ void BGCSimple::initialize(const Teuchos::Ptr<State>& S) {
   
   // potentially initial aboveground vegetation data
   Teuchos::RCP<Field> leaf_biomass_field = S->GetField("leaf_biomass", name_);
+
+  // -- set the subfield names
+  Teuchos::RCP<Field_CompositeVector> leaf_biomass_field_cv =
+      Teuchos::rcp_dynamic_cast<Field_CompositeVector>(leaf_biomass_field_cv);
+  ASSERT(leaf_biomass_field_cv != Teuchos::null);
+
+  int npft = pfts_old_[0].size();
+  std::vector<std::vector<std::string> > names(1, std::vector<std::string>());
+  names[0].resize(npft);
+  for (int i=0; i!=npft; ++i) names[0][i] = pfts_old_[0][i]->pft_type;
+  leaf_biomass_field_cv->set_subfield_names(names);
+
   if (!leaf_biomass_field->initialized()) {
     // -- Calculate the IC.
     if (plist_->isSublist("leaf biomass initial condition")) {
@@ -234,14 +246,13 @@ void BGCSimple::initialize(const Teuchos::Ptr<State>& S) {
 
       // -- copy into PFTs
       Epetra_MultiVector& bio = *S->GetFieldData("leaf_biomass", name_)
-	->ViewComponent("cell", false);
+          ->ViewComponent("cell", false);
       
       int ncols = surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
       for (int col=0; col!=ncols; ++col) {
-	int npft = pfts_old_[col].size();
-	for (int i=0; i!=npft; ++i) {
-	  pfts_old_[col][i]->Bleaf = bio[i][col];
-	}
+        for (int i=0; i!=npft; ++i) {
+          pfts_old_[col][i]->Bleaf = bio[i][col];
+        }
       }
     }
     
@@ -268,7 +279,6 @@ void BGCSimple::initialize(const Teuchos::Ptr<State>& S) {
     FieldToColumn_(col, temp, col_temp.ptr());
     ColDepthDz_(col, col_depth.ptr(), col_dz.ptr());
 
-    int npft = pfts_old_[col].size();
     for (int i=0; i!=npft; ++i) {
       pfts_old_[col][i]->InitRoots(*col_temp, *col_depth, *col_dz);
     }
@@ -277,7 +287,6 @@ void BGCSimple::initialize(const Teuchos::Ptr<State>& S) {
   // ensure all initialization in both PFTs?  Not sure this is
   // necessary -- likely done in initial call to commit-state --etc
   for (int col=0; col!=ncols; ++col) {
-    int npft = pfts_old_[col].size();
     for (int i=0; i!=npft; ++i) {
       *pfts_[col][i] = *pfts_old_[col][i];
     }
@@ -290,8 +299,8 @@ void BGCSimple::commit_state(double dt, const Teuchos::RCP<State>& S) {
   // Copy the PFT over, which includes all additional state required, commit
   // the step as succesful.
   int ncols = surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int npft = pfts_old_[0].size();
   for (int col=0; col!=ncols; ++col) {
-    int npft = pfts_old_[col].size();
     for (int i=0; i!=npft; ++i) {
       *pfts_old_[col][i] = *pfts_[col][i];
     }
