@@ -211,16 +211,46 @@ void BGCSimple::initialize(const Teuchos::Ptr<State>& S) {
   // diagnostic variable
   S->GetFieldData("co2_decomposition", name_)->PutScalar(0.);
   S->GetField("co2_decomposition", name_)->set_initialized();
-  S->GetFieldData("total_biomass", name_)->PutScalar(0.);
-  S->GetField("total_biomass", name_)->set_initialized();
-  S->GetFieldData("leaf_biomass", name_)->PutScalar(0.);
-  S->GetField("leaf_biomass", name_)->set_initialized();
+
   S->GetFieldData("c_sink_limit", name_)->PutScalar(0.);
   S->GetField("c_sink_limit", name_)->set_initialized();
+
   S->GetFieldData("lai", name_)->PutScalar(0.);
   S->GetField("lai", name_)->set_initialized();
+
   S->GetFieldData("transpiration", name_)->PutScalar(0.);
   S->GetField("transpiration", name_)->set_initialized();
+
+  S->GetFieldData("total_biomass", name_)->PutScalar(0.);
+  S->GetField("total_biomass", name_)->set_initialized();
+  
+  // potentially initial aboveground vegetation data
+  Teuchos::RCP<Field> leaf_biomass_field = S->GetField("leaf_biomass", name_);
+  if (!leaf_biomass_field->initialized()) {
+    // -- Calculate the IC.
+    if (plist_->isSublist("leaf biomass initial condition")) {
+      Teuchos::ParameterList ic_plist = plist_->sublist("leaf biomass initial condition");
+      leaf_biomass_field->Initialize(ic_plist);
+
+      // -- copy into PFTs
+      Epetra_MultiVector& bio = *S->GetFieldData("leaf_biomass", name_)
+	->ViewComponent("cell", false);
+      
+      int ncols = surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+      for (int col=0; col!=ncols; ++col) {
+	int npft = pfts_old_[col].size();
+	for (int i=0; i!=npft; ++i) {
+	  pfts_old_[col][i]->Bleaf = bio[i][col];
+	}
+      }
+    }
+    
+    if (!leaf_biomass_field->initialized()) {
+      S->GetFieldData("leaf_biomass", name_)->PutScalar(0.);
+      leaf_biomass_field->set_initialized();
+    }
+  }
+  
   // init root carbon
   Teuchos::RCP<Epetra_SerialDenseVector> col_temp =
       Teuchos::rcp(new Epetra_SerialDenseVector(ncells_per_col_));
@@ -230,7 +260,8 @@ void BGCSimple::initialize(const Teuchos::Ptr<State>& S) {
       Teuchos::rcp(new Epetra_SerialDenseVector(ncells_per_col_));
 
   S->GetFieldEvaluator("temperature")->HasFieldChanged(S, name_);
-  const Epetra_Vector& temp = *(*S->GetFieldData("temperature")->ViewComponent("cell",false))(0);
+  const Epetra_Vector& temp = *(*S->GetFieldData("temperature")
+				->ViewComponent("cell",false))(0);
 
   int ncols = surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int col=0; col!=ncols; ++col) {
@@ -239,12 +270,21 @@ void BGCSimple::initialize(const Teuchos::Ptr<State>& S) {
 
     int npft = pfts_old_[col].size();
     for (int i=0; i!=npft; ++i) {
-      pfts_[col][i]->InitRoots(*col_temp, *col_depth, *col_dz);
-      *pfts_old_[col][i] = *pfts_[col][i];
+      pfts_old_[col][i]->InitRoots(*col_temp, *col_depth, *col_dz);
+    }
+  }
+
+  // ensure all initialization in both PFTs?  Not sure this is
+  // necessary -- likely done in initial call to commit-state --etc
+  for (int col=0; col!=ncols; ++col) {
+    int npft = pfts_old_[col].size();
+    for (int i=0; i!=npft; ++i) {
+      *pfts_[col][i] = *pfts_old_[col][i];
     }
   }
 }
 
+  
 // -- Commit any secondary (dependent) variables.
 void BGCSimple::commit_state(double dt, const Teuchos::RCP<State>& S) {
   // Copy the PFT over, which includes all additional state required, commit
