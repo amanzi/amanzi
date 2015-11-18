@@ -34,7 +34,7 @@ public:
   const CompositeMultiVector* CloneView(const std::vector<int> &index) const;
 
   // Dimension information methods
-  int GetVecLength() const {return cmv_[0]->GlobalLength(); } // TODO: Fix this
+  ptrdiff_t GetGlobalLength() const {return cmv_[0]->GlobalLength(); } // TODO: Fix this
   int GetNumberVecs() const { return cmv_.size(); }
 
   // Update methods
