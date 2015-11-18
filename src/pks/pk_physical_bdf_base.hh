@@ -14,7 +14,6 @@ domains/meshes of PKPhysicalBase and BDF methods of PKBDFBase.
 #define AMANZI_PK_PHYSICAL_BDF_BASE_HH_
 
 #include "errors.hh"
-#include "ResidualDebugger.hh"
 #include "pk_default_base.hh"
 #include "pk_bdf_base.hh"
 #include "pk_physical_base.hh"
