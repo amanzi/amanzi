@@ -79,8 +79,11 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
   int GMRESRestart_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
   int GMRES_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
   int GMRES_Deflated_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
+
   void ComputeSolution_(Vector& x, int k, WhetStone::DenseMatrix& T, double* s,
                         Vector& p, Vector& r) const;
+  void ComputeSolution_(Vector& x, double* d, Vector& p, Vector& r) const;
+
   void InitGivensRotation_( double& dx, double& dy, double& cs, double& sn) const;
   void ApplyGivensRotation_(double& dx, double& dy, double& cs, double& sn) const;
 
@@ -94,6 +97,7 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
   using LinearOperator<Matrix, Vector, VectorSpace>::name_;
 
   mutable std::vector<Teuchos::RCP<Vector> > v_;
+  mutable WhetStone::DenseMatrix Hu_;  // upper Hessenberg matrix
 
   int max_itrs_, criteria_, krylov_dim_;
   double tol_, overflow_tol_;
@@ -139,7 +143,11 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRESRestart_(
   while (ierr == LIN_SOLVER_MAX_ITERATIONS && num_itrs_total_ < max_itrs) {
     int max_itrs_left = max_itrs - num_itrs_total_;
 
-    ierr = GMRES_(f, x, tol, max_itrs_left, criteria);
+    if (deflation_ == 0) {
+      ierr = GMRES_(f, x, tol, max_itrs_left, criteria);
+    } else {
+      ierr = GMRES_Deflated_(f, x, tol, max_itrs_left, criteria);
+    }
     if (ierr == LIN_SOLVER_RESIDUAL_OVERFLOW) return ierr;
   }
 
@@ -299,7 +307,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
   Vector p(f), r(f), w(f);
-  double c[krylov_dim_ + 1], d[krylov_dim_], u[krylov_dim_], g[krylov_dim_];
+  WhetStone::DenseVector d(krylov_dim_ + 1), g(krylov_dim_);
   WhetStone::DenseMatrix T(krylov_dim_ + 1, krylov_dim_);
 
   double fnorm;
@@ -335,12 +343,19 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
     if (ierr != 0) return ierr;
   }
 
-  // calculate the firts (num_ritz_ + l) rows of c.
+  // calculate the first (num_ritz_ + l) rows of c.
   double tmp;
-  c = 0.0;
+  d = 0.0;
   for (int i = 0 ; i <= num_ritz_; ++i) {
     r.Dot(*(v_[i]), &tmp);
-    c[i] = tmp;
+    d(i) = tmp;
+  }
+
+  // set the leading diagonal block of T
+  for (int i = 0; i <= num_ritz_; ++i) {
+    for (int j = 0; j < num_ritz_; ++j) {
+      T(i, j) = Hu_(i, j);
+    }
   }
 
   // Apply Arnoldi method to extend the Krylov space calculate
@@ -369,20 +384,26 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   if (ierr != 0) return ierr;
 
   // Solve the least-square problem min_d ||T d - c||.
+  WhetStone::DenseMatrix Ttmp(T);
   int m(krylov_dim_ + 1), n(krylov_dim_), nrhs(1), info;
   int lwork(m * n);
   WhetStone::DenseVector work(lwork);
 
-  WhetStone::DPOSV_F77("N", &m, &n, &nrhs, T.Values(), &m, d.Values(), &n,
+  WhetStone::DGELS_F77("N", &m, &n, &nrhs, Ttmp.Values(), &m, d.Values(), &n,
                        work.Values(), &lwork, &info);
 
+  residual_ = fabs(d(m));
+  ComputeSolution_(x, d.Values(), p, r); 
+
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+    *vo_->os() << num_itrs_total_ << " ||r||=" << residual_ << std::endl;
+  }
+
   // Compute Schur vectors
-  WhetStone::DenseMatrix T1(krylov_dim_, krylov_dim_);
-  for (int i = 0; i < krylov_dim_; ++i)
-    for (int j = 0; j < krylov_dim_; ++j) T1(i, j) = T(i, j);
-  
-  T1.Inverse();
-  for (int i = 0; i < krylov_dim_; ++i) g[i] = T1(krylov_dim_ - 1, i);
+  // -- auxiliary vector g = Hm^{-T} e_m
+  WhetStone::DenseMatrix Hm(krylov_dim_, krylov_dim_);
+  Hm.Inverse();
+  for (int i = 0; i < krylov_dim_; ++i) g(i) = Hm(krylov_dim_ - 1, i);
 
   return 0;
 }
@@ -498,6 +519,29 @@ void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::ComputeSolution_(
     p.PutScalar(0.0);
     for (int j = 0; j <= k; j++) {
       p.Update(s[j], *(v_[j]), 1.0);
+    }
+    h_->ApplyInverse(p, r);
+    x.Update(1.0, r, 1.0);
+  }
+}
+
+
+/* ******************************************************************
+* solution is x = x0 + V s for the left preconditioner
+*         and x = x0 + H V s for the right preconditioner
+****************************************************************** */
+template<class Matrix, class Vector, class VectorSpace>
+void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::ComputeSolution_(
+    Vector& x, double* d, Vector& p, Vector& r) const
+{
+  if (left_pc_) {
+    for (int j = 0; j < krylov_dim_; j++) {
+      x.Update(d[j], *(v_[j]), 1.0);
+    }
+  } else {
+    p.PutScalar(0.0);
+    for (int j = 0; j < krylov_dim_; j++) {
+      p.Update(d[j], *(v_[j]), 1.0);
     }
     h_->ApplyInverse(p, r);
     x.Update(1.0, r, 1.0);
