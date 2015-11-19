@@ -41,6 +41,7 @@ class LitterDrainageEvaluator : public SecondaryVariableFieldEvaluator {
   double tau_;
   double wc_sat_;
   double n_liq_;
+  bool rewetting_;
 
  private:
   static Amanzi::Utils::RegisteredFactory<FieldEvaluator,LitterDrainageEvaluator> factory_;
