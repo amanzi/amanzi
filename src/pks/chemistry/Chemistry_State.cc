@@ -311,7 +311,6 @@ void Chemistry_State::RequireData_() {
   }
 
   // Require my data
-std::cout << "We seem to have " << compnames_.size() << " components.\n";
   if (number_of_aqueous_components_ > 0) {
 
     // Make dummy names if our component names haven't already been set.
