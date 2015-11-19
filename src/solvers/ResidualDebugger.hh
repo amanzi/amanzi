@@ -32,7 +32,7 @@ class ResidualDebugger : public IOEvent {
   // Constructor
   ResidualDebugger(Teuchos::ParameterList& plist) :
       IOEvent(plist) {
-    filebasename_ = plist_.get<std::string>("file name base","amanzi_dbg");
+    filebasename_ = plist_.get<std::string>("file name base", "amanzi_dbg");
   }
 
   template <class VectorSpace>
@@ -57,7 +57,7 @@ class ResidualDebugger : public IOEvent {
 
 template <>
 void ResidualDebugger::StartIteration<TreeVectorSpace>(double time, int cycle, int attempt,
-                                       const TreeVectorSpace& space);
+                                                       const TreeVectorSpace& space);
 template <>
 void ResidualDebugger::WriteVector<TreeVector>(int iter,
               const TreeVector& res,
