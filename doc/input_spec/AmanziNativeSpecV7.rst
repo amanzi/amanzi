@@ -136,7 +136,7 @@ The name *Verbosity Level* is reserved by Trilinos.
    </ParameterList>
 
 
-Residual Debugger
+Residual debugger
 -----------------
 
 Some components (currently just nonlinear solver, this may change)
@@ -159,13 +159,15 @@ expensive.
 
   * `"cycles`" [Array(int)] an array of discrete cycles that at which all iterations shall be written. 
 
-
+Note: *cycle* here means the current time integration step and *not* the global cycle.
 
 .. code-block:: xml
 
-   <ParameterList name="ResidualDebugger">
-     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
-     <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
+   <ParameterList name="BDF1">  <!-- parent list -->
+     <ParameterList name="ResidualDebugger">
+       <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
+       <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
+     </ParameterList>
    </ParameterList>
    
 
