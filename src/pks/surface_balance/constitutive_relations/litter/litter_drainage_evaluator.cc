@@ -32,7 +32,7 @@ LitterDrainageEvaluator::LitterDrainageEvaluator(Teuchos::ParameterList& plist) 
   tau_ = plist_.get<double>("litter drainage timescale [s]");
   wc_sat_ = plist_.get<double>("litter moisture (saturated) [-]"); // this is somehow related to a LAI?
   n_liq_ = plist_.get<double>("density of liquid water [mol/m^3]", 1000. / 0.0180153);
-  
+  rewetting_ = plist_.get<bool>("wet litter from surface water", true);
 };
 
 
@@ -43,7 +43,8 @@ LitterDrainageEvaluator::LitterDrainageEvaluator(const LitterDrainageEvaluator& 
     pd_key_(other.pd_key_),
     tau_(other.tau_),
     wc_sat_(other.wc_sat_),
-    n_liq_(other.n_liq_)
+    n_liq_(other.n_liq_),
+    rewetting_(other.rewetting_)
 {}
 
 
@@ -75,7 +76,7 @@ void LitterDrainageEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       // litter is oversaturated and draining
       res_c[0][c] = (wc[0][c] - wc_sat) / tau_;
       //      std::cout << std::endl;
-    } else {
+    } else if (rewetting_) {
       // litter is undersaturated and there is surface water to be absorbed
       double litter_wetting = std::min(pd[0][c] / ld[0][c], 1.0);
       //      std::cout << ", litter wetting = " << litter_wetting << std::endl;
@@ -106,7 +107,7 @@ void LitterDrainageEvaluator::EvaluateFieldPartialDerivative_(
       if (wc[0][c] > wc_sat) {
         // litter is oversaturated and draining
         res_c[0][c] = 1.0 / tau_;
-      } else {
+      } else if (rewetting_) {
         // litter is undersaturated and there is surface water to be absorbed
         double litter_wetting = std::min(pd[0][c] / ld[0][c], 1.0);
         res_c[0][c] = litter_wetting / tau_;
@@ -119,7 +120,7 @@ void LitterDrainageEvaluator::EvaluateFieldPartialDerivative_(
       if (wc[0][c] > wc_sat) {
         // litter is oversaturated and draining
         res_c[0][c] = -n_liq_ * cv[0][c] * wc_sat_ / tau_;
-      } else {
+      } else if (rewetting_) {
         double litter_wetting = std::min(pd[0][c] / ld[0][c], 1.0);
         res_c[0][c] = -litter_wetting * n_liq_ * cv[0][c] * wc_sat_ / tau_;
       }
@@ -131,7 +132,7 @@ void LitterDrainageEvaluator::EvaluateFieldPartialDerivative_(
       if (wc[0][c] > wc_sat) {
         // litter is oversaturated and draining
         res_c[0][c] = -n_liq_ * ld[0][c] * wc_sat_ / tau_;
-      } else {
+      } else if (rewetting_) {
         // litter is undersaturated and there is surface water to be absorbed
         double litter_wetting = std::min(pd[0][c] / ld[0][c], 1.0);
         res_c[0][c] = -litter_wetting * n_liq_ * ld[0][c] * wc_sat_ / tau_;
@@ -144,7 +145,7 @@ void LitterDrainageEvaluator::EvaluateFieldPartialDerivative_(
       if (wc[0][c] > wc_sat) {
         // litter is oversaturated and draining
         res_c[0][c] = 0.;
-      } else {
+      } else if (rewetting_) {
         // litter is undersaturated and there is surface water to be absorbed
         double dlitter_wetting = pd[0][c] > ld[0][c] ? 0. : 1./ld[0][c];
         res_c[0][c] = dlitter_wetting * (wc[0][c] - wc_sat) / tau_;
