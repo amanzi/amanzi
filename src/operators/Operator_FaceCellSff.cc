@@ -152,7 +152,6 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
   
   int num_with_cells = 0;
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    std::cout << "schema: " << (*it)->schema_string << ", " << (*it)->schema << std::endl;
     if ((*it)->schema & OPERATOR_SCHEMA_DOFS_CELL) {
       if (((*it)->schema == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
 	  && ((*it)->vals.size() == ncells_owned)) {
