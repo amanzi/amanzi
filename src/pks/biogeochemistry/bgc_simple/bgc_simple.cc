@@ -160,7 +160,7 @@ void BGCSimple::setup(const Teuchos::Ptr<State>& S) {
       ->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
   S->RequireField("lai", name_)->SetMesh(surf_mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
-  S->RequireField("transpiration", name_)->SetMesh(surf_mesh_)
+  S->RequireField("veg_total_transpiration", name_)->SetMesh(surf_mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
 
   // requirement: temp of each cell
@@ -229,11 +229,12 @@ void BGCSimple::initialize(const Teuchos::Ptr<State>& S) {
 
   // -- set the subfield names
   Teuchos::RCP<Field_CompositeVector> leaf_biomass_field_cv =
-      Teuchos::rcp_dynamic_cast<Field_CompositeVector>(leaf_biomass_field_cv);
+      Teuchos::rcp_dynamic_cast<Field_CompositeVector>(leaf_biomass_field);
   ASSERT(leaf_biomass_field_cv != Teuchos::null);
 
   int npft = pfts_old_[0].size();
-  std::vector<std::vector<std::string> > names(1, std::vector<std::string>());
+  std::vector<std::vector<std::string> > names;
+  names.resize(1);
   names[0].resize(npft);
   for (int i=0; i!=npft; ++i) names[0][i] = pfts_old_[0][i]->pft_type;
   leaf_biomass_field_cv->set_subfield_names(names);
@@ -344,7 +345,7 @@ bool BGCSimple::advance(double dt) {
       ->ViewComponent("cell",false);
   Epetra_MultiVector& lai = *S_next_->GetFieldData("lai", name_)
       ->ViewComponent("cell",false);
-  Epetra_MultiVector& transpiration = *S_next_->GetFieldData("transpiration", name_)
+  Epetra_MultiVector& veg_total_transpiration = *S_next_->GetFieldData("veg_total_transpiration", name_)
       ->ViewComponent("cell",false);
 
   S_next_->GetFieldEvaluator("temperature")->HasFieldChanged(S_next_.ptr(), name_);
@@ -456,7 +457,7 @@ bool BGCSimple::advance(double dt) {
       leafbiomass[lcv_pft][col] = pfts_[col][lcv_pft]->Bleaf;
       csink[lcv_pft][col] = pfts_[col][lcv_pft]->CSinkLimit;
       lai[lcv_pft][col] = pfts_[col][lcv_pft]->lai;
-      transpiration[lcv_pft][col] = pfts_[col][lcv_pft]->ET;
+      veg_total_transpiration[lcv_pft][col] = pfts_[col][lcv_pft]->ET;
     }
 
   } // end loop over columns
