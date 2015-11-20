@@ -176,7 +176,8 @@ void OverlandConductivityEvaluator::EvaluateFieldPartialDerivative_(
     }
 
   } else {
-    ASSERT(0);
+    // FIX ME -- need to add derivatives of conductivity model wrt slope, coef --etc
+    result->PutScalar(0.);
   }
 }
 
