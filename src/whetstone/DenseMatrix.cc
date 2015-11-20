@@ -22,7 +22,7 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Constructor.
+* Constructor: memory is allocated.
 ****************************************************************** */
 DenseMatrix::DenseMatrix(int mrow, int ncol) 
 { 
@@ -32,8 +32,9 @@ DenseMatrix::DenseMatrix(int mrow, int ncol)
   access_ = WHETSTONE_DATA_ACCESS_COPY;
 }
 
+
 /* ******************************************************************
-* Constructor.
+* Constructor: empty matrix
 ****************************************************************** */
 DenseMatrix::DenseMatrix() 
 { 
@@ -42,6 +43,7 @@ DenseMatrix::DenseMatrix()
   data_ = NULL; 
   access_ = WHETSTONE_DATA_ACCESS_COPY;
 }
+
 
 /* ******************************************************************
 * No memory check is performed: invalid read is possible.
@@ -73,6 +75,33 @@ DenseMatrix::DenseMatrix(const DenseMatrix& B)
   data_ = new double[m_ * n_];
   const double* dataB = B.Values();
   for (int i = 0; i < m_ * n_; i++) data_[i] = dataB[i];
+}
+
+
+/* ******************************************************************
+* Copy constructor creates an new matrix from a submatrix
+****************************************************************** */
+DenseMatrix::DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2)
+{
+  m_ = m2 - m1;
+  n_ = n2 - n1;
+  access_ = WHETSTONE_DATA_ACCESS_COPY;
+
+  data_ = new double[m_ * n_];
+
+  int mB = B.NumRows();
+  int nB = B.NumCols();
+  const double* dataB = B.Values();
+
+  for (int j = n1; j < n2; ++j) {
+    const double* tmpB = dataB + j * mB + m1;
+    double* tmpA = data_ + (j - n1) * m_;
+    for (int i = 0; i < m_; ++i) {
+      *tmpA = *tmpB;
+      tmpA++;
+      tmpB++;
+    }
+  }
 }
 
 

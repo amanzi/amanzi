@@ -29,6 +29,7 @@ namespace WhetStone {
 #define DGESV_F77  F77_LAPACK_MANGLE(dgesv,DGESV)
 #define DGEEV_F77  F77_LAPACK_MANGLE(dgeev,DGEEV)
 #define DGELS_F77  F77_LAPACK_MANGLE(dgels,DGELS)
+#define DGEES_F77  F77_LAPACK_MANGLE(dgees,DGEES)
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,6 +66,11 @@ void PREFIX DGELS_F77(const char* trans,
                       int* m, int* n, int* nrhs, double* a, int* lda,
                       double* b, int* ldb, double* work, int* lwork, int* info);
  
+void PREFIX DGEES_F77(const char* jobvs, const char* sort, double* select(double, double),
+                      int* n, double* a, int* lda, int* sdim, 
+                      double* wr, double* wi, double* vs, int* ldvs,
+                      double* work, int* lwork, int* bwork, int* info);
+
 #ifdef __cplusplus
 }
 #endif

@@ -34,6 +34,7 @@ class DenseMatrix {
   DenseMatrix(int mrow, int ncol);
   DenseMatrix(int mrow, int ncol, double* data, int data_access = WHETSTONE_DATA_ACCESS_COPY);
   DenseMatrix(const DenseMatrix& B);
+  DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2);
   ~DenseMatrix() { if (data_ != NULL && access_ == WHETSTONE_DATA_ACCESS_COPY) { delete[] data_; } }
   
   // primary members 

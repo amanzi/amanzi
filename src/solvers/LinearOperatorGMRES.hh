@@ -109,7 +109,8 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
   mutable double controller_[2];
 
   bool left_pc_;
-  int deflation_, num_ritz_;
+  int deflation_;
+  mutable int num_ritz_;
 };
 
 
@@ -401,9 +402,24 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
 
   // Compute Schur vectors
   // -- auxiliary vector g = Hm^{-T} e_m
-  WhetStone::DenseMatrix Hm(krylov_dim_, krylov_dim_);
-  Hm.Inverse();
-  for (int i = 0; i < krylov_dim_; ++i) g(i) = Hm(krylov_dim_ - 1, i);
+  WhetStone::DenseMatrix Tm(T, 1, krylov_dim_, 1, krylov_dim_);
+  WhetStone::DenseMatrix Hm(Tm);
+  Tm.Inverse();
+  for (int i = 0; i < krylov_dim_; ++i) g(i) = Tm(krylov_dim_ - 1, i);
+
+  // -- solve eigenvector problem
+  beta *= beta;
+  for (int i = 0; i < krylov_dim_; ++i) Hm(i, krylov_dim_ - 1) += beta * g(i);
+  
+  int sdim, bwork;
+  WhetStone::DenseVector wr(krylov_dim_), wi(krylov_dim_);
+  WhetStone::DenseMatrix vs(krylov_dim_, krylov_dim_);
+  WhetStone::DGEES_F77("V", "N", NULL, &n, Hm.Values(), &n, &sdim,
+                       wr.Values(), wi.Values(), vs.Values(), &n,
+                       work.Values(), &lwork, &bwork, &info);
+
+  num_ritz_ = 1;
+  Hu_ = Hm;
 
   return 0;
 }
