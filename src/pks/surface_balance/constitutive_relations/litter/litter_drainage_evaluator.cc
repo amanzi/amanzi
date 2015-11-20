@@ -33,6 +33,9 @@ LitterDrainageEvaluator::LitterDrainageEvaluator(Teuchos::ParameterList& plist) 
   wc_sat_ = plist_.get<double>("litter moisture (saturated) [-]"); // this is somehow related to a LAI?
   n_liq_ = plist_.get<double>("density of liquid water [mol/m^3]", 1000. / 0.0180153);
   rewetting_ = plist_.get<bool>("wet litter from surface water", true);
+
+  source_key_ = plist_.get<std::string>("litter source key");
+  source_coef_ = plist_.get<double>("litter source coefficient", 1.0);
 };
 
 
@@ -44,7 +47,9 @@ LitterDrainageEvaluator::LitterDrainageEvaluator(const LitterDrainageEvaluator& 
     tau_(other.tau_),
     wc_sat_(other.wc_sat_),
     n_liq_(other.n_liq_),
-    rewetting_(other.rewetting_)
+    rewetting_(other.rewetting_),
+    source_key_(other.source_key_),
+    source_coef_(other.source_coef_)
 {}
 
 
@@ -62,6 +67,8 @@ void LitterDrainageEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       *S->GetFieldData(litter_thickness_key_)->ViewComponent("cell",false);
   const Epetra_MultiVector& pd =
       *S->GetFieldData(pd_key_)->ViewComponent("cell",false);  
+  const Epetra_MultiVector& source =
+      *S->GetFieldData(source_key_)->ViewComponent("cell",false);  
   const Epetra_MultiVector& cv =
       *S->GetFieldData("surface_cell_volume")->ViewComponent("cell",false);
   Epetra_MultiVector& res_c = *result->ViewComponent("cell",false);
@@ -69,18 +76,19 @@ void LitterDrainageEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   // evaluate the model
   for (int c=0; c!=res_c.MyLength(); ++c) {
     res_c[0][c] = 0.0;
-    
-    double wc_sat = n_liq_ * ld[0][c] * cv[0][c] * wc_sat_;
-    //    std::cout << "wc = " << wc[0][c] << ", wc_sat = " << wc_sat;
-    if (wc[0][c] > wc_sat) {
-      // litter is oversaturated and draining
-      res_c[0][c] = (wc[0][c] - wc_sat) / tau_;
-      //      std::cout << std::endl;
-    } else if (rewetting_) {
-      // litter is undersaturated and there is surface water to be absorbed
-      double litter_wetting = std::min(pd[0][c] / ld[0][c], 1.0);
-      //      std::cout << ", litter wetting = " << litter_wetting << std::endl;
-      res_c[0][c] = litter_wetting * (wc[0][c] - wc_sat) / tau_;
+
+    if (ld[0][c] == 0.0) {
+      res_c[0][c] = source[0][c] * source_coef_;
+    } else {
+      double wc_sat = n_liq_ * ld[0][c] * cv[0][c] * wc_sat_;
+      if (wc[0][c] > wc_sat) {
+	// litter is oversaturated and draining
+	res_c[0][c] = (wc[0][c] - wc_sat) / tau_;
+      } else if (rewetting_) {
+	// litter is undersaturated and there is surface water to be absorbed
+	double litter_wetting = ld[0][c] > 0 ? std::min(pd[0][c] / ld[0][c], 1.0) : 1.0;
+	res_c[0][c] = litter_wetting * (wc[0][c] - wc_sat) / tau_;
+      }
     }
   }
 }
@@ -99,56 +107,83 @@ void LitterDrainageEvaluator::EvaluateFieldPartialDerivative_(
       *S->GetFieldData(pd_key_)->ViewComponent("cell",false);  
   const Epetra_MultiVector& cv =
       *S->GetFieldData("surface_cell_volume")->ViewComponent("cell",false);
+  const Epetra_MultiVector& source =
+      *S->GetFieldData(source_key_)->ViewComponent("cell",false);  
   Epetra_MultiVector& res_c = *result->ViewComponent("cell",false);
 
   if (wrt_key == litter_wc_key_) {
     for (int c=0; c!=res_c.MyLength(); ++c) {
-      double wc_sat = n_liq_ * ld[0][c] * cv[0][c] * wc_sat_;
-      if (wc[0][c] > wc_sat) {
-        // litter is oversaturated and draining
-        res_c[0][c] = 1.0 / tau_;
-      } else if (rewetting_) {
-        // litter is undersaturated and there is surface water to be absorbed
-        double litter_wetting = std::min(pd[0][c] / ld[0][c], 1.0);
-        res_c[0][c] = litter_wetting / tau_;
+      if (ld[0][c] == 0.) {
+	res_c[0][c] = 0.;
+      } else {
+	double wc_sat = n_liq_ * ld[0][c] * cv[0][c] * wc_sat_;
+	if (wc[0][c] > wc_sat) {
+	  // litter is oversaturated and draining
+	  res_c[0][c] = 1.0 / tau_;
+	} else if (rewetting_) {
+	  // litter is undersaturated and there is surface water to be absorbed
+	  double litter_wetting = std::min(pd[0][c] / ld[0][c], 1.0);
+	  res_c[0][c] = litter_wetting / tau_;
+	}
       }
     }
 
   } else if (wrt_key == litter_thickness_key_) {
     for (int c=0; c!=res_c.MyLength(); ++c) {
-      double wc_sat = n_liq_ * ld[0][c] * cv[0][c] * wc_sat_;
-      if (wc[0][c] > wc_sat) {
-        // litter is oversaturated and draining
-        res_c[0][c] = -n_liq_ * cv[0][c] * wc_sat_ / tau_;
-      } else if (rewetting_) {
-        double litter_wetting = std::min(pd[0][c] / ld[0][c], 1.0);
-        res_c[0][c] = -litter_wetting * n_liq_ * cv[0][c] * wc_sat_ / tau_;
+      if (ld[0][c] == 0.) {
+	res_c[0][c] = 0.;
+      } else {
+	double wc_sat = n_liq_ * ld[0][c] * cv[0][c] * wc_sat_;
+	if (wc[0][c] > wc_sat) {
+	  // litter is oversaturated and draining
+	  res_c[0][c] = -n_liq_ * cv[0][c] * wc_sat_ / tau_;
+	} else if (rewetting_) {
+	  double litter_wetting = std::min(pd[0][c] / ld[0][c], 1.0);
+	  res_c[0][c] = -litter_wetting * n_liq_ * cv[0][c] * wc_sat_ / tau_;
+	}
       }
     }
 
   } else if (wrt_key == "surface_cell_volume") {
     for (int c=0; c!=res_c.MyLength(); ++c) {
-      double wc_sat = n_liq_ * ld[0][c] * cv[0][c] * wc_sat_;
-      if (wc[0][c] > wc_sat) {
-        // litter is oversaturated and draining
-        res_c[0][c] = -n_liq_ * ld[0][c] * wc_sat_ / tau_;
-      } else if (rewetting_) {
-        // litter is undersaturated and there is surface water to be absorbed
-        double litter_wetting = std::min(pd[0][c] / ld[0][c], 1.0);
-        res_c[0][c] = -litter_wetting * n_liq_ * ld[0][c] * wc_sat_ / tau_;
+      if (ld[0][c] == 0.) {
+	res_c[0][c] = 0.;
+      } else {
+	double wc_sat = n_liq_ * ld[0][c] * cv[0][c] * wc_sat_;
+	if (wc[0][c] > wc_sat) {
+	  // litter is oversaturated and draining
+	  res_c[0][c] = -n_liq_ * ld[0][c] * wc_sat_ / tau_;
+	} else if (rewetting_) {
+	  // litter is undersaturated and there is surface water to be absorbed
+	  double litter_wetting = std::min(pd[0][c] / ld[0][c], 1.0);
+	  res_c[0][c] = -litter_wetting * n_liq_ * ld[0][c] * wc_sat_ / tau_;
+	}
       }
     }
 
   } else if (wrt_key == pd_key_) {
     for (int c=0; c!=res_c.MyLength(); ++c) {
-      double wc_sat = n_liq_ * ld[0][c] * cv[0][c] * wc_sat_;
-      if (wc[0][c] > wc_sat) {
-        // litter is oversaturated and draining
-        res_c[0][c] = 0.;
-      } else if (rewetting_) {
-        // litter is undersaturated and there is surface water to be absorbed
-        double dlitter_wetting = pd[0][c] > ld[0][c] ? 0. : 1./ld[0][c];
-        res_c[0][c] = dlitter_wetting * (wc[0][c] - wc_sat) / tau_;
+      if (ld[0][c] == 0.) {
+	res_c[0][c] = 0.;
+      } else {
+	double wc_sat = n_liq_ * ld[0][c] * cv[0][c] * wc_sat_;
+	if (wc[0][c] > wc_sat) {
+	  // litter is oversaturated and draining
+	  res_c[0][c] = 0.;
+	} else if (rewetting_) {
+	  // litter is undersaturated and there is surface water to be absorbed
+	  double dlitter_wetting = pd[0][c] > ld[0][c] ? 0. : 1./ld[0][c];
+	  res_c[0][c] = dlitter_wetting * (wc[0][c] - wc_sat) / tau_;
+	}
+      }
+    }
+
+  } else if (wrt_key == source_key_) {
+    for (int c=0; c!=res_c.MyLength(); ++c) {
+      if (ld[0][c] == 0.) {
+	res_c[0][c] = source_coef_;
+      } else {
+	res_c[0][c] = 0.;
       }
     }
     

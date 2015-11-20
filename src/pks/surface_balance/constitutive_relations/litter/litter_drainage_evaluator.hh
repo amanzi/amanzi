@@ -37,6 +37,8 @@ class LitterDrainageEvaluator : public SecondaryVariableFieldEvaluator {
  protected:
   Key litter_thickness_key_;
   Key litter_wc_key_;
+  Key source_key_;
+  double source_coef_;
   Key pd_key_;
   double tau_;
   double wc_sat_;

@@ -1,18 +1,20 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
-   ATS
+ATS
 
-   License: see $ATS_DIR/COPYRIGHT
-   Author: Ethan Coon
+License: see $ATS_DIR/COPYRIGHT
+Author: Ethan Coon
 
-   A generalized surface balance model using Crank-Nicholson time integration
-   for a system of ODEs, i.e.:
+A generalized surface balance model using Crank-Nicholson time integration
+for a system of ODEs, i.e.:
 
-   d theta(u)
-   ---------  = f(u,x,t)
-     dt 
-   ------------------------------------------------------------------------- */
+d theta(u)
+---------  = Qin - Qout
+  dt 
+
+
+ ------------------------------------------------------------------------- */
 
 #ifndef PK_SURFACE_BALANCE_BASE_HH_
 #define PK_SURFACE_BALANCE_BASE_HH_
