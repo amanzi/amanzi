@@ -68,18 +68,29 @@ def getSurfaceData(keys, dat, name):
         res = res[:,0]
     return res
 
-def subsetFile(directory=".", base="visdump_data.h5", outfile="my_visdump_data.h5", inds=None, interval=1, time_range=None, names=None):
+def subsetFile(directory=".", base="visdump_data.h5", outfile="my_visdump_data.h5", inds=None, interval=1, time_range=None, names=None, dry_run=False):
     """Read one file, write another"""
+    null_time_range = False
+    if (time_range[0] == 0.0) and (time_range[1] == 1.e99):
+        null_time_range = True
+    
     keys, times, dat = readATS(directory,base,inds,time_range)
+
     if interval > 1:
         keys = keys[::interval]
         times = times[::interval]
-    
+
+    if (interval == 1) and (null_time_range) and (inds == None) and dry_run:
+        print "Available times (count = %d):"%len(times), times
+        return (None,None)
+    elif dry_run:
+        print "Matched times (count = %d):"%len(times), times
+        return (None, None)
+        
     print "Transfering %d times to %s"%(len(times),outfile)
     
     if names is None:
         names = dat.keys()
-
     
     out = h5py.File(outfile)
     for name in names:
@@ -90,5 +101,6 @@ def subsetFile(directory=".", base="visdump_data.h5", outfile="my_visdump_data.h
     out.create_dataset('Times', data=np.array(times))
     out.close()
 
+    return keys, times
 
     

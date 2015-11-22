@@ -16,6 +16,7 @@ if __name__ == "__main__":
     parser.add_argument("--start", dest="start", type=float, default=0.0, help="start time [yrs]")
     parser.add_argument("--end", dest="end", type=float, default=-1.0, help="end time [yrs], -1 for end of simulation")
     parser.add_argument("--interval", dest="interval", type=int, default=1, help="subsampling interval")
+    parser.add_argument("--dry-run", dest="dry_run", action="store_true", default=False, help="do no work, but print information -- if start/end/interval provided, print times that match, otherwise print all times available")
     parser.add_argument("--names", dest="names", type=str, nargs="+", help="subsampling interval")
     args = parser.parse_args()
 
@@ -29,7 +30,7 @@ if __name__ == "__main__":
         args.end = 1.e99
         
     parse_ats.subsetFile(args.directory, args.infile, args.outfile, interval=args.interval,
-                         time_range=(args.start,args.end), names=args.names)
+                         time_range=(args.start,args.end), names=args.names, dry_run=args.dry_run)
     sys.exit(0)
 
         
