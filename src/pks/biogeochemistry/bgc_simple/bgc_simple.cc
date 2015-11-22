@@ -223,6 +223,9 @@ void BGCSimple::initialize(const Teuchos::Ptr<State>& S) {
 
   S->GetFieldData("total_biomass", name_)->PutScalar(0.);
   S->GetField("total_biomass", name_)->set_initialized();
+
+  S->GetFieldData("veg_total_transpiration", name_)->PutScalar(0.);
+  S->GetField("veg_total_transpiration", name_)->set_initialized();
   
   // potentially initial aboveground vegetation data
   Teuchos::RCP<Field> leaf_biomass_field = S->GetField("leaf_biomass", name_);
@@ -255,6 +258,7 @@ void BGCSimple::initialize(const Teuchos::Ptr<State>& S) {
           pfts_old_[col][i]->Bleaf = bio[i][col];
         }
       }
+      leaf_biomass_field->set_initialized();
     }
     
     if (!leaf_biomass_field->initialized()) {
