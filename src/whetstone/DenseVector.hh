@@ -14,6 +14,7 @@
 #ifndef AMANZI_DENSE_VECTOR_HH_
 #define AMANZI_DENSE_VECTOR_HH_
 
+#include <cmath>
 #include <cstdlib>
 #include <iostream>
 #include <iomanip>
@@ -96,6 +97,13 @@ class DenseVector {
         os << std::setw(12) << std::setprecision(12) << A(i) << " ";
     os << "\n";
     return os;
+  }
+
+  // First level routines
+  void Norm2(double* result) {
+    *result = 0.0;
+    for (int i = 0; i < m_; i++) *result += data_[i] * data_[i];
+    *result = std::pow(*result, 0.5);
   }
  
  private:
