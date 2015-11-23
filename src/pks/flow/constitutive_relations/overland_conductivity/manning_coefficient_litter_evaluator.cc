@@ -51,7 +51,7 @@ ManningCoefficientLitterEvaluator::InitializeFromPlist_()
   // - pull Keys from plist
   // dependency: litter_thickness
   ld_key_ = plist_.get<std::string>("litter thickness key",
-          domain_name+"litter_thickness");
+          domain_name+"litter-thickness");
   dependencies_.insert(ld_key_);
 
   // dependency: ponded_depth

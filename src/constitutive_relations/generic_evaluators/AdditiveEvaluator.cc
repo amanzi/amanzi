@@ -38,7 +38,6 @@ void
 AdditiveEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 {
-  ASSERT(dependencies_.size() > 1);
   result->PutScalar(0.);
   
   for (std::map<Key, double>::const_iterator it=coefs_.begin();

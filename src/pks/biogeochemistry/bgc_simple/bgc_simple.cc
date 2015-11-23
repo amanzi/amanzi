@@ -42,6 +42,12 @@ BGCSimple::BGCSimple(const Teuchos::RCP<Teuchos::ParameterList>& plist,
   sw_sublist.set("evaluator name", "shortwave_radiation_to_surface");
   sw_sublist.set("field evaluator type", "primary variable");
 
+  // -- lai
+  Teuchos::ParameterList& lai_sublist =
+      FElist.sublist("total_leaf_area_index");
+  lai_sublist.set("evaluator name", "total_leaf_area_index");
+  lai_sublist.set("field evaluator type", "primary variable");
+  
 }
 
 // is a PK
@@ -148,6 +154,16 @@ void BGCSimple::setup(const Teuchos::Ptr<State>& S) {
     Errors::Message message("BGC: error, failure to initialize primary variable for shaded shortwave");
     Exceptions::amanzi_throw(message);
   }
+
+  S->RequireField("total_leaf_area_index", name_)->SetMesh(surf_mesh_)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator("total_leaf_area_index");
+  lai_eval_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(
+      S->GetFieldEvaluator("total_leaf_area_index"));
+  if (lai_eval_ == Teuchos::null) {
+    Errors::Message message("BGC: error, failure to initialize primary variable for LAI");
+    Exceptions::amanzi_throw(message);
+  }
   
   // requirement: diagnostics
   S->RequireField("co2_decomposition", name_)->SetMesh(mesh_)
@@ -156,9 +172,9 @@ void BGCSimple::setup(const Teuchos::Ptr<State>& S) {
       ->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
   S->RequireField("leaf_biomass", name_)->SetMesh(surf_mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
-  S->RequireField("c_sink_limit", name_)->SetMesh(surf_mesh_)
+  S->RequireField("leaf_area_index", name_)->SetMesh(surf_mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
-  S->RequireField("lai", name_)->SetMesh(surf_mesh_)
+  S->RequireField("c_sink_limit", name_)->SetMesh(surf_mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
   S->RequireField("veg_total_transpiration", name_)->SetMesh(surf_mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
@@ -215,14 +231,14 @@ void BGCSimple::initialize(const Teuchos::Ptr<State>& S) {
   S->GetFieldData("c_sink_limit", name_)->PutScalar(0.);
   S->GetField("c_sink_limit", name_)->set_initialized();
 
-  S->GetFieldData("lai", name_)->PutScalar(0.);
-  S->GetField("lai", name_)->set_initialized();
-
   S->GetFieldData("transpiration", name_)->PutScalar(0.);
   S->GetField("transpiration", name_)->set_initialized();
 
   S->GetFieldData("total_biomass", name_)->PutScalar(0.);
   S->GetField("total_biomass", name_)->set_initialized();
+
+  S->GetFieldData("leaf_area_index", name_)->PutScalar(0.);
+  S->GetField("leaf_area_index", name_)->set_initialized();
 
   S->GetFieldData("veg_total_transpiration", name_)->PutScalar(0.);
   S->GetField("veg_total_transpiration", name_)->set_initialized();
@@ -347,7 +363,9 @@ bool BGCSimple::advance(double dt) {
       ->ViewComponent("cell",false);
   Epetra_MultiVector& csink = *S_next_->GetFieldData("c_sink_limit", name_)
       ->ViewComponent("cell",false);
-  Epetra_MultiVector& lai = *S_next_->GetFieldData("lai", name_)
+  Epetra_MultiVector& total_lai = *S_next_->GetFieldData("total_leaf_area_index", name_)
+      ->ViewComponent("cell",false);
+  Epetra_MultiVector& lai = *S_next_->GetFieldData("leaf_area_index", name_)
       ->ViewComponent("cell",false);
   Epetra_MultiVector& veg_total_transpiration = *S_next_->GetFieldData("veg_total_transpiration", name_)
       ->ViewComponent("cell",false);
@@ -405,6 +423,7 @@ bool BGCSimple::advance(double dt) {
 
   // Grab the mesh partition to get soil properties
   Teuchos::RCP<const Functions::MeshPartition> mp = S_next_->GetMeshPartition(soil_part_name_);
+  total_lai.PutScalar(0.);
 
   // loop over columns and apply the model
   for (AmanziMesh::Entity_ID col=0; col!=ncols; ++col) {
@@ -462,6 +481,7 @@ bool BGCSimple::advance(double dt) {
       csink[lcv_pft][col] = pfts_[col][lcv_pft]->CSinkLimit;
       lai[lcv_pft][col] = pfts_[col][lcv_pft]->lai;
       veg_total_transpiration[lcv_pft][col] = pfts_[col][lcv_pft]->ET;
+      total_lai[0][col] += pfts_[col][lcv_pft]->lai;
     }
 
   } // end loop over columns
@@ -469,6 +489,7 @@ bool BGCSimple::advance(double dt) {
   // mark primaries as changed
   trans_eval_->SetFieldAsChanged(S_next_.ptr());
   sw_eval_->SetFieldAsChanged(S_next_.ptr());
+  lai_eval_->SetFieldAsChanged(S_next_.ptr());
   return false;
 }
 
