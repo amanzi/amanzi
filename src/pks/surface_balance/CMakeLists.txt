@@ -14,7 +14,8 @@ add_library(pk_surface_balance_SEB
        constitutive_relations/SEB/SnowEnergyBalance_VPL.cc
        constitutive_relations/SEB/seb_physics_defs.cc
        constitutive_relations/SEB/seb_physics_funcs.cc
-       constitutive_relations/litter/litter_drainage_evaluator.cc
+       constitutive_relations/litter/drainage_evaluator.cc
+       constitutive_relations/litter/interception_evaluator.cc
        constitutive_relations/litter/latent_heat_evaluator.cc
        constitutive_relations/litter/latent_heat_model.cc       
        constitutive_relations/litter/evaporative_flux_relaxation_evaluator.cc       
@@ -41,7 +42,12 @@ install(TARGETS pk_surface_balance_SEB DESTINATION lib)
 
 # SEB evalutors
 register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/litter/litter_drainage_evaluator_reg.hh
+  HEADERFILE constitutive_relations/litter/drainage_evaluator_reg.hh
+  LISTNAME SURFACE_BALANCE_SEB_REG
+)
+
+register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/litter/interception_evaluator_reg.hh
   LISTNAME SURFACE_BALANCE_SEB_REG
 )
 

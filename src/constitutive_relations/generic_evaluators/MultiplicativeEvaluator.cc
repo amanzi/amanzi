@@ -10,10 +10,14 @@ namespace Amanzi {
 namespace Relations {
 
 MultiplicativeEvaluator::MultiplicativeEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist) {}
+    SecondaryVariableFieldEvaluator(plist) {
+  coef_ = plist_.get<double>("coefficient", 1.0);
+}
 
 MultiplicativeEvaluator::MultiplicativeEvaluator(const MultiplicativeEvaluator& other) :
-    SecondaryVariableFieldEvaluator(other) {}
+    SecondaryVariableFieldEvaluator(other),
+    coef_(other.coef_)
+{}
 
 Teuchos::RCP<FieldEvaluator>
 MultiplicativeEvaluator::Clone() const
@@ -30,6 +34,7 @@ MultiplicativeEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   ASSERT(dependencies_.size() > 1);
   KeySet::const_iterator key = dependencies_.begin();
   *result = *S->GetFieldData(*key);
+  result->Scale(coef_);
   key++;
 
   for (; key!=dependencies_.end(); ++key) {
@@ -52,6 +57,7 @@ MultiplicativeEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<Stat
   KeySet::const_iterator key = dependencies_.begin();
   while (*key == wrt_key) key++;
   *result = *S->GetFieldData(*key);
+  result->Scale(coef_);
   key++;
 
   for (; key!=dependencies_.end(); ++key) {

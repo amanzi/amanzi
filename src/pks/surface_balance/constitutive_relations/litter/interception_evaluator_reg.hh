@@ -5,14 +5,14 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#include "litter_drainage_evaluator.hh"
+#include "interception_evaluator.hh"
 
 namespace Amanzi {
 namespace SurfaceBalance {
 namespace Relations {
 
 // registry of method
-Utils::RegisteredFactory<FieldEvaluator,LitterDrainageEvaluator> LitterDrainageEvaluator::factory_("litter drainage");
+Utils::RegisteredFactory<FieldEvaluator,InterceptionEvaluator> InterceptionEvaluator::factory_("interception/throughfall");
 
 } // namespace
 } // namespace

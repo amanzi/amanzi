@@ -28,7 +28,7 @@ SurfaceBalanceBase::SurfaceBalanceBase(
 {
   // name the layer
   layer_ = plist->get<std::string>("layer name", name_);
-  source_key_  = layer_+std::string("_source");
+  source_key_  = getKey(layer_, "source_sink");
   source_key_ = plist->get<std::string>("source key", source_key_);
 
   theta_ = plist->get<double>("time discretization theta", 1.0);

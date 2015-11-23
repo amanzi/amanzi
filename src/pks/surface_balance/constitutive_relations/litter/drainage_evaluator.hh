@@ -1,14 +1,33 @@
 /*
-  Litter drainage rate.
+  Drainage rate.
 
   A simple model based on relaxation from current water content to a saturated water content.
+
+          |
+          | source
+          V
+         /   \
+      I /     \
+       V       |
+  --Theta--    | T
+       ^       |
+       | D     | 
+       V       V
+  ----------------------
+
+  This is the model for drainage D.  Note that this model allows for
+  both drainage (positive, sink from the canopy/litter layer) and
+  uptake (negative, source to the canopy/litter layer), the rewetting
+  of litter by surface water.
+
+  D = drainage - uptake.
   
   License: BSD
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_RELATIONS_LITTER_DRAINAGE_EVALUATOR_HH_
-#define AMANZI_RELATIONS_LITTER_DRAINAGE_EVALUATOR_HH_
+#ifndef AMANZI_RELATIONS_DRAINAGE_EVALUATOR_HH_
+#define AMANZI_RELATIONS_DRAINAGE_EVALUATOR_HH_
 
 #include "factory.hh"
 #include "secondary_variable_field_evaluator.hh"
@@ -17,15 +36,15 @@ namespace Amanzi {
 namespace SurfaceBalance {
 namespace Relations {
 
-class LitterDrainageEvaluator : public SecondaryVariableFieldEvaluator {
+class DrainageEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
 
   // constructor format for all derived classes
   explicit
-  LitterDrainageEvaluator(Teuchos::ParameterList& plist);
+  DrainageEvaluator(Teuchos::ParameterList& plist);
 
-  LitterDrainageEvaluator(const LitterDrainageEvaluator& other);
+  DrainageEvaluator(const DrainageEvaluator& other);
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
   // Required methods from SecondaryVariableFieldEvaluator
@@ -35,18 +54,18 @@ class LitterDrainageEvaluator : public SecondaryVariableFieldEvaluator {
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
-  Key litter_thickness_key_;
-  Key litter_wc_key_;
-  Key source_key_;
-  double source_coef_;
+  Key ai_key_;
+  Key wc_key_;
   Key pd_key_;
+  Key source_key_;
+
   double tau_;
   double wc_sat_;
   double n_liq_;
-  bool rewetting_;
+  bool is_uptake_;
 
  private:
-  static Amanzi::Utils::RegisteredFactory<FieldEvaluator,LitterDrainageEvaluator> factory_;
+  static Amanzi::Utils::RegisteredFactory<FieldEvaluator,DrainageEvaluator> factory_;
 
 };
 

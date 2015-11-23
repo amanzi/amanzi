@@ -29,6 +29,9 @@ class MultiplicativeEvaluator : public SecondaryVariableFieldEvaluator {
   void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
+ protected:
+  double coef_;
+  
  private:
   static Utils::RegisteredFactory<FieldEvaluator,MultiplicativeEvaluator> factory_;
 };
