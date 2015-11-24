@@ -22,18 +22,44 @@ class ManningCoefficientLitterVariableModel : public ManningCoefficientLitterMod
     n_l_ = plist.get<double>("manning coefficient litter [s * m^-1/3]", 0.1);
   }
   
+
   double ManningCoefficient(double ld, double pd) const {
-    return (pd <= ld) ? n_l_ : (ld*n_l_ + n_bg_*(-ld + pd))/pd;
+    double n;
+    if (ld > 0.) {
+      n = n_l_;
+    } else {
+      n = n_bg_;
+    }
+
+    if (pd > 0) {
+      if (pd <= ld) {
+	n = n_l_;
+      } else {
+	n = (ld*n_l_ + n_bg_*(-ld + pd))/pd;
+      }
+    }
+    
+    return n;
   }
     
 
   double DManningCoefficientDLitterThickness(double ld, double pd) const {
-    return (pd <= ld) ? 0 : (-n_bg_ + n_l_)/pd;
+    double n = 0.;
+
+    if (pd > 0 && pd > ld) {
+	n = n_l_ / pd - n_bg_/pd;
+      }
+    }
+    return n;
   }
 
 
   double DManningCoefficientDPondedDepth(double ld, double pd) const {
-    return (pd <= ld) ? 0 : n_bg_/pd - (ld*n_l_ + n_bg_*(-ld + pd))/std::pow(pd, 2);
+    double n = 0.;
+    if (pd > 0 && pd > ld) {
+      n = n_bg_ / pd - (ld*n_l_ + n_bg_*(-ld + pd))/std::pow(pd, 2);
+    }
+    return n;
   }
 
  protected:
