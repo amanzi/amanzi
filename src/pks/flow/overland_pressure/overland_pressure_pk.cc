@@ -248,6 +248,8 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   // fluxes
   S->RequireField("surface-mass_flux", name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("face", AmanziMesh::FACE, 1);
+  S->RequireField("surface-velocity", name_)->SetMesh(mesh_)->SetGhosted()
+      ->SetComponent("cell", AmanziMesh::CELL, 3);
 
 };
 
@@ -430,7 +432,8 @@ void OverlandPressureFlow::initialize(const Teuchos::Ptr<State>& S) {
   S->GetField("surface-mass_flux", name_)->set_initialized();
   S->GetFieldData("surface-mass_flux_direction", name_)->PutScalar(0.);
   S->GetField("surface-mass_flux_direction", name_)->set_initialized();
-  //  S->GetField("surface-velocity", name_)->set_initialized();
+  S->GetFieldData("surface-velocity", name_)->PutScalar(0.);
+  S->GetField("surface-velocity", name_)->set_initialized();
 };
 
 
@@ -482,7 +485,67 @@ void OverlandPressureFlow::commit_state(double dt, const Teuchos::RCP<State>& S)
 // -----------------------------------------------------------------------------
 // Update diagnostics -- used prior to vis.
 // -----------------------------------------------------------------------------
-void OverlandPressureFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {};
+void OverlandPressureFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Calculating diagnostic variables." << std::endl;
+
+  // update the cell velocities
+  UpdateBoundaryConditions_(S.ptr());
+
+  Teuchos::RCP<const CompositeVector> conductivity =
+      S->GetFieldData("upwind_overland_conductivity");
+  // update the stiffness matrix
+  matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
+  matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  // derive fluxes
+  Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
+  Teuchos::RCP<CompositeVector> flux = S->GetFieldData("surface-mass_flux", name_);
+  matrix_diff_->UpdateFlux(*potential, *flux);
+
+  // update velocity
+  Epetra_MultiVector& velocity = *S->GetFieldData("surface-velocity", name_)
+      ->ViewComponent("cell", true);
+
+  int d(mesh_->space_dimension());
+  AmanziGeometry::Point local_velocity(d);
+
+  Teuchos::LAPACK<int, double> lapack;
+  Teuchos::SerialDenseMatrix<int, double> matrix(d, d);
+  double rhs[d];
+
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  AmanziMesh::Entity_ID_List faces;
+  for (int c=0; c!=ncells_owned; ++c) {
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    for (int i=0; i!=d; ++i) rhs[i] = 0.0;
+    matrix.putScalar(0.0);
+
+    for (int n=0; n!=nfaces; ++n) {  // populate least-square matrix
+      int f = faces[n];
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      double area = mesh_->face_area(f);
+
+      for (int i=0; i!=d; ++i) {
+        rhs[i] += normal[i] * flux[0][f];
+        matrix(i, i) += normal[i] * normal[i];
+        for (int j = i+1; j < d; ++j) {
+          matrix(j, i) = matrix(i, j) += normal[i] * normal[j];
+        }
+      }
+    }
+
+    int info;
+    lapack.POSV('U', d, 1, matrix.values(), d, rhs, d, &info);
+
+    for (int i=0; i!=d; ++i) velocity[i][c] = rhs[i] / nliq_c[0][c];
+  }
+
+
+};
 
 
 // -----------------------------------------------------------------------------
