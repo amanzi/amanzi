@@ -5,6 +5,8 @@ This is the overland flow component of ATS.
 License: BSD
 Author: Ethan Coon (ecoon@lanl.gov)
 ----------------------------------------------------------------------------- */
+#include "Teuchos_LAPACK.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 #include "EpetraExt_MultiVectorOut.h"
 #include "Epetra_MultiVector.h"
@@ -507,7 +509,13 @@ void OverlandPressureFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
   // update velocity
   Epetra_MultiVector& velocity = *S->GetFieldData("surface-velocity", name_)
       ->ViewComponent("cell", true);
-
+  flux->ScatterMasterToGhosted("face");
+  const Epetra_MultiVector& flux_f = *flux->ViewComponent("face",true);
+  const Epetra_MultiVector& nliq_c = *S->GetFieldData("surface-molar_density_liquid")
+    ->ViewComponent("cell");
+  const Epetra_MultiVector& pd_c = *S->GetFieldData("ponded_depth")
+    ->ViewComponent("cell");
+  
   int d(mesh_->space_dimension());
   AmanziGeometry::Point local_velocity(d);
 
@@ -530,7 +538,7 @@ void OverlandPressureFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
       double area = mesh_->face_area(f);
 
       for (int i=0; i!=d; ++i) {
-        rhs[i] += normal[i] * flux[0][f];
+        rhs[i] += normal[i] * flux_f[0][f];
         matrix(i, i) += normal[i] * normal[i];
         for (int j = i+1; j < d; ++j) {
           matrix(j, i) = matrix(i, j) += normal[i] * normal[j];
@@ -541,7 +549,8 @@ void OverlandPressureFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
     int info;
     lapack.POSV('U', d, 1, matrix.values(), d, rhs, d, &info);
 
-    for (int i=0; i!=d; ++i) velocity[i][c] = rhs[i] / nliq_c[0][c];
+    // NOTE this is probably wrong in the frozen case?  pd --> uf*pd?
+    for (int i=0; i!=d; ++i) velocity[i][c] = rhs[i] / (nliq_c[0][c] * pd_c[0][c]);
   }
 
 
