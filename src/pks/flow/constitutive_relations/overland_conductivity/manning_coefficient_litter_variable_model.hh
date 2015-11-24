@@ -47,8 +47,7 @@ class ManningCoefficientLitterVariableModel : public ManningCoefficientLitterMod
     double n = 0.;
 
     if (pd > 0 && pd > ld) {
-	n = n_l_ / pd - n_bg_/pd;
-      }
+      n = n_l_ / pd - n_bg_/pd;
     }
     return n;
   }
