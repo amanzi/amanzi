@@ -98,7 +98,7 @@ TEST(GMRES_SOLVER_LEFT_PRECONDITIONER) {
     AmanziSolvers::LinearOperatorGMRES<Matrix, Epetra_Vector, Epetra_Map> gmres(m, m);
     gmres.Init();
     gmres.set_krylov_dim(15 + loop * 5);
-    gmres.set_tolerance(1e-10);
+    gmres.set_tolerance(1e-12);
 
     // initial guess
     Epetra_Vector u(*map);
@@ -129,7 +129,7 @@ TEST(GMRES_SOLVER_RIGHT_PRECONDITIONER) {
     AmanziSolvers::LinearOperatorGMRES<Matrix, Epetra_Vector, Epetra_Map> gmres(m, m);
     gmres.Init(plist);
     gmres.set_krylov_dim(15 + loop * 5);
-    gmres.set_tolerance(1e-10);
+    gmres.set_tolerance(1e-12);
 
     // initial guess
     Epetra_Vector u(*map);
@@ -155,7 +155,7 @@ TEST(GMRES_SOLVER_DEFLATION) {
   plist.set<int>("maximum size of deflation space", 5);
   plist.set<int>("maximum number of iterations", 200);
   plist.set<int>("size of Krylov space", 15);
-  plist.set<double>("error tolerance", 1e-10);
+  plist.set<double>("error tolerance", 1e-12);
   Teuchos::ParameterList& vlist = plist.sublist("VerboseObject");
   vlist.set("Verbosity Level", "extreme");
 
@@ -242,7 +242,7 @@ TEST(VERBOSITY_OBJECT) {
   slist.set<std::string>("iterative method", "gmres");
   slist.sublist("gmres parameters")
       .set("size of Krylov space", 50)
-      .set<double>("error tolerance", 1e-10);
+      .set<double>("error tolerance", 1e-12);
   slist.sublist("gmres parameters")
        .sublist("VerboseObject").set("Verbosity Level", "extreme");
 

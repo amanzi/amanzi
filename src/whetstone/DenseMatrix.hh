@@ -141,10 +141,9 @@ class DenseMatrix {
   int NullSpace(DenseMatrix& D);
   double Det();  // limited capabilities
 
-  // -- orthonormalize given vector to matrix columns form n1 to n2-1.
-  //    If unitary=true, the columns are assumed to be normalized to 1.
+  // -- orthonormalize matrix columns between n1 and n2-1.
   //    Returns 0 is sucessful.
-  int OrthonormalizeColumns(int n1, int n2, bool unitary, DenseVector& v);
+  int OrthonormalizeColumns(int n1, int n2);
 
   // -- permutations
   void SwapColumns(int n1, int n2);

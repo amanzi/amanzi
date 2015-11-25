@@ -407,7 +407,8 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   ComputeSolution_(x, d.Values(), p, r); 
 
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-    *vo_->os() << num_itrs_total_ << " ||r||=" << residual_ << std::endl;
+    *vo_->os() << num_itrs_total_ << " ||r||=" << residual_ 
+               << "  ritz vectors=" << num_ritz_ << std::endl;
   }
   int ierr = CheckConvergence_(residual_, fnorm);
   if (ierr != 0) return ierr;
@@ -416,7 +417,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   // -- allocate memory: Tm, Hm, and Vm
   WhetStone::DenseMatrix Tm(T, 0, krylov_dim_, 0, krylov_dim_);
   WhetStone::DenseMatrix Sm(Tm);
-  WhetStone::DenseMatrix Vs(krylov_dim_ + 1, krylov_dim_);
+  WhetStone::DenseMatrix Vr(krylov_dim_ + 1, krylov_dim_);
 
   // -- auxiliary vector g = Tm^{-T} e_m
   Tm.Inverse();
@@ -425,15 +426,16 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   // -- solve eigenvector problem
   for (int i = 0; i < krylov_dim_; ++i) Sm(i, krylov_dim_ - 1) += beta * g(i);
   
-  int sdim, bwork;
+  double Vl[1];
   WhetStone::DenseVector wr(krylov_dim_), wi(krylov_dim_);
-  WhetStone::DGEES_F77("V", "N", NULL, &n, Sm.Values(), &n, &sdim,
-                       wr.Values(), wi.Values(), Vs.Values(), &m,
-                       work.Values(), &lwork, &bwork, &info);
+  WhetStone::DGEEV_F77("N", "V", &n, Sm.Values(), &n, 
+                       wr.Values(), wi.Values(), Vl, &nrhs, Vr.Values(), &m,
+                       work.Values(), &lwork, &info);
 
   // -- select not more than (deflation_) Schur vectors and
-  //    make them the first column in Vs
+  //    make them the first columns in Vr
   num_ritz_ = deflation_;
+
   for (int i = 0; i < num_ritz_; ++i) {
     int imin = i;
     double emin = wr(i);
@@ -443,23 +445,21 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
         imin = j;
       }
     }
-    wr(imin) = wr(i);
-    wr(i) = emin;
-    Vs.SwapColumns(imin, i);
-  }
+    wr.SwapRows(imin, i);
+    wi.SwapRows(imin, i);
 
-  // -- add one vector and orthonormalize it. We reuse vector d.
+    Vr.SwapColumns(imin, i);
+  }
+  if (wi(num_ritz_ - 1) > 0.0) num_ritz_--;
+
+  // -- add one vector and orthonormalize all columns.
   for (int i = 0; i < krylov_dim_; ++i) {
-    Vs(krylov_dim_, i) = 0.0;
-    d(i) = -g(i);
+    Vr(krylov_dim_, i) = 0.0;
+    Vr(i, num_ritz_) = -g(i);
   }
-  d(krylov_dim_) = 1.0;
+  Vr(krylov_dim_, num_ritz_) = 1.0;
 
-  Vs.OrthonormalizeColumns(0, num_ritz_, true, d);
-
-  for (int i = 0; i <= krylov_dim_; ++i) {
-    Vs(i, num_ritz_) = d(i);
-  }
+  Vr.OrthonormalizeColumns(0, num_ritz_ + 1);
 
   // Calculate new basis for the next loop.
   std::vector<Teuchos::RCP<Vector> > vv(num_ritz_ + 1);
@@ -467,7 +467,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
     vv[i] = Teuchos::rcp(new Vector(x.Map()));
     vv[i]->PutScalar(0.0);
     for (int k = 0; k <= krylov_dim_; ++k) {
-      vv[i]->Update(Vs(k, i), *(v_[k]), 1.0);
+      vv[i]->Update(Vr(k, i), *(v_[k]), 1.0);
     }
   }
   
@@ -475,16 +475,16 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
     *(v_[i]) = *(vv[i]);
   }
 
-  // Calculate modified Hessenberg matrix Hu = Vs_{nr+1}^T * T * Vs_nr
-  WhetStone::DenseMatrix TVs(krylov_dim_ + 1, num_ritz_);
-  WhetStone::DenseMatrix VTVs(num_ritz_ + 1, num_ritz_);
+  // Calculate modified Hessenberg matrix Hu = Vr_{nr+1}^T * T * Vr_nr
+  WhetStone::DenseMatrix TVr(krylov_dim_ + 1, num_ritz_);
+  WhetStone::DenseMatrix VTVr(num_ritz_ + 1, num_ritz_);
 
-  WhetStone::DenseMatrix Vs1(Vs, 0, krylov_dim_, 0, num_ritz_);
-  WhetStone::DenseMatrix Vs2(krylov_dim_ + 1, num_ritz_ + 1, Vs.Values(), WhetStone::WHETSTONE_DATA_ACCESS_VIEW);
+  WhetStone::DenseMatrix Vr1(Vr, 0, krylov_dim_, 0, num_ritz_);
+  WhetStone::DenseMatrix Vr2(krylov_dim_ + 1, num_ritz_ + 1, Vr.Values(), WhetStone::WHETSTONE_DATA_ACCESS_VIEW);
 
-  TVs.Multiply(T, Vs1, false);
-  VTVs.Multiply(Vs2, TVs, true);
-  Hu_ = VTVs;
+  TVr.Multiply(T, Vr1, false);
+  VTVr.Multiply(Vr2, TVr, true);
+  Hu_ = VTVr;
   
   return LIN_SOLVER_MAX_ITERATIONS;
 }

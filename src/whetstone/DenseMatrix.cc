@@ -320,35 +320,31 @@ double DenseMatrix::Det()
 
 
 /* ******************************************************************
-* Orthonormalize given vector to selected columns.
+* Orthonormalize selected matrix columns.
 ****************************************************************** */
-int DenseMatrix::OrthonormalizeColumns(
-    int n1, int n2, bool unitary, DenseVector& v)
+int DenseMatrix::OrthonormalizeColumns(int n1, int n2)
 {
   double sum;
-  double* tmpV = v.Values();
-  double* tmpA = data_ + n1 * m_;
- 
-  if (m_ != v.NumRows()) return -1;
-  for (int i = n1; i < n2; ++i) {
-    sum = 0.0;
-    for (int k = 0; k < m_; ++k) sum += tmpA[k] * tmpV[k];
 
-    if (!unitary) {
-      double nrm(0.0);
-      for (int k = 0; k < m_; ++k) nrm += tmpA[k] * tmpA[k];
-      sum /= std::pow(nrm, 0.5);
+  for (int i = n1; i < n2; ++i) {
+    double* tmp1 = data_ + i * m_;
+
+    for (int j = n1; j < i; ++j) {
+      double* tmp2 = data_ + j * m_;
+
+      sum = 0.0;
+      for (int k = 0; k < m_; ++k) sum += tmp1[k] * tmp2[k];
+      for (int k = 0; k < m_; ++k) tmp1[k] -= sum * tmp2[k];
     }
 
-    for (int k = 0; k < m_; ++k) tmpV[k] -= sum * tmpA[k];
-    tmpA += m_;
+    sum = 0.0;
+    for (int k = 0; k < m_; ++k) sum += tmp1[k] * tmp1[k];
+    if (sum == 0.0) return -1;
+
+    sum = std::pow(1.0 / sum, 0.5);
+    for (int k = 0; k < m_; ++k) tmp1[k] *= sum;
   }
-
-  // normalize the vector
-  v.Norm2(&sum);
-  if (sum == 0.0) return -1;
-  for (int k = 0; k < m_; ++k) tmpV[k] /= sum;
-
+ 
   return 0;
 }
 
