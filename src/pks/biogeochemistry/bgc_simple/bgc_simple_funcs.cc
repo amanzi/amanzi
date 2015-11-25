@@ -645,17 +645,17 @@ namespace BGC {
       pft.Broot *= 1.0 - turnoverRoot;
       pft.Bstem *= 1.0 - turnoverStem;
       pft.totalBiomass = pft.Bleaf + pft.Broot + pft.Bstem + pft.Bstore;
-       //===============================================================================
-       // Check root mass balance
-       pft.AssertRootBalance_or_die();
+
+      //===============================================================================
+      // Check root mass balance
+      pft.AssertRootBalance_or_die();
 
       //=============================================================================
       //distribution transpirations
-
       for (int k=0; k!=ncells; ++k) {
-	  rootFrac = pft.BRootSoil[k] / pft.Broot;
-          TransArr[k] += pft.ET * rootFrac/(gridarea * SoilThicknessArr[k] * dt);  //unit: kg H2O/m3/s
-       }
+	rootFrac = pft.Broot > 0. ? pft.BRootSoil[k] / pft.Broot : 0.;
+	TransArr[k] += pft.ET * rootFrac/(gridarea * SoilThicknessArr[k] * dt);  //unit: kg H2O/m3/s
+      }
 
     } else {  //biomass check
 
