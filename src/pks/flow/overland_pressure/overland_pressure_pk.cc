@@ -550,7 +550,7 @@ void OverlandPressureFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
     lapack.POSV('U', d, 1, matrix.values(), d, rhs, d, &info);
 
     // NOTE this is probably wrong in the frozen case?  pd --> uf*pd?
-    for (int i=0; i!=d; ++i) velocity[i][c] = rhs[i] / (nliq_c[0][c] * pd_c[0][c]);
+    for (int i=0; i!=d; ++i) velocity[i][c] = pd_c[0][c] > 0. ? rhs[i] / (nliq_c[0][c] * pd_c[0][c]) : 0.;
   }
 
 
