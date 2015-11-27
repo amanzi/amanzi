@@ -8,12 +8,16 @@
 %
 % -------------------------------------------------------------------------
 
+% bold symbols
 \def\bnabla{{\boldsymbol{\nabla}}}
 \def\bg{{\boldsymbol{g}}}
 \def\bq{{\boldsymbol{q}}}
+\def\bx{{\boldsymbol{x}}}
+\def\bJ{{\boldsymbol{J}}}
 \def\K{{\mathbb K}}
 
-\def\bx{{\boldsymbol{x}}}
+% abbreviations
+\def\Frac{\displaystyle \frac}
 
 % units
 \def\ucdot{{\,\cdot\,}}
@@ -24,7 +28,7 @@
 \def\upa{{\rm Pa}}
 
 \section{Flow Processes}         
-\label{sec:flow}
+\label{sec:flow-processes}
 
 \subsection{Overview}
 
@@ -45,13 +49,54 @@ effectively be treated with multiple porosity models. Similarly,
 rate-limited diffusion from clay inclusions can also be modeled with a
 multiple porosity material.
 
+\begin{center}
+\begin{longtable}{cp{7cm}c}
+\caption{List of local variables.} \label{table:flow-list-of-variables} \\
+
+\multicolumn{1}{c}{Symbol} & \multicolumn{1}{c}{Meaning} & \multicolumn{1}{c}{Units} \\
+\hline  \hline 
+\endfirsthead
+
+\multicolumn{3}{c}{{\tablename} \thetable{} -- Continued} \\
+\multicolumn{1}{c}{Symbol} & \multicolumn{1}{c}{Meaning} & \multicolumn{1}{c}{Units} \\
+\hline  \hline 
+\endhead
+
+\hline \multicolumn{3}{c}{{Continued on next page}} \\ 
+\hline \hline 
+\endfoot
+
+\hline \hline
+\endlastfoot
+
+$\bg$      & gravity vector       &  $\um\ucdot\us^{-2}$  \\
+$g$        & gravity magnitude    &  $\um\ucdot\us^{-2}$  \\
+$\K$       & absolute permeability tensor & $\um^2$ \\
+$k_{rl}$   & relative permeability&  $-$ \\
+$p_l$      & liquid pressure      &  $\upa$ \\
+$\bq$      & Darcy velocity       &  $\um\ucdot\us^{-1}$  \\
+$S_s$      & specific storage     &  $\um^{-1}$  \\
+$S_y$      & specific yield       &  $-$  \\
+$s_l$      & liquid saturation    &  $-$ \\
+$\mu_l$    & liquid viscosity     &  $\upa\ucdot\us$ \\
+$\rho_l$   & liquid density       &  $\ukg\ucdot\um^{-3}$ \\
+$\phi$     & porosity             &  $-$  \\
+$\phi_f$   & porosity of fracture &  $-$  \\
+$\phi_m$   & porosity of matrix   &  $-$  \\
+$\eta_l$   & molar liquid density &  $\umol\ucdot\um^{-3}$ \\
+$\theta$   & volumetric water content  &  $\umol\ucdot\um^{-3}$ \\
+$\theta_f$ & volumetric water content of fracture &  $\umol\ucdot\um^{-3}$ \\
+$\theta_m$ & volumetric water content of matrix   &  $\umol\ucdot\um^{-3}$ \\
+
+\end{longtable}
+\end{center}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Single-Phase Flow 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Single-Phase Flow}
-\label{sec:single-phase-flow}
+\label{sec:flow-single-phase}
 
 The most basic flow model is a single-phase flow in a porous medium.  
 Notwithstanding its simplicity, it has a wide application to
@@ -72,23 +117,15 @@ We also assume that rock is incompressible and fluid viscosity is constant.
 The governing equations for the single phase flow in porous media 
 under isothermal conditions are
 \begin{equation}
-  \phi (s_s + s_y) \frac{\partial p_l}{\partial t} 
+  \phi \left(\Frac{S_s}{g} + \Frac{S_y}{L\,g}\right) \frac{\partial p_l}{\partial t} 
   =
   \boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_l) + Q,
   \qquad
   \bq_l = -\frac{\K}{\mu_l} 
-  (\bnabla p_l - \rho_l \bg).
+  (\bnabla p_l - \rho_l \bg),
 \end{equation}
-In the first equation $\phi$ is porosity [-],
-$s_s$ and $s_y$ are specific storage and specific yield, respectively,
-$p_l$ is fluid pressure,
-$\rho_l$ is fluid density [$\ukg \ucdot \um^{-3}$],
-$Q$ is source or sink term [$\ukg \ucdot \um^{-3} \ucdot \us^{-1}$],
-and $\bq_l$ is the Darcy velocity [$\um \ucdot \us^{-1}$].
-In the second equation, $\K$ is absolute permeability tensor,
-$\mu_l$ is fluid viscosity,
-$\bg$ is gravity vector [$\um \ucdot \us^{-2}$].
-
+where $L$ is a characteristic size of the yield layer, and 
+$Q$ is source or sink term [$\ukg \ucdot \um^{-3} \ucdot \us^{-1}$].
 It is common to see the Darcy Law written in terms of hydraulic head $h$ [$\um$]
 and the hydraulic conductivity tensor $\K_h$:
 \begin{equation}  \label{eq:HydraulicHead}
@@ -101,58 +138,13 @@ Three types of boundary conditions are supported by the model:
 1) prescribed pressure (or head);
 2) prescribed flux;
 3) semipervious boundary \citep[for reference see][]{bear-1979}.
-To facilitate the discussion on boundary conditions, consider the case of 
-flow described in Fig.~\ref{fig:bc_flow}. 
-Although the figure represents a two-dimensional flow field, the passage to three dimensions 
-is straightforward and requires no further explanations. 
-
-\begin{figure}  [h]
-\begin{center} 
-\includegraphics[scale=0.25]{bc_flow.pdf}
-\caption{Flow domain between two rivers \citep[it was partially based on][Figure 5-7]{bear-1979}.}
-\label{fig:bc_flow}
-\end{center}
-\end{figure}
-
-\paragraph{Boundary of prescribed pressure or head.}
-This involves the specification of a fixed pressure or hydrostatic head on boundary $\Gamma_D$.
-For instance, a boundary of this kind occurs whenever the flow domain is adjacent to a body of open water.
-Segments A-B and E-F in Fig.~\ref{fig:bc_flow} are examples of a boundary of prescribed potential.
-The pressure or head boundary conditions are given functions, e.g.
-\begin{equation}
-  p_l(\bx,t) = p_{b}(\bx,t), \quad \bx \in \Gamma_D. 
-\end{equation}
-
-\paragraph{Boundary of prescribed flux.}
-This involves the specification of the flux normal to the boundary $\Gamma_N$
-(see segment C-D in Figure \ref{fig:bc_flow}):
-\begin{equation}
-  \bq_l\cdot \bn = q_{b}(\bx,t), \quad \bx \in \Gamma_N,
-\end{equation}
-where $q_b$ [$\um\ucdot\us^{-1}$] is the given boundary flux. 
-For infiltration at the top horizontal surface, it equals to the Darcy velocity
-and referred to as the infiltration velocity.
-
-\paragraph{Semipervious boundary (or mixed boundary condition).}
-This boundary condition is more complicated than the first two as it involves a case 
-in which local conditions within the computational domain influence the flux in or 
-out of the domain.
-This type of boundary occurs when the porous medium domain is in contact with 
-a body of water continuum (or another porous medium domain, see for instance segments 
-A-B and E-F in Fig.~\ref{fig:bc_flow}), however, a relatively thin semipervious layer 
-separates the two domain:
-\begin{equation}
-  \bq_l \cdot \bn = I\, \left(p (\bx,t) - p_{b}(\bx,t) \right), \quad \bx \in \Gamma_R.
-\end{equation}
-where $I$ is an impedance and $p_{b}(\bx,t)$ is the given external pressure.
-
+These boundary conditions are described in Section~\ref{sec:flow-boundary-conditions}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Richards (variably saturated) Flow
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Richards Equation}
+\subsection{Isothermal Richards Equation}
 \label{sec:richards-equation}
 
 The Richards equation is often used to describe single phase flow under partially 
@@ -184,28 +176,18 @@ liquid mass continuity equation.
 In the mixed formulation, this equation is continuous when 
 transitioning from the saturated zone to the vadoze zone:
 \begin{equation}
-  \frac{\partial \theta_l}{\partial t} 
+  \frac{\partial \theta}{\partial t} 
   = \bnabla \cdot (\eta_l \bq_l) + Q,
   \qquad
   \bq_l = -\frac{\K k_{rl}}{\mu_l} 
-  (\bnabla p_l - \rho_l \bg).
+  (\bnabla p_l - \rho_l \bg),
 \end{equation}
-In the first equation $\theta_l$ is total water content [$\umol\ucdot\um^{-3}$],
-$\eta_l$ is molar density of liquid\footnote{This allows us to extend easily the model to a non-isothermal case.},
-$Q$ is source or sink term [$\ukg \ucdot \um^{-3} \ucdot \us^{-1}$],
-and $\bq_l$ is the Darcy velocity [$\um \ucdot \us^{-1}$].
-In the second equation,
-$\K$ is absolute permeability tensor,
-$k_{rl}$ is relative permeability,
-$\mu_l$ is fluid viscosity,
-$p_l$ is fluid pressure,
-$\rho_l$ is fluid density [$\ukg \ucdot \um^{-3}$],
-$\bg$ is gravity vector [$\um \ucdot \us^{-2}$].
-The total water content is defined as
+where $Q$ is source or sink term [$\ukg \ucdot \um^{-3} \ucdot \us^{-1}$].
+Usage of the molar liquid density allows us to extend easily the model to a non-isothermal case.
+The total volumetric water content is defined as
 $$
-  \theta_l = \phi\, \eta_l\, s_l,
+  \theta = \phi\, \eta_l\, s_l.
 $$
-where $s_l$ is liquid saturation [-], and $\phi$ is porosity [-].
 Porosity is in general a function of pressure.
 
 The primary dependent variable is liquid pressure $p_l$.
@@ -219,79 +201,7 @@ Four types of boundary conditions are supported by the model:
 2) prescribed flux;
 3) semipervious boundary \citep[for reference see][]{bear-1979};
 4) seepage face.
-To facilitate the discussion on boundary conditions, consider again the case of 
-flow described in Fig.~\ref{fig:bc_flow}. 
-
-\paragraph{Boundary of prescribed pressure or head.}
-This involves the specification of a fixed pressure or hydrostatic head on boundary $\Gamma_D$:
-\begin{equation}
-  p_l(\bx,t) = p_{b}(\bx,t), \quad \bx \in \Gamma_D. 
-\end{equation}
-
-\paragraph{Boundary of prescribed flux.}
-This involves the specification of the flux normal to the boundary $\Gamma_N$
-(see segment C-D in Figure \ref{fig:bc_flow}):
-\begin{equation}
-  \bq_l\cdot \bn = q_{b}(\bx,t), \quad \bx \in \Gamma_N,
-\end{equation}
-where $q_b$ [$\um\ucdot\us^{-1}$] is the given boundary flux.
-
-\paragraph{Semipervious boundary (or mixed boundary condition).}
-This boundary condition is more complicated than the first two as it involves a case
-in which local conditions within the computational domain influence the flux in or
-out of the domain:
-\begin{equation}
-  \bq_l \cdot \bn = I\, \left(p (\bx,t) - p_{b}(\bx,t) \right), \quad \bx \in \Gamma_R.
-\end{equation}
-where $I$ is an impedance and $p_{b}(\bx,t)$ is the given external pressure.
-
-\paragraph{Seepage face.}
-As is shown in Fig.~\ref{fig:bc_flow} (see segments B-C and D-E), seepage face (or surface) 
-is always present when a phreatic surface ends at the down-stream external boundary of flow domain.
-In this case the phreatic surface is tangent to the boundary of the porous medium at points C and D.
-Along a seepage surface, water emerges from the flow domain, trickling downward to the adjacent body of water.
-
-A seepage surface is defined as the boundary where water leaves the ground surface and then continues to flow in a thin film along its surface.
-Being exposed to the atmosphere, the presence along the seepage face is atmospheric pressure (i.e. capillary pressure $p_{c}=0$).
-The geometry of the seepage face is known (as it coincides with the boundary of the porous medium), except for its limit (points C and D in Figure \ref{fig:bc_flow}) which is also lying on the (a priori) unknown phreatic surface.
-The location of this point is, therefore, part of the required solution.
-In unsteady flow, the location of the upper limit of the seepage face varies with time.
-and could be simulated in two ways:
-\begin{enumerate}
-\item Using a dynamic boundary condition that switches from a prescribed pressure boundary condition
-to a prescribed flux boundary condition representing the recharge.
-\item Combining boundary conditions in a hybrid one to represent the transition recharge/seepage 
-surface (e.g. see Fig.~\ref{fig:seepage_bc}).
-\end{enumerate}
-
-\begin{figure}  [h]
-\begin{center}
-\includegraphics[scale=0.3]{seepage_bc.pdf}
-\caption{Seepage face.}
-\label{fig:seepage_bc}
-\end{center}
-\end{figure}
-
-The state of the first option depends on the pressure inside the computational domain.
-Regarding the second option, this hybrid boundary condition \citep[based on][]{hamm2000} can be formulated as
-\begin{equation} \label{eq:fifth_bc_richard}
-\begin{array} {llll}
-  \bq \cdot \bn & = & q_{b}(t) &  p < \left( \frac{3}{2} p' + p_{0} \right) \\[0.5ex]
-  \bq \cdot \bn & = & \frac{\left(  7-2f-f^{2}  \right)}{8} q_{b}(t) 
-                    & \left( \frac32 p' + p_{0} \right) \leq p \leq \left( \frac12 p' + p_{0} \right) \\[1.0ex]
-  \bq \cdot \bn & = & I (p - p_{0}) & \left( \frac{1}{2} p' + p_{0} \right) < p 
-\end{array} 
-\end{equation}
-where $q_{b}(t)$ is the maximum recharge and $f(p,t)$ is a local variable between $-1$ and $1$ 
-defined as 
-\begin{equation}
-  f(p,t) = 2 \frac{p'- (p(x_{b},y_{b},z_{b},t) - p_{0}) }{p'}
-\end{equation}
-where $p_{0}$ is a reference pressure (in this particular example case, its value is equal to 
-the atmospheric pressure), and $p'$ is defined as 
-\begin{equation}
-  p' = I^{-1} q_{b}(t).
-\end{equation}
+These boundary conditions are described in Section~\ref{sec:flow-boundary-conditions}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -443,14 +353,13 @@ is given by
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Thermal Richards (variably saturated) Flow with water vapor
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 \subsection{Thermal Richards Equation}
 \label{sec:thermal-richards-equation}
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Process Model Equations} 
-\label{sec:thermal-richards-model-equations}
 
 \begin{equation}
   \frac{\partial \theta}{\partial t} 
@@ -463,10 +372,8 @@ is given by
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Richards (variably saturated) Flow with dual porocity submodel
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsection{Richards Equation with Dual Porosity Submodel}
+\subsection{Isothermal Richards Equation with Dual Porosity Model}
 \label{sec:dual-porosity-richards-equation}
 
 Dual-porosity model assumes that water flow is restricted to the fractures and the
@@ -479,46 +386,136 @@ phase into mobile and immobile regions.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Process Model Equations} 
-\label{sec:sual-porosity-richards-model-equations}
 
 The Richards equation in the mobile region is augmented by the water exchange
-term $\Sigma_{fm}$: 
-
+term $\Sigma_w$: 
 \begin{equation}
-  \frac{\partial \theta_{lf}}{\partial t} 
-  = \bnabla \cdot (\eta_l \bq_l) - \Sigma_{fm} + Q_f,
+  \frac{\partial \theta_f}{\partial t} 
+  = \bnabla \cdot (\eta_l \bq_l) - \Sigma_w + Q_f,
   \qquad
-  \bq_l = -\frac{\K k_r}{\mu} (\bnabla p_l - \rho_l \bg).
+  \bq_l = -\frac{\K k_r}{\mu} (\bnabla p_l - \rho_l \bg),
 \end{equation}
-In the first equation $\theta_{lf}$ is total water content in the fracture [$\umol\ucdot\um^{-3}$],
-$\eta_l$ is molar density of liquid,
-$\Sigma_f$ is transfer rate for water from the matrix to the fracture, 
-$Q_f$ is source or sink term [$\ukg \ucdot \um^{-3} \ucdot \us^{-1}$],
-and $\bq_l$ is the Darcy velocity [$\um \ucdot \us^{-1}$].
-In the second equation,
-$\K$ is absolute permeability tensor,
-$k_{rl}$ is relative permeability,
-$\mu_l$ is fluid viscosity,
-$p_l$ is fluid pressure,
-$\rho_l$ is fluid density [$\ukg \ucdot \um^{-3}$],
-$\bg$ is gravity vector [$\um \ucdot \us^{-2}$].
-
+where $\Sigma_w$ is transfer rate for water from the matrix to the fracture, 
+and $Q_f$ is source or sink term [$\ukg \ucdot \um^{-3} \ucdot \us^{-1}$].
 The equation for water balance in the matrix is
 $$
-  \frac{\partial \theta_{lm}}{\partial t} 
-  = Q_m + \Sigma_{fm},
+  \frac{\partial \theta_m}{\partial t} 
+  = Q_m + \Sigma_w,
 $$
-where 
-$\theta_{lm}$ is total water content in the matrix [$\umol\ucdot\um^{-3}$],
-and $Q_f$ is source or sink term [$\ukg \ucdot \um^{-3} \ucdot \us^{-1}$].
+where and $Q_m$ is source or sink term [$\ukg \ucdot \um^{-3} \ucdot \us^{-1}$].
+The volumetric volumetric water contents are defined as
+$$
+  \theta_f = \phi_f\, \eta_l\, s_{lf},\quad
+  \theta_m = \phi_m\, \eta_l\, s_{lm},
+$$
+where saturations $s_{lf}$ and $s_{lm}$ may use different capillary pressure - saturation
+models.
 The rate of water exchange between the fracture and matrix regions is
 proportional to the difference in hydraulic heads:
 $$
-  \Sigma_{fm} = \alpha_{fm} (h_f - h_m),
+  \Sigma_w = \alpha_w (h_f - h_m),
 $$
-where $\alpha_{fm}$ is the mass transfer coefficient.
+where $\alpha_w$ is the mass transfer coefficient.
 Since hydraulic heads are needed for both regions, this equation requires
 estimating retention curves for both regions and therefore is nonlinear.
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Boundary conditions}
+\label{sec:flow-boundary-conditions}
+
+
+To facilitate the discussion on boundary conditions, consider the case of 
+flow described in Fig.~\ref{fig:bc_flow}. 
+Although the figure represents a two-dimensional flow field, the passage to three dimensions 
+is straightforward and requires no further explanations. 
+
+\begin{figure}  [h]
+\begin{center} 
+\includegraphics[scale=0.25]{bc_flow.pdf}
+\caption{Flow domain between two rivers \citep[it was partially based on][Figure 5-7]{bear-1979}.}
+\label{fig:bc_flow}
+\end{center}
+\end{figure}
+
+\paragraph{Boundary of prescribed pressure or head.}
+This involves the specification of a fixed pressure or hydrostatic head on boundary $\Gamma_D$.
+For instance, a boundary of this kind occurs whenever the flow domain is adjacent to a body of open water.
+Segments A-B and E-F in Fig.~\ref{fig:bc_flow} are examples of a boundary of prescribed potential.
+The pressure or head boundary conditions are given functions, e.g.
+\begin{equation}
+  p_l(\bx,t) = p_{b}(\bx,t), \quad \bx \in \Gamma_D. 
+\end{equation}
+
+\paragraph{Boundary of prescribed flux.}
+This involves the specification of the flux normal to the boundary $\Gamma_N$
+(see segment C-D in Figure \ref{fig:bc_flow}):
+\begin{equation}
+  \bq_l\cdot \bn = q_{b}(\bx,t), \quad \bx \in \Gamma_N,
+\end{equation}
+where $q_b$ [$\um\ucdot\us^{-1}$] is the given boundary flux. 
+For infiltration at the top horizontal surface, it equals to the Darcy velocity
+and referred to as the infiltration velocity.
+
+\paragraph{Semipervious boundary (or mixed boundary condition).}
+This boundary condition is more complicated than the first two as it involves a case 
+in which local conditions within the computational domain influence the flux in or 
+out of the domain.
+This type of boundary occurs when the porous medium domain is in contact with 
+a body of water continuum (or another porous medium domain, see for instance segments 
+A-B and E-F in Fig.~\ref{fig:bc_flow}), however, a relatively thin semipervious layer 
+separates the two domain:
+\begin{equation}
+  \bq_l \cdot \bn = I\, \left(p (\bx,t) - p_{b}(\bx,t) \right), \quad \bx \in \Gamma_R.
+\end{equation}
+where $I$ is an impedance and $p_{b}(\bx,t)$ is the given external pressure.
+
+\paragraph{Seepage face.}
+As is shown in Fig.~\ref{fig:bc_flow} (see segments B-C and D-E), seepage face (or surface) 
+is always present when a phreatic surface ends at the down-stream external boundary of flow domain.
+In this case the phreatic surface is tangent to the boundary of the porous medium at points C and D.
+Along a seepage surface, water emerges from the flow domain, trickling downward to the adjacent body of water.
+
+A seepage surface is defined as the boundary where water leaves the ground surface and then continues to flow in a thin film along its surface.
+Being exposed to the atmosphere, the presence along the seepage face is atmospheric pressure (i.e. capillary pressure $p_{c}=0$).
+The geometry of the seepage face is known (as it coincides with the boundary of the porous medium), except for its limit (points C and D in Figure \ref{fig:bc_flow}) which is also lying on the (a priori) unknown phreatic surface.
+The location of this point is, therefore, part of the required solution.
+In unsteady flow, the location of the upper limit of the seepage face varies with time.
+and could be simulated in two ways:
+\begin{enumerate}
+\item Using a dynamic boundary condition that switches from a prescribed pressure boundary condition
+to a prescribed flux boundary condition representing the recharge.
+\item Combining boundary conditions in a hybrid one to represent the transition recharge/seepage 
+surface (e.g. see Fig.~\ref{fig:seepage_bc}).
+\end{enumerate}
+
+\begin{figure}  [h]
+\begin{center}
+\includegraphics[scale=0.3]{seepage_bc.pdf}
+\caption{Seepage face.}
+\label{fig:seepage_bc}
+\end{center}
+\end{figure}
+
+The state of the first option depends on the pressure inside the computational domain.
+Regarding the second option, this hybrid boundary condition \citep[based on][]{hamm2000} can be formulated as
+\begin{equation} \label{eq:fifth_bc_richard}
+\begin{array} {llll}
+  \bq \cdot \bn & = & q_{b}(t) &  p < \left( \frac{3}{2} p' + p_{0} \right) \\[0.5ex]
+  \bq \cdot \bn & = & \frac{\left(  7-2f-f^{2}  \right)}{8} q_{b}(t) 
+                    & \left( \frac32 p' + p_{0} \right) \leq p \leq \left( \frac12 p' + p_{0} \right) \\[1.0ex]
+  \bq \cdot \bn & = & I (p - p_{0}) & \left( \frac{1}{2} p' + p_{0} \right) < p 
+\end{array} 
+\end{equation}
+where $q_{b}(t)$ is the maximum recharge and $f(p,t)$ is a local variable between $-1$ and $1$ 
+defined as 
+\begin{equation}
+  f(p,t) = 2 \frac{p'- (p(x_{b},y_{b},z_{b},t) - p_{0}) }{p'}
+\end{equation}
+where $p_{0}$ is a reference pressure (in this particular example case, its value is equal to 
+the atmospheric pressure), and $p'$ is defined as 
+\begin{equation}
+  p' = I^{-1} q_{b}(t).
+\end{equation}
 
