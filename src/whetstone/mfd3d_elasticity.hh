@@ -44,7 +44,7 @@ class MFD3D_Elasticity : public MFD3D {
   // required implementation of two consistency conditions
   int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
 
-  int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc) {
+  int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) {
     return WHETSTONE_ELEMENTAL_MATRIX_OK;
   }
 

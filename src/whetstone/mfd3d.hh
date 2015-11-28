@@ -48,7 +48,7 @@ class MFD3D {
                             DenseMatrix& N, DenseMatrix& Mc, bool symmetry) = 0;
 
   virtual int L2consistencyInverse(int cell, const Tensor& T,
-                                   DenseMatrix& R, DenseMatrix& Wc) = 0;
+                                   DenseMatrix& R, DenseMatrix& Wc, bool symmetry) = 0;
 
   virtual int H1consistency(int cell, const Tensor& T,
                             DenseMatrix& N, DenseMatrix& Mc) = 0;

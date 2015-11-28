@@ -202,7 +202,7 @@ int MFD3D_Electromagnetics::L2consistency3D_(int c, const Tensor& T,
 * Efficient implementation is possible in 2D. Hence, we fork the code.
 ****************************************************************** */
 int MFD3D_Electromagnetics::L2consistencyInverse(
-    int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
+    int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
 {
   int ok, d = mesh_->space_dimension();
   if (d == 2) {
@@ -560,7 +560,7 @@ int MFD3D_Electromagnetics::MassMatrixInverse(int c, const Tensor& T, DenseMatri
   DenseMatrix R(nrows, d);
   DenseMatrix Wc(nrows, nrows);
 
-  int ok = L2consistencyInverse(c, T, R, Wc);
+  int ok = L2consistencyInverse(c, T, R, Wc, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   StabilityScalar(c, R, Wc, W);
@@ -581,7 +581,7 @@ int MFD3D_Electromagnetics::MassMatrixInverseOptimized(
   DenseMatrix R(nrows, d);
   DenseMatrix Wc(nrows, nrows);
 
-  int ok = L2consistencyInverse(c, T, R, Wc);
+  int ok = L2consistencyInverse(c, T, R, Wc, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   ok = StabilityOptimized(T, R, Wc, W);
