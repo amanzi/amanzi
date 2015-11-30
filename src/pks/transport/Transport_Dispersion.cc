@@ -27,7 +27,7 @@ namespace Amanzi {
 namespace Transport {
 
 /* *******************************************************************
-* Calculate a dispersive tensor the from Darcy fluxes. The flux is
+* Calculate dispersive tensor from given Darcy fluxes. The flux is
 * assumed to be scaled by face area.
 ******************************************************************* */
 void Transport_PK::CalculateDispersionTensor_(

@@ -167,7 +167,7 @@ void Transport_PK::Setup()
   bool abs_perm = physical_models->get<bool>("permeability field is required", false);
   std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single porosity");
 
-  // require state fields when Flow is off
+  // require state fields when Flow PK is off
   if (!S_->HasField("permeability") && abs_perm) {
     S_->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, dim);
@@ -186,7 +186,7 @@ void Transport_PK::Setup()
     S_->GetField("prev_saturation_liquid", passwd_)->set_io_vis(false);
   }
 
-  // require state fields when Transport is on
+  // require state fields when Transport PK is on
   if (component_names_.size() == 0) {
     Errors::Message msg;
     msg << "Transport PK: list of solutes is empty.\n";
@@ -312,6 +312,14 @@ void Transport_PK::Initialize()
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   lifting_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
 
+  // mechanical dispersion
+  if (tp_list_->isSublist("material properties")) {
+    bool flag;
+    Teuchos::RCP<Teuchos::ParameterList>
+        mdm_list = Teuchos::sublist(tp_list_, "material properties");
+    mdm_ = CreateMDMPartition(mesh_, mdm_list, flag);
+  }
+
   // boundary conditions initialization
   time = t_physics_;
   for (int i = 0; i < bcs.size(); i++) {
@@ -348,6 +356,8 @@ void Transport_PK::Initialize()
 ****************************************************************** */
 void Transport_PK::InitializeFields_()
 {
+  Teuchos::OSTab tab = vo_->getOSTab();
+
   // set popular default values when flow PK is off
   if (S_->HasField("saturation_liquid")) {
     if (S_->GetField("saturation_liquid")->owner() == passwd_) {

@@ -57,6 +57,38 @@ generate_evaluators_registration_header(
   INSTALL    True
   )
 
+# -- mechamical dispersion models registration
+register_evaluator_with_factory(
+  HEADERFILE MDMFactory_reg.hh
+  LISTNAME   MDM_TRANSPORT_REGISTRATIONS
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE MDM_Isotropic_reg.hh
+  LISTNAME   MDM_TRANSPORT_REGISTRATIONS
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE MDM_Bear_reg.hh
+  LISTNAME   MDM_TRANSPORT_REGISTRATIONS
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE MDM_BurnettFrind_reg.hh
+  LISTNAME   MDM_TRANSPORT_REGISTRATIONS
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE MDM_LichtnerKelkarRobinson_reg.hh
+  LISTNAME   MDM_TRANSPORT_REGISTRATIONS
+  )
+
+generate_evaluators_registration_header( 
+  HEADERFILE mdm_transport_registration.hh   
+  LISTNAME   MDM_TRANSPORT_REGISTRATIONS
+  INSTALL    True
+  )
+
 # -- multiscale models registration
 register_evaluator_with_factory(
   HEADERFILE MultiscaleTransportPorosityFactory_reg.hh
@@ -80,6 +112,11 @@ generate_evaluators_registration_header(
 set(transport_inc_files
   DiffusionPhase.hh
   MaterialProperties.hh
+  MDM.hh
+  MDMFactory.hh
+  MDMPartition.hh
+  MDM_Isotropic.hh
+  MDM_Bear.hh
   MultiscaleTransportPorosity.hh
   MultiscaleTransportPorosityFactory.hh
   MultiscaleTransportPorosityPartition.hh
@@ -96,6 +133,8 @@ set(transport_inc_files
 set(transport_src_files Transport_PK.cc Transport_TI.cc 
                         Transport_VandV.cc Transport_Initialize.cc 
                         Transport_Dispersion.cc Transport_HenryLaw.cc
+                        MDM_Isotropic.cc MDM_Bear.cc MDM_BurnettFrind.cc MDM_LichtnerKelkarRobinson.cc
+                        MDMPartition.cc MDMFactory.cc
                         MultiscaleTransportPorosityFactory.cc MultiscaleTransportPorosity_DPM.cc
                         MultiscaleTransportPorosityPartition.cc
                         TransportBCFactory.cc TransportSourceFactory.cc

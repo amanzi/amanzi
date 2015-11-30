@@ -36,6 +36,7 @@
 #endif
 
 // Transport
+#include "MDMPartition.hh"
 #include "MultiscaleTransportPorosityPartition.hh"
 #include "TransportBoundaryFunction.hh"
 #include "TransportDomainFunction.hh"
@@ -227,10 +228,13 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
 
+  // mechanical dispersion and molecual diffusion
+  Teuchos::RCP<MDMPartition> mdm_;
+  std::vector<WhetStone::Tensor> D_;
+
   std::vector<Teuchos::RCP<MaterialProperties> > mat_properties_;  // vector of materials
   std::vector<Teuchos::RCP<DiffusionPhase> > diffusion_phase_;   // vector of phases
 
-  std::vector<WhetStone::Tensor> D_;
   int dispersion_models_;
   std::vector<int> axi_symmetry_;  // axi-symmetry direction of permeability tensor
   std::string dispersion_preconditioner;
