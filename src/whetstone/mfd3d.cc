@@ -69,17 +69,13 @@ void MFD3D::ModifyStabilityScalingFactor(double factor)
 /* ******************************************************************
 * Simplest stability term is added to the consistency term. 
 ****************************************************************** */
-void MFD3D::StabilityScalar(int c, DenseMatrix& N, DenseMatrix& Mc, DenseMatrix& M)
+void MFD3D::StabilityScalar(int c, DenseMatrix& N, DenseMatrix& M)
 {
   GrammSchmidt(N);
-  CalculateStabilityScalar(Mc);
+  CalculateStabilityScalar(M);
 
-  int nrows = Mc.NumRows();
+  int nrows = M.NumRows();
   int ncols = N.NumCols();
-
-  for (int i = 0; i < nrows; i++) {
-    for (int j = i; j < nrows; j++) M(i, j) = Mc(i, j);
-  }
 
   for (int i = 0; i < nrows; i++) {  // add projector ss * (I - N^T N) to matrix M
     M(i, i) += scalar_stability_;
@@ -103,17 +99,16 @@ void MFD3D::StabilityScalar(int c, DenseMatrix& N, DenseMatrix& Mc, DenseMatrix&
 * The algorithm minimizes off-diagonal entries in the mass matrix.
 * WARNING: the routine is used for inverse of mass matrix only.
 ****************************************************************** */
-int MFD3D::StabilityOptimized(const Tensor& T, DenseMatrix& N,
-                              DenseMatrix& Mc, DenseMatrix& M)
+int MFD3D::StabilityOptimized(const Tensor& T, DenseMatrix& N, DenseMatrix& M)
 {
   int d = mesh_->space_dimension();
   int nrows = N.NumRows();
   int ncols = N.NumCols();
 
   // find correct scaling of a stability term
-  double lower, upper, eigmin = Mc(0, 0);
+  double lower, upper, eigmin = M(0, 0);
   // T.spectral_bounds(&lower, &upper);
-  for (int k = 1; k < nrows; k++) eigmin = std::min(eigmin, Mc(k, k));
+  for (int k = 1; k < nrows; k++) eigmin = std::min(eigmin, M(k, k));
 
   // find null space of N^T
   DenseMatrix U(nrows, nrows);
@@ -155,7 +150,7 @@ int MFD3D::StabilityOptimized(const Tensor& T, DenseMatrix& N,
 
   m = 0;
   for (int i = 0; i < nrows; i++) { 
-    for (int j = i+1; j < nrows; j++) F(m++) = -Mc(i, j);
+    for (int j = i+1; j < nrows; j++) F(m++) = -M(i, j);
   }
 
   // Form a linear system for parameters
@@ -209,10 +204,6 @@ int MFD3D::StabilityOptimized(const Tensor& T, DenseMatrix& N,
   }
 
   // add stability term U G U^T
-  for (int i = 0; i < nrows; i++) {
-    for (int j = i; j < nrows; j++) M(i, j) = Mc(i, j);
-  }
-
   DenseMatrix UP(nrows, mcols);
   UP.PutScalar(0.0);
   for (int i = 0; i < nrows; i++) {
@@ -238,14 +229,15 @@ int MFD3D::StabilityOptimized(const Tensor& T, DenseMatrix& N,
 * A wrapper for the simplex method that finds monotone parameters. 
 ****************************************************************** */
 int MFD3D::StabilityMMatrix_(
-    int c, DenseMatrix& N, DenseMatrix& Mc, DenseMatrix& M, int objective)
+    int c, DenseMatrix& N, DenseMatrix& M, int objective)
 {
   int d = mesh_->space_dimension();
   int nrows = N.NumRows();
   int ncols = N.NumCols();
 
+  // symmetrize the consistency matrix
   for (int i = 0; i < nrows; i++) {
-    for (int j = i; j < nrows; j++) M(j, i) = M(i, j) = Mc(i, j);
+    for (int j = i; j < nrows; j++) M(j, i) = M(i, j);
   }
 
   // compute null space

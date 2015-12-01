@@ -217,15 +217,14 @@ int MFD3D_Diffusion::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
   int nfaces = M.NumRows();
 
   DenseMatrix N(nfaces, d);
-  DenseMatrix Mc(nfaces, nfaces);
 
   Tensor Kinv(K);
   Kinv.Inverse();
 
-  int ok = L2consistency(c, Kinv, N, Mc, true);
+  int ok = L2consistency(c, Kinv, N, M, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  StabilityScalar(c, N, Mc, M);
+  StabilityScalar(c, N, M);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -260,12 +259,11 @@ int MFD3D_Diffusion::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
   int nfaces = W.NumRows();
 
   DenseMatrix R(nfaces, d);
-  DenseMatrix Wc(nfaces, nfaces);
 
-  int ok = L2consistencyInverse(c, K, R, Wc, true);
+  int ok = L2consistencyInverse(c, K, R, W, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  StabilityScalar(c, R, Wc, W);
+  StabilityScalar(c, R, W);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -296,12 +294,11 @@ int MFD3D_Diffusion::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
   int nnodes = A.NumRows();
 
   DenseMatrix N(nnodes, d + 1);
-  DenseMatrix Ac(nnodes, nnodes);
 
-  int ok = H1consistency(c, K, N, Ac);
+  int ok = H1consistency(c, K, N, A);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  StabilityScalar(c, N, Ac, A);
+  StabilityScalar(c, N, A);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -315,12 +312,11 @@ int MFD3D_Diffusion::StiffnessMatrixOptimized(int c, const Tensor& K, DenseMatri
   int nnodes = A.NumRows();
 
   DenseMatrix N(nnodes, d + 1);
-  DenseMatrix Ac(nnodes, nnodes);
 
-  int ok = H1consistency(c, K, N, Ac);
+  int ok = H1consistency(c, K, N, A);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  ok = StabilityOptimized(K, N, Ac, A);
+  ok = StabilityOptimized(K, N, A);
   return ok;
 }
 
@@ -334,17 +330,16 @@ int MFD3D_Diffusion::StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix&
   int nnodes = A.NumRows();
 
   DenseMatrix N(nnodes, d + 1);
-  DenseMatrix Ac(nnodes, nnodes);
 
-  int ok = H1consistency(c, K, N, Ac);
+  int ok = H1consistency(c, K, N, A);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  // scaling of matrix Wc
-  double s = Ac.Trace() / nnodes;
-  Ac /= s;
+  // scaling of matrix A for numerical stability
+  double s = A.Trace() / nnodes;
+  A /= s;
 
   int objective = WHETSTONE_SIMPLEX_FUNCTIONAL_TRACE;
-  StabilityMMatrix_(c, N, Ac, A, objective);
+  StabilityMMatrix_(c, N, A, objective);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   A *= s;
@@ -610,12 +605,11 @@ int MFD3D_Diffusion::MassMatrixInverseScaled(int c, const Tensor& K, DenseMatrix
   int nfaces = W.NumRows();
 
   DenseMatrix R(nfaces, d);
-  DenseMatrix Wc(nfaces, nfaces);
 
-  int ok = L2consistencyInverseScaled(c, K, R, Wc);
+  int ok = L2consistencyInverseScaled(c, K, R, W);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
  
-  StabilityScalar(c, R, Wc, W);
+  StabilityScalar(c, R, W);
   RescaleMassMatrixInverse_(c, W);
 
   return ok;
@@ -632,12 +626,11 @@ int MFD3D_Diffusion::MassMatrixInverseMMatrixHex(
   int nfaces = W.NumRows();
 
   DenseMatrix R(nfaces, d);
-  DenseMatrix Wc(nfaces, nfaces);
 
-  int ok = L2consistencyInverse(c, K, R, Wc, true);
+  int ok = L2consistencyInverse(c, K, R, W, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  ok = StabilityMMatrixHex_(c, K, Wc, W);
+  ok = StabilityMMatrixHex_(c, K, W);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -654,17 +647,15 @@ int MFD3D_Diffusion::MassMatrixInverseMMatrix(
   int nfaces = W.NumRows();
 
   DenseMatrix R(nfaces, d);
-  DenseMatrix Wc(nfaces, nfaces);
-  Wc.PutScalar(0.0);
 
-  int ok = L2consistencyInverse(c, K, R, Wc, true);
+  int ok = L2consistencyInverse(c, K, R, W, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  // scaling of matrix Wc
-  double s = Wc.Trace() / nfaces;
-  Wc /= s;
+  // scaling of matrix W for numerical stability
+  double s = W.Trace() / nfaces;
+  W /= s;
 
-  ok = StabilityMMatrix_(c, R, Wc, W);
+  ok = StabilityMMatrix_(c, R, W);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   W *= s;
@@ -683,12 +674,11 @@ int MFD3D_Diffusion::MassMatrixInverseOptimized(
   int nfaces = W.NumRows();
 
   DenseMatrix R(nfaces, d);
-  DenseMatrix Wc(nfaces, nfaces);
 
-  int ok = L2consistencyInverse(c, K, R, Wc, true);
+  int ok = L2consistencyInverse(c, K, R, W, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  ok = StabilityOptimized(K, R, Wc, W);
+  ok = StabilityOptimized(K, R, W);
   return ok;
 }
 
@@ -703,12 +693,11 @@ int MFD3D_Diffusion::MassMatrixInverseOptimizedScaled(
   int nfaces = W.NumRows();
 
   DenseMatrix R(nfaces, d);
-  DenseMatrix Wc(nfaces, nfaces);
 
-  int ok = L2consistencyInverseScaled(c, K, R, Wc);
+  int ok = L2consistencyInverseScaled(c, K, R, W);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
  
-  ok = StabilityOptimized(K, R, Wc, W);
+  ok = StabilityOptimized(K, R, W);
   RescaleMassMatrixInverse_(c, W);
 
   return ok;
@@ -725,12 +714,11 @@ int MFD3D_Diffusion::MassMatrixInverseDivKScaled(
   int nfaces = W.NumRows();
 
   DenseMatrix R(nfaces, d);
-  DenseMatrix Wc(nfaces, nfaces);
 
-  int ok = L2consistencyInverseDivKScaled(c, K, kmean, kgrad, R, Wc);
+  int ok = L2consistencyInverseDivKScaled(c, K, kmean, kgrad, R, W);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
  
-  StabilityScalar(c, R, Wc, W);
+  StabilityScalar(c, R, W);
   RescaleMassMatrixInverse_(c, W);
 
   return ok;
@@ -764,14 +752,14 @@ void MFD3D_Diffusion::RescaleMassMatrixInverse_(int c, DenseMatrix& W)
 /* ******************************************************************
 * A simple monotone stability term for a 2D or 3D brick element. 
 ****************************************************************** */
-int MFD3D_Diffusion::StabilityMMatrixHex_(
-    int c, const Tensor& K, DenseMatrix& Mc, DenseMatrix& M)
+int MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M)
 {
   int d = mesh_->space_dimension();
   int nrows = 2 * d;
 
+  // symmetrize the consistency matrix
   for (int i = 0; i < nrows; i++) {
-    for (int j = i; j < nrows; j++) M(j, i) = M(i, j) = Mc(i, j);
+    for (int j = i; j < nrows; j++) M(j, i) = M(i, j);
   }
 
   // create groups of quasi-parallel faces

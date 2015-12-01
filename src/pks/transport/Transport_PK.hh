@@ -176,7 +176,6 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   int FindComponentNumber(const std::string component_name);
 
  public:
-  Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> tp_list_;
   Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
   Teuchos::RCP<const Teuchos::ParameterList> linear_solver_list_;

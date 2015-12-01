@@ -37,7 +37,7 @@ void Transport_PK::CalculateDispersionTensor_(
   D_.resize(ncells_owned);
   for (int c = 0; c < ncells_owned; c++) D_[c].Init(dim, 1);
 
-  AmanziGeometry::Point velocity(dim), omega(dim);
+  AmanziGeometry::Point velocity(dim);
   AmanziMesh::Entity_ID_List faces;
   WhetStone::MFD3D_Diffusion mfd3d(mesh_);
 

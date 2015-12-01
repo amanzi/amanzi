@@ -46,7 +46,6 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<Teuchos::ParameterList>& glist,
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& soln) :
-    glist_(glist),
     S_(S),
     soln_(soln)
 {
@@ -56,10 +55,10 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
   boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name,"->"); 
   if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name,  res.end() - pk_name.begin());
 
-  if (glist_->isSublist("Cycle Driver")) {
-    if (glist_->sublist("Cycle Driver").isParameter("component names")) {
+  if (glist->isSublist("Cycle Driver")) {
+    if (glist->sublist("Cycle Driver").isParameter("component names")) {
       // grab the component names
-      component_names_ = glist_->sublist("Cycle Driver")
+      component_names_ = glist->sublist("Cycle Driver")
           .get<Teuchos::Array<std::string> >("component names").toVector();
     } else {
       Errors::Message msg("Transport PK: parameter component names is missing.");

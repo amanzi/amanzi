@@ -97,8 +97,8 @@ class MFD3D_Diffusion : public MFD3D {
   double Transmissibility(int f, int c, const Tensor& K);
 
  private:  
-  // stability methods (add matrix Ms in M = Mc + Ms)
-  int StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& Mc, DenseMatrix& M);
+  // stability methods (add stability matrix, M += Mstab)
+  int StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M);
   void RescaleMassMatrixInverse_(int c, DenseMatrix& W);
   void StabilityScalarNonSymmetric_(int c, DenseMatrix& N, DenseMatrix& M);
 };
