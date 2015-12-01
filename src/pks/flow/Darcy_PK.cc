@@ -22,7 +22,7 @@
 #include "mfd3d_diffusion.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "PK_Utils.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 #include "Darcy_PK.hh"
 #include "FlowDefs.hh"

@@ -22,9 +22,14 @@ class AnalyticBase {
 
   virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
   virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
-  virtual Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
   virtual Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
   virtual double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+
+  virtual Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
+    Amanzi::WhetStone::Tensor K = Tensor(p, t);
+    Amanzi::AmanziGeometry::Point g = gradient_exact(p, t);
+    return -(K * g);
+  }
 
   void ComputeCellError(Epetra_MultiVector& p, double t, double& pnorm, double& l2_err, double& inf_err) {
     pnorm = 0.0;

@@ -17,7 +17,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "exceptions.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "Point.hh"
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
@@ -167,6 +167,7 @@ class OperatorDiffusion {
   
  protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
+  bool K_symmetric_;
 
   // nonlinear coefficient and its representation
   Teuchos::RCP<const CompositeVector> k_, dkdp_;

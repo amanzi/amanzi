@@ -50,32 +50,51 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   // chemical engine
   bool flag;
   node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
-  element = static_cast<DOMElement*>(node);
-  std::string engine = GetAttributeValueS_(element, "engine");
+  std::string engine = GetAttributeValueS_(static_cast<DOMElement*>(node), "engine");
 
   // process engine
   bool native(false);
   if (engine ==  "amanzi") {
-    out_list.set<std::string>("chemistry model", "Amanzi");
-    std::string bgdfilename = CreateBGDFile(xmlfilename_);
-    bgdfilename = GetAttributeValueS_(element, "input_filename", false, bgdfilename);
     native = true;
+    out_list.set<std::string>("chemistry model", "Amanzi");
+
+    std::string bgdfilename, format("simple");
+    node = GetUniqueElementByTagsString_("geochemistry, reaction_network", flag);
+    if (flag) {
+      element = static_cast<DOMElement*>(node);
+      bgdfilename = GetAttributeValueS_(element, "file");
+      format = GetAttributeValueS_(element, "format", false, format);
+    } else {
+      bgdfilename = CreateBGDFile(xmlfilename_);
+    }
 
     Teuchos::ParameterList& bgd_list = out_list.sublist("Thermodynamic Database");
-    bgd_list.set<std::string>("Format", "simple");
     bgd_list.set<std::string>("File", bgdfilename);
+    bgd_list.set<std::string>("Format", format);
 
-  } else if (engine == "pflotran") {
-    out_list.set<std::string>("chemistry model", "Alquimia");
-    out_list.set<std::string>("Engine", "PFloTran");
-    std::string inpfilename = GetAttributeValueS_(element, "input_filename");
-    out_list.set<std::string>("Engine Input File", inpfilename);
+  } else {
+    bool valid_engine(true);
 
-  } else if (engine == "crunchflow") {
-    out_list.set<std::string>("chemistry model", "Alquimia");
-    out_list.set<std::string>("Engine", "CrunchFlow");
-    std::string inpfilename = GetAttributeValueS_(element, "input_filename");
-    out_list.set<std::string>("Engine Input File", inpfilename);
+    if (engine == "pflotran") {
+      out_list.set<std::string>("Engine", "PFloTran");
+    } else if (engine == "crunchflow") {
+      out_list.set<std::string>("Engine", "CrunchFlow");
+    } else {
+      valid_engine = false;
+    }
+
+    // Pass along chemistry engine info.
+    if (valid_engine) {
+      out_list.set<std::string>("chemistry model", "Alquimia");
+
+      // Find the name of the engine-specific input file.
+      node = GetUniqueElementByTagsString_("geochemistry, reaction_network", flag);
+      if (flag) {
+        element = static_cast<DOMElement*>(node);
+        std::string inpfilename = GetAttributeValueS_(element, "file");
+        out_list.set<std::string>("Engine Input File", inpfilename);
+      }
+    }
   }
   
   // minerals
@@ -86,7 +105,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
     for (int i = 0; i < children->getLength(); ++i) {
       DOMNode* inode = children->item(i);
-      std::string name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
+      std::string name = TrimString_(mm.transcode(inode->getTextContent()));
       minerals.push_back(name);
     }
   }
@@ -111,8 +130,8 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
       out_list.set<Teuchos::Array<std::string> >("Minerals", minerals);
 
       if (pk_model_["chemistry"] == "amanzi") {
-        Teuchos::ParameterList &volfrac = ic_list.sublist("mineral_volume_fractions");
-        Teuchos::ParameterList &surfarea = ic_list.sublist("mineral_specific_surface_area");
+        Teuchos::ParameterList& volfrac = ic_list.sublist("mineral_volume_fractions");
+        Teuchos::ParameterList& surfarea = ic_list.sublist("mineral_specific_surface_area");
 
         for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); it++) {
           Teuchos::ParameterList& aux1_list = volfrac.sublist("function").sublist(*it)

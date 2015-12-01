@@ -13,7 +13,7 @@
     <definitions>
       <macros>
         <time_macro name="Steady State">
-          <time>0.0</time>
+          <time>1.0</time>
         </time_macro>
       </macros>
     </definitions>
@@ -33,7 +33,7 @@
     <execution_controls>
       <verbosity level="high" />
       <execution_control_defaults method="bdf1" mode="steady" />
-      <execution_control end="1.0" init_dt="1" method="bdf1" mode="steady" start="0.0" />
+      <execution_control end="1.0" init_dt="1.0" method="bdf1" mode="steady" start="0.0" />
     </execution_controls>
     <numerical_controls>
       <unstructured_controls>
@@ -86,20 +86,20 @@
         <comments>Right boundary</comments>
         <box high_coordinates="100.0, 2.0, 10.0" low_coordinates="100.0, 0.0, 0.0" />
       </region>
-      <point coordinate="(  0.0, 0.5, 5.0)" name="LeftBoundaryFront" />
-      <point coordinate="(100.0, 0.5, 5.0)" name="RightBoundaryFront" />
-      <point coordinate="( 50.0, 0.5, 5.0)" name="MidpointFront" />
-      <point coordinate="(  2.5, 0.5, 5.0)" name="LeftmostCellFront" />
-      <point coordinate="( 97.5, 0.5, 5.0)" name="RightmostCellFront" />
-      <point coordinate="( 47.5, 0.5, 5.0)" name="LeftMidpointCellFront" />
-      <point coordinate="( 52.5, 0.5, 5.0)" name="RightMidpointCellFront" />
-      <point coordinate="(  0.0, 1.5, 5.0)" name="LeftBoundaryBack" />
-      <point coordinate="(100.0, 1.5, 5.0)" name="RightBoundaryBack" />
-      <point coordinate="( 50.0, 1.5, 5.0)" name="MidpointBack" />
-      <point coordinate="(  2.5, 1.5, 5.0)" name="LeftmostCellBack" />
-      <point coordinate="( 97.5, 1.5, 5.0)" name="RightmostCellBack" />
-      <point coordinate="( 47.5, 1.5, 5.0)" name="LeftMidpointCellBack" />
-      <point coordinate="( 52.5, 1.5, 5.0)" name="RightMidpointCellBack" />
+      <point coordinate="  0.0, 0.5, 5.0" name="LeftBoundaryFront" />
+      <point coordinate="100.0, 0.5, 5.0" name="RightBoundaryFront" />
+      <point coordinate=" 50.0, 0.5, 5.0" name="MidpointFront" />
+      <point coordinate="  2.5, 0.5, 5.0" name="LeftmostCellFront" />
+      <point coordinate=" 97.5, 0.5, 5.0" name="RightmostCellFront" />
+      <point coordinate=" 47.5, 0.5, 5.0" name="LeftMidpointCellFront" />
+      <point coordinate=" 52.5, 0.5, 5.0" name="RightMidpointCellFront" />
+      <point coordinate="  0.0, 1.5, 5.0" name="LeftBoundaryBack" />
+      <point coordinate="100.0, 1.5, 5.0" name="RightBoundaryBack" />
+      <point coordinate=" 50.0, 1.5, 5.0" name="MidpointBack" />
+      <point coordinate="  2.5, 1.5, 5.0" name="LeftmostCellBack" />
+      <point coordinate=" 97.5, 1.5, 5.0" name="RightmostCellBack" />
+      <point coordinate=" 47.5, 1.5, 5.0" name="LeftMidpointCellBack" />
+      <point coordinate=" 52.5, 1.5, 5.0" name="RightMidpointCellBack" />
     </regions>
     <materials>
       <material name="Front Material">

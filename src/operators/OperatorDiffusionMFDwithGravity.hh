@@ -16,7 +16,7 @@
 
 #include "Epetra_IntVector.h"
 
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "WhetStoneDefs.hh"
 #include "DenseMatrix.hh"
 

@@ -44,6 +44,9 @@
 namespace Amanzi {
 namespace AmanziInput {
 
+/* ******************************************************************
+* Non-member functions.
+****************************************************************** */
 XercesDOMParser* CreateXMLParser()
 {
   XMLPlatformUtils::Initialize();
@@ -84,6 +87,10 @@ xercesc::DOMDocument* OpenXMLInput(XercesDOMParser* parser,
   return doc;
 }
 
+
+/* ******************************************************************
+* Various constructors.
+****************************************************************** */
 InputConverter::InputConverter(const std::string& input_filename):
   xmlfilename_(input_filename),
   doc_(NULL),
@@ -105,8 +112,8 @@ InputConverter::InputConverter(const std::string& input_filename,
 
 InputConverter::~InputConverter()
 {
-//  if (doc_ != NULL)
-//    delete doc_;
+  // if (doc_ != NULL)
+  //   delete doc_;
   if (parser_ != NULL)
     delete parser_;
 }
@@ -190,8 +197,8 @@ void InputConverter::ParseConstants_()
 
 
 /* ******************************************************************
-* Return node described by the list of consequtive names tags 
-* separated by commas. It 
+* Returns node specified by the list of consequtive names tags 
+* separated by commas. Only the first tag may be not unique.
 ****************************************************************** */
 DOMNode* InputConverter::GetUniqueElementByTagsString_(
     const std::string& tags, bool& flag)
@@ -200,33 +207,48 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
 
   MemoryManager mm;
   DOMNode* node;
+  DOMNode* node_good;
 
   std::vector<std::string> tag_names = CharToStrings_(tags.c_str());
   if (tag_names.size() == 0) return node;
 
   // get the first node
   DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode(tag_names[0].c_str()));
-  if (node_list->getLength() != 1) return node;
-  node = node_list->item(0);
+  int nnodes = node_list->getLength();
+  if (nnodes == 0) return node;
 
-  for (int n = 1; n < tag_names.size(); ++n) {
-    DOMNodeList* children = node->getChildNodes();
-    int ntag(0);
-    for (int i = 0; i < children->getLength(); i++) {
-      DOMNode* inode = children->item(i);
-      if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-        char* tagname = mm.transcode(inode->getNodeName());   
-        if (strcmp(tagname, tag_names[n].c_str()) == 0) {
-          node = inode;
-          ntag++;
+  int icnt(0);
+  for (int k = 0; k < nnodes; ++k) {
+    node = node_list->item(k);
+
+    bool found(true);
+    for (int n = 1; n < tag_names.size(); ++n) {
+      DOMNodeList* children = node->getChildNodes();
+      int ntag(0);
+      for (int i = 0; i < children->getLength(); i++) {
+        DOMNode* inode = children->item(i);
+        if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
+          char* tagname = mm.transcode(inode->getNodeName());   
+          if (strcmp(tagname, tag_names[n].c_str()) == 0) {
+            node = inode;
+            ntag++;
+          }
         }
       }
+      if (ntag != 1) {
+        found = false;
+        break;
+      }
     }
-    if (ntag != 1) return node;
+
+    if (found) {
+      icnt++;
+      node_good = node;
+    }
   }
 
-  flag = true;
-  return node;
+  flag = (icnt == 1);
+  return node_good;
 }
 
 

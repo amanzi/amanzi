@@ -1,16 +1,24 @@
 /*
-  num_itrs_accumulated_ = 0;
   This is the Linear Solver component of the Amanzi code.
-  License: BSD
-  Authors: Ethan Coon (ecoon@lanl.gov)
-  Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Generalized minimum residual method (Yu.Kuznetsov, 1968; Y.Saad, 1986)
-  Usage:
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Ethan Coon (ecoon@lanl.gov)
+           Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Generalized minimum residual method is due to 
+    Yu.Kuznetsov, 1968;
+    Y.Saad, 1986.
+  Deflated version of GMRES is due to 
+    R.Morgan, GMRES with deflated restarting, 2002 SISC;
+    S.Rollin, W.Fichtner, Improving accuracy of GMRES with deflated restarting, 2007 SISC.
 */
 
-#ifndef  AMANZI_GMRES_OPERATOR_HH_
-#define  AMANZI_GMRES_OPERATOR_HH_
+#ifndef AMANZI_GMRES_OPERATOR_HH_
+#define AMANZI_GMRES_OPERATOR_HH_
 
 #include <cmath>
 
@@ -49,7 +57,6 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
 
     int ierr = GMRESRestart_(v, hv, tol_, max_itrs_, criteria_);
     returned_code_ = ierr;
-    //return (ierr > 0) ? 0 : 1;  // Positive ierr code means success.
     return returned_code_;
   }
 
@@ -71,10 +78,16 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
  private:
   int GMRESRestart_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
   int GMRES_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
+  int GMRES_Deflated_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
+
   void ComputeSolution_(Vector& x, int k, WhetStone::DenseMatrix& T, double* s,
-                        std::vector<Teuchos::RCP<Vector> >& v, Vector& p, Vector& r) const;
+                        Vector& p, Vector& r) const;
+  void ComputeSolution_(Vector& x, double* d, Vector& p, Vector& r) const;
+
   void InitGivensRotation_( double& dx, double& dy, double& cs, double& sn) const;
   void ApplyGivensRotation_(double& dx, double& dy, double& cs, double& sn) const;
+
+  int CheckConvergence_(double rnorm, double fnorm) const;
 
   LinearOperatorGMRES(const LinearOperatorGMRES& other); // not implemented
 
@@ -82,6 +95,9 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
   using LinearOperator<Matrix, Vector, VectorSpace>::m_;
   using LinearOperator<Matrix, Vector, VectorSpace>::h_;
   using LinearOperator<Matrix, Vector, VectorSpace>::name_;
+
+  mutable std::vector<Teuchos::RCP<Vector> > v_;
+  mutable WhetStone::DenseMatrix Hu_;  // upper Hessenberg matrix
 
   int max_itrs_, criteria_, krylov_dim_;
   double tol_, overflow_tol_;
@@ -93,6 +109,8 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
   mutable double controller_[2];
 
   bool left_pc_;
+  int deflation_;
+  mutable int num_ritz_;
 };
 
 
@@ -113,6 +131,12 @@ template<class Matrix, class Vector, class VectorSpace>
 int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRESRestart_(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
+  // initialize verbose object
+  Teuchos::OSTab tab = vo_->getOSTab();
+
+  // allocate memory for Krylov space
+  v_.resize(krylov_dim_ + 1, Teuchos::null);
+
   num_itrs_total_ = 0;
   rnorm0_ = -1.0;
 
@@ -120,12 +144,15 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRESRestart_(
   while (ierr == LIN_SOLVER_MAX_ITERATIONS && num_itrs_total_ < max_itrs) {
     int max_itrs_left = max_itrs - num_itrs_total_;
 
-    ierr = GMRES_(f, x, tol, max_itrs_left, criteria);
+    if (deflation_ == 0) {
+      ierr = GMRES_(f, x, tol, max_itrs_left, criteria);
+    } else {
+      ierr = GMRES_Deflated_(f, x, tol, max_itrs_left, criteria);
+    }
     if (ierr == LIN_SOLVER_RESIDUAL_OVERFLOW) return ierr;
   }
 
   if (ierr == LIN_SOLVER_MAX_ITERATIONS) {
-    Teuchos::OSTab tab = vo_->getOSTab();
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
       *vo_->os() << "Not converged (max iterations), ||r||=" << residual_ 
                  << " ||f||=" << fnorm_ << std::endl;
@@ -137,23 +164,20 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRESRestart_(
 
 
 /* ******************************************************************
- * GMRES input/output data:
- *  f [input]         the right-hand side
- *  x [input/output]  initial guess / final solution
- *  tol [input]       convergence tolerance
- *  max_itrs [input]  maximum number of iterations
- *  criteria [input]  sum of termination critaria
- *
- *  Return value. See above.
+* GMRES input/output data:
+*  f [input]         the right-hand side
+*  x [input/output]  initial guess / final solution
+*  tol [input]       convergence tolerance
+*  max_itrs [input]  maximum number of iterations
+*  criteria [input]  sum of termination critaria
+*
+*  Return value. See above.
  ***************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
 int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
-  Teuchos::OSTab tab = vo_->getOSTab();
-
   Vector w(f), r(f), p(f);  // construct empty vectors
-  std::vector<Teuchos::RCP<Vector> > v(krylov_dim_ + 1);
 
   double s[krylov_dim_ + 1], cs[krylov_dim_ + 1], sn[krylov_dim_ + 1];
   WhetStone::DenseMatrix T(krylov_dim_ + 1, krylov_dim_);
@@ -189,32 +213,13 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
   }
 
   // Ignore all criteria if one iteration is enforced.
-  if (rnorm0 > overflow_tol_) {
-    if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-      *vo_->os() << "Diverged, ||r||=" << rnorm0 << std::endl;
-    return LIN_SOLVER_RESIDUAL_OVERFLOW;
-  }
-
   if (! (criteria & LIN_SOLVER_MAKE_ONE_ITERATION)) {
-    if (criteria & LIN_SOLVER_RELATIVE_RHS) {
-      if (rnorm0 < tol * fnorm) {
-	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-	  *vo_->os() << "Converged (relative RHS), itr=" << num_itrs_total_ 
-                     << " ||r||=" << rnorm0 << std::endl;
-	return LIN_SOLVER_RELATIVE_RHS;
-      }
-    } else if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
-      if (rnorm0 < tol) {
-	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-	  *vo_->os() << "Converged (absolute res), itr=" << num_itrs_total_ 
-                     << " ||r||=" << rnorm0 << std::endl;
-	return LIN_SOLVER_ABSOLUTE_RESIDUAL;
-      }
-    }
+    int ierr = CheckConvergence_(rnorm0, fnorm);
+    if (ierr != 0) return ierr;
   }
 
-  v[0] = Teuchos::rcp(new Vector(r));
-  v[0]->Update(0.0, r, 1.0 / rnorm0);
+  v_[0] = Teuchos::rcp(new Vector(r));
+  v_[0]->Update(0.0, r, 1.0 / rnorm0);
 
   s[0] = rnorm0;
 
@@ -222,17 +227,17 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
     // calculate H M v_i for the left preconditioner
     //       and M H v_i for the right preconditioner
     if (left_pc_) {
-      m_->Apply(*(v[i]), p);
+      m_->Apply(*(v_[i]), p);
       h_->ApplyInverse(p, w);
     } else {
-      h_->ApplyInverse(*(v[i]), p);
+      h_->ApplyInverse(*(v_[i]), p);
       m_->Apply(p, w);
     }
 
     double tmp(0.0);
     for (int k = 0; k <= i; k++) {  // Arnoldi algorithm
-      w.Dot(*(v[k]), &tmp);
-      w.Update(-tmp, *(v[k]), 1.0);
+      w.Dot(*(v_[k]), &tmp);
+      w.Update(-tmp, *(v_[k]), 1.0);
       T(k, i) = tmp;
     }
     w.Norm2(&tmp);
@@ -255,34 +260,11 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
     // Check all criteria one-by-one.
     num_itrs_ = i + 1;
     num_itrs_total_++;
-    if (criteria & LIN_SOLVER_RELATIVE_RHS) {
-      if (residual_ < tol * fnorm) {
-        ComputeSolution_(x, i, T, s, v, p, r);  // vector s is overwritten
-        if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-          *vo_->os() << "Converged (relative RHS), itr=" << num_itrs_total_ 
-                     << " ||r||=" << residual_ << " ||f||=" << fnorm << std::endl;
-        return LIN_SOLVER_RELATIVE_RHS;
-      }
-    }
 
-    if (criteria & LIN_SOLVER_RELATIVE_RESIDUAL) {
-      if (residual_ < tol * rnorm0_) {
-        ComputeSolution_(x, i, T, s, v, p, r);
-        if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-          *vo_->os() << "Converged (relative res), itr=" << num_itrs_total_ 
-                     << " ||r||=" << residual_ << " ||r0||=" << rnorm0_ << std::endl;
-        return LIN_SOLVER_RELATIVE_RESIDUAL;
-      }
-    }
-
-    if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
-      if (residual_ < tol) {
-        ComputeSolution_(x, i, T, s, v, p, r);  // vector s is overwritten
-        if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-          *vo_->os() << "Converged (absolute res), itr=" << num_itrs_total_ 
-                     << " ||r||=" << residual_ << std::endl;
-        return LIN_SOLVER_ABSOLUTE_RESIDUAL;
-      }
+    int ierr = CheckConvergence_(residual_, fnorm);
+    if (ierr != 0) {
+      ComputeSolution_(x, i, T, s, p, r);  // vector s is overwritten
+      return ierr;
     }
 
     // optional controller of convergence
@@ -299,22 +281,147 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
         if (vo_->os_OK(Teuchos::VERB_EXTREME))
           *vo_->os() << "controller indicates convergence stagnation\n"; 
 
-        ComputeSolution_(x, i, T, s, v, p, r); 
+        ComputeSolution_(x, i, T, s, p, r); 
         return LIN_SOLVER_MAX_ITERATIONS;
       }
       controller_[1] = residual_;
     }
 
     if (i < krylov_dim_ - 1) {
-      v[i + 1] = Teuchos::rcp(new Vector(w));
+      v_[i + 1] = Teuchos::rcp(new Vector(w));
       if (tmp != 0.0) {  // zero occurs in exact arithmetic
-        v[i + 1]->Update(0.0, r, 1.0 / tmp);
+        v_[i + 1]->Update(0.0, r, 1.0 / tmp);
       }
     }
   }
 
-  ComputeSolution_(x, krylov_dim_ - 1, T, s, v, p, r);  // vector s is overwritten
+  ComputeSolution_(x, krylov_dim_ - 1, T, s, p, r);  // vector s is overwritten
   return LIN_SOLVER_MAX_ITERATIONS;
+}
+
+
+/* ******************************************************************
+* GMRES with deflated start, input/output data: see GMRES_(...)
+***************************************************************** */
+template<class Matrix, class Vector, class VectorSpace>
+int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
+    const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
+{
+  Vector p(f), r(f), w(f);
+  WhetStone::DenseVector d(krylov_dim_ + 1), g(krylov_dim_);
+  WhetStone::DenseMatrix T(krylov_dim_ + 1, krylov_dim_);
+
+  double fnorm;
+  f.Norm2(&fnorm);
+  fnorm_ = fnorm;
+
+  // initial residual is r = f - M x for the right preconditioner
+  // and r = H (f - M x)  for the left preconditioner
+  if (left_pc_) {
+    m_->Apply(x, p);
+    p.Update(1.0, f, -1.0);
+    h_->ApplyInverse(p, r);
+  } else {
+    m_->Apply(x, r);
+    r.Update(1.0, f, -1.0);
+  }
+
+  double rnorm0;
+  r.Norm2(&rnorm0);
+  residual_ = rnorm0;
+  if (rnorm0_ < 0.0) rnorm0_ = rnorm0;
+
+  if (fnorm == 0.0) {
+    x.PutScalar(0.0);
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+      *vo_->os() << "Converged, itr=" << num_itrs_total_ << " ||r||=" << rnorm0 << std::endl;
+    return criteria;  // Zero solution satifies all criteria.
+  }
+
+  // Ignore all criteria if one iteration is enforced.
+  if (! (criteria & LIN_SOLVER_MAKE_ONE_ITERATION)) {
+    int ierr = CheckConvergence_(rnorm0, fnorm);
+    if (ierr != 0) return ierr;
+  }
+
+  // calculate the first (num_ritz_ + l) rows of c.
+  double tmp;
+  d = 0.0;
+  for (int i = 0 ; i <= num_ritz_; ++i) {
+    r.Dot(*(v_[i]), &tmp);
+    d(i) = tmp;
+  }
+
+  // set the leading diagonal block of T
+  for (int i = 0; i <= num_ritz_; ++i) {
+    for (int j = 0; j < num_ritz_; ++j) {
+      T(i, j) = Hu_(i, j);
+    }
+  }
+
+  // Apply Arnoldi method to extend the Krylov space calculate
+  // at the end of the previous loop.
+  double beta;
+  for (int i = num_ritz_ + 1; i < krylov_dim_; i++) {
+    if (left_pc_) {
+      m_->Apply(*(v_[i]), p);
+      h_->ApplyInverse(p, w);
+    } else {
+      h_->ApplyInverse(*(v_[i]), p);
+      m_->Apply(p, w);
+    }
+
+    for (int k = 0; k <= i; k++) {  // Arnoldi algorithm
+      w.Dot(*(v_[k]), &tmp);
+      w.Update(-tmp, *(v_[k]), 1.0);
+      T(k, i) = tmp;
+    }
+    w.Norm2(&beta);
+    T(i + 1, i) = beta;
+  }
+
+  // Calculate residual
+  int ierr = CheckConvergence_(residual_, fnorm);
+  if (ierr != 0) return ierr;
+
+  // Solve the least-square problem min_d ||T d - c||.
+  WhetStone::DenseMatrix Ttmp(T);
+  int m(krylov_dim_ + 1), n(krylov_dim_), nrhs(1), info;
+  int lwork(m * n);
+  WhetStone::DenseVector work(lwork);
+
+  WhetStone::DGELS_F77("N", &m, &n, &nrhs, Ttmp.Values(), &m, d.Values(), &n,
+                       work.Values(), &lwork, &info);
+
+  residual_ = fabs(d(m));
+  ComputeSolution_(x, d.Values(), p, r); 
+
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+    *vo_->os() << num_itrs_total_ << " ||r||=" << residual_ << std::endl;
+  }
+
+  // Compute Schur vectors
+  // -- auxiliary vector g = Hm^{-T} e_m
+  WhetStone::DenseMatrix Tm(T, 1, krylov_dim_, 1, krylov_dim_);
+  WhetStone::DenseMatrix Hm(Tm);
+  Tm.Inverse();
+  for (int i = 0; i < krylov_dim_; ++i) g(i) = Tm(krylov_dim_ - 1, i);
+
+  // -- solve eigenvector problem
+  beta *= beta;
+  for (int i = 0; i < krylov_dim_; ++i) Hm(i, krylov_dim_ - 1) += beta * g(i);
+  
+  int sdim, bwork;
+  WhetStone::DenseVector wr(krylov_dim_), wi(krylov_dim_);
+  WhetStone::DenseMatrix vs(krylov_dim_, krylov_dim_);
+  WhetStone::DGEES_F77("V", "N", NULL, &n, Hm.Values(), &n, &sdim,
+                       wr.Values(), wi.Values(), vs.Values(), &n,
+                       work.Values(), &lwork, &bwork, &info);
+
+  num_ritz_ = 1;
+  Hu_ = Hm;
+
+  return 0;
 }
 
 
@@ -339,6 +446,7 @@ void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterLi
   controller_end_ = std::max(controller_end_, controller_start_ + 1);
 
   left_pc_ = (plist.get<std::string>("preconditioning strategy", "left") == "left");
+  deflation_ = plist.get<int>("maximum size of deflation space", 0);
 
   int criteria(0);
   if (plist.isParameter("convergence criteria")) {
@@ -407,7 +515,7 @@ void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::ApplyGivensRotation_(
 template<class Matrix, class Vector, class VectorSpace>
 void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::ComputeSolution_(
     Vector& x, int k, WhetStone::DenseMatrix& T, double* s,
-    std::vector<Teuchos::RCP<Vector> >& v, Vector& p, Vector& r) const
+    Vector& p, Vector& r) const
 {
   for (int i = k; i >= 0; i--) {
     s[i] /= T(i, i);
@@ -421,16 +529,83 @@ void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::ComputeSolution_(
   //         and x = x0 + H V s for the right preconditioner
   if (left_pc_) {
     for (int j = 0; j <= k; j++) {
-      x.Update(s[j], *(v[j]), 1.0);
+      x.Update(s[j], *(v_[j]), 1.0);
     }
   } else {
     p.PutScalar(0.0);
     for (int j = 0; j <= k; j++) {
-      p.Update(s[j], *(v[j]), 1.0);
+      p.Update(s[j], *(v_[j]), 1.0);
     }
     h_->ApplyInverse(p, r);
     x.Update(1.0, r, 1.0);
   }
+}
+
+
+/* ******************************************************************
+* solution is x = x0 + V s for the left preconditioner
+*         and x = x0 + H V s for the right preconditioner
+****************************************************************** */
+template<class Matrix, class Vector, class VectorSpace>
+void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::ComputeSolution_(
+    Vector& x, double* d, Vector& p, Vector& r) const
+{
+  if (left_pc_) {
+    for (int j = 0; j < krylov_dim_; j++) {
+      x.Update(d[j], *(v_[j]), 1.0);
+    }
+  } else {
+    p.PutScalar(0.0);
+    for (int j = 0; j < krylov_dim_; j++) {
+      p.Update(d[j], *(v_[j]), 1.0);
+    }
+    h_->ApplyInverse(p, r);
+    x.Update(1.0, r, 1.0);
+  }
+}
+
+
+/* ******************************************************************
+* Convergence analysis.
+****************************************************************** */
+template<class Matrix, class Vector, class VectorSpace>
+int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::CheckConvergence_(
+    double rnorm, double fnorm) const
+{
+  if (rnorm > overflow_tol_) {
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+      *vo_->os() << "Diverged, ||r||=" << rnorm << std::endl;
+    return LIN_SOLVER_RESIDUAL_OVERFLOW;
+  }
+
+  if (criteria_ & LIN_SOLVER_RELATIVE_RHS) {
+    if (rnorm < tol_ * fnorm) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+        *vo_->os() << "Converged (relative RHS), itr=" << num_itrs_total_ 
+                   << " ||r||=" << rnorm << " ||f||=" << fnorm << std::endl;
+      return LIN_SOLVER_RELATIVE_RHS;
+    }
+  }
+
+  if (criteria_ & LIN_SOLVER_RELATIVE_RESIDUAL) {
+    if (rnorm < tol_ * rnorm0_) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+        *vo_->os() << "Converged (relative res), itr=" << num_itrs_total_ 
+                   << " ||r||=" << residual_ << " ||r0||=" << rnorm0_ << std::endl;
+      return LIN_SOLVER_RELATIVE_RESIDUAL;
+    }
+  }
+
+  if (criteria_ & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
+    if (rnorm < tol_) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+        *vo_->os() << "Converged (absolute res), itr=" << num_itrs_total_ 
+                   << " ||r||=" << rnorm << std::endl;
+      return LIN_SOLVER_ABSOLUTE_RESIDUAL;
+    }
+  }
+
+  return 0;
 }
 
 }  // namespace AmanziSolvers

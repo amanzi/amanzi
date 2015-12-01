@@ -123,6 +123,7 @@ class InputConverterU : public InputConverter {
   std::string CreateBGDFile(std::string& filename);
 
   void FilterEmptySublists_(Teuchos::ParameterList& plist);
+  void MergeInitialConditionsLists_(Teuchos::ParameterList& plist);
 
  private:
   int dim_;
@@ -154,6 +155,9 @@ class InputConverterU : public InputConverter {
   // -- initialization filename, different from restart
   bool restart_;
   std::string init_filename_;
+
+  // global solvers
+  std::vector<std::pair<std::string, double> > gmres_solvers_;
 
   // for analysis
   std::vector<std::string> transport_diagnostics_;

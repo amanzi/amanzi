@@ -50,6 +50,7 @@ template<class T>
 std::vector<Teuchos::RCP<T> >
 collectTreeVectorLeaves(T& tv) {
   std::vector<Teuchos::RCP<T> > list;
+  list.push_back(Teuchos::rcpFromRef(tv));
   recurseTreeVectorBFS<T>(tv, list);
 
   std::vector<Teuchos::RCP<T> > leaves;
@@ -67,6 +68,7 @@ template<class T>
 std::vector<Teuchos::RCP<const T> >
 collectTreeVectorLeaves_const(const T& tv) {
   std::vector<Teuchos::RCP<const T> > list;
+  list.push_back(Teuchos::rcpFromRef(tv));
   recurseTreeVectorBFS_const<T>(tv, list);
 
   std::vector<Teuchos::RCP<const T> > leaves;

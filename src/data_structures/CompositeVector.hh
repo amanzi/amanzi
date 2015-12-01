@@ -181,6 +181,8 @@ public:
   unsigned int size(std::string name, bool ghosted=false) const {
     return ghosted ? ghostvec_->size(name) : mastervec_->size(name); }
 
+  int GlobalLength() const { return mastervec_->GlobalLength(); }
+  
   // Access the VectorSpace for each component.
   Teuchos::RCP<const Epetra_Map> ComponentMap(std::string name,
           bool ghosted=false) const {

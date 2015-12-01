@@ -96,7 +96,9 @@ class TreeVector {
 
 
   // -- Assorted vector operations, this implements a Vec --
-
+  // total length of the containing data
+  int GlobalLength() const;
+  
   // this <- scalar
   int PutScalar(double scalar);
 

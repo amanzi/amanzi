@@ -8,20 +8,39 @@
 %
 % -------------------------------------------------------------------------
 
+\def\bnabla{{\boldsymbol{\nabla}}}
+\def\bg{{\boldsymbol{g}}}
+\def\bq{{\boldsymbol{q}}}
+\def\K{{\mathbb K}}
+
+% units
+\def\ucdot{{\,\cdot\,}}
+\def\ukg{{\rm kg}}
+\def\um{{\rm m}}
+\def\us{{\rm s}}
+
 \section{Flow Processes}         
 \label{sec:flow}
 
 \subsection{Overview}
 
-\subsection{Assumptions and Applicability for Flow Equations}
+Subsurface flow simulations typically assume that Darcy's law is
+valid. As this law gives a relationship between velocity and pressure,
+it essentially replaces the momentum equation. There has been much
+research to support the validity of Darcy's
+Law~\citep{bear-1972}.
+Most references give the applicability of
+Darcy's Law to be for laminar flows with Reynolds numbers less that 10 using the pore throat diameter for a soil.
+There has been some effort to include inertial as well as turbulence effects that can occur near the wells.
 
-\subsection{Concepts}
+It is also assumed that thermodynamic equilibrium (mechanical and
+thermal) exists for each grid block.  Sub-grid scale features will
+often play a prominent role in multi-fluid simulations. Faults and
+fractures will likely be fast paths for contaminant transport and can
+effectively be treated with multiple porosity models. Similarly,
+rate-limited diffusion from clay inclusions can also be modeled with a
+multiple porosity material.
 
-\subsubsection{Capillary Pressure - Saturation Relations}  
-\label{sec:pc_s_relations}
-
-\subsubsection{Relative Permeability Relations}  
-\label{sec:RelativePerm}
 
 %-------------------------------------------------------------------------------------
 % Single-Phase Flow 
@@ -33,9 +52,35 @@
 \subsubsection{Overview}
 \label{sec:single-phase-overview}
 
-\paragraph{Assumptions and Applicability.}
+The most basic flow model is a single-phase flow in a porous medium.  
+Notwithstanding its simplicity, it has a wide application to
+describing subsurface processes.
+
+\subsubsection{Assumptions and Applicability}
+
+There are many assumptions required for the strict validity of Darcy's
+Law, including incompressible and laminar flow.
+
 
 \subsubsection{Process Model Equations}
+
+The governing equations for the single phase flow in porous media 
+under isothermal conditions are
+\begin{equation}
+  \phi (s_s + s_y) \frac{\partial p_l}{\partial t} 
+  =
+  \boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_l) + Q,
+  \qquad
+  \bq_l = -\frac{\K}{\mu} 
+  (\bnabla p_l - \rho_l \bg),
+\end{equation}
+where $\phi$ is porosity [-],
+$s_s$ and $s_y$ are specific storage and specific yield, respectively,
+$\rho_l$ is fluid density [$\ukg \ucdot \um^3$],
+$Q$ is source or sink term [$\ukg \ucdot \um^3 \ucdot \us$],
+$\bq_l$ is the Darcy velocity [$\um \ucdot \us$],
+and $\bg$ is gravity vector [$\um \ucdot \us^2$].
+
 
 %-------------------------------------------------------------------------------------
 % Richards (variably saturated) Flow
@@ -47,11 +92,56 @@
 \subsubsection{Overview}
 \label{sec:richards-overview}
 
-\paragraph{Assumptions and Applicability.}
-\label{sec:richards-assumptions}
-
 \subsubsection{Process Model Equations} 
 \label{sec:richards-model-equations}
 
+\begin{equation}
+  \frac{\partial \theta}{\partial t} 
+  = \bnabla \cdot (\eta_l \bq_l) + Q,
+  \qquad
+  \bq_l = -\frac{\K k_r}{\mu} 
+  (\bnabla p - \rho_l \bg)
+\end{equation}
 
+\subsubsection{Capillary Pressure -- Saturation Relations}  
+\label{sec:pc_s_relations}
 
+\subsubsection{Relative Permeability Relations}  
+\label{sec:RelativePerm}
+
+Bla-bla-bla
+
+%-------------------------------------------------------------------------------------
+% Thermal Richards (variably saturated) Flow with water vapor
+%-------------------------------------------------------------------------------------
+
+\subsection{Thermal Richards Equation}
+\label{sec:thermal-richards-equation}
+
+\subsubsection{Overview}
+\label{sec:thermal-richards-overview}
+
+\subsubsection{Process Model Equations} 
+\label{sec:thermal-richards-model-equations}
+
+\begin{equation}
+  \frac{\partial \theta}{\partial t} 
+  =
+  \bnabla \cdot (\eta_l \bq_l)
+  - \bnabla \cdot (\K_g \bnabla \big(\frac{p_v}{p_g}\big)) + Q,
+  \qquad
+  \bq_l = -\frac{\K k_r}{\mu} (\bnabla p - \rho_l \bg)
+\end{equation}
+
+%-------------------------------------------------------------------------------------
+% Richards (variably saturated) Flow with dual porocity submodel
+%-------------------------------------------------------------------------------------
+
+\subsection{Richards Equation with Dual Porosity Submodel}
+\label{sec:dual-porosity-richards-equation}
+
+\subsubsection{Overview}
+\label{sec:sual-porosity-richards-overview}
+
+\subsubsection{Process Model Equations} 
+\label{sec:sual-porosity-richards-model-equations}

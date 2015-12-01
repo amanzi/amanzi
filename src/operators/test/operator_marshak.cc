@@ -25,7 +25,7 @@
 #include "Mesh_MSTK.hh"
 #include "GMVMesh.hh"
 
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "mfd3d_diffusion.hh"
 
 #include "LinearOperatorFactory.hh"

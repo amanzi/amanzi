@@ -1060,7 +1060,7 @@ Chemistry
       
       * `"state`" = "on | off"
       
-      * `"engine`" = "amanzi | pflotran | none"
+      * `"engine`" = "amanzi | pflotran | crunchflow | none"
 
       * `"process_model`" = "implicit operator split | none" 
 
@@ -1306,6 +1306,9 @@ Solute_component
 *  Here is more info on the `"geochemistry`" elements:
 
     * `"constraint`" is an element with the following attributes: ONLY UNIFORM, for now
+    * If function is not specified and there is a geochemical constraint of the given name in the 
+      `"geochemistry`" top-level element, information for that constraint will be taken from the 
+      geochemical engine.
 
 .. code-block:: xml
 

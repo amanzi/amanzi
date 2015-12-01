@@ -26,7 +26,7 @@
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
 #include "LinearOperatorFactory.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 // Operators
 #include "Analytic01.hh"
