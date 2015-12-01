@@ -39,7 +39,10 @@ class MDM_BurnettFrind : public MDM {
       const AmanziGeometry::Point& u, int axi_symmetry, double s, double phi) const;
 
   // -- the model is valid if at least one parameter is not zero.
-  virtual bool is_valid() const { return (alphaL_ + alphaTH_ + alphaTV_ != 0.0); }
+  bool is_valid() const { return (alphaL_ + alphaTH_ + alphaTV_ != 0.0); }
+
+  // -- check model applicability
+  void set_dim(int dim) { ASSERT(dim == 3); dim_ = dim; }
 
  private:
   double alphaL_, alphaTH_, alphaTV_;

@@ -20,8 +20,7 @@ namespace Amanzi {
 namespace Transport {
 
 Teuchos::RCP<MDM> MDMFactory::Create(Teuchos::ParameterList& plist) {
-  std::string mdm_typename = plist.get<std::string>("model");
-  if (mdm_typename == "none") mdm_typename = "scalar";  // FIXME 
+  std::string mdm_typename = plist.get<std::string>("model", "scalar");
   Teuchos::ParameterList& tmp_list = plist.sublist("parameters for " + mdm_typename);
   return Teuchos::rcp(CreateInstance(mdm_typename, tmp_list));
 };

@@ -39,7 +39,7 @@ class MDM_Isotropic : public MDM {
       const AmanziGeometry::Point& u, int axi_symmetric, double s, double phi) const;
 
   // -- the model is valid if at least one parameter is not zero.
-  virtual bool is_valid() const { return (alpha_ != 0.0); }
+  bool is_valid() const { return (alpha_ != 0.0); }
 
  private:
   double alpha_;

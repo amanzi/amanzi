@@ -171,7 +171,6 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   // initialization methods
   void InitializeAll_();
   void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
-  void ProcessStringDispersionModel(const std::string name, int* model);
 
   // miscaleneous methods
   int FindComponentNumber(const std::string component_name);
@@ -232,13 +231,12 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   Teuchos::RCP<MDMPartition> mdm_;
   std::vector<WhetStone::Tensor> D_;
 
+  bool flag_dispersion_;
+  std::vector<int> axi_symmetry_;  // axi-symmetry direction of permeability tensor
+  std::string dispersion_preconditioner, dispersion_solver;
+
   std::vector<Teuchos::RCP<MaterialProperties> > mat_properties_;  // vector of materials
   std::vector<Teuchos::RCP<DiffusionPhase> > diffusion_phase_;   // vector of phases
-
-  int dispersion_models_;
-  std::vector<int> axi_symmetry_;  // axi-symmetry direction of permeability tensor
-  std::string dispersion_preconditioner;
-  std::string dispersion_solver;
 
   // Hosting temporarily Henry law 
   bool henry_law_;

@@ -34,7 +34,7 @@ class MDM {
 
   // This allows us to set space dimension which could be used for estimating 
   // model applicability.
-  void set_dim(int dim) { dim_ = dim; }
+  virtual void set_dim(int dim) { dim_ = dim; }
 
  protected:
   int dim_;

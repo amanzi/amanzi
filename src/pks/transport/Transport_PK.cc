@@ -241,7 +241,6 @@ void Transport_PK::Initialize()
   double time = S_->time();
   if (time >= 0.0) t_physics_ = time;
 
-  dispersion_models_ = 0; 
   dispersion_preconditioner = "identity";
 
   internal_tests = 0;
@@ -313,11 +312,12 @@ void Transport_PK::Initialize()
   lifting_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
 
   // mechanical dispersion
+  flag_dispersion_ = false;
   if (tp_list_->isSublist("material properties")) {
-    bool flag;
     Teuchos::RCP<Teuchos::ParameterList>
         mdm_list = Teuchos::sublist(tp_list_, "material properties");
-    mdm_ = CreateMDMPartition(mesh_, mdm_list, flag);
+    mdm_ = CreateMDMPartition(mesh_, mdm_list, flag_dispersion_);
+    if (flag_dispersion_) CalculateAxiSymmetryDirection();
   }
 
   // boundary conditions initialization
@@ -606,7 +606,6 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   int num_components = tcc_prev.NumVectors();
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", false);
 
-  bool flag_dispersion = (dispersion_models_ != TRANSPORT_DISPERSIVITY_MODEL_NULL);
   bool flag_diffusion(false);
   for (int i = 0; i < 2; i++) {
     if (diffusion_phase_[i] != Teuchos::null) {
@@ -622,7 +621,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     if (tau == 0.0) flag_diffusion = false;
   }
 
-  if (flag_dispersion || flag_diffusion) {
+  if (flag_dispersion_ || flag_diffusion) {
     Teuchos::ParameterList& op_list = 
         tp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
 
@@ -654,7 +653,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
 
     // populate the dispersion operator (if any)
-    if (flag_dispersion) {
+    if (flag_dispersion_) {
       CalculateDispersionTensor_(*darcy_flux, *phi, *ws);
     }
 

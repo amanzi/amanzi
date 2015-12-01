@@ -39,7 +39,10 @@ class MDM_LichtnerKelkarRobinson : public MDM {
       const AmanziGeometry::Point& u, int axi_symmetry, double s, double phi) const;
 
   // -- the model is valid if at least one parameter is not zero.
-  virtual bool is_valid() const { return (alphaLH_ + alphaLV_ + alphaTH_ + alphaTV_ != 0.0); }
+  bool is_valid() const { return (alphaLH_ + alphaLV_ + alphaTH_ + alphaTV_ != 0.0); }
+
+  // -- simple check of model applicability
+  void set_dim(int dim) { ASSERT(dim == 3); dim_ = dim; }
 
  private:
   double alphaLH_, alphaLV_, alphaTH_, alphaTV_;

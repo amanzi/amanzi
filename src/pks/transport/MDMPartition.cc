@@ -23,7 +23,7 @@ namespace Transport {
 ****************************************************************** */
 Teuchos::RCP<MDMPartition> CreateMDMPartition(
     Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    Teuchos::RCP<Teuchos::ParameterList> plist, bool flag)
+    Teuchos::RCP<Teuchos::ParameterList> plist, bool& flag)
 {
   MDMFactory factory;
   Teuchos::RCP<MDM> mdm;
