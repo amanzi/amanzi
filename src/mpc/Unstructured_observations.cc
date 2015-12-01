@@ -299,13 +299,17 @@ int Unstructured_observations::MakeObservations(State& S)
             value += porosity[0][c] * ws[0][c] * vol;
           }
         } else if (var == "gravimetric water content") {
-          double particle_density(1.0);  // does not exist in new state, yet... TODO
+          if (!S.HasField("particle_density")) {
+            msg << "Observation \""  << var << "\" requires field \"particle_density\".\n";
+            Exceptions::amanzi_throw(msg);
+          }
+          const Epetra_MultiVector& pd = *S.GetFieldData("particle_density")->ViewComponent("cell");    
   
           for (int i = 0; i < mesh_block_size; i++) {
             int c = entity_ids[i];
             double vol = S.GetMesh()->cell_volume(c);
             volume += vol;
-            value += porosity[0][c] * ws[0][c] * rho / (particle_density * (1.0 - porosity[0][c])) * vol;
+            value += porosity[0][c] * ws[0][c] * rho / (pd[0][c] * (1.0 - porosity[0][c])) * vol;
           }    
         } else if (var == "aqueous pressure") {
           for (int i = 0; i < mesh_block_size; i++) {
