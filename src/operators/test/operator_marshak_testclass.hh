@@ -10,7 +10,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "mfd3d_diffusion.hh"
 
 namespace Amanzi{
