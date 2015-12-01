@@ -7,6 +7,10 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+          Ethan Coon (ecoon@lanl.gov)
+
+  Adapted from operator_marshak, this does marshak on a logical mesh.
+  More of a test for logical meshes than a test for operators. --etc
 */
 
 #include <cstdlib>
@@ -21,9 +25,8 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
-#include "MeshFactory.hh"
-#include "Mesh_MSTK.hh"
-#include "GMVMesh.hh"
+#include "MeshLogicalFactory.hh"
+#include "MeshLogical.hh"
 
 #include "tensor.hh"
 #include "mfd3d_diffusion.hh"
@@ -32,12 +35,13 @@
 #include "OperatorDefs.hh"
 #include "Operator.hh"
 #include "OperatorAccumulation.hh"
-#include "OperatorDiffusionMFD.hh"
+#include "OperatorDiffusionFV.hh"
 #include "UpwindStandard.hh"
 
 #include "operator_marshak_testclass.hh"
 
-void RunTestMarshak(std::string op_list_name) {
+
+void RunTestMarshakLogical(std::string op_list_name) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -50,24 +54,20 @@ void RunTestMarshak(std::string op_list_name) {
   if (MyPID == 0) std::cout << "\nTest: Simulating nonlinear Marshak wave" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/operator_marshak.xml";
+  std::string xmlFileName = "test/operator_marshak_logical.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
-  // create an MSTK mesh framework
+  // create a logical mesh
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
+  MeshLogicalFactory fac(&comm, gm);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 3.0, 1.0, 200, 10, gm);
-  RCP<const Mesh> mesh = meshfactory("test/marshak.exo", gm);
-  // RCP<const Mesh> mesh = meshfactory("test/marshak_poly.exo", gm);
+  AmanziGeometry::Point begin(0.,0.5,0.5), end(1.,0.5,0.5);
+  AmanziMesh::Entity_ID_List cells,faces;
+  fac.AddSegment(100,begin,end,1.0,true,true,"myregion",&cells, &faces);
+  RCP<const Mesh> mesh = fac.Create();
 
   // Create nonlinear coefficient.
   Teuchos::RCP<HeatConduction> knc = Teuchos::rcp(new HeatConduction(mesh));
@@ -156,7 +156,7 @@ void RunTestMarshak(std::string op_list_name) {
 
     // add diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
-    OperatorDiffusionMFD op(olist, mesh);
+    OperatorDiffusionFV op(olist, mesh);
     op.SetBCs(bc, bc);
 
     int schema_dofs = op.schema_dofs();
@@ -238,30 +238,15 @@ void RunTestMarshak(std::string op_list_name) {
   printf("||dp||=%10.6g  ||p||=%10.6g\n", pl2_err, pnorm);
 
   CHECK_CLOSE(0., pl2_err, 0.1);
-
+  
   // CHECK_EQUAL(208, step);
   // CHECK_CLOSE(1.0034, T, 1.e-4); // overshoots the end time?
   // CHECK_CLOSE(9.94834, snorm, 1.e-4);
       
-  if (MyPID == 0) {
-    // visualization
-    GMV::open_data_file(*mesh, (std::string)"operators.gmv");
-    GMV::start_data();
-    GMV::write_cell_data(p, 0, "solution");
-    GMV::close_data_file();
-  }
 }
 
 
-/* *****************************************************************
-* This test replaves tensor and boundary conditions by continuous
-* functions. This is a prototype forheat conduction solvers.
-* **************************************************************** */
-// TEST(MARSHAK_NONLINEAR_WAVE) {
-//   RunTest("diffusion operator");
-// }
-
-TEST(MARSHAK_NONLINEAR_WAVE_SFF) {
-  RunTestMarshak("diffusion operator Sff");
+TEST(MARSHAK_NONLINEAR_WAVE_LOGICAL) {
+  RunTestMarshakLogical("diffusion operator");
 }
 

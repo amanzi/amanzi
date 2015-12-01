@@ -69,6 +69,7 @@ if (BUILD_TESTS)
                           test/test_box_region.cc
                           test/test_plane_region.cc
                           test/test_labeledset.cc
+                          test/test_enumeratedset.cc
                           test/test_colorfunc_region.cc
 			  test/test_polygon_region.cc
                    LINK_LIBS 

@@ -1,0 +1,83 @@
+<ParameterList name="Main">
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+  <Parameter name="grid_option" type="string" value="Unstructured"/>
+
+  <!--  REGIONS  -->
+  <ParameterList name="Regions">
+    <ParameterList name="Left side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{-1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Right side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array(double)" value="{3.0,0.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!--  OPERATORS  -->
+  <ParameterList name="PK operator">
+    <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+
+    <ParameterList name="diffusion operator">
+      <Parameter name="discretization primary" type="string" value="fv: default"/>
+      <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
+      <Parameter name="scaled constraint equation" type="bool" value="true"/>
+    </ParameterList>
+    
+    <ParameterList name="upwind">
+      <Parameter name="upwind method" type="string" value="standard"/>
+      <ParameterList name="upwind standard parameters">
+        <Parameter name="tolerance" type="double" value="1e-12"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- SOLVERS -->
+  <ParameterList name="Solvers">
+    <ParameterList name="AztecOO CG">
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      <Parameter name="iterative method" type="string" value="pcg"/>
+      <ParameterList name="pcg parameters">
+        <Parameter name="error tolerance" type="double" value="1e-16"/>
+        <Parameter name="maximum number of iterations" type="int" value="200"/>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="medium"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Amanzi GMRES">
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="error tolerance" type="double" value="1e-16"/>
+        <Parameter name="maximum number of iterations" type="int" value="200"/>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="low"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- PRECONDITIONERS -->
+  <ParameterList name="Preconditioners">
+    <ParameterList name="Hypre AMG">
+      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <ParameterList name="boomer amg parameters">
+        <Parameter name="cycle applications" type="int" value="2"/>
+        <Parameter name="smoother sweeps" type="int" value="3"/>
+        <Parameter name="cycle type" type="int" value="1"/>
+        <Parameter name="strong threshold" type="double" value="0.5"/>
+        <Parameter name="relaxation type down" type="int" value="3"/>
+        <Parameter name="relaxation type up" type="int" value="4"/>
+        <Parameter name="coarsen type" type="int" value="0"/>
+        <Parameter name="tolerance" type="double" value="0.0"/>
+        <Parameter name="verbosity" type="int" value="0"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
+

@@ -23,7 +23,8 @@ namespace AmanziMesh
 // Method is declared constant because it is not modifying the mesh
 // itself; rather it is modifying mutable data structures - see
 // declaration of Mesh class for further explanation
-
+//
+// sets up: cell_face_ids, cell_face_dirs
 void Mesh::cache_cell2face_info() const {
 
   int ncells = num_entities(CELL,USED);
@@ -44,7 +45,8 @@ void Mesh::cache_cell2face_info() const {
 // Method is declared constant because it is not modifying the mesh
 // itself; rather it is modifying mutable data structures - see
 // declaration of Mesh class for further explanation
-
+//
+// sets up: face_cell_ids, face_cell_ptype
 void Mesh::cache_face2cell_info() const {
 
   int nfaces = num_entities(FACE,USED);

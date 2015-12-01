@@ -23,8 +23,8 @@ namespace AmanziGeometry {
 // -------------------------------------------------------------
 // LogicalRegion:: constructors / destructor
 // -------------------------------------------------------------
-LogicalRegion::LogicalRegion(const std::string name, 
-                             const unsigned int id,
+LogicalRegion::LogicalRegion(const Set_Name& name, 
+                             const Set_ID id,
                              const std::string operation_str,
                              const std::vector<std::string> region_names,
                              const LifeCycleType lifecycle,
@@ -50,32 +50,6 @@ LogicalRegion::LogicalRegion(const std::string name,
     
 }
 
-LogicalRegion::LogicalRegion(const char *name, 
-                             const unsigned int id,
-                             const std::string operation_str,
-                             const std::vector<std::string> region_names,
-                             const LifeCycleType lifecycle,
-                             const VerboseObject *verbobj)
-  : Region(name,id,3,lifecycle,verbobj), operation_(NOBOOLEAN),
-    region_names_(region_names)
-{
-  // Region dimension is set arbitrarily as 3 since the set of
-  // entities in the mesh will determine the dimension
-
-
-  if (operation_str == "Complement")
-    operation_ = COMPLEMENT;
-  else if (operation_str == "Union")
-    operation_ = UNION;
-  else if (operation_str == "Intersect")
-    operation_ = INTERSECT;
-  else if (operation_str == "Subtract")
-    operation_ = SUBTRACT;
-  else {
-    Errors::Message mesg("Unknown logical operation type requested on regions");
-    amanzi_throw(mesg);
-  }
-}
 
 LogicalRegion::LogicalRegion(const LogicalRegion& old)
   : Region(old)

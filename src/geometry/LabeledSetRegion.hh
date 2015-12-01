@@ -42,21 +42,12 @@ public:
 
   /// Default constructor 
 
-  LabeledSetRegion(const std::string name, 
-                   const unsigned int id, 
-                   const std::string entity_str,
-                   const std::string file,
-                   const std::string format,
-                   const std::string label,
-                   const LifeCycleType lifecycle=PERMANENT,
-                   const VerboseObject *verbobj=NULL);
-
-  LabeledSetRegion(const char *name, 
-                   const unsigned int id, 
-                   const std::string entity_str,
-                   const std::string file,
-                   const std::string format,
-                   const std::string label,
+  LabeledSetRegion(const Set_Name& name, 
+                   const Set_ID id, 
+                   const std::string& entity_str,
+                   const std::string& file,
+                   const std::string& format,
+                   const std::string& label,
                    const LifeCycleType lifecycle=PERMANENT,
                    const VerboseObject *verbobj=NULL);
 
