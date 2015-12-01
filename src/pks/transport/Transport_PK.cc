@@ -46,7 +46,6 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<Teuchos::ParameterList>& glist,
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& soln) :
-    glist_(glist),
     S_(S),
     soln_(soln)
 {
@@ -56,10 +55,10 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
   boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name,"->"); 
   if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name,  res.end() - pk_name.begin());
 
-  if (glist_->isSublist("Cycle Driver")) {
-    if (glist_->sublist("Cycle Driver").isParameter("component names")) {
+  if (glist->isSublist("Cycle Driver")) {
+    if (glist->sublist("Cycle Driver").isParameter("component names")) {
       // grab the component names
-      component_names_ = glist_->sublist("Cycle Driver")
+      component_names_ = glist->sublist("Cycle Driver")
           .get<Teuchos::Array<std::string> >("component names").toVector();
     } else {
       Errors::Message msg("Transport PK: parameter component names is missing.");
@@ -167,7 +166,7 @@ void Transport_PK::Setup()
   bool abs_perm = physical_models->get<bool>("permeability field is required", false);
   std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single porosity");
 
-  // require state fields when Flow is off
+  // require state fields when Flow PK is off
   if (!S_->HasField("permeability") && abs_perm) {
     S_->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, dim);
@@ -186,7 +185,7 @@ void Transport_PK::Setup()
     S_->GetField("prev_saturation_liquid", passwd_)->set_io_vis(false);
   }
 
-  // require state fields when Transport is on
+  // require state fields when Transport PK is on
   if (component_names_.size() == 0) {
     Errors::Message msg;
     msg << "Transport PK: list of solutes is empty.\n";
@@ -241,7 +240,6 @@ void Transport_PK::Initialize()
   double time = S_->time();
   if (time >= 0.0) t_physics_ = time;
 
-  dispersion_models_ = 0; 
   dispersion_preconditioner = "identity";
 
   internal_tests = 0;
@@ -312,6 +310,15 @@ void Transport_PK::Initialize()
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   lifting_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
 
+  // mechanical dispersion
+  flag_dispersion_ = false;
+  if (tp_list_->isSublist("material properties")) {
+    Teuchos::RCP<Teuchos::ParameterList>
+        mdm_list = Teuchos::sublist(tp_list_, "material properties");
+    mdm_ = CreateMDMPartition(mesh_, mdm_list, flag_dispersion_);
+    if (flag_dispersion_) CalculateAxiSymmetryDirection();
+  }
+
   // boundary conditions initialization
   time = t_physics_;
   for (int i = 0; i < bcs.size(); i++) {
@@ -348,6 +355,8 @@ void Transport_PK::Initialize()
 ****************************************************************** */
 void Transport_PK::InitializeFields_()
 {
+  Teuchos::OSTab tab = vo_->getOSTab();
+
   // set popular default values when flow PK is off
   if (S_->HasField("saturation_liquid")) {
     if (S_->GetField("saturation_liquid")->owner() == passwd_) {
@@ -596,7 +605,6 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   int num_components = tcc_prev.NumVectors();
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", false);
 
-  bool flag_dispersion = (dispersion_models_ != TRANSPORT_DISPERSIVITY_MODEL_NULL);
   bool flag_diffusion(false);
   for (int i = 0; i < 2; i++) {
     if (diffusion_phase_[i] != Teuchos::null) {
@@ -612,7 +620,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     if (tau == 0.0) flag_diffusion = false;
   }
 
-  if (flag_dispersion || flag_diffusion) {
+  if (flag_dispersion_ || flag_diffusion) {
     Teuchos::ParameterList& op_list = 
         tp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
 
@@ -644,7 +652,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
 
     // populate the dispersion operator (if any)
-    if (flag_dispersion) {
+    if (flag_dispersion_) {
       CalculateDispersionTensor_(*darcy_flux, *phi, *ws);
     }
 

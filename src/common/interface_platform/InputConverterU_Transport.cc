@@ -103,7 +103,6 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
     node_list = doc_->getElementsByTagName(mm.transcode("materials"));
 
     Teuchos::ParameterList& mat_list = out_list.sublist("material properties");
-    mat_list.set<std::string>("numerical method", "two-point flux approximation");
 
     children = node_list->item(0)->getChildNodes();
     for (int i = 0; i < children->getLength(); ++i) {

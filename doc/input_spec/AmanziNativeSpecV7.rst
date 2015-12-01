@@ -3642,6 +3642,9 @@ Internal parameters for GMRES include
   stops to collect data of the convergence history. The cotroller becomes active on the next
   iteration. Default is 3.
 
+* `"maximum size of deflation space`" [int] defines the size of deflation space. It should be 
+  smaller than the size of the Krylov space. Default is 0. This is experimental feature.
+
 .. code-block:: xml
 
    <ParameterList name="GMRES with HYPRE AMG">  <!-- parent list -->
@@ -3651,6 +3654,7 @@ Internal parameters for GMRES include
        <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
        <Parameter name="size of Krylov space" type="int" value="10"/>
        <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
+       <Parameter name="maximum size of deflation space" type="int" value="0"/>
 
        <ParameterList name="VerboseObject">
          <Parameter name="Verbosity Level" type="string" value="high"/>

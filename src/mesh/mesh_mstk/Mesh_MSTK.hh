@@ -386,10 +386,11 @@ public:
     const double quality_func_const1 = 0.0e+0; // ignore quality
     const double quality_func_const2 = 1.0e+0;
 
-    deform(target_cell_volumes_in, min_cell_volumes_in, fixed_nodes,
-           move_vertical, min_vol_const1, min_vol_const2,
-           target_vol_const1, target_vol_const2, 
-           quality_func_const1, quality_func_const2);
+    int ierr = deform(target_cell_volumes_in, min_cell_volumes_in, fixed_nodes,
+                      move_vertical, min_vol_const1, min_vol_const2,
+                      target_vol_const1, target_vol_const2, 
+                      quality_func_const1, quality_func_const2);
+    return ierr;
   }
 
 

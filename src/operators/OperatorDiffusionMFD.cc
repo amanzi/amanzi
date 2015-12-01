@@ -1015,10 +1015,7 @@ void OperatorDiffusionMFD::CreateMassMatrices_()
           if (K_symmetric_) {
             ok = mfd.MassMatrixInverseScaled(c, Kc, Wff);
           } else {
-            WhetStone::Tensor Ktmp(Kc);
-            Ktmp.Inverse();
-            ok = mfd.MassMatrixNonSymmetric(c, Ktmp, Wff);
-            Wff.Inverse();
+            ok = mfd.MassMatrixInverseNonSymmetric(c, Kc, Wff);
           }
         }
       }

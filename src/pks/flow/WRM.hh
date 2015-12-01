@@ -24,12 +24,12 @@ class WRM {
 
   virtual double k_relative(double pc) const = 0;
   virtual double saturation(double pc) const = 0;
-  virtual double dSdPc(double pc)  const = 0;  // derivative of saturation w.r.t. to capillary pressure
-  virtual double capillaryPressure(double s)  const = 0;
+  virtual double dSdPc(double pc) const = 0;  // derivative of saturation w.r.t. to capillary pressure
+  virtual double capillaryPressure(double s) const = 0;
   virtual double residualSaturation() const = 0;
-  virtual double dKdPc(double pc)  const { return 0.0; }
+  virtual double dKdPc(double pc) const { return 0.0; }
 
-  const std::string region()  const { return region_; };
+  const std::string region() const { return region_; };
 
  protected:
   void set_region(std::string region) { region_ = region; };

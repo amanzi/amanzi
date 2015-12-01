@@ -100,12 +100,11 @@ int MFD3D_Diffusion::MassMatrixInverseSurface(
   int nfaces = W.NumRows();
 
   DenseMatrix R(nfaces, d - 1);
-  DenseMatrix Wc(nfaces, nfaces);
 
-  int ok = L2consistencyInverseSurface(cell, permeability, R, Wc);
+  int ok = L2consistencyInverseSurface(cell, permeability, R, W);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  StabilityScalar(cell, R, Wc, W);
+  StabilityScalar(cell, R, W);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 

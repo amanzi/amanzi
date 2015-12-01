@@ -79,7 +79,8 @@ DenseMatrix::DenseMatrix(const DenseMatrix& B)
 
 
 /* ******************************************************************
-* Copy constructor creates an new matrix from a submatrix
+* Copy constructor creates a new matrix from the submatrix of B in 
+* rows m1 to m2-1 and columns n1 to n2-1.
 ****************************************************************** */
 DenseMatrix::DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2)
 {
@@ -315,6 +316,55 @@ double DenseMatrix::Det()
     a = data_[0];
   }
   return a;
+}
+
+
+/* ******************************************************************
+* Orthonormalize selected matrix columns.
+****************************************************************** */
+int DenseMatrix::OrthonormalizeColumns(int n1, int n2)
+{
+  double sum;
+
+  for (int i = n1; i < n2; ++i) {
+    double* tmp1 = data_ + i * m_;
+
+    for (int j = n1; j < i; ++j) {
+      double* tmp2 = data_ + j * m_;
+
+      sum = 0.0;
+      for (int k = 0; k < m_; ++k) sum += tmp1[k] * tmp2[k];
+      for (int k = 0; k < m_; ++k) tmp1[k] -= sum * tmp2[k];
+    }
+
+    sum = 0.0;
+    for (int k = 0; k < m_; ++k) sum += tmp1[k] * tmp1[k];
+    if (sum == 0.0) return -1;
+
+    sum = std::pow(1.0 / sum, 0.5);
+    for (int k = 0; k < m_; ++k) tmp1[k] *= sum;
+  }
+ 
+  return 0;
+}
+
+
+/* ******************************************************************
+* Permutation of matrix columns.
+****************************************************************** */
+void DenseMatrix::SwapColumns(int n1, int n2) 
+{
+  if (n1 != n2) {
+    double tmp;
+    double* row1 = data_ + n1 * m_;
+    double* row2 = data_ + n2 * m_;
+
+    for (int i = 0; i < m_; i++) {
+      tmp = row1[i];
+      row1[i] = row2[i];
+      row2[i] = tmp;
+    }
+  }
 }
 
 }  // namespace WhetStone

@@ -345,14 +345,23 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   }
 
   // calculate the first (num_ritz_ + l) rows of c.
+  int i0(0);
   double tmp;
-  d = 0.0;
-  for (int i = 0 ; i <= num_ritz_; ++i) {
-    r.Dot(*(v_[i]), &tmp);
-    d(i) = tmp;
+  d.PutScalar(0.0);
+  if (num_ritz_ == 0) {
+    v_[0] = Teuchos::rcp(new Vector(r));
+    v_[0]->Update(0.0, r, 1.0 / rnorm0);
+    d(0) = rnorm0;
+  } else {
+    for (int i = 0 ; i <= num_ritz_; ++i) {
+      r.Dot(*(v_[i]), &tmp);
+      d(i) = tmp;
+    }
+    i0 = num_ritz_;
   }
 
   // set the leading diagonal block of T
+  T.PutScalar(0.0);
   for (int i = 0; i <= num_ritz_; ++i) {
     for (int j = 0; j < num_ritz_; ++j) {
       T(i, j) = Hu_(i, j);
@@ -362,7 +371,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   // Apply Arnoldi method to extend the Krylov space calculate
   // at the end of the previous loop.
   double beta;
-  for (int i = num_ritz_ + 1; i < krylov_dim_; i++) {
+  for (int i = i0; i < krylov_dim_; i++) {
     if (left_pc_) {
       m_->Apply(*(v_[i]), p);
       h_->ApplyInverse(p, w);
@@ -377,12 +386,12 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
       T(k, i) = tmp;
     }
     w.Norm2(&beta);
+    if (beta == 0.0);  // zero occurs in exact arithmetic
     T(i + 1, i) = beta;
-  }
 
-  // Calculate residual
-  int ierr = CheckConvergence_(residual_, fnorm);
-  if (ierr != 0) return ierr;
+    v_[i + 1] = Teuchos::rcp(new Vector(w));
+    v_[i + 1]->Update(0.0, r, 1.0 / beta);
+  }
 
   // Solve the least-square problem min_d ||T d - c||.
   WhetStone::DenseMatrix Ttmp(T);
@@ -390,38 +399,94 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   int lwork(m * n);
   WhetStone::DenseVector work(lwork);
 
-  WhetStone::DGELS_F77("N", &m, &n, &nrhs, Ttmp.Values(), &m, d.Values(), &n,
+  WhetStone::DGELS_F77("N", &m, &n, &nrhs, Ttmp.Values(), &m, d.Values(), &m,
                        work.Values(), &lwork, &info);
 
-  residual_ = fabs(d(m));
+  residual_ = fabs(d(n));
+  num_itrs_total_ += krylov_dim_;
   ComputeSolution_(x, d.Values(), p, r); 
 
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-    *vo_->os() << num_itrs_total_ << " ||r||=" << residual_ << std::endl;
+    *vo_->os() << num_itrs_total_ << " ||r||=" << residual_ 
+               << "  ritz vectors=" << num_ritz_ << std::endl;
   }
+  int ierr = CheckConvergence_(residual_, fnorm);
+  if (ierr != 0) return ierr;
 
   // Compute Schur vectors
-  // -- auxiliary vector g = Hm^{-T} e_m
-  WhetStone::DenseMatrix Tm(T, 1, krylov_dim_, 1, krylov_dim_);
-  WhetStone::DenseMatrix Hm(Tm);
+  // -- allocate memory: Tm, Hm, and Vm
+  WhetStone::DenseMatrix Tm(T, 0, krylov_dim_, 0, krylov_dim_);
+  WhetStone::DenseMatrix Sm(Tm);
+  WhetStone::DenseMatrix Vr(krylov_dim_ + 1, krylov_dim_);
+
+  // -- auxiliary vector g = Tm^{-T} e_m
   Tm.Inverse();
-  for (int i = 0; i < krylov_dim_; ++i) g(i) = Tm(krylov_dim_ - 1, i);
+  for (int i = 0; i < krylov_dim_; ++i) g(i) = beta * Tm(krylov_dim_ - 1, i);
 
   // -- solve eigenvector problem
-  beta *= beta;
-  for (int i = 0; i < krylov_dim_; ++i) Hm(i, krylov_dim_ - 1) += beta * g(i);
+  for (int i = 0; i < krylov_dim_; ++i) Sm(i, krylov_dim_ - 1) += beta * g(i);
   
-  int sdim, bwork;
+  double Vl[1];
   WhetStone::DenseVector wr(krylov_dim_), wi(krylov_dim_);
-  WhetStone::DenseMatrix vs(krylov_dim_, krylov_dim_);
-  WhetStone::DGEES_F77("V", "N", NULL, &n, Hm.Values(), &n, &sdim,
-                       wr.Values(), wi.Values(), vs.Values(), &n,
-                       work.Values(), &lwork, &bwork, &info);
+  WhetStone::DGEEV_F77("N", "V", &n, Sm.Values(), &n, 
+                       wr.Values(), wi.Values(), Vl, &nrhs, Vr.Values(), &m,
+                       work.Values(), &lwork, &info);
 
-  num_ritz_ = 1;
-  Hu_ = Hm;
+  // -- select not more than (deflation_) Schur vectors and
+  //    make them the first columns in Vr
+  num_ritz_ = deflation_;
 
-  return 0;
+  for (int i = 0; i < num_ritz_; ++i) {
+    int imin = i;
+    double emin = wr(i);
+    for (int j = i + 1; j < krylov_dim_; ++j) {
+      if (wr(j) < emin) { 
+        emin = wr(j);
+        imin = j;
+      }
+    }
+    wr.SwapRows(imin, i);
+    wi.SwapRows(imin, i);
+
+    Vr.SwapColumns(imin, i);
+  }
+  if (wi(num_ritz_ - 1) > 0.0) num_ritz_--;
+
+  // -- add one vector and orthonormalize all columns.
+  for (int i = 0; i < krylov_dim_; ++i) {
+    Vr(krylov_dim_, i) = 0.0;
+    Vr(i, num_ritz_) = -g(i);
+  }
+  Vr(krylov_dim_, num_ritz_) = 1.0;
+
+  Vr.OrthonormalizeColumns(0, num_ritz_ + 1);
+
+  // Calculate new basis for the next loop.
+  std::vector<Teuchos::RCP<Vector> > vv(num_ritz_ + 1);
+  for (int i = 0; i <= num_ritz_; ++i) {
+    vv[i] = Teuchos::rcp(new Vector(x.Map()));
+    vv[i]->PutScalar(0.0);
+    for (int k = 0; k <= krylov_dim_; ++k) {
+      vv[i]->Update(Vr(k, i), *(v_[k]), 1.0);
+    }
+  }
+  
+  for (int i = 0; i <= num_ritz_; ++i) {
+    *(v_[i]) = *(vv[i]);
+  }
+
+  // Calculate modified Hessenberg matrix Hu = Vr_{nr+1}^T * T * Vr_nr
+  WhetStone::DenseMatrix TVr(krylov_dim_ + 1, num_ritz_);
+  WhetStone::DenseMatrix VTVr(num_ritz_ + 1, num_ritz_);
+
+  WhetStone::DenseMatrix Vr1(Vr, 0, krylov_dim_, 0, num_ritz_);
+  WhetStone::DenseMatrix Vr2(krylov_dim_ + 1, num_ritz_ + 1, Vr.Values(), WhetStone::WHETSTONE_DATA_ACCESS_VIEW);
+
+  TVr.Multiply(T, Vr1, false);
+  VTVr.Multiply(Vr2, TVr, true);
+  Hu_ = VTVr;
+  
+  return LIN_SOLVER_MAX_ITERATIONS;
 }
 
 
@@ -447,6 +512,7 @@ void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterLi
 
   left_pc_ = (plist.get<std::string>("preconditioning strategy", "left") == "left");
   deflation_ = plist.get<int>("maximum size of deflation space", 0);
+  num_ritz_ = 0;
 
   int criteria(0);
   if (plist.isParameter("convergence criteria")) {

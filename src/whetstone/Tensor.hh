@@ -74,6 +74,22 @@ class Tensor {
   double* data_;
 };
 
+
+inline bool operator==(const Tensor& T1, const Tensor& T2) {
+  if (T1.rank() != T1.rank()) return false;
+  if (T1.size() != T2.size()) return false;
+
+  double* data1 = T1.data();
+  double* data2 = T2.data();
+  for (int i = 0; i != T1.size(); ++i)
+    if (data1[i] != data2[i]) return false;
+  return true;
+}
+
+inline bool operator!=(const Tensor& T1, const Tensor& T2) {
+  return !(T1 == T2);
+}
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 

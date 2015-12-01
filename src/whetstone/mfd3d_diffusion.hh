@@ -46,7 +46,7 @@ class MFD3D_Diffusion : public MFD3D {
   // the inner product in the spave of face-based functions is weighted by
   // inverse of K. 
   int L2consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
-  int L2consistencyInverse(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc);
+  int L2consistencyInverse(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
 
   int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac);
 
@@ -75,6 +75,7 @@ class MFD3D_Diffusion : public MFD3D {
 
   // -- non-symmetric tensor K
   int MassMatrixNonSymmetric(int c, const Tensor& K, DenseMatrix& M);
+  int MassMatrixInverseNonSymmetric(int c, const Tensor& K, DenseMatrix& W);
 
   // surface methods
   int L2consistencyInverseSurface(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc);
@@ -96,8 +97,8 @@ class MFD3D_Diffusion : public MFD3D {
   double Transmissibility(int f, int c, const Tensor& K);
 
  private:  
-  // stability methods (add matrix Ms in M = Mc + Ms)
-  int StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& Mc, DenseMatrix& M);
+  // stability methods (add stability matrix, M += Mstab)
+  int StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M);
   void RescaleMassMatrixInverse_(int c, DenseMatrix& W);
   void StabilityScalarNonSymmetric_(int c, DenseMatrix& N, DenseMatrix& M);
 };
