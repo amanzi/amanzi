@@ -36,6 +36,7 @@ add_amanzi_library(atk
 			  IOEvent.cc
                    HEADERS HDF5Reader.hh
                            Utils.hh
+                           Units.hh
                            Timer.hh
                            TimerManager.hh
                            TimeStepManager.hh

@@ -18,7 +18,9 @@
 #include "PlaneRegion.hh"
 #include "PolygonRegion.hh"
 #include "ReconstructionCell.hh"
+#include "Units.hh"
 
+// MPC
 #include "Unstructured_observations.hh"
 
 namespace Amanzi {
@@ -109,6 +111,9 @@ int Unstructured_observations::MakeObservations(State& S)
 {
   Errors::Message msg;
   int num_obs(0);
+
+  // units conversion
+  Utils::Units units;
 
   // loop over all observables
   for (std::map<std::string, Observable>::iterator i = observations.begin(); i != observations.end(); i++) {
@@ -235,6 +240,8 @@ int Unstructured_observations::MakeObservations(State& S)
             value += tcc[tcc_index][c] * factor;
             volume += factor;
           }
+          value *= units.concentration_factor();
+
         } else if (var == comp_names_[tcc_index] + " gaseous concentration") { 
           for (int i = 0; i < mesh_block_size; i++) {
             int c = entity_ids[i];
@@ -242,6 +249,8 @@ int Unstructured_observations::MakeObservations(State& S)
             value += tcc[tcc_index][c] * factor;
             volume += factor;
           }
+          value *= units.concentration_factor();
+
         } else if (var == comp_names_[tcc_index] + " volumetric flow rate") {
           const Epetra_MultiVector& darcy_flux = *S.GetFieldData("darcy_flux")->ViewComponent("face");
           Amanzi::AmanziMesh::Entity_ID_List cells;
@@ -258,6 +267,8 @@ int Unstructured_observations::MakeObservations(State& S)
               value += std::max(0.0, sign * darcy_flux[0][f]) * tcc[tcc_index][c];
               volume += area;
             }
+            value *= units.concentration_factor();
+
           } else if (obs_planar) {  // observation is on an interior planar set
             for (int i = 0; i != mesh_block_size; ++i) {
               int f = entity_ids[i];
@@ -273,6 +284,8 @@ int Unstructured_observations::MakeObservations(State& S)
               value += sign * darcy_flux[0][f] * tcc[tcc_index][c];
               volume += area;
             }
+            value *= units.concentration_factor();
+
           } else {
             msg << "Observations of \"SOLUTE volumetric flow rate\""
                 << " is only possible for Polygon, Plane and Boundary side sets";
