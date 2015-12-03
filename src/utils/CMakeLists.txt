@@ -30,6 +30,7 @@ add_amanzi_library(atk
                    SOURCE Timer.cc 
                           TimerManager.cc
                           TimeStepManager.cc
+                          Units.cc
                           XMLParameterListWriter.cc 
                           LeastSquare.cc 
                           VerboseObject.cc

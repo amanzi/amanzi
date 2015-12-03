@@ -10,8 +10,7 @@
 #include "Timer.hh"
 #include <sstream>
 
-namespace Amanzi
-{
+namespace Amanzi {
 
 unsigned Timer::_numTimerInstances = 0;
 
