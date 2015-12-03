@@ -1,5 +1,11 @@
 <ParameterList>
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+  <ParameterList name="Units">
+    <Parameter name="length" type="string" value="m"/>
+    <Parameter name="time" type="string" value="s"/>
+    <Parameter name="mass" type="string" value="kg"/>
+    <Parameter name="concentration" type="string" value="molar"/>
+  </ParameterList>
   <ParameterList name="Mesh">
     <ParameterList name="Unstructured">
       <ParameterList name="Expert">

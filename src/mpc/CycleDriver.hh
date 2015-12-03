@@ -82,7 +82,7 @@ class CycleDriver {
   Teuchos::Ptr<TimeStepManager> tsm_;
 
   // misc setup information
-  Teuchos::RCP<Teuchos::ParameterList> parameter_list_;
+  Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> coordinator_list_;
 
   std::vector<double> t_, tp_start_, tp_end_, tp_dt_, tp_max_cycle_;  
