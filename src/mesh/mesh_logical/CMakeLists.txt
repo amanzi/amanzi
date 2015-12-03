@@ -23,7 +23,6 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_FACTORY_SOURCE_DIR})
 
 # External (TPL) directories
 include_directories(${Epetra_INCLUDE_DIRS})
@@ -34,7 +33,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 #
 set(mesh_logical_src MeshLogical.cc
 		     MeshLogicalFactory.cc
-		     )
+		     MeshEmbeddedLogical.cc)
 
 add_amanzi_library(mesh_logical SOURCE ${mesh_logical_src}
 				LINK_LIBS mesh geometry ${Epetra_LIBRARIES})
@@ -47,31 +46,35 @@ add_install_include_file(${mesh_logical_inc_files})
 
 
 if (BUILD_TESTS)
+   add_definitions("-DMSTK_HAVE_MPI")
+   if (WITH_MSTK_2_20rc1_OR_NEWER)
+     add_definitions("-DMSTK_2_20rc1_OR_NEWER")
+   endif ()
 
-    # Include dirs for test
-    include_directories(${MESH_LOGICAL_SOURCE_DIR})
-    include_directories(${GEOMETRY_SOURCE_DIR})
-    include_directories(${Epetra_INCLUDE_DIRS})
+   if (WITH_MSTK_2_21rc1_OR_NEWER)
+     add_definitions("-DMSTK_2_21rc1_OR_NEWER")
+   endif ()
 
-    # Add UnitTest ExodusII include directories
-    include_directories(${UnitTest_INCLUDE_DIRS})
+   # Include dirs for test
+   include_directories(${MESH_LOGICAL_SOURCE_DIR})
+   include_directories(${MESH_LOGICAL_SOURCE_DIR}/test)
+   include_directories(${MSTK_SOURCE_DIR})
+   include_directories(${GEOMETRY_SOURCE_DIR})
+   include_directories(${MSTK_INCLUDE_DIRS})
 
-    # Need to copy files for the tests 
-    if (NOT (${MESH_LOGICAL_SOURCE_DIR} EQUAL ${MESH_LOGICAL_BINARY_DIR}))
-      execute_process(COMMAND ${CMAKE_COMMAND} -E 
-        copy_directory ${MESH_LOGICAL_SOURCE_DIR}/test ${MESH_LOGICAL_BINARY_DIR}/test) 
-    endif()
+   # Add UnitTest ExodusII include directories
+   include_directories(${UnitTest_INCLUDE_DIRS})
 
-    # Test link libraries
-    set(test_link_libs mesh_logical mesh geometry ${UnitTest_LIBRARIES})
+   # Test link libraries
+   set(test_link_libs mesh_logical mesh mstk_mesh geometry ${UnitTest_LIBRARIES})
 
-    # Test: init
-    set(test_src_files test/Main.cc test/test_mesh_logical.cc)
+   # Test: init
+   set(test_src_files test/Main.cc test/demo_mesh.cc test/test_mesh_logical.cc)
 
-    add_amanzi_test(mesh_logical test_mesh_logical
-                    KIND unit
-		    SOURCE ${test_src_files}
-		    LINK_LIBS ${test_link_libs})
+   add_amanzi_test(mesh_logical test_mesh_logical
+                KIND unit
+		SOURCE ${test_src_files}
+		LINK_LIBS ${test_link_libs})
 
 endif()
   

@@ -23,6 +23,9 @@ namespace Amanzi
 namespace AmanziMesh
 {
 
+  // friended class that uses cache
+  class MeshEmbeddedLogical;
+  
   // Base mesh class for Amanzi 
   //
   // Use the associated mesh factory to create an instance of a
@@ -805,6 +808,7 @@ class Mesh
 
   const Epetra_MpiComm *comm; // temporary until we get an amanzi communicator
 
+  friend class MeshEmbeddedLogical;
 }; // End class Mesh
 
 

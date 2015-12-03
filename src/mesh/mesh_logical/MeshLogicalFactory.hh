@@ -72,11 +72,16 @@ class MeshLogicalFactory {
 		const std::vector<double>& lengths,
 		double area);		
 
+  int
+  AddSet(const std::string& set_name,
+         const Entity_ID_List* cells,
+         const Entity_ID_List* faces);
+  
   Teuchos::RCP<MeshLogical>
   Create();
 
-  Teuchos::RCP<MeshLogical>
-  Create(Teuchos::ParameterList& plist) {}
+  // Teuchos::RCP<MeshLogical>
+  // Create(Teuchos::ParameterList& plist) {}
 
   
  protected:
