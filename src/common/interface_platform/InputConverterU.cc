@@ -242,8 +242,6 @@ Teuchos::ParameterList InputConverterU::TranslateVerbosity_()
 Teuchos::ParameterList InputConverterU::TranslateUnits_()
 {
   Teuchos::ParameterList out_list;
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-    *vo_->os() << "Translating units" << std::endl;
 
   MemoryManager mm;  
   DOMNode* node;
@@ -267,6 +265,10 @@ Teuchos::ParameterList InputConverterU::TranslateUnits_()
   out_list.set<std::string>("time", time);
   out_list.set<std::string>("mass", mass);
   out_list.set<std::string>("concentration", concentration);
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+    *vo_->os() << "Translating units: " << length << " " << time << " " 
+               << mass << " " << concentration << std::endl;
 
   return out_list;
 }
