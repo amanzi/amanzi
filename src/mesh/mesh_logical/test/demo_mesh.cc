@@ -3,6 +3,8 @@
 //
 // ------------------------------------------------------------------
 
+#include <cmath>
+
 #include "Epetra_MpiComm.h"
 
 #include "Mesh_MSTK.hh"
@@ -329,9 +331,9 @@ Amanzi::AmanziMesh::Entity_ID
 RegularMeshCellFromCoordFunctor::operator()(const Amanzi::AmanziGeometry::Point& p) {
   Amanzi::AmanziGeometry::Point dp = p - X0_;
 
-  int i = std::round(dp[0]/dX_[0] - .5);
-  int j = std::round(dp[1]/dX_[1] - .5);
-  int k = std::round(dp[2]/dX_[2] - .5);
+  int i = round(dp[0]/dX_[0] - .5);
+  int j = round(dp[1]/dX_[1] - .5);
+  int k = round(dp[2]/dX_[2] - .5);
   return k + j*nz_ + i*nz_*ny_;
 };
 
