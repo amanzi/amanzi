@@ -51,6 +51,7 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   out_list.set<bool>("Native Unstructured Input", "true");
 
   out_list.sublist("Miscalleneous") = TranslateMisc_();  
+  out_list.sublist("Units") = TranslateUnits_();  
   out_list.sublist("Mesh") = TranslateMesh_();
   out_list.sublist("Domain").set<int>("Spatial Dimension", dim_);
   out_list.sublist("Regions") = TranslateRegions_();
@@ -232,6 +233,42 @@ Teuchos::ParameterList InputConverterU::TranslateVerbosity_()
     }
   }
   return vlist;
+}
+
+
+/* ******************************************************************
+* Units
+****************************************************************** */
+Teuchos::ParameterList InputConverterU::TranslateUnits_()
+{
+  Teuchos::ParameterList out_list;
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+    *vo_->os() << "Translating units" << std::endl;
+
+  MemoryManager mm;  
+  DOMNode* node;
+
+  bool flag;
+  std::string length("m"), time("s"), mass("kg"), concentration("molar");
+
+  node = GetUniqueElementByTagsString_("model_description, units, length_unit", flag);
+  if (flag) length = TrimString_(mm.transcode(node->getTextContent()));
+
+  node = GetUniqueElementByTagsString_("model_description, units, time_unit", flag);
+  if (flag) time = TrimString_(mm.transcode(node->getTextContent()));
+
+  node = GetUniqueElementByTagsString_("model_description, units, mass_unit", flag);
+  if (flag) mass = TrimString_(mm.transcode(node->getTextContent()));
+
+  node = GetUniqueElementByTagsString_("model_description, units, conc_unit", flag);
+  if (flag) concentration = TrimString_(mm.transcode(node->getTextContent()));
+
+  out_list.set<std::string>("length", length);
+  out_list.set<std::string>("time", time);
+  out_list.set<std::string>("mass", mass);
+  out_list.set<std::string>("concentration", concentration);
+
+  return out_list;
 }
 
 

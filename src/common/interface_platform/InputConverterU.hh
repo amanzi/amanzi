@@ -63,6 +63,7 @@ class InputConverterU : public InputConverter {
 
   Teuchos::ParameterList TranslateVerbosity_();
   Teuchos::ParameterList TranslateMisc_();
+  Teuchos::ParameterList TranslateUnits_();
 
   Teuchos::ParameterList TranslateMesh_();
   Teuchos::ParameterList TranslateRegions_();

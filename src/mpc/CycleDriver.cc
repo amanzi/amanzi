@@ -72,14 +72,14 @@ CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
                          Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                          Epetra_MpiComm* comm,
                          Amanzi::ObservationData& observations_data) :
-    parameter_list_(glist),
+    glist_(glist),
     mesh_(mesh),
     comm_(comm),
     observations_data_(observations_data),
     restart_requested_(false) {
 
-  if (parameter_list_->isSublist("State")) {
-    Teuchos::ParameterList state_plist = parameter_list_->sublist("State");
+  if (glist_->isSublist("State")) {
+    Teuchos::ParameterList state_plist = glist_->sublist("State");
     S_ = Teuchos::rcp(new Amanzi::State(state_plist));
     S_->RegisterMesh("domain", mesh_); 
   }else{
@@ -90,7 +90,7 @@ CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
   // create and start the global timer
   CoordinatorInit_();
 
-  vo_ = Teuchos::rcp(new VerboseObject("CycleDriver", parameter_list_->sublist("Cycle Driver")));
+  vo_ = Teuchos::rcp(new VerboseObject("CycleDriver", glist_->sublist("Cycle Driver")));
 };
 
 
@@ -98,7 +98,7 @@ CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
 * High-level initialization.
 ****************************************************************** */
 void CycleDriver::CoordinatorInit_() {
-  coordinator_list_ = Teuchos::sublist(parameter_list_, "Cycle Driver");
+  coordinator_list_ = Teuchos::sublist(glist_, "Cycle Driver");
   ReadParameterList_();
 
   // create the global solution vector
@@ -130,7 +130,7 @@ void CycleDriver::Init_PK(int time_pr_id) {
     Exceptions::amanzi_throw(message);
   }
 
-  pk_ = pk_factory.CreatePK(pk_tree_list.sublist(pk_name), parameter_list_, S_, soln_);
+  pk_ = pk_factory.CreatePK(pk_tree_list.sublist(pk_name), glist_, S_, soln_);
 }
 
 
@@ -141,9 +141,11 @@ void CycleDriver::Setup() {
   // Set up the states, creating all data structures.
 
   // create the observations
-  if (parameter_list_->isSublist("Observation Data")) {
-    Teuchos::ParameterList observation_plist = parameter_list_->sublist("Observation Data");
-    observations_ = Teuchos::rcp(new Amanzi::Unstructured_observations(observation_plist, observations_data_, comm_));
+  if (glist_->isSublist("Observation Data")) {
+    Teuchos::RCP<Teuchos::ParameterList> obs_list = Teuchos::sublist(glist_, "Observation Data");
+    Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist_, "Units");
+    observations_ = Teuchos::rcp(new Amanzi::Unstructured_observations(obs_list, units_list, observations_data_, comm_));
+
     if (coordinator_list_->isParameter("component names")) {
       Teuchos::Array<std::string> comp_names = coordinator_list_->get<Teuchos::Array<std::string> >("component names");
       int num_liquid = coordinator_list_->get<int>("number of liquid components", comp_names.size());
@@ -152,8 +154,8 @@ void CycleDriver::Setup() {
   }
 
   // create the checkpointing
-  if (parameter_list_->isSublist("Checkpoint Data")) {
-    Teuchos::ParameterList& chkp_plist = parameter_list_->sublist("Checkpoint Data");
+  if (glist_->isSublist("Checkpoint Data")) {
+    Teuchos::ParameterList& chkp_plist = glist_->sublist("Checkpoint Data");
     checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
   }
   else{
@@ -161,8 +163,8 @@ void CycleDriver::Setup() {
   }
 
   // create the walkabout
-  if (parameter_list_->isSublist("Walkabout Data")){
-    Teuchos::ParameterList& walk_plist = parameter_list_->sublist("Walkabout Data");
+  if (glist_->isSublist("Walkabout Data")){
+    Teuchos::ParameterList& walk_plist = glist_->sublist("Walkabout Data");
     walkabout_ = Teuchos::rcp(new Amanzi::Walkabout_observations(walk_plist, comm_));
   }
   else {
@@ -180,12 +182,12 @@ void CycleDriver::Setup() {
       // vis successful steps
       std::string plist_name = "Visualization Data "+mesh->first;
       // in the case of just a domain mesh, we want to allow no name.
-      if ((mesh->first == "domain") && !parameter_list_->isSublist(plist_name)) {
+      if ((mesh->first == "domain") && !glist_->isSublist(plist_name)) {
         plist_name = "Visualization Data";
       }
 
-      if (parameter_list_->isSublist(plist_name)) {
-        Teuchos::ParameterList& vis_plist = parameter_list_->sublist(plist_name);
+      if (glist_->isSublist(plist_name)) {
+        Teuchos::ParameterList& vis_plist = glist_->sublist(plist_name);
         Teuchos::RCP<Visualization> vis = Teuchos::rcp(new Visualization(vis_plist, comm_));
         vis->set_mesh(mesh->second.first);
         vis->CreateFiles();
@@ -195,12 +197,12 @@ void CycleDriver::Setup() {
       // vis unsuccessful steps
       std::string fail_plist_name = "Visualization Data "+mesh->first+" Failed Steps";
       // in the case of just a domain mesh, we want to allow no name.
-      if ((mesh->first == "domain") && !parameter_list_->isSublist(fail_plist_name)) {
+      if ((mesh->first == "domain") && !glist_->isSublist(fail_plist_name)) {
         fail_plist_name = "Visualization Data Failed Steps";
       }
 
-      if (parameter_list_->isSublist(fail_plist_name)) {
-        Teuchos::ParameterList& fail_vis_plist = parameter_list_->sublist(fail_plist_name);
+      if (glist_->isSublist(fail_plist_name)) {
+        Teuchos::ParameterList& fail_vis_plist = glist_->sublist(fail_plist_name);
         Teuchos::RCP<Visualization> fail_vis =
           Teuchos::rcp(new Visualization(fail_vis_plist, comm_));
         fail_vis->set_mesh(mesh->second.first);
@@ -216,7 +218,7 @@ void CycleDriver::Setup() {
   S_->Setup();
 
   // create the time step manager
-  tsm_ = Teuchos::ptr(new TimeStepManager(parameter_list_->sublist("Cycle Driver")));
+  tsm_ = Teuchos::ptr(new TimeStepManager(glist_->sublist("Cycle Driver")));
   //tsm_ = Teuchos::ptr(new TimeStepManager(vo_));
 
   // set up the TSM
@@ -965,7 +967,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   S_old_ = S_;
 
-  Teuchos::ParameterList state_plist = parameter_list_->sublist("State");
+  Teuchos::ParameterList state_plist = glist_->sublist("State");
   S_ = Teuchos::rcp(new Amanzi::State(state_plist));
 
   S_->RegisterMesh("domain", mesh);

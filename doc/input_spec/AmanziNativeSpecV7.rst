@@ -174,7 +174,21 @@ Note: *cycle* here means the current time integration step and *not* the global 
 Units
 -----
 
-Amanzi's internal default units are SI units.
+Amanzi's internal default units are SI units except for the concentration.
+
+* `"concentration`" [string] defines units for concentration. Availbale options
+  are `"molar`" (default) and `"mol/m^3`".
+
+.. code-block:: xml
+
+   <ParameterList>  <!-- parent list -->
+     <ParameterList name="Units">
+       <Parameter name="length" type="string" value="m"/>
+       <Parameter name="time" type="string" value="s"/>
+       <Parameter name="mass" type="string" value="kg"/>
+       <Parameter name="concentration" type="string" value="molar"/>
+     </ParameterList>
+   </ParameterList>
 
 
 Cycle driver
