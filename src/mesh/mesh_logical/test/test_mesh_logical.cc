@@ -13,126 +13,12 @@
 #include "MeshLogicalFactory.hh"
 #include "Geometry.hh"
 
-Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical> Demo3x3x1_Regular() {
-  using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziGeometry;
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  const int nproc(comm.NumProc());
-  const int me(comm.MyPID());
-
-  GeometricModelPtr gm = new GeometricModel(3);
-  
-  // Create the mesh:
-  std::vector<double> cell_volumes;
-  cell_volumes.push_back(.25);
-  cell_volumes.push_back(.25);
-  cell_volumes.push_back(.25);
-  cell_volumes.push_back(.25);
-
-  std::vector<std::vector<int> > face_cell_list(5);
-  face_cell_list[0].push_back(0);
-  face_cell_list[1].push_back(0);
-  face_cell_list[1].push_back(1);
-  face_cell_list[2].push_back(1);
-  face_cell_list[2].push_back(2);
-  face_cell_list[3].push_back(2);
-  face_cell_list[3].push_back(3);
-  face_cell_list[4].push_back(3);
-  
-
-  std::vector<std::vector<double> > face_cell_lengths;
-  face_cell_lengths.resize(5);
-  face_cell_lengths[0].push_back(0.125);
-  face_cell_lengths[1].resize(2,0.125);
-  face_cell_lengths[2].resize(2,0.125);
-  face_cell_lengths[3].resize(2,0.125);
-  face_cell_lengths[4].push_back(0.125);
-
-  std::vector<Amanzi::AmanziGeometry::Point> face_area_normals;
-  Amanzi::AmanziGeometry::Point normal(3);
-  normal[0] = 1.0;
-  normal[1] = 0.0;                    
-  normal[2] = 0.0;
-  face_area_normals.resize(5,normal);
-
-  Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical> mesh =
-    Teuchos::rcp(new MeshLogical(&comm,cell_volumes,
-				 face_cell_list,
-				 face_cell_lengths,
-				 face_area_normals));
-  mesh->set_geometric_model(gm);
-  return mesh;    
-}
-
-Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical> Demo3x3x1_Regular_Factory() {
-  using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziGeometry;
-
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-
-  GeometricModelPtr gm = new GeometricModel(3);
-  MeshLogicalFactory fac(&comm, gm);
-
-  Entity_ID_List cells, faces;
-  fac.AddSegment(4, 1.0, false, 1.0, true,true, "myregion", &cells, &faces);
-  Teuchos::RCP<MeshLogical> mesh = fac.Create();
-  return mesh;
-}
-
-Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical> Demo3x3x1_Irregular() {
-  using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziGeometry;
-
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  const int nproc(comm.NumProc());
-  const int me(comm.MyPID());
-
-  GeometricModelPtr gm = new GeometricModel(3);
-  
-  // Create the mesh:
-  std::vector<double> cell_volumes;
-  cell_volumes.push_back(2);
-  cell_volumes.push_back(3);
-  cell_volumes.push_back(4);
-
-  std::vector<std::vector<int> > face_cell_list;
-  face_cell_list.resize(4);
-  face_cell_list[0].push_back(0);
-  face_cell_list[1].push_back(0);
-  face_cell_list[1].push_back(1);
-  face_cell_list[2].push_back(1);
-  face_cell_list[2].push_back(2);
-  face_cell_list[3].push_back(2);
-  
-  std::vector<std::vector<double> > face_cell_lengths;
-  face_cell_lengths.resize(4);
-  face_cell_lengths[0].push_back(0.5);
-  face_cell_lengths[1].push_back(0.5);
-  face_cell_lengths[1].push_back(.75);
-  face_cell_lengths[2].push_back(.75);
-  face_cell_lengths[2].push_back(1.);
-  face_cell_lengths[3].push_back(1.);
-  
-  std::vector<Amanzi::AmanziGeometry::Point> face_area_normals;
-  Amanzi::AmanziGeometry::Point normal(3);
-  normal[0] = 2.0;
-  normal[1] = 0.0;                    
-  normal[2] = 0.0;
-  face_area_normals.resize(4,normal);
-
-  Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical> mesh =
-    Teuchos::rcp(new MeshLogical(&comm,cell_volumes,
-				 face_cell_list,
-				 face_cell_lengths,
-				 face_area_normals));
-  mesh->set_geometric_model(gm);
-  return mesh;    
-}
+#include "demo_mesh.hh"
 
 
 void
-run_test_regular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
-                 bool test_region) {
+test_segment_regular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
+                     bool test_region) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
@@ -194,34 +80,16 @@ run_test_regular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
     CHECK_EQUAL(0, set_ents[0]);
     CHECK_EQUAL(2, set_ents[2]);
   }
-
 }  
 
-TEST(MESH_LOGICAL_CONSTRUCTION)
-{
-  using namespace Amanzi::AmanziMesh;
-  Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical> mesh =
-    Demo3x3x1_Irregular();
-}
 
-TEST(MESH_LOGICAL_STRUCTURED)
-{
-  run_test_regular(Demo3x3x1_Regular(), false);
-}
-
-TEST(MESH_LOGICAL_STRUCTURED_FACTORY)
-{
-  run_test_regular(Demo3x3x1_Regular_Factory(), true);
-}
-
-TEST(MESH_LOGICAL_WITH_SETS)
-{
+void
+test_segment_irregular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
+                     bool test_region) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
-  Teuchos::RCP<MeshLogical> mesh =
-    Demo3x3x1_Irregular();
 
-  GeometricModelPtr gm = mesh->geometric_model();
+  GeometricModelPtr gm = m->geometric_model();
 
   Entity_ID_List ents;
   ents.push_back(0);
@@ -230,16 +98,90 @@ TEST(MESH_LOGICAL_WITH_SETS)
   Teuchos::RCP<Region> enum_rgn =
     Teuchos::rcp(new EnumeratedSetRegion("myregion",
 					   0, "CELL", ents));
-
   gm->Add_Region(&*enum_rgn);
-  mesh->set_geometric_model(&*gm);
 
-  CHECK_EQUAL(2, mesh->get_set_size("myregion", CELL, USED));
-  CHECK_EQUAL(0, mesh->get_set_size("myregion", FACE, USED));
 
-  Entity_ID_List set_ents;
-  mesh->get_set_entities("myregion", CELL, USED, &set_ents);
-  CHECK_EQUAL(0, set_ents[0]);
-  CHECK_EQUAL(3, set_ents[1]);
+  CHECK_EQUAL(2, m->get_set_size("myregion", CELL, USED));
+  CHECK_EQUAL(0, m->get_set_size("myregion", FACE, USED));
+
+  if (test_region) {
+    Entity_ID_List set_ents;
+    m->get_set_entities("myregion", CELL, USED, &set_ents);
+    CHECK_EQUAL(0, set_ents[0]);
+    CHECK_EQUAL(3, set_ents[1]);
+  }
 }
 
+
+void
+test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
+                     bool test_region) {
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
+
+  // surface
+  Point zero(0.,0.,0.);
+  CHECK_CLOSE(0., norm(zero-m->face_centroid(0)), 1.e-6);
+
+  // branch point
+  Point branch(0.,0.,-1.25);
+  CHECK_CLOSE(0., norm(branch - m->cell_centroid(2)), 1.e-6);
+
+  Entity_ID_List branch_faces;
+  std::vector<int> dirs;
+  m->cell_get_faces_and_dirs(2, &branch_faces, &dirs);
+  CHECK_EQUAL(5, branch_faces.size());
+
+  // fine root 1 tip
+  Point fine1_normal(1.,0.,-1.);
+  fine1_normal /= norm(fine1_normal);
+  Point tip = branch + 1.25*std::sqrt(2) * fine1_normal;
+  CHECK_CLOSE(0., norm(tip-m->face_centroid(5)), 1.e-6);
+
+  if (test_region) {
+    CHECK_EQUAL(3, m->get_set_size("coarse_root", CELL, USED));
+    CHECK_EQUAL(8, m->get_set_size("fine_root", CELL, USED));
+  }
+}
+
+
+
+// Tests the construction process, ensures it does not crash.
+TEST(MESH_LOGICAL_CONSTRUCTION)
+{
+  using namespace Amanzi::AmanziMesh;
+  Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical> mesh =
+    Amanzi::Testing::demoMeshLogicalSegmentRegularManual();
+}
+
+// Evaulates the manually constructed mesh.
+TEST(MESH_LOGICAL_SEGMENT_REGULAR_MANUAL)
+{
+  test_segment_regular(Amanzi::Testing::demoMeshLogicalSegmentRegularManual(), false);
+}
+
+// Evaluates the mesh constructed through the factory.
+TEST(MESH_LOGICAL_SEGMENT_REGULAR_FACTORY)
+{
+  test_segment_regular(Amanzi::Testing::demoMeshLogicalSegmentRegular(), true);
+}
+
+// Evaluates an irregularly space mesh
+TEST(MESH_LOGICAL_SEGMENT_IRREGULAR_WITH_SETS)
+{
+  test_segment_irregular(Amanzi::Testing::demoMeshLogicalSegmentIrregularManual(), true);
+}
+
+
+// Evaluates a Y-mesh
+TEST(MESH_LOGICAL_Y_WITH_SETS)
+{
+  test_Y(Amanzi::Testing::demoMeshLogicalYManual(), true);
+}
+
+
+// Evaluates a Y-mesh
+TEST(MESH_EMBEDDED_Y)
+{
+  Amanzi::Testing::demoMeshLogicalYEmbedded();
+}

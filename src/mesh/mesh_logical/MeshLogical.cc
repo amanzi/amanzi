@@ -423,17 +423,9 @@ unsigned int
 MeshLogical::get_set_size (const Set_ID setid,
 			   const Entity_kind kind,
 			   const Parallel_type ptype) const {
-  AmanziGeometry::RegionPtr rgn = geometric_model_->FindRegion(setid);
-  if (rgn->type() == AmanziGeometry::ENUMERATEDSET) {
-    AmanziGeometry::EnumeratedSetRegionPtr esrgn =
-      dynamic_cast<AmanziGeometry::EnumeratedSetRegionPtr>(rgn);
-
-    if ((esrgn->entity_str() == "CELL" && kind == CELL) ||
-	(esrgn->entity_str() == "FACE" && kind == FACE)) {
-      return esrgn->entities().size();
-    }
-  }
-  return 0;
+  Entity_ID_List ents;
+  get_set_entities(setid, kind, ptype, &ents);
+  return ents.size();
 }
 
 unsigned int
@@ -458,6 +450,16 @@ MeshLogical::get_set_entities (const Set_ID setid,
 			       const Parallel_type ptype,
 			       Entity_ID_List *entids) const {
   AmanziGeometry::RegionPtr rgn = geometric_model_->FindRegion(setid);
+
+  if (rgn->name() == "All" || rgn->name() == "all" || rgn->name() == "ALL") {
+    int nent = num_entities(kind, ptype);
+    entids->resize(num_entities(kind, ptype));
+    for (int i=0; i!=nent; ++i) {
+      (*entids)[i] = i;
+    }
+    return;
+  }
+
   if (rgn->type() == AmanziGeometry::ENUMERATEDSET) {
     AmanziGeometry::EnumeratedSetRegionPtr esrgn =
       dynamic_cast<AmanziGeometry::EnumeratedSetRegionPtr>(rgn);
