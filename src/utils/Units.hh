@@ -10,23 +10,40 @@
 #ifndef AMANZI_UNITS_HH_
 #define AMANZI_UNITS_HH_
 
+#include <iostream>
+#include <cstdio>
+#include <iomanip>
+
+#include <boost/units/scaled_base_unit.hpp>
+#include <boost/units/derived_dimension.hpp>
+#include <boost/units/io.hpp>
 #include <boost/units/make_scaled_unit.hpp>
 #include <boost/units/make_system.hpp>
 #include <boost/units/systems/si.hpp>
+#include <boost/units/quantity.hpp>
 #include <boost/units/unit.hpp>
-#include <boost/units/derived_dimension.hpp>
 
 #include "Teuchos_ParameterList.hpp"
 
+namespace Amanzi {
 namespace Utils {
 
-// units for Amanzi concentration function
-typedef boost::units::derived_dimension<
-    boost::units::amount_base_dimension, 1,
-    boost::units::length_base_dimension, -3>::type concentration_si;
+extern bool concentration_mol_liter;
 
+// units for liter
 typedef boost::units::make_scaled_unit<
     boost::units::si::volume, boost::units::scale<10, boost::units::static_rational<-3> > >::type liter;
+
+// units for concentration
+typedef boost::units::derived_dimension<
+    boost::units::amount_base_dimension, 1,
+    boost::units::length_base_dimension, -3>::type concentration_dimension;
+
+typedef boost::units::unit<
+    concentration_dimension, boost::units::si::system> concentration;
+
+typedef boost::units::make_scaled_unit<
+    concentration, boost::units::scale<10, boost::units::static_rational<3> > >::type concentration_amanzi;
 
 class Units {
  public:
@@ -39,18 +56,20 @@ class Units {
   inline double concentration_factor() { return tcc_factor_; } 
 
   // output
-  /*
-  friend std::ostream& operator << (std::ostream& os, double val) {
-    os << (val * tcc_si_);
-    return os;
+  inline std::string print_tcc(double val) {
+    boost::units::quantity<concentration_amanzi> qval = val * concentration_amanzi();
+    std::stringstream ss;
+    ss << qval;
+    return ss.str();
   }
-  */
 
   void Init(const std::string& conc_units) {
     pressure_factor_ = conversion_factor(boost::units::si::pressure(), pressure_si_);
     if (conc_units == "molar") {
-      tcc_factor_ = conversion_factor(boost::units::si::amount() / liter(), tcc_si_);
+      concentration_mol_liter = true;
+      tcc_factor_ = conversion_factor(boost::units::si::amount() / liter(), concentration());
     } else {
+      concentration_mol_liter = false;
       tcc_factor_ = 1.0;
     }
   }
@@ -61,11 +80,22 @@ class Units {
 
  private:
   boost::units::si::pressure pressure_si_;
-  boost::units::unit<concentration_si, boost::units::si::system> tcc_si_;
+  concentration tcc_si_;
 
   double pressure_factor_, tcc_factor_;
 };
 
 }  // namespace Utils
+}  // namespace Amanzi
+
+
+namespace boost {
+namespace units {
+
+std::string symbol_string(const Amanzi::Utils::concentration_amanzi&);
+std::string name_string(const Amanzi::Utils::concentration_amanzi&);
+
+}  // namespace units
+}  // namespace boost
 
 #endif
