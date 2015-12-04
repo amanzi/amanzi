@@ -28,6 +28,7 @@
 #include "ReconstructionCell.hh"
 #include "State.hh"
 #include "Tensor.hh"
+#include "Units.hh"
 #include "VerboseObject.hh"
 
 #ifdef ALQUIMIA_ENABLED
@@ -259,6 +260,8 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   std::vector<std::string> component_names_;  // details of components
   int num_aqueous, num_gaseous;
 
+  // io
+  Utils::Units units_;
   VerboseObject* vo_;
 
   // Forbidden.

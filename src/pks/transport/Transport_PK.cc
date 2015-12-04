@@ -79,6 +79,10 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
 
   subcycling_ = tp_list_->get<bool>("transport subcycling", true);
    
+  // initialize io
+  Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "Units");
+  units_.Init(*units_list);
+
   vo_ = NULL;
 }
 
