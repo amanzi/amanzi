@@ -66,7 +66,10 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
   AmanziGeometry::Point begin(0.,0.5,0.5), end(1.,0.5,0.5);
   AmanziMesh::Entity_ID_List cells,faces;
-  fac.AddSegment(100,begin,end,1.0,true,true,"myregion",&cells, &faces);
+  double length;
+  fac.AddSegment(100,begin,end,1.0,
+		 MeshLogicalFactory::TIP_BOUNDARY,MeshLogicalFactory::TIP_BOUNDARY,
+		 "myregion",&cells, &faces, &length);
   RCP<const Mesh> mesh = fac.Create();
 
   // Create nonlinear coefficient.
