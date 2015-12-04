@@ -103,8 +103,10 @@ MeshLogicalFactory::AddSegment(int n_cells,
 
   // extend face_cell_list
   // - first face
+  Entity_ID first_face = -1;
   if (first_tip == MeshLogicalFactory::TIP_BOUNDARY) {
     if (faces) faces->push_back(face_cell_list_.size());
+    first_face = faces->front();
     Entity_ID_List my_cells(1,cell_first);
     face_cell_list_.push_back(my_cells);
     face_cell_lengths_.push_back(ds_halflengths_boundary);
@@ -122,8 +124,10 @@ MeshLogicalFactory::AddSegment(int n_cells,
   }
 
   // - last face
+  Entity_ID last_face = -1;
   if (last_tip == MeshLogicalFactory::TIP_BOUNDARY) {
     if (faces) faces->push_back(face_cell_list_.size());
+    last_face = faces->back();
     Entity_ID_List my_cells(1,cell_last-1);
     face_cell_list_.push_back(my_cells);
     face_cell_lengths_.push_back(ds_halflengths_boundary);
@@ -137,6 +141,24 @@ MeshLogicalFactory::AddSegment(int n_cells,
 			    "CELL", new_cells);
   gm_->Add_Region(enum_rgn);
 
+  if (first_tip == MeshLogicalFactory::TIP_BOUNDARY) {
+    Entity_ID_List boundary_face(1,first_face);
+    AmanziGeometry::EnumeratedSetRegionPtr boundary_rgn =
+      new AmanziGeometry::EnumeratedSetRegion(set_name+"_first_tip",
+                                              gm_->Num_Regions(),
+                                              "FACE", boundary_face);
+    gm_->Add_Region(boundary_rgn);
+  }
+  
+  if (last_tip == MeshLogicalFactory::TIP_BOUNDARY) {
+    Entity_ID_List boundary_face(1,last_face);
+    AmanziGeometry::EnumeratedSetRegionPtr boundary_rgn =
+      new AmanziGeometry::EnumeratedSetRegion(set_name+"_last_tip",
+                                              gm_->Num_Regions(),
+                                              "FACE", boundary_face);
+    gm_->Add_Region(boundary_rgn);
+  }
+  
   centroids_good_ = false;
   return;
 }
