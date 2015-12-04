@@ -153,13 +153,13 @@ void Transport_PK::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, dou
       double vol = mesh_->cell_volume(c);
       mass_solute += (*ws)[0][c] * (*phi)[0][c] * tcc_next[i][c] * vol;
     }
+    mass_solute /= units_.concentration_factor();
 
     double tmp1 = mass_solute, tmp2 = mass_solutes_exact_[i], mass_exact;
     mesh_->get_comm()->SumAll(&tmp1, &mass_solute, 1);
     mesh_->get_comm()->SumAll(&tmp2, &mass_exact, 1);
 
-    double mass_loss = mass_exact - mass_solute;
-    *vo_->os() << ", total/out=" << mass_solute << " " << mass_loss << " mol" << std::endl;
+    *vo_->os() << ", total=" << mass_solute << " mol" << std::endl;
   }
 }
 
