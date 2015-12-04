@@ -55,6 +55,13 @@ if (BUILD_TESTS)
      add_definitions("-DMSTK_2_21rc1_OR_NEWER")
    endif ()
 
+    # Copy test directory files if an out of source build
+    if (NOT (${MESH_LOGICAL_SOURCE_DIR} EQUAL ${MESH_LOGICAL_BINARY_DIR}) )
+        file(GLOB DataFiles "${MESH_LOGICAL_SOURCE_DIR}/test/*.xml"
+                            "${MESH_LOGICAL_SOURCE_DIR}/test/*.exo")
+        file(COPY ${DataFiles} DESTINATION ${MESH_LOGICAL_BINARY_DIR}/test/)
+    endif()
+
    # Include dirs for test
    include_directories(${MESH_LOGICAL_SOURCE_DIR})
    include_directories(${MESH_LOGICAL_SOURCE_DIR}/test)

@@ -161,6 +161,44 @@ MeshLogical::init_maps() {
   num_entities_[NODE] = 0;
 }
 
+
+// testing purposes -- checks if the caches match
+bool
+MeshLogical::operator==(const MeshLogical& other) {
+  double _eps = 1.e-10;
+  
+  if (&other == this) return true;
+  if (cell_face_ids != other.cell_face_ids) return false;
+  if (face_cell_ids != other.face_cell_ids) return false;
+
+  if (cell_volumes.size() != other.cell_volumes.size()) return false;
+  for (size_t i=0; i!=cell_volumes.size(); ++i) {
+    if (std::abs(cell_volumes[i] - other.cell_volumes[i]) > _eps) return false;
+  }
+
+  if (face_normal0.size() != other.face_normal0.size()) return false;
+  for (size_t i=0; i!=face_normal0.size(); ++i) {
+    if (AmanziGeometry::norm(face_normal0[i] - other.face_normal0[i]) > _eps) return false;
+  }
+
+  if (face_normal1.size() != other.face_normal1.size()) return false;  
+  for (size_t i=0; i!=face_normal1.size(); ++i) {
+    if (AmanziGeometry::norm(face_normal1[i] - other.face_normal1[i]) > _eps) return false;
+  }
+
+  if (cell_centroids.size() != other.cell_centroids.size()) return false;  
+  for (size_t i=0; i!=cell_centroids.size(); ++i) {
+    if (AmanziGeometry::norm(cell_centroids[i] - other.cell_centroids[i]) > _eps) return false;
+  }
+
+  if (face_centroids.size() != other.face_centroids.size()) return false;  
+  for (size_t i=0; i!=face_centroids.size(); ++i) {
+    if (AmanziGeometry::norm(face_centroids[i] - other.face_centroids[i]) > _eps) return false;
+  }
+  return true;
+}
+
+  
 // Get parallel type of entity - OWNED, GHOST, USED (See MeshDefs.hh)
 Parallel_type
 MeshLogical::entity_get_ptype(const Entity_kind kind,

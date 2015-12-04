@@ -6,6 +6,7 @@
 #include <cmath>
 
 #include "Epetra_MpiComm.h"
+#include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "Mesh_MSTK.hh"
 #include "MeshLogicalFactory.hh"
@@ -82,7 +83,7 @@ demoMeshLogicalSegmentRegular() {
   MeshLogicalFactory fac(&comm, gm);
 
   Entity_ID_List cells, faces;
-  fac.AddSegment(4, 1.0, false, 1.0, true,true, "myregion", &cells, &faces);
+  fac.AddSegment(4, 1.0, false, 1.0, MeshLogicalFactory::TIP_BOUNDARY, MeshLogicalFactory::TIP_BOUNDARY, "myregion", &cells, &faces,NULL);
   Teuchos::RCP<MeshLogical> mesh = fac.Create();
   return mesh;
 }
@@ -238,59 +239,59 @@ demoMeshLogicalYManual() {
 
   // fine root 1, 3 faces
   // -- f3
-  face_cells[3].push_back(2); face_cells[3].push_back(3);
+  face_cells[5].push_back(2); face_cells[5].push_back(3);
+  face_cell_lengths[5].push_back(half_cell_fine); face_cell_lengths[5].push_back(half_cell_fine);
+  face_normals[5] = root_normal1;
+  // -- f4
+  face_cells[3].push_back(3); face_cells[3].push_back(4);
   face_cell_lengths[3].push_back(half_cell_fine); face_cell_lengths[3].push_back(half_cell_fine);
   face_normals[3] = root_normal1;
-  // -- f4
-  face_cells[4].push_back(3); face_cells[4].push_back(4);
-  face_cell_lengths[4].push_back(half_cell_fine); face_cell_lengths[4].push_back(half_cell_fine);
-  face_normals[4] = root_normal1;
   // -- f5
-  face_cells[5].push_back(4);
-  face_cell_lengths[5].push_back(half_cell_fine);
-  face_normals[5] = root_normal1;
+  face_cells[4].push_back(4);
+  face_cell_lengths[4].push_back(half_cell_fine);
+  face_normals[4] = root_normal1;
 
   // fine root 2, 3 faces
   // -- f6
-  face_cells[6].push_back(2); face_cells[6].push_back(5);
+  face_cells[8].push_back(2); face_cells[8].push_back(5);
+  face_cell_lengths[8].push_back(half_cell_fine); face_cell_lengths[8].push_back(half_cell_fine);
+  face_normals[8] = root_normal2;
+  // -- f7
+  face_cells[6].push_back(5); face_cells[6].push_back(6);
   face_cell_lengths[6].push_back(half_cell_fine); face_cell_lengths[6].push_back(half_cell_fine);
   face_normals[6] = root_normal2;
-  // -- f7
-  face_cells[7].push_back(5); face_cells[7].push_back(6);
-  face_cell_lengths[7].push_back(half_cell_fine); face_cell_lengths[7].push_back(half_cell_fine);
-  face_normals[7] = root_normal2;
   // -- f8
-  face_cells[8].push_back(6);
-  face_cell_lengths[8].push_back(half_cell_fine);
-  face_normals[8] = root_normal2;
+  face_cells[7].push_back(6);
+  face_cell_lengths[7].push_back(half_cell_fine);
+  face_normals[7] = root_normal2;
 
   // fine root 1, 3 faces
   // -- f9
-  face_cells[9].push_back(2); face_cells[9].push_back(7);
+  face_cells[11].push_back(2); face_cells[11].push_back(7);
+  face_cell_lengths[11].push_back(half_cell_fine); face_cell_lengths[11].push_back(half_cell_fine);
+  face_normals[11] = root_normal3;
+  // -- f10
+  face_cells[9].push_back(7); face_cells[9].push_back(8);
   face_cell_lengths[9].push_back(half_cell_fine); face_cell_lengths[9].push_back(half_cell_fine);
   face_normals[9] = root_normal3;
-  // -- f10
-  face_cells[10].push_back(7); face_cells[10].push_back(8);
-  face_cell_lengths[10].push_back(half_cell_fine); face_cell_lengths[10].push_back(half_cell_fine);
-  face_normals[10] = root_normal3;
   // -- f11
-  face_cells[11].push_back(8);
-  face_cell_lengths[11].push_back(half_cell_fine);
-  face_normals[11] = root_normal3;
+  face_cells[10].push_back(8);
+  face_cell_lengths[10].push_back(half_cell_fine);
+  face_normals[10] = root_normal3;
 
   // fine root 1, 3 faces
   // -- f12
-  face_cells[12].push_back(2); face_cells[12].push_back(9);
+  face_cells[14].push_back(2); face_cells[14].push_back(9);
+  face_cell_lengths[14].push_back(half_cell_fine); face_cell_lengths[14].push_back(half_cell_fine);
+  face_normals[14] = root_normal4;
+  // -- f13
+  face_cells[12].push_back(9); face_cells[12].push_back(10);
   face_cell_lengths[12].push_back(half_cell_fine); face_cell_lengths[12].push_back(half_cell_fine);
   face_normals[12] = root_normal4;
-  // -- f13
-  face_cells[13].push_back(9); face_cells[13].push_back(10);
-  face_cell_lengths[13].push_back(half_cell_fine); face_cell_lengths[13].push_back(half_cell_fine);
-  face_normals[13] = root_normal4;
   // -- f14
-  face_cells[14].push_back(10);
-  face_cell_lengths[14].push_back(half_cell_fine);
-  face_normals[14] = root_normal4;
+  face_cells[13].push_back(10);
+  face_cell_lengths[13].push_back(half_cell_fine);
+  face_normals[13] = root_normal4;
 
   // make the mesh  
   Teuchos::RCP<MeshLogical> m =
@@ -316,6 +317,117 @@ demoMeshLogicalYManual() {
   return m;
 }
 
+
+// Single coarse root to 1 meter, then branches to 4 fine roots
+Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
+demoMeshLogicalY() {
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
+
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  const int nproc(comm.NumProc());
+  const int me(comm.MyPID());
+
+  GeometricModelPtr gm = new GeometricModel(3);
+
+  MeshLogicalFactory fac(&comm, gm);
+
+
+  double half_cell_coarse = 0.25;
+  double half_cell_fine = 0.25*std::sqrt(2);
+  double cross_section_coarse = 1.e-4;
+  double cross_section_fine = cross_section_coarse / 4.;
+  
+  // Structure: set up endpoints
+  // ---------------------------------
+  // coarse root
+  Point stem_root_intersection(0., 0., 0.);
+  Point down(0.,0.,-half_cell_coarse);
+  Point branch = stem_root_intersection + 5*down;
+
+  Point root_normal1(1., 0., -1.);
+  root_normal1 *= half_cell_fine / norm(root_normal1);
+  Point root_normal2(-1., 0., -1.);
+  root_normal2 *= half_cell_fine / norm(root_normal2);
+  Point root_normal3(0., 1., -1.);
+  root_normal3 *= half_cell_fine / norm(root_normal3);
+  Point root_normal4(0., -1., -1.);
+  root_normal4 *= half_cell_fine / norm(root_normal4);
+
+  Point root_tip1 = branch + root_normal1*5;
+  Point root_tip2 = branch + root_normal2*5;
+  Point root_tip3 = branch + root_normal3*5;
+  Point root_tip4 = branch + root_normal4*5;
+
+  // add the coarse root
+  Entity_ID_List coarse_c, coarse_f;
+  fac.AddSegment(3, stem_root_intersection, branch, cross_section_coarse,
+		 MeshLogicalFactory::TIP_BOUNDARY, MeshLogicalFactory::TIP_JUNCTION, "coarse_root", &coarse_c, &coarse_f,NULL);
+
+  // add the fine roots, along with the connection to the coarse root
+  Entity_ID_List fine_c1, fine_f1;
+  double c1_length;
+  fac.AddSegment(2, branch, root_tip1, cross_section_fine,
+		 MeshLogicalFactory::TIP_BRANCH, MeshLogicalFactory::TIP_BOUNDARY, "fine_root1", &fine_c1, &fine_f1, &c1_length);
+
+  // add the connections between the fine and coarse
+  Entity_ID_List new_conn(2); new_conn[0] = coarse_c.back(); new_conn[1] = fine_c1[0];
+  std::vector<double> face_to_cell_lengths(2, c1_length/2.0);
+  fac.AddConnection(new_conn, root_tip1-branch, face_to_cell_lengths, cross_section_fine);
+
+  Entity_ID_List fine_c2, fine_f2;
+  double c2_length;
+  fac.AddSegment(2, branch, root_tip2, cross_section_fine,
+		 MeshLogicalFactory::TIP_BRANCH, MeshLogicalFactory::TIP_BOUNDARY, "fine_root2", &fine_c2, &fine_f2, &c2_length);
+  new_conn[1] = fine_c2[0];
+  fac.AddConnection(new_conn, root_tip2-branch, face_to_cell_lengths, cross_section_fine);
+
+  Entity_ID_List fine_c3, fine_f3;
+  double c3_length;
+  fac.AddSegment(2, branch, root_tip3, cross_section_fine,
+		 MeshLogicalFactory::TIP_BRANCH, MeshLogicalFactory::TIP_BOUNDARY, "fine_root3", &fine_c3, &fine_f3, &c3_length);
+  new_conn[1] = fine_c3[0];
+  fac.AddConnection(new_conn, root_tip3-branch, face_to_cell_lengths, cross_section_fine);
+
+  Entity_ID_List fine_c4, fine_f4;
+  double c4_length;
+  fac.AddSegment(2, branch, root_tip4, cross_section_fine,
+		 MeshLogicalFactory::TIP_BRANCH, MeshLogicalFactory::TIP_BOUNDARY, "fine_root4", &fine_c4, &fine_f4, &c4_length);
+  new_conn[1] = fine_c4[0];
+  fac.AddConnection(new_conn, root_tip4-branch, face_to_cell_lengths, cross_section_fine);
+
+  // make the fine root set
+  fine_c1.insert(fine_c1.end(), fine_c2.begin(), fine_c2.end());
+  fine_c1.insert(fine_c1.end(), fine_c3.begin(), fine_c3.end());
+  fine_c1.insert(fine_c1.end(), fine_c4.begin(), fine_c4.end());
+  fac.AddSet("fine_root", CELL, fine_c1);
+
+  Teuchos::RCP<MeshLogical> mesh = fac.Create();
+  return mesh;
+
+}
+
+
+// Single coarse root to 1 meter, then branches to 4 fine roots
+Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
+demoMeshLogicalYFromXML() {
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
+
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  const int nproc(comm.NumProc());
+  const int me(comm.MyPID());
+
+  GeometricModelPtr gm = new GeometricModel(3);
+  MeshLogicalFactory fac(&comm, gm);
+
+  // load the xml
+  std::string xmlFileName = "test/demo_mesh_Y.xml";
+  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
+  Teuchos::ParameterList plist = xmlreader.getParameters();
+  return fac.Create(plist.sublist("logical mesh Y"));
+}
+  
 // helper class to get indices from a regular mesh
 RegularMeshCellFromCoordFunctor::RegularMeshCellFromCoordFunctor(
 				 const Amanzi::AmanziGeometry::Point& X0,
@@ -337,7 +449,7 @@ RegularMeshCellFromCoordFunctor::operator()(const Amanzi::AmanziGeometry::Point&
   return k + j*nz_ + i*nz_*ny_;
 };
 
-  
+
 Teuchos::RCP<Amanzi::AmanziMesh::MeshEmbeddedLogical>
 demoMeshLogicalYEmbedded() {
   using namespace Amanzi::AmanziMesh;
@@ -399,55 +511,6 @@ demoMeshLogicalYEmbedded() {
   return m;
 }
   
-// // Single coarse root to 1 meter, then branches to 4 fine roots
-// Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
-// demoMeshLogicalY() {
-//   using namespace Amanzi::AmanziMesh;
-//   using namespace Amanzi::AmanziGeometry;
-
-//   Epetra_MpiComm comm(MPI_COMM_WORLD);
-//   const int nproc(comm.NumProc());
-//   const int me(comm.MyPID());
-
-//   GeometricModelPtr gm = new GeometricModel(3);
-//   MeshLogicalFactory fac(&comm, gm);
-
-//   Point stem_root_intersection(0., 0., 0.);
-//   Point root_branch(0., 0., -1.);
-
-//   Point root_tip1(1., 0., -2.);
-//   Point root_tip2(-1., 0., -2.);
-//   Point root_tip3(0., 1., -2.);
-//   Point root_tip4(0., -1., -2.);
-
-//   // add the coarse root
-//   Entity_ID_List cells_cr, faces_cr;
-//   fac.AddSegment(5, stem_root_intersection, root_branch, 1.e-4, true, false, "coarse_root", &cells_cr, &faces_cr);
-
-//   // add the fine root segments (4)
-//   Entity_ID_List cells_fr1, faces_fr1;
-//   fac.AddSegment(6, root_branch, root_tip1, 2.5e-5, false, true, "fine_root1", &cells_fr1, &faces_fr1);
-//   Entity_ID_List cells_fr2, faces_fr2;
-//   fac.AddSegment(6, root_branch, root_tip2, 2.5e-5, false, true, "fine_root2", &cells_fr2, &faces_fr2);
-//   Entity_ID_List cells_fr3, faces_fr3;
-//   fac.AddSegment(6, root_branch, root_tip3, 2.5e-5, false, true, "fine_root3", &cells_fr3, &faces_fr3);
-//   Entity_ID_List cells_fr4, faces_fr4;
-//   fac.AddSegment(6, root_branch, root_tip4, 2.5e-5, false, true, "fine_root4", &cells_fr4, &faces_fr4);
-
-//   // add the fine root segments (4)
-//   Entity_ID_List cells_fr;
-//   cells_fr.insert(cells_fr.end(), cells_fr1.begin(), cells_fr1.end());
-//   cells_fr.insert(cells_fr.end(), cells_fr2.begin(), cells_fr2.end());
-//   cells_fr.insert(cells_fr.end(), cells_fr3.begin(), cells_fr3.end());
-//   cells_fr.insert(cells_fr.end(), cells_fr4.begin(), cells_fr4.end());
-//   fac.AddSet("fine_root", &cells_fr, NULL);
-
-//   // add the connections between fine and coarse
-  
-//   Teuchos::RCP<MeshLogical> mesh = fac.Create();
-//   return mesh;
-  
-// }
 
 
 } // namespace Testing

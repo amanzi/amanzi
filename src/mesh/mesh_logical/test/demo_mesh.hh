@@ -30,6 +30,12 @@ demoMeshLogicalSegmentIrregularManual();
 Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
 demoMeshLogicalYManual();
 
+Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
+demoMeshLogicalY();
+
+Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
+demoMeshLogicalYFromXML();
+
 Teuchos::RCP<Amanzi::AmanziMesh::MeshEmbeddedLogical>
 demoMeshLogicalYEmbedded();
   

@@ -15,7 +15,6 @@
 
 #include "demo_mesh.hh"
 
-
 void
 test_segment_regular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
                      bool test_region) {
@@ -136,7 +135,7 @@ test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   Point fine1_normal(1.,0.,-1.);
   fine1_normal /= norm(fine1_normal);
   Point tip = branch + 1.25*std::sqrt(2) * fine1_normal;
-  CHECK_CLOSE(0., norm(tip-m->face_centroid(5)), 1.e-6);
+  CHECK_CLOSE(0., norm(tip-m->face_centroid(4)), 1.e-6);
 
   if (test_region) {
     CHECK_EQUAL(3, m->get_set_size("coarse_root", CELL, USED));
@@ -164,6 +163,7 @@ TEST(MESH_LOGICAL_SEGMENT_REGULAR_MANUAL)
 TEST(MESH_LOGICAL_SEGMENT_REGULAR_FACTORY)
 {
   test_segment_regular(Amanzi::Testing::demoMeshLogicalSegmentRegular(), true);
+  CHECK(*Amanzi::Testing::demoMeshLogicalSegmentRegular() == *Amanzi::Testing::demoMeshLogicalSegmentRegularManual());
 }
 
 // Evaluates an irregularly space mesh
@@ -174,9 +174,24 @@ TEST(MESH_LOGICAL_SEGMENT_IRREGULAR_WITH_SETS)
 
 
 // Evaluates a Y-mesh
-TEST(MESH_LOGICAL_Y_WITH_SETS)
+TEST(MESH_LOGICAL_Y_MANUAL_WITH_SETS)
 {
   test_Y(Amanzi::Testing::demoMeshLogicalYManual(), true);
+}
+
+// Evaluates a Y-mesh
+TEST(MESH_LOGICAL_Y_WITH_SETS)
+{
+  test_Y(Amanzi::Testing::demoMeshLogicalY(), true);
+  CHECK(*Amanzi::Testing::demoMeshLogicalY() == *Amanzi::Testing::demoMeshLogicalYManual());
+}
+
+
+// Evaluates a Y-mesh
+TEST(MESH_LOGICAL_Y_XML_WITH_SETS)
+{
+  test_Y(Amanzi::Testing::demoMeshLogicalYFromXML(), true);
+  CHECK(*Amanzi::Testing::demoMeshLogicalYFromXML() == *Amanzi::Testing::demoMeshLogicalYManual());
 }
 
 

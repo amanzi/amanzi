@@ -2,6 +2,7 @@
 #ifndef AMANZI_LOGICAL_MESH_FACTORY_H_
 #define AMANZI_LOGICAL_MESH_FACTORY_H_
 
+#include "Teuchos_ParameterList.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_MpiComm.h"
 
@@ -17,6 +18,13 @@ namespace AmanziMesh {
 
 class MeshLogicalFactory {
  public:
+
+  enum LogicalTip_t {
+    TIP_BOUNDARY, // tip is a root boundary, i.e. face.  add cell and face.
+    TIP_JUNCTION, // tip is a root junction cell.  add cell.
+    TIP_BRANCH // tip branches from a junction.  add neither cell nor face.
+  };
+  
   MeshLogicalFactory(const Epetra_MpiComm* incomm,
 		     AmanziGeometry::GeometricModelPtr& gm) :
     comm_(incomm),
@@ -38,11 +46,12 @@ class MeshLogicalFactory {
 	     double length,
 	     bool vertical,
 	     double cross_section_area,
-	     bool include_first_face,
-	     bool include_last_face,
+	     MeshLogicalFactory::LogicalTip_t first_tip,
+	     MeshLogicalFactory::LogicalTip_t last_tip,
 	     const std::string& set_name,
 	     std::vector<Entity_ID>* cells,
-	     std::vector<Entity_ID>* faces);
+	     std::vector<Entity_ID>* faces,
+             double* cell_length);
 
   // Add a segment of uniform size.
   //
@@ -58,11 +67,13 @@ class MeshLogicalFactory {
 	     const AmanziGeometry::Point& begin,
 	     const AmanziGeometry::Point& end,
 	     double cross_section_area,
-	     bool include_first_face,
-	     bool include_last_face,
+	     MeshLogicalFactory::LogicalTip_t first_tip,
+	     MeshLogicalFactory::LogicalTip_t last_tip,
 	     const std::string& set_name,
 	     std::vector<Entity_ID>* cells,
-	     std::vector<Entity_ID>* faces);
+	     std::vector<Entity_ID>* faces,
+             double* cell_length);
+
 
 
   // Manually add a connection, returning the face id.
@@ -74,14 +85,14 @@ class MeshLogicalFactory {
 
   int
   AddSet(const std::string& set_name,
-         const Entity_ID_List* cells,
-         const Entity_ID_List* faces);
+         Entity_kind ent,
+         const Entity_ID_List& ents);
   
   Teuchos::RCP<MeshLogical>
   Create();
 
-  // Teuchos::RCP<MeshLogical>
-  // Create(Teuchos::ParameterList& plist) {}
+  Teuchos::RCP<MeshLogical>
+  Create(Teuchos::ParameterList& plist);
 
   
  protected:

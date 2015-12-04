@@ -57,6 +57,9 @@ class MeshLogical : public Mesh {
               const std::vector<AmanziGeometry::Point>* cell_centroids=NULL,
               const VerboseObject *verbosity_obj=NULL);
 
+  // testing purposes
+  bool operator==(const MeshLogical& other);
+  
   // Get parallel type of entity - OWNED, GHOST, USED (See MeshDefs.hh)
   virtual
   Parallel_type entity_get_ptype(const Entity_kind kind,
