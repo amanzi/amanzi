@@ -176,8 +176,8 @@ Units
 
 Amanzi's internal default units are SI units except for the concentration.
 
-* `"concentration`" [string] defines units for concentration. Availbale options
-  are `"molar`" (default) and `"mol/m^3`".
+* `"concentration`" [string] defines units for concentration. Available options
+  are `"molar`" (default) which is `"mol/L`" and `"mol/m^3`". 
 
 .. code-block:: xml
 
@@ -361,10 +361,10 @@ The initialization sublist of *State* is named *initial conditions*.
 Primary and derived fields
 --------------------------
 
-* Primary fields
+* Primary fields (default units)
 
   * pressure [Pa]
-  * total component concentration [:math:`mol/m^3`]
+  * total component concentration [:math:`mol/L`] or [:math:`mol/m^3`]
   * temperature [K]
 
 * Derived fields
@@ -2094,7 +2094,8 @@ Note that the source values are set up separately for each component.
     * `"spatial distribution method`" [string] identifies a method for distributing
       source Q over the specified regions. The available options are `"volume`",
       `"none`", and `"permeability`". For option `"none`" the source term Q is measured
-      in [mol/m^3/s]. For the other options, it is measured in [mol/s]. When the source function
+      in [mol/L/s] (if units for concetration is mol/L) or [mol/m^3/s] (othrwise). 
+      For the other options, it is measured in [mol/s]. When the source function
       is defined over a few regions, Q will be distributed independently over each region.
       Default value is `"none`".
 
@@ -2174,8 +2175,7 @@ The incomplete list is
  * [local] cell id and position with the smallest time step
  * [local] convergence of a linear solver for dispersion, PCG here
  * [local] number of subcycles, stable time step, and global time step (in seconds)
- * [local] species's name, concentration extrema, total amount of it in the 
-   reservoir, and amount escaped through the outflow boundary
+ * [local] species's name, concentration extrema, and total amount of it in the reservoir
  * [global] current simulation time (in years)
 
 .. code-block:: xml
@@ -2184,7 +2184,7 @@ The incomplete list is
   TransportPK      |    cell 0 has smallest dt, (-270, -270)
   TransportPK      |    dispersion solver (pcg) ||r||=8.33085e-39 itrs=2
   TransportPK      |    1 sub-cycles, dt_stable=2.81743e+06 [sec]  dt_MPC=2.81743e+06 [sec]
-  TransportPK      |    Tc-99: min/max=7.111e-21 0.001461 [mol/m^3], total/out=2.2957 1.4211e-14 [mol]
+  TransportPK      |    Tc-99: min=8.08339e-06 mol/L max=0.0952948 mol/L, total=9.07795 mol
   CycleDriver      |   New time(y) = 0.89279
 
 
@@ -2580,7 +2580,7 @@ Minerals
 ````````
 
 Each line in this section has five fields for secondary species:
-Name = coeff reactant, log Keq, gram molecular weight [g/mole], molar volume [cm^3/mole],
+Name = coeff reactant, log Keq, gram molecular weight [g/mol], molar volume [cm^3/mol],
 and specific surface area [cm^2 mineral / cm^3 bulk].
 
 .. code-block:: txt

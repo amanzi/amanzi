@@ -56,15 +56,16 @@ class Units {
   inline double concentration_factor() { return tcc_factor_; } 
 
   // output
-  inline std::string print_tcc(double val) {
+  inline std::string print_tcc(double val, const std::string& system = "amanzi") {
     boost::units::quantity<concentration_amanzi> qval = val * concentration_amanzi();
+    boost::units::quantity<concentration> qval_si(qval);
     std::stringstream ss;
-    ss << qval;
+    (system == "si") ? ss << qval_si : ss << qval;
     return ss.str();
   }
 
   void Init(const std::string& conc_units) {
-    pressure_factor_ = conversion_factor(boost::units::si::pressure(), pressure_si_);
+    pressure_factor_ = 1.0;
     if (conc_units == "molar") {
       concentration_mol_liter = true;
       tcc_factor_ = conversion_factor(boost::units::si::amount() / liter(), concentration());
@@ -79,9 +80,6 @@ class Units {
   }
 
  private:
-  boost::units::si::pressure pressure_si_;
-  concentration tcc_si_;
-
   double pressure_factor_, tcc_factor_;
 };
 

@@ -386,8 +386,8 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
       T(k, i) = tmp;
     }
     w.Norm2(&beta);
-    if (beta == 0.0);  // zero occurs in exact arithmetic
     T(i + 1, i) = beta;
+    if (beta == 0.0) break;
 
     v_[i + 1] = Teuchos::rcp(new Vector(w));
     v_[i + 1]->Update(0.0, r, 1.0 / beta);

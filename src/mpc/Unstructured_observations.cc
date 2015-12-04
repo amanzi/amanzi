@@ -238,19 +238,21 @@ int Unstructured_observations::MakeObservations(State& S)
           for (int i = 0; i < mesh_block_size; i++) {
             int c = entity_ids[i];
             double factor = porosity[0][c] * ws[0][c] * S.GetMesh()->cell_volume(c);
+            factor *= units_.concentration_factor();
+
             value += tcc[tcc_index][c] * factor;
             volume += factor;
           }
-          value *= units_.concentration_factor();
 
         } else if (var == comp_names_[tcc_index] + " gaseous concentration") { 
           for (int i = 0; i < mesh_block_size; i++) {
             int c = entity_ids[i];
             double factor = porosity[0][c] * (1.0 - ws[0][c]) * S.GetMesh()->cell_volume(c);
+            factor *= units_.concentration_factor();
+
             value += tcc[tcc_index][c] * factor;
             volume += factor;
           }
-          value *= units_.concentration_factor();
 
         } else if (var == comp_names_[tcc_index] + " volumetric flow rate") {
           const Epetra_MultiVector& darcy_flux = *S.GetFieldData("darcy_flux")->ViewComponent("face");
@@ -264,11 +266,11 @@ int Unstructured_observations::MakeObservations(State& S)
               int sign, c = cells[0];
               const AmanziGeometry::Point& face_normal = S.GetMesh()->face_normal(f, false, c, &sign);
               double area = S.GetMesh()->face_area(f);
+              double factor = units_.concentration_factor();
 
-              value += std::max(0.0, sign * darcy_flux[0][f]) * tcc[tcc_index][c];
-              volume += area;
+              value += std::max(0.0, sign * darcy_flux[0][f]) * tcc[tcc_index][c] * factor;
+              volume += area * factor;
             }
-            value *= units_.concentration_factor();
 
           } else if (obs_planar) {  // observation is on an interior planar set
             for (int i = 0; i != mesh_block_size; ++i) {
@@ -281,11 +283,11 @@ int Unstructured_observations::MakeObservations(State& S)
 
               double area = S.GetMesh()->face_area(f);
               double sign = (reg_normal * face_normal) * csign / area;
+              double factor = units_.concentration_factor();
     
-              value += sign * darcy_flux[0][f] * tcc[tcc_index][c];
-              volume += area;
+              value += sign * darcy_flux[0][f] * tcc[tcc_index][c] * factor;
+              volume += area * factor;
             }
-            value *= units_.concentration_factor();
 
           } else {
             msg << "Observations of \"SOLUTE volumetric flow rate\""

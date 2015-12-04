@@ -334,8 +334,10 @@ void Darcy_PK::Initialize()
     if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
       src_sink->ComputeDistribute(t_old, t_new, Kxy->Values()); 
-    } else {
+    } else if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME) {
       src_sink->ComputeDistribute(t_old, t_new);
+    } else {
+      src_sink->Compute(t_old, t_new);
     }
   }
   

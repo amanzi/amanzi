@@ -79,6 +79,10 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
 
   subcycling_ = tp_list_->get<bool>("transport subcycling", true);
    
+  // initialize io
+  Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "Units");
+  units_.Init(*units_list);
+
   vo_ = NULL;
 }
 
@@ -1164,8 +1168,10 @@ void Transport_PK::ComputeAddSourceTerms(double tp, double dtp,
     int distribution = srcs[m]->CollectActionsList();
     if (distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       srcs[m]->ComputeDistribute(t0, tp, Kxy->Values()); 
-    } else {
+    } else if (distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME) {
       srcs[m]->ComputeDistribute(t0, tp);
+    } else {
+      srcs[m]->Compute(t0, tp);
     }
 
     TransportDomainFunction::Iterator it;
@@ -1173,6 +1179,10 @@ void Transport_PK::ComputeAddSourceTerms(double tp, double dtp,
     for (it = srcs[m]->begin(); it != srcs[m]->end(); ++it) {
       int c = it->first;
       double value = mesh_->cell_volume(c) * it->second;
+
+      if (distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME ||
+         (distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY))
+          value *= units_.concentration_factor();
 
       tcc[imap][c] += dtp * value;
       mass_solutes_source_[i] += value;
