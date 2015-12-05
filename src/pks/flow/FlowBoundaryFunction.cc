@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -26,7 +26,7 @@ void FlowBoundaryFunction::ComputeShift(double time, double* shift)
     Finalize();
   }
 
-  if (specs_and_ids_.size() == 0) return;
+  if (unique_specs_.size() == 0) return;
 
   // create the input tuple
   int dim = mesh_->space_dimension();
@@ -35,18 +35,18 @@ void FlowBoundaryFunction::ComputeShift(double time, double* shift)
 
   // Loop over all FACE specs and evaluate the function at all IDs in the
   // list.
-  for (SpecAndIDsList::const_iterator it= specs_and_ids_[AmanziMesh::FACE]->begin();
-       it != specs_and_ids_[AmanziMesh::FACE]->end(); ++it) {
+  for (UniqueSpecList::const_iterator it = unique_specs_[AmanziMesh::FACE]->begin();
+       it != unique_specs_[AmanziMesh::FACE]->end(); ++it) {
     // Here we could specialize on the argument signature of the function:
     // time-independent functions need only be evaluated at each face on the
     // first call; space-independent functions need only be evaluated once per
     // call and the value used for all faces; etc. Right now we just assume
     // the most general case.
-    Teuchos::RCP<SpecIDs> ids = (*it)->second;
-    for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
+    Teuchos::RCP<MeshIDs> ids = (*it)->second;
+    for (MeshIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
       const AmanziGeometry::Point& xc = mesh_->face_centroid(*id);
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-      // Careful tracing of the typedefs is required here: spec_and_ids->first
+      // Careful tracing of the typedefs is required here: it->first
       //  is a RCP<Spec>, and the Spec's second is an RCP to the function.
       value_[*id] = (*(*it)->first->second)(args)[0] + shift[*id];
     }

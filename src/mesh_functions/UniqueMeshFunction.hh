@@ -26,8 +26,7 @@ namespace Amanzi {
 namespace Functions {
 
 class UniqueMeshFunction : public MeshFunction {
-
-public:
+ public:
   // Constructor
   UniqueMeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
       : MeshFunction(mesh) {};
@@ -35,15 +34,15 @@ public:
   // Overload the AddSpec method to check uniqueness.
   virtual void AddSpec(const Teuchos::RCP<Spec>& spec);
 
-protected:
-  typedef std::set<AmanziMesh::Entity_ID> SpecIDs;
-  typedef std::pair<Teuchos::RCP<Spec>, Teuchos::RCP<SpecIDs> > SpecAndIDs;
-  typedef std::vector<Teuchos::RCP<SpecAndIDs> > SpecAndIDsList;
+ protected:
+  typedef std::set<AmanziMesh::Entity_ID> MeshIDs;
+  typedef std::pair<Teuchos::RCP<Spec>, Teuchos::RCP<MeshIDs> > UniqueSpec;
+  typedef std::vector<Teuchos::RCP<UniqueSpec> > UniqueSpecList;
 
-  std::map<AmanziMesh::Entity_kind, Teuchos::RCP<SpecAndIDsList> > specs_and_ids_;
+  std::map<AmanziMesh::Entity_kind, Teuchos::RCP<UniqueSpecList> > unique_specs_;
 };
 
-} //namespace
-} //namespace
+} //namespace Functions
+} //namespace Amanzi
 
 #endif

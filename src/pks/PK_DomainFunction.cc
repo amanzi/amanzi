@@ -50,7 +50,7 @@ void PK_DomainFunction::Compute(double t0, double t1)
     Finalize();
   }
   
-  if (specs_and_ids_.size() == 0) return;
+  if (unique_specs_.size() == 0) return;
 
   double dt = t1 - t0;
   if (dt > 0.0) dt = 1.0 / dt;
@@ -60,26 +60,25 @@ void PK_DomainFunction::Compute(double t0, double t1)
   std::vector<double> args(1 + dim);
 
   int n(0);
-  for (SpecAndIDsList::const_iterator
-       spec_and_ids = specs_and_ids_[AmanziMesh::CELL]->begin();
-       spec_and_ids != specs_and_ids_[AmanziMesh::CELL]->end(); ++spec_and_ids) {
+  for (UniqueSpecList::const_iterator uspec = unique_specs_[AmanziMesh::CELL]->begin();
+       uspec != unique_specs_[AmanziMesh::CELL]->end(); ++uspec) {
 
     args[0] = t1;
-    Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
+    Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
 
-    for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
+    for (MeshIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-      // spec_and_ids->first is a RCP<Spec>, Spec's second is an RCP to the function.
-      value_[*id] = (*(*spec_and_ids)->first->second)(args)[0];
+      // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
+      value_[*id] = (*(*uspec)->first->second)(args)[0];
     }
    
     if (submodel_[n] == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAL) {
       args[0] = t0;
-      for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
+      for (MeshIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-        value_[*id] -= (*(*spec_and_ids)->first->second)(args)[0];
+        value_[*id] -= (*(*uspec)->first->second)(args)[0];
         value_[*id] *= dt;
        }
     }
@@ -108,34 +107,33 @@ void PK_DomainFunction::ComputeDistribute(double t0, double t1)
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   int n(0);  
-  for (SpecAndIDsList::const_iterator
-       spec_and_ids = specs_and_ids_[AmanziMesh::CELL]->begin();
-       spec_and_ids != specs_and_ids_[AmanziMesh::CELL]->end(); ++spec_and_ids) {
+  for (UniqueSpecList::const_iterator uspec = unique_specs_[AmanziMesh::CELL]->begin();
+       uspec != unique_specs_[AmanziMesh::CELL]->end(); ++uspec) {
 
     double domain_volume = 0.0;
-    Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
+    Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
 
     // calculate physical volume of region.
-    for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
+    for (MeshIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
       if (*id < ncells_owned) domain_volume += mesh_->cell_volume(*id);
     }
     double volume_tmp = domain_volume;
     mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);
 
     args[0] = t1;
-    for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
+    for (MeshIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-      // spec_and_ids->first is a RCP<Spec>, Spec's second is an RCP to the function.
-      value_[*id] = (*(*spec_and_ids)->first->second)(args)[0] / domain_volume;
+      // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
+      value_[*id] = (*(*uspec)->first->second)(args)[0] / domain_volume;
     }
 
     if (submodel_[n] == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAL) {
       args[0] = t0;
-      for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
+      for (MeshIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-        value_[*id] -= (*(*spec_and_ids)->first->second)(args)[0] / domain_volume;
+        value_[*id] -= (*(*uspec)->first->second)(args)[0] / domain_volume;
         value_[*id] *= dt;
       }
     }
@@ -166,79 +164,78 @@ void PK_DomainFunction::ComputeDistribute(double t0, double t1, double* weight)
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int n(0);
 
-  for (SpecAndIDsList::const_iterator
-       spec_and_ids = specs_and_ids_[AmanziMesh::CELL]->begin();
-       spec_and_ids != specs_and_ids_[AmanziMesh::CELL]->end(); ++spec_and_ids) {
+  for (UniqueSpecList::const_iterator uspec = unique_specs_[AmanziMesh::CELL]->begin();
+       uspec != unique_specs_[AmanziMesh::CELL]->end(); ++uspec) {
 
     int action = actions_[n];
     int submodel = submodel_[n];
 
     double domain_volume = 0.0;
-    Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
+    Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
 
     if (action == CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME) {
-      for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
+      for (MeshIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
         if (*id < ncells_owned) domain_volume += mesh_->cell_volume(*id);
       }
       double volume_tmp = domain_volume;
       mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);
 
       args[0] = t1;
-      for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
+      for (MeshIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-        // spec_and_ids->first is a RCP<Spec>, Spec's second is an RCP to the function.
-        value_[*id] = (*(*spec_and_ids)->first->second)(args)[0] / domain_volume;
+        // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
+        value_[*id] = (*(*uspec)->first->second)(args)[0] / domain_volume;
       }      
 
       if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAL) {
         args[0] = t0;
-        for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
+        for (MeshIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
           for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-          value_[*id] -= (*(*spec_and_ids)->first->second)(args)[0] / domain_volume;
+          value_[*id] -= (*(*uspec)->first->second)(args)[0] / domain_volume;
           value_[*id] *= dt;
         }
       }
     }
     else if (action == CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
+      for (MeshIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
         if (*id < ncells_owned) domain_volume += mesh_->cell_volume(*id) * weight[*id];
       }
       double volume_tmp = domain_volume;
       mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);
 
       args[0] = t1;
-      for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
+      for (MeshIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-        value_[*id] = (*(*spec_and_ids)->first->second)(args)[0] * weight[*id] / domain_volume;
+        value_[*id] = (*(*uspec)->first->second)(args)[0] * weight[*id] / domain_volume;
       }      
 
       if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAL) {
         args[0] = t0;
-        for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
+        for (MeshIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
           for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-          value_[*id] -= (*(*spec_and_ids)->first->second)(args)[0] * weight[*id] / domain_volume;
+          value_[*id] -= (*(*uspec)->first->second)(args)[0] * weight[*id] / domain_volume;
           value_[*id] *= dt;
         }
       }
     }
     else {
       args[0] = t1;
-      for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
+      for (MeshIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-        value_[*id] = (*(*spec_and_ids)->first->second)(args)[0];
+        value_[*id] = (*(*uspec)->first->second)(args)[0];
       }      
 
       if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAL) {
         args[0] = t0;
-        for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
+        for (MeshIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
           for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-          value_[*id] -= (*(*spec_and_ids)->first->second)(args)[0];
+          value_[*id] -= (*(*uspec)->first->second)(args)[0];
           value_[*id] *= dt;
         }
       }
