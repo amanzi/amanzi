@@ -8,7 +8,6 @@ Author: Ethan Coon
 Interface for grabbing vectors of data from HDF5 files for use with i/o.
 ------------------------------------------------------------------------- */
 
-
 #ifndef HDF5_READER_HH_
 #define HDF5_READER_HH_
 
@@ -26,8 +25,7 @@ Interface for grabbing vectors of data from HDF5 files for use with i/o.
 namespace Amanzi {
 
 struct HDF5Reader {
-
-public:
+ public:
   HDF5Reader(std::string filename) :
       filename_(filename) {
     htri_t ierr = H5Fis_hdf5(filename.c_str());
@@ -63,13 +61,13 @@ public:
     //    strcpy(h5path,varname.c_str());
     hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT );
     hid_t dataspace = H5Dget_space(dataset);
-	hsize_t dims[2];
+    hsize_t dims[2];
     int rank = H5Sget_simple_extent_dims(dataspace, dims, NULL);
-	if ( rank != 2 ) {
-		Errors::Message message("HDF5Reader: error, dataset dimension is not equal to 2 ");
-      	Exceptions::amanzi_throw(message);
-	}
-	mat.Shape(dims[1],dims[0]);
+    if ( rank != 2 ) {
+      Errors::Message message("HDF5Reader: error, dataset dimension is not equal to 2 ");
+      Exceptions::amanzi_throw(message);
+    }
+    mat.Shape(dims[1],dims[0]);
     herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL,
                             H5P_DEFAULT, &mat[0][0]);
   }
@@ -77,11 +75,8 @@ public:
  protected:
   std::string filename_;
   hid_t file_;
-
-
 };
 
 } // namespace
-
 
 #endif

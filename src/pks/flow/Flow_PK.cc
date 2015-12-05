@@ -275,9 +275,6 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 
   // Create the source object if any
   if (plist.isSublist("source terms")) {
-    std::string distribution_method_name = plist.get<std::string>("source and sink distribution method", "none");
-    ProcessStringSourceDistribution(distribution_method_name, &src_sink_distribution); 
-
     Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(plist.sublist("source terms", true));
     FlowSourceFactory src_factory(mesh_, src_list);
     src_sink = src_factory.createSource();
@@ -618,20 +615,6 @@ void Flow_PK::WriteGMVfile(Teuchos::RCP<State> FS) const
   GMV::write_cell_data(*(S_->GetFieldData("pressure")->ViewComponent("cell")), 0, "pressure");
   GMV::write_cell_data(*(S_->GetFieldData("saturation_liquid")->ViewComponent("cell")), 0, "saturation");
   GMV::close_data_file();
-}
-
-
-/* ****************************************************************
-* Process string for the linear solver.
-**************************************************************** */
-void Flow_PK::ProcessStringSourceDistribution(const std::string name, int* method)
-{
-  if (name != "none") {
-    Errors::Message msg;
-    msg << "\nFlow_PK: \"source and sink distribution method\" is obsolete.\n"
-        << "         see desription of sublist \"source terms\" in the native spec.\n";
-    Exceptions::amanzi_throw(msg);
-  }
 }
 
 }  // namespace Flow

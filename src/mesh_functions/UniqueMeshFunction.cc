@@ -1,18 +1,20 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-ATS
+/*
+  Mesh Functions
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Function applied to a mesh component with at most one function application per
-entity.
+  Author: Ethan Coon
 
-------------------------------------------------------------------------- */
+  Function applied to a mesh component with at most one function
+  application per entity.
+*/
 
 #include "errors.hh"
 
-#include "unique_mesh_function.hh"
+#include "UniqueMeshFunction.hh"
 
 namespace Amanzi {
 namespace Functions {
@@ -70,7 +72,6 @@ void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
   spec_list_.push_back(spec);
   other_specs->push_back(Teuchos::rcp(new SpecAndIDs(spec, this_spec_ids)));
 };
-
 
 } // namespace Functions
 } // namespace Amanzi

@@ -1,12 +1,12 @@
 /*
-  This is the process kernel component of the Amanzi code.
+  Process Kernel
  
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Function applied to a mesh component with at most one function 
   application per entity.
@@ -24,7 +24,7 @@
 #include "CommonDefs.hh"
 #include "Mesh.hh"
 #include "MultiFunction.hh"
-#include "unique_mesh_function.hh"
+#include "UniqueMeshFunction.hh"
 
 namespace Amanzi {
 

@@ -1,15 +1,17 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-ATS
+/*
+  Mesh Functions
 
-License: see $AMANZI_DIR/COPYRIGHT
-Author (v1): Neil Carlson
-       (v2): Ethan Coon
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Function applied to a mesh component with at most one function application per
-entity.
+  Authors: (v1) Neil Carlson
+           (v2) Ethan Coon
 
-------------------------------------------------------------------------- */
+  Function applied to a mesh component with at most one function 
+  application per entity.
+*/
 
 #include "boundary_function.hh"
 
@@ -34,6 +36,7 @@ void BoundaryFunction::Define(std::string region,
   Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, AmanziMesh::FACE));
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
 };
+
 
 // Evaluate values at time.
 void BoundaryFunction::Compute(double time) {
@@ -90,5 +93,5 @@ void BoundaryFunction::Finalize() {
   //TODO: Verify that the faces in this_domain are all boundary faces.
 };
 
-} // namespace
-} // namespace
+} // namespace Functions
+} // namespace Amanzi

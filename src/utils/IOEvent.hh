@@ -8,7 +8,6 @@ Author: Markus Berndt
 
 IO event -- base class for reading or writing data.  Mostly just manages when
 to do the I/O.
-
 ------------------------------------------------------------------------- */
 
 #ifndef AMANZI_STATE_IO_EVENT_HH_
@@ -49,7 +48,6 @@ class IOEvent : public Teuchos::VerboseObject<IOEvent> {
 
   // disable visualization dumps alltogether
   bool disabled_;
-
 };
 
 } // namespace

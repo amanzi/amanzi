@@ -573,7 +573,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
       weight = "volume";
     } else if (strcmp(text, "perm_weighted") == 0) {
       weight = "permeability";
-    } else if (strcmp(text, "aqueous_conc") == 0) {
+    } else if (strcmp(text, "uniform_conc") == 0) {
       weight = "none";
     } else if (strcmp(text, "flow_weighted_conc") == 0) {
       element = static_cast<DOMElement*>(phase_l);

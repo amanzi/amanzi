@@ -1,5 +1,5 @@
 /*
-  This is the process kernel component of the Amanzi code. 
+  Process Kernel
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -20,15 +20,15 @@
 #include "CommonDefs.hh"
 #include "Mesh.hh"
 #include "MultiFunction.hh"
-#include "unique_mesh_function.hh"
+#include "UniqueMeshFunction.hh"
 
 namespace Amanzi {
 
 class PK_DomainFunction : public Functions::UniqueMeshFunction {
  public:
-   PK_DomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : 
-      UniqueMeshFunction(mesh),
-      finalized_(false) {};
+  PK_DomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : 
+     UniqueMeshFunction(mesh),
+     finalized_(false) {};
 
   virtual void Define(const std::vector<std::string>& regions,
                       const Teuchos::RCP<const MultiFunction>& f,

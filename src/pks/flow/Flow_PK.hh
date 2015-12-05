@@ -75,7 +75,6 @@ class Flow_PK : public FnTimeIntegratorPK {
   int FindPosition(int f, AmanziMesh::Entity_ID_List faces);
 
   // -- io members
-  void ProcessStringSourceDistribution(const std::string name, int* method);
   void OutputTimeHistory(const Teuchos::ParameterList& plist, std::vector<dt_tuple>& dt_history);
   void WriteGMVfile(Teuchos::RCP<State> S) const;
 
