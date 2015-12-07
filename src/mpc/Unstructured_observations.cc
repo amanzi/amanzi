@@ -365,7 +365,7 @@ int Unstructured_observations::MakeObservations(State& S)
 
           // zero drawdown at time = t0 wil be written directly to the file.
           if (od.size() > 0) { 
-            value = od.begin()->value - value;
+            value = od.begin()->value * volume - value;
           }
         } else if (var == "aqueous mass flow rate" || 
                    var == "aqueous volumetric flow rate") {

@@ -4643,7 +4643,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
     Observation *drawdown* is calculated with respect to the value registered at the first time
     it was requested.
 
-    The following observations are point-type obervations: "water table".
+    The following observations are point-type obervations: "water table", "drawdown".
 
     * `"functional`" [string] the label of a function to apply to each of the variables
       in the variable list (Function options detailed below)
