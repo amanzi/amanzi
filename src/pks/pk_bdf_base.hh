@@ -69,6 +69,13 @@ class PKBDFBase : public virtual PKDefaultBase,
     return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }
 
+  // experimental approach -- calling this indicates that the time
+  // integration scheme is changing the value of the solution in
+  // state.
+  virtual void ChangedSolution() = 0;
+  virtual void ChangedSolution(const Teuchos::Ptr<State>& S) = 0;
+
+  
  protected: // data
   // preconditioner assembly control
   bool assemble_preconditioner_;

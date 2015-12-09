@@ -70,6 +70,7 @@ public:
   // -- Experimental approach -- calling this indicates that the time
   //    integration scheme is changing the value of the solution in
   //    state.
+  virtual void ChangedSolution(const Teuchos::Ptr<State>& S);
   virtual void ChangedSolution();
 
   // -- Admissibility of the solution.
@@ -289,6 +290,20 @@ void StrongMPC<PK_t>::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVect
 // scheme is changing the value of the solution in state.
 // -----------------------------------------------------------------------------
 template<class PK_t>
+void StrongMPC<PK_t>::ChangedSolution(const Teuchos::Ptr<State>& S) {
+  // loop over sub-PKs
+  for (typename MPC<PK_t>::SubPKList::iterator pk = MPC<PK_t>::sub_pks_.begin();
+       pk != MPC<PK_t>::sub_pks_.end(); ++pk) {
+    (*pk)->ChangedSolution(S);
+  }
+};
+
+  
+// -----------------------------------------------------------------------------
+// Calling this indicates that the time integration scheme is changing
+// the value of the solution in state.
+// -----------------------------------------------------------------------------
+template<class PK_t>
 void StrongMPC<PK_t>::ChangedSolution() {
   // loop over sub-PKs
   for (typename MPC<PK_t>::SubPKList::iterator pk = MPC<PK_t>::sub_pks_.begin();
@@ -296,6 +311,7 @@ void StrongMPC<PK_t>::ChangedSolution() {
     (*pk)->ChangedSolution();
   }
 };
+
 
 // -----------------------------------------------------------------------------
 // Check admissibility of each sub-pk

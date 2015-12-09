@@ -1,60 +1,53 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
-#include "EpetraExt_RowMatrixOut.h"
 
+#include "pk_physical_bdf_base.hh"
 #include "mpc_surface_subsurface_helpers.hh"
-#include "weak_mpc_semi_coupled.hh"
+#include "strong_mpc.hh"
 
+#include "weak_mpc_semi_coupled.hh"
 
 
 namespace Amanzi {
 
-/*
-// -----------------------------------------------------------------------------
-// Calculate the min of sub PKs timestep sizes.
-// -----------------------------------------------------------------------------
-double WeakMPCSemiCoupled::get_dt() {
-  double dt = 1.0e99;
-  for (MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
-       pk != sub_pks_.end(); ++pk) {
-    dt = std::min<double>(dt, (*pk)->get_dt());
-  }
-  return dt;
-};
-
-*/
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually.
 // -----------------------------------------------------------------------------
 bool WeakMPCSemiCoupled::advance(double dt) {
- 
   bool fail = false;
   MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
-  //advance surface_star-pressure from t_n to t_(n+1)
- 
+
+  // advance surface_star-pressure from t_n to t_(n+1)
   fail = (*pk)->advance(dt);
 
-  //--*S_inter_->GetFieldData("surface-pressure","surface flow") = *S_next_->GetFieldData("surface_star-pressure",sub_pks_[0]->name());
   // copy surface_star-pressure at t_(n+1) to surface-pressure at t_n
-
-  //CopySurfaceToSubsurface(*S_inter_->GetFieldData("surface-pressure", "surface flow"),S_inter_->GetFieldData("pressure", "subsurface flow").ptr()); 
-
+  *S_inter_->GetFieldData("surface-pressure",sub_pks_[1]->name()) =
+    *S_next_->GetFieldData("surface_star-pressure");
+  CopySurfaceToSubsurface(*S_inter_->GetFieldData("surface-pressure"),
+			  S_inter_->GetFieldData("pressure", sub_pks_[1]->name()).ptr());
+  // NOTE: later do it in the setup or constructor --aj
+  Teuchos::RCP<PKBDFBase> pk_domain =
+    Teuchos::rcp_dynamic_cast<PKBDFBase>(sub_pks_[1]);
+  ASSERT(pk_domain.get());
+  pk_domain->ChangedSolution(S_inter_.ptr());
   
+  // advance surface-pressure from t_n to t_(n+1)
   ++pk;
+  fail += (*pk)->advance(dt);
+  if (fail) return fail;
+  
+  // copy surface-pressure at t_(n+1) to surface_star-pressure at t_n+1
+  *S_next_->GetFieldData("surface_star-pressure",sub_pks_[0]->name()) =
+    *S_next_->GetFieldData("surface-pressure");
 
- fail += (*pk)->advance(dt);
+  // Mark surface_star-pressure evaluator as changed.
+  // NOTE: later do it in the setup or constructor --aj
+  Teuchos::RCP<PKBDFBase> pk_surf =
+    Teuchos::rcp_dynamic_cast<PKBDFBase>(sub_pks_[0]);
+  ASSERT(pk_surf.get());
+  pk_surf->ChangedSolution();
 
-
- *S_next_->GetFieldData("surface_star-pressure",sub_pks_[0]->name()) =  *S_next_->GetFieldData("surface-pressure","surface flow");
-
-//later do it in the setup or constructor
- Teuchos::RCP<PKPhysicalBDFBase> pk_surf = Teuchos::rcp_dynamic_cast<PKPhysicalBDFBase>(sub_pks_[0]);
- pk_surf->ChangedSolution();
-   
-  if (fail)
-    return fail;
-
+  return fail;
 };
-
  
 
 
@@ -64,13 +57,7 @@ WeakMPCSemiCoupled::setup(const Teuchos::Ptr<State>& S) {
   MPC<PK>::setup(S);
 };
 
-/*
-void
-WeakMPCSemiCoupled::initialize(const Teuchos::Ptr<State>& S) {
-  MPC<PK>::initialize(S);
-}
-*/
 
-} // namespace
+} // namespace Amanzi
 
 

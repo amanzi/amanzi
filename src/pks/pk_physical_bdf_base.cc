@@ -212,14 +212,33 @@ double PKPhysicalBDFBase::BoundaryValue(const Teuchos::RCP<const Amanzi::Composi
 }
 
 
-  
 // -----------------------------------------------------------------------------
 // Experimental approach -- calling this indicates that the time
 // integration scheme is changing the value of the solution in
 // state.
 // -----------------------------------------------------------------------------
+void PKPhysicalBDFBase::ChangedSolution(const Teuchos::Ptr<State>& S) {
+  if (S == Teuchos::null) {
+    solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
+
+  } else {
+
+    Teuchos::RCP<FieldEvaluator> fm = S->GetFieldEvaluator(key_);
+
+    Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator =
+      Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
+    ASSERT(solution_evaluator != Teuchos::null);
+    solution_evaluator->SetFieldAsChanged(S);
+  }
+};
+
+
+// -----------------------------------------------------------------------------
+// Calling this indicates that the time integration scheme is changing
+// the value of the solution in state.
+// -----------------------------------------------------------------------------
 void PKPhysicalBDFBase::ChangedSolution() {
   solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
 };
-
+  
 } // namespace

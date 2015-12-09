@@ -55,6 +55,7 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
   // -- Experimental approach -- calling this indicates that the time
   //    integration scheme is changing the value of the solution in
   //    state.
+  virtual void ChangedSolution(const Teuchos::Ptr<State>& S);
   virtual void ChangedSolution();
 
   virtual double BoundaryValue(const Teuchos::RCP<const Amanzi::CompositeVector>& solution, int face_id);
