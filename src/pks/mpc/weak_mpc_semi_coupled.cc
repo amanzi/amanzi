@@ -4,12 +4,6 @@
 #include "mpc_surface_subsurface_helpers.hh"
 #include "weak_mpc_semi_coupled.hh"
 
-/*
-
-Weak MPC 
-
-
- */
 
 
 namespace Amanzi {
@@ -52,8 +46,9 @@ bool WeakMPCSemiCoupled::advance(double dt) {
 
  *S_next_->GetFieldData("surface_star-pressure",sub_pks_[0]->name()) =  *S_next_->GetFieldData("surface-pressure","surface flow");
 
-Teuchos::RCP<PKPhysicalBDFBase> pk_surf = Teuchos::rcp_dynamic_cast<PKPhysicalBDFBase>(sub_pks_[0]);
-pk_surf->ChangedSolution();
+//later do it in the setup or constructor
+ Teuchos::RCP<PKPhysicalBDFBase> pk_surf = Teuchos::rcp_dynamic_cast<PKPhysicalBDFBase>(sub_pks_[0]);
+ pk_surf->ChangedSolution();
    
   if (fail)
     return fail;

@@ -107,7 +107,7 @@ void HeightEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
 // ---------------------------------------------------------------------------
 void HeightEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key) {
-  Key dmy_key = std::string("d")+my_key_+std::string("_d")+wrt_key;
+  Key dmy_key = getDerivKey(my_key_,wrt_key);
   Teuchos::RCP<CompositeVector> dmy;
   if (S->HasField(dmy_key)) {
     // Get the field...
@@ -147,7 +147,7 @@ void HeightEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S,
     } else if (S->GetFieldEvaluator(*dep)->IsDependency(S, wrt_key)) {
       // partial F / partial dep * ddep/dx
       // -- ddep/dx
-      Key ddep_key = std::string("d")+*dep+std::string("_d")+wrt_key;
+      Key ddep_key = getDerivKey(*dep,wrt_key);
       Teuchos::RCP<const CompositeVector> ddep = S->GetFieldData(ddep_key);
       // -- partial F / partial dep
       EvaluateFieldPartialDerivative_(S, *dep, tmp.ptr());
@@ -188,8 +188,6 @@ void HeightEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const double& p_atm = *S->GetScalarData(patm_key_);
   const Epetra_Vector& gravity = *S->GetConstantVectorData(gravity_key_);
   double gz = -gravity[2];  // check this
-  
-  std::cout<<"================ "<<pres_key_<< "="<<pres_c[0][0]<<" "<<bar_<<"\n";
     
   int ncells = res_c.MyLength();
   if (bar_) {

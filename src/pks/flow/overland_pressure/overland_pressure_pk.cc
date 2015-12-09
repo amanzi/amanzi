@@ -201,14 +201,14 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   if (jacobian_) {
     if (preconditioner_->RangeMap().HasComponent("face")) {
       // MFD -- upwind required
-      S->RequireField("d"+getKey(domain_,"upwind_overland_conductivity")+"_d"+getKey(domain_,"ponded_depth"), name_)
+      S->RequireField(getDerivKey(getKey(domain_,"upwind_overland_conductivity"),getKey(domain_,"ponded_depth")), name_)
         ->SetMesh(mesh_)->SetGhosted()
         ->SetComponent("face", AmanziMesh::FACE, 1);
 
       upwinding_dkdp_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-               "d"+getKey(domain_,"overland_conductivity")+"_d"+getKey(domain_,"ponded_depth"),
-               "d"+getKey(domain_,"upwind_overland_conductivity")+"_d"+getKey(domain_,"ponded_depth"),
-                                                                    getKey(domain_,"mass_flux_direction"),1.e-8));
+                                    getDerivKey(getKey(domain_,"overland_conductivity"),getKey(domain_,"ponded_depth")),
+                                    getDerivKey(getKey(domain_,"upwind_overland_conductivity"),getKey(domain_,"ponded_depth")),
+                                    getKey(domain_,"mass_flux_direction"),1.e-8));
     }
   }
   
@@ -431,8 +431,8 @@ void OverlandPressureFlow::initialize(const Teuchos::Ptr<State>& S) {
   S->GetField(getKey(domain_,"upwind_overland_conductivity"),name_)->set_initialized();
 
   if (jacobian_ && preconditioner_->RangeMap().HasComponent("face")) {
-    S->GetFieldData("d"+getKey(domain_,"upwind_overland_conductivity")+"_d"+getKey(domain_,"ponded_depth"),name_)->PutScalar(1.0);
-    S->GetField("d"+getKey(domain_,"upwind_overland_conductivity")+"_d"+getKey(domain_,"ponded_depth"),name_)->set_initialized();
+    S->GetFieldData(getDerivKey(getKey(domain_,"upwind_overland_conductivity"),getKey(domain_,"ponded_depth")),name_)->PutScalar(1.0);
+    S->GetField(getDerivKey(getKey(domain_,"upwind_overland_conductivity"),getKey(domain_,"ponded_depth")),name_)->set_initialized();
   }
 
   S->GetField(getKey(domain_,"mass_flux"), name_)->set_initialized();
@@ -638,7 +638,7 @@ bool OverlandPressureFlow::UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<
     if (preconditioner_->RangeMap().HasComponent("face")) {
       // get upwind conductivity data
       Teuchos::RCP<CompositeVector> duw_cond =
-        S->GetFieldData("d"+getKey(domain_,"upwind_overland_conductivity")+"_d"+getKey(domain_,"ponded_depth"), name_);
+        S->GetFieldData(getDerivKey(getKey(domain_,"upwind_overland_conductivity"),getKey(domain_,"ponded_depth")), name_);
       duw_cond->PutScalar(0.);
     
       // Then upwind.  This overwrites the boundary if upwinding says so.
