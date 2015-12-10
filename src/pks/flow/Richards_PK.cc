@@ -355,7 +355,6 @@ void Richards_PK::Initialize()
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;
 
   src_sink = NULL;
-  src_sink_distribution = 0;
 
   // create verbosity object
   Teuchos::ParameterList vlist;
@@ -521,6 +520,15 @@ void Richards_PK::Initialize()
   // repeat upwind initialization, mainly for old MPC
   InitializeUpwind_();
 
+  // initialize well modeling
+  if (src_sink != NULL) {
+    int type = src_sink->CollectActionsList();
+    if (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+      PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
+    }
+    src_sink->Compute(t_old, t_new, (Kxy == Teuchos::null) ? NULL : Kxy->Values()); 
+  }
+
   // initialize matrix and preconditioner operators.
   // -- setup phase
   // -- molar density requires to rescale gravity later.
@@ -570,11 +578,6 @@ void Richards_PK::Initialize()
     }
   }
   
-  // initialize well modeling
-  if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
-  }
-
   // Optional step: calculate hydrostatic solution consistent with BCs
   // and clip it as requested. We have to do it only once at the beginning
   // of time period.
@@ -812,7 +815,7 @@ void Richards_PK::InitializeStatistics_()
     *vo_->os() << std::endl 
         << vo_->color("green") << "Initalization of PK is complete, T=" << S_->time()
         << " dT=" << dt_ << vo_->reset() << std::endl;
-    *vo_->os()<< "EC:" << error_control_ << " Src:" << src_sink_distribution
+    *vo_->os()<< "EC:" << error_control_ 
               << " Upwind:" << relperm_->method() << op_matrix_diff_->little_k()
               << " PC:\"" << preconditioner_name_.c_str() << "\"" 
               << " TI:\"" << ti_method_name.c_str() << "\"" << std::endl
@@ -974,13 +977,7 @@ void Richards_PK::CommitStep(double t_old, double t_new)
 void Richards_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u)
 {
   if (src_sink != NULL) {
-    if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      src_sink->ComputeDistribute(t_old, t_new, Kxy->Values());
-    } else if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME) {
-      src_sink->ComputeDistribute(t_old, t_new);
-    } else {
-      src_sink->Compute(t_old, t_new);
-    }
+    src_sink->Compute(t_old, t_new, (Kxy == Teuchos::null) ? NULL : Kxy->Values()); 
   }
 
   bc_pressure->Compute(t_new);

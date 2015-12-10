@@ -329,16 +329,13 @@ void Darcy_PK::Initialize()
   preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
   ASSERT(preconditioner_list_->isSublist(preconditioner_name_));
   
-  // initialize well modeling
+  // initialize well models
   if (src_sink != NULL) {
-    if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+    int type = src_sink->CollectActionsList();
+    if (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
-      src_sink->ComputeDistribute(t_old, t_new, Kxy->Values()); 
-    } else if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME) {
-      src_sink->ComputeDistribute(t_old, t_new);
-    } else {
-      src_sink->Compute(t_old, t_new);
     }
+    src_sink->Compute(t_old, t_new, (Kxy == Teuchos::null) ? NULL : Kxy->Values()); 
   }
   
   // Optional step: calculate hydrostatic solution consistent with BCs.
@@ -429,11 +426,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     bc_head->ComputeShift(t_new, shift_water_table_->Values());
 
   if (src_sink != NULL) {
-    if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      src_sink->ComputeDistribute(t_old, t_new, Kxy->Values()); 
-    } else {
-      src_sink->ComputeDistribute(t_old, t_new);
-    }
+    src_sink->Compute(t_old, t_new, (Kxy == Teuchos::null) ? NULL : Kxy->Values()); 
   }
 
   ComputeBCs(*solution);

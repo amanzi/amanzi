@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -26,8 +26,8 @@ namespace Flow {
 class FlowSourceFactory {
  public:
   FlowSourceFactory(const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                    const Teuchos::RCP<Teuchos::ParameterList> params)
-     : mesh_(mesh), params_(params) {};
+                    const Teuchos::RCP<Teuchos::ParameterList> plist)
+     : mesh_(mesh), plist_(plist) {};
   ~FlowSourceFactory() {};
   
   FlowDomainFunction* createSource() const;
@@ -38,7 +38,7 @@ class FlowSourceFactory {
      
  private:
   const Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  const Teuchos::RCP<Teuchos::ParameterList> params_;
+  const Teuchos::RCP<Teuchos::ParameterList> plist_;
 };
 
 }  // namespace Flow

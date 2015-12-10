@@ -1,5 +1,5 @@
 /*
-  This is the transport component of the Amanzi code.
+  Transport PK
 
   Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
@@ -22,7 +22,7 @@ namespace Transport {
 /* ******************************************************************
 * Process source, step 1.
 ****************************************************************** */
-void TransportSourceFactory::CreateSource(std::vector<TransportDomainFunction*>& srcs) 
+void TransportSourceFactory::Create(std::vector<TransportDomainFunction*>& srcs) 
 {
   Errors::Message msg;
 

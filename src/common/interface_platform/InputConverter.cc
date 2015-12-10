@@ -1,5 +1,5 @@
 /*
-  This is the input component of the Amanzi code. 
+  Input Converter
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -45,7 +45,7 @@ namespace Amanzi {
 namespace AmanziInput {
 
 /* ******************************************************************
-* Non-member functions.
+* Non-member function: returns parser.
 ****************************************************************** */
 XercesDOMParser* CreateXMLParser()
 {
@@ -63,6 +63,9 @@ XercesDOMParser* CreateXMLParser()
   return parser;
 }
 
+/* ******************************************************************
+* Non-member function: returns xercesc document.
+****************************************************************** */
 xercesc::DOMDocument* OpenXMLInput(XercesDOMParser* parser,
                                    const std::string& xml_input)
 {
@@ -92,9 +95,9 @@ xercesc::DOMDocument* OpenXMLInput(XercesDOMParser* parser,
 * Various constructors.
 ****************************************************************** */
 InputConverter::InputConverter(const std::string& input_filename):
-  xmlfilename_(input_filename),
-  doc_(NULL),
-  parser_(NULL)
+    xmlfilename_(input_filename),
+    doc_(NULL),
+    parser_(NULL)
 {
   parser_ = CreateXMLParser();
   doc_ = OpenXMLInput(parser_, input_filename);
@@ -103,9 +106,9 @@ InputConverter::InputConverter(const std::string& input_filename):
 
 InputConverter::InputConverter(const std::string& input_filename,
                                xercesc::DOMDocument* input_doc):
-  xmlfilename_(input_filename),
-  doc_(input_doc),
-  parser_(NULL)
+    xmlfilename_(input_filename),
+    doc_(input_doc),
+    parser_(NULL)
 {
   FilterNodes(doc_, "comments");
 }
@@ -140,6 +143,59 @@ void InputConverter::FilterNodes(DOMNode* parent, const std::string& filter)
     }
   }
 }
+
+
+/* ******************************************************************
+* Check the version number.
+****************************************************************** */
+void InputConverter::ParseVersion_()
+{
+  MemoryManager mm;
+  
+  DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("amanzi_input"));
+  if (node_list->getLength() > 0) {
+    std::string version = GetAttributeValueS_(static_cast<DOMElement*>(node_list->item(0)), "version");
+    
+    int major, minor, micro;
+    
+    std::stringstream ss;
+    ss << version;
+    std::string ver;
+    
+    try {
+      getline(ss, ver, '.');
+      major = boost::lexical_cast<int>(ver);
+      
+      getline(ss, ver, '.');
+      minor = boost::lexical_cast<int>(ver);
+      
+      getline(ss,ver);
+      micro = boost::lexical_cast<int>(ver);
+    }
+    catch (...) {
+      Errors::Message msg("The version string in the input file '" + version + 
+                          "' has the wrong format, use I.J.K.");
+      Exceptions::amanzi_throw(msg);
+    }
+
+    if ((major != AMANZI_SPEC_VERSION_MAJOR) ||
+        (minor != AMANZI_SPEC_VERSION_MINOR) || 
+        (micro != AMANZI_SPEC_VERSION_MICRO)) {
+      std::stringstream ss;
+      ss << AMANZI_SPEC_VERSION_MAJOR << "." << AMANZI_SPEC_VERSION_MINOR << "." << AMANZI_SPEC_VERSION_MICRO;
+
+      Errors::Message msg;
+      msg << "The input version " << version << " is not supported. "
+          << "Supported versions: "<< ss.str() << ".\n";
+      Exceptions::amanzi_throw(msg);
+    }
+  } else {
+    // amanzi input description did not exist, error
+    Errors::Message msg("Amanzi input description does not exist <amanzi_input version=...>");
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
 
 /* ******************************************************************
 * Populates protected std::map constants_.
@@ -193,7 +249,6 @@ void InputConverter::ParseConstants_()
     }
   }
 }
-
 
 
 /* ******************************************************************

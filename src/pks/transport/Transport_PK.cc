@@ -333,8 +333,8 @@ void Transport_PK::Initialize()
 
   // source term initialization
   for (int i =0; i < srcs.size(); i++) {
-    int distribution = srcs[i]->CollectActionsList();
-    if (distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+    int type = srcs[i]->CollectActionsList();
+    if (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
       break;
     }
@@ -1165,23 +1165,15 @@ void Transport_PK::ComputeAddSourceTerms(double tp, double dtp,
     if (num_vectors == 1) imap = 0;
 
     double t0 = tp - dtp;
-    int distribution = srcs[m]->CollectActionsList();
-    if (distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      srcs[m]->ComputeDistribute(t0, tp, Kxy->Values()); 
-    } else if (distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME) {
-      srcs[m]->ComputeDistribute(t0, tp);
-    } else {
-      srcs[m]->Compute(t0, tp);
-    }
+    srcs[m]->Compute(t0, tp, (Kxy == Teuchos::null) ? NULL : Kxy->Values()); 
 
-    TransportDomainFunction::Iterator it;
-
-    for (it = srcs[m]->begin(); it != srcs[m]->end(); ++it) {
+    int type = srcs[m]->CollectActionsList();
+    for (TransportDomainFunction::Iterator it = srcs[m]->begin(); it != srcs[m]->end(); ++it) {
       int c = it->first;
       double value = mesh_->cell_volume(c) * it->second;
 
-      if (distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME ||
-         (distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY))
+      if (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME ||
+         (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY))
           value *= units_.concentration_factor();
 
       tcc[imap][c] += dtp * value;

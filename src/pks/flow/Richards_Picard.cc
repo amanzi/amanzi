@@ -47,11 +47,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 
   // update steady state source conditons
   if (src_sink != NULL) {
-    if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      src_sink->ComputeDistribute(time, time, Kxy->Values()); 
-    } else {
-      src_sink->ComputeDistribute(time, time, NULL);
-    }
+    src_sink->Compute(time, time, (Kxy == Teuchos::null) ? NULL : Kxy->Values()); 
   }
 
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
