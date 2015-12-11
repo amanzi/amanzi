@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "Epetra_Vector.h"
 #include "Teuchos_RCP.hpp"
 
 #include "CommonDefs.hh"
@@ -27,8 +28,8 @@ namespace Amanzi {
 class PK_DomainFunction : public Functions::UniqueMeshFunction {
  public:
   PK_DomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : 
-     UniqueMeshFunction(mesh),
-     finalized_(false) {};
+      UniqueMeshFunction(mesh),
+      finalized_(false) {};
 
   virtual void Define(const std::vector<std::string>& regions,
                       const Teuchos::RCP<const MultiFunction>& f,
@@ -39,7 +40,7 @@ class PK_DomainFunction : public Functions::UniqueMeshFunction {
                       int action, int submodel);
 
   // source term on time interval (t0, t1]
-  virtual void Compute(double t0, double t1, double* weight);
+  virtual void Compute(double t0, double t1, Teuchos::RCP<const Epetra_Vector> weight);
 
   // a place keeper
   void Finalize() {};

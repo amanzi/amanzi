@@ -66,7 +66,7 @@ void Richards_PK::Functional(double t_old, double t_new,
   op_matrix_diff_->ApplyBCs(true, true);
 
   Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
-  if (src_sink != NULL) AddSourceTerms(*rhs);
+  AddSourceTerms(*rhs);
 
   op_matrix_->ComputeNegativeResidual(*u_new->Data(), *f->Data());
 

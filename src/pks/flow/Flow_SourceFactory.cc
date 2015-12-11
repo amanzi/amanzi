@@ -23,10 +23,8 @@ namespace Flow {
 /* ******************************************************************
 * Process source, step 1.
 ****************************************************************** */
-FlowDomainFunction* FlowSourceFactory::createSource() const
+void FlowSourceFactory::Create(std::vector<FlowDomainFunction*>& srcs) const
 {
-  FlowDomainFunction* src = new FlowDomainFunction(mesh_);
-
   // Iterate through the source specification sublists in the plist_.
   // All are expected to be sublists of identical structure.
   for (Teuchos::ParameterList::ConstIterator i = plist_->begin(); i != plist_->end(); ++i) {
@@ -34,7 +32,9 @@ FlowDomainFunction* FlowSourceFactory::createSource() const
     if (plist_->isSublist(name)) {
       Teuchos::ParameterList& spec = plist_->sublist(name);
       try {
+        FlowDomainFunction* src = new FlowDomainFunction(mesh_);
         ProcessSourceSpec(spec, src);
+        srcs.push_back(src);
       } catch (Errors::Message& msg) {
         Errors::Message m;
         m << "in sublist \"" << spec.name().c_str() << "\": " << msg.what();
@@ -46,7 +46,6 @@ FlowDomainFunction* FlowSourceFactory::createSource() const
       Exceptions::amanzi_throw(m);
     }
   }
-  return src;
 }
 
 

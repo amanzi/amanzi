@@ -1165,7 +1165,7 @@ void Transport_PK::ComputeAddSourceTerms(double tp, double dtp,
     if (num_vectors == 1) imap = 0;
 
     double t0 = tp - dtp;
-    srcs[m]->Compute(t0, tp, (Kxy == Teuchos::null) ? NULL : Kxy->Values()); 
+    srcs[m]->Compute(t0, tp, Kxy); 
 
     int type = srcs[m]->CollectActionsList();
     for (TransportDomainFunction::Iterator it = srcs[m]->begin(); it != srcs[m]->end(); ++it) {

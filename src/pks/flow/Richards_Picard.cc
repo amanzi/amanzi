@@ -46,8 +46,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     bc_head->ComputeShift(time, shift_water_table_->Values());
 
   // update steady state source conditons
-  if (src_sink != NULL) {
-    src_sink->Compute(time, time, (Kxy == Teuchos::null) ? NULL : Kxy->Values()); 
+  for (int i = 0; i < srcs.size(); ++i) {
+    srcs[i]->Compute(time, time, Kxy); 
   }
 
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
@@ -85,7 +85,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     op_preconditioner_diff_->ApplyBCs(true, true);
 
     Teuchos::RCP<CompositeVector> rhs = op_preconditioner_->rhs();  // export RHS from the matrix class
-    if (src_sink != NULL) AddSourceTerms(*rhs);
+    AddSourceTerms(*rhs);
 
     // create preconditioner
     op_preconditioner_->AssembleMatrix();

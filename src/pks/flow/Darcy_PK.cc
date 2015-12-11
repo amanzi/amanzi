@@ -97,7 +97,9 @@ Darcy_PK::~Darcy_PK()
   if (bc_flux != NULL) delete bc_flux;
   if (bc_seepage != NULL) delete bc_seepage;
 
-  if (src_sink != NULL) delete src_sink;
+  for (int i = 0; i < srcs.size(); i++) {
+    if (srcs[i] != NULL) delete srcs[i]; 
+  }
   if (vo_ != NULL) delete vo_;
 }
 
@@ -223,9 +225,6 @@ void Darcy_PK::Initialize()
 
   // Initialize defaults
   bc_seepage = NULL; 
-  src_sink = NULL;
-  src_sink_distribution = 0;
-
   initialize_with_darcy_ = true;
   num_itrs_ = 0;
 
@@ -330,12 +329,12 @@ void Darcy_PK::Initialize()
   ASSERT(preconditioner_list_->isSublist(preconditioner_name_));
   
   // initialize well models
-  if (src_sink != NULL) {
-    int type = src_sink->CollectActionsList();
+  for (int i =0; i < srcs.size(); i++) {
+    int type = srcs[i]->CollectActionsList();
     if (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
     }
-    src_sink->Compute(t_old, t_new, (Kxy == Teuchos::null) ? NULL : Kxy->Values()); 
+    srcs[i]->Compute(t_old, t_new, Kxy); 
   }
   
   // Optional step: calculate hydrostatic solution consistent with BCs.
@@ -357,7 +356,7 @@ void Darcy_PK::Initialize()
     *vo_->os() << std::endl 
         << vo_->color("green") << "Initalization of PK is complete." << vo_->reset() << std::endl;
     *vo_->os() << "TI:\"" << ti_method_name.c_str() << "\""
-               << " dt:" << dt_method_name << " Src:" << src_sink_distribution
+               << " dt:" << dt_method_name
                << " LS:\"" << solver_name_.c_str() << "\""
                << " PC:\"" << preconditioner_name_.c_str() << "\"" << std::endl
                << "matrix: " << op_->PrintDiagnostics() << std::endl;
@@ -425,8 +424,8 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   else
     bc_head->ComputeShift(t_new, shift_water_table_->Values());
 
-  if (src_sink != NULL) {
-    src_sink->Compute(t_old, t_new, (Kxy == Teuchos::null) ? NULL : Kxy->Values()); 
+  for (int i = 0; i < srcs.size(); ++i) {
+    srcs[i]->Compute(t_old, t_new, Kxy); 
   }
 
   ComputeBCs(*solution);
@@ -450,7 +449,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   op_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 
   CompositeVector& rhs = *op_->rhs();
-  if (src_sink != NULL) AddSourceTerms(rhs);
+  AddSourceTerms(rhs);
 
   // create linear solver
   AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;

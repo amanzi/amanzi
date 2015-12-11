@@ -54,13 +54,14 @@ void PK_DomainFunction::Define(const std::string& region,
 /* ******************************************************************
 * Evaluate function
 ****************************************************************** */
-void PK_DomainFunction::Compute(double t0, double t1, double* weight)
+void PK_DomainFunction::Compute(double t0, double t1,
+                                Teuchos::RCP<const Epetra_Vector> weight)
 {
   int type = CollectActionsList();
 
   if (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    ASSERT(weight != NULL);
-    ComputeIntegral_(t0, t1, weight); 
+    ASSERT(weight != Teuchos::null);
+    ComputeIntegral_(t0, t1, weight->Values()); 
   } else if (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME) {
     ComputeIntegral_(t0, t1);
   } else {

@@ -30,7 +30,7 @@ class FlowSourceFactory {
      : mesh_(mesh), plist_(plist) {};
   ~FlowSourceFactory() {};
   
-  FlowDomainFunction* createSource() const;
+  void Create(std::vector<FlowDomainFunction*>& srcs) const;
 
  private:
   void ProcessSourceSpec(Teuchos::ParameterList& list, FlowDomainFunction* src) const;
