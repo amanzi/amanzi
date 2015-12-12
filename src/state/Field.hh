@@ -1,14 +1,12 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
-ATS
+  Amanzi & ATS
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+  License: see $ATS_DIR/COPYRIGHT
+  Author: Ethan Coon
 
-Interface for a Field.  A field contains meta-data about a data structure and
-that data structure, encapsulating things like vis, checkpointing, ownership,
-initialization, etc.
-
+  Interface for a Field.  A field contains meta-data about a data structure
+  and that data structure, encapsulating things like vis, checkpointing,
+  ownership, initialization, etc.
 ------------------------------------------------------------------------- */
 
 #ifndef AMANZI_STATE_FIELD_HH_
@@ -17,24 +15,24 @@ initialization, etc.
 #include <string>
 #include <vector>
 
+// TPLs
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 
-#include "visualization.hh"
+// State
 #include "checkpoint.hh"
 #include "CompositeVector.hh"
-
 #include "StateDefs.hh"
+#include "Visualization.hh"
 
 namespace Amanzi {
 
 class Field {
-
-public:
+ public:
   // virtual destructor
-  virtual ~Field() {}
+  virtual ~Field() {};
 
   // copy constructor and assignment
   virtual Teuchos::RCP<Field> Clone() const = 0;
@@ -135,7 +133,7 @@ public:
 
   virtual long int GetLocalElementCount() { return 0L; };
 
-protected:
+ protected:
   // constructors protected, should only be called by derived classes
   Field(std::string fieldname, std::string owner="state");
   Field(const Field& other);
@@ -157,8 +155,7 @@ protected:
 private:
   // operator= disabled
   Field& operator=(const Field&);
-
-}; // class Field
+};
 
 } // namespace Amanzi
 

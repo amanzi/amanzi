@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------
-  Amanzi & ATS
+  State
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -36,7 +36,7 @@
 
 #include "StateDefs.hh"
 
-#include "visualization.hh"
+#include "Visualization.hh"
 #include "checkpoint.hh"
 #include "ObservationData.hh"
 

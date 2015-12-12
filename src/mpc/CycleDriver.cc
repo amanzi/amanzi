@@ -1,5 +1,5 @@
 /*
-  This is the MPC component of the Amanzi code. 
+  Multi-Process Coordinator
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -19,27 +19,31 @@
 #include <iostream>
 #include <unistd.h>
 #include <sys/resource.h>
-#include "errors.hh"
 
+// TPLs
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 
+#include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_TimeMonitor.hpp"
 
+// Amanzi
 #include "checkpoint.hh"
-#include "CycleDriver.hh"
-#include "ObservationData.hh"
+#include "errors.hh"
 #include "PK.hh"
 #include "PK_Factory.hh"
-#include "TimeStepManager.hh"
+#include "ObservationData.hh"
 #include "TimerManager.hh"
+#include "TimeStepManager.hh"
 #include "TreeVector.hh"
-#include "Unstructured_observations.hh"
 #include "State.hh"
-#include "visualization.hh"
+#include "Visualization.hh"
+
+// MPC
+#include "CycleDriver.hh"
+#include "Unstructured_observations.hh"
 
 #define DEBUG_MODE 1
 

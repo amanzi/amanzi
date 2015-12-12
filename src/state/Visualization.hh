@@ -1,14 +1,16 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-Amanzi
+/*
+  State
 
-License:
-Author: Markus Berndt
-        Ethan Coon (ecoon@lanl.gov)
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Visualization of data.
+  Authors: Markus Berndt
+           Ethan Coon (ecoon@lanl.gov)
 
-------------------------------------------------------------------------- */
+  Visualization of data.
+*/
 
 #ifndef AMANZI_STATE_VISUALIZATION_HH_
 #define AMANZI_STATE_VISUALIZATION_HH_
@@ -23,9 +25,7 @@ Visualization of data.
 namespace Amanzi {
 
 class Visualization : public IOEvent {
-
  public:
-
   Visualization(Teuchos::ParameterList& plist, Epetra_MpiComm *comm);
   Visualization();
 
@@ -54,7 +54,7 @@ class Visualization : public IOEvent {
   std::map<std::string, Teuchos::Array<std::string> > regions_;
   bool dynamic_mesh_;
   bool write_partition_;
-}; // Visualization class
+};
 
 } // Amanzi namespace
 
