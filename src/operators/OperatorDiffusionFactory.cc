@@ -19,6 +19,7 @@
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorDiffusionMFD.hh"
 #include "OperatorDiffusionFV.hh"
+#include "OperatorDiffusionNLFV.hh"
 #include "OperatorDiffusionMFDwithGravity.hh"
 #include "OperatorDiffusionFVwithGravity.hh"
 
@@ -50,6 +51,11 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
   } else if (name == "fv: default" && flag) {
     op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh, rho, g));
     op->SetBCs(bc, bc);
+
+  // NLFV methods
+  } else if (name == "nlfv: default" && !flag) {
+    op = Teuchos::rcp(new OperatorDiffusionNLFV(oplist, mesh)); 
+    // op->SetBCs(bc, bc);
 
   // MFD methods
   } else if (!flag) {

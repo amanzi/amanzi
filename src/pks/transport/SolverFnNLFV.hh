@@ -1,5 +1,5 @@
 /*
-  This is the Transport component of Amanzi.
+  Transport PK
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */

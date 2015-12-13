@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -9,7 +9,7 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Reliative permeability as a function of capillary pressure, k=k(pc).
+  Relative permeability as a function of capillary pressure, k=k(pc).
 */
 
 #ifndef AMANZI_FLOW_REL_PERM_EVALUATOR_HH_

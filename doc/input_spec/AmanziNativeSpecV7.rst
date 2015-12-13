@@ -3118,7 +3118,7 @@ Diffusion operator
     has useful properties under some a priori conditions on the mesh and/or permeability tensor.
     The available options are `"mfd: optimized for sparsity`", `"mfd: optimized for monotonicity`",
     `"mfd: default`", `"mfd: support operator`", `"mfd: two-point flux approximation`",
-    and `"fv: default`". 
+    `"fv: default`", and `"nlfv: default`".
     The first option is recommended for general meshes.
     The second option is recommended for orthogonal meshes and diagonal absolute 
     permeability tensor. 

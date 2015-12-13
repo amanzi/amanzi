@@ -1,30 +1,34 @@
 /*
-  This is the mimetic discretization component of the Amanzi code. 
+  WhetStone, version 2.0
+  Release name: naka-to.
 
   Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Release name: aka-to.
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Mimetic finite difference method.
 */
 
 
-#include "WhetStoneDefs.hh"
 #include "nlfv.hh"
-
+#include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* A harmonic point is a unique point on a plane seprating two 
-* materials where (a) continuity conditions are satisfied for 
-* continuous piecewise linear pressure functions and (b) pressure 
-* value is a convex combination of two neighboring cell-based 
-* pressures p_0 and p_1:
-*   p = w p_0 + (1-x) p_1. 
+* A harmonic averaging point is a unique point on a plane (line in 2D)
+* seprating two materials where (a) continuity conditions are 
+* satisfied for continuous piecewise linear pressure functions and 
+* (b) pressure value is a convex combination of two neighboring 
+* cell-based pressures p_0 and p_1:
+*
+*   p = w p_0 + (1-w) p_1. 
+*
+* NOTE: weigth is defined as 1.0 for a boundary face.
 ****************************************************************** */
 void NLFV::HarmonicAveragingPoint(int face, std::vector<Tensor>& T,
                                   AmanziGeometry::Point& p, double& weight)
@@ -37,7 +41,7 @@ void NLFV::HarmonicAveragingPoint(int face, std::vector<Tensor>& T,
 
   if (ncells == 1) {
     p = mesh_->face_centroid(face);
-    weight = 0.5;
+    weight = 1.0;
   } else {
     const AmanziGeometry::Point& fm = mesh_->face_centroid(face);
     const AmanziGeometry::Point& normal = mesh_->face_normal(face);
@@ -68,7 +72,7 @@ void NLFV::HarmonicAveragingPoint(int face, std::vector<Tensor>& T,
 
 /* ******************************************************************
 * Decomposion: conormal = w1 * tau[i1] + w2 * tau[i2] + w3 * tau[i3],
-* where the weights ws = (w1, w2, w3) >= 0.
+* where the weights ws = (w1, w2, w3) are non-negative.
 ****************************************************************** */
 int NLFV::PositiveDecomposition(
     int id1, const std::vector<AmanziGeometry::Point>& tau,

@@ -1,5 +1,5 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators
 
   Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -33,8 +33,6 @@
 
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionMFD.hh"
-#include "OperatorDiffusionFV.hh"
-#include "OperatorDiffusionFactory.hh"
 #include "UpwindSecondOrder.hh"
 #include "UpwindStandard.hh"
 

@@ -1,14 +1,15 @@
 /*
-  This is the mimetic discretization component of the Amanzi code. 
+  WhetStone, version 2.0
+  Release name: naka-to.
 
   Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Version: 2.0
-  Release name: naka-to.
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  The mimetic finite difference method.
 */
 
 #ifndef AMANZI_WHETSTONE_NLFV_HH_
@@ -21,7 +22,6 @@
 
 #include "WhetStone_typedefs.hh"
 #include "Tensor.hh"
-
 
 namespace Amanzi {
 namespace WhetStone {
