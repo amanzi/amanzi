@@ -125,7 +125,6 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
     op->ApplyBCs(true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
-std::cout << *global_op->A() << std::endl;
 
     // create preconditoner using the base operator class
     Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");

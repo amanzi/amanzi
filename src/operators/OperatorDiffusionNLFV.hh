@@ -92,6 +92,7 @@ class OperatorDiffusionNLFV : public virtual OperatorDiffusion {
   virtual void InitDiffusion_(Teuchos::ParameterList& plist);
   void InitStencils_();
   double OneSidedFluxCorrection_(int c, int f, const Epetra_MultiVector& uc, int k);
+  int OrderCellIds_(const AmanziMesh::Entity_ID_List& cells, int& c1, int& c2);
   
  private:
   int dim_;
