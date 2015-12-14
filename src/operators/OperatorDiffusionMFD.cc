@@ -1327,12 +1327,12 @@ OperatorDiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
     CompositeVector u_f_copy(y);
     ierr = lin_solver->ApplyInverse(y, u_f_copy);
     *u.ViewComponent("face",false) = *u_f_copy.ViewComponent("face",false);
-    ASSERT(ierr >= 0);
+    //    ASSERT(ierr >= 0);
   } else {
     CompositeVector u_f_copy(y);
     ierr = consistent_face_op_->ApplyInverse(y, u);
     *u.ViewComponent("face",false) = *u_f_copy.ViewComponent("face",false);
-    ASSERT(ierr >= 0);
+    //    ASSERT(ierr >= 0);
   }
   
   return (ierr > 0) ? 0 : 1;

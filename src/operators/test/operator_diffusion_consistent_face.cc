@@ -144,10 +144,10 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
   op->UpdateConsistentFaces(x);
 
-  // dump the schur complement
-  std::stringstream filename_s2;
-  filename_s2 << "consist_face_" << 0 << ".txt";
-  EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *op->consistent_face_operator()->A());
+  // // dump the schur complement
+  // std::stringstream filename_s2;
+  // filename_s2 << "consist_face_" << 0 << ".txt";
+  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *op->consistent_face_operator()->A());
 
   // ensure that (y - A * x) on faces is zero
   CompositeVector res(cvs);
