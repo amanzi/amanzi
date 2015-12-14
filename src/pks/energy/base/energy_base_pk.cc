@@ -678,15 +678,35 @@ bool EnergyBase::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
 // -----------------------------------------------------------------------------
 void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) {
 
-  // update boundary conditions
-  bc_temperature_->Compute(S_next_->time());
-  bc_diff_flux_->Compute(S_next_->time());
-  bc_flux_->Compute(S_next_->time());
-  UpdateBoundaryConditions_(S_next_.ptr());
+  // average cells to faces to give a reasonable initial guess
+  u->ScatterMasterToGhosted("cell");
+  const Epetra_MultiVector& u_c = *u->ViewComponent("cell",true);
+  Epetra_MultiVector& u_f = *u->ViewComponent("face",false);
 
-  // div K_e grad u
+  int f_owned = u_f.MyLength();
+  for (int f=0; f!=f_owned; ++f) {
+    AmanziMesh::Entity_ID_List cells;
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    double face_value = 0.0;
+    for (int n=0; n!=ncells; ++n) {
+      face_value += u_c[0][cells[n]];
+    }
+    u_f[0][f] = face_value / ncells;
+  }
   ChangedSolution();
-  bool update = UpdateConductivityData_(S_next_.ptr());
+  
+  // use old BCs
+  // // update boundary conditions
+  // bc_temperature_->Compute(S_next_->time());
+  // bc_diff_flux_->Compute(S_next_->time());
+  // bc_flux_->Compute(S_next_->time());
+  // UpdateBoundaryConditions_(S_next_.ptr());
+
+  // use old conductivity
+  // div K_e grad u
+  //  bool update = UpdateConductivityData_(S_next_.ptr());
   Teuchos::RCP<const CompositeVector> conductivity =
       S_next_->GetFieldData(uw_conductivity_key_);
 

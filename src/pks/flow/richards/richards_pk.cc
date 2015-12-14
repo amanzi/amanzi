@@ -976,7 +976,7 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "  Modifying predictor for consistent faces" << std::endl;
 
-  // average cells to faces to give a reasonable place to start
+  // average cells to faces to give a reasonable initial guess
   u->ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& u_c = *u->ViewComponent("cell",true);
   Epetra_MultiVector& u_f = *u->ViewComponent("face",false);
@@ -1013,17 +1013,15 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
       S_next_->GetConstantVectorData("gravity");
 
   // Update the preconditioner with darcy and gravity fluxes
-  Teuchos::RCP<CompositeVector> rel_perm_one = Teuchos::rcp(new CompositeVector(*rel_perm, INIT_MODE_NONE));
-  rel_perm_one->PutScalar(1.);
   matrix_->Init();
   matrix_diff_->SetDensity(rho);
-  matrix_diff_->SetScalarCoefficient(rel_perm_one, Teuchos::null);
+  matrix_diff_->SetScalarCoefficient(rel_perm, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   matrix_diff_->ApplyBCs(true, true);
 
   // derive the consistent faces, involves a solve
+  db_->WriteVector(" p_consistent face Richards guess:", u.ptr(), true);
   matrix_diff_->UpdateConsistentFaces(*u);
-
   db_->WriteVector(" p_consistent face Richards:", u.ptr(), true);
 }
 
