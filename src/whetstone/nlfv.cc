@@ -20,53 +20,44 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* A harmonic averaging point is a unique point on a plane (line in 2D)
-* seprating two materials where (a) continuity conditions are 
-* satisfied for continuous piecewise linear pressure functions and 
-* (b) pressure value is a convex combination of two neighboring 
-* cell-based pressures p_0 and p_1:
+* A harmonic averaging point (HAP) is a unique point on a plane 
+* (line in 2D) * seprating two materials where (a) continuity 
+* conditions are satisfied for continuous piecewise linear pressure
+* functions and (b) pressure value is a convex combination of two 
+* neighboring cell-based pressures p_c1 and p_c2:
 *
-*   p = w p_0 + (1-w) p_1. 
+*   p = w p_c1 + (1-w) p_c2. 
 *
-* NOTE: weigth is defined as 1.0 for a boundary face.
+* Input: face f, two cells sharing this face, and two co-normal 
+*        vectors Tni = Ti * normal.
+* Output: HAP p and weight w.
 ****************************************************************** */
-void NLFV::HarmonicAveragingPoint(int face, std::vector<Tensor>& T,
-                                  AmanziGeometry::Point& p, double& weight)
+void NLFV::HarmonicAveragingPoint(
+    int f, int c1, int c2, 
+    const AmanziGeometry::Point& Tn1, const AmanziGeometry::Point& Tn2,
+    AmanziGeometry::Point& p, double& weight)
 {
   int d = mesh_->space_dimension();
 
-  Entity_ID_List cells;
-  mesh_->face_get_cells(face, (ParallelTypeCast)WhetStone::USED, &cells);
-  int ncells = cells.size();
+  const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
+  const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
-  if (ncells == 1) {
-    p = mesh_->face_centroid(face);
-    weight = 1.0;
-  } else {
-    const AmanziGeometry::Point& fm = mesh_->face_centroid(face);
-    const AmanziGeometry::Point& normal = mesh_->face_normal(face);
+  const AmanziGeometry::Point& cm1 = mesh_->cell_centroid(c1);
+  const AmanziGeometry::Point& cm2 = mesh_->cell_centroid(c2);
 
-    const AmanziGeometry::Point& cm1 = mesh_->cell_centroid(cells[0]);
-    const AmanziGeometry::Point& cm2 = mesh_->cell_centroid(cells[1]);
+  double d1 = fabs(normal * (fm - cm1));
+  double d2 = fabs(normal * (fm - cm2));
+  double t1 = fabs(normal * Tn1);
+  double t2 = fabs(normal * Tn2);
 
-    AmanziGeometry::Point Tn1(d), Tn2(d);
-    Tn1 = T[cells[0]] * normal;
-    Tn2 = T[cells[1]] * normal;
+  double det = t1 * d2 + t2 * d1;
+  weight = t1 * d2 / det;
 
-    double d1 = fabs(normal * (fm - cm1));
-    double d2 = fabs(normal * (fm - cm2));
-    double t1 = fabs(normal * Tn1);
-    double t2 = fabs(normal * Tn2);
-
-    double det = t1 * d2 + t2 * d1;
-    weight = t1 * d2 / det;
-
-    AmanziGeometry::Point v1(d), v2(d);
-    double area = mesh_->face_area(face);
-    v1 = area * Tn1 - t1 * normal / area;
-    v2 = area * Tn2 - t2 * normal / area;
-    p = weight * cm1 + (1 - weight) * cm2 + (d1 * d2 / det) * (v2 - v1);
-  }
+  AmanziGeometry::Point v1(d), v2(d);
+  double area = mesh_->face_area(f);
+  v1 = area * Tn1 - t1 * normal / area;
+  v2 = area * Tn2 - t2 * normal / area;
+  p = weight * cm1 + (1 - weight) * cm2 + (d1 * d2 / det) * (v2 - v1);
 }
 
 

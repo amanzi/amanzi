@@ -16,9 +16,11 @@
 #ifndef AMANZI_OPERATOR_DIFFUSION_NLFV_HH_
 #define AMANZI_OPERATOR_DIFFUSION_NLFV_HH_
 
-#include <strings.h>
+#include <string>
+#include <vector>
 
 // TPLs
+#include "Epetra_IntVector.h"
 #include "Ifpack.h" 
 #include "Teuchos_RCP.hpp"
 
@@ -33,40 +35,12 @@ namespace Operators {
 
 class BCs;
 
-/*
-  Auxiliary face-based structure for scheme stencils. The stencils 
-  are used in the flux calculation. They are not mapped directly 
-  on the face-based local matrices that still follow the classical 
-  FV structure.
-*/
-
-struct FaceStencil {
- public:
-  FaceStencil() {};
-  ~FaceStencil() {};
-
-  // Use space dimension to allocate enough data for stencils.
-  void Init(int d) {
-    weights.resize(2 * d);
-    stencil.resize(2 * d);
-    faces.resize(2 * d);
-  }
-
- public:
-  AmanziGeometry::Point p;  // harmonic averaging point
-  double gamma;  // coefficient for cell with the lowest id 
-
-  std::vector<double> weights;  // weights in positive decompositions
-  std::vector<int> stencil;  // ids of cells in positive decompositions
-  std::vector<int> faces;  // ids of interface faces
-};
-
 class OperatorDiffusionNLFV : public virtual OperatorDiffusion {
  public:
   OperatorDiffusionNLFV(Teuchos::ParameterList& plist,
                         const Teuchos::RCP<Operator>& global_op) :
       OperatorDiffusion(global_op),
-      stencils_initialized_(false)
+      stencil_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_NLFV;
     InitDiffusion_(plist);
@@ -75,7 +49,7 @@ class OperatorDiffusionNLFV : public virtual OperatorDiffusion {
   OperatorDiffusionNLFV(Teuchos::ParameterList& plist,
                         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       OperatorDiffusion(mesh),
-      stencils_initialized_(false)
+      stencil_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_NLFV;
     InitDiffusion_(plist);
@@ -84,7 +58,7 @@ class OperatorDiffusionNLFV : public virtual OperatorDiffusion {
   OperatorDiffusionNLFV(Teuchos::ParameterList& plist,
                         const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
       OperatorDiffusion(mesh),
-      stencils_initialized_(false)
+      stencil_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_NLFV;
     InitDiffusion_(plist);
@@ -121,8 +95,10 @@ class OperatorDiffusionNLFV : public virtual OperatorDiffusion {
   
  private:
   int dim_;
-  bool stencils_initialized_;
-  std::vector<FaceStencil> stencils_;
+  bool stencil_initialized_;
+  Teuchos::RCP<CompositeVector> stencil_data_;
+  std::vector<Teuchos::RCP<Epetra_IntVector> > stencil_faces_;
+  std::vector<Teuchos::RCP<Epetra_IntVector> > stencil_cells_;
 };
 
 }  // namespace Operators

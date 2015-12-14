@@ -31,8 +31,10 @@ class NLFV {
   NLFV(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
   ~NLFV() {};
 
-  void HarmonicAveragingPoint(int face, std::vector<Tensor>& T,
-                              AmanziGeometry::Point& p, double& weight);
+  void HarmonicAveragingPoint(
+      int f, int c1, int c2, 
+      const AmanziGeometry::Point& Tn1, const AmanziGeometry::Point& Tn2,
+      AmanziGeometry::Point& p, double& weight);
 
   int PositiveDecomposition(
       int id1, const std::vector<AmanziGeometry::Point>& tau,

@@ -62,8 +62,8 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 5, 6, NULL);
-  Teuchos::RCP<const Mesh> mesh = meshfactory("test/random10.exo");
+  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 3, 3, NULL);
+  // Teuchos::RCP<const Mesh> mesh = meshfactory("test/random10.exo");
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion tensor
@@ -116,7 +116,7 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
 
   // populate the diffusion operator
   op->Setup(K, Teuchos::null, Teuchos::null);
-  for (int loop = 0; loop < 10; ++loop) {
+  for (int loop = 0; loop < 1; ++loop) {
     global_op->Init();
     op->UpdateMatrices(Teuchos::null, solution.ptr());
 
@@ -125,6 +125,7 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
     op->ApplyBCs(true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
+std::cout << *global_op->A() << std::endl;
 
     // create preconditoner using the base operator class
     Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");

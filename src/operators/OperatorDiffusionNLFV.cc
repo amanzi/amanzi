@@ -1,13 +1,13 @@
 /*
-   Operators
+  Operators
 
-   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-   Amanzi is released under the three-clause BSD License. 
-   The terms of use and "as is" disclaimer for this license are 
-   provided in the top-level COPYRIGHT file.
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-   Authors: Daniil Svyatskiy (dasvyat@lanl.gov)
-            Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Daniil Svyatskiy (dasvyat@lanl.gov)
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <vector>
@@ -15,6 +15,7 @@
 // Amanzi
 #include "mfd3d_diffusion.hh"
 #include "nlfv.hh"
+#include "ParallelCommunication.hh"
 
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionNLFV.hh"
@@ -73,22 +74,79 @@ void OperatorDiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
 ****************************************************************** */
 void OperatorDiffusionNLFV::InitStencils_()
 {
-  // allocate memory
-  stencils_.resize(nfaces_owned);
-  for (int f = 0; f < nfaces_owned; f++) stencils_[f].Init(dim_);
+  // allocate persistent memory
+  CompositeVectorSpace cvs; 
+  cvs.SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("hap", AmanziMesh::FACE, dim_)
+      ->AddComponent("gamma", AmanziMesh::FACE, 1)
+      ->AddComponent("weight", AmanziMesh::FACE, 2 * dim_);
+  stencil_data_ = Teuchos::rcp(new CompositeVector(cvs));
+
+  Epetra_MultiVector& hap = *stencil_data_->ViewComponent("hap", true);
+  Epetra_MultiVector& gamma = *stencil_data_->ViewComponent("gamma", true);
+  Epetra_MultiVector& weight = *stencil_data_->ViewComponent("weight", true);
+
+  stencil_faces_.resize(2 * dim_);
+  stencil_cells_.resize(2 * dim_);
+  for (int i = 0; i < 2 * dim_; ++i) {
+    stencil_faces_[i] = Teuchos::rcp(new Epetra_IntVector(mesh_->face_map(true)));
+    stencil_cells_[i] = Teuchos::rcp(new Epetra_IntVector(mesh_->face_map(true)));
+  }
   
+  // allocate temporary memory for distributed tensor
+  CompositeVectorSpace cvs_tmp; 
+  cvs_tmp.SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("tensor", AmanziMesh::CELL, dim_ * dim_);
+  Teuchos::RCP<CompositeVector> cv_tmp = Teuchos::rcp(new CompositeVector(cvs_tmp));
+  Epetra_MultiVector& Ktmp = *cv_tmp->ViewComponent("tensor", true);
+
+  // instantiate variables to access supporting tools
   WhetStone::NLFV nlfv(mesh_);
   WhetStone::MFD3D_Diffusion mfd3d(mesh_);
 
+  // distribute diffusion tensor
+  for (int c = 0; c < ncells_owned; ++c) {
+    int k = 0;
+    for (int i = 0; i < dim_; ++i) {
+      for (int j = 0; j < dim_; ++j) {
+        Ktmp[k][c] = (*K_)[c](i, j);
+        k++;
+      }
+    }
+  }
+  cv_tmp->ScatterMasterToGhosted();
+
   // calculate harmonic averaging points (HAPs)
+  double hap_weight;
+  AmanziMesh::Entity_ID_List cells, faces;
+  AmanziGeometry::Point Kn1(dim_), Kn2(dim_), p(dim_);
+
   for (int f = 0; f < nfaces_owned; f++) {
-    nlfv.HarmonicAveragingPoint(f, *K_, stencils_[f].p, stencils_[f].gamma);
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    if (ncells == 2) {
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      int c1 = cells[0];
+      int c2 = cells[1];
+
+      Kn1 = (*K_)[c1] * normal;  // co-normals
+      Kn2 = (*K_)[c2] * normal;
+   
+      nlfv.HarmonicAveragingPoint(f, c1, c2, Kn1, Kn2, p, hap_weight);
+    } else {
+      p = mesh_->face_centroid(f);
+      hap_weight = 1.0;
+    }
+
+    for (int i = 0; i < dim_; ++i) hap[i][f] = p[i];
+    gamma[0][f] = hap_weight;
   }
 
-  // calculate coefficients in positive decompositions of conormals
-  AmanziMesh::Entity_ID_List cells, faces;
-  std::vector<int> dirs;
+  stencil_data_->ScatterMasterToGhosted("hap");
 
+  // calculate coefficients in positive decompositions of conormals
+  std::vector<int> dirs;
   AmanziGeometry::Point conormal(dim_), v(dim_);
   std::vector<AmanziGeometry::Point> tau;
 
@@ -99,36 +157,46 @@ void OperatorDiffusionNLFV::InitStencils_()
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
+    // calculate list of candidate vectors
     tau.clear();
-    for (int i = 0; i < nfaces; i++) {
-      v = stencils_[faces[i]].p - xc;
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      for (int i = 0; i < dim_; ++i) v[i] = hap[i][f] - xc[i];
       tau.push_back(v);
     }
 
-    // calculate positive decomposition of exterior conormals
+    // decompose co-normals
     int ids[dim_];
     double ws[dim_];
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      if (f < nfaces_owned) {
-        const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-        conormal = ((*K_)[c] * normal) * dirs[n];
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      conormal = ((*K_)[c] * normal) * dirs[n];
 
-        nlfv.PositiveDecomposition(n, tau, conormal, ws, ids);
+      nlfv.PositiveDecomposition(n, tau, conormal, ws, ids);
 
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-        int k = (cells[0] == c) ? 0 : dim_;
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int k = (cells[0] == c) ? 0 : dim_;
 
-        for (int i = 0; i < dim_; i++) {
-          stencils_[f].weights[k + i] = ws[i];
-          stencils_[f].stencil[k + i] = mfd3d.cell_get_face_adj_cell(c, faces[ids[i]]);
-          stencils_[f].faces[k + i] = faces[ids[i]];
-        }
+      for (int i = 0; i < dim_; i++) {
+        weight[k + i][f] = ws[i];
+        (*stencil_faces_[k + i])[f] = faces[ids[i]];
+        (*stencil_cells_[k + i])[f] = mfd3d.cell_get_face_adj_cell(c, faces[ids[i]]);
       }
     }
   }
 
-  stencils_initialized_ = true;
+  // distribute stencils
+  stencil_data_->ScatterMasterToGhosted("gamma");
+  stencil_data_->ScatterMasterToGhosted("weight");
+
+  ParallelCommunication pp(mesh_);
+  for (int i = 0; i < dim_; ++i) {
+    pp.CopyMasterFace2GhostFace(*stencil_faces_[i]);
+    pp.CopyMasterFace2GhostFace(*stencil_cells_[i]);
+  }
+
+  stencil_initialized_ = true;
 }
 
 
@@ -141,9 +209,12 @@ void OperatorDiffusionNLFV::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
-  if (!stencils_initialized_) InitStencils_();
+  if (!stencil_initialized_) InitStencils_();
 
   u->ScatterMasterToGhosted("cell");
+
+  Epetra_MultiVector& hap_gamma = *stencil_data_->ViewComponent("gamma", true);
+  Epetra_MultiVector& weight = *stencil_data_->ViewComponent("weight", true);
 
   // allocate zero local matrices
   AmanziMesh::Entity_ID_List cells, cells_tmp;
@@ -169,13 +240,13 @@ void OperatorDiffusionNLFV::UpdateMatrices(
     int c1, c2, f1;
     double gamma, tmp, g1, g2, gg(-1.0), w1, w2(0.0), tpfa, mu(1.0);
 
-    gamma = stencils_[f].gamma;
+    gamma = hap_gamma[0][f];
     c1 = cells[0];
 
     if (ncells == 2) {
       c2 = cells[1];
-      w1 = stencils_[f].weights[0] * gamma;
-      w2 = stencils_[f].weights[dim_] * (1.0 - gamma);
+      w1 = weight[0][f] * gamma;
+      w2 = weight[dim_][f] * (1.0 - gamma);
 
       g1 = OneSidedFluxCorrection_(c1, f, uc, 0);
       g2 = OneSidedFluxCorrection_(c2, f, uc, dim_);
@@ -185,7 +256,7 @@ void OperatorDiffusionNLFV::UpdateMatrices(
       g2 = fabs(g2);
       mu = (g1 + g2 == 0.0) ? 0.5 : g2 / (g1 + g2);
     } else {
-      w1 = stencils_[f].weights[0];
+      w1 = weight[0][f];
     }
     tpfa = mu * w1 + (1.0 - mu) * w2;
 
@@ -202,18 +273,18 @@ void OperatorDiffusionNLFV::UpdateMatrices(
     if (gg <= 0.0) {
       // calculate the remaining terms of the left flux
       for (int i = 1; i < dim_; i++) {
-        f1 = stencils_[f].faces[i];
+        f1 = (*stencil_faces_[i])[f];
         if (f1 >= nfaces_owned) continue;
         mesh_->face_get_cells(f1, AmanziMesh::USED, &cells_tmp);
 
         int k(0);
-        gamma = stencils_[f1].gamma;
+        gamma = hap_gamma[0][f1];
         if (cells_tmp[0] != c1) {
           gamma = 1.0 - gamma;
           k = 1;
         }
 
-        tmp = ncells * stencils_[f].weights[i] * gamma * mu;
+        tmp = ncells * weight[i][f] * gamma * mu;
         WhetStone::DenseMatrix& Bface = local_op_->matrices[f1];
         Bface(k, k) += tmp;
         if (Bface.NumRows() == 2) Bface(k, 1 - k) -= tmp;
@@ -221,18 +292,18 @@ void OperatorDiffusionNLFV::UpdateMatrices(
     
       // calculate the remaining terms of the right flux
       for (int i = 1; i < dim_; i++) {
-        f1 = stencils_[f].faces[i + dim_];
+        f1 = (*stencil_faces_[i + dim_])[f];
         if (f1 >= nfaces_owned) continue;
         mesh_->face_get_cells(f1, AmanziMesh::USED, &cells_tmp);
 
         int k(0);
-        gamma = stencils_[f1].gamma;
+        gamma = hap_gamma[0][f1];
         if (cells_tmp[0] != c2) {
           gamma = 1.0 - gamma;
           k = 1;
         } 
 
-        tmp = ncells * stencils_[f].weights[i + dim_] * gamma * (1.0 - mu);
+        tmp = ncells * weight[i + dim_][f] * gamma * (1.0 - mu);
         WhetStone::DenseMatrix& Bface = local_op_->matrices[f1];
         Bface(k, k) += tmp;
         if (Bface.NumRows() == 2) Bface(k, 1 - k) -= tmp;
@@ -248,6 +319,9 @@ void OperatorDiffusionNLFV::UpdateMatrices(
 double OperatorDiffusionNLFV::OneSidedFluxCorrection_(
     int c, int f, const Epetra_MultiVector& uc, int k) 
 {
+  Epetra_MultiVector& hap_gamma = *stencil_data_->ViewComponent("gamma", true);
+  Epetra_MultiVector& weight = *stencil_data_->ViewComponent("weight", true);
+
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
   
   int c3, f1;
@@ -255,19 +329,19 @@ double OperatorDiffusionNLFV::OneSidedFluxCorrection_(
   AmanziMesh::Entity_ID_List cells;
 
   for (int i = 1; i < dim_; i++) {
-    f1 = stencils_[f].faces[i + k];
+    f1 = (*stencil_faces_[i + k])[f];
     if (f1 >= nfaces_owned) continue;
     mesh_->face_get_cells(f1, AmanziMesh::USED, &cells);
 
-    c3 = stencils_[f].stencil[i + k];
+    c3 = (*stencil_cells_[i + k])[f];
     if (c3 >= 0) {
-      gamma = stencils_[f1].gamma;
+      gamma = hap_gamma[0][f1];
       if (cells[0] != c) gamma = 1.0 - gamma;
 
-      tmp = stencils_[f].weights[i + k] * gamma;
+      tmp = weight[i + k][f] * gamma;
       flux += tmp * (uc[0][c] - uc[0][c3]);
     } else {
-      tmp = stencils_[f].weights[i + k];
+      tmp = weight[i + k][f];
       flux += tmp * (uc[0][c] - bc_value[f1]); 
     }
   }

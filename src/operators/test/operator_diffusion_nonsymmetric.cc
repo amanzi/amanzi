@@ -171,7 +171,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
         pl2_err, pinf_err, ul2_err, uinf_err, solver->num_itrs());
 
     CHECK(pl2_err < 0.03 && ul2_err < 0.1);
-    CHECK(solver->num_itrs() < 11);
+    CHECK(solver->num_itrs() < 15);
   }
 }
 
