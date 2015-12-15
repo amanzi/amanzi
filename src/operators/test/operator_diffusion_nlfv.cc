@@ -116,7 +116,7 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
 
   // populate the diffusion operator
   op->Setup(K, Teuchos::null, Teuchos::null);
-  for (int loop = 0; loop < 1; ++loop) {
+  for (int loop = 0; loop < 7; ++loop) {
     global_op->Init();
     op->UpdateMatrices(Teuchos::null, solution.ptr());
 
