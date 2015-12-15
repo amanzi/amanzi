@@ -62,7 +62,7 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 3, 3, NULL);
+  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 15, 17, NULL);
   // Teuchos::RCP<const Mesh> mesh = meshfactory("test/random10.exo");
 
   // modify diffusion coefficient
@@ -108,10 +108,12 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
   // create source 
   CompositeVector source(cvs);
   Epetra_MultiVector& src = *source.ViewComponent("cell");
+  Epetra_MultiVector& sol = *solution->ViewComponent("cell");
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
     src[0][c] = ana.source_exact(xc, 0.0);
+    // sol[0][c] = ana.pressure_exact(xc, 0.0);
   }
 
   // populate the diffusion operator

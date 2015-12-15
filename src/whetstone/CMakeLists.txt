@@ -35,7 +35,6 @@ include_directories(${Epetra_INCLUDE_DIRS})
 #
 # Library: whetstone
 #
-file(GLOB whetstone_inc_files "*.hh")
 add_amanzi_library(whetstone
                    SOURCE mfd3d.cc
                           mfd3d_diffusion.cc mfd3d_diffusion_surface.cc 
@@ -43,7 +42,17 @@ add_amanzi_library(whetstone
                           mfd3d_elasticity.cc 
                           mfd3d_electromagnetics.cc 
                           nlfv.cc Tensor.cc DenseMatrix.cc
-                   HEADERS ${whetstone_inc_files}
+                   HEADERS DenseMatrix.hh
+                           DenseVector.hh
+                           lapack.hh
+                           mfd3d.hh
+                           mfd3d_diffusion.hh
+                           mfd3d_elasticity.hh
+                           mfd3d_electromagnetics.hh
+                           nlfv.hh
+                           Tensor.hh
+                           WhetStoneDefs.hh
+                           WhetStone_typedefs.hh
                    LINK_LIBS geometry mesh error_handling ${Epetra_LIBRARIES})
 
 
@@ -88,6 +97,12 @@ if ( BUILD_TESTS )
     add_amanzi_test(whetstone_surface whetstone_surface
                     KIND unit
                     SOURCE test/Main.cc test/whetstone_surface.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: various toolsets
+    add_amanzi_test(whetstone_nlfv whetstone_nlfv
+                    KIND unit
+                    SOURCE test/Main.cc test/whetstone_nlfv.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

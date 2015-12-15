@@ -28,6 +28,7 @@ namespace WhetStone {
 
 class NLFV { 
  public:
+  NLFV() : mesh_(Teuchos::null) {};
   NLFV(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
   ~NLFV() {};
 

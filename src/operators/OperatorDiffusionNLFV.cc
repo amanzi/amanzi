@@ -142,11 +142,12 @@ void OperatorDiffusionNLFV::InitStencils_()
       nlfv.HarmonicAveragingPoint(f, c1, c2, Kn1, Kn2, p, hap_weight);
     } else {
       p = mesh_->face_centroid(f);
-      hap_weight = 1.0;
+      hap_weight = 0.0;
     }
 
+    // factor going to stencil should be (1 - weight)
     for (int i = 0; i < dim_; ++i) hap[i][f] = p[i];
-    gamma[0][f] = hap_weight;
+    gamma[0][f] = 1.0 - hap_weight;
   }
 
   stencil_data_->ScatterMasterToGhosted("hap");

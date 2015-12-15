@@ -45,19 +45,28 @@ void NLFV::HarmonicAveragingPoint(
   const AmanziGeometry::Point& cm1 = mesh_->cell_centroid(c1);
   const AmanziGeometry::Point& cm2 = mesh_->cell_centroid(c2);
 
-  double d1 = fabs(normal * (fm - cm1));
-  double d2 = fabs(normal * (fm - cm2));
+  double d1s = normal * (fm - cm1);
+  double d2s = normal * (fm - cm2);
+
+  double d1 = fabs(d1s);
+  double d2 = fabs(d2s);
+  
   double t1 = fabs(normal * Tn1);
   double t2 = fabs(normal * Tn2);
 
   double det = t1 * d2 + t2 * d1;
   weight = t1 * d2 / det;
 
-  AmanziGeometry::Point v1(d), v2(d);
+  AmanziGeometry::Point y1(d), y2(d), v1(d), v2(d);
   double area = mesh_->face_area(f);
-  v1 = area * Tn1 - t1 * normal / area;
-  v2 = area * Tn2 - t2 * normal / area;
-  p = weight * cm1 + (1 - weight) * cm2 + (d1 * d2 / det) * (v2 - v1);
+  double a2 = area * area;
+
+  y1 = cm1 + (d1s / a2) * normal;
+  y2 = cm2 + (d2s / a2) * normal;
+
+  v1 = Tn1 - (t1 / a2) * normal;
+  v2 = Tn2 - (t2 / a2) * normal;
+  p = weight * y1 + (1 - weight) * y2 + (d1 * d2 / det) * (v2 - v1);
 }
 
 
@@ -69,7 +78,8 @@ int NLFV::PositiveDecomposition(
     int id1, const std::vector<AmanziGeometry::Point>& tau,
     const AmanziGeometry::Point& conormal, double* ws, int* ids)
 {
-  int d = mesh_->space_dimension();
+  int ierr(1);
+  int d = conormal.dim();
   int ntau = tau.size();
 
   // default is the TPFA stencil 
@@ -89,14 +99,14 @@ int NLFV::PositiveDecomposition(
 
   // Find the other directions
   Tensor T(d, 2);
-  double det = 0.0;
+  double det(0.0);
 
   if (d == 2) {
     for (int i = 0; i < ntau; i++) {
       if (i == id1) continue;
 
-      T.SetRow(0, tau[id1]);
-      T.SetRow(1, tau[i]);
+      T.SetColumn(0, tau[id1]);
+      T.SetColumn(1, tau[i]);
 
       // We skip almost colinear pairs.
       c2 = norm(tau[i]);
@@ -115,6 +125,7 @@ int NLFV::PositiveDecomposition(
           ws[0] = p[0];
           ws[1] = fabs(p[1]);
           ids[1] = i; 
+          ierr = 0;
         }
       }
     }
@@ -126,9 +137,9 @@ int NLFV::PositiveDecomposition(
       for (int j = i + 1; j < ntau; j++) {
         if (j == id1) continue;
 
-        T.SetRow(0, tau[id1]);
-        T.SetRow(1, tau[i]);
-        T.SetRow(2, tau[j]);
+        T.SetColumn(0, tau[id1]);
+        T.SetColumn(1, tau[i]);
+        T.SetColumn(2, tau[j]);
 
         // We skip almost colinear pairs.
         double c3 = norm(tau[j]);
@@ -150,13 +161,14 @@ int NLFV::PositiveDecomposition(
             ws[2] = fabs(p[2]);
             ids[1] = i; 
             ids[2] = j; 
+            ierr = 0;
           }
         }
       }
     }
   }
 
-  return 0;
+  return ierr;
 }
 
 }  // namespace WhetStone
