@@ -1,5 +1,5 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -11,8 +11,8 @@
 */
 
 #include <vector>
-#include <boost/math/tools/roots.hpp>
 
+// Operators
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionFV.hh"
 #include "Op.hh"
@@ -61,6 +61,7 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
   }
   
   // upwind options
+  Errors::Message msg;
   std::string uwname = plist.get<std::string>("nonlinear coefficient", "upwind: face");
   if (uwname == "none") {
     little_k_ = OPERATOR_LITTLE_K_NONE;
@@ -68,23 +69,14 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
   } else if (uwname == "upwind: face") {
     little_k_ = OPERATOR_LITTLE_K_UPWIND;
 
-  } else if (uwname == "divk: cell-face") {  
-    little_k_ = OPERATOR_LITTLE_K_DIVK;
-    Errors::Message msg("OperatorDiffusionFV: \"divk: cell-face\" upwinding not supported.");
-    Exceptions::amanzi_throw(msg);
-
-  } else if (uwname == "divk: cell-grad-face-twin") {  
-    little_k_ = OPERATOR_LITTLE_K_DIVK_TWIN_GRAD;
-    Errors::Message msg("OperatorDiffusionFV: \"divk: cell-grad-face-twin\" upwinding not supported.");
-    Exceptions::amanzi_throw(msg);
-
-  } else if (uwname == "standard: cell") {
-    little_k_ = OPERATOR_LITTLE_K_STANDARD;  // cell-centered scheme.
-    Errors::Message msg("OperatorDiffusionFV: \"standard: cell\" upwinding not supported.");
+  } else if (uwname == "divk: cell-face" ||
+             uwname == "divk: cell-grad-face-twin" ||
+             uwname == "standard: cell") {
+    msg << "OperatorDiffusionFV: \"" << uwname << "\" upwinding not supported.";
     Exceptions::amanzi_throw(msg);
 
   } else {
-    Errors::Message msg("OperatorDiffusionFV: unknown upwind scheme specified.");
+    msg << "OperatorDiffusionFV: unknown upwind scheme specified.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -98,7 +90,7 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
   } else if (jacobian == "approximate jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
-    Errors::Message msg("OperatorDiffusionFV: \"approximate jacobian\" not supported -- maybe you mean \"true jacobian\"?");
+    msg << "OperatorDiffusionFV: \"approximate jacobian\" not supported -- maybe you mean \"true jacobian\"?";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -147,7 +139,7 @@ void OperatorDiffusionFV::SetTensorCoefficient(const Teuchos::RCP<std::vector<Wh
 * setup with K absolute
 ****************************************************************** */
 void OperatorDiffusionFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
-                                const Teuchos::RCP<const CompositeVector>& dkdp)
+                                               const Teuchos::RCP<const CompositeVector>& dkdp)
 {
   transmissibility_initialized_ = false;
   k_ = k;
@@ -161,20 +153,18 @@ void OperatorDiffusionFV::SetScalarCoefficient(const Teuchos::RCP<const Composit
   }
   if (dkdp_ != Teuchos::null) {
     ASSERT(dkdp_->HasComponent("cell"));
-    //ASSERT(dkdp_->HasComponent("face"));
   }
 
   // verify that mass matrices were initialized.
   // -- this shouldn't be called here, as Trans has no dependence on
   //    rel perm, and abs perm may not be set yet! --etc
-  // if (!transmissibility_initialized_) {
-  //   ComputeTransmissibility_();
-  // }
+  // if (!transmissibility_initialized_)  ComputeTransmissibility_();
 }
 
 
 /* ******************************************************************
-* Populate face-based matrices.
+* Populate face-based 2x2 matrices on interior faces and 1x1 matrices
+* on boundary faces.
 ****************************************************************** */
 void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                                          const Teuchos::Ptr<const CompositeVector>& u)
@@ -227,7 +217,7 @@ void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVecto
 
 /* ******************************************************************
 * Special implementation of boundary conditions.
-**********************************;******************************** */
+****************************************************************** */
 void OperatorDiffusionFV::ApplyBCs(bool primary, bool eliminate)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
@@ -522,7 +512,6 @@ double OperatorDiffusionFV::ComputeTransmissibility(int f) const
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
   return trans_face[0][f];
 }
-
 
 }  // namespace Operators
 }  // namespace Amanzi

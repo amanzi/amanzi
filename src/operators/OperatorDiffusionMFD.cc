@@ -1034,7 +1034,7 @@ void OperatorDiffusionMFD::CreateMassMatrices_()
 
 
 /* ******************************************************************
-* Scale elemental inverse mass matrices. Use case if saturated flow.
+* Scale elemental inverse mass matrices. Use case is saturated flow.
 ****************************************************************** */
 void OperatorDiffusionMFD::ScaleMassMatrices(double s)
 {

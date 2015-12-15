@@ -1,5 +1,5 @@
 /*
-  This is the transport component of the Amanzi code.
+  Transport PK
 
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -52,7 +52,7 @@ class TransportBCFactory {
 
   ~TransportBCFactory() {};
   
-  void CreateConcentration(std::vector<TransportBoundaryFunction*>& bcs) const;
+  void Create(std::vector<TransportBoundaryFunction*>& bcs) const;
 
   // non-reactive components
   void ProcessTracerList(std::vector<TransportBoundaryFunction*>& bcs) const;

@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -66,7 +66,7 @@ void Richards_PK::Functional(double t_old, double t_new,
   op_matrix_diff_->ApplyBCs(true, true);
 
   Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
-  if (src_sink != NULL) AddSourceTerms(*rhs);
+  AddSourceTerms(*rhs);
 
   op_matrix_->ComputeNegativeResidual(*u_new->Data(), *f->Data());
 

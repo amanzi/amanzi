@@ -126,13 +126,11 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_driver_frt.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-
     # Test: mpc-new driver dummy
     add_amanzi_test(mpc_driver_dummy mpc_driver_dummy
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_dummy_pk.cc
-		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
 #    add_executable(test_vis test/Main.cc test/test_vis.cpp)
 #    target_link_libraries(test_vis state mpc stk_mesh ${UnitTest_LIBRARIES})

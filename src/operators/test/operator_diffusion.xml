@@ -40,6 +40,18 @@
         <Parameter name="error tolerance" type="double" value="1e-16"/>
       </ParameterList>
     </ParameterList>
+
+    <ParameterList name="AztecOO GMRES">
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="maximum number of iterations" type="int" value="20"/>
+        <Parameter name="error tolerance" type="double" value="1e-12"/>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="low"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
   <!-- PRECONDITIONERS -->
@@ -62,6 +74,7 @@
   <ParameterList name="PK operator">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
+    <!-- NODAL MFD schemes -->
     <ParameterList name="diffusion operator nodal">
       <Parameter name="discretization primary" type="string" value="mfd: default"/>
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
@@ -69,6 +82,7 @@
       <Parameter name="preconditioner schema" type="Array(string)" value="{node}"/>
     </ParameterList>
 
+    <!-- MIXED MFD schemes -->
     <ParameterList name="diffusion operator mixed">
       <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
@@ -101,12 +115,20 @@
       <Parameter name="gravity" type="bool" value="true"/>
     </ParameterList>
 
+    <!-- FV schemes -->
     <ParameterList name="diffusion operator gravity fv">
       <Parameter name="discretization primary" type="string" value="fv: default"/>
       <Parameter name="discretization secondary" type="string" value="fv: default"/>
       <Parameter name="schema" type="Array(string)" value="{cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
       <Parameter name="gravity" type="bool" value="true"/>
+    </ParameterList>
+
+    <ParameterList name="diffusion operator nlfv">
+      <Parameter name="discretization primary" type="string" value="nlfv: default"/>
+      <Parameter name="discretization secondary" type="string" value="nlfv: default"/>
+      <Parameter name="schema" type="Array(string)" value="{cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
     </ParameterList>
 
     <ParameterList name="upwind">

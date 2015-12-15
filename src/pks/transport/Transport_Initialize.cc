@@ -129,7 +129,7 @@ void Transport_PK::InitializeAll_()
 #else
     TransportBCFactory bc_factory(mesh_, bcs_list);
 #endif
-    bc_factory.CreateConcentration(bcs);
+    bc_factory.Create(bcs);
 
     for (int m = 0; m < bcs.size(); m++) {
       std::vector<int>& tcc_index = bcs[m]->tcc_index();
@@ -152,7 +152,7 @@ void Transport_PK::InitializeAll_()
   if (tp_list_->isSublist("source terms")) {
     Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(tp_list_->sublist("source terms", true));
     TransportSourceFactory src_factory(mesh_, src_list);
-    src_factory.CreateSource(srcs);
+    src_factory.Create(srcs);
 
     for (int m = 0; m < srcs.size(); m++) {
       srcs[m]->set_tcc_index(FindComponentNumber(srcs[m]->tcc_name()));

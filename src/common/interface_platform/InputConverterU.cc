@@ -1,5 +1,5 @@
 /*
-  This is the input component of the Amanzi code. 
+  Input Converter
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -42,6 +42,9 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
 
   // checks that input XML is structurally sound
   VerifyXMLStructure_();
+
+  // checks that input XML has valid version
+  ParseVersion_();
 
   // parsing of miscalleneous lists
   ParseSolutes_();

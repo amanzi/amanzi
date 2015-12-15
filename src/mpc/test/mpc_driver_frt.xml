@@ -92,7 +92,7 @@
 	</ParameterList>
 	<Parameter name="start period time" type="double" value="0.0"/>
 	<Parameter name="end period time" type="double" value="1.0e+04"/>
-        <Parameter name="initial time step" type="double" value="350.0"/>
+        <Parameter name="initial time step" type="double" value="1000.0"/>
       </ParameterList>
     </ParameterList>
     <!--ParameterList name="Restart from Checkpoint Data File">
@@ -180,7 +180,7 @@
 	    <ParameterList name="timestep controller standard parameters">
 	      <Parameter name="max iterations" type="int" value="15"/>
 	      <Parameter name="min iterations" type="int" value="10"/>
-	      <Parameter name="time step increase factor" type="double" value="1.25000e+00"/>
+	      <Parameter name="time step increase factor" type="double" value="1.0"/>
 	      <Parameter name="time step reduction factor" type="double" value="8.00000000000000044e-01"/>
 	      <Parameter name="max time step" type="double" value="6.00000e+10"/>
 	      <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
@@ -763,6 +763,24 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
+  <ParameterList name="Observation Data">
+    <Parameter name="observation output filename" type="string" value="obs_output.out"/>
+    <Parameter name="precision" type="int" value="10"/>
+    <ParameterList name="OBS-1">
+      <Parameter name="region" type="string" value="Soil_1"/>
+      <Parameter name="functional" type="string" value="Observation Data: Point"/>
+      <Parameter name="variable" type="string" value="drawdown"/>
+      <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1, -1}" />
+    </ParameterList>
+    <ParameterList name="OBS-2">
+      <Parameter name="region" type="string" value="Soil_2"/>
+      <Parameter name="functional" type="string" value="Observation Data: Point"/>
+      <Parameter name="variable" type="string" value="drawdown"/>
+      <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1, -1}" />
+    </ParameterList>
+  </ParameterList>
+
   <ParameterList name="Analysis">
     <Parameter name="used boundary condition regions" type="Array(string)" value="{West, East, West, East}"/>
     <Parameter name="used source regions" type="Array(string)" value="{}"/>

@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.1.1">
+<amanzi_input type="unstructured" version="2.2.1">
   <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
 
   <model_description name="DVZ 3layer 2D">
@@ -156,7 +156,8 @@
       <mechanical_properties>
         <porosity value="0.4082"/>
       </mechanical_properties>
-      <permeability x="1.9976E-12" z="1.9976E-13" />
+      <!--permeability x="1.9976E-12" z="1.9976E-13" /-->
+      <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
       <cap_pressure model="van_genuchten">
         <parameters alpha="1.9467E-04" m="0.2294" sr="0.0"/>
       </cap_pressure>
@@ -168,7 +169,8 @@
       <mechanical_properties>
         <porosity value="0.2206"/>
       </mechanical_properties>
-      <permeability x="6.9365E-11" z="6.9365E-12" />
+      <!--permeability x="6.9365E-11" z="6.9365E-12" /-->
+      <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
       <cap_pressure model="van_genuchten">
         <parameters alpha="2.0260E-03" m="0.2136" sr="0.0"/>
       </cap_pressure>
@@ -178,9 +180,10 @@
 
     <material name="Facies_3">
       <mechanical_properties>
-        <porosity value="0.2340"/>
+        <porosity value="0.234"/>
       </mechanical_properties>
-      <permeability x="2.0706E-09" z="2.0706E-10" />
+      <!--permeability x="2.0706E-09" z="2.0706E-10" /-->
+      <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
       <cap_pressure model="van_genuchten">
         <parameters alpha="2.0674E-03" m="0.3006" sr="0.0"/>
       </cap_pressure>

@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code.
+  Flow PK
  
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -23,18 +23,18 @@ namespace Flow {
 /* ******************************************************************
 * Process source, step 1.
 ****************************************************************** */
-FlowDomainFunction* FlowSourceFactory::createSource() const
+void FlowSourceFactory::Create(std::vector<FlowDomainFunction*>& srcs) const
 {
-  FlowDomainFunction* src = new FlowDomainFunction(mesh_);
-
-  // Iterate through the source specification sublists in the params_.
+  // Iterate through the source specification sublists in the plist_.
   // All are expected to be sublists of identical structure.
-  for (Teuchos::ParameterList::ConstIterator i = params_->begin(); i != params_->end(); ++i) {
+  for (Teuchos::ParameterList::ConstIterator i = plist_->begin(); i != plist_->end(); ++i) {
     std::string name = i->first;
-    if (params_->isSublist(name)) {
-      Teuchos::ParameterList& spec = params_->sublist(name);
+    if (plist_->isSublist(name)) {
+      Teuchos::ParameterList& spec = plist_->sublist(name);
       try {
+        FlowDomainFunction* src = new FlowDomainFunction(mesh_);
         ProcessSourceSpec(spec, src);
+        srcs.push_back(src);
       } catch (Errors::Message& msg) {
         Errors::Message m;
         m << "in sublist \"" << spec.name().c_str() << "\": " << msg.what();
@@ -46,7 +46,6 @@ FlowDomainFunction* FlowSourceFactory::createSource() const
       Exceptions::amanzi_throw(m);
     }
   }
-  return src;
 }
 
 

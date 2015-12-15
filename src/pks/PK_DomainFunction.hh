@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "Epetra_Vector.h"
 #include "Teuchos_RCP.hpp"
 
 #include "CommonDefs.hh"
@@ -27,8 +28,8 @@ namespace Amanzi {
 class PK_DomainFunction : public Functions::UniqueMeshFunction {
  public:
   PK_DomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : 
-     UniqueMeshFunction(mesh),
-     finalized_(false) {};
+      UniqueMeshFunction(mesh),
+      finalized_(false) {};
 
   virtual void Define(const std::vector<std::string>& regions,
                       const Teuchos::RCP<const MultiFunction>& f,
@@ -39,23 +40,25 @@ class PK_DomainFunction : public Functions::UniqueMeshFunction {
                       int action, int submodel);
 
   // source term on time interval (t0, t1]
-  virtual void Compute(double t0, double t1);
-  virtual void ComputeDistribute(double t0, double t1);
-  virtual void ComputeDistribute(double t0, double t1, double* weight);
-  
+  virtual void Compute(double t0, double t1, Teuchos::RCP<const Epetra_Vector> weight);
+
   // a place keeper
   void Finalize() {};
  
   // iterator methods
-  typedef std::map<int,double>::const_iterator Iterator;
+  typedef std::map<int, double>::const_iterator Iterator;
   Iterator begin() const { return value_.begin(); }
-  Iterator end() const  { return value_.end(); }
-  Iterator find(const int j) const { return value_.find(j); }
-  std::map<int,double>::size_type size() { return value_.size(); }
+  Iterator end() const { return value_.end(); }
+  std::map<int, double>::size_type size() { return value_.size(); }
 
   // extract internal information
   int CollectActionsList();
 
+ private:
+  void ComputeDensity_(double t0, double t1);
+  void ComputeIntegral_(double t0, double t1);
+  void ComputeIntegral_(double t0, double t1, double* weight);
+  
  protected:
   std::map<int, double> value_;
   bool finalized_;

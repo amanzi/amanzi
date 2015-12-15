@@ -1,5 +1,5 @@
 /*
-  This is the operators component of the Amanzi code.
+  Operators
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -8,7 +8,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Complex solution plus full non-constant tensor.
+  Non-polynomial solution and a full non-constant tensor.
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_01_HH_

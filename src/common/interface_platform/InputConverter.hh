@@ -1,5 +1,5 @@
 /*
-  This is the input component of the Amanzi code. 
+  Input Converter
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -30,6 +30,10 @@
 
 namespace Amanzi {
 namespace AmanziInput {
+
+#define AMANZI_SPEC_VERSION_MAJOR 2
+#define AMANZI_SPEC_VERSION_MINOR 2
+#define AMANZI_SPEC_VERSION_MICRO 1
 
 XERCES_CPP_NAMESPACE_USE
 
@@ -95,6 +99,7 @@ class InputConverter {
   virtual ~InputConverter();
 
   // parse various nodes
+  void ParseVersion_();
   void ParseConstants_();
   void FilterNodes(xercesc::DOMNode* parent, const std::string& filter);
 

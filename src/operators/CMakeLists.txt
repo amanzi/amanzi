@@ -78,6 +78,7 @@ set(operators_inc_files
     OperatorDiffusionMFD.hh
     OperatorDiffusionMFDwithGravity.hh
     OperatorDiffusionFV.hh
+    OperatorDiffusionNLFV.hh
     OperatorDiffusionFVwithGravity.hh
     OperatorAccumulation.hh
     OperatorAdvection.hh
@@ -105,6 +106,7 @@ add_amanzi_library(operators
                           OperatorDiffusionMFDwithGravity.cc
                           OperatorDiffusionFV.cc
                           OperatorDiffusionFVwithGravity.cc
+                          OperatorDiffusionNLFV.cc
                           OperatorDiffusionFactory.cc                   
                           OperatorAccumulation.cc
                           OperatorAdvection.cc  
@@ -128,8 +130,8 @@ if ( BUILD_TESTS )
 
     set(amanzi_libs geometry atk mesh mesh_factory mesh_logical data_structures operators whetstone output atk)
 
-    # Test: matrices for diffusion
-#    if ( ENABLE_INDIVIDUAL_TESTS_OPERATORS OR ENABLE_INDIVIDUAL_TESTS )
+    # Test: operators for various PDEs
+    if ( ENABLE_INDIVIDUAL_TESTS_OPERATORS OR ENABLE_INDIVIDUAL_TESTS )
         add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
                         KIND unit
                         SOURCE test/Main.cc test/operator_laplace_beltrami.cc 
@@ -150,21 +152,22 @@ if ( BUILD_TESTS )
                         KIND unit
                         SOURCE test/Main.cc test/operator_marshak_logical.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-    # else()
-    #     add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
-    #                     KIND unit
-    #                     SOURCE test/Main.cc test/operator_laplace_beltrami.cc 
-    #                                         test/operator_parabolic_surface.cc
-    #                                         test/operator_nonlinear_surface.cc
-    #                                         test/operator_marshak.cc
-    #                                         test/operator_marshak_logical.cc
-    #                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-    # endif()
+    else()
+        add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
+                        KIND unit
+                        SOURCE test/Main.cc test/operator_laplace_beltrami.cc 
+                                            test/operator_parabolic_surface.cc
+                                            test/operator_nonlinear_surface.cc
+                                            test/operator_marshak.cc
+                                            test/operator_marshak_logical.cc
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    endif()
 
     add_amanzi_test(operators_diffusion operators_diffusion
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion.cc
                                         test/operator_diffusion_nonsymmetric.cc
+                                        test/operator_diffusion_nlfv.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_diffusion_3pe operators_diffusion NPROCS 3 KIND unit)
@@ -229,7 +232,7 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/operator_reconstruction.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    add_amanzi_test(operator_boundary_flux_solver operator_boundary_flux_solver
+    add_amanzi_test(operators_boundary_flux_solver operators_boundary_flux_solver
                     KIND unit
                     SOURCE test/Main.cc test/operator_boundary_flux_solver.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})

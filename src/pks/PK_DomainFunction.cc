@@ -1,3 +1,14 @@
+/*
+  Process Kernel
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
 #include <algorithm>
 #include "errors.hh"
 
@@ -41,9 +52,28 @@ void PK_DomainFunction::Define(const std::string& region,
 
 
 /* ******************************************************************
+* Evaluate function
+****************************************************************** */
+void PK_DomainFunction::Compute(double t0, double t1,
+                                Teuchos::RCP<const Epetra_Vector> weight)
+{
+  int type = CollectActionsList();
+
+  if (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+    ASSERT(weight != Teuchos::null);
+    ComputeIntegral_(t0, t1, weight->Values()); 
+  } else if (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME) {
+    ComputeIntegral_(t0, t1);
+  } else {
+    ComputeDensity_(t0, t1);
+  }
+}
+
+
+/* ******************************************************************
 * Compute and normalize the result, so far by volume
 ****************************************************************** */
-void PK_DomainFunction::Compute(double t0, double t1)
+void PK_DomainFunction::ComputeDensity_(double t0, double t1)
 {
   // lazily generate space for the values
   if (!finalized_) {
@@ -90,7 +120,7 @@ void PK_DomainFunction::Compute(double t0, double t1)
 /* ******************************************************************
 * Compute and distribute the result by volume.
 ****************************************************************** */
-void PK_DomainFunction::ComputeDistribute(double t0, double t1)
+void PK_DomainFunction::ComputeIntegral_(double t0, double t1)
 {
   // lazily generate space for the values
   if (!finalized_) {
@@ -147,7 +177,7 @@ void PK_DomainFunction::ComputeDistribute(double t0, double t1)
 * Compute and distribute the result by specified weight if an action
 * is set on. Otherwise, weight could be a null pointer.
 ****************************************************************** */
-void PK_DomainFunction::ComputeDistribute(double t0, double t1, double* weight)
+void PK_DomainFunction::ComputeIntegral_(double t0, double t1, double* weight)
 {
   // lazily generate space for the values
   if (!finalized_) {

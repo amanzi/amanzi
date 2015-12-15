@@ -17,6 +17,7 @@ namespace Operators {
 
 typedef enum { OPERATOR_DIFFUSION_MFD,
                OPERATOR_DIFFUSION_FV,
+               OPERATOR_DIFFUSION_NLFV,
                OPERATOR_DIFFUSION_MFD_GRAVITY,
                OPERATOR_DIFFUSION_FV_GRAVITY,
                OPERATOR_ADVECTION,

@@ -693,9 +693,14 @@ Initialization from a file
 
 Some fields can be initialized from files. 
 For each field, an additional sublist has to be added to the
-named sublist of *State* list with the file name and the name of an attribute. 
+named sublist of *State* list with the file name and the name of attributes. 
 For a serial run, the file extension must be *.exo*. 
 For a parallel run, it must be *.par*.
+
+* `"attributes`" [Array(string)] defines names of attributes. The number of names
+  must be equal to the number of components in the field. The names can be repeated.
+  Scalar fields (e.g. porosity) require one name, tensorial fields (e.g. permeability)
+  require two or three names.
 
 .. code-block:: xml
 
@@ -703,7 +708,7 @@ For a parallel run, it must be *.par*.
      <ParameterList name="permeability">
        <ParameterList name="exodus file initialization">
          <Parameter name="file" type="string" value="mesh_with_data.exo"/>
-         <Parameter name="attribute" type="string" value="perm"/>
+         <Parameter name="attributes" type="Array(string)" value="{permx, permx, permz}"/>
        </ParameterList>
      </ParameterList>
    </ParameterList>
@@ -3113,7 +3118,7 @@ Diffusion operator
     has useful properties under some a priori conditions on the mesh and/or permeability tensor.
     The available options are `"mfd: optimized for sparsity`", `"mfd: optimized for monotonicity`",
     `"mfd: default`", `"mfd: support operator`", `"mfd: two-point flux approximation`",
-    and `"fv: default`". 
+    `"fv: default`", and `"nlfv: default`".
     The first option is recommended for general meshes.
     The second option is recommended for orthogonal meshes and diagonal absolute 
     permeability tensor. 
@@ -4643,7 +4648,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
     Observation *drawdown* is calculated with respect to the value registered at the first time
     it was requested.
 
-    The following observations are point-type obervations: "water table".
+    The following observations are point-type obervations: "water table", "drawdown".
 
     * `"functional`" [string] the label of a function to apply to each of the variables
       in the variable list (Function options detailed below)

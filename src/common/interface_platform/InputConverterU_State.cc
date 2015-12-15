@@ -1,5 +1,5 @@
 /*
-  This is the input component of the Amanzi code. 
+  Input Converter 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -136,10 +136,10 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         node = GetUniqueElementByTagsString_(inode, "hydraulic_conductivity", flag);
       }
 
-      // first we get either permeability value or the file name
+      // First we get either permeability value or the file name
       int file(0);
-      char* file_name;
-      char* attr_name;
+      std::string file_name;
+      std::vector<std::string> attr_names;
       double kx(-1.0), ky(-1.0), kz(-1.0);
 
       DOMNamedNodeMap* attr_tmp = node->getAttributes();
@@ -157,15 +157,13 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           } else if (strcmp(tagname, "z") == 0) {
             kz = std::strtod(text_content, NULL);
           } else if (strcmp(tagname, "type") == 0) {
-            file++;
+            if (strcmp(text_content, "file") == 0) file++;
           } else if (strcmp(tagname, "filename") == 0) {
             file++;
-            file_name = new char[std::strlen(text_content) + 1];
-            std::strcpy(file_name, text_content);
+            file_name = text_content;
           } else if (strcmp(tagname, "attribute") == 0) {
             file++;
-            attr_name = new char[std::strlen(text_content) + 1];
-            std::strcpy(attr_name, text_content);
+            attr_names.push_back(text_content);
           }
         }
       }
@@ -184,9 +182,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       if (file == 3) {
         permeability_ic.sublist("exodus file initialization")
             .set<std::string>("file", file_name)
-            .set<std::string>("attribute", attr_name);
-        delete file_name;
-        delete attr_name;
+            .set<Teuchos::Array<std::string> >("attributes", attr_names);
+        kx = ky = kz = 1.0;
       } else if (file == 0) {
         if (ky < 0) ky = kz;  // x-z system was defined
         Teuchos::ParameterList& aux_list = permeability_ic.sublist("function").sublist(reg_str)

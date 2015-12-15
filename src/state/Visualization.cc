@@ -1,22 +1,28 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-Amanzi
+/*
+  State
 
-License:
-Author: Markus Berndt
-        Ethan Coon (ecoon@lanl.gov)
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Visualization of data.
+  Authors: Markus Berndt
+           Ethan Coon (ecoon@lanl.gov)
 
-------------------------------------------------------------------------- */
+  Visualization of data.
+*/
 
-#include "visualization.hh"
+// TPLs
 #include "Epetra_MpiComm.h"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
+// Amanzi
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
+
+// State
+#include "Visualization.hh"
 
 namespace Amanzi {
 
@@ -88,7 +94,6 @@ void Visualization::WriteVector(const Epetra_Vector& vec, const std::string name
 }
 
 
-
 // -----------------------------------------------------------------------------
 // Write the mesh
 // -----------------------------------------------------------------------------
@@ -130,7 +135,6 @@ void Visualization::WriteRegions() {
 }
 
 
-
 // -----------------------------------------------------------------------------
 // Write a field with region information
 // -----------------------------------------------------------------------------
@@ -149,7 +153,9 @@ void Visualization::WritePartition() {
 }
 
 
-
+// -----------------------------------------------------------------------------
+// Writing to files
+// -----------------------------------------------------------------------------
 void Visualization::CreateFiles() {
 
   if (!is_disabled()) {
@@ -169,14 +175,16 @@ void Visualization::CreateFiles() {
   }
 }
 
+
 void Visualization::CreateTimestep(const double& time, const int& cycle) {
   visualization_output_->createTimestep(time,cycle);
   visualization_output_->open_h5file();
 }
+
 
 void Visualization::FinalizeTimestep() const {
   visualization_output_->close_h5file();
   visualization_output_->endTimestep();
 }
 
-} // namespace
+} // namespace Amanzi
