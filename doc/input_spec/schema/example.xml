@@ -1,707 +1,744 @@
 <amanzi_input version="2.1.1" type="unstructured | structured">
 
-	<echo_translated_input file_name="string"/>
+    <echo_translated_input file_name="string"/>
 
-	<model_description name="string">
-		<comments>string</comments>
-		<model_id>string</model_id>
-		<author>string</author>
-		<units>
-			<length_unit>m | cm</length_unit>
-			<time_unit>y | d | h | s</time_unit> <!-- seconds assumed anytime unit not specified -->
-			<mass_unit>kg</mass_unit>
-			<conc_unit>molar</conc_unit>
-		</units>
-	</model_description>
+    <model_description name="string">
+        <comments>string</comments>
+        <author>string</author>
+        <created>string</created>
+        <modified>string</modified>
+        <model_id>string</model_id>
+        <description>string</description>
+        <purpose>string</purpose>
+        <units>
+            <length_unit>m | cm</length_unit>
+            <time_unit>y | d | h | s</time_unit> <!-- seconds assumed anytime unit not specified -->
+            <mass_unit>kg</mass_unit>
+            <conc_unit>molar</conc_unit>
+        </units>
+    </model_description>
 
-        <definitions>
+    <definitions>
 
-		<named_times>
-			<time name="string" value="time"/>
-		</named_times>
+        <named_times>
+            <time name="string" value="time"/>
+        </named_times>
 
-		<constants>
-			<!-- default: value is in seconds if no units given-->
-			<constant name="string" type="none | time | numerical | area_mass_flux" value="exp (;y | ;d | ;h | ;s)"/>  
+        <constants>
+            <!-- default: value is in seconds if no units given-->
+            <constant name="string" type="none | time | numerical | area_mass_flux" value="exp (;y | ;d | ;h | ;s)"/>  
+            <time_constant name="string" value="time (;y | ;d | ;h | ;s)"/>
+            <numerical_constant name="string" value="exp"/>
+            <area_mass_flux_constant name="string" value="exp"/>
+        </constants>
 
-			<time_constant name="string" value="time (;y | ;d | ;h | ;s)"/>
+        <macros>
 
-			<numerical_constant name="string" value="exp (;y | ;d | ;h | ;s)"/>
+            <time_macro name = "string">
+		<time>time</time> 
+                <time>time</time>
+            </time_macro>
+            <!-- or -->
+            <time_macro name = "string">
+		<start>time</start> <!-- REQUIRED -->
+                <timestep_interval>time</timestep_interval>
+                <stop>time | -1</stop> <!-- -1 indicates, continue until end of simulation-->
+            </time_macro>
 
-			<area_mass_flux_constant name="string" value="exp (;y | ;d | ;h | ;s)"/>
-		</constants>
+            <cycle_macro name = "string">
+                <start>int</start>
+                <timestep_interval>int</timestep_interval>
+                <stop>int | -1</stop> <!-- -1 indicates, continue until end of simulation-->
+            </cycle_macro>
 
-		<macros>
+            <variable_macro name = "string">
+                    <!-- still in development -->
+            </variable_macro>
+        </macros>
+    
+    </definitions>
 
-			<time_macro name = "string">
-				<time>time</time>
-				<time>time</time>
-			</time_macro>
-			<!-- or -->
-			<time_macro name = "string">
-				<start>time</start>
-				<timestep_interval>time</timestep_interval>
-				<stop>time | -1</stop> <!-- -1 indicates, continue until end of simulation-->
-			</time_macro>
+    <!--  if flow,transport,chemistry are missing, this implies that state == off -->
+    <process_kernels> <!-- REQUIRED -->
 
-			<cycle_macro name = "string">
-				<start>int</start>
-				<timestep_interval>int</timestep_interval>
-				<stop>int | -1</stop> <!-- -1 indicates, continue until end of simulation-->
-			</cycle_macro>
+        <comments>string</comments>
+	<flow state = "on | off" model = "richards | saturated | constant | none"/> <!-- REQUIRED -->
+        <transport state = "on | off"/> <!-- REQUIRED -->
+        <chemistry state = "on | off" engine="amanzi | pflotran | none" /> <!-- REQUIRED -->
 
-			<variable_macro name = "string">
-			    	<!-- still in development -->
-			</variable_macro>
-		</macros>
-	
-        </definitions>
+    </process_kernels>
 
-        <!--  if flow,transport,chemistry are missing, this implies that state == off -->
-        <process_kernels>
+    <phases> <!-- REQUIRED -->
 
-		<comments>string</comments>
-      		<flow state = "on | off" model = "richards | saturated | constant | none"/>
-      		<transport state = "on | off"/>
-      		<chemistry state = "on | off" engine="amanzi | pflotran | none" />
+        <comments>string</comments>
 
-	</process_kernels>
+        <liquid_phase name = "water"> <!-- REQUIRED -->
+            <eos>false | true</eos>  <!-- default: false -->
+            <viscosity>exp</viscosity> <!-- REQUIRED -->
+            <density>exp</density> <!-- REQUIRED -->
+            <dissolved_components> 
+                <solutes>
+		    <!-- Must include at least 1 -->
+                    <solute coefficient_of_diffusion="exp" first_order_decay_constant="exp">solute_name_string</solute>
+                </solutes> 
+                <primaries>
+		    <!-- Must include at least 1 -->
+                    <primary coefficient_of_diffusion="exp">primary_name_string</primary>
+                    <!-- primary name must match the name in the engine database -->
+                </primaries> 
+                <secondaries>
+		    <!-- Must include at least 1 -->
+                    <secondary>secondary_name_string</secondary>
+                    <!-- secondary name must match the name in the engine database -->
+                </secondaries> 
+            </dissolved_components>
+        </liquid_phase>
 
+        <solid_phase>
+            <minerals> <!-- REQUIRED -->
+		<!-- Must include at least 1 -->
+                <mineral rate_constant="exp">mineral_name_string</mineral>
+                <!-- mineral name must match the name in the engine database -->
+            </minerals>
+        </solid_phase>
 
-	<phases>
+        <gas_phase>
+            <gases> <!-- REQUIRED -->
+		<!-- Must include at least 1 -->
+                <gas>gas_name_string</gas>
+                <!-- gas name must match the name in the engine database -->
+            </gases>
+        </gas_phase>
 
-	        <comments>string</comments>
-
-		<liquid_phase name = "water"> <!-- REQUIRED -->
-			<eos>false | true</eos>  <!-- default: false -->
-			<viscosity>exp</viscosity> <!-- REQUIRED -->
-			<density>exp</density> <!-- REQUIRED -->
-			<dissolved_components> 
-				<solutes>
-					<solute coefficient_of_diffusion="exp" first_order_decay_constant="exp">solute_name_string</solute>
-				</solutes> 
-				<primaries>
-					<primary coefficient_of_diffusion="exp">primary_name_string</primary>
-					<!-- primary name must match the name in the engine database -->
-				</primaries> 
-				<secondaries>
-					<secondary>secondary_name_string</secondary>
-					<!-- secondary name must match the name in the engine database -->
-				</secondaries> 
-			</dissolved_components>
-		</liquid_phase>
-
-		<solid_phase>
-		    	<minerals>
-			    <mineral rate_constant="exp">mineral_name_string</mineral>
-			    <!-- mineral name must match the name in the engine database -->
-			</minerals>
-		</solid_phase>
-
-		<gas_phase>
-		    	<gases>
-			    <gas>gas_name_string</gas>
-			    <!-- gas name must match the name in the engine database -->
-			</gases>
-		</gas_phase>
-
-	</phases>
+    </phases>
 
 
-	<execution_controls>
+    <execution_controls> <!-- REQUIRED -->
 
-	    	<verbosity level="none | low | medium | high | extreme"/> <!-- default: medium -->
-		<!-- level=extreme should be used for debugging -->
-                <execution_control_defaults init_dt="time"   max_dt="time"  reduction_factor="exp"  increase_factor="exp" mode="steady | transient" method="bdf1 | picard"/>
-		<execution_control  start="time"  end="time"   init_dt= "time"  max_dt="time"  reduction_factor="exp"  mode="steady | transient" method="bdf1 | picard" max_cycle="int" restart="filename_string"/>
-		<execution_control  start="time" />
-		<execution_control  start="time" end="time" />
-		<!-- start is REQUIRED -->
-		<!-- MUST include an end time for end of simulation -->
+        <verbosity level="none | low | medium | high | extreme"/> <!-- default: medium -->
+        <!-- level=extreme should be used for debugging -->
+        <execution_control_defaults init_dt="time" max_dt="time" reduction_factor="exp" increase_factor="exp" mode="steady | transient" method="bdf1 | picard"/> <!-- REQUIRED -->
+        <execution_control  start="time" end="time" init_dt= "time" max_dt="time" reduction_factor="exp" increase_factor="exp" mode="steady | transient" method="bdf1 | picard" max_cycles="int" restart="filename_string"/> <!-- REQUIRED -->
+        <execution_control  start="time" />
+        <execution_control  start="time" end="time" />
+        <!-- start is REQUIRED -->
+        <!-- MUST include an end time for end of simulation -->
                 
-	</execution_controls>
+    </execution_controls>
 
         <!-- There are few different ways to iterate to steady-state -
         most use pseudo-time. But what may complicate this is that two different PKs may have different needs here or in transient.-->
 
-	<numerical_controls>
-
-		<comments>string</comments>
-
-		<common_controls>
-		        <comments>string</comments>
-		</common_controls>
-
-		<!-- include unstructured or structured controls, but not both -->
-		<unstructured_controls>
-		  	<unstr_flow_controls>
-		        	<discretization_method>fv-default | fv-monotone | fv-multi_point_flux_approximation | fv-extended_to_boundary_edges | mfd-default | mfd-optimized_for_sparsity | mfd-support_operator | mfd-optimized_for_monotonicity | mfd-two_point_flux_approximation</discretization_method>
-				<!-- default: fv-default or mfd-default-->
-
-		        	<rel_perm_method>upwind-darcy_velocity | upwind-gravity | upwind-amanzi | other-arithmetic_average | other-harmonic_average</rel_perm_method>
-				<!-- default: upwind-darcy_velocity -->
-		        	<preconditioning_strategy>diffusion_operator | linearized_operator</preconditioning_strategy>
-				<!-- default: linearized_operator -->
-				<atmospheric_pressure>exp</atmospheric_pressure>
-			</unstr_flow_controls>
-
-		  	<unstr_transport_controls>
-			    	<algorithm>explicit first-order | explicit second-order | implicit upwind</algorithm> <!-- default: explicit first-order -->
-		        	<sub_cycling>on | off</sub_cycling> <!-- default: on -->
-				<cfl>exp</cfl>
-			</unstr_transport_controls>
-
-		  	<unstr_chemistry_controls>
-				<process_model>implicit operator split | none</process_model>
-				<chem_tolerance>exp</chem_tolerance> <!-- EIB: add/remove to translator? goes in engine file? -->
-		        	<chem_max_newton_iterations>int</chem_max_newton_iterations> <!-- EIB: add/remove to translator? goes in engine file? -->
-				<log_formulation>on | off</log_formulation> <!-- EIB: add/remove to translator? goes in engine file? -->
-				<max_chemistry_transport_timestep_ratio>exp</max_chemistry_transport_timestep_ratio> <!-- default: 1.0 suggested range: 0.2 - 10.0 -->
-			</unstr_chemistry_controls>
-
-			<unstr_steady-state_controls>
-		        	<comments>string</comments>
-          			<min_iterations>int</min_iterations> <!-- default: 10 suggested range: 5-15 -->
-		      		<max_iterations>int</max_iterations> <!-- default: 15 suggested range: 10-20 -->
-				<limit_iterations>int</limit_iterations> <!-- default: 20 suggested range: 20-50 -->
-          			<nonlinear_tolerance>exp</nonlinear_tolerance> <!-- default: 1.0e-5 suggested range: 1.0e-8 - 1.0e-6 -->
-				<error_control_options>pressure | residual</error_control_options> <!-- default: pressure -->
-				<nonlinear_iteration_damping_factor>exp</nonlinear_iteration_damping_factor> <!-- default: 1.0 (no damping) suggested range: 0.1-1.0 -->
-          			<max_preconditioner_lag_iterations>int</max_preconditioner_lag_iterations> <!-- default: 5 suggested range: 0-10 -->
-				<max_divergent_iterations>int</max_divergent_iterations> <!-- default: 3 suggested range: 3-8 -->
-				<nonlinear_iteration_divergence_factor>exp</nonlinear_iteration_divergence_factor> <!-- default: 1000.0 suggested range: 100.0-10000.0 -->
-				<restart_tolerance_relaxation_factor>exp</restart_tolerance_relaxation_factor> <!-- default: 1.0 suggested range: 1.0-1000.0 -->
-				<restart_tolerance_relaxation_factor_damping>exp</restart_tolerance_relaxation_factor_damping> <!-- default: 1.0 suggested range: 0.001-1.0 -->
-
-				<preconditioner>hypre_amg | trilinos_ml | block_ilu</preconditioner> <!-- default: hypre_amg -->
-				<initialize_with_darcy>true | false</initialize_with_darcy> <!-- default: true -->
-				<nonlinear_iteration_initial_guess_extrapolation_order>int</nonlinear_iteration_initial_guess_extrapolation_order> <!-- EIB add --> <!-- default: 1 -->
-				<unstr_initialization>
-				        <!-- EIB: ask Konstantin if this only needs to be included if steady method = picard? -->
-					<clipping_saturation>exp</clipping_saturation> <!-- default: 0.9 suggested range: 0.7-0.95 -->
-					<clipping_pressure>exp</clipping_pressure> 
-					<method>picard | darcy_solver</method> <!-- default: picard -->
-					<preconditioner>hypre_amg | trilinos_ml | block_ilu</preconditioner> <!-- default: hypre_amg -->
-					<linear_solver>aztec00</linear_solver> <!-- default: aztec00 -->
-					<error_control_options>pressure | residual</error_control_options> <!-- default: pressure -->
-					<convergence_tolerance>exp</convergence_tolerance> <!-- default: 1.0e-8 suggested range: 1.0e-10-1.0e-4 -->
-					<max_iterations>int</max_iterations> <!-- default: 400 suggested range: 50-1000 -->
-				</unstr_initialization>
-			</unstr_steady-state_controls>
-
-			<unstr_transient_controls>
-				<comments>string</comments>
-				<bdf1_integration_method>
-				        <!-- EIB: ask Konstantin if any of these need to be elevated -->
-				        <min_iterations>int</min_iterations> <!-- default: 10 suggested range: 5-15 -->
-					<max_iterations>int</max_iterations> <!-- default: 15 suggested range: 10-20 -->
-					<limit_iterations>int</limit_iterations> <!-- default: 20 suggested range: 20-50 -->
-					<nonlinear_tolerance>exp</nonlinear_tolerance> <!-- default: 1.0e-5 suggested range: 1.0e-6 - 1.0e-5 -->
-					<error_control_options>pressure | residual</error_control_options> <!-- default: pressure,residual -->
-					<nonlinear_iteration_damping_factor>exp</nonlinear_iteration_damping_factor> <!-- default: 1.0 suggested range: 0.1 - 1.0-->
-					<max_preconditioner_lag_iterations>int</max_preconditioner_lag_iterations> <!-- default: 5 suggested range: 0-10 -->
-					<max_divergent_iterations>int</max_divergent_iterations> <!-- default: 3 suggested range: 3 - 8-->
-					<nonlinear_iteration_divergence_factor>exp</nonlinear_iteration_divergence_factor> <!-- default: 1000.0 suggested range: 100.0 - 10000.0-->
-					<restart_tolerance_relaxation_factor>exp</restart_tolerance_relaxation_factor> <!-- default: 1.0 suggested range: 1.0 - 1000.0 -->
-				        <restart_tolerance_relaxation_factor_damping>exp</restart_tolerance_relaxation_factor_damping> <!-- default: 1.0 suggested range: 0.001-1.0 -->
-				</bdf1_integration_method>
-				<preconditioner>hypre_amg | trilinos_ml | block_ilu</preconditioner> <!-- default: hypre_amg -->
-				<initialize_with_darcy>true | false</initialize_with_darcy> <!-- default: false -->
-				<nonlinear_iteration_initial_guess_extrapolation_order>int</nonlinear_iteration_initial_guess_extrapolation_order> <!-- EIB add --> <!-- default: 1 -->
-			</unstr_transient_controls>
-
-			<unstr_linear_solver>
-				<comments>string</comments>
-				<tolerance>exp</tolerance> <!-- default: 1.0e-16 suggested range:1.0e-20-1.0e-14 -->
-				<max_iterations>int</max_iterations> <!-- default: 100 suggested range: 50-1000 -->
-	    	            	<preconditioner>hypre_amg | trilinos_ml | block_ilu</preconditioner> <!-- default: hypre_amg -->
-				<method>gmres | pcg</method> <!-- default: gmres -->
-			</unstr_linear_solver>
-
-			<unstr_nonlinear_solver name="nka | newton | jfnk | newton_picard" >
-			        <modify_correction>true | false</modify_correction> <!-- default: false -->
-				<update_upwind_frequency>every_timestep | every_nonlinear_iteration</update_upwind_frequency> <!-- default: every_timestep -->
-			</unstr_nonlinear_solver>
-
-			<unstr_preconditioners>
-			    	<hypre_amg>
-				    <hypre_cycle_applications>int</hypre_cycle_applications> <!-- default: 5 suggested range: 1-5 -->
-				    <hypre_smoother_sweeps>int</hypre_smoother_sweeps > <!-- default: 3 suggested range: 1-5 -->
-				    <hypre_tolerance>exp</hypre_tolerance> <!-- default: 0.0 suggested range: 0.0-0.1 -->
-				    <hypre_strong_threshold>exp</hypre_strong_threshold> <!-- default: 0.5 suggested range: 0.2-0.8 -->
-			   	</hypre_amg>
-			   	<trilinos_ml>
-				    <trilinos_cycle_applications>int</trilinos_cycle_applications> <!-- default: 2 suggested range: 1-5 -->
-				    <trilinos_smoother_sweeps>int</trilinos_smoother_sweeps> <!-- default: 1 suggested range: 1-5 -->
-				    <trilinos_threshold>exp</trilinos_threshold>  <!-- default: 0.0 suggested range: 0.0-0.1 -->
-				    <trilinos_smoother_type>jacobi | gauss_seidel | ilu</trilinos_smoother_type> <!-- default: jacobi -->
-			   	</trilinos_ml>
-			   	<block_ilu>
-				    <ilu_overlap>int</ilu_overlap> <!-- default: 0 suggested range: 0-3 -->
-				    <ilu_relax>exp</ilu_relax> <!-- default: 1.0 suggested range:  -->
-				    <ilu_rel_threshold>exp</ilu_rel_threshold> <!-- default: 1.0 suggested range: see Ifpack manual -->
-				    <ilu_abs_threshold>exp</ilu_abs_threshold> <!-- default: 0.0 suggested range: see Ifpack manual -->
-				    <ilu_level_of_fill>int</ilu_level_of_fill> <!-- default: 0 suggested range: 0-2 -->
-			   	</block_ilu>
-			</unstr_preconditioners>
-		</unstructured_controls>
-
-		<structured_controls>
-			<comments>string</comments>
-
-			<petsc_options_file>string</petsc_options_file>
-			
-			<str_steady-state_controls>
-				<comments>string</comments>
-				<max_pseudo_time>exp</max_pseudo_time> <!-- default: 1.e10 suggested range: 0.0-1.e12 -->
-				<min_iterations>int</min_iterations> <!-- default: 10 suggested range: 5-100 -->
-				<limit_iterations>int</limit_iterations> <!-- default: 20 suggested range: 5-200 -->
-				<min_iterations_2>int</min_iterations_2> <!-- default: 0 suggested range: 5-100 -->
-				<time_step_increase_factor>exp</time_step_increase_factor> <!-- default: 1.2 suggested range: 1.1-2.0 -->
-				<time_step_increase_factor_2>exp</time_step_increase_factor_2> <!-- default: 10.0 suggested range: 1.1-10.0 -->
-				<max_consecutive_failures_1>int</max_consecutive_failures_1> <!-- default: 3 suggested range: 5-10 -->
-				<time_step_retry_factor_1>exp</time_step_retry_factor_1> <!-- default: 0.5 suggested range: 0.1-0.5 -->
-				<max_consecutive_failures_2>int</max_consecutive_failures_2> <!-- default: 4 suggested range: 5-10 -->
-				<time_step_retry_factor_2>exp</time_step_retry_factor_2> <!-- default: 0.01 suggested range: 0.01-0.1 -->
-				<time_step_retry_factor_f>exp</time_step_retry_factor_f> <!-- default: 0.001 suggested range: 0.001-0.01 -->
-				<max_num_consecutive_success>int</max_num_consecutive_success> <!-- default: 15 suggested range: 5-100 -->
-				<extra_time_step_increase_factor>exp</extra_time_step_increase_factor> <!-- default: 10.0 suggested range: 5.0-100.0 -->
-				<abort_on_psuedo_timestep_failure>true | false</abort_on_psuedo_timestep_failure> <!-- default: false -->
-				<limit_function_evals>int</limit_function_evals> <!-- default: -1 suggested range: -1,1-10000000000 -->
-				<do_grid_sequence>true | false</do_grid_sequence> <!-- default: true -->
-				<grid_sequence_new_level_dt_factor>
-				    	<dt_factor>exp</dt_factor>
-				    	<dt_factor>exp</dt_factor>
-				    	<dt_factor>exp</dt_factor>
-				</grid_sequence_new_level_dt_factor>
-			</str_steady-state_controls>
-			
-			<str_transient_controls>
-				<comments>string</comments>
-				<max_ls_iterations>int</max_ls_iterations>
-				<ls_reduction_factor>exp</ls_reduction_factor>
-				<min_ls_factor>exp</min_ls_factor>
-				<ls_acceptance_factor>exp</ls_acceptance_factor>
-				<monitor_line_search>int</monitor_line_search>
-				<monitor_linear_solve>int</monitor_linear_solve>
-				<use_fd_jac>true | false</use_fd_jac>
-				<perturbation_scale_for_J>exp</perturbation_scale_for_J>
-				<use_dense_Jacobian>true | false</use_dense_Jacobian>
-				<upwind_krel>true | false</upwind_krel>
-				<pressure_maxorder>int</pressure_maxorder>
-				<scale_solution_before_solve>true | false</scale_solution_before_solve>
-				<semi_analytic_J>true | false</semi_analytic_J>
-				<cfl>exp</cfl>
-			</str_transient_controls>
-			
-			<str_amr_controls>
-				<comments>string</comments>
-				<amr_levels>int</amr_levels>
-				<refinement_ratio>int int</refinement_ratio> 
-                                <!-- min entries = #levels-1; additional will be ignored -->
-				<do_amr_cubcycling>true | false</do_amr_cubcycling>
-				<regrid_interval>int int</regrid_interval> 
-                                <!-- min entries = #levels; additional will be ignored -->
-				<blocking_factor>int int</blocking_factor> 
-				<!-- min entries = #levels; additional will be ignored -->
-                                <!-- include blocking_factor if using a multi-grid solver -->
-				<number_error_buffer_cells>int int</number_error_buffer_cells> 
-                                <!-- min entries = #levels-1; additional will be ignored -->
-				<max_grid_size>int int</max_grid_size> 
-                                <!-- min entries = #levels; additional will be ignored -->
-
-				<!-- may have unbounded number of refinement indicators -->
-				<refinement_indicator name="string">
-				    	<field_name>string</field_name>
-				    	<regions>string</regions>
-				    	<max_refinement_level>int</max_refinement_level>
-				    	<start_time>exp</start_time>
-				    	<end_time>exp</end_time>
-					<!-- indicator to apply: choose 1 of the following -->
-				    	<value_greater>exp</value_greater>
-				    	<value_less>exp</value_less>
-				    	<adjacent_difference_greater>exp</adjacent_difference_greater>
-				    	<inside_region>true | false</inside_region>
-				</refinement_indicator>
-			</str_amr_controls>
-			
-			<max_n_subcycle_transport>int</max_n_subcycle_transport>
-		</structured_controls>
-
-	</numerical_controls>
-	
-
-	<regions>
-	        <comments>string</comments>
-
-		<region name="string">
-	        	<comments>string</comments>
-			<region_file name="string" type="color | labeled set" format="exodus ii" entity="cell | face" label="int"/>
-		</region>
-		<region name="string">
-	        	<comments>string</comments>
-			<box low_coordinates="coordinate" high_coordinates="coordinate"/>
-		</region>
-		<region name="string">
-	        	<comments>string</comments>
-			<plane location="coordinate" normal="normal"/>
-		</region>
-
-		<box name="string" low_coordinates="coordinate" high_coordinates="coordinate"/>
-		<point name="string" coordinate="coordinate"/>
-		<plane name="string" location="coordinate" normal="normal" tolerane="optional exp"/>
-
-		<!-- only available for unstructured -->
-
-		<polygonal_surface name="string" num_points="int" tolerane="optional exp">
-		    	<point>coordinate</point>
-		</polygonal_surface>
-		<logical name="string">
-		   	 <operation>union | intersection | subtraction | complement</operation>
-		    	<region_list>list of regions</region_list>
-		</logical>
-
-		<!-- only available for structured -->
-
-		<!-- 2D only -->
-		<polygon name="string" num_points="int">
-		    	<point>coordinate</point>
-		</polygon>
-		<!-- 2D only -->
-		<ellipse name="string">
-		    	<center>coordinate</center>
-		    	<radius>coordinate</radius>
-		</ellipse>
-		<!-- 3D only -->
-		<rotated_polygon name="string">
-		    	<vertex>coordinate</vertex>
-		    	<xyz_plane>xy | yz | xz</xyz_plane>
-		    	<axis>x | y | z</axis>
-		    	<reference_point>coordinate</reference_point>
-		</rotated_polygon>
-		<!-- 3D only -->
-		<swept_polygon name="string">
-		    	<vertex>coordinate</vertex>
-		    	<xyz_plane>xy | yz | xz</xyz_plane>
-		    	<extent_min>exp</extent_min>
-		    	<extent_max>exp</extent_max>
-		</swept_polygon>
-
-	</regions>
-
-	<geochemistry>
-		<!-- EIB: should database and engine options go here or above in chemistry controls section? -->
-		<database>default_reduced_database.dat</database>
-	        <!-- Akuna will write a reduced database file containing only the items requested -->
-		<activity_coefficients>timestep</activity_coefficients>
-		<constraints>
-			<!-- Provide a list of constraints for various chemistry in system. -->
-                        <!-- Chemistry input needs to be consolidated and migrated to xml file
-                             as funding becomes available -->
-			<!-- activity model, database specification, mineral kinetics, secondary species specified
-			     in external file -->
-			<constraint name="string">
-			        <!-- EIB: need full set of examples here, what are the various options? -->
-				<primary name="primary_name_string"     initial_guess="exp"   type="free"/>
-				<primary name="primary_name_string"     initial_guess="exp"   type="mineral" mineral="geothite"/>
-				<primary name="primary_name_string(aq)" initial_guess="exp"   type="Gas" gas = "CO2(g)"/>
-				<mineral name="mineral_name_string"     volume_fraction="exp" surface_area ="exp"/>
-				<!-- cation exchange capacity and surface site density are specified in the
-				     external pflotran input file, and scaled by mineral volume fraction -->
-			</constraint>
-		</constraints>
-  	</geochemistry>
-
-	<!-- unstructured mesh element -->
-	<mesh framework="mstk | stk::mesh | simple"> <!-- default is MSTK for unstructured -->
-	        <comments>string</comments>
-		<dimension>2 | 3</dimension>
-		<read>
-    			<file>string</file>
-	    		<format>exodus ii</format>
-		</read>
-		<!-- OR -->
-		<generate>
-		    	<number_of_cells nx="int" ny="int" nz="int" />
-			<box low_coordinates="coordinate" high_coordinates="coordinate"/>
-		</generate>
-	</mesh>
-	<!-- structured mesh element -->
-	<mesh>
-	        <comments>string</comments>
-		<dimension>2 | 3</dimension>
-		<generate>
-		    	<number_of_cells nx="int" ny="int" nz="int" />
-			<box low_coordinates="coordinate" high_coordinates="coordinate"/>
-		</generate>
-	</mesh>
-
-
-	<materials>
-
-		<material name="string">
-		       	<comments>string</comments>
- 	 	      	<assigned_regions>string, string, string</assigned_regions>
-
-               		<mechanical_properties>
-                         	<porosity value="exp"/>
-                         	<particle_density value="exp"/>
-                         	<specific_storage value="exp"/>
-                         	<specific_yield value="exp"/>
-
-				<dispersion_tensor alpha_l="exp" alpha_t="exp"/> <!-- uniform_isotropic -->
-				<!-- OR -->
-                         	<dispersion_tensor alpha_l="exp" alpha_th="exp" alpha_tv="exp"/> <!-- burnett_frind -->
-				<!-- OR -->
-                         	<dispersion_tensor alpha_hl="exp" alpha_lv="exp" alpha_th="exp" alpha_tv="exp"/> <!-- lichtner_kelkar_robinson -->
-				<!-- OR -->
-                         	<dispersion_tensor filename="string" type="exodus ii" attribute="string"/> <!-- file -->
-
-                         	<tortuosity value="exp"/>
- 	 	      	</mechanical_properties>
-
- 	 	        <!-- require permeability or hydraulic_conductivity -->
-			<!-- permeability can take values or fileread -->
- 	 	        <permeability x="exp" y="exp" z="exp"/>
-			    <!-- OR -->
-			<permeability filename="string" type="exodus ii" attribute="string"/>
-			    <!-- OR -->
-			<hydraulic_conductivity x="exp" y="exp" z="exp"/>
-
- 	 	      	<cap_pressure model="van_genuchten | brooks_corey | none">
-				<!-- van genuchten -->
- 	 	       	 	<parameters m="exp" alpha="exp" sr="exp" optional_krel_smoothing_interval="exp"/>
-				<!-- brooks corey -->
- 	 	       	 	<parameters lambda="exp" alpha="exp" sr="exp" optional_krel_smoothing_interval="exp"/>
- 	 	       	</cap_pressure>
-
-  	  	      	<rel_perm model="mualem | burdine | none">
-			    	<!-- burdine only -->
-				<exp>exp</exp>
-  	  	      	</rel_perm>
-
-			<sorption_isotherms>
-				<solute name="string">
-					<molecular_diffusion value="exp"/>
-					<kd_model model="linear | langmuir | freundlich" kd="exp" b="exp" n="exp"/>
-					<!-- b and n are model specific -->
-				</solute>
-			</sorption_isotherms>
- 	   	</material>
-
-	</materials>
-
-	<initial_conditions>
-		<initial_condition name="string">
-			<comments>string</comments>
-			<assigned_regions>string, string, string</assigned_regions>
-
-			<liquid_phase name = "water">
-				<liquid_component name = "water">
-					<!-- use same type for a given IC, can provide time series -->
-					<uniform_pressure name="string" value="exp"/>
-					<linear_pressure name="string" value="exp" reference_coord="coordinate" gradient="coordinate"/>
-					<uniform_saturation name="string" value="exp"/>
-					<linear_saturation name="string" value="exp" reference_coord="coordinate" gradient="coordinate"/>
-					<velocity value="exp" reference_coord="coordinate" gradient="coordinate"/>
-				</liquid_component>
-
-				<solute_component name="solute">
-					<uniform_conc name="string1" start="time" value="exp"/>
-					<uniform_conc name="string2" start="time" value="exp"/>
-					<uniform_conc name="string3" start="time" value="exp"/>
-					<linear_conc name="string4" value="exp" reference_coord="coordinate" gradient="coordinate"/>
-				</solute_component>
-
-				<geochemistry>
-					<constraint name="constraint_name" start="time" function="constant | linear"/>
-				</geochemistry>
-			</liquid_phase>
-
-			<solid_phase name="string">
-			    	<mineral/>
-
-				<geochemistry>
-					<constraint name="constraint_name" start="time" function="constant | linear"/>
-				</geochemistry>
-			</solid_phase>
-         	</initial_condition>
-	</initial_conditions>
-
-	<boundary_conditions>
-		<comments>string</comments>
-
-		<boundary_condition name="string">
-			<comments>string</comments>
-			<assigned_regions>string,string,string</assigned_regions>
-			<liquid_phase name="water">
-				<liquid_component name="water">
-					<inward_mass_flux start="time" function="constant | linear"  value="exp"/>
-					<outward_mass_flux start="time" function="constant | linear"  value="exp"/>
-					<inward_volumetric_flux start="time" function="constant | linear"  value="exp"/>
-					<outward_volumetric_flux start="time" function="constant | linear"  value="exp"/>
-					<uniform_pressure start="time" function="constant | linear"  value="exp"/>
-					<linear_pressure gradient_value="time" reference_point="coordinate"  reference_value="exp"/>
-					<hydrostatic start="time" function="constant | linear"  value="exp" coordinate_system="absolute | relative to mesh top" submodel="no_flow_above_water_table | none"/>
-					<linear_hydrostatic start="time" function="constant | linear"  value="exp"/>
-					<seepage_face start="time" function="constant | linear"  value="exp"/>
-					<no_flow start="time" function= "constant | linear"/>
-				</liquid_component>
-
-				<solute_component name="solute">
-					<aqueous_conc name="string1" start="time" function="constant | linear"  value="exp"/>
-					<aqueous_conc name="string2" start="time" function="constant | linear"  value="exp"/>
-					<aqueous_conc name="string3" start="time" function="constant | linear"  value="exp"/>
-				</solute_component>
-
-				<geochemistry>
-					<constraint name="string" start="time" function= "constant | linear"/>
-				</geochemistry>
-			</liquid_phase>
-		</boundary_condition>
-	</boundary_conditions>
-
-	<sources>
-		<comments>string</comments>
-		<source name="water">
-			<comments>string</comments>
-			<assigned_regions>string, string, string</assigned_regions>
-			<liquid_phase name="water">
-				<liquid_component name="water">
-					<volume_weighted start="time" value="exp" function="linear | constant"/>
-					<perm_weighted start="time" value="exp" function="linear | constant"/>
-				</liquid_component>
-
-				<solute_component name="solute">
-					<uniform_conc start="time" value="exp" function="linear | constant"/>
-					<flow_weighted_conc start="time" value="exp" function="linear | constant"/>
-					<diffusion_dominated_release start="time" total_inventory="exp" mixing_length="exp" effective_diffusion_coefficient="exp"/>
-				</solute_component>
-
-				<geochemistry>
-					<constraint name="string" start="time" function= "constant | linear"/>
-				</geochemistry>
-			</liquid_phase>
-		</source>
-	</sources>
-
-	<output>
-		<vis>
-			<base_filename>string</base_filename>
-		  	<num_digits>int</num_digits>
-		  	<time_macros>string</time_macros>
-			<!-- OR -->
-		  	<cycle_macros>string</cycle_macros>
-			<write_regions>
-			    <field name="string" regions="string, string, string" />
-			</write_regions>
-		</vis>
-
-		<checkpoint>
-			<base_filename>string</base_filename>
-		  	<num_digits>int</num_digits>
-		  	<cycle_macro>string</cycle_macro>
-		</checkpoint>
-
-		<walkabout>
-			<base_filename>string</base_filename>
-		  	<num_digits>int</num_digits>
-		  	<cycle_macro>string</cycle_macro>
-		</walkabout>
-
-		<observations>
-			<filename>string</filename>
-			<liquid_phase name="water">
-			    <volumetric_water_content>
-				<filename>string</filename>
-				<assigned_regions>string</assigned_regions>
-				<functional>point | integral</functional>
-				<time_macro>string</time_macro>
-			    </volumetric_water_content>
-
-			    <gravimetric_water_content>
-				<filename>string</filename>
-				<assigned_regions>string</assigned_regions>
-				<functional>point | integral</functional>
-				<time_macro>string</time_macro>
-			    </gravimetric_water_content>
-
-			    <aqueous_pressure>
-				<filename>string</filename>
-				<assigned_regions>string</assigned_regions>
-				<functional>point | integral</functional>
-				<time_macro>string</time_macro>
-			    </aqueous_pressure>
-
-			    <x_aqueous_volumetric_flux>
-				<filename>string</filename>
-				<assigned_regions>string</assigned_regions>
-				<functional>point | integral</functional>
-				<time_macro>string</time_macro>
-			    </x_aqueous_volumetric_flux>
-
-			    <y_aqueous_volumetric_flux>
-				<filename>string</filename>
-				<assigned_regions>string</assigned_regions>
-				<functional>point | integral</functional>
-				<time_macro>string</time_macro>
-			    </y_aqueous_volumetric_flux>
-
-			    <z_aqueous_volumetric_flux>
-				<filename>string</filename>
-				<assigned_regions>string</assigned_regions>
-				<functional>point | integral</functional>
-				<time_macro>string</time_macro>
-			    </z_aqueous_volumetric_flux>
-
-			    <material_id>
-				<filename>string</filename>
-				<assigned_regions>string</assigned_regions>
-				<functional>point | integral</functional>
-				<time_macro>string</time_macro>
-			    </material_id>
-
-			    <hydraulic_head>
-				<filename>string</filename>
-				<assigned_regions>string</assigned_regions>
-				<functional>point | integral</functional>
-				<time_macro>string</time_macro>
-			    </hydraulic_head>
-
-			    <aqueous_mass_flow_rate>
-				<filename>string</filename>
-				<assigned_regions>string</assigned_regions>
-				<functional>point | integral</functional>
-				<time_macro>string</time_macro>
-			    </aqueous_mass_flow_rate>
-
-			    <aqueous_volumetric_flow_rate>
-				<filename>string</filename>
-				<assigned_regions>string</assigned_regions>
-				<functional>point | integral</functional>
-				<time_macro>string</time_macro>
-			    </aqueous_volumetric_flow_rate>
-
-			    <aqueous_conc>
-				<filename>string</filename>
-				<solute>string</solute>
-				<assigned_regions>string</assigned_regions>
-				<functional>point | integral</functional>
-				<time_macro>string</time_macro>
-			    </aqueous_conc>
-
-			    <solute_volumetric_flow_rate>
-				<filename>string</filename>
-				<solute>string</solute>
-				<assigned_regions>string</assigned_regions>
-				<functional>point | integral</functional>
-				<time_macro>string</time_macro>
-			    </solute_volumetric_flow_rate>
-
-			</liquid_phase>
-		</observations>
-
-	</output>
+    <numerical_controls>
+
+        <comments>string</comments>
+
+        <common_controls>
+            <comments>string</comments>
+        </common_controls>
+
+	<!-- 1 of unstructured_controls or structured_controls REQUIRED -->
+        <unstructured_controls>
+            <unstr_flow_controls>
+                <discretization_method>fv-default | fv-monotone | fv-multi_point_flux_approximation | fv-extended_to_boundary_edges | mfd-default | mfd-optimized_for_sparsity | mfd-support_operator | mfd-optimized_for_monotonicity | mfd-two_point_flux_approximation</discretization_method>
+                <!-- default: fv-default or mfd-default-->
+
+                <rel_perm_method>upwind-darcy_velocity | upwind-gravity | upwind-amanzi | other-arithmetic_average | other-harmonic_average</rel_perm_method>
+                <!-- default: upwind-darcy_velocity -->
+                <preconditioning_strategy>diffusion_operator | linearized_operator</preconditioning_strategy>
+                <!-- default: linearized_operator -->
+                <atmospheric_pressure>exp</atmospheric_pressure>
+            </unstr_flow_controls>
+
+            <unstr_transport_controls>
+                <algorithm>explicit first-order | explicit second-order | implicit upwind</algorithm> <!-- default: explicit first-order -->
+                <sub_cycling>on | off</sub_cycling> <!-- default: on -->
+                <cfl>exp</cfl>
+            </unstr_transport_controls>
+
+            <unstr_chemistry_controls>
+                <process_model>implicit operator split | none</process_model>
+                <chem_tolerance>exp</chem_tolerance> <!-- EIB: add/remove to translator? goes in engine file? -->
+                <chem_max_newton_iterations>int</chem_max_newton_iterations> <!-- EIB: add/remove to translator? goes in engine file? -->
+                <log_formulation>on | off</log_formulation> <!-- EIB: add/remove to translator? goes in engine file? -->
+                <max_chemistry_transport_timestep_ratio>exp</max_chemistry_transport_timestep_ratio> <!-- default: 1.0 suggested range: 0.2 - 10.0 -->
+            </unstr_chemistry_controls>
+
+            <unstr_steady-state_controls>
+                <comments>string</comments>
+                <min_iterations>int</min_iterations> <!-- default: 10 suggested range: 5-15 -->
+                <max_iterations>int</max_iterations> <!-- default: 15 suggested range: 10-20 -->
+                <limit_iterations>int</limit_iterations> <!-- default: 20 suggested range: 20-50 -->
+                <nonlinear_tolerance>exp</nonlinear_tolerance> <!-- default: 1.0e-5 suggested range: 1.0e-8 - 1.0e-6 -->
+                <error_control_options>pressure | residual</error_control_options> <!-- default: pressure -->
+                <nonlinear_iteration_damping_factor>exp</nonlinear_iteration_damping_factor> <!-- default: 1.0 (no damping) suggested range: 0.1-1.0 -->
+                <max_preconditioner_lag_iterations>int</max_preconditioner_lag_iterations> <!-- default: 5 suggested range: 0-10 -->
+                <max_divergent_iterations>int</max_divergent_iterations> <!-- default: 3 suggested range: 3-8 -->
+                <nonlinear_iteration_divergence_factor>exp</nonlinear_iteration_divergence_factor> <!-- default: 1000.0 suggested range: 100.0-10000.0 -->
+                <restart_tolerance_relaxation_factor>exp</restart_tolerance_relaxation_factor> <!-- default: 1.0 suggested range: 1.0-1000.0 -->
+                <restart_tolerance_relaxation_factor_damping>exp</restart_tolerance_relaxation_factor_damping> <!-- default: 1.0 suggested range: 0.001-1.0 -->
+                <preconditioner>hypre_amg | trilinos_ml | block_ilu</preconditioner> <!-- default: hypre_amg -->
+                <initialize_with_darcy>true | false</initialize_with_darcy> <!-- default: true -->
+                <nonlinear_iteration_initial_guess_extrapolation_order>int</nonlinear_iteration_initial_guess_extrapolation_order> <!-- default: 1 -->
+                <unstr_initialization>
+                    <!-- EIB: ask Konstantin if this only needs to be included if steady method = picard? -->
+                    <clipping_saturation>exp</clipping_saturation> <!-- default: 0.9 suggested range: 0.7-0.95 -->
+                    <clipping_pressure>exp</clipping_pressure> 
+                    <method>picard | darcy_solver</method> <!-- default: picard -->
+                    <preconditioner>hypre_amg | trilinos_ml | block_ilu</preconditioner> <!-- default: hypre_amg -->
+                    <linear_solver>aztec00</linear_solver> <!-- default: aztec00 -->
+                    <error_control_options>pressure | residual</error_control_options> <!-- default: pressure -->
+                    <convergence_tolerance>exp</convergence_tolerance> <!-- default: 1.0e-8 suggested range: 1.0e-10-1.0e-4 -->
+                    <max_iterations>int</max_iterations> <!-- default: 400 suggested range: 50-1000 -->
+                </unstr_initialization>
+            </unstr_steady-state_controls>
+
+            <unstr_transient_controls>
+                <comments>string</comments>
+                <bdf1_integration_method>
+                    <!-- EIB: ask Konstantin if any of these need to be elevated -->
+                    <min_iterations>int</min_iterations> <!-- default: 10 suggested range: 5-15 -->
+                    <max_iterations>int</max_iterations> <!-- default: 15 suggested range: 10-20 -->
+                    <limit_iterations>int</limit_iterations> <!-- default: 20 suggested range: 20-50 -->
+                    <nonlinear_tolerance>exp</nonlinear_tolerance> <!-- default: 1.0e-5 suggested range: 1.0e-6 - 1.0e-5 -->
+                    <nonlinear_iteration_damping_factor>exp</nonlinear_iteration_damping_factor> <!-- default: 1.0 suggested range: 0.1 - 1.0-->
+                    <max_preconditioner_lag_iterations>int</max_preconditioner_lag_iterations> <!-- default: 5 suggested range: 0-10 -->
+                    <max_divergent_iterations>int</max_divergent_iterations> <!-- default: 3 suggested range: 3 - 8-->
+                    <nonlinear_iteration_divergence_factor>exp</nonlinear_iteration_divergence_factor> <!-- default: 1000.0 suggested range: 100.0 - 10000.0-->
+                    <restart_tolerance_relaxation_factor>exp</restart_tolerance_relaxation_factor> <!-- default: 1.0 suggested range: 1.0 - 1000.0 -->
+                    <restart_tolerance_relaxation_factor_damping>exp</restart_tolerance_relaxation_factor_damping> <!-- default: 1.0 suggested range: 0.001-1.0 -->
+                    <error_control_options>pressure | residual</error_control_options> <!-- default: pressure,residual -->
+                </bdf1_integration_method>
+                <preconditioner>hypre_amg | trilinos_ml | block_ilu</preconditioner> <!-- default: hypre_amg -->
+                <initialize_with_darcy>true | false</initialize_with_darcy> <!-- default: false -->
+                <nonlinear_iteration_initial_guess_extrapolation_order>int</nonlinear_iteration_initial_guess_extrapolation_order> <!-- EIB add --> <!-- default: 1 -->
+            </unstr_transient_controls>
+
+            <unstr_linear_solver>
+                <comments>string</comments>
+                <method>gmres | pcg</method> <!-- default: gmres -->
+                <max_iterations>int</max_iterations> <!-- default: 100 suggested range: 50-1000 -->
+                <tolerance>exp</tolerance> <!-- default: 1.0e-16 suggested range:1.0e-20-1.0e-14 -->
+                <preconditioner>hypre_amg | trilinos_ml | block_ilu</preconditioner> <!-- default: hypre_amg -->
+            </unstr_linear_solver>
+
+            <unstr_nonlinear_solver name="nka | newton | jfnk | newton_picard" >
+                <modify_correction>true | false</modify_correction> <!-- default: false -->
+                <update_upwind_frequency>every_timestep | every_nonlinear_iteration</update_upwind_frequency> <!-- default: every_timestep -->
+            </unstr_nonlinear_solver>
+
+            <unstr_preconditioners>
+                <hypre_amg>
+                    <hypre_cycle_applications>int</hypre_cycle_applications> <!-- default: 5 suggested range: 1-5 -->
+                    <hypre_smoother_sweeps>int</hypre_smoother_sweeps> <!-- default: 3 suggested range: 1-5 -->
+                    <hypre_tolerance>exp</hypre_tolerance> <!-- default: 0.0 suggested range: 0.0-0.1 -->
+                    <hypre_strong_threshold>exp</hypre_strong_threshold> <!-- default: 0.5 suggested range: 0.2-0.8 -->
+                </hypre_amg>
+                <trilinos_ml>
+                    <trilinos_cycle_applications>int</trilinos_cycle_applications> <!-- default: 2 suggested range: 1-5 -->
+                    <trilinos_smoother_sweeps>int</trilinos_smoother_sweeps> <!-- default: 1 suggested range: 1-5 -->
+                    <trilinos_threshold>exp</trilinos_threshold>  <!-- default: 0.0 suggested range: 0.0-0.1 -->
+                    <trilinos_smoother_type>jacobi | gauss_seidel | ilu</trilinos_smoother_type> <!-- default: jacobi -->
+                </trilinos_ml>
+                <block_ilu>
+                    <ilu_overlap>int</ilu_overlap> <!-- default: 0 suggested range: 0-3 -->
+                    <ilu_relax>exp</ilu_relax> <!-- default: 1.0 suggested range:  -->
+                    <ilu_rel_threshold>exp</ilu_rel_threshold> <!-- default: 1.0 suggested range: see Ifpack manual -->
+                    <ilu_abs_threshold>exp</ilu_abs_threshold> <!-- default: 0.0 suggested range: see Ifpack manual -->
+                    <ilu_level_of_fill>int</ilu_level_of_fill> <!-- default: 0 suggested range: 0-2 -->
+                </block_ilu>
+            </unstr_preconditioners>
+        </unstructured_controls>
+
+        <structured_controls>
+            <comments>string</comments>
+
+	    <petsc_options_file>string</petsc_options_file> <!-- if not specified, assumed .petsc -->
+            
+            <str_steady-state_controls>
+                <comments>string</comments>
+                <max_pseudo_time>exp</max_pseudo_time> <!-- default: 1.e10 suggested range: 0.0-1.e12 -->
+                <min_iterations>int</min_iterations> <!-- default: 10 suggested range: 5-100 -->
+                <limit_iterations>int</limit_iterations> <!-- default: 20 suggested range: 5-200 -->
+                <min_iterations_2>int</min_iterations_2> <!-- default: 0 suggested range: 5-100 -->
+                <time_step_increase_factor>exp</time_step_increase_factor> <!-- default: 1.2 suggested range: 1.1-2.0 -->
+                <time_step_increase_factor_2>exp</time_step_increase_factor_2> <!-- default: 10.0 suggested range: 1.1-10.0 -->
+                <max_consecutive_failures_1>int</max_consecutive_failures_1> <!-- default: 3 suggested range: 5-10 -->
+                <time_step_retry_factor_1>exp</time_step_retry_factor_1> <!-- default: 0.5 suggested range: 0.1-0.5 -->
+                <max_consecutive_failures_2>int</max_consecutive_failures_2> <!-- default: 4 suggested range: 5-10 -->
+                <time_step_retry_factor_2>exp</time_step_retry_factor_2> <!-- default: 0.01 suggested range: 0.01-0.1 -->
+                <time_step_retry_factor_f>exp</time_step_retry_factor_f> <!-- default: 0.001 suggested range: 0.001-0.01 -->
+                <max_num_consecutive_success>int</max_num_consecutive_success> <!-- default: 15 suggested range: 5-100 -->
+                <extra_time_step_increase_factor>exp</extra_time_step_increase_factor> <!-- default: 10.0 suggested range: 5.0-100.0 -->
+                <abort_on_psuedo_timestep_failure>true | false</abort_on_psuedo_timestep_failure> <!-- default: false -->
+                <limit_function_evals>int</limit_function_evals> <!-- default: -1 suggested range: -1,1-10000000000 -->
+                <do_grid_sequence>true | false</do_grid_sequence> <!-- default: true -->
+                <grid_sequence_new_level_dt_factor>
+                    <dt_factor>exp</dt_factor>
+                    <dt_factor>exp</dt_factor>
+                    <dt_factor>exp</dt_factor>
+                </grid_sequence_new_level_dt_factor>
+            </str_steady-state_controls>
+            
+            <str_transient_controls>
+                <comments>string</comments>
+                <max_ls_iterations>int</max_ls_iterations>
+                <ls_reduction_factor>exp</ls_reduction_factor>
+                <min_ls_factor>exp</min_ls_factor>
+                <ls_acceptance_factor>exp</ls_acceptance_factor>
+                <monitor_line_search>int</monitor_line_search>
+                <monitor_linear_solve>int</monitor_linear_solve>
+                <use_fd_jac>true | false</use_fd_jac>
+                <perturbation_scale_for_J>exp</perturbation_scale_for_J>
+                <use_dense_Jacobian>true | false</use_dense_Jacobian>
+                <upwind_krel>true | false</upwind_krel>
+                <pressure_maxorder>int</pressure_maxorder>
+                <scale_solution_before_solve>true | false</scale_solution_before_solve>
+                <semi_analytic_J>true | false</semi_analytic_J>
+                <cfl>exp</cfl>
+            </str_transient_controls>
+            
+            <str_amr_controls>
+                <comments>string</comments>
+                <amr_levels>int</amr_levels>
+                <refinement_ratio>int int</refinement_ratio> 
+                <!-- min entries = #levels-1; additional will be ignored -->
+                <do_amr_cubcycling>true | false</do_amr_cubcycling>
+                <regrid_interval>int int</regrid_interval> 
+                <!-- min entries = #levels; additional will be ignored -->
+                <blocking_factor>int int</blocking_factor> 
+                <!-- min entries = #levels; additional will be ignored -->
+                <!-- include blocking_factor if using a multi-grid solver -->
+                <number_error_buffer_cells>int int</number_error_buffer_cells> 
+                <!-- min entries = #levels-1; additional will be ignored -->
+                <max_grid_size>int int</max_grid_size> 
+                <!-- min entries = #levels; additional will be ignored -->
+
+                <!-- may have unbounded number of refinement indicators -->
+                <refinement_indicator name="string">
+                    <field_name>string</field_name>
+                    <regions>string</regions>
+                    <max_refinement_level>int</max_refinement_level>
+                    <start_time>exp</start_time>
+                    <end_time>exp</end_time>
+                    <!-- indicator to apply: must choose 1 of the following -->
+                    <value_greater>exp</value_greater>
+                    <value_less>exp</value_less>
+                    <adjacent_difference_greater>exp</adjacent_difference_greater>
+                    <inside_region>true | false</inside_region>
+                </refinement_indicator>
+            </str_amr_controls>
+            
+            <max_n_subcycle_transport>int</max_n_subcycle_transport>
+        </structured_controls>
+
+    </numerical_controls>
+
+    <regions> <!-- REQUIRED -->
+        <comments>string</comments>
+
+        <region name="string">
+            <comments>string</comments>
+            <region_file name="string" type="color | labeled set" format="exodus ii" entity="cell | face" label="int"/>
+        </region>
+        <region name="string">
+            <comments>string</comments>
+            <box low_coordinates="coordinate" high_coordinates="coordinate"/>
+        </region>
+        <region name="string">
+            <comments>string</comments>
+            <plane location="coordinate" normal="normal"/>
+        </region>
+
+        <box name="string" low_coordinates="coordinate" high_coordinates="coordinate"/>
+        <point name="string" coordinate="coordinate"/>
+        <plane name="string" location="coordinate" normal="normal" tolerane="optional exp"/>
+
+        <!-- only available for unstructured -->
+
+        <polygonal_surface name="string" num_points="int" tolerane="optional exp">
+            <point>coordinate</point>
+        </polygonal_surface>
+        <logical name="string">
+	    <!-- ALL Subelements REQUIRED -->
+            <operation>union | intersection | subtraction | complement</operation>
+            <region_list>list of regions</region_list>
+        </logical>
+
+        <!-- only available for structured -->
+
+        <!-- 2D only -->
+        <polygon name="string" num_points="int">
+	    <!-- ALL Subelements REQUIRED -->
+            <point>coordinate</point>
+        </polygon>
+        <!-- 2D only -->
+        <ellipse name="string">
+	    <!-- ALL Subelements REQUIRED -->
+            <center>coordinate</center>
+            <radius>coordinate</radius>
+        </ellipse>
+        <!-- 3D only -->
+        <rotated_polygon name="string">
+	    <!-- ALL Subelements REQUIRED -->
+            <vertex>coordinate</vertex>
+            <xyz_plane>xy | yz | xz</xyz_plane>
+            <axis>x | y | z</axis>
+            <reference_point>coordinate</reference_point>
+        </rotated_polygon>
+        <!-- 3D only -->
+        <swept_polygon name="string">
+	    <!-- ALL Subelements REQUIRED -->
+            <vertex>coordinate</vertex>
+            <xyz_plane>xy | yz | xz</xyz_plane>
+            <extent_min>exp</extent_min>
+            <extent_max>exp</extent_max>
+        </swept_polygon>
+
+    </regions>
+
+    <geochemistry>
+	<verbosity>silent | terse | verbose | warnings | errors</verbosity>
+
+	<amanzi_chemistry>
+	    <reaction_network file="filename.bgd" format="simple | none"/> <!-- REQUIRED -->
+	    <activity_model>unit | pitzer</activity_model>
+	</amanzi_chemistry>
+
+	<pflotran_chemistry>
+	    <reaction_network file="filename.in" format="simple | none"/> <!-- REQUIRED -->
+            <database>default_reduced_database.dat</database> <!-- REQUIRED -->
+	    <radioactive_decay></radioactive_decay>
+	</pflotran_chemistry>
+
+	<constraints> <!-- REQUIRED -->
+            <!-- Provide a list of constraints for various chemistry in system. -->
+            <!-- Chemistry input needs to be consolidated and migrated to xml file
+                 as funding becomes available -->
+            <!-- activity model, database specification, mineral kinetics, secondary species specified
+                 in external file -->
+            <constraint name="string"> <!-- REQUIRED -->
+                <!-- EIB: need full set of examples here, what are the various options? -->
+                <primary name="primary_name_string"     initial_guess="exp"   type="free_ion | pH | total | total+sorbed | charge"/>
+                <primary name="primary_name_string"     initial_guess="exp"   type="mineral" mineral="geothite"/>
+                <primary name="primary_name_string(aq)" initial_guess="exp"   type="gas" gas = "CO2(g)"/>
+                <mineral name="mineral_name_string"     volume_fraction="exp" surface_area ="exp"/>
+                <!-- cation exchange capacity and surface site density are specified in the
+                     external pflotran input file, and scaled by mineral volume fraction -->
+            </constraint>
+        </constraints>
+    </geochemistry>
+
+    <!-- unstructured mesh element --> <!-- REQUIRED -->
+    <mesh framework="mstk | stk::mesh | simple"> <!-- default is MSTK for unstructured -->
+        <comments>string</comments>
+	<dimension>2 | 3</dimension> <!-- REQUIRED -->
+	<!-- 1 of read or generated REQUIRED -->
+        <read>
+            <file>string</file> <!-- REQUIRED -->
+            <format>exodus ii</format> <!-- REQUIRED -->
+        </read>
+        <!-- OR -->
+        <generate>
+            <number_of_cells nx="int" ny="int" nz="int" /> <!-- REQUIRED -->
+            <box low_coordinates="coordinate" high_coordinates="coordinate"/> <!-- REQUIRED -->
+        </generate>
+    </mesh>
+    <!-- structured mesh element --> <!-- REQUIRED -->
+    <mesh>
+        <comments>string</comments>
+        <dimension>2 | 3</dimension> <!-- REQUIRED -->
+        <generate> <!-- REQUIRED -->
+            <number_of_cells nx="int" ny="int" nz="int" /> <!-- REQUIRED -->
+            <box low_coordinates="coordinate" high_coordinates="coordinate"/> <!-- REQUIRED -->
+        </generate>
+    </mesh>
+
+    <materials> <!-- REQUIRED -->
+
+	<!-- Must include at least 1 material -->
+        <material name="string">
+            <comments>string</comments>
+            <assigned_regions>string, string, string</assigned_regions> <!-- REQUIRED -->
+
+            <mechanical_properties> <!-- REQUIRED -->
+		<porosity value="exp"/> <!-- REQUIRED -->
+                <particle_density value="exp"/>
+                <specific_storage value="exp"/>
+                <specific_yield value="exp"/>
+
+                <dispersion_tensor alpha_l="exp" alpha_t="exp"/> <!-- uniform_isotropic -->
+                <!-- OR -->
+                <dispersion_tensor alpha_l="exp" alpha_th="exp" alpha_tv="exp"/> <!-- burnett_frind -->
+                <!-- OR -->
+                <dispersion_tensor alpha_hl="exp" alpha_lv="exp" alpha_th="exp" alpha_tv="exp"/> <!-- lichtner_kelkar_robinson -->
+                <!-- OR -->
+                <dispersion_tensor filename="string" type="exodus ii" attribute="string"/> <!-- file -->
+
+                <tortuosity value="exp"/>
+            </mechanical_properties>
+
+            <!-- require permeability or hydraulic_conductivity -->
+            <!-- permeability can take values or fileread -->
+            <permeability x="exp" y="exp" z="exp"/>
+            <!-- OR -->
+            <permeability filename="string" type="exodus ii" attribute="string"/>
+            <!-- OR -->
+            <hydraulic_conductivity x="exp" y="exp" z="exp"/>
+
+            <cap_pressure model="van_genuchten | brooks_corey | none">
+                <!-- van genuchten -->
+                <parameters m="exp" alpha="exp" sr="exp" optional_krel_smoothing_interval="exp"/> <!-- REQUIRED -->
+                <!-- brooks corey -->
+                <parameters lambda="exp" alpha="exp" sr="exp" optional_krel_smoothing_interval="exp"/> <!-- REQUIRED -->
+            </cap_pressure>
+
+            <rel_perm model="mualem | burdine | none">
+                <!-- burdine only: REQUIRED -->
+                <exp>exp</exp>
+            </rel_perm>
+
+            <sorption_isotherms>
+                <solute name="string"> <!-- REQUIRED -->
+                    <molecular_diffusion value="exp"/>
+                    <kd_model model="linear | langmuir | freundlich" kd="exp" b="exp" n="exp"/>
+                    <!-- b and n are model specific -->
+                </solute>
+            </sorption_isotherms>
+
+            <minerals>
+                <mineral name="mineral_name_string" volume_fraction="exp" specific_surface_area="exp"/>
+            </minerals>
+
+            <surface_complexation model="string" value="exp" density="exp"/>
+
+            <ion_exchange>
+		<cec>exp</cec>
+		<cations>
+		    <cation name="string" value="exp"/>
+		</cations>
+            </ion_exchange>
+        </material>
+
+    </materials>
+
+    <initial_conditions> <!-- REQUIRED -->
+        <initial_condition name="string">
+            <comments>string</comments>
+	    <assigned_regions>string, string, string</assigned_regions> <!-- REQUIRED -->
+
+            <liquid_phase name = "water">
+		<liquid_component name = "water"> <!-- REQUIRED -->
+                    <!-- use same type for a given IC, can provide time series -->
+                    <uniform_pressure name="string" value="exp"/>
+                    <linear_pressure name="string" value="exp" reference_coord="coordinate" gradient="coordinate"/>
+                    <uniform_saturation name="string" value="exp"/>
+                    <linear_saturation name="string" value="exp" reference_coord="coordinate" gradient="coordinate"/>
+                    <velocity x="exp" y="exp" z="exp"/>
+                </liquid_component>
+
+                <solute_component name="solute">
+                    <uniform_conc name="string1" value="exp"/>
+                    <uniform_conc name="string2" value="exp"/>
+                    <uniform_conc name="string3" value="exp"/>
+                    <linear_conc name="string4" value="exp" reference_coord="coordinate" gradient="coordinate"/>
+                </solute_component>
+
+                <geochemistry>
+                    <constraint name="constraint_name" />
+                </geochemistry>
+            </liquid_phase>
+
+            <solid_phase name="string">
+                <mineral>
+		    <!-- Must include at least 1 -->
+                    <mineral>string</mineral>
+	        </mineral>
+
+                <geochemistry>
+                    <constraint name="constraint_name"/>
+                </geochemistry>
+            </solid_phase>
+        </initial_condition>
+    </initial_conditions>
+
+    <boundary_conditions>
+        <comments>string</comments>
+
+        <boundary_condition name="string">
+            <comments>string</comments>
+	    <assigned_regions>string,string,string</assigned_regions> <!-- REQUIRED -->
+
+            <liquid_phase name="water"> <!-- REQUIRED -->
+                <liquid_component name="water"> <!-- REQUIRED -->
+                    <inward_mass_flux  name="string" start="time" function="constant | linear"  value="exp"/>
+                    <outward_mass_flux name="string" start="time" function="constant | linear"  value="exp"/>
+                    <inward_volumetric_flux  name="string" start="time" function="constant | linear"  value="exp"/>
+                    <outward_volumetric_flux name="string" start="time" function="constant | linear"  value="exp"/>
+                    <uniform_pressure name="string" start="time" function="constant | linear"  value="exp"/>
+                    <linear_pressure  name="string" gradient_value="time" reference_point="coordinate"  reference_value="exp"/>
+                    <hydrostatic name="string" start="time" function="constant | linear"  value="exp" coordinate_system="absolute | relative to mesh top" submodel="no_flow_above_water_table | none"/>
+                    <linear_hydrostatic name="string" gradient_value="exp" reference_point="coordinate"  reference_water_table_height="exp" submodel="no_flow_above_water_table | none"/>
+                    <seepage_face start="time" function="constant | linear"  inward_mass_flux="exp"/>
+                    <no_flow name="string" start="time" function= "constant | linear"/>
+                </liquid_component>
+
+                <solute_component name="solute">
+                    <aqueous_conc name="string1" start="time" function="constant | linear"  value="exp"/>
+                    <aqueous_conc name="string2" start="time" function="constant | linear"  value="exp"/>
+                    <aqueous_conc name="string3" start="time" function="constant | linear"  value="exp"/>
+                </solute_component>
+
+                <geochemistry>
+		    <!-- Must include at least 1 -->
+                    <constraint name="string" start="time" function= "constant | linear"/>
+                </geochemistry>
+            </liquid_phase>
+        </boundary_condition>
+    </boundary_conditions>
+
+    <sources>
+        <comments>string</comments>
+        <source name="water">
+            <comments>string</comments>
+	    <assigned_regions>string, string, string</assigned_regions> <!-- REQUIRED -->
+	    <liquid_phase name="water"> <!-- REQUIRED -->
+                <liquid_component name="water">
+                    <volume_weighted start="time" value="exp" function="linear | constant"/>
+                    <perm_weighted   start="time" value="exp" function="linear | constant"/>
+                </liquid_component>
+
+                <solute_component name="solute">
+                    <uniform_conc name="string" start="time" value="exp" function="linear | constant"/>
+                    <flow_weighted_conc start="time" value="exp" function="linear | constant"/>
+                    <diffusion_dominated_release name="string" start="time" total_inventory="exp" mixing_length="exp" effective_diffusion_coefficient="exp"/>
+                </solute_component>
+
+                <geochemistry>
+		    <!-- Must include at least 1 -->
+                    <constraint name="string" start="time" function= "constant | linear"/>
+                </geochemistry>
+            </liquid_phase>
+        </source>
+    </sources>
+
+    <output>
+        <vis>
+            <base_filename>string</base_filename> <!-- REQUIRED -->
+            <num_digits>int</num_digits> <!-- REQUIRED -->
+            <time_macros>string</time_macros>
+            <!-- OR -->
+            <cycle_macros>string</cycle_macros>
+            <write_regions>
+                <field name="string" regions="string, string, string" />
+            </write_regions>
+        </vis>
+
+        <checkpoint>
+            <base_filename>string</base_filename> <!-- REQUIRED -->
+            <num_digits>int</num_digits> <!-- REQUIRED -->
+            <cycle_macro>string</cycle_macro>
+        </checkpoint>
+
+        <walkabout>
+            <base_filename>string</base_filename> <!-- REQUIRED -->
+            <num_digits>int</num_digits> <!-- REQUIRED -->
+            <cycle_macro>string</cycle_macro>
+        </walkabout>
+
+        <observations>
+            <filename>string</filename> <!-- REQUIRED -->
+	    <liquid_phase name="water"> <!-- REQUIRED -->
+                <volumetric_water_content>
+                    <filename>string</filename>
+		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
+                    <functional>point | integral</functional> <!-- REQUIRED -->
+                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                </volumetric_water_content>
+
+                <gravimetric_water_content>
+                    <filename>string</filename>
+		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
+                    <functional>point | integral</functional> <!-- REQUIRED -->
+                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                </gravimetric_water_content>
+
+                <aqueous_pressure>
+                    <filename>string</filename>
+		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
+                    <functional>point | integral</functional> <!-- REQUIRED -->
+                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                </aqueous_pressure>
+
+                <x_aqueous_volumetric_flux>
+                    <filename>string</filename>
+		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
+                    <functional>point | integral</functional> <!-- REQUIRED -->
+                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                </x_aqueous_volumetric_flux>
+
+                <y_aqueous_volumetric_flux>
+                    <filename>string</filename>
+		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
+                    <functional>point | integral</functional> <!-- REQUIRED -->
+                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                </y_aqueous_volumetric_flux>
+
+                <z_aqueous_volumetric_flux>
+                    <filename>string</filename>
+		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
+                    <functional>point | integral</functional> <!-- REQUIRED -->
+                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                </z_aqueous_volumetric_flux>
+
+                <material_id>
+                    <filename>string</filename>
+		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
+                    <functional>point | integral</functional> <!-- REQUIRED -->
+                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                </material_id>
+
+                <hydraulic_head>
+                    <filename>string</filename>
+		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
+                    <functional>point | integral</functional> <!-- REQUIRED -->
+                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                </hydraulic_head>
+
+                <aqueous_mass_flow_rate>
+                    <filename>string</filename>
+		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
+                    <functional>point | integral</functional> <!-- REQUIRED -->
+                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                </aqueous_mass_flow_rate>
+
+                <aqueous_volumetric_flow_rate>
+                    <filename>string</filename>
+		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
+                    <functional>point | integral</functional> <!-- REQUIRED -->
+                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                </aqueous_volumetric_flow_rate>
+
+                <aqueous_conc>
+                    <filename>string</filename>
+                    <solute>string</solute> <!-- REQUIRED -->
+		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
+                    <functional>point | integral</functional> <!-- REQUIRED -->
+                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                </aqueous_conc>
+
+                <solute_volumetric_flow_rate>
+                    <filename>string</filename>
+                    <solute>string</solute> <!-- REQUIRED -->
+		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
+                    <functional>point | integral</functional> <!-- REQUIRED -->
+                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                </solute_volumetric_flow_rate>
+
+            </liquid_phase>
+        </observations>
+
+    </output>
 
 </amanzi_input>
 
