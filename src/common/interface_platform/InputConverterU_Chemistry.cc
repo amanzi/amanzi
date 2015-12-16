@@ -59,7 +59,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     out_list.set<std::string>("chemistry model", "Amanzi");
 
     std::string bgdfilename, format("simple");
-    node = GetUniqueElementByTagsString_("geochemistry, reaction_network", flag);
+    node = GetUniqueElementByTagsString_("geochemistry, amanzi_chemistry, reaction_network", flag);
     if (flag) {
       element = static_cast<DOMElement*>(node);
       bgdfilename = GetAttributeValueS_(element, "file");
@@ -74,11 +74,14 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
   } else {
     bool valid_engine(true);
+    std::string file_location;
 
     if (engine == "pflotran") {
       out_list.set<std::string>("Engine", "PFloTran");
+      file_location = "geochemistry, pflotran_chemistry, reaction_network";
     } else if (engine == "crunchflow") {
       out_list.set<std::string>("Engine", "CrunchFlow");
+      file_location = "geochemistry, crunchflow_chemistry, reaction_network";
     } else {
       valid_engine = false;
     }
@@ -88,7 +91,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
       out_list.set<std::string>("chemistry model", "Alquimia");
 
       // Find the name of the engine-specific input file.
-      node = GetUniqueElementByTagsString_("geochemistry, reaction_network", flag);
+      node = GetUniqueElementByTagsString_(file_location, flag);
       if (flag) {
         element = static_cast<DOMElement*>(node);
         std::string inpfilename = GetAttributeValueS_(element, "file");
