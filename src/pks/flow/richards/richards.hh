@@ -210,6 +210,11 @@ protected:
   // scale for perm
   double perm_scale_;
 
+  // limiters
+  double p_limit_;
+  double sl_limit_;
+  double si_limit_;
+
   // keys
   Key mass_dens_key_;
   Key molar_dens_key_;

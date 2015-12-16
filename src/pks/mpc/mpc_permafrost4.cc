@@ -461,7 +461,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 MPCPermafrost4::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
   Teuchos::OSTab tab = vo_->getOSTab();
-
+  
   // dump NKAd correction to screen
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "NKA * PC * residuals (surface):" << std::endl;
@@ -481,8 +481,14 @@ MPCPermafrost4::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
     domain_db_->WriteVectors(vnames, vecs, true);
   }
 
-  // modify correction using water approaches
   int n_modified = 0;
+
+  // apply limiters
+  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult base_result =   
+    MPCSubsurface::ModifyCorrection(h,r,u,du);
+  if (base_result) n_modified++;
+  
+  // modify correction using water approaches
   n_modified += water_->ModifyCorrection_WaterFaceLimiter(h, r, u, du);
   double damping = water_->ModifyCorrection_WaterSpurtDamp(h, r, u, du);
   n_modified += water_->ModifyCorrection_WaterSpurtCap(h, r, u, du, damping);

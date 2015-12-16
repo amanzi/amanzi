@@ -344,6 +344,11 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   modify_predictor_wc_ =
     plist_->get<bool>("modify predictor via water content", false);
 
+  // correctors
+  p_limit_ = plist_->get<double>("limit correction to pressure change [Pa]", -1.);
+  // sl_limit_ = plist_->get<double>("limit correction to liquid saturation change [-]", -1.);
+  // si_limit_ = plist_->get<double>("limit correction to ice saturation change [-]", -1.);
+  
   // Require fields and evaluators for those fields.
   // -- primary variables
   S->RequireField(key_, name_)->Update(matrix_->RangeMap())->SetGhosted();
@@ -1125,12 +1130,44 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 Richards::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
                  Teuchos::RCP<const TreeVector> u,
                  Teuchos::RCP<TreeVector> du) {
+  Teuchos::OSTab tab = vo_->getOSTab();
 
   // if the primary variable has boundary face, this is for upwinding rel
   // perms and is never actually used.  Make sure it does not go to undefined
   // pressures.
   if (du->Data()->HasComponent("boundary_face")) {
     du->Data()->ViewComponent("boundary_face")->PutScalar(0.);
+  }
+
+  int my_limited = 0;
+  int n_limited = 0;
+  if (p_limit_ > 0.) {
+    for (CompositeVector::name_iterator comp=du->Data()->begin();
+         comp!=du->Data()->end(); ++comp) {
+      Epetra_MultiVector& du_c = *du->Data()->ViewComponent(*comp,false);
+
+      double max;
+      du_c.NormInf(&max);
+      if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+        *vo_->os() << "Max pressure correction (" << *comp << ") = " << max << std::endl;
+      }
+      
+      for (int c=0; c!=du_c.MyLength(); ++c) {
+        if (std::abs(du_c[0][c]) > p_limit_) {
+          du_c[0][c] = ((du_c[0][c] > 0) - (du_c[0][c] < 0)) * p_limit_;
+          my_limited++;
+        }
+      }
+    }
+    
+    mesh_->get_comm()->MaxAll(&my_limited, &n_limited, 1);
+  }
+
+  if (n_limited > 0) {
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "  limited by pressure." << std::endl;
+    }
+    return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED;
   }
   return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
 }
