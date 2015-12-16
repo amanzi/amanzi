@@ -372,7 +372,7 @@ void OperatorDiffusionFV::AnalyticJacobian_(const CompositeVector& u)
           dkdp[1] = dKdP_face.get() ? (*dKdP_face)[0][f] : 0.;
         }
 
-        ComputeJacobianLocal_(mcells, f, face_dir, little_k_,
+        ComputeJacobianLocal_(mcells, f, face_dir, 
                               bc_model[f], bc_value[f], pres, dkdp, Aface);
 
         jac_op_->matrices[f] = Aface;
@@ -388,10 +388,8 @@ void OperatorDiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 * (its nonlinear part) on face f.
 ****************************************************************** */
 void OperatorDiffusionFV::ComputeJacobianLocal_(
-    int mcells, int f, int face_dir, int Krel_method,
-    int bc_model_f, double bc_value_f,
-    double *pres, double *dkdp_cell,
-    WhetStone::DenseMatrix& Jpp)
+    int mcells, int f, int face_dir, int bc_model_f, double bc_value_f,
+    double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
   double dKrel_dp[2];
@@ -399,7 +397,7 @@ void OperatorDiffusionFV::ComputeJacobianLocal_(
 
   if (mcells == 2) {
     dpres = pres[0] - pres[1];  // + grn;
-    if (Krel_method == OPERATOR_LITTLE_K_UPWIND) {
+    if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
       double flux0to1;
       flux0to1 = trans_face[0][f] * dpres;
       if (flux0to1  > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
@@ -412,7 +410,7 @@ void OperatorDiffusionFV::ComputeJacobianLocal_(
         dKrel_dp[0] = 0.5 * dkdp_cell[0];
         dKrel_dp[1] = 0.5 * dkdp_cell[1];
       }
-    } else if (Krel_method == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
+    } else if (little_k_ == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
       dKrel_dp[0] = 0.5 * dkdp_cell[0];
       dKrel_dp[1] = 0.5 * dkdp_cell[1];
     } else {

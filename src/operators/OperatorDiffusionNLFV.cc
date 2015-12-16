@@ -56,6 +56,18 @@ void OperatorDiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
   local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
   global_op_->OpPushBack(local_op_);
 
+  // upwind options
+  Errors::Message msg;
+  std::string uwname = plist.get<std::string>("nonlinear coefficient", "upwind: face");
+  if (uwname == "none") {
+    little_k_ = OPERATOR_LITTLE_K_NONE;
+  } else if (uwname == "upwind: face") {
+    little_k_ = OPERATOR_LITTLE_K_UPWIND;
+  } else {
+    msg << "OperatorDiffusionNLFV: unknown or not supported upwind scheme specified.";
+    Exceptions::amanzi_throw(msg);
+  }
+
   // mesh info
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -65,6 +77,28 @@ void OperatorDiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
 
   // other data
   dim_ = mesh_->space_dimension();
+}
+
+
+/* ******************************************************************
+* Setup methods: krel and dkdp must be called after calling a
+* setup with K absolute
+****************************************************************** */
+void OperatorDiffusionNLFV::SetScalarCoefficient(
+    const Teuchos::RCP<const CompositeVector>& k,
+    const Teuchos::RCP<const CompositeVector>& dkdp)
+{
+  stencil_initialized_ = false;
+
+  k_ = k;
+  dkdp_ = dkdp;
+
+  if (k_ != Teuchos::null) {
+    if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
+      ASSERT(k_->HasComponent("face"));
+    }
+  }
+  if (dkdp_ != Teuchos::null) ASSERT(dkdp_->HasComponent("cell")); 
 }
 
 
@@ -314,6 +348,12 @@ void OperatorDiffusionNLFV::UpdateMatrices(
 
   matrix_cv.GatherGhostedToMaster();
 
+  // un-rolling little-k data
+  Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
+  if (k_ != Teuchos::null) {
+    if (k_->HasComponent("face")) k_face = k_->ViewComponent("face");
+  }
+
   // populate local matrices
   for (int f = 0; f < nfaces_owned; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -332,6 +372,10 @@ void OperatorDiffusionNLFV::UpdateMatrices(
     } else {
       Aface(0, 0) = matrix[0][f];
     }
+
+    if (little_k_ == OPERATOR_LITTLE_K_UPWIND && k_face.get()) {
+      Aface *= (*k_face)[0][f];
+    }
   
     local_op_->matrices[f] = Aface;
   }
@@ -344,6 +388,7 @@ void OperatorDiffusionNLFV::UpdateMatrices(
 double OperatorDiffusionNLFV::OneSidedFluxCorrections_(
   const CompositeVector& u, CompositeVector& flux_cv) 
 {
+  // un-rolling composite vectors
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
   Epetra_MultiVector& flux = *flux_cv.ViewComponent("face", true);
 
@@ -352,6 +397,12 @@ double OperatorDiffusionNLFV::OneSidedFluxCorrections_(
 
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
   
+  // un-rolling little-k data
+  Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
+  if (k_ != Teuchos::null) {
+    if (k_->HasComponent("face")) k_face = k_->ViewComponent("face");
+  }
+
   int c1, c2, c3, k1, k2;
   double gamma, tmp;
   std::vector<int> dirs;
@@ -387,6 +438,10 @@ double OperatorDiffusionNLFV::OneSidedFluxCorrections_(
           tmp = weight[i + k2][f];
           sideflux += tmp * (uc[0][c] - bc_value[f1]);
         }
+      }
+
+      if (little_k_ == OPERATOR_LITTLE_K_UPWIND && k_face.get()) {
+        sideflux *= (*k_face)[0][f];
       }
       flux[k1][f] = sideflux; 
     }

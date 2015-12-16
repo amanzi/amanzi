@@ -69,10 +69,7 @@ class OperatorDiffusionNLFV : public virtual OperatorDiffusion {
   using OperatorDiffusion::Setup;
   virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) { K_ = K; }
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
-                                    const Teuchos::RCP<const CompositeVector>& dkdp) {
-    k_ = k;
-    dkdp_ = dkdp;
-  }
+                                    const Teuchos::RCP<const CompositeVector>& dkdp);
 
   // -- create an operator
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
