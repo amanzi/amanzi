@@ -453,6 +453,31 @@ std::ostream& operator<<(std::ostream& os, const Tensor& T)
   return os;
 }
 
+
+/* ******************************************************************
+* Expanding tensor to a constant size vector and reverse.
+* NOTE: Implementation is not complete.
+****************************************************************** */
+void TensorToVector(const Tensor& T, DenseVector& v) {
+  ASSERT(v.NumRows() == T.size() * T.size());
+
+  double* data1 = v.Values(); 
+  const double* data2 = T.data(); 
+  for (int i = 0; i < v.NumRows(); ++i) {
+    data1[i] = data2[i]; 
+  }
+}
+
+void VectorToTensor(const DenseVector& v, Tensor& T) {
+  ASSERT(v.NumRows() == T.size() * T.size());
+
+  const double* data1 = v.Values(); 
+  double* data2 = T.data(); 
+  for (int i = 0; i < v.NumRows(); ++i) {
+    data2[i] = data1[i]; 
+  }
+}
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 

@@ -62,8 +62,8 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 15, 17, NULL);
-  // Teuchos::RCP<const Mesh> mesh = meshfactory("test/random10.exo");
+  // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 5, 7, NULL);
+  Teuchos::RCP<const Mesh> mesh = meshfactory("test/random10.exo");
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion tensor
@@ -75,7 +75,7 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
 
   Analytic02 ana(mesh);
 
-  for (int c = 0; c < ncells_wghost; c++) {  // FIXME: no distributed tensors.
+  for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
     const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
     K->push_back(Kc);
@@ -118,7 +118,7 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
 
   // populate the diffusion operator
   op->Setup(K, Teuchos::null, Teuchos::null);
-  for (int loop = 0; loop < 7; ++loop) {
+  for (int loop = 0; loop < 9; ++loop) {
     global_op->Init();
     op->UpdateMatrices(Teuchos::null, solution.ptr());
 
@@ -155,8 +155,8 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
           pl2_err, pinf_err, ul2_err, uinf_err,
           solver->num_itrs(), solver->residual(), solver->returned_code());
 
-      CHECK(pl2_err < 0.2 && ul2_err < 0.1);
-      CHECK(solver->num_itrs() < 11);
+      CHECK(pl2_err < 0.1 / loop && ul2_err < 0.1);
+      CHECK(solver->num_itrs() < 15);
     }
   }
 }

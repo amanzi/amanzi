@@ -90,20 +90,22 @@ TEST(HARMONIC_AVERAGING_POINT_2D) {
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory("test/two_cell2.exo"); 
+  Teuchos::RCP<Mesh> mesh = meshfactory("test/two_cell2_dist.exo"); 
  
   // instantiate the toolset and populate data
   WhetStone::NLFV nlfv(mesh);
 
   int f(1), c1(0), c2(1);
   double w;
-  AmanziGeometry::Point p(2), v(2);
+  AmanziGeometry::Point xa(0.8, 0.0), xb(0.7, 1.0);  // end-points of face f
+  AmanziGeometry::Point p(2), v(2), u(2), xab(2), xcc(2);
   const AmanziGeometry::Point& xf = mesh->face_centroid(f);
   const AmanziGeometry::Point& xc1 = mesh->cell_centroid(c1);
   const AmanziGeometry::Point& xc2 = mesh->cell_centroid(c2);
 
   // identity tensor: conormal = normal
   {
+    double tmp1, tmp2;
     AmanziGeometry::Point conormal1(2), conormal2(2);
     conormal1 = mesh->face_normal(f);
     conormal2 = mesh->face_normal(f);
@@ -112,8 +114,15 @@ TEST(HARMONIC_AVERAGING_POINT_2D) {
     std::cout << "hap: " << p << " weight=" << w << std::endl;
     v = w * xc1 + (1.0 - w) * xc2;
 
-    CHECK_CLOSE(xf[0], p[0], 1e-12);
+    // hap is intersection of two lines xa-xb and xc1-xc2
+    xab = xb - xa;
+    xcc = xc2 - xc1;
+    tmp1 = ((xa - xc1)^xcc)[0];
+    tmp2 = (xab^xcc)[0];
+    u = xa - xab * (tmp1 / tmp2);
+
     CHECK(norm(v - p) < 1e-12);
+    CHECK(norm(u - p) < 1e-12);
   }
 
   // rotated normal
@@ -123,12 +132,17 @@ TEST(HARMONIC_AVERAGING_POINT_2D) {
     std::cout << "hap: " << p << " weight=" << w << std::endl;
     v = w * xc1 + (1.0 - w) * xc2;
 
-    CHECK_CLOSE(xf[0], p[0], 1e-12);
+    // from the previous test
+    u[0] = 0.75432884536924;
+    u[1] = 0.45671154630763;
+
     CHECK(norm(v - p) < 1e-12);
+    CHECK(norm(u - p) < 1e-12);
   }
 
   // full tensors
   {
+    double tmp;
     WhetStone::Tensor K1(2, 2), K2(2, 2); 
     AmanziGeometry::Point conormal1(2), conormal2(2);
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
@@ -147,8 +161,10 @@ TEST(HARMONIC_AVERAGING_POINT_2D) {
     nlfv.HarmonicAveragingPoint(f, c1, c2, conormal1, conormal2, p, w);
     std::cout << "hap: " << p << " weight=" << w << std::endl;
 
-    CHECK_CLOSE(0.363636363636364, w, 1e-12);
-    CHECK_CLOSE(xf[0], p[0], 1e-12);
+    tmp = ((p - xa)^(xb - xa))[0];
+
+    CHECK_CLOSE(0.35985587749587, w, 1e-12);
+    CHECK(fabs(tmp) < 1e-12);
   }
 }
 

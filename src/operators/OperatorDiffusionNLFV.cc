@@ -111,13 +111,11 @@ void OperatorDiffusionNLFV::InitStencils_()
   WhetStone::MFD3D_Diffusion mfd3d(mesh_);
 
   // distribute diffusion tensor
+  WhetStone::DenseVector data(dim_ * dim_);
   for (int c = 0; c < ncells_owned; ++c) {
-    int k = 0;
-    for (int i = 0; i < dim_; ++i) {
-      for (int j = 0; j < dim_; ++j) {
-        Ktmp[k][c] = (*K_)[c](i, j);
-        k++;
-      }
+    WhetStone::TensorToVector((*K_)[c], data);
+    for (int i = 0; i < dim_ *dim_; ++i) {
+      Ktmp[i][c] = data(i);
     }
   }
   cv_tmp->ScatterMasterToGhosted();
@@ -125,6 +123,7 @@ void OperatorDiffusionNLFV::InitStencils_()
   // calculate harmonic averaging points (HAPs)
   int c1, c2;
   double hap_weight;
+  WhetStone::Tensor T(dim_, 2);
   AmanziMesh::Entity_ID_List cells, faces;
   AmanziGeometry::Point Kn1(dim_), Kn2(dim_), p(dim_);
 
@@ -136,8 +135,14 @@ void OperatorDiffusionNLFV::InitStencils_()
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
       OrderCellsByGlobalId_(cells, c1, c2);
 
-      Kn1 = (*K_)[c1] * normal;  // co-normals
-      Kn2 = (*K_)[c2] * normal;
+      // create to conormals
+      for (int i = 0; i < dim_ *dim_; ++i) data(i) = Ktmp[i][c1];
+      VectorToTensor(data, T);
+      Kn1 = T * normal;
+
+      for (int i = 0; i < dim_ *dim_; ++i) data(i) = Ktmp[i][c2];
+      VectorToTensor(data, T);
+      Kn2 = T * normal;
    
       nlfv.HarmonicAveragingPoint(f, c1, c2, Kn1, Kn2, p, hap_weight);
     } else {
@@ -173,14 +178,15 @@ void OperatorDiffusionNLFV::InitStencils_()
     }
 
     // decompose co-normals
-    int ids[dim_];
+    int ierr, ids[dim_];
     double ws[dim_];
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
       conormal = ((*K_)[c] * normal) * dirs[n];
 
-      nlfv.PositiveDecomposition(n, tau, conormal, ws, ids);
+      ierr = nlfv.PositiveDecomposition(n, tau, conormal, ws, ids);
+      ASSERT(ierr == 0);
 
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       OrderCellsByGlobalId_(cells, c1, c2);
@@ -259,8 +265,8 @@ void OperatorDiffusionNLFV::UpdateMatrices(
       k1 = (c1 == c) ? 0 : 1;
       k2 = k1 * dim_;      
 
-      // calculate solution-dependent weigths using corrections
-      // to the two-point flux
+      // Calculate solution-dependent weigths using corrections to the
+      // two-point flux. Note mu does not depend on one-sided flux. 
       double gamma, g1, g2, gg(-1.0), w1, w2(0.0), tpfa, mu(1.0);
 
       gamma = hap_gamma[0][f];
@@ -268,8 +274,8 @@ void OperatorDiffusionNLFV::UpdateMatrices(
         w1 = weight[0][f] * gamma;
         w2 = weight[dim_][f] * (1.0 - gamma);
 
-        g1 = sideflux[k1][f];
-        g2 = sideflux[1 - k1][f];
+        g1 = sideflux[0][f];
+        g2 = sideflux[1][f];
         gg = g1 * g2;
 
         g1 = fabs(g1);
@@ -282,8 +288,10 @@ void OperatorDiffusionNLFV::UpdateMatrices(
       tpfa = mu * w1 + (1.0 - mu) * w2;
       matrix[k1][f] += tpfa;
 
-      // remaining terms of one-sided flux in cell c
+      // remaining terms of one-sided flux in cell c. Now we need
+      // to select mu depending on the one-sided flux. 
       if (gg <= 0.0) {
+        if (c1 != c) mu = 1.0 - mu;
         for (int i = 1; i < dim_; i++) {
           int f1 = (*stencil_faces_[i + k2])[f];
           mesh_->face_get_cells(f1, AmanziMesh::USED, &cells_tmp);
@@ -331,7 +339,7 @@ void OperatorDiffusionNLFV::UpdateMatrices(
 
 
 /* ******************************************************************
-* Calculate one-sided flux for given cell c and face f.
+* Calculate one-sided fluxorrections for all faces
 ****************************************************************** */
 double OperatorDiffusionNLFV::OneSidedFluxCorrections_(
   const CompositeVector& u, CompositeVector& flux_cv) 

@@ -335,7 +335,7 @@ TEST(DARCY_FULL_TENSOR_2D) {
       CHECK_CLOSE(2 * volume, vxx, 1e-10);
       std::cout << vxx << std::endl;
 
-      // additional tests for triangle: interal with v2 = RT basis function
+      // additional tests for triangle: integral with v2 = RT basis function
       if (cell == 1) {
         if (method == 3 || method == 6) continue;
         vxx = 0.0;
