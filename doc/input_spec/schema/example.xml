@@ -14,7 +14,7 @@
             <length_unit>m | cm</length_unit>
             <time_unit>y | d | h | s</time_unit> <!-- seconds assumed anytime unit not specified -->
             <mass_unit>kg</mass_unit>
-            <conc_unit>molar</conc_unit>
+	    <conc_unit>molar | mol/m^3</conc_unit> <!-- mol/m^3 currently unstructured only -->
         </units>
     </model_description>
 
@@ -117,8 +117,8 @@
 
         <verbosity level="none | low | medium | high | extreme"/> <!-- default: medium -->
         <!-- level=extreme should be used for debugging -->
-        <execution_control_defaults init_dt="time" max_dt="time" reduction_factor="exp" increase_factor="exp" mode="steady | transient" method="bdf1 | picard"/> <!-- REQUIRED -->
-        <execution_control  start="time" end="time" init_dt= "time" max_dt="time" reduction_factor="exp" increase_factor="exp" mode="steady | transient" method="bdf1 | picard" max_cycles="int" restart="filename_string"/> <!-- REQUIRED -->
+        <execution_control_defaults init_dt="time" max_dt="time" reduction_factor="exp" increase_factor="exp" mode="steady | transient" method="bdf1"/> <!-- REQUIRED -->
+        <execution_control  start="time" end="time" init_dt= "time" max_dt="time" reduction_factor="exp" increase_factor="exp" mode="steady | transient" method="bdf1" max_cycles="int" restart="filename_string"/> <!-- REQUIRED -->
         <execution_control  start="time" />
         <execution_control  start="time" end="time" />
         <!-- start is REQUIRED -->
@@ -637,13 +637,13 @@
         <checkpoint>
             <base_filename>string</base_filename> <!-- REQUIRED -->
             <num_digits>int</num_digits> <!-- REQUIRED -->
-            <cycle_macro>string</cycle_macro>
+            <cycle_macros>string</cycle_macros>
         </checkpoint>
 
         <walkabout>
             <base_filename>string</base_filename> <!-- REQUIRED -->
             <num_digits>int</num_digits> <!-- REQUIRED -->
-            <cycle_macro>string</cycle_macro>
+            <cycle_macros>string</cycle_macros>
         </walkabout>
 
         <observations>
@@ -653,70 +653,70 @@
                     <filename>string</filename>
 		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
                     <functional>point | integral</functional> <!-- REQUIRED -->
-                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                    <time_macros>string</time_macros> <!-- REQUIRED -->
                 </volumetric_water_content>
 
                 <gravimetric_water_content>
                     <filename>string</filename>
 		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
                     <functional>point | integral</functional> <!-- REQUIRED -->
-                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                    <time_macros>string</time_macros> <!-- REQUIRED -->
                 </gravimetric_water_content>
 
                 <aqueous_pressure>
                     <filename>string</filename>
 		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
                     <functional>point | integral</functional> <!-- REQUIRED -->
-                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                    <time_macros>string</time_macros> <!-- REQUIRED -->
                 </aqueous_pressure>
 
                 <x_aqueous_volumetric_flux>
                     <filename>string</filename>
 		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
                     <functional>point | integral</functional> <!-- REQUIRED -->
-                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                    <time_macros>string</time_macros> <!-- REQUIRED -->
                 </x_aqueous_volumetric_flux>
 
                 <y_aqueous_volumetric_flux>
                     <filename>string</filename>
 		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
                     <functional>point | integral</functional> <!-- REQUIRED -->
-                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                    <time_macros>string</time_macros> <!-- REQUIRED -->
                 </y_aqueous_volumetric_flux>
 
                 <z_aqueous_volumetric_flux>
                     <filename>string</filename>
 		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
                     <functional>point | integral</functional> <!-- REQUIRED -->
-                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                    <time_macros>string</time_macros> <!-- REQUIRED -->
                 </z_aqueous_volumetric_flux>
 
                 <material_id>
                     <filename>string</filename>
 		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
                     <functional>point | integral</functional> <!-- REQUIRED -->
-                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                    <time_macros>string</time_macros> <!-- REQUIRED -->
                 </material_id>
 
                 <hydraulic_head>
                     <filename>string</filename>
 		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
                     <functional>point | integral</functional> <!-- REQUIRED -->
-                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                    <time_macros>string</time_macros> <!-- REQUIRED -->
                 </hydraulic_head>
 
                 <aqueous_mass_flow_rate>
                     <filename>string</filename>
 		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
                     <functional>point | integral</functional> <!-- REQUIRED -->
-                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                    <time_macros>string</time_macros> <!-- REQUIRED -->
                 </aqueous_mass_flow_rate>
 
                 <aqueous_volumetric_flow_rate>
                     <filename>string</filename>
 		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
                     <functional>point | integral</functional> <!-- REQUIRED -->
-                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                    <time_macros>string</time_macros> <!-- REQUIRED -->
                 </aqueous_volumetric_flow_rate>
 
                 <aqueous_conc>
@@ -724,7 +724,7 @@
                     <solute>string</solute> <!-- REQUIRED -->
 		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
                     <functional>point | integral</functional> <!-- REQUIRED -->
-                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                    <time_macros>string</time_macros> <!-- REQUIRED -->
                 </aqueous_conc>
 
                 <solute_volumetric_flow_rate>
@@ -732,7 +732,7 @@
                     <solute>string</solute> <!-- REQUIRED -->
 		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
                     <functional>point | integral</functional> <!-- REQUIRED -->
-                    <time_macro>string</time_macro> <!-- REQUIRED -->
+                    <time_macros>string</time_macros> <!-- REQUIRED -->
                 </solute_volumetric_flow_rate>
 
             </liquid_phase>

@@ -37,6 +37,11 @@ Chemistry
 
 * The option ``process_model`` has been moved from the ``process_kernel`` section to the ``unstr_chemistry_controls`` section.
 
+Execution_controls
+------------------
+
+* Updated available options for the ``execution_control`` attribute ``method``.  Available option is: bdf1.
+
 Geochemistry
 ------------
 

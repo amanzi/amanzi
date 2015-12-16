@@ -125,6 +125,7 @@ Changes by TDS June 2013:
 <xs:simpleType name="typedef_unit_conc">
      <xs:restriction base="xs:string">
             <xs:enumeration value="molar" />
+	    <xs:enumeration value="mol/m^3" />
      </xs:restriction>
 </xs:simpleType>		
 
@@ -616,7 +617,6 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:simpleType name="typedef_method">
 	<xs:restriction base="xs:string">
 		<xs:enumeration value="bdf1"/>
-		<xs:enumeration value="picard"/>
 	</xs:restriction>
 </xs:simpleType>
 

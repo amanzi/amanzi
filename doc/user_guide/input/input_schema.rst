@@ -75,17 +75,19 @@ The opening tag ``model_description`` accepts an attribute ``name`` in which the
 
 The units block specifies the default units to be used through out the input file unless otherwise specified.
 
-+----------------+------------+----------------+
-| Units Elements | Value Type | Value Options  |
-+================+============+================+
-| length_unit    | string     | ``m, cm``      |
-+----------------+------------+----------------+
-| time_unit      | string     | ``y, d, h, s`` |
-+----------------+------------+----------------+
-| mass_unit      | string     | ``kg``         |
-+----------------+------------+----------------+
-| conc_unit      | string     | ``molar``      |
-+----------------+------------+----------------+
++----------------+------------+--------------------+
+| Units Elements | Value Type | Value Options      |
++================+============+====================+
+| length_unit    | string     | ``m, cm``          |
++----------------+------------+--------------------+
+| time_unit      | string     | ``y, d, h, s``     |
++----------------+------------+--------------------+
+| mass_unit      | string     | ``kg``             |
++----------------+------------+--------------------+
+| conc_unit      | string     | ``molar, mol/m^3`` |
++----------------+------------+--------------------+
+
+Note, the concentration unit of mol/m^3 is currently only available for unstructured.
 
 Here is an overall example for the model description element.
 
@@ -281,7 +283,7 @@ The ``execution_control_defaults`` element has the following attributes.
 +------------------+----------------+----------------------------------+
 | mode             | string         | ``steady, transient``            |
 +------------------+----------------+----------------------------------+
-| method           | string         | ``bdf1, picard``                 |
+| method           | string         | ``bdf1``                         |
 +------------------+----------------+----------------------------------+
 
 Execution_control
@@ -302,7 +304,7 @@ The ``execution_control`` element has the following attributes.
 +------------------+----------------+----------------------------------+
 | mode             | string         | ``steady, transient``            |
 +------------------+----------------+----------------------------------+
-| method           | string         | ``bdf1, picard``                 |
+| method           | string         | ``bdf1``                         |
 +------------------+----------------+----------------------------------+
 
 The ``execution_control`` element has the following attributes. 
@@ -330,14 +332,14 @@ The ``execution_control`` element has the following attributes.
 +------------------+----------------+-----------------------------------------------------+
 | mode             | string         | ``steady, transient``                               |
 +------------------+----------------+-----------------------------------------------------+
-| method           | string         | ``bdf1, picard``                                    |
+| method           | string         | ``bdf1``                                            |
 +------------------+----------------+-----------------------------------------------------+
 
 Each ``execution_control`` is required to define a ``start`` time.  The final control period must define an ``end`` time.  It is assumed that the start time of the next control period is the end time of the previous period.  Therefore, it is not required that each ``execution_control`` element have an ``end`` time defined.
 
 The attribute ``max_cycles`` is only valid for transient and transient with static flow execution modes.
 
-The ``execution_control`` section also provides the elements ``comments`` and ``verbosity``.  Users may provide any text within the ``comment`` element to annotate this section.  ``verbosity`` takes the attribute level=`` extreme | high | medium | low | none``.  This triggers increasing levels of reporting from inside Amanzi.  For debugging purposes use the level extreme.
+The ``execution_control`` section also provides the elements ``comments`` and ``verbosity``.  Users may provide any text within the ``comment`` element to annotate this section.  ``verbosity`` takes the attribute level= ``extreme | high | medium | low | none``.  This triggers increasing levels of reporting from inside Amanzi.  `"extreme`" is recommended for developers and debugging.  For users wishing to monitor solver performance and convergence more closely or debug input files, `"high`" is recommended.
 
 Restarting a simulation is available using the ``restart`` attribute.  The value given for the ``restart`` attribute is the name of the Amanzi checkpoint file to be read in and initialized from.
 
@@ -388,7 +390,6 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
     </unstr_transport_controls>
 
     <unstr_steady-state_controls>
-      <comments>Comment text here</comments>
       <min_iterations> Integer </min_iterations>
       <limit_iterations> Integer </limit_iterations>
       <max_iterations> Integer </max_iterations>
@@ -734,9 +735,9 @@ A polygonal_surface region is used to define a bounded planar region and is spec
 .. code-block:: xml
 
     <polygonal_surface name="polygon name" num_points="3" tolerance="optional exp">
-      <point> (X, Y, Z) </point>
-      <point> (X, Y, Z) </point>
-      <point> (X, Y, Z) </point>
+      <point> X, Y, Z </point>
+      <point> X, Y, Z </point>
+      <point> X, Y, Z </point>
     </polygonal_surface>
 
 The attribute ``tolerance`` is optional.  This value prescribes a tolerance for determining the cell face centroids that lie on the defined plane.
@@ -759,9 +760,9 @@ A polygon region is used to define a bounded planar region and is specified by t
 .. code-block:: xml
 
     <polygon name="polygon name" num_points="3">
-      <point> (X, Y) </point>
-      <point> (X, Y) </point>
-      <point> (X, Y) </point>
+      <point> X, Y </point>
+      <point> X, Y </point>
+      <point> X, Y </point>
     </polygon>
 
 Ellipse (structured 2D only)
@@ -772,8 +773,8 @@ An ellipse region is used to define a bounded planar region and is specified by 
 .. code-block:: xml
 
     <ellipse name="polygon name" num_points="3">
-      <center> (X, Y) </center>
-      <radius> (radiusX, radiusY) </radius>
+      <center> X, Y </center>
+      <radius> radiusX, radiusY </radius>
     </ellipse>
 
 Rotated Polygon (structured 3D only)
@@ -784,12 +785,12 @@ A rotated_polygon region is defined by a list of points defining the polygon, th
 .. code-block:: xml
 
     <rotated_polygon name="rotated_polygon name">
-      <vertex> (X, Y, Z) </vertex>
-      <vertex> (X, Y, Z) </vertex>
-      <vertex> (X, Y, Z) </vertex>
-      <xyz_plane> (XY | YZ | XZ) </xyz_plane>
-      <axis> (X | Y | Z) </axis>
-      <reference_point> (X, Y) </reference_point>
+      <vertex> X, Y, Z </vertex>
+      <vertex> X, Y, Z </vertex>
+      <vertex> X, Y, Z </vertex>
+      <xyz_plane> XY | YZ | XZ </xyz_plane>
+      <axis> X | Y | Z </axis>
+      <reference_point> X, Y </reference_point>
     </rotated_polygon>
 
 Swept Polygon (structured 3D only)
@@ -800,10 +801,10 @@ A swept_polygon region is defined by a list of points defining the polygon, the 
 .. code-block:: xml
 
     <swept_polygon name="swept_polygon name">
-      <vertex> (X, Y, Z) </vertex>
-      <vertex> (X, Y, Z) </vertex>
-      <vertex> (X, Y, Z) </vertex>
-      <xyz_plane> (XY | YZ | XZ) </xyz_plane>
+      <vertex> X, Y, Z </vertex>
+      <vertex> X, Y, Z </vertex>
+      <vertex> X, Y, Z </vertex>
+      <xyz_plane> XY | YZ | XZ </xyz_plane>
       <extent_min> exponential </extent_min>
       <extent_max> exponential </extent_max>
     </swept_polygon>
@@ -1125,7 +1126,7 @@ An example ``initial_conditions`` element looks like the following.
 	    <assigned_regions>All</assigned_regions>
 	    <liquid_phase name = "water">
 		<liquid_component name = "water">
-		    <linear_pressure value = "101325" reference_coord ="(0.0,0.0,0.5)" gradient="(0.0,0.0,-9793.5192)"/>
+		    <linear_pressure value = "101325" reference_coord ="0.0,0.0,0.5" gradient="0.0,0.0,-9793.5192"/>
 		</liquid_component>
 		<solute_component name="solute">
                     <uniform_conc name="Cs137" value="400"/>
