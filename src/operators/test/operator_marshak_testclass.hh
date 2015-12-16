@@ -1,7 +1,6 @@
 #ifndef OPERATOR_MARSHAK_TESTCLASS_HH_
 #define OPERATOR_MARSHAK_TESTCLASS_HH_
 
-
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
@@ -10,23 +9,21 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Tensor.hh"
 #include "mfd3d_diffusion.hh"
+#include "Tensor.hh"
 
 namespace Amanzi{
 
 class HeatConduction {
  public:
-  HeatConduction(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+  HeatConduction(Teuchos::RCP<const AmanziMesh::Mesh> mesh, double T0)
     : mesh_(mesh),
-      TemperatureFloor(0.),
-      TemperatureSource(100.) { 
+      TemperatureFloor(T0),
+      TemperatureSource(100.0) { 
     CompositeVectorSpace cvs;
-    cvs.SetMesh(mesh_);
-    cvs.SetGhosted(true);
-    cvs.SetComponent("cell", AmanziMesh::CELL, 1);
-    cvs.SetOwned(false);
-    cvs.AddComponent("face", AmanziMesh::FACE, 1);
+    cvs.SetMesh(mesh_)->SetGhosted(true)
+        ->AddComponent("cell", AmanziMesh::CELL, 1)
+        ->AddComponent("face", AmanziMesh::FACE, 1);
 
     values_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
     derivatives_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
@@ -46,38 +43,28 @@ class HeatConduction {
     derivatives_->PutScalar(1.0);
   }
 
-  double Conduction(int c, double T) const {
-    // ASSERT(T > 0.0);
-    return T * T * T;
-  }
+  double Conduction(int c, double T) const { return T * T * T; }
 
   Teuchos::RCP<CompositeVector> values() { return values_; }
   Teuchos::RCP<CompositeVector> derivatives() { return derivatives_; }
  
-
   double exact(double t, const Amanzi::AmanziGeometry::Point& p) {
     double x = p[0], c = 0.4;
     double xi = c * t - x;
-    return (xi > 0.0) ? std::pow(3 * c * (c * t - x), 1.0 / 3)  : TemperatureFloor;
+    return (xi > 0.0) ? std::pow(3 * c * (c * t - x), 1.0 / 3) : TemperatureFloor;
   }
 
-
-public:
+ public:
   double TemperatureSource;
   double TemperatureFloor;
 
-  
-private:
+ private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<CompositeVector> values_, derivatives_;
-
 };
 
 typedef double(HeatConduction::*ModelUpwindFn)(int c, double T) const; 
 
-
 }  // namespace Amanzi
-
-  
 
 #endif

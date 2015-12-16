@@ -1,5 +1,5 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators
 
   Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -19,18 +19,19 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
 
+// Amanzi
 #include "MeshLogicalFactory.hh"
 #include "MeshLogical.hh"
-
-#include "Tensor.hh"
 #include "mfd3d_diffusion.hh"
+#include "Tensor.hh"
 
+// Operators
 #include "LinearOperatorFactory.hh"
 #include "OperatorDefs.hh"
 #include "Operator.hh"
@@ -73,7 +74,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
   RCP<const Mesh> mesh = fac.Create();
 
   // Create nonlinear coefficient.
-  Teuchos::RCP<HeatConduction> knc = Teuchos::rcp(new HeatConduction(mesh));
+  Teuchos::RCP<HeatConduction> knc = Teuchos::rcp(new HeatConduction(mesh, 0.0));
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
@@ -241,11 +242,6 @@ void RunTestMarshakLogical(std::string op_list_name) {
   printf("||dp||=%10.6g  ||p||=%10.6g\n", pl2_err, pnorm);
 
   CHECK_CLOSE(0., pl2_err, 0.1);
-  
-  // CHECK_EQUAL(208, step);
-  // CHECK_CLOSE(1.0034, T, 1.e-4); // overshoots the end time?
-  // CHECK_CLOSE(9.94834, snorm, 1.e-4);
-      
 }
 
 

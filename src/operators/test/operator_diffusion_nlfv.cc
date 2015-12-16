@@ -62,7 +62,7 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 5, 7, NULL);
+  // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 3, 3, NULL);
   Teuchos::RCP<const Mesh> mesh = meshfactory("test/random10.exo");
 
   // modify diffusion coefficient
@@ -88,9 +88,14 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+        fabs(xf[1]) < 1e-6) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = ana.pressure_exact(xf, 0.0);
+    } else if (fabs(xf[1] - 1.0) < 1e-6) {
+      const AmanziGeometry::Point& normal = mesh->face_normal(f);
+      double area = mesh->face_area(f);
+      bc_model[f] = OPERATOR_BC_NEUMANN;
+      bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
     }
   }
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));

@@ -1,7 +1,7 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -15,29 +15,30 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
 
+// Amanzi
+#include "GMVMesh.hh"
+#include "LinearOperatorFactory.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
-#include "GMVMesh.hh"
-
-#include "Tensor.hh"
 #include "mfd3d_diffusion.hh"
+#include "Tensor.hh"
 
-#include "LinearOperatorFactory.hh"
-#include "OperatorDefs.hh"
+// Operators
 #include "Operator.hh"
 #include "OperatorAccumulation.hh"
-#include "OperatorDiffusionMFD.hh"
+#include "OperatorDefs.hh"
+#include "OperatorDiffusionFactory.hh"
 #include "UpwindStandard.hh"
 
 #include "operator_marshak_testclass.hh"
 
-void RunTestMarshak(std::string op_list_name) {
+void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -67,13 +68,11 @@ void RunTestMarshak(std::string op_list_name) {
   meshfactory.preference(pref);
   // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 3.0, 1.0, 200, 10, gm);
   RCP<const Mesh> mesh = meshfactory("test/marshak.exo", gm);
-  // RCP<const Mesh> mesh = meshfactory("test/marshak_poly.exo", gm);
 
   // Create nonlinear coefficient.
-  Teuchos::RCP<HeatConduction> knc = Teuchos::rcp(new HeatConduction(mesh));
+  Teuchos::RCP<HeatConduction> knc = Teuchos::rcp(new HeatConduction(mesh, TemperatureFloor));
 
   // modify diffusion coefficient
-  // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -83,7 +82,6 @@ void RunTestMarshak(std::string op_list_name) {
     Kc(0, 0) = 1.0;
     K->push_back(Kc);
   }
-  double rho(1.0), mu(1.0);
 
   // create boundary data (no mixed bc)
   std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
@@ -108,14 +106,17 @@ void RunTestMarshak(std::string op_list_name) {
 
   // create solution map.
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(mesh);
-  cvs->SetGhosted(true);
-  cvs->SetComponent("cell", AmanziMesh::CELL, 1);
-  cvs->SetOwned(false);
-  cvs->AddComponent("face", AmanziMesh::FACE, 1);
+  if (op_list_name == "diffusion operator Sff") {
+    cvs->SetMesh(mesh)->SetGhosted(true)
+       ->AddComponent("cell", AmanziMesh::CELL, 1)
+       ->AddComponent("face", AmanziMesh::FACE, 1);
+  } else {
+    cvs->SetMesh(mesh)->SetGhosted(true)
+       ->AddComponent("cell", AmanziMesh::CELL, 1);
+  }
 
   // create and initialize state variables.
-  Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(*cvs));
+  Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(knc->values()->Map()));
   Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
 
   Point velocity(0.0, 0.0);
@@ -156,24 +157,24 @@ void RunTestMarshak(std::string op_list_name) {
 
     // add diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
-    OperatorDiffusionMFD op(olist, mesh);
-    op.SetBCs(bc, bc);
+    OperatorDiffusionFactory diff_factory;
+    Teuchos::RCP<OperatorDiffusion> op = diff_factory.Create(olist, mesh, bc);
 
-    int schema_dofs = op.schema_dofs();
-    int schema_prec_dofs = op.schema_prec_dofs();
+    int schema_dofs = op->schema_dofs();
+    int schema_prec_dofs = op->schema_prec_dofs();
 
-    op.Setup(K, knc->values(), knc->derivatives());
-    op.UpdateMatrices(flux.ptr(), Teuchos::null);
+    op->Setup(K, knc->values(), knc->derivatives());
+    op->UpdateMatrices(flux.ptr(), Teuchos::null);
 
     // get the global operator
-    Teuchos::RCP<Operator> global_op = op.global_operator();
+    Teuchos::RCP<Operator> global_op = op->global_operator();
 
     // add accumulation terms
     OperatorAccumulation op_acc(AmanziMesh::CELL, global_op);
     op_acc.AddAccumulationTerm(solution, heat_capacity, dT, "cell");
 
     // apply BCs and assemble
-    op.ApplyBCs(true, true);
+    op->ApplyBCs(true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 
@@ -254,14 +255,17 @@ void RunTestMarshak(std::string op_list_name) {
 
 
 /* *****************************************************************
-* This test replaves tensor and boundary conditions by continuous
-* functions. This is a prototype forheat conduction solvers.
+* This test replaces tensor and boundary conditions by continuous
+* functions. This is a prototype for heat conduction solvers.
 * **************************************************************** */
-// TEST(MARSHAK_NONLINEAR_WAVE) {
-//   RunTest("diffusion operator");
-// }
-
-TEST(MARSHAK_NONLINEAR_WAVE_SFF) {
-  RunTestMarshak("diffusion operator Sff");
+/*
+TEST(MARSHAK_NONLINEAR_WAVE_NLFV) {
+  RunTestMarshak("diffusion operator nlfv", 0.2);
 }
+*/
+
+TEST(MARSHAK_NONLINEAR_WAVE_MFD) {
+  RunTestMarshak("diffusion operator Sff", 0.0);
+}
+
 

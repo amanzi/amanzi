@@ -109,6 +109,8 @@ void OperatorDiffusionNLFV::SetScalarCoefficient(
 ****************************************************************** */
 void OperatorDiffusionNLFV::InitStencils_()
 {
+  const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
+
   // allocate persistent memory
   CompositeVectorSpace cvs; 
   cvs.SetMesh(mesh_)->SetGhosted(true)
@@ -207,7 +209,11 @@ void OperatorDiffusionNLFV::InitStencils_()
     tau.clear();
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      for (int i = 0; i < dim_; ++i) v[i] = hap[i][f] - xc[i];
+      if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+        v = (*K_)[c] * mesh_->face_normal(f);
+      } else {
+        for (int i = 0; i < dim_; ++i) v[i] = hap[i][f] - xc[i];
+      }
       tau.push_back(v);
     }
 
@@ -396,6 +402,7 @@ double OperatorDiffusionNLFV::OneSidedFluxCorrections_(
   Epetra_MultiVector& weight = *stencil_data_->ViewComponent("weight", true);
 
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
+  const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   
   // un-rolling little-k data
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
@@ -434,9 +441,12 @@ double OperatorDiffusionNLFV::OneSidedFluxCorrections_(
 
           tmp = weight[i + k2][f] * gamma;
           sideflux += tmp * (uc[0][c] - uc[0][c3]);
-        } else {
+        } else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
           tmp = weight[i + k2][f];
           sideflux += tmp * (uc[0][c] - bc_value[f1]);
+        } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
+          tmp = weight[i + k2][f];
+          sideflux += tmp * bc_value[f1] * mesh_->face_area(f1);
         }
       }
 
@@ -473,10 +483,11 @@ void OperatorDiffusionNLFV::ApplyBCs(bool primary, bool eliminate)
         WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
         rhs_cell[0][c] += Aface(0, 0) * bc_value[f];
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-        local_op_->matrices_shadow[f] = local_op_->matrices[f];
-        local_op_->matrices[f](0,0) = 0.0;
-            
-        rhs_cell[0][c] -= bc_value[f] * mesh_->face_area(f);
+        WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
+        local_op_->matrices_shadow[f] = Aface;
+
+        rhs_cell[0][c] -= Aface(0, 0) * bc_value[f] * mesh_->face_area(f);
+        Aface = 0.0;
       }
     }
   }
