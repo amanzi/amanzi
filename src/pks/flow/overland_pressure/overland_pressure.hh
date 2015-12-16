@@ -74,6 +74,13 @@ public:
   // -- Compute a norm on u-du and return the result.
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
                            Teuchos::RCP<const TreeVector> du);
+
+  // -- Possibly modify the correction before it is applied
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+      ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+                       Teuchos::RCP<const TreeVector> u,
+                       Teuchos::RCP<TreeVector> du);
+
 protected:
   // setup methods
   virtual void SetupOverlandFlow_(const Teuchos::Ptr<State>& S);
@@ -125,6 +132,8 @@ protected:
   bool perm_update_required_;
   bool source_only_if_unfrozen_;
   bool smoothed_ponded_accumulation_;
+
+  double p_limit_;
 
   // coupling term
   bool coupled_to_subsurface_via_head_;

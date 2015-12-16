@@ -312,6 +312,9 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   // -- ewc and other predictors can result in odd face values
   modify_predictor_with_consistent_faces_ =
       plist_->get<bool>("modify predictor with consistent faces", false);
+
+  // correction controls
+  T_limit_ = plist_->get<double>("limit correction to temperature change [K]", -1.);
 };
 
 
@@ -726,6 +729,36 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 EnergyBase::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
                              Teuchos::RCP<const TreeVector> u,
                              Teuchos::RCP<TreeVector> du) {
+
+  int my_limited = 0;
+  int n_limited = 0;
+  if (T_limit_ > 0.) {
+    for (CompositeVector::name_iterator comp=du->Data()->begin();
+         comp!=du->Data()->end(); ++comp) {
+      Epetra_MultiVector& du_c = *du->Data()->ViewComponent(*comp,false);
+
+      double max;
+      du_c.NormInf(&max);
+      if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+        *vo_->os() << "Max temperature correction (" << *comp << ") = " << max << std::endl;
+      }
+
+      for (int c=0; c!=du_c.MyLength(); ++c) {
+        if (std::abs(du_c[0][c]) > T_limit_) {
+          du_c[0][c] = ((du_c[0][c] > 0) - (du_c[0][c] < 0)) * T_limit_;
+          my_limited++;
+        }
+      }
+    }
+    mesh_->get_comm()->MaxAll(&my_limited, &n_limited, 1);
+  }
+
+  if (n_limited > 0) {
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "  limited by temperature." << std::endl;
+    }
+    return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED;
+  }
   return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
 }
 

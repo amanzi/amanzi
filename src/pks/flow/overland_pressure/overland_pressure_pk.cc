@@ -253,6 +253,9 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   S->RequireField("surface-velocity", name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("cell", AmanziMesh::CELL, 3);
 
+  // limiters
+  p_limit_ = plist_->get<double>("limit correction to pressure change [Pa]", -1.);
+  
 };
 
 
@@ -991,6 +994,45 @@ void OverlandPressureFlow::CalculateConsistentFaces(const Teuchos::Ptr<Composite
   //         -1., elevation, 0.);
 }
 
+
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+OverlandPressureFlow::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+                 Teuchos::RCP<const TreeVector> u,
+                 Teuchos::RCP<TreeVector> du) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+
+  int my_limited = 0;
+  int n_limited = 0;
+  if (p_limit_ > 0.) {
+    for (CompositeVector::name_iterator comp=du->Data()->begin();
+         comp!=du->Data()->end(); ++comp) {
+      Epetra_MultiVector& du_c = *du->Data()->ViewComponent(*comp,false);
+
+      double max;
+      du_c.NormInf(&max);
+      if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+        *vo_->os() << "Max overland pressure correction (" << *comp << ") = " << max << std::endl;
+      }
+      
+      for (int c=0; c!=du_c.MyLength(); ++c) {
+        if (std::abs(du_c[0][c]) > p_limit_) {
+          du_c[0][c] = ((du_c[0][c] > 0) - (du_c[0][c] < 0)) * p_limit_;
+          my_limited++;
+        }
+      }
+    }
+    mesh_->get_comm()->MaxAll(&my_limited, &n_limited, 1);
+  }
+
+  if (n_limited > 0) {
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "  limited by overland pressure." << std::endl;
+    }
+    return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED;
+  }
+  return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
+}
+  
 } // namespace
 } // namespace
 

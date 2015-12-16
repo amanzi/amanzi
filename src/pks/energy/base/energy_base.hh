@@ -157,6 +157,8 @@ public:
   bool precon_used_;
   bool flux_exists_;
 
+  double T_limit_;
+  
   bool coupled_to_subsurface_via_temp_;
   bool coupled_to_subsurface_via_flux_;
   bool coupled_to_surface_via_temp_;
