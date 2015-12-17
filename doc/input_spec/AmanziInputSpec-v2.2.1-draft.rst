@@ -62,17 +62,19 @@ REMINDER - UNITS ARE NOT IMPLEMENTED YET
 
 Acceptable values for each unit are as follows:
 
-+----------------+---------------+
-| Units Elements | Value Options |
-+================+===============+
-| length_unit    | m or cm       |
-+----------------+---------------+
-| time_unit      | y, d, h, or s |
-+----------------+---------------+
-| mass_unit      | kg            |
-+----------------+---------------+
-| conc_unit      | molar         |
-+----------------+---------------+
++----------------+----------------+
+| Units Elements | Value Options  |
++================+================+
+| length_unit    | m or cm        |
++----------------+----------------+
+| time_unit      | y, d, h, or s  |
++----------------+----------------+
+| mass_unit      | kg             |
++----------------+----------------+
+| conc_unit      | molar, mol/m^3 |
++----------------+----------------+
+
+Note, currently mol/m^3 concentration unit is only available for unstructured.  The input converter for unstructured will convert the concentration internally as needed.
 
 Here is an overall example for the model description element.
 
@@ -283,7 +285,7 @@ The ``verbosity`` element specifies the level of output messages provided by Ama
   
   <verbosity level="none | low | medium | high | extreme" />
  
-Note, for debugging purposes use a value of `"extreme`". 
+A level of `"extreme`" is recommended for developers.  For users trying to debug input files or monitor solver performance and convergence `"high`" is recommended.
 
 Execution_control_defaults
 --------------------------
@@ -303,7 +305,7 @@ The ``execution_control_defaults`` element specifies default values to be utiliz
 +------------------+----------------+----------------------------------+
 | mode             | string         | ``steady, transient``            |
 +------------------+----------------+----------------------------------+
-| method           | string         | ``bdf1, picard``                 |
+| method           | string         | ``bdf1``                         |
 +------------------+----------------+----------------------------------+
 | max_cycles [S]   | integer        | max cycles to use for structured |
 +------------------+----------------+----------------------------------+
@@ -336,7 +338,7 @@ Individual time periods of the simulation are defined using ``execution_control`
 +------------------+----------------+----------------------------------------------------------+
 | mode             | string         | ``steady, transient``                                    |
 +------------------+----------------+----------------------------------------------------------+
-| method           | string         | ``bdf1, picard``                                         |
+| method           | string         | ``bdf1``                                                 |
 +------------------+----------------+----------------------------------------------------------+
 | max_cycles [S]   | integer        | max cycles to use for structured                         |
 +------------------+----------------+----------------------------------------------------------+
@@ -472,8 +474,6 @@ ___________________________
 +---------------------------------------------+---------------+---------------------------------------+
 | Element Names                               | Content Type  | Content Value                         |
 +=============================================+===============+=======================================+
-| comments                                    | string        |                                       |
-+---------------------------------------------+---------------+---------------------------------------+
 | min_iterations                              | integer       |                                       |
 +---------------------------------------------+---------------+---------------------------------------+
 | max_iterations                              | integer       |                                       |
@@ -999,9 +999,9 @@ A polygonal_surface region is used to define a bounded planar region and is spec
 .. code-block:: xml
 
     <polygonal_surface name="polygon name" num_points="3" tolerance="optional exp">
-      <point> (X, Y, Z) </point>
-      <point> (X, Y, Z) </point>
-      <point> (X, Y, Z) </point>
+      <point> X, Y, Z </point>
+      <point> X, Y, Z </point>
+      <point> X, Y, Z </point>
     </polygonal_surface>
 
 The attribute ``tolerance`` is optional.  This value prescribes a tolerance for determining the cell face centroids that lie on the defined plane.
@@ -1025,9 +1025,9 @@ A polygon region is used to define a bounded planar region and is specified by t
 .. code-block:: xml
 
     <polygon name="polygon name" num_points="3">
-      <point> (X, Y) </point>
-      <point> (X, Y) </point>
-      <point> (X, Y) </point>
+      <point> X, Y </point>
+      <point> X, Y </point>
+      <point> X, Y </point>
     </polygon>
 
 Ellipse [S]
@@ -1038,8 +1038,8 @@ An ellipse region is used to define a bounded planar region and is specified by 
 .. code-block:: xml
 
     <ellipse name="polygon name" num_points="3">
-      <center> (X, Y) </center>
-      <radius> (radiusX, radiusY) </radius>
+      <center> X, Y </center>
+      <radius> radiusX, radiusY </radius>
     </ellipse>
 
 Rotated Polygon [S]
@@ -1050,12 +1050,12 @@ A rotated_polygon region is defined by a list of points defining the polygon, th
 .. code-block:: xml
 
     <rotated_polygon name="rotated_polygon name">
-        <vertex> (X, Y, Z) </vertex>
-        <vertex> (X, Y, Z) </vertex>
-        <vertex> (X, Y, Z) </vertex>
-        <xyz_plane> (XY | YZ | XZ) </xyz_plane>
-        <axis> (X | Y | Z) </axis>
-        <reference_point> (X, Y) </reference_point>
+        <vertex> X, Y, Z </vertex>
+        <vertex> X, Y, Z </vertex>
+        <vertex> X, Y, Z </vertex>
+        <xyz_plane> XY | YZ | XZ </xyz_plane>
+        <axis> X | Y | Z </axis>
+        <reference_point> X, Y </reference_point>
     </rotated_polygon>
 
 Swept Polygon [S]
@@ -1066,10 +1066,10 @@ A swept_polygon region is defined by a list of points defining the polygon, the 
 .. code-block:: xml
 
     <swept_polygon name="swept_polygon name">
-        <vertex> (X, Y, Z) </vertex>
-        <vertex> (X, Y, Z) </vertex>
-        <vertex> (X, Y, Z) </vertex>
-        <xyz_plane> (XY | YZ | XZ) </xyz_plane>
+        <vertex> X, Y, Z </vertex>
+        <vertex> X, Y, Z </vertex>
+        <vertex> X, Y, Z </vertex>
+        <xyz_plane> XY | YZ | XZ </xyz_plane>
         <extent_min> exponential </extent_min>
         <extent_max> exponential </extent_max>
     </swept_polygon>
@@ -1967,13 +1967,13 @@ Full Example
         <box high_coordinates="499.872, 73.152" low_coordinates="0.0, 0.0"/>
       </region>
       <region name="Left">
-        <box high_coordinates="(0.0, 49.9872)" low_coordinates="(0.0, 0.0)"/>
+        <box high_coordinates="0.0, 49.9872" low_coordinates="0.0, 0.0"/>
       </region>
       <region name="Right">
-        <box high_coordinates="(499.872, 73.152)" low_coordinates="(499.872, 0.0)"/>
+        <box high_coordinates="499.872, 73.152" low_coordinates="499.872, 0.0"/>
       </region>
       <region name="Top">
-        <box high_coordinates="(499.872, 73.152)" low_coordinates="(0.0, 73.152)"/>
+        <box high_coordinates="499.872, 73.152" low_coordinates="0.0, 73.152"/>
       </region>
       <point coordinate="1.5240, 0.3048" name="Point5ft"/>
       <point coordinate="32.0040, 0.3048" name="Point105ft"/>
