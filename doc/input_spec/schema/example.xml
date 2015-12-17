@@ -157,15 +157,25 @@
             </unstr_transport_controls>
 
             <unstr_chemistry_controls>
-                <process_model>implicit operator split | none</process_model>
-                <chem_tolerance>exp</chem_tolerance> <!-- EIB: add/remove to translator? goes in engine file? -->
-                <chem_max_newton_iterations>int</chem_max_newton_iterations> <!-- EIB: add/remove to translator? goes in engine file? -->
-                <log_formulation>on | off</log_formulation> <!-- EIB: add/remove to translator? goes in engine file? -->
-                <max_chemistry_transport_timestep_ratio>exp</max_chemistry_transport_timestep_ratio> <!-- default: 1.0 suggested range: 0.2 - 10.0 -->
+                <!-- Amanzi native chemistry -->
+		<process_model> implicit operator split | none </process_model>
+		<activity_model> unit | debye-huckel </activity_model> <!-- default: unit -->
+		<maximum_newton_iterations> int </maximum_newton_iterations> <!-- default: 1e-12 -->
+		<tolerance> exp </tolerance> <!-- default: 100 -->
+		<auxiliary_data> pH </auxiliary_data> 
+                <!-- Pflotran chemistry -->
+		<min_time_step> exp </min_time_step> <!-- default: 1e+10 -->
+		<max_time_step> exp </max_time_step> <!-- default: 1e+10 -->
+		<initial_time_step> exp </initial_time_step> <!-- default: 1e+7 -->
+		<time_step_control_method> fixed | simple </time_step_control_method> <!-- default: fixed -->
+		<!-- use time step options only if method = simple -->
+		<time_step_cut_threshold> int </time_step_cut_threshold> <!-- default: 8 -->
+		<time_step_cut_factor> exp </time_step_cut_factor> <!-- default: 2.0 -->
+		<time_step_increase_threshold> int </time_step_increase_threshold> <!-- default: 4 -->
+		<time_step_increase_factor> exp </time_step_increase_factor> <!-- default: 1.2 -->
             </unstr_chemistry_controls>
 
             <unstr_steady-state_controls>
-                <comments>string</comments>
                 <min_iterations>int</min_iterations> <!-- default: 10 suggested range: 5-15 -->
                 <max_iterations>int</max_iterations> <!-- default: 15 suggested range: 10-20 -->
                 <limit_iterations>int</limit_iterations> <!-- default: 20 suggested range: 20-50 -->
@@ -194,28 +204,23 @@
             </unstr_steady-state_controls>
 
             <unstr_transient_controls>
-                <comments>string</comments>
-                <bdf1_integration_method>
-                    <!-- EIB: ask Konstantin if any of these need to be elevated -->
-                    <min_iterations>int</min_iterations> <!-- default: 10 suggested range: 5-15 -->
-                    <max_iterations>int</max_iterations> <!-- default: 15 suggested range: 10-20 -->
-                    <limit_iterations>int</limit_iterations> <!-- default: 20 suggested range: 20-50 -->
-                    <nonlinear_tolerance>exp</nonlinear_tolerance> <!-- default: 1.0e-5 suggested range: 1.0e-6 - 1.0e-5 -->
-                    <nonlinear_iteration_damping_factor>exp</nonlinear_iteration_damping_factor> <!-- default: 1.0 suggested range: 0.1 - 1.0-->
-                    <max_preconditioner_lag_iterations>int</max_preconditioner_lag_iterations> <!-- default: 5 suggested range: 0-10 -->
-                    <max_divergent_iterations>int</max_divergent_iterations> <!-- default: 3 suggested range: 3 - 8-->
-                    <nonlinear_iteration_divergence_factor>exp</nonlinear_iteration_divergence_factor> <!-- default: 1000.0 suggested range: 100.0 - 10000.0-->
-                    <restart_tolerance_relaxation_factor>exp</restart_tolerance_relaxation_factor> <!-- default: 1.0 suggested range: 1.0 - 1000.0 -->
-                    <restart_tolerance_relaxation_factor_damping>exp</restart_tolerance_relaxation_factor_damping> <!-- default: 1.0 suggested range: 0.001-1.0 -->
-                    <error_control_options>pressure | residual</error_control_options> <!-- default: pressure,residual -->
-                </bdf1_integration_method>
+                <min_iterations>int</min_iterations> <!-- default: 10 suggested range: 5-15 -->
+                <max_iterations>int</max_iterations> <!-- default: 15 suggested range: 10-20 -->
+                <limit_iterations>int</limit_iterations> <!-- default: 20 suggested range: 20-50 -->
+                <nonlinear_tolerance>exp</nonlinear_tolerance> <!-- default: 1.0e-5 suggested range: 1.0e-6 - 1.0e-5 -->
+                <nonlinear_iteration_damping_factor>exp</nonlinear_iteration_damping_factor> <!-- default: 1.0 suggested range: 0.1 - 1.0-->
+                <max_preconditioner_lag_iterations>int</max_preconditioner_lag_iterations> <!-- default: 5 suggested range: 0-10 -->
+                <max_divergent_iterations>int</max_divergent_iterations> <!-- default: 3 suggested range: 3 - 8-->
+                <nonlinear_iteration_divergence_factor>exp</nonlinear_iteration_divergence_factor> <!-- default: 1000.0 suggested range: 100.0 - 10000.0-->
+                <restart_tolerance_relaxation_factor>exp</restart_tolerance_relaxation_factor> <!-- default: 1.0 suggested range: 1.0 - 1000.0 -->
+                <restart_tolerance_relaxation_factor_damping>exp</restart_tolerance_relaxation_factor_damping> <!-- default: 1.0 suggested range: 0.001-1.0 -->
+                <error_control_options>pressure | residual</error_control_options> <!-- default: pressure,residual -->
                 <preconditioner>hypre_amg | trilinos_ml | block_ilu</preconditioner> <!-- default: hypre_amg -->
                 <initialize_with_darcy>true | false</initialize_with_darcy> <!-- default: false -->
                 <nonlinear_iteration_initial_guess_extrapolation_order>int</nonlinear_iteration_initial_guess_extrapolation_order> <!-- EIB add --> <!-- default: 1 -->
             </unstr_transient_controls>
 
             <unstr_linear_solver>
-                <comments>string</comments>
                 <method>gmres | pcg</method> <!-- default: gmres -->
                 <max_iterations>int</max_iterations> <!-- default: 100 suggested range: 50-1000 -->
                 <tolerance>exp</tolerance> <!-- default: 1.0e-16 suggested range:1.0e-20-1.0e-14 -->
@@ -251,12 +256,11 @@
         </unstructured_controls>
 
         <structured_controls>
-            <comments>string</comments>
+            <comments>
 
 	    <petsc_options_file>string</petsc_options_file> <!-- if not specified, assumed .petsc -->
             
             <str_steady-state_controls>
-                <comments>string</comments>
                 <max_pseudo_time>exp</max_pseudo_time> <!-- default: 1.e10 suggested range: 0.0-1.e12 -->
                 <min_iterations>int</min_iterations> <!-- default: 10 suggested range: 5-100 -->
                 <limit_iterations>int</limit_iterations> <!-- default: 20 suggested range: 5-200 -->
@@ -281,7 +285,6 @@
             </str_steady-state_controls>
             
             <str_transient_controls>
-                <comments>string</comments>
                 <max_ls_iterations>int</max_ls_iterations>
                 <ls_reduction_factor>exp</ls_reduction_factor>
                 <min_ls_factor>exp</min_ls_factor>
@@ -299,7 +302,6 @@
             </str_transient_controls>
             
             <str_amr_controls>
-                <comments>string</comments>
                 <amr_levels>int</amr_levels>
                 <refinement_ratio>int int</refinement_ratio> 
                 <!-- min entries = #levels-1; additional will be ignored -->
@@ -402,7 +404,6 @@
 
 	<amanzi_chemistry>
 	    <reaction_network file="filename.bgd" format="simple | none"/> <!-- REQUIRED -->
-	    <activity_model>unit | pitzer</activity_model>
 	</amanzi_chemistry>
 
 	<pflotran_chemistry>
@@ -500,7 +501,6 @@
 
             <sorption_isotherms>
                 <solute name="string"> <!-- REQUIRED -->
-                    <molecular_diffusion value="exp"/>
                     <kd_model model="linear | langmuir | freundlich" kd="exp" b="exp" n="exp"/>
                     <!-- b and n are model specific -->
                 </solute>

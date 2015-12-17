@@ -167,7 +167,7 @@ Changes by TDS June 2013:
     </xs:documentation>
   </xs:annotation>
   <xs:restriction base="xs:token">
-    <xs:pattern value="([0-9]+ *)+?"/>
+    <xs:pattern value="([0-9]+ *)+"/>
   </xs:restriction>
 </xs:simpleType>
 
@@ -672,28 +672,39 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_unstr_chemistry_controls">
   <xs:all minOccurs = "0" maxOccurs = "1">
-    <!-- for amanzi chemistry -->
     <xs:element name="process_model" type="xs:string"/>
-    <xs:element name="chem_tolerance" type="typedef_exponential"/>
-    <xs:element name="chem_max_newton_iterations" type="xs:integer"/>
-    <xs:element name="chem_max_time_step" type="typedef_exponential"/>
-    <xs:element name="max_chemistry_transport_timestep_ratio" type="typedef_exponential"/>
+    <!-- Amanzi native chemistry -->
+    <xs:element name="activity_model" type="xs:string" default="unit" minOccurs="0" maxOccurs="1"/>
+    <xs:element name="tolerance" type="typedef_exponential" default="1e-12" minOccurs="0" maxOccurs="1"/>
+    <xs:element name="maximum_newton_iterations" type="xs:integer" default="100" minOccurs="0" maxOccurs="1"/>
+    <xs:element name="auxiliary_data" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
+
+    <!-- Alqumia - PFlotran chemistry -->
+    <xs:element name="min_time_step" type="typedef_exponential" default="1e+10" minOccurs="0" maxOccurs="1"/>
+    <xs:element name="max_time_step" type="typedef_exponential" default="1e+10" minOccurs="0" maxOccurs="1"/>
+    <xs:element name="initial_time_step" type="typedef_exponential" default="1e+7" minOccurs="0" maxOccurs="1"/>
+    <xs:element name="time_step_control_method" type="xs:string" default="fixed" minOccurs="0" maxOccurs="1"/>
+    <!-- the following 4 options are only valid if time_step_control_method=simple -->
+    <xs:element name="time_step_cut_threshold" type="xs:integer" default="8" minOccurs="0" maxOccurs="1"/>
+    <xs:element name="time_step_cut_factor" type="typedef_exponential" default="2.0" minOccurs="0" maxOccurs="1"/>
+    <xs:element name="time_step_increase_threshold" type="xs:integer" default="4" minOccurs="0" maxOccurs="1"/>
+    <xs:element name="time_step_increase_factor" type="typedef_exponential" default="1.2" minOccurs="0" maxOccurs="1"/>
     
-    
-    <!-- for pflotran chemistry -->
-    <xs:element name="log_formulation" type="xs:string"/>
-    <xs:element name="generate_chemistry_engine_inputfile" type="xs:string"/>
-    <xs:element name="read_chemistry_engine_inputfile" type="xs:string"/>
+    <xs:element name="log_formulation" type="xs:string" minOccurs="0" maxOccurs="1"/>
+    <xs:element name="generate_chemistry_engine_inputfile" type="xs:string" minOccurs="0" maxOccurs="1"/>
+    <xs:element name="read_chemistry_engine_inputfile" type="xs:string"minOccurs="0" maxOccurs="1"/>
     
   </xs:all>
 
-    <xs:assert  test="@process_model = ('implicit operator split','none')"/>	
-    <xs:assert  test="@log_formulation = ('on','off')"/>
+    <xs:assert  test="not(exists(process_model)) or process_model = ('implicit operator split','none')"/>	
+    <xs:assert  test="not(exists(activity_model)) or activity_model = ('unit','debye-huckel')"/>	
+    <xs:assert  test="not(exists(auxiliary_data)) or auxiliary_data = ('pH')"/>	
+    <xs:assert  test="not(exists(time_step_control_method)) or time_step_control_method = ('fixed','simple')"/>	
+    <xs:assert  test="not(exists(log_formulation)) or log_formulation = ('on','off')"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_unstr_steady-state_controls">
     <xs:all minOccurs = "0" maxOccurs = "1">
-        <xs:element name="comments" minOccurs = "0" maxOccurs = "1"/>
         <xs:element name="min_iterations" type="xs:integer" minOccurs = "0" maxOccurs = "1"/>
 	<xs:element name="max_iterations" type="xs:integer" minOccurs = "0" maxOccurs = "1"/>
         <xs:element name="limit_iterations" type="xs:integer" minOccurs = "0" maxOccurs = "1"/>
@@ -754,30 +765,23 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_unstr_transient_controls">
 	<xs:all minOccurs = "0" maxOccurs = "1">
-		<xs:element name="comments" minOccurs = "0" maxOccurs = "1"/>
-                <xs:element name="bdf1_integration_method" type="typedef_unstr_bdf1_integration_method" minOccurs = "0" maxOccurs = "1"/>
+	        <xs:element name="min_iterations" type="xs:integer" default="10" minOccurs="0" maxOccurs="1"/>   
+                <xs:element name="max_iterations" type="xs:integer" default="15" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="limit_iterations" type="xs:integer" default="20" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="nonlinear_tolerance" type="typedef_exponential" default="1.0e-5" minOccurs="0" maxOccurs="1"/>
+	        <xs:element name="nonlinear_iteration_damping_factor" type="typedef_exponential" default="1.0" minOccurs="0" maxOccurs="1"/>
+	        <xs:element name="max_preconditioner_lag_iterations" type="xs:integer" default="5" minOccurs="0" maxOccurs="1"/> 
+	        <xs:element name="max_divergent_iterations" type="xs:integer" default="3" minOccurs="0" maxOccurs="1"/>   
+	        <xs:element name="nonlinear_iteration_divergence_factor" type="typedef_exponential" default="1000.0" minOccurs="0" maxOccurs="1"/>
+	        <xs:element name="restart_tolerance_relaxation_factor" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
+	        <xs:element name="restart_tolerance_relaxation_factor_damping" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="error_control_options" type="xs:string" default="'pressure,residual'" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="preconditioner" type="xs:string" minOccurs = "0" maxOccurs = "1"/>
                 <xs:element name="initialize_with_darcy" type="xs:boolean" default="false" minOccurs = "0" maxOccurs = "1"/>
                 <xs:element name="nonlinear_iteration_initial_guess_extrapolation_order" type="xs:integer" default="1" minOccurs = "0" maxOccurs = "1"/>
         </xs:all>
         <xs:assert  test="not(exists(preconditioner)) or preconditioner = ('hypre_amg','trilinos_ml','block_ilu')"/>
-</xs:complexType>
-
-<xs:complexType name="typedef_unstr_bdf1_integration_method">
-    <xs:all minOccurs="0" maxOccurs="1">
-	<xs:element name="min_iterations" type="xs:integer" default="10" minOccurs="0" maxOccurs="1"/>   
-        <xs:element name="max_iterations" type="xs:integer" default="15" minOccurs="0" maxOccurs="1"/>
-        <xs:element name="limit_iterations" type="xs:integer" default="20" minOccurs="0" maxOccurs="1"/>
-        <xs:element name="nonlinear_tolerance" type="typedef_exponential" default="1.0e-5" minOccurs="0" maxOccurs="1"/>
-	<xs:element name="nonlinear_iteration_damping_factor" type="typedef_exponential" default="1.0" minOccurs="0" maxOccurs="1"/>
-	<xs:element name="max_preconditioner_lag_iterations" type="xs:integer" default="5" minOccurs="0" maxOccurs="1"/> 
-	<xs:element name="max_divergent_iterations" type="xs:integer" default="3" minOccurs="0" maxOccurs="1"/>   
-	<xs:element name="nonlinear_iteration_divergence_factor" type="typedef_exponential" default="1000.0" minOccurs="0" maxOccurs="1"/>
-	<xs:element name="restart_tolerance_relaxation_factor" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
-	<xs:element name="restart_tolerance_relaxation_factor_damping" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
-        <xs:element name="error_control_options" type="xs:string" default="'pressure,residual'" minOccurs="0" maxOccurs="1"/>
-    </xs:all>	
-    <xs:assert test="not(exists(error_control_options)) or error_control_options = ('pressure,residual')" />
+        <xs:assert test="not(exists(error_control_options)) or error_control_options = ('pressure,residual')" />
 </xs:complexType>
 
 <xs:complexType name="typedef_unstr_nonlinear_solver">
@@ -792,7 +796,6 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_unstr_linear_solver">
 	<xs:all minOccurs = "0" maxOccurs = "1">
-	<xs:element name="comments" minOccurs="0" maxOccurs="1"/>
 	<xs:element name="method" type="xs:string" minOccurs="0" maxOccurs="1"/>
 	<xs:element name="max_iterations" type="xs:integer" minOccurs="0" maxOccurs="1"/>
 	<xs:element name="tolerance" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
@@ -1141,8 +1144,6 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:complexType name="typedef_amanzi_chemistry">
 	<xs:all minOccurs = "0" maxOccurs = "1">
 		<xs:element name="reaction_network" type="typedef_reaction_network" minOccurs="1" maxOccurs="1"/>
-		<xs:element name="activity_model" type="typedef_activity_model" minOccurs="0" maxOccurs="1"/>
-		<!--xs:element name="auxillary_data" type="typedef_auxillary_data" minOccurs="0" maxOccurs="1"/-->
 	</xs:all>
     </xs:complexType>
 
@@ -1175,21 +1176,6 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:complexType name="typedef_database">
 	<xs:attribute name="file" type="xs:string"/>
     </xs:complexType>
-
-<xs:simpleType name="typedef_activity_model">
-	<!-- what are the different activity models? -->
-	<xs:restriction base="xs:string">
-		<xs:enumeration value="unit"/>
-		<xs:enumeration value="pitzer"/>
-	</xs:restriction>
-</xs:simpleType>
-
-<xs:simpleType name="typedef_auxillary_data">
-	<!-- what are the different options for aux data?  -->
-	<xs:restriction base="xs:string">
-		<xs:enumeration value="pH"/>
-	</xs:restriction>
-</xs:simpleType>
 
 <xs:complexType name="typedef_geochem_constraints">
 	<xs:all minOccurs = "0" maxOccurs = "1">

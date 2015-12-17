@@ -42,6 +42,16 @@ Execution_controls
 
 * Updated available options for the ``execution_control`` attribute ``method``.  Available option is: bdf1.
 
+Numerical_controls->unstr_transient_controls
+--------------------------------------------
+
+* To be more consistent between the steady-state and transient controls, the block heading ``bdf1_integration_method`` has been removed.  All of the subelements are now subelements of ``unstr_transient_controls``.
+
+Numerical_controls->unstr_chemistry_controls
+--------------------------------------------
+
+* This section has been expanded to match the options available.
+
 Geochemistry
 ------------
 

@@ -415,27 +415,23 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
     </unstr_steady-state_controls>
 
     <unstr_transient_controls>
-      <comments>Comment text here</comments>
-      <bdf1_integration_method> 
-        <min_iterations> Integer </min_iterations>
-        <max_iterations> Integer </max_iterations>
-        <limit_iterations> Integer </limit_iterations>
-        <nonlinear_tolerance> Exponential </nonlinear_tolerance>
-        <nonlinear_iteration_damping_factor> Exponential </nonlinear_iteration_damping_factor>
-        <max_preconditioner_lag_iterations> Integer </max_preconditioner_lag_iterations>
-        <max_divergent_iterations> Integer </max_divergent_iterations>
-        <nonlinear_iteration_divergence_factor> Exponential </nonlinear_iteration_divergence_factor>
-        <restart_tolerance_factor> Exponential </restart_tolerance_factor>
-        <restart_tolerance_relaxation_factor> Exponential </restart_tolerance_relaxation_factor>
-        <initialize_with_darcy> true | false </initialize_with_darcy>
-      <bdf1_integration_method> 
+      <min_iterations> Integer </min_iterations>
+      <max_iterations> Integer </max_iterations>
+      <limit_iterations> Integer </limit_iterations>
+      <nonlinear_tolerance> Exponential </nonlinear_tolerance>
+      <nonlinear_iteration_damping_factor> Exponential </nonlinear_iteration_damping_factor>
+      <max_preconditioner_lag_iterations> Integer </max_preconditioner_lag_iterations>
+      <max_divergent_iterations> Integer </max_divergent_iterations>
+      <nonlinear_iteration_divergence_factor> Exponential </nonlinear_iteration_divergence_factor>
+      <restart_tolerance_factor> Exponential </restart_tolerance_factor>
+      <restart_tolerance_relaxation_factor> Exponential </restart_tolerance_relaxation_factor>
+      <initialize_with_darcy> true | false </initialize_with_darcy>
       <preconditioner> trilinos_ml | hypre_amg | block_ilu </preconditioner>
       <initialize_with_darcy>true | false</initialize_with_darcy>
       <nonlinear_iteration_initial_guess_extrapolation_order>int</nonlinear_iteration_initial_guess_extrapolation_order>
     </unstr_transient_controls>
 
     <unstr_linear_solver>
-      <comments>Comment text here</comments>
       <method> gmres </method>
       <max_iterations> Integer </max_iterations>
       <tolerance> Exponential </tolerance>
@@ -445,8 +441,20 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
     <unstr_nonlinear_solver name="nka | newton | inexact newton" />
 
     <unstr_chemistry_controls>
-      <chem_tolerance> Exponential </chem_tolerance>
-      <chem_max_newton_iterations> Integer </chem_max_newton_iterations>
+      <process_model> implicit operator split | none </process_model>
+      <activity_model> unit | debye-huckel </activity_model>
+      <maximum_newton_iterations> Integer </maximum_newton_iterations>
+      <tolerance> Exponential </tolerance>
+      <auxiliary_data> pH </auxiliary_data>
+      <!-- OR -->
+      <min_time_step> Exponential </min_time_step>
+      <max_time_step> Exponential </max_time_step>
+      <initial_time_step> Exponential </initial_time_step>
+      <time_step_control_method> fixed | simple </time_step_control_method>
+      <time_step_cut_threshold> Integer </time_step_cut_threshold> <!-- use only if method = simple -->
+      <time_step_cut_factor> Exponential </time_step_cut_factor> <!-- use only if method = simple -->
+      <time_step_increase_threshold> Integer </time_step_increase_threshold> <!-- use only if method = simple -->
+      <time_step_increase_factor> Exponential </time_step_increase_factor> <!-- use only if method = simple -->
     </unstr_chemistry_controls>
 
     <unstr_preconditioners>
@@ -482,18 +490,14 @@ Here is an overall example for the ``unstructured_controls`` element.
 		<comments>Numerical controls comments here</comments>
 
 		<unstr_steady-state_controls>
-		        <comments>Note that this section contained data on timesteps, which was moved into the execution control section.</comments>
           		<min_iterations>10</min_iterations>
 		      	<max_iterations>15</max_iterations>
           		<max_preconditioner_lag_iterations>30</max_preconditioner_lag_iterations>
           		<nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
 		</unstr_steady-state_controls>
 		<unstr_transient_controls>
-			<comments>Proposed comments section.</comments>
-			<bdf1_integration_method min_iterations="10" max_iterations="15" max_preconditioner_lag_iterations="5" />
 		</unstr_transient_controls>
 		<unstr_linear_solver>
-			<comments>Proposed comment section.</comments>
 			<method>gmres</method>
 			<max_iterations>20</max_iterations>
 			<tolerance>1.0e-18</tolerance>
@@ -809,8 +813,16 @@ A swept_polygon region is defined by a list of points defining the polygon, the 
       <extent_max> exponential </extent_max>
     </swept_polygon>
 
-.. Geochemistry
-.. ------------
+Geochemistry
+------------
+
+The ``geochemistry`` section allow for chemistry engine inputs to be defined as well as constraints.  
+
+External chemistry engines may provide additional screen output.  Therefore, a chemistry specific verbosity is specified here using the ``verbosity`` element.  Available options in `"silent, terse, verbose, warnings, and errors`".
+
+A capability to generate additional engine specific input blocks is currently under development.  Currently, the user must provide any additional engine specific files.  This includes the bgd file for the Amanzi native chemistry engine or the PFLOTRAN input blocks (\*.in) and database file (\*.dat).  The files are specified using the appropriate block ``amanzi_chemistry`` or ``pflotran_chemistry``.
+
+The ``geochemistry`` section also provides a ``constraints`` block.  This block accepts an unbounded number of subelements ``constraint`` to define individual geochemical constraints to be referenced in other areas of the input file.  This section is utilized by the PFLOTRAN chemistry engine.  Currently, only the name of the constraint needs to be specified using the attribute ``name``.  The name should correspond to a constraint defined in the PFLOTRAN input file.
 
 Materials
 ---------

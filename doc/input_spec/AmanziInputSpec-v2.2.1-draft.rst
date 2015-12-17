@@ -447,26 +447,43 @@ The subelements pertaining to the Amanzi native chemistry engine are:
 +========================================+==============+===================================+
 | process_model                          | string       | ``implicit operator split, none`` |
 +----------------------------------------+--------------+-----------------------------------+
-| chem_tolerance                         | exponential  |                                   |
+| activity_model                         | string       | ``unit, debye-huckel``            |
 +----------------------------------------+--------------+-----------------------------------+
-| chem_max_newton_iterations             | integer      |                                   |
+| maximum_newton_iterations              | integer      |                                   |
 +----------------------------------------+--------------+-----------------------------------+
-| chem_max_time_step                     | exponential  |                                   |
+| tolerance                              | exponential  |                                   |
 +----------------------------------------+--------------+-----------------------------------+
-| max_chemistry_transport_timestep_ratio | exponential  |                                   |
++----------------------------------------+--------------+-----------------------------------+
+| auxiliary_data                         | string       | ``pH``                            |
 +----------------------------------------+--------------+-----------------------------------+
 
 The subelements pertaining to the pflotran chemistry engine are:
 
-+----------------------------------------+--------------+-------------------------+
-| Element Names                          | Content Type | Content Value           |
-+========================================+==============+=========================+
-| log_formulation                        | string       | ``on, off``             |
-+----------------------------------------+--------------+-------------------------+
-| generate_chemistry_engine_inputfile    | string       |                         |
-+----------------------------------------+--------------+-------------------------+
-| read_chemistry_engine_inputfile        | string       |                         |
-+----------------------------------------+--------------+-------------------------+
++----------------------------------------+--------------+-----------------------------------+
+| Element Names                          | Content Type | Content Value                     |
++========================================+==============+===================================+
+| min_time_step                          | exponential  |                                   |
++----------------------------------------+--------------+-----------------------------------+
+| max_time_step                          | exponential  |                                   |
++----------------------------------------+--------------+-----------------------------------+
+| initial_time_step                      | exponential  |                                   |
++----------------------------------------+--------------+-----------------------------------+
+| time_step_control_method               | string       | ``fixed, simple``                 |
++----------------------------------------+--------------+-----------------------------------+
+| time_step_cut_threshold                | integer      | (use only if method = simple)     |
++----------------------------------------+--------------+-----------------------------------+
+| time_step_cut_factor                   | exponential  | (use only if method = simple)     |
++----------------------------------------+--------------+-----------------------------------+
+| time_step_increase_threshold           | integer      | (use only if method = simple)     |
++----------------------------------------+--------------+-----------------------------------+
+| time_step_increase_factor              | exponential  | (use only if method = simple)     |
++----------------------------------------+--------------+-----------------------------------+
+| log_formulation                        | string       | ``on, off``                       |
++----------------------------------------+--------------+-----------------------------------+
+| generate_chemistry_engine_inputfile    | string       |                                   |
++----------------------------------------+--------------+-----------------------------------+
+| read_chemistry_engine_inputfile        | string       |                                   |
++----------------------------------------+--------------+-----------------------------------+
 
 Unstr_steady-state_controls
 ___________________________
@@ -533,9 +550,27 @@ ________________________
 +-------------------------------------------------------+---------------+---------------------------------------+
 | Element Names                                         | Content Type  | Content Value                         |
 +=======================================================+===============+=======================================+
-| comments                                              | string        |                                       |
+| min_iterations                                        | integer       | *default = 10*                        |
 +-------------------------------------------------------+---------------+---------------------------------------+
-| bdf1_integration_method                               | element block |                                       |
+| max_iterations                                        | integer       | *default = 15*                        |
++-------------------------------------------------------+---------------+---------------------------------------+
+| limit_iterations                                      | integer       | *default = 20*                        |
++-------------------------------------------------------+---------------+---------------------------------------+
+| nonlinear_tolerance                                   | exponential   | *default = 1.0e-5*                    |
++-------------------------------------------------------+---------------+---------------------------------------+
+| nonlinear_iteration_damping_factor                    | exponential   | *default = 1.0*                       |
++-------------------------------------------------------+---------------+---------------------------------------+
+| max_preconditioner_lag_iterations                     | integer       | *default = 5*                         |
++-------------------------------------------------------+---------------+---------------------------------------+
+| max_divergent_iterations                              | integer       | *default = 3*                         |
++-------------------------------------------------------+---------------+---------------------------------------+
+| nonlinear_iteration_divergence_factor                 | exponential   | *default = 1000.0*                    |
++-------------------------------------------------------+---------------+---------------------------------------+
+| restart_tolerance_relaxation_factor                   | exponential   |                                       |
++-------------------------------------------------------+---------------+---------------------------------------+
+| restart_tolerance_relaxation_factor_damping           | exponential   |                                       |
++-------------------------------------------------------+---------------+---------------------------------------+
+| error_control_options                                 | string        | ``pressure, residual``                |
 +-------------------------------------------------------+---------------+---------------------------------------+
 | nonlinear_iteration_initial_guess_extrapolation_order | integer       |                                       |
 +-------------------------------------------------------+---------------+---------------------------------------+
@@ -545,36 +580,6 @@ ________________________
 |                                                       |               | | *default = false*                   |
 +-------------------------------------------------------+---------------+---------------------------------------+
 
-The element block ``bdf1_integration_method`` specifies options for the BDF1 integration method.  It has the following elements:
-
-+---------------------------------------------+---------------+-------------------------------------+
-| Element Names                               | Content Type  | Content Value                       |
-+=============================================+===============+=====================================+
-| comments                                    | string        |                                     |
-+---------------------------------------------+---------------+-------------------------------------+
-| min_iterations                              | integer       | *default = 10*                      |
-+---------------------------------------------+---------------+-------------------------------------+
-| max_iterations                              | integer       | *default = 15*                      |
-+---------------------------------------------+---------------+-------------------------------------+
-| limit_iterations                            | integer       | *default = 20*                      |
-+---------------------------------------------+---------------+-------------------------------------+
-| nonlinear_tolerance                         | exponential   | *default = 1.0e-5*                  |
-+---------------------------------------------+---------------+-------------------------------------+
-| nonlinear_iteration_damping_factor          | exponential   | *default = 1.0*                     |
-+---------------------------------------------+---------------+-------------------------------------+
-| max_preconditioner_lag_iterations           | integer       | *default = 5*                       |
-+---------------------------------------------+---------------+-------------------------------------+
-| max_divergent_iterations                    | integer       | *default = 3*                       |
-+---------------------------------------------+---------------+-------------------------------------+
-| nonlinear_iteration_divergence_factor       | exponential   | *default = 1000.0*                  |
-+---------------------------------------------+---------------+-------------------------------------+
-| restart_tolerance_relaxation_factor         | exponential   |                                     |
-+---------------------------------------------+---------------+-------------------------------------+
-| restart_tolerance_relaxation_factor_damping | exponential   |                                     |
-+---------------------------------------------+---------------+-------------------------------------+
-| error_control_options                       | string        | ``pressure, residual``              |
-+---------------------------------------------+---------------+-------------------------------------+
-
 
 Unstr_linear_solver
 ___________________
@@ -582,8 +587,6 @@ ___________________
 +----------------+--------------+---------------------------------------+
 | Element Names  | Content Type | Content Value                         |
 +================+==============+=======================================+
-| comments       | string       |                                       |
-+----------------+--------------+---------------------------------------+
 | method         | string       | ``gmres, pcg``                        |
 +----------------+--------------+---------------------------------------+
 | max_iterations | integer      |                                       |
@@ -695,18 +698,16 @@ An example ``unstructured_controls`` section would look as the following:
                 <preconditioner>hypre_amg</preconditioner>
             </unstr_steady-state_controls>
             <unstr_transient_controls>
-                <bdf1_integration_method>
-                    <min_iterations>10</min_iterations>
-                    <max_iterations>15</max_iterations>
-                    <limit_iterations>20</limit_iterations>
-                    <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
-                    <nonlinear_iteration_damping_factor>1.0</nonlinear_iteration_damping_factor>
-                    <max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
-                    <max_divergent_iterations>3</max_divergent_iterations>
-                    <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
-                    <restart_tolerance_relaxation_factor>1</restart_tolerance_relaxation_factor>
-                    <error_control_options>pressure,residual</error_control_options>
-                </bdf1_integration_method>
+                <min_iterations>10</min_iterations>
+                <max_iterations>15</max_iterations>
+                <limit_iterations>20</limit_iterations>
+                <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
+                <nonlinear_iteration_damping_factor>1.0</nonlinear_iteration_damping_factor>
+                <max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
+                <max_divergent_iterations>3</max_divergent_iterations>
+                <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
+                <restart_tolerance_relaxation_factor>1</restart_tolerance_relaxation_factor>
+                <error_control_options>pressure,residual</error_control_options>
                 <preconditioner>hypre_amg</preconditioner>
                 <initialize_with_darcy>true</initialize_with_darcy>
             </unstr_transient_controls>
@@ -1101,13 +1102,11 @@ The ``amanzi_chemistry`` block specifies options specific to the native Amanzi c
 
   <amanzi_chemistry>
       Required Elements: NONE
-      Optional Elements: reaction_network, activity_model
+      Optional Elements: reaction_network
   </amanzi_chemistry>
 
 * ``reaction_network`` specifies the external file containing chemistry information (\*.bgd) using the attributes ``file`` and ``format``.  By default the format of an existing bgd file is simple.  Amanzi currently has the capability to automatically generate the bgd file for isotherm only.
 
-* ``activity_model`` specifies the activity to be used.  Options are unit or pitzer.
-    
 .. code-block:: xml
 
     <amanzi_chemistry>
@@ -1917,18 +1916,16 @@ Full Example
                 <preconditioner>hypre_amg</preconditioner>
             </unstr_steady-state_controls>
             <unstr_transient_controls>
-                <bdf1_integration_method>
-                    <min_iterations>10</min_iterations>
-                    <max_iterations>15</max_iterations>
-                    <limit_iterations>20</limit_iterations>
-                    <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
-                    <nonlinear_iteration_damping_factor>1.0</nonlinear_iteration_damping_factor>
-                    <max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
-                    <max_divergent_iterations>3</max_divergent_iterations>
-                    <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
-                    <restart_tolerance_relaxation_factor>1</restart_tolerance_relaxation_factor>
-                    <error_control_options>pressure,residual</error_control_options>
-                </bdf1_integration_method>
+                <min_iterations>10</min_iterations>
+                <max_iterations>15</max_iterations>
+                <limit_iterations>20</limit_iterations>
+                <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
+                <nonlinear_iteration_damping_factor>1.0</nonlinear_iteration_damping_factor>
+                <max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
+                <max_divergent_iterations>3</max_divergent_iterations>
+                <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
+                <restart_tolerance_relaxation_factor>1</restart_tolerance_relaxation_factor>
+                <error_control_options>pressure,residual</error_control_options>
                 <preconditioner>hypre_amg</preconditioner>
                 <initialize_with_darcy>true</initialize_with_darcy>
             </unstr_transient_controls>
