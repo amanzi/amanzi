@@ -428,7 +428,7 @@ double OperatorDiffusionNLFV::OneSidedFluxCorrections_(
       k1 = (c1 == c) ? 0 : 1;
       k2 = k1 * dim_;      
     
-      double sideflux(0.0);
+      double sideflux(0.0), neumann_flux(0.0);
       for (int i = 1; i < dim_; ++i) {
         int f1 = (*stencil_faces_[i + k2])[f];
         c3 = (*stencil_cells_[i + k2])[f];
@@ -446,14 +446,14 @@ double OperatorDiffusionNLFV::OneSidedFluxCorrections_(
           sideflux += tmp * (uc[0][c] - bc_value[f1]);
         } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
           tmp = weight[i + k2][f];
-          sideflux += tmp * bc_value[f1] * mesh_->face_area(f1);
+          neumann_flux += tmp * bc_value[f1] * mesh_->face_area(f1);
         }
       }
 
       if (little_k_ == OPERATOR_LITTLE_K_UPWIND && k_face.get()) {
         sideflux *= (*k_face)[0][f];
       }
-      flux[k1][f] = sideflux; 
+      flux[k1][f] = sideflux + neumann_flux; 
     }
   }
 

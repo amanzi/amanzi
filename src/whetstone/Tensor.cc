@@ -455,16 +455,22 @@ std::ostream& operator<<(std::ostream& os, const Tensor& T)
 
 
 /* ******************************************************************
-* Expanding tensor to a constant size vector and reverse.
-* NOTE: Implementation is not complete.
+* Convert tensor to a vector and reverse. Used for parallel 
+* distribution of tensors. We assume that size of v sufficient to 
+* contain tensor of rank 2.
 ****************************************************************** */
 void TensorToVector(const Tensor& T, DenseVector& v) {
-  ASSERT(v.NumRows() == T.size() * T.size());
-
-  double* data1 = v.Values(); 
-  const double* data2 = T.data(); 
-  for (int i = 0; i < v.NumRows(); ++i) {
-    data1[i] = data2[i]; 
+  const double* data1 = T.data(); 
+  double* data2 = v.Values(); 
+  
+  if (T.rank() == 2) {
+    int mem = T.size() * T.size();
+    for (int i = 0; i < mem; ++i) data2[i] = data1[i]; 
+  } else if (T.rank() == 1) {
+    int d = T.dimension();
+    int mem = WHETSTONE_TENSOR_SIZE[d - 1][1];  // rank 2
+    v.PutScalar(0.0);
+    for (int i = 0; i < mem * mem; i += d + 1) data2[i] = data1[0]; 
   }
 }
 

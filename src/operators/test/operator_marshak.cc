@@ -97,14 +97,14 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     } else if(fabs(xf[0]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value[f] = knc->TemperatureSource;
-    } else if(fabs(xf[0] - 1.0) < 1e-6) {
+    } else if(fabs(xf[0] - 3.0) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value[f] = knc->TemperatureFloor;
     }
   }
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
-  // create solution map.
+  // Create and initialize solution (temperature) field.
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   if (op_list_name == "diffusion operator Sff") {
     cvs->SetMesh(mesh)->SetGhosted(true)
@@ -115,7 +115,10 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
        ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  // create and initialize state variables.
+  Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(*cvs));
+  solution->PutScalar(knc->TemperatureFloor);  // solution at time T=0
+
+  // Create and initialize flux field.
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(knc->values()->Map()));
   Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
 
@@ -124,9 +127,6 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     const Point& normal = mesh->face_normal(f);
     flx[0][f] = velocity * normal;
   }
-
-  CompositeVector solution(*cvs);
-  solution.PutScalar(knc->TemperatureFloor);  // solution at time T=0
 
   CompositeVector heat_capacity(*cvs);
   heat_capacity.PutScalar(1.0);
@@ -137,23 +137,24 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   upwind.Init(ulist);
 
   // MAIN LOOP
+  double tstop = plist.get<double>("simulation time", 0.5);
   int step(0);
   double snorm(0.0);
   
-  double T(0.0), dT(1e-4);
-  while (T < 1.0) {
-    solution.ScatterMasterToGhosted();
+  double t(0.0), dt(1e-4);
+  while (t < tstop) {
+    solution->ScatterMasterToGhosted();
 
     // update bc
     for (int f = 0; f < nfaces_wghost; f++) {
       const Point& xf = mesh->face_centroid(f);
-      if(fabs(xf[0]) < 1e-6) bc_value[f] = knc->exact(T + dT, xf);
+      if(fabs(xf[0]) < 1e-6) bc_value[f] = knc->exact(t + dt, xf);
     }
 
     // upwind heat conduction coefficient
-    knc->UpdateValues(solution);
+    knc->UpdateValues(*solution);
     ModelUpwindFn func = &HeatConduction::Conduction;
-    upwind.Compute(*flux, solution, bc_model, bc_value, *knc->values(), *knc->values(), func);
+    upwind.Compute(*flux, *solution, bc_model, bc_value, *knc->values(), *knc->values(), func);
 
     // add diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
@@ -164,14 +165,14 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     int schema_prec_dofs = op->schema_prec_dofs();
 
     op->Setup(K, knc->values(), knc->derivatives());
-    op->UpdateMatrices(flux.ptr(), Teuchos::null);
+    op->UpdateMatrices(flux.ptr(), solution.ptr());
 
     // get the global operator
     Teuchos::RCP<Operator> global_op = op->global_operator();
 
     // add accumulation terms
     OperatorAccumulation op_acc(AmanziMesh::CELL, global_op);
-    op_acc.AddAccumulationTerm(solution, heat_capacity, dT, "cell");
+    op_acc.AddAccumulationTerm(*solution, heat_capacity, dt, "cell");
 
     // apply BCs and assemble
     op->ApplyBCs(true, true);
@@ -188,24 +189,25 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
        solver = factory.Create("Amanzi GMRES", lop_list, global_op);
 
-    Epetra_MultiVector& sol_new = *solution.ViewComponent("cell");
+    Epetra_MultiVector& sol_new = *solution->ViewComponent("cell");
     Epetra_MultiVector sol_old(sol_new);
 
     CompositeVector rhs = *global_op->rhs();
     solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
-    int ierr = solver->ApplyInverse(rhs, solution);
+    int ierr = solver->ApplyInverse(rhs, *solution);
 
     step++;
-    T += dT;
+    t += dt;
 
-    solution.ViewComponent("cell")->Norm2(&snorm);
+    solution->ViewComponent("cell")->Norm2(&snorm);
 
     if (MyPID == 0) {
-      printf("%3d  ||r||=%11.6g  itr=%2d  ||sol||=%11.6g  T=%7.4f  dT=%7.4f\n",
-          step, solver->residual(), solver->num_itrs(), snorm, T, dT);
+      printf("%3d  ||r||=%11.6g  itr=%2d  ||sol||=%11.6g  t=%7.4f  dt=%7.4f\n",
+          step, solver->residual(), solver->num_itrs(), snorm, t, dt);
     }
 
-    // change time step
+    // Change time step based on solution change.
+    // We use empiric algorithm insired by Levenberg-Marquardt 
     Epetra_MultiVector sol_diff(sol_old);
     sol_diff.Update(1.0, sol_new, -1.0);
 
@@ -217,20 +219,20 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     sol_diff.Comm().MaxAll(&ds_rel_local, &ds_rel, 1);
 
     if (ds_rel < 0.05) {
-      dT *= 1.2;
+      dt *= 1.2;
     } else if (ds_rel > 0.10) {
-      dT *= 0.8;
+      dt *= 0.8;
     }
     // dT = std::min(dT, 0.002);
   }
 
   // calculate errors
-  const Epetra_MultiVector& p = *solution.ViewComponent("cell");
+  const Epetra_MultiVector& p = *solution->ViewComponent("cell");
   double pl2_err(0.0), pnorm(0.0);
 
   for (int c = 0; c < ncells_owned; ++c) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-    double err = p[0][c] - knc->exact(T, xc);
+    double err = p[0][c] - knc->exact(t, xc);
     pl2_err += err * err;
     pnorm += p[0][c] * p[0][c];
   }
@@ -238,14 +240,9 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   pnorm = std::pow(pnorm, 0.5);
   printf("||dp||=%10.6g  ||p||=%10.6g\n", pl2_err, pnorm);
 
-  CHECK_CLOSE(0., pl2_err, 0.1);
+  CHECK_CLOSE(0.0, pl2_err, 0.1);
 
-  // CHECK_EQUAL(208, step);
-  // CHECK_CLOSE(1.0034, T, 1.e-4); // overshoots the end time?
-  // CHECK_CLOSE(9.94834, snorm, 1.e-4);
-      
   if (MyPID == 0) {
-    // visualization
     GMV::open_data_file(*mesh, (std::string)"operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");
@@ -258,11 +255,9 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 * This test replaces tensor and boundary conditions by continuous
 * functions. This is a prototype for heat conduction solvers.
 * **************************************************************** */
-/*
 TEST(MARSHAK_NONLINEAR_WAVE_NLFV) {
-  RunTestMarshak("diffusion operator nlfv", 0.2);
+  RunTestMarshak("diffusion operator nlfv", 0.02);
 }
-*/
 
 TEST(MARSHAK_NONLINEAR_WAVE_MFD) {
   RunTestMarshak("diffusion operator Sff", 0.0);

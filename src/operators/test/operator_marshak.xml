@@ -1,6 +1,7 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
   <Parameter name="grid_option" type="string" value="Unstructured"/>
+  <Parameter name="simulation time" type="double" value="0.6"/>
 
   <!--  REGIONS  -->
   <ParameterList name="Regions">

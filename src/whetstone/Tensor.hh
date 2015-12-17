@@ -71,11 +71,11 @@ class Tensor {
   int SetColumn(int column, const AmanziGeometry::Point& p); 
   int SetRow(int row, const AmanziGeometry::Point& p); 
 
-  inline int dimension() const { return d_; }
-  inline int rank() const { return rank_; }
-  inline int size() const { return size_; }
-  inline double* data() { return data_; }
-  inline double* data() const { return data_; }
+  int dimension() const { return d_; }
+  int rank() const { return rank_; }
+  int size() const { return size_; }
+  double* data() { return data_; }
+  double* data() const { return data_; }
 
   // miscaleneous
   friend std::ostream& operator<<(std::ostream& os, const Tensor& T);
