@@ -128,10 +128,8 @@ void OperatorDiffusionFVwithGravity::UpdateFlux(
 * (its nonlinear part) on face f.
 ****************************************************************** */
 void OperatorDiffusionFVwithGravity::ComputeJacobianLocal_(
-    int mcells, int f, int face_dir, int Krel_method,
-    int bc_model_f, double bc_value_f,
-    double *pres, double *dkdp_cell,
-    WhetStone::DenseMatrix& Jpp)
+    int mcells, int f, int face_dir, int bc_model_f, double bc_value_f,
+    double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
   const Teuchos::Ptr<Epetra_MultiVector> gravity_face =
@@ -142,7 +140,7 @@ void OperatorDiffusionFVwithGravity::ComputeJacobianLocal_(
 
   if (mcells == 2) {
     dpres = pres[0] - pres[1];  // + grn;
-    if (Krel_method == OPERATOR_LITTLE_K_UPWIND) {
+    if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
       double flux0to1;
       flux0to1 = trans_face[0][f] * dpres;
       if (gravity_face.get()) flux0to1 += face_dir * (*gravity_face)[0][f];
@@ -156,7 +154,7 @@ void OperatorDiffusionFVwithGravity::ComputeJacobianLocal_(
         dKrel_dp[0] = 0.5 * dkdp_cell[0];
         dKrel_dp[1] = 0.5 * dkdp_cell[1];
       }
-    } else if (Krel_method == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
+    } else if (little_k_ == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
       dKrel_dp[0] = 0.5 * dkdp_cell[0];
       dKrel_dp[1] = 0.5 * dkdp_cell[1];
     } else {

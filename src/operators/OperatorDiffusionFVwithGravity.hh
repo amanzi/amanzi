@@ -158,10 +158,8 @@ class OperatorDiffusionFVwithGravity : public OperatorDiffusionFV,
 
  protected:
   virtual void ComputeJacobianLocal_(
-      int mcells, int f, int face_dir, int Krel_method,
-      int bc_model, double bc_value,
-      double *pres, double *dkdp_cell,
-      WhetStone::DenseMatrix& Jpp);
+      int mcells, int f, int face_dir, int bc_model, double bc_value,
+      double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp);
 
   void ComputeTransmissibility_(Teuchos::RCP<CompositeVector> g_cv);
 

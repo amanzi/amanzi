@@ -205,7 +205,26 @@ void InputConverter::ParseConstants_()
   MemoryManager mm;
 
   char *tagname, *text;
+  DOMNode* node;
   DOMNodeList *node_list, *children;
+  DOMElement* element;
+
+  // process time constants
+  node_list = doc_->getElementsByTagName(mm.transcode("named_times"));
+  if (node_list->getLength() > 0) {
+    bool flag;
+    std::string name, value;
+    element = static_cast<DOMElement*>(node_list->item(0));
+    children = element->getElementsByTagName(mm.transcode("time"));
+
+    for (int i = 0; i < node_list->getLength(); ++i) {
+      element = static_cast<DOMElement*>(children->item(i));
+      name = mm.transcode(element->getAttribute(mm.transcode("name")));
+      value = mm.transcode(element->getAttribute(mm.transcode("value")));
+      constants_[name] = value;
+    } 
+  }
+
 
   // process constants: we ignore type of generic constants.
   node_list = doc_->getElementsByTagName(mm.transcode("constants"));
@@ -222,7 +241,7 @@ void InputConverter::ParseConstants_()
         strcmp(tagname, "time_constant") == 0 ||
         strcmp(tagname, "numerical_constant") == 0 ||
         strcmp(tagname, "area_mass_flux_constant") == 0) {
-      DOMElement* element = static_cast<DOMElement*>(inode);
+      element = static_cast<DOMElement*>(inode);
       if (element->hasAttribute(mm.transcode("name"))) {
         text = mm.transcode(element->getAttribute(mm.transcode("name")));
         name = text;

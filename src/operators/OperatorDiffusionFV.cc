@@ -372,7 +372,7 @@ void OperatorDiffusionFV::AnalyticJacobian_(const CompositeVector& u)
           dkdp[1] = dKdP_face.get() ? (*dKdP_face)[0][f] : 0.;
         }
 
-        ComputeJacobianLocal_(mcells, f, face_dir, 
+        ComputeJacobianLocal_(mcells, f, face_dir,
                               bc_model[f], bc_value[f], pres, dkdp, Aface);
 
         jac_op_->matrices[f] = Aface;
