@@ -86,7 +86,7 @@ CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
     Teuchos::ParameterList state_plist = glist_->sublist("State");
     S_ = Teuchos::rcp(new Amanzi::State(state_plist));
     S_->RegisterMesh("domain", mesh_); 
-  }else{
+  } else{
     Errors::Message message("CycleDriver: xml_file does not contain 'State' sublist\n");
     Exceptions::amanzi_throw(message);
   }
@@ -303,21 +303,6 @@ void CycleDriver::Finalize() {
 }
 
 
-// double rss_usage() { // return ru_maxrss in MBytes
-// #if (defined(__unix__) || defined(__unix) || defined(unix) || defined(__APPLE__) || defined(__MACH__))
-//   struct rusage usage;
-//   getrusage(RUSAGE_SELF, &usage);
-// #if (defined(__APPLE__) || defined(__MACH__))
-//   return static_cast<double>(usage.ru_maxrss)/1024.0/1024.0;
-// #else
-//   return static_cast<double>(usage.ru_maxrss)/1024.0;
-// #endif
-// #else
-//   return 0.0;
-// #endif
-// }
-
-
 /* ******************************************************************
 * Report the memory high water mark (using ru_maxrss)
 * this should be called at the very end of a simulation
@@ -391,37 +376,9 @@ void CycleDriver::ReportMemory() {
 
 
 /* ******************************************************************
-* TBW.
+* Read control variables for all time periods. 
 ****************************************************************** */
 void CycleDriver::ReadParameterList_() {
-  // std::cout<<*coordinator_list_<<"\n";
-  // t0_ = coordinator_list_->get<double>("start time");
-  // t1_ = coordinator_list_->get<double>("end time");
-  // std::string t0_units = coordinator_list_->get<std::string>("start time units", "s");
-  // std::string t1_units = coordinator_list_->get<std::string>("end time units", "s");
-
-  // if (t0_units == "s") {
-  //   // internal units in s
-  // } else if (t0_units == "d") { // days
-  //   t0_ = t0_ * 24.0*3600.0;
-  // } else if (t0_units == "yr") { // years
-  //   t0_ = t0_ * 365.25*24.0*3600.0;
-  // } else {
-  //   Errors::Message message("CycleDriver: error, invalid start time units");
-  //   Exceptions::amanzi_throw(message);
-  // }
-
-  // if (t1_units == "s") {
-  //   // internal units in s
-  // } else if (t1_units == "d") { // days
-  //   t1_ = t1_ * 24.0*3600.0;
-  // } else if (t1_units == "yr") { // years
-  //   t1_ = t1_ * 365.25*24.0*3600.0;
-  // } else {
-  //   Errors::Message message("CycleDriver: error, invalid end time units");
-  //   Exceptions::amanzi_throw(message);
-  // }
-
   max_dt_ = coordinator_list_->get<double>("max time step size", 1.0e99);
   min_dt_ = coordinator_list_->get<double>("min time step size", 1.0e-12);
   cycle0_ = coordinator_list_->get<int>("start cycle",0);
@@ -444,39 +401,6 @@ void CycleDriver::ReadParameterList_() {
     tp_dt_[i] = time_periods_list.sublist(tp_name).get<double>("initial time step", 1.0);
     tp_max_cycle_[i] = time_periods_list.sublist(tp_name).get<int>("maximum cycle number", -1);
    
-    std::string t_units = time_periods_list.sublist(tp_name).get<std::string>("start time units", "s");
-    if (t_units == "s") {
-      // internal units in s
-    } else if (t_units == "d") {  // days
-      tp_start_[i] = tp_start_[i] * 24.0*3600.0;
-    } else if (t_units == "yr") {  // years
-      tp_start_[i] = tp_start_[i] * 365.25*24.0*3600.0;
-    } else {
-      Errors::Message message("CycleDriver: error, invalid start time units");
-      Exceptions::amanzi_throw(message);
-    }
-    t_units = time_periods_list.sublist(tp_name).get<std::string>("end time units", "s");
-    if (t_units == "s") {
-      // internal units in s
-    } else if (t_units == "d") {  // days
-      tp_end_[i] = tp_end_[i] * 24.0*3600.0;
-    } else if (t_units == "yr") {  // years
-      tp_end_[i] = tp_end_[i] * 365.25*24.0*3600.0;
-    } else {
-      Errors::Message message("CycleDriver: error, invalid end time units");
-      Exceptions::amanzi_throw(message);
-    }
-    t_units = time_periods_list.sublist(tp_name).get<std::string>("initial time step units", "s");
-    if (t_units == "s") {
-      // internal units in s
-    } else if (t_units == "d") {  // days
-      tp_dt_[i] = tp_dt_[i] * 24.0*3600.0;
-    } else if (t_units == "yr") {  // years
-      tp_dt_[i] = tp_dt_[i] * 365.25*24.0*3600.0;
-    } else {
-      Errors::Message message("CycleDriver: error, invalid initial time step time units");
-      Exceptions::amanzi_throw(message);
-    }
     i++;
   }
 
@@ -979,14 +903,8 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   S_->set_time(tp_start_[time_pr_id]); 
   S_->set_position(TIME_PERIOD_START);
 
-  //delete the old global solution vector
-  // soln_ = Teuchos::null;
-  // pk_ = Teuchos::null;
-  
-  //if (pk_.get()) delete pk_.get(); 
+  // delete the old global solution vector
   pk_ = Teuchos::null;
-
-  //if (soln_.get()) delete soln_.get(); 
   soln_ = Teuchos::null;
 
   // create the global solution vector
@@ -1029,8 +947,6 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   pk_->set_dt(tp_dt_[time_pr_id]);
 
   S_old_ = Teuchos::null;
-
-
 }
 
 }  // namespace Amanzi
