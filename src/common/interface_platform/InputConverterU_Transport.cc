@@ -46,6 +46,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   char *text, *tagname;
   DOMNodeList *node_list, *children;
   DOMNode* node;
+  DOMElement* element;
 
   // process CFL number
   bool flag;
@@ -188,12 +189,13 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
     children = node->getChildNodes();
     for (int i = 0; i < children->getLength(); ++i) {
       DOMNode* inode = children->item(i);
+      element = static_cast<DOMElement*>(inode);  
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
       tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "solute") != 0) continue;
 
-      double val = GetAttributeValueD_(static_cast<DOMElement*>(inode), "coefficient_of_diffusion", false);
+      double val = GetAttributeValueD_(element, "coefficient_of_diffusion", TYPE_NUMERICAL, false);
       text = mm.transcode(inode->getTextContent());
 
       aqueous_names.push_back(TrimString_(text));
@@ -215,13 +217,14 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
     children = node->getChildNodes();
     for (int i = 0; i < children->getLength(); ++i) {
       DOMNode* inode = children->item(i);
+      element = static_cast<DOMElement*>(inode);  
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
       tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "solute") != 0) continue;
 
-      double val = GetAttributeValueD_(static_cast<DOMElement*>(inode), "coefficient_of_diffusion", false);
-      double kh = GetAttributeValueD_(static_cast<DOMElement*>(inode), "kh");
+      double val = GetAttributeValueD_(element, "coefficient_of_diffusion", TYPE_NUMERICAL, false);
+      double kh = GetAttributeValueD_(element, "kh");
       text = mm.transcode(inode->getTextContent());
 
       gaseous_names.push_back(TrimString_(text));
@@ -383,7 +386,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
         element = static_cast<DOMElement*>(same_list[j]);
         double t0 = GetAttributeValueD_(element, "start");
         tp_values[t0] = GetAttributeValueS_(element, "name");
-        tp_forms[t0] = GetAttributeValueS_(element, "function", false); // no form -> use geochemistry engine
+        tp_forms[t0] = GetAttributeValueS_(element, "function", TYPE_NONE, false); // no form -> use geochemistry engine
       }
 
       // create vectors of values and forms

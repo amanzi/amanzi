@@ -294,7 +294,7 @@ Teuchos::ParameterList InputConverterU::TranslateMisc_()
   node = GetUniqueElementByTagsString_("misc, echo_translated_input", flag);
   if (flag) {
     element = static_cast<DOMElement*>(node);
-    std::string filename = GetAttributeValueS_(element, "file_name", false, "native_v6.xml");
+    std::string filename = GetAttributeValueS_(element, "file_name", TYPE_NONE, false, "native_v7.xml");
 
     out_list.set<std::string>("file name", filename);
   }

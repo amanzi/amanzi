@@ -31,9 +31,15 @@
 namespace Amanzi {
 namespace AmanziInput {
 
+// Amanzi version
 #define AMANZI_SPEC_VERSION_MAJOR 2
 #define AMANZI_SPEC_VERSION_MINOR 2
 #define AMANZI_SPEC_VERSION_MICRO 1
+
+// constants
+const std::string TYPE_TIME = "time";
+const std::string TYPE_NUMERICAL = "numerical";
+const std::string TYPE_NONE = "none";
 
 XERCES_CPP_NAMESPACE_USE
 
@@ -124,11 +130,14 @@ class InputConverter {
   // -- extract and verify children
   // -- extract existing attribute value
   int GetAttributeValueL_(
-      xercesc::DOMElement* elem, const char* attr_name, bool exception = true, int val = 0);
+      xercesc::DOMElement* elem, const char* attr_name,
+      const std::string& type = TYPE_NUMERICAL, bool exception = true, int val = 0);
   double GetAttributeValueD_(
-      xercesc::DOMElement* elem, const char* attr_name, bool exception = true, double val = 0.0);
+      xercesc::DOMElement* elem, const char* attr_name,
+      const std::string& type = TYPE_NUMERICAL, bool exception = true, double val = 0.0);
   std::string GetAttributeValueS_(
-      xercesc::DOMElement* elem, const char* attr_name, bool exception = true, std::string val = "");
+      xercesc::DOMElement* elem, const char* attr_name,
+      const std::string& type = TYPE_NUMERICAL, bool exception = true, std::string val = "");
   std::vector<double> GetAttributeVector_(
       xercesc::DOMElement* elem, const char* attr_name);
  
@@ -173,6 +182,7 @@ class InputConverter {
 
  protected:
   // various constants defined by the users
+  std::map<std::string, std::string> constants_time_; 
   std::map<std::string, std::string> constants_; 
 
   std::string xmlfilename_;

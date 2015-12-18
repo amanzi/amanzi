@@ -42,6 +42,7 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_()
 
   MemoryManager mm;
   DOMNode* node;
+  DOMElement* element;
 
   // process expert parameters
   bool flag;
@@ -64,7 +65,8 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_()
 
   std::string nonlinear_solver("nka");
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver", flag);
-  if (flag) nonlinear_solver = GetAttributeValueS_(static_cast<DOMElement*>(node), "name", false, "nka"); 
+  element = static_cast<DOMElement*>(node);
+  if (flag) nonlinear_solver = GetAttributeValueS_(element, "name", TYPE_NONE, false, "nka"); 
 
   bool modify_correction(false);
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
@@ -117,6 +119,7 @@ Teuchos::ParameterList InputConverterU::TranslateEnergyBCs_()
   char *text, *tagname;
   DOMNodeList *node_list, *children;
   DOMNode *node;
+  DOMElement *element;
 
   node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
   if (!node_list) return out_list;
@@ -149,10 +152,11 @@ Teuchos::ParameterList InputConverterU::TranslateEnergyBCs_()
 
     for (int j = 0; j < same_list.size(); ++j) {
       DOMNode* jnode = same_list[j];
-      double t0 = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "start");
+      element = static_cast<DOMElement*>(jnode);
+      double t0 = GetAttributeValueD_(element, "start");
 
-      tp_forms[t0] = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "function");
-      tp_values[t0] = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "value", false, 0.0);
+      tp_forms[t0] = GetAttributeValueS_(element, "function");
+      tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, false, 0.0);
     }
 
     // create vectors of values and forms

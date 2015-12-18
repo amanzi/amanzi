@@ -109,9 +109,9 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
         std::vector<int> ncells; 
         int nx = GetAttributeValueL_(element, "nx");
         if (nx > 0) ncells.push_back(nx);
-        int ny = GetAttributeValueL_(element, "ny", false, 0);
+        int ny = GetAttributeValueL_(element, "ny", TYPE_NUMERICAL, false, 0);
         if (ny > 0) ncells.push_back(ny); 
-        int nz = GetAttributeValueL_(element, "nz", false, 0);
+        int nz = GetAttributeValueL_(element, "nz", TYPE_NUMERICAL, false, 0);
         if (nz > 0) ncells.push_back(nz); 
 
         if (ncells.size() != dim_) 

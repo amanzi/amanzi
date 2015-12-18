@@ -63,7 +63,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     if (flag) {
       element = static_cast<DOMElement*>(node);
       bgdfilename = GetAttributeValueS_(element, "file");
-      format = GetAttributeValueS_(element, "format", false, format);
+      format = GetAttributeValueS_(element, "format", TYPE_NONE, false, format);
     } else {
       bgdfilename = CreateBGDFile(xmlfilename_);
     }
@@ -159,8 +159,8 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
             double mvf(0.0), msa(0.0);
             if (flag) {
               element = GetUniqueChildByAttribute_(node, "name", minerals[j], flag, true);
-              mvf = GetAttributeValueD_(element, "volume_fraction", false, 0.0);
-              msa = GetAttributeValueD_(element, "specific_surface_area", false, 0.0);
+              mvf = GetAttributeValueD_(element, "volume_fraction", TYPE_NUMERICAL, false, 0.0);
+              msa = GetAttributeValueD_(element, "specific_surface_area", TYPE_NUMERICAL, false, 0.0);
             }
             aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", mvf);
             aux2_list.sublist(ss.str()).sublist("function-constant").set<double>("value", msa);
@@ -199,7 +199,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
         for (int j = 0; j < nsolutes; ++j) {
           std::string solute_name = phases_["water"][j];
           element = GetUniqueChildByAttribute_(node, "name", solute_name, flag, false);
-          double val = (!flag) ? 0.0 : GetAttributeValueD_(element, "selectivity", false, 0.0);
+          double val = (!flag) ? 0.0 : GetAttributeValueD_(element, "selectivity", TYPE_NUMERICAL, false, 0.0);
 
           std::stringstream ss;
           ss << "DoF " << j + 1 << " Function";
@@ -245,13 +245,13 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
           std::stringstream ss;
           ss << "DoF " << j + 1 << " Function";
 
-          double val = (!flag) ? 0.0 : GetAttributeValueD_(element, "kd", false, 0.0);
+          double val = (!flag) ? 0.0 : GetAttributeValueD_(element, "kd", TYPE_NUMERICAL, false, 0.0);
           aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", val);
 
-          val = (!flag) ? 0.0 : GetAttributeValueD_(element, "b", false, 0.0);
+          val = (!flag) ? 0.0 : GetAttributeValueD_(element, "b", TYPE_NUMERICAL, false, 0.0);
           aux2_list.sublist(ss.str()).sublist("function-constant").set<double>("value", val);
 
-          val = (!flag) ? 0.0 : GetAttributeValueD_(element, "n", false, 0.0);
+          val = (!flag) ? 0.0 : GetAttributeValueD_(element, "n", TYPE_NUMERICAL, false, 0.0);
           aux3_list.sublist(ss.str()).sublist("function-constant").set<double>("value", val);
         }
       }
