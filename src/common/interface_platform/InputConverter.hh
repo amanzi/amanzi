@@ -39,7 +39,9 @@ namespace AmanziInput {
 // constants
 const std::string TYPE_TIME = "time";
 const std::string TYPE_NUMERICAL = "numerical";
+const std::string TYPE_AREA_MASS_FLUX = "area_mass_flux";
 const std::string TYPE_NONE = "none";
+const std::string TYPE_NOT_CONSTANT = "not_constant";
 
 XERCES_CPP_NAMESPACE_USE
 
@@ -157,6 +159,7 @@ class InputConverter {
   // -- times
   double TimeStringToValue_(const std::string& time_value);
   double TimeCharToValue_(const char* time_value);
+  std::string GetConstantType_(const std::string& val, std::string& parsed_val);
 
   // -- coordinates
   std::vector<double> MakeCoordinates_(const std::string& array);
@@ -182,8 +185,11 @@ class InputConverter {
 
  protected:
   // various constants defined by the users
-  std::map<std::string, std::string> constants_time_; 
-  std::map<std::string, std::string> constants_; 
+  // consistency check is performed for all but constants_
+  std::map<std::string, std::string> constants_time_;  
+  std::map<std::string, std::string> constants_numerical_; 
+  std::map<std::string, std::string> constants_area_mass_flux_; 
+  std::map<std::string, std::string> constants_;  // no check
 
   std::string xmlfilename_;
   xercesc::DOMDocument* doc_;

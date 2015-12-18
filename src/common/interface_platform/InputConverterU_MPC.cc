@@ -83,8 +83,8 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
 
     tagname = mm.transcode(inode->getNodeName());
     if (strcmp(tagname, "execution_control") == 0) {
-      t0 = TimeStringToValue_(GetAttributeValueS_(element, "start"));
-      t1 = TimeStringToValue_(GetAttributeValueS_(element, "end"));
+      t0 = GetAttributeValueD_(element, "start", TYPE_TIME);
+      t1 = GetAttributeValueD_(element, "end", TYPE_TIME);
       dt0 = TimeStringToValue_(GetAttributeValueS_(element, "init_dt", TYPE_TIME, false, dt0_d));
       max_cycles = GetAttributeValueL_(element, "max_cycles", TYPE_NUMERICAL, false, -1);
       std::string mode = GetAttributeValueS_(element, "mode", TYPE_NONE, false, mode_d);

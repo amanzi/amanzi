@@ -209,23 +209,6 @@ void InputConverter::ParseConstants_()
   DOMNodeList *node_list, *children;
   DOMElement* element;
 
-  // process time constants
-  node_list = doc_->getElementsByTagName(mm.transcode("named_times"));
-  if (node_list->getLength() > 0) {
-    bool flag;
-    std::string name, value;
-    element = static_cast<DOMElement*>(node_list->item(0));
-    children = element->getElementsByTagName(mm.transcode("time"));
-
-    for (int i = 0; i < node_list->getLength(); ++i) {
-      element = static_cast<DOMElement*>(children->item(i));
-      name = TrimString_(mm.transcode(element->getAttribute(mm.transcode("name"))));
-      value = TrimString_(mm.transcode(element->getAttribute(mm.transcode("value"))));
-      constants_time_[name] = value;
-    } 
-  }
-
-
   // process constants: we ignore type of generic constants.
   node_list = doc_->getElementsByTagName(mm.transcode("constants"));
   if (node_list->getLength() == 0) return;
@@ -234,22 +217,31 @@ void InputConverter::ParseConstants_()
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+    element = static_cast<DOMElement*>(inode);
     
-    std::string name, value, type(TYPE_NUMERICAL);
+    std::string name, value, type(TYPE_NOT_CONSTANT);
     char* tagname = mm.transcode(inode->getNodeName());   
-    if (strcmp(tagname, "time_constant") == 0) type = TYPE_TIME;
+    if (strcmp(tagname, "constant") == 0) {
+      type = GetAttributeValueS_(element, "type");
+    } else if (strcmp(tagname, "time_constant") == 0) {
+      type = TYPE_TIME;
+    } else if (strcmp(tagname, "numerical_constant") == 0) {
+      type = TYPE_NUMERICAL;
+    } else if (strcmp(tagname, "area_mass_flux_constant") == 0) {
+      type = TYPE_AREA_MASS_FLUX;
+    }
 
-    if (strcmp(tagname, "constant") == 0 ||
-        strcmp(tagname, "time_constant") == 0 ||
-        strcmp(tagname, "numerical_constant") == 0 ||
-        strcmp(tagname, "area_mass_flux_constant") == 0) {
-      element = static_cast<DOMElement*>(inode);
+    if (type != TYPE_NOT_CONSTANT) {
       name = GetAttributeValueS_(element, "name");
       value = GetAttributeValueS_(element, "value");
 
       if (type == TYPE_TIME) {
         constants_time_[name] = value;
-      } else {
+      } else if (type == TYPE_NUMERICAL) {
+        constants_numerical_[name] = value;
+      } else if (type == TYPE_AREA_MASS_FLUX) {
+        constants_area_mass_flux_[name] = value;
+      } else if (type == TYPE_NONE) {
         constants_[name] = value;
       }
     }
@@ -445,24 +437,21 @@ double InputConverter::GetAttributeValueD_(
   double val;
   MemoryManager mm;
 
+  std::string text, parsed, found_type;
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
-    char* text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+    text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+
     // process constants
-    std::string found_type(TYPE_NONE);
-    if (constants_time_.find(text) != constants_time_.end()) {
-      found_type = TYPE_TIME;
-      val = TimeStringToValue_(constants_time_[text]);
-    } else if (constants_.find(text) != constants_.end()) {
-      found_type = TYPE_NUMERICAL;
-      val = strtod(constants_[text].c_str(), NULL);
-    } else {
-      found_type = type;
-      val = TimeCharToValue_(text);
-    }
+    found_type = GetConstantType_(text, parsed);
+    val = TimeStringToValue_(parsed);
+
+    // no checks for two types
+    if (found_type == TYPE_NONE ||
+        found_type == TYPE_NOT_CONSTANT) found_type = type;
 
     if (type != found_type) {
       Errors::Message msg;
-      msg << "Found constant \"" << text << "\" of type=" << found_type 
+      msg << "Usage of constant \"" << text << "\" of type=" << found_type 
           << ". Expect type=" << type << ".\n";
       Exceptions::amanzi_throw(msg);
     }
@@ -487,23 +476,21 @@ int InputConverter::GetAttributeValueL_(
   int val;
   MemoryManager mm;
 
+  std::string text, parsed, found_type;
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
-    char* text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
-    // process constants
-    std::string found_type(TYPE_NONE);
-    if (constants_time_.find(text) != constants_time_.end()) {
-      found_type = TYPE_TIME;
-    } else if (constants_.find(text) != constants_.end()) {
-      found_type = TYPE_NUMERICAL;
-      val = std::strtol(constants_[text].c_str(), NULL, 10);
-    } else {
-      found_type = type;
-      val = std::strtol(text, NULL, 10);
-    }
+    text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+
+    // process constants 
+    found_type = GetConstantType_(text, parsed);
+    val = std::strtol(parsed.c_str(), NULL, 10);
+
+    // no checks for two types
+    if (found_type == TYPE_NONE ||
+        found_type == TYPE_NOT_CONSTANT) found_type = type;
 
     if (type != found_type) {
       Errors::Message msg;
-      msg << "Found constant \"" << text << "\" of type=" << found_type 
+      msg << "Usage of constant \"" << text << "\" of type=" << found_type 
           << ". Expect type=" << type << ".\n";
       Exceptions::amanzi_throw(msg);
     }
@@ -528,17 +515,23 @@ std::string InputConverter::GetAttributeValueS_(
   std::string val;
   MemoryManager mm;
 
+  std::string text, found_type;
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
-    val = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
-    boost::algorithm::trim(val);
+    text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+    boost::algorithm::trim(text);
+
     // check the list of global constants
-    std::string found_type(TYPE_NONE);
-    if (constants_time_.find(val) != constants_time_.end()) {
-      found_type = TYPE_TIME;
-      val = constants_time_[val];
-    } else if (constants_.find(val) != constants_.end()) {
-      found_type = TYPE_NUMERICAL;
-      val = constants_[val];
+    found_type = GetConstantType_(text, val);
+
+    // no checks for two types
+    if (found_type == TYPE_NONE ||
+        found_type == TYPE_NOT_CONSTANT) found_type = type;
+
+    if (type != found_type) {
+      Errors::Message msg;
+      msg << "Usage of constant \"" << text << "\" of type=" << found_type 
+          << ". Expect type=" << type << ".\n";
+      Exceptions::amanzi_throw(msg);
     }
   } else if (!exception) {
     val = default_val;
@@ -608,7 +601,8 @@ std::string InputConverter::GetTextContentS_(
   std::string val;
 
   MemoryManager mm;
-  val = TrimString_(mm.transcode(node->getTextContent()));
+  std::string text = TrimString_(mm.transcode(node->getTextContent()));
+  GetConstantType_(text, val);
 
   std::vector<std::string> names = CharToStrings_(options);
   for (std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it) {
@@ -622,6 +616,34 @@ std::string InputConverter::GetTextContentS_(
   msg << "Please correct and try again.\n";
   Exceptions::amanzi_throw(msg);
   return "";
+}
+
+
+/* ******************************************************************
+* Find positing in the array.
+****************************************************************** */
+std::string InputConverter::GetConstantType_(
+    const std::string& val, std::string& parsed_val)
+{
+  std::string type;
+  if (constants_time_.find(val) != constants_time_.end()) {
+    type = TYPE_TIME;
+    parsed_val = constants_time_[val];
+  } else if (constants_numerical_.find(val) != constants_numerical_.end()) {
+    type = TYPE_NUMERICAL;
+    parsed_val = constants_numerical_[val];
+  } else if (constants_area_mass_flux_.find(val) != constants_area_mass_flux_.end()) {
+    type = TYPE_AREA_MASS_FLUX;
+    parsed_val = constants_area_mass_flux_[val];
+  } else if (constants_.find(val) != constants_.end()) {
+    type = TYPE_NONE;
+    parsed_val = constants_[val];
+  } else {
+    type = TYPE_NOT_CONSTANT;
+    parsed_val = val;
+  }
+
+  return type;
 }
 
 
