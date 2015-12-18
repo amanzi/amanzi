@@ -102,39 +102,8 @@ Definitions allows the user the define and name constants, times, and macros to 
 
   <definitions>
       Required Elements: NONE
-      Optional Elements: named_times, constants, macros
+      Optional Elements: constants, macros
   </definitions>
-
-Named Times
------------
-
-Here the user can specify and name times to be used in other sections of the input file.   Note that if a name is repeated the last read value will be retained and all others will be overwritten.
-
-.. code-block:: xml
-
-  <named_times>
-      Required Elements: NONE
-      Optional Elements: time [S]
-  </named_times>
-
-A ``time`` requires the attributes ``name`` and ``value``.  If a unit is not specified with the value, seconds is taken as the default.  A unit other than seconds may be specified using an acceptable time unit separated with a comma or semicolon.
-
-.. code-block:: xml
-
-  <named_times>
-    <time  name="String" value="time,y|d|h|s"/>
-  </named_times>
-
-Here are examples of how to specify a ``named_time``.  Note that both the times "Simulation Start Time" and "Transition Time" are specifing seconds.  The time values of "Simulation End Time" will be automatically converted from years to seconds by Amanzi.
-
-.. code-block:: xml
-
-  <named_times>
-    <time  name="Simulation Start Time" value="0.0"/>
-    <time  name="Transition Time" value="6.1726e+10,s"/>
-    <time  name="Simulation End Time" value="3000,y"/>
-  </named_times>
-
 
 Constants
 ---------

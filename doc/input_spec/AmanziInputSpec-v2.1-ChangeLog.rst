@@ -27,6 +27,11 @@ Model_description
 
 * Previously, the schema required the ``model_description`` section but Amanzi did not.  The schema has been updated to not require this section.  This should improve importing existing Amanzi files into Akuna.
 
+Named_times
+-----------
+
+* The user had two options for defining and naming a time under ``definitions``.  The options were the ``named_times`` block and the ``time_constant`` under the ``constants`` block.  To remove redundancy, the ``named_times`` section has been removed.
+
 Transport
 ---------
 

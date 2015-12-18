@@ -20,10 +20,6 @@
 
     <definitions>
 
-        <named_times>
-            <time name="string" value="time"/>
-        </named_times>
-
         <constants>
             <!-- default: value is in seconds if no units given-->
             <constant name="string" type="none | time | numerical | area_mass_flux" value="exp (;y | ;d | ;h | ;s)"/>  

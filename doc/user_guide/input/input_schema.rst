@@ -109,7 +109,7 @@ Here is an overall example for the model description element.
 Definitions
 -----------
 
-This section allows the user to provide useful definitions to be used throughout the other sections.  Definitions are grouped as element blocks: `constants`_, `named_times`_, and `macros`_.
+This section allows the user to provide useful definitions to be used throughout the other sections.  Definitions are grouped as element blocks: `constants`_ and `macros`_.
 
 Constants
 _________
@@ -157,26 +157,6 @@ Here is an overall structure for the constants element.
     <numerical_constant name="Name of Numerical Constant" value="value_constant"/>
     <area_mass_flux_constant name="Name of Flux Constant" value="value_of_flux"/>
   </constants>
-
-Named_times
-___________
-
-Named_times allows the user to assign meaningful names to time values and define time values in a single location in the file.  Then the names are used throughout the file whenever needed by boundary conditions or execution controls, etc.  The named_times element contains an unbounded number of time ``time`` elements. 
-
-+----------------------+-----------------+----------------+------------------------------------+
-| Named_times Elements | Attribute Names | Attribute Type | Attribute Values                   |
-+======================+=================+================+====================================+
-| time                 | | name          | | string       | | (user specified name)            |
-|                      | | value         | | time(,char)  | | (time value with optional units) |
-+----------------------+-----------------+----------------+------------------------------------+
-
-Here is an overall structure for the named_times element.
-
-.. code-block:: xml
-
-  <named_times>
-    <time  name="Name of Time" value="time,y|d|h|s"/>
-  </named_times>
 
 Macros
 ______
